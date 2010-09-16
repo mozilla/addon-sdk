@@ -64,6 +64,16 @@ Test options:
 
     -d, --dep-tests              include tests for all dependencies
 
+    -F FILTER, --filter=FILTER
+                                 only run tests that match regexp
+
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+    -m PROFILEMEMORY, --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
+
     -x ITERATIONS, --times=ITERATIONS
                                  number of times to run tests
 
@@ -203,6 +213,16 @@ Run options:
 Test options:
 
     -d, --dep-tests              include tests for all dependencies
+
+    -F FILTER, --filter=FILTER
+                                 only run tests that match regexp
+
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+    -m PROFILEMEMORY, --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
 
     -x ITERATIONS, --times=ITERATIONS
                                  number of times to run tests
