@@ -21,6 +21,7 @@
  *   Myk Melez <myk@mozilla.org>
  *   Daniel Aquino <mr.danielaquino@gmail.com>
  *   Atul Varma <atul@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -40,8 +41,8 @@
 // The range of valid values is narrower than the range of valid JS values
 // because the native preferences code treats integers as NSPR PRInt32s,
 // which are 32-bit signed integers on all platforms.
-const MAX_INT = Math.pow(2, 31) - 1;
-const MIN_INT = -MAX_INT;
+const MAX_INT = 0x7FFFFFFF;
+const MIN_INT = -0x80000000;
 
 const {Cc,Ci,Cr} = require("chrome");
 
@@ -96,7 +97,7 @@ var set = exports.set = function set(name, value) {
       throw new Error("you cannot set the " + name +
                       " pref to the number " + value +
                       ", as number pref values must be in the signed " +
-                      "32-bit integer range -(2^31-1) to 2^31-1.  " +
+                      "32-bit integer range -(2^31) to 2^31-1.  " +
                       "To store numbers outside that range, store " +
                       "them as strings.");
     if (value % 1 != 0)
