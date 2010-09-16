@@ -1,0 +1,5 @@
+*.pyc
+local.json
+*~
+*.DS_Store
+_test_tmp
