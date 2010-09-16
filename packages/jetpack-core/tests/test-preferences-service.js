@@ -29,6 +29,10 @@ exports.testGetAndSet = function(test) {
     "setting a float preference should raise an error"
   );
 
+  test.assertEqual(prefs.getChildList("test_set_get_pref")[0],
+                   ["test_set_get_pref.integer"][0],
+                   "getChildList should work");
+
   test.assertRaises(
     function() { prefs.set("test_set_get_number_pref", Math.pow(2, 31)); },
     ("you cannot set the test_set_get_number_pref pref to the number " +

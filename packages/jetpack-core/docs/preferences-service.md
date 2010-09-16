@@ -49,3 +49,11 @@ Clears a non-default, user-set value from the application preference
 does nothing.
 @param name {string} Preference name.
 </api>
+
+<api name="getChildList">
+@method
+Returns an array of strings representing the child preferences with of the root
+of `name`.
+@param name {string}
+@returns {array} An array of child preferences names.
+</api>

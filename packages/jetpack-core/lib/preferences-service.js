@@ -21,6 +21,7 @@
  *   Myk Melez <myk@mozilla.org>
  *   Daniel Aquino <mr.danielaquino@gmail.com>
  *   Atul Varma <atul@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -135,3 +136,7 @@ var reset = exports.reset = function reset(name) {
     // know what other exceptions might be thrown and what they might mean.
   }
 };
+
+var getChildList = exports.getChildList = function getChildList(name) {
+  return prefSvc.getChildList(name, {});
+}
