@@ -75,20 +75,21 @@ let fromFilename = exports.fromFilename = function fromFilename(path) {
 
 let toFilename = exports.toFilename = function toFilename(url) {
   var uri = newURI(url);
-  if (uri.scheme == "resource")
-    uri = newURI(resolveResourceURI(uri));
-  if (uri.scheme == "chrome") {
-    var channel = ios.newChannelFromURI(uri);
-    try {
-      channel = channel.QueryInterface(Ci.nsIFileChannel);
-      return channel.file.path;
-    } catch (e if e.result == Cr.NS_NOINTERFACE) {
-      throw new Error("chrome url isn't on filesystem: " + url);
-    }
-  }
-  if (uri.scheme == "file") {
-    var file = uri.QueryInterface(Ci.nsIFileURL).file;
-    return file.path;
+  switch (uri.scheme) {
+    case 'chrome':
+      var channel = ios.newChannelFromURI(uri);
+      try {
+        channel = channel.QueryInterface(Ci.nsIFileChannel);
+        return channel.file.path;
+      } catch (e if e.result == Cr.NS_NOINTERFACE) {
+        throw new Error("chrome url isn't on filesystem: " + url);
+      }
+    case 'resource':
+      uri = newURI(resolveResourceURI(uri));
+      if (uri.scheme != "file") break;
+    case 'file':
+      var file = uri.QueryInterface(Ci.nsIFileURL).file;
+      return file.path;
   }
   throw new Error("cannot map to filename: " + url);
 };
