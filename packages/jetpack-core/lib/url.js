@@ -98,7 +98,7 @@ function URL(url, base) {
 
   var userPass = null;
   try {
-    userPass = uri.userPass ? uri.userPass : null;
+    userPass = uri.userPass || null;
   } catch (e if e.result == Cr.NS_ERROR_FAILURE) {}
 
   var host = null;

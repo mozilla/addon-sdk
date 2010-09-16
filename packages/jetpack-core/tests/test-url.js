@@ -37,6 +37,15 @@ exports.testParseHttp = function(test) {
   test.assertEqual(info.path, "/bar");
 };
 
+exports.testParseHttpsWithUserPassAndPort = function(test) {
+  var info = url.URL("https://username:password@foo.com:55/bar");
+  test.assertEqual(info.scheme, "https");
+  test.assertEqual(info.host, "foo.com");
+  test.assertEqual(info.port, 55);
+  test.assertEqual(info.userPass, "username:password");
+  test.assertEqual(info.path, "/bar");
+};
+
 exports.testParseChrome = function(test) {
   var info = url.URL("chrome://global/content/blah");
   test.assertEqual(info.scheme, "chrome");
