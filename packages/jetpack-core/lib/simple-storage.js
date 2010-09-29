@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -44,6 +45,7 @@ const prefs = require("preferences-service");
 const jpSelf = require("self");
 const timer = require("timer");
 const unload = require("unload");
+const { EventEmitter } = require('events');
 
 const WRITE_PERIOD_PREF = "jetpack.jetpack-core.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
@@ -59,29 +61,25 @@ exports.__defineSetter__("storage", function (val) manager.root = val);
 // simpleStorage.quotaUsage
 exports.__defineGetter__("quotaUsage", function () manager.quotaUsage);
 
-// simpleStorage.onOverQuota
-collection.addCollectionProperty(exports, "onOverQuota");
-
-
 // A generic JSON store backed by a file on disk.  This should be isolated
 // enough to move to its own module if need be...
-function JsonStore(options) {
-  this.filename = options.filename;
-  this.quota = options.quota;
-  this.writePeriod = options.writePeriod;
-  this.onOverQuota = options.onOverQuota || new collection.Collection();
-  this.onWrite = options.onWrite || new collection.Collection();
-  this.observersThisArg = options.observersThisArg;
+const JsonStore = EventEmitter.compose({
+  constructor: function JsonStore(options) {
+    this.filename = options.filename;
+    this.quota = options.quota;
+    this.writePeriod = options.writePeriod;
 
-  unload.ensure(this);
+    // log uncaught exceptions thrown by listeners
+    this.on('error', console.error);
 
-  const self = this;
-  this.writeTimer = timer.setInterval(function JsonStore_periodicWrite() {
-    self.write();
-  }, this.writePeriod);
-}
+    unload.ensure(this);
 
-JsonStore.prototype = {
+    this.writeTimer = timer.setInterval(
+      this.write.bind(this), this.writePeriod
+    );
+  },
+
+  writeTimer: null,
 
   // The store's root.
   get root() {
@@ -140,10 +138,8 @@ JsonStore.prototype = {
   // If the store is under quota, writes the root to the backing file.
   // Otherwise quota observers are notified and nothing is written.
   write: function JsonStore_write() {
-    if (this.quotaUsage > 1) {
-      let arr = this._copyAndWrapObservers(this.onOverQuota);
-      this._notifyObserversArray(arr);
-    }
+    if (this.quotaUsage > 1)
+      this._emit('overQuota', exports);
     else
       this._write();
   },
@@ -152,6 +148,7 @@ JsonStore.prototype = {
   // purged; otherwise it's written.
   unload: function JsonStore_unload(reason) {
     timer.clearInterval(this.writeTimer);
+    this.writeTimer = null;
 
     if (reason === "uninstall")
       this.purge();
@@ -159,8 +156,7 @@ JsonStore.prototype = {
       this._write();
 
     // Clear the collections so they don't keep references to client callbacks.
-    this.onOverQuota = [];
-    this.onWrite = [];
+    this._removeAllListeners('overQuota');
   },
 
   // True if the root is an empty object.
@@ -176,22 +172,6 @@ JsonStore.prototype = {
     return false;
   },
 
-  // Returns the given observers collection as an array, with each function
-  // wrapped in a try-catch-log function.  This has the important side effect of
-  // allowing the collection to be subsequently freed.
-  _copyAndWrapObservers: function JsonStore__copyAndWrapObservers(observers) {
-    let arr = [];
-    for (let obs in observers)
-      arr.push(require("errors").catchAndLog(obs));
-    return arr;
-  },
-
-  // Calls all observer functions in the given array.
-  _notifyObserversArray: function JsonStore__notifyObserversArray(obsArray) {
-    while (obsArray.length)
-      obsArray.shift().call(this.observersThisArg);
-  },
-
   // Writes the root to the backing file, notifying write observers when
   // complete.  If the store is over quota or if it's empty and the store has
   // never been written, nothing is written and write observers aren't notified.
@@ -205,27 +185,28 @@ JsonStore.prototype = {
     if (this.quotaUsage > 1)
       return;
 
-    // Before we leave this function, copy observers into an array, because
-    // they're removed on unload.
-    let obsArray = this._copyAndWrapObservers(this.onWrite);
-
     // Finally, write.
-    const self = this;
     let stream = file.open(this.filename, "w");
     try {
       stream.writeAsync(JSON.stringify(this.root), function writeAsync(err) {
         if (err)
-          console.error("Error writing simple storage file: " + self.filename);
+          console.error("Error writing simple storage file: " + this.filename);
         else
-          self._notifyObserversArray(obsArray);
-      });
+          this._emit('write', exports);
+
+        // Maybe unload happened before callback was called
+        if (null == this.writeTimer) {
+          this._removeAllListeners('write');
+          this._removeAllListeners('error');
+        }
+      }.bind(this));
     }
     catch (err) {
       // writeAsync closes the stream after it's done, so only close on error.
       stream.close();
     }
   }
-};
+});
 
 
 // This manages a JsonStore singleton and tailors its use to simple storage.
@@ -267,13 +248,14 @@ let manager = {
   // Must be called before use.
   init: function manager_init() {
     let fname = this.filename;
-    this.jsonStore = new JsonStore({
+    let jsonStore = this.jsonStore = new JsonStore({
       filename: fname,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      onOverQuota: exports.onOverQuota,
-      observersThisArg: exports
     });
+
+    exports.on = jsonStore.on;
+    exports.removeListener = jsonStore.removeListener;
   }
 };
 
