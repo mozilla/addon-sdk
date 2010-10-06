@@ -138,7 +138,7 @@ const JsonStore = EventEmitter.compose({
   // Otherwise quota observers are notified and nothing is written.
   write: function JsonStore_write() {
     if (this.quotaUsage > 1)
-      this._emit("overQuota", exports);
+      this._emit("overQuota", this.observersThisArg);
     else
       this._write();
   },
@@ -191,7 +191,7 @@ const JsonStore = EventEmitter.compose({
         if (err)
           console.error("Error writing simple storage file: " + this.filename);
         else
-          this._emit("write", exports);
+          this._emit("write", this.observersThisArg);
 
         // Maybe unload happened before callback was called
         if (null == this.writeTimer) {
@@ -251,6 +251,7 @@ let manager = {
       filename: fname,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
+      observersThisArg: exports
     });
 
     exports.on = jsonStore.on;
