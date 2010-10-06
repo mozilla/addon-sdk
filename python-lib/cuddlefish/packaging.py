@@ -11,8 +11,10 @@ DEFAULT_LOADER = 'jetpack-core'
 
 DEFAULT_PROGRAM_MODULE = 'main'
 
+DEFAULT_ICON = 'icon.png'
+
 METADATA_PROPS = ['name', 'description', 'keywords', 'author',
-                  'contributors', 'license', 'url']
+                  'contributors', 'license', 'url', 'icon']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -96,6 +98,9 @@ def get_metadata(pkg_cfg, deps):
 def is_dir(path):
     return os.path.exists(path) and os.path.isdir(path)
 
+def is_file(path):
+    return os.path.exists(path) and os.path.isfile(path)
+
 def apply_default_dir(base_json, base_path, dirname):
     if (not base_json.get(dirname) and
         is_dir(os.path.join(base_path, dirname))):
@@ -127,6 +132,10 @@ def get_config_in_dir(path):
 
     for dirname in ['lib', 'tests', 'data', 'packages']:
         apply_default_dir(base_json, path, dirname)
+
+    if (not base_json.get('icon') and
+        is_file(os.path.join(path, DEFAULT_ICON))):
+        base_json['icon'] = DEFAULT_ICON
 
     for key in ['lib', 'tests', 'dependencies', 'packages']:
         normalize_string_or_array(base_json, key)

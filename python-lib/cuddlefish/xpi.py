@@ -11,6 +11,9 @@ def build_xpi(template_root_dir, manifest, xpi_name,
     zf.write('.install.rdf', 'install.rdf')
     os.remove('.install.rdf')
 
+    if 'icon' in harness_options:
+        zf.write(str(harness_options['icon']), 'icon.png')
+
     IGNORED_FILES = [".hgignore", "install.rdf", 
                      "application.ini", xpi_name]
     IGNORED_FILE_SUFFIXES = ["~"]
