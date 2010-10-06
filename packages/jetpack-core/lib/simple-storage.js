@@ -67,9 +67,9 @@ const JsonStore = EventEmitter.compose({
     this.filename = options.filename;
     this.quota = options.quota;
     this.writePeriod = options.writePeriod;
-
-    // log uncaught exceptions thrown by listeners
-    this.on("error", console.error);
+    this.observersThisArg = options.observersThisArg;
+    // Log uncaught exceptions thrown by listeners.
+    this.on("error", console.exception);
 
     unload.ensure(this);
 
