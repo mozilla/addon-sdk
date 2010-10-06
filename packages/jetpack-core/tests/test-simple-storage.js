@@ -314,4 +314,3 @@ function setGetRootError(test, val, msg) {
   test.assertRaises(function () ss.storage = val, pred, msg);
   loader.unload();
 }
-
