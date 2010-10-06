@@ -13,6 +13,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
 
     if 'icon' in harness_options:
         zf.write(str(harness_options['icon']), 'icon.png')
+        del harness_options['icon']
 
     IGNORED_FILES = [".hgignore", "install.rdf", 
                      "application.ini", xpi_name]

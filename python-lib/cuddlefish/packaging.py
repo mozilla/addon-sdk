@@ -95,15 +95,9 @@ def get_metadata(pkg_cfg, deps):
                 metadata[pkg_name][prop] = cfg[prop]
     return metadata
 
-def is_dir(path):
-    return os.path.exists(path) and os.path.isdir(path)
-
-def is_file(path):
-    return os.path.exists(path) and os.path.isfile(path)
-
 def apply_default_dir(base_json, base_path, dirname):
     if (not base_json.get(dirname) and
-        is_dir(os.path.join(base_path, dirname))):
+        os.path.isdir(os.path.join(base_path, dirname))):
         base_json[dirname] = dirname
 
 def normalize_string_or_array(base_json, key):
@@ -134,7 +128,7 @@ def get_config_in_dir(path):
         apply_default_dir(base_json, path, dirname)
 
     if (not base_json.get('icon') and
-        is_file(os.path.join(path, DEFAULT_ICON))):
+        os.path.isfile(os.path.join(path, DEFAULT_ICON))):
         base_json['icon'] = DEFAULT_ICON
 
     for key in ['lib', 'tests', 'dependencies', 'packages']:
@@ -277,6 +271,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
 
     if 'loader' not in build:
         add_dep_to_build(DEFAULT_LOADER)
+
+    if 'icon' in target_cfg:
+        build['icon'] = os.path.join(target_cfg.root_dir,
+                                     target_cfg.icon)
 
     return build
 
