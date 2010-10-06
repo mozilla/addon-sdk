@@ -73,9 +73,8 @@ const JsonStore = EventEmitter.compose({
 
     unload.ensure(this);
 
-    this.writeTimer = timer.setInterval(
-      this.write.bind(this), this.writePeriod
-    );
+    this.writeTimer = timer.setInterval(this.write.bind(this),
+                                        this.writePeriod);
   },
 
   writeTimer: null,
