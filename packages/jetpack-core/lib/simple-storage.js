@@ -153,7 +153,7 @@ const JsonStore = EventEmitter.compose({
     else
       this._write();
 
-    // Clear the collections so they don't keep references to client callbacks.
+    // Removeing listeners so they don't keep references to client callbacks.
     this._removeAllListeners("overQuota");
   },
 
