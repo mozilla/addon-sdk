@@ -161,6 +161,7 @@ exports.testQuotaExceededHandle = function (test) {
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
   ss.on("overQuota", function (storage) {
+    test.assertEqual(storage, ss, "storage should be simple storage");
     test.pass("overQuota was emitted as expected");
     ss.storage = { x: 4, y: 5 };
 
