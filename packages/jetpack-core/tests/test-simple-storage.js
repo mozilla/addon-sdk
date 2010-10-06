@@ -160,9 +160,9 @@ exports.testQuotaExceededHandle = function (test) {
 
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  ss.on("overQuota", function (storage) {
+  ss.on("OverQuota", function (storage) {
     test.assertEqual(storage, ss, "storage should be simple storage");
-    test.pass("overQuota was emitted as expected");
+    test.pass("OverQuota was emitted as expected");
     ss.storage = { x: 4, y: 5 };
 
     manager(loader).jsonStore.on("write", function () {
@@ -202,8 +202,8 @@ exports.testQuotaExceededNoHandle = function (test) {
     test.assertEqual(ss.storage, val,
                      "Value should have persisted: " + ss.storage);
     ss.storage = "some very long string that is very long";
-    ss.on("overQuota", function () {
-      test.pass("overQuota emitted as expected");
+    ss.on("OverQuota", function () {
+      test.pass("OverQuota emitted as expected");
       manager(loader).jsonStore.on("write", function () {
         test.fail("Over-quota value should not have been written");
       });

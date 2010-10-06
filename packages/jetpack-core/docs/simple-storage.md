@@ -55,16 +55,16 @@ storage.  If the user quits the application while you are over quota, all data
 stored since the last time you were under quota will not be persisted.  You
 should not let that happen.
 
-To listen for quota notifications, register a listener for `"overQuota"` events:
+To listen for quota notifications, register a listener for `"OverQuota"` events:
 
     function myOnOverQuotaListener() {
       console.log("Uh oh.");
     }
-    simpleStorage.on("overQuota", myOnOverQuotaListener);
+    simpleStorage.on("OverQuota", myOnOverQuotaListener);
 
 Listeners can also be unregistered:
 
-    simpleStorage.removeListener("overQuota", myOnOverQuotaListener);
+    simpleStorage.removeListener("OverQuota", myOnOverQuotaListener);
 
 To find out how much of your quota you're using, check the module's `quotaUsage`
 property.  It indicates the percentage of quota your storage occupies.  If
@@ -76,7 +76,7 @@ storage until your `quotaUsage` is less than or equal to 1.  Which particular
 data you remove is up to you.  For example:
 
     simpleStorage.storage = [ /* some long array */ ];
-    simpleStorage.on("overQuota", function () {
+    simpleStorage.on("OverQuota", function () {
       while (simpleStorage.quotaUsage > 1)
         simpleStorage.storage.pop();
     });

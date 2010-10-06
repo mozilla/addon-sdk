@@ -137,7 +137,7 @@ const JsonStore = EventEmitter.compose({
   // Otherwise quota observers are notified and nothing is written.
   write: function JsonStore_write() {
     if (this.quotaUsage > 1)
-      this._emit("overQuota", this.observersThisArg);
+      this._emit("OverQuota", this.observersThisArg);
     else
       this._write();
   },
@@ -154,7 +154,7 @@ const JsonStore = EventEmitter.compose({
       this._write();
 
     // Removeing listeners so they don't keep references to client callbacks.
-    this._removeAllListeners("overQuota");
+    this._removeAllListeners("OverQuota");
   },
 
   // True if the root is an empty object.
