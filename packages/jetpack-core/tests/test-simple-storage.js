@@ -59,14 +59,14 @@ exports.testSetGet = function (test) {
   // Load the module once, set a value.
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.on('write', function (storage) {
+  manager(loader).jsonStore.on("write", function (storage) {
     test.assertEqual(storage, ss, "storage should be simple storage module");
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = newLoader(test);
     ss = loader.require("simple-storage");
-    manager(loader).jsonStore.on('write', function (storage) {
+    manager(loader).jsonStore.on("write", function (storage) {
       test.assertEqual(storage, ss, "storage should be simple storage module");
       file.remove(storeFilename);
       test.done();
@@ -160,11 +160,11 @@ exports.testQuotaExceededHandle = function (test) {
 
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  ss.on('overQuota', function (storage) {
+  ss.on("overQuota", function (storage) {
     test.pass("overQuota was emitted as expected");
     ss.storage = { x: 4, y: 5 };
 
-    manager(loader).jsonStore.on('write', function () {
+    manager(loader).jsonStore.on("write", function () {
       loader = newLoader(test);
       ss = loader.require("simple-storage");
       let numProps = 0;
@@ -174,7 +174,7 @@ exports.testQuotaExceededHandle = function (test) {
                   "Store should contain 2 values: " + ss.storage.toSource());
       test.assertEqual(ss.storage.x, 4, "x value should be correct");
       test.assertEqual(ss.storage.y, 5, "y value should be correct");
-      manager(loader).jsonStore.on('write', function (storage) {
+      manager(loader).jsonStore.on("write", function (storage) {
         prefs.reset(QUOTA_PREF);
         test.done();
       });
@@ -195,15 +195,15 @@ exports.testQuotaExceededNoHandle = function (test) {
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
 
-  manager(loader).jsonStore.on('write', function (storage) {
+  manager(loader).jsonStore.on("write", function (storage) {
     loader = newLoader(test);
     ss = loader.require("simple-storage");
     test.assertEqual(ss.storage, val,
                      "Value should have persisted: " + ss.storage);
     ss.storage = "some very long string that is very long";
-    ss.on('overQuota', function () {
+    ss.on("overQuota", function () {
       test.pass("overQuota emitted as expected");
-      manager(loader).jsonStore.on('write', function () {
+      manager(loader).jsonStore.on("write", function () {
         test.fail("Over-quota value should not have been written");
       });
       loader.unload();
@@ -246,7 +246,7 @@ exports.testQuotaUsage = function (test) {
   ss.storage = { a: 1, bb: 2, cc: 3 };
   test.assertEqual(ss.quotaUsage, 21 / quota, "quotaUsage should be correct");
 
-  manager(loader).jsonStore.on('write', function () {
+  manager(loader).jsonStore.on("write", function () {
     prefs.reset(QUOTA_PREF);
     test.done();
   });
@@ -257,7 +257,7 @@ exports.testUninstall = function (test) {
   test.waitUntilDone();
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.on('write', function () {
+  manager(loader).jsonStore.on("write", function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     loader = newLoader(test);
@@ -287,13 +287,13 @@ function setGetRoot(test, val, compare) {
   // Load the module once, set a value.
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.on('write', function () {
+  manager(loader).jsonStore.on("write", function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = newLoader(test);
     ss = loader.require("simple-storage");
-    manager(loader).jsonStore.on('write', function () {
+    manager(loader).jsonStore.on("write", function () {
       file.remove(storeFilename);
       test.done();
     });

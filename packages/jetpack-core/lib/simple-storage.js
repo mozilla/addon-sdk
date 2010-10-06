@@ -45,7 +45,7 @@ const prefs = require("preferences-service");
 const jpSelf = require("self");
 const timer = require("timer");
 const unload = require("unload");
-const { EventEmitter } = require('events');
+const { EventEmitter } = require("events");
 
 const WRITE_PERIOD_PREF = "jetpack.jetpack-core.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
@@ -70,7 +70,7 @@ const JsonStore = EventEmitter.compose({
     this.writePeriod = options.writePeriod;
 
     // log uncaught exceptions thrown by listeners
-    this.on('error', console.error);
+    this.on("error", console.error);
 
     unload.ensure(this);
 
@@ -139,7 +139,7 @@ const JsonStore = EventEmitter.compose({
   // Otherwise quota observers are notified and nothing is written.
   write: function JsonStore_write() {
     if (this.quotaUsage > 1)
-      this._emit('overQuota', exports);
+      this._emit("overQuota", exports);
     else
       this._write();
   },
@@ -156,7 +156,7 @@ const JsonStore = EventEmitter.compose({
       this._write();
 
     // Clear the collections so they don't keep references to client callbacks.
-    this._removeAllListeners('overQuota');
+    this._removeAllListeners("overQuota");
   },
 
   // True if the root is an empty object.
@@ -192,12 +192,12 @@ const JsonStore = EventEmitter.compose({
         if (err)
           console.error("Error writing simple storage file: " + this.filename);
         else
-          this._emit('write', exports);
+          this._emit("write", exports);
 
         // Maybe unload happened before callback was called
         if (null == this.writeTimer) {
-          this._removeAllListeners('write');
-          this._removeAllListeners('error');
+          this._removeAllListeners("write");
+          this._removeAllListeners("error");
         }
       }.bind(this));
     }
