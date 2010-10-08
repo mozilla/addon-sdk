@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *  Paul O’Shannessy <paul@oshannessy.com>
+ *  Irakli Gozalishivil <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,6 +40,12 @@ const {Cc,Ci} = require("chrome");
 const collection = require("collection");
 const observers = require("observer-service");
 const errors = require("errors");
+const { EventEmitter } = require('events');
+const { setTimeout } = require('timer');
+
+const ON_ENTER = 'enter',
+      ON_EXIT = 'exit',
+      ON_TRANSITION = 'private-browsing-transition-complete';
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -47,77 +54,34 @@ if (require("xul-app").is("Firefox")) {
               getService(Ci.nsIPrivateBrowsingService);
 }
 
-// make pb.active work
-exports.__defineGetter__("active", function () {
-  return pbService ? pbService.privateBrowsingEnabled : false;
-});
-
-exports.__defineSetter__("active", function (val) {
-  if (pbService) {
-    pbService.privateBrowsingEnabled = val;
-  }
-});
-
-// add our collection properties
-collection.addCollectionProperty(exports, "onBeforeStart");
-collection.addCollectionProperty(exports, "onStart");
-collection.addCollectionProperty(exports, "onAfterStart");
-collection.addCollectionProperty(exports, "onBeforeStop");
-collection.addCollectionProperty(exports, "onStop");
-collection.addCollectionProperty(exports, "onAfterStop");
-
-// implement functions to serve as delegators for various observer topics
-function onBeforeTransition(subject, data) {
-  subject.QueryInterface(Ci.nsISupportsPRBool);
-  // If subject is already true (by way of another observer), exit early.
-  if (subject.data)
-    return;
-
-  let callbacks = data == "enter" ? exports.onBeforeStart :
-                  data == "exit"  ? exports.onBeforeStop  : [];
-
-  for (let callback in callbacks) {
-    let cancelled = false;
-    // Since we're calling a user-defined callback, we need to catchAndLog it.
-    errors.catchAndLog(function () {
-      callback.call(exports, function () cancelled = true);
-    })();
-
-    // If cancel() was called, then we want to make sure the PB transition is
-    // cancelled and also stop executing any other callbacks we have.
-    if (cancelled) {
-      subject.data = true;
-      break;
+const PrivateBrowsing = EventEmitter.compose({
+  constructor: function PrivateBrowsing() {
+    // We only need to add observers if pbService exists.
+    this._emit = this._emit.bind(this);
+    // report errors from listeners
+    this.on('error', console.error);
+    if (pbService) {
+      observers.add(ON_TRANSITION, this.onTransition.bind(this));
+      this._enabled = pbService.privateBrowsingEnabled;
     }
-  }
-}
+  },
+  // We don't need to do anything with cancel here.
+  onTransition: function onTransition() {
+    let enabled = this._enabled = pbService.privateBrowsingEnabled;
+    setTimeout(this._emit, 0, exports.enabled ? ON_ENTER : ON_EXIT);
+  },
+  get enabled() this._enabled,
+  set enabled(value) {
+    if (pbService) pbService.privateBrowsingEnabled = !!value
+  },
+  _enabled: null
+})()
 
-// We don't need to do anything with cancel here.
-function onTransition(subject, data) {
-  let callbacks = data == "enter" ? exports.onStart :
-                  data == "exit"  ? exports.onStop  : [];
-  for (let callback in callbacks) {
-    errors.catchAndLog(function () {
-      callback.call(exports);
-    })();
-  }
-}
-
-function onAfterTransition(subject, data) {
-  // "private-browsing-transition-complete" isn't sent with "enter"/"exit", so
-  // determine which it was based on if PB is active.
-  let callbacks = exports.active ? exports.onAfterStart : exports.onAfterStop;
-  for (let callback in callbacks) {
-    errors.catchAndLog(function () {
-      callback.call(exports);
-    })();
-  }
-}
-
-// We only need to add observers if pbService exists.
-if (pbService) {
-  observers.add("private-browsing-cancel-vote", onBeforeTransition);
-  observers.add("private-browsing", onTransition);
-  observers.add("private-browsing-transition-complete", onAfterTransition);
-}
+// Not sure we'll be able to toggle state synchronously with E10S
+Object.defineProperty(exports, 'enabled', {
+  get: function() PrivateBrowsing.enabled,
+  set: function(value) PrivateBrowsing.enabled = value
+});
+exports.on = PrivateBrowsing.on;
+exports.removeListener = PrivateBrowsing.removeListener;
 

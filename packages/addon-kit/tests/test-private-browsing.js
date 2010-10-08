@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *  Paul O’Shannessy <paul@oshannessy.com>
+ *  Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -46,248 +47,165 @@ if (require("xul-app").is("Firefox")) {
 }
 
 if (pbService) {
-  // a method used to reset all the callbacks for the next test run
-  function reset(active) {
-    active = active === undefined ? false : active;
-    pb.onBeforeStart = [];
-    pb.onStart = [];
-    pb.onBeforeStop = [];
-    pb.onStop = [];
-    // Use the service since that's guaranteed
-    pbService.privateBrowsingEnabled = active;
-  }
-
 
   // tests that active has the same value as the private browsing service expects
   exports.testGetActive = function (test) {
-    reset();
-    test.assertEqual(pb.active, false,
-                     "private-browsing.active is correct without modifying PB service");
+    test.assertEqual(pb.enabled, false,
+                     "private-browsing.enabled is correct without modifying PB service");
 
     pbService.privateBrowsingEnabled = true;
-    test.assertEqual(pb.active, true,
-                     "private-browsing.active is correct after modifying PB service");
+    test.assertEqual(pb.enabled, true,
+                     "private-browsing.enabled is correct after modifying PB service");
   }
 
 
   // tests that setting active does put the browser into private browsing mode
   exports.testSetActive = function (test) {
-    reset();
-    pb.active = true;
+    pb.enabled = true;
     test.assertEqual(pbService.privateBrowsingEnabled, true,
-                     "private-browsing.active=true enables private browsing mode");
-    pb.active = false;
+                     "private-browsing.enabled=true enables private browsing mode");
+    pb.enabled = false;
     test.assertEqual(pbService.privateBrowsingEnabled, false,
-                     "private-browsing.active=false disables private browsing mode");
+                     "private-browsing.enabled=false disables private browsing mode");
   }
 
-
-  // tests the basic cases for onBeforeStart callbacks
-  exports.testSimpleOnBeforeStart = function (test) {
-    reset();
-    let count = 0;
-    function simpleOnBeforeStart(cancelFn) {
-      count++;
-    }
-    pb.onBeforeStart = simpleOnBeforeStart;
-    pb.active = true;
-    test.assertEqual(count, 1, "All onBeforeStart methods were called");
-    test.assertEqual(pb.active, true,
-                     "onBeforeStart didn't cancel when it wasn't supposed");
-    pb.active = false;
-
-    // Now let's make it more complicated...
-    function simpleOnBeforeStart2(cancelFn) {
-      count += 2;
-    }
-    pb.onBeforeStart = [simpleOnBeforeStart, simpleOnBeforeStart2];
-    pb.active = true;
-    test.assertEqual(count, 4, "All onBeforeStart methods were called");
-    test.assertEqual(pb.active, true,
-                     "onBeforeStart didn't cancel when it wasn't supposed");
-  }
-
-
-  // tests the basic cases for onStart callbacks
-  exports.testSimpleOnStart = function (test) {
-    reset();
-    let count = 0;
-    function simpleOnStart() {
-      count++;
-    }
-    pb.onStart = simpleOnStart;
-    pb.active = true;
-    test.assertEqual(count, 1, "simpleonStart was called");
-    pb.active = false;
-
-    // Now let's make it more complicated...
-    function simpleOnStart2() {
-      count += 2;
-    }
-    pb.onStart = [simpleOnStart, simpleOnStart2];
-    pb.active = true;
-    test.assertEqual(count, 4, "simpleOnStart was called");
-  }
-
-
-  // tests that canceling from inside onBeforeStart prevents onStart callbacks from running
-  exports.testOnBeforeStartCancel = function (test) {
-    reset();
-    let wasActivated = false;
-    pb.onBeforeStart = function (cancelFn) {
-      cancelFn();
-    }
-    pb.onStart = function () {
-      wasActivated = true;
-    }
-    pb.active = true;
-
-    test.assertEqual(pb.active, false, "Private Browsing enter was cancelled");
-    test.assertEqual(wasActivated, false, "onStart wasn't called");
-  }
-
-
-  // tests the basic case for onAfterStart callbacks
-  exports.testSimpleOnAfterStart = function (test) {
+  exports.testEnter = function(test) {
     test.waitUntilDone();
-    reset();
-    pb.onAfterStart = function () {
-      test.assert(true, "onAfterStart was called");
+    pb.on('enter', function onEnter() {
+      test.assertEqual(
+        pbService.privateBrowsingEnabled,
+        true,
+        'private mode is enabled when "enter" event is emitted'
+      );
+      test.assertEqual(
+        pb.enabled,
+        true,
+        '`enabled` is `true` when "enter" event is emitted'
+      );
+      pb.removeListener('enter', onEnter);
+      test.done();
+    })
+    pb.enabled = true;
+  }
+
+  exports.testExit = function(test) {
+    test.waitUntilDone();
+    pb.on('exit', function onExit() {
+    test.assertEqual(
+        pbService.privateBrowsingEnabled,
+        false,
+        'private mode is disabled when "exit" event is emitted'
+      );
+      test.assertEqual(
+        pb.enabled,
+        false,
+        '`enabled` is `false` when "exit" event is emitted'
+      );
+      pb.removeListener('exit', onExit);
+      test.done();
+    })
+    pb.enabled = true;
+    pb.enabled = false;
+  }
+
+  exports.testBothListeners = function(test) {
+    test.waitUntilDone();
+    let exit = false, enter = false;
+    function onExit() {
+      test.assertEqual(
+        false,
+        exit,
+        'exit callback must be called only once'
+      );
+      test.assertEqual(
+        pbService.privateBrowsingEnabled,
+        false,
+        'private mode is disabled when "exit" event is emitted'
+      );
+      test.assertEqual(
+        pb.enabled,
+        false,
+        '`enabled` is `false` when "exit" event is emitted'
+      );
+      pb.on('enter', finish);
+      pb.removeListener('enter', onEnter);
+      pb.removeListener('enter', onEnter2);
+      pb.enable = false;
+      pb.enabled = true;
+      exit = true;
+    }
+    function onEnter() {
+      test.assertEqual(
+        false,
+        enter,
+        'exit callback must be called only once'
+      );
+      test.assertEqual(
+        pbService.privateBrowsingEnabled,
+        true,
+        'private mode is enabled when "enter" event is emitted'
+      );
+      test.assertEqual(
+        pb.enabled,
+        true,
+        '`enabled` is `true` when "enter" event is emitted'
+      );
+      pb.on('exit', onExit);
+      pb.enabled = false;
+      enter = true;
+    }
+    function onEnter2() {
+      test.assertEqual(
+        true,
+        enter,
+        'enter listener must be called already'
+      );
+      test.assertEqual(
+        false,
+        exit,
+        'exit callback must not be called yet'
+      );
+    }
+    function finish() {
+      test.assertEqual(
+        pbService.privateBrowsingEnabled,
+        true,
+        'private mode is enabled when "enter" event is emitted'
+      );
+      test.assertEqual(
+        pb.enabled,
+        true,
+        '`enabled` is `true` when "enter" event is emitted'
+      );
+      pb.removeListener('enter', finish);
+      pb.removeListener('exit', onExit);
+      pb.enabled = false;
+      test.assertEqual(pbService.privateBrowsingEnabled, false);
+      test.assertEqual(pb.enabled, false);
       test.done();
     }
-    pb.active = true;
-  }
-
-
-  // tests the basic cases for onBeforeStop callbacks
-  exports.testSimpleOnBeforeStop = function (test) {
-    reset(true);
-    let count = 0;
-    function simpleOnBeforeStop(cancelFn) {
-      count++;
-    }
-    pb.onBeforeStop = simpleOnBeforeStop;
-    pb.active = false;
-    test.assertEqual(count, 1, "All onBeforeStop methods were called");
-    test.assertEqual(pb.active, false,
-                     "onBeforeStop didn't cancel when it wasn't supposed");
-    pb.active = true;
-
-    // Now let's make it more complicated...
-    function simpleOnBeforeStop2(cancelFn) {
-      count += 2;
-    }
-    pb.onBeforeStop = [simpleOnBeforeStop, simpleOnBeforeStop2];
-    pb.active = false;
-    test.assertEqual(count, 4, "All onBeforeStop methods were called");
-    test.assertEqual(pb.active, false,
-                     "onBeforeStop didn't cancel when it wasn't supposed");
-  }
-
-
-  // tests the basic cases for onStop callbacks
-  exports.testSimpleOnStop = function (test) {
-    reset(true);
-    let count = 0;
-    function simpleOnStop() {
-      count++;
-    }
-    pb.onStop = simpleOnStop;
-    pb.active = false;
-    test.assertEqual(count, 1, "All onStop methods were called");
-    pb.active = true;
-
-    // Now let's make it more complicated...
-    function simpleOnStop2() {
-      count += 2;
-    }
-    pb.onStop = [simpleOnStop, simpleOnStop2];
-    pb.active = false;
-    test.assertEqual(count, 4, "All onStop methods were called");
-  }
-
-
-  // tests that canceling from inside onBeforeStop prevents onStop callbacks from running
-  exports.testOnBeforeStopCancel = function (test) {
-    reset();
-    let wasDeactivated = false;
-    pb.onBeforeStop = function (cancelFn) {
-      cancelFn();
-    }
-    pb.onStop = function () {
-      wasDeactivated = true;
-    }
-    pb.active = true;
-
-    test.assertEqual(pb.active, true, "Private Browsing exit was cancelled");
-    test.assertEqual(wasDeactivated, false, "onStop wasn't called");
-  }
-
-
-  // tests the basic case for onAfterStop callbacks
-  exports.testSimpleOnAfterStop = function (test) {
-    test.waitUntilDone();
-    reset();
-    pb.onAfterStop = function () {
-      test.assert(true, "onAfterStop was called");
-      test.done();
-    }
-    pb.active = true;
-  }
-
-
-  // tests that |this| is |pb| inside each of the Start callbacks
-  exports.testCallbackThisStart = function (test) {
-    test.waitUntilDone();
-    reset();
-    pb.onBeforeStart = function (cancel) {
-      test.assertEqual(this, pb, "|this| == pb in onBeforeStart");
-    };
-    pb.onStart = function () {
-      test.assertEqual(this, pb, "|this| == pb in onStart");
-    };
-    pb.onAfterStart = function () {
-      test.assertEqual(this, pb, "|this| == pb in onAfterStart");
-      test.done();
-    };
-    pb.active = true;
-  }
-
-
-  // test that |this| is |pb| inside each of the Stop callbacks
-  exports.testCallbackThisStop = function (test) {
-    test.waitUntilDone();
-    reset(true);
-    pb.onBeforeStop = function (cancel) {
-      test.assertEqual(this, pb, "|this| == pb in onBeforeStop");
-    };
-    pb.onStop = function () {
-      test.assertEqual(this, pb, "|this| == pb in onStop");
-    };
-    pb.onAfterStop = function () {
-      test.assertEqual(this, pb, "|this| == pb in onAfterStop");
-      test.done();
-    };
-    pb.active = false;
+    pb.on('enter', onEnter);
+    pb.on('enter', onEnter2);
+    pbService.privateBrowsingEnabled = true;
   }
 }
 else {
   // tests for the case where private browsing doesn't exist
   exports.testNoImpl = function (test) {
-    test.assertEqual(pb.active, false,
-                     "pb.active returns false when private browsing isn't supported");
+    test.assertEqual(pb.enabled, false,
+                     "pb.enabled returns false when private browsing isn't supported");
 
 
-    // Setting pb.active = true shouldn't have any effect. Also, no callbacks
+    // Setting pb.enabled = true shouldn't have any effect. Also, no callbacks
     // should have been called. We'll just test one callback since they are
     // under the same code path.
     let wasActivated = false;
     pb.onStart = function () {
       wasActivated = true;
     }
-    pb.active = true;
-    test.assertEqual(pb.active, false,
-                     "pb.active returns false even when set to true");
+    pb.enabled = true;
+    test.assertEqual(pb.enabled, false,
+                     "pb.enabled returns false even when set to true");
     test.assertEqual(wasActivated, false,
                      "onStart callback wasn't run when PB isn't supported");
   }
