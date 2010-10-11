@@ -45,6 +45,7 @@ const jpSelf = require("self");
 const timer = require("timer");
 const unload = require("unload");
 const { EventEmitter } = require("events");
+const { Trait } = require("traits");
 
 const WRITE_PERIOD_PREF = "jetpack.jetpack-core.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
@@ -62,21 +63,20 @@ exports.__defineGetter__("quotaUsage", function () manager.quotaUsage);
 
 // A generic JSON store backed by a file on disk.  This should be isolated
 // enough to move to its own module if need be...
-const JsonStore = EventEmitter.compose({
-  constructor: function JsonStore(options) {
-    this.filename = options.filename;
-    this.quota = options.quota;
-    this.writePeriod = options.writePeriod;
-    this.observersThisArg = options.observersThisArg;
-    // Log uncaught exceptions thrown by listeners.
-    this.on("error", console.exception);
+function JsonStore(options) {
+  this.filename = options.filename;
+  this.quota = options.quota;
+  this.writePeriod = options.writePeriod;
+  this.onOverQuota = options.onOverQuota;
+  this.onWrite = options.onWrite;
 
-    unload.ensure(this);
+  unload.ensure(this);
 
-    this.writeTimer = timer.setInterval(this.write.bind(this),
-                                        this.writePeriod);
-  },
+  this.writeTimer = timer.setInterval(this.write.bind(this),
+                                      this.writePeriod);
+}
 
+JsonStore.prototype = {
   writeTimer: null,
 
   // The store's root.
@@ -137,7 +137,7 @@ const JsonStore = EventEmitter.compose({
   // Otherwise quota observers are notified and nothing is written.
   write: function JsonStore_write() {
     if (this.quotaUsage > 1)
-      this._emit("OverQuota", this.observersThisArg);
+      this.onOverQuota(this);
     else
       this._write();
   },
@@ -152,9 +152,6 @@ const JsonStore = EventEmitter.compose({
       this.purge();
     else
       this._write();
-
-    // Removeing listeners so they don't keep references to client callbacks.
-    this._removeAllListeners("OverQuota");
   },
 
   // True if the root is an empty object.
@@ -189,14 +186,8 @@ const JsonStore = EventEmitter.compose({
       stream.writeAsync(JSON.stringify(this.root), function writeAsync(err) {
         if (err)
           console.error("Error writing simple storage file: " + this.filename);
-        else
-          this._emit("write", this.observersThisArg);
-
-        // Maybe unload happened before callback was called
-        if (null == this.writeTimer) {
-          this._removeAllListeners("write");
-          this._removeAllListeners("error");
-        }
+        else if (this.onWrite)
+          this.onWrite(this);
       }.bind(this));
     }
     catch (err) {
@@ -204,13 +195,14 @@ const JsonStore = EventEmitter.compose({
       stream.close();
     }
   }
-});
+};
 
 
 // This manages a JsonStore singleton and tailors its use to simple storage.
 // The root of the JsonStore is lazy-loaded:  The backing file is only read the
 // first time the root's gotten.
-let manager = {
+let manager = Trait.compose(EventEmitter, Trait.compose({
+  jsonStore: null,
 
   // The filename of the store, based on the profile dir and extension ID.
   get filename() {
@@ -243,19 +235,27 @@ let manager = {
     return rv;
   },
 
+  unload: function manager_unload() {
+    this._removeAllListeners("OverQuota");
+    this._removeAllListeners("error");
+  },
+
   // Must be called before use.
-  init: function manager_init() {
+  constructor: function manager_constructor() {
+    // log unhandled errors
+    this.on('error', console.exception)
+    unload.ensure(this);
+
     let fname = this.filename;
-    let jsonStore = this.jsonStore = new JsonStore({
+    this.jsonStore = new JsonStore({
       filename: fname,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      observersThisArg: exports
+      onOverQuota: this._emit.bind(this, "OverQuota", exports)
     });
-
-    exports.on = jsonStore.on;
-    exports.removeListener = jsonStore.removeListener;
   }
-};
+}))();
 
-manager.init();
+exports.on = manager.on;
+exports.removeListener = manager.removeListener;
+
