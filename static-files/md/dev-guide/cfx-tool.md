@@ -267,11 +267,11 @@ For example, if your `main.js` looks like this:
 
 And you run cfx like this:
 
-    cfx run --static-args='{ "foo": "Hello from the command line!" }'
+    cfx run --static-args="{ \"foo\": \"Hello from the command line\" }"
 
 Then your console should contain this:
 
-    info: Hello from the command line!
+    info: Hello from the command line
 
 The `--static-args` option is recognized by two of the package-specific
 commands: `run` and `xpi`.  When used with the `xpi` command, the JSON is
