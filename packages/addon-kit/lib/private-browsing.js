@@ -43,8 +43,8 @@ const errors = require("errors");
 const { EventEmitter } = require('events');
 const { setTimeout } = require('timer');
 
-const ON_ENTER = 'enter',
-      ON_EXIT = 'exit',
+const ON_START = 'start',
+      ON_STOP = 'stop',
       ON_TRANSITION = 'private-browsing-transition-complete';
 
 let pbService;
@@ -68,7 +68,7 @@ const PrivateBrowsing = EventEmitter.compose({
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {
     let active = this._active = pbService.privateBrowsingEnabled;
-    setTimeout(this._emit, 0, exports.active ? ON_ENTER : ON_EXIT);
+    setTimeout(this._emit, 0, exports.active ? ON_START : ON_STOP);
   },
   get active() this._active,
   set active(value) {

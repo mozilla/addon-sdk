@@ -71,18 +71,18 @@ if (pbService) {
 
   exports.testEnter = function(test) {
     test.waitUntilDone();
-    pb.on('enter', function onEnter() {
+    pb.on('start', function onEnter() {
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is active when "enter" event is emitted'
+        'private mode is active when "start" event is emitted'
       );
       test.assertEqual(
         pb.active,
         true,
-        '`active` is `true` when "enter" event is emitted'
+        '`active` is `true` when "start" event is emitted'
       );
-      pb.removeListener('enter', onEnter);
+      pb.removeListener('start', onEnter);
       test.done();
     })
     pb.active = true;
@@ -90,18 +90,18 @@ if (pbService) {
 
   exports.testExit = function(test) {
     test.waitUntilDone();
-    pb.on('exit', function onExit() {
+    pb.on('stop', function onExit() {
     test.assertEqual(
         pbService.privateBrowsingEnabled,
         false,
-        'private mode is disabled when "exit" event is emitted'
+        'private mode is disabled when "stop" event is emitted'
       );
       test.assertEqual(
         pb.active,
         false,
-        '`active` is `false` when "exit" event is emitted'
+        '`active` is `false` when "stop" event is emitted'
       );
-      pb.removeListener('exit', onExit);
+      pb.removeListener('stop', onExit);
       test.done();
     })
     pb.active = true;
@@ -115,21 +115,21 @@ if (pbService) {
       test.assertEqual(
         false,
         exit,
-        'exit callback must be called only once'
+        'stop callback must be called only once'
       );
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         false,
-        'private mode is disabled when "exit" event is emitted'
+        'private mode is disabled when "stop" event is emitted'
       );
       test.assertEqual(
         pb.active,
         false,
-        '`active` is `false` when "exit" event is emitted'
+        '`active` is `false` when "stop" event is emitted'
       );
-      pb.on('enter', finish);
-      pb.removeListener('enter', onEnter);
-      pb.removeListener('enter', onEnter2);
+      pb.on('start', finish);
+      pb.removeListener('start', onEnter);
+      pb.removeListener('start', onEnter2);
       pb.enable = false;
       pb.active = true;
       exit = true;
@@ -138,19 +138,19 @@ if (pbService) {
       test.assertEqual(
         false,
         enter,
-        'exit callback must be called only once'
+        'stop callback must be called only once'
       );
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is active when "enter" event is emitted'
+        'private mode is active when "start" event is emitted'
       );
       test.assertEqual(
         pb.active,
         true,
-        '`active` is `true` when "enter" event is emitted'
+        '`active` is `true` when "start" event is emitted'
       );
-      pb.on('exit', onExit);
+      pb.on('stop', onExit);
       pb.active = false;
       enter = true;
     }
@@ -158,34 +158,34 @@ if (pbService) {
       test.assertEqual(
         true,
         enter,
-        'enter listener must be called already'
+        'start listener must be called already'
       );
       test.assertEqual(
         false,
         exit,
-        'exit callback must not be called yet'
+        'stop callback must not be called yet'
       );
     }
     function finish() {
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is active when "enter" event is emitted'
+        'private mode is active when "start" event is emitted'
       );
       test.assertEqual(
         pb.active,
         true,
-        '`active` is `true` when "enter" event is emitted'
+        '`active` is `true` when "start" event is emitted'
       );
-      pb.removeListener('enter', finish);
-      pb.removeListener('exit', onExit);
+      pb.removeListener('start', finish);
+      pb.removeListener('stop', onExit);
       pb.active = false;
       test.assertEqual(pbService.privateBrowsingEnabled, false);
       test.assertEqual(pb.active, false);
       test.done();
     }
-    pb.on('enter', onEnter);
-    pb.on('enter', onEnter2);
+    pb.on('start', onEnter);
+    pb.on('start', onEnter2);
     pbService.privateBrowsingEnabled = true;
   }
 }

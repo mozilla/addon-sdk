@@ -18,7 +18,7 @@ in a variable.
 <api name="active">
 @property {boolean}
 This is a boolean. You can read this attribute to determine if private browsing
-mode is active. You can also set the attribute to enter or exit private
+mode is active. You can also set the attribute to start or stops private
 browsing.
 </api>
 
@@ -35,23 +35,23 @@ browsing.
 
 ##Events##
 
-When browser enters or leaves private browsing mode following events are
+When browser starts or stops private browsing mode following events are
 emitted:
 
-###enter###
-Emitted when the browser enters private browsing mode.
+###start###
+Emitted when the browser starts private browsing mode.
     
-    pb.on('enter', function() {
-      // do something when browser enters private mode
+    pb.on('start', function() {
+      // do something when browser starts private mode
     });
     
  
-###exit###
-Emitted when the browser leaves private browsing mode.
+###stop###
+Emitted when the browser stops private browsing mode.
 
     
-    pb.on('exit', function() {
-      // do something when browser leaves private mode
+    pb.on('stop', function() {
+      // do something when browser stops private mode
     });
     
 
