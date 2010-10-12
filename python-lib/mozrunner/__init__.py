@@ -47,6 +47,7 @@ import zipfile
 import optparse
 import killableprocess
 import subprocess
+import platform
 from xml.etree import ElementTree
 from distutils import dir_util
 from time import sleep
@@ -406,7 +407,13 @@ class Runner(object):
     @property
     def command(self):
         """Returns the command list to run."""
-        return [self.binary, '-profile', self.profile.profile]
+        cmd = [self.binary, '-profile', self.profile.profile]
+        # On i386 OS X machines, i386+x86_64 universal binaries need to be told
+        # to run as i386 binaries.  If we're not running a i386+x86_64 universal
+        # binary, then this command modification is harmless.
+        if hasattr(platform, 'mac_ver') and platform.mac_ver()[2] == 'i386':
+            cmd = ['arch', '-i386'] + cmd
+        return cmd
 
     def get_repositoryInfo(self):
         """Read repository information from application.ini and platform.ini."""
