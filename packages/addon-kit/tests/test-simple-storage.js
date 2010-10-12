@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -58,21 +59,19 @@ exports.testSetGet = function (test) {
   // Load the module once, set a value.
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.onWrite.add(function () {
-    test.assertEqual(this, ss, "|this| should be simple storage module");
+  manager(loader).jsonStore.onWrite = function (storage) {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = newLoader(test);
     ss = loader.require("simple-storage");
-    manager(loader).jsonStore.onWrite.add(function () {
-      test.assertEqual(this, ss, "|this| should be simple storage module");
+    manager(loader).jsonStore.onWrite = function (storage) {
       file.remove(storeFilename);
       test.done();
-    });
+    };
     test.assertEqual(ss.storage.foo, val, "Value should persist");
     loader.unload();
-  });
+  };
   let val = "foo";
   ss.storage.foo = val;
   test.assertEqual(ss.storage.foo, val, "Value read should be value set");
@@ -152,18 +151,19 @@ exports.testMalformed = function (test) {
   loader.unload();
 };
 
-// Go over quota and handle it in onOverQuota.
+// Go over quota and handle it by listener.
 exports.testQuotaExceededHandle = function (test) {
   test.waitUntilDone();
   prefs.set(QUOTA_PREF, 18);
 
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  ss.onOverQuota = function () {
-    test.pass("onOverQuota callback called as expected");
+  ss.on("OverQuota", function (storage) {
+    test.assertEqual(storage, ss, "storage should be simple storage");
+    test.pass("OverQuota was emitted as expected");
     ss.storage = { x: 4, y: 5 };
 
-    manager(loader).jsonStore.onWrite.add(function () {
+    manager(loader).jsonStore.onWrite = function () {
       loader = newLoader(test);
       ss = loader.require("simple-storage");
       let numProps = 0;
@@ -173,14 +173,14 @@ exports.testQuotaExceededHandle = function (test) {
                   "Store should contain 2 values: " + ss.storage.toSource());
       test.assertEqual(ss.storage.x, 4, "x value should be correct");
       test.assertEqual(ss.storage.y, 5, "y value should be correct");
-      manager(loader).jsonStore.onWrite.add(function () {
+      manager(loader).jsonStore.onWrite = function (storage) {
         prefs.reset(QUOTA_PREF);
         test.done();
-      });
+      };
       loader.unload();
-    });
+    };
     loader.unload();
-  };
+  });
   // This will be JSON.stringify()ed to: {"a":1,"b":2,"c":3} (19 bytes)
   ss.storage = { a: 1, b: 2, c: 3 };
   manager(loader).jsonStore.write();
@@ -194,17 +194,17 @@ exports.testQuotaExceededNoHandle = function (test) {
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
 
-  manager(loader).jsonStore.onWrite.add(function () {
+  manager(loader).jsonStore.onWrite = function (storage) {
     loader = newLoader(test);
     ss = loader.require("simple-storage");
     test.assertEqual(ss.storage, val,
                      "Value should have persisted: " + ss.storage);
     ss.storage = "some very long string that is very long";
-    ss.onOverQuota = function () {
-      test.pass("onOverQuota called as expected");
-      manager(loader).jsonStore.onWrite.add(function () {
+    ss.on("OverQuota", function () {
+      test.pass("OverQuota emitted as expected");
+      manager(loader).jsonStore.onWrite = function () {
         test.fail("Over-quota value should not have been written");
-      });
+      };
       loader.unload();
 
       loader = newLoader(test);
@@ -215,9 +215,9 @@ exports.testQuotaExceededNoHandle = function (test) {
       loader.unload();
       prefs.reset(QUOTA_PREF);
       test.done();
-    };
+    });
     manager(loader).jsonStore.write();
-  });
+  };
 
   let val = "foo";
   ss.storage = val;
@@ -245,10 +245,10 @@ exports.testQuotaUsage = function (test) {
   ss.storage = { a: 1, bb: 2, cc: 3 };
   test.assertEqual(ss.quotaUsage, 21 / quota, "quotaUsage should be correct");
 
-  manager(loader).jsonStore.onWrite.add(function () {
+  manager(loader).jsonStore.onWrite = function () {
     prefs.reset(QUOTA_PREF);
     test.done();
-  });
+  };
   loader.unload();
 };
 
@@ -256,7 +256,7 @@ exports.testUninstall = function (test) {
   test.waitUntilDone();
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.onWrite.add(function () {
+  manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     loader = newLoader(test);
@@ -264,11 +264,10 @@ exports.testUninstall = function (test) {
     loader.unload("uninstall");
     test.assert(!file.exists(storeFilename), "Store file should be removed");
     test.done();
-  });
+  };
   ss.storage.foo = "foo";
   loader.unload();
 };
-
 
 function manager(loader) {
   return loader.findSandboxForModule("simple-storage").globalScope.manager;
@@ -286,19 +285,19 @@ function setGetRoot(test, val, compare) {
   // Load the module once, set a value.
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  manager(loader).jsonStore.onWrite.add(function () {
+  manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = newLoader(test);
     ss = loader.require("simple-storage");
-    manager(loader).jsonStore.onWrite.add(function () {
+    manager(loader).jsonStore.onWrite = function () {
       file.remove(storeFilename);
       test.done();
-    });
+    };
     test.assert(compare(ss.storage, val), "Value should persist");
     loader.unload();
-  });
+  };
   ss.storage = val;
   test.assert(compare(ss.storage, val), "Value read should be value set");
   loader.unload();
