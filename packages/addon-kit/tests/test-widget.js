@@ -14,9 +14,9 @@ exports.testConstructor = function(test) {
     let doc = browserWindow.document;
 
     function container() doc.getElementById("addon-bar");
-    function widgetCount() container() ? container().childNodes.length : 0;
+    function widgetCount() container() ? container().getElementsByTagName("toolbaritem").length : 0;
     let widgetStartCount = widgetCount();
-    function widgetNode(index) container() ? container().childNodes[index] : null;
+    function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
     // Test basic add/remove
     let w = widgets.Widget({ label: "foo", content: "bar" });
@@ -398,7 +398,7 @@ exports.testConstructor = function(test) {
       onReady: function(widget, e) {
         test.assertEqual(widget.width, 200);
 
-        let node = widgetNode(1);
+        let node = widgetNode(0);
         test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
         test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
         widget.width = 300;
