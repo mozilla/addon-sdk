@@ -14,22 +14,22 @@ in a variable.
 
 ## Attributes ##
 
-<api name="enabled">
+<api name="active">
 @property {boolean}
 This is a boolean. You can read this attribute to determine if private browsing
-mode is enabled. You can also set the attribute to enter or exit private
+mode is active. You can also set the attribute to enter or exit private
 browsing.
 </api>
 
     // If browser is in private browsing mode
-    if (pb.enabled)
+    if (pb.active)
       doSomething();
     
     // Enter private browsing mode
-    pb.enabled = true;
+    pb.active = true;
     
     // Exit private browsing mode
-    pb.enabled = false;
+    pb.active = false;
 
 
 ##Events##

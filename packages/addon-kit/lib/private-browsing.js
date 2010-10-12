@@ -62,25 +62,24 @@ const PrivateBrowsing = EventEmitter.compose({
     this.on('error', console.error);
     if (pbService) {
       observers.add(ON_TRANSITION, this.onTransition.bind(this));
-      this._enabled = pbService.privateBrowsingEnabled;
+      this._active = pbService.privateBrowsingEnabled;
     }
   },
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {
-    let enabled = this._enabled = pbService.privateBrowsingEnabled;
-    setTimeout(this._emit, 0, exports.enabled ? ON_ENTER : ON_EXIT);
+    let active = this._active = pbService.privateBrowsingEnabled;
+    setTimeout(this._emit, 0, exports.active ? ON_ENTER : ON_EXIT);
   },
-  get enabled() this._enabled,
-  set enabled(value) {
+  get active() this._active,
+  set active(value) {
     if (pbService) pbService.privateBrowsingEnabled = !!value
   },
-  _enabled: null
+  _active: null
 })()
 
-// Not sure we'll be able to toggle state synchronously with E10S
-Object.defineProperty(exports, 'enabled', {
-  get: function() PrivateBrowsing.enabled,
-  set: function(value) PrivateBrowsing.enabled = value
+Object.defineProperty(exports, 'active', {
+  get: function() PrivateBrowsing.active,
+  set: function(value) PrivateBrowsing.active = value
 });
 exports.on = PrivateBrowsing.on;
 exports.removeListener = PrivateBrowsing.removeListener;

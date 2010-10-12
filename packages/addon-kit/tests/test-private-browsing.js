@@ -50,23 +50,23 @@ if (pbService) {
 
   // tests that active has the same value as the private browsing service expects
   exports.testGetActive = function (test) {
-    test.assertEqual(pb.enabled, false,
-                     "private-browsing.enabled is correct without modifying PB service");
+    test.assertEqual(pb.active, false,
+                     "private-browsing.active is correct without modifying PB service");
 
     pbService.privateBrowsingEnabled = true;
-    test.assertEqual(pb.enabled, true,
-                     "private-browsing.enabled is correct after modifying PB service");
+    test.assertEqual(pb.active, true,
+                     "private-browsing.active is correct after modifying PB service");
   }
 
 
   // tests that setting active does put the browser into private browsing mode
   exports.testSetActive = function (test) {
-    pb.enabled = true;
+    pb.active = true;
     test.assertEqual(pbService.privateBrowsingEnabled, true,
-                     "private-browsing.enabled=true enables private browsing mode");
-    pb.enabled = false;
+                     "private-browsing.active=true enables private browsing mode");
+    pb.active = false;
     test.assertEqual(pbService.privateBrowsingEnabled, false,
-                     "private-browsing.enabled=false disables private browsing mode");
+                     "private-browsing.active=false disables private browsing mode");
   }
 
   exports.testEnter = function(test) {
@@ -75,17 +75,17 @@ if (pbService) {
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is enabled when "enter" event is emitted'
+        'private mode is active when "enter" event is emitted'
       );
       test.assertEqual(
-        pb.enabled,
+        pb.active,
         true,
-        '`enabled` is `true` when "enter" event is emitted'
+        '`active` is `true` when "enter" event is emitted'
       );
       pb.removeListener('enter', onEnter);
       test.done();
     })
-    pb.enabled = true;
+    pb.active = true;
   }
 
   exports.testExit = function(test) {
@@ -97,15 +97,15 @@ if (pbService) {
         'private mode is disabled when "exit" event is emitted'
       );
       test.assertEqual(
-        pb.enabled,
+        pb.active,
         false,
-        '`enabled` is `false` when "exit" event is emitted'
+        '`active` is `false` when "exit" event is emitted'
       );
       pb.removeListener('exit', onExit);
       test.done();
     })
-    pb.enabled = true;
-    pb.enabled = false;
+    pb.active = true;
+    pb.active = false;
   }
 
   exports.testBothListeners = function(test) {
@@ -123,15 +123,15 @@ if (pbService) {
         'private mode is disabled when "exit" event is emitted'
       );
       test.assertEqual(
-        pb.enabled,
+        pb.active,
         false,
-        '`enabled` is `false` when "exit" event is emitted'
+        '`active` is `false` when "exit" event is emitted'
       );
       pb.on('enter', finish);
       pb.removeListener('enter', onEnter);
       pb.removeListener('enter', onEnter2);
       pb.enable = false;
-      pb.enabled = true;
+      pb.active = true;
       exit = true;
     }
     function onEnter() {
@@ -143,15 +143,15 @@ if (pbService) {
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is enabled when "enter" event is emitted'
+        'private mode is active when "enter" event is emitted'
       );
       test.assertEqual(
-        pb.enabled,
+        pb.active,
         true,
-        '`enabled` is `true` when "enter" event is emitted'
+        '`active` is `true` when "enter" event is emitted'
       );
       pb.on('exit', onExit);
-      pb.enabled = false;
+      pb.active = false;
       enter = true;
     }
     function onEnter2() {
@@ -170,18 +170,18 @@ if (pbService) {
       test.assertEqual(
         pbService.privateBrowsingEnabled,
         true,
-        'private mode is enabled when "enter" event is emitted'
+        'private mode is active when "enter" event is emitted'
       );
       test.assertEqual(
-        pb.enabled,
+        pb.active,
         true,
-        '`enabled` is `true` when "enter" event is emitted'
+        '`active` is `true` when "enter" event is emitted'
       );
       pb.removeListener('enter', finish);
       pb.removeListener('exit', onExit);
-      pb.enabled = false;
+      pb.active = false;
       test.assertEqual(pbService.privateBrowsingEnabled, false);
-      test.assertEqual(pb.enabled, false);
+      test.assertEqual(pb.active, false);
       test.done();
     }
     pb.on('enter', onEnter);
@@ -192,20 +192,20 @@ if (pbService) {
 else {
   // tests for the case where private browsing doesn't exist
   exports.testNoImpl = function (test) {
-    test.assertEqual(pb.enabled, false,
-                     "pb.enabled returns false when private browsing isn't supported");
+    test.assertEqual(pb.active, false,
+                     "pb.active returns false when private browsing isn't supported");
 
 
-    // Setting pb.enabled = true shouldn't have any effect. Also, no callbacks
+    // Setting pb.active = true shouldn't have any effect. Also, no callbacks
     // should have been called. We'll just test one callback since they are
     // under the same code path.
     let wasActivated = false;
     pb.onStart = function () {
       wasActivated = true;
     }
-    pb.enabled = true;
-    test.assertEqual(pb.enabled, false,
-                     "pb.enabled returns false even when set to true");
+    pb.active = true;
+    test.assertEqual(pb.active, false,
+                     "pb.active returns false even when set to true");
     test.assertEqual(wasActivated, false,
                      "onStart callback wasn't run when PB isn't supported");
   }
