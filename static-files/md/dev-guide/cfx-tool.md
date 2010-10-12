@@ -1,6 +1,7 @@
 <!-- contributed by Noelle Murata [fiveinchpixie@gmail.com] -->
-The `cfx`command line tool gives you access to the SDK documentation and development
-servers; as well as testing, running, and building packages.
+
+The cfx command-line tool gives you access to the SDK documentation and
+development servers as well as testing, running, and building packages.
 
 Any of the cfx commands can be run with the following options:
 
@@ -9,7 +10,9 @@ Global Options:
     -h, --help        - show this help message and exit
     -v, --verbose     - enable lots of output
 
-# Global Commands #
+
+Global Commands
+---------------
 
 **`cfx docs`**
 
@@ -79,7 +82,7 @@ For example, in shell A, type:
 
     cfx develop
 
-in shell B, type:
+In shell B, type:
 
     cfx test -r
 
@@ -87,7 +90,9 @@ This will send `cfx test -r` output to shell A. If you repeat the
 command in shell B, `cfx test -r` output will appear again in shell A
 without restarting the host application.
 
-# Package Specific Commands #
+
+Package-Specific Commands
+-------------------------
 
 **`cfx xpcom`**
 
@@ -148,6 +153,9 @@ Package creation/run options:
     -g CONFIG, --use-config=CONFIG
                                  use named config from local.json
 
+    --static-args=STATIC_ARGS
+                                 extra harness options as JSON
+
 **`cfx run`**
 
 This tool is used to run the extension code.
@@ -181,6 +189,9 @@ Package creation/run options:
     -g CONFIG, --use-config=CONFIG
                                  use named config from local.json
 
+    --static-args=STATIC_ARGS
+                                 extra harness options as JSON
+
 **`cfx test`**
 
 Run available tests for the specified package.
@@ -208,8 +219,8 @@ Test options:
                                  number of times to run tests
 
 
-
-# Configuring local.json #
+Configuring local.json
+----------------------
 
 Define configuration options using a file called `local.json` which should live
 in the root directory of your SDK. You can specify command-line options for cfx
@@ -235,3 +246,34 @@ This method of defining configuration options can be used for all of the run,
 build, and test tools. If "default" is defined in the `local.json` cfx will use
 that configuration unless otherwise specified.
 
+
+Passing Arguments to Programs
+-----------------------------
+
+You can use the cfx `--static-args` option to pass arbitrary data to your
+program.  This may be especially useful if you run cfx from a script.
+
+The value of `--static-args` must be a JSON string.  The object encoded by the
+JSON becomes the `staticArgs` member of the `options` object passed as the first
+argument to your program's `main` function.  The default value of
+`--static-args` is `"{}"` (an empty object), so you don't have to worry about
+checking whether `staticArgs` exists in `options`.
+
+For example, if your `main.js` looks like this:
+
+    exports.main = function (options, callbacks) {
+      console.log(options.staticArgs.foo);
+    };
+
+And you run cfx like this:
+
+    cfx run --static-args="{ \"foo\": \"Hello from the command line\" }"
+
+Then your console should contain this:
+
+    info: Hello from the command line
+
+The `--static-args` option is recognized by two of the package-specific
+commands: `run` and `xpi`.  When used with the `xpi` command, the JSON is
+packaged with the XPI's harness options and will therefore be used whenever the
+program in the XPI is run.
