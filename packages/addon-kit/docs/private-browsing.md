@@ -1,5 +1,6 @@
 <!-- contributed by Paul O’Shannessy [paul@oshannessy.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
+<!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
 
 The `private-browsing` module allows you to access the private browsing service
