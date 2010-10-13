@@ -46,6 +46,8 @@ const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
+const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
+
 
 // Removing items that were previously added should cause them to be absent from
 // the menu.
@@ -115,7 +117,7 @@ exports.testSelectorContextMatch = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item",
-    context: "img"
+    context: loader.cm.SelectorContext("img")
   });
   loader.cm.add(item);
 
@@ -138,7 +140,7 @@ exports.testSelectorAncestorContextMatch = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item",
-    context: "a[href]"
+    context: loader.cm.SelectorContext("a[href]")
   });
   loader.cm.add(item);
 
@@ -161,7 +163,7 @@ exports.testSelectorContextNoMatch = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item",
-    context: "img"
+    context: loader.cm.SelectorContext("img")
   });
   loader.cm.add(item);
 
@@ -188,15 +190,11 @@ exports.testPageContextMatch = function (test) {
     }),
     new loader.cm.Item({
       label: "item 2",
-      context: [undefined]
+      context: loader.cm.PageContext()
     }),
     new loader.cm.Item({
       label: "item 3",
-      context: null
-    }),
-    new loader.cm.Item({
-      label: "item 4",
-      context: [null]
+      context: [loader.cm.PageContext()]
     })
   ];
   items.forEach(function (i) loader.cm.add(i));
@@ -224,21 +222,109 @@ exports.testPageContextNoMatch = function (test) {
     }),
     new loader.cm.Item({
       label: "item 2",
-      context: [undefined]
+      context: loader.cm.PageContext()
     }),
     new loader.cm.Item({
       label: "item 3",
-      context: null
-    }),
-    new loader.cm.Item({
-      label: "item 4",
-      context: [null]
-    }),
+      context: [loader.cm.PageContext()]
+    })
   ];
   items.forEach(function (i) loader.cm.add(i));
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu([], items, []);
+      test.done();
+    });
+  });
+};
+
+
+// Selection contexts should cause items to appear when a selection exists.
+exports.testSelectionContextMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+  loader.cm.add(item);
+
+  test.withTestDoc(function (window, doc) {
+    window.getSelection().selectAllChildren(doc.body);
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Selection contexts should not cause items to appear when a selection does
+// not exist.
+exports.testSelectionContextNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+  loader.cm.add(item);
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([], [item], []);
+    test.done();
+  });
+};
+
+
+// URL contexts should cause items to appear on pages that match.
+exports.testURLContextMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "item 0",
+      context: loader.cm.URLContext(TEST_DOC_URL)
+    }),
+    loader.cm.Item({
+      label: "item 1",
+      context: loader.cm.URLContext([TEST_DOC_URL, "*.bogus.com"])
+    })
+  ];
+  items.forEach(function (i) loader.cm.add(i));
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
+
+// URL contexts should not cause items to appear on pages that do not match.
+exports.testURLContextNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "item 0",
+      context: loader.cm.URLContext("*.bogus.com")
+    }),
+    loader.cm.Item({
+      label: "item 1",
+      context: loader.cm.URLContext(["*.bogus.com", "*.gnarly.com"])
+    })
+  ];
+  items.forEach(function (i) loader.cm.add(i));
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
       test.checkMenu([], items, []);
       test.done();
     });
@@ -315,7 +401,7 @@ exports.testMultipleContexts = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    context: ["a[href]", null],
+    context: [loader.cm.SelectorContext("a[href]"), loader.cm.PageContext()],
     contentScript: 'on("context", function () postMessage());',
     onMessage: function () {
       test.fail("Context listener should not be called");
@@ -337,9 +423,10 @@ exports.testRemoveContext = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
+  let ctxt = loader.cm.SelectorContext("img");
   let item = new loader.cm.Item({
     label: "item",
-    context: "img"
+    context: ctxt
   });
   loader.cm.add(item);
 
@@ -351,7 +438,7 @@ exports.testRemoveContext = function (test) {
       popup.hidePopup();
 
       // Remove the img context and check again.
-      item.context.remove("img");
+      item.context.remove(ctxt);
       test.showMenu(doc.getElementById("image"), function (popup) {
         test.checkMenu([], [item], []);
         test.done();
@@ -505,7 +592,7 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
   loader0.cm.add(item0);
 
@@ -552,7 +639,7 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
   loader0.cm.add(item0);
 
@@ -593,7 +680,7 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
   loader0.cm.add(item0);
 
@@ -640,7 +727,7 @@ exports.testMultipleModulesDiffContexts4 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
   loader0.cm.add(item0);
 
@@ -779,7 +866,7 @@ exports.testMenuClick = function (test) {
       test.done();
     },
     items: [submenu],
-    context: "a"
+    context: loader.cm.SelectorContext("a")
   });
   loader.cm.add(topMenu);
 
@@ -1366,8 +1453,7 @@ TestHelper.prototype = {
   // be closed automatically when done() is called.
   withTestDoc: function (onloadCallback) {
     this.oldSelectedTab = this.tabBrowser.selectedTab;
-    let docUrl = __url__.replace(/\.js$/, ".html");
-    this.tab = this.tabBrowser.addTab(docUrl);
+    this.tab = this.tabBrowser.addTab(TEST_DOC_URL);
     let browser = this.tabBrowser.getBrowserForTab(this.tab);
 
     this.delayedEventListener(browser, "load", function () {
