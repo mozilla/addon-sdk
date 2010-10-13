@@ -57,16 +57,17 @@ const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
     // Binding method to instance since it will be used with `setTimeout`.
     this._emit = this._emit.bind(this);
+    this.unload = this.unload.bind(this);
     // Report unhandled errors from listeners
     this.on("error", console.exception.bind(console));
-    unload.when(this._destructor.bind(this));
+    unload.ensure(this);
     // We only need to add observers if `pbService` exists.
     if (pbService) {
       observers.add(ON_TRANSITION, this.onTransition.bind(this));
       this._active = pbService.privateBrowsingEnabled;
     }
   },
-  _destructor: function _destructor() {
+  unload: function _destructor() {
     this._removeAllListeners(ON_START);
     this._removeAllListeners(ON_STOP);
   },
