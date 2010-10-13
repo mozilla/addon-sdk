@@ -146,31 +146,16 @@ exports.validateOptions = function validateOptions(options, requirements) {
   return validatedOptions;
 };
 
-exports.addIterator = function addIterator(obj, keysValsGen) {
-  // Define a getter so that we can determine if the Iterator wrapper is used.
-  obj.__defineGetter__("__iterator__", function() {
-    // Detect that we're in a "for (.. in Iterator(.., keysonly))" context.
-    if (Error().stack.split(/\n/)[2].indexOf("Iterator(") == 0) {
-      return function(keysonly) {
-        let keysVals = keysValsGen.call(this);
+exports.addIterator = function addIterator(obj, keysValsGenerator) {
+  obj.__iterator__ = function(keysOnly, keysVals) {
+    let keysValsIterator = keysValsGenerator.call(this);
 
-        // Get only keys if the optional second Iterator argument is true.
-        // Otherwise, get both keys and vals for the standard Iterator usage.
-        while (true)
-          yield keysonly ? keysVals.next()[0] : keysVals.next();
-      };
-    }
-
-    // Provide an iterator that handles the non-Iterator-wrapped contexts.
-    return function(keysonly) {
-      let keysVals = keysValsGen.call(this);
-
-      // "for (.. in ..)" gets only keys and "for each (.. in ..)" gets values.
-      let index = keysonly ? 0 : 1;
-      while (true)
-        yield keysVals.next()[index];
-    };
-  });
+    // "for (.. in ..)" gets only keys, "for each (.. in ..)" gets values,
+    // and "for (.. in Iterator(..))" gets [key, value] pairs.
+    let index = keysOnly ? 0 : 1;
+    while (true)
+      yield keysVals ? keysValsIterator.next() : keysValsIterator.next()[index];
+  };
 };
 
 // Similar to typeof, except arrays and null are identified by "array" and

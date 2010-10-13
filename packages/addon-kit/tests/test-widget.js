@@ -14,9 +14,9 @@ exports.testConstructor = function(test) {
     let doc = browserWindow.document;
 
     function container() doc.getElementById("addon-bar");
-    function widgetCount() container() ? container().childNodes.length : 0;
+    function widgetCount() container() ? container().getElementsByTagName("toolbaritem").length : 0;
     let widgetStartCount = widgetCount();
-    function widgetNode(index) container() ? container().childNodes[index] : null;
+    function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
     // Test basic add/remove
     let w = widgets.Widget({ label: "foo", content: "bar" });
@@ -74,14 +74,14 @@ exports.testConstructor = function(test) {
         widgets.add(w);
         widgets.add(w);
       },
-      "The widget [object Widget \"foo\"] has already been added.",
+      "The widget [object Widget] has already been added.",
       "should throw when adding a widget that's already been added");
     widgets.remove(w);
 
     // Test removing widget that's never been added
     test.assertRaises(
       function() widgets.remove(w),
-      "The widget [object Widget \"foo\"] has not been added and therefore cannot be removed.",
+      "The widget [object Widget] has not been added and therefore cannot be removed.",
       "should throw when removing a widget that's never been added");
 
     /**
@@ -120,9 +120,9 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "text widget",
       content: "oh yeah",
-      onReady: function(e) {
-        test.assertEqual(e.target.body.innerHTML, this.content, "content matches");
-        widgets.remove(this)
+      onReady: function(widget, e) {
+        test.assertEqual(e.target.body.innerHTML, widget.content, "content matches");
+        widgets.remove(widget)
         doneTest();
       }
     })));
@@ -131,9 +131,9 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "html widget",
       content: "<div>oh yeah</div>",
-      onReady: function(e) {
-        test.assertEqual(e.target.body.innerHTML, this.content, "content matches");
-        widgets.remove(this)
+      onReady: function(widget, e) {
+        test.assertEqual(e.target.body.innerHTML, widget.content, "content matches");
+        widgets.remove(widget)
         doneTest();
       }
     })));
@@ -142,10 +142,10 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "image url widget",
       content: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(e) {
+      onLoad: function(widget, e) {
         test.assertEqual(e.target.body.firstElementChild.tagName, "IMG", "tag name matches");
-        test.assertEqual(e.target.body.firstElementChild.src, this.content, "content matches");
-        widgets.remove(this)
+        test.assertEqual(e.target.body.firstElementChild.src, widget.content, "content matches");
+        widgets.remove(widget)
         doneTest();
       }
     })));
@@ -154,10 +154,10 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "image widget",
       image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(e) {
+      onLoad: function(widget, e) {
         test.assertEqual(e.target.body.firstElementChild.tagName, "IMG", "tag name matches");
-        test.assertEqual(e.target.body.firstElementChild.src, require("self").data.url(this.image), "content matches");
-        widgets.remove(this);
+        test.assertEqual(e.target.body.firstElementChild.src, require("self").data.url(widget.image), "content matches");
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -166,26 +166,26 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "web uri widget",
       content: require("self").data.url("test.html"),
-      onReady: function(e) {
+      onReady: function(widget, e) {
         test.assertEqual(e.target.title, "foo", "title matches");
         test.assertEqual(e.target.body.firstElementChild.tagName, "P", "element matches");
         test.assertEqual(e.target.body.firstElementChild.innerHTML, "bar", "element content matches");
-        widgets.remove(this);
+        widgets.remove(widget);
         doneTest();
       }
     })));
-
+    
     // event: onclick + content
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "click test widget - content",
       content: "<div id='me'>foo</div>",
-      onReady: function(e) {
+      onReady: function(widget, e) {
         if (e.target.defaultView)
           sendMouseEvent({type:"click"}, "me", e.target.defaultView);
       },
-      onClick: function(e) {
+      onClick: function(widget, e) {
         test.pass("onClick called");
-        widgets.remove(this);
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -194,12 +194,12 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "mouseover test widget - content",
       content: "<div id='me'>foo</div>",
-      onReady: function(e) {
+      onReady: function(widget, e) {
         sendMouseEvent({type:"mouseover"}, "me", e.target.defaultView);
       },
-      onMouseover: function(e) {
-        test.pass("onMouseover called");
-        widgets.remove(this);
+      onMouseOver: function(widget, e) {
+        test.pass("onMouseOver called");
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -208,12 +208,12 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "mouseout test widget - content",
       content: "<div id='me'>foo</div>",
-      onReady: function(e) {
+      onReady: function(widget, e) {
         sendMouseEvent({type:"mouseout"}, "me", e.target.defaultView);
       },
-      onMouseout: function(e) {
-        test.pass("onMouseout called");
-        widgets.remove(this);
+      onMouseOut: function(widget, e) {
+        test.pass("onMouseOut called");
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -222,13 +222,13 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "click test widget - image",
       image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(e) {
+      onLoad: function(widget, e) {
         if (e.target.defaultView)
           sendMouseEvent({type:"click"}, null, e.target.defaultView);
       },
-      onClick: function(e) {
+      onClick: function(widget, e) {
         test.pass("onClick called");
-        widgets.remove(this);
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -237,12 +237,12 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "mouseover test widget - image",
       image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(e) {
+      onLoad: function(widget, e) {
         sendMouseEvent({type:"mouseover"}, null, e.target.defaultView);
       },
-      onMouseover: function(e) {
-        test.pass("onMouseover called");
-        widgets.remove(this);
+      onMouseOver: function(widget, e) {
+        test.pass("onMouseOver called");
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -251,12 +251,12 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "mouseout test widget - image",
       image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(e) {
+      onLoad: function(widget, e) {
         sendMouseEvent({type:"mouseout"}, null, e.target.defaultView);
       },
-      onMouseout: function(e) {
-        test.pass("onMouseout called");
-        widgets.remove(this);
+      onMouseOut: function(widget, e) {
+        test.pass("onMouseOut called");
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -280,14 +280,14 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "content update test widget",
       content: "<div id='me'>foo</div>",
-      onReady: function(e) {
+      onReady: function(widget, e) {
         if (loads == 0) {
-          this.content = "<div id='me'>bar</div>";
+          widget.content = "<div id='me'>bar</div>";
           loads++;
         }
         else {
-          test.assertEqual(this.content, "<div id='me'>bar</div>");
-          widgets.remove(this);
+          test.assertEqual(widget.content, "<div id='me'>bar</div>");
+          widgets.remove(widget);
           doneTest();
         }
       }
@@ -298,9 +298,9 @@ exports.testConstructor = function(test) {
       label: "text widget",
       content: "oh yeah",
       tooltip: "foo",
-      onReady: function(e) {
-        test.assertEqual(this.tooltip, "foo", "tooltip matches");
-        widgets.remove(this)
+      onReady: function(widget, e) {
+        test.assertEqual(widget.tooltip, "foo", "tooltip matches");
+        widgets.remove(widget)
         doneTest();
       }
     })));
@@ -309,9 +309,9 @@ exports.testConstructor = function(test) {
     tests.push(function() testSingleWidget(widgets.Widget({
       label: "fallback",
       content: "oh yeah",
-      onReady: function(e) {
-        test.assertEqual(this.tooltip, this.label, "tooltip fallbacks to label");
-        widgets.remove(this)
+      onReady: function(widget, e) {
+        test.assertEqual(widget.tooltip, widget.label, "tooltip fallbacks to label");
+        widgets.remove(widget)
         doneTest();
       }
     })));
@@ -322,14 +322,14 @@ exports.testConstructor = function(test) {
       label: "tooltip update test widget",
       tooltip: "foo",
       content: "<div id='me'>foo</div>",
-      onReady: function(e) {
+      onReady: function(widget, e) {
         if (!updated) {
-          this.tooltip = "bar";
+          widget.tooltip = "bar";
           updated = true;
         }
         else {
-          test.assertEqual(this.tooltip, "bar", "tooltip gets updated");
-          widgets.remove(this);
+          test.assertEqual(widget.tooltip, "bar", "tooltip gets updated");
+          widgets.remove(widget);
           doneTest();
         }
       }
@@ -395,18 +395,17 @@ exports.testConstructor = function(test) {
       label: "test widget.width",
       content: "test width",
       width: 200,
-      onReady: function(e) {
-        test.assertEqual(this.width, 200);
+      onReady: function(widget, e) {
+        test.assertEqual(widget.width, 200);
 
-        let node = widgetNode(1);
-        test.assertEqual(this.width, node.style.minWidth.replace("px", ""));
-        test.assertEqual(this.width, node.firstElementChild.style.width.replace("px", ""));
+        let node = widgetNode(0);
+        test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
+        test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
+        widget.width = 300;
+        test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
+        test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
 
-        this.width = 300;
-        test.assertEqual(this.width, node.style.minWidth.replace("px", ""));
-        test.assertEqual(this.width, node.firstElementChild.style.width.replace("px", ""));
-
-        widgets.remove(this);
+        widgets.remove(widget);
         doneTest();
       }
     })));
@@ -421,7 +420,7 @@ exports.testPanelWidget = function testPanelWidget(test) {
   let widget1 = widgets.Widget({
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
-    onLoad: function(e) {
+    onLoad: function(widget, e) {
       sendMouseEvent({type:"click"}, "me", e.target.defaultView);
     },
     panel: require("panel").Panel({
@@ -450,12 +449,12 @@ exports.testPanelWidget = function testPanelWidget(test) {
   let widget3 = widgets.Widget({
     label: "panel widget 3",
     content: "<div id='me'>foo</div>",
-    onLoad: function(e) {
+    onLoad: function(widget, e) {
       sendMouseEvent({type:"click"}, "me", e.target.defaultView);
     },
-    onClick: function() {
+    onClick: function(widget) {
       onClickCalled = true;
-      this.panel.show();
+      widget.panel.show();
     },
     panel: require("panel").Panel({
       contentURL: "data:text/html,<body>Look ma, a panel!</body>",
@@ -473,7 +472,6 @@ exports.testPanelWidget = function testPanelWidget(test) {
 
   test.waitUntilDone();
 };
-
 
 /******************* helpers *********************/
 

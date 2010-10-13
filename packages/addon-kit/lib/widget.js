@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Dietrich Ayala <dietrich@mozilla.com> (Original Author)
  *   Drew Willcoxon <adw@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -45,13 +46,18 @@ const CONTENT_TYPE_URI    = 1;
 const CONTENT_TYPE_HTML   = 2;
 const CONTENT_TYPE_IMAGE  = 3;
 
+const ERR_IMG_OR_CONTENT = "No image or content property found. Widgets must "
+                         + "have one or the other.",
+      ERR_LABEL = "The widget must have a non-empty label property.";
+
 // Supported events
 const EVENTS = {
-  onClick: "click",
-  onLoad: "load",
-  onMouseover: "mouseover",
-  onMouseout: "mouseout",
-  onReady: "DOMContentLoaded"};
+  "click": "click",
+  "load": "load",
+  "mouseover": "MouseOver",
+  "mouseout": "MouseOut",
+  "DOMContentLoaded": "ready"
+};
 
 if (!require("xul-app").is("Firefox")) {
   throw new Error([
@@ -61,109 +67,139 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const apiutils = require("api-utils");
-const collection = require("collection");
-const errors = require("errors");
+const { validateOptions } = require("api-utils");
 const panels = require("panel");
+const { EventEmitter } = require("events");
+const { Trait } = require("traits");
+
+const valid = {
+  number: { is: ["null", "undefined", "number"] },
+  string: { is: ["null", "undefined", "string"] },
+  label: {
+    is: ["string"],
+    ok: function (v) v.length > 0,
+    msg: ERR_LABEL
+  },
+  panel: {
+    is: ["null", "undefined", "object"],
+    ok: function(v) !v || v instanceof panels.Panel
+  }
+}
+
+function validate(name, suspect, validation) {
+  let $1 = {}
+  $1[name] = suspect
+  let $2 = {}
+  $2[name] = validation
+  return validateOptions($1, $2)[name]
+}
 
 // Expose public APIs for creating/adding/removing widgets
-exports.Widget = apiutils.publicConstructor(Widget);
 exports.add = function(item) browserManager.addItem(item);
 exports.remove = function(item) browserManager.removeItem(item);
 
+const eventBus = Trait.compose(EventEmitter, Trait.compose({
+  constructor: function EventBus() this
+}))();
+
 // The widget object.
-function Widget(options) {
-  options = apiutils.validateOptions(options, {
-    label: {
-      is: ["string"],
-      ok: function (v) v.length > 0,
-      msg: "The widget must have a non-empty label property."
-    },
-    tooltip: {
-      is: ["null", "undefined", "string"],
-    },
-    image: {
-      is: ["null", "undefined", "string"],
-    },
-    content: {
-      is: ["null", "undefined", "string"],
-    },
-    width:  {
-      is: ["null", "undefined", "number"],
-    },
-    panel: {
-      is: ["null", "undefined", "object"],
-      ok: function(v) !v || v instanceof panels.Panel
-    },
-    onClick: {
-      is: ["function", "array", "null", "undefined"],
-    },
-    onMouseover: {
-      is: ["function", "array", "null", "undefined"],
-    },
-    onMouseout: {
-      is: ["function", "array", "null", "undefined"],
-    },
-    onLoad: {
-      is: ["function", "array", "null", "undefined"],
-    },
-    onReady: {
-      is: ["function", "array", "null", "undefined"],
+const Widget = Trait.compose(EventEmitter, Trait.compose({
+  constructor: function Widget(options) {
+
+    eventBus.on('event', this._onEvent.bind(this));
+    this.on('error', this._defaultErrorHandler.bind(this));
+
+    this._label = validate("label", options.label, valid.label);
+
+    this.tooltip = "tooltip" in options ? options.tooltip : this._label
+    
+    if ("image" in options)
+      this.image = options.image;
+    if ("content" in options)
+      this.content = options.content;
+
+    if ("width" in options)
+      this.width = options.width;
+    if ("panel" in options)
+      this.panel = options.panel;
+    
+    if ("onClick" in options)
+      this.on("click", options.onClick);
+    if ("onMouseOver" in options)
+      this.on("MouseOver", options.onMouseOver);
+    if ("onMouseOut" in options)
+      this.on("MouseOut", options.onMouseOut);
+    if ("onLoad" in options)
+      this.on("load", options.onLoad);
+    if ("onReady" in options)
+      this.on("ready", options.onReady);
+
+    if (!(this._image || this._content))
+      throw new Error(ERR_IMG_OR_CONTENT);
+  },
+
+  _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
+    if (1 == this._listeners('error').length)
+      console.exception(e)
+  },
+
+  _onEvent: function Widget__onEvent(type, target, e, item) {
+    if (target === this._public) {
+      this._emit(type, this._public, e);
+
+      // Special case for click events: if the widget doesn't have a click
+      // handler, but it does have a panel, display the panel.
+      if ("click" == type && !this._listeners("click").length && this.panel)
+        this.panel.show(item.node);
     }
-  });
+  },
 
-  if (!(options.image || options.content))
-    throw new Error("No image or content property found. Widgets must have one or the other.");
+  get label() this._label,
+  _label: null,
 
-  let self = this;
+  get width() this._width,
+  set width(value) {
+    value = validate("width", value, valid.number);
+    if (null === value || undefined === value) value = 16;
+    if (value !== this._width)
+      browserManager.updateItem(this._public, "width", this._width = value);
+  },
+  _width: 16,
 
-  this.__defineGetter__("label", function() options.label);
+  get tooltip() this._tooltip,
+  set tooltip(value) {
+    value = validate("tooltip", value, valid.string);
+    if (value !== this._tooltip)
+      browserManager.updateItem(this._public, "tooltip", this._tooltip = value);
+  },
+  _tooltip: null,
 
-  this.__defineGetter__("width", function() options.width || 16);
-  this.__defineSetter__("width", function(width) {
-    options.width = width;
-    browserManager.updateItem(self, "width", width);
-  });
+  get image() this._image,
+  set image(value) {
+    value = validate("image", value, valid.string);
+    if (value !== this._image)
+      browserManager.updateItem(this._public, "image", this._image = value);
+  },
+  _image: null,
 
-  this.__defineGetter__("tooltip", function() options.tooltip || options.label);
-  this.__defineSetter__("tooltip", function(text) {
-    options.tooltip = text;
-    browserManager.updateItem(self, "tooltip", text);
-  });
+  get content() this._content,
+  set content(value) {
+    value = validate("content", value, valid.string);
+    if (value !== this._content)
+      browserManager.updateItem(this._public, "content", this._content = value);
+  },
+  _content: null,
 
-  if (options.image) {
-    this.__defineGetter__("image", function() options.image);
-    this.__defineSetter__("image", function(image) {
-      options.image = image;
-      browserManager.updateItem(self, "image", image);
-    });
-  }
-
-  if (options.content) {
-    this.__defineGetter__("content", function() options.content);
-    this.__defineSetter__("content", function(content) {
-      options.content = content;
-      browserManager.updateItem(self, "content", content);
-    });
-  }
-
-    this.__defineGetter__("panel", function() options.panel || undefined);
-    this.__defineSetter__("panel", function(panel) {
-      options.panel = panel;
-    });
-
-  for (let method in EVENTS) {
-    // create collection for the event as a widget property
-    collection.addCollectionProperty(this, method);
-    // add event handlers
-    if (options[method])
-      this[method].add(options[method]);
-  }
-
-  this.toString = function Widget_toString() {
-    return '[object Widget "' + options.label + '"]';
-  };
-}
+  get panel() this._panel,
+  set panel(value) {
+    value = validate("panel", value, valid.panel);
+    if (value !== this._panel)
+      this._panel = value;
+  },
+  _panel: null
+}));
+exports.Widget = function(options) Widget(options);
+exports.Widget.prototype = Widget.prototype;
 
 // Keeps track of all browser windows.
 // Exposes methods for adding/removing/updating widgets
@@ -224,9 +260,8 @@ let browserManager = {
   // propagating the change to all windows.
   updateItem: function browserManager_updateItem(item, property, value) {
     let idx = this.items.indexOf(item);
-    if (idx == -1)
-      throw new Error("The widget " + item + " cannot be updated because it is not currently registered.");
-    this.windows.forEach(function (w) w.updateItem(item, property, value));
+    if (idx != -1)
+      this.windows.forEach(function (w) w.updateItem(item, property, value));
   },
 
   // Unregisters an item from the manager.  It's removed from the addon-bar
@@ -471,16 +506,6 @@ BrowserWindow.prototype = {
   addEventHandlers: function BW_addEventHandlers(item) {
     let contentType = this.getContentType(item.widget);
 
-    // Given an event type (eg: load) return the
-    // handler name (eg: onLoad).
-    function getHandlerForType(type) {
-      for (let handler in EVENTS) {
-        if (EVENTS[handler] == type)
-          return handler;
-      }
-      return null;
-    }
-
     // Detect if document consists of a single image.
     function isImageDoc(doc) {
       return doc.body.childNodes.length == 1 &&
@@ -516,26 +541,17 @@ BrowserWindow.prototype = {
       if (e.type == "load")
         modifyStyle(e.target);
 
-      // Proxy event to the widget's listeners
-      let handler = getHandlerForType(e.type);
-      for (let callback in item.widget[handler])
-        require("errors").catchAndLog(function(e) callback.apply(item.widget, [e]))(e);
-
-      // Special case for click events: if the widget doesn't have a click
-      // handler, but it does have a panel, display the panel.
-      if (e.type == "click" && item.widget[handler].length == 0 &&
-          item.widget.panel) {
-        item.widget.panel.show(item.node);
-      }
+      // Proxy event to the widget
+      eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
     };
 
     item.eventListeners = {};
-    for (let [method, type] in Iterator(EVENTS)) {
+    for (let [type, method] in Iterator(EVENTS)) {
       let iframe = item.node.firstElementChild;
       iframe.addEventListener(type, listener, true, true);
 
       // Store listeners for later removal
-      item.eventListeners[method] = listener;
+      item.eventListeners[type] = listener;
     }
   },
 
@@ -545,8 +561,8 @@ BrowserWindow.prototype = {
       let entry = this._items.filter(function(entry) entry.widget == removedItem).shift();
       if (entry) {
         // remove event listeners
-        for (let [method, listener] in Iterator(entry.eventListeners))
-          entry.node.firstElementChild.removeEventListener(EVENTS[method], listener, true);
+        for (let [type, listener] in Iterator(entry.eventListeners))
+          entry.node.firstElementChild.removeEventListener(type, listener, true);
         // remove dom node
         this.container.removeChild(entry.node);
         // remove entry

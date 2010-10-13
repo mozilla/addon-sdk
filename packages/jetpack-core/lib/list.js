@@ -49,25 +49,16 @@ const Iterable = Trait.compose(Object.create({}, {
    */
   _keyValueMap: { value: Trait.required },
   /**
-   * Internal property used during iteration. If value is `true` `Iterator`
-   * wrapper is used during iteration.
-   * @type {Boolean}
-   */
-  _iterateOnKeyValue: { value: false, writable: true },
-  /**
    * Custom iterator providing `Iterable`s enumeration behavior.
    * @param {Boolean} onKeys
    */
-  _iterator: { value: function _iterator(onKeys) {
-    let onKeyValue = this._iterateOnKeyValue,
-        map = this._keyValueMap;
+  _iterator: { value: function _iterator(onKeys, onKeyValue) {
+    let map = this._keyValueMap;
     for (let key in map)
       yield onKeyValue ? [key, map[key]] : onKeys ? key : map[key];
   }, writable: true },
   /**
-   * Getter checks wether or not `Iterator` wrapper is used during
-   * enumeration, modifies internal `_iterateOnKeyValue` property accordingly
-   * and return private `_iterator`.
+   * Getter returns private `_iterator`.
    */
   __iterator__: { get: function __iterator__() {
     let iterator = this._iterator;
@@ -75,11 +66,6 @@ const Iterable = Trait.compose(Object.create({}, {
     // to avoid making consumers resolve this trait every time they want
     // to compose a new trait from it.
     if (!iterator.bound) iterator = this._iterator = iterator.bind(this);
-    let stack = Error().stack.split(/\n/);
-    this._iterateOnKeyValue = (
-      stack[2].indexOf('Iterator(') == 0 || // native implementation of bind
-      stack[3].indexOf('Iterator(') == 0    // custom implementation of bind
-    );
     return iterator;
   }}
 }));
@@ -155,7 +141,6 @@ const List = Iterable.resolve({ toString: null, _iterator: null }).compose({
       delete this._public[i];
     this._keyValueMap.splice(0);
   },
-  _iterateOnKeyValue: Trait.required,
   /**
    * Custom iterator providing `List`s enumeration behavior.
    * We cant reuse `_iterator` that is defined by `Iterable` since it provides
@@ -163,13 +148,11 @@ const List = Iterable.resolve({ toString: null, _iterator: null }).compose({
    * @see https://developer.mozilla.org/en/JavaScript/Reference/Statements/for...in
    * @param {Boolean} onKeys
    */
-  _iterator: function _iterator(onKeys) {
-    let onKeyValue = this._iterateOnKeyValue,
-        array = this._keyValueMap,
+  _iterator: function _iterator(onKeys, onKeyValue) {
+    let array = this._keyValueMap,
         i = -1;
     for each(let element in array)
       yield onKeyValue ? [++i, element] : onKeys ? ++i : element;
   }
 });
 exports.List = List;
-
