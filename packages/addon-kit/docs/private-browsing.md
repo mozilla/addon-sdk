@@ -18,11 +18,11 @@ in a variable.
 <api name="active">
 @property {boolean}
 This is a boolean. You can read this attribute to determine if private browsing
-mode is active. You can also set the attribute to start or stops private
+mode is active. You can also set the attribute to enter or exit private
 browsing.
 </api>
 
-    // If browser is in private browsing mode
+    // If private browsing is active, do something
     if (pb.active)
       doSomething();
     
@@ -33,25 +33,25 @@ browsing.
     pb.active = false;
 
 
-##Events##
+## Events ##
 
-When browser starts or stops private browsing mode following events are
-emitted:
+When the browser starts or stops private browsing mode, the following events
+are emitted:
 
-###start###
+### start ###
 Emitted when the browser starts private browsing mode.
     
-    pb.on('start', function() {
-      // do something when browser starts private mode
+    pb.on("start", function() {
+      // Do something when the browser starts private browsing mode.
     });
     
  
-###stop###
+### stop ###
 Emitted when the browser stops private browsing mode.
 
     
-    pb.on('stop', function() {
-      // do something when browser stops private mode
+    pb.on("stop", function() {
+      // Do something when the browser stops private browsing mode.
     });
     
 
@@ -60,5 +60,5 @@ Emitted when the browser stops private browsing mode.
 
 This module is available in all applications. However, only Firefox will ever
 transition into or out of private browsing mode. For all other applications,
-`pb.active` will always return `null`, and none of the events will be emitted.
+`pb.active` will always return `false`, and none of the events will be emitted.
 

@@ -37,15 +37,14 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci} = require("chrome");
-const collection = require("collection");
 const observers = require("observer-service");
-const errors = require("errors");
-const { EventEmitter } = require('events');
-const { setTimeout } = require('timer');
+const { EventEmitter } = require("events");
+const { setTimeout } = require("timer");
+const unload = require("unload");
 
-const ON_START = 'start',
-      ON_STOP = 'stop',
-      ON_TRANSITION = 'private-browsing-transition-complete';
+const ON_START = "start";
+const ON_STOP = "stop";
+const ON_TRANSITION = "private-browsing-transition-complete";
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -54,33 +53,40 @@ if (require("xul-app").is("Firefox")) {
               getService(Ci.nsIPrivateBrowsingService);
 }
 
-const PrivateBrowsing = EventEmitter.compose({
+const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
-    // We only need to add observers if pbService exists.
+    // Binding method to instance since it will be used with `setTimeout`.
     this._emit = this._emit.bind(this);
-    // report errors from listeners
-    this.on('error', console.error);
+    // Report unhandled errors from listeners
+    this.on("error", console.exception.bind(console));
+    unload.when(this._destructor.bind(this));
+    // We only need to add observers if `pbService` exists.
     if (pbService) {
       observers.add(ON_TRANSITION, this.onTransition.bind(this));
       this._active = pbService.privateBrowsingEnabled;
     }
   },
+  _destructor: function _destructor() {
+    this._removeAllListeners(ON_START);
+    this._removeAllListeners(ON_STOP);
+  },
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {
     let active = this._active = pbService.privateBrowsingEnabled;
-    setTimeout(this._emit, 0, exports.active ? ON_START : ON_STOP);
+    setTimeout(this._emit, 0, active ? ON_START : ON_STOP);
   },
   get active() this._active,
   set active(value) {
-    if (pbService) pbService.privateBrowsingEnabled = !!value
+    if (pbService)
+      pbService.privateBrowsingEnabled = !!value;
   },
-  _active: null
+  _active: false
 })()
 
-Object.defineProperty(exports, 'active', {
-  get: function() PrivateBrowsing.active,
-  set: function(value) PrivateBrowsing.active = value
+Object.defineProperty(exports, "active", {
+  get: function() privateBrowsing.active,
+  set: function(value) privateBrowsing.active = value
 });
-exports.on = PrivateBrowsing.on;
-exports.removeListener = PrivateBrowsing.removeListener;
+exports.on = privateBrowsing.on;
+exports.removeListener = privateBrowsing.removeListener;
 
