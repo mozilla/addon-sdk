@@ -572,10 +572,29 @@ BrowserWindow.prototype = {
     this.workerReg.registerItems(items);
   },
 
+  // The context specified for a top-level item may not match exactly the real
+  // context that triggers it.  For example, if the user context-clicks a span
+  // inside an anchor, we want items that specify an anchor context to be
+  // triggered, but the real context will indicate that the span was clicked,
+  // not the anchor.  Where the real context and an item's context conflict,
+  // clients should be given the item's context, and this method can be used to
+  // make such adjustments.  Returns an adjusted popupNode.
+  adjustPopupNode: function BW_adjustPopupNode(popupNode, topLevelItem) {
+    for (let ctxt in topLevelItem.context) {
+      if (typeof(ctxt) === "string") {
+        let ctxtNode = this._popupNodeMatchingSelector(ctxt, popupNode);
+        if (ctxtNode) {
+          popupNode = ctxtNode;
+          break;
+        }
+      }
+    }
+    return popupNode;
+  },
+
   // Returns true if all of item's contexts are current in the window.
-  areAllContextsCurrent: function BW_areAllContextsCurrent(item) {
-    let contextObj = this.contextObj();
-    let worker = this.workerReg.find(contextObj.window, item);
+  areAllContextsCurrent: function BW_areAllContextsCurrent(item, popupNode) {
+    let worker = this.workerReg.find(popupNode.ownerDocument.defaultView, item);
 
     // If the worker for the content-window-item pair doesn't exist (e.g.,
     // because the page hasn't loaded yet), we can't really make a good decision
@@ -587,7 +606,7 @@ BrowserWindow.prototype = {
     // If there are no contexts given at all, the page context applies.
     let hasContentContext = worker.anyContextListeners();
     if (!hasContentContext && !item.context.length)
-      return this._isPageContextCurrent();
+      return this._isPageContextCurrent(popupNode);
 
     // Otherwise, determine if all given contexts are current.  Evaluate the
     // declarative contexts first and the worker's context listeners last.  That
@@ -595,40 +614,25 @@ BrowserWindow.prototype = {
     let curr = true;
     for (let ctxt in item.context) {
       curr = curr &&
-             !ctxt ? this._isPageContextCurrent() :
-             typeof(ctxt) === "string" ? this._isSelectorContextCurrent(ctxt) :
+             !ctxt ?
+               this._isPageContextCurrent(popupNode) :
+             typeof(ctxt) === "string" ?
+               this._isSelectorContextCurrent(ctxt, popupNode) :
              false;
       if (!curr)
         return false;
     }
-    return !hasContentContext ||
-           worker.isAnyContextCurrent(contextObj.node);
+    return !hasContentContext || worker.isAnyContextCurrent(popupNode);
   },
 
-  // Returns an object describing the current context.  This object may need to
-  // be slightly adjusted to match the context of a top-level item.  If not,
-  // topLevelItem need not be given.
-  contextObj: function BW_contextObj(topLevelItem) {
-    let node = this.doc.popupNode;
-
-    if (topLevelItem) {
-      for (let ctxt in topLevelItem.context) {
-        if (typeof(ctxt) === "string") {
-          let ctxtNode = this._popupNodeMatchingSelector(ctxt);
-          if (ctxtNode) {
-            node = ctxtNode;
-            break;
-          }
-        }
-      }
-    }
-
-    return {
-      node: node,
-      // Just to be safe, don't assume popupNode is non-null.
-      document: node ? node.ownerDocument : null,
-      window: node ? node.ownerDocument.defaultView : null
-    };
+  // Sets this.popupNode to the node the user context-clicked to invoke the
+  // context menu.  For Gecko 2.0 and later, triggerNode is this node; if it's
+  // falsey, document.popupNode is used.  Returns the popupNode.
+  capturePopupNode: function BW_capturePopupNode(triggerNode) {
+    this.popupNode = triggerNode || this.doc.popupNode;
+    if (!this.popupNode)
+      console.warn("popupNode is null.");
+    return this.popupNode;
   },
 
   // Undoes all modifications to the window's context menu.  The BrowserWindow
@@ -641,13 +645,13 @@ BrowserWindow.prototype = {
     });
   },
 
-  // Emits a click event in the port of the content worker related to the
-  // contextObj.window-item pair.  Listeners will be passed contextObj.node and
+  // Emits a click event in the port of the content worker related to item and
+  // popupNode's content window.  Listeners will be passed popupNode and
   // clickedItemData.
-  fireClick: function BW_fireClick(item, contextObj, clickedItemData) {
-    let worker = this.workerReg.find(contextObj.window, item);
+  fireClick: function BW_fireClick(item, popupNode, clickedItemData) {
+    let worker = this.workerReg.find(popupNode.ownerDocument.defaultView, item);
     if (worker)
-      worker.fireClick(contextObj.node, clickedItemData);
+      worker.fireClick(popupNode, clickedItemData);
   },
 
   // Removes an array of items from the window's context menu.
@@ -659,10 +663,9 @@ BrowserWindow.prototype = {
   // Returns true if the page context is current in the window.  The page
   // context arises when the user invokes the context menu on a non-interactive
   // part of the page.
-  _isPageContextCurrent: function BW__isPageContextCurrent() {
-    let popupNode = this.doc.popupNode;
-    let contentWin = popupNode ? popupNode.ownerDocument.defaultView : null;
-    if (contentWin && !contentWin.getSelection().isCollapsed)
+  _isPageContextCurrent: function BW__isPageContextCurrent(popupNode) {
+    let contentWin = popupNode.ownerDocument.defaultView;
+    if (!contentWin.getSelection().isCollapsed)
       return false;
 
     let cursor = popupNode;
@@ -676,15 +679,15 @@ BrowserWindow.prototype = {
 
   // Returns true if the node the user clicked to invoke the context menu or
   // any of the node's ancestors matches the given CSS selector.
-  _isSelectorContextCurrent: function BW__isSelectorContextCurrent(selector) {
-    return !!this._popupNodeMatchingSelector(selector);
+  _isSelectorContextCurrent: function BW__isSelCtxtCurr(selector, popupNode) {
+    return !!this._popupNodeMatchingSelector(selector, popupNode);
   },
 
   // Returns popupNode if it matches selector, or the closest ancestor of
   // popupNode that matches selector, or null if popupNode and none of its
   // ancestors matches selector.
-  _popupNodeMatchingSelector: function BW__popupNodeMatchingSelector(selector) {
-    let cursor = this.doc.popupNode;
+  _popupNodeMatchingSelector: function BW__pnMatchingSel(selector, popupNode) {
+    let cursor = popupNode;
     while (cursor) {
       if (cursor.mozMatchesSelector(selector))
         return cursor;
@@ -768,21 +771,22 @@ Popup.prototype = {
       let elt = event.target;
       if (elt.className.split(/\s+/).indexOf(ITEM_CLASS) >= 0) {
         // If the event originated at an item in the popup, dispatch a click.
-        // Also set Popup.clickedItem and contextObj so ancestor popups know
+        // Also set Popup.clickedItem and popupNode so ancestor popups know
         // which item was clicked and under what context.
         let childItemWrapper = this._findItemWrapper(elt);
         if (childItemWrapper) {
           let clickedItem = childItemWrapper.item;
           let topLevelItem = this._topLevelItem(clickedItem);
-          let contextObj = this.window.contextObj(topLevelItem);
+          let popupNode = this.window.adjustPopupNode(this.window.popupNode,
+                                                      topLevelItem);
           Popup.clickedItem = clickedItem;
-          Popup.contextObj = contextObj;
-          this.window.fireClick(clickedItem, contextObj, clickedItem.data);
+          Popup.popupNode = popupNode;
+          this.window.fireClick(clickedItem, popupNode, clickedItem.data);
         }
 
         // Dispatch a click to this popup's parent menu.
         if (this.parentMenu) {
-          this.window.fireClick(this.parentMenu, Popup.contextObj,
+          this.window.fireClick(this.parentMenu, Popup.popupNode,
                                 Popup.clickedItem.data);
         }
       }
@@ -943,10 +947,16 @@ function ContextMenuPopup(popupElt, window) {
     }
     else if (event.type === "popupshowing" && event.target === popupElt) {
       try {
+        // popupElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
+        // to avoid a Spidermonkey strict warning on earlier versions.
+        let triggerNode = popupElt.triggerNode || undefined;
+        let popupNode = window.capturePopupNode(triggerNode);
+
         // Show and hide items.  Set a "jetpackContextCurrent" property on the
         // DOM elements to signal which of our items match the current context.
         this.itemWrappers.forEach(function (wrapper) {
-          let contextCurr = window.areAllContextsCurrent(wrapper.item);
+          let contextCurr = window.areAllContextsCurrent(wrapper.item,
+                                                         popupNode);
           wrapper.elt.jetpackContextCurrent = contextCurr;
           wrapper.overflowElt.jetpackContextCurrent = contextCurr;
           wrapper.elt.hidden = !contextCurr;
