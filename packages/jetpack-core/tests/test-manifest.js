@@ -2,7 +2,7 @@ exports.testManifest = function(test) {
   var nullModule = {
     code: '',
     moduleInfo: {
-      dependencies: [],
+      dependencies: {},
       needsChrome: false
     }
   };
@@ -11,7 +11,7 @@ exports.testManifest = function(test) {
     "foo": {
       code: 'require("bar");',
       moduleInfo: {
-        dependencies: ["bar"],
+        dependencies: {"bar": {}},
         needsChrome: false
       }
     },
@@ -19,14 +19,21 @@ exports.testManifest = function(test) {
     "sorta-bad": {
       code: 'require("f" + "oo")',
       moduleInfo: {
-        dependencies: [],
+        dependencies: {},
+        needsChrome: false
+      }
+    },
+    "loads-wrong-thing": {
+      code: 'require("bar")',
+      moduleInfo: {
+        dependencies: {"bar": {url: "wrong"} },
         needsChrome: false
       }
     },
     "pure-evil": {
       code: 'require("ch" + "rome")',
       moduleInfo: {
-        dependencies: [],
+        dependencies: {},
         needsChrome: false
       }
     },
@@ -73,13 +80,20 @@ exports.testManifest = function(test) {
 
   checkWarnings([], "init of loader does not trigger warnings");
   
-  loader.require("foo");
-  checkWarnings([], "require() of non-chrome module w/ expected deps works");
+  loader.require("foo"); // this triggers warnings
+  checkWarnings(["require(bar) (called from foo) is loading bar, but the manifest couldn't find it", 
+                 "require(bar) (called from foo) is loading bar, but the manifest couldn't find it"],
+                "require() of non-chrome module w/ expected deps works");
 
   loader.require("sorta-bad");
   checkWarnings(["undeclared require(foo) called from sorta-bad"],
                 "require() of non-chrome module w/ unexpected " +
                 "non-chrome dep triggers warning");
+
+  loader.require("loads-wrong-thing"); // also triggers warnings
+  checkWarnings(["require(bar) (called from loads-wrong-thing) is loading bar, but is supposed to be loading wrong"
+                 ],
+                "require() loading wrong module is noticed");
 
   loader.require("pure-evil");
   checkWarnings(["undeclared require(chrome) called from pure-evil"],

@@ -1,10 +1,15 @@
 
-import os
+import os, re
 import unittest
 from StringIO import StringIO
-from cuddlefish.manifest import scan_module, scan_package
+from cuddlefish.manifest import scan_module, scan_package, \
+     update_manifest_with_fileinfo
 
-class Require(unittest.TestCase):
+class Extra:
+    def failUnlessKeysAre(self, d, keys):
+        self.failUnlessEqual(sorted(d.keys()), sorted(keys))
+
+class Require(unittest.TestCase, Extra):
     def scan(self, text):
         lines = StringIO(text).readlines()
         requires, chrome, problems = scan_module("fake.js", lines)
@@ -14,54 +19,54 @@ class Require(unittest.TestCase):
     def test_modules(self):
         mod = """var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one"])
+        self.failUnlessKeysAre(requires, ["one"])
         self.failUnlessEqual(chrome, False)
 
         mod = """var foo = require(\"one\");"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one"])
+        self.failUnlessKeysAre(requires, ["one"])
         self.failUnlessEqual(chrome, False)
 
         mod = """var foo=require(  'one' )  ;  """
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one"])
+        self.failUnlessKeysAre(requires, ["one"])
         self.failUnlessEqual(chrome, False)
 
         mod = """var foo = require('o'+'ne'); // tricky, denied"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         mod = """require('one').immediately.do().stuff();"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one"])
+        self.failUnlessKeysAre(requires, ["one"])
         self.failUnlessEqual(chrome, False)
 
         # these forms are commented out, and thus ignored
 
         mod = """// var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         mod = """/* var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         mod = """ * var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         mod = """ ' var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         mod = """ \" var foo = require('one');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
 
         # multiple requires
@@ -69,12 +74,12 @@ class Require(unittest.TestCase):
         mod = """const foo = require('one');
         const foo = require('two');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one", "two"])
+        self.failUnlessKeysAre(requires, ["one", "two"])
         self.failUnlessEqual(chrome, False)
 
         mod = """const foo = require('one'); const foo = require('two');"""
         requires, chrome = self.scan(mod)
-        self.failUnlessEqual(requires, ["one", "two"])
+        self.failUnlessKeysAre(requires, ["one", "two"])
         self.failUnlessEqual(chrome, False)
 
 def scan2(text, fn="fake.js"):
@@ -84,20 +89,20 @@ def scan2(text, fn="fake.js"):
     stderr.seek(0)
     return requires, chrome, problems, stderr.readlines()
 
-class Chrome(unittest.TestCase):
+class Chrome(unittest.TestCase, Extra):
 
     def test_ignore_loader(self):
         # we specifically ignore the two loader files
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, chrome, problems, err = scan2(mod, "blah/cuddlefish.js")
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, chrome, problems, err = scan2(mod, "securable-module.js")
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
@@ -105,7 +110,7 @@ class Chrome(unittest.TestCase):
     def test_chrome(self):
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, True)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
@@ -113,14 +118,14 @@ class Chrome(unittest.TestCase):
         mod = """var foo = require('foo');
         let {Cc,Ci} = require('chrome');"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, ["foo"])
+        self.failUnlessKeysAre(requires, ["foo"])
         self.failUnlessEqual(chrome, True)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
         mod = """let c = require('chrome');"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, True)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
@@ -128,18 +133,18 @@ class Chrome(unittest.TestCase):
         mod = """var foo = require('foo');
         let c = require('chrome');"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, ["foo"])
+        self.failUnlessKeysAre(requires, ["foo"])
         self.failUnlessEqual(chrome, True)
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
-class BadChrome(unittest.TestCase):
+class BadChrome(unittest.TestCase, Extra):
     def test_bad_alias(self):
         # using Components.* gets you a warning. If it looks like you're
         # using it to build an alias, the warning suggests a better way.
         mod = """let Cc = Components.classes;"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
         self.failUnlessEqual(problems, True)
         self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
@@ -150,7 +155,7 @@ class BadChrome(unittest.TestCase):
         # the warning also suggests a better way.
         mod = """if (Components.isSuccessCode(foo))"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
         self.failUnlessEqual(problems, True)
         self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
@@ -159,7 +164,7 @@ class BadChrome(unittest.TestCase):
 
         mod = """let CID = Components.ID""" # not one of the usual aliases
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, False)
         self.failUnlessEqual(problems, True)
         self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
@@ -171,7 +176,7 @@ class BadChrome(unittest.TestCase):
         mod = """let {Cc,Ci} = require('chrome');
         Cu.something();"""
         requires, chrome, problems, err = scan2(mod)
-        self.failUnlessEqual(requires, [])
+        self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(chrome, True)
         self.failUnlessEqual(problems, True)
         err = "".join(err)
@@ -183,10 +188,10 @@ class BadChrome(unittest.TestCase):
 class Package(unittest.TestCase):
     def test_bug_596573(self):
         jp_tests = "packages/jetpack-core/tests"
-        manifest, has_problems = scan_package("tests", jp_tests)
-        found = [modname
-                 for pkgname, modname, deps, needschrome in manifest
-                 if modname == "interoperablejs-read-only/compliance/" +
+        manifest, has_problems = scan_package("prefix", "resource:foo",
+                                              "jetpack-core", "tests", jp_tests)
+        found = [i.name for i in manifest.values()
+                 if i.name == "interoperablejs-read-only/compliance/" +
                                "nested/a/b/c/d"]
         self.failUnless(len(found) == 1)
         
@@ -196,11 +201,37 @@ class Package(unittest.TestCase):
         jp_core = "packages/jetpack-core/lib"
         assert os.path.isdir(jp_core) # we expect to be run from the SDK top
         stderr = StringIO()
-        manifest, has_problems = scan_package("jetpack-core", jp_core, stderr)
+        manifest, has_problems = scan_package("prefix-", "resource:foo/",
+                                              "jetpack-core", "lib",
+                                              jp_core, stderr)
         stderr.seek(0)
         err = stderr.readlines()
         self.failUnlessEqual(err, [], "".join(err))
         self.failUnlessEqual(has_problems, False)
+        update_manifest_with_fileinfo(["jetpack-core"], "jetpack-core",
+                                      manifest)
+
+        # look at a few samples from the manifest: this depends upon the
+        # behavior of other files in the SDK, so when those files change
+        # (specifically when they move or add dependencies), this test must
+        # be updated
+        self.failUnless("resource:foo/tab-browser.js" in manifest, manifest.keys())
+        tb = manifest["resource:foo/tab-browser.js"]
+        self.failUnlessEqual(tb.chrome, True)
+        self.failUnlessEqual(tb.name, "tab-browser")
+        self.failUnlessEqual(tb.packageName, "jetpack-core")
+        self.failUnless("window-utils" in tb.requires, tb.requires.values())
+        self.failUnlessEqual(tb.requires["window-utils"].url,
+                             "resource:foo/window-utils.js")
+        self.failUnlessEqual(tb.sectionName, "lib")
+        self.failUnlessEqual(tb.zipname,
+                             "resources/prefix-jetpack-core-lib/tab-browser.js")
+        h = tb.hash
+        self.failUnless(re.search(r'^[0-9a-f]{64}$', h), h)
+        # don't assert the actual value, since that will change each time
+        # page-mod.js changes
+
+        self.failUnless("resource:foo/api-utils.js" in manifest, manifest.keys())
 
 if __name__ == '__main__':
     unittest.main()

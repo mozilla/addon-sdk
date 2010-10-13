@@ -187,6 +187,7 @@
      this.sandboxFactory = options.sandboxFactory;
      this.sandboxes = {};
      this.modules = {};
+     this.module_infos = {};
      this.globals = options.globals;
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
@@ -203,22 +204,28 @@
          if (self.getModuleExports)
            exports = self.getModuleExports(basePath, module);
 
+         var module_info = null; /* null for require("chrome") */
          if (!exports) {
            var path = self.fs.resolveModule(basePath, module);
            if (!path)
              throw new Error('Module "' + module + '" not found');
-           if (!(path in self.modules)) {
-             var options = self.fs.getFile(path);
-             if (options.filename === undefined)
-               options.filename = path;
+           if (path in self.modules) {
+             module_info = self.module_infos[path];
+           } else {
+             module_info = self.fs.getFile(path);
+             /* module_info.filename is read by sandbox.evaluate() to
+                generate tracebacks, so the property must be named
+                ".filename" even though ".url" might be more accurate */
+             if (module_info.filename === undefined)
+               module_info.filename = path;
 
              if (self.securityPolicy &&
                  !self.securityPolicy.allowEval(self, basePath, module,
-                                                options))
+                                                module_info))
                throw new Error("access denied to execute module: " +
                                module);
 
-             var sandbox = self.sandboxFactory.createSandbox(options);
+             var sandbox = self.sandboxFactory.createSandbox(module_info);
              self.sandboxes[path] = sandbox;
              for (name in self.globals)
                sandbox.defineProperty(name, self.globals[name]);
@@ -239,16 +246,17 @@
              );
              sandbox.evaluate("var exports = {};");
              self.modules[path] = sandbox.getProperty("exports");
+             self.module_infos[path] = module_info;
              if (self.modifyModuleSandbox)
-               self.modifyModuleSandbox(sandbox, options);
-             sandbox.evaluate(options);
+               self.modifyModuleSandbox(sandbox, module_info);
+             sandbox.evaluate(module_info);
            }
            exports = self.modules[path];
          }
 
          if (self.securityPolicy &&
              !self.securityPolicy.allowImport(self, basePath, module,
-                                              exports))
+                                              module_info, exports))
            throw new Error("access denied to import module: " + module);
 
          return exports;

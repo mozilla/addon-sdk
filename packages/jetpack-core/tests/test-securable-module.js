@@ -339,7 +339,7 @@ exports.testSecurityPolicy = function (test) {
   var allowEval = false;
 
   var secpol = {
-    allowImport: function(loader, basePath, module, exports) {
+    allowImport: function(loader, basePath, module, module_info, exports) {
       if (loader != this.expectLoader)
         test.fail("loader != this.expectLoader");
       if (module == "beets" && exports.beets != 5)
@@ -350,12 +350,12 @@ exports.testSecurityPolicy = function (test) {
                  basePath);
       return true;
     },
-    allowEval: function(loader, basePath, module, options) {
+    allowEval: function(loader, basePath, module, module_info) {
       if (loader != this.expectLoader)
         test.fail("loader != this.expectLoader");
       if (!allowEval)
         return false;
-      lines.push('allowing eval of ' + options.contents.length +
+      lines.push('allowing eval of ' + module_info.contents.length +
                  ' chars for module ' + module + ' from ' + basePath);
       return true;
     }

@@ -4,6 +4,7 @@ import re
 
 import simplejson as json
 from cuddlefish.bunch import Bunch
+from manifest import scan_package, update_manifest_with_fileinfo
 
 MANIFEST_NAME = 'package.json'
 
@@ -209,7 +210,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                               default_loader=DEFAULT_LOADER):
     validate_resource_hostname(prefix)
 
-    manifest = []
+    manifest = {}
     build = Bunch(resources=Bunch(),
                   resourcePackages=Bunch(),
                   packageData=Bunch(),
@@ -238,13 +239,14 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
 
                 if is_code:
                     build.rootPaths.insert(0, resource_url)
-                    from manifest import scan_package
-                    pkg_manifest, problems = scan_package(cfg.name, dirname)
+                    pkg_manifest, problems = scan_package(prefix, resource_url,
+                                                          cfg.name,
+                                                          section, dirname)
                     if problems:
                         # the relevant instructions have already been written
                         # to stderr
                         raise BadChromeMarkerError()
-                    manifest.extend(pkg_manifest)
+                    manifest.update(pkg_manifest)
 
                 if is_data:
                     build.packageData[cfg.name] = resource_url
@@ -268,6 +270,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
 
     if 'loader' not in build:
         add_dep_to_build(DEFAULT_LOADER)
+
+    # now go back through and find out where each module lives, to record the
+    # pathname in the manifest
+    update_manifest_with_fileinfo(deps, DEFAULT_LOADER, manifest)
 
     return build
 

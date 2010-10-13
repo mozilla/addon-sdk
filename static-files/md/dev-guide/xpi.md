@@ -21,33 +21,26 @@ packages, structured like so:
         console.log("1 + 1 =", require("bar-module").add(1, 1));
         callbacks.quit();
       };
-    <BLANKLINE>
     aardvark/package.json:
       {
-        "description": "A package w/ a main module; can be built into
-                        an extension.",
+        "description": "A package w/ a main module; can be built into an extension.",
         "dependencies": ["jetpack-core", "barbeque"]
       }
-    <BLANKLINE>
     barbeque/lib/bar-module.js:
       exports.add = function add(a, b) {
         return a + b;
       };
-    <BLANKLINE>
     barbeque/package.json:
       {
         "description": "A package used by 'aardvark' as a library."
       }
-    <BLANKLINE>
     jetpack-core/lib/loader.js:
       // This module will be imported by the XPCOM harness/boostrapper
       // via Components.utils.import() and is responsible for creating a
       // CommonJS module loader.
-    <BLANKLINE>
     jetpack-core/package.json:
       {
-        "description": "A foundational package that provides a CommonJS
-                        module loader implementation.",
+        "description": "A foundational package that provides a CommonJS module loader implementation.",
         "loader": "lib/loader.js"
       }
 
@@ -83,13 +76,11 @@ auto-generated files:
     >>> document_dir('xpi-output')
     install.rdf:
       <RDF><!-- Extension metadata is here. --></RDF>
-    <BLANKLINE>
     components/harness.js:
       // This file contains XPCOM code that bootstraps a
       // Jetpack-based extension by loading its harness-options.json,
       // registering all its resource directories, executing its loader,
       // and then executing its main module's main() function.
-    <BLANKLINE>
     resources/guid-aardvark-lib/:
     <BLANKLINE>
     resources/guid-aardvark-lib/main.js:
@@ -97,70 +88,78 @@ auto-generated files:
         console.log("1 + 1 =", require("bar-module").add(1, 1));
         callbacks.quit();
       };
-    <BLANKLINE>
     resources/guid-barbeque-lib/:
     <BLANKLINE>
     resources/guid-barbeque-lib/bar-module.js:
       exports.add = function add(a, b) {
         return a + b;
       };
-    <BLANKLINE>
     resources/guid-jetpack-core-lib/:
     <BLANKLINE>
     resources/guid-jetpack-core-lib/loader.js:
       // This module will be imported by the XPCOM harness/boostrapper
       // via Components.utils.import() and is responsible for creating a
       // CommonJS module loader.
-    <BLANKLINE>
     harness-options.json:
       {
-       "loader": "resource://guid-jetpack-core-lib/loader.js",
-       "main": "main",
-       "manifest": [
-        [
-         "aardvark",
-         "main",
-         [
-          "bar-module"
-         ],
-         false
-        ],
-        [
-         "barbeque",
-         "bar-module",
-         [],
-         false
-        ],
-        [
-         "jetpack-core",
-         "loader",
-         [],
-         false
-        ]
-       ],
-       "packageData": {},
+       "loader": "resource://guid-jetpack-core-lib/loader.js", 
+       "main": "main", 
+       "manifest": {
+        "resource://guid-aardvark-lib/main.js": {
+         "chrome": false, 
+         "hash": "a592cf3cf924f2c77e0728d97131138fcb7495c77f5202ac55c2e0c77ef903c2", 
+         "name": "main", 
+         "packageName": "aardvark", 
+         "requires": {
+          "bar-module": {
+           "url": "resource://guid-barbeque-lib/bar-module.js"
+          }
+         }, 
+         "sectionName": "lib", 
+         "zipname": "resources/guid-aardvark-lib/main.js"
+        }, 
+        "resource://guid-barbeque-lib/bar-module.js": {
+         "chrome": false, 
+         "hash": "2515f8623e793571f1dffc4828de14a00a3da9be666147f8cebb3b3f1929e4d6", 
+         "name": "bar-module", 
+         "packageName": "barbeque", 
+         "requires": {}, 
+         "sectionName": "lib", 
+         "zipname": "resources/guid-barbeque-lib/bar-module.js"
+        }, 
+        "resource://guid-jetpack-core-lib/loader.js": {
+         "chrome": false, 
+         "hash": "efac9dc700a56e693ac75ab81955c11e6874ddc83d92c11177d643601eaac346", 
+         "name": "loader", 
+         "packageName": "jetpack-core", 
+         "requires": {}, 
+         "sectionName": "lib", 
+         "zipname": "resources/guid-jetpack-core-lib/loader.js"
+        }
+       }, 
+       "packageData": {}, 
        "resourcePackages": {
-        "guid-aardvark-lib": "aardvark",
-        "guid-barbeque-lib": "barbeque",
+        "guid-aardvark-lib": "aardvark", 
+        "guid-barbeque-lib": "barbeque", 
         "guid-jetpack-core-lib": "jetpack-core"
-       },
+       }, 
        "resources": {
         "guid-aardvark-lib": [
-         "resources",
+         "resources", 
          "guid-aardvark-lib"
-        ],
+        ], 
         "guid-barbeque-lib": [
-         "resources",
+         "resources", 
          "guid-barbeque-lib"
-        ],
+        ], 
         "guid-jetpack-core-lib": [
-         "resources",
+         "resources", 
          "guid-jetpack-core-lib"
         ]
-       },
+       }, 
        "rootPaths": [
-        "resource://guid-jetpack-core-lib/",
-        "resource://guid-barbeque-lib/",
+        "resource://guid-jetpack-core-lib/", 
+        "resource://guid-barbeque-lib/", 
         "resource://guid-aardvark-lib/"
        ]
       }
