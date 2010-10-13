@@ -76,6 +76,9 @@ function _guid(object, force) {
 function noSetter() {
   throw new TypeError('setting a property that has only a getter');
 }
+function nonWritable() {
+  throw new TypeError('setting a property that is read-only');
+}
 
 /**
  * Function that generates ES5 object mutation functions(freeze, seal
@@ -321,6 +324,7 @@ function defineProperty(object, name, descriptor) {
     if (false === descriptor.writable) {
       let value = descriptor.value;
       setGetter.call(object, name, function() value);
+      setSetter.call(object, name, nonWritable);
     }
     else {
       // temporary removing proto to avoid inherited getter / setter
