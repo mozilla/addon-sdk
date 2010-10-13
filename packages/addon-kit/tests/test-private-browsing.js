@@ -163,21 +163,5 @@ else {
   exports.testNoImpl = function (test) {
     test.assertEqual(pb.active, false,
                      "pb.active returns false when private browsing isn't supported");
-
-
-    // Setting pb.active = true shouldn't have any effect. Also, no callbacks
-    // should have been called. We'll just test one callback since they are
-    // under the same code path.
-    let wasActivated = false;
-
-    pb.onStart = function () {
-      wasActivated = true;
-    }
-
-    pb.active = true;
-    test.assertEqual(pb.active, false,
-                     "pb.active returns false even when set to true");
-    test.assertEqual(wasActivated, false,
-                     "onStart callback wasn't run when PB isn't supported");
   };
 }
