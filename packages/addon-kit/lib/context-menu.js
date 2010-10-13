@@ -49,6 +49,8 @@ if (!require("xul-app").is("Firefox")) {
 
 const apiUtils = require("api-utils");
 const collection = require("collection");
+const { Worker } = require("content");
+const url = require("url");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -107,13 +109,6 @@ exports.Item = apiUtils.publicConstructor(Item);
 exports.Menu = apiUtils.publicConstructor(Menu);
 exports.Separator = apiUtils.publicConstructor(Separator);
 
-/**
- * Adds an item to the context menu.
- *
- * @param item
- *        The item to add, an Item or Menu.  Separators can only be added to
- *        submenus, not the top-level context menu.
- */
 exports.add = function contextMenu_add(item) {
   if (item instanceof Separator) {
     throw new Error("Separators cannot be added to the top-level " +
@@ -122,12 +117,6 @@ exports.add = function contextMenu_add(item) {
   browserManager.addItem(item);
 };
 
-/**
- * Removes an item from the context menu.
- *
- * @param item
- *        The item to remove.  It must have been previously added.
- */
 exports.remove = function contextMenu_remove(item) {
   browserManager.removeItem(item);
 };
@@ -136,41 +125,55 @@ exports.remove = function contextMenu_remove(item) {
 exports._insertionPoint = insertionPoint;
 
 
-/**
- * Creates a simple menu item.
- *
- * @params options
- *         If any of the following options are invalid, an error is thrown:
- *         @prop label
- *               The item's label.  It must be either a string or an object that
- *               implements toString().
- *         @prop data
- *               An optional arbitrary value to associate with the item.  It
- *               must be either a string or an object that implements
- *               toString().
- *         @prop onClick
- *               An optional function that will be called when the item is
- *               clicked.  It is called as onClick(contextObj, item).
- *               contextObj is an object describing the context in which the
- *               context menu was invoked: { node, document, window }, where
- *               node is the node the user right-clicked to invoke the menu,
- *               document is the node's document, and window is the document's
- *               window.  item is the item itself.
- *         @prop context
- *               If the item is added to the top-level context menu, this
- *               specifies the context under which the item will appear.  It
- *               must be a string, function, undefined or null, or an array.  If
- *               undefined, the page context is assumed.  Ignored if the item is
- *               contained in a submenu.
- */
 function Item(options) {
-  options = apiUtils.validateOptions(options, {
+  let rules = optionsRules();
+  rules.data = {
+    map: function (v) v.toString(),
+    is: ["string", "undefined"]
+  };
+  options = apiUtils.validateOptions(options, rules);
+
+  defineGetters(this, options);
+
+  // TODO: Add setter for this?
+  this.__defineGetter__("data", function () {
+    return "data" in options ? options.data : undefined;
+  });
+
+  this.toString = function Item_toString() {
+    return '[object Item "' + options.label + '"]';
+  };
+}
+
+function Menu(options) {
+  let rules = optionsRules();
+  rules.items = {
+    is: ["array"]
+  };
+  options = apiUtils.validateOptions(options, rules);
+
+  defineGetters(this, options);
+
+  // TODO: Add setter for this?
+  this.__defineGetter__("items", function () options.items.slice(0));
+
+  this.toString = function Menu_toString() {
+    return '[object Menu "' + options.label + '"]';
+  };
+}
+
+function Separator() {
+  this.toString = function Separator_toString() {
+    return "[object Separator]";
+  };
+}
+
+
+// Returns rules for apiUtils.validateOptions() common to Item and Menu.
+function optionsRules() {
+  return {
     context: {
-      is: ["undefined", "null", "string", "function", "array"]
-    },
-    data: {
-      map: function (v) v.toString(),
-      is: ["string", "undefined"]
+      is: ["undefined", "null", "string", "array"]
     },
     label: {
       map: function (v) v.toString(),
@@ -178,98 +181,61 @@ function Item(options) {
       ok: function (v) !!v,
       msg: "The item must have a non-empty string label."
     },
-    onClick: {
+    contentScript: {
+      is: ["string", "array", "undefined"],
+      ok: function (v) {
+        return apiUtils.getTypeOf(v) !== "array" ||
+               v.every(function (s) typeof(s) === "string");
+      }
+    },
+    contentScriptURL: {
+      is: ["string", "array", "undefined"],
+      ok: function (v) {
+        if (!v)
+          return true;
+        let arr = apiUtils.getTypeOf(v) === "array" ? v : [v];
+        try {
+          return arr.every(function (s) {
+            return apiUtils.getTypeOf(s) === "string" && url.toFilename(s);
+          });
+        }
+        catch (err) {}
+        return false;
+      },
+      msg: "The 'contentScriptURL' option must be a local file URL or " +
+           "an array of local file URLs."
+    },
+    onMessage: {
       is: ["function", "undefined"]
     }
-  });
-
-  // TODO: Add setters for these.  Updating label and data would require finding
-  // this item's DOM element and changing its attributes as well.
-  this.__defineGetter__("label", function () options.label);
-  this.__defineGetter__("onClick", function () options.onClick || undefined);
-  this.__defineGetter__("data", function () {
-    return "data" in options ? options.data : undefined;
-  });
-
-  collection.addCollectionProperty(this, "context");
-  if (options.context)
-    this.context.add(options.context);
-
-  this.toString = function Item_toString() {
-    return '[object Item "' + options.label + '"]';
   };
 }
 
-/**
- * Creates an item that expands into a submenu.
- *
- * @params options
- *         If any of the following options are invalid, an error is thrown:
- *         @prop label
- *               The menu's label.  It must be either a string or an object that
- *               implements toString().
- *         @prop items
- *               An array of items that the menu will contain.
- *         @prop onClick
- *               An optional function that will be called when any of the menu's
- *               Item descendants is clicked. (The onClicks of descendants are
- *               invoked first, in a bottom-up, bubbling manner.)  It is called
- *               as onClick(contextObj, item).  contextObj is an object
- *               describing the context in which the context menu was invoked:
- *               { node, document, window }, where node is the node the user
- *               right-clicked to invoke the menu, document is the node's
- *               document, and window is the document's window.  item is the
- *               the item that was clicked.
- *         @prop context
- *               If the item is added to the top-level context menu, this
- *               specifies the context under which the item will appear.  It
- *               must be a string, function, undefined or null, or an array.  If
- *               undefined, the page context is assumed.  Ignored if the item is
- *               contained in a submenu.
- */
-function Menu(options) {
-  options = apiUtils.validateOptions(options, {
-    context: {
-      is: ["undefined", "null", "string", "function", "array"]
-    },
-    items: {
-      is: ["array"]
-    },
-    label: {
-      map: function (v) v.toString(),
-      is: ["string"],
-      ok: function (v) !!v,
-      msg: "The menu must have a non-empty string label."
-    },
-    onClick: {
-      is: ["function", "undefined"]
-    }
+// Defines some getters and other properties that are common to Item and Menu.
+// item is the Item or Menu object on which to define the getters, and options
+// is a validated options object.
+function defineGetters(item, options) {
+  // TODO: Add setter for label?  It would require finding the item's DOM
+  // element and changing its attributes as well.  Note however that
+  // WorkerRegistry relies on label remaining constant, so if setters are added,
+  // that would need fixing.
+  item.__defineGetter__("label", function () options.label);
+
+  // Stupid ternaries to avoid Spidermonkey strict warnings.
+  item.__defineGetter__("contentScript", function () {
+    return "contentScript" in options ? options.contentScript : undefined;
+  });
+  item.__defineGetter__("contentScriptURL", function () {
+    return "contentScriptURL" in options ? options.contentScriptURL : undefined;
+  });
+  item.__defineGetter__("onMessage", function () {
+    return "onMessage" in options ? options.onMessage : undefined;
   });
 
-  // TODO: Add setters for these.  Updating label and items would require
-  // finding this menus's DOM element updating it as well.
-  this.__defineGetter__("label", function () options.label);
-  this.__defineGetter__("items", function () options.items.slice(0));
-  this.__defineGetter__("onClick", function () options.onClick || undefined);
-
-  collection.addCollectionProperty(this, "context");
-  if (options.context)
-    this.context.add(options.context);
-
-  this.toString = function Menu_toString() {
-    return '[object Menu "' + options.label + '"]';
-  };
+  collection.addCollectionProperty(item, "context");
+  if ("context" in options)
+    item.context.add(options.context);
 }
-
-/**
- * Creates a menu separator.
- */
-function Separator() {
-  this.toString = function Separator_toString() {
-    return "[object Separator]";
-  };
-}
-
 
 // Does a binary search on elts, a NodeList, and returns the DOM element
 // before which an item with targetLabel should be inserted.  null is returned
@@ -359,6 +325,215 @@ let browserManager = {
 };
 
 
+// A type of Worker tailored to our uses.
+const ContextMenuWorker = Worker.compose({
+
+  // Returns true if any context listeners are defined in the worker's port.
+  anyContextListeners: function CMW_anyContextListeners() {
+    return this._port._listeners("context").length > 0;
+  },
+
+  // Returns true if any of the context listeners in the worker's port return
+  // true.  popupNode is the node that was context-clicked.
+  isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
+    let listeners = this._port._listeners("context");
+    for (let i = 0; i < listeners.length; i++)
+      if (listeners[i].call(this._port._sandbox, popupNode))
+        return true;
+    return false;
+  },
+
+  // Emits a click event in the worker's port.  popupNode is the node that was
+  // context-clicked, and clickedItemData is the data of the item that was
+  // clicked.
+  fireClick: function CMW_fireClick(popupNode, clickedItemData) {
+    this._port._emit("click", popupNode, clickedItemData);
+  },
+
+  // Frees the worker's resources.
+  destroy: function CMW_destroy() {
+    this._deconstructWorker();
+  }
+});
+
+
+// This class creates and stores content workers for pairs of menu items and
+// content windows.  Since workers need to be looked up every time the context
+// menu is shown, the main purpose of this class, in addition to creating and
+// storing workers, is to provide fast lookup of workers given a menu item and
+// content window.
+function WorkerRegistry() {
+  // This is a matrix.  The rows are menu item keys, the columns content window
+  // keys.  Each entry in the matrix stores workers for pairs of content windows
+  // and menu items.
+  //
+  // workers[i][w] is an array of objects { item, win, worker }.  item is a menu
+  // item whose key is i, win is a content window whose key is w, and worker is
+  // the content worker created from the pair.  The reason workers[i][w] is an
+  // array and not a single object is that we don't require menu item keys and
+  // content window keys to be unique.
+  //
+  // This structure is fairly simple and allows worker lookups in constant time
+  // in the best case.  In the worst case, however -- when all content windows
+  // have the same key and all menu items have the same key -- lookup is O(I*W),
+  // where I is the number of items and W is the number of windows in the
+  // registry.  I don't expect users to open many duplicate pages or developers
+  // to create many identical items, so I think it's a good trade-off.
+  this.workers = {};
+
+  // These are simple lists of registered menu items and content windows.  For
+  // better performance in the best and common cases (i.e., O(1) instead of
+  // O(n)) these could be hash tables with separate chaining...
+  this.items = [];
+  this.wins = [];
+}
+
+WorkerRegistry.prototype = {
+
+  // Registers a content window, creating workers for each pair formed by the
+  // window and all previously registered menu items.
+  registerContentWin: function WR_registerContentWin(win) {
+    let winKey = this._winKey(win);
+    let (self = this) this.items.forEach(function (item) {
+      self._registerPair(win, winKey, item, self._itemKey(item));
+    });
+    this.wins.push(win);
+  },
+
+  // Registers an array of menu items, creating workers for each pair formed by
+  // the items and all previously registered content windows.
+  registerItems: function WR_registerItems(items) {
+    let (self = this) items.forEach(function (item) {
+      let itemKey = self._itemKey(item);
+      self.workers[itemKey] = self.workers[itemKey] || {};
+      self.wins.forEach(function (win) {
+        self._registerPair(win, self._winKey(win), item, itemKey);
+      });
+      self.items.push(item);
+    });
+  },
+
+  // Unregisters a content window, destroying all workers related to it.
+  unregisterContentWin: function WR_unregisterContentWin(win) {
+    let winKey = this._winKey(win);
+    let (self = this) this.items.forEach(function (item) {
+      let itemKey = self._itemKey(item);
+      let list = self._unregisterPair(win, winKey, item, itemKey);
+
+      // Delete the window column (of this item row) if there are no more
+      // entries.
+      if (!list.length)
+        delete self.workers[itemKey][winKey];
+    });
+
+    let idx = this.wins.indexOf(win);
+    if (idx < 0)
+      throw new Error("Internal error: window not registered.");
+    this.wins.splice(idx, 1);
+  },
+
+  // Unregisters an array of menu items, destroying all workers related to them.
+  unregisterItems: function WR_unregisterItems(items) {
+    let (self = this) items.forEach(function (item) {
+      let allEmpty = true;
+      let itemKey = self._itemKey(item);
+      self.wins.forEach(function (win) {
+        let list = self._unregisterPair(win, self._winKey(win), item, itemKey);
+        allEmpty = allEmpty && !list.length;
+      });
+
+      // Delete the item row if there are no more entries in any of its window
+      // columns.
+      if (allEmpty)
+        delete self.workers[itemKey];
+
+      let idx = self.items.indexOf(item);
+      if (idx < 0)
+        throw new Error("Internal error: item not registered.");
+      self.items.splice(idx, 1);
+    });
+  },
+
+  // Returns the worker for the given content-window-item pair, or null if none
+  // exists.
+  find: function WR_find(contentWin, item) {
+    let itemKey = this._itemKey(item);
+    if (itemKey in this.workers) {
+      let wins = this.workers[itemKey];
+      let winKey = this._winKey(contentWin);
+      if (winKey in wins) {
+        let list = wins[winKey];
+        let idx = this._indexOfPair(list, contentWin, item);
+        if (idx >= 0)
+          return list[idx].worker;
+      }
+    }
+    return null;
+  },
+
+  _registerPair: function WR__registerPair(win, winKey, item, itemKey) {
+    let worker = this._makeWorker(win, item);
+    this.workers[itemKey][winKey] = this.workers[itemKey][winKey] || [];
+    this.workers[itemKey][winKey].push({
+      win: win,
+      item: item,
+      worker: worker
+    });
+  },
+
+  _unregisterPair: function WR__unregisterPair(win, winKey, item, itemKey) {
+    if (!(itemKey in this.workers))
+      throw new Error("Internal error: item key not in registry.");
+    if (!(winKey in this.workers[itemKey]))
+      throw new Error("Internal error: window key not in registry.");
+    let list = this.workers[itemKey][winKey];
+    let idx = this._indexOfPair(list, win, item);
+    if (idx < 0)
+      throw new Error("Internal error: target pair not found.");
+    list[idx].worker.destroy();
+    list.splice(idx, 1);
+    return list;
+  },
+
+  _indexOfPair: function WR__indexOfPair(list, win, item) {
+    let idx = 0;
+    for (; idx < list.length; idx++)
+      if (list[idx].win === win && list[idx].item === item)
+        break;
+    return idx >= list.length ? -1 : idx;
+  },
+
+  _makeWorker: function WR__makeWorker(win, item) {
+    let worker = ContextMenuWorker({
+      window: win.wrappedJSObject,
+      contentScript: item.contentScript,
+      contentScriptURL: item.contentScriptURL,
+      onError: function (err) console.exception(err)
+    });
+    worker.on("message", function workerOnMessage(msg) {
+      if (item.onMessage) {
+        try {
+          item.onMessage(msg);
+        }
+        catch (err) {
+          console.exception(err);
+        }
+      }
+    });
+    return worker;
+  },
+
+  _winKey: function WR__winKey(win) {
+    return win.document.URL;
+  },
+
+  _itemKey: function WR__itemKey(item) {
+    // We rely on label remaining constant over the lifetime of the item.
+    return item.label;
+  }
+};
+
+
 // Keeps track of a single browser window.  Responsible for providing a
 // description of the window's current context and determining whether an item
 // matches the current context.
@@ -373,8 +548,20 @@ function BrowserWindow(window) {
   let popup = this.doc.getElementById("contentAreaContextMenu");
   if (!popup)
     throw new Error("Internal error: Context menu popup not found.");
-
   this.contextMenuPopup = new ContextMenuPopup(popup, this);
+
+  // This browser window is responsible for workers related to its content
+  // windows.
+  this.workerReg = new WorkerRegistry();
+
+  // New workers are created when content windows are loaded.
+  window.gBrowser.addEventListener("DOMContentLoaded", this, false);
+
+  // Register content windows that are already open and loaded.
+  let browsers = window.gBrowser.browsers;
+  for (let i = 0; i < browsers.length; i++)
+    if (browsers[i].contentDocument.readyState === "complete")
+      this._registerContentWin(browsers[i].contentWindow);
 }
 
 BrowserWindow.prototype = {
@@ -382,6 +569,40 @@ BrowserWindow.prototype = {
   // Adds an array of items to the window's context menu.
   addItems: function BW_addItems(items) {
     this.contextMenuPopup.addItems(items);
+    this.workerReg.registerItems(items);
+  },
+
+  // Returns true if all of item's contexts are current in the window.
+  areAllContextsCurrent: function BW_areAllContextsCurrent(item) {
+    let contextObj = this.contextObj();
+    let worker = this.workerReg.find(contextObj.window, item);
+
+    // If the worker for the content-window-item pair doesn't exist (e.g.,
+    // because the page hasn't loaded yet), we can't really make a good decision
+    // since the content script may have a context listener.  So just don't show
+    // the item at all.
+    if (!worker)
+      return false;
+
+    // If there are no contexts given at all, the page context applies.
+    let hasContentContext = worker.anyContextListeners();
+    if (!hasContentContext && !item.context.length)
+      return this._isPageContextCurrent();
+
+    // Otherwise, determine if all given contexts are current.  Evaluate the
+    // declarative contexts first and the worker's context listeners last.  That
+    // way the listener might be able to avoid some work.
+    let curr = true;
+    for (let ctxt in item.context) {
+      curr = curr &&
+             !ctxt ? this._isPageContextCurrent() :
+             typeof(ctxt) === "string" ? this._isSelectorContextCurrent(ctxt) :
+             false;
+      if (!curr)
+        return false;
+    }
+    return !hasContentContext ||
+           worker.isAnyContextCurrent(contextObj.node);
   },
 
   // Returns an object describing the current context.  This object may need to
@@ -414,40 +635,25 @@ BrowserWindow.prototype = {
   // should not be used afterward.
   destroy: function BW_destroy() {
     this.contextMenuPopup.destroy();
+    this.window.gBrowser.removeEventListener("DOMContentLoaded", this, false);
+    let (self = this) this.workerReg.wins.forEach(function (win) {
+      self._unregisterContentWin(win);
+    });
   },
 
-  // Returns true if any of item's contexts is current in the window.
-  isAnyContextCurrent: function BW_isAnyContextCurrent(item) {
-    if (!item.context.length)
-      return this._isPageContextCurrent();
-
-    for (let ctxt in item.context) {
-      let t = typeof(ctxt);
-      let curr = !ctxt ? this._isPageContextCurrent() :
-                 t === "string" ? this._isSelectorContextCurrent(ctxt) :
-                 t === "function" ? this._isFunctionContextCurrent(item, ctxt) :
-                 false;
-      if (curr)
-        return true;
-    }
-    return false;
+  // Emits a click event in the port of the content worker related to the
+  // contextObj.window-item pair.  Listeners will be passed contextObj.node and
+  // clickedItemData.
+  fireClick: function BW_fireClick(item, contextObj, clickedItemData) {
+    let worker = this.workerReg.find(contextObj.window, item);
+    if (worker)
+      worker.fireClick(contextObj.node, clickedItemData);
   },
 
   // Removes an array of items from the window's context menu.
   removeItems: function BW_removeItems(items) {
     this.contextMenuPopup.removeItems(items);
-  },
-
-  // Returns true if func returns true given the window's current context.  item
-  // is needed because it is |this| inside of func.
-  _isFunctionContextCurrent: function BW__isFunctionContextCurrent(item, func) {
-    try {
-      return !!func.call(item, this.contextObj());
-    }
-    catch (err) {
-      console.exception(err);
-    }
-    return false;
+    this.workerReg.unregisterItems(items);
   },
 
   // Returns true if the page context is current in the window.  The page
@@ -487,6 +693,34 @@ BrowserWindow.prototype = {
       cursor = cursor.parentNode;
     }
     return null;
+  },
+
+  // Handles content window loads and unloads.
+  handleEvent: function BW_handleEvent(event) {
+    try {
+      switch (event.type) {
+      case "DOMContentLoaded":
+        if (event.target.defaultView)
+          this._registerContentWin(event.target.defaultView);
+        break;
+      case "unload":
+        this._unregisterContentWin(event.target.defaultView);
+        break;
+      }
+    }
+    catch (err) {
+      console.exception(err);
+    }
+  },
+
+  _registerContentWin: function BW__registerContentWin(win) {
+    win.addEventListener("unload", this, false);
+    this.workerReg.registerContentWin(win);
+  },
+
+  _unregisterContentWin: function BW__unregisterContentWin(win) {
+    win.removeEventListener("unload", this, false);
+    this.workerReg.unregisterContentWin(win);
   }
 };
 
@@ -527,13 +761,13 @@ Popup.prototype = {
 
   // The popup is responsible for two command events: those originating at items
   // in the popup and those bubbling to the popup's parent menu.  In the first
-  // case the popup calls the item's onClick method, and in the second the popup
-  // calls its parent menu's onClick -- in that order.
+  // case the popup dispatches a click to the item, and in the second the popup
+  // dispatches a click to its parent menu -- in that order.
   handleEvent: function Popup_handleEvent(event) {
     try {
       let elt = event.target;
       if (elt.className.split(/\s+/).indexOf(ITEM_CLASS) >= 0) {
-        // If the event originated at an item in the popup, call its onClick.
+        // If the event originated at an item in the popup, dispatch a click.
         // Also set Popup.clickedItem and contextObj so ancestor popups know
         // which item was clicked and under what context.
         let childItemWrapper = this._findItemWrapper(elt);
@@ -543,25 +777,13 @@ Popup.prototype = {
           let contextObj = this.window.contextObj(topLevelItem);
           Popup.clickedItem = clickedItem;
           Popup.contextObj = contextObj;
-
-          if (clickedItem.onClick) {
-            try {
-              clickedItem.onClick(contextObj, clickedItem);
-            }
-            catch (err) {
-              console.exception(err);
-            }
-          }
+          this.window.fireClick(clickedItem, contextObj, clickedItem.data);
         }
 
-        // Call the onClick of this popup's parent menu.
-        if (this.parentMenu && this.parentMenu.onClick) {
-          try {
-            this.parentMenu.onClick(Popup.contextObj, Popup.clickedItem);
-          }
-          catch (err) {
-            console.exception(err);
-          }
+        // Dispatch a click to this popup's parent menu.
+        if (this.parentMenu) {
+          this.window.fireClick(this.parentMenu, Popup.contextObj,
+                                Popup.clickedItem.data);
         }
       }
     }
@@ -724,7 +946,7 @@ function ContextMenuPopup(popupElt, window) {
         // Show and hide items.  Set a "jetpackContextCurrent" property on the
         // DOM elements to signal which of our items match the current context.
         this.itemWrappers.forEach(function (wrapper) {
-          let contextCurr = window.isAnyContextCurrent(wrapper.item);
+          let contextCurr = window.areAllContextsCurrent(wrapper.item);
           wrapper.elt.jetpackContextCurrent = contextCurr;
           wrapper.overflowElt.jetpackContextCurrent = contextCurr;
           wrapper.elt.hidden = !contextCurr;
