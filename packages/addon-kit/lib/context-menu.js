@@ -121,9 +121,6 @@ exports.remove = function contextMenu_remove(item) {
   browserManager.removeItem(item);
 };
 
-// This is exported only to test it, on the suggestion of bug 548590 comment 30.
-exports._insertionPoint = insertionPoint;
-
 
 function Item(options) {
   let rules = optionsRules();
