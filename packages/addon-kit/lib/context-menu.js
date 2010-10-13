@@ -51,6 +51,7 @@ const apiUtils = require("api-utils");
 const collection = require("collection");
 const { Worker } = require("content");
 const url = require("url");
+const { MatchPattern } = require("match-pattern");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -82,9 +83,9 @@ const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 // The ID of the overflow submenu's <menupopup>.
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
-// These are used by BrowserWindow._isPageContextCurrent below.  If the
-// popupNode or any of its ancestors is one of these, Firefox uses a tailored
-// context menu, and so the page context doesn't apply.
+// These are used by PageContext.isCurrent below.  If the popupNode or any of
+// its ancestors is one of these, Firefox uses a tailored context menu, and so
+// the page context doesn't apply.
 const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLAnchorElement,
   Ci.nsIDOMHTMLAppletElement,
@@ -166,11 +167,113 @@ function Separator() {
 }
 
 
+function Context() {}
+
+function PageContext() {
+  this.isCurrent = function PageContext_isCurrent(popupNode) {
+    let win = popupNode.ownerDocument.defaultView;
+    if (win && !win.getSelection().isCollapsed)
+      return false;
+
+    let cursor = popupNode;
+    while (cursor && !(cursor instanceof Ci.nsIDOMHTMLHtmlElement)) {
+      if (NON_PAGE_CONTEXT_ELTS.some(function (iface) cursor instanceof iface))
+        return false;
+      cursor = cursor.parentNode;
+    }
+    return true;
+  };
+}
+
+PageContext.prototype = new Context();
+
+function SelectorContext(selector) {
+  let opts = apiUtils.validateOptions({ selector: selector }, {
+    selector: {
+      is: ["string"],
+      msg: "selector must be a string."
+    }
+  });
+
+  this.adjustPopupNode = function SelectorContext_adjustPopupNode(node) {
+    return closestMatchingAncestor(node);
+  };
+
+  this.isCurrent = function SelectorContext_isCurrent(popupNode) {
+    return !!closestMatchingAncestor(popupNode);
+  };
+
+  // Returns node if it matches selector, or the closest ancestor of node that
+  // matches, or null if node and none of its ancestors matches.
+  function closestMatchingAncestor(node) {
+    let cursor = node;
+    while (cursor) {
+      if (cursor.mozMatchesSelector(selector))
+        return cursor;
+      if (cursor instanceof Ci.nsIDOMHTMLHtmlElement)
+        break;
+      cursor = cursor.parentNode;
+    }
+    return null;
+  }
+}
+
+SelectorContext.prototype = new Context();
+
+function SelectionContext() {
+  this.isCurrent = function SelectionContext_isCurrent(popupNode) {
+    let win = popupNode.ownerDocument.defaultView;
+    if (!win)
+      return false;
+    return !win.getSelection().isCollapsed;
+  };
+}
+
+SelectionContext.prototype = new Context();
+
+function URLContext(patterns) {
+  let opts = apiUtils.validateOptions({ patterns: patterns }, {
+    patterns: {
+      map: function (v) apiUtils.getTypeOf(v) === "array" ? v : [v],
+      ok: function (v) v.every(function (p) typeof(p) === "string"),
+      msg: "patterns must be a string or an array of strings."
+    }
+  });
+  try {
+    patterns = opts.patterns.map(function (p) new MatchPattern(p));
+  }
+  catch (err) {
+    console.error("Error creating URLContext match pattern:");
+    throw err;
+  }
+
+  this.isCurrent = function URLContext_isCurrent(popupNode) {
+    let url = popupNode.ownerDocument.URL;
+    return patterns.some(function (p) p.test(url));
+  };
+}
+
+URLContext.prototype = new Context();
+
+exports.PageContext = apiUtils.publicConstructor(PageContext);
+exports.SelectorContext = apiUtils.publicConstructor(SelectorContext);
+exports.SelectionContext = apiUtils.publicConstructor(SelectionContext);
+exports.URLContext = apiUtils.publicConstructor(URLContext);
+
+
 // Returns rules for apiUtils.validateOptions() common to Item and Menu.
 function optionsRules() {
   return {
     context: {
-      is: ["undefined", "null", "string", "array"]
+      is: ["undefined", "object", "array"],
+      ok: function (v) {
+        if (!v)
+          return true;
+        let arr = apiUtils.getTypeOf(v) === "array" ? v : [v];
+        return arr.every(function (o) o instanceof Context);
+      },
+      msg: "The 'context' option must be a Context object or an array of " +
+           "Context objects."
     },
     label: {
       map: function (v) v.toString(),
@@ -230,7 +333,7 @@ function defineGetters(item, options) {
   });
 
   collection.addCollectionProperty(item, "context");
-  if ("context" in options)
+  if (options.context)
     item.context.add(options.context);
 }
 
@@ -578,8 +681,8 @@ BrowserWindow.prototype = {
   // make such adjustments.  Returns an adjusted popupNode.
   adjustPopupNode: function BW_adjustPopupNode(popupNode, topLevelItem) {
     for (let ctxt in topLevelItem.context) {
-      if (typeof(ctxt) === "string") {
-        let ctxtNode = this._popupNodeMatchingSelector(ctxt, popupNode);
+      if (typeof(ctxt.adjustPopupNode) === "function") {
+        let ctxtNode = ctxt.adjustPopupNode(popupNode);
         if (ctxtNode) {
           popupNode = ctxtNode;
           break;
@@ -603,19 +706,14 @@ BrowserWindow.prototype = {
     // If there are no contexts given at all, the page context applies.
     let hasContentContext = worker.anyContextListeners();
     if (!hasContentContext && !item.context.length)
-      return this._isPageContextCurrent(popupNode);
+      return new PageContext().isCurrent(popupNode);
 
     // Otherwise, determine if all given contexts are current.  Evaluate the
     // declarative contexts first and the worker's context listeners last.  That
     // way the listener might be able to avoid some work.
     let curr = true;
     for (let ctxt in item.context) {
-      curr = curr &&
-             !ctxt ?
-               this._isPageContextCurrent(popupNode) :
-             typeof(ctxt) === "string" ?
-               this._isSelectorContextCurrent(ctxt, popupNode) :
-             false;
+      curr = curr && ctxt.isCurrent(popupNode);
       if (!curr)
         return false;
     }
@@ -655,44 +753,6 @@ BrowserWindow.prototype = {
   removeItems: function BW_removeItems(items) {
     this.contextMenuPopup.removeItems(items);
     this.workerReg.unregisterItems(items);
-  },
-
-  // Returns true if the page context is current in the window.  The page
-  // context arises when the user invokes the context menu on a non-interactive
-  // part of the page.
-  _isPageContextCurrent: function BW__isPageContextCurrent(popupNode) {
-    let contentWin = popupNode.ownerDocument.defaultView;
-    if (!contentWin.getSelection().isCollapsed)
-      return false;
-
-    let cursor = popupNode;
-    while (cursor && !(cursor instanceof Ci.nsIDOMHTMLHtmlElement)) {
-      if (NON_PAGE_CONTEXT_ELTS.some(function (iface) cursor instanceof iface))
-        return false;
-      cursor = cursor.parentNode;
-    }
-    return true;
-  },
-
-  // Returns true if the node the user clicked to invoke the context menu or
-  // any of the node's ancestors matches the given CSS selector.
-  _isSelectorContextCurrent: function BW__isSelCtxtCurr(selector, popupNode) {
-    return !!this._popupNodeMatchingSelector(selector, popupNode);
-  },
-
-  // Returns popupNode if it matches selector, or the closest ancestor of
-  // popupNode that matches selector, or null if popupNode and none of its
-  // ancestors matches selector.
-  _popupNodeMatchingSelector: function BW__pnMatchingSel(selector, popupNode) {
-    let cursor = popupNode;
-    while (cursor) {
-      if (cursor.mozMatchesSelector(selector))
-        return cursor;
-      if (cursor instanceof Ci.nsIDOMHTMLHtmlElement)
-        break;
-      cursor = cursor.parentNode;
-    }
-    return null;
   },
 
   // Handles content window loads and unloads.

@@ -59,26 +59,57 @@ non-text node, or while a selection exists.
 
 You can specify some simple, declarative contexts when you construct a menu
 item by setting the `context` property of the options object passed to its
-constructor.  Such contexts may be specified with any of the following types:
+constructor.  Such contexts may be specified with instances of any of the
+following types.  Each is a constructor exported by the `context-menu` module.
 
 <table>
   <tr>
-    <td>string</td>
-    <td>
-      A CSS selector.  This context occurs when the menu is invoked on a node
-      that either matches this selector or has an ancestor that matches.  The
-      selector may include multiple selectors separated by commas, e.g.,
-      <code>"a[href], img"</code>.
-    </td>
-  </tr>
-  <tr>
-    <td>undefined or null</td>
+    <td><code>
+      PageContext()
+    </code></td>
     <td>
       The page context.
     </td>
   </tr>
   <tr>
-    <td>array</td>
+    <td><code>
+      SelectionContext()
+    </code></td>
+    <td>
+      This context occurs when the menu is invoked on a page that contains a
+      selection.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      SelectorContext(selector)
+    </code></td>
+    <td>
+      This context occurs when the menu is invoked on a node that either matches
+      <code>selector</code>, a CSS selector,  or has an ancestor that matches.
+      <code>selector</code> may include multiple selectors separated by commas,
+      e.g., <code>"a[href], img"</code>.
+    </td>
+  </tr>
+  <tr>
+    <td><code>
+      URLContext(matchPattern)
+    </code></td>
+    <td>
+      This context occurs when the menu is invoked on pages with particular
+      URLs.  <code>matchPattern</code> is a match pattern string or an array of
+      match pattern strings.  When <code>matchPattern</code> is an array, the
+      context occurs when the menu is invoked on a page whose URL matches any of
+      the patterns.  These are the same match pattern strings that you use with
+      the <a href="#module/addon-kit/page-mod"><code>page-mod</code></a>
+      <code>include</code> property.
+      <a href="#module/jetpack-core/match-pattern">Read more about patterns</a>.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      array
+    </td>
     <td>
       An array of any of the other types.  This context occurs when all contexts
       in the array occur.
@@ -89,8 +120,9 @@ constructor.  Such contexts may be specified with any of the following types:
 Menu items also have a `context` property that can be used to add and remove
 declarative contexts after construction.  For example:
 
-    myMenuItem.context.add("img");
-    myMenuItem.context.remove("a[href]");
+    var context = contextMenu.SelectorContext("img");
+    myMenuItem.context.add(context);
+    myMenuItem.context.remove(context);
 
 When a menu item is bound to more than one context, it appears in the menu when
 all of those contexts occur.
@@ -117,8 +149,8 @@ on a page whose URL contains "mozilla" as a substring:
     });
 
 Note that the listener function has a parameter called `node`.  This is the node
-that the user context-clicked to invoke the menu.  You can use it to determine
-whether your item should be shown.
+in the page that the user context-clicked to invoke the menu.  You can use it to
+determine whether your item should be shown.
 
 You can both specify declarative contexts and listen for contexts in a content
 script.  In that case, the declarative contexts are evaluated first.  If they
@@ -129,7 +161,7 @@ This example takes advantage of that fact.  The listener can be assured that
 
     var myItem = contextMenu.Item({
       label: "My Mozilla Image Item",
-      context: "img",
+      context: contextMenu.SelectorContext("img"),
       contentScript: 'on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
                      '});'
@@ -182,7 +214,7 @@ associated with the content script, the content script can call the global
 
     var myItem = contextMenu.Item({
       label: "Edit Image",
-      context: "img",
+      context: contextMenu.SelectorContext("img"),
       contentScript: 'on("click", function (node, data) {' +
                      '  postMessage(node.src);' +
                      '});',
@@ -264,6 +296,36 @@ Reference
   can't be added to the top-level context menu.
 </api>
 
+### Context Constructors
+
+<api name="PageContext">
+@constructor
+  Creates a page context.  See Specifying Contexts above.
+</api>
+
+<api name="SelectionContext">
+@constructor
+  Creates a context that occurs when a page contains a selection.  See
+  Specifying Contexts above.
+</api>
+
+<api name="SelectorContext">
+@constructor
+  Creates a context that matches a given CSS selector.  See Specifying Contexts
+  above.
+@param selector {string}
+  A CSS selector.
+</api>
+
+<api name="URLContext">
+@constructor
+  Creates a context that matches pages with particular URLs.  See Specifying
+  Contexts above.
+@param matchPattern {string,array}
+  A [match pattern] string or an array of match pattern strings.
+  [match pattern]: #module/jetpack-core/match-pattern
+</api>
+
 ### Module Functions
 
 <api name="add">
@@ -316,10 +378,9 @@ part of the page:
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    var imgCssSelector = "img";
     var editImageItem = contextMenu.Item({
       label: "Edit Image",
-      context: imgCssSelector,
+      context: contextMenu.SelectorContext("img"),
       contentScript: 'on("click", function (node, data) {' +
                      '  postMessage(node.src);' +
                      '});',
@@ -329,12 +390,30 @@ Show an "Edit Image" item when the menu is invoked on an image:
     });
     contextMenu.add(editImageItem);
 
+Show an "Edit Mozilla Image" item when the menu is invoked on an image in a
+mozilla.org or mozilla.com page:
+
+    var editMozImageItem = contextMenu.Item({
+      label: "Edit Mozilla Image",
+      context: [
+        contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
+        contextMenu.SelectorContext("img")
+      ],
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
+                     '});',
+      onMessage: function (imgSrc) {
+        openImageEditor(imgSrc);
+      }
+    });
+    contextMenu.add(editMozImageItem);
+
 Show an "Edit Page Images" item when the page contains at least one image:
 
     var editImagesItem = contextMenu.Item({
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
-      context: null,
+      context: contextMenu.PageContext(),
       contentScript: 'on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
@@ -363,10 +442,9 @@ Google or Wikipedia with the text contained in the anchor:
       label: "Wikipedia",
       data: "http://en.wikipedia.org/wiki/Special:Search?search="
     });
-    var anchorSelector = "a[href]";
     var searchMenu = contextMenu.Menu({
       label: "Search With",
-      context: anchorSelector,
+      context: contextMenu.SelectorContext("a[href]"),
       contentScript: 'on("click", function (node, data) {' +
                      '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
