@@ -111,26 +111,35 @@ Events of browserWindows
 ------------------------
 
 Events representing common actions and state changes for windows.
+
+These properties are `collections`. Listeners can be registered by
+passing the callback to the properties' `add` method, and can be removed
+by passing the callback function to the properties' `remove` method.
+
 Listeners are passed the `window` object that triggered the event.
 
-**open**  
+<api name="onOpen">
+@property {collection}
 Called when a new window is opened.
+</api>
 
-**close**  
+<api name="onClose">
+@property {collection}
 Called when a window is closed.
+</api>
 
 **Examples**
 
     var windows = require("windows").browserWindows;
 
     // listen for window openings via property assignment
-    windows.on('open', function(window) {
+    windows.onOpen.add(function(window) {
       myOpenWindows.push(window);
     });
 
     // modify the DOM of the page when ready,
     // by adding listener to the event collection.
-    windows.on('close', function(window) {
+    windows.onClose.add(function(window) {
       console.log("A window was closed.");
     });
 
@@ -178,7 +187,7 @@ A function to be called when the window finishes its closing process.
                 " tabs.");
 
     // Print the title of all browser windows
-    for each (var window in windows) {
+    for (var window in windows) {
       console.log(window.title);
     }
 
