@@ -10,8 +10,8 @@ and more.
 ## Your First Program ##
 
 We're going to continue building upon our package from the [Packaging]
-section. This program will add a context-menu option to links, with the
-ability to search Google for the link text.
+section.  This program adds a menu item to Firefox's context menu that replaces
+selected text with its English translation.
 
 ### Using Jetpack's Built-in Libraries ###
 
@@ -20,7 +20,7 @@ package requires modules from the jetpack-core library. It should look
 something like this now:
 
     {
-      "description": "This package adds a Google search context-menu item.",
+      "description": "This package adds a translation context menu item.",
       "author": "Me (http://me.org)",
       "dependencies": ["jetpack-core"]
     }
@@ -37,25 +37,44 @@ forthcoming example will demonstrate an extension.
 With this in mind, let's create a file at `lib/main.js` with the
 following content:
 
+    // Import the APIs we need.
     var contextMenu = require("context-menu");
+    var request = require("request");
+    var selection = require("selection");
 
     // Create a new context menu item.
     var menuItem = contextMenu.Item({
 
-      label: "Search with Google",
+      label: "Translate Selection",
 
-      // A CSS selector. Matching on this selector triggers the
-      // display of our context menu.
-      context: "a[href]",
+      // Show this item when a selection exists.
+      context: contextMenu.SelectionContext(),
 
-      // When the context menu item is clicked, perform a Google
-      // search for the link text.
-      onClick: function (contextObj, item) {
-        var anchor = contextObj.node;
-        console.log("searching for " + anchor.textContent);
-        var searchUrl = "http://www.google.com/search?q=" +
-                        anchor.textContent;
-        contextObj.window.location.href = searchUrl;
+      // When this item is clicked, post a message to the item with the
+      // selected text and current URL.
+      contentScript: 'on("click", function () {' +
+                     '  var text = window.getSelection().toString();' +
+                     '  postMessage({ text: text, url: document.URL });' +
+                     '});',
+
+      // When we receive the message, call the Google Translate API with the
+      // selected text and replace it with the translation.
+      onMessage: function (selectionInfo) {
+        var req = request.Request({
+          url: "http://ajax.googleapis.com/ajax/services/language/translate",
+          content: {
+            v: "1.0",
+            q: selectionInfo.text,
+            langpair: "|en"
+          },
+          headers: {
+            Referer: selectionInfo.url
+          },
+          onComplete: function (response) {
+            selection.text = response.json.responseData.translatedText;
+          }
+        });
+        req.get();
       }
     });
 
