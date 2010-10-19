@@ -6,11 +6,19 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = panels.add(Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage('')",
+    contentScript: "postMessage(1); on('message', function() postMessage(2));",
     onMessage: function (message) {
-      panels.remove(panel);
-      test.pass("The panel was loaded.");
-      test.done();
+      switch(message) {
+        case 1:
+          test.pass("The panel was loaded.");
+          panel.postMessage('');
+          break;
+        case 2:
+          test.pass("The panel posted a message and received a response.");
+          panels.remove(panel);
+          test.done();
+          break;
+      }
     }
   }));
 };
@@ -184,5 +192,3 @@ else {
     test.pass("The panel module is not supported on this app.");
   }
 }
-
-

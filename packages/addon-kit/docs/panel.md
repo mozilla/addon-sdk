@@ -206,13 +206,11 @@ them once the DOM content of the page has been loaded.
 Functions to call when a content script sends the panel a message.
 </api>
 
-<api name="sendMessage">
+<api name="postMessage">
 @method
 Send a message to the content scripts.
 @param message {string,number,object,array,boolean}
 The message to send.  Must be stringifiable to JSON.
-@param [callback] {function}
-A function the content scripts can call to respond to the message.  Optional.
 </api>
 
 <api name="show">
