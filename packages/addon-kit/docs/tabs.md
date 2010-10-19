@@ -182,9 +182,14 @@ This property is read-only.
 </api>
 
 <api name="location">
-@property {string}
+@property {Location}
 The URL of the page currently loaded in the tab.
-This property can be set, to load a different URL in the tab.
+This property can be set to load a different URL in the tab.
+The value is a Location object, just like window.location in web pages.
+Its toString() method returns a string representation of the URL.
+For more information about Location objects, see their [Mozilla Developer
+Network documentation][MDN].
+[MDN]: https://developer.mozilla.org/en/DOM/window.location#Location_object
 </api>
 
 <api name="contentWindow">
