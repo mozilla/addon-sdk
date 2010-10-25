@@ -1,0 +1,6 @@
+local.json
+python-lib/cuddlefish/app-extension/components/jetpack.xpt
+testdocs.tgz
+jetpack-sdk-docs.tgz
+.test_tmp/
+jetpack-sdk-docs/
