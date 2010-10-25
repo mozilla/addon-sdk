@@ -404,7 +404,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         target_cfg_json = os.path.join(options.pkgdir, 'package.json')
         target_cfg = packaging.get_config_in_dir(options.pkgdir)
 
-    use_main = False
     if command == "xpcom":
         if 'xpcom' not in target_cfg:
             print >>sys.stderr, "package.json does not have a 'xpcom' entry."
@@ -430,11 +429,21 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             module_name=xpcom.module
             )
         sys.exit(0)
-    elif command == "xpi":
+
+    # At this point, we're either building an XPI or running Jetpack code in
+    # a Mozilla application (which includes running tests).
+
+    use_main = False
+    timeout = None
+    inherited_options = ['verbose']
+
+    if command == "xpi":
         use_main = True
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
+        timeout = TEST_RUN_TIMEOUT
+        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
     elif command == "run":
         use_main = True
     else:
@@ -502,10 +511,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     assert "@" not in unique_prefix
     assert "." not in unique_prefix
 
-    timeout = None
     targets = [target]
-    if not use_main:
-        timeout = TEST_RUN_TIMEOUT
+    if command == "test":
         targets.append(options.test_runner_pkg)
 
     if options.extra_packages:
@@ -545,13 +552,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
-    inherited_options = ['verbose']
-
-    if use_main:
-        harness_options['main'] = target_cfg.get('main')
+    if command == "test":
+        # This should be contained in the test runner package.
+        harness_options['main'] = 'run-tests'
     else:
-        harness_options['main'] = "run-tests"
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        harness_options['main'] = target_cfg.get('main')
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
