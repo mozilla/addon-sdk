@@ -37,7 +37,19 @@
 
 const {Cc, Ci} = require("chrome");
 
+var wins = Cc['@mozilla.org/appshell/window-mediator;1'].
+                        getService(Ci.nsIWindowMediator).getEnumerator("navigator:browser")
+  ,   i = 0
+
+  while (wins.hasMoreElements()) {
+    wins.getNext()
+    i ++
+  }
+  console.log('>>>>>>>>>>>>>>', 'Starting with #' + i)
+  
+
 exports.testOpenAndCloseWindow = function(test) {
+    
   test.waitUntilDone();
   let windows = require("windows").browserWindows;
 

@@ -108,10 +108,9 @@ exports['test removeing listeners'] = function(test) {
       );
       this._window = null;
       window.close();
-      test.done();
     },
     onUnload: function(window) {
-      test.fail('listener must be unset');
+      test.done();
     }
   });
 };

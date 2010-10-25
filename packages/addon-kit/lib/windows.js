@@ -82,7 +82,7 @@ const BrowserWindowTrait = Trait.compose(
      */
     constructor: function BrowserWindow(options) {
       // make sure we don't have unhandled errors
-      this.on('error', console.exception);
+      this.on('error', console.exception.bind(console));
 
       if ('onOpen' in options) this.on('open', options.onOpen);
       if ('onClose' in options) this.on('close', options.onClose);

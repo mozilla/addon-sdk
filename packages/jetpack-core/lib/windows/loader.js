@@ -99,7 +99,7 @@ const WindowLoader = Trait.compose({
       this.__unloadListener ||
         (this.__unloadListener = this._unloadListener.bind(this))
       ,
-      true
+      false
     );
     if (STATE_LOADED != window.document.readyState) {
       window.addEventListener(
@@ -107,7 +107,7 @@ const WindowLoader = Trait.compose({
         this.__loadListener ||
           (this.__loadListener = this._loadListener.bind(this))
         ,
-        true
+        false
       );
     }
     else {
@@ -125,7 +125,7 @@ const WindowLoader = Trait.compose({
   _loadListener: function _loadListener(event) {
     let window = this._window;
     if (!event.target || event.target.defaultView != window) return;
-    window.removeEventListener(ON_LOAD, this.__loadListener, true);
+    window.removeEventListener(ON_LOAD, this.__loadListener, false);
     this._onLoad(window);
   },
   __loadListener: null,
@@ -140,7 +140,7 @@ const WindowLoader = Trait.compose({
       || event.target.defaultView != window
       || STATE_LOADED != window.document.readyState
     ) return;
-    window.removeEventListener(ON_UNLOAD, this.__unloadListener, true);
+    window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
     this._onUnload(window);
   },
   __unloadListener: null
