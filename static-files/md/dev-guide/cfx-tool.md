@@ -94,6 +94,23 @@ without restarting the host application.
 Package-Specific Commands
 -------------------------
 
+**`cfx init`**
+
+Just create a new directory, change into it, and run `cfx init`.
+
+This command will create an skeleton addon, as a starting point for your
+own add-on development, with the following file structure:
+
+    README.md
+    package.json
+    data/
+    lib/
+        main.js
+    tests/
+        test-main.js
+    docs/
+        main.md
+
 **`cfx xpcom`**
 
 This tool is used to build xpcom objects.
