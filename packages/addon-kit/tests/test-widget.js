@@ -482,34 +482,6 @@ this.__defineGetter__("activeWindow", function activeWindow() {
          getMostRecentWindow("navigator:browser");
 });
 
-// Utility function to open a new browser window.
-// Currently does not work if there's not already a browser
-// window open.
-function openBrowserWindow(callback, url) {
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-           .getService(Ci.nsIWindowMediator);
-  let win = wm.getMostRecentWindow("navigator:browser");
-  let window = win.openDialog("chrome://browser/content/browser.xul",
-                              "_blank", "chrome,all,dialog=no", url); 
-  if (callback) {
-    function onLoad(event) {
-      if (event.target && event.target.defaultView == window) {
-        window.removeEventListener("load", onLoad, true);
-        let browsers = window.document.getElementsByTagName("tabbrowser");
-        try {
-          require("timer").setTimeout(function () {
-            callback(window, browsers[0]);
-          }, 10);
-        } catch (e) { console.exception(e); }
-      }
-    }
-
-    window.addEventListener("load", onLoad, true);
-  }
-
-  return window;
-}
-
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
   require("timer").setTimeout(function() {

@@ -42,29 +42,6 @@ let {Cc,Ci} = require("chrome");
 // with more deterministic solutions.
 const ARB_DELAY = 100;
 
-function openBrowserWindow(callback) {
-  let window = Cc["@mozilla.org/embedcomp/window-watcher;1"].
-                 getService(Ci.nsIWindowWatcher).openWindow(null,
-                 "chrome://browser/content/browser.xul",
-                 null, "chrome", null);
-
-  function onLoad(event) {
-    if (event.target && event.target.defaultView == window) {
-      window.removeEventListener("load", onLoad, true);
-      let browsers = window.document.getElementsByTagName("tabbrowser");
-      try {
-        callback(window, browsers[0]);
-      }
-      catch (e) {
-        dump(e);
-      }
-    }
-  }
-
-  window.addEventListener("load", onLoad, true);
-  return window;
-}
-
 // Select all divs elements in an HTML document
 function selectAllDivs(window) {
   let divs = window.document.getElementsByTagName("div");
