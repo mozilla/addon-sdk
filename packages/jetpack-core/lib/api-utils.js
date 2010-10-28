@@ -165,9 +165,7 @@ let getTypeOf = exports.getTypeOf = function getTypeOf(val) {
   if (typ === "object") {
     if (!val)
       return "null";
-    // TODO: Replace this check with the ES5 Array.isArray() when Spidermonkey
-    // supports it.
-    if (Object.prototype.toString.call(val) === "[object Array]")
+    if (Array.isArray(val))
       return "array";
   }
   return typ;
