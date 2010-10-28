@@ -48,10 +48,15 @@ import optparse
 import killableprocess
 import subprocess
 import platform
-from xml.etree import ElementTree
+
 from distutils import dir_util
 from time import sleep
 
+# conditional (version-dependent) imports
+try:
+    from xml.etree import ElementTree
+except ImportError:
+    from elementtree import ElementTree
 try:
     import simplejson
 except ImportError:
@@ -174,17 +179,17 @@ class Profile(object):
             self.profile = self.create_new_profile(self.binary)
 
         self.addons_installed = []
-        self.addons = addons
+        self.addons = addons or []
 
         ### set preferences from class preferences
-        prefereneces = preferences or {}
+        preferences = preferences or {}
         if hasattr(self.__class__, 'preferences'):
             self.preferences = self.__class__.preferences.copy()
         else:
             self.preferences = {}
         self.preferences.update(preferences)
 
-        for addon in addons:
+        for addon in self.addons:
             self.install_addon(addon)
 
         self.set_preferences(self.preferences)
@@ -194,53 +199,58 @@ class Profile(object):
         profile = tempfile.mkdtemp(suffix='.mozrunner')
         return profile
 
-    def install_addon(self, addon):
-        """Installs the given addon in the profile."""
-        tmpdir = None
-        if addon.endswith('.xpi'):
-            tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
-            compressed_file = zipfile.ZipFile(addon, "r")
-            for name in compressed_file.namelist():
-                if name.endswith('/'):
-                    makedirs(os.path.join(tmpdir, name))
-                else:
-                    if not os.path.isdir(os.path.dirname(os.path.join(tmpdir, name))):
-                        makedirs(os.path.dirname(os.path.join(tmpdir, name)))
-                    data = compressed_file.read(name)
-                    f = open(os.path.join(tmpdir, name), 'wb')
-                    f.write(data) ; f.close()
-            addon = tmpdir
+    def install_addon(self, path):
+        """Installs the given addon or directory of addons in the profile."""
+        addons = [path]
+        if not path.endswith('.xpi') and not os.path.exists(os.path.join(path, 'install.rdf')):
+            addons = [os.path.join(path, x) for x in os.listdir(path)]
 
-        tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
-        # description_element =
-        # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
+        for addon in addons:
+            tmpdir = None
+            if addon.endswith('.xpi'):
+                tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
+                compressed_file = zipfile.ZipFile(addon, "r")
+                for name in compressed_file.namelist():
+                    if name.endswith('/'):
+                        makedirs(os.path.join(tmpdir, name))
+                    else:
+                        if not os.path.isdir(os.path.dirname(os.path.join(tmpdir, name))):
+                            makedirs(os.path.dirname(os.path.join(tmpdir, name)))
+                        data = compressed_file.read(name)
+                        f = open(os.path.join(tmpdir, name), 'wb')
+                        f.write(data) ; f.close()
+                addon = tmpdir
 
-        desc = tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-        apps = desc.findall('.//{http://www.mozilla.org/2004/em-rdf#}targetApplication')
-        for app in apps:
-          desc.remove(app)
-        if len(desc) and desc.attrib.has_key('{http://www.mozilla.org/2004/em-rdf#}id'):
-            addon_id = desc.attrib['{http://www.mozilla.org/2004/em-rdf#}id']
-        elif len(desc) and desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id') is not None:
-            addon_id = desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id').text
-        else:
-            about = [e for e in tree.findall(
-                        './/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description') if
-                         e.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') ==
-                         'urn:mozilla:install-manifest'
-                    ]
+            tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
+            # description_element =
+            # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
 
-            x = e.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-
-            if len(about) == 0:
-                addon_element = tree.find('.//{http://www.mozilla.org/2004/em-rdf#}id')
-                addon_id = addon_element.text
+            desc = tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
+            apps = desc.findall('.//{http://www.mozilla.org/2004/em-rdf#}targetApplication')
+            for app in apps:
+              desc.remove(app)
+            if len(desc) and desc.attrib.has_key('{http://www.mozilla.org/2004/em-rdf#}id'):
+                addon_id = desc.attrib['{http://www.mozilla.org/2004/em-rdf#}id']
+            elif len(desc) and desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id') is not None:
+                addon_id = desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id').text
             else:
-                addon_id = about[0].get('{http://www.mozilla.org/2004/em-rdf#}id')
+                about = [e for e in tree.findall(
+                            './/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description') if
+                             e.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') ==
+                             'urn:mozilla:install-manifest'
+                        ]
 
-        addon_path = os.path.join(self.profile, 'extensions', addon_id)
-        copytree(addon, addon_path, preserve_symlinks=1)
-        self.addons_installed.append(addon_path)
+                x = e.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
+
+                if len(about) == 0:
+                    addon_element = tree.find('.//{http://www.mozilla.org/2004/em-rdf#}id')
+                    addon_id = addon_element.text
+                else:
+                    addon_id = about[0].get('{http://www.mozilla.org/2004/em-rdf#}id')
+
+            addon_path = os.path.join(self.profile, 'extensions', addon_id)
+            copytree(addon, addon_path, preserve_symlinks=1)
+            self.addons_installed.append(addon_path)
 
     def set_preferences(self, preferences):
         """Adds preferences dict to profile preferences"""
@@ -295,8 +305,8 @@ class FirefoxProfile(Profile):
                    'browser.tabs.warnOnClose' : False,
                    # Don't warn when exiting the browser
                    'browser.warnOnQuit': False,
-                   # Don't install global add-ons
-                   'extensions.enabledScopes' : 0,
+                   # Only install add-ons from the profile and the app folder
+                   'extensions.enabledScopes' : 5,
                    # Don't automatically update add-ons
                    'extensions.update.enabled'    : False,
                    # Don't open a dialog to show available add-on updates
@@ -335,9 +345,15 @@ class Runner(object):
         else:
             self.binary = binary
 
-
         if not os.path.exists(self.binary):
             raise Exception("Binary path does not exist "+self.binary)
+
+        if sys.platform == 'linux2' and self.binary.endswith('-bin'):
+            dirname = os.path.dirname(self.binary)
+            if os.environ.get('LD_LIBRARY_PATH', None):
+                os.environ['LD_LIBRARY_PATH'] = '%s:%s' % (os.environ['LD_LIBRARY_PATH'], dirname)
+            else:
+                os.environ['LD_LIBRARY_PATH'] = dirname
 
         self.profile = profile
 
@@ -381,6 +397,9 @@ class Runner(object):
 
                 if binary is None:
                     for bin in [(program_files, 'Mozilla Firefox', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Mozilla Firefox', 'firefox.exe'),
+                                (program_files,'Minefield', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Minefield', 'firefox.exe')
                                 ]:
                         path = os.path.join(*bin)
                         if os.path.isfile(path):
@@ -411,8 +430,9 @@ class Runner(object):
         # On i386 OS X machines, i386+x86_64 universal binaries need to be told
         # to run as i386 binaries.  If we're not running a i386+x86_64 universal
         # binary, then this command modification is harmless.
-        if hasattr(platform, 'mac_ver') and platform.mac_ver()[2] == 'i386':
-            cmd = ['arch', '-i386'] + cmd
+        if sys.platform == 'darwin':
+            if hasattr(platform, 'architecture') and platform.architecture()[0] == '32bit':
+                cmd = ['arch', '-i386'] + cmd
         return cmd
 
     def get_repositoryInfo(self):

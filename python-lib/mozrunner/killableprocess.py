@@ -109,6 +109,9 @@ class Popen(subprocess.Popen):
                            errread, errwrite):
             if not isinstance(args, types.StringTypes):
                 args = subprocess.list2cmdline(args)
+            
+            # Always or in the create new process group
+            creationflags |= winprocess.CREATE_NEW_PROCESS_GROUP
 
             if startupinfo is None:
                 startupinfo = winprocess.STARTUPINFO()
@@ -125,13 +128,16 @@ class Popen(subprocess.Popen):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
 
-            # We create a new job for this process, so that we can kill
-            # the process and any sub-processes 
-            self._job = winprocess.CreateJobObject()
+            # determine if we can create create a job
+            canCreateJob = winprocess.CanCreateJobObject()
 
+            # set process creation flags
             creationflags |= winprocess.CREATE_SUSPENDED
             creationflags |= winprocess.CREATE_UNICODE_ENVIRONMENT
+            if canCreateJob:
+                creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
 
+            # create the process
             hp, ht, pid, tid = winprocess.CreateProcess(
                 executable, args,
                 None, None, # No special security
@@ -139,15 +145,22 @@ class Popen(subprocess.Popen):
                 creationflags,
                 winprocess.EnvironmentBlock(env),
                 cwd, startupinfo)
-            
             self._child_created = True
             self._handle = hp
             self._thread = ht
             self.pid = pid
             self.tid = tid
 
-            winprocess.AssignProcessToJobObject(self._job, hp)
-            winprocess.ResumeThread(ht)
+            if canCreateJob:
+                # We create a new job for this process, so that we can kill
+                # the process and any sub-processes 
+                self._job = winprocess.CreateJobObject()
+                winprocess.AssignProcessToJobObject(self._job, int(hp))
+            else:
+                self._job = None
+                    
+            winprocess.ResumeThread(int(ht))
+            ht.Close()
 
             if p2cread is not None:
                 p2cread.Close()
@@ -161,10 +174,14 @@ class Popen(subprocess.Popen):
         """Kill the process. If group=True, all sub-processes will also be killed."""
         self.kill_called = True
         if mswindows:
-            if group:
+            if group and self._job:
                 winprocess.TerminateJobObject(self._job, 127)
             else:
-                winprocess.TerminateProcess(self._handle, 127)
+                try:
+                    winprocess.TerminateProcess(self._handle, 127)
+                except:
+                    # TODO: better error handling here
+                    pass
             self.returncode = 127    
         else:
             if group:
@@ -182,6 +199,7 @@ class Popen(subprocess.Popen):
         time out."""
         
         if timeout is not None:
+            # timeout is now in milliseconds
             timeout = timeout * 1000
 
         if self.returncode is not None:
@@ -194,11 +212,23 @@ class Popen(subprocess.Popen):
                 timeout = -1
             rc = winprocess.WaitForSingleObject(self._handle, timeout)
             
-            if rc != winprocess.WAIT_TIMEOUT: 
-                while (starttime - datetime.datetime.now()).microseconds < timeout or ( winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0 ):
-                    time.sleep(.5)            
+            if rc != winprocess.WAIT_TIMEOUT:
+                def check():
+                    now = datetime.datetime.now()
+                    diff = now - starttime
+                    if (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000):
+                        if self._job:
+                            if (winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0):
+                                return True
+                        else:
+                            return True
+                    return False
+                while check():
+                    time.sleep(.5)
             
-            if (starttime - datetime.datetime.now()).microseconds > timeout:
+            now = datetime.datetime.now()
+            diff = now - starttime
+            if (diff.seconds * 1000 * 1000 + diff.microseconds) > (timeout * 1000):
                 self.kill(group)
             else:
                 self.returncode = winprocess.GetExitCodeProcess(self._handle)
@@ -215,13 +245,14 @@ class Popen(subprocess.Popen):
                     try:
                         count = 0
                         if timeout is None and self.kill_called:
-                            timeout = 10 # Have to set some kind of timeout or else this could go on forever                
+                            timeout = 10 # Have to set some kind of timeout or else this could go on forever
                         if timeout is None:
                             while 1:
                                 os.killpg(self.pid, signal.SIG_DFL)
                         while ((count * 2) <= timeout):
                             os.killpg(self.pid, signal.SIG_DFL)
-                            time.sleep(.5); count += .5
+                            # count is increased by 500ms for every 0.5s of sleep
+                            time.sleep(.5); count += 500
                     except exceptions.OSError:
                         return self.returncode
                         
@@ -234,14 +265,18 @@ class Popen(subprocess.Popen):
 
             returncode = False
 
-            while (starttime - datetime.datetime.now()).microseconds < timeout or ( returncode is False ):
+            now = datetime.datetime.now()
+            diff = now - starttime
+            while (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000) and ( returncode is False ):
                 if group is True:
                     return group_wait(timeout)
                 else:
                     if subprocess.poll() is not None:
                         returncode = self.returncode
                 time.sleep(.5)
-            return self.returncode        
+                now = datetime.datetime.now()
+                diff = now - starttime
+            return self.returncode
                 
         return self.returncode
     # We get random maxint errors from subprocesses __del__
