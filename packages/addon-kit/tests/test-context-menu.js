@@ -1380,7 +1380,7 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = new this.test.makeSandboxedLoader();
+    let loader = this.test.makeSandboxedLoader();
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),

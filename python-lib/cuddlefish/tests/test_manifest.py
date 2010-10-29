@@ -186,6 +186,16 @@ class BadChrome(unittest.TestCase, Extra):
         self.failUnless('const {Cc,Ci,Cu} = require("chrome");' in err, err)
 
 class Package(unittest.TestCase):
+    def test_e10s_adapter(self):
+        path = "python-lib/cuddlefish/tests/e10s-adapter-files/packages/foo/lib"
+        manifest, has_problems = scan_package("prefix-", "resource:foo/",
+                                              "foo", "lib", path)
+        update_manifest_with_fileinfo(["foo"], "foo", manifest)
+        self.assertEqual(manifest['resource:foo/bar.js']['e10s-adapter'],
+                         'resource:foo/bar-e10s-adapter.js')
+        self.assertFalse(manifest['resource:foo/bar-e10s-adapter.js']['e10s-adapter'])
+        self.assertFalse(manifest['resource:foo/foo.js']['e10s-adapter'])
+
     def test_bug_596573(self):
         jp_tests = "packages/jetpack-core/tests"
         manifest, has_problems = scan_package("prefix", "resource:foo",

@@ -74,6 +74,10 @@ parser_options = {
                              type="json",
                              metavar=None,
                              default="{}"),
+    ("", "--e10s",): dict(dest="enable_e10s",
+                          help="enable out-of-process Jetpacks",
+                          action="store_true",
+                          default=False)
     }
 
 parser_groups = Bunch(
@@ -468,7 +472,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     use_main = False
     timeout = None
-    inherited_options = ['verbose']
+    inherited_options = ['verbose', 'enable_e10s']
 
     if command == "xpi":
         use_main = True

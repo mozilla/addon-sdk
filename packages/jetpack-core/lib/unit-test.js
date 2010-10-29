@@ -34,64 +34,28 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// We don't actually use chrome directly, but we do access the 
-// filesystem and scan it to dynamically import modules, so
-// we put this here to tell the module loader to give us
-// permission to require() whatever we want.
-require("chrome");
-
 var timer = require("timer");
-var file = require("file");
 
 exports.findAndRunTests = function findAndRunTests(options) {
-  var finder = new TestFinder(options.dirs, options.filter);
-  var runner = new TestRunner();
-  runner.startMany({tests: finder.findTests(),
-                    onDone: options.onDone});
-};
-
-var TestFinder = exports.TestFinder = function TestFinder(dirs, filter) {
-  memory.track(this);
-  this.dirs = dirs;
-  this.filter = filter;
-};
-
-TestFinder.prototype = {
-  _makeTest: function _makeTest(suite, name, test) {
-    function runTest(runner) {
-      console.info("executing '" + suite + "." + name + "'");
-      test(runner);
-    }
-    return runTest;
-  },
-
-  findTests: function findTests() {
-    var self = this;
-    var tests = [];
-    var filterRegex = this.filter ? new RegExp(this.filter) : null;
-
-    this.dirs.forEach(
-      function(dir) {
-        var suites = [name.slice(0, -3)
-                      for each (name in file.list(dir))
-                      if (/^test-.*\.js$/.test(name) &&
-                          (!filterRegex || filterRegex.test(name)))];
-
-        suites.forEach(
-          function(suite) {
-            var module = require(suite);
-            for (name in module)
-                tests.push({
-                  testFunction: self._makeTest(suite, name, module[name]),
-                  name: suite + "." + name
-                });
-          });
-      });
-    return tests;
-  }
+  var TestFinder = require("unit-test-finder").TestFinder;
+  var finder = new TestFinder({
+    dirs: options.dirs,
+    filter: options.filter,
+    testInProcess: options.testInProcess,
+    testOutOfProcess: options.testOutOfProcess
+  });
+  var runner = new TestRunner({fs: options.fs});
+  finder.findTests(
+    function (tests) {
+      runner.startMany({tests: tests,
+                        onDone: options.onDone});
+    });
 };
 
 var TestRunner = exports.TestRunner = function TestRunner(options) {
+  if (options) {
+    this.fs = options.fs;
+  }
   memory.track(this);
   this.passed = 0;
   this.failed = 0;
@@ -112,12 +76,16 @@ TestRunner.prototype = {
   },
 
   makeSandboxedLoader: function makeSandboxedLoader(options) {
+    if (!this.fs)
+      console.error("Hey, either you didn't pass .fs when building the" +
+                    " TestRunner, or you used 'new' when calling" +
+                    " test.makeSandboxedLoader. Don't do that.");
+
     if (!options)
       options = {console: console};
+    options.fs = this.fs;
 
     var Cuddlefish = require("cuddlefish");
-
-    options.fs = require("parent-loader").fs;
 
     if ("moduleOverrides" in options) {
       var moduleOverrides = options.moduleOverrides;

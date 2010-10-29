@@ -149,7 +149,7 @@ exports.testFriendlyError = function (test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = new test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader();
   var sbxpcom = loader.require("xpcom");
 
   function Component() {}

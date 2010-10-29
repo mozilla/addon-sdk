@@ -121,6 +121,7 @@ def scan_package(prefix, resource_url, pkg_name, section, dirname,
                      "hash": hashhex,
                      "requires": requires,
                      "chrome": chrome,
+                     "e10s-adapter": None,
                      "zipname": "resources/%s%s-%s/%s.js" % (prefix, pkg_name,
                                                              section, modname),
                      }
@@ -147,9 +148,15 @@ def update_manifest_with_fileinfo(deps, loader, manifest):
     for url, i in manifest.items():
         idx = (i.packageName,i.name)
         if idx not in m:
-            m[idx] = []
-        m[idx].append( (i.sectionName, url) )
+            m[idx] = url
     for url, i in manifest.items():
+        looking_for = i.name + '-e10s-adapter'
+        for source in packages:
+            if (source,looking_for) in m:
+                # got it
+                i['e10s-adapter'] = m[ (source,looking_for) ]
+                break
+
         for reqname in i.requires:
             # now where will this requirement come from? This code tries to
             # duplicate the behavior of the LocalFileSystem.resolveModule
@@ -195,13 +202,13 @@ def update_manifest_with_fileinfo(deps, loader, manifest):
                 for source in packages:
                     if (source,looking_for) in m:
                         # got it
-                        section,found_url = m[ (source,looking_for) ][0]
+                        found_url = m[ (source,looking_for) ]
                         break
             else:
                 # only look in the package doing the importing
                 if (i.packageName,looking_for) in m:
                     # yup
-                    section,found_url = m[ (i.packageName,looking_for) ][0]
+                    found_url = m[ (i.packageName,looking_for) ]
 
             if found_url:
                 # now store the zipfile name (actually the URL)

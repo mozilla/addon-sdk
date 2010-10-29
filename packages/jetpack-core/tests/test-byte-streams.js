@@ -176,7 +176,7 @@ exports.testTruncate = function (test) {
 };
 
 exports.testUnload = function (test) {
-  let loader = new test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader();
   let file = loader.require("file");
 
   let filename = url.toFilename(__url__);

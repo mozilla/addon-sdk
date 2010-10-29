@@ -143,7 +143,7 @@ tests.testContentURLOption = function(test) {
 
 tests['test:destruct before removed'] = function(test) {
   test.waitUntilDone();
-  let loader = new test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader();
   let panels = loader.require('panel');
   let { Panel } = loader.findSandboxForModule("panel").globalScope;
   let PanelShim = Panel.compose({ destructor: function() this._destructor() });
