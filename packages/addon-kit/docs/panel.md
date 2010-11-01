@@ -48,57 +48,8 @@ Create and show a simple panel with content from the `data/` directory:
     
     panel.show();
 
-The following code creates a widget that opens a panel containing the mobile
-version of Reddit.  The panel has an associated content script (see below)
-that intercepts clicks on the titles of stories and passes their URLs to the
-panel object, which loads them in new tabs, so users can load each story they
-want to read in a new tab by clicking on the stories' titles.
-
-    const widgets = require("widget");
-    const panels = require("panel");
-    const data = require("self").data;
-    
-    widgets.add(widgets.Widget({
-      label: "Reddit",
-      image: "http://www.reddit.com/static/favicon.ico",
-      panel: panels.Panel({
-        width: 240,
-        height: 320,
-        contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
-        contentScriptURL: [data.url("jquery-1.4.2.min.js"),
-                           data.url("panel.js")],
-        contentScriptWhen: "ready",
-        onMessage: function(message) {
-          require("tab-browser").addTab(message);
-        }
-      })
-    }));
-
-This is the content script that intercepts the link clicks.  It uses jQuery,
-which was also loaded as a content script, to interact with the DOM of the page.
-
-    $(window).click(function (event) {
-      var t = event.target;
-      
-      // Don't intercept the click if it isn't on a link.
-      if (t.nodeName != "A")
-        return;
-      
-      // Don't intercept the click if it was on one of the links in the header
-      // or next/previous footer, since those links should load in the panel
-      // itself.
-      if ($(t).parents('#header').length || $(t).parents('.nextprev').length)
-        return;
-      
-      // Intercept the click, passing it to the addon, which will load it in
-      // a tab.
-      event.stopPropagation();
-      event.preventDefault();
-      postMessage(t.toString());
-    });
-
-See the `examples/reddit-panel` directory for the complete example (including
-the content script containing jQuery).
+The tutorial section on [web content](#guide/web-content) has a more complex
+example using panels.
 
 Reference
 ---------

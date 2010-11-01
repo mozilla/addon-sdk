@@ -216,6 +216,8 @@ function buildHarnessService(rootFileSpec, dump, logError,
       return options;
     },
 
+    enableE10s: options.enable_e10s,
+
     jetpackID: options.jetpackID,
 
     bundleID: options.bundleID,
@@ -224,6 +226,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
       var i = this.__packages[path];
       var info = { dependencies: i.requires,
                    needsChrome: i.chrome,
+                   'e10s-adapter': i['e10s-adapter'],
                    name: i.name,
                    packageName: i.packageName,
                    hash: i.hash

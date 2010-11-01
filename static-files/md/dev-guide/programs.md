@@ -182,15 +182,9 @@ To distribute your program, you can upload it to
 Eventually, this step may be automated via the SDK, streamlining the
 distribution process further.
 
-## To Be Continued... ##
-
-Right now, the Jetpack SDK is at an early stage of development.
-There's not too much to show, and if you run into trouble, you may
-want to check the [troubleshooting] guide.
-
-Be on the lookout for upcoming versions of the SDK, which will expand the
-built-in set of libraries, continue this tutorial and show you how to build
-other types of add-ons, as well as standalone applications!
+The next section provides an overview of the mechanisms Jetpack provides
+to access and modify web pages: [Interacting with Web
+Content](#guide/web-content).
 
   [Packaging]: #guide/packaging
   [troubleshooting]: #guide/troubleshooting

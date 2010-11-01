@@ -1,11 +1,14 @@
-from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE, addressof
+from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE, addressof, c_size_t, c_ulong
 from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LARGE_INTEGER
 
 LPVOID = c_void_p
 LPDWORD = POINTER(DWORD)
+SIZE_T = c_size_t
+ULONG_PTR = POINTER(c_ulong)
 
 # A ULONGLONG is a 64-bit unsigned integer.
 # Thus there are 8 bytes in a ULONGLONG.
+# XXX why not import c_ulonglong ?
 ULONGLONG = BYTE * 8
 
 class IO_COUNTERS(Structure):
@@ -27,7 +30,51 @@ class JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION(Structure):
     _fields_ = [('BasicInfo', JOBOBJECT_BASIC_ACCOUNTING_INFORMATION),
                 ('IoInfo', IO_COUNTERS)]
 
+# see http://msdn.microsoft.com/en-us/library/ms684147%28VS.85%29.aspx
+class JOBOBJECT_BASIC_LIMIT_INFORMATION(Structure):
+    _fields_ = [('PerProcessUserTimeLimit', LARGE_INTEGER),
+                ('PerJobUserTimeLimit', LARGE_INTEGER),
+                ('LimitFlags', DWORD),
+                ('MinimumWorkingSetSize', SIZE_T),
+                ('MaximumWorkingSetSize', SIZE_T),
+                ('ActiveProcessLimit', DWORD),
+                ('Affinity', ULONG_PTR),
+                ('PriorityClass', DWORD),
+                ('SchedulingClass', DWORD)
+                ]
+
+# see http://msdn.microsoft.com/en-us/library/ms684156%28VS.85%29.aspx
+class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(Structure):
+    _fields_ = [('BasicLimitInformation', JOBOBJECT_BASIC_LIMIT_INFORMATION),
+                ('IoInfo', IO_COUNTERS),
+                ('ProcessMemoryLimit', SIZE_T),
+                ('JobMemoryLimit', SIZE_T),
+                ('PeakProcessMemoryUsed', SIZE_T),
+                ('PeakJobMemoryUsed', SIZE_T)]
+
+# XXX Magical numbers like 8 should be documented
 JobObjectBasicAndIoAccountingInformation = 8
+
+# ...like magical number 9 comes from
+# http://community.flexerasoftware.com/archive/index.php?t-181670.html
+# I wish I had a more canonical source
+JobObjectExtendedLimitInformation = 9
+
+class JobObjectInfo(object):
+    mapping = { 'JobObjectBasicAndIoAccountingInformation': 8,
+                'JobObjectExtendedLimitInformation': 9
+                }
+    structures = { 8: JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION,
+                   9: JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                   }
+    def __init__(self, _class):
+        if isinstance(_class, basestring):
+            assert _class in self.mapping, 'Class should be one of %s; you gave %s' % (self.mapping, _class)
+            _class = self.mapping[_class]
+        assert _class in self.structures, 'Class should be one of %s; you gave %s' % (self.structures, _class)
+        self.code = _class
+        self.info = self.structures[_class]()
+    
 
 QueryInformationJobObjectProto = WINFUNCTYPE(
     BOOL,        # Return type
@@ -72,18 +119,16 @@ class SubscriptableReadOnlyStruct(object):
         return self._delegate(name)
 
 def QueryInformationJobObject(hJob, JobObjectInfoClass):
-    if JobObjectInfoClass != 8:
-        raise NotImplementedError()
-    info = JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION()
+    jobinfo = JobObjectInfo(JobObjectInfoClass)
     result = _QueryInformationJobObject(
         hJob=hJob,
-        JobObjectInfoClass=JobObjectInfoClass,
-        lpJobObjectInfo=addressof(info),
-        cbJobObjectInfoLength=sizeof(info)
+        JobObjectInfoClass=jobinfo.code,
+        lpJobObjectInfo=addressof(jobinfo.info),
+        cbJobObjectInfoLength=sizeof(jobinfo.info)
         )
-    if result == 0:
+    if not result:
         raise WinError()
-    return SubscriptableReadOnlyStruct(info)
+    return SubscriptableReadOnlyStruct(jobinfo.info)
 
 def test_qijo():
     from killableprocess import Popen

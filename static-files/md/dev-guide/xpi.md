@@ -107,6 +107,7 @@ auto-generated files:
        "manifest": {
         "resource://guid-aardvark-lib/main.js": {
          "chrome": false, 
+         "e10s-adapter": null, 
          "hash": "a592cf3cf924f2c77e0728d97131138fcb7495c77f5202ac55c2e0c77ef903c2", 
          "name": "main", 
          "packageName": "aardvark", 
@@ -120,6 +121,7 @@ auto-generated files:
         }, 
         "resource://guid-barbeque-lib/bar-module.js": {
          "chrome": false, 
+         "e10s-adapter": null, 
          "hash": "2515f8623e793571f1dffc4828de14a00a3da9be666147f8cebb3b3f1929e4d6", 
          "name": "bar-module", 
          "packageName": "barbeque", 
@@ -129,6 +131,7 @@ auto-generated files:
         }, 
         "resource://guid-jetpack-core-lib/loader.js": {
          "chrome": false, 
+         "e10s-adapter": null, 
          "hash": "efac9dc700a56e693ac75ab81955c11e6874ddc83d92c11177d643601eaac346", 
          "name": "loader", 
          "packageName": "jetpack-core", 
