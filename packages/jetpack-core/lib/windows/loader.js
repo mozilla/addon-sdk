@@ -90,8 +90,8 @@ const WindowLoader = Trait.compose({
     if (!window) window = null;
     if (window == _window) return;
     if (_window) {
-      _window.removeEventListener(ON_UNLOAD, this.__unloadListener, true);
-      _window.removeEventListener(ON_LOAD, this.__loadListener, true);
+      _window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
+      _window.removeEventListener(ON_LOAD, this.__loadListener, false);
     }
     if (!window) return;
     window.addEventListener(
@@ -101,6 +101,7 @@ const WindowLoader = Trait.compose({
       ,
       false
     );
+    // If window is not loaded yet setting up a listener.
     if (STATE_LOADED != window.document.readyState) {
       window.addEventListener(
         ON_LOAD,
@@ -110,8 +111,7 @@ const WindowLoader = Trait.compose({
         false
       );
     }
-    else {
-      // calling listener in another turn of the event loop
+    else { // If window is loaded calling listener next turn of event loop.
       setTimeout(this._onLoad.bind(this), 0, window);
     }
     return this.__window = window;
