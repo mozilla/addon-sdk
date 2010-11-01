@@ -57,7 +57,7 @@ const Loader = Trait.compose(
 exports['test compositions with missing required properties'] = function(test) {
   test.assertRaises(
     function() WindowLoader.compose({})(),
-    /Missing required property:/,
+    'Missing required property: _onLoad',
     'should throw missing required property exception'
   );
   test.assertRaises(

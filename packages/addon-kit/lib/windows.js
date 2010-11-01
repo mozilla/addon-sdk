@@ -169,8 +169,9 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       unload.when(this._destructor.bind(this));
     },
     _destructor: function _destructor() {
-      for each (window in this)
+      for each (let window in this) {
         window.close();
+      }
       this._removeAllListeners('open');
       this._removeAllListeners('close');
     },
