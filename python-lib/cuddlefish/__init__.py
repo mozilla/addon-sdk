@@ -21,6 +21,7 @@ usage = """
 %prog [options] [command]
 
 Package-Specific Commands:
+  init       - create a sample addon in an empty directory
   xpcom      - build xpcom component
   xpi        - generate an xpi
   test       - run tests
@@ -329,6 +330,35 @@ def get_config_args(name, env_root):
         sys.exit(1)
     return config
 
+def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
+    from templates import MAIN_JS, PACKAGE_JSON, README_DOC, MAIN_JS_DOC, TEST_MAIN_JS
+    path = os.getcwd()
+    addon = os.path.basename(path)
+    # if more than one argument
+    if len(args) > 1:
+        print >>err, 'Too many arguments.'
+        return 1
+    # if current dir isn't empty
+    if len(os.listdir(path)) > 0:
+        print >>err, 'This tool must be run in an empty directory.'
+        return 1
+    for d in ['lib','data','tests','docs']:
+        os.mkdir(os.path.join(path,d))
+        print >>out, '*', d, 'directory created'
+    open('README.md','w').write(README_DOC % {'name':addon})
+    print >>out, '* README.md written'
+    open('package.json','w').write(PACKAGE_JSON % {'name':addon})
+    print >>out, '* package.json written'
+    open(os.path.join(path,'tests','test-main.js'),'w').write(TEST_MAIN_JS)
+    print >>out, '* tests/test-main.js written'
+    open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
+    print >>out, '* lib/main.js written'
+    open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
+    print >>out, '* docs/main.md written'
+    print >>out, '''\nYour sample add-on is now ready for testing:
+    try "cfx test" and then "cfx run". Have fun!"'''
+    return 0
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT')):
     parser_kwargs = dict(arguments=arguments,
@@ -348,6 +378,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     command = args[0]
 
+    if command == "init":
+        initializer(env_root, args)
+        return
     if command == "develop":
         run_development_mode(env_root, defaults=options.__dict__)
         return
@@ -404,7 +437,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         target_cfg_json = os.path.join(options.pkgdir, 'package.json')
         target_cfg = packaging.get_config_in_dir(options.pkgdir)
 
-    use_main = False
     if command == "xpcom":
         if 'xpcom' not in target_cfg:
             print >>sys.stderr, "package.json does not have a 'xpcom' entry."
@@ -430,11 +462,21 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             module_name=xpcom.module
             )
         sys.exit(0)
-    elif command == "xpi":
+
+    # At this point, we're either building an XPI or running Jetpack code in
+    # a Mozilla application (which includes running tests).
+
+    use_main = False
+    timeout = None
+    inherited_options = ['verbose']
+
+    if command == "xpi":
         use_main = True
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
+        timeout = TEST_RUN_TIMEOUT
+        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
     elif command == "run":
         use_main = True
     else:
@@ -502,10 +544,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     assert "@" not in unique_prefix
     assert "." not in unique_prefix
 
-    timeout = None
     targets = [target]
-    if not use_main:
-        timeout = TEST_RUN_TIMEOUT
+    if command == "test":
         targets.append(options.test_runner_pkg)
 
     if options.extra_packages:
@@ -545,13 +585,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
-    inherited_options = ['verbose']
-
-    if use_main:
-        harness_options['main'] = target_cfg.get('main')
+    if command == "test":
+        # This should be contained in the test runner package.
+        harness_options['main'] = 'run-tests'
     else:
-        harness_options['main'] = "run-tests"
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        harness_options['main'] = target_cfg.get('main')
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)

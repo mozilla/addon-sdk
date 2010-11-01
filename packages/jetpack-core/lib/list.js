@@ -41,34 +41,23 @@ const { Trait } = require('traits');
 /**
  * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/list
  */
-const Iterable = Trait.compose(Object.create({}, {
+const Iterable = Trait.compose({
   /**
    * Hash map of key-values to iterate over.
    * Note: That this property can be a getter if you need dynamic behavior.
    * @type {Object}
    */
-  _keyValueMap: { value: Trait.required },
+  _keyValueMap: Trait.required,
   /**
    * Custom iterator providing `Iterable`s enumeration behavior.
    * @param {Boolean} onKeys
    */
-  _iterator: { value: function _iterator(onKeys, onKeyValue) {
+  __iterator__: function __iterator__(onKeys, onKeyValue) {
     let map = this._keyValueMap;
     for (let key in map)
       yield onKeyValue ? [key, map[key]] : onKeys ? key : map[key];
-  }, writable: true },
-  /**
-   * Getter returns private `_iterator`.
-   */
-  __iterator__: { get: function __iterator__() {
-    let iterator = this._iterator;
-    // We bind the _iterator method here rather than in a constructor
-    // to avoid making consumers resolve this trait every time they want
-    // to compose a new trait from it.
-    if (!iterator.bound) iterator = this._iterator = iterator.bind(this);
-    return iterator;
-  }}
-}));
+  }
+});
 exports.Iterable = Iterable;
 
 /**
@@ -78,7 +67,7 @@ exports.Iterable = Iterable;
  * elements of the list). List is a base trait and is meant to be a part of
  * composition, since all of it's API is private except length property.
  */
-const List = Iterable.resolve({ toString: null, _iterator: null }).compose({
+const List = Trait.resolve({ toString: null }).compose({
   _keyValueMap: null,
   /**
    * List constructor can take any number of element to populate itself.
@@ -148,7 +137,7 @@ const List = Iterable.resolve({ toString: null, _iterator: null }).compose({
    * @see https://developer.mozilla.org/en/JavaScript/Reference/Statements/for...in
    * @param {Boolean} onKeys
    */
-  _iterator: function _iterator(onKeys, onKeyValue) {
+  __iterator__: function __iterator__(onKeys, onKeyValue) {
     let array = this._keyValueMap,
         i = -1;
     for each(let element in array)
