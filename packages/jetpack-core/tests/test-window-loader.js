@@ -106,7 +106,6 @@ exports['test removeing listeners'] = function(test) {
       test.assertEqual(
         window, this._window, 'windows should match'
       );
-      this._window = null;
       window.close();
     },
     onUnload: function(window) {

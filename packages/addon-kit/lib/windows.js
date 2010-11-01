@@ -105,8 +105,9 @@ const BrowserWindowTrait = Trait.compose(
     },
     _onUnload: function() {
       this._emit('close', this._public);
-      // since window is closed we can destruct it
       this._window = null;
+      // Removing reference from the windows array.
+      windows.splice(windows.indexOf(this), 1);
       this._removeAllListeners('close');
       this._removeAllListeners('open');
       this._removeAllListeners('ready');
@@ -169,9 +170,8 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       unload.when(this._destructor.bind(this));
     },
     _destructor: function _destructor() {
-      for each (let window in this) {
+      for each (let window in this)
         window.close();
-      }
       this._removeAllListeners('open');
       this._removeAllListeners('close');
     },
@@ -227,8 +227,9 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     _onUntrack: function _onUntrack(chromeWindow) {
       if (!this._isBrowser(chromeWindow)) return;
       let window = BrowserWindow({ window: chromeWindow });
+      // `_onUnload` method of the `BrowserWindow` will remove `chromeWindow`
+      // from the `windows` array.
       this._remove(window);
-      windows.splice(windows.indexOf(window), 1);
       this._emit('close', window);
     }
   }).resolve({ toString: null })
