@@ -146,16 +146,12 @@ tests['test:destruct before removed'] = function(test) {
   let loader = test.makeSandboxedLoader();
   let panels = loader.require('panel');
   let { Panel } = loader.findSandboxForModule("panel").globalScope;
-  let PanelShim = Panel.compose({ destructor: function() this._destructor() });
-  PanelShim.prototype = Panel.prototype;
   
-  let isShowEmitted = false;
-
-  let panel = PanelShim({
+  let panel = Panel({
     contentURL: "about:buildconfig",
     onShow: function onShow() {
       test.pass('shown was emitted');
-      panel.destructor();
+      loader.unload();
     },
     onHide: function onHide() {
       test.done();
