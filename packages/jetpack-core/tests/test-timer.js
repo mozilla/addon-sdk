@@ -105,7 +105,7 @@ exports.testParamedClearInterval = function(test) {
 
 
 exports.testUnload = function(test) {
-  var loader = new test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader();
   var sbtimer = loader.require("timer");
 
   var myFunc = function myFunc() {

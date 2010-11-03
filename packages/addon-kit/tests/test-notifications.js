@@ -58,7 +58,7 @@ exports.testOnClick = function (test) {
 
 // Returns [loader, mockAlertService].
 function makeLoader(test) {
-  let loader = new test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader();
   let mockAlertServ = {
     showAlertNotification: function (imageUrl, title, text, textClickable,
                                      cookie, alertListener, name) {

@@ -75,7 +75,7 @@ tests.testAddedPageProperties = function(test) {
 tests.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = new test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader();
   let Pages = loader.require("page-worker");
   let global = loader.findSandboxForModule("page-worker").globalScope;
 
@@ -115,7 +115,7 @@ tests.testConstructorAndDestructor = function(test) {
 tests.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = new test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader();
   let Pages = loader.require("page-worker");
   let global = loader.findSandboxForModule("page-worker").globalScope;
 

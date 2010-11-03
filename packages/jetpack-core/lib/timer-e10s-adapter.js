@@ -1,3 +1,7 @@
+// This implementation is neither secure nor complete,
+// because timer functionality should be implemented
+// natively in-process by bug 568695.
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -13,13 +17,12 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2007
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Atul Varma <atul@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,26 +38,36 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-'use strict';
+if (this.sendMessage) {
+  var callbacks = {};
+  exports.setTimeout = function setTimeout(cb, ms) {
+    var id = callMessage("setTimeout", ms)[0];
+    callbacks[id] = cb;
+    return id;
+  };
 
-const { Trait } = require('traits');
-
-const WindowDom = Trait.compose({
-  _window: Trait.required,
-  get title() {
-    let window = this._window;
-    return window && window.document ? window.document.title : null
-  },
-  close: function close() {
-    let window = this._window;
-    if (window) window.close();
-    return this._public;
-  },
-  focus: function focus() {
-    let window = this._window;
-    if (window) window.focus();
-    return this._public;
-  }
-});
-exports.WindowDom = WindowDom;
-
+  exports.clearTimeout = function clearTimeout(id) {
+    delete callbacks[id];
+    sendMessage("clearTimeout", id);
+  };
+  
+  registerReceiver("onTimeout", function(name, id) {
+    var cb = callbacks[id];
+    delete callbacks[id];
+    if (cb)
+      cb(); // yay race conditions
+  });
+} else {
+  exports.register = function(process) {
+    var timer = require("timer");
+    process.registerReceiver("setTimeout", function(name, ms) {
+      var id = timer.setTimeout(function() {
+        process.sendMessage("onTimeout", id);
+      }, ms);
+      return id;
+    });
+    process.registerReceiver("clearTimeout", function(name, id) {
+      timer.clearTimeout(id);
+    });
+  };
+}

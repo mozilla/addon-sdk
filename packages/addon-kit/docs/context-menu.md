@@ -1,8 +1,7 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-The `context-menu` module allows you to add items to Firefox's page context
-menu.
+The `context-menu` module lets you add items to Firefox's page context menu.
 
 
 Introduction
@@ -25,8 +24,8 @@ never need to manually remove your items from the menu unless you want them to
 never appear again.
 
 For example, if your extension needs to add a context menu item whenever the
-user visits a certain URL, don't add the item when that URL loads, and don't
-remove the item when the URL unloads.  Rather, add your item only once, when
+user visits a certain page, don't add the item when that page loads, and don't
+remove the item when the page unloads.  Rather, add your item only once, when
 your program starts, and supply a context that matches the target URL.
 
 
@@ -35,114 +34,200 @@ Specifying Contexts
 
 As its name implies, the context menu should be reserved for the occurrence of
 specific contexts.  Contexts can be related to page content or the page itself,
-but they should never be external to the page.  For example, a good use of the
-menu would be to show an "Edit Image" item when the user right-clicks an image
-in the page.  A bad use would be to show a submenu that listed all the user's
-tabs, since tabs aren't related to the page or the node the user clicked to open
-the menu.
+but they should never be external to the page.
 
-The binding of a menu item to a context occurs through the item's `context`
-property and the `context` options key passed to its constructor.
+For example, a good use of the menu would be to show an "Edit Image" item when
+the user right-clicks an image in the page.  A bad use would be to show a
+submenu that listed all the user's tabs, since tabs aren't related to the page
+or the node the user clicked to open the menu.
 
-Contexts may be specified with any of the following types:
+### The Page Context
+
+First of all, you may not need to specify a context at all.  When an item does
+not specify a context, the *page context* applies.  The page context occurs
+when the user invokes the context menu on a non-interactive portion of the page.
+
+Try right-clicking a blank spot in a page, or on text.  Make sure that no text
+is selected.  The menu that appears should contain the items "Back", "Forward",
+"Reload", "Stop", and so on.  This is the page context.
+
+The page context is appropriate when your item acts on the page as a whole.  It
+does not occur when the user invokes the context menu on a link, image, or other
+non-text node, or while a selection exists.
+
+### Declarative Contexts
+
+You can specify some simple, declarative contexts when you construct a menu
+item by setting the `context` property of the options object passed to its
+constructor.  Such contexts may be specified with instances of any of the
+following types.  Each is a constructor exported by the `context-menu` module.
 
 <table>
   <tr>
-    <td>string</td>
+    <td><code>
+      PageContext()
+    </code></td>
     <td>
-      A CSS selector.  This context occurs when the menu is invoked on a node
-      that either matches this selector or has an ancestor that matches.
+      The page context.
     </td>
   </tr>
   <tr>
-    <td>undefined or null</td>
+    <td><code>
+      SelectionContext()
+    </code></td>
     <td>
-      The page context.  This context occurs when the menu is invoked on a
-      non-interactive portion of the page.  For example, right-clicking plain
-      text triggers the page context but an image or hyperlink doesn't.
+      This context occurs when the menu is invoked on a page that contains a
+      selection.
     </td>
   </tr>
   <tr>
-    <td>function</td>
+    <td><code>
+      SelectorContext(selector)
+    </code></td>
     <td>
-      An arbitrary predicate.  This context occurs when the function returns
-      true.  The function is passed an object describing the current context,
-      which it can use to determine if the predicate is true.  See Examining
-      Contexts below for details.
+      This context occurs when the menu is invoked on a node that either matches
+      <code>selector</code>, a CSS selector,  or has an ancestor that matches.
+      <code>selector</code> may include multiple selectors separated by commas,
+      e.g., <code>"a[href], img"</code>.
     </td>
   </tr>
   <tr>
-    <td>array</td>
+    <td><code>
+      URLContext(matchPattern)
+    </code></td>
     <td>
-      An array of any of the other types.  This context occurs when any context
-      in the array occurs.
+      This context occurs when the menu is invoked on pages with particular
+      URLs.  <code>matchPattern</code> is a match pattern string or an array of
+      match pattern strings.  When <code>matchPattern</code> is an array, the
+      context occurs when the menu is invoked on a page whose URL matches any of
+      the patterns.  These are the same match pattern strings that you use with
+      the <a href="#module/addon-kit/page-mod"><code>page-mod</code></a>
+      <code>include</code> property.
+      <a href="#module/jetpack-core/match-pattern">Read more about patterns</a>.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      array
+    </td>
+    <td>
+      An array of any of the other types.  This context occurs when all contexts
+      in the array occur.
     </td>
   </tr>
 </table>
 
-A menu item's `context` property is a collection, similar to event listener
-collections common throughout Jetpack's APIs.  A single context may be bound by
-assigning a scalar either on creation or after:
+Menu items also have a `context` property that can be used to add and remove
+declarative contexts after construction.  For example:
 
-    var contextMenu = require("context-menu");
-    var item = contextMenu.Item({ context: "img" });
-    item.context = "img";
-
-Multiple contexts may be bound by assigning an array:
-
-    item = contextMenu.Item({ context: ["img", "a[href]"] });
-    item.context = ["img", "a[href]"];
-
-You can add more bindings:
-
-    item.context.add("img");
-    item.context.add(["img", "a[href]"]);
-
-And remove them:
-
-    item.context.remove("img");
-    item.context.remove(["img", "a[href]"]);
+    var context = contextMenu.SelectorContext("img");
+    myMenuItem.context.add(context);
+    myMenuItem.context.remove(context);
 
 When a menu item is bound to more than one context, it appears in the menu when
-any of those contexts occur.
+all of those contexts occur.
+
+### In Content Scripts
+
+To interact with pages in the browser, you create content scripts and pass them
+when constructing menu items.  Only items added to the top-level context menu
+can have content scripts.
+
+One of the things you can do in a content script is listen for an event named
+`"context"`.  This event is fired whenever the context menu is about to be
+shown.  If your listener returns true, the menu item associated with the content
+script is shown in the menu.
+
+For example, this is an item that appears whenever the context menu is invoked
+on a page whose URL contains "mozilla" as a substring:
+
+    var myItem = contextMenu.Item({
+      label: "My Mozilla Item",
+      contentScript: 'on("context", function (node) {' +
+                     '  return /mozilla/.test(document.URL);' +
+                     '});'
+    });
+
+Note that the listener function has a parameter called `node`.  This is the node
+in the page that the user context-clicked to invoke the menu.  You can use it to
+determine whether your item should be shown.
+
+You can both specify declarative contexts and listen for contexts in a content
+script.  In that case, the declarative contexts are evaluated first.  If they
+are not current, then your context listener is never called.
+
+This example takes advantage of that fact.  The listener can be assured that
+`node` will always be an image:
+
+    var myItem = contextMenu.Item({
+      label: "My Mozilla Image Item",
+      context: contextMenu.SelectorContext("img"),
+      contentScript: 'on("context", function (node) {' +
+                     '  return /mozilla/.test(node.src);' +
+                     '});'
+    });
+
+Your item is shown only when all declarative contexts are current and your
+context listener returns true.
 
 
-Examining Contexts
-------------------
+Handling Menu Item Clicks
+-------------------------
 
-Menu item callbacks like `onClick` often need to examine the context in which
-the menu was invoked.  For example, an item that edits images needs to know the
-URL of the image on which the user invoked the context menu.
+When the user clicks your menu item, an event named `"click"` is dispatched to
+the item's content script.  Content scripts let you interact with pages in the
+browser, and they also let you handle menu item clicks.
 
-Callbacks are therefore passed an object describing the current context.  It has
-the following properties:
+Therefore, to handle a click, listen for `"click"` events in your content
+script like so:
 
-<table>
-  <tr>
-    <td><code>node</code></td>
-    <td>
-     The node the user clicked to invoke the menu.
-    </td>
-  </tr>
-  <tr>
-    <td><code>document</code></td>
-    <td>
-     The document containing <code>node</code> (i.e.,
-     <code>node.ownerDocument</code>).
-    </td>
-  </tr>
-  <tr>
-    <td><code>window</code></td>
-    <td>
-     The window containing <code>document</code> (i.e.,
-     <code>node.ownerDocument.defaultView</code>).
-    </td>
-  </tr>
-</table>
+    var myItem = contextMenu.Item({
+      label: "My Item",
+      contentScript: 'on("click", function (node, data) {' +
+                     '  console.log("Item clicked!");' +
+                     '});'
+    });
+
+Note that the listener function has parameters called `node` and `data`.  `node`
+is the node that the user context-clicked to invoke the menu.  You can use it
+when performing some action.  `data` is the `data` property of the menu item
+that was clicked.  Since only top-level menu items have content scripts, this
+comes in handy for `Menu`s with sub-items.  For example:
+
+    var myMenu = contextMenu.Menu({
+      label: "My Menu",
+      contentScript: 'on("click", function (node, data) {' +
+                     '  console.log("You clicked " + data);' +
+                     '});',
+      items: [
+        contextMenu.Item({ label: "Item 1", data: "item1" }),
+        contextMenu.Item({ label: "Item 2", data: "item2" }),
+        contextMenu.Item({ label: "Item 3", data: "item3" })
+      ]
+    });
+
+Often you will need to collect some kind of information in the click listener
+and perform an action unrelated to content.  To communicate to the menu item
+associated with the content script, the content script can call the global
+`postMessage` function, passing it some JSON-able data.  The menu item's
+`onMessage` function will be called with that data.
+
+    var myItem = contextMenu.Item({
+      label: "Edit Image",
+      context: contextMenu.SelectorContext("img"),
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
+                     '});',
+      onMessage: function (imgSrc) {
+        openImageEditor(imgSrc);
+      }
+    });
 
 
-Item Constructors
------------------
+Reference
+---------
+
+### Menu Item Constructors
 
 <api name="Item">
 @constructor
@@ -154,16 +239,25 @@ Item Constructors
     `toString()`.
   @prop [data] {string}
     An optional arbitrary value to associate with the item.  It must be either a
-    string or an object that implements `toString()`.
-  @prop [onClick] {function}
-    An optional function that will be called when the Item is clicked.  It's
-    called as `onClick(contextObj, item)`.  `contextObj` is an object describing
-    the context in which the context menu was invoked; see Examining Contexts
-    above.  `item` is the item itself.
-  @prop [context] {object}
-    If the item is added to the top-level context menu, this specifies the
-    context under which the item will appear; see Specifying Contexts above.
-    Ignored if the item is contained in a submenu.
+    string or an object that implements `toString()`.  It will be passed to
+    click listeners.
+  @prop [context] {value}
+    If the item is added to the top-level context menu, this declaratively
+    specifies the context under which the item will appear; see Specifying
+    Contexts above.  Ignored if the item is contained in a submenu.
+  @prop [contentScript] {string,array}
+    If the item is added to the top-level context menu, this is the content
+    script or an array of content scripts that the item can use to interact with
+    the page.  Ignored if the item is contained in a submenu.
+  @prop [contentScriptURL] {string,array}
+    If the item is added to the top-level context menu, this is the local file
+    URL of the content script or an array of such URLs that the item can use to
+    interact with the page.  Ignored if the item is contained in a submenu.
+  @prop [onMessage] {function}
+    If the item is added to the top-level context menu, this function will be
+    called when the content script calls `postMessage`.  It will be passed the
+    data that was passed to `postMessage`.  Ignored if the item is contained in
+    a submenu.
 </api>
 
 <api name="Menu">
@@ -177,17 +271,23 @@ Item Constructors
   @prop items {array}
     An array of menu items that the menu will contain.  Each must be an `Item`,
     `Menu`, or `Separator`.
-  @prop [onClick] {function}
-    An optional function that will be called when any of the menu's `Item`
-    descendants is clicked. (The `onClick`s of descendants are invoked first, in
-    a bottom-up, bubbling manner.)  It is called as
-    `onClick(contextObj, item)`. `contextObj` is an object describing the
-    context in which the context menu was invoked; see Examining Contexts above.
-    `item` is the item that was clicked.
-  @prop [context] {object}
-    If the item is added to the top-level context menu, this specifies the
-    context under which the item will appear; see Specifying Contexts above for
-    details.  Ignored if the item is contained in a submenu.
+  @prop [context] {value}
+    If the menu is added to the top-level context menu, this declaratively
+    specifies the context under which the menu will appear; see Specifying
+    Contexts above.  Ignored if the menu is contained in a submenu.
+  @prop [contentScript] {string,array}
+    If the menu is added to the top-level context menu, this is the content
+    script or an array of content scripts that the menu can use to interact with
+    the page.  Ignored if the menu is contained in a submenu.
+  @prop [contentScriptURL] {string,array}
+    If the menu is added to the top-level context menu, this is the local file
+    URL of the content script or an array of such URLs that the menu can use to
+    interact with the page.  Ignored if the menu is contained in a submenu.
+  @prop [onMessage] {function}
+    If the menu is added to the top-level context menu, this function will be
+    called when the content script calls `postMessage`.  It will be passed the
+    data that was passed to `postMessage`.  Ignored if the menu is contained in
+    a submenu.
 </api>
 
 <api name="Separator">
@@ -196,9 +296,37 @@ Item Constructors
   can't be added to the top-level context menu.
 </api>
 
+### Context Constructors
 
-Context Menu Functions
-----------------------
+<api name="PageContext">
+@constructor
+  Creates a page context.  See Specifying Contexts above.
+</api>
+
+<api name="SelectionContext">
+@constructor
+  Creates a context that occurs when a page contains a selection.  See
+  Specifying Contexts above.
+</api>
+
+<api name="SelectorContext">
+@constructor
+  Creates a context that matches a given CSS selector.  See Specifying Contexts
+  above.
+@param selector {string}
+  A CSS selector.
+</api>
+
+<api name="URLContext">
+@constructor
+  Creates a context that matches pages with particular URLs.  See Specifying
+  Contexts above.
+@param matchPattern {string,array}
+  A [match pattern] string or an array of match pattern strings.
+  [match pattern]: #module/jetpack-core/match-pattern
+</api>
+
+### Module Functions
 
 <api name="add">
 @function
@@ -220,9 +348,15 @@ Context Menu Functions
 Examples
 --------
 
-Each of these examples can be added to the top-level context of your program;
+Each of these examples can be added to the top-level scope of your program;
 you don't need to manually remove or add these items other than the single call
 to `add()` in each example.  See the Introduction above for more information.
+
+Also, in the real world you probably don't want to include content scripts
+directly in your programs like these examples do.  Instead, make separate files
+in your package's `data` directory, get the URLs of those files using the
+[`self`][self] module, and pass them to menu item constructors using the
+`contentScriptURL` options object property.
 
 First, don't forget to import the module:
 
@@ -233,37 +367,67 @@ part of the page:
 
     var pageSourceItem = contextMenu.Item({
       label: "Edit Page Source",
-      onClick: function (contextObj, item) {
-        editSource(contextObj.document.URL);
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(document.URL);' +
+                     '});',
+      onMessage: function (pageURL) {
+        editSource(page.URL);
       }
     });
     contextMenu.add(pageSourceItem);
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    var imgCssSelector = "img";
     var editImageItem = contextMenu.Item({
       label: "Edit Image",
-      onClick: function (contextObj, item) {
-        var img = contextObj.node;
-        editImage(img.src);
-      },
-      context: imgCssSelector
+      context: contextMenu.SelectorContext("img"),
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
+                     '});',
+      onMessage: function (imgSrc) {
+        openImageEditor(imgSrc);
+      }
     });
     contextMenu.add(editImageItem);
 
+Show an "Edit Mozilla Image" item when the menu is invoked on an image in a
+mozilla.org or mozilla.com page:
+
+    var editMozImageItem = contextMenu.Item({
+      label: "Edit Mozilla Image",
+      context: [
+        contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
+        contextMenu.SelectorContext("img")
+      ],
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
+                     '});',
+      onMessage: function (imgSrc) {
+        openImageEditor(imgSrc);
+      }
+    });
+    contextMenu.add(editMozImageItem);
+
 Show an "Edit Page Images" item when the page contains at least one image:
 
-    function pageHasImages(contextObj) {
-      return !!contextObj.document.querySelector("img");
-    }
     var editImagesItem = contextMenu.Item({
       label: "Edit Page Images",
-      onClick: function (contextObj, item) {
-        var imgNodes = contextObj.document.querySelectorAll("img");
-        editImages(imgNodes);
-      },
-      context: pageHasImages
+      // This ensures the item only appears during the page context.
+      context: contextMenu.PageContext(),
+      contentScript: 'on("context", function (node) {' +
+                     '  var pageHasImgs = !!document.querySelector("img");' +
+                     '  return pageHasImgs;' +
+                     '});' +
+                     'on("click", function (node, data) {' +
+                     '  var imgs = document.querySelectorAll("img");' +
+                     '  var imgSrcs = [];' +
+                     '  for (var i = 0 ; i < imgs.length; i++)' +
+                     '    imgSrcs.push(imgs[i].src);' +
+                     '  postMessage(imgSrcs);' +
+                     '});',
+      onMessage: function (imgSrcs) {
+        openImageEditor(imgSrcs);
+      }
     });
     contextMenu.add(editImagesItem);
 
@@ -278,15 +442,16 @@ Google or Wikipedia with the text contained in the anchor:
       label: "Wikipedia",
       data: "http://en.wikipedia.org/wiki/Special:Search?search="
     });
-    var anchorSelector = "a[href]";
     var searchMenu = contextMenu.Menu({
       label: "Search With",
-      onClick: function (contextObj, item) {
-        var anchor = contextObj.node;
-        var searchUrl = item.data + anchor.textContent;
-        contextObj.window.location.href = searchUrl;
-      },
-      context: anchorSelector,
+      context: contextMenu.SelectorContext("a[href]"),
+      contentScript: 'on("click", function (node, data) {' +
+                     '  var searchURL = data + node.textContent;' +
+                     '  window.location.href = searchURL;' +
+                     '});',
       items: [googleItem, wikipediaItem]
     });
     contextMenu.add(searchMenu);
+
+
+[self]: #module/jetpack-core/self

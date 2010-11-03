@@ -274,7 +274,7 @@ function manager(loader) {
 }
 
 function newLoader(test) {
-  return new test.makeSandboxedLoader({ globals: { packaging: packaging } });
+  return test.makeSandboxedLoader({ globals: { packaging: packaging } });
 }
 
 function setGetRoot(test, val, compare) {

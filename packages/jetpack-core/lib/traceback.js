@@ -95,10 +95,12 @@ function nsIStackFramesToJSON(frame) {
   var stack = [];
 
   while (frame) {
-    var filename = deParentifyURL(frame.filename);
-    stack.splice(0, 0, {filename: filename,
-                        lineNo: frame.lineNumber,
-                        funcName: frame.name});
+    if (frame.filename) {
+      var filename = deParentifyURL(frame.filename);
+      stack.splice(0, 0, {filename: filename,
+                          lineNo: frame.lineNumber,
+                          funcName: frame.name});
+    }
     frame = frame.caller;
   }
 
