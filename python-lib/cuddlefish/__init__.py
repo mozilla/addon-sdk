@@ -418,7 +418,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         import cuddlefish.server
 
         # TODO: Allow user to change this filename via cmd line.
-        filename = 'jetpack-sdk-docs.tgz'
+        filename = 'addon-sdk-docs.tgz'
         cuddlefish.server.generate_static_docs(env_root, filename)
         print "Wrote %s." % filename
         return

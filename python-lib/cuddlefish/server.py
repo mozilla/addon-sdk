@@ -371,7 +371,7 @@ def generate_static_docs(env_root, tgz_filename):
     server = Server(env_root=env_root,
                     task_queue=None,
                     expose_privileged_api=False)
-    staging_dir = os.path.join(env_root, "jetpack-sdk-docs")
+    staging_dir = os.path.join(env_root, "addon-sdk-docs")
     if os.path.exists(staging_dir):
         shutil.rmtree(staging_dir)
 
@@ -434,7 +434,7 @@ def generate_static_docs(env_root, tgz_filename):
 
     # finally, build a tarfile out of everything
     tgz = tarfile.open(tgz_filename, 'w:gz')
-    tgz.add('jetpack-sdk-docs', 'jetpack-sdk-docs')
+    tgz.add('addon-sdk-docs', 'addon-sdk-docs')
     tgz.close()
     shutil.rmtree(staging_dir)
 

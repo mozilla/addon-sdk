@@ -36,15 +36,15 @@ implementation) and bootstraps the add-on (i.e. starts its `main` program or
 runs tests).
 </span>
 Copy the extension template the SDK uses to run add-ons from
-`jetpack-sdk/python-lib/cuddlefish/app-extension` to your own folder, for
-example `jetpack-sdk/packages/my-first-package/extension`.
+`addon-sdk/python-lib/cuddlefish/app-extension` to your own folder, for
+example `addon-sdk/packages/my-first-package/extension`.
 
-Copy your other extension files to `jetpack-sdk/packages/my-extension/extension`
+Copy your other extension files to `addon-sdk/packages/my-extension/extension`
 (`components`, `chrome.manifest` and chrome files, etc).
 
 Now you can run Firefox with your XUL extension *and* our test module installed
 by executing the following command from the package folder,
-`jetpack-sdk/packages/my-extension`:
+`addon-sdk/packages/my-extension`:
 
     cfx run -t extension
 
