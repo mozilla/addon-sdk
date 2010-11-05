@@ -37,20 +37,15 @@ to all Cuddlefish Modules, such as `console` and `memory`. Includes
 CommonJS globals like `require` and standard JavaScript globals such
 as `Array` and `Math`.
 
-__Jetpack Chrome Module__: A CommonJS module which requires full
-access to the Mozilla platform (e.g., `Components.classes`) to
-function properly. It also has access to all Jetpack Globals.
-
-__Privileged Jetpack Module__: Synonym for Jetpack Chrome Module.
-
 <span class="aside">
 For more information on Low-Level Jetpack API Modules, see the
 [LLJAPI Best Practices] appendix.
 </span>
 
-__Low-Level Jetpack API Module__: A Jetpack Chrome Module with the
-following properties:
+__Low-Level Jetpack API Module__: A module with the following properties:
 
+  * Has "chrome" access to the Mozilla platform (e.g. `Components.classes`)
+    and all Jetpack Globals.
   * Is reloadable without leaking memory.
   * Logs full exception tracebacks originating from client-provided
     callbacks (i.e., does not allow the exceptions to propagate into
@@ -63,8 +58,8 @@ __Unprivileged Jetpack Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
 all applicable Jetpack Globals that don't require chrome privileges.
 
-__Jetpack Module__: A CommonJS module that is either a Privileged
-Jetpack Module or an Unprivileged Jetpack Module.
+__Jetpack Module__: A CommonJS module that is either a Low-Level Jetpack API
+Module or an Unprivileged Jetpack Module.
 
 __Jetpack Loader__: An object capable of finding, evaluating, and
 exposing CommonJS modules to each other in a given security context,
