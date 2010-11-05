@@ -77,14 +77,14 @@ Jetpack-based code.
 
 __Jetpack Package__: A directory structure containing Jetpack modules,
 documentation, tests, and related metadata. If a Jetpack Package contains
-a Jetpack Program and includes proper metadata, it can be built into
+an SDK Program and includes proper metadata, it can be built into
 a Mozilla application or extension.
 
 __Jetpack XPI__: A build target of the CFX tool that, when loaded as
 an extension by a supported Mozilla application, bootstraps a Jetpack
-Loader and executes a Jetpack Program.
+Loader and executes an SDK Program.
 
-__Jetpack Program__: A Jetpack Module named `main` that optionally exports
+__SDK Program__: A Jetpack Module named `main` that optionally exports
 a `main()` function.  This module is intended either to start a program for
 an end-user or add features to an existing program.
 

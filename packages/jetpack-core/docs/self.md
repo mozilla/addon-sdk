@@ -1,6 +1,6 @@
-The `self` module provides access to data that is bundled with the add-on or
-jetpack program as a whole. It also provides the "add-on ID", a value which
-is unique for each add-on.
+The `self` module provides access to data that is bundled with the add-on
+as a whole. It also provides the "add-on ID", a value which is unique for each
+add-on.
 
 <api name="id">
 @property {string}
