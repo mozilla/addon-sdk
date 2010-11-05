@@ -52,7 +52,7 @@ ultimately be included in the XPI.
 The XPI Template
 ----------------
 
-The Jetpack SDK also contains a directory that contains a template for
+The Add-on SDK also contains a directory that contains a template for
 a XPI file:
 
     >>> document_dir('xpi-template')

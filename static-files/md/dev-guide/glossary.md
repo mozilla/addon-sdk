@@ -18,7 +18,7 @@ __Jetpack__: A CommonJS-based framework used to power secure Mozilla
 applications and extensions with Web technologies. Not to be confused
 with the Jetpack Prototype, which is a completely different animal.
 
-__Jetpack SDK__: A toolchain and associated applications used to develop
+__Add-on SDK__: A toolchain and associated applications used to develop
 Jetpack Packages.
 
 __Jetpack Prototype__: A Firefox extension released in May 2009 which

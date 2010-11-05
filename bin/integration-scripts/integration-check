@@ -186,7 +186,7 @@ def run_cmd(home_path,folder_name):
       kill_check.set() # tell the main routine to kill. Used SIGKILL to hard kill the process.
       return
     
-    #Set the path for the logs. They will be in the parent directory of the Jetpack SDK.
+    #Set the path for the logs. They will be in the parent directory of the Add-on SDK.
     global base_path
     log_path=base_path+'tests.log 2>&1'
     #Subprocess call to set up the jetpack environment and to start the tests. Also sends the output to a log file.
@@ -233,7 +233,7 @@ def package(example_dir):
       kill_check.set() # tell the main routine to kill. Used SIGKILL to hard kill the process.
       return
     
-    #Set the path for the example logs. They will be in the parent directory of the Jetpack SDK.
+    #Set the path for the example logs. They will be in the parent directory of the Add-on SDK.
     global base_path
     exlog_path=base_path+'test-example.log 2>&1'
     #Subprocess call to test the sample example for packaging.

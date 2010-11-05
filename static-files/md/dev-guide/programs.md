@@ -143,7 +143,7 @@ with your program installed.
 ### Packaging It ###
 
 Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Jetpack SDK simplifies the packaging
+application, as a XPI file. The Add-on SDK simplifies the packaging
 process by generating this file for you.
 
 <span class="aside"> Each Jetpack program (such as an add-on) gets a

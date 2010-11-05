@@ -1,4 +1,4 @@
-If you're having trouble getting the Jetpack SDK up and running, don't panic!
+If you're having trouble getting the Add-on SDK up and running, don't panic!
 The SDK is an alpha-stage project under active development, so there are bound
 to be some rough edges.
 
@@ -67,7 +67,7 @@ problems to the [Jetpack mailing list].  You can also browse the list of
 Contact the Jetpack Team and User Group
 ---------------------------------------
 
-Jetpack SDK users and team members discuss problems and proposals on the
+Add-on SDK users and team members discuss problems and proposals on the
 [Jetpack mailing list].  Someone else may have had the same problem you do, so
 try searching the list.  You're welcome to post a question, too.
 

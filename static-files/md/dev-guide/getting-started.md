@@ -1,9 +1,9 @@
-Welcome to the Jetpack SDK.
+Welcome to the Add-on SDK.
 
 Prerequisites
 -------------
 
-To develop with the new Jetpack SDK, you'll need:
+To develop with the new Add-on SDK, you'll need:
 
 <span class="aside">
 Verify that Python is in your path.
@@ -24,7 +24,7 @@ At the time of this writing, the latest stable version of the Jetpack
 SDK is 0.10pre. You can obtain it as a [tarball] or a [zip file].
 
 Alternatively, you can get the latest development version of the
-Jetpack SDK from its [HG repository].
+Add-on SDK from its [HG repository].
 
 Regardless of which option you choose, navigate to the root directory
 of your checkout with a shell/command prompt. This directory should
@@ -32,7 +32,7 @@ be called `jetpack-sdk`.
 
 <span class="aside">
 Unlike many development tools, there isn't a system-wide location for
-the Jetpack SDK. Instead, developers can have as many installations of
+the Add-on SDK. Instead, developers can have as many installations of
 the SDK as they want, each configured separately from one
 another. Each installation is called a *virtual environment*.
 </span>
@@ -47,7 +47,7 @@ Otherwise, if you're on Windows, run:
 
 Now the beginning of your command prompt should contain the text
 `(jetpack-sdk)`, which means that your shell has entered a special
-virtual environment that gives you access to the Jetpack SDK's
+virtual environment that gives you access to the Add-on SDK's
 command-line tools.
 
 At any time, you can leave a virtual environment by running
@@ -62,7 +62,7 @@ Sanity Check
 
 <span class="aside">
 Unit and behavioral [testing] is something that
-we're trying to make as easy and fast as possible in the Jetpack SDK,
+we're trying to make as easy and fast as possible in the Add-on SDK,
 because it's imperative that we know when breakages occur between the
 Mozilla platform and Jetpack. We also need to make sure that creating
 new functionality or modifying existing code doesn't break other
@@ -81,7 +81,7 @@ many lines of usage information:
     Usage: cfx [options] [command]
 
 This is the `cfx` command-line program.  It's your primary interface to the
-Jetpack SDK.  You use it to launch Firefox and test your add-on, package your
+Add-on SDK.  You use it to launch Firefox and test your add-on, package your
 add-on for distribution, view documentation, and run unit tests.
 
 Once you're ready, move on to the next section: [Packaging].

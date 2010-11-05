@@ -1,13 +1,13 @@
-The Jetpack SDK houses collections of reusable code, documentation,
+The Add-on SDK houses collections of reusable code, documentation,
 and other associated resources in structures called *packages*.
 
-A list of packages in the Jetpack SDK environment that generated this
+A list of packages in the Add-on SDK environment that generated this
 documentation is on the left side of this page under the heading
 *Package Reference*.
 
 Packages are just directories on your filesystem. Specifically,
 they're located under the `packages` directory in the root of your
-Jetpack SDK environment.
+Add-on SDK environment.
 
 Your First Package
 ------------------
@@ -42,7 +42,7 @@ the following:
 
 Now reload this page. You should see `my-first-package` listed under
 *Package Reference* on the left side of this page, with its
-description next to it. The Jetpack SDK's documentation server has
+description next to it. The Add-on SDK's documentation server has
 automatically detected your new package and has started documenting
 it!
 
@@ -52,7 +52,7 @@ it!
 Learn more about how modules work at the [CommonJS Specification].
 </span>
 
-Reusable pieces of code are called *modules*. The Jetpack SDK uses a
+Reusable pieces of code are called *modules*. The Add-on SDK uses a
 module standard called CommonJS, which means that it's possible to
 share code between Jetpack and other JavaScript-based frameworks like
 node.js.
@@ -109,7 +109,7 @@ Runner Object*, and has an API that makes it really easy to run tests.
 
 <span class="aside">
 Writing and running tests has been designed to be as easy and fast as
-possible in the Jetpack SDK.
+possible in the Add-on SDK.
 </span>
 
 Now go to the root directory of your new package and run `cfx test
