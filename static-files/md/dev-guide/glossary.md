@@ -27,10 +27,9 @@ CSS and JavaScript), with the goal of allowing anyone who can build a
 Web site to participate in making the Web a better place to work,
 communicate and play. Not to be confused with Jetpack.
 
-__Jetpack Core__: A small, self-contained set of Jetpack Chrome
-Modules and Low-Level Modules that form the base
-functionality for Jetpack. The Core can actually be "bootstrapped"
-into any Mozilla application or extension.
+__Jetpack Core__: A small, self-contained set of low-level modules that forms
+the base functionality for the Add-on SDK. The Core can be "bootstrapped" into
+any Mozilla application or extension.
 
 __Jetpack Globals__: The set of global variables and objects provided
 to all Cuddlefish Modules, such as `console` and `memory`. Includes
