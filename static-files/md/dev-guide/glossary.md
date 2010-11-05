@@ -60,7 +60,7 @@ all applicable globals that don't require chrome privileges.
 __Module__: A CommonJS module that is either a Low-Level Module
 or an Unprivileged Module.
 
-__Jetpack Loader__: An object capable of finding, evaluating, and
+__Loader__: An object capable of finding, evaluating, and
 exposing CommonJS modules to each other in a given security context,
 while providing each module with necessary globals and
 enforcing security boundaries between the modules as necessary. It's
