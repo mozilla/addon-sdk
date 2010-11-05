@@ -28,7 +28,7 @@ Web site to participate in making the Web a better place to work,
 communicate and play. Not to be confused with Jetpack.
 
 __Jetpack Core__: A small, self-contained set of Jetpack Chrome
-Modules and Low-Level Jetpack API Modules that form the base
+Modules and Low-Level Modules that form the base
 functionality for Jetpack. The Core can actually be "bootstrapped"
 into any Mozilla application or extension.
 
@@ -38,11 +38,11 @@ CommonJS globals like `require` and standard JavaScript globals such
 as `Array` and `Math`.
 
 <span class="aside">
-For more information on Low-Level Jetpack API Modules, see the
-[LLJAPI Best Practices] appendix.
+For more information on Low-Level Modules, see the
+[Low-Level Module Best Practices] appendix.
 </span>
 
-__Low-Level Jetpack API Module__: A module with the following properties:
+__Low-Level Module__: A module with the following properties:
 
   * Has "chrome" access to the Mozilla platform (e.g. `Components.classes`)
     and all Jetpack Globals.
@@ -58,7 +58,7 @@ __Unprivileged Jetpack Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
 all applicable Jetpack Globals that don't require chrome privileges.
 
-__Jetpack Module__: A CommonJS module that is either a Low-Level Jetpack API
+__Jetpack Module__: A CommonJS module that is either a Low-Level
 Module or an Unprivileged Jetpack Module.
 
 __Jetpack Loader__: An object capable of finding, evaluating, and
@@ -79,7 +79,7 @@ __Program__: A Jetpack Module named `main` that optionally exports
 a `main()` function.  This module is intended either to start an application for
 an end-user or add features to an existing application.
 
-__Jetpack Platform Library__: A set of Low-Level Jetpack API Modules
+__Jetpack Platform Library__: A set of Low-Level Modules
 that expose the functionality of the Mozilla Platform (Gecko).
 
-  [LLJAPI Best Practices]: #guide/best-practices
+  [Low-Level Module Best Practices]: #guide/best-practices

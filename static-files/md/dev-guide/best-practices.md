@@ -4,7 +4,7 @@ the Jetpack team hasn't been able to do a great deal of yet, since the
 platform is fairly new.
 </span>
 
-Low-Level Jetpack API (LLJAPI) modules expose Mozilla platform
+Low-level modules expose Mozilla platform
 capabilities to client code. They are intended to have the following
 characteristics:
 
@@ -38,12 +38,12 @@ For more information on the security aspects of Jetpack, see the
 </span>
 
   * **Security Conscious**. Because the precise details of Jetpack's
-    security model are still unknown, we can't yet make LLJAPI
+    security model are still unknown, we can't yet make low-level
     modules truly secure. However, we can document the *intended*
-    security characteristics of an LLJAPI module, which will
+    security characteristics of low-level modules, which will
     aid downstream development.
 
-    At minimum, each LLJAPI should document:
+    At minimum, each low-level module should document:
 
     1. The level of authority (or range of authority levels) that its
        use implies
