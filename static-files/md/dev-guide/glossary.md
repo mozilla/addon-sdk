@@ -31,7 +31,7 @@ __Jetpack Core__: A small, self-contained set of low-level modules that forms
 the base functionality for the Add-on SDK. The Core can be "bootstrapped" into
 any Mozilla application or extension.
 
-__Jetpack Globals__: The set of global variables and objects provided
+__Globals__: The set of global variables and objects provided
 to all modules, such as `console` and `memory`. Includes
 CommonJS globals like `require` and standard JavaScript globals such
 as `Array` and `Math`.
@@ -44,7 +44,7 @@ For more information on Low-Level Modules, see the
 __Low-Level Module__: A module with the following properties:
 
   * Has "chrome" access to the Mozilla platform (e.g. `Components.classes`)
-    and all Jetpack Globals.
+    and all globals.
   * Is reloadable without leaking memory.
   * Logs full exception tracebacks originating from client-provided
     callbacks (i.e., does not allow the exceptions to propagate into
@@ -55,14 +55,14 @@ __Low-Level Module__: A module with the following properties:
 
 __Unprivileged Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
-all applicable Jetpack Globals that don't require chrome privileges.
+all applicable globals that don't require chrome privileges.
 
 __Module__: A CommonJS module that is either a Low-Level Module
 or an Unprivileged Module.
 
 __Jetpack Loader__: An object capable of finding, evaluating, and
 exposing CommonJS modules to each other in a given security context,
-while providing each module with necessary Jetpack Globals and
+while providing each module with necessary globals and
 enforcing security boundaries between the modules as necessary. It's
 entirely possible for Loaders to create new Loaders.
 
