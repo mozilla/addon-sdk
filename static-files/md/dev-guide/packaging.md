@@ -54,7 +54,7 @@ Learn more about how modules work at the [CommonJS Specification].
 
 Reusable pieces of code are called *modules*. The Add-on SDK uses a
 module standard called CommonJS, which means that it's possible to
-share code between Jetpack and other JavaScript-based frameworks like
+share code between the SDK and other JavaScript-based frameworks like
 node.js.
 
 From the root of your new package's directory, create a new directory
@@ -66,12 +66,11 @@ following contents:
     };
 
 <span class="aside">
-For information on more globals available to Jetpack code, see
-the [Globals] appendix.
+For information on more globals available to code, see the [Globals] appendix.
 </span>
 
 In the code above, `exports` is a global object--part of the CommonJS
-module standard--provided to all modules by the Jetpack framework. To
+module standard--provided to all modules by the SDK framework. To
 make data or code visible to other modules for reuse, a module simply
 "attaches" it to the `exports` object.
 

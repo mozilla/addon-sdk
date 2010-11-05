@@ -1,9 +1,9 @@
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
-can be helpful if you want to use some of Jetpack APIs, if you like the way
+can be helpful if you want to use some of SDK APIs, if you like the way
 modules help separate your code into testable and re-usable pieces,
-or if you'd like to gradually migrate an existing extension over to Jetpack.
+or if you'd like to gradually migrate an existing extension over to the SDK.
 
-Running a jetpack in Firefox
+Running an SDK-based add-on in Firefox
 ------------------
 We assume you have already completed the [Getting Started](#guide/getting-started),
 [Packaging](#guide/packaging), and [Programs](#guide/programs) steps of the
@@ -32,10 +32,10 @@ Getting your XUL extension to run with Add-on SDK
 <span class="aside">
 There's only one interesting file in the template extension - the `harness.js`
 component that provides the CommonJS module loader (the `require()`
-implementation) and bootstraps the jetpack (i.e. starts its `main` program or
+implementation) and bootstraps the add-on (i.e. starts its `main` program or
 runs tests).
 </span>
-Copy the extension template the SDK uses to run jetpacks from
+Copy the extension template the SDK uses to run add-ons from
 `jetpack-sdk/python-lib/cuddlefish/app-extension` to your own folder, for
 example `jetpack-sdk/packages/my-first-package/extension`.
 
@@ -53,8 +53,8 @@ extension to install when running the specified application).
 
 Loading modules from extension's code
 ------------------
-To load modules we'll need to get the harness XPCOM service provided by
-Jetpack. This service has contract ID 
+To load modules we'll need to get the harness XPCOM service provided by the SDK.
+This service has contract ID
 `@mozilla.org/harness-service;1?id=<package id>`, where *&lt;package-id>*
 is the programs "JID", found in `package.json` as the `id` key.
 
@@ -75,12 +75,12 @@ will look something like this:
 
 Now we can use CommonJS modules from regular extension code using this code:
 
-    function loadJetpackModule(module) {
+    function loadSDKModule(module) {
       return Components.classes[
         "@mozilla.org/harness-service;1?id="jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk"].
         getService().wrappedJSObject.loader.require(module);
     }
-    alert(loadJetpackModule("my-module").add(1, 3)); // alerts 4!
+    alert(loadSDKModule("my-module").add(1, 3)); // alerts 4!
 
 You can test this code by pasting it into the Error Console of the Firefox
 instance that appears when you use `cfx run -t extension`.
@@ -90,7 +90,7 @@ Packaging the extension into an XPI
 <span class="aside">
 Check out [XPI Generation](#guide/xpi) for an overview of how this works.
 </span>
-As with regular jetpacks, you can use `cfx` to create an XPI from your package:
+As with regular add-ons, you can use `cfx` to create an XPI from your package:
 
     cfx xpi -t extension
 

@@ -74,7 +74,7 @@ Test options:
 
 This initiates an instance of a host application in development mode,
 and allows you to pipe commands into it from another shell without
-having to constantly restart it. Aside from convenience, for Jetpack
+having to constantly restart it. Aside from convenience, for SDK
 Platform developers this has the added benefit of making it easier to
 detect leaks.
 

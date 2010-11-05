@@ -1,7 +1,7 @@
 <span class="aside">Security is really hard.</span>
 
-While the current implementation of Jetpack technology is
-fully-privileged, it won't always be.
+While the current implementation of the SDK is fully-privileged, it won't
+always be.
 
 At an architectural level, this means that we need to make a
 distinction between modules that are *low-level* and ones that are
@@ -26,7 +26,7 @@ wrapper for `XMLHttpRequest` that provides an interface like
 both low-level and unprivileged modules to do something useful.
 
 When our architecture is set up in this way, we have the opportunity
-to combine Jetpack's module-loading framework with cutting-edge
+to combine the SDK's module-loading framework with cutting-edge
 Mozilla platform security technologies like [Chrome Object Wrappers]
 to securitize the way extension code behaves. Low-level modules
 execute with chrome privileges, but their exports are wrapped in a way

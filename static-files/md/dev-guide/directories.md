@@ -1,9 +1,9 @@
 <!-- contributed by Noelle Murata [fiveinchpixie@gmail.com] (test) -->
-This is a map of the jetpack-sdk file structure by directory.
+This is a map of the Add-on SDK directory structure.
 
 * **bin**:  executable scripts for command line use
 * **examples**:  example packages
-* **python-lib**:  core Python libraries for operating the Jetpack framework
+* **python-lib**:  core Python libraries for operating the SDK framework
 * **packages**:  main packages directory. Core packages, packages obtained from others and packages created locally live here
     * **jetpack-core**:  core modules, tests, documentation and package manifest
 

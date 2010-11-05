@@ -13,7 +13,7 @@ We're going to continue building upon our package from the [Packaging]
 section.  This program adds a menu item to Firefox's context menu that replaces
 selected text with its English translation.
 
-### Using Jetpack's Built-in Libraries ###
+### Using the SDK's Built-in Libraries ###
 
 Add a `dependencies` entry to your package.json file, showing that your
 package requires modules from the jetpack-core library. It should look
@@ -181,7 +181,7 @@ To distribute your program, you can upload it to
 Eventually, this step may be automated via the SDK, streamlining the
 distribution process further.
 
-The next section provides an overview of the mechanisms Jetpack provides
+The next section provides an overview of the mechanisms the SDK provides
 to access and modify web pages: [Interacting with Web
 Content](#guide/web-content).
 

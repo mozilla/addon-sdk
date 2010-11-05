@@ -20,7 +20,7 @@ Verify that Python is in your path.
 Installation
 ------------
 
-At the time of this writing, the latest stable version of the Jetpack
+At the time of this writing, the latest stable version of the Add-on
 SDK is 0.10pre. You can obtain it as a [tarball] or a [zip file].
 
 Alternatively, you can get the latest development version of the
@@ -28,7 +28,7 @@ Add-on SDK from its [HG repository].
 
 Regardless of which option you choose, navigate to the root directory
 of your checkout with a shell/command prompt. This directory should
-be called `jetpack-sdk`.
+be called `addon-sdk`.
 
 <span class="aside">
 Unlike many development tools, there isn't a system-wide location for
@@ -46,7 +46,7 @@ Otherwise, if you're on Windows, run:
     bin\activate
 
 Now the beginning of your command prompt should contain the text
-`(jetpack-sdk)`, which means that your shell has entered a special
+`(addon-sdk)`, which means that your shell has entered a special
 virtual environment that gives you access to the Add-on SDK's
 command-line tools.
 
@@ -64,7 +64,7 @@ Sanity Check
 Unit and behavioral [testing] is something that
 we're trying to make as easy and fast as possible in the Add-on SDK,
 because it's imperative that we know when breakages occur between the
-Mozilla platform and Jetpack. We also need to make sure that creating
+Mozilla platform and the SDK. We also need to make sure that creating
 new functionality or modifying existing code doesn't break other
 things.
 

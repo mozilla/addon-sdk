@@ -112,7 +112,7 @@ might handle that:
 
 For more information on supporting private browsing, see its [Mozilla Developer
 Network documentation][MDN].  While that page does not apply specifically to
-Jetpack-based extensions (and its code samples don't apply at all), you should
+SDK-based add-ons (and its code samples don't apply at all), you should
 follow its guidance on best practices and policies.
 
 [SUMO]: http://support.mozilla.com/en-US/kb/Private+Browsing

@@ -1,13 +1,13 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-The `api-utils` module provides some helpers useful to Jetpack's high-level API
+The `api-utils` module provides some helpers useful to the SDK's high-level API
 implementations.
 
 Introduction
 ------------
 
-The Jetpack high-level API design guidelines make a number of recommendations.
+The SDK high-level API design guidelines make a number of recommendations.
 This module implements some of those patterns so that your own implementations
 don't need to reinvent them.
 
@@ -18,7 +18,7 @@ For example, public constructors should be callable both with and without the
 Options objects or "dictionaries" are also common throughout the high-level
 APIs.  The guidelines recommend that public constructors should generally define
 a single `options` parameter rather than defining many parameters.  Since one of
-Jetpack's principles is to be friendly to developers, ideally all properties on
+the SDK's principles is to be friendly to developers, ideally all properties on
 options dictionaries should be checked for correct type, and informative error
 messages should be generated when clients make mistakes.  With the
 `validateOptions` function, your module can easily do so.
