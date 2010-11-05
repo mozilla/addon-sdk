@@ -1,6 +1,6 @@
 By default, all Jetpack code is executed as [JavaScript 1.8.1] and has access
 to all the globals defined by it, such as `Math`, `Array`, and `JSON`. Each
-Jetpack module has its own set of these objects; this means that if, for
+module has its own set of these objects; this means that if, for
 instance, the `String` prototype is changed in one module, the changes
 will not be reflected in another module.
 

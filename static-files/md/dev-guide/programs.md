@@ -127,8 +127,7 @@ this object into a much richer implementation.
 </span>
 
 You'll note that the code above also uses a global object called `console`.
-This is a global accessible by any Jetpack module and is very useful
-for debugging.
+This is a global accessible by any module and is very useful for debugging.
 
 ### Running It ###
 

@@ -58,8 +58,8 @@ __Unprivileged Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
 all applicable Jetpack Globals that don't require chrome privileges.
 
-__Jetpack Module__: A CommonJS module that is either a Low-Level
-Module or an Unprivileged Module.
+__Module__: A CommonJS module that is either a Low-Level Module
+or an Unprivileged Module.
 
 __Jetpack Loader__: An object capable of finding, evaluating, and
 exposing CommonJS modules to each other in a given security context,
@@ -75,7 +75,7 @@ documentation, tests, and related metadata. If a package contains
 a program and includes proper metadata, it can be built into
 a Mozilla application or extension.
 
-__Program__: A Jetpack Module named `main` that optionally exports
+__Program__: A module named `main` that optionally exports
 a `main()` function.  This module is intended either to start an application for
 an end-user or add features to an existing application.
 

@@ -1,6 +1,6 @@
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
 can be helpful if you want to use some of Jetpack APIs, if you like the way
-Jetpack modules help separate your code into testable and re-usable pieces,
+modules help separate your code into testable and re-usable pieces,
 or if you'd like to gradually migrate an existing extension over to Jetpack.
 
 Running a jetpack in Firefox
