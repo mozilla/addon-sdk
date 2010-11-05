@@ -12,7 +12,7 @@ For information on writing Low-Level Modules, see the
 [Low-Level Module Best Practices] appendix.
 </span>
 
-**Low-Level Modules** absolutely require chrome-privileged
+**Low-level modules** absolutely require chrome-privileged
 access to globals like `Components` in order to access resources like
 the network, sensitive user data, or UI elements. A quintessential
 example of a low-level module would be [xhr](#module/jetpack-core/xhr).
