@@ -54,12 +54,12 @@ __Low-Level Module__: A module with the following properties:
     itself.
   * Contains documentation on security concerns and threat modeling.
 
-__Unprivileged Jetpack Module__: A CommonJS module that may be run
+__Unprivileged Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
 all applicable Jetpack Globals that don't require chrome privileges.
 
 __Jetpack Module__: A CommonJS module that is either a Low-Level
-Module or an Unprivileged Jetpack Module.
+Module or an Unprivileged Module.
 
 __Jetpack Loader__: An object capable of finding, evaluating, and
 exposing CommonJS modules to each other in a given security context,

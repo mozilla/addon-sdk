@@ -17,13 +17,13 @@ access to globals like `Components` in order to access resources like
 the network, sensitive user data, or UI elements. A quintessential
 example of a low-level module would be [xhr](#module/jetpack-core/xhr).
 
-High-level modules, which we call **Unprivileged Jetpack modules**,
+High-level modules, which we call **unprivileged modules**,
 just import the low-level modules through a call to `require()` and don't
 actually need direct, unfettered access to the Mozilla platform
 itself. An example of a high-level module would be a convenience
 wrapper for `XMLHttpRequest` that provides an interface like
 [jQuery.get()]. Another example would be an actual extension that uses
-both low-level and unprivileged Jetpack modules to do something useful.
+both low-level and unprivileged modules to do something useful.
 
 When our architecture is set up in this way, we have the opportunity
 to combine Jetpack's module-loading framework with cutting-edge
