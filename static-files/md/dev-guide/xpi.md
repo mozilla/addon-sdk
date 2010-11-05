@@ -3,8 +3,8 @@ Note that some parts of the following text have been simplified to
 allow you get a better idea of what's going on when a XPI is created.
 </span>
 
-Running `cfx xpi` in the directory of any package that contains an
-SDK Program will bundle the package and all its dependencies
+Running `cfx xpi` in the directory of any package that contains a program
+will bundle the package and all its dependencies
 into a standalone XPI. This document explains how this process
 works under the hood.
 

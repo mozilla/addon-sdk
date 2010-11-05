@@ -77,12 +77,12 @@ Jetpack-based code.
 
 __Package__: A directory structure containing modules,
 documentation, tests, and related metadata. If a package contains
-an SDK Program and includes proper metadata, it can be built into
+a program and includes proper metadata, it can be built into
 a Mozilla application or extension.
 
-__SDK Program__: A Jetpack Module named `main` that optionally exports
-a `main()` function.  This module is intended either to start a program for
-an end-user or add features to an existing program.
+__Program__: A Jetpack Module named `main` that optionally exports
+a `main()` function.  This module is intended either to start an application for
+an end-user or add features to an existing application.
 
 __Jetpack Platform Library__: A set of Low-Level Jetpack API Modules
 that expose the functionality of the Mozilla Platform (Gecko).
