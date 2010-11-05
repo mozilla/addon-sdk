@@ -78,7 +78,4 @@ __Program__: A module named `main` that optionally exports
 a `main()` function.  This module is intended either to start an application for
 an end-user or add features to an existing application.
 
-__Jetpack Platform Library__: A set of Low-Level Modules
-that expose the functionality of the Mozilla Platform (Gecko).
-
   [Low-Level Module Best Practices]: #guide/best-practices
