@@ -32,7 +32,7 @@ the base functionality for the Add-on SDK. The Core can be "bootstrapped" into
 any Mozilla application or extension.
 
 __Jetpack Globals__: The set of global variables and objects provided
-to all Cuddlefish Modules, such as `console` and `memory`. Includes
+to all modules, such as `console` and `memory`. Includes
 CommonJS globals like `require` and standard JavaScript globals such
 as `Array` and `Math`.
 
