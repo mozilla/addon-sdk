@@ -19,7 +19,7 @@ applications and extensions with Web technologies. Not to be confused
 with the Jetpack Prototype, which is a completely different animal.
 
 __Add-on SDK__: A toolchain and associated applications used to develop
-Jetpack Packages.
+packages.
 
 __Jetpack Prototype__: A Firefox extension released in May 2009 which
 explored using Web technologies to enhance the browser (e.g., HTML,
@@ -75,8 +75,8 @@ entirely possible for Loaders to create new Loaders.
 __CFX__: A command-line build, testing, and packaging tool for
 Jetpack-based code.
 
-__Jetpack Package__: A directory structure containing Jetpack modules,
-documentation, tests, and related metadata. If a Jetpack Package contains
+__Package__: A directory structure containing modules,
+documentation, tests, and related metadata. If a package contains
 an SDK Program and includes proper metadata, it can be built into
 a Mozilla application or extension.
 
