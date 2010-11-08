@@ -39,24 +39,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const {Cc,Ci} = require("chrome");
+const {Cc, Ci} = require("chrome");
 
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
 const CONTENT_TYPE_HTML   = 2;
 const CONTENT_TYPE_IMAGE  = 3;
 
-const ERR_IMG_OR_CONTENT = "No image or content property found. Widgets must "
+const ERR_CONTENT = "No content or contentURL property found. Widgets must "
                          + "have one or the other.",
       ERR_LABEL = "The widget must have a non-empty label property.";
 
 // Supported events
 const EVENTS = {
   "click": "click",
-  "load": "load",
   "mouseover": "MouseOver",
   "mouseout": "MouseOut",
-  "DOMContentLoaded": "ready"
 };
 
 if (!require("xul-app").is("Firefox")) {
@@ -71,6 +69,7 @@ const { validateOptions } = require("api-utils");
 const panels = require("panel");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
+const { Loader, Symbiont } = require("content");
 
 const valid = {
   number: { is: ["null", "undefined", "number"] },
@@ -103,21 +102,22 @@ const eventBus = Trait.compose(EventEmitter, Trait.compose({
 }))();
 
 // The widget object.
-const Widget = Trait.compose(EventEmitter, Trait.compose({
+const Widget = Loader.resolve({
+  // Rename Loader.contentURL so that we can add our own setter
+  // for propagating changes down to the window-level objects.
+  // Also, _contentURL conflicts somehow, even if I remove all Widget's
+  // references to it. FML.
+  contentURL: "__contentURL",
+}).compose({
   constructor: function Widget(options) {
+    eventBus.on("event", this._onEvent.bind(this));
 
-    eventBus.on('event', this._onEvent.bind(this));
-    this.on('error', this._defaultErrorHandler.bind(this));
+    this.on("error", this._defaultErrorHandler.bind(this));
 
     this._label = validate("label", options.label, valid.label);
 
     this.tooltip = "tooltip" in options ? options.tooltip : this._label
     
-    if ("image" in options)
-      this.image = options.image;
-    if ("content" in options)
-      this.content = options.content;
-
     if ("width" in options)
       this.width = options.width;
     if ("panel" in options)
@@ -129,13 +129,27 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       this.on("MouseOver", options.onMouseOver);
     if ("onMouseOut" in options)
       this.on("MouseOut", options.onMouseOut);
-    if ("onLoad" in options)
-      this.on("load", options.onLoad);
-    if ("onReady" in options)
-      this.on("ready", options.onReady);
 
-    if (!(this._image || this._content))
-      throw new Error(ERR_IMG_OR_CONTENT);
+    if ("content" in options)
+      this._content = options.content;
+    if ("contentURL" in options)
+      this.__contentURL = options.contentURL;
+
+    if ("contentScriptWhen" in options)
+      this.contentScriptWhen = options.contentScriptWhen;
+    if ("contentScriptURL" in options)
+      this.contentScriptURL = options.contentScriptURL;
+    if ("contentScript" in options)
+      this.contentScript = options.contentScript;
+    if ("allow" in options)
+      this.allow = options.allow;
+    if ("onError" in options)
+      this.on("error", options.onError);
+    if ("onMessage" in options)
+        this.on("message", options.onMessage);
+
+    if (!(this._content || this.__contentURL))
+      throw new Error(ERR_CONTENT);
   },
 
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
@@ -174,13 +188,15 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
   },
   _tooltip: null,
 
-  get image() this._image,
-  set image(value) {
-    value = validate("image", value, valid.string);
-    if (value !== this._image)
-      browserManager.updateItem(this._public, "image", this._image = value);
+  get contentURL() this.__contentURL,
+  set contentURL(value) {
+    value = validate("contentURL", value, valid.string);
+    if (value !== this.__contentURL) {
+      this.__contentURL = value;
+      browserManager.updateItem(this._public, "contentURL", value);
+    }
   },
-  _image: null,
+  __contentURL: Loader.required,
 
   get content() this._content,
   set content(value) {
@@ -197,7 +213,7 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       this._panel = value;
   },
   _panel: null
-}));
+});
 exports.Widget = function(options) Widget(options);
 exports.Widget.prototype = Widget.prototype;
 
@@ -269,10 +285,11 @@ let browserManager = {
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
     if (idx == -1) {
-      throw new Error("The widget " + item + " has not been added " +
+      throw new Error("The widget " + item.label + " has not been added " +
                       "and therefore cannot be removed.");
     }
     this.items.splice(idx, 1);
+
     if (item.panel)
       panels.remove(item.panel);
     this.windows.forEach(function (w) w.removeItems([item]));
@@ -307,6 +324,7 @@ BrowserWindow.prototype = {
     //   widget: widget object,
     //   node: dom node,
     //   eventListeners: hash of event listeners
+    //   symbiont: contentSymbiont
     // }
     this._items = [];
 
@@ -390,7 +408,7 @@ BrowserWindow.prototype = {
     let item = this._items.filter(function(item) item.widget == updatedItem).shift();
     if (item) {
       switch(property) {
-        case "image":
+        case "contentURL":
         case "content":
           this.setContent(item);
           break;
@@ -467,39 +485,47 @@ BrowserWindow.prototype = {
   },
 
   // Get widget content type.
-  // TODO: fully replace with explicit URL/IMG objects once bug 564524 is fixed.
   getContentType: function BW_getContentType(widget) {
-    let type = widget.image ? CONTENT_TYPE_IMAGE :
-                              CONTENT_TYPE_HTML;
-    if (widget.content) {
-      try {
-        require("url").URL(widget.content);
-        type = CONTENT_TYPE_URI;
-      } catch(e) {}
-    }
-
-    return type;
+    if (widget.content)
+      return CONTENT_TYPE_HTML;
+    return (widget.contentURL && /\.(jpg|gif|png|ico)$/.test(widget.contentURL))
+      ? CONTENT_TYPE_IMAGE : CONTENT_TYPE_URI;
   },
 
   // Set widget content.
   setContent: function BW_setContent(item) {
     let type = this.getContentType(item.widget);
-    let iframe = item.node.firstElementChild;
+    let contentURL = null;
+
     switch (type) {
       case CONTENT_TYPE_HTML:
-        iframe.setAttribute("src", "data:text/html," + encodeURI(item.widget.content));
+        contentURL = "data:text/html," + encodeURI(item.widget.content);
         break;
       case CONTENT_TYPE_URI:
-        iframe.setAttribute("src", item.widget.content);
+        contentURL = item.widget.contentURL;
         break;
       case CONTENT_TYPE_IMAGE:
-        let imageURL = item.widget.image;
-        iframe.setAttribute("src", "data:text/html,<html><body><img src='" +
-                                   encodeURI(imageURL) + "'></body></html>");
+        let imageURL = item.widget.contentURL;
+        contentURL = "data:text/html,<html><body><img src='" +
+                     encodeURI(imageURL) + "'></body></html>";
         break;
       default:
         throw new Error("The widget's type cannot be determined.");
     }
+
+    let iframe = item.node.firstElementChild;
+
+    item.symbiont = Symbiont({
+      frame: iframe,
+      contentURL: contentURL,
+      contentScriptURL: item.widget.contentScriptURL,
+      contentScript: item.widget.contentScript,
+      contentScriptWhen: item.widget.contentScriptWhen,
+      allow: item.widget.allow,
+      onMessage: function(message) {
+        eventBus._emit("event", "message", item.widget, message);
+      }
+    });
   },
 
   // Set up all supported events for a widget.
@@ -533,21 +559,27 @@ BrowserWindow.prototype = {
       if (e.target == item.node.firstElementChild)
         return;
 
+      // TODO: check that content/worker.js handles this properly
+      /*
       // Ignore about:blank loads
       if (e.type == "load" && e.target.location == "about:blank")
         return;
+      */
 
+      // TODO: fixme
+      /*
       // Content-specific document modifications
       if (e.type == "load")
         modifyStyle(e.target);
+      */
 
       // Proxy event to the widget
       eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
     };
 
     item.eventListeners = {};
+    let iframe = item.node.firstElementChild;
     for (let [type, method] in Iterator(EVENTS)) {
-      let iframe = item.node.firstElementChild;
       iframe.addEventListener(type, listener, true, true);
 
       // Store listeners for later removal

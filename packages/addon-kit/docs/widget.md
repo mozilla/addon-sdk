@@ -12,14 +12,6 @@ the location of it, in subsequent releases.
 The widget bar can be shown and hidden via the Control+Shift+U keyboard
 shortcut (or Cmd+Shift+U if on Mac).
 
-## Permanent vs. Transient Widgets
-
-In subsequent releases there may be support for ideas such as "active"
-vs. "inactive" widgets, or "pinned" widgets, or time-contextual widgets.
-
-Currently the widget author is in charge of managing their widget's
-visibility.
-
 ## Constructors ##
 
 <api name="Widget">

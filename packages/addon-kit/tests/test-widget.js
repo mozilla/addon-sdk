@@ -6,423 +6,429 @@ exports.testConstructor = function(test) {
 
   test.waitUntilDone(30000);
 
-  tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
-    const widgets = require("widget");
-    const url = require("url");
+  const widgets = require("widget");
+  const url = require("url");
+  const windowUtils = require("window-utils");
 
-    let browserWindow = e.target.defaultView;
-    let doc = browserWindow.document;
+  let browserWindow = windowUtils.activeBrowserWindow;
+  let doc = browserWindow.document;
 
-    function container() doc.getElementById("addon-bar");
-    function widgetCount() container() ? container().getElementsByTagName("toolbaritem").length : 0;
-    let widgetStartCount = widgetCount();
-    function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
+  function container() doc.getElementById("addon-bar");
+  function widgetCount() container() ? container().getElementsByTagName("toolbaritem").length : 0;
+  let widgetStartCount = widgetCount();
+  function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
-    // Test basic add/remove
-    let w = widgets.Widget({ label: "foo", content: "bar" });
-    widgets.add(w);
-    test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after add");
+  // Test basic add/remove
+  let w = widgets.Widget({ label: "foo", content: "bar" });
+  widgets.add(w);
+  test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after add");
 
-    widgets.remove(w);
-    test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after remove");
+  widgets.remove(w);
+  test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after remove");
 
-    // Test nothing
-    test.assertRaises(
-      function() widgets.Widget({}),
-      "The widget must have a non-empty label property.",
-      "throws on no properties");
+  // Test nothing
+  test.assertRaises(
+    function() widgets.Widget({}),
+    "The widget must have a non-empty label property.",
+    "throws on no properties");
 
-    // Test no label
-    test.assertRaises(
-      function() widgets.Widget({content: "foo"}),
-      "The widget must have a non-empty label property.",
-      "throws on no label");
+  // Test no label
+  test.assertRaises(
+    function() widgets.Widget({content: "foo"}),
+    "The widget must have a non-empty label property.",
+    "throws on no label");
 
-    // Test empty label
-    test.assertRaises(
-      function() widgets.Widget({label: "", content: "foo"}),
-      "The widget must have a non-empty label property.",
-      "throws on empty label");
+  // Test empty label
+  test.assertRaises(
+    function() widgets.Widget({label: "", content: "foo"}),
+    "The widget must have a non-empty label property.",
+    "throws on empty label");
 
-    // Test no content or image
-    test.assertRaises(
-      function() widgets.Widget({label: "foo"}),
-      "No image or content property found. Widgets must have one or the other.",
-      "throws on no content");
- 
-    // Test empty content, no image
-    test.assertRaises(
-      function() widgets.Widget({label: "foo", content: ""}),
-      "No image or content property found. Widgets must have one or the other.",
-      "throws on empty content");
- 
-    // Test empty image, no content 
-    test.assertRaises(
-      function() widgets.Widget({label: "foo", image: ""}),
-      "No image or content property found. Widgets must have one or the other.",
-      "throws on empty content");
- 
-    // Test empty content, empty image 
-    test.assertRaises(
-      function() widgets.Widget({label: "foo", content: "", image: ""}),
-      "No image or content property found. Widgets must have one or the other.",
-      "throws on empty content");
+  // Test no content or image
+  test.assertRaises(
+    function() widgets.Widget({label: "foo"}),
+    "No content or contentURL property found. Widgets must have one or the other.",
+    "throws on no content");
 
-    // Test adding same widget twice
-    test.assertRaises(
-      function() {
-        widgets.add(w);
-        widgets.add(w);
-      },
-      "The widget [object Widget] has already been added.",
-      "should throw when adding a widget that's already been added");
-    widgets.remove(w);
+  // Test empty content, no contentURL
+  test.assertRaises(
+    function() widgets.Widget({label: "foo", content: ""}),
+    "No content or contentURL property found. Widgets must have one or the other.",
+    "throws on empty content");
 
-    // Test removing widget that's never been added
-    test.assertRaises(
-      function() widgets.remove(w),
-      "The widget [object Widget] has not been added and therefore cannot be removed.",
-      "should throw when removing a widget that's never been added");
+  // Test empty contentURL, no content 
+  test.assertRaises(
+    function() widgets.Widget({label: "foo", contentURL: ""}),
+    "The `contentURL` option must be a URL.",
+    "throws on empty contentURL");
 
-    /**
-     * Helper for testing a single widget.
-     * Adds the widget, confirms proper addition and content
-     * setup. 
-     */
-    function testSingleWidget(widget) {
-      let startCount = widgetCount();
-      widgets.add(widget);
-      let node = widgetNode(startCount);
-      test.assert(node, "widget node at index");
-      test.assertEqual(node.tagName, "toolbaritem", "widget element is correct");
-      test.assertEqual(widget.width + "px", node.style.minWidth, "widget width is correct");
-      test.assertEqual(widgetCount(), startCount + 1, "container has correct number of child elements after add");
-      let content = node.firstElementChild;
-      test.assert(content, "found content");
-      test.assertMatches(content.tagName, /iframe|image/, "content is iframe or image");
+  // Test empty content, empty contentURL (throws on invalid contentURL)
+  test.assertRaises(
+    function() widgets.Widget({label: "foo", content: "", contentURL: ""}),
+    "The `contentURL` option must be a URL.",
+    "throws on empty content");
+
+  // Test adding same widget twice
+  test.assertRaises(
+    function() {
+      widgets.add(w);
+      widgets.add(w);
+    },
+    "The widget [object Widget] has already been added.",
+    "should throw when adding a widget that's already been added");
+  widgets.remove(w);
+
+  // Test that removing a widget that's not currently registered
+  // throws.
+  test.assertRaises(
+    function() widgets.remove(w),
+    "The widget foo has not been added and therefore cannot be removed.",
+    "should throw when removing a widget that's never been added");
+
+
+  /**
+   * Helper for testing a single widget.
+   * Adds the widget, confirms proper addition and content
+   * setup. 
+   */
+  function testSingleWidget(widget) {
+    let startCount = widgetCount();
+    widgets.add(widget);
+    let node = widgetNode(startCount);
+    test.assert(node, "widget node at index");
+    test.assertEqual(node.tagName, "toolbaritem", "widget element is correct");
+    test.assertEqual(widget.width + "px", node.style.minWidth, "widget width is correct");
+    test.assertEqual(widgetCount(), startCount + 1, "container has correct number of child elements after add");
+    let content = node.firstElementChild;
+    test.assert(content, "found content");
+    test.assertMatches(content.tagName, /iframe|image/, "content is iframe or image");
+  }
+
+  // Array of widgets to test
+  // and a function to test them.
+  let tests = [];
+  function nextTest() {
+    test.assertEqual(widgetCount(), 0, "widget in last test property cleaned itself up");
+    if (!tests.length)
+      test.done();
+    else
+      require("timer").setTimeout(tests.shift(), 0);
+  }
+
+  // text widget
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "text widget",
+    content: "oh yeah",
+    contentScript: "postMessage(document.body.innerHTML);",
+    contentScriptWhen: "ready",
+    onMessage: function (widget, message) {
+      test.assertEqual(widget.content, message, "content matches");
+      widgets.remove(widget)
+      nextTest();
     }
+  })));
 
-    // Array of widgets to test
-    // and a function to test them.
-    let tests = [];
-    function nextTest() {
-      if (!tests.length) {
-        closeBrowserWindow(browserWindow, function() {
-          test.done();
-        });
-      }
-      else
-        require("timer").setTimeout(tests.shift(), 0);
+  // html widget
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "html widget",
+    content: "<div>oh yeah</div>",
+    contentScript: "postMessage(document.body.innerHTML);",
+    contentScriptWhen: "ready",
+    onMessage: function (widget, message) {
+      test.assertEqual(widget.content, message, "content matches");
+      widgets.remove(widget)
+      nextTest();
     }
-    function doneTest() nextTest();
+  })));
 
-    // text widget
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "text widget",
-      content: "oh yeah",
-      onReady: function(widget, e) {
-        test.assertEqual(e.target.body.innerHTML, widget.content, "content matches");
-        widgets.remove(widget)
-        doneTest();
+  // image url widget
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "image url widget",
+    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentScript: "postMessage({tag: document.body.firstElementChild.tagName, " + 
+                   "src: document.body.firstElementChild.src});",
+    contentScriptWhen: "ready",
+    onMessage: function (widget, message) {
+      test.assertEqual(message.tag, "IMG", "tag name matches");
+      test.assertEqual(message.src, widget.contentURL, "contentURL matches");
+      widgets.remove(widget)
+      nextTest();
+    }
+  })));
+
+  // web uri widget
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "web uri widget",
+    contentURL: require("self").data.url("test.html"),
+    contentScript: "postMessage({title: document.title, " +
+                   "tag: document.body.firstElementChild.tagName, " + 
+                   "content: document.body.firstElementChild.innerHTML});",
+    contentScriptWhen: "ready",
+    onMessage: function (widget, message) {
+      test.assertEqual(message.title, "foo", "title matches");
+      test.assertEqual(message.tag, "P", "element matches");
+      test.assertEqual(message.content, "bar", "element content matches");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+  
+  // event: onclick + content
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "click test widget - content",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onClick: function(widget) {
+      test.pass("onClick called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // event: onmouseover + content
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "mouseover test widget - content",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseover', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onMouseOver: function(widget) {
+      test.pass("onMouseOver called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // event: onmouseout + content
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "mouseout test widget - content",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseout', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onMouseOut: function(widget) {
+      test.pass("onMouseOut called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // event: onclick + image
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "click test widget - image",
+    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.body.firstElementChild.dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onClick: function(widget) {
+      test.pass("onClick called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // event: onmouseover + image
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "mouseover test widget - image",
+    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseover', true, true ); " +
+                   "document.body.firstElementChild.dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onMouseOver: function(widget) {
+      test.pass("onMouseOver called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // event: onmouseout + image 
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "mouseout test widget - image",
+    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseout', true, true ); " +
+                   "document.body.firstElementChild.dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onMouseOut: function(widget) {
+      test.pass("onMouseOut called");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
+
+  // test multiple widgets
+  tests.push(function() {
+    let w1 = widgets.Widget({label: "first widget", content: "first content"});
+    widgets.add(w1);
+
+    let w2 = widgets.Widget({label: "second widget", content: "second content"});
+    widgets.add(w2);
+
+    widgets.remove(w1);
+    widgets.remove(w2);
+
+    nextTest();
+  });
+
+  // test updating widget content
+  let loads = 0;
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "content update test widget",
+    content: "<div id='me'>foo</div>",
+    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScriptWhen: "ready",
+    onMessage: function(widget, message) {
+      if (loads == 0) {
+        widget.content = "<div id='me'>bar</div>";
+        loads++;
       }
-    })));
-
-    // html widget
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "html widget",
-      content: "<div>oh yeah</div>",
-      onReady: function(widget, e) {
-        test.assertEqual(e.target.body.innerHTML, widget.content, "content matches");
-        widgets.remove(widget)
-        doneTest();
-      }
-    })));
-
-    // image url widget
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "image url widget",
-      content: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(widget, e) {
-        test.assertEqual(e.target.body.firstElementChild.tagName, "IMG", "tag name matches");
-        test.assertEqual(e.target.body.firstElementChild.src, widget.content, "content matches");
-        widgets.remove(widget)
-        doneTest();
-      }
-    })));
-
-    // image widget
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "image widget",
-      image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(widget, e) {
-        test.assertEqual(e.target.body.firstElementChild.tagName, "IMG", "tag name matches");
-        test.assertEqual(e.target.body.firstElementChild.src, require("self").data.url(widget.image), "content matches");
+      else {
+        test.assertEqual(widget.content, "<div id='me'>bar</div>");
         widgets.remove(widget);
-        doneTest();
+        nextTest();
       }
-    })));
-    
-    // web uri widget
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "web uri widget",
-      content: require("self").data.url("test.html"),
-      onReady: function(widget, e) {
-        test.assertEqual(e.target.title, "foo", "title matches");
-        test.assertEqual(e.target.body.firstElementChild.tagName, "P", "element matches");
-        test.assertEqual(e.target.body.firstElementChild.innerHTML, "bar", "element content matches");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
-    
-    // event: onclick + content
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "click test widget - content",
-      content: "<div id='me'>foo</div>",
-      onReady: function(widget, e) {
-        if (e.target.defaultView)
-          sendMouseEvent({type:"click"}, "me", e.target.defaultView);
-      },
-      onClick: function(widget, e) {
-        test.pass("onClick called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
+    }
+  })));
+  
+  // test tooltip
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "text widget",
+    content: "oh yeah",
+    tooltip: "foo",
+    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScriptWhen: "start",
+    onMessage: function(widget, message) {
+      test.assertEqual(widget.tooltip, "foo", "tooltip matches");
+      widgets.remove(widget)
+      nextTest();
+    }
+  })));
+  
+  // test tooltip fallback to label
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "fallback",
+    content: "oh yeah",
+    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScriptWhen: "start",
+    onMessage: function(widget, message) {
+      test.assertEqual(widget.tooltip, widget.label, "tooltip fallbacks to label");
+      widgets.remove(widget)
+      nextTest();
+    }
+  })));
 
-    // event: onmouseover + content
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "mouseover test widget - content",
-      content: "<div id='me'>foo</div>",
-      onReady: function(widget, e) {
-        sendMouseEvent({type:"mouseover"}, "me", e.target.defaultView);
-      },
-      onMouseOver: function(widget, e) {
-        test.pass("onMouseOver called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
+  // test updating widget tooltip
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "tooltip update test widget",
+    tooltip: "foo",
+    content: "<div id='me'>foo</div>",
+    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScriptWhen: "start",
+    onMessage: function(widget, message) {
+      widget.tooltip = "bar";
+      test.assertEqual(widget.tooltip, "bar", "tooltip gets updated");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
 
-    // event: onmouseout + content
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "mouseout test widget - content",
-      content: "<div id='me'>foo</div>",
-      onReady: function(widget, e) {
-        sendMouseEvent({type:"mouseout"}, "me", e.target.defaultView);
-      },
-      onMouseOut: function(widget, e) {
-        test.pass("onMouseOut called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
+  // test multiple windows
+  tests.push(function() {
+    tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+      let browserWindow = e.target.defaultView;
+      let doc = browserWindow.document;
+      function container() doc.getElementById("addon-bar");
+      function widgetCount2() container() ? container().childNodes.length : 0;
+      let widgetStartCount2 = widgetCount2();
 
-    // event: onclick + image
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "click test widget - image",
-      image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(widget, e) {
-        if (e.target.defaultView)
-          sendMouseEvent({type:"click"}, null, e.target.defaultView);
-      },
-      onClick: function(widget, e) {
-        test.pass("onClick called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
-
-    // event: onmouseover + image
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "mouseover test widget - image",
-      image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(widget, e) {
-        sendMouseEvent({type:"mouseover"}, null, e.target.defaultView);
-      },
-      onMouseOver: function(widget, e) {
-        test.pass("onMouseOver called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
-
-    // event: onmouseout + image 
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "mouseout test widget - image",
-      image: require("self").data.url("moz_favicon.ico"),
-      onLoad: function(widget, e) {
-        sendMouseEvent({type:"mouseout"}, null, e.target.defaultView);
-      },
-      onMouseOut: function(widget, e) {
-        test.pass("onMouseOut called");
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
-
-    // test multiple widgets
-    tests.push(function() {
       let w1 = widgets.Widget({label: "first widget", content: "first content"});
-      widgets.add(w1);
+      testSingleWidget(w1);
+      test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first add");
 
       let w2 = widgets.Widget({label: "second widget", content: "second content"});
-      widgets.add(w2);
+      testSingleWidget(w2);
+      test.assertEqual(widgetCount2(), widgetStartCount2 + 2, "2nd window has correct number of child elements after second add");
 
       widgets.remove(w1);
+      test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first remove");
       widgets.remove(w2);
+      test.assertEqual(widgetCount2(), widgetStartCount2, "2nd window has correct number of child elements after second remove");
 
-      doneTest();
-    });
+      closeBrowserWindow(browserWindow, function() {
+        nextTest();
+      });
+    }});
+  });
 
-    // test updating widget content
-    let loads = 0;
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "content update test widget",
-      content: "<div id='me'>foo</div>",
-      onReady: function(widget, e) {
-        if (loads == 0) {
-          widget.content = "<div id='me'>bar</div>";
-          loads++;
-        }
-        else {
-          test.assertEqual(widget.content, "<div id='me'>bar</div>");
-          widgets.remove(widget);
-          doneTest();
-        }
-      }
-    })));
-    
-    // test tooltip
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "text widget",
-      content: "oh yeah",
-      tooltip: "foo",
-      onReady: function(widget, e) {
-        test.assertEqual(widget.tooltip, "foo", "tooltip matches");
-        widgets.remove(widget)
-        doneTest();
-      }
-    })));
-    
-    // test tooltip fallback to label
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "fallback",
-      content: "oh yeah",
-      onReady: function(widget, e) {
-        test.assertEqual(widget.tooltip, widget.label, "tooltip fallbacks to label");
-        widgets.remove(widget)
-        doneTest();
-      }
-    })));
+  // test the visibility keyboard shortcut
+  tests.push(function() {
+    // Test hide/show the widget bar
+    function toggleUI() {
+      let keyEvent = doc.createEvent("KeyEvents");
+      let ctrlKey = false, metaKey = false, shiftKey = true, altKey = false, charCode = keyEvent.DOM_VK_U, keyCode = 0;
+      if(/^Mac/.test(browserWindow.navigator.platform))
+        metaKey = true;
+      else
+        ctrlKey = true;
+      keyEvent.initKeyEvent("keypress", true, true, browserWindow, ctrlKey, altKey, shiftKey, metaKey, keyCode, charCode);
+      doc.dispatchEvent(keyEvent);
+    }
 
-    // test updating widget tooltip
-    let updated = false;
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "tooltip update test widget",
-      tooltip: "foo",
-      content: "<div id='me'>foo</div>",
-      onReady: function(widget, e) {
-        if (!updated) {
-          widget.tooltip = "bar";
-          updated = true;
-        }
-        else {
-          test.assertEqual(widget.tooltip, "bar", "tooltip gets updated");
-          widgets.remove(widget);
-          doneTest();
-        }
-      }
-    })));
+    test.assert(container().collapsed, "UI is not visible when no widgets");
+    let w = widgets.Widget({label: "foo", content: "bar"});
+    widgets.add(w);
+    test.assert(container(), "UI exists when widgets are added");
+    test.assertEqual(container().collapsed, false, "UI is visible by default");
+    toggleUI(); 
+    test.assertEqual(container().collapsed, true, "keyboard shortcut hides UI when visible");
+    toggleUI(); 
+    test.assertEqual(container().collapsed, false, "keyboard shortcut shows UI when hidden");
+    widgets.remove(w);
+    nextTest();
+  });
 
-    // test multiple windows
-    tests.push(function() {
-      tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
-        let browserWindow = e.target.defaultView;
-        let doc = browserWindow.document;
-        function container() doc.getElementById("addon-bar");
-        function widgetCount2() container() ? container().childNodes.length : 0;
-        let widgetStartCount2 = widgetCount2();
+  // test widget.width
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "test widget.width",
+    content: "test width",
+    width: 200,
+    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScriptWhen: "ready",
+    onMessage: function(widget, message) {
+      test.assertEqual(widget.width, 200);
 
-        let w1 = widgets.Widget({label: "first widget", content: "first content"});
-        testSingleWidget(w1);
-        test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first add");
+      let node = widgetNode(0);
+      test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
+      test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
+      widget.width = 300;
+      test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
+      test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
 
-        let w2 = widgets.Widget({label: "second widget", content: "second content"});
-        testSingleWidget(w2);
-        test.assertEqual(widgetCount2(), widgetStartCount2 + 2, "2nd window has correct number of child elements after second add");
+      widgets.remove(widget);
+      nextTest();
+    }
+  })));
 
-        widgets.remove(w1);
-        test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first remove");
-        widgets.remove(w2);
-        test.assertEqual(widgetCount2(), widgetStartCount2, "2nd window has correct number of child elements after second remove");
-
-        closeBrowserWindow(browserWindow, function() {
-          doneTest();
-        });
-      }});
-    });
-
-    // test the visibility keyboard shortcut
-    tests.push(function() {
-      // Test hide/show the widget bar
-      function toggleUI() {
-        let keyEvent = doc.createEvent("KeyEvents");
-        let ctrlKey = false, metaKey = false, shiftKey = true, altKey = false, charCode = keyEvent.DOM_VK_U, keyCode = 0;
-        if(/^Mac/.test(browserWindow.navigator.platform))
-          metaKey = true;
-        else
-          ctrlKey = true;
-        keyEvent.initKeyEvent("keypress", true, true, browserWindow, ctrlKey, altKey, shiftKey, metaKey, keyCode, charCode);
-        doc.dispatchEvent(keyEvent);
-      }
-
-      test.assert(container().collapsed, "UI is not visible when no widgets");
-      let w = widgets.Widget({label: "foo", content: "bar"});
-      widgets.add(w);
-      test.assert(container(), "UI exists when widgets are added");
-      test.assertEqual(container().collapsed, false, "UI is visible by default");
-      toggleUI(); 
-      test.assertEqual(container().collapsed, true, "keyboard shortcut hides UI when visible");
-      toggleUI(); 
-      test.assertEqual(container().collapsed, false, "keyboard shortcut shows UI when hidden");
-      widgets.remove(w);
-      doneTest();
-    });
-
-    // test widget.width
-    tests.push(function() testSingleWidget(widgets.Widget({
-      label: "test widget.width",
-      content: "test width",
-      width: 200,
-      onReady: function(widget, e) {
-        test.assertEqual(widget.width, 200);
-
-        let node = widgetNode(0);
-        test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
-        test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
-        widget.width = 300;
-        test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
-        test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
-
-        widgets.remove(widget);
-        doneTest();
-      }
-    })));
-
-    // kick off test execution
-    doneTest();
-  }});
+  // kick off test execution
+  nextTest();
 };
 
 exports.testPanelWidget = function testPanelWidget(test) {
-  let widgets = require("widget");
+  const widgets = require("widget");
   let widget1 = widgets.Widget({
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
-    onLoad: function(widget, e) {
-      sendMouseEvent({type:"click"}, "me", e.target.defaultView);
-    },
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.body.dispatchEvent(evt);",
+    contentScriptWhen: "ready",
     panel: require("panel").Panel({
       contentURL: "data:text/html,<body>Look ma, a panel!</body>",
       onShow: function() {
@@ -449,9 +455,10 @@ exports.testPanelWidget = function testPanelWidget(test) {
   let widget3 = widgets.Widget({
     label: "panel widget 3",
     content: "<div id='me'>foo</div>",
-    onLoad: function(widget, e) {
-      sendMouseEvent({type:"click"}, "me", e.target.defaultView);
-    },
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.body.firstElementChild.dispatchEvent(evt);",
+    contentScriptWhen: "ready",
     onClick: function(widget) {
       onClickCalled = true;
       widget.panel.show();
@@ -474,13 +481,6 @@ exports.testPanelWidget = function testPanelWidget(test) {
 };
 
 /******************* helpers *********************/
-
-// Helper for getting the active window
-this.__defineGetter__("activeWindow", function activeWindow() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"].
-         getService(Ci.nsIWindowMediator).
-         getMostRecentWindow("navigator:browser");
-});
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
