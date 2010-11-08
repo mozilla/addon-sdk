@@ -278,19 +278,42 @@ exports.testConstructor = function(test) {
   });
 
   // test updating widget content
-  let loads = 0;
   tests.push(function() testSingleWidget(widgets.Widget({
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "ready",
     onMessage: function(widget, message) {
-      if (loads == 0) {
+      if (!widget.flag) {
         widget.content = "<div id='me'>bar</div>";
-        loads++;
+        widget.flag = 1;
       }
       else {
         test.assertEqual(widget.content, "<div id='me'>bar</div>");
+        widgets.remove(widget);
+        nextTest();
+      }
+    }
+  })));
+
+  // test updating widget contentURL
+  let url1 = "data:text/html,<body>foodle</body>";
+  let url2 = "data:text/html,<body>nistel</body>";
+  tests.push(function() testSingleWidget(widgets.Widget({
+    label: "content update test widget",
+    contentURL: url1,
+    contentScript: "postMessage(document.location.href);",
+    contentScriptWhen: "ready",
+    onMessage: function(widget, message) {
+      if (!widget.flag) {
+        test.assertEqual(widget.contentURL.toString(), url1);
+        test.assertEqual(message, url1);
+        widget.contentURL = url2;
+        widget.flag = 1;
+      }
+      else {
+        test.assertEqual(widget.contentURL.toString(), url2);
+        test.assertEqual(message, url2);
         widgets.remove(widget);
         nextTest();
       }

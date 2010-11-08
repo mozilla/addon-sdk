@@ -101,14 +101,7 @@ const eventBus = Trait.compose(EventEmitter, Trait.compose({
   constructor: function EventBus() this
 }))();
 
-// The widget object.
-const Widget = Loader.resolve({
-  // Rename Loader.contentURL so that we can add our own setter
-  // for propagating changes down to the window-level objects.
-  // Also, _contentURL conflicts somehow, even if I remove all Widget's
-  // references to it. FML.
-  contentURL: "__contentURL",
-}).compose({
+const Widget = Trait.compose(Loader, Trait.compose({
   constructor: function Widget(options) {
     eventBus.on("event", this._onEvent.bind(this));
 
@@ -133,7 +126,7 @@ const Widget = Loader.resolve({
     if ("content" in options)
       this._content = options.content;
     if ("contentURL" in options)
-      this.__contentURL = options.contentURL;
+      this.contentURL = options.contentURL;
 
     if ("contentScriptWhen" in options)
       this.contentScriptWhen = options.contentScriptWhen;
@@ -148,8 +141,14 @@ const Widget = Loader.resolve({
     if ("onMessage" in options)
         this.on("message", options.onMessage);
 
-    if (!(this._content || this.__contentURL))
+    if (!(this._content || this.contentURL))
       throw new Error(ERR_CONTENT);
+    
+    let self = this;
+    this.on('propertyChange', function(change) {
+      if ('contentURL' in change)
+        browserManager.updateItem(self._public, "contentURL", self.contentURL);
+    });
   },
 
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
@@ -188,16 +187,6 @@ const Widget = Loader.resolve({
   },
   _tooltip: null,
 
-  get contentURL() this.__contentURL,
-  set contentURL(value) {
-    value = validate("contentURL", value, valid.string);
-    if (value !== this.__contentURL) {
-      this.__contentURL = value;
-      browserManager.updateItem(this._public, "contentURL", value);
-    }
-  },
-  __contentURL: Loader.required,
-
   get content() this._content,
   set content(value) {
     value = validate("content", value, valid.string);
@@ -213,7 +202,7 @@ const Widget = Loader.resolve({
       this._panel = value;
   },
   _panel: null
-});
+}));
 exports.Widget = function(options) Widget(options);
 exports.Widget.prototype = Widget.prototype;
 
