@@ -1,39 +1,39 @@
 <span class="aside">Security is really hard.</span>
 
-While the current implementation of Jetpack technology is
-fully-privileged, it won't always be.
+While the current implementation of the SDK is fully-privileged, it won't
+always be.
 
 At an architectural level, this means that we need to make a
 distinction between modules that are *low-level* and ones that are
 *high-level*.
 
 <span class="aside">
-For information on writing Low-Level Jetpack API Modules, see the
-[LLJAPI Best Practices] appendix.
+For information on writing Low-Level Modules, see the
+[Low-Level Module Best Practices] appendix.
 </span>
 
-**Low-level Jetpack API modules** absolutely require chrome-privileged
+**Low-level modules** absolutely require chrome-privileged
 access to globals like `Components` in order to access resources like
 the network, sensitive user data, or UI elements. A quintessential
-example of a LLJAPI module would be [xhr](#module/jetpack-core/xhr).
+example of a low-level module would be [xhr](#module/jetpack-core/xhr).
 
-High-level modules, which we call **Unprivileged Jetpack modules**,
-just import the LLJAPI modules through a call to `require()` and don't
+High-level modules, which we call **unprivileged modules**,
+just import the low-level modules through a call to `require()` and don't
 actually need direct, unfettered access to the Mozilla platform
 itself. An example of a high-level module would be a convenience
 wrapper for `XMLHttpRequest` that provides an interface like
 [jQuery.get()]. Another example would be an actual extension that uses
-both LLJAPI and unprivileged Jetpack modules to do something useful.
+both low-level and unprivileged modules to do something useful.
 
 When our architecture is set up in this way, we have the opportunity
-to combine Jetpack's module-loading framework with cutting-edge
+to combine the SDK's module-loading framework with cutting-edge
 Mozilla platform security technologies like [Chrome Object Wrappers]
-to securitize the way extension code behaves. LLJAPI modules
+to securitize the way extension code behaves. Low-level modules
 execute with chrome privileges, but their exports are wrapped in a way
 that protects their internal state from outside clients, allowing
 unprivileged modules to execute with limited authority.
 
-Optionally, the interfaces of LLJAPI modules can also be attenuated
+Optionally, the interfaces of low-level modules can also be attenuated
 by trusted code that applies further security restrictions. Imagine a
 wrapper for `XMLHttpRequest` that filters calls to `open()` based on a
 white-list of domains provided in an extension's `package.json`
@@ -54,7 +54,7 @@ This approach has a number of advantages:
     Model].
 
   * It provides a path for community members to create their own
-    LLJAPI modules, which can be given security reviews and
+    low-level modules, which can be given security reviews and
     approved for use in extensions. This allows the Mozilla community
     to organically "grow" a secure platform by exposing parts of the
     underlying privileged platform into it, rather than being
@@ -77,4 +77,4 @@ reviewers.
   [Object Capability Model]: http://en.wikipedia.org/wiki/Object-capability_model
   [jQuery.get()]: http://docs.jquery.com/Ajax/jQuery.get
   [Chrome Object Wrappers]: https://wiki.mozilla.org/XPConnect_Chrome_Object_Wrapper
-  [LLJAPI Best Practices]: #guide/best-practices
+  [Low-Level Module Best Practices]: #guide/best-practices

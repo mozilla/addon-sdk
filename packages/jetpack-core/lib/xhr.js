@@ -39,7 +39,7 @@ const {Cc,Ci} = require("chrome");
 // ## Implementation Notes ##
 // 
 // Making `XMLHttpRequest` objects available to Jetpack code involves a
-// few key principles universal to all LLJAPI module implementations:
+// few key principles universal to all low-level module implementations:
 //
 // * **Unloadability**. A Jetpack-based extension using this module can be 
 //   asked to unload itself at any time, e.g. because the user decides to

@@ -3,8 +3,8 @@ Note that some parts of the following text have been simplified to
 allow you get a better idea of what's going on when a XPI is created.
 </span>
 
-Running `cfx xpi` in the directory of any package that contains a
-Jetpack Program will bundle the package and all its dependencies
+Running `cfx xpi` in the directory of any package that contains a program
+will bundle the package and all its dependencies
 into a standalone XPI. This document explains how this process
 works under the hood.
 
@@ -52,15 +52,15 @@ ultimately be included in the XPI.
 The XPI Template
 ----------------
 
-The Jetpack SDK also contains a directory that contains a template for
+The Add-on SDK also contains a directory that contains a template for
 a XPI file:
 
     >>> document_dir('xpi-template')
     components/harness.js:
-      // This file contains XPCOM code that bootstraps a
-      // Jetpack-based extension by loading its harness-options.json,
-      // registering all its resource directories, executing its loader,
-      // and then executing its main module's main() function.
+      // This file contains XPCOM code that bootstraps an SDK-based add-on
+      // by loading its harness-options.json, registering all its resource
+      // directories, executing its loader, and then executing its program's
+      // main() function.
 
 A template different than the default can be specified via the
 `cfx` tool's `--templatedir` option.
@@ -77,10 +77,10 @@ auto-generated files:
     install.rdf:
       <RDF><!-- Extension metadata is here. --></RDF>
     components/harness.js:
-      // This file contains XPCOM code that bootstraps a
-      // Jetpack-based extension by loading its harness-options.json,
-      // registering all its resource directories, executing its loader,
-      // and then executing its main module's main() function.
+      // This file contains XPCOM code that bootstraps an SDK-based add-on
+      // by loading its harness-options.json, registering all its resource
+      // directories, executing its loader, and then executing its program's
+      // main() function.
     resources/guid-aardvark-lib/:
     <BLANKLINE>
     resources/guid-aardvark-lib/main.js:
@@ -180,12 +180,12 @@ examples is a unique identifier that the SDK prepends to all
 `resource:` URIs to namespace the XPI's resources so they don't
 collide with anything else, including other extensions built by the
 SDK and containing the same packages. This GUID is built from the
-"Jetpack ID", described below.
+"Program ID", described below.
 
 The Program ID
 --------------
 
-Each jetpack-based program (including add-on) gets a unique identifier
+Each program (including each add-on) gets a unique identifier
 string, based upon a cryptographic keypair generated the first time you run
 `cfx xpi`. You keep the private key safe on your local computer. The public
 key is used as the "Program ID", and is written into the `package.json` file
@@ -195,7 +195,7 @@ that the XPI was signed by the original author and not by someone else.
 
 This ID is used to index things like the `simple-storage` API, and is tracked
 by services like addons.mozilla.org to tell the difference between a new
-add-on and upgrades of an existing one. Addons can learn their ID by using
+add-on and upgrades of an existing one. Add-ons can learn their ID by using
 the `require("self").id` call. The cryptographic properties of the keypair
 makes these IDs "unforgeable": no other add-on can successfully pretend to
 have your ID.

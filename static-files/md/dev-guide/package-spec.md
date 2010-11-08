@@ -85,7 +85,7 @@ API documentation.
 Packages may optionally contain a directory called `data` into which
 arbitrary files may be placed, such as images or text files. The
 URL for these resources may be reached via the `packaging` global
-defined in the [Jetpack Globals] appendix.
+defined in the [Globals] appendix.
 
   [Markdown]: http://daringfireball.net/projects/markdown/
-  [Jetpack Globals]: #guide/globals
+  [Globals]: #guide/globals

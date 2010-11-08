@@ -1,7 +1,7 @@
-Jetpack SDK README
+Add-on SDK README
 ==================
 
-This a work-in-progress implementation of the Jetpack SDK. It should
+This a work-in-progress implementation of the Add-on SDK. It should
 not be confused with the Jetpack Prototype, which is an entirely
 different project.
 

@@ -3,14 +3,14 @@ import os
 
 def welcome():
     """
-    Perform a bunch of sanity tests to make sure the Jetpack SDK
+    Perform a bunch of sanity tests to make sure the Add-on SDK
     environment is sane, and then display a welcome message.
     """
 
     try:
         if sys.version_info[0] > 2:
             print ("Error: You appear to be using Python %d, but "
-                   "the Jetpack SDK only supports the Python 2.x line." %
+                   "the Add-on SDK only supports the Python 2.x line." %
                    (sys.version_info[0]))
             return
 
@@ -19,7 +19,7 @@ def welcome():
         if 'CUDDLEFISH_ROOT' not in os.environ:
             print ("Error: CUDDLEFISH_ROOT environment variable does "
                    "not exist! It should point to the root of the "
-                   "Jetpack SDK repository.")
+                   "Add-on SDK repository.")
             return
 
         env_root = os.environ['CUDDLEFISH_ROOT']
@@ -29,13 +29,13 @@ def welcome():
         path = os.environ['PATH'].split(os.path.pathsep)
 
         if bin_dir not in path:
-            print ("Warning: the Jetpack SDK binary directory %s "
+            print ("Warning: the Add-on SDK binary directory %s "
                    "does not appear to be in your PATH. You may "
                    "not be able to run 'cfx' or other SDK tools." %
                    bin_dir)
 
         if python_lib_dir not in sys.path:
-            print ("Warning: the Jetpack SDK python-lib directory %s "
+            print ("Warning: the Add-on SDK python-lib directory %s "
                    "does not appear to be in your sys.path, which "
                    "is odd because I'm running from it." % python_lib_dir)
 
@@ -52,11 +52,11 @@ def welcome():
 
         import traceback
         _, e, _ = sys.exc_info()
-        print ("Verification of Jetpack SDK environment failed (%s)." % e)
+        print ("Verification of Add-on SDK environment failed (%s)." % e)
         print ("Your SDK may not work properly.")
         return
 
-    print ("Welcome to the Jetpack SDK. Run 'cfx docs' for assistance.")
+    print ("Welcome to the Add-on SDK. Run 'cfx docs' for assistance.")
 
 if __name__ == '__main__':
     welcome()

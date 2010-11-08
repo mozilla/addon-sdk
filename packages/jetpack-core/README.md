@@ -1,6 +1,6 @@
 Jetpack Core provides a basic CommonJS infrastructure for
 developing traditional XULRunner Extensions and applications. It is
-the basis for Jetpack.
+the basis for the Add-on SDK.
 
 To address issues present in traditional Extension development,
 Jetpack Core provides mechanisms for:

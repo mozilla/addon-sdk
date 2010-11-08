@@ -60,11 +60,11 @@ If access to the filesystem isn't prevented, it could easily be used
 to access sensitive user data, though this may be inconsequential if
 the client can't access the network.
 
-If access to local area networks isn't prevented, malicious Jetpack
-code could access sensitive data.
+If access to local area networks isn't prevented, malicious code could access
+sensitive data.
 
-If transmission of cookies isn't prevented, malicious Jetpack code
-could access sensitive data.
+If transmission of cookies isn't prevented, malicious code could access
+sensitive data.
 
 Attenuating access based on a regular expression may be ineffective if
 it's easy to write a regular expression that *looks* safe but contains
@@ -79,13 +79,13 @@ and possibly even restricting the protocol to `https:` only, to reduce
 risk.
 </span>
 
-Before being exposed to unprivileged Jetpack code, this object needs
+Before being exposed to unprivileged code, this object needs
 to be attenuated in such a way that, at the very least, it can't
 access the user's filesystem. This can probably be done most securely
 by white-listing the protocols that can be used in the URL passed to
 the `open()` method, and limiting them to `http:`, `https:`, and
-possibly a special scheme that can be used to access the Jetpack
-extension's packaged, read-only resources.
+possibly a special scheme that can be used to access the add-on's
+packaged, read-only resources.
 
 Finally, we need to also consider attenuating http/https requests such
 that they're "sandboxed" and don't communicate potentially sensitive

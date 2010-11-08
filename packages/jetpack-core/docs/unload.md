@@ -2,9 +2,9 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-The `unload` module allows modules to register callbacks that
-are called when Jetpack code is unloaded.  It is similar to the
-CommonJS module of the same name in the [Narwhal] platform.
+The `unload` module allows modules to register callbacks that are called
+when they are unloaded.  It is similar to the CommonJS module of the same
+name in the [Narwhal] platform.
 
 [Narwhal]: http://narwhaljs.org/
 
