@@ -130,6 +130,7 @@ The HTTP response headers represented as key/value pairs.
 
 ### Getting the Most recent Public Tweet ###
 
+    var Request = require('request').Request;
     var latestTweetRequest = Request({
       url: "http://api.twitter.com/1/statuses/public_timeline.json",
       onComplete: function (response) {
@@ -149,3 +150,4 @@ The HTTP response headers represented as key/value pairs.
         }
       }
     }).get();
+    latestTweetRequest.get();
