@@ -18,13 +18,18 @@ exports.testConstructor = function(test) {
     let widgetStartCount = widgetCount();
     function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
-    // Test basic add/remove
+    // Test basic add
     let w = widgets.Widget({ label: "foo", content: "bar" });
     widgets.add(w);
-    test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after add");
+    test.assertEqual(widgetNode(0).boxObject.height, 16, "widget height is correct");
 
+    // Test widget height
+    test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after remove");
+
+    // Test remove
     widgets.remove(w);
     test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after remove");
+
 
     // Test nothing
     test.assertRaises(
