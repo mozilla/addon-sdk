@@ -528,21 +528,6 @@ BrowserWindow.prototype = {
              doc.body.firstElementChild.tagName == "IMG";
     }
 
-    // Make modifications required for nice default presentation.
-    function modifyStyle(doc) {
-      // TODO: special-casing of images will be replaced, probably by an
-      // image-specific extension of the URI object.
-      if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
-        // Force image content to size.
-        // Add-on authors must size their images correctly.
-        doc.body.firstElementChild.style.width = item.widget.width + "px";
-        doc.body.firstElementChild.style.height = "16px";
-      }
-
-      // Allow all content to fill the box by default.
-      doc.body.style.margin = "0";
-    }
-
     let listener = function(e) {
       // Ignore event firings that target the iframe
       if (e.target == item.node.firstElementChild)
@@ -553,13 +538,6 @@ BrowserWindow.prototype = {
       // Ignore about:blank loads
       if (e.type == "load" && e.target.location == "about:blank")
         return;
-      */
-
-      // TODO: fixme
-      /*
-      // Content-specific document modifications
-      if (e.type == "load")
-        modifyStyle(e.target);
       */
 
       // Proxy event to the widget
@@ -574,6 +552,29 @@ BrowserWindow.prototype = {
       // Store listeners for later removal
       item.eventListeners[type] = listener;
     }
+    
+    /*
+    // On document load, make modifications required for nice default
+    // presentation.
+    function loadListener(e) {
+      // Ignore event firings that target the iframe
+      if (e.target == iframe)
+        return;
+      iframe.removeEventListener("load", loadListener, true, true);
+      let doc = e.target;
+      if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
+        // Force image content to size.
+        // Add-on authors must size their images correctly.
+        doc.body.firstElementChild.style.width = item.widget.width + "px";
+        doc.body.firstElementChild.style.height = "16px";
+      }
+
+      // Allow all content to fill the box by default.
+      doc.body.style.margin = "0";
+    }
+    iframe.addEventListener("load", loadListener, true, true);
+    //item.eventListeners["load"] = loadListener;
+    */
   },
 
   // Removes an array of items from the window.

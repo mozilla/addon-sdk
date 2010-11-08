@@ -12,6 +12,10 @@ the location of it, in subsequent releases.
 The widget bar can be shown and hidden via the Control+Shift+U keyboard
 shortcut (or Cmd+Shift+U if on Mac).
 
+TODO:
+* talk about replacement for onLoad/onReady
+* talk about replacement for image
+
 ## Constructors ##
 
 <api name="Widget">
@@ -21,21 +25,20 @@ shortcut (or Cmd+Shift+U if on Mac).
 @param options {object}
   An object with the following keys:
 
-  @prop label {string}
+  @prop [label] {string}
     A required string description of the widget used for accessibility,
     title bars, and error reporting.
 
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
-    It may contain raw HTML content, or a URL to Web content, or a URL to an
-    image.  Widgets must either have a `content` property or an `image`
-    property.
+    It may contain raw HTML content. Widgets must have either the `content` property or the
+    `contentURL` property set.
 
-  @prop [image] {string}
-    An optional string URL of an image from your package to use as the displayed
-    content of the widget.  See the [`self`](#module/jetpack-core/self) module
-    for directions on where in your package to store your static data files.
-    Widgets must either have a `content` property or an `image` property.
+  @prop [contentURL] {URL}
+    An optional string URL to content to load into the widget. This can be
+    local content via the `self` module, or remote content, and can be an image
+    or web content. Widgets must have either the `content` property or the
+    `contentURL` property set.
 
   @prop [panel] {panel}
     An optional `Panel` to open when the user clicks on the widget.  See the
@@ -55,12 +58,6 @@ shortcut (or Cmd+Shift+U if on Mac).
     An optional function to be called when the widget is clicked. It is called
     as `onClick(event)`. `event` is the standard DOM event object.
 
-  @prop [onLoad] {callback}
-    An optional function to be called when the widget's content is loaded. If
-    the content is HTML then the `onReady` event is recommended, as it provides
-    earlier access. It is called as `onLoad(event)`. `event` is the standard DOM
-    event object.
-
   @prop [onMouseover] {callback}
     An optional function to be called when the user passes the mouse over the
     widget. It is called as `onClick(event)`. `event` is the standard DOM event
@@ -71,15 +68,31 @@ shortcut (or Cmd+Shift+U if on Mac).
     widget. It is called as `onClick(event)`. `event` is the standard DOM event
     object.
 
-  @prop [onReady] {callback}
-    An optional function to be called when widget content that is HTML is
-    loaded. If the widget's content is an image then use the `onLoad` event
-    instead. It is called as `onReady(event)`. `event` is the standard DOM event
-    object.
-
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
     given, the `label` is used.
+
+  @prop [allow] {object}
+    Permissions for the content, with the following keys:
+    @prop [script] {boolean}
+      Whether or not to execute script in the content.  Defaults to true.
+
+  @prop [contentScriptURL] {array}
+    The URLs of content scripts to load.  Content scripts specified by this property
+    are loaded *before* those specified by the `contentScript` property.
+
+  @prop [contentScript] {array}
+    The texts of content scripts to load.  Content scripts specified by this
+    property are loaded *after* those specified by the `contentScriptURL` property.
+
+  @prop [contentScriptWhen] {string}
+    When to load the content scripts.
+    Possible values are "start" (default), which loads them as soon as
+    the window object for the page has been created, and "ready", which loads
+    them once the DOM content of the page has been loaded.
+
+  @prop [onMessage] {array}
+    Functions to call when a content script sends the widget a message.
 </api>
 
 ## Functions ##
@@ -103,24 +116,24 @@ shortcut (or Cmd+Shift+U if on Mac).
 
 ## Examples ##
 
-    var widgets = require("widget");
+    const widgets = require("widget");
 
     // A basic click-able image widget.
     widgets.add(widgets.Widget({
       label: "Widget with an image and a click handler",
-      image: "http://www.google.com/favicon.ico",
-      onClick: function(e) e.view.content.location = "http://www.google.com"
+      contentURL: "http://www.google.com/favicon.ico",
+      onClick: function() require("tabs").activeTab.location = "http://www.google.com"
     }));
 
     // A widget that changes display on mouseover.
     widgets.add(widgets.Widget({
       label: "Widget with changing image on mouseover",
-      image: "http://www.yahoo.com/favicon.ico",
-      onMouseover: function(e) {
-        e.target.src = "http://www.bing.com/favicon.ico";
+      contentURL: "http://www.yahoo.com/favicon.ico",
+      onMouseover: function() {
+        this.contentURL = "http://www.bing.com/favicon.ico";
       },
-      onMouseout: function(e) {
-        e.target.src = this.content;
+      onMouseout: function() {
+        this.contentURL: "http://www.yahoo.com/favicon.ico",
       }
     }));
 
@@ -128,46 +141,31 @@ shortcut (or Cmd+Shift+U if on Mac).
     widgets.add(widgets.Widget({
       label: "Widget that updates content on a timer",
       content: "0",
-      onReady: function(e) {
-        if (!this.timer) {
-          var self = this;
-          this.timer = require("timer").setInterval(function() {
-            self.content++;
-          }, 2000);
-        }
-      }
+      contentScript: "setTimeout(function() { document.body.innerHTML++; }, 2000)",
+      contentScriptWhen: "ready"
     }));
 
     // A widget that loads a random Flickr photo every 5 minutes.
     widgets.add(widgets.Widget({
       label: "Random Flickr Photo Widget",
-      content: "http://www.flickr.com/explore/",
+      contentURL: "http://www.flickr.com/explore/",
       onReady: function(e) {
-        var imgNode = e.target.querySelector(".pc_img");
-        this.content = imgNode.src;
+      contentScriptWhen: "ready",
+      contentScript: "postMessage(document.querySelector('.pc_img').src); " +
+        "setTimeout(function() { document.location = 'http://www.flickr.com/explore/'; }, 5 * 60 * 1000);",
+      onMessage: function(widget, message) {
+        widget.contentURL = message;
       },
-      onLoad: function(e) {
-        var self = this;
-        require("timer").setTimeout(function() {
-          self.content = "http://www.flickr.com/explore/";
-        }, (5 * 60 * 1000));
-      },
-      onClick: function(e) {
-        e.view.content.location = this.content
-      }
+      onClick: function() require("tabs").activeTab.location = this.contentURL
     }));
 
     // A widget created with a specified width, that grows.
-    widgets.add(widgets.Widget({
+    let myWidget = widgets.Widget({
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
-      width: 50,
-      onReady: function(e) {
-        if (!this.timer) {
-          var self = this;
-          this.timer = require("timer").setInterval(function() {
-            self.width += 10;
-          }, 1000);
-        }
-      }
-    }));
+      width: 50
+    });
+    widgets.add(myWidget);
+    require("timer").setInterval(function() {
+      myWidget.width += 10;
+    }, 1000);
