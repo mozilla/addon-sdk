@@ -512,7 +512,9 @@ BrowserWindow.prototype = {
       contentScriptWhen: item.widget.contentScriptWhen,
       allow: item.widget.allow,
       onMessage: function(message) {
-        eventBus._emit("event", "message", item.widget, message);
+        require("timer").setTimeout(function() {
+          eventBus._emit("event", "message", item.widget, message);
+        }, 0);
       }
     });
   },
@@ -533,15 +535,10 @@ BrowserWindow.prototype = {
       if (e.target == item.node.firstElementChild)
         return;
 
-      // TODO: check that content/worker.js handles this properly
-      /*
-      // Ignore about:blank loads
-      if (e.type == "load" && e.target.location == "about:blank")
-        return;
-      */
-
       // Proxy event to the widget
-      eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
+      require("timer").setTimeout(function() {
+        eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
+      }, 0);
     };
 
     item.eventListeners = {};
@@ -558,6 +555,9 @@ BrowserWindow.prototype = {
     function loadListener(e) {
       // Ignore event firings that target the iframe
       if (e.target == iframe)
+        return;
+      // Ignore about:blank loads
+      if (e.type == "load" && e.target.location == "about:blank")
         return;
       let doc = e.target;
       if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
