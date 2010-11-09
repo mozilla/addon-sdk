@@ -139,7 +139,7 @@ const EventEmitter = Trait.compose({
     let params = Array.slice(arguments, 1);
     for each (let listener in listeners) {
       try {
-        listener.apply(null, params);
+        listener.apply(this._public, params);
       } catch(e) {
         this._emit('error', e);
       }

@@ -21,6 +21,7 @@ exports['test:add listeners'] = function(test) {
     times_hello_emited += 1
     test.assertEqual("a", a)
     test.assertEqual("b", b)
+    test.assertEqual(this, e, '`this` pseudo-variable is bound to instance');
   })
 
   e.emit("hello", "a", "b")
