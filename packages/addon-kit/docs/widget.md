@@ -12,9 +12,12 @@ palette, available in the View/Toolbars menu.
 The widget bar can be shown and hidden via the Control+Shift+U keyboard
 shortcut (or Cmd+Shift+U if on Mac).
 
-TODO:
-* talk about replacement for onLoad/onReady
-* talk about replacement for image
+To communicate between your widget and the content loading in it, every widget
+exposes the `Loader` module API. This allows you to run content scripts in
+the context of your widget's content. For example, to be notified when the 
+widget contents have loaded, you can make a small script that calls back to the
+widget when it first loads, or when it's DOM is ready. See the example code
+below for various ways of doing this.
 
 ## Constructors ##
 
