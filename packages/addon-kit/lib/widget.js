@@ -553,14 +553,12 @@ BrowserWindow.prototype = {
       item.eventListeners[type] = listener;
     }
     
-    /*
     // On document load, make modifications required for nice default
     // presentation.
     function loadListener(e) {
       // Ignore event firings that target the iframe
       if (e.target == iframe)
         return;
-      iframe.removeEventListener("load", loadListener, true, true);
       let doc = e.target;
       if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
         // Force image content to size.
@@ -573,8 +571,7 @@ BrowserWindow.prototype = {
       doc.body.style.margin = "0";
     }
     iframe.addEventListener("load", loadListener, true, true);
-    //item.eventListeners["load"] = loadListener;
-    */
+    item.eventListeners["load"] = loadListener;
   },
 
   // Removes an array of items from the window.

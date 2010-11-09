@@ -5,9 +5,9 @@ The `widget` module provides a consistent, unified way for extensions to
 expose their user-interface in a way that blends in well with the host
 application.
 
-The widgets are displayed on a horizontal bar above the browser status
-bar. Expect major changes to the look and feel of the bar, as well as
-the location of it, in subsequent releases.
+The widgets are displayed in the Firefox 4 Add-on Bar by default.
+Users can move them around using the Firefox toolbar customization
+palette, available in the View/Toolbars menu.
 
 The widget bar can be shown and hidden via the Control+Shift+U keyboard
 shortcut (or Cmd+Shift+U if on Mac).
@@ -116,8 +116,6 @@ TODO:
 
 ## Examples ##
 
-    const widgets = require("widget");
-
     // A basic click-able image widget.
     widgets.add(widgets.Widget({
       label: "Widget with an image and a click handler",
@@ -133,7 +131,7 @@ TODO:
         this.contentURL = "http://www.bing.com/favicon.ico";
       },
       onMouseout: function() {
-        this.contentURL: "http://www.yahoo.com/favicon.ico",
+        this.contentURL = "http://www.yahoo.com/favicon.ico";
       }
     }));
 
@@ -149,7 +147,6 @@ TODO:
     widgets.add(widgets.Widget({
       label: "Random Flickr Photo Widget",
       contentURL: "http://www.flickr.com/explore/",
-      onReady: function(e) {
       contentScriptWhen: "ready",
       contentScript: "postMessage(document.querySelector('.pc_img').src); " +
         "setTimeout(function() { document.location = 'http://www.flickr.com/explore/'; }, 5 * 60 * 1000);",
