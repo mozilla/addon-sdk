@@ -3,7 +3,7 @@ The procedures described in this section are tentative and likely to
 change in the near future.
 </span>
 
-If Jetpack packages are constructed in a certain way, they can function as
+If packages are constructed in a certain way, they can function as
 Firefox or Thunderbird extensions, full-fledged native platform applications,
 and more.
 
@@ -13,7 +13,7 @@ We're going to continue building upon our package from the [Packaging]
 section.  This program adds a menu item to Firefox's context menu that replaces
 selected text with its English translation.
 
-### Using Jetpack's Built-in Libraries ###
+### Using the SDK's Built-in Libraries ###
 
 Add a `dependencies` entry to your package.json file, showing that your
 package requires modules from the jetpack-core library. It should look
@@ -127,8 +127,7 @@ this object into a much richer implementation.
 </span>
 
 You'll note that the code above also uses a global object called `console`.
-This is a global accessible by any Jetpack module and is very useful
-for debugging.
+This is a global accessible by any module and is very useful for debugging.
 
 ### Running It ###
 
@@ -143,10 +142,10 @@ with your program installed.
 ### Packaging It ###
 
 Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Jetpack SDK simplifies the packaging
+application, as a XPI file. The Add-on SDK simplifies the packaging
 process by generating this file for you.
 
-<span class="aside"> Each Jetpack program (such as an add-on) gets a
+<span class="aside"> Each program (such as an add-on) gets a
 separate cryptographic keypair. Your program is signed by the private
 key, and the public key is used as the "ID". See
 [XPI Generation](#guide/xpi) for more details.</span>
@@ -182,7 +181,7 @@ To distribute your program, you can upload it to
 Eventually, this step may be automated via the SDK, streamlining the
 distribution process further.
 
-The next section provides an overview of the mechanisms Jetpack provides
+The next section provides an overview of the mechanisms the SDK provides
 to access and modify web pages: [Interacting with Web
 Content](#guide/web-content).
 

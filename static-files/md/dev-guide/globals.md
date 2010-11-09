@@ -1,6 +1,6 @@
-By default, all Jetpack code is executed as [JavaScript 1.8.1] and has access
+By default, all code is executed as [JavaScript 1.8.1] and has access
 to all the globals defined by it, such as `Math`, `Array`, and `JSON`. Each
-Jetpack module has its own set of these objects; this means that if, for
+module has its own set of these objects; this means that if, for
 instance, the `String` prototype is changed in one module, the changes
 will not be reflected in another module.
 
@@ -9,10 +9,10 @@ For an introduction to CommonJS modules, see the
 [Packaging](#guide/packaging) tutorial.
 </span>
 
-Jetpack code also has access to the `require` and `exports` globals
+Code also has access to the `require` and `exports` globals
 as specified by version 1.0 of the [CommonJS Module Specification].
 
-At the time of this writing, Jetpack code does *not* have access to
+At the time of this writing, code does *not* have access to
 any globals defined by the [HTML5] specification, such as `window`,
 `document`, or `localStorage`.
 
@@ -21,14 +21,12 @@ To access the infamous and powerful `Components` object, see the
 
 ## Unprivileged Globals ##
 
-These globals are available regardless of the security context of the
-Jetpack code.
+These globals are available regardless of the security context of the code.
 
 <code>**\_\_url\_\_**</code>
 
-The `__url__` global is a string identifying the URL from which
-the Jetpack code has been retrieved.  If the code has no identifiable
-URL, this value may be `null`.
+The `__url__` global is a string identifying the URL from which the code has
+been retrieved.  If the code has no identifiable URL, this value may be `null`.
 
 <code>**console**</code>
 

@@ -2,7 +2,7 @@ Almost all interesting add-ons will need to interact with web content or the
 browser's user interface. For example, they may need to access and modify the
 content of web pages or be notified when the user clicks a link.
 
-Jetpack provides several core modules to support this:
+The SDK provides several core modules to support this:
 
 ***[panel](#module/addon-kit/panel)***<br>
 Create a dialog that can host web content.
@@ -38,7 +38,7 @@ access](#content-script-access).
 The add-on script and content script communicate by passing messages across
 the process boundary rather than directly accessing each other's state.
 
-The Jetpack core modules listed above, which we call _content modules_, define
+The modules listed above, which we call _content modules_, define
 a set of APIs to support working with content scripts. This section of the
 tutorial provides a basic guide to these APIs.
 

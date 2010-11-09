@@ -5,8 +5,8 @@ implementing EcmaScript 5 features.
 - John Resig made post with good [introduction] of new API's.
 - Google tech talk [changes to JavaScript] is also a good walk through.
 
-**There is no need to `require` this module** since it's automatically gets
-preloaded into all jetpack sandboxes.
+**There is no need to `require` this module** since it gets preloaded into
+all sandboxes automatically.
 
 Usage of new ES5 API's is encouraged, but since not everything can be
 provided to all the versions of firefox, there are few things to be aware of:
