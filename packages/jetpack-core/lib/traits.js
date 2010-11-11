@@ -41,13 +41,37 @@ const {
   override: _override,
   resolve: _resolve,
   trait: _trait,
-  create: _create,
+  //create: _create,
   required,
 } = require('traits/core');
 
 const defineProperties = Object.defineProperties,
       freeze = Object.freeze,
       create = Object.create;
+
+/**
+ * Work around bug 608959 by defining the _create function here instead of
+ * importing it from traits/core.  For docs on this function, see the create
+ * function in that module.
+ *
+ * FIXME: remove this workaround in favor of importing the function once that
+ * bug has been fixed.
+ */
+function _create(proto, trait) {
+  let properties = {},
+      keys = Object.getOwnPropertyNames(trait);
+  for each(let key in keys) {
+    let descriptor = trait[key];
+    if (descriptor.required &&
+        !Object.prototype.hasOwnProperty.call(proto, key))
+      throw new Error('Missing required property: ' + key);
+    else if (descriptor.conflict)
+      throw new Error('Remaining conflicting property: ' + key);
+    else
+      properties[key] = descriptor;
+  }
+  return Object.create(proto, properties);
+}
 
 /**
  * Placeholder for `Trait.prototype`
