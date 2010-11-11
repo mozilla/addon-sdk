@@ -294,7 +294,8 @@ function nextIteration(tests) {
 }
 
 var POINTLESS_ERRORS = [
-  "Invalid chrome URI:"
+  "Invalid chrome URI:",
+  "OpenGL LayerManager Initialized Succesfully."
 ];
 
 var consoleListener = {
