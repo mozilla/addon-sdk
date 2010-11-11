@@ -17,6 +17,14 @@ const E10S_COMPATIBLE_TEST_SUITES = [
 ];
 
 exports.runE10SCompatibleTestSuites = function(test) {
+  var xulApp = require("xul-app");
+  if (xulApp.is("Firefox") &&
+      xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
+    test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
+              "so we'll skip it.");
+    return;
+  }
+  
   if (packaging.enableE10s) {
     // Don't worry about running these E10S-compatible test
     // suites, cfx will find them by default because its
