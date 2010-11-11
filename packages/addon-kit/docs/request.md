@@ -98,12 +98,6 @@ All members of a `Response` object are read-only.
 The content of the response as plain text.
 </api>
 
-<api name="xml">
-@property {DOM}
-The content of the response as a DOM document (for text/xml responses). The
-value will be `null` if the document cannot be processed as XML.
-</api>
-
 <api name="json">
 @property {object}
 The content of the response as a JavaScript object. The value will be `null`
