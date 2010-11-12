@@ -221,7 +221,10 @@ function fixedEncodeURIComponent (str) {
 function Response(request) {
   // Define the straight mappings of our value to original request value
   xpcom.utils.defineLazyGetter(this, "text", function () request.responseText);
-  xpcom.utils.defineLazyGetter(this, "xml", function () request.responseXML);
+  xpcom.utils.defineLazyGetter(this, "xml", function () {
+    throw new Error("Sorry, the 'xml' property is no longer available. " +
+                    "see bug 611042 for more information.");
+  });
   xpcom.utils.defineLazyGetter(this, "status", function () request.status);
   xpcom.utils.defineLazyGetter(this, "statusText", function () request.statusText);
 
