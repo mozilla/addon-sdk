@@ -4,7 +4,7 @@ let tests = {}, panels, Panel;
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
+  let panel = Panel({
     contentURL: "about:buildconfig",
     contentScript: "postMessage(1); on('message', function() postMessage(2));",
     onMessage: function (message) {
@@ -15,17 +15,17 @@ tests.testPanel = function(test) {
           break;
         case 2:
           test.pass("The panel posted a message and received a response.");
-          panels.remove(panel);
+          panel.destroy();
           test.done();
           break;
       }
     }
-  }));
+  });
 };
 
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
+  let panel = Panel({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     onMessage: function (message) {
@@ -36,16 +36,16 @@ tests.testShowHidePanel = function(test) {
       panel.hide();
     },
     onHide: function () {
-      panels.remove(panel);
+      panel.destroy();
       test.pass("The panel was hidden.");
       test.done();
     }
-  }));
+  });
 };
 
 tests.testResizePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
+  let panel = Panel({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     height: 10,
@@ -62,13 +62,13 @@ tests.testResizePanel = function(test) {
         "The panel was resized.");
       test.done();
     }
-  }));
+  });
 };
 
 tests.testHideBeforeShow = function(test) {
   test.waitUntilDone();
   let showCalled = false;
-  let panel = panels.add(Panel({
+  let panel = Panel({
     onShow: function () {
       showCalled = true;
     },
@@ -76,7 +76,7 @@ tests.testHideBeforeShow = function(test) {
       test.assert(!showCalled, 'must not emit show if was hidden before');
       test.done();
     }
-  }));
+  });
   panel.show();
   panel.hide();
 };
@@ -84,7 +84,7 @@ tests.testHideBeforeShow = function(test) {
 tests.testSeveralShowHides = function(test) {
   test.waitUntilDone();
   let hideCalled = 0;
-  let panel = panels.add(panels.Panel({
+  let panel = panels.Panel({
     contentURL: "about:buildconfig",
     onShow: function () {
       panel.hide();
@@ -98,7 +98,7 @@ tests.testSeveralShowHides = function(test) {
         test.done();
       }
     }
-  }));
+  });
   panel.on('error', function(e) {
     test.fail('error was emitted:' + e.message + '\n' + e.stack);
   });
@@ -161,7 +161,6 @@ tests['test:destruct before removed'] = function(test) {
       test.done();
     }
   });
-  panels.add(panel);
   panel.on('error', function(e) {
     test.fail('error emit was emitted:' + e.message + '\n'+ e.stack)
   });

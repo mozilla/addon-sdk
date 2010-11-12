@@ -252,8 +252,6 @@ let browserManager = {
       throw new Error("The widget " + item + " has already been added.");
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
-    if (item.panel)
-      panels.add(item.panel);
   },
 
   // Updates the content of an item registered with the manager,
@@ -274,7 +272,8 @@ let browserManager = {
     }
     this.items.splice(idx, 1);
     if (item.panel)
-      panels.remove(item.panel);
+      // TODO: Also set item.panel to null?
+      item.panel.destroy();
     this.windows.forEach(function (w) w.removeItems([item]));
   },
 

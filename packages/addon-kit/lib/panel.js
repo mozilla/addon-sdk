@@ -118,6 +118,7 @@ const Panel = Symbiont.resolve({
       this.contentURL = options.contentURL;
 
     this._init(options);
+    PanelRegistry.add(this._public);
   },
   _destructor: function _destructor() {
     PanelRegistry.remove(this._public);
@@ -126,6 +127,9 @@ const Panel = Symbiont.resolve({
     this._xulPanel = null;
     this._symbiontDestructor(this);
     this._removeAllListeners(this, 'hide');
+  },
+  destroy: function destroy() {
+    PanelRegistry.remove(this._public);
   },
   /* Public API: Panel.width */
   get width() this._width,
@@ -274,9 +278,6 @@ exports.Panel = function(options) Panel(options)
 exports.Panel.prototype = Panel.prototype;
 
 const PanelRegistry = Registry(Panel);
-
-exports.add = PanelRegistry.add;
-exports.remove = PanelRegistry.remove;
 
 function getWindow(anchor) {
   let window;
