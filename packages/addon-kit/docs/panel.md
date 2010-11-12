@@ -11,14 +11,9 @@ them.
 Introduction
 ------------
 
-The module exports a constructor function, `Panel`, and two other functions,
-`add` and `remove`.
+The module exports a single constructor function, `Panel`, which constructs a new panel.
 
-`Panel` constructs a new panel.  `add` registers a panel, loading its content
-and preparing it to be shown when its `show` method is invoked.  `remove`
-unregisters a panel, unloading the content that was loaded in it.
-
-A panel's content is loaded as soon as it is added, before the panel is shown,
+A panel's content is loaded as soon as it is created, before the panel is shown,
 and the content remains loaded when a panel is hidden, so it is possible
 to keep a panel around in the background, updating its content as appropriate
 in preparation for the next time it is shown.
@@ -40,11 +35,10 @@ Examples
 
 Create and show a simple panel with content from the `data/` directory:
 
-    const panels = require("panel");
     const data = require("self").data;
-    let panel = panels.add(panels.Panel({
+    let panel = require("panel").Panel({
       contentURL: data.url("foo.html")
-    }));
+    });
     
     panel.show();
 
@@ -92,19 +86,6 @@ Creates a panel.
     Functions to call when the panel is hidden.
 </api>
 
-<api name="add">
-@function
-Register a panel, loading its content and preparing it to be shown when its
-`show` method is invoked.
-@param panel {Panel} the panel to add
-</api>
-
-<api name="remove">
-@function
-Unregister a panel, unloading the content that was loaded in it.
-@param panel {Panel} the panel to remove
-</api>
-
 Panel
 -----
 
@@ -150,6 +131,11 @@ When to load the content scripts.
 Possible values are "start" (default), which loads them as soon as
 the window object for the page has been created, and "ready", which loads
 them once the DOM content of the page has been loaded.
+</api>
+
+<api name="destroy">
+@method
+Destroy the panel, unloading any content that was loaded in it.
 </api>
 
 <api name="onMessage">

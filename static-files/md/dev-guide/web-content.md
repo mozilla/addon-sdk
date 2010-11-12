@@ -176,7 +176,7 @@ modules. The panel and page objects integrate the worker API directly. So to
 receive messages from a content script associated with a panel you can
 register as a listener in its constructor:
 
-    panel = panels.add(panels.Panel({
+    panel = require("panel").Panel({
       contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
       contentScriptURL: data.url("panel.js"),
       contentScriptWhen: "ready",
@@ -184,7 +184,7 @@ register as a listener in its constructor:
       onMessage: function handleMessage(message) {
         // Handle the message
       }
-    }));
+    });
 
 To send messages to a content script from a panel you can just call
 `panel.postMessage()`.
