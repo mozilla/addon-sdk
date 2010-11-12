@@ -1,8 +1,16 @@
+var xulApp = require("xul-app");
 var e10s = require('e10s');
 var timer = require('timer');
 
 function makeConsoleTest(options) {
   return function(test) {
+    if (xulApp.is("Firefox") &&
+        xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
+      test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
+                "so we'll skip it.");
+      return;
+    }
+
     var actions = [];
 
     if (options.setup)
@@ -136,6 +144,13 @@ exports.testAdapterOnlyModule = makeConsoleTest({
 });
 
 exports.testCommonJSCompliance = function(test) {
+  if (xulApp.is("Firefox") &&
+      xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
+    test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
+              "so we'll skip it.");
+    return;
+  }
+
   let {Cc, Ci} = require("chrome");
 
   var url = require("url");

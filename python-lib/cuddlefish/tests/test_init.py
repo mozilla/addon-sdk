@@ -28,7 +28,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
         self.assertEqual(err,"")
-        self.assertTrue(os.listdir(basedir)>0)
+        self.assertTrue(len(os.listdir(basedir))>0)
         main_js = os.path.join(basedir,"lib","main.js")
         package_json = os.path.join(basedir,"package.json")
         test_main_js = os.path.join(basedir,"tests","test-main.js")
