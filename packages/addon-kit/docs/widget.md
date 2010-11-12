@@ -20,95 +20,6 @@ vs. "inactive" widgets, or "pinned" widgets, or time-contextual widgets.
 Currently the widget author is in charge of managing their widget's
 visibility.
 
-## Constructors ##
-
-<api name="Widget">
-@constructor {options}
-  Creates a new widget.
-
-@param options {object}
-  An object with the following keys:
-
-  @prop label {string}
-    A required string description of the widget used for accessibility,
-    title bars, and error reporting.
-
-  @prop [content] {string}
-    An optional string value containing the displayed content of the widget.
-    It may contain raw HTML content, or a URL to Web content, or a URL to an
-    image.  Widgets must either have a `content` property or an `image`
-    property.
-
-  @prop [image] {string}
-    An optional string URL of an image from your package to use as the displayed
-    content of the widget.  See the [`self`](#module/jetpack-core/self) module
-    for directions on where in your package to store your static data files.
-    Widgets must either have a `content` property or an `image` property.
-
-  @prop [panel] {panel}
-    An optional `Panel` to open when the user clicks on the widget.  See the
-    [`panel`](#module/jetpack-core/panel) module for more information about the
-    `Panel` objects to which this option can be set and the `reddit-panel`
-    example add-on for an example of using this option.  Note: If you also
-    specify an `onClick` callback function, it will be called instead of the
-    panel being opened.  However, you can then show the panel from the `onClick`
-    callback function by calling `panel.show()`.
-
-  @prop [width] {integer}
-    Optional width in pixels of the widget. This property can be updated after
-    the widget has been created, to resize it. If not given, a default width is
-    used.
-
-  @prop [onClick] {callback}
-    An optional function to be called when the widget is clicked. It is called
-    as `onClick(event)`. `event` is the standard DOM event object.
-
-  @prop [onLoad] {callback}
-    An optional function to be called when the widget's content is loaded. If
-    the content is HTML then the `onReady` event is recommended, as it provides
-    earlier access. It is called as `onLoad(event)`. `event` is the standard DOM
-    event object.
-
-  @prop [onMouseover] {callback}
-    An optional function to be called when the user passes the mouse over the
-    widget. It is called as `onClick(event)`. `event` is the standard DOM event
-    object.
-
-  @prop [onMouseout] {callback}
-    An optional function to be called when the mouse is no longer over the
-    widget. It is called as `onClick(event)`. `event` is the standard DOM event
-    object.
-
-  @prop [onReady] {callback}
-    An optional function to be called when widget content that is HTML is
-    loaded. If the widget's content is an image then use the `onLoad` event
-    instead. It is called as `onReady(event)`. `event` is the standard DOM event
-    object.
-
-  @prop [tooltip] {string}
-    Optional text to show when the user's mouse hovers over the widget.  If not
-    given, the `label` is used.
-</api>
-
-## Functions ##
-
-<api name="add">
-@function
-  Adds a widget to the bar.
-
-@param widget {Widget}
-  Widget to be added.
-</api>
-
-
-<api name="remove">
-@function
-  Removes a widget from the bar.
-
-@param Widget {Widget}
-  Widget to be removed.
-</api>
-
 ## Examples ##
 
     var widgets = require("widget");
@@ -179,3 +90,92 @@ visibility.
         }
       }
     }));
+
+<api-name="Widget">
+@class
+Represents a widget object.
+<api name="Widget">
+@constructor {options}
+  Creates a new widget.
+
+@param options {object}
+  An object with the following keys:
+
+  @prop label {string}
+    A required string description of the widget used for accessibility,
+    title bars, and error reporting.
+
+  @prop [content] {string}
+    An optional string value containing the displayed content of the widget.
+    It may contain raw HTML content, or a URL to Web content, or a URL to an
+    image.  Widgets must either have a `content` property or an `image`
+    property.
+
+  @prop [image] {string}
+    An optional string URL of an image from your package to use as the displayed
+    content of the widget.  See the [`self`](#module/jetpack-core/self) module
+    for directions on where in your package to store your static data files.
+    Widgets must either have a `content` property or an `image` property.
+
+  @prop [panel] {panel}
+    An optional `Panel` to open when the user clicks on the widget.  See the
+    [`panel`](#module/jetpack-core/panel) module for more information about the
+    `Panel` objects to which this option can be set and the `reddit-panel`
+    example add-on for an example of using this option.  Note: If you also
+    specify an `onClick` callback function, it will be called instead of the
+    panel being opened.  However, you can then show the panel from the `onClick`
+    callback function by calling `panel.show()`.
+
+  @prop [width] {integer}
+    Optional width in pixels of the widget. This property can be updated after
+    the widget has been created, to resize it. If not given, a default width is
+    used.
+
+  @prop [onClick] {callback}
+    An optional function to be called when the widget is clicked. It is called
+    as `onClick(event)`. `event` is the standard DOM event object.
+
+  @prop [onLoad] {callback}
+    An optional function to be called when the widget's content is loaded. If
+    the content is HTML then the `onReady` event is recommended, as it provides
+    earlier access. It is called as `onLoad(event)`. `event` is the standard DOM
+    event object.
+
+  @prop [onMouseover] {callback}
+    An optional function to be called when the user passes the mouse over the
+    widget. It is called as `onClick(event)`. `event` is the standard DOM event
+    object.
+
+  @prop [onMouseout] {callback}
+    An optional function to be called when the mouse is no longer over the
+    widget. It is called as `onClick(event)`. `event` is the standard DOM event
+    object.
+
+  @prop [onReady] {callback}
+    An optional function to be called when widget content that is HTML is
+    loaded. If the widget's content is an image then use the `onLoad` event
+    instead. It is called as `onReady(event)`. `event` is the standard DOM event
+    object.
+
+  @prop [tooltip] {string}
+    Optional text to show when the user's mouse hovers over the widget.  If not
+    given, the `label` is used.
+</api>
+</api>
+
+<api name="add">
+@function
+  Adds a widget to the bar.
+
+@param widget {Widget}
+  Widget to be added.
+</api>
+
+
+<api name="remove">
+@function
+  Removes a widget from the bar.
+
+@param Widget {Widget}
+  Widget to be removed.
+</api>

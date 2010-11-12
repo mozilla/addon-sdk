@@ -40,7 +40,9 @@ See the `panel` module for a real-world example of usage of this module.
 
 Reference
 ---------
-
+<api name="HiddenFrame">
+@class
+`HiddenFrame` objects represent hidden frames.
 <api name="HiddenFrame">
 @constructor
 Creates a hidden frame.
@@ -65,11 +67,6 @@ Unregister a hidden frame, unloading any content that was loaded in it.
 @param hiddenFrame {HiddenFrame} the frame to remove
 </api>
 
-HiddenFrame
------------
-
-`HiddenFrame` objects represent hidden frames.
-
 <api name="element">
 @property {DOMElement}
 The host application frame in which the page is loaded.
@@ -78,4 +75,5 @@ The host application frame in which the page is loaded.
 <api name="onReady">
 @property {array}
 Functions to call when the frame is ready to load content.
+</api>
 </api>

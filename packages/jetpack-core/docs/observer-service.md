@@ -21,8 +21,6 @@ In the above example, `subject` is any JavaScript object, as is
 `data`.  The particulars of what the two contain are specific
 to the notification topic.
 
-## Functions ##
-
 <api name="add">
 @function
   Adds an observer callback to be triggered whenever a notification matching the

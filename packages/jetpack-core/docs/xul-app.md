@@ -3,10 +3,6 @@
 The `xul-app` module provides facilities for introspecting the application on
 which your program is running.
 
-
-Properties
-----------
-
 With the exception of `ids`, each of these properties exposes the attribute of
 the same name on the [`nsIXULAppInfo`][nsIXULAppInfo] interface.  For more
 information, see the [MDC documentation][].
@@ -40,10 +36,6 @@ information, see the [MDC documentation][].
   A mapping of application names to their IDs.  For example,
   `ids["Firefox"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"`.
 </api>
-
-
-Functions
----------
 
 <api name="is">
 @function

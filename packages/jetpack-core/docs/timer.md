@@ -6,7 +6,7 @@
 The `timer` module provides access to web-like timing functionality.
 
 <api name="setTimeout">
-@method
+@function
   Schedules `callback` to be called in `ms` milliseconds. Any additional
   arguments are passed straight through to the callback.
 @returns {integer}
@@ -19,7 +19,7 @@ The `timer` module provides access to web-like timing functionality.
 </api>
 
 <api name="clearTimeout">
-@method
+@function
   Given an ID returned from `setTimeout()`, prevents the callback with the ID
   from being called (if it hasn't yet been called).
 @param ID {integer}
@@ -27,7 +27,7 @@ The `timer` module provides access to web-like timing functionality.
 </api>
 
 <api name="setInterval">
-@method
+@function
   Schedules `callback` to be called repeatedly every `ms` milliseconds. Any
   additional arguments are passed straight through to the callback.
 @returns {integer}
@@ -39,7 +39,7 @@ The `timer` module provides access to web-like timing functionality.
 </api>
 
 <api name="clearInterval">
-@method
+@function
   Given an ID returned from `setInterval()`, prevents the callback with the ID
   from being called again.
 @param ID {integer}

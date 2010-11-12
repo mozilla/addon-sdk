@@ -6,18 +6,8 @@ interface.
 
 [nsIDOMWindow]: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/base/nsIDOMWindow.idl
 
-
-Constructors
-------------
-
 <api name="WindowTracker">
-@constructor
-  A `WindowTracker` object listens for openings and closings of application
-  windows.
-@param delegate {object}
-  An object that implements `onTrack()` and `onUntrack()` methods.
-</api>
-
+@class
 `WindowTracker` objects make it easy to "monkeypatch" windows when a program is
 loaded and "un-monkeypatch" those windows when the program is unloaded.  For
 example, if a Firefox add-on needs to add a status bar icon to all browser
@@ -58,20 +48,26 @@ uninstalled, whichever comes first.)
     var winUtils = require("window-utils");
     var tracker = new winUtils.WindowTracker(delegate);
 
-
-Functions
----------
+<api name="WindowTracker">
+@constructor
+  A `WindowTracker` object listens for openings and closings of application
+  windows.
+@param delegate {object}
+  An object that implements `onTrack()` and `onUntrack()` methods.
+</api>
+</api>
 
 <api name="windowIterator">
 @function
   An iterator for windows currently open in the application.
-</api>
 
 **Example**
 
     var winUtils = require("window-utils");
     for (window in winUtils.windowIterator())
       console.log("An open window! " + window.document.URL);
+
+</api>
 
 <api name="closeOnUnload">
 @function

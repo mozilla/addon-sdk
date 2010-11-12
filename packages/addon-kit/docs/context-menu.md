@@ -224,126 +224,6 @@ associated with the content script, the content script can call the global
     });
 
 
-Reference
----------
-
-### Menu Item Constructors
-
-<api name="Item">
-@constructor
-  Creates a labeled menu item that can perform an action when clicked.
-@param options {object}
-  An object with the following keys:
-  @prop label {string}
-    The item's label.  It must either be a string or an object that implements
-    `toString()`.
-  @prop [data] {string}
-    An optional arbitrary value to associate with the item.  It must be either a
-    string or an object that implements `toString()`.  It will be passed to
-    click listeners.
-  @prop [context] {value}
-    If the item is added to the top-level context menu, this declaratively
-    specifies the context under which the item will appear; see Specifying
-    Contexts above.  Ignored if the item is contained in a submenu.
-  @prop [contentScript] {string,array}
-    If the item is added to the top-level context menu, this is the content
-    script or an array of content scripts that the item can use to interact with
-    the page.  Ignored if the item is contained in a submenu.
-  @prop [contentScriptURL] {string,array}
-    If the item is added to the top-level context menu, this is the local file
-    URL of the content script or an array of such URLs that the item can use to
-    interact with the page.  Ignored if the item is contained in a submenu.
-  @prop [onMessage] {function}
-    If the item is added to the top-level context menu, this function will be
-    called when the content script calls `postMessage`.  It will be passed the
-    data that was passed to `postMessage`.  Ignored if the item is contained in
-    a submenu.
-</api>
-
-<api name="Menu">
-@constructor
-  Creates a menu item that expands into a submenu.
-@param options {object}
-  An object with the following keys:
-  @prop label {string}
-    The item's label.  It must either be a string or an object that implements
-    `toString()`.
-  @prop items {array}
-    An array of menu items that the menu will contain.  Each must be an `Item`,
-    `Menu`, or `Separator`.
-  @prop [context] {value}
-    If the menu is added to the top-level context menu, this declaratively
-    specifies the context under which the menu will appear; see Specifying
-    Contexts above.  Ignored if the menu is contained in a submenu.
-  @prop [contentScript] {string,array}
-    If the menu is added to the top-level context menu, this is the content
-    script or an array of content scripts that the menu can use to interact with
-    the page.  Ignored if the menu is contained in a submenu.
-  @prop [contentScriptURL] {string,array}
-    If the menu is added to the top-level context menu, this is the local file
-    URL of the content script or an array of such URLs that the menu can use to
-    interact with the page.  Ignored if the menu is contained in a submenu.
-  @prop [onMessage] {function}
-    If the menu is added to the top-level context menu, this function will be
-    called when the content script calls `postMessage`.  It will be passed the
-    data that was passed to `postMessage`.  Ignored if the menu is contained in
-    a submenu.
-</api>
-
-<api name="Separator">
-@constructor
-  Creates a menu separator.  Separators can only be contained in `Menu`s; they
-  can't be added to the top-level context menu.
-</api>
-
-### Context Constructors
-
-<api name="PageContext">
-@constructor
-  Creates a page context.  See Specifying Contexts above.
-</api>
-
-<api name="SelectionContext">
-@constructor
-  Creates a context that occurs when a page contains a selection.  See
-  Specifying Contexts above.
-</api>
-
-<api name="SelectorContext">
-@constructor
-  Creates a context that matches a given CSS selector.  See Specifying Contexts
-  above.
-@param selector {string}
-  A CSS selector.
-</api>
-
-<api name="URLContext">
-@constructor
-  Creates a context that matches pages with particular URLs.  See Specifying
-  Contexts above.
-@param matchPattern {string,array}
-  A [match pattern] string or an array of match pattern strings.
-  [match pattern]: #module/jetpack-core/match-pattern
-</api>
-
-### Module Functions
-
-<api name="add">
-@function
-  Adds a menu item to the context menu.
-@param item {object}
-  An `Item` or `Menu` object to be added to the context menu.  `Separator`s
-  can't be added to the top-level menu.
-</api>
-
-<api name="remove">
-@function
-  Permanently removes a menu item from the context menu.  The item must have
-  been previously added.
-@param item {object}
-  An `Item` or `Menu` object that was previously added.
-</api>
-
 
 Examples
 --------
@@ -453,5 +333,139 @@ Google or Wikipedia with the text contained in the anchor:
     });
     contextMenu.add(searchMenu);
 
+<api name="Item">
+@class
+A single item to be added to the context menu.
+<api name="Item">
+@constructor
+  Creates a labeled menu item that can perform an action when clicked.
+@param options {object}
+  An object with the following keys:
+  @prop label {string}
+    The item's label.  It must either be a string or an object that implements
+    `toString()`.
+  @prop [data] {string}
+    An optional arbitrary value to associate with the item.  It must be either a
+    string or an object that implements `toString()`.  It will be passed to
+    click listeners.
+  @prop [context] {value}
+    If the item is added to the top-level context menu, this declaratively
+    specifies the context under which the item will appear; see Specifying
+    Contexts above.  Ignored if the item is contained in a submenu.
+  @prop [contentScript] {string,array}
+    If the item is added to the top-level context menu, this is the content
+    script or an array of content scripts that the item can use to interact with
+    the page.  Ignored if the item is contained in a submenu.
+  @prop [contentScriptURL] {string,array}
+    If the item is added to the top-level context menu, this is the local file
+    URL of the content script or an array of such URLs that the item can use to
+    interact with the page.  Ignored if the item is contained in a submenu.
+  @prop [onMessage] {function}
+    If the item is added to the top-level context menu, this function will be
+    called when the content script calls `postMessage`.  It will be passed the
+    data that was passed to `postMessage`.  Ignored if the item is contained in
+    a submenu.
+</api>
+</api>
+
+<api name="Menu">
+@class
+A submenu to be added to the context menu.
+<api name="Menu">
+@constructor
+  Creates a menu item that expands into a submenu.
+@param options {object}
+  An object with the following keys:
+  @prop label {string}
+    The item's label.  It must either be a string or an object that implements
+    `toString()`.
+  @prop items {array}
+    An array of menu items that the menu will contain.  Each must be an `Item`,
+    `Menu`, or `Separator`.
+  @prop [context] {value}
+    If the menu is added to the top-level context menu, this declaratively
+    specifies the context under which the menu will appear; see Specifying
+    Contexts above.  Ignored if the menu is contained in a submenu.
+  @prop [contentScript] {string,array}
+    If the menu is added to the top-level context menu, this is the content
+    script or an array of content scripts that the menu can use to interact with
+    the page.  Ignored if the menu is contained in a submenu.
+  @prop [contentScriptURL] {string,array}
+    If the menu is added to the top-level context menu, this is the local file
+    URL of the content script or an array of such URLs that the menu can use to
+    interact with the page.  Ignored if the menu is contained in a submenu.
+  @prop [onMessage] {function}
+    If the menu is added to the top-level context menu, this function will be
+    called when the content script calls `postMessage`.  It will be passed the
+    data that was passed to `postMessage`.  Ignored if the menu is contained in
+    a submenu.
+</api>
+</api>
+
+<api name="Separator">
+@class
+A menu separator.
+<api name="Separator">
+@constructor
+  Creates a menu separator.  Separators can only be contained in `Menu`s; they
+  can't be added to the top-level context menu.
+</api>
+</api>
+
+<api name="PageContext">
+@class
+<api name="PageContext">
+@constructor
+  Creates a page context.  See Specifying Contexts above.
+</api>
+</api>
+
+<api name="SelectionContext">
+@class
+<api name="SelectionContext">
+@constructor
+  Creates a context that occurs when a page contains a selection.  See
+  Specifying Contexts above.
+</api>
+</api>
+
+<api name="SelectorContext">
+@class
+<api name="SelectorContext">
+@constructor
+  Creates a context that matches a given CSS selector.  See Specifying Contexts
+  above.
+@param selector {string}
+  A CSS selector.
+</api>
+</api>
+
+<api name="URLContext">
+@class
+<api name="URLContext">
+@constructor
+  Creates a context that matches pages with particular URLs.  See Specifying
+  Contexts above.
+@param matchPattern {string,array}
+  A [match pattern] string or an array of match pattern strings.
+  [match pattern]: #module/jetpack-core/match-pattern
+</api>
+</api>
+
+<api name="add">
+@function
+  Adds a menu item to the context menu.
+@param item {object}
+  An `Item` or `Menu` object to be added to the context menu.  `Separator`s
+  can't be added to the top-level menu.
+</api>
+
+<api name="remove">
+@function
+  Permanently removes a menu item from the context menu.  The item must have
+  been previously added.
+@param item {object}
+  An `Item` or `Menu` object that was previously added.
+</api>
 
 [self]: #module/jetpack-core/self
