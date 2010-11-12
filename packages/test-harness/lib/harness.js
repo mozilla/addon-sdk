@@ -366,6 +366,17 @@ var runTests = exports.runTests = function runTests(options) {
                                         options);
     var globals = {packaging: packaging};
 
+    var xulApp = require("xul-app");
+    var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
+                     .getService(Ci.nsIXULRuntime);
+
+    print("Running tests on " + xulApp.name + " " + xulApp.version +
+          " (Gecko " + xulApp.platformVersion + ") under " +
+          xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
+    if (options.verbose) {
+      print("Application ID is " + xulApp.ID + ".\n");
+    }
+
     sandbox = new cuddlefish.Loader({console: console,
                                      globals: globals,
                                      packaging: packaging,
