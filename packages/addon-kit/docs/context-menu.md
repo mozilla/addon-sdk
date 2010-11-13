@@ -364,7 +364,8 @@ A labeled menu item that can perform an action when clicked.
 </api>
 <api name="destroy">
 @method
-  Permanently removes the item from the context menu.
+  Permanently removes the item from the top-level context menu.  If the item is
+  not contained in the top-level context menu, this method does nothing.
 </api>
 </api>
 
@@ -403,7 +404,8 @@ A labeled menu item that expands into a submenu.
 </api>
 <api name="destroy">
 @method
-  Permanently removes the menu from the context menu.
+  Permanently removes the menu from the top-level context menu.  If the menu is
+  not contained in the top-level context menu, this method does nothing.
 </api>
 </api>
 
