@@ -78,9 +78,6 @@ following content:
       }
     });
 
-    // Add the new menu item to the application's context menu.
-    contextMenu.add(menuItem);
-
 ### Listening for Load and Unload ###
 
 We take a moment to note that just as your program is loaded when it starts, it
