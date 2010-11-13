@@ -28,18 +28,20 @@ visibility.
     widgets.add(widgets.Widget({
       label: "Widget with an image and a click handler",
       image: "http://www.google.com/favicon.ico",
-      onClick: function(e) e.view.content.location = "http://www.google.com"
+      onClick: function(widget, event) {
+        event.view.content.location = "http://www.google.com";
+      }
     }));
 
     // A widget that changes display on mouseover.
     widgets.add(widgets.Widget({
       label: "Widget with changing image on mouseover",
       image: "http://www.yahoo.com/favicon.ico",
-      onMouseover: function(e) {
-        e.target.src = "http://www.bing.com/favicon.ico";
+      onMouseover: function(widget, event) {
+        event.target.src = "http://www.bing.com/favicon.ico";
       },
-      onMouseout: function(e) {
-        e.target.src = this.content;
+      onMouseout: function(widget, event) {
+        event.target.src = this.content;
       }
     }));
 
@@ -47,7 +49,7 @@ visibility.
     widgets.add(widgets.Widget({
       label: "Widget that updates content on a timer",
       content: "0",
-      onReady: function(e) {
+      onReady: function(widget, event) {
         if (!this.timer) {
           var self = this;
           this.timer = require("timer").setInterval(function() {
@@ -61,18 +63,18 @@ visibility.
     widgets.add(widgets.Widget({
       label: "Random Flickr Photo Widget",
       content: "http://www.flickr.com/explore/",
-      onReady: function(e) {
-        var imgNode = e.target.querySelector(".pc_img");
+      onReady: function(widget, event) {
+        var imgNode = event.target.querySelector(".pc_img");
         this.content = imgNode.src;
       },
-      onLoad: function(e) {
+      onLoad: function(widget, event) {
         var self = this;
         require("timer").setTimeout(function() {
           self.content = "http://www.flickr.com/explore/";
         }, (5 * 60 * 1000));
       },
-      onClick: function(e) {
-        e.view.content.location = this.content
+      onClick: function(widget, event) {
+        event.view.content.location = this.content;
       }
     }));
 
@@ -81,7 +83,7 @@ visibility.
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
       width: 50,
-      onReady: function(e) {
+      onReady: function(widget, event) {
         if (!this.timer) {
           var self = this;
           this.timer = require("timer").setInterval(function() {
@@ -133,29 +135,30 @@ Represents a widget object.
 
   @prop [onClick] {callback}
     An optional function to be called when the widget is clicked. It is called
-    as `onClick(event)`. `event` is the standard DOM event object.
+    as `onClick(widget, event)`. `widget` is the `Widget` instance, and `event`
+    is the standard DOM event object.
 
   @prop [onLoad] {callback}
     An optional function to be called when the widget's content is loaded. If
     the content is HTML then the `onReady` event is recommended, as it provides
-    earlier access. It is called as `onLoad(event)`. `event` is the standard DOM
-    event object.
+    earlier access. It is called as `onLoad(widget, event)`. `widget` is the
+    `Widget` instance, and `event` is the standard DOM event object.
 
   @prop [onMouseover] {callback}
     An optional function to be called when the user passes the mouse over the
-    widget. It is called as `onClick(event)`. `event` is the standard DOM event
-    object.
+    widget. It is called as `onMouseover(widget, event)`. `widget` is the
+    `Widget` instance, and `event` is the standard DOM event object.
 
   @prop [onMouseout] {callback}
     An optional function to be called when the mouse is no longer over the
-    widget. It is called as `onClick(event)`. `event` is the standard DOM event
-    object.
+    widget. It is called as `onMouseout(widget, event)`. `widget` is the
+    `Widget` instance, and `event` is the standard DOM event object.
 
   @prop [onReady] {callback}
     An optional function to be called when widget content that is HTML is
     loaded. If the widget's content is an image then use the `onLoad` event
-    instead. It is called as `onReady(event)`. `event` is the standard DOM event
-    object.
+    instead. It is called as `onReady(widget, event)`. `widget` is the `Widget`
+    instance, and `event` is the standard DOM event object.
 
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
