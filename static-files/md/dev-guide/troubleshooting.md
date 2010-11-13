@@ -73,7 +73,8 @@ try searching the list.  You're welcome to post a question, too.
 
 You can also chat with other SDK users in [#jetpack] on [Mozilla's IRC network].
 
-And if you'd like to [report a bug in the SDK], that's always welcome!  You will need to create an account with Bugzilla, Mozilla's bug tracker.
+And if you'd like to [report a bug in the SDK], that's always welcome!  You will
+need to create an account with Bugzilla, Mozilla's bug tracker.
 
 [project mailing list]: http://groups.google.com/group/mozilla-labs-jetpack/topics
 
