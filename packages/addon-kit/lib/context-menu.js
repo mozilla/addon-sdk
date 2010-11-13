@@ -70,12 +70,12 @@ const SEPARATOR_ID = "jetpack-context-menu-separator";
 // overflow into a "Jetpack" submenu.
 const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_THRESH_PREF =
-  "jetpack.jetpack-core.context-menu.overflowThreshold";
+  "extensions.addon-sdk.context-menu.overflowThreshold";
 
 // The label of the overflow sub-<menu>.
 //
 // TODO: Localize this.
-const OVERFLOW_MENU_LABEL = "Jetpack";
+const OVERFLOW_MENU_LABEL = "Add-ons";
 
 // The ID of the overflow sub-<menu>.
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
