@@ -1,4 +1,4 @@
-<!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
+<!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
 The `widget` module provides a consistent, unified way for extensions to
@@ -25,14 +25,14 @@ visibility.
     var widgets = require("widget");
 
     // A basic click-able image widget.
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Widget with an image and a click handler",
       image: "http://www.google.com/favicon.ico",
       onClick: function(e) e.view.content.location = "http://www.google.com"
-    }));
+    });
 
     // A widget that changes display on mouseover.
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Widget with changing image on mouseover",
       image: "http://www.yahoo.com/favicon.ico",
       onMouseover: function(e) {
@@ -41,10 +41,10 @@ visibility.
       onMouseout: function(e) {
         e.target.src = this.content;
       }
-    }));
+    });
 
     // A widget that updates content on a timer.
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Widget that updates content on a timer",
       content: "0",
       onReady: function(e) {
@@ -55,10 +55,10 @@ visibility.
           }, 2000);
         }
       }
-    }));
+    });
 
     // A widget that loads a random Flickr photo every 5 minutes.
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Random Flickr Photo Widget",
       content: "http://www.flickr.com/explore/",
       onReady: function(e) {
@@ -74,10 +74,10 @@ visibility.
       onClick: function(e) {
         e.view.content.location = this.content
       }
-    }));
+    });
 
     // A widget created with a specified width, that grows.
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
       width: 50,
@@ -89,7 +89,7 @@ visibility.
           }, 1000);
         }
       }
-    }));
+    });
 
 <api-name="Widget">
 @class
@@ -161,21 +161,8 @@ Represents a widget object.
     Optional text to show when the user's mouse hovers over the widget.  If not
     given, the `label` is used.
 </api>
+<api name="destroy">
+@method
+  Removes the widget from the widget bar.
 </api>
-
-<api name="add">
-@function
-  Adds a widget to the bar.
-
-@param widget {Widget}
-  Widget to be added.
-</api>
-
-
-<api name="remove">
-@function
-  Removes a widget from the bar.
-
-@param Widget {Widget}
-  Widget to be removed.
 </api>
