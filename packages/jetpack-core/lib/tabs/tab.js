@@ -40,6 +40,7 @@ const { EventEmitter } = require("events");
 const dataUtils = require("utils/data");
 const thumbnailUtils = require("utils/thumbnail");
 const { validateOptions } = require("api-utils");
+const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
 
 // Array the inner instances of all the wrapped tabs.
@@ -126,11 +127,6 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   get _contentWindow() this._browser.contentWindow,
 
-  // Has been exposed by previous implementation, but i10s incompatible
-  // and probably will be removed.
-  get contentDocument() this._contentDocument,
-  get contentWindow() this._contentWindow,
-  
   /**
    * The title of the page currently loaded in the tab.
    * Changing this property changes an actual title.
@@ -182,7 +178,6 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   focus: function focus() {
     this._window.gBrowser.selectedTab = this._tab;
-    return this._public;
   },
   /**
    * Close the tab
