@@ -152,7 +152,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
    */
-  get faveicon() dataUtils.favicon(String(this.location)),
+  get favicon() dataUtils.favicon(String(this.location)),
   /**
    * The CSS style for the tab
    */
