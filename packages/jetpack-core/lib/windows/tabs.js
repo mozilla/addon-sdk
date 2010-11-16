@@ -40,22 +40,9 @@ const { Trait } = require("traits");
 const { List } = require("list");
 const { Tab, Options } = require("tabs/tab");
 const { EventEmitter } = require("events");
+const { EVENTS } = require("tabs/events");
 
-const DOM_READY = "DOMContentLoaded";
-const DOM_TAB_OPEN = "TabOpen";
-const DOM_TAB_CLOSE = "TabClose";
-const DOM_TAB_SELECT = "TabSelect";
-const ON_TAB_OPEN = "TabOpen";
-const ON_TAB_CLOSE = "TabClose";
-const ON_TAB_SELECT = "TabSelect";
 const TAB_BROWSER = "tabbrowser";
-
-
-const TAB_CONTAINER_EVENTS = [
-  [DOM_TAB_OPEN, ON_TAB_OPEN],
-  [DOM_TAB_CLOSE, ON_TAB_CLOSE],
-  [DOM_TAB_SELECT, ON_TAB_SELECT]
-]
 
 const WindowTabTracker = Trait.compose({
   /**
@@ -105,10 +92,21 @@ const WindowTabTracker = Trait.compose({
     this._tabs._clear();
   },
   _onTabEvent: function _onTabEvent(type, event) {
-    var tab = Tab({ tab: event.target, window: this._public });
-    this._emit(type, tab);
-    this._tabs._emit(type, tab);
+    let options = this._tabOptions.shift() || {};
+    options.tab = event.target;
+    options.window = this._public;
+    var tab = Tab(options);
+    if (type == EVENTS.open.dom)
+      tab.on(EVENTS.ready.tab, this._emitEvent.bind(this, EVENTS.ready.window));
+    this._emitEvent(type, tab);
+  },
+  _emitEvent: function _emitEvent(type, tab) {
+    // Notifies combined tab list that tab was added / removed.
     tabs._emit(type, tab);
+    // Notifies contained tab list that window was added / removed.
+    this._tabs._emit(type, tab);
+    // Notifies listeners that tab got opened / closed / selected.
+    this._emit(type, tab);
   }
 });
 exports.WindowTabTracker = WindowTabTracker;
@@ -119,11 +117,24 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     on: Trait.required,
     _emit: Trait.required,
     constructor: function TabList() {
-      this.on(ON_TAB_OPEN, this._add.bind(this));
-      this.on(ON_TAB_CLOSE, this._remove.bind(this));
+      this.on('error', this._onError = this._onError.bind(this));
+      // Add new items to the list
+      this.on(EVENTS.open.window, this._add.bind(this));
+      // Remove closed items from the list
+      this.on(EVENTS.close.window, this._remove.bind(this));
+      // Emit events for closed items
+      this.on(EVENTS.activate.window, this._onActivate.bind(this));
       this._init();
       return this;
     }
+    _onActivate: function _onActivate(value) {
+      this._emit(EVENTS.deactivate.window, this._active);
+      this._active = value;
+    },
+    _onError: function _onError(error) {
+      if (1 <= this._listeners('error').length)
+        console.exception(error)
+    },
   }).resolve({ toString: null })
 );
 

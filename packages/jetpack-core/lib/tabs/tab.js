@@ -39,20 +39,8 @@ const { Trait } = require("traits");
 const { EventEmitter } = require("events");
 const dataUtils = require("utils/data");
 const thumbnailUtils = require("utils/thumbnail");
-
-const PREFIX = "on";
-const DOM_READY = "DOMContentLoaded";
-const ON_READY = "ready";
-const ON_TAB_OPEN = "TabOpen";
-const ON_TAB_CLOSE = "TabClose";
-const ON_TAB_SELECT = "TabSelect";
-
-const EVENTS = [
-  [ PREFIX + ON_TAB_OPEN, ON_TAB_OPEN ],
-  [ PREFIX + ON_TAB_CLOSE, ON_TAB_CLOSE ],
-  [ PREFIX + ON_TAB_SELECT, ON_TAB_SELECT ]
-];
 const { validateOptions } = require("api-utils");
+const { EVENTS } = require("tabs/events");
 
 // Array the inner instances of all the wrapped tabs.
 const TABS = [];
@@ -71,28 +59,37 @@ const TabTrait = Trait.compose(EventEmitter, {
   window: null,
 
   constructor: function Tab(options) {
-    this._onReady = this._onReady.bind(this)
+    this._onReady = this._onReady.bind(this);
     this._tab = options.tab;
     let window = this.window = options.window;
-    // setting event listener if required
-    if ('onReady' in options)
-      this.on(ON_READY, options.onReady)
-
-    for each (let [ name, type ] in EVENTS) {
-      window.on(type, this._onEvent.bind(this, type))
-      if (name in options)
-        this.on(type, options[name]);
+    // Setting event listener if was passed.
+    for each (let type in EVENTS) {
+      let listener = options[type.listener];
+      if (listener)
+        this.on(type.tab, options[type.listener]);
+      if ('ready' != type.tab) // window spreads this event.
+        window.on(type.window, this._onEvent.bind(this, type.tab));
     }
 
-    
-    let window = this._contentWindow;
-    this._contentWindow.addEventListener(DOM_READY, this._onReady, true);
-    // listen for events, filtered on this tab
+    this.on(EVENTS.close.tab, this.destroy.bind(this))
+    this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
     return this;
   },
+  destroy: function destroy() {
+    for each (let type in EVENTS)
+      this._removeAllListeners(type.tab);
+    this._browser.removeEventListener(EVENTS.ready.dom, this._onReady,
+                                            true);
+  },
+
+  /**
+   * Internal listener that emits public event 'ready' when the page of this
+   * tab is loaded.
+   */
   _onReady: function _onReady(event) {
-    this._contentWindow.removeEventListener(DOM_READY, this._onReady, true);
-    this._emit(ON_READY, this._public);
+    // IFrames events will bubble so we need to ignore those.
+    if (event.target == this._contentDocument)
+      this._emit(EVENTS.ready.tab, this._public);
   },
   _onEvent: function _onEvent(type, tab) {
     //tabs._emit(type, tab);

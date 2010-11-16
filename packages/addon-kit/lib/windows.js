@@ -108,9 +108,6 @@ const BrowserWindowTrait = Trait.compose(
       }
       this._emit('open', this._public);
     },
-    _onReady: function() {
-      this._emit('ready', this._public);
-    },
     _onUnload: function() {
       this._emit('close', this._public);
       this._window = null;
