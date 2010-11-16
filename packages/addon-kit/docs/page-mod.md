@@ -8,12 +8,16 @@ a given set of pages.
 Introduction
 ------------
 
-The module exports a constructor function, `PageMod`, and two other functions,
-`add` and `remove`.
+The module exports a constructor function `PageMod` which creates a new page
+modification (or "mod" for short).
 
-`PageMod` constructs a new page modification (mod).  `add` registers a page mod,
-activating it for the pages to which it applies.  `remove` unregisters a page
-mod, deactivating it.
+A page mod does not modify its pages until those pages are loaded or reloaded.
+In other words, if your add-on is loaded while the user's browser is open, the
+user will have to reload any open pages that match the mod for the mod to affect
+them.
+
+To stop a page mod from making any more modifications, call its `destroy`
+method.
 
 Examples
 --------
@@ -21,7 +25,7 @@ Examples
 Add content to a variety of pages:
 
     var pageMod = require("page-mod");
-    pageMod.add(new pageMod.PageMod({
+    pageMod.PageMod({
       include: ["*.example.com",
                 "http://example.org/a/specific/url",
                 "http://example.info/*"],
@@ -29,22 +33,22 @@ Add content to a variety of pages:
       // before the page starts loading, so we can't interact with the
       // page's DOM here yet.
       contentScript: 'window.newExposedProperty = 1;'
-    }));
+    });
 
     // If you want to work with the DOM, then you should set `contentScriptWhen`
     // to `'ready'`.
     var pageMod = require("page-mod");
-    pageMod.add(new pageMod.PageMod({
+    pageMod.PageMod({
       include: ["*.example.com",
                 "http://example.org/a/specific/url",
                 "http://example.info/*"],
       contentScriptWhen: 'ready',
       contentScript: 'document.body.innerHTML = "<h1>Page Mods!</h1>";'
-    }));
+    });
 
     // You can also pass messages between content scripts and the program.
     var pageMod = require("page-mod");
-    var myPageMod = pageMod.add({
+    pageMod.PageMod({
       include: [
         '*.example.com',
         'http://example.org/a/specific/url',
@@ -120,18 +124,10 @@ calling its `remove` method.
 [List]: https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/list
 [match-pattern]: #module/jetpack-core/match-pattern
 </api>
+<api name="destroy">
+@method
+Stops the page mod from making any more modifications.  Once destroyed the page
+mod can no longer be used.  Note that modifications already made to open pages
+will not be undone.
 </api>
-
-<api name="add">
-@function
-Register a page mod, activating it for the pages to which it applies.
-@param pageMod {PageMod,Object}
-The page mod to add, or options for a page mod to create and then add.
 </api>
-
-<api name="remove">
-@function
-Unregister a page mod, deactivating it.
-@param pageMod {PageMod} the page mod to remove.
-</api>
-

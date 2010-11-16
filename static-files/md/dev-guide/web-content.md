@@ -209,8 +209,7 @@ post messages back to the content script:
       myWorker.postMessage("do not click this link again");
     }
 
-    var pageMod = require("page-mod");
-    var myPageMod = pageMod.add({
+    require("page-mod").PageMod({
       include: ["*"],
       contentScriptWhen: 'ready',
       contentScriptURL:  data.url("pagemod.js"),
