@@ -44,6 +44,12 @@ const { EVENTS } = require("tabs/events");
 
 const TAB_BROWSER = "tabbrowser";
 
+/**
+ * This is a trait that is used in composition of window wrapper. Trait tracks
+ * tab related events of the wrapped window in order to keep truck of open
+ * tabs and maintain their wrappers. Every new tab is gets wrapped and jetpack
+ * type event is emitted.
+ */
 const WindowTabTracker = Trait.compose({
   /**
    * Chrome window whose tabs are tracked.
@@ -91,6 +97,14 @@ const WindowTabTracker = Trait.compose({
       tab.close();
     this._tabs._clear();
   },
+  /**
+   * Tab event router. Function is called on every tab related DOM event.
+   * For each event jetpack style event is emitted with a wrapped tab as
+   * an argument.
+   * @param {String} type
+   *  Event type.
+   * @param {Event} event
+   */
   _onTabEvent: function _onTabEvent(type, event) {
     let options = this._tabOptions.shift() || {};
     options.tab = event.target;
@@ -111,7 +125,17 @@ const WindowTabTracker = Trait.compose({
 });
 exports.WindowTabTracker = WindowTabTracker;
 
+/**
+ * This trait is used to create live representation of open tab lists. Each
+ * window wrapper's tab list is represented by an object created from this
+ * trait. It is also used to represent list of all the open windows. Trait is
+ * composed out of `EventEmitter` in order to emit 'TabOpen', 'TabClose' events.
+ * **Please note** that objects created by this trait can't be exposed outside
+ * instead you should expose it's `_public` property, see comments in
+ * constructor for details.
+ */
 const TabList = List.resolve({ constructor: "_init" }).compose(
+  // This is ugly, but necessary. Will be removed by #596248
   EventEmitter.resolve({ toString: null }),
   Trait.compose({
     on: Trait.required,
@@ -124,9 +148,12 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       this.on(EVENTS.close.window, this._remove.bind(this));
       // Emit events for closed items
       this.on(EVENTS.activate.window, this._onActivate.bind(this));
+      // Initialize list.
       this._init();
+      // This list is not going to emit any events, object holding this list
+      // will do it instead, to make that possible we return a private API.
       return this;
-    }
+    },
     _onActivate: function _onActivate(value) {
       this._emit(EVENTS.deactivate.window, this._active);
       this._active = value;
@@ -135,13 +162,23 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       if (1 <= this._listeners('error').length)
         console.exception(error)
     },
+  // This is ugly, but necessary. Will be removed by #596248
   }).resolve({ toString: null })
 );
 
 // Combined list of tabs for all the windows.
+/**
+ * Combined list of all open tabs on all the windows.
+ * type {TabList}
+ */
 var tabs = TabList();
 exports.tabs = tabs._public;
 
+/**
+ * Trait is a part of composition that represents window wrapper. This trait is
+ * composed out of `WindowTabTracker` that allows it to keep track of open tabs
+ * on the window being wrapped.
+ */
 const WindowTabs = Trait.compose(
   WindowTabTracker,
   Trait.compose({

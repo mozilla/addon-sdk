@@ -13,7 +13,7 @@ Properties
 <api name="activeTab">
 @property {object}
 
-The currently active tab.  This property can be set to a `tab` object, which
+The currently active tab. This property can be set to a `tab` object, which
 will focus that tab's parent window and bring the tab to the foreground.
 </api>
 
@@ -27,14 +27,14 @@ will focus that tab's parent window and bring the tab to the foreground.
     tabs.activeTab = anotherTab;
 
 <api name="tabs">
-@property {array}
+@property {List}
 
 The set of open tabs, across all open windows.
 </api>
 
 **Example**
 
-    var tabs = require("tabs");
+    var { tabs } = require("tabs");
     for each (tab in tabs) {
       console.log(tab.title);
     }
@@ -178,32 +178,12 @@ registration.
 <api name="title">
 @property {string}
 The title of the page currently loaded in the tab.
-This property is read-only.
 </api>
 
 <api name="location">
-@property {Location}
+@property {String}
 The URL of the page currently loaded in the tab.
 This property can be set to load a different URL in the tab.
-The value is a Location object, just like window.location in web pages.
-Its toString() method returns a string representation of the URL.
-For more information about Location objects, see their [Mozilla Developer
-Network documentation][MDN].
-[MDN]: https://developer.mozilla.org/en/DOM/window.location#Location_object
-</api>
-
-<api name="contentWindow">
-@property {object}
-The window object for the page currently loaded in the tab.
-This property is read-only, meaning you cannot set it to different window.
-The window itself can be modified.
-</api>
-
-<api name="contentDocument">
-@property {object}
-The document object for the page currently loaded in the tab.
-This property is read-only, meaning you cannot set it to a different document.
-The document itself can be modified.
 </api>
 
 <api name="favicon">
@@ -214,18 +194,18 @@ This property is read-only.
 
 <api name="style">
 @property {string}
-The CSS style for the tab. NOT IMPLEMENTED YET.
+The CSS style for the tab. **NOT IMPLEMENTED YET**.
 </api>
 
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
-This property is read-only.
+This property can be set to change it's relative position.
 </api>
 
 <api name="thumbnail">
-@property {canvas}
-A thumbnail of the page currently loaded in the tab.
+@property {String}
+Data URI of a thumbnail of the page currently loaded in the tab.
 This property is read-only.
 </api>
 
@@ -234,12 +214,9 @@ This property is read-only.
 Close the tab.
 </api>
 
-<api name="move">
-@method 
-Move the tab to the specified index in its containing window.
-
-@param index {number}
-The index in the set of tabs to move the tab to. This is a zero-based index.
+<api name="focus">
+@method
+Makes the tab active.
 </api>
 
 **Events**

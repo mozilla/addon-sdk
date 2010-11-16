@@ -46,20 +46,25 @@ const { EVENTS } = require("tabs/events");
 const TABS = [];
 
 /**
- * Trait used to wrap tap elements.
+ * Trait used to create tab wrappers.
  */
 const TabTrait = Trait.compose(EventEmitter, {
   on: Trait.required,
   _emit: Trait.required,
-
   /**
    * Tab DOM element that is being wrapped.
    */
   _tab: null,
+  /**
+   * Window wrapper whose tab this object represents.
+   */
   window: null,
-
   constructor: function Tab(options) {
     this._onReady = this._onReady.bind(this);
+    this.on('error', this._onError = this._onError.bind(this));
+    // In e10s focus won't be synchronous anyway and calling `focus` from
+    // constructor will cause creation of two different tab wrappers.
+    this.focus = Enqueued(this.focus);
     this._tab = options.tab;
     let window = this.window = options.window;
     // Setting event listener if was passed.
@@ -91,8 +96,12 @@ const TabTrait = Trait.compose(EventEmitter, {
     if (event.target == this._contentDocument)
       this._emit(EVENTS.ready.tab, this._public);
   },
+  /**
+   * Internal tab event router. Window will emit tab related events for all it's
+   * tabs, this listener will propagate all the events for this tab to it's
+   * listeners.
+   */
   _onEvent: function _onEvent(type, tab) {
-    //tabs._emit(type, tab);
     if (tab == this._public)
       this._emit(type, tab);
   },
@@ -120,14 +129,14 @@ const TabTrait = Trait.compose(EventEmitter, {
   
   /**
    * The title of the page currently loaded in the tab.
-   * Changing the property will change a title.
+   * Changing this property changes an actual title.
    * @type {String}
    */
   get title() this._contentDocument.title,
   set title(value) this._contentDocument.title = String(value),
   /**
    * Location of the page currently loaded in this tab.
-   * Changing value of this property will load different page in this tab.
+   * Changing this property will loads page under under the specified location.
    * @type {String}
    */
   get location() String(this._contentDocument.location),
