@@ -49,12 +49,12 @@ const { browserWindows } = require("windows");
 const { tabs } = require("windows/tabs");
 
 exports.tabs = tabs;
-exports.on = tabs.on;
-exports.removeListener = tabs.removeListener;
-Object.defineProperty(exports, 'activeTab', {
-  get: function getActiveTab() browserWindows.activeWindow.activeTab,
-  set: function setActiveTab(value) {
-    value.focus();
-    value.window.focus();
-  }
-});
+Object.defineProperties(tabs, {
+  open: { value: function open(options) {
+    if (options.inNewWindow)
+        return browserWindows.openWindow({ tabs: [ options ] });
+    // Open in active window if new window was not required.
+    return browserWindows.activeWindow.openTab(options);
+  }}
+})
+

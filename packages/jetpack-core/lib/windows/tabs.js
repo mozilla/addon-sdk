@@ -162,11 +162,13 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       if (1 <= this._listeners('error').length)
         console.exception(error)
     },
+    get active() this._active,
+    set active(active) active.focus(),
+    _active: null,
   // This is ugly, but necessary. Will be removed by #596248
   }).resolve({ toString: null })
 );
 
-// Combined list of tabs for all the windows.
 /**
  * Combined list of all open tabs on all the windows.
  * type {TabList}
@@ -183,14 +185,19 @@ const WindowTabs = Trait.compose(
   WindowTabTracker,
   Trait.compose({
     _window: Trait.required,
-    get tabs() {
-      return (this._tabs || (this._tabs = TabList()))._public
-    },
+    /**
+     * List of tabs
+     */
+    get tabs() (this._tabs || (this._tabs = TabList()))._public,
     _tabs: null,
-
-    get activeTab()
-      Tab({ tab: this._window.gBrowser.selectedTab, window: this._public }),
-    set activeTab(value) value.focus()
+    /**
+     * Open a tab in this window.
+     */
+    openTab: function openTab(options) {
+      options = Options(options)
+      this._tabOptions.push(options);
+      this._window.gBrowser.addTab(options.url);
+    }
   })
 );
 exports.WindowTabs = WindowTabs;
