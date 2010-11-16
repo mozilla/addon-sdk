@@ -80,6 +80,10 @@ const TabTrait = Trait.compose(EventEmitter, {
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
     return this;
   },
+  _onError: function _onError(error) {
+    if (1 <= this._listeners('error').length)
+      console.exception(error)
+  },
   destroy: function destroy() {
     for each (let type in EVENTS)
       this._removeAllListeners(type.tab);
