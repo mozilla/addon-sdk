@@ -147,7 +147,12 @@ const TabTrait = Trait.compose(EventEmitter, {
    * @type {String}
    */
   get location() String(this._contentDocument.location),
-  set location(value) this._contentWindow.location = String(value),
+  set location(value) this._changeLocation(String(value)),
+  // "TabOpen" event is fired when it's still "about:blank" is loaded in the
+  // changing `location` property of the `contentDocument` has no effect since
+  // seems to be either ignored or overridden by internal listener, there for
+  // location change is enqueued for the next turn of event loop.
+  _changeLocation: Enqueued(function(url) this._contentDocument.location = url),
   /**
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
