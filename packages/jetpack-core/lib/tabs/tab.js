@@ -79,6 +79,13 @@ const TabTrait = Trait.compose(EventEmitter, {
 
     this.on(EVENTS.close.tab, this.destroy.bind(this))
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
+
+    this.pinned = options.pinned;
+    if (!options.inBackground)
+        this.focus();
+    // Since we will have to identify tabs by a DOM elements facade function
+    // is used as constructor that collects all the instances and makes sure
+    // that they more then one wrapper is not created per tab.
     return this;
   },
   _onError: function _onError(error) {
