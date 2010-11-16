@@ -52,6 +52,7 @@ const EVENTS = [
   [ PREFIX + ON_TAB_CLOSE, ON_TAB_CLOSE ],
   [ PREFIX + ON_TAB_SELECT, ON_TAB_SELECT ]
 ];
+const { validateOptions } = require("api-utils");
 
 // Array the inner instances of all the wrapped tabs.
 const TABS = [];
@@ -191,3 +192,20 @@ function Tab(options) {
 }
 Tab.prototype = TabTrait.prototype
 exports.Tab = Tab
+
+function Options(options) {
+  if ("string" === typeof options)
+    options = { url: options };
+
+  return validateOptions(options, {
+    url: { is: ["string"] },
+    inBackground: { is: ["undefined", "boolean"] },
+    pinned: { is: ["undefined", "boolean"] },
+    onOpen: { is: ["undefined", "function"] },
+    onClose: { is: ["undefined", "function"] },
+    onReady: { is: ["undefined", "function"] },
+    onActivate: { is: ["undefined", "function"] },
+    onDeactivate: { is: ["undefined", "function"] }
+  });
+}
+exports.Options = Options;

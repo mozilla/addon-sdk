@@ -52,6 +52,7 @@ const { Cc, Ci } = require('chrome'),
       { WindowDom } = require('windows/dom'),
       { WindowLoader } = require('windows/loader'),
       { WindowTrackerTrait } = require('window-utils'),
+      { Options } = require('tabs/tab'),
       // { Sidebars } = require('window/sidebars');
       { utils } = require('xpcom'),
       apiUtils = require('api-utils'),
@@ -76,6 +77,7 @@ const BrowserWindowTrait = Trait.compose(
   Trait.compose({
     _emit: Trait.required,
     _close: Trait.required,
+    _load: Trait.required,
     /**
      * Constructor returns wrapper of the specified chrome window.
      * @param {nsIWindow} window
@@ -84,14 +86,20 @@ const BrowserWindowTrait = Trait.compose(
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
-      if ('onOpen' in options) this.on('open', options.onOpen);
-      if ('onClose' in options) this.on('close', options.onClose);
-      if ('onReady' in options) this.on('ready', options.onReady);
-      if ('params' in options) this._params = options.params;
-      if ('window' in options) this._window = options.window;
-      this._window; // need to invoke lazy getter.
+      if ('onOpen' in options)
+        this.on('open', options.onOpen);
+      if ('onClose' in options)
+        this.on('close', options.onClose);
+      if ('window' in options)
+        this._window = options.window;
+      if ('tabs' in options) {
+        this._tabOptions = Array.isArray(options.tabs) ?
+                           options.tabs.map(Options) : [ Options(options.tabs) ]
+      }
+      this._load();
       return this;
     },
+    _tabOptions: [],
     _onLoad: function() {
       try {
         this._initWindowTabTracker();
@@ -190,15 +198,10 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     },
     openWindow: function(options) {
       if (typeof options === "string")
-        options = { url: options };
+        options = { tabs: [Options(options)] };
 
-      let url = apiUtils.validateOptions(options, {
-        url: { is: ["undefined", "string"] }
-      }).url || "about:blank";
 
-      return BrowserWindow(Object.create(options, {
-        params: { value: [ url ] }
-      }));
+      return BrowserWindow(options);
     },
     /**
      * Returns true if specified window is a browser window.

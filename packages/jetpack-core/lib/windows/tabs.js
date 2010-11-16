@@ -38,7 +38,7 @@
 
 const { Trait } = require("traits");
 const { List } = require("list");
-const { Tab } = require("tabs/tab");
+const { Tab, Options } = require("tabs/tab");
 const { EventEmitter } = require("events");
 
 const DOM_READY = "DOMContentLoaded";
@@ -63,16 +63,16 @@ const WindowTabTracker = Trait.compose({
    */
   _window: Trait.required,
   /**
-   * Callback that is called once first tab is fully loaded.
-   */
-  _onReady: Trait.required,
-  /**
-   * Function used to emit 'TabOpen' & 'TabClose' events.
+   * Function used to emit events.
    */
   _emit: Trait.required,
+  _tabOptions: Trait.required,
+  /**
+   * Function to add event listeners.
+   */
   on: Trait.required,
   /**
-   * Live array of the windows tabContainers.
+   * Live array of the window tabContainers.
    */
   get _tabContainers()
     Array.slice(this._window.document.getElementsByTagName(TAB_BROWSER))
@@ -82,30 +82,27 @@ const WindowTabTracker = Trait.compose({
    */
   _initWindowTabTracker: function _initWindowTabTracker() {
     this.tabs;
-    let firstTab = null;
     // Some XULRunner apps may have more then one tab browser.
     for each (let tabContainer in this._tabContainers) {
-      //
       let tabs = Array.slice(tabContainer.children);
-      for each (let tab in tabs) {
-        firstTab = firstTab || tab;
-        this._onTabEvent(ON_TAB_OPEN, { target: tab })
-      }
+      // Emulating 'open' events for all open tabs.
+      for each (let tab in tabs)
+        this._onTabEvent(EVENTS.open.window, { target: tab })
+      this._onTabEvent(EVENTS.activate.window, { target: this._window.gBrowser.selectedTab })
       // Setting event listeners to track tab events
-      for each (let [domType, eventType] in TAB_CONTAINER_EVENTS) {
-        tabContainer.addEventListener(domType,
-                                      this._onTabEvent.bind(this, eventType),
-                                      true);
+      for each (let type in EVENTS) {
+        if (!type.dom) continue;
+        tabContainer.addEventListener(type.dom,
+                                      this._onTabEvent.bind(this, type.window),
+                                      false);
       }
     }
-    let gBrowser = this._window.gBrowser;
-    let tab = gBrowser.getBrowserForTab(firstTab);
-    let listener = this.__onReady = this.__onReady.bind(this, tab)
-    tab.addEventListener(DOM_READY, listener, false);
+    this.on('close', this._destroyTabTracker.bind(this));
   },
-  __onReady: function __onReady(tab, e) {
-    tab.removeEventListener(DOM_READY, this.__onReady, false);
-    this._onReady(e);
+  _destroyTabTracker: function() {
+    for each (tab in this.tabs)
+      tab.close();
+    this._tabs._clear();
   },
   _onTabEvent: function _onTabEvent(type, event) {
     var tab = Tab({ tab: event.target, window: this._public });
