@@ -96,7 +96,7 @@ visibility.
 Represents a widget object.
 <api name="Widget">
 @constructor {options}
-  Creates a new widget.
+  Creates a new widget.  The widget is immediately added to the widget bar.
 
 @param options {object}
   An object with the following keys:
