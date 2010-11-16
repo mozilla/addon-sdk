@@ -26,12 +26,11 @@ exports.main = function(options, callbacks) {
 
   // Create a widget that displays the image.  We'll attach the panel to it.
   // When you click the widget, the panel will pop up.
-  var myWidget = widgets.Widget({
+  widgets.Widget({
     label: "Mom",
     image: iconURL,
     panel: myPanel
   });
-  widgets.add(myWidget);
 
   // If you run cfx with --static-args='{"quitWhenDone":true}' this program
   // will automatically quit Firefox when it's done.
