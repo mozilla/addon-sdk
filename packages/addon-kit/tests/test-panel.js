@@ -141,33 +141,6 @@ tests.testContentURLOption = function(test) {
                     "Panel throws an exception if contentURL is not a URL.");
 };
 
-tests['test:destruct before removed'] = function(test) {
-  test.waitUntilDone();
-  let loader = test.makeSandboxedLoader();
-  let panels = loader.require('panel');
-  let { Panel } = loader.findSandboxForModule("panel").globalScope;
-  let PanelShim = Panel.compose({ destructor: function() this._destructor() });
-  PanelShim.prototype = Panel.prototype;
-  
-  let isShowEmitted = false;
-
-  let panel = PanelShim({
-    contentURL: "about:buildconfig",
-    onShow: function onShow() {
-      test.pass('shown was emitted');
-      panel.destructor();
-    },
-    onHide: function onHide() {
-      test.done();
-    }
-  });
-  panels.add(panel);
-  panel.on('error', function(e) {
-    test.fail('error emit was emitted:' + e.message + '\n'+ e.stack)
-  });
-  panel.show();
-};
-
 let panelSupported = true;
 
 try {
