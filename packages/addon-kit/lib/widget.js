@@ -156,14 +156,14 @@ const Widget = Trait.compose(Loader, Trait.compose({
       console.exception(e)
   },
 
-  _onEvent: function Widget__onEvent(type, target, e, item) {
+  _onEvent: function Widget__onEvent(type, target, eventData, domNode) {
     if (target === this._public) {
-      this._emit(type, this._public, e);
+      this._emit(type, this._public, eventData);
 
       // Special case for click events: if the widget doesn't have a click
       // handler, but it does have a panel, display the panel.
       if ("click" == type && !this._listeners("click").length && this.panel)
-        this.panel.show(item.node);
+        this.panel.show(domNode);
     }
   },
 
@@ -537,7 +537,7 @@ BrowserWindow.prototype = {
 
       // Proxy event to the widget
       require("timer").setTimeout(function() {
-        eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
+        eventBus._emit("event", EVENTS[e.type], item.widget, null, item.node);
       }, 0);
     };
 
