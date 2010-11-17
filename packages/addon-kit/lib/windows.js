@@ -113,6 +113,8 @@ const BrowserWindowTrait = Trait.compose(
       this._emit('open', this._public);
     },
     _onUnload: function() {
+      // Need to remove all the tabs before window listener are notified.
+      this._destroyWindowTabTracker();
       this._emit('close', this._public);
       this._window = null;
       // Removing reference from the windows array.
