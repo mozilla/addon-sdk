@@ -16,7 +16,7 @@ To communicate between your widget and the content loading in it, every widget
 exposes the `Loader` module API. This allows you to run content scripts in
 the context of your widget's content. For example, to be notified when the 
 widget contents have loaded, you can make a small script that calls back to the
-widget when it first loads, or when it's DOM is ready. See the example code
+widget when it first loads, or when its DOM is ready. See the example code
 below for various ways of doing this.
 
 ## Constructors ##
@@ -118,6 +118,9 @@ below for various ways of doing this.
 </api>
 
 ## Examples ##
+
+    // Include the widget module.
+    const widgets = require("widget");
 
     // A basic click-able image widget.
     widgets.add(widgets.Widget({
