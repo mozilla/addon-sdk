@@ -241,7 +241,7 @@ This property is read-only.
 
 <api name="pinned">
 @property {boolean}
-Weather or not tab is pinned (Is an AppTab).
+Whether or not tab is pinned (Is an AppTab).
 This property can be set to pin / unpin this tab.
 </api>
 

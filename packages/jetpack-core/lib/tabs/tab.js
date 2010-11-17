@@ -43,7 +43,9 @@ const { validateOptions } = require("api-utils");
 const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
 
-// Array the inner instances of all the wrapped tabs.
+
+
+// Array of the inner instances of all the wrapped tabs.
 const TABS = [];
 
 /**
@@ -173,7 +175,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   get thumbnail() thumbnailUtils.thumbnailURI(this._contentWindow),
   /**
-   * Weather or not tab is pinned (Is an app-tab).
+   * Whether or not tab is pinned (Is an app-tab).
    * Changing value will pin / unpin tab.
    * @type {Boolean}
    */

@@ -71,11 +71,11 @@ const WindowTabTracker = Trait.compose({
     Array.slice(this._window.document.getElementsByTagName(TAB_BROWSER))
       .map(function(tabBrowser) tabBrowser.tabContainer),
   /**
-   * Initializes tab tracker.
+   * Initializes tab tracker for a browser window.
    */
   _initWindowTabTracker: function _initWindowTabTracker() {
     this.tabs;
-    // Some XULRunner apps may have more then one tab browser.
+    // Some XULRunner apps may have more than one tab browser.
     for each (let tabContainer in this._tabContainers) {
       let tabs = Array.slice(tabContainer.children);
       // Emulating 'open' events for all open tabs.
