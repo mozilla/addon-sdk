@@ -94,7 +94,11 @@ const BrowserWindowTrait = Trait.compose(
         this._window = options.window;
       if ('tabs' in options) {
         this._tabOptions = Array.isArray(options.tabs) ?
-                           options.tabs.map(Options) : [ Options(options.tabs) ]
+                           options.tabs.map(Options) :
+                           [ Options(options.tabs) ];
+      }
+      else if ('url' in options) {
+        this._tabOptions = [ Options(options.url) ];
       }
       this._load();
       return this;
@@ -193,11 +197,9 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       if (window instanceof BrowserWindow)
         window.focus()
     },
-    openWindow: function(options) {
+    openWindow: function openWindow(options) {
       if (typeof options === "string")
         options = { tabs: [Options(options)] };
-
-
       return BrowserWindow(options);
     },
     /**
