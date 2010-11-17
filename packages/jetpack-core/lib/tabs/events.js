@@ -49,9 +49,8 @@ exports.EVENTS = EVENTS;
 
 Object.keys(EVENTS).forEach(function(name) {
   EVENTS[name] = {
+    name: name,
     listener: ON_PREFIX + name.charAt(0).toUpperCase() + name.substr(1),
-    window: TAB_PREFIX + name.charAt(0).toUpperCase() + name.substr(1),
-    tab: name,
     dom: EVENTS[name]
   }
 });

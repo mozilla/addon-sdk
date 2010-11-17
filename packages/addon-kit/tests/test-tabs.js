@@ -66,12 +66,12 @@ exports.testActiveTab_setter = function(test) {
     let { tabs } = require("tabs");
     let location = "data:text/html,<html><head><title>foo</title></head></html>";
 
-    tabs.on('TabReady', function onReady(tab) {
-      tabs.removeListener('TabReady', onReady);
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.active.location, "about:blank", "activeTab location has not changed");
       test.assertEqual(tab.location, location, "location of new background tab matches");
-      tabs.on('TabActivate', function onActivate() {
-        tabs.removeListener('TabActivate', onActivate);
+      tabs.on('activate', function onActivate() {
+        tabs.removeListener('activate', onActivate);
         test.assertEqual(tabs.active.location, location, "location after activeTab setter matches");
         closeBrowserWindow(window, function() test.done());
       });
@@ -138,10 +138,10 @@ exports.testTabLocation = function(test) {
     let url1 = "data:text/html,foo";
     let url2 = "data:text/html,bar";
 
-    tabs.on('TabReady', function onReady(tab) {
+    tabs.on('ready', function onReady(tab) {
       if (tab.location != url2)
         return;
-      tabs.removeListener('TabReady', onReady);
+      tabs.removeListener('ready', onReady);
       test.pass("tab.load() loaded the correct url");
       closeBrowserWindow(window, function() test.done());
     });
@@ -163,8 +163,8 @@ exports.testTabClose = function(test) {
     let url = "data:text/html,foo";
 
     test.assertNotEqual(tabs.active.location, url, "tab is now the active tab");
-    tabs.on('TabReady', function onReady(tab) {
-      tabs.removeListener('TabReady', onReady);
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.active.location, tab.location, "tab is now the active tab");
       tab.close();
       test.assertNotEqual(tabs.active.location, url, "tab is no longer the active tab");
@@ -268,8 +268,8 @@ exports.testInBackground = function(test) {
     let activeUrl = tabs.active.location;
     let url = "data:text/html,background";
     test.assertEqual(activeWindow, window, "activeWindow matches this window");
-    tabs.on('TabReady', function onReady(tab) {
-      tabs.removeListener('TabReady', onReady);
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.active.location, activeUrl, "URL of active tab has not changed");
       test.assertEqual(tab.location, url, "URL of the new background tab matches");
       test.assertEqual(activeWindow, window, "a new window was not opened");
@@ -334,13 +334,13 @@ exports.testTabsEvent_onOpen = function(test) {
     function listener1(tab) {
       eventCount++;
     };
-    tabs.on('TabOpen', listener1);
+    tabs.on('open', listener1);
 
     // add listener via collection add
-    tabs.on('TabOpen', function listener2(tab) {
+    tabs.on('open', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('TabOpen', listener1);
-      tabs.removeListener('TabOpen', listener2);
+      tabs.removeListener('open', listener1);
+      tabs.removeListener('open', listener2);
       closeBrowserWindow(window, function() test.done());
     });
 
@@ -360,18 +360,18 @@ exports.testTabsEvent_onClose = function(test) {
     function listener1(tab) {
       eventCount++;
     }
-    tabs.on('TabClose', listener1);
+    tabs.on('close', listener1);
 
     // add listener via collection add
-    tabs.on('TabClose', function listener2(tab) {
+    tabs.on('close', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('TabClose', listener1);
-      tabs.removeListener('TabClose', listener2);
+      tabs.removeListener('close', listener1);
+      tabs.removeListener('close', listener2);
       closeBrowserWindow(window, function() test.done());
     });
 
-    tabs.on('TabReady', function onReady(tab) {
-      tabs.removeListener('TabReady', onReady);
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
       tab.close();
     });
 
@@ -391,13 +391,13 @@ exports.testTabsEvent_onReady = function(test) {
     function listener1(tab) {
       eventCount++;
     };
-    tabs.on('TabReady', listener1);
+    tabs.on('ready', listener1);
 
     // add listener via collection add
-    tabs.on('TabReady', function listener2(tab) {
+    tabs.on('ready', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('TabReady', listener1);
-      tabs.removeListener('TabReady', listener2);
+      tabs.removeListener('ready', listener1);
+      tabs.removeListener('ready', listener2);
       closeBrowserWindow(window, function() test.done());
     });
 
@@ -417,13 +417,13 @@ exports.testTabsEvent_onActivate = function(test) {
     function listener1(tab) {
       eventCount++;
     };
-    tabs.on('TabActivate', listener1);
+    tabs.on('activate', listener1);
 
     // add listener via collection add
-    tabs.on('TabActivate', function listener2(tab) {
+    tabs.on('activate', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('TabActivate', listener1);
-      tabs.removeListener('TabActivate', listener2);
+      tabs.removeListener('activate', listener1);
+      tabs.removeListener('activate', listener2);
       closeBrowserWindow(window, function() test.done());
     });
 
@@ -443,18 +443,18 @@ exports.testTabsEvent_onDeactivate = function(test) {
     function listener1(tab) {
       eventCount++;
     };
-    tabs.on('TabDeactivate', listener1);
+    tabs.on('deactivate', listener1);
 
     // add listener via collection add
-    tabs.on('TabDeactivate', function listener2(tab) {
+    tabs.on('deactivate', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.removeListener('TabDeactivate', listener1);
-      tabs.removeListener('TabDeactivate', listener2);
+      tabs.removeListener('deactivate', listener1);
+      tabs.removeListener('deactivate', listener2);
       closeBrowserWindow(window, function() test.done());
     });
 
-    tabs.on('TabOpen', function onOpen(tab) {
-      tabs.removeListener('TabOpen', onOpen);
+    tabs.on('open', function onOpen(tab) {
+      tabs.removeListener('open', onOpen);
       tabs.open("data:text/html,foo");
     });
 

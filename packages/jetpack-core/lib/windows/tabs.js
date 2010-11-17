@@ -80,13 +80,13 @@ const WindowTabTracker = Trait.compose({
       let tabs = Array.slice(tabContainer.children);
       // Emulating 'open' events for all open tabs.
       for each (let tab in tabs)
-        this._onTabEvent(EVENTS.open.window, { target: tab })
-      this._onTabEvent(EVENTS.activate.window, { target: this._window.gBrowser.selectedTab })
+        this._onTabEvent(EVENTS.open, { target: tab })
+      this._onTabEvent(EVENTS.activate, { target: this._window.gBrowser.selectedTab })
       // Setting event listeners to track tab events
       for each (let type in EVENTS) {
         if (!type.dom) continue;
         tabContainer.addEventListener(type.dom,
-                                      this._onTabEvent.bind(this, type.window),
+                                      this._onTabEvent.bind(this, type),
                                       false);
       }
     }
@@ -109,17 +109,16 @@ const WindowTabTracker = Trait.compose({
     options.tab = event.target;
     options.window = this._public;
     var tab = Tab(options);
-    if (type == EVENTS.open.dom)
-      tab.on(EVENTS.ready.tab, this._emitEvent.bind(this, EVENTS.ready.window));
+    // Piping 'ready' events from open tabs to the window listeners.
+    if (type == EVENTS.open)
+      tab.on(EVENTS.ready.name, this._emitEvent.bind(this, EVENTS.ready));
     this._emitEvent(type, tab);
   },
   _emitEvent: function _emitEvent(type, tab) {
     // Notifies combined tab list that tab was added / removed.
-    tabs._emit(type, tab);
+    tabs._emit(type.name, tab);
     // Notifies contained tab list that window was added / removed.
-    this._tabs._emit(type, tab);
-    // Notifies listeners that tab got opened / closed / selected.
-    this._emit(type, tab);
+    this._tabs._emit(type.name, tab);
   }
 });
 exports.WindowTabTracker = WindowTabTracker;
@@ -143,11 +142,11 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       this._window = options.window;
       this.on('error', this._onError = this._onError.bind(this));
       // Add new items to the list
-      this.on(EVENTS.open.window, this._add.bind(this));
+      this.on(EVENTS.open.name, this._add.bind(this));
       // Remove closed items from the list
-      this.on(EVENTS.close.window, this._remove.bind(this));
+      this.on(EVENTS.close.name, this._remove.bind(this));
       // Emit events for closed items
-      this.on(EVENTS.activate.window, this._onActivate.bind(this));
+      this.on(EVENTS.activate.name, this._onActivate.bind(this));
       // Initialize list.
       this._init();
       // This list is not going to emit any events, object holding this list
@@ -155,7 +154,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       return this;
     },
     _onActivate: function _onActivate(value) {
-      this._emit(EVENTS.deactivate.window, this._active);
+      this._emit(EVENTS.deactivate.name, this._active);
       this._active = value;
     },
     _onError: function _onError(error) {

@@ -69,12 +69,12 @@ const TabTrait = Trait.compose(EventEmitter, {
     for each (let type in EVENTS) {
       let listener = options[type.listener];
       if (listener)
-        this.on(type.tab, options[type.listener]);
-      if ('ready' != type.tab) // window spreads this event.
-        window.on(type.window, this._onEvent.bind(this, type.tab));
+        this.on(type.name, options[type.listener]);
+      if ('ready' != type.name) // window spreads this event.
+        window.tabs.on(type.name, this._onEvent.bind(this, type.name));
     }
 
-    this.on(EVENTS.close.tab, this.destroy.bind(this))
+    this.on(EVENTS.close.name, this.destroy.bind(this))
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
 
     this.pinned = options.pinned;
@@ -91,7 +91,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   },
   destroy: function destroy() {
     for each (let type in EVENTS)
-      this._removeAllListeners(type.tab);
+      this._removeAllListeners(type.name);
     this._browser.removeEventListener(EVENTS.ready.dom, this._onReady,
                                             true);
   },
@@ -103,7 +103,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   _onReady: function _onReady(event) {
     // IFrames events will bubble so we need to ignore those.
     if (event.target == this._contentDocument)
-      this._emit(EVENTS.ready.tab, this._public);
+      this._emit(EVENTS.ready.name, this._public);
   },
   /**
    * Internal tab event router. Window will emit tab related events for all it's
