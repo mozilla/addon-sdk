@@ -44,7 +44,6 @@ const AppShellService = Cc["@mozilla.org/appshell/appShellService;1"].
   getService(Ci.nsIAppShellService);
 
 Cu.import("resource://gre/modules/NetUtil.jsm", this);
-NetUtil = NetUtil.NetUtil;
 const FaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                           getService(Ci.nsIFaviconService);
 
