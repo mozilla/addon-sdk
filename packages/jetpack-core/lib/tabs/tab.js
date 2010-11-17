@@ -63,9 +63,6 @@ const TabTrait = Trait.compose(EventEmitter, {
   constructor: function Tab(options) {
     this._onReady = this._onReady.bind(this);
     this.on('error', this._onError = this._onError.bind(this));
-    // In e10s focus won't be synchronous anyway and calling `focus` from
-    // constructor will cause creation of two different tab wrappers.
-    this.focus = Enqueued(this.focus);
     this._tab = options.tab;
     let window = this.window = options.window;
     // Setting event listener if was passed.
@@ -187,10 +184,14 @@ const TabTrait = Trait.compose(EventEmitter, {
   },
   /**
    * Make this tab active.
+   * Please note: That this function is called synchronous since in E10S that
+   * will be the case. Besides this function is called from a constructor where
+   * we would like to return instance before firing a 'TabActivated' event.
    */
-  focus: function focus() {
-    this._window.gBrowser.selectedTab = this._tab;
-  },
+  focus: Enqueued(function focus() {
+    if (this._window) // Ignore if window is closed by the time this is invoked.
+      this._window.gBrowser.selectedTab = this._tab;
+  }),
   /**
    * Close the tab
    */
