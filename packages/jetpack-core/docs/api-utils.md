@@ -29,19 +29,10 @@ values, or [key, value] pairs.  The `addIterator` function makes it easy to do
 so in a way that is consistent with the behavior of default iterators during
 `for...in`, `for each...in`, and `for...in Iterator()` loops.
 
-Functions
----------
-
 <api name="publicConstructor">
-@method
+@function
 Returns a function *C* that creates an instance of `privateConstructor`. *C*
 may be called with or without the `new` keyword.
-
-@returns {function}
-A function that makes new instances of `privateConstructor`.
-
-@param privateConstructor {constructor}
-</api>
 
 The prototype of each instance returned from *C* is *C*.`prototype`, and
 *C*.`prototype` is an object whose prototype is
@@ -58,8 +49,50 @@ Instances returned from *C* are automatically memory tracked using
     function MyObject() {}
     exports.MyObject = apiUtils.publicConstructor(MyObject);
 
+@returns {function}
+A function that makes new instances of `privateConstructor`.
+
+@param privateConstructor {constructor}
+</api>
+
 <api name="validateOptions">
-@method
+@function
+A function to validate an options dictionary according to the specified
+constraints.
+
+`map`, `is`, and `ok` are used in that order.
+
+The return value is an object whose keys are those keys in `requirements` that
+are also in `options` and whose values are the corresponding return values of
+`map` or the corresponding values in `options`.  Note that any keys not shared
+by both `requirements` and `options` are not in the returned object.
+
+**Examples**
+
+A typical use:
+
+    var opts = { foo: 1337 };
+    var requirements = {
+      foo: {
+        map: function (val) val.toString(),
+        is: ["string"],
+        ok: function (val) val.length > 0,
+        msg: "foo must be a non-empty string."
+      }
+    };
+    var validatedOpts = apiUtils.validateOptions(opts, requirements);
+    // validatedOpts == { foo: "1337" }
+
+If the key `foo` is optional and doesn't need to be mapped:
+
+    var opts = { foo: 1337 };
+    var validatedOpts = apiUtils.validateOptions(opts, { foo: {} });
+    // validatedOpts == { foo: 1337 }
+
+    opts = {};
+    validatedOpts = apiUtils.validateOptions(opts, { foo: {} });
+    // validatedOpts == {}
+
 @returns {object}
 A validated options dictionary given some requirements. If any of the
 requirements are not met, an exception is thrown.
@@ -97,42 +130,8 @@ will be used as its message. If undefined, a generic message is used, unless
 be one of the given types.
 </api>
 
-`map`, `is`, and `ok` are used in that order.
-
-The return value is an object whose keys are those keys in `requirements` that
-are also in `options` and whose values are the corresponding return values of
-`map` or the corresponding values in `options`.  Note that any keys not shared
-by both `requirements` and `options` are not in the returned object.
-
-**Examples**
-
-A typical use:
-
-    var opts = { foo: 1337 };
-    var requirements = {
-      foo: {
-        map: function (val) val.toString(),
-        is: ["string"],
-        ok: function (val) val.length > 0,
-        msg: "foo must be a non-empty string."
-      }
-    };
-    var validatedOpts = apiUtils.validateOptions(opts, requirements);
-    // validatedOpts == { foo: "1337" }
-
-If the key `foo` is optional and doesn't need to be mapped:
-
-    var opts = { foo: 1337 };
-    var validatedOpts = apiUtils.validateOptions(opts, { foo: {} });
-    // validatedOpts == { foo: 1337 }
-
-    opts = {};
-    validatedOpts = apiUtils.validateOptions(opts, { foo: {} });
-    // validatedOpts == {}
-
-
 <api name="addIterator">
-@method
+@function
 Adds an iterator to the specified object that iterates keys, values,
 or [key, value] pairs depending on how it is invoked, i.e.:
 

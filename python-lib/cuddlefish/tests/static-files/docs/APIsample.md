@@ -78,5 +78,68 @@ A function that returns a random integer between 0 and 10.
 @returns {int} The random number.
 </api>
 
-Some more text here.
+<api name="empty-class">
+@class
+This class contains nothing.
+</api>
+
+<api name="only-one-ctor">
+@class
+This class contains only one constructor.
+<api name="one-constructor">
+@constructor
+@param [options] An object-bag of goodies.
+</api>
+</api>
+
+<api name="two-ctors">
+@class
+This class contains two constructors.
+<api name="one-constructor">
+@constructor
+The first constructor.
+@param [options] An object-bag of goodies.
+</api>
+<api name="another-constructor">
+@constructor
+The second constructor.
+@param [options] An object-bag of goodies.
+</api>
+</api>
+
+<api name="ctor-and-method">
+@class
+This class contains one constructor and one method.
+<api name="one-constructor">
+@constructor
+The first constructor.
+@param [options] An object-bag of goodies.
+</api>
+<api name="a-method">
+@method
+Does things.
+@param [options] An argument.
+</api>
+</api>
+
+<api name="ctor-and-method-and-prop">
+@class
+This class contains one constructor, one method, and one property.
+<api name="one-constructor">
+@constructor
+The first constructor.
+@param [options] An object-bag of goodies.
+</api>
+<api name="a-method">
+@method
+Does things.
+@param [options] An argument.
+</api>
+<api name="a-property">
+@property {bool}
+Represents stuff.
+</api>
+</api>
+
+Some more text here, at the end of the file.
 

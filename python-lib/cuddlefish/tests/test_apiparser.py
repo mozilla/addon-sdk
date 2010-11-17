@@ -26,8 +26,11 @@ class ParserTests(unittest.TestCase):
         p_test = parsed[1][1]
         self.assertEqual(p_test["name"], "test")
         self.assertEqual(p_test["type"], "method")
+        self.assertEqual(p_test["signature"], "test(argOne, argTwo, \
+argThree, options)")
         self.assertEqual(p_test["description"],
-                         "This is a function which does nothing in particular.")
+                         "This is a function which does nothing in \
+particular.")
         r = p_test["returns"]
         self.assertEqual(r["type"], "object")
         self.assertEqual(r["description"], "")
@@ -93,69 +96,82 @@ A multiline description
 Written as haiku""")
 
         self.assertEqual(parsed[2][0], "markdown")
-        self.assertEqual(parsed[2][1], "\n\nThis text appears between the API blocks.\n\n")
+        self.assertEqual(parsed[2][1], "\n\nThis text appears between the \
+API blocks.\n\n")
 
         self.assertEqual(parsed[3][0], "api-json")
         p_test = parsed[3][1]
 
-        expected = {'description': 'This is a list of options to specify modifications to your slideBar instance.',
- "line_number": 28,
+        expected = {'line_number': 28,
  'name': 'append',
- 'params': [{'description': 'Pass in all of your options here.',
+ 'params': [{'props':[{'line_number': 33,
+                       'required': False,
+                       'type': 'uri',
+                       'name': 'icon',
+                       'description': 'The HREF of an icon to show as the \
+method of accessing your features slideBar'},
+                      {'line_number': 34,
+                       'required': False,
+                       'type': 'string/xml',
+                       'name': 'html',
+                       'description': 'The content of the feature, either \
+as an HTML string,\nor an E4X document fragment (e.g., <><h1>Hi!</h1></>)'},
+                      {'line_number': 37,
+                       'required': False,
+                       'type': 'uri',
+                       'name': 'url',
+                       'description': 'The url to load into the content area \
+of the feature'},
+                      {'line_number': 38,
+                       'required': False,
+                       'type': 'int',
+                       'name': 'width',
+                       'description': 'Width of the content area and the \
+selected slide size'},
+                      {'line_number': 39,
+                       'required': False,
+                       'type': 'bool',
+                       'name': 'persist',
+                       'description': 'Default slide behavior when being \
+selected as follows:\nIf true: blah; If false: double blah.'},
+                      {'line_number': 42,
+                       'required': False,
+                       'type': 'bool',
+                       'name': 'autoReload',
+                       'description': 'Automatically reload content on \
+select'},
+                      {'line_number': 43,
+                       'required': False,
+                       'type': 'function',
+                       'name': 'onClick',
+                       'description': 'Callback when the icon is \
+clicked'},
+                      {'line_number': 44,
+                       'required': False,
+                       'type': 'function',
+                       'name': 'onSelect',
+                       'description': 'Callback when the feature is selected'},
+                      {'line_number': 45,
+                       'required': False,
+                       'type': 'function',
+                       'name': 'onReady',
+                       'description':
+                       'Callback when featured is loaded'}],
+                       'line_number': 31,
+             'required': True,
              'name': 'options',
-             "line_number": 31,
-             'props': [{'description': 'The HREF of an icon to show as the method of accessing your features slideBar',
-                        'name': 'icon',
-                        "line_number": 33,
-                        'required': False,
-                        'type': 'uri'},
-                       {'description': 'The content of the feature, either as an HTML string,\nor an E4X document fragment (e.g., <><h1>Hi!</h1></>)',
-                        'name': 'html',
-                        "line_number": 34,
-                        'required': False,
-                        'type': 'string/xml'},
-                       {'description': 'The url to load into the content area of the feature',
-                        'name': 'url',
-                        "line_number": 37,
-                        'required': False,
-                        'type': 'uri'},
-                       {'description': 'Width of the content area and the selected slide size',
-                        'name': 'width',
-                        "line_number": 38,
-                        'required': False,
-                        'type': 'int'},
-                       {'description': 'Default slide behavior when being selected as follows:\nIf true: blah; If false: double blah.',
-                        'name': 'persist',
-                        "line_number": 39,
-                        'required': False,
-                        'type': 'bool'},
-                       {'description': 'Automatically reload content on select',
-                        'name': 'autoReload',
-                        "line_number": 42,
-                        'required': False,
-                        'type': 'bool'},
-                       {'description': 'Callback when the icon is clicked',
-                        'name': 'onClick',
-                        "line_number": 43,
-                        'required': False,
-                        'type': 'function'},
-                       {'description': 'Callback when the feature is selected',
-                        'name': 'onSelect',
-                        "line_number": 44,
-                        'required': False,
-                        'type': 'function'},
-                       {'description': 'Callback when featured is loaded',
-                        'name': 'onReady',
-                        "line_number": 45,
-                        'required': False,
-                        'type': 'function'}],
-             'required': True}],
- 'type': 'method'}
+             'description': 'Pass in all of your options here.'}],
+ 'signature': 'append(options)',
+ 'type': 'method',
+ 'description': 'This is a list of options to specify modifications to your \
+slideBar instance.'}
         self.assertEqual(p_test, expected)
 
         self.assertEqual(parsed[5][0], "api-json")
         p_test = parsed[5][1]
         self.assertEqual(p_test["name"], "cool-func.dot")
+        self.assertEqual(p_test["signature"], "cool-func.dot(howMuch, double, \
+options, onemore, options2)")
         self.assertEqual(p_test["returns"]["description"],
                          """\
 A value telling you just how cool you are.
@@ -180,8 +196,93 @@ some **realy** fancy things. Like `code`, or even
                           "description": "Do something random?",
                           })
 
-        self.assertEqual(parsed[8][0], "markdown")
-        self.assertEqual(parsed[8][1], "\n\nSome more text here.\n\n")
+        p_test = parsed[7][1]
+        self.assertEqual(p_test["signature"],"random()")
+
+        # tests for classes
+        #1) empty class
+        p_test = parsed[9][1]
+        self.assertEqual(len(p_test), 4)
+        self.assertEqual(p_test["name"], "empty-class")
+        self.assertEqual(p_test["description"], "This class contains nothing.")
+        self.assertEqual(p_test["type"], "class")
+        # 2) class with just one ctor
+        p_test = parsed[11][1]
+        self.assertEqual(len(p_test), 5)
+        self.assertEqual(p_test["name"], "only-one-ctor")
+        self.assertEqual(p_test["description"], "This class contains only \
+one constructor.")
+        self.assertEqual(p_test["type"], "class")
+        constructors = p_test["constructors"]
+        self.assertEqual(len(constructors), 1)
+        self._test_class_constructor(constructors[0], "one-constructor")
+        # 3) class with 2 ctors
+        p_test = parsed[13][1]
+        self.assertEqual(len(p_test), 5)
+        self.assertEqual(p_test["name"], "two-ctors")
+        self.assertEqual(p_test["description"], "This class contains two \
+constructors.")
+        self.assertEqual(p_test["type"], "class")
+        constructors = p_test["constructors"]
+        self.assertEqual(len(constructors), 2)
+        self._test_class_constructor(constructors[0], "one-constructor")
+        self._test_class_constructor(constructors[1], "another-constructor")
+        # 4) class with ctor + method
+        p_test = parsed[15][1]
+        self.assertEqual(len(p_test), 6)
+        self.assertEqual(p_test["name"], "ctor-and-method")
+        self.assertEqual(p_test["description"], "This class contains one \
+constructor and one method.")
+        self.assertEqual(p_test["type"], "class")
+        constructors = p_test["constructors"]
+        self.assertEqual(len(constructors), 1)
+        self._test_class_constructor(constructors[0], "one-constructor")
+        methods = p_test["methods"]
+        self.assertEqual(len(methods), 1)
+        self._test_class_method(methods[0])
+        # 5) class with ctor + method + property
+        p_test = parsed[17][1]
+        self.assertEqual(len(p_test), 7)
+        self.assertEqual(p_test["name"], "ctor-and-method-and-prop")
+        self.assertEqual(p_test["description"], "This class contains one \
+constructor, one method, and one property.")
+        self.assertEqual(p_test["type"], "class")
+        constructors = p_test["constructors"]
+        self.assertEqual(len(constructors), 1)
+        self._test_class_constructor(constructors[0], "one-constructor")
+        methods = p_test["methods"]
+        self.assertEqual(len(methods), 1)
+        self._test_class_method(methods[0])
+        properties = p_test["properties"]
+        self.assertEqual(len(properties), 1)
+        self._test_class_property(properties[0])
+
+        self.assertEqual(parsed[-1][0], "markdown")
+        self.assertEqual(parsed[-1][1], "\n\nSome more text here, \
+at the end of the file.\n\n")
+
+    def _test_class_constructor(self, constructor, name):
+        self.assertEqual(constructor["type"], "constructor")
+        self.assertEqual(constructor["name"], name)
+        params = constructor["params"]
+        self.assertEqual(len(params), 1)
+        self.assertEqual(params[0]["name"], "options")
+        self.assertEqual(params[0]["description"], "An object-bag of goodies.")
+
+    def _test_class_method(self, method):
+        self.assertEqual(method["type"], "method")
+        self.assertEqual(method["name"], "a-method")
+        self.assertEqual(method["description"], "Does things.")
+        params = method["params"]
+        self.assertEqual(len(params), 1)
+        self.assertEqual(params[0]["name"], "options")
+        self.assertEqual(params[0]["description"], "An argument.")
+
+    def _test_class_property(self, prop):
+        self.assertEqual(prop["type"], "property")
+        self.assertEqual(prop["name"], "a-property")
+        self.assertEqual(prop["description"], "Represents stuff.")
+        self.assertEqual(prop["property_type"], "bool")
 
     def test_missing_return_propname(self):
         md = '''\
@@ -386,6 +487,18 @@ An object property named test of type foo.
 <api name="test">
 @property
 This property needs to specify a type!
+</api>
+'''
+        self.assertRaises(ParseError, self.parse_text, md)
+
+    def test_missing_api_closing_tag(self):
+        md = '''\
+<api name="test">
+@class
+This is a class with a missing closing tag.
+<api name="doStuff"
+@method
+This method does stuff.
 </api>
 '''
         self.assertRaises(ParseError, self.parse_text, md)

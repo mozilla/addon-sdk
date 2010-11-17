@@ -3,28 +3,15 @@
 
 The `byte-streams` module provides streams for reading and writing bytes.
 
-
-Constructors
-------------
-
+<api name="ByteReader">
+@class
 <api name="ByteReader">
 @constructor
   Creates a binary input stream that reads bytes from a backing stream.
 @param inputStream {stream}
-  The backing stream, an <a href="http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsIInputStream.idl"><code>nsIInputStream</code></a>.
+  The backing stream, an <a href="http://mxr.mozilla.org/mozilla-central/
+source/xpcom/io/nsIInputStream.idl"><code>nsIInputStream</code></a>.
 </api>
-
-<api name="ByteWriter">
-@constructor
-  Creates a binary output stream that writes bytes to a backing stream.
-@param outputStream {stream}
-  The backing stream, an <a href="http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsIOutputStream.idl"><code>nsIOutputStream</code></a>.
-</api>
-
-
-ByteReader Objects
-------------------
-
 <api name="closed">
 @property {boolean}
   True if the stream is closed.
@@ -47,26 +34,31 @@ ByteReader Objects
   A string containing the bytes read.  If the stream is at the end, returns the
   empty string.
 </api>
+</api>
 
-
-ByteWriter Objects
-------------------
-
+<api name="ByteWriter">
+@class
+<api name="ByteWriter">
+@constructor
+  Creates a binary output stream that writes bytes to a backing stream.
+@param outputStream {stream}
+  The backing stream, an <a href="http://mxr.mozilla.org/mozilla-central/
+source/xpcom/io/nsIOutputStream.idl"><code>nsIOutputStream</code></a>.
+</api>
 <api name="closed">
 @property {boolean}
   True if the stream is closed.
 </api>
-
 <api name="close">
 @method
   Closes both the stream and its backing stream.  If the stream is already
   closed, an exception is thrown.
 </api>
-
 <api name="write">
 @method
   Writes a string to the stream.  If the stream is closed, an exception is
   thrown.
 @param str {string}
   The string to write.
+</api>
 </api>

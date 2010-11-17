@@ -45,15 +45,27 @@ Create and show a simple panel with content from the `data/` directory:
     let panel = panels.add(panels.Panel({
       contentURL: data.url("foo.html")
     }));
-    
+
     panel.show();
 
 The tutorial section on [web content](#guide/web-content) has a more complex
 example using panels.
 
-Reference
----------
+<api name="Panel">
+@class
+The Panel object represents a floating modal dialog that can by an add-on to
+present user interface content.
 
+Once a panel object has been created it can be activated using the global
+`add()` function and can subsequently be shown and hidden using its `show()`
+and `hide()` methods. Once a panel is no longer needed it can be deactivated
+using `remove()`.
+
+The content of a panel is specified using the `contentURL` option. An add-on
+can interact with the content of a panel using content scripts which it
+supplies in the `contentScript` and/or `contentScriptURL` options. For example,
+a content script could create a menu and send the user's selection to the
+add-on.
 <api name="Panel">
 @constructor
 Creates a panel.
@@ -92,24 +104,6 @@ Creates a panel.
     Functions to call when the panel is hidden.
 </api>
 
-<api name="add">
-@function
-Register a panel, loading its content and preparing it to be shown when its
-`show` method is invoked.
-@param panel {Panel} the panel to add
-</api>
-
-<api name="remove">
-@function
-Unregister a panel, unloading the content that was loaded in it.
-@param panel {Panel} the panel to remove
-</api>
-
-Panel
------
-
-`Panel` objects represent panels.
-
 <api name="height">
 @property {number}
 The height of the panel in pixels.
@@ -134,8 +128,8 @@ Permissions for the content, with the following keys:
 
 <api name="contentScriptURL">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
+The URLs of content scripts to load.  Content scripts specified by this
+property are loaded *before* those specified by the `contentScript` property.
 </api>
 
 <api name="contentScript">
@@ -185,4 +179,18 @@ Resizes the panel to its new dimensions.
 The new width of the panel in pixels.
 @param height {number}
 The new height of the panel in pixels.
+</api>
+</api>
+
+<api name="add">
+@function
+Register a panel, loading its content and preparing it to be shown when its
+`show` method is invoked.
+@param panel {Panel} the panel to add
+</api>
+
+<api name="remove">
+@function
+Unregister a panel, unloading the content that was loaded in it.
+@param panel {Panel} the panel to remove
 </api>

@@ -55,8 +55,8 @@ storage.  If the user quits the application while you are over quota, all data
 stored since the last time you were under quota will not be persisted.  You
 should not let that happen.
 
-To listen for quota notifications, register a listener for `"OverQuota"` events.
-It will be called when your storage goes over quota.
+To listen for quota notifications, register a listener for `"OverQuota"`
+events. It will be called when your storage goes over quota.
 
     function myOnOverQuotaListener(simpleStorage) {
       console.log("Uh oh.");
@@ -119,9 +119,6 @@ follow its guidance on best practices and policies.
 [MDN]: https://developer.mozilla.org/En/Supporting_private_browsing_mode
 
 
-Reference
----------
-
 <api name="storage">
 @property {object}
   A persistent object private to the extension.  Properties with array, boolean,
@@ -137,3 +134,4 @@ Reference
   is within quota.  A value greater than 1 indicates that the storage exceeds
   quota.
 </api>
+

@@ -18,12 +18,66 @@ access to the content loaded into the pages.  A program can specify scripts
 to load for a page worker, and the program can communicate with those scripts
 over an asynchronous JSON pipe.
 
-Reference
----------
+Events
+------
+Content workers may emit the following types of events:
 
-Constructors
-------------
+####"message"####
+Event allows the page worker to receive messages from the content scripts.
+Calling `postMessage` function from the one of the content scripts will
+asynchronously emit 'message' event on the worker.
 
+####"error"####
+Event allows the page worker to react on an uncaught runtime script error
+that occurs in one of the content scripts.
+
+####"ready"####
+
+Event is emitted when the DOM on the page is ready. This can be used to know
+when your Page Worker instance is ready to be used, and also whenever the page
+is reloaded or another page is loaded in its place.
+
+Examples
+--------
+
+### Print all header titles from a Wikipedia article ###
+
+First, don't forget to import the module:
+
+    var pageWorkers = require("page-worker");
+
+Then make a script that will send the titles from the content script
+to the program:
+
+    var script = "var elements = document.querySelectorAll('h2 > span'); " +
+                 "for (var i = 0; i < elements.length; i++) { " +
+                 "  postMessage(elements[i].textContent) " +
+                 "}";
+
+Finally, create a page pointed to Wikipedia and add it to the page workers:
+
+    var page = pageWorkers.Page({
+      contentURL: "http://en.wikipedia.org/wiki/Internet",
+      contentScript: script,
+      contentScriptWhen: "ready",
+      onMessage: function(message) {
+        console.log(message);
+      }
+    });
+    pageWorkers.add(page);
+
+The page's `onMessage` callback function will print all the titles it receives
+from the content script.
+
+<api name="Page">
+@class
+The `Page` object loads the page specified by the `contentURL` option and
+executes any content scripts that have been supplied to it in the
+`contentScript` and/or `contentScriptURL` options.
+
+The page is not displayed to the user.
+
+The page is loaded as soon as the page object is added using the global `add()` function and stays loaded until the page object is removed using `remove()`.
 <api name="Page">
 @constructor
   Creates an uninitialized Page Worker instance.
@@ -50,34 +104,6 @@ Constructors
   @prop [onMessage] {function,array}
     Functions to call when a content script sends the program a message.
 </api>
-
-Functions
----------
-
-<api name="add">
-@function
-  Initialize the given Page Worker instance. You'll only be able to use its
-  features after calling this function, which will define its properties
-  as described in the Page Objects section below.
-@param pageWorker {Page}
-  The Page Worker instance to initialize.
-</api>
-
-<api name="remove">
-@function
-  Unload the given Page Worker instance. After you remove a Page Worker, its
-  memory is freed and you must create a new instance if you need to load
-  another page.
-@param pageWorker {Page}
-  The Page Worker instance to unload.
-</api>
-
-Page Objects
-------------
-
-`Page` objects represent Page Worker instances.  Once they have been initialized 
-by calling `add()`, Page Worker instances have the following properties:
-
 
 <api name="contentURL">
 @property {URL}
@@ -161,54 +187,23 @@ is never invoked again (unless registered again for future processing).
 @param listener {Function}
   The listener function that processes the event.
 </api>
+</api>
 
-Events
-------
-Content workers may emit following types of events:
+<api name="add">
+@function
+  Initialize the given Page Worker instance. You'll only be able to use its
+  features after calling this function, which will define its properties
+  as described in the Page Objects section below.
+@param pageWorker {Page}
+  The Page Worker instance to initialize.
+</api>
 
-####"message"####
-Event allows the page worker to receive messages from the content scripts.
-Calling `postMessage` function from the one of the content scripts will
-asynchronously emit 'message' event on the worker. 
+<api name="remove">
+@function
+  Unload the given Page Worker instance. After you remove a Page Worker, its
+  memory is freed and you must create a new instance if you need to load
+  another page.
+@param pageWorker {Page}
+  The Page Worker instance to unload.
+</api>
 
-####"error"####
-Event allows the page worker to react on an uncaught runtime script error
-that occurs in one of the content scripts.
-
-####"ready"####
-
-Event is emitted when the DOM on the page is ready. This can be used to know
-when your Page Worker instance is ready to be used, and also whenever the page
-is reloaded or another page is loaded in its place.
-
-Examples
---------
-
-### Print all header titles from a Wikipedia article ###
-
-First, don't forget to import the module:
-
-    var pageWorkers = require("page-worker");
-    
-Then make a script that will send the titles from the content script
-to the program:
-
-    var script = "var elements = document.querySelectorAll('h2 > span'); " +
-                 "for (var i = 0; i < elements.length; i++) { " +
-                 "  postMessage(elements[i].textContent) " +
-                 "}";
-
-Finally, create a page pointed to Wikipedia and add it to the page workers:
-
-    var page = pageWorkers.Page({
-      contentURL: "http://en.wikipedia.org/wiki/Internet",
-      contentScript: script,
-      contentScriptWhen: "ready",
-      onMessage: function(message) {
-        console.log(message);
-      }
-    });
-    pageWorkers.add(page);
-
-The page's `onMessage` callback function will print all the titles it receives
-from the content script.

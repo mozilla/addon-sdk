@@ -3,7 +3,7 @@ const panels = require("panel");
 const data = require("self").data;
 
 exports.main = function(options, callbacks) {
-  widgets.add(widgets.Widget({
+  widgets.Widget({
     label: "Reddit",
     image: "http://www.reddit.com/static/favicon.ico",
     panel: panels.Panel({
@@ -16,7 +16,7 @@ exports.main = function(options, callbacks) {
         require("tab-browser").addTab(message);
       }
     })
-  }));
+  });
 
   if (options.staticArgs.quitWhenDone)
     callbacks.quit();

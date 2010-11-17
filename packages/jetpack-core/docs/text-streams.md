@@ -4,9 +4,8 @@
 The `text-streams` module provides streams for reading and writing text using
 particular character encodings.
 
-Constructors
-------------
-
+<api name="TextReader">
+@class
 <api name="TextReader">
 @constructor
   Creates a buffered input stream that reads text from a backing stream using a
@@ -19,23 +18,6 @@ Constructors
   If not specified, "UTF-8" is assumed.  See [`nsICharsetConverterManager.idl`](http://mxr.mozilla.org/mozilla-central/source/intl/uconv/idl/nsICharsetConverterManager.idl)
   for documentation on how to determine other valid values for this.
 </api>
-
-<api name="TextWriter">
-@constructor
-  Creates a buffered output stream that writes text to a backing stream using a
-  given text encoding.
-@param outputStream {stream}
-  The backing stream, an [`nsIOutputStream`](http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsIOutputStream.idl).
-  It must already be opened.
-@param [charset] {string}
-  Text will be written to `outputStream` using the character encoding named by
-  this value.  If not specified, "UTF-8" is assumed.  See [`nsICharsetConverterManager.idl`](http://mxr.mozilla.org/mozilla-central/source/intl/uconv/idl/nsICharsetConverterManager.idl)
-  for documentation on how to determine other valid values for this.
-</api>
-
-
-TextReader Objects
-------------------
 
 <api name="closed">
 @property {boolean}
@@ -58,9 +40,23 @@ TextReader Objects
   The string read.  If the stream is at the end, the empty string is returned.
 </api>
 
+</api>
 
-TextWriter Objects
-------------------
+
+<api name="TextWriter">
+@class
+<api name="TextWriter">
+@constructor
+  Creates a buffered output stream that writes text to a backing stream using a
+  given text encoding.
+@param outputStream {stream}
+  The backing stream, an [`nsIOutputStream`](http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsIOutputStream.idl).
+  It must already be opened.
+@param [charset] {string}
+  Text will be written to `outputStream` using the character encoding named by
+  this value.  If not specified, "UTF-8" is assumed.  See [`nsICharsetConverterManager.idl`](http://mxr.mozilla.org/mozilla-central/source/intl/uconv/idl/nsICharsetConverterManager.idl)
+  for documentation on how to determine other valid values for this.
+</api>
 
 <api name="closed">
 @property {boolean}
@@ -98,4 +94,5 @@ TextWriter Objects
   *`callback`*, if given, must be a function.  It's called as `callback(error)`
    when the write completes.  `error` is an `Error` object or undefined if there
    was no error.  Inside *`callback`*, `this` is the `TextWriter` object.
+</api>
 </api>

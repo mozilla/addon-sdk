@@ -6,30 +6,6 @@ The `notifications` module allows you to display transient [toaster]()- or
 [toaster]: http://en.wikipedia.org/wiki/Toast_%28computing%29
 [Growl]: http://growl.info/
 
-
-Functions
----------
-
-<api name="notify">
-@function
-  Displays a transient notification to the user.
-@param options {object}
-  An object with the following keys.  Each is optional.
-  @prop [title] {string}
-    A string to display as the message's title.
-  @prop [text] {string}
-    A string to display as the body of the message.
-  @prop [iconURL] {string}
-    The URL of an icon to display inside the message.  It may be a remote URL,
-    a data URI, or a URL returned by the `self` module.
-  @prop [onClick] {function}
-    A function to be called when the user clicks the message.  It will be passed
-    the value of `data`.
-  @prop [data] {string}
-    A string that will be passed to `onClick`.
-</api>
-
-
 Examples
 --------
 
@@ -58,3 +34,23 @@ the `self` module documentation for more information.)
       text: "I have an icon!",
       iconURL: myIconURL
     });
+
+
+<api name="notify">
+@function
+  Displays a transient notification to the user.
+@param options {object}
+  An object with the following keys.  Each is optional.
+  @prop [title] {string}
+    A string to display as the message's title.
+  @prop [text] {string}
+    A string to display as the body of the message.
+  @prop [iconURL] {string}
+    The URL of an icon to display inside the message.  It may be a remote URL,
+    a data URI, or a URL returned by the `self` module.
+  @prop [onClick] {function}
+    A function to be called when the user clicks the message.  It will be passed
+    the value of `data`.
+  @prop [data] {string}
+    A string that will be passed to `onClick`.
+</api>

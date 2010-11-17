@@ -94,10 +94,6 @@ function validate(name, suspect, validation) {
   return validateOptions($1, $2)[name]
 }
 
-// Expose public APIs for creating/adding/removing widgets
-exports.add = function(item) browserManager.addItem(item);
-exports.remove = function(item) browserManager.removeItem(item);
-
 const eventBus = Trait.compose(EventEmitter, Trait.compose({
   constructor: function EventBus() this
 }))();
@@ -112,7 +108,7 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
     this._label = validate("label", options.label, valid.label);
 
     this.tooltip = "tooltip" in options ? options.tooltip : this._label
-    
+
     if ("image" in options)
       this.image = options.image;
     if ("content" in options)
@@ -122,7 +118,7 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       this.width = options.width;
     if ("panel" in options)
       this.panel = options.panel;
-    
+
     if ("onClick" in options)
       this.on("click", options.onClick);
     if ("onMouseOver" in options)
@@ -136,6 +132,8 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
 
     if (!(this._image || this._content))
       throw new Error(ERR_IMG_OR_CONTENT);
+
+    browserManager.addItem(this._public);
   },
 
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
@@ -196,7 +194,11 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
     if (value !== this._panel)
       this._panel = value;
   },
-  _panel: null
+  _panel: null,
+
+  destroy: function Widget_destroy() {
+    browserManager.removeItem(this._public);
+  }
 }));
 exports.Widget = function(options) Widget(options);
 exports.Widget.prototype = Widget.prototype;
@@ -268,14 +270,12 @@ let browserManager = {
   // of all windows that are currently registered.
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
-    if (idx == -1) {
-      throw new Error("The widget " + item + " has not been added " +
-                      "and therefore cannot be removed.");
+    if (idx > -1) {
+      this.items.splice(idx, 1);
+      if (item.panel)
+        panels.remove(item.panel);
+      this.windows.forEach(function (w) w.removeItems([item]));
     }
-    this.items.splice(idx, 1);
-    if (item.panel)
-      panels.remove(item.panel);
-    this.windows.forEach(function (w) w.removeItems([item]));
   },
 
   _isBrowserWindow: function browserManager__isBrowserWindow(win) {

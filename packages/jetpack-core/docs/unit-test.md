@@ -4,11 +4,10 @@
 
 The `unit-test` module makes it easy to find and run unit tests.
 
-## Test Runner Objects ##
-
+<api name="test">
+@class
 Each function which represents a test case is passed a single argument
-`test`, which represents the test runner.  It has the following
-methods:
+`test`, which represents the test runner.
 
 <api name="pass">
 @method
@@ -139,8 +138,7 @@ methods:
   `test.waitUntilDone()`.
 </api>
 
-
-## Functions ##
+</api>
 
 <api name="findAndRunTests">
 @function

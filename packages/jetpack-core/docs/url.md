@@ -4,8 +4,8 @@
 
 The `url` module provides functionality for the parsing and retrieving of URLs.
 
-## Constructors ##
-
+<api name="URL">
+@class
 <api name="URL">
 @constructor
   The URL constructor creates an object that represents a URL,  verifying that
@@ -20,40 +20,6 @@ The `url` module provides functionality for the parsing and retrieving of URLs.
 @param [base] {string}
   An optional string used to resolve relative `source` URLs into absolute ones.
 </api>
-
-
-## Functions ##
-
-<api name="toFilename">
-@function
-  Attempts to convert the given URL to a native file path.  This function will
-  automatically attempt to resolve non-file protocols, such as the `resource:`
-  protocol, to their place on the file system. An exception is raised if the URL
-  can't be converted; otherwise, the native file path is returned as a string.
-
-@param url {string}
-  The URL, as a string, to be converted.
-
-@returns {string}
-  The converted native file path as a string.
-</api>
-
-<api name="fromFilename">
-@function
-  Converts the given native file path to a `file:` URL.
-
-@param path {string}
-  The native file path, as a string, to be converted.
-
-@returns {string}
-  The converted URL as a string.
-</api>
-
-
-## URL Objects ##
-
-Objects created by the `URL` constructor have the following properties and
-methods:
 
 <api name="scheme">
 @property {string}
@@ -86,3 +52,30 @@ methods:
 @returns {string}
   The URL as a string.
 </api>
+</api>
+
+<api name="toFilename">
+@function
+  Attempts to convert the given URL to a native file path.  This function will
+  automatically attempt to resolve non-file protocols, such as the `resource:`
+  protocol, to their place on the file system. An exception is raised if the URL
+  can't be converted; otherwise, the native file path is returned as a string.
+
+@param url {string}
+  The URL, as a string, to be converted.
+
+@returns {string}
+  The converted native file path as a string.
+</api>
+
+<api name="fromFilename">
+@function
+  Converts the given native file path to a `file:` URL.
+
+@param path {string}
+  The native file path, as a string, to be converted.
+
+@returns {string}
+  The converted URL as a string.
+</api>
+

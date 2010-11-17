@@ -8,7 +8,7 @@ application-wide preferences service singleton.
 
 
 <api name="set">
-@method
+@function
 Sets the application preference `name` to `value`.
 @param name {string} Preference name.
 @param value {string,number,bool} Preference value.
@@ -16,7 +16,7 @@ Sets the application preference `name` to `value`.
 
 
 <api name="get">
-@method
+@function
 Gets the application preference `name`.
 @param name {string}
 @param defaultValue {string,number,bool} Preference value.
@@ -26,14 +26,14 @@ preference is set.
 
 
 <api name="has">
-@method
+@function
 @param name {string} Preference name.
 @returns {bool} Returns whether or not the application preference `name` exists.
 </api>
 
 
 <api name="isSet">
-@method
+@function
 @param name {string} Preference name.
 @returns {bool}
 Returns whether or not the application preference `name` both exists
@@ -43,7 +43,7 @@ acting on the user's behalf).
 
 
 <api name="reset">
-@method
+@function
 Clears a non-default, user-set value from the application preference
 `name`. If no user-set value is defined on `name`, the function
 does nothing.
