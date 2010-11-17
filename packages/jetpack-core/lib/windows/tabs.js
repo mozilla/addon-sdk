@@ -140,7 +140,8 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
   Trait.compose({
     on: Trait.required,
     _emit: Trait.required,
-    constructor: function TabList() {
+    constructor: function TabList(options) {
+      this._window = options.window;
       this.on('error', this._onError = this._onError.bind(this));
       // Add new items to the list
       this.on(EVENTS.open.window, this._add.bind(this));
@@ -165,6 +166,12 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     get active() this._active,
     set active(active) active.focus(),
     _active: null,
+
+    open: function open(options) {
+      options = Options(options)
+      this._window._tabOptions.push(options);
+      this._window._window.gBrowser.addTab(options.url);
+    }
   // This is ugly, but necessary. Will be removed by #596248
   }).resolve({ toString: null })
 );
@@ -173,7 +180,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
  * Combined list of all open tabs on all the windows.
  * type {TabList}
  */
-var tabs = TabList();
+var tabs = TabList({ window: null });
 exports.tabs = tabs._public;
 
 /**
@@ -188,16 +195,8 @@ const WindowTabs = Trait.compose(
     /**
      * List of tabs
      */
-    get tabs() (this._tabs || (this._tabs = TabList()))._public,
+    get tabs() (this._tabs || (this._tabs = TabList({ window: this })))._public,
     _tabs: null,
-    /**
-     * Open a tab in this window.
-     */
-    openTab: function openTab(options) {
-      options = Options(options)
-      this._tabOptions.push(options);
-      this._window.gBrowser.addTab(options.url);
-    }
   })
 );
 exports.WindowTabs = WindowTabs;
