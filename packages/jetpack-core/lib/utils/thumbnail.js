@@ -49,7 +49,7 @@ const COLOR = "rgb(255,255,255)";
  * @param {Window} window
  * @returns {Element}
  */
-function thumbnailCanvas(window) {
+function getThumbnailCanvasForWindow(window) {
   let aspectRatio = 0.5625; // 16:9
   let thumbnail = AppShellService.hiddenDOMWindow.document
                     .createElementNS(NS, "canvas");
@@ -64,13 +64,13 @@ function thumbnailCanvas(window) {
                 snippetWidth * aspectRatio, COLOR);
   return thumbnail;
 }
-exports.thumbnailCanvas = thumbnailCanvas
+exports.getThumbnailCanvasForWindow = getThumbnailCanvasForWindow;
 
 /**
  * Creates Base64 encoded data URI of the thumbnail for the passed window.
  * @param {Window} window
  * @returns {String}
  */
-exports.thumbnailURI = function thumbnailURI(window) {
-  return thumbnailCanvas(window).toDataURL()
-}
+exports.getThumbnailURIForWindow = function getThumbnailURIForWindow(window) {
+  return getThumbnailCanvasForWindow(window).toDataURL()
+};

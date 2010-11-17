@@ -37,11 +37,11 @@
 
 const { Trait } = require("traits");
 const { EventEmitter } = require("events");
-const dataUtils = require("utils/data");
-const thumbnailUtils = require("utils/thumbnail");
 const { validateOptions } = require("api-utils");
 const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
+const { getThumbnailURIForWindow } = require("utils/thumbnail");
+const { getFaviconURIForLocation } = require("utils/data");
 
 
 
@@ -76,7 +76,7 @@ const TabTrait = Trait.compose(EventEmitter, {
         window.tabs.on(type.name, this._onEvent.bind(this, type.name));
     }
 
-    this.on(EVENTS.close.name, this.destroy.bind(this))
+    this.on(EVENTS.close.name, this.destroy.bind(this));
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
 
     this.pinned = options.pinned;
@@ -89,7 +89,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   },
   _onError: function _onError(error) {
     if (1 <= this._listeners('error').length)
-      console.exception(error)
+      console.exception(error);
   },
   destroy: function destroy() {
     for each (let type in EVENTS)
@@ -156,7 +156,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
    */
-  get favicon() dataUtils.favicon(String(this.location)),
+  get favicon() getFaviconURIForLocation(String(this.location)),
   /**
    * The CSS style for the tab
    */
@@ -173,7 +173,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Thumbnail data URI of the page currently loaded in this tab.
    * @type {String}
    */
-  get thumbnail() thumbnailUtils.thumbnailURI(this._contentWindow),
+  get thumbnail() getThumbnailURIForWindow(this._contentWindow),
   /**
    * Whether or not tab is pinned (Is an app-tab).
    * Changing value will pin / unpin tab.
@@ -204,14 +204,14 @@ function Tab(options) {
   let chromeTab = options.tab;
   for each (let tab in TABS) {
     if (chromeTab == tab._tab)
-      return tab._public
+      return tab._public;
   }
   let tab = TabTrait(options);
   TABS.push(tab);
   return tab._public;
 }
-Tab.prototype = TabTrait.prototype
-exports.Tab = Tab
+Tab.prototype = TabTrait.prototype;
+exports.Tab = Tab;
 
 function Options(options) {
   if ("string" === typeof options)

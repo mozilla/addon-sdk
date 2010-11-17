@@ -43,10 +43,9 @@ const IOService = Cc["@mozilla.org/network/io-service;1"].
 const AppShellService = Cc["@mozilla.org/appshell/appShellService;1"].
   getService(Ci.nsIAppShellService);
 
-let NetUtil = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
+Cu.import("resource://gre/modules/NetUtil.jsm", this);
 NetUtil = NetUtil.NetUtil;
-const FaveiconService = Cc["@mozilla.org/browser/favicon-service;1"].
+const FaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                           getService(Ci.nsIFaviconService);
 
 const PNG_B64 = "data:image/png;base64,";
@@ -60,15 +59,18 @@ let   DEF_FAVICON = null;
  * @param {String} uri
  * @returns {String}
  */
-exports.favicon = function favicon(uri) {
+exports.getFaviconURIForLocation = function getFaviconURIForLocation(uri) {
   let pageURI = NetUtil.newURI(uri);
   try {
-    return FaveiconService.getFaviconDataAsDataURL(
-                  FaveiconService.getFaviconForPage(pageURI));
-  } catch(e) {
-    if (!DEF_FAVICON)
-      DEF_FAVICON = PNG_B64 + base64Encode(chromeURIContent(DEF_FAVICON_URI))
-    return DEF_FAVICON
+    return FaviconService.getFaviconDataAsDataURL(
+                  FaviconService.getFaviconForPage(pageURI));
+  }
+  catch(e) {
+    if (!DEF_FAVICON) {
+      DEF_FAVICON = PNG_B64 +
+                    base64Encode(getChromeURIContent(DEF_FAVICON_URI));
+    }
+    return DEF_FAVICON;
   }
 }
 
@@ -77,7 +79,7 @@ exports.favicon = function favicon(uri) {
  * @param {String} chromeURI
  * @returns {String}
  */
-function chromeURIContent(chromeURI) {
+function getChromeURIContent(chromeURI) {
   let channel = IOService.newChannel(chromeURI, null, null);
   let input = channel.open();
   let stream = Cc["@mozilla.org/binaryinputstream;1"].
@@ -88,19 +90,16 @@ function chromeURIContent(chromeURI) {
   input.close();
   return content;
 }
-exports.chromeURIContent = chromeURIContent
+exports.getChromeURIContent = getChromeURIContent;
 
 /**
  * Creates a base-64 encoded ASCII string from a string of binary data.
  */
-function base64Encode(data) {
-  return AppShellService.hiddenDOMWindow.btoa(String(data))
-}
-exports.base64Encode = base64Encode
+function base64Encode(data) AppShellService.hiddenDOMWindow.btoa(String(data));
+exports.base64Encode = base64Encode;
 
 /**
  * Decodes a string of data which has been encoded using base-64 encoding.
  */
-exports.base64Decode = function base64Decode(data) {
-  return AppShellService.hiddenDOMWindow.atob(String(data))
-}
+function base64Decode(data) AppShellService.hiddenDOMWindow.atob(String(data));
+exports.base64Decode = base64Decode;

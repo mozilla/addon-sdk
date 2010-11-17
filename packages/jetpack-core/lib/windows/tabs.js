@@ -80,9 +80,10 @@ const WindowTabTracker = Trait.compose({
       let tabs = Array.slice(tabContainer.children);
       // Emulating 'open' events for all open tabs.
       for each (let tab in tabs)
-        this._onTabEvent(EVENTS.open, { target: tab })
-      this._onTabEvent(EVENTS.activate, { target: this._window.gBrowser.selectedTab })
-      // Setting event listeners to track tab events
+        this._onTabEvent(EVENTS.open, { target: tab });
+      this._onTabEvent(EVENTS.activate,
+                       { target: this._window.gBrowser.selectedTab });
+      // Setting event listeners to track tab events.
       for each (let type in EVENTS) {
         if (!type.dom) continue;
         tabContainer.addEventListener(type.dom,
@@ -159,14 +160,14 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     },
     _onError: function _onError(error) {
       if (1 <= this._listeners('error').length)
-        console.exception(error)
+        console.exception(error);
     },
     get active() this._active,
     set active(active) active.focus(),
     _active: null,
 
     open: function open(options) {
-      options = Options(options)
+      options = Options(options);
       this._window._tabOptions.push(options);
       this._window._window.gBrowser.addTab(options.url);
     }
