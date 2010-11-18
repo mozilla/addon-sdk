@@ -6,12 +6,9 @@ and access its DOM.
 Introduction
 ------------
 
-The module exports a constructor function, `Page`, and two other functions,
-`add` and `remove`.
-
-`Page` constructs a new page.  `add` initializes the given page, which is a
-prerequisite to using the page. `remove` unloads the given page, after which
-its memory is freed, and you must create a new instance to load another page.
+The module exports a constructor function `Page`, which constructs a new page.
+A page may be destroyed, after which its memory is freed, and you must create a
+new instance to load another page.
 
 Pages have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the pages.  A program can specify scripts
@@ -54,9 +51,9 @@ to the program:
                  "  postMessage(elements[i].textContent) " +
                  "}";
 
-Finally, create a page pointed to Wikipedia and add it to the page workers:
+Finally, create a page pointed to Wikipedia:
 
-    var page = pageWorkers.Page({
+    pageWorkers.Page({
       contentURL: "http://en.wikipedia.org/wiki/Internet",
       contentScript: script,
       contentScriptWhen: "ready",
@@ -64,7 +61,6 @@ Finally, create a page pointed to Wikipedia and add it to the page workers:
         console.log(message);
       }
     });
-    pageWorkers.add(page);
 
 The page's `onMessage` callback function will print all the titles it receives
 from the content script.
@@ -77,7 +73,8 @@ executes any content scripts that have been supplied to it in the
 
 The page is not displayed to the user.
 
-The page is loaded as soon as the page object is added using the global `add()` function and stays loaded until the page object is removed using `remove()`.
+The page is loaded as soon as the page object is created and stays loaded until
+its `destroy` method is called or the add-on is unloaded.
 <api name="Page">
 @constructor
   Creates an uninitialized Page Worker instance.
@@ -137,6 +134,12 @@ the window object for the page has been created, and "ready", which loads
 them once the DOM content of the page has been loaded.
 </api>
 
+<api name="destroy">
+@method
+Unloads the Page Worker. After you destroy a Page Worker, its memory is freed
+and you must create a new instance if you need to load another page.
+</api>
+
 <api name="postMessage">
 @method
 Send a message to the content scripts.
@@ -188,22 +191,3 @@ is never invoked again (unless registered again for future processing).
   The listener function that processes the event.
 </api>
 </api>
-
-<api name="add">
-@function
-  Initialize the given Page Worker instance. You'll only be able to use its
-  features after calling this function, which will define its properties
-  as described in the Page Objects section below.
-@param pageWorker {Page}
-  The Page Worker instance to initialize.
-</api>
-
-<api name="remove">
-@function
-  Unload the given Page Worker instance. After you remove a Page Worker, its
-  memory is freed and you must create a new instance if you need to load
-  another page.
-@param pageWorker {Page}
-  The Page Worker instance to unload.
-</api>
-
