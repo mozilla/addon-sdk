@@ -120,7 +120,11 @@
      };
    }
 
-   function modifyModuleSandbox(sandbox, options) {
+   function modifyModuleSandbox(sandbox, options, module) {
+     // Let's not infinitely recurse.
+     if (module === 'es5')
+       return;
+
      let ES5 = this.require('es5');
      if ('init' in ES5) {
        let { Object, Array, Function } = sandbox.globalScope;

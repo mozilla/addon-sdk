@@ -9,8 +9,9 @@ For an introduction to CommonJS modules, see the
 [Packaging](#guide/packaging) tutorial.
 </span>
 
-Code also has access to the `require` and `exports` globals
-as specified by version 1.0 of the [CommonJS Module Specification].
+Jetpack code also has access to the `require` and `exports` globals
+as specified by version 1.0 of the [CommonJS Module Specification],
+and it supports `define` from the [CommonJS Asynchronous Module Proposal].
 
 At the time of this writing, code does *not* have access to
 any globals defined by the [HTML5] specification, such as `window`,
@@ -151,4 +152,5 @@ currently empty.
   [HTML5]: http://dev.w3.org/html5/spec/Overview.html
   [JavaScript 1.8.1]: https://developer.mozilla.org/En/New_in_JavaScript_1.8.1
   [CommonJS Module Specification]: http://wiki.commonjs.org/wiki/Modules/1.0
+  [CommonJS Asynchronous Module Proposal]: http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition
   [Package Specification]: #guide/package-spec

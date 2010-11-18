@@ -48,6 +48,10 @@
    var systemPrincipal = Cc["@mozilla.org/systemprincipal;1"]
                          .createInstance(Ci.nsIPrincipal);
 
+   var commentRegExp = /(\/\*([\s\S]*?)\*\/|\/\/(.*)$)/mg;
+   var cjsRequireRegExp = /require\(["']([\w\!\-_\.\/]+)["']\)/g;
+   var cjsStandardDeps = ['require', 'exports', 'module'];
+
    function resolvePrincipal(principal, defaultPrincipal) {
      if (principal === undefined)
        return defaultPrincipal;
@@ -180,6 +184,11 @@
        );
      if ('modules' in options)
        throw new Error('options.modules is no longer supported');
+     // pathAccessed used to know if a module was accessed/required
+     // by another module, and in that case, assigning the module value
+     // via a define callback is not allowed.
+     if (options.pathAccessed === undefined)
+       options.pathAccessed = {};
      if (options.globals === undefined)
        options.globals = {};
 
@@ -187,6 +196,7 @@
      this.sandboxFactory = options.sandboxFactory;
      this.sandboxes = {};
      this.modules = {};
+     this.pathAccessed = options.pathAccessed;
      this.module_infos = {};
      this.globals = options.globals;
      this.getModuleExports = options.getModuleExports;
@@ -194,11 +204,21 @@
      this.securityPolicy = options.securityPolicy;
    };
 
+   // START Support functions for Async module-style
+   var ostring = Object.prototype.toString;
+   function isFunction(it) {
+     return ostring.call(it) === "[object Function]";
+   }
+   function isArray(it) {
+     return ostring.call(it) === "[object Array]";
+   }
+   // END Support functions for Async module-style
+
    exports.Loader.prototype = {
-     _makeRequire: function _makeRequire(basePath) {
+     _makeApi: function _makeApi(basePath) {
        var self = this;
 
-       return function require(module) {
+       function require(module) {
          var exports;
 
          if (self.getModuleExports)
@@ -209,6 +229,13 @@
            var path = self.fs.resolveModule(basePath, module);
            if (!path)
              throw new Error('Module "' + module + '" not found');
+
+           // Track accesses to this module via its normalized path
+           if (!self.pathAccessed[path]) {
+             self.pathAccessed[path] = 0;
+           }
+           self.pathAccessed[path] += 1;
+
            if (path in self.modules) {
              module_info = self.module_infos[path];
            } else {
@@ -229,7 +256,9 @@
              self.sandboxes[path] = sandbox;
              for (name in self.globals)
                sandbox.defineProperty(name, self.globals[name]);
-             sandbox.defineProperty('require', self._makeRequire(path));
+             var api = self._makeApi(path);
+             sandbox.defineProperty('require', api.require);
+             sandbox.defineProperty('define', api.define);
              // Override the default Iterator function with one that passes
              // a second argument to custom iterator methods that identifies
              // the call as originating from an Iterator function so the custom
@@ -261,6 +290,181 @@
 
          return exports;
        };
+
+       // START support Async module-style require and define calls.
+       // If the only argument to require is a string, then the module that
+       // is represented by that string is fetched for the appropriate context.
+       //
+       // If the first argument is an array, then it will be treated as an array
+       // of dependency string names to fetch. An optional function callback can
+       // be specified to execute when all of those dependencies are available.
+       function asyncRequire(deps, callback) {
+         if (typeof deps === "string" && !callback) {
+           // Just return the module wanted via sync require.
+           return require(deps);
+         } else {
+           asyncMain(null, basePath, null, deps, callback);
+           return undefined;
+         }
+       }
+
+       // The function that handles definitions of modules. Differs from
+       // require() in that a string for the module should be the first
+       // argument, and the function to execute after dependencies are loaded
+       // should return a value to define the module corresponding to the first
+       // argument's name.
+       function define (name, deps, callback) {
+
+         // For anonymous modules, the namePath is the basePath
+         var namePath = basePath,
+             exports = {}, exported;
+
+         // Adjust args if an anonymous module
+         if (typeof name !== 'string') {
+           callback = deps;
+           deps = name;
+           name = null;
+         }
+
+         // If just a define({}) call (no dependencies),
+         // adjust args accordingly.
+         if (!isArray(deps)) {
+           callback = deps;
+           deps = null;
+         }
+
+         // Set up the path if we have a name
+         if (name) {
+           namePath = self.fs.resolveModule(basePath, name);
+         }
+
+         // If the callback is not an actual function, it means it already
+         // has the definition of the module as a literal value.
+         if (!deps && callback && !isFunction(callback)) {
+           self.modules[namePath] = callback;
+           return;
+         }
+
+         // Set the exports value now in case other modules need a handle
+         // on it for cyclical cases.
+         self.modules[namePath] = exports;
+
+         // Load dependencies and call the module's definition function.
+         exported = asyncMain(name, namePath, exports, deps, callback);
+
+         // Assign output of function to name, if exports was not
+         // in play (which asyncMain already figured out).
+         if (exported !== undefined) {
+           if (self.pathAccessed[namePath] > 1) {
+             // Another module already accessed the exported value,
+             // need to throw to avoid nasty circular dependency weirdness
+             throw new Error('Module "' + (name || namePath) + '" cannot use ' +
+                             'return from define to define the module ' +
+                             'after another module has referenced its ' +
+                             'exported value.');
+           } else {
+             self.modules[namePath] = exported;
+           }
+         }
+       }
+
+       // The function that handles the main async module work, for both
+       // require([], function(){}) calls and define calls.
+       // It makes sure all the dependencies exist before calling the
+       // callback function. It will return the result of the callback
+       // function if "exports" is not a dependency.
+       function asyncMain (name, namePath, exports, deps, callback) {
+
+         if (isFunction(deps)) {
+           callback = deps;
+           deps = null;
+         }
+
+         if (!deps) {
+           deps = [];
+           // The shortened form of the async wrapper for CommonJS modules:
+           // define(function (require, exports, module) {});
+           // require calls could be inside the function, so toString it
+           // and pull out the dependencies.
+
+           // Remove comments from the callback string,
+           // look for require calls, and pull them into the dependencies.
+           // The comment regexp is not very robust, but good enough to
+           // avoid commented out require calls and to find normal, sync
+           // require calls in the function. 
+           callback
+               .toString()
+               .replace(commentRegExp, "")
+               .replace(cjsRequireRegExp, function (match, dep) {
+                 deps.push(dep);
+               });
+           // Prepend standard require, exports, and module dependencies
+           // (and in that *exact* order per spec), but only add as many as
+           // was asked for via the callback's function argument length.
+           // In particular, do *not* pass exports if it was not asked for.
+           // By asking for exports as a dependency the rest of this
+           // asyncRequire code assumes then that the return value from the
+           // function should not be used as the exported module value.
+           deps = cjsStandardDeps.slice(0, callback.length).concat(deps);
+         }
+
+         var depModules = [],
+             usesExports = false,
+             exported;
+
+         // Load all the dependencies, with the "require", "exports" and
+         // "module" ones getting special handling to match the traditional
+         // CommonJS sync module expectations.
+         deps.forEach(function (dep) {
+             if (dep === "require") {
+               depModules.push(asyncRequire);
+             } else if (dep === "module") {
+               depModules.push({
+                 id: name
+               });
+             } else if (dep === "exports") {
+               usesExports = true;
+               depModules.push(exports);
+             } else {
+               var overridden;
+               if (self.getModuleExports)
+                 overridden = self.getModuleExports(basePath, dep);
+               if (overridden) {
+                 depModules.push(overridden);
+                 return;
+               }
+
+               var depPath = self.fs.resolveModule(basePath, dep);
+
+               if (!self.modules[depPath]) {
+                 require(dep);
+               }
+               depModules.push(self.modules[depPath]);
+             }
+         });
+
+         // Execute the function.
+         if (callback) {
+           exported = callback.apply(null, depModules);
+         }
+
+         if (exported !== undefined) {
+           if (usesExports) {
+             throw new Error('Inside "' + namePath + '", cannot use exports ' +
+                             'and also return a value from a define ' +
+                             'definition function');
+           } else {
+             return exported;
+           }
+         }
+         return undefined;
+       };
+
+       return {
+         require: asyncRequire,
+         define: define
+       };
+       // END support for Async module-style
      },
 
      // This is only really used by unit tests and other
@@ -279,7 +483,7 @@
      },
 
      require: function require(module) {
-       return (this._makeRequire(null))(module);
+       return (this._makeApi(null).require)(module);
      },
 
      runScript: function runScript(options, extraOutput) {
@@ -291,7 +495,9 @@
          extraOutput.sandbox = sandbox;
        for (name in this.globals)
          sandbox.defineProperty(name, this.globals[name]);
-       sandbox.defineProperty('require', this._makeRequire(null));
+       var api = this._makeApi(null);
+       sandbox.defineProperty('require', api.require);
+       sandbox.defineProperty('define', api.define);
        return sandbox.evaluate(options);
      }
    };
