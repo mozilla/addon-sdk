@@ -106,7 +106,7 @@ exports.testRemoteException = makeConsoleTest({
   main: "e10s-samples/thrown-exception",
   expect: [
     ["log", "An exception occurred in the child Jetpack process."],
-    ["exception", "Error: alas"]
+    ["exception", "Error: uncaught exception: Error: alas"]
   ]
 });
 
