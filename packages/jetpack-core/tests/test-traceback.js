@@ -63,15 +63,7 @@ exports.testFromExceptionWithError = function(test) {
   } catch (e if e instanceof Error) {
     var tb = traceback.fromException(e);
     var xulApp = require("xul-app");
-    // Per bug 603849, slow-native removal during the Gecko 2.0b8 cycle
-    // eliminated the Error entry from this stack trace, but that entry is still
-    // present on Gecko 2.0b6 (Firefox 4.0b6), which we currently support,
-    // so we need to test it differently.
-    // FIXME: remove this after the next beta build of Firefox 4.0 is released.
-    if (xulApp.versionInRange(xulApp.platformVersion, "2.0b8pre", "*"))
-      test.assertEqual(tb.slice(-1)[0].funcName, "throwError");
-    else
-      test.assertEqual(tb.slice(-1)[0].funcName, "Error");
+    test.assertEqual(tb.slice(-1)[0].funcName, "throwError");
   }
 };
 

@@ -24,6 +24,7 @@
  *   Felipe Gomes <felipc@gmail.com> (Original Author)
  *   Myk Melez <myk@mozilla.org>
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Drew Willcoxon <adw@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,10 +43,9 @@
 
 const { Symbiont } = require("content");
 const { Trait } = require("traits");
-const { Registry } = require('utils/registry');
 
-const ERR_ADD_BEFORE_POST =
-  'You have to add the page before you can send a message to it.';
+const ERR_DESTROYED =
+  "The page has been destroyed and can no longer be used.";
 
 if (!require("xul-app").isOneOf(["Firefox", "Thunderbird"])) {
   throw new Error([
@@ -84,32 +84,22 @@ const Page = Trait.compose(
         this.on('message', options.onMessage);
 
       this.on('propertyChange', this._onChange.bind(this));
-      PageRegistry.on('add', this._onRegister.bind(this));
-      PageRegistry.on('remove', this._onUnregister.bind(this));
+
+      this._initSymbiont();
     },
     postMessage: function postMessage(message) {
-      if (!PageRegistry.has(this))
-        throw new Error(ERR_ADD_BEFORE_POST);
+      if (!this._frame)
+        throw new Error(ERR_DESTROYED);
       this._postMessage(message);
+    },
+    destroy: function destroy() {
+      this._destructor();
     },
     _onChange: function _onChange(e) {
       if ('contentURL' in e)
         this._initFrame(this._frame);
-    },
-    _onRegister: function _onRegister(page) {
-      if (page == this._public)
-        this._initSymbiont();
-    },
-    _onUnregister: function _onUnregister(page) {
-      if (page == this._public)
-        this._destructor();
     }
   }
 );
 exports.Page = function(options) Page(options);
 exports.Page.prototype = Page.prototype;
-
-const PageRegistry = Registry(Page);
-exports.add = PageRegistry.add;
-exports.remove = PageRegistry.remove;
-

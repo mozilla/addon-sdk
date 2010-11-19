@@ -120,6 +120,10 @@ const PageMod = Loader.compose(EventEmitter, {
     }
 
     this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
+    pageModManager.add(this._public);
+  },
+  destroy: function destroy() {
+    pageModManager.remove(this._public);
   },
   _onContent: function _onContent(window) {
     if (!pageModManager.has(this))
@@ -187,7 +191,3 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
-
-
-exports.add = pageModManager.add;
-exports.remove = pageModManager.remove;

@@ -49,15 +49,14 @@ const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
 
 
-// Removing items that were previously added should cause them to be absent from
-// the menu.
-exports.testAddRemove = function (test) {
+// Destroying items that were previously created should cause them to be absent
+// from the menu.
+exports.testConstructDestroy = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  // Add an item.
+  // Create an item.
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -65,8 +64,8 @@ exports.testAddRemove = function (test) {
     test.checkMenu([item], [], []);
     popup.hidePopup();
 
-    // Remove the item.
-    loader.cm.remove(item);
+    // Destroy the item.
+    item.destroy();
     test.showMenu(null, function (popup) {
 
       // It should be removed from the menu.
@@ -77,33 +76,16 @@ exports.testAddRemove = function (test) {
 };
 
 
-// Removing an item that wasn't added should fail.
-exports.testRemoveNonexistent = function (test) {
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-  let item = new loader.cm.Item({ label: "item" });
-
-  let errRegex = /^The item \[.+?\] has not been added to the menu and therefore cannot be removed\.$/;
-  test.assertRaises(function () loader.cm.remove(item),
-                    errRegex,
-                    "Removing an item that wasn't added should fail");
-  test.done();
-};
-
-
-// Removing an item twice should fail.
-exports.testRemoveTwice = function (test) {
+// Destroying an item twice should not cause an error.
+exports.testDestroyTwice = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
-  loader.cm.remove(item);
+  item.destroy();
+  item.destroy();
 
-  let errRegex = /^The item \[.+?\] has not been added to the menu and therefore cannot be removed\.$/;
-  test.assertRaises(function () loader.cm.remove(item),
-                    errRegex,
-                    "Removing an item twice should fail the second time");
+  test.pass("Destroying an item twice should not cause an error.");
   test.done();
 };
 
@@ -119,7 +101,6 @@ exports.testSelectorContextMatch = function (test) {
     data: "item",
     context: loader.cm.SelectorContext("img")
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
@@ -142,7 +123,6 @@ exports.testSelectorAncestorContextMatch = function (test) {
     data: "item",
     context: loader.cm.SelectorContext("a[href]")
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
@@ -165,7 +145,6 @@ exports.testSelectorContextNoMatch = function (test) {
     data: "item",
     context: loader.cm.SelectorContext("img")
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([], [item], []);
@@ -197,7 +176,6 @@ exports.testPageContextMatch = function (test) {
       context: [loader.cm.PageContext()]
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -229,7 +207,6 @@ exports.testPageContextNoMatch = function (test) {
       context: [loader.cm.PageContext()]
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
@@ -249,7 +226,6 @@ exports.testSelectionContextMatch = function (test) {
     label: "item",
     context: loader.cm.SelectionContext()
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     window.getSelection().selectAllChildren(doc.body);
@@ -271,7 +247,6 @@ exports.testSelectionContextNoMatch = function (test) {
     label: "item",
     context: loader.cm.SelectionContext()
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([], [item], []);
@@ -295,7 +270,6 @@ exports.testURLContextMatch = function (test) {
       context: loader.cm.URLContext([TEST_DOC_URL, "*.bogus.com"])
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(null, function (popup) {
@@ -321,7 +295,6 @@ exports.testURLContextNoMatch = function (test) {
       context: loader.cm.URLContext(["*.bogus.com", "*.gnarly.com"])
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(null, function (popup) {
@@ -342,7 +315,6 @@ exports.testContentContextMatch = function (test) {
     label: "item",
     contentScript: 'on("context", function () true);'
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -361,7 +333,6 @@ exports.testContentContextNoMatch = function (test) {
     label: "item",
     contentScript: 'on("context", function () false);'
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([], [item], []);
@@ -387,7 +358,6 @@ exports.testContentContextArgs = function (test) {
       test.done();
     }
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function () {});
 };
@@ -407,7 +377,6 @@ exports.testMultipleContexts = function (test) {
       test.fail("Context listener should not be called");
     }
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
@@ -428,7 +397,6 @@ exports.testRemoveContext = function (test) {
     label: "item",
     context: ctxt
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
@@ -457,7 +425,6 @@ exports.testOverflow = function (test) {
   for (let i = 0; i < OVERFLOW_THRESH_DEFAULT + 1; i++) {
     let item = new loader.cm.Item({ label: "item " + i });
     items.push(item);
-    loader.cm.add(item);
   }
 
   test.showMenu(null, function (popup) {
@@ -473,7 +440,6 @@ exports.testUnload = function (test) {
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -502,10 +468,7 @@ exports.testMultipleModulesAdd = function (test) {
 
   // Use each module to add an item, then unload each module in turn.
   let item0 = new loader0.cm.Item({ label: "item 0" });
-  loader0.cm.add(item0);
-
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -545,12 +508,10 @@ exports.testMultipleModulesAddOverflow = function (test) {
   for (let i = 0; i < OVERFLOW_THRESH_DEFAULT; i++) {
     let item = new loader0.cm.Item({ label: "item 0 " + i });
     items0.push(item);
-    loader0.cm.add(item);
   }
 
   // Use module 1 to add one item.
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let allItems = items0.concat(item1);
 
@@ -584,7 +545,8 @@ exports.testMultipleModulesAddOverflow = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader0.add -> loader1.add -> loader0.unload -> loader1.unload
+// loader0 create item -> loader1 create item -> loader0.unload ->
+// loader1.unload
 exports.testMultipleModulesDiffContexts1 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
@@ -594,10 +556,8 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
     label: "item 0",
     context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -628,20 +588,19 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader1.add -> loader0.add -> loader0.unload -> loader1.unload
+// loader1 create item -> loader0 create item -> loader0.unload ->
+// loader1.unload
 exports.testMultipleModulesDiffContexts2 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
   let loader1 = test.newLoader();
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
     context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   test.showMenu(null, function (popup) {
 
@@ -672,7 +631,8 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader0.add -> loader1.add -> loader1.unload -> loader0.unload
+// loader0 create item -> loader1 create item -> loader1.unload ->
+// loader0.unload
 exports.testMultipleModulesDiffContexts3 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
@@ -682,10 +642,8 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
     label: "item 0",
     context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -716,20 +674,19 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader1.add -> loader0.add -> loader1.unload -> loader0.unload
+// loader1 create item -> loader0 create item -> loader1.unload ->
+// loader0.unload
 exports.testMultipleModulesDiffContexts4 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
   let loader1 = test.newLoader();
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
     context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   test.showMenu(null, function (popup) {
 
@@ -766,7 +723,6 @@ exports.testMultipleModulesAddRemove = function (test) {
   let loader1 = test.newLoader();
 
   let item = new loader0.cm.Item({ label: "item" });
-  loader0.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -775,7 +731,7 @@ exports.testMultipleModulesAddRemove = function (test) {
     popup.hidePopup();
 
     // Remove the item.
-    loader0.cm.remove(item);
+    item.destroy();
     test.showMenu(null, function (popup) {
 
       // The item should be removed from the menu.
@@ -818,7 +774,6 @@ exports.testItemClick = function (test) {
       test.done();
     }
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -868,7 +823,6 @@ exports.testMenuClick = function (test) {
     items: [submenu],
     context: loader.cm.SelectorContext("a")
   });
-  loader.cm.add(topMenu);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
@@ -883,22 +837,8 @@ exports.testMenuClick = function (test) {
   });
 };
 
-
-// Adding a separator to the top-level menu should raise an exception.
-exports.testSeparatorTopLevel = function (test) {
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-
-  let sep = new loader.cm.Separator();
-  test.assertRaises(function () loader.cm.add(sep),
-                    "Separators cannot be added to the top-level context menu.",
-                    "Adding a separator to the top-level menu should fail");
-  test.done();
-};
-
-
 // Adding a separator to a submenu should work OK.
-exports.testSeparatorTopLevel = function (test) {
+exports.testSeparator = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
@@ -906,7 +846,6 @@ exports.testSeparatorTopLevel = function (test) {
     label: "submenu",
     items: [new loader.cm.Separator()]
   });
-  loader.cm.add(menu);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([menu], [], []);
@@ -933,7 +872,6 @@ exports.testNewWindow = function (test) {
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.withNewWindow(function () {
     test.showMenu(null, function (popup) {
@@ -950,7 +888,6 @@ exports.testNewWindowMultipleModules = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -978,7 +915,6 @@ exports.testSorting = function (test) {
     items.push(new loader.cm.Item({ label: "item " + (i + 1) }));
     items.push(new loader.cm.Item({ label: "item " + i }));
   }
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -999,7 +935,6 @@ exports.testSortingOverflow = function (test) {
     items.push(new loader.cm.Item({ label: "item " + (i + 1) }));
     items.push(new loader.cm.Item({ label: "item " + i }));
   }
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -1020,12 +955,10 @@ exports.testSortingMultipleModules = function (test) {
     if (i % 2) {
       let item = new loader0.cm.Item({ label: "item " + i });
       items0.push(item);
-      loader0.cm.add(item);
     }
     else {
       let item = new loader1.cm.Item({ label: "item " + i });
       items1.push(item);
-      loader1.cm.add(item);
     }
   }
   let allItems = items0.concat(items1);
@@ -1105,7 +1038,6 @@ exports.testContentCommunication = function (test) {
       test.done();
     }
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -1115,7 +1047,7 @@ exports.testContentCommunication = function (test) {
 };
 
 
-// ADD NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////
+// NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
 if (!require("xul-app").is("Firefox")) {

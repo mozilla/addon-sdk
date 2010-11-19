@@ -50,7 +50,12 @@ exports.testDelegatedReturns = function(test) {
       // This response isn't going to have any headers, so the return value
       // should be null. Previously it wasn't returning anything, and thus was
       // undefined.
-      test.assert(req.getAllResponseHeaders() === null,
+      
+      // Depending on whether Bug 608939 has been applied
+      // to the platform, getAllResponseHeaders() may return
+      // null or the empty string; accept either.
+      var headers = req.getAllResponseHeaders();
+      test.assert(headers === null || headers === "",
                   "XHR's delegated methods should return");
       test.done();
     }

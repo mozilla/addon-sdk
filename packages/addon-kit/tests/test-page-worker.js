@@ -1,5 +1,7 @@
 let tests = {}, Pages, Page;
 
+const ERR_DESTROYED =
+  "The page has been destroyed and can no longer be used.";
 
 tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
@@ -13,9 +15,6 @@ tests.testSimplePageCreation = function(test) {
       test.done();
     }
   });
-
-  Pages.add(page);
-
 }
 
 /* Tests that the window and document objects exposed to the content symbiont
@@ -23,7 +22,7 @@ tests.testSimplePageCreation = function(test) {
 tests.testUnwrappedDOM = function(test) {
   test.waitUntilDone();
 
-  let page = Pages.add(Page({
+  let page = Page({
     allow: { script: true },
     contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
     contentScript: "window.addEventListener('load', function () " +
@@ -40,36 +39,20 @@ tests.testUnwrappedDOM = function(test) {
 
       test.done();
     }
-  }));
-
+  });
 }
-tests.testUnaddedPageProperties = function(test) {
+
+tests.testPageProperties = function(test) {
   let page = new Page();
-
-  for each (let prop in ['contentURL', 'allow', 'contentScriptURL',
-                         'contentScript', 'contentScriptWhen',
-                         'postMessage', 'on', 'removeListener']) {
-    test.assert(prop in page, prop + " property is defined on unadded page.");
-  }
-
-  test.assertRaises(
-    function () page.postMessage("foo"),
-    "You have to add the page before you can send a message to it.",
-    "sendMessage throws exception on unadded page."
-  );
-}
-
-tests.testAddedPageProperties = function(test) {
-  let page = Pages.add(new Page());
 
   for each (let prop in ['contentURL', 'allow', 'contentScriptURL',
                          'contentScript', 'contentScriptWhen', 'on',
                          'postMessage', 'removeListener']) {
-    test.assert(prop in page, prop + " property is defined on added page.");
+    test.assert(prop in page, prop + " property is defined on page.");
   }
 
   test.assert(function () page.postMessage("foo") || true,
-              "sendMessage doesn't throw exception on added page.");
+              "postMessage doesn't throw exception on page.");
 }
 
 tests.testConstructorAndDestructor = function(test) {
@@ -81,30 +64,27 @@ tests.testConstructorAndDestructor = function(test) {
 
   let pagesReady = 0;
 
-  let page1 = Pages.add(Pages.Page({
+  let page1 = Pages.Page({
     contentScript:      "postMessage('')",
     contentScriptWhen:  "ready",
     onMessage:          pageReady
-  }));
-  let page2 = Pages.add(Pages.Page({
+  });
+  let page2 = Pages.Page({
     contentScript:      "postMessage('')",
     contentScriptWhen:  "ready",
     onMessage:          pageReady
-  }));
+  });
 
-  if (page1 === page2)
-    test.fail("Page 1 and page 2 should be different objects.");
+  test.assertNotEqual(page1, page2,
+                      "Page 1 and page 2 should be different objects.");
 
   function pageReady() {
     if (++pagesReady == 2) {
-      Pages.remove(page1);
-      Pages.remove(page2);
+      page1.destroy();
+      page2.destroy();
 
-      test.assert(
-        !global.PageRegistry.has(page1) &&
-        !global.PageRegistry.has(page2),
-        "Pages correctly unloaded."
-      );
+      test.assert(isDestroyed(page1), "page1 correctly unloaded.");
+      test.assert(isDestroyed(page2), "page2 correctly unloaded.");
 
       loader.unload();
       test.done();
@@ -117,17 +97,16 @@ tests.testAutoDestructor = function(test) {
 
   let loader = test.makeSandboxedLoader();
   let Pages = loader.require("page-worker");
-  let global = loader.findSandboxForModule("page-worker").globalScope;
 
-  let page = Pages.add(Pages.Page({
+  let page = Pages.Page({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     onMessage: function() {
       loader.unload();
-      test.assert(!global.PageRegistry.has(page), "Page correctly unloaded.");
+      test.assert(isDestroyed(page), "Page correctly unloaded.");
       test.done();
     }
-  }));
+  });
 }
 
 tests.testValidateOptions = function(test) {
@@ -149,12 +128,12 @@ tests.testValidateOptions = function(test) {
 tests.testContentAndAllowGettersAndSetters = function(test) {
   test.waitUntilDone();
   let content = "data:text/html,<script>window.scrollTo=3</script>";
-  let page = Pages.add(Page({
+  let page = Page({
     contentURL: content,
     contentScript: "window.addEventListener('load', function () " +
                    "postMessage(typeof window.scrollTo), true);",
     onMessage: step0
-  }));
+  });
 
   function step0(message) {
     test.assertEqual(message, "number",
@@ -213,25 +192,25 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 tests.testOnMessageCallback = function(test) {
   test.waitUntilDone();
 
-  Pages.add(Page({
+  Page({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     onMessage: function() {
       test.pass("onMessage callback called");
       test.done();
     }
-  }));
+  });
 }
 
 tests.testMultipleOnMessageCallbacks = function(test) {
   test.waitUntilDone();
 
   let count = 0;
-  let page = Pages.add(Page({
+  let page = Page({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     onMessage: function() count += 1
-  }));
+  });
   page.on('message', function() count += 2);
   page.on('message', function() count *= 3);
   page.on('message', function()
@@ -244,7 +223,7 @@ tests.testLoadContentPage = function(test) {
 
   test.waitUntilDone();
 
-  let page = Pages.add(Page({
+  let page = Page({
     onMessage: function(message) {
       // The message is an array whose first item is the test method to call
       // and the rest of whose items are arguments to pass it.
@@ -252,7 +231,7 @@ tests.testLoadContentPage = function(test) {
     },
     contentURL: require("self").data.url("test-page-worker.html"),
     contentScriptURL: require("self").data.url("test-page-worker.js")
-  }));
+  });
 
 }
 
@@ -260,7 +239,7 @@ tests.testAllowScript = function(test) {
 
   test.waitUntilDone();
 
-  let page = Pages.add(Page({
+  let page = Page({
     onMessage: function(message) {
       test.assert(message, "Script is allowed to run by default.");
       test.done();
@@ -268,14 +247,14 @@ tests.testAllowScript = function(test) {
     contentURL: "data:text/html,<script>window.foo=3;</script>",
     contentScript: "window.addEventListener('DOMContentLoaded', function () " +
                    "postMessage('foo' in window), false)"
-  }));
+  });
 }
 
 tests.testAllowScript = function(test) {
 
   test.waitUntilDone();
 
-  let page = Pages.add(Page({
+  let page = Page({
     onMessage: function(message) {
       test.assert(message, "Script runs when allowed to do so.");
       test.done();
@@ -285,13 +264,12 @@ tests.testAllowScript = function(test) {
     contentScript: "window.addEventListener('DOMContentLoaded', function () " +
                    "postMessage(('foo' in window) && window.foo " +
                    "== 3), false)"
-  }));
-
+  });
 }
 
 tests.testPingPong = function(test) {
   test.waitUntilDone();
-  let page = Pages.add({
+  let page = Page({
     contentURL: 'data:text/html,ping-pong',
     contentScript: 'onMessage = function(message) postMessage("pong");'
       + 'postMessage("ready");'
@@ -307,6 +285,24 @@ tests.testPingPong = function(test) {
     }
   });
 };
+
+tests.testMultipleDestroys = function(test) {
+  let page = Page();
+  page.destroy();
+  page.destroy();
+  test.pass("Multiple destroys should not cause an error");
+};
+
+
+function isDestroyed(page) {
+  try {
+    page.postMessage("foo");
+  }
+  catch (err if err.message == ERR_DESTROYED) {
+    return true;
+  }
+  return false;
+}
 
 
 let pageWorkerSupported = true;

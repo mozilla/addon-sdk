@@ -70,12 +70,12 @@ const SEPARATOR_ID = "jetpack-context-menu-separator";
 // overflow into a "Jetpack" submenu.
 const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_THRESH_PREF =
-  "jetpack.jetpack-core.context-menu.overflowThreshold";
+  "extensions.addon-sdk.context-menu.overflowThreshold";
 
 // The label of the overflow sub-<menu>.
 //
 // TODO: Localize this.
-const OVERFLOW_MENU_LABEL = "Jetpack";
+const OVERFLOW_MENU_LABEL = "Add-ons";
 
 // The ID of the overflow sub-<menu>.
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
@@ -110,18 +110,6 @@ exports.Item = apiUtils.publicConstructor(Item);
 exports.Menu = apiUtils.publicConstructor(Menu);
 exports.Separator = apiUtils.publicConstructor(Separator);
 
-exports.add = function contextMenu_add(item) {
-  if (item instanceof Separator) {
-    throw new Error("Separators cannot be added to the top-level " +
-                    "context menu.");
-  }
-  browserManager.addItem(item);
-};
-
-exports.remove = function contextMenu_remove(item) {
-  browserManager.removeItem(item);
-};
-
 
 function Item(options) {
   let rules = optionsRules();
@@ -131,7 +119,7 @@ function Item(options) {
   };
   options = apiUtils.validateOptions(options, rules);
 
-  defineGetters(this, options);
+  defineItemProps(this, options);
 
   // TODO: Add setter for this?
   this.__defineGetter__("data", function () {
@@ -141,6 +129,8 @@ function Item(options) {
   this.toString = function Item_toString() {
     return '[object Item "' + options.label + '"]';
   };
+
+  browserManager.addItem(this);
 }
 
 function Menu(options) {
@@ -150,7 +140,7 @@ function Menu(options) {
   };
   options = apiUtils.validateOptions(options, rules);
 
-  defineGetters(this, options);
+  defineItemProps(this, options);
 
   // TODO: Add setter for this?
   this.__defineGetter__("items", function () options.items.slice(0));
@@ -158,6 +148,9 @@ function Menu(options) {
   this.toString = function Menu_toString() {
     return '[object Menu "' + options.label + '"]';
   };
+
+  browserManager.addItem(this);
+  options.items.forEach(function (i) browserManager.removeItem(i));
 }
 
 function Separator() {
@@ -312,9 +305,9 @@ function optionsRules() {
 }
 
 // Defines some getters and other properties that are common to Item and Menu.
-// item is the Item or Menu object on which to define the getters, and options
-// is a validated options object.
-function defineGetters(item, options) {
+// item is the Item or Menu object on which to define the properties, and
+// options is a validated options object.
+function defineItemProps(item, options) {
   // TODO: Add setter for label?  It would require finding the item's DOM
   // element and changing its attributes as well.  Note however that
   // WorkerRegistry relies on label remaining constant, so if setters are added,
@@ -335,6 +328,10 @@ function defineGetters(item, options) {
   collection.addCollectionProperty(item, "context");
   if (options.context)
     item.context.add(options.context);
+
+  item.destroy = function Item_destroy() {
+    browserManager.removeItem(item);
+  };
 }
 
 // Does a binary search on elts, a NodeList, and returns the DOM element
@@ -407,15 +404,14 @@ let browserManager = {
   },
 
   // Unregisters an item from the manager.  It's removed from the context menus
-  // of all windows that are currently registered.
+  // of all windows that are currently registered.  If the item is not
+  // registered, this is a no-op.
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
-    if (idx < 0) {
-      throw new Error("The item " + item + " has not been added to the menu " +
-                      "and therefore cannot be removed.");
+    if (idx >= 0) {
+      this.items.splice(idx, 1);
+      this.windows.forEach(function (w) w.removeItems([item]));
     }
-    this.items.splice(idx, 1);
-    this.windows.forEach(function (w) w.removeItems([item]));
   },
 
   _isBrowserWindow: function browserManager__isBrowserWindow(win) {

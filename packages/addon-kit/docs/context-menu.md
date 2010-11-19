@@ -24,8 +24,8 @@ never need to manually remove your items from the menu unless you want them to
 never appear again.
 
 For example, if your extension needs to add a context menu item whenever the
-user visits a certain page, don't add the item when that page loads, and don't
-remove the item when the page unloads.  Rather, add your item only once, when
+user visits a certain page, don't create the item when that page loads, and
+don't remove it when the page unloads.  Rather, create your item only once, when
 your program starts, and supply a context that matches the target URL.
 
 
@@ -130,8 +130,8 @@ all of those contexts occur.
 ### In Content Scripts
 
 To interact with pages in the browser, you create content scripts and pass them
-when constructing menu items.  Only items added to the top-level context menu
-can have content scripts.
+when constructing menu items.  Only items in the top-level context menu can have
+content scripts.
 
 One of the things you can do in a content script is listen for an event named
 `"context"`.  This event is fired whenever the context menu is about to be
@@ -228,9 +228,9 @@ associated with the content script, the content script can call the global
 Examples
 --------
 
-Each of these examples can be added to the top-level scope of your program;
-you don't need to manually remove or add these items other than the single call
-to `add()` in each example.  See the Introduction above for more information.
+Each of these examples can be added to the top-level scope of your program; you
+only need to create an item once.  See the Introduction above for further
+discussion.
 
 Also, in the real world you probably don't want to include content scripts
 directly in your programs like these examples do.  Instead, make separate files
@@ -254,7 +254,6 @@ part of the page:
         editSource(page.URL);
       }
     });
-    contextMenu.add(pageSourceItem);
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
@@ -268,7 +267,6 @@ Show an "Edit Image" item when the menu is invoked on an image:
         openImageEditor(imgSrc);
       }
     });
-    contextMenu.add(editImageItem);
 
 Show an "Edit Mozilla Image" item when the menu is invoked on an image in a
 mozilla.org or mozilla.com page:
@@ -286,7 +284,6 @@ mozilla.org or mozilla.com page:
         openImageEditor(imgSrc);
       }
     });
-    contextMenu.add(editMozImageItem);
 
 Show an "Edit Page Images" item when the page contains at least one image:
 
@@ -309,7 +306,6 @@ Show an "Edit Page Images" item when the page contains at least one image:
         openImageEditor(imgSrcs);
       }
     });
-    contextMenu.add(editImagesItem);
 
 Show a "Search With" menu when the user right-clicks an anchor that searches
 Google or Wikipedia with the text contained in the anchor:
@@ -331,11 +327,10 @@ Google or Wikipedia with the text contained in the anchor:
                      '});',
       items: [googleItem, wikipediaItem]
     });
-    contextMenu.add(searchMenu);
 
 <api name="Item">
 @class
-A single item to be added to the context menu.
+A labeled menu item that can perform an action when clicked.
 <api name="Item">
 @constructor
   Creates a labeled menu item that can perform an action when clicked.
@@ -349,31 +344,37 @@ A single item to be added to the context menu.
     string or an object that implements `toString()`.  It will be passed to
     click listeners.
   @prop [context] {value}
-    If the item is added to the top-level context menu, this declaratively
+    If the item is contained in the top-level context menu, this declaratively
     specifies the context under which the item will appear; see Specifying
     Contexts above.  Ignored if the item is contained in a submenu.
   @prop [contentScript] {string,array}
-    If the item is added to the top-level context menu, this is the content
+    If the item is contained in the top-level context menu, this is the content
     script or an array of content scripts that the item can use to interact with
     the page.  Ignored if the item is contained in a submenu.
   @prop [contentScriptURL] {string,array}
-    If the item is added to the top-level context menu, this is the local file
-    URL of the content script or an array of such URLs that the item can use to
-    interact with the page.  Ignored if the item is contained in a submenu.
+    If the item is contained in the top-level context menu, this is the local
+    file URL of the content script or an array of such URLs that the item can
+    use to interact with the page.  Ignored if the item is contained in a
+    submenu.
   @prop [onMessage] {function}
-    If the item is added to the top-level context menu, this function will be
-    called when the content script calls `postMessage`.  It will be passed the
-    data that was passed to `postMessage`.  Ignored if the item is contained in
-    a submenu.
+    If the item is contained in the top-level context menu, this function will
+    be called when the content script calls `postMessage`.  It will be passed
+    the data that was passed to `postMessage`.  Ignored if the item is contained
+    in a submenu.
+</api>
+<api name="destroy">
+@method
+  Permanently removes the item from the top-level context menu.  If the item is
+  not contained in the top-level context menu, this method does nothing.
 </api>
 </api>
 
 <api name="Menu">
 @class
-A submenu to be added to the context menu.
+A labeled menu item that expands into a submenu.
 <api name="Menu">
 @constructor
-  Creates a menu item that expands into a submenu.
+  Creates a labeled menu item that expands into a submenu.
 @param options {object}
   An object with the following keys:
   @prop label {string}
@@ -383,32 +384,38 @@ A submenu to be added to the context menu.
     An array of menu items that the menu will contain.  Each must be an `Item`,
     `Menu`, or `Separator`.
   @prop [context] {value}
-    If the menu is added to the top-level context menu, this declaratively
+    If the menu is contained in the top-level context menu, this declaratively
     specifies the context under which the menu will appear; see Specifying
     Contexts above.  Ignored if the menu is contained in a submenu.
   @prop [contentScript] {string,array}
-    If the menu is added to the top-level context menu, this is the content
+    If the menu is contained in the top-level context menu, this is the content
     script or an array of content scripts that the menu can use to interact with
     the page.  Ignored if the menu is contained in a submenu.
   @prop [contentScriptURL] {string,array}
-    If the menu is added to the top-level context menu, this is the local file
-    URL of the content script or an array of such URLs that the menu can use to
-    interact with the page.  Ignored if the menu is contained in a submenu.
+    If the menu is contained in the top-level context menu, this is the local
+    file URL of the content script or an array of such URLs that the menu can
+    use to interact with the page.  Ignored if the menu is contained in a
+    submenu.
   @prop [onMessage] {function}
-    If the menu is added to the top-level context menu, this function will be
-    called when the content script calls `postMessage`.  It will be passed the
-    data that was passed to `postMessage`.  Ignored if the menu is contained in
-    a submenu.
+    If the menu is contained in the top-level context menu, this function will
+    be called when the content script calls `postMessage`.  It will be passed
+    the data that was passed to `postMessage`.  Ignored if the menu is contained
+    in a submenu.
+</api>
+<api name="destroy">
+@method
+  Permanently removes the menu from the top-level context menu.  If the menu is
+  not contained in the top-level context menu, this method does nothing.
 </api>
 </api>
 
 <api name="Separator">
 @class
-A menu separator.
+A menu separator.  Separators can be contained only in `Menu`s, not in the
+top-level context menu.
 <api name="Separator">
 @constructor
-  Creates a menu separator.  Separators can only be contained in `Menu`s; they
-  can't be added to the top-level context menu.
+  Creates a menu separator.
 </api>
 </api>
 
@@ -450,22 +457,6 @@ A menu separator.
   A [match pattern] string or an array of match pattern strings.
   [match pattern]: #module/jetpack-core/match-pattern
 </api>
-</api>
-
-<api name="add">
-@function
-  Adds a menu item to the context menu.
-@param item {object}
-  An `Item` or `Menu` object to be added to the context menu.  `Separator`s
-  can't be added to the top-level menu.
-</api>
-
-<api name="remove">
-@function
-  Permanently removes a menu item from the context menu.  The item must have
-  been previously added.
-@param item {object}
-  An `Item` or `Menu` object that was previously added.
 </api>
 
 [self]: #module/jetpack-core/self
