@@ -1,3 +1,4 @@
+let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let URL = require("url").URL;
 let tests = {}, panels, Panel;
@@ -45,24 +46,53 @@ tests.testShowHidePanel = function(test) {
 
 tests.testResizePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
-    height: 10,
-    width: 10,
-    onMessage: function (message) {
-      panel.show();
-    },
-    onShow: function () {
-      panel.resize(100,100);
-      panel.hide();
-    },
-    onHide: function () {
-      test.assert((panel.width == 100) && (panel.height == 100),
-        "The panel was resized.");
-      test.done();
-    }
-  }));
+
+  // These tests fail on Linux if the browser window in which the panel
+  // is displayed is not active.  And depending on what other tests have run
+  // before this one, it might not be (the untitled window in which the test
+  // runner executes is often active).  So we make sure the browser window
+  // is focused by focusing it before running the tests.  Then, to be the best
+  // possible test citizen, we refocus whatever window was focused before we
+  // started running these tests.
+
+  let activeWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                     getService(Ci.nsIWindowMediator).
+                     getMostRecentWindow(null);
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  function onFocus() {
+    browserWindow.removeEventListener("focus", onFocus, true);
+
+    let panel = panels.add(Panel({
+      contentScript: "postMessage('')",
+      contentScriptWhen: "ready",
+      height: 10,
+      width: 10,
+      onMessage: function (message) {
+        panel.show();
+      },
+      onShow: function () {
+        panel.resize(100,100);
+        panel.hide();
+      },
+      onHide: function () {
+        test.assert((panel.width == 100) && (panel.height == 100),
+          "The panel was resized.");
+        activeWindow.focus();
+        test.done();
+      }
+    }));
+  }
+
+  if (browserWindow === activeWindow) {
+    onFocus();
+  }
+  else {
+    browserWindow.addEventListener("focus", onFocus, true);
+    browserWindow.focus();
+  }
 };
 
 tests.testHideBeforeShow = function(test) {
