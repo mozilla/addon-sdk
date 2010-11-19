@@ -11,7 +11,7 @@ Events represent common actions and state changes for tabs and their content.
 
 Listeners are passed the `tab` object that triggered the event.
 
-All the tabs and lists of tabs emit following event:
+All the tabs and lists of tabs emit following events:
 
 ### open ###
 Event emitted when a new tab is open.
@@ -71,11 +71,11 @@ _See TabList class for more details._
 
 <api name="TabList">
 @class
-The set sorted list of open tabs.
-An instance of `TabList` represents a list of open tab. Tablist can represent
-either list of tabs per window as in case with `BrowserWindow`'s `tabs` property
-or list of all open tabs as in case of `tabs` object that is exported by this
-module.
+The set of sorted list of open tabs.
+An instance of `TabList` represents a list of open tabs. `Tablist` can represent
+a list of tabs per window as in the case of `BrowserWindow`'s `tabs` property
+or list of all open tabs as in the case of `tabs` object that is exported by
+this module.
 
 `TabList` instances emit all the events described in the "events" section.
 Listeners are passed the `tab` object that triggered the event.
@@ -84,8 +84,8 @@ Listeners are passed the `tab` object that triggered the event.
 @property {Tab}
 
 The currently active tab in this list. This property can be set to a `tab`
-object, which will focus that tab. If this is a list of all tabs setting this
-property will focus parent window and bring the tab to the foreground.
+object, which will focus that tab. If this is a list of all tabs, setting this
+property will focus the parent window and bring the tab to the foreground.
 
 **Example**
 
@@ -103,9 +103,9 @@ Number of items in this list.
 </api>
 <api name="open">
 @method
-Open a new tab. If this is a list of tabs for a window new tab will be open
-on this window. If this is a list of all tabs new tab will be open in the active
-window or in the new window depending on option being passed.
+Open a new tab. If this is a list of tabs for a window, the tab will be opened
+on this window. If this is a list of all tabs, the new tab will be open in the
+active window or in the new window depending on the option being passed.
 
 **Example**
 
@@ -156,7 +156,7 @@ If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
 @prop [pinned] {boolean}
-If present and true, then new tab will be pinned as an app-tab.
+If present and true, then the new tab will be pinned as an app-tab.
 
 @prop [onOpen] {function}
 A callback function that will be registered for 'open' event.
@@ -194,7 +194,7 @@ passed the `tab` object that triggered the event.
     tabs.active.close();
 
     // Move the active tab one position to the right.
-    tabs.active.index ++;
+    tabs.active.index++;
 
     // Open a tab and listen for content being ready.
     tabs.open({
@@ -207,7 +207,7 @@ passed the `tab` object that triggered the event.
 <api name="title">
 @property {string}
 The title of the page currently loaded in the tab.
-This property can be set to change tab title.
+This property can be set to change the tab title.
 </api>
 
 <api name="location">

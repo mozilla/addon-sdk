@@ -15,7 +15,7 @@ Events represent common actions and state changes for windows.
 
 Listeners are passed the `window` object that triggered the event.
 
-All the windows and lists of windows emit following event:
+All the windows and lists of windows emit following events:
 
 ### open ###
 Event emitted when a new window is open.
@@ -116,9 +116,9 @@ String URL to be opened in the new window.
 This is a required property.
 
 @prop [tabs] {array}
-Array of objects containing configurable options for tabs.
-Property can be used to open new window with a several tabs. Each element
-of the array is an options object passed to the
+Array of objects containing configurable options for tabs or URL strings.
+The property can be used to open new window with a several tabs. Each element
+of the array is an options object or URL string passed to the
 [TabList's open method](#module/addon-kit/tabs).
 This is an optional property.
 
@@ -167,8 +167,8 @@ This property is read-only.
 
 <api name="tabs">
 @property {TabList}
-An instance of [TabList](#module/addon-kit/tabs) representing live list of all
-the open tabs for this window.
+An instance of [TabList](#module/addon-kit/tabs) representing the live list of
+all the open tabs for this window.
 This property is read-only.
 </api>
 
