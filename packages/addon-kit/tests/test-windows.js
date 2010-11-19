@@ -46,12 +46,15 @@ exports.testOpenAndCloseWindow = function(test) {
 
   windows.openWindow({
     url: "data:text/html,<title>windows API test</title>",
-    onReady: function(window) {
-      test.pass("onOpen callback called");
-      test.assert(window.title.indexOf("windows API test") != -1, "URL correctly loaded");
+    onOpen: function(window) {
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
       test.assertEqual(windows.length, 2, "Two windows open");
-      window.close();
+      window.tabs.active.on('ready', function onReady(tab) {
+        tab.removeListener('ready', onReady);
+        test.assert(window.title.indexOf("windows API test") != -1,
+                    "URL correctly loaded");
+        window.close();
+      });
     },
     onClose: function(window) {
       test.assertEqual(window.tabs.length, 0, "Tabs were cleared");
@@ -131,31 +134,28 @@ exports.testWindowTabsObject = function(test) {
 
   windows.openWindow({
     url: "data:text/html,<title>tab 1</title>",
-    onReady: function(window) {
+    onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-      for (let tab in window.tabs)
-        test.assertEqual(tab.title, "tab 1", "Correct tab listing");
 
       window.tabs.open({
         url: "data:text/html,<title>tab 2</title>",
         inBackground: true,
-        onOpen: function(newTab) {
+        onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
           test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+          test.assertEqual(window.tabs.active.title, "tab 1", "Correct active tab");
 
           let i = 1;
-          for (let tab in window.tabs) {
-            let title = "tab " + i++;
-            test.assertEqual(tab.title, title, "Correct " + title + " title");
-          }
+          for each (let tab in window.tabs)
+            test.assertEqual(tab.title, "tab " + i++, "Correct title");
 
-          window.close(function() {
-            test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
-            test.done();
-          });
+          window.close();
         }
       });
+    },
+    onClose: function onClose(window) {
+      test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
+      test.done();
     }
   });
 };
@@ -227,25 +227,26 @@ exports.testActiveWindow = function(test) {
 
   windows.openWindow({
     url: "data:text/html,<title>window 2</title>",
-    onReady: function(window) {
+    onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
       windows.openWindow({
         url: "data:text/html,<title>window 3</title>",
-        onReady: function(window) {
-          window3 = window;
-          rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-          nextStep();
+        onOpen: function(window) {
+          window.tabs.active.on('ready', function onReady() {
+            window3 = window;
+            rawWindow3 = wm.getMostRecentWindow("navigator:browser");
+            nextStep()
+          });
         }
       });
     }
   });
 
   function nextStep() {
-    if (testSteps.length > 0) {
+    if (testSteps.length > 0)
       testSteps.shift()();
-    }
   }
 
   function continueAfterFocus(targetWindow) {

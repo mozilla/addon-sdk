@@ -18,8 +18,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Dietrich Ayala <dietrich@mozilla.com> (Original author)
- *   Felipe Gomes <felipc@gmail.com>
  *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -37,24 +35,30 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
-  throw new Error([
-    "The tabs module currently supports only Firefox.  In the future ",
-    "we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=560716 for more information."
-  ].join(""));
+var { setTimeout } = require("timer");
+
+/**
+ * Takes a function and returns a wrapped one instead, calling which will call
+ * original function in the next turn of event loop. This is basically utility
+ * to do `setTimeout(function() { ... }, 0)`, with a difference that returned
+ * function is reused, instead of creating a new one each time. This also allows
+ * to use this functions as event listeners.
+ */
+function Enqueued(callee) {
+  return function enqueued()
+    setTimeout(invoke, 0, callee, arguments, this);
 }
+exports.Enqueued = Enqueued;
 
-const { browserWindows } = require("windows");
-const { tabs } = require("windows/tabs");
-
-exports.tabs = tabs;
-Object.defineProperties(tabs, {
-  open: { value: function open(options) {
-    if (options.inNewWindow)
-        return browserWindows.openWindow({ tabs: [ options ] });
-    // Open in active window if new window was not required.
-    return browserWindows.activeWindow.tabs.open(options);
-  }}
-})
-
+/**
+ * Invokes `callee` by passing `params` as an arguments and `self` as `this`
+ * pseudo-variable. Returns value that is returned by a callee.
+ * @param {Function} callee
+ *    Function to invoke.
+ * @param {Array} params
+ *    Arguments to invoke function with.
+ * @param {Object} self
+ *    Object to be passed as a `this` pseudo variable.
+ */
+function invoke(callee, params, self) callee.apply(self, params);
+exports.invoke = invoke;

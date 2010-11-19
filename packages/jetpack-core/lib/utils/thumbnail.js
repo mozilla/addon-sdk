@@ -13,14 +13,13 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is Mozilla.
+ * The Initial Developer of the Original Code is
+ * the Mozilla Foundation.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Dietrich Ayala <dietrich@mozilla.com> (Original author)
- *   Felipe Gomes <felipc@gmail.com>
- *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,26 +34,43 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
-  throw new Error([
-    "The tabs module currently supports only Firefox.  In the future ",
-    "we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=560716 for more information."
-  ].join(""));
+const { Cc, Ci, Cu } = require("chrome");
+const AppShellService = Cc["@mozilla.org/appshell/appShellService;1"].
+  getService(Ci.nsIAppShellService);
+
+const NS = "http://www.w3.org/1999/xhtml";
+const COLOR = "rgb(255,255,255)";
+
+/**
+ * Creates canvas element with a thumbnail of the passed window.
+ * @param {Window} window
+ * @returns {Element}
+ */
+function getThumbnailCanvasForWindow(window) {
+  let aspectRatio = 0.5625; // 16:9
+  let thumbnail = AppShellService.hiddenDOMWindow.document
+                    .createElementNS(NS, "canvas");
+  thumbnail.mozOpaque = true;
+  thumbnail.width = Math.ceil(window.screen.availWidth / 5.75);
+  thumbnail.height = Math.round(thumbnail.width * aspectRatio);
+  let ctx = thumbnail.getContext("2d");
+  let snippetWidth = window.innerWidth * .6;
+  let scale = thumbnail.width / snippetWidth;
+  ctx.scale(scale, scale);
+  ctx.drawWindow(window, window.scrollX, window.scrollY, snippetWidth,
+                snippetWidth * aspectRatio, COLOR);
+  return thumbnail;
 }
+exports.getThumbnailCanvasForWindow = getThumbnailCanvasForWindow;
 
-const { browserWindows } = require("windows");
-const { tabs } = require("windows/tabs");
-
-exports.tabs = tabs;
-Object.defineProperties(tabs, {
-  open: { value: function open(options) {
-    if (options.inNewWindow)
-        return browserWindows.openWindow({ tabs: [ options ] });
-    // Open in active window if new window was not required.
-    return browserWindows.activeWindow.tabs.open(options);
-  }}
-})
-
+/**
+ * Creates Base64 encoded data URI of the thumbnail for the passed window.
+ * @param {Window} window
+ * @returns {String}
+ */
+exports.getThumbnailURIForWindow = function getThumbnailURIForWindow(window) {
+  return getThumbnailCanvasForWindow(window).toDataURL()
+};

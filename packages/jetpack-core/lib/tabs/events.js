@@ -18,8 +18,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Dietrich Ayala <dietrich@mozilla.com> (Original author)
- *   Felipe Gomes <felipc@gmail.com>
  *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -37,24 +35,22 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
-  throw new Error([
-    "The tabs module currently supports only Firefox.  In the future ",
-    "we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=560716 for more information."
-  ].join(""));
+const ON_PREFIX = "on";
+const TAB_PREFIX = "Tab";
+
+const EVENTS = {
+  ready: "DOMContentLoaded",
+  open: "TabOpen",
+  close: "TabClose",
+  activate: "TabSelect",
+  deactivate: null
 }
+exports.EVENTS = EVENTS;
 
-const { browserWindows } = require("windows");
-const { tabs } = require("windows/tabs");
-
-exports.tabs = tabs;
-Object.defineProperties(tabs, {
-  open: { value: function open(options) {
-    if (options.inNewWindow)
-        return browserWindows.openWindow({ tabs: [ options ] });
-    // Open in active window if new window was not required.
-    return browserWindows.activeWindow.tabs.open(options);
-  }}
-})
-
+Object.keys(EVENTS).forEach(function(name) {
+  EVENTS[name] = {
+    name: name,
+    listener: ON_PREFIX + name.charAt(0).toUpperCase() + name.substr(1),
+    dom: EVENTS[name]
+  }
+});
