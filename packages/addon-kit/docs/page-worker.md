@@ -28,12 +28,6 @@ asynchronously emit 'message' event on the worker.
 Event allows the page worker to react on an uncaught runtime script error
 that occurs in one of the content scripts.
 
-####"ready"####
-
-Event is emitted when the DOM on the page is ready. This can be used to know
-when your Page Worker instance is ready to be used, and also whenever the page
-is reloaded or another page is loaded in its place.
-
 Examples
 --------
 
