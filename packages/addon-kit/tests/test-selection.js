@@ -85,7 +85,7 @@ exports.testContiguousMultiple = function testContiguousMultiple(test) {
   let selection = require("selection");
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
-    test.assertEqual(selection.contiguous, false,
+    test.assertEqual(selection.isContiguous, false,
       "selection.contiguous multiple works.");
   });
 
@@ -96,7 +96,7 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
   let selection = require("selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
-    test.assertEqual(selection.contiguous, true,
+    test.assertEqual(selection.isContiguous, true,
       "selection.contiguous single works.");
   });
 
@@ -106,7 +106,7 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
 exports.testContiguousNull = function testContiguousNull(test) {
   let selection = require("selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
-    test.assertEqual(selection.contiguous, null,
+    test.assertEqual(selection.isContiguous, null,
       "selection.contiguous null works.");
   });
 
@@ -121,12 +121,12 @@ exports.testContiguousNull = function testContiguousNull(test) {
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     try {
-      selection.contiguous = true;
-      test.assertEqual(selection.contiguous, false,
-        "setting selection.contiguous doesn't work (as expected).");
+      selection.isContiguous = true;
+      test.assertEqual(selection.isContiguous, false,
+        "setting selection.isContiguous doesn't work (as expected).");
     }
     catch (e) {
-      test.pass("setting selection.contiguous doesn't work (as expected).");
+      test.pass("setting selection.isContiguous doesn't work (as expected).");
     }
   });
 
