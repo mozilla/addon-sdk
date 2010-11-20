@@ -161,10 +161,10 @@ The message to send.  Must be stringifiable to JSON.
 <api name="show">
 @method
 Display the panel.
-@param [anchor] {DOMElement}
-The element to which the panel should be anchored (i.e. appear connected).
-If not specified, panels are centered relative to the most recent (frontmost)
-primary application window.  Optional.
+@param [anchor] {DOM node handle}
+A handle to a DOM node in a page to which the panel should appear to be
+connected.  If not given, the panel is centered inside the most recent browser
+window.
 </api>
 
 <api name="hide">
