@@ -181,8 +181,9 @@ Makes window active
 @method
 Close the window.
 
-@param callback {function}
+@param [callback] {function}
 A function to be called when the window finishes its closing process.
+This is an optional argument.
 </api>
 
 </api>

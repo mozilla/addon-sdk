@@ -248,6 +248,10 @@ This property can be set to pin / unpin this tab.
 <api name="close">
 @method
 Close this tab.
+
+@param [callback] {function}
+A function to be called when the tab finishes its closing process.
+This is an optional arguments.
 </api>
 
 <api name="focus">
