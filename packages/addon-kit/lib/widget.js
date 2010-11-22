@@ -410,15 +410,15 @@ BrowserWindow.prototype = {
     // XUL element container for widget
     let node = this.doc.createElement("toolbaritem");
     let guid = require("xpcom").makeUuid().toString();
-    let id = "widget: " + guid;
+    let id = "widget:" + guid;
     node.setAttribute("id", id);
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);
 
     // TODO move into a stylesheet
     node.setAttribute("style", [
-        "overflow: hidden; margin: 5px; padding: 0px;",
-        "border: 1px solid #71798F; -moz-box-shadow: 1px 1px 3px #71798F;",
+        "overflow: hidden; padding: 0px; min-height: 16px; ",
+        "border: 1px solid #71798F; -moz-box-shadow: 1px 1px 3px #71798F; ",
         "-moz-border-radius: 3px;"
     ].join(""));
 
