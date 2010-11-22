@@ -18,7 +18,7 @@ Event emitted when a new tab is open.
 This does not mean that the content has loaded, only that the browser tab
 itself is fully visible to the user.
 
-Tab content related properties (title, thumbnail, favicon, location) will not
+Tab content related properties (title, thumbnail, favicon, url) will not
 be correct at this point. Use `ready` event listener to be notified when the
 page has loaded.
 
@@ -51,7 +51,7 @@ Event emitted when the active tab is made inactive.
 
     // listen for tab content loadings.
     tabs.on('ready', function(tab) {
-      console.log('tab is loaded', tab.title, tab.location)
+      console.log('tab is loaded', tab.title, tab.url)
     });
 
 <api name="tabs">
@@ -210,7 +210,7 @@ The title of the page currently loaded in the tab.
 This property can be set to change the tab title.
 </api>
 
-<api name="location">
+<api name="url">
 @property {String}
 The URL of the page currently loaded in the tab.
 This property can be set to load a different URL in the tab.

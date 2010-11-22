@@ -145,8 +145,8 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property will loads page under under the specified location.
    * @type {String}
    */
-  get location() String(this._contentDocument.location),
-  set location(value) this._changeLocation(String(value)),
+  get url() String(this._contentDocument.location),
+  set url(value) this._changeLocation(String(value)),
   // "TabOpen" event is fired when it's still "about:blank" is loaded in the
   // changing `location` property of the `contentDocument` has no effect since
   // seems to be either ignored or overridden by internal listener, there for
@@ -156,7 +156,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
    */
-  get favicon() getFaviconURIForLocation(String(this.location)),
+  get favicon() getFaviconURIForLocation(this.url),
   /**
    * The CSS style for the tab
    */
