@@ -83,9 +83,7 @@ Listeners are passed the `tab` object that triggered the event.
 <api name="active">
 @property {Tab}
 
-The currently active tab in this list. This property can be set to a `tab`
-object, which will focus that tab. If this is a list of all tabs, setting this
-property will focus the parent window and bring the tab to the foreground.
+The currently active tab in this list. This property is read only.
 
 **Example**
 
@@ -191,10 +189,10 @@ passed the `tab` object that triggered the event.
     var tabs = require("tabs").tabs;
 
     // Close the active tab.
-    tabs.active.close();
+    tabs.activeTab.close();
 
     // Move the active tab one position to the right.
-    tabs.active.index++;
+    tabs.activeTab.index++;
 
     // Open a tab and listen for content being ready.
     tabs.open({
@@ -250,8 +248,8 @@ This property can be set to pin / unpin this tab.
 Close this tab.
 </api>
 
-<api name="focus">
+<api name="activate">
 @method
-Makes this tab active.
+Makes this tab active, which will bring this tab to the foreground.
 </api>
 </api>
