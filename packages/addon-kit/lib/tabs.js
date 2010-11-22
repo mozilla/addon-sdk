@@ -52,7 +52,7 @@ exports.tabs = tabs;
 Object.defineProperties(tabs, {
   open: { value: function open(options) {
     if (options.inNewWindow)
-        return browserWindows.openWindow({ tabs: [ options ] });
+        return browserWindows.open({ tabs: [ options ] });
     // Open in active window if new window was not required.
     return browserWindows.activeWindow.tabs.open(options);
   }}

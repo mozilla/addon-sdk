@@ -81,7 +81,7 @@ const TabTrait = Trait.compose(EventEmitter, {
 
     this.pinned = options.pinned;
     if (!options.inBackground)
-        this.focus();
+        this.activate();
     // Since we will have to identify tabs by a DOM elements facade function
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
@@ -191,7 +191,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * will be the case. Besides this function is called from a constructor where
    * we would like to return instance before firing a 'TabActivated' event.
    */
-  focus: Enqueued(function focus() {
+  activate: Enqueued(function activate() {
     if (this._window) // Ignore if window is closed by the time this is invoked.
       this._window.gBrowser.selectedTab = this._tab;
   }),

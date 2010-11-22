@@ -48,9 +48,9 @@ exports.testActiveTab_getter = function(test) {
       location,
       {
         onLoad: function(e) {
-          test.assert(tabs.active);
-          test.assertEqual(tabs.active.location, location);
-          test.assertEqual(tabs.active.title, "foo");
+          test.assert(tabs.activeTab);
+          test.assertEqual(tabs.activeTab.location, location);
+          test.assertEqual(tabs.activeTab.title, "foo");
           closeBrowserWindow(window, function() test.done());
         }
       }
@@ -68,14 +68,14 @@ exports.testActiveTab_setter = function(test) {
 
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
-      test.assertEqual(tabs.active.location, "about:blank", "activeTab location has not changed");
+      test.assertEqual(tabs.activeTab.location, "about:blank", "activeTab location has not changed");
       test.assertEqual(tab.location, location, "location of new background tab matches");
       tabs.on('activate', function onActivate() {
         tabs.removeListener('activate', onActivate);
-        test.assertEqual(tabs.active.location, location, "location after activeTab setter matches");
+        test.assertEqual(tabs.activeTab.location, location, "location after activeTab setter matches");
         closeBrowserWindow(window, function() test.done());
       });
-      tabs.active = tab;
+      tab.activate();
     })
 
     tabs.open({
@@ -162,12 +162,12 @@ exports.testTabClose = function(test) {
     let { tabs } = require("tabs");
     let url = "data:text/html,foo";
 
-    test.assertNotEqual(tabs.active.location, url, "tab is now the active tab");
+    test.assertNotEqual(tabs.activeTab.location, url, "tab is now the active tab");
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
-      test.assertEqual(tabs.active.location, tab.location, "tab is now the active tab");
+      test.assertEqual(tabs.activeTab.location, tab.location, "tab is now the active tab");
       tab.close();
-      test.assertNotEqual(tabs.active.location, url, "tab is no longer the active tab");
+      test.assertNotEqual(tabs.activeTab.location, url, "tab is no longer the active tab");
       closeBrowserWindow(window, function() test.done());
     });
 
@@ -265,15 +265,15 @@ exports.testInBackground = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let { tabs } = require("tabs");
-    let activeUrl = tabs.active.location;
+    let activeUrl = tabs.activeTab.location;
     let url = "data:text/html,background";
     test.assertEqual(activeWindow, window, "activeWindow matches this window");
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
-      test.assertEqual(tabs.active.location, activeUrl, "URL of active tab has not changed");
+      test.assertEqual(tabs.activeTab.location, activeUrl, "URL of active tab has not changed");
       test.assertEqual(tab.location, url, "URL of the new background tab matches");
       test.assertEqual(activeWindow, window, "a new window was not opened");
-      test.assertNotEqual(tabs.active.location, url, "URL of active tab is not the new URL");
+      test.assertNotEqual(tabs.activeTab.location, url, "URL of active tab is not the new URL");
       closeBrowserWindow(window, function() test.done());
     });
     tabs.open({
@@ -311,7 +311,7 @@ exports.testOpenInNewWindow = function(test) {
         test.assertEqual(activeWindow, newWindow, "new window is active");
         test.assertEqual(tab.location, url, "URL of the new tab matches");
         test.assertEqual(newWindow.content.location, url, "URL of new tab in new window matches");
-        test.assertEqual(tabs.active.location, url, "URL of activeTab matches");
+        test.assertEqual(tabs.activeTab.location, url, "URL of activeTab matches");
         for (var i in cache) cache[i] = null;
         wt.unload();
         closeBrowserWindow(newWindow, function() {
