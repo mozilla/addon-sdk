@@ -39,24 +39,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const {Cc,Ci} = require("chrome");
+const {Cc, Ci} = require("chrome");
 
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
 const CONTENT_TYPE_HTML   = 2;
 const CONTENT_TYPE_IMAGE  = 3;
 
-const ERR_IMG_OR_CONTENT = "No image or content property found. Widgets must "
+const ERR_CONTENT = "No content or contentURL property found. Widgets must "
                          + "have one or the other.",
       ERR_LABEL = "The widget must have a non-empty label property.";
 
 // Supported events
 const EVENTS = {
   "click": "click",
-  "load": "load",
   "mouseover": "MouseOver",
   "mouseout": "MouseOut",
-  "DOMContentLoaded": "ready"
 };
 
 if (!require("xul-app").is("Firefox")) {
@@ -71,6 +69,7 @@ const { validateOptions } = require("api-utils");
 const panels = require("panel");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
+const { Loader, Symbiont } = require("content");
 
 const valid = {
   number: { is: ["null", "undefined", "number"] },
@@ -99,7 +98,7 @@ const eventBus = Trait.compose(EventEmitter, Trait.compose({
 }))();
 
 // The widget object.
-const Widget = Trait.compose(EventEmitter, Trait.compose({
+const Widget = Trait.compose(Loader, Trait.compose({
   constructor: function Widget(options) {
 
     eventBus.on('event', this._onEvent.bind(this));
@@ -108,11 +107,6 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
     this._label = validate("label", options.label, valid.label);
 
     this.tooltip = "tooltip" in options ? options.tooltip : this._label
-
-    if ("image" in options)
-      this.image = options.image;
-    if ("content" in options)
-      this.content = options.content;
 
     if ("width" in options)
       this.width = options.width;
@@ -125,13 +119,32 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       this.on("MouseOver", options.onMouseOver);
     if ("onMouseOut" in options)
       this.on("MouseOut", options.onMouseOut);
-    if ("onLoad" in options)
-      this.on("load", options.onLoad);
-    if ("onReady" in options)
-      this.on("ready", options.onReady);
+    if ("content" in options)
+      this._content = options.content;
+    if ("contentURL" in options)
+      this.contentURL = options.contentURL;
 
-    if (!(this._image || this._content))
-      throw new Error(ERR_IMG_OR_CONTENT);
+    if ("contentScriptWhen" in options)
+      this.contentScriptWhen = options.contentScriptWhen;
+    if ("contentScriptURL" in options)
+      this.contentScriptURL = options.contentScriptURL;
+    if ("contentScript" in options)
+      this.contentScript = options.contentScript;
+    if ("allow" in options)
+      this.allow = options.allow;
+    if ("onError" in options)
+      this.on("error", options.onError);
+    if ("onMessage" in options)
+        this.on("message", options.onMessage);
+
+    if (!(this._content || this.contentURL))
+      throw new Error(ERR_CONTENT);
+    
+    let self = this;
+    this.on('propertyChange', function(change) {
+      if ('contentURL' in change)
+        browserManager.updateItem(self._public, "contentURL", self.contentURL);
+    });
 
     browserManager.addItem(this._public);
   },
@@ -141,14 +154,14 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       console.exception(e)
   },
 
-  _onEvent: function Widget__onEvent(type, target, e, item) {
+  _onEvent: function Widget__onEvent(type, target, eventData, domNode) {
     if (target === this._public) {
-      this._emit(type, this._public, e);
+      this._emit(type, this._public, eventData);
 
       // Special case for click events: if the widget doesn't have a click
       // handler, but it does have a panel, display the panel.
       if ("click" == type && !this._listeners("click").length && this.panel)
-        this.panel.show(item.node);
+        this.panel.show(domNode);
     }
   },
 
@@ -171,14 +184,6 @@ const Widget = Trait.compose(EventEmitter, Trait.compose({
       browserManager.updateItem(this._public, "tooltip", this._tooltip = value);
   },
   _tooltip: null,
-
-  get image() this._image,
-  set image(value) {
-    value = validate("image", value, valid.string);
-    if (value !== this._image)
-      browserManager.updateItem(this._public, "image", this._image = value);
-  },
-  _image: null,
 
   get content() this._content,
   set content(value) {
@@ -307,6 +312,7 @@ BrowserWindow.prototype = {
     //   widget: widget object,
     //   node: dom node,
     //   eventListeners: hash of event listeners
+    //   symbiont: contentSymbiont
     // }
     this._items = [];
 
@@ -390,7 +396,7 @@ BrowserWindow.prototype = {
     let item = this._items.filter(function(item) item.widget == updatedItem).shift();
     if (item) {
       switch(property) {
-        case "image":
+        case "contentURL":
         case "content":
           this.setContent(item);
           break;
@@ -467,39 +473,49 @@ BrowserWindow.prototype = {
   },
 
   // Get widget content type.
-  // TODO: fully replace with explicit URL/IMG objects once bug 564524 is fixed.
   getContentType: function BW_getContentType(widget) {
-    let type = widget.image ? CONTENT_TYPE_IMAGE :
-                              CONTENT_TYPE_HTML;
-    if (widget.content) {
-      try {
-        require("url").URL(widget.content);
-        type = CONTENT_TYPE_URI;
-      } catch(e) {}
-    }
-
-    return type;
+    if (widget.content)
+      return CONTENT_TYPE_HTML;
+    return (widget.contentURL && /\.(jpg|gif|png|ico)$/.test(widget.contentURL))
+      ? CONTENT_TYPE_IMAGE : CONTENT_TYPE_URI;
   },
 
   // Set widget content.
   setContent: function BW_setContent(item) {
     let type = this.getContentType(item.widget);
-    let iframe = item.node.firstElementChild;
+    let contentURL = null;
+
     switch (type) {
       case CONTENT_TYPE_HTML:
-        iframe.setAttribute("src", "data:text/html," + encodeURI(item.widget.content));
+        contentURL = "data:text/html," + encodeURI(item.widget.content);
         break;
       case CONTENT_TYPE_URI:
-        iframe.setAttribute("src", item.widget.content);
+        contentURL = item.widget.contentURL;
         break;
       case CONTENT_TYPE_IMAGE:
-        let imageURL = item.widget.image;
-        iframe.setAttribute("src", "data:text/html,<html><body><img src='" +
-                                   encodeURI(imageURL) + "'></body></html>");
+        let imageURL = item.widget.contentURL;
+        contentURL = "data:text/html,<html><body><img src='" +
+                     encodeURI(imageURL) + "'></body></html>";
         break;
       default:
         throw new Error("The widget's type cannot be determined.");
     }
+
+    let iframe = item.node.firstElementChild;
+
+    item.symbiont = Symbiont({
+      frame: iframe,
+      contentURL: contentURL,
+      contentScriptURL: item.widget.contentScriptURL,
+      contentScript: item.widget.contentScript,
+      contentScriptWhen: item.widget.contentScriptWhen,
+      allow: item.widget.allow,
+      onMessage: function(message) {
+        require("timer").setTimeout(function() {
+          eventBus._emit("event", "message", item.widget, message);
+        }, 0);
+      }
+    });
   },
 
   // Set up all supported events for a widget.
@@ -513,10 +529,36 @@ BrowserWindow.prototype = {
              doc.body.firstElementChild.tagName == "IMG";
     }
 
-    // Make modifications required for nice default presentation.
-    function modifyStyle(doc) {
-      // TODO: special-casing of images will be replaced, probably by an
-      // image-specific extension of the URI object.
+    let listener = function(e) {
+      // Ignore event firings that target the iframe
+      if (e.target == item.node.firstElementChild)
+        return;
+
+      // Proxy event to the widget
+      require("timer").setTimeout(function() {
+        eventBus._emit("event", EVENTS[e.type], item.widget, null, item.node);
+      }, 0);
+    };
+
+    item.eventListeners = {};
+    let iframe = item.node.firstElementChild;
+    for (let [type, method] in Iterator(EVENTS)) {
+      iframe.addEventListener(type, listener, true, true);
+
+      // Store listeners for later removal
+      item.eventListeners[type] = listener;
+    }
+    
+    // On document load, make modifications required for nice default
+    // presentation.
+    function loadListener(e) {
+      // Ignore event firings that target the iframe
+      if (e.target == iframe)
+        return;
+      // Ignore about:blank loads
+      if (e.type == "load" && e.target.location == "about:blank")
+        return;
+      let doc = e.target;
       if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
         // Force image content to size.
         // Add-on authors must size their images correctly.
@@ -527,32 +569,8 @@ BrowserWindow.prototype = {
       // Allow all content to fill the box by default.
       doc.body.style.margin = "0";
     }
-
-    let listener = function(e) {
-      // Ignore event firings that target the iframe
-      if (e.target == item.node.firstElementChild)
-        return;
-
-      // Ignore about:blank loads
-      if (e.type == "load" && e.target.location == "about:blank")
-        return;
-
-      // Content-specific document modifications
-      if (e.type == "load")
-        modifyStyle(e.target);
-
-      // Proxy event to the widget
-      eventBus._emit("event", EVENTS[e.type], item.widget, e, item);
-    };
-
-    item.eventListeners = {};
-    for (let [type, method] in Iterator(EVENTS)) {
-      let iframe = item.node.firstElementChild;
-      iframe.addEventListener(type, listener, true, true);
-
-      // Store listeners for later removal
-      item.eventListeners[type] = listener;
-    }
+    iframe.addEventListener("load", loadListener, true, true);
+    item.eventListeners["load"] = loadListener;
   },
 
   // Removes an array of items from the window.
