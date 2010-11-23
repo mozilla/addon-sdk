@@ -166,9 +166,10 @@ exports.testTabClose = function(test) {
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.active.location, tab.location, "tab is now the active tab");
-      tab.close();
+      tab.close(function() {
+        closeBrowserWindow(window, function() test.done());
+      });
       test.assertNotEqual(tabs.active.location, url, "tab is no longer the active tab");
-      closeBrowserWindow(window, function() test.done());
     });
 
     tabs.open(url);
