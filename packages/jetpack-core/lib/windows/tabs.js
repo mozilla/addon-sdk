@@ -155,16 +155,15 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       return this;
     },
     _onActivate: function _onActivate(value) {
-      this._emit(EVENTS.deactivate.name, this._active);
-      this._active = value;
+      this._emit(EVENTS.deactivate.name, this._activeTab);
+      this._activeTab = value;
     },
     _onError: function _onError(error) {
       if (1 <= this._listeners('error').length)
         console.exception(error);
     },
-    get active() this._active,
-    set active(active) active.focus(),
-    _active: null,
+    get activeTab() this._activeTab,
+    _activeTab: null,
 
     open: function open(options) {
       options = Options(options);

@@ -59,8 +59,7 @@ Object emits all the events listed under "Events" section.
 <api name="activeWindow">
 @property {BrowserWindow}
 
-The currently active window. This property can be set to an instance of
-`BrowserWindow` which will focus that window and bring it to the foreground.
+The currently active window. This property is read-only.
 
 **Example**
 
@@ -69,24 +68,24 @@ The currently active window. This property can be set to an instance of
     console.log("title of active window is " +
                 windows.browserWindows.activeWindow.title);
 
+    anotherWindow.activate();
     // set
-    windows.activeWindow = anotherWindow;
-
+    windows.activeWindow == anotherWindow // true
 </api>
 
 </api>
 
-<api name="openWindow">
+<api name="open">
 @function
 Open a new window.
 
     var windows = require("windows").browserWindows;
 
     // Open a new window.
-    windows.openWindow("http://www.mysite.com");
+    windows.open("http://www.mysite.com");
 
     // Open a new window and set a listener for "open" event.
-    windows.openWindow({
+    windows.open({
       url: "http://www.mysite.com",
       onOpen: function(window) {
         // do stuff like listen for content
@@ -95,7 +94,7 @@ Open a new window.
     });
 
     // Open new window with two tabs.
-    windows.openWindow({
+    windows.open({
       tabs: [
         "http://www.mysite.com",
         { url: "http:/mozilla.com",
@@ -109,7 +108,7 @@ An object containing configurable options for how this window will be opened,
 as well as a callback for being notified when the window has fully opened.
 
 If the only option being used is `url`, then a bare string URL can be passed to
-`openWindow` instead of specifying it as a property of the `options` object.
+`open` instead of specifying it as a property of the `options` object.
 
 @prop url {string}
 String URL to be opened in the new window.
@@ -172,9 +171,10 @@ all the open tabs for this window.
 This property is read-only.
 </api>
 
-<api name="focus">
+<api name="activate">
 @method
-Makes window active
+Makes window active, which will focus that window and bring it to the
+foreground.
 </api>
 
 <api name="close">

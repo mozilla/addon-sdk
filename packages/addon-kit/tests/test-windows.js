@@ -44,12 +44,12 @@ exports.testOpenAndCloseWindow = function(test) {
 
   test.assertEqual(windows.length, 1, "Only one window open");
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>windows API test</title>",
     onOpen: function(window) {
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
       test.assertEqual(windows.length, 2, "Two windows open");
-      window.tabs.active.on('ready', function onReady(tab) {
+      window.tabs.activeTab.on('ready', function onReady(tab) {
         tab.removeListener('ready', onReady);
         test.assert(window.title.indexOf("windows API test") != -1,
                     "URL correctly loaded");
@@ -120,7 +120,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
   }
 
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,foo",
     onOpen: function(window) {
       window.close(verify);
@@ -132,7 +132,7 @@ exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
   let windows = require("windows").browserWindows;
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>tab 1</title>",
     onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
@@ -143,7 +143,7 @@ exports.testWindowTabsObject = function(test) {
         onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
           test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.active.title, "tab 1", "Correct active tab");
+          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
 
           let i = 1;
           for each (let tab in window.tabs)
@@ -210,31 +210,31 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       test.assertEqual(windows.activeWindow, null, "Non-browser windows aren't handled by this module");
-      windows.activeWindow = window2;
+      window2.activate();
       continueAfterFocus(rawWindow2);
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
-      windows.activeWindow = window3;
+      window3.activate();
       continueAfterFocus(rawWindow3);
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
-      windows.activeWindow = nonBrowserWindow;
+      nonBrowserWindow.focus();
       finishTest();
     }
   ];
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>window 2</title>",
     onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
-      windows.openWindow({
+      windows.open({
         url: "data:text/html,<title>window 3</title>",
         onOpen: function(window) {
-          window.tabs.active.on('ready', function onReady() {
+          window.tabs.activeTab.on('ready', function onReady() {
             window3 = window;
             rawWindow3 = wm.getMostRecentWindow("navigator:browser");
             nextStep()

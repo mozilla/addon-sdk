@@ -195,11 +195,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       let window = WM.getMostRecentWindow(null);
       return this._isBrowser(window) ? BrowserWindow({ window: window }) : null;
     },
-    set activeWindow(window) {
-      if (window instanceof BrowserWindow)
-        window.focus()
-    },
-    openWindow: function openWindow(options) {
+    open: function open(options) {
       if (typeof options === "string")
         options = { tabs: [Options(options)] };
       return BrowserWindow(options);

@@ -50,7 +50,7 @@ const WindowDom = Trait.compose({
     if (window) window.close();
     return this._public;
   },
-  focus: function focus() {
+  activate: function activate() {
     let window = this._window;
     if (window) window.focus();
     return this._public;
