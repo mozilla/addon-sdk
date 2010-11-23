@@ -61,9 +61,6 @@ var filter;
 // Whether to report memory profiling information.
 var profileMemory;
 
-// Information on memory profiler binary component (optional).
-var profiler;
-
 // Combined information from all test runs.
 var results = {
   passed: 0,
@@ -156,24 +153,6 @@ function dictDiff(last, curr) {
 function reportMemoryUsage() {
   memory.gc();
   sandbox.memory.gc();
-
-  if (profiler) {
-    var namedObjects = {};
-    for (url in sandbox.sandboxes)
-      namedObjects[url] = sandbox.sandboxes[url].globalScope;
-
-    var parentSandbox = require("parent-loader");
-    for (url in parentSandbox.sandboxes)
-      namedObjects["(harness) " + url] = parentSandbox.sandboxes[url].globalScope;
-
-    var result = profiler.binary.profileMemory(profiler.script,
-                                               profiler.scriptUrl,
-                                               1,
-                                               namedObjects);
-    result = JSON.parse(result);
-    if (result.success)
-      analyzeRawProfilingData(result.data);
-  }
 
   var mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
             .getService(Ci.nsIMemoryReporterManager);
@@ -346,19 +325,6 @@ var runTests = exports.runTests = function runTests(options) {
     var cuddlefish = require("cuddlefish");
     var ptc = require("plain-text-console");
     var url = require("url");
-
-    if (options.profileMemory) {
-      try {
-        var nsjetpack = require("nsjetpack");
-        profiler = {
-          binary: nsjetpack.get(),
-          scriptUrl: packaging.getURLForData("profiler.js")
-        };
-
-        profiler.scriptPath = url.toFilename(profiler.scriptUrl);
-        profiler.script = require("file").read(profiler.scriptPath);
-      } catch (e) {}
-    }
 
     dirs = [url.toFilename(path)
             for each (path in options.rootPaths)];
