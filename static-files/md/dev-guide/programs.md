@@ -158,19 +158,6 @@ When you re-run it, you should see a message:
 The test.xpi file can be found in the directory in which you ran the
 command.
 
-### Checking the Package ###
-
-If you'd like to test the packaged program before distributing it,
-you can run it from the shell with:
-
-    mozrunner -a test.xpi
-
-Or you can install it from the Firefox Add-ons Manager itself, as
-you would when testing a traditional add-on.
-
-Running your program as described in the `Running It` section uses
-the same process as packaging it as a .xpi, so this step is optional.
-
 ### Distributing It ###
 
 To distribute your program, you can upload it to
