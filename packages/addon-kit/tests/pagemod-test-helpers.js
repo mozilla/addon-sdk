@@ -29,7 +29,6 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   let pageMod = loader.require("page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
-  pageMods.forEach(pageMod.add);
 
   var tabBrowser = browserWindow.gBrowser;
   var newTab = tabBrowser.addTab(testURL);
@@ -39,7 +38,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   function onPageLoad() {
     b.removeEventListener("load", onPageLoad, true);
     testCallback(b.contentWindow.wrappedJSObject, function done() {
-      pageMods.forEach(function(mod) {pageMod.remove(mod)});
+      pageMods.forEach(function(mod) mod.destroy());
       // XXX leaks reported if we don't close the tab?
       tabBrowser.removeTab(newTab);
       test.done();

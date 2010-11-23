@@ -42,29 +42,6 @@ let {Cc,Ci} = require("chrome");
 // with more deterministic solutions.
 const ARB_DELAY = 100;
 
-function openBrowserWindow(callback) {
-  let window = Cc["@mozilla.org/embedcomp/window-watcher;1"].
-                 getService(Ci.nsIWindowWatcher).openWindow(null,
-                 "chrome://browser/content/browser.xul",
-                 null, "chrome", null);
-
-  function onLoad(event) {
-    if (event.target && event.target.defaultView == window) {
-      window.removeEventListener("load", onLoad, true);
-      let browsers = window.document.getElementsByTagName("tabbrowser");
-      try {
-        callback(window, browsers[0]);
-      }
-      catch (e) {
-        dump(e);
-      }
-    }
-  }
-
-  window.addEventListener("load", onLoad, true);
-  return window;
-}
-
 // Select all divs elements in an HTML document
 function selectAllDivs(window) {
   let divs = window.document.getElementsByTagName("div");
@@ -108,7 +85,7 @@ exports.testContiguousMultiple = function testContiguousMultiple(test) {
   let selection = require("selection");
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
-    test.assertEqual(selection.contiguous, false,
+    test.assertEqual(selection.isContiguous, false,
       "selection.contiguous multiple works.");
   });
 
@@ -119,7 +96,7 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
   let selection = require("selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
-    test.assertEqual(selection.contiguous, true,
+    test.assertEqual(selection.isContiguous, true,
       "selection.contiguous single works.");
   });
 
@@ -129,7 +106,7 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
 exports.testContiguousNull = function testContiguousNull(test) {
   let selection = require("selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
-    test.assertEqual(selection.contiguous, null,
+    test.assertEqual(selection.isContiguous, null,
       "selection.contiguous null works.");
   });
 
@@ -144,12 +121,12 @@ exports.testContiguousNull = function testContiguousNull(test) {
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     try {
-      selection.contiguous = true;
-      test.assertEqual(selection.contiguous, false,
-        "setting selection.contiguous doesn't work (as expected).");
+      selection.isContiguous = true;
+      test.assertEqual(selection.isContiguous, false,
+        "setting selection.isContiguous doesn't work (as expected).");
     }
     catch (e) {
-      test.pass("setting selection.contiguous doesn't work (as expected).");
+      test.pass("setting selection.isContiguous doesn't work (as expected).");
     }
   });
 

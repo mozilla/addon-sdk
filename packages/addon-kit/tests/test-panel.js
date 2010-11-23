@@ -1,3 +1,4 @@
+let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let URL = require("url").URL;
 let tests = {}, panels, Panel;
@@ -6,11 +7,19 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = panels.add(Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage('')",
+    contentScript: "postMessage(1); on('message', function() postMessage(2));",
     onMessage: function (message) {
-      panels.remove(panel);
-      test.pass("The panel was loaded.");
-      test.done();
+      switch(message) {
+        case 1:
+          test.pass("The panel was loaded.");
+          panel.postMessage('');
+          break;
+        case 2:
+          test.pass("The panel posted a message and received a response.");
+          panels.remove(panel);
+          test.done();
+          break;
+      }
     }
   }));
 };
@@ -37,24 +46,53 @@ tests.testShowHidePanel = function(test) {
 
 tests.testResizePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
-    height: 10,
-    width: 10,
-    onMessage: function (message) {
-      panel.show();
-    },
-    onShow: function () {
-      panel.resize(100,100);
-      panel.hide();
-    },
-    onHide: function () {
-      test.assert((panel.width == 100) && (panel.height == 100),
-        "The panel was resized.");
-      test.done();
-    }
-  }));
+
+  // These tests fail on Linux if the browser window in which the panel
+  // is displayed is not active.  And depending on what other tests have run
+  // before this one, it might not be (the untitled window in which the test
+  // runner executes is often active).  So we make sure the browser window
+  // is focused by focusing it before running the tests.  Then, to be the best
+  // possible test citizen, we refocus whatever window was focused before we
+  // started running these tests.
+
+  let activeWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                     getService(Ci.nsIWindowMediator).
+                     getMostRecentWindow(null);
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  function onFocus() {
+    browserWindow.removeEventListener("focus", onFocus, true);
+
+    let panel = panels.add(Panel({
+      contentScript: "postMessage('')",
+      contentScriptWhen: "ready",
+      height: 10,
+      width: 10,
+      onMessage: function (message) {
+        panel.show();
+      },
+      onShow: function () {
+        panel.resize(100,100);
+        panel.hide();
+      },
+      onHide: function () {
+        test.assert((panel.width == 100) && (panel.height == 100),
+          "The panel was resized.");
+        activeWindow.focus();
+        test.done();
+      }
+    }));
+  }
+
+  if (browserWindow === activeWindow) {
+    onFocus();
+  }
+  else {
+    browserWindow.addEventListener("focus", onFocus, true);
+    browserWindow.focus();
+  }
 };
 
 tests.testHideBeforeShow = function(test) {
@@ -133,33 +171,6 @@ tests.testContentURLOption = function(test) {
                     "Panel throws an exception if contentURL is not a URL.");
 };
 
-tests['test:destruct before removed'] = function(test) {
-  test.waitUntilDone();
-  let loader = new test.makeSandboxedLoader();
-  let panels = loader.require('panel');
-  let { Panel } = loader.findSandboxForModule("panel").globalScope;
-  let PanelShim = Panel.compose({ destructor: function() this._destructor() });
-  PanelShim.prototype = Panel.prototype;
-  
-  let isShowEmitted = false;
-
-  let panel = PanelShim({
-    contentURL: "about:buildconfig",
-    onShow: function onShow() {
-      test.pass('shown was emitted');
-      panel.destructor();
-    },
-    onHide: function onHide() {
-      test.done();
-    }
-  });
-  panels.add(panel);
-  panel.on('error', function(e) {
-    test.fail('error emit was emitted:' + e.message + '\n'+ e.stack)
-  });
-  panel.show();
-};
-
 let panelSupported = true;
 
 try {
@@ -184,5 +195,3 @@ else {
     test.pass("The panel module is not supported on this app.");
   }
 }
-
-

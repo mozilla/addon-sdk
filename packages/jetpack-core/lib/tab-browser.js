@@ -61,11 +61,13 @@ if (!require("xul-app").is("Firefox")) {
 
 // Utility function to open a new browser window.
 function openBrowserWindow(callback, url) {
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-           .getService(Ci.nsIWindowMediator);
-  let win = wm.getMostRecentWindow("navigator:browser");
-  let window = win.openDialog("chrome://browser/content/browser.xul",
-                              "_blank", "chrome,all,dialog=no", url); 
+  let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+           getService(Ci.nsIWindowWatcher);
+  let urlString = Cc["@mozilla.org/supports-string;1"].
+                  createInstance(Ci.nsISupportsString);
+  urlString.data = url;
+  let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
+                             "_blank", "chrome,all,dialog=no", urlString);
   if (callback) {
     function onLoad(event) {
       if (event.target && event.target.defaultView == window) {

@@ -99,6 +99,11 @@ exports.testSimpleXML = function (test) {
     url: "http://playground.zpao.com/jetpack/request/note.xml",
     onComplete: function (response, request) {
       // response.xml should be a document, so lets use it
+      test.assertRaises(function() { response.xml },
+                        "Sorry, the 'xml' property is no longer available. " +
+                        "see bug 611042 for more information.");
+      test.done();
+      return;
       let xml = response.xml;
       let notes = xml.getElementsByTagName("note");
       // Notes should have length of 1

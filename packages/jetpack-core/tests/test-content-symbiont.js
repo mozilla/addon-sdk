@@ -20,12 +20,12 @@ function makeWindow() {
          openWindow(null, url, null, features.join(","), null);
 }
 
-exports['test:constructing symbiont && validateing API'] = function(test) {
+exports['test:constructing symbiont && validating API'] = function(test) {
   let window = makeWindow();
   window.addEventListener("load", function onLoad() {
     window.removeEventListener("load", onLoad, false);
     let frame = window.document.getElementById("content");
-    // TODO: support ararys ??
+    // TODO: support arrays ??
     let contentScripts = ["1;", "2;"];
     let contentSymbiont = Symbiont({
       frame: frame,
@@ -103,7 +103,6 @@ exports["test:communication with worker global scope"] = function(test) {
       } + '()',
       onMessage: onMessage1
     });
-    
     
     frame.setAttribute("src", "data:text/html,<html><body></body></html>");
   }, false);

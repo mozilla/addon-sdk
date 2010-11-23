@@ -41,6 +41,7 @@ from qijo import QueryInformationJobObject
 LPVOID = c_void_p
 LPBYTE = POINTER(BYTE)
 LPDWORD = POINTER(DWORD)
+LPBOOL = POINTER(BOOL)
 
 def ErrCheckBool(result, func, args):
     """errcheck function for Windows functions that return a BOOL True
@@ -60,7 +61,7 @@ class AutoHANDLE(HANDLE):
     CloseHandle.errcheck = ErrCheckBool
     
     def Close(self):
-        if self.value:
+        if self.value and self.value != HANDLE(-1).value:
             self.CloseHandle(self)
             self.value = 0
     
@@ -178,6 +179,7 @@ CreateProcess = CreateProcessProto(("CreateProcessW", windll.kernel32),
                                    CreateProcessFlags)
 CreateProcess.errcheck = ErrCheckCreateProcess
 
+# flags for CreateProcess
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 CREATE_DEFAULT_ERROR_MODE = 0x04000000
 CREATE_NEW_CONSOLE = 0x00000010
@@ -185,6 +187,13 @@ CREATE_NEW_PROCESS_GROUP = 0x00000200
 CREATE_NO_WINDOW = 0x08000000
 CREATE_SUSPENDED = 0x00000004
 CREATE_UNICODE_ENVIRONMENT = 0x00000400
+
+# flags for job limit information
+# see http://msdn.microsoft.com/en-us/library/ms684147%28VS.85%29.aspx
+JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x00000800
+JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK = 0x00001000
+
+# XXX these flags should be documented
 DEBUG_ONLY_THIS_PROCESS = 0x00000002
 DEBUG_PROCESS = 0x00000001
 DETACHED_PROCESS = 0x00000008
@@ -216,6 +225,36 @@ AssignProcessToJobObject = AssignProcessToJobObjectProto(
     AssignProcessToJobObjectFlags)
 AssignProcessToJobObject.errcheck = ErrCheckBool
 
+# GetCurrentProcess()
+# because os.getPid() is way too easy
+GetCurrentProcessProto = WINFUNCTYPE(HANDLE    # Return type
+                                     )
+GetCurrentProcessFlags = ()
+GetCurrentProcess = GetCurrentProcessProto(
+    ("GetCurrentProcess", windll.kernel32),
+    GetCurrentProcessFlags)
+GetCurrentProcess.errcheck = ErrCheckHandle
+
+# IsProcessInJob()
+try:
+    IsProcessInJobProto = WINFUNCTYPE(BOOL,     # Return type
+                                      HANDLE,   # Process Handle
+                                      HANDLE,   # Job Handle
+                                      LPBOOL      # Result
+                                      )
+    IsProcessInJobFlags = ((1, "ProcessHandle"),
+                           (1, "JobHandle", HANDLE(0)),
+                           (2, "Result"))
+    IsProcessInJob = IsProcessInJobProto(
+        ("IsProcessInJob", windll.kernel32),
+        IsProcessInJobFlags)
+    IsProcessInJob.errcheck = ErrCheckBool 
+except AttributeError:
+    # windows 2k doesn't have this API
+    def IsProcessInJob(process):
+        return False
+
+
 # ResumeThread()
 
 def ErrCheckResumeThread(result, func, args):
@@ -231,6 +270,19 @@ ResumeThreadFlags = ((1, "hThread"),)
 ResumeThread = ResumeThreadProto(("ResumeThread", windll.kernel32),
                                  ResumeThreadFlags)
 ResumeThread.errcheck = ErrCheckResumeThread
+
+# TerminateProcess()
+
+TerminateProcessProto = WINFUNCTYPE(BOOL,   # Return type
+                                    HANDLE, # hProcess
+                                    UINT    # uExitCode
+                                    )
+TerminateProcessFlags = ((1, "hProcess"),
+                         (1, "uExitCode", 127))
+TerminateProcess = TerminateProcessProto(
+    ("TerminateProcess", windll.kernel32),
+    TerminateProcessFlags)
+TerminateProcess.errcheck = ErrCheckBool
 
 # TerminateJobObject()
 
@@ -274,3 +326,56 @@ GetExitCodeProcess = GetExitCodeProcessProto(
     ("GetExitCodeProcess", windll.kernel32),
     GetExitCodeProcessFlags)
 GetExitCodeProcess.errcheck = ErrCheckBool
+
+def CanCreateJobObject():
+    currentProc = GetCurrentProcess()
+    if IsProcessInJob(currentProc):
+        jobinfo = QueryInformationJobObject(HANDLE(0), 'JobObjectExtendedLimitInformation')
+        limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
+        return bool(limitflags & JOB_OBJECT_LIMIT_BREAKAWAY_OK) or bool(limitflags & JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK)
+    else:
+        return True
+
+### testing functions
+
+def parent():
+    print 'Starting parent'
+    currentProc = GetCurrentProcess()
+    if IsProcessInJob(currentProc):
+        print >> sys.stderr, "You should not be in a job object to test"
+        sys.exit(1)
+    assert CanCreateJobObject()
+    print 'File: %s' % __file__
+    command = [sys.executable, __file__, '-child']
+    print 'Running command: %s' % command
+    process = Popen(command)
+    process.kill()
+    code = process.returncode
+    print 'Child code: %s' % code
+    assert code == 127
+        
+def child():
+    print 'Starting child'
+    currentProc = GetCurrentProcess()
+    injob = IsProcessInJob(currentProc)
+    print "Is in a job?: %s" % injob
+    can_create = CanCreateJobObject()
+    print 'Can create job?: %s' % can_create
+    process = Popen('c:\\windows\\notepad.exe')
+    assert process._job
+    jobinfo = QueryInformationJobObject(process._job, 'JobObjectExtendedLimitInformation')
+    print 'Job info: %s' % jobinfo
+    limitflags = jobinfo['BasicLimitInformation']['LimitFlags']
+    print 'LimitFlags: %s' % limitflags
+    process.kill()
+
+if __name__ == '__main__':
+    import sys
+    from killableprocess import Popen
+    nargs = len(sys.argv[1:])
+    if nargs:
+        if nargs != 1 or sys.argv[1] != '-child':
+            raise AssertionError('Wrong flags; run like `python /path/to/winprocess.py`')
+        child()
+    else:
+        parent()

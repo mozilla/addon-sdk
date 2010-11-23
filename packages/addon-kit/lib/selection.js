@@ -77,7 +77,7 @@ function Selection(rangeNumber) {
   this.__defineGetter__("html", function () getSelection(HTML, rangeNumber));
   this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
 
-  this.__defineGetter__("contiguous", function () {
+  this.__defineGetter__("isContiguous", function () {
     let sel = getSelection(DOM, rangeNumber);
     // It isn't enough to check that rangeCount is zero. If one or more ranges
     // are selected and then unselected, rangeCount is set to one, not zero.

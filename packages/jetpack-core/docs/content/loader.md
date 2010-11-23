@@ -11,6 +11,38 @@ Loader is composed from the [EventEmitter] trait, therefore instances
 of Loader and their descendants expose all the public properties
 exposed by EventEmitter along with additional public properties:
 
+Value changes on all of the above mentioned properties emit `propertyChange`
+events on an instances.
+
+**Example:**
+
+The following code creates a wrapper on hidden frame that reloads a web page
+in frame every time `contentURL` property is changed:
+
+    const hiddenFrames = require("hidden-frame");
+    const { Loader } = require("content");
+    const PageLoader = Loader.compose({
+      constructor: function PageLoader(options) {
+        options = options || {};
+        if (options.contentURL)
+          this.contentURL = options.contentURL;
+        this.on('propertyChange', this._onChange = this._onChange.bind(this));
+        let self = this;
+        hiddenFrames.add(hiddenFrames.HiddenFrame({
+          onReady: function onReady() {
+            let frame = self._frame = this.element;
+            self._emit('propertyChange', { contentURL: self.contentURL });
+          }
+        }));
+      },
+      _onChange: function _onChange(e) {
+        if ('contentURL' in e)
+          this._frame.setAttribute('src', this._contentURL);
+      }
+    });
+
+<api name="Loader">
+@class
 <api name="contentScriptURL">
 @property {array}
 The URLs of content scripts to load.  Content scripts specified by this property
@@ -42,34 +74,5 @@ Permissions for the content, with the following keys:
 @prop script {boolean}
   Whether or not to execute script in the content.  Defaults to true.
 </api>
-
-Value changes on all of the above mentioned properties emit `propertyChange`
-events on an instances.
-
-**Example:**  
-
-The following code creates a wrapper on hidden frame that reloads a web page
-in frame every time `contentURL` property is changed:
-
-    const hiddenFrames = require("hidden-frame");
-    const { Loader } = require("content");
-    const PageLoader = Loader.compose({
-      constructor: function PageLoader(options) {
-        options = options || {};
-        if (options.contentURL)
-          this.contentURL = options.contentURL;
-        this.on('propertyChange', this._onChange = this._onChange.bind(this));
-        let self = this;
-        hiddenFrames.add(hiddenFrames.HiddenFrame({
-          onReady: function onReady() {
-            let frame = self._frame = this.element;
-            self._emit('propertyChange', { contentURL: self.contentURL });
-          }
-        }));
-      },
-      _onChange: function _onChange(e) {
-        if ('contentURL' in e)
-          this._frame.setAttribute('src', this._contentURL);
-      }
-    });
+</api>
 

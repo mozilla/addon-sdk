@@ -46,16 +46,17 @@ const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
+const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
 
-// Removing items that were previously added should cause them to be absent from
-// the menu.
-exports.testAddRemove = function (test) {
+
+// Destroying items that were previously created should cause them to be absent
+// from the menu.
+exports.testConstructDestroy = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  // Add an item.
+  // Create an item.
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -63,8 +64,8 @@ exports.testAddRemove = function (test) {
     test.checkMenu([item], [], []);
     popup.hidePopup();
 
-    // Remove the item.
-    loader.cm.remove(item);
+    // Destroy the item.
+    item.destroy();
     test.showMenu(null, function (popup) {
 
       // It should be removed from the menu.
@@ -75,33 +76,16 @@ exports.testAddRemove = function (test) {
 };
 
 
-// Removing an item that wasn't added should fail.
-exports.testRemoveNonexistent = function (test) {
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-  let item = new loader.cm.Item({ label: "item" });
-
-  let errRegex = /^The item \[.+?\] has not been added to the menu and therefore cannot be removed\.$/;
-  test.assertRaises(function () loader.cm.remove(item),
-                    errRegex,
-                    "Removing an item that wasn't added should fail");
-  test.done();
-};
-
-
-// Removing an item twice should fail.
-exports.testRemoveTwice = function (test) {
+// Destroying an item twice should not cause an error.
+exports.testDestroyTwice = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
-  loader.cm.remove(item);
+  item.destroy();
+  item.destroy();
 
-  let errRegex = /^The item \[.+?\] has not been added to the menu and therefore cannot be removed\.$/;
-  test.assertRaises(function () loader.cm.remove(item),
-                    errRegex,
-                    "Removing an item twice should fail the second time");
+  test.pass("Destroying an item twice should not cause an error.");
   test.done();
 };
 
@@ -112,23 +96,15 @@ exports.testSelectorContextMatch = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let items = [
-    new loader.cm.Item({
-      label: "item 0",
-      data: "item 0",
-      context: "img"
-    }),
-    new loader.cm.Item({
-      label: "item 1",
-      data: "item 1",
-      context: [null, "img"]
-    })
-  ];
-  items.forEach(function (i) loader.cm.add(i));
+  let item = new loader.cm.Item({
+    label: "item",
+    data: "item",
+    context: loader.cm.SelectorContext("img")
+  });
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
-      test.checkMenu(items, [], []);
+      test.checkMenu([item], [], []);
       test.done();
     });
   });
@@ -142,23 +118,15 @@ exports.testSelectorAncestorContextMatch = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let items = [
-    new loader.cm.Item({
-      label: "item 0",
-      data: "item 0",
-      context: "a[href]"
-    }),
-    new loader.cm.Item({
-      label: "item 1",
-      data: "item 1",
-      context: [null, "a[href]"]
-    })
-  ];
-  items.forEach(function (i) loader.cm.add(i));
+  let item = new loader.cm.Item({
+    label: "item",
+    data: "item",
+    context: loader.cm.SelectorContext("a[href]")
+  });
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
-      test.checkMenu(items, [], []);
+      test.checkMenu([item], [], []);
       test.done();
     });
   });
@@ -172,22 +140,14 @@ exports.testSelectorContextNoMatch = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let items = [
-    new loader.cm.Item({
-      label: "item 0",
-      data: "item 0",
-      context: "img"
-    }),
-    new loader.cm.Item({
-      label: "item 1",
-      data: "item 1",
-      context: ["a", "img"]
-    })
-  ];
-  items.forEach(function (i) loader.cm.add(i));
+  let item = new loader.cm.Item({
+    label: "item",
+    data: "item",
+    context: loader.cm.SelectorContext("img")
+  });
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([], items, []);
+    test.checkMenu([], [item], []);
     test.done();
   });
 };
@@ -209,26 +169,13 @@ exports.testPageContextMatch = function (test) {
     }),
     new loader.cm.Item({
       label: "item 2",
-      context: [undefined]
+      context: loader.cm.PageContext()
     }),
     new loader.cm.Item({
       label: "item 3",
-      context: ["img", undefined]
-    }),
-    new loader.cm.Item({
-      label: "item 4",
-      context: null
-    }),
-    new loader.cm.Item({
-      label: "item 5",
-      context: [null]
-    }),
-    new loader.cm.Item({
-      label: "item 6",
-      context: ["img", null]
+      context: [loader.cm.PageContext()]
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -253,26 +200,13 @@ exports.testPageContextNoMatch = function (test) {
     }),
     new loader.cm.Item({
       label: "item 2",
-      context: [undefined]
+      context: loader.cm.PageContext()
     }),
     new loader.cm.Item({
       label: "item 3",
-      context: ["a", undefined]
-    }),
-    new loader.cm.Item({
-      label: "item 4",
-      context: null
-    }),
-    new loader.cm.Item({
-      label: "item 5",
-      context: [null]
-    }),
-    new loader.cm.Item({
-      label: "item 6",
-      context: ["a", null]
+      context: [loader.cm.PageContext()]
     })
   ];
-  items.forEach(function (i) loader.cm.add(i));
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
@@ -283,22 +217,104 @@ exports.testPageContextNoMatch = function (test) {
 };
 
 
-// Function contexts that return true should cause their items to be present
+// Selection contexts should cause items to appear when a selection exists.
+exports.testSelectionContextMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    window.getSelection().selectAllChildren(doc.body);
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Selection contexts should not cause items to appear when a selection does
+// not exist.
+exports.testSelectionContextNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([], [item], []);
+    test.done();
+  });
+};
+
+
+// URL contexts should cause items to appear on pages that match.
+exports.testURLContextMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "item 0",
+      context: loader.cm.URLContext(TEST_DOC_URL)
+    }),
+    loader.cm.Item({
+      label: "item 1",
+      context: loader.cm.URLContext([TEST_DOC_URL, "*.bogus.com"])
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
+
+// URL contexts should not cause items to appear on pages that do not match.
+exports.testURLContextNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Item({
+      label: "item 0",
+      context: loader.cm.URLContext("*.bogus.com")
+    }),
+    loader.cm.Item({
+      label: "item 1",
+      context: loader.cm.URLContext(["*.bogus.com", "*.gnarly.com"])
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu([], items, []);
+      test.done();
+    });
+  });
+};
+
+
+// Content contexts that return true should cause their items to be present
 // in the menu.
-exports.testFunctionContextMatch = function (test) {
+exports.testContentContextMatch = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({
     label: "item",
-    context: function (context) {
-      test.assertEqual(this, item,
-                       "|this| inside function context should be item");
-      test.checkContextObj(context, Ci.nsIDOMHTMLHtmlElement);
-      return true;
-    }
+    contentScript: 'on("context", function () true);'
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -307,26 +323,66 @@ exports.testFunctionContextMatch = function (test) {
 };
 
 
-// Function contexts that return false should cause their items to be absent
+// Content contexts that return false should cause their items to be absent
 // from the menu.
-exports.testFunctionContextNoMatch = function (test) {
+exports.testContentContextNoMatch = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({
     label: "item",
-    context: function (context) {
-      test.assertEqual(this, item,
-                       "|this| inside function context should be item");
-      test.checkContextObj(context, Ci.nsIDOMHTMLHtmlElement);
-      return false;
-    }
+    contentScript: 'on("context", function () false);'
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([], [item], []);
     test.done();
+  });
+};
+
+
+// The args passed to context listeners should be correct.
+exports.testContentContextArgs = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'on("context", function (node) {' +
+                   '  let Ci = Components.interfaces;' +
+                   '  postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  return false;' +
+                   '});',
+    onMessage: function (isElt) {
+      test.assert(isElt, "node should be an HTML element");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function () {});
+};
+
+
+// Multiple contexts imply intersection, not union, and content context
+// listeners should not be called if all declarative contexts are not current.
+exports.testMultipleContexts = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    context: [loader.cm.SelectorContext("a[href]"), loader.cm.PageContext()],
+    contentScript: 'on("context", function () postMessage());',
+    onMessage: function () {
+      test.fail("Context listener should not be called");
+    }
+  });
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("span-link"), function (popup) {
+      test.checkMenu([], [item], []);
+      test.done();
+    });
   });
 };
 
@@ -336,11 +392,11 @@ exports.testRemoveContext = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
+  let ctxt = loader.cm.SelectorContext("img");
   let item = new loader.cm.Item({
     label: "item",
-    context: "img"
+    context: ctxt
   });
-  loader.cm.add(item);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
@@ -350,7 +406,7 @@ exports.testRemoveContext = function (test) {
       popup.hidePopup();
 
       // Remove the img context and check again.
-      item.context.remove("img");
+      item.context.remove(ctxt);
       test.showMenu(doc.getElementById("image"), function (popup) {
         test.checkMenu([], [item], []);
         test.done();
@@ -369,7 +425,6 @@ exports.testOverflow = function (test) {
   for (let i = 0; i < OVERFLOW_THRESH_DEFAULT + 1; i++) {
     let item = new loader.cm.Item({ label: "item " + i });
     items.push(item);
-    loader.cm.add(item);
   }
 
   test.showMenu(null, function (popup) {
@@ -385,7 +440,6 @@ exports.testUnload = function (test) {
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -414,10 +468,7 @@ exports.testMultipleModulesAdd = function (test) {
 
   // Use each module to add an item, then unload each module in turn.
   let item0 = new loader0.cm.Item({ label: "item 0" });
-  loader0.cm.add(item0);
-
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -457,12 +508,10 @@ exports.testMultipleModulesAddOverflow = function (test) {
   for (let i = 0; i < OVERFLOW_THRESH_DEFAULT; i++) {
     let item = new loader0.cm.Item({ label: "item 0 " + i });
     items0.push(item);
-    loader0.cm.add(item);
   }
 
   // Use module 1 to add one item.
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let allItems = items0.concat(item1);
 
@@ -496,7 +545,8 @@ exports.testMultipleModulesAddOverflow = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader0.add -> loader1.add -> loader0.unload -> loader1.unload
+// loader0 create item -> loader1 create item -> loader0.unload ->
+// loader1.unload
 exports.testMultipleModulesDiffContexts1 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
@@ -504,12 +554,10 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -540,20 +588,19 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader1.add -> loader0.add -> loader0.unload -> loader1.unload
+// loader1 create item -> loader0 create item -> loader0.unload ->
+// loader1.unload
 exports.testMultipleModulesDiffContexts2 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
   let loader1 = test.newLoader();
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   test.showMenu(null, function (popup) {
 
@@ -584,7 +631,8 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader0.add -> loader1.add -> loader1.unload -> loader0.unload
+// loader0 create item -> loader1 create item -> loader1.unload ->
+// loader0.unload
 exports.testMultipleModulesDiffContexts3 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
@@ -592,12 +640,10 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   test.showMenu(null, function (popup) {
 
@@ -628,20 +674,19 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
 
 // Using multiple module instances to modify the menu without causing overflow
 // should work OK.  This test creates two loaders and:
-// loader1.add -> loader0.add -> loader1.unload -> loader0.unload
+// loader1 create item -> loader0 create item -> loader1.unload ->
+// loader0.unload
 exports.testMultipleModulesDiffContexts4 = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
   let loader1 = test.newLoader();
 
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  loader1.cm.add(item1);
 
   let item0 = new loader0.cm.Item({
     label: "item 0",
-    context: "img"
+    context: loader0.cm.SelectorContext("img")
   });
-  loader0.cm.add(item0);
 
   test.showMenu(null, function (popup) {
 
@@ -678,7 +723,6 @@ exports.testMultipleModulesAddRemove = function (test) {
   let loader1 = test.newLoader();
 
   let item = new loader0.cm.Item({ label: "item" });
-  loader0.cm.add(item);
 
   test.showMenu(null, function (popup) {
 
@@ -687,7 +731,7 @@ exports.testMultipleModulesAddRemove = function (test) {
     popup.hidePopup();
 
     // Remove the item.
-    loader0.cm.remove(item);
+    item.destroy();
     test.showMenu(null, function (popup) {
 
       // The item should be removed from the menu.
@@ -708,23 +752,28 @@ exports.testMultipleModulesAddRemove = function (test) {
 };
 
 
-// An item's onClick function should work.
-exports.testItemOnCommand = function (test) {
+// An item's click listener should work.
+exports.testItemClick = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({
     label: "item",
     data: "item data",
-    onClick: function (context, clickedItem) {
-      test.assertEqual(this, item, "|this| inside onClick should be item");
-      test.checkContextObj(context, Ci.nsIDOMHTMLHtmlElement);
-      test.assertEqual(clickedItem, item,
-                       "Clicked item passed to onClick should be item");
+    contentScript: 'on("click", function (node, data) {' +
+                   '  let Ci = Components.interfaces;' +
+                   '  postMessage({' +
+                   '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
+                   '    data: data' +
+                   '  });' +
+                   '});',
+    onMessage: function (data) {
+      test.assertEqual(this, item, "`this` inside onMessage should be item");
+      test.assert(data.isElt, "node should be an HTML element");
+      test.assertEqual(data.data, item.data, "data should be item data");
       test.done();
     }
   });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -734,62 +783,46 @@ exports.testItemOnCommand = function (test) {
 };
 
 
-// A menu's onClick function should work and bubble appropriately.  This also
-// tests menus and ensures that when a CSS selector context matches the clicked
-// node's ancestor, the matching ancestor is contextObj.node.
-exports.testMenuOnCommand = function (test) {
+// A menu's click listener should work and receive bubbling clicks from
+// sub-items appropriately.  This also tests menus and ensures that when a CSS
+// selector context matches the clicked node's ancestor, the matching ancestor
+// is passed to listeners as the clicked node.
+exports.testMenuClick = function (test) {
   // Create a top-level menu, submenu, and item, like this:
   // topMenu -> submenu -> item
-  // Click the item and make sure onClick bubbles.
+  // Click the item and make sure the click bubbles.
   let test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let itemOnCommandFired = false;
-  let submenuOnCommandFired = false;
-
   let item = new loader.cm.Item({
     label: "submenu item",
-    data: "submenu item data",
-    onClick: function (context, clickedItem) {
-      itemOnCommandFired = true;
-      test.assertEqual(this, item, "|this| inside item should be item");
-      test.checkContextObj(context, Ci.nsIDOMHTMLAnchorElement);
-      test.assertEqual(clickedItem, item,
-                       "Clicked item passed to item should be item");
-    }
+    data: "submenu item data"
   });
 
   let submenu = new loader.cm.Menu({
     label: "submenu",
-    onClick: function (context, clickedItem) {
-      submenuOnCommandFired = true;
-      test.assert(itemOnCommandFired,
-                  "Item's onClick should have fired before submenu's");
-      test.assertEqual(this, submenu, "|this| inside submenu should be menu");
-      test.checkContextObj(context, Ci.nsIDOMHTMLAnchorElement);
-      test.assertEqual(clickedItem, item,
-                       "Clicked item passed to submenu should be item");
-    },
     items: [item]
   });
 
   let topMenu = new loader.cm.Menu({
     label: "top menu",
-    onClick: function (context, clickedItem) {
-      test.assert(itemOnCommandFired,
-                  "Item's onClick should have fired before top menu's");
-      test.assert(submenuOnCommandFired,
-                  "Submenu's onClick should have fired before top menu's");
-      test.assertEqual(this, topMenu, "|this| inside top menu should be menu");
-      test.checkContextObj(context, Ci.nsIDOMHTMLAnchorElement);
-      test.assertEqual(clickedItem, item,
-                       "Clicked item passed to top menu should be item");
+    contentScript: 'on("click", function (node, data) {' +
+                   '  let Ci = Components.interfaces;' +
+                   '  postMessage({' +
+                   '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
+                   '    data: data' +
+                   '  });' +
+                   '});',
+    onMessage: function (data) {
+      test.assertEqual(this, topMenu, "`this` inside top menu should be menu");
+      test.assert(data.isAnchor, "Clicked node should be anchor");
+      test.assertEqual(data.data, item.data,
+                       "Clicked item data should be correct");
       test.done();
     },
     items: [submenu],
-    context: "a"
+    context: loader.cm.SelectorContext("a")
   });
-  loader.cm.add(topMenu);
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
@@ -804,22 +837,8 @@ exports.testMenuOnCommand = function (test) {
   });
 };
 
-
-// Adding a separator to the top-level menu should raise an exception.
-exports.testSeparatorTopLevel = function (test) {
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-
-  let sep = new loader.cm.Separator();
-  test.assertRaises(function () loader.cm.add(sep),
-                    "Separators cannot be added to the top-level context menu.",
-                    "Adding a separator to the top-level menu should fail");
-  test.done();
-};
-
-
 // Adding a separator to a submenu should work OK.
-exports.testSeparatorTopLevel = function (test) {
+exports.testSeparator = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
@@ -827,7 +846,6 @@ exports.testSeparatorTopLevel = function (test) {
     label: "submenu",
     items: [new loader.cm.Separator()]
   });
-  loader.cm.add(menu);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([menu], [], []);
@@ -854,7 +872,6 @@ exports.testNewWindow = function (test) {
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.withNewWindow(function () {
     test.showMenu(null, function (popup) {
@@ -871,7 +888,6 @@ exports.testNewWindowMultipleModules = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
   let item = new loader.cm.Item({ label: "item" });
-  loader.cm.add(item);
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
@@ -899,7 +915,6 @@ exports.testSorting = function (test) {
     items.push(new loader.cm.Item({ label: "item " + (i + 1) }));
     items.push(new loader.cm.Item({ label: "item " + i }));
   }
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -920,7 +935,6 @@ exports.testSortingOverflow = function (test) {
     items.push(new loader.cm.Item({ label: "item " + (i + 1) }));
     items.push(new loader.cm.Item({ label: "item " + i }));
   }
-  items.forEach(function (i) loader.cm.add(i));
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
@@ -941,12 +955,10 @@ exports.testSortingMultipleModules = function (test) {
     if (i % 2) {
       let item = new loader0.cm.Item({ label: "item " + i });
       items0.push(item);
-      loader0.cm.add(item);
     }
     else {
       let item = new loader1.cm.Item({ label: "item " + i });
       items1.push(item);
-      loader1.cm.add(item);
     }
   }
   let allItems = items0.concat(items1);
@@ -968,8 +980,7 @@ exports.testSortingMultipleModules = function (test) {
 };
 
 
-// The binary search of _insertionPoint should work OK.  This is tested as
-// suggested by bug 548590 comment 30.
+// The binary search of insertionPoint should work OK.
 exports.testInsertionPoint = function (test) {
   function mockElts(labels) {
     return labels.map(function (label) {
@@ -979,49 +990,70 @@ exports.testInsertionPoint = function (test) {
 
   test = new TestHelper(test);
   let loader = test.newLoader();
+  let insertionPoint = loader.globalScope.insertionPoint;
 
-  let ip = loader.cm._insertionPoint("a", []);
+  let ip = insertionPoint("a", []);
   test.assert(ip === null, "Insertion point should be null");
 
-  ip = loader.cm._insertionPoint("a", mockElts(["b"]));
+  ip = insertionPoint("a", mockElts(["b"]));
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
-  ip = loader.cm._insertionPoint("c", mockElts(["b"]));
+  ip = insertionPoint("c", mockElts(["b"]));
   test.assert(ip === null, "Insertion point should be null");
 
-  ip = loader.cm._insertionPoint("b", mockElts(["a", "c"]));
+  ip = insertionPoint("b", mockElts(["a", "c"]));
   test.assertEqual(ip.label, "c", "Insertion point should be 'c'");
 
-  ip = loader.cm._insertionPoint("c", mockElts(["a", "b", "d"]));
+  ip = insertionPoint("c", mockElts(["a", "b", "d"]));
   test.assertEqual(ip.label, "d", "Insertion point should be 'd'");
 
-  ip = loader.cm._insertionPoint("a", mockElts(["b", "c", "d"]));
+  ip = insertionPoint("a", mockElts(["b", "c", "d"]));
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
-  ip = loader.cm._insertionPoint("d", mockElts(["a", "b", "c"]));
+  ip = insertionPoint("d", mockElts(["a", "b", "c"]));
   test.assert(ip === null, "Insertion point should be null");
 
   test.done();
 };
 
 
-// ADD NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////
+// Content click handlers and context handlers should be able to communicate,
+// i.e., they're eval'ed in the same worker and sandbox.
+exports.testContentCommunication = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
 
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  require("context-menu");
-}
-catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
-  if (err.message.indexOf(bug) < 0)
-    throw err;
-  for (let [prop, val] in Iterator(exports)) {
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'var potato;' +
+                   'on("context", function (node) {' +
+                   '  potato = "potato";' +
+                   '  return true;' +
+                   '});' +
+                   'on("click", function () {' +
+                   '  postMessage(potato);' +
+                   '});',
+    onMessage: function (potato) {
+      test.assertEqual(potato, "potato", "That's a lot of potatoes!");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    let elt = test.getItemElt(popup, item);
+    elt.click();
+  });
+};
+
+
+// NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
+
+// Run only a dummy test if context-menu doesn't support the host app.
+if (!require("xul-app").is("Firefox")) {
+  for (let [prop, val] in Iterator(exports))
     if (/^test/.test(prop) && typeof(val) === "function")
       delete exports[prop];
-  }
   exports.testAppNotSupported = function (test) {
     test.pass("context-menu does not support this application.");
   };
@@ -1086,16 +1118,6 @@ TestHelper.prototype = {
                          "Item should not be present in overflow submenu");
       }
     }
-  },
-
-  // Asserts that context, an object describing the current context, looks OK.
-  checkContextObj: function (context, nodeIface) {
-    this.test.assert(context.node instanceof nodeIface,
-                     "context.node should be the expected type of element");
-    this.test.assert(context.document instanceof Ci.nsIDOMHTMLDocument,
-                     "context.document should be an HTML document");
-    this.test.assert(context.window instanceof Ci.nsIDOMWindow,
-                     "context.window should be a window");
   },
 
   // Asserts that elt, a DOM element representing item, looks OK.
@@ -1258,17 +1280,27 @@ TestHelper.prototype = {
       this.test.done();
     }
 
-    this.contextMenuPopup.hidePopup();
+    function closeBrowserWindow() {
+      if (this.oldBrowserWindow) {
+        this.delayedEventListener(this.browserWindow, "unload", commonDone,
+                                  false);
+        this.browserWindow.close();
+        this.browserWindow = this.oldBrowserWindow;
+        delete this.oldBrowserWindow;
+      }
+      else {
+        commonDone.call(this);
+      }
+    };
 
-    if (this.oldBrowserWindow) {
-      this.delayedEventListener(this.browserWindow, "unload", commonDone,
-                                false);
-      this.browserWindow.close();
-      this.browserWindow = this.oldBrowserWindow;
-      delete this.oldBrowserWindow;
+    if (this.contextMenuPopup.state == "closed") {
+      closeBrowserWindow.call(this);
     }
     else {
-      commonDone.call(this);
+      this.delayedEventListener(this.contextMenuPopup, "popuphidden",
+                                function () closeBrowserWindow.call(this),
+                                false);
+      this.contextMenuPopup.hidePopup();
     }
   },
 
@@ -1284,15 +1316,17 @@ TestHelper.prototype = {
     return null;
   },
 
-  // Returns a wrapper around a new loader: { loader, cm, unload }.  loader is
-  // a Cuddlefish sandboxed loader, cm is the context menu module, and unload
-  // is a function that unloads the loader and associated resources.
+  // Returns a wrapper around a new loader: { loader, cm, unload, globalScope }.
+  // loader is a Cuddlefish sandboxed loader, cm is the context menu module,
+  // globalScope is the context menu module's global scope, and unload is a
+  // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = new this.test.makeSandboxedLoader();
+    let loader = this.test.makeSandboxedLoader();
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
+      globalScope: loader.findSandboxForModule("context-menu").globalScope,
       unload: function () {
         loader.unload();
         let idx = self.loaders.indexOf(wrapper);
@@ -1361,8 +1395,7 @@ TestHelper.prototype = {
   // be closed automatically when done() is called.
   withTestDoc: function (onloadCallback) {
     this.oldSelectedTab = this.tabBrowser.selectedTab;
-    let docUrl = __url__.replace(/\.js$/, ".html");
-    this.tab = this.tabBrowser.addTab(docUrl);
+    this.tab = this.tabBrowser.addTab(TEST_DOC_URL);
     let browser = this.tabBrowser.getBrowserForTab(this.tab);
 
     this.delayedEventListener(browser, "load", function () {

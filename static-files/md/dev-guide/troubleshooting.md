@@ -1,4 +1,4 @@
-If you're having trouble getting the Jetpack SDK up and running, don't panic!
+If you're having trouble getting the Add-on SDK up and running, don't panic!
 The SDK is an alpha-stage project under active development, so there are bound
 to be some rough edges.
 
@@ -43,12 +43,12 @@ the text console.  This should be the same console or shell from which you ran
 the `cfx` command.
 
 
-Don't Leave Non-Jetpack Files Lying Around
+Don't Leave Non-SDK Files Lying Around
 ------------------------------------------
 
 Currently the SDK does not gracefully handle files and directories that it does
 not expect to encounter.  If there are empty directories or directories or files
-that are not related to Jetpack inside your `jetpack-sdk` directory or its
+that are not related to the SDK inside your `addon-sdk` directory or its
 sub-directories, try removing them.
 
 
@@ -56,33 +56,33 @@ Search for Known Issues
 -----------------------
 
 Someone else might have experienced your problem, too.  Other users often post
-problems to the [Jetpack mailing list].  You can also browse the list of
+problems to the [project mailing list].  You can also browse the list of
 [known issues] or [search] for specific keywords.
 
-[known issues]: https://bugzilla.mozilla.org/buglist.cgi?order=Bug%20Number&resolution=---&resolution=DUPLICATE&query_format=advanced&component=Jetpack%20SDK&product=Mozilla%20Labs
+[known issues]: https://bugzilla.mozilla.org/buglist.cgi?order=Bug%20Number&resolution=---&resolution=DUPLICATE&query_format=advanced&product=Add-on%20SDK
 
-[search]: https://bugzilla.mozilla.org/query.cgi?format=advanced&product=Mozilla%20Labs&component=Jetpack%20SDK
+[search]: https://bugzilla.mozilla.org/query.cgi?format=advanced&product=Add-on%20SDK
 
 
-Contact the Jetpack Team and User Group
+Contact the Project Team and User Group
 ---------------------------------------
 
-Jetpack SDK users and team members discuss problems and proposals on the
-[Jetpack mailing list].  Someone else may have had the same problem you do, so
+SDK users and project team members discuss problems and proposals on the
+[project mailing list].  Someone else may have had the same problem you do, so
 try searching the list.  You're welcome to post a question, too.
 
-You can also chat with other Jetpack users in [#jetpack] on
-[Mozilla's IRC network].
+You can also chat with other SDK users in [#jetpack] on [Mozilla's IRC network].
 
-And if you'd like to [report a bug in the SDK], that's always welcome!
+And if you'd like to [report a bug in the SDK], that's always welcome!  You will
+need to create an account with Bugzilla, Mozilla's bug tracker.
 
-[Jetpack mailing list]: http://groups.google.com/group/mozilla-labs-jetpack/topics
+[project mailing list]: http://groups.google.com/group/mozilla-labs-jetpack/topics
 
 [#jetpack]: http://mibbit.com/?channel=%23jetpack&server=irc.mozilla.org
 
 [Mozilla's IRC network]: http://irc.mozilla.org/
 
-[report a bug in the SDK]: https://bugzilla.mozilla.org/enter_bug.cgi?alias=&assigned_to=nobody%40mozilla.org&blocked=&bug_file_loc=http%3A%2F%2F&bug_severity=normal&bug_status=UNCONFIRMED&comment=&component=Jetpack%20SDK&contenttypeentry=&contenttypemethod=autodetect&contenttypeselection=text%2Fplain&data=&dependson=&description=&flag_type-325=X&flag_type-37=X&flag_type-4=X&flag_type-607=X&form_name=enter_bug&keywords=&maketemplate=Remember%20values%20as%20bookmarkable%20template&op_sys=All&priority=--&product=Mozilla%20Labs&qa_contact=jetpack-sdk%40mozilla-labs.bugs&rep_platform=All&short_desc=&status_whiteboard=&target_milestone=--&version=Trunk
+[report a bug in the SDK]: https://bugzilla.mozilla.org/enter_bug.cgi?alias=&assigned_to=nobody%40mozilla.org&blocked=&bug_file_loc=http%3A%2F%2F&bug_severity=normal&bug_status=UNCONFIRMED&comment=&component=General&contenttypeentry=&contenttypemethod=autodetect&contenttypeselection=text%2Fplain&data=&dependson=&description=&flag_type-325=X&flag_type-37=X&flag_type-4=X&flag_type-607=X&form_name=enter_bug&keywords=&maketemplate=Remember%20values%20as%20bookmarkable%20template&op_sys=All&priority=--&product=Add-on%20SDK&rep_platform=All&short_desc=&status_whiteboard=&target_milestone=--&version=Trunk
 
 
 Run the SDK's Unit Tests
@@ -174,4 +174,4 @@ something like this:
 
 If you get lots of errors instead, that may be a sign that the SDK does not work
 properly on your system.  In that case, please file a bug or send a message to
-the mailing list.  See the previous section for information on doing so.
+the project mailing list.  See the previous section for information on doing so.

@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Felipe Gomes <felipc@gmail.com> (Original author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -37,28 +38,31 @@
 const {Cc, Ci} = require("chrome");
 
 exports.testOpenAndCloseWindow = function(test) {
+    
   test.waitUntilDone();
   let windows = require("windows").browserWindows;
 
   test.assertEqual(windows.length, 1, "Only one window open");
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>windows API test</title>",
     onOpen: function(window) {
-      test.pass("onOpen callback called");
-      test.assert(window.title.indexOf("windows API test") != -1, "URL correctly loaded");
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
       test.assertEqual(windows.length, 2, "Two windows open");
-
-      window.close(function() {
-        test.assertEqual(this.tabs.length, 0, "Tabs were cleared");
-        test.assertEqual(this.title, null, "Window title was cleared");
-        test.assertEqual(windows.length, 1, "Only one window open");
-        test.done();
+      window.tabs.activeTab.on('ready', function onReady(tab) {
+        tab.removeListener('ready', onReady);
+        test.assert(window.title.indexOf("windows API test") != -1,
+                    "URL correctly loaded");
+        window.close();
       });
+    },
+    onClose: function(window) {
+      test.assertEqual(window.tabs.length, 0, "Tabs were cleared");
+      test.assertEqual(windows.length, 1, "Only one window open");
+      test.done();
     }
   });
-}
+};
 
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
@@ -97,10 +101,10 @@ exports.testOnOpenOnCloseListeners = function(test) {
     received.listener4 = true;
   }
 
-  windows.onOpen.add(listener1);
-  windows.onOpen.add(listener2);
-  windows.onClose.add(listener3);
-  windows.onClose.add(listener4);
+  windows.on('open', listener1);
+  windows.on('open', listener2);
+  windows.on('close', listener3);
+  windows.on('close', listener4);
 
   function verify() {
     test.assert(received.listener1, "onOpen handler called");
@@ -108,56 +112,53 @@ exports.testOnOpenOnCloseListeners = function(test) {
     test.assert(received.listener3, "onClose handler called");
     test.assert(received.listener4, "onClose handler called");
 
-    windows.onOpen.remove(listener1);
-    windows.onOpen.remove(listener2);
-    windows.onClose.remove(listener3);
-    windows.onClose.remove(listener4);
+    windows.removeListener('open', listener1);
+    windows.removeListener('open', listener2);
+    windows.removeListener('close', listener3);
+    windows.removeListener('close', listener4);
     test.done();
   }
 
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,foo",
     onOpen: function(window) {
       window.close(verify);
     }
   });
-}
+};
 
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
   let windows = require("windows").browserWindows;
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>tab 1</title>",
-    onOpen: function(window) {
+    onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-      for (let tab in window.tabs)
-        test.assertEqual(tab.title, "tab 1", "Correct tab listing");
 
       window.tabs.open({
         url: "data:text/html,<title>tab 2</title>",
         inBackground: true,
-        onOpen: function(newTab) {
+        onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
           test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
           test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
 
           let i = 1;
-          for (let tab in window.tabs) {
-            let title = "tab " + i++;
-            test.assertEqual(tab.title, title, "Correct " + title + " title");
-          }
+          for each (let tab in window.tabs)
+            test.assertEqual(tab.title, "tab " + i++, "Correct title");
 
-          window.close(function() {
-            test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
-            test.done();
-          });
+          window.close();
         }
       });
+    },
+    onClose: function onClose(window) {
+      test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
+      test.done();
     }
   });
-}
+};
 
 exports.testActiveWindow = function(test) {
   const xulApp = require("xul-app");
@@ -209,42 +210,43 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       test.assertEqual(windows.activeWindow, null, "Non-browser windows aren't handled by this module");
-      windows.activeWindow = window2;
+      window2.activate();
       continueAfterFocus(rawWindow2);
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
-      windows.activeWindow = window3;
+      window3.activate();
       continueAfterFocus(rawWindow3);
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
-      windows.activeWindow = nonBrowserWindow;
+      nonBrowserWindow.focus();
       finishTest();
     }
   ];
 
-  windows.openWindow({
+  windows.open({
     url: "data:text/html,<title>window 2</title>",
     onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
-      windows.openWindow({
+      windows.open({
         url: "data:text/html,<title>window 3</title>",
         onOpen: function(window) {
-          window3 = window;
-          rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-          nextStep();
+          window.tabs.activeTab.on('ready', function onReady() {
+            window3 = window;
+            rawWindow3 = wm.getMostRecentWindow("navigator:browser");
+            nextStep()
+          });
         }
       });
     }
   });
 
   function nextStep() {
-    if (testSteps.length > 0) {
+    if (testSteps.length > 0)
       testSteps.shift()();
-    }
   }
 
   function continueAfterFocus(targetWindow) {
@@ -282,8 +284,7 @@ exports.testActiveWindow = function(test) {
       });
     });
   }
-
-}
+};
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy

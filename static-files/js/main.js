@@ -3,6 +3,7 @@ function startApp(jQuery, window) {
   var document = window.document;
   var packages = null;
   var currentHash = "";
+  var shouldFadeAndScroll = true;
 
   const DEFAULT_HASH = "guide/getting-started";
   const IDLE_PING_DELAY = 500;
@@ -78,8 +79,7 @@ function startApp(jQuery, window) {
       });
   }
 
-  function renderInterleavedAPIDocs(where, hunks) {
-    $(where).empty();
+  function doRender(where, hunks) {
     function render_hunk (hunk) {
       if (hunk[0] == "markdown") {
         var nh = $("<span>" + markdownToHtml(hunk[1]) + "</span>");
@@ -90,6 +90,49 @@ function startApp(jQuery, window) {
       }
     }
     hunks.forEach(render_hunk);
+  }
+
+  function renderStructuredDocs(where, hunks) {
+    if (hunks.length == 0) return;
+    $(where).empty();
+    var markdown = new Array();
+    var classes = new Array();
+    var functions = new Array();
+    var properties = new Array();
+    var apiHunksExist = false;
+    for (var i = 0; i < hunks.length; i++) {
+      hunk = hunks[i];
+      if (hunk[0] == "markdown"){
+        markdown.push(hunk);
+      }
+      else if (hunk[0] == "api-json") {
+        apiHunksExist = true;
+        if (hunk[1].type == "class") {
+          classes.push(hunk);
+        }
+        else if (hunk[1].type == "function") {
+          functions.push(hunk);
+        }
+        else if (hunk[1].type == "property") {
+          properties.push(hunk);
+        }
+      }
+    }
+    doRender(where, markdown);
+    if (!apiHunksExist) {
+      return;
+    }
+    var heading = $("<div class='api-heading'>API Reference</div>");
+    heading.appendTo(where);
+    if (classes.length > 0) {
+      doRender(where, classes);
+    }
+    if (functions.length > 0) {
+      doRender(where, functions);
+    }
+    if (properties.length > 0) {
+      doRender(where, properties);
+    }
   }
 
   function getPkgFile(pkg, filename, filter, cb) {
@@ -131,7 +174,7 @@ function startApp(jQuery, window) {
         dataType: "json",
         success: function(json) {
           try {
-            renderInterleavedAPIDocs(where, json);
+            renderStructuredDocs(where, json);
           } catch (e) {
             $(where).text("Oops, API docs renderer failed: " + e);
           }
@@ -173,13 +216,20 @@ function startApp(jQuery, window) {
 
   function queueMainContent(query, onDone) {
     queuedContent = query;
-    scrollToTop(function () {
-      $("#main-content").fadeOut(100, function () {
-        $("#sidenotes").empty();
-        $("#right-column").empty().append(query);
-        onDone();
+    function doIt() {
+      $("#sidenotes").empty();
+      $("#right-column").empty().append(query);
+      onDone();
+    }
+    if (shouldFadeAndScroll) {
+      scrollToTop(function () {
+        $("#main-content").fadeOut(100, doIt);
       });
-    });
+    }
+    else {
+      $("#main-content").hide();
+      doIt();
+    }
   }
 
   function scrollToTop(onDone) {
@@ -189,7 +239,7 @@ function startApp(jQuery, window) {
         onDone();
       }
       else
-        window.scrollBy(0, -25);
+        window.scrollBy(0, -Math.max(window.scrollY / 10, 10));
     }, 10);
   }
 
@@ -201,7 +251,11 @@ function startApp(jQuery, window) {
     else
       // TODO: This actually just results in a 404.
       $("#view-source").attr("href", "");
-    $("#main-content").fadeIn(400);
+    if (shouldFadeAndScroll)
+      $("#main-content").fadeIn(400);
+    else
+      $("#main-content").show();
+    shouldFadeAndScroll = false;
     fixInternalLinkTargets(query);
     showSidenotes(query);
     queuedContent = null;
@@ -341,7 +395,7 @@ function startApp(jQuery, window) {
     } else {
       window.setInterval(checkHash, CHECK_HASH_DELAY);
     }
-    
+
     $('#hide-dev-guide-toc').click(function() {
       if ($(this).text() == 'hide') {
         $(this).text('show');
@@ -437,6 +491,12 @@ function startApp(jQuery, window) {
                dataType: "json",
                success: processPackages,
                error: onPackageError});
+
+  $("a[href]").live("click", function () {
+    var href = $(this).attr("href");
+    if (href.length && href[0] == "#")
+      shouldFadeAndScroll = true;
+  });
 }
 
 $(window).ready(function() { startApp(jQuery, window); });

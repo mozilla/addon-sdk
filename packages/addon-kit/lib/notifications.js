@@ -41,16 +41,32 @@ const { Cc, Ci } = require("chrome");
 const apiUtils = require("api-utils");
 const errors = require("errors");
 
-// The unit test sets this to a mock alert service.
-let gAlertServ = Cc["@mozilla.org/alerts-service;1"].
-                 getService(Ci.nsIAlertsService);
+try {
+  // The unit test sets this to a mock alert service.
+  var gAlertServ = Cc["@mozilla.org/alerts-service;1"].
+                   getService(Ci.nsIAlertsService);
+}
+catch (err) {
+  // An exception will be thrown if the platform doesn't provide an alert
+  // service, e.g., if Growl is not installed on OS X.  In that case, create a
+  // mock alert service that just logs to the console.
+  gAlertServ = {
+    showAlertNotification: function (iconURL, title, text) {
+      title = title ? "[" + title + "]" : "";
+      text = text || "";
+      let str = [title, text].filter(function (s) s).join(" ");
+      console.log(str);
+    }
+  };
+}
 
 exports.notify = function notifications_notify(options) {
   let valOpts = validateOptions(options);
   let clickObserver = !valOpts.onClick ? null : {
     observe: function notificationClickObserved(subject, topic, data) {
       if (topic === "alertclickcallback")
-        errors.catchAndLog(valOpts.onClick).call(options, valOpts.data);
+        errors.catchAndLog(valOpts.onClick).call(options, valOpts.data,
+                                                 options);
     }
   };
   gAlertServ.showAlertNotification(valOpts.iconURL, valOpts.title,

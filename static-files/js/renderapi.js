@@ -7,14 +7,33 @@ function _indefiniteArticle(str) {
          "a";
 }
 
-function _createTitle(doc){
-  return doc.type === "property" ?
-         _createPropertyTitle(doc) :
-         _createMethodTitle(doc);
+function _createApiTitle(doc, prefix){
+  if (doc.type == "property") {
+    return _createPropertyTitle(doc, "Property: ");
+  }
+  else if (doc.type == "class") {
+    return _createClassTitle(doc, "Class: ");
+  }
+  else {
+    return _createMethodTitle(doc, false, "Function: ");
+  }
 }
 
-function _createPropertyTitle(doc) {
-  var $title = $("<span class='name'/>").html(doc.name);
+
+function _createTitle(doc){
+  if (doc.type == "property") {
+    return _createPropertyTitle(doc, "");
+  }
+  else if (doc.type == "class") {
+    return _createClassTitle(doc, true, "");
+  }
+  else {
+    return _createMethodTitle(doc, true, "");
+  }
+}
+
+function _createPropertyTitle(doc, prefix) {
+  var $title = $("<div class='name'/>").html(prefix + doc.name);
   var text = " is " + _indefiniteArticle(doc.property_type) + " ";
   var $isSpan = $("<span class='property_type'/>").text(text);
   $("<span class='type'/>").text(doc.property_type).appendTo($isSpan);
@@ -22,9 +41,14 @@ function _createPropertyTitle(doc) {
   return $title;
 }
 
-function _createMethodTitle(doc){
+function _createClassTitle(doc, prefix) {
+  var $title = $("<div class='name'/>").html(prefix + doc.name);
+  return $title;
+}
+
+function _createMethodTitle(doc, showReturns, prefix){
   var $title = $("<div class='name'/>")
-    .html(doc.name + "(<span class='params'></span>)");
+    .html(prefix + doc.name + "(<span class='params'></span>)");
 
   var $params = $title.find(".params");
   if (doc.params) {
@@ -44,14 +68,14 @@ function _createMethodTitle(doc){
     });
   }
 
-  if( doc.returns ){
+  if( doc.returns && showReturns){
     var text = " returns " + _indefiniteArticle(doc.returns.type) + " ";
     var $ret = $("<span class='returns'/>").text(text);
     $("<span class='type'/>").text(doc.returns.type).appendTo($ret);
     $ret.appendTo($title);
   }
 
-  return $title; 
+  return $title;
 }
 
 function _createDescription(doc){
@@ -111,6 +135,42 @@ function _createParams(doc){
   return $params;
 }
 
+function _createComponent($context, components, componentName){
+  var $classMemberSet = $("<div class='class-member-set'/>");
+  var $componentHeader = $("<div class='name'/>").html(componentName);
+  $componentHeader.appendTo($classMemberSet);
+
+  for(var i = 0; i < components.length; i++) {
+    component = components[i];
+    var $classMember = $("<div class='class-member'/>");
+    _createTitle(component).appendTo($classMember);
+
+    if(component.params) {
+      _createParams(component).appendTo($classMember);
+    }
+    if(component.returns) {
+      _createReturns(component).appendTo($classMember);
+    }
+  _createDescription(component).appendTo($classMember);
+  $classMember.appendTo($classMemberSet)
+  }
+  $classMemberSet.appendTo($context);
+  return $context;
+}
+
+function _createClassComponents($context, doc){
+  if(doc.constructors) {
+    _createComponent($context, doc.constructors, "Constructors");
+  }
+
+  if(doc.methods) {
+    _createComponent($context, doc.methods, "Methods");
+  }
+
+  if(doc.properties) {
+    _createComponent($context, doc.properties, "Properties");
+  }
+}
 
 function render(doc, $where){
   var $home = $where;
@@ -118,11 +178,12 @@ function render(doc, $where){
   if ($home.length == 0)
     return;
 
-  _createTitle(doc).appendTo($home);
+  _createApiTitle(doc).appendTo($home);
 
-  _createDescription(doc).appendTo($home);
   if( doc.params) _createParams(doc).appendTo($home);
   if( doc.returns ) _createReturns(doc).appendTo($home);
+  _createDescription(doc).appendTo($home);
+  _createClassComponents($home, doc);
 
   $home.find(".description").each(function(){
     var text = $(this).text();
@@ -131,5 +192,5 @@ function render(doc, $where){
 }
 
 global.renderDocumentationJSON = render;
-    
+
 })(this);

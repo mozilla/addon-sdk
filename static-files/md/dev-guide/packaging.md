@@ -1,13 +1,13 @@
-The Jetpack SDK houses collections of reusable code, documentation,
+The Add-on SDK houses collections of reusable code, documentation,
 and other associated resources in structures called *packages*.
 
-A list of packages in the Jetpack SDK environment that generated this
+A list of packages in the Add-on SDK environment that generated this
 documentation is on the left side of this page under the heading
 *Package Reference*.
 
 Packages are just directories on your filesystem. Specifically,
 they're located under the `packages` directory in the root of your
-Jetpack SDK environment.
+Add-on SDK environment.
 
 Your First Package
 ------------------
@@ -42,7 +42,7 @@ the following:
 
 Now reload this page. You should see `my-first-package` listed under
 *Package Reference* on the left side of this page, with its
-description next to it. The Jetpack SDK's documentation server has
+description next to it. The Add-on SDK's documentation server has
 automatically detected your new package and has started documenting
 it!
 
@@ -52,9 +52,9 @@ it!
 Learn more about how modules work at the [CommonJS Specification].
 </span>
 
-Reusable pieces of code are called *modules*. The Jetpack SDK uses a
+Reusable pieces of code are called *modules*. The Add-on SDK uses a
 module standard called CommonJS, which means that it's possible to
-share code between Jetpack and other JavaScript-based frameworks like
+share code between the SDK and other JavaScript-based frameworks like
 node.js.
 
 From the root of your new package's directory, create a new directory
@@ -66,12 +66,11 @@ following contents:
     };
 
 <span class="aside">
-For information on more globals available to Jetpack code, see
-the [Jetpack Globals] appendix.
+For information on more globals available to code, see the [Globals] appendix.
 </span>
 
 In the code above, `exports` is a global object--part of the CommonJS
-module standard--provided to all modules by the Jetpack framework. To
+module standard--provided to all modules by the SDK framework. To
 make data or code visible to other modules for reuse, a module simply
 "attaches" it to the `exports` object.
 
@@ -109,7 +108,7 @@ Runner Object*, and has an API that makes it really easy to run tests.
 
 <span class="aside">
 Writing and running tests has been designed to be as easy and fast as
-possible in the Jetpack SDK.
+possible in the Add-on SDK.
 </span>
 
 Now go to the root directory of your new package and run `cfx test
@@ -183,5 +182,5 @@ Once you're ready, move on to the next section: [Programs].
   [syntax guide]: http://daringfireball.net/projects/markdown/syntax
   [Markdown]: http://daringfireball.net/projects/markdown/
   [Programs]: #guide/programs
-  [Jetpack Globals]: #guide/globals
+  [Globals]: #guide/globals
   [unit-test]: #module/jetpack-core/unit-test

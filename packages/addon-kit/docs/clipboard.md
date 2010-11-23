@@ -11,8 +11,25 @@ The following types are supported:
 
 If no data type is provided, then the module will detect it for you.
 
-Reference
----------
+Examples
+--------
+
+Set and get the contents of the clipboard.
+
+    let clipboard = require("clipboard");
+    clipboard.set("Lorem ipsum dolor sit amet");
+    let contents = clipboard.get();
+
+Set the clipboard contents to some HTML.
+
+    let clipboard = require("clipboard");
+    clipboard.set("<blink>Lorem ipsum dolor sit amet</blink>", "html");
+
+If the clipboard contains HTML content, open it in a new tab.
+
+    let clipboard = require("clipboard");
+    if (clipboard.currentFlavors.indexOf("html") != -1)
+      require("tabs").open("data:text/html," + clipboard.get("html"));
 
 <api name="set">
 @function
@@ -35,27 +52,7 @@ Reference
 <api name="currentFlavors">
 @property {array}
   Data on the clipboard is sometimes available in multiple types. For example,
-  HTML data might be available as both a string of HTML (the `html` type) 
+  HTML data might be available as both a string of HTML (the `html` type)
   and a string of plain text (the `text` type). This function returns an array
   of all types in which the data currently on the clipboard is available.
 </api>
-
-Examples
---------
-
-Set and get the contents of the clipboard.
-
-    let clipboard = require("clipboard");
-    clipboard.set("Lorem ipsum dolor sit amet");
-    let contents = clipboard.get();
-
-Set the clipboard contents to some HTML.
-
-    let clipboard = require("clipboard");
-    clipboard.set("<blink>Lorem ipsum dolor sit amet</blink>", "html");
-
-If the clipboard contains HTML content, open it in a new tab.
-
-    let clipboard = require("clipboard");
-    if (clipboard.currentFlavors.indexOf("html") != -1)
-      require("tabs").open("data:text/html," + clipboard.get("html"));

@@ -3,24 +3,24 @@ The procedures described in this section are tentative and likely to
 change in the near future.
 </span>
 
-If Jetpack packages are constructed in a certain way, they can function as
+If packages are constructed in a certain way, they can function as
 Firefox or Thunderbird extensions, full-fledged native platform applications,
 and more.
 
 ## Your First Program ##
 
 We're going to continue building upon our package from the [Packaging]
-section. This program will add a context-menu option to links, with the
-ability to search Google for the link text.
+section.  This program adds a menu item to Firefox's context menu that replaces
+selected text with its English translation.
 
-### Using Jetpack's Built-in Libraries ###
+### Using the SDK's Built-in Libraries ###
 
 Add a `dependencies` entry to your package.json file, showing that your
 package requires modules from the jetpack-core library. It should look
 something like this now:
 
     {
-      "description": "This package adds a Google search context-menu item.",
+      "description": "This package adds a translation context menu item.",
       "author": "Me (http://me.org)",
       "dependencies": ["jetpack-core"]
     }
@@ -37,30 +37,46 @@ forthcoming example will demonstrate an extension.
 With this in mind, let's create a file at `lib/main.js` with the
 following content:
 
+    // Import the APIs we need.
     var contextMenu = require("context-menu");
+    var request = require("request");
+    var selection = require("selection");
 
     // Create a new context menu item.
     var menuItem = contextMenu.Item({
 
-      label: "Search with Google",
+      label: "Translate Selection",
 
-      // A CSS selector. Matching on this selector triggers the
-      // display of our context menu.
-      context: "a[href]",
+      // Show this item when a selection exists.
+      context: contextMenu.SelectionContext(),
 
-      // When the context menu item is clicked, perform a Google
-      // search for the link text.
-      onClick: function (contextObj, item) {
-        var anchor = contextObj.node;
-        console.log("searching for " + anchor.textContent);
-        var searchUrl = "http://www.google.com/search?q=" +
-                        anchor.textContent;
-        contextObj.window.location.href = searchUrl;
+      // When this item is clicked, post a message to the item with the
+      // selected text and current URL.
+      contentScript: 'on("click", function () {' +
+                     '  var text = window.getSelection().toString();' +
+                     '  postMessage({ text: text, url: document.URL });' +
+                     '});',
+
+      // When we receive the message, call the Google Translate API with the
+      // selected text and replace it with the translation.
+      onMessage: function (selectionInfo) {
+        var req = request.Request({
+          url: "http://ajax.googleapis.com/ajax/services/language/translate",
+          content: {
+            v: "1.0",
+            q: selectionInfo.text,
+            langpair: "|en"
+          },
+          headers: {
+            Referer: selectionInfo.url
+          },
+          onComplete: function (response) {
+            selection.text = response.json.responseData.translatedText;
+          }
+        });
+        req.get();
       }
     });
-
-    // Add the new menu item to the application's context menu.
-    contextMenu.add(menuItem);
 
 ### Listening for Load and Unload ###
 
@@ -108,8 +124,7 @@ this object into a much richer implementation.
 </span>
 
 You'll note that the code above also uses a global object called `console`.
-This is a global accessible by any Jetpack module and is very useful
-for debugging.
+This is a global accessible by any module and is very useful for debugging.
 
 ### Running It ###
 
@@ -124,10 +139,10 @@ with your program installed.
 ### Packaging It ###
 
 Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Jetpack SDK simplifies the packaging
+application, as a XPI file. The Add-on SDK simplifies the packaging
 process by generating this file for you.
 
-<span class="aside"> Each Jetpack program (such as an add-on) gets a
+<span class="aside"> Each program (such as an add-on) gets a
 separate cryptographic keypair. Your program is signed by the private
 key, and the public key is used as the "ID". See
 [XPI Generation](#guide/xpi) for more details.</span>
@@ -163,15 +178,8 @@ To distribute your program, you can upload it to
 Eventually, this step may be automated via the SDK, streamlining the
 distribution process further.
 
-## To Be Continued... ##
-
-Right now, the Jetpack SDK is at an early stage of development.
-There's not too much to show, and if you run into trouble, you may
-want to check the [troubleshooting] guide.
-
-Be on the lookout for upcoming versions of the SDK, which will expand the
-built-in set of libraries, continue this tutorial and show you how to build
-other types of add-ons, as well as standalone applications!
+The next section provides an overview of the SDK's [event-handling
+framework](#guide/events).
 
   [Packaging]: #guide/packaging
   [troubleshooting]: #guide/troubleshooting

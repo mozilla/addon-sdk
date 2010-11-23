@@ -44,9 +44,8 @@ exports.testPublicConstructor = function (test) {
   PrivateCtor.prototype = {};
 
   let PublicCtor = apiUtils.publicConstructor(PrivateCtor);
-  test.assertEqual(
-    PublicCtor.prototype.__proto__,
-    PrivateCtor.prototype,
+  test.assert(
+    PrivateCtor.prototype.isPrototypeOf(PublicCtor.prototype),
     "PrivateCtor.prototype should be prototype of PublicCtor.prototype"
   );
 
@@ -56,8 +55,8 @@ exports.testPublicConstructor = function (test) {
                 "Object should be instance of PublicCtor");
     test.assert(obj instanceof PrivateCtor,
                 "Object should be instance of PrivateCtor");
-    test.assertEqual(obj.__proto__, PublicCtor.prototype,
-                "Object prototype should be PublicCtor's prototype");
+    test.assert(PublicCtor.prototype.isPrototypeOf(obj),
+                "PublicCtor's prototype should be prototype of object");
     test.assertEqual(obj.constructor, PublicCtor,
                      "Object constructor should be PublicCtor");
   }
@@ -207,7 +206,7 @@ exports.testValidateMapWithMissingKey = function (test) {
     }
   });
   assertObjsEqual(test, val, { });
-}
+};
 
 exports.testAddIterator = function testAddIterator(test) {
   let obj = {};

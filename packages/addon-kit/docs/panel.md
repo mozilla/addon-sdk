@@ -45,64 +45,27 @@ Create and show a simple panel with content from the `data/` directory:
     let panel = panels.add(panels.Panel({
       contentURL: data.url("foo.html")
     }));
-    
+
     panel.show();
 
-The following code creates a widget that opens a panel containing the mobile
-version of Reddit.  The panel has an associated content script (see below)
-that intercepts clicks on the titles of stories and passes their URLs to the
-panel object, which loads them in new tabs, so users can load each story they
-want to read in a new tab by clicking on the stories' titles.
+The tutorial section on [web content](#guide/web-content) has a more complex
+example using panels.
 
-    const widgets = require("widget");
-    const panels = require("panel");
-    const data = require("self").data;
-    
-    widgets.add(widgets.Widget({
-      label: "Reddit",
-      image: "http://www.reddit.com/static/favicon.ico",
-      panel: panels.Panel({
-        width: 240,
-        height: 320,
-        contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
-        contentScriptURL: [data.url("jquery-1.4.2.min.js"),
-                           data.url("panel.js")],
-        contentScriptWhen: "ready",
-        onMessage: function(message) {
-          require("tab-browser").addTab(message);
-        }
-      })
-    }));
+<api name="Panel">
+@class
+The Panel object represents a floating modal dialog that can by an add-on to
+present user interface content.
 
-This is the content script that intercepts the link clicks.  It uses jQuery,
-which was also loaded as a content script, to interact with the DOM of the page.
+Once a panel object has been created it can be activated using the global
+`add()` function and can subsequently be shown and hidden using its `show()`
+and `hide()` methods. Once a panel is no longer needed it can be deactivated
+using `remove()`.
 
-    $(window).click(function (event) {
-      var t = event.target;
-      
-      // Don't intercept the click if it isn't on a link.
-      if (t.nodeName != "A")
-        return;
-      
-      // Don't intercept the click if it was on one of the links in the header
-      // or next/previous footer, since those links should load in the panel
-      // itself.
-      if ($(t).parents('#header').length || $(t).parents('.nextprev').length)
-        return;
-      
-      // Intercept the click, passing it to the addon, which will load it in
-      // a tab.
-      event.stopPropagation();
-      event.preventDefault();
-      postMessage(t.toString());
-    });
-
-See the `examples/reddit-panel` directory for the complete example (including
-the content script containing jQuery).
-
-Reference
----------
-
+The content of a panel is specified using the `contentURL` option. An add-on
+can interact with the content of a panel using content scripts which it
+supplies in the `contentScript` and/or `contentScriptURL` options. For example,
+a content script could create a menu and send the user's selection to the
+add-on.
 <api name="Panel">
 @constructor
 Creates a panel.
@@ -141,24 +104,6 @@ Creates a panel.
     Functions to call when the panel is hidden.
 </api>
 
-<api name="add">
-@function
-Register a panel, loading its content and preparing it to be shown when its
-`show` method is invoked.
-@param panel {Panel} the panel to add
-</api>
-
-<api name="remove">
-@function
-Unregister a panel, unloading the content that was loaded in it.
-@param panel {Panel} the panel to remove
-</api>
-
-Panel
------
-
-`Panel` objects represent panels.
-
 <api name="height">
 @property {number}
 The height of the panel in pixels.
@@ -183,8 +128,8 @@ Permissions for the content, with the following keys:
 
 <api name="contentScriptURL">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
+The URLs of content scripts to load.  Content scripts specified by this
+property are loaded *before* those specified by the `contentScript` property.
 </api>
 
 <api name="contentScript">
@@ -206,22 +151,20 @@ them once the DOM content of the page has been loaded.
 Functions to call when a content script sends the panel a message.
 </api>
 
-<api name="sendMessage">
+<api name="postMessage">
 @method
 Send a message to the content scripts.
 @param message {string,number,object,array,boolean}
 The message to send.  Must be stringifiable to JSON.
-@param [callback] {function}
-A function the content scripts can call to respond to the message.  Optional.
 </api>
 
 <api name="show">
 @method
 Display the panel.
-@param [anchor] {DOMElement}
-The element to which the panel should be anchored (i.e. appear connected).
-If not specified, panels are centered relative to the most recent (frontmost)
-primary application window.  Optional.
+@param [anchor] {DOM node handle}
+A handle to a DOM node in a page to which the panel should appear to be
+connected.  If not given, the panel is centered inside the most recent browser
+window.
 </api>
 
 <api name="hide">
@@ -236,4 +179,18 @@ Resizes the panel to its new dimensions.
 The new width of the panel in pixels.
 @param height {number}
 The new height of the panel in pixels.
+</api>
+</api>
+
+<api name="add">
+@function
+Register a panel, loading its content and preparing it to be shown when its
+`show` method is invoked.
+@param panel {Panel} the panel to add
+</api>
+
+<api name="remove">
+@function
+Unregister a panel, unloading the content that was loaded in it.
+@param panel {Panel} the panel to remove
 </api>

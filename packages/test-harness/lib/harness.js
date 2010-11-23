@@ -281,15 +281,21 @@ function nextIteration(tests) {
     iterationsLeft--;
   }
   if (iterationsLeft)
-    sandbox.require("unit-test").findAndRunTests({dirs: dirs,
-                                                  filter: filter,
-                                                  onDone: nextIteration});
+    sandbox.require("unit-test").findAndRunTests({
+      testOutOfProcess: packaging.enableE10s,
+      testInProcess: true,
+      fs: sandbox.fs,
+      dirs: dirs,
+      filter: filter,
+      onDone: nextIteration
+    });
   else
     require("timer").setTimeout(cleanup, 0);
 }
 
 var POINTLESS_ERRORS = [
-  "Invalid chrome URI:"
+  "Invalid chrome URI:",
+  "OpenGL LayerManager Initialized Succesfully."
 ];
 
 var consoleListener = {
@@ -359,6 +365,15 @@ var runTests = exports.runTests = function runTests(options) {
     var console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
                                         options);
     var globals = {packaging: packaging};
+
+    var xulApp = require("xul-app");
+    var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
+                     .getService(Ci.nsIXULRuntime);
+
+    print("Running tests on " + xulApp.name + " " + xulApp.version +
+          "/Gecko " + xulApp.platformVersion + " (" + 
+          xulApp.ID + ") under " +
+          xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
 
     sandbox = new cuddlefish.Loader({console: console,
                                      globals: globals,

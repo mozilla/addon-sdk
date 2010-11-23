@@ -36,18 +36,26 @@ Examples
 
 See the [panel] module for a real-world example of usage of this module.
 
-[panel]:https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/panel
+[panel]:#module/jetpack-core/panel
 
 Reference
 ---------
 
+<api name="Symbiont">
+@class
+Symbiont is composed from the [Worker] trait, therefore instances
+of Symbiont and their descendants expose all the public properties
+exposed by [Worker] along with additional public properties that
+are listed below:
+
+[Worker]:#module/jetpack-core/content/worker
 <api name="Symbiont">
 @constructor
 Creates a content symbiont.
 @param options {object}
   Options for the constructor. Includes all the keys that [Worker] constructor
   accepts and few additional:
-[Worker]:https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/panel
+[Worker]:#module/jetpack-core/panel
   @prop [frame] {object}
     The host application frame in which the page is loaded.
     If frame is not provided hidden one will be created.
@@ -63,16 +71,6 @@ Creates a content symbiont.
       Optional.
     Optional.
 </api>
-
-Symbiont
---------
-
-Symbiont is composed from the [Worker] trait, therefore instances
-of Symbiont and their descendants expose all the public properties
-exposed by [Worker] along with additional public properties that
-are listed below:
-
-[Worker]:https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/content/worker
 
 <api name="contentScriptURL">
 @property {array}
@@ -105,4 +103,7 @@ Permissions for the content, with the following keys:
   @prop script {boolean}
   Whether or not to execute script in the content.  Defaults to true.
 </api>
+
+</api>
+
 

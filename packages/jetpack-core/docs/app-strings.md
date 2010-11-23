@@ -1,9 +1,6 @@
 The `app-strings` module gives you access to the host application's localized
 string bundles (`.properties` files).
 
-Introduction
-------------
-
 The module exports the `StringBundle` constructor function.  To access a string
 bundle, construct an instance of `StringBundle`, passing it the bundle's URL:
 
@@ -30,28 +27,6 @@ of the form [name, value]:
     for (var [name, value] in Iterator(bundle))
       console.log(name + " = " + value);
 
-Reference
----------
-
-<api name="StringBundle">
-@constructor
-Creates a StringBundle object that gives you access to a string bundle.
-@param url {string} the URL of the string bundle
-@returns {StringBundle} the string bundle
-</api>
-
-StringBundle
-------------
-
-The `StringBundle` object represents a string bundle.
-
-<api name="get">
-@method Get the value of the string with the given name.
-@param [name] {string} the name of the string to get
-@param [args] {array} (optional) strings that replace placeholders in the string
-@returns {string} the value of the string
-</api>
-
 Iteration
 ---------
 
@@ -66,3 +41,21 @@ Iterate the values of strings in the bundle.
 <code>for (var [name, value] in Iterator(bundle)) { ... }</code>
 
 Iterate the names and values of strings in the bundle.
+
+
+<api name="StringBundle">
+@class
+The `StringBundle` object represents a string bundle.
+<api name="StringBundle">
+@constructor
+Creates a StringBundle object that gives you access to a string bundle.
+@param url {string} the URL of the string bundle
+@returns {StringBundle} the string bundle
+</api>
+<api name="get">
+@method Get the value of the string with the given name.
+@param [name] {string} the name of the string to get
+@param [args] {array} (optional) strings that replace placeholders in the string
+@returns {string} the value of the string
+</api>
+</api>

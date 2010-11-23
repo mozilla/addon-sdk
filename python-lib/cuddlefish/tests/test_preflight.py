@@ -9,7 +9,7 @@ from StringIO import StringIO
 
 class Util(unittest.TestCase):
     def get_basedir(self):
-        return os.path.join("_test_tmp", self.id())
+        return os.path.join(".test_tmp", self.id())
     def make_basedir(self):
         basedir = self.get_basedir()
         if os.path.isdir(basedir):

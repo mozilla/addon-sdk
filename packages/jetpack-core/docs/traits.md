@@ -1,7 +1,8 @@
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com]  -->
 
 The `traits` module provides base building blocks for secure object
-composition. 
+composition. It exports base trait / constructor function that
+constructs an instance of `Trait`.
 
 Traits
 ------
@@ -9,13 +10,14 @@ Traits
 [Traits] are a simple composition mechanism for structuring object-oriented
 programs. Traits are similar to [interfaces], except that they often define
 only a part of an object's data and behavior and are intended to be used in
-conjunction with other traits to completely define the object.  
+conjunction with other traits to completely define the object.
+
 Traits are also considered to be a more robust alternative to [mixins]
 because, name conflicts have to be resolved explicitly by composer & because
 trait composition is order-independent (hence more declarative).
 
 
-There are some other implementations of traits in javascript & some ideas / 
+There are some other implementations of traits in JavaScript & some ideas /
 APIs are borrowed from them:
 
 - [traitsjs]
@@ -39,29 +41,19 @@ defined during composition.
 [interfaces]:http://en.wikipedia.org/wiki/Interface_%28object-oriented_programming%29
 [mixins]:http://en.wikipedia.org/wiki/Mixins
 
-Introduction
-------------
-
-The module exports base trait / constructor function that constructs an 
-instance of `Trait`.
-
-Reference
----------
-
+<api name="Trait">
+@class
 <api name="Trait">
 @constructor
 Creates an instance of Trait and returns it if it has no `constructor` method
 defined. If instance has `constructor` method, then it is called with all the
 arguments passed to this function and returned value is returned instead,
 unless it's `undefined`. In that case instance is returned.
-</api>
 
-Trait
------
-
-`Trait` function represent a base trait. As with any other trait it represents
-a constructor function for creating instances of it's own & a placeholder
+`Trait` function represents a base trait. As with any other trait it represents
+a constructor function for creating instances of its own & a placeholder
 for a trait compositions functions.
+</api>
 
 <api name="compose">
 @method
@@ -72,21 +64,10 @@ examples in Examples section to find out more about "conflict" properties).
 This is a commutative and associative operation, and the order of its
 arguments is not significant.
 
-@param trait1 {Object|Function}
-    Trait or property map to compose new trait from.
-@param trait2 {Object|Function}
-    Trait or property map to compose new trait from.
-@param ... {Object|Function}
-    Traits or property maps to compose new trait from.
-
-@returns {Function}
-    New trait containing the combined properties of all the traits.
-</api>
-
-*Examples:*
+**Examples:**
 
 Let's say we want to define a reusable piece of code for a lists of elements.
-    
+
     const { Trait } = require('traits');
     const List = Trait.compose({
       // private API:
@@ -113,7 +94,7 @@ Instances of `List` can be created by calling `List` function with or without
 As you can see `add` and `remove` functions are capable of accessing private
 `_list` property, but thats about it, there's nothing else that will be able
 to access this property:
-  
+
     '_list' in l1;              // false
     '_list' in l2;              // false
     '_list' in List.protoype;   // false
@@ -123,11 +104,20 @@ to access this property:
     l1.add('test')
     l1.length                   // 1
 
+@param trait1 {Object|Function}
+    Trait or property map to compose new trait from.
+@param trait2 {Object|Function}
+    Trait or property map to compose new trait from.
+@param ... {Object|Function}
+    Traits or property maps to compose new trait from.
+
+@returns {Function}
+    New trait containing the combined properties of all the traits.
+</api>
 
 <api name="required">
 @property {Object}
 Singleton, used during trait composition to define "required" properties.
-</api>
 
 **Example:**
 
@@ -150,6 +140,8 @@ Singleton, used during trait composition to define "required" properties.
     c2.list[0]                  // 'test'
     c2.forEach(console.log)     // > info: 'test'
 
+</api>
+
 
 <api name="resolve">
 @method
@@ -158,10 +150,6 @@ as the trait on which it is called, except that each property listed
 in the `resolutions` argument will be renamed from the name
 of the  property in the `resolutions` argument to its value.
 And if its value is `null`, the property will become required.
-@param resolutions {Object}
-@returns {Function}
-    New resolved trait.
-</api>
 
 **Example:**
 
@@ -182,8 +170,8 @@ And if its value is `null`, the property will become required.
           this._add(item)
       }
     });
-    
-    
+
+
     let r = Range(0, 10);
     r.min;                      // 0
     r.max;                      // 10
@@ -193,6 +181,10 @@ And if its value is `null`, the property will become required.
     r.add(12);
     r.length;                   // 1 (12 was not in a range)
 
+@param resolutions {Object}
+@returns {Function}
+    New resolved trait.
+</api>
 
 <api name="override">
 @method
@@ -201,16 +193,6 @@ argument traits. In contrast to `compose`, `override` immediately resolves
 all conflicts resulting from this composition by overriding the properties of
 later traits. Trait priority is from left to right. I.e. the properties of
 the leftmost trait are never overridden.
-@param trait1 {Object|Function}
-    Trait or property map to compose new trait from.
-@param trait2 {Object|Function}
-    Trait or property map to compose new trait from.
-@param ... {Object|Function}
-    Traits or property maps to compose new trait from.
-
-@returns {Function}
-    New trait containing the combined properties of all the traits.
-</api>
 
 **Example:**
 
@@ -226,12 +208,16 @@ the leftmost trait are never overridden.
     });
     ConstructableList(1, 2, 3).length       // 3
 
-Trait Objects
--------------
+@param trait1 {Object|Function}
+    Trait or property map to compose new trait from.
+@param trait2 {Object|Function}
+    Trait or property map to compose new trait from.
+@param ... {Object|Function}
+    Traits or property maps to compose new trait from.
 
-Since all the traits are composed out of base `Trait` their instances will
-contain properties described below, unless explicitly overriding them in
-composition.
+@returns {Function}
+    New trait containing the combined properties of all the traits.
+</api>
 
 <api name="_public">
 @property {Object}
@@ -244,7 +230,6 @@ consumers of an instance.
 Textual representation of an object. All the traits will return:
 `'[object Trait]'` string, unless they have `constructor` property, in that
 case string `'Trait'` is replaced with the name of `constructor` property.
-</api>
 
 **Example:**
 
@@ -255,3 +240,5 @@ case string `'Trait'` is replaced with the name of `constructor` property.
     });
     MyTrait().toString();     // [object MyTrait]
 
+</api>
+</api>

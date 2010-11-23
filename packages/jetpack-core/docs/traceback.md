@@ -28,10 +28,8 @@ element thus represents a stack frame and has the following keys:
   </tr>
 </table>
 
-## Functions ##
-
 <api name="fromException">
-@method
+@function
   Attempts to extract the traceback from *`exception`*.
 
 @returns {traceback}
@@ -46,7 +44,7 @@ See [nsIException] for more information.
 [nsIException]: https://developer.mozilla.org/en/NsIException
 
 <api name="get">
-@method
+@function
 
 @returns {JSON}
   Returns the JSON representation of the stack at the point that this
@@ -54,7 +52,7 @@ See [nsIException] for more information.
 </api>
 
 <api name="format">
-@method
+@function
 Given a JSON representation of the stack or an exception instance,
 returns a formatted plain text representation of it, similar to
 Python's formatted stack tracebacks.  If no argument is provided, the
