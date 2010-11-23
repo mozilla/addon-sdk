@@ -59,7 +59,7 @@ Object emits all the events listed under "Events" section.
 <api name="activeWindow">
 @property {BrowserWindow}
 
-The currently active window. This property is read only.
+The currently active window. This property is read-only.
 
 **Example**
 

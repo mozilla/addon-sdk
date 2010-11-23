@@ -83,7 +83,7 @@ Listeners are passed the `tab` object that triggered the event.
 <api name="active">
 @property {Tab}
 
-The currently active tab in this list. This property is read only.
+The currently active tab in this list. This property is read-only.
 
 **Example**
 
