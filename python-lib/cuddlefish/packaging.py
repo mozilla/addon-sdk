@@ -277,6 +277,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
     if 'icon' in target_cfg:
         build['icon'] = os.path.join(target_cfg.root_dir,
                                      target_cfg.icon)
+        del target_cfg['icon']
 
     # now go back through and find out where each module lives, to record the
     # pathname in the manifest
