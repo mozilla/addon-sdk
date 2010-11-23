@@ -13,19 +13,6 @@ We're going to continue building upon our package from the [Packaging]
 section.  This program adds a menu item to Firefox's context menu that replaces
 selected text with its English translation.
 
-### Using the SDK's Built-in Libraries ###
-
-Add a `dependencies` entry to your package.json file, showing that your
-package requires modules from the jetpack-core library. It should look
-something like this now:
-
-    {
-      "description": "This package adds a translation context menu item.",
-      "author": "Me (http://me.org)",
-      "dependencies": ["jetpack-core"]
-    }
-
-
 ### Adding Your Code ###
 
 If a module called `main` exists in your package, that module will be evaluated
@@ -110,8 +97,8 @@ unloaded: `"uninstall"`, `"disable"`, `"shutdown"`, `"upgrade"`, or
 in their place.)
 
 Note that if your program is unloaded with reason `"disable"`, it will not be
-notified about `"uninstall"` while it is disabled.  (A solution to this issue is
-being investigated; see bug 571049.)
+notified about `"uninstall"` while it is disabled.  (A solution to this issue
+is being investigated; see bug 571049.)
 
 ### Logging ###
 
@@ -136,6 +123,16 @@ in your shell and run:
 That will load an instance of Firefox (or your default application)
 with your program installed.
 
+### Trying It Out ###
+
+Once `cfx run` has launched Firefox you can try out the new add-on. Load a
+page containing some text that is not in English. For example:
+[http://www.mozilla-europe.org/fr/](http://www.mozilla-europe.org/fr/).
+
+Select some text on that page and right-click to activate the context menu.
+You should see a new item labeled "Translate Selection". Select that item and
+the text you selected should be replaced with its English translation.
+
 ### Packaging It ###
 
 Your program is packaged like any other extension for a Mozilla-based
@@ -153,23 +150,30 @@ you'll see a message about generating a keypair and modifying your
 `package.json` to add an `id` field, asking you to run `cfx xpi` again.
 When you re-run it, you should see a message:
 
-    Exporting extension to test.xpi.
+    Exporting extension to my-first-package.xpi.
 
-The test.xpi file can be found in the directory in which you ran the
-command.
+The my-first-package.xpi file can be found in the directory in which you ran
+the command.
 
 ### Checking the Package ###
 
-If you'd like to test the packaged program before distributing it,
-you can run it from the shell with:
+Test that the package installs correctly by adding it to your own Firefox
+installation.
 
-    mozrunner -a test.xpi
+You can do this by pressing the Ctrl+O key combination (Cmd+O on Mac) from
+within Firefox. This will bring up a file selection dialog: navigate to the
+my-first-package.xpi file, open it and follow the prompts to install the
+add-on.
 
-Or you can install it from the Firefox Add-ons Manager itself, as
-you would when testing a traditional add-on.
+Alternatively, open the Firefox Add-ons Manager from within Firefox, either
+from the Add-ons item on the Tools menu, or by typing "about:addons" into the
+address bar. In the Firefox Add-ons Manager there is a gears icon next to the
+search bar. Click the icon and select "Install Add-on From File..." from the
+menu that appears. Again, this will bring up a file selection dialog which you
+can use to find and open the XPI file.
 
-Running your program as described in the `Running It` section uses
-the same process as packaging it as a .xpi, so this step is optional.
+Once you have installed the add-on you can test it in exactly the same way as
+in the "Trying It Out" section above.
 
 ### Distributing It ###
 
