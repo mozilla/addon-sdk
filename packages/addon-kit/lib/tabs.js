@@ -48,7 +48,6 @@ if (!require("xul-app").is("Firefox")) {
 const { browserWindows } = require("windows");
 const { tabs } = require("windows/tabs");
 
-exports.tabs = tabs;
 Object.defineProperties(tabs, {
   open: { value: function open(options) {
     if (options.inNewWindow)
@@ -56,5 +55,7 @@ Object.defineProperties(tabs, {
     // Open in active window if new window was not required.
     return browserWindows.activeWindow.tabs.open(options);
   }}
-})
-
+});
+// It's a hack but we will be able to remove it once will implemnet CommonJS
+// feature that would allow us to override exports.
+exports.__proto__ = tabs;
