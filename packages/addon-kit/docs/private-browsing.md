@@ -33,29 +33,23 @@ Emitted when the browser stops private browsing mode.
       // Do something when the browser stops private browsing mode.
     });
 
-
-
 ## Supported Applications ##
 
 This module is available in all applications. However, only Firefox will ever
 transition into or out of private browsing mode. For all other applications,
-`pb.active` will always return `false`, and none of the events will be emitted.
+`pb.isActive` will always be `false`, and none of the events will be emitted.
 
-<api name="active">
+<api name="isActive">
 @property {boolean}
-This is a boolean. You can read this attribute to determine if private browsing
-mode is active. You can also set the attribute to enter or exit private
-browsing.
-
-    // If private browsing is active, do something
-    if (pb.active)
-      doSomething();
-
-    // Enter private browsing mode
-    pb.active = true;
-
-    // Exit private browsing mode
-    pb.active = false;
-
+  This read-only boolean is true if private browsing mode is turned on.
 </api>
 
+<api name="activate">
+@function
+  Turns on private browsing mode.
+</api>
+
+<api name="deactivate">
+@function
+  Turns off private browsing mode.
+</api>

@@ -116,9 +116,9 @@ enter private browsing again.
     pb.on("start", listener1);
     pb.on("start", listener2);
 
-    pb.active = true;
-    pb.active = false;
-    pb.active = true;
+    pb.activate();
+    pb.deactivate();
+    pb.activate();
 
 Removing listeners is optional since they will be removed in any case
 when the application or add-on is unloaded.
