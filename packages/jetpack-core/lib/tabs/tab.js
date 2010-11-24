@@ -37,6 +37,7 @@
 
 const { Trait } = require("traits");
 const { EventEmitter } = require("events");
+const { TabSelectionTrait } = require("./selection");
 const { validateOptions } = require("api-utils");
 const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
@@ -51,7 +52,7 @@ const TABS = [];
 /**
  * Trait used to create tab wrappers.
  */
-const TabTrait = Trait.compose(EventEmitter, {
+const TabTrait = Trait.compose(EventEmitter, TabSelectionTrackerTrait, {
   on: Trait.required,
   _emit: Trait.required,
   /**
@@ -78,6 +79,7 @@ const TabTrait = Trait.compose(EventEmitter, {
 
     this.on(EVENTS.close.name, this.destroy.bind(this));
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
+    this._initTabSelectionTracker();
 
     this.pinned = options.pinned;
     if (!options.inBackground)
