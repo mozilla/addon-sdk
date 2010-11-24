@@ -23,6 +23,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Nickolay Ponomarev
 * Aza Raskin
 * Justin Scott
+* Ayan Shah
 * Clint Talbert
 * Thomas
 * Dave Townsend
