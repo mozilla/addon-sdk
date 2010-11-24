@@ -64,7 +64,7 @@ const privateBrowsing = EventEmitter.compose({
     // We only need to add observers if `pbService` exists.
     if (pbService) {
       observers.add(ON_TRANSITION, this.onTransition.bind(this));
-      this._active = pbService.privateBrowsingEnabled;
+      this._isActive = pbService.privateBrowsingEnabled;
     }
   },
   unload: function _destructor() {
@@ -73,21 +73,22 @@ const privateBrowsing = EventEmitter.compose({
   },
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {
-    let active = this._active = pbService.privateBrowsingEnabled;
-    setTimeout(this._emit, 0, active ? ON_START : ON_STOP);
+    let isActive = this._isActive = pbService.privateBrowsingEnabled;
+    setTimeout(this._emit, 0, isActive ? ON_START : ON_STOP);
   },
-  get active() this._active,
-  set active(value) {
+  get isActive() this._isActive,
+  set isActive(value) {
     if (pbService)
       pbService.privateBrowsingEnabled = !!value;
   },
-  _active: false
+  _isActive: false
 })()
 
-Object.defineProperty(exports, "active", {
-  get: function() privateBrowsing.active,
-  set: function(value) privateBrowsing.active = value
+Object.defineProperty(exports, "isActive", {
+  get: function() privateBrowsing.isActive
 });
+exports.activate = function activate() privateBrowsing.isActive = true;
+exports.deactivate = function deactivate() privateBrowsing.isActive = false;
 exports.on = privateBrowsing.on;
 exports.removeListener = privateBrowsing.removeListener;
 
