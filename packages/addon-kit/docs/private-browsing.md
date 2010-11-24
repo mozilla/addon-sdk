@@ -37,11 +37,11 @@ Emitted when the browser stops private browsing mode.
 
 This module is available in all applications. However, only Firefox will ever
 transition into or out of private browsing mode. For all other applications,
-`pb.active` will always be `false`, and none of the events will be emitted.
+`pb.isActive` will always be `false`, and none of the events will be emitted.
 
-<api name="active">
+<api name="isActive">
 @property {boolean}
-  This read-only boolean is true if private browsing mode is active.
+  This read-only boolean is true if private browsing mode is turned on.
 </api>
 
 <api name="activate">
