@@ -48,22 +48,22 @@ parser_options = {
                                   help="use named config from local.json",
                                   metavar=None,
                                   default="default"),
-    ("-t", "--templatedir",): dict(dest="templatedir",
-                                   help="XULRunner app/ext. template",
-                                   metavar=None,
-                                   default=None),
-    ("-k", "--extra-packages",): dict(dest="extra_packages",
-                                      help=("extra packages to include, "
-                                            "comma-separated. Default is "
-                                            "'addon-kit'."),
-                                      metavar=None,
-                                      default="addon-kit"),
-    ("-p", "--pkgdir",): dict(dest="pkgdir",
-                              help=("package dir containing "
-                                    "package.json; default is "
-                                    "current directory"),
-                              metavar=None,
-                              default=None),
+    ("", "--templatedir",): dict(dest="templatedir",
+                                 help="XULRunner app/ext. template",
+                                 metavar=None,
+                                 default=None),
+    ("", "--extra-packages",): dict(dest="extra_packages",
+                                    help=("extra packages to include, "
+                                          "comma-separated. Default is "
+                                          "'addon-kit'."),
+                                    metavar=None,
+                                    default="addon-kit"),
+    ("", "--pkgdir",): dict(dest="pkgdir",
+                            help=("package dir containing "
+                                  "package.json; default is "
+                                  "current directory"),
+                            metavar=None,
+                            default=None),
     ("--keydir",): dict(dest="keydir",
                         help=("directory holding private keys;"
                               " default is ~/.jetpack/keys"),
@@ -84,20 +84,20 @@ parser_groups = Bunch(
     xpi=Bunch(
         name="XPI Options",
         options={
-            ("-u", "--update-url",): dict(dest="update_url",
-                                          help="update URL in install.rdf",
-                                          metavar=None,
-                                          default=None),
-            ("-l", "--update-link",): dict(dest="update_link",
-                                           help="generate update.rdf",
-                                           metavar=None,
-                                           default=None),
+            ("", "--update-url",): dict(dest="update_url",
+                                        help="update URL in install.rdf",
+                                        metavar=None,
+                                        default=None),
+            ("", "--update-link",): dict(dest="update_link",
+                                         help="generate update.rdf",
+                                         metavar=None,
+                                         default=None),
             }
         ),
     app=Bunch(
         name="Application Options",
         options={
-            ("-P", "--profiledir",): dict(dest="profiledir",
+            ("-p", "--profiledir",): dict(dest="profiledir",
                                           help=("profile directory to "
                                                 "pass to app"),
                                           metavar=None,
@@ -116,14 +116,14 @@ parser_groups = Bunch(
                                          "fennec, or thunderbird"),
                                    metavar=None,
                                    default="firefox"),
-            ("-f", "--logfile",): dict(dest="logfile",
-                                       help="log console output to file",
-                                       metavar=None,
-                                       default=None),
-            ("-r", "--use-server",): dict(dest="use_server",
-                                          help="use development server",
-                                          action="store_true",
-                                          default=False),
+            ("", "--logfile",): dict(dest="logfile",
+                                     help="log console output to file",
+                                     metavar=None,
+                                     default=None),
+            ("", "--use-server",): dict(dest="use_server",
+                                        help="use development server",
+                                        action="store_true",
+                                        default=False),
             }
         ),
     xpcom=Bunch(
@@ -148,16 +148,17 @@ parser_groups = Bunch(
                                                    "program (default is "
                                                    "test-harness)"),
                                              default="test-harness"),
-            ("-d", "--dep-tests",): dict(dest="dep_tests",
-                                         help="include tests for all deps",
-                                         action="store_true",
-                                         default=False),
-            ("-x", "--times",): dict(dest="iterations",
-                                     type="int",
-                                     help="number of times to run tests",
-                                     default=1),
-            ("-F", "--filter",): dict(dest="filter",
-                                      help="only run tests that match regexp",
+            ("", "--dependencies",): dict(dest="dep_tests",
+                                          help="include tests for all deps",
+                                          action="store_true",
+                                          default=False),
+            ("", "--times",): dict(dest="iterations",
+                                   type="int",
+                                   help="number of times to run tests",
+                                   default=1),
+            ("-f", "--filter",): dict(dest="filter",
+                                      help=("only run tests whose filenames "
+                                            "match FILTER, a regexp"),
                                       metavar=None,
                                       default=None),
             # TODO: This should default to true once our memory debugging
@@ -282,7 +283,7 @@ def test_all_packages(env_root, defaults):
         if name != "testpkgs":
             deps.append(name)
     print "Testing all available packages: %s." % (", ".join(deps))
-    run(arguments=["test", "--dep-tests"],
+    run(arguments=["test", "--dependencies"],
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
         defaults=defaults)
@@ -300,8 +301,8 @@ def run_development_mode(env_root, defaults):
 
     print "I am starting an instance of %s in development mode." % app
     print "From a separate shell, you can now run cfx commands with"
-    print "'-r' as an option to send the cfx command to this instance."
-    print "All logging messages will appear below."
+    print "'--use-server' as an option to send the cfx command to this"
+    print "instance. All logging messages will appear below."
 
     os.environ['JETPACK_DEV_SERVER_PORT'] = str(port)
     options = {}
