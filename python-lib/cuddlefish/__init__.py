@@ -283,7 +283,7 @@ def test_all_packages(env_root, defaults):
         if name != "testpkgs":
             deps.append(name)
     print "Testing all available packages: %s." % (", ".join(deps))
-    run(arguments=["test", "--dep-tests"],
+    run(arguments=["test", "--dependencies"],
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
         defaults=defaults)
