@@ -4,7 +4,7 @@ import zipfile
 import simplejson as json
 
 def build_xpi(template_root_dir, manifest, xpi_name,
-              harness_options, xpts):
+              harness_options):
     zf = zipfile.ZipFile(xpi_name, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
@@ -33,11 +33,6 @@ def build_xpi(template_root_dir, manifest, xpi_name,
             abspath = os.path.join(dirpath, filename)
             arcpath = abspath[len(template_root_dir)+1:]
             zf.write(abspath, arcpath)
-
-    for abspath in xpts:
-        zf.write(str(abspath),
-                 str(os.path.join('components',
-                                  os.path.basename(abspath))))
 
     new_resources = {}
     for resource in harness_options['resources']:

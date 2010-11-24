@@ -67,5 +67,4 @@ def create_xpi(xpiname):
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,
                   xpi_name=xpiname,
-                  harness_options=options,
-                  xpts=[])
+                  harness_options=options)
