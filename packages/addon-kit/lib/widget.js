@@ -126,8 +126,8 @@ const Widget = Trait.compose(Loader, Trait.compose({
 
     if ("contentScriptWhen" in options)
       this.contentScriptWhen = options.contentScriptWhen;
-    if ("contentScriptURL" in options)
-      this.contentScriptURL = options.contentScriptURL;
+    if ("contentScriptFile" in options)
+      this.contentScriptFile = options.contentScriptFile;
     if ("contentScript" in options)
       this.contentScript = options.contentScript;
     if ("allow" in options)
@@ -506,7 +506,7 @@ BrowserWindow.prototype = {
     item.symbiont = Symbiont({
       frame: iframe,
       contentURL: contentURL,
-      contentScriptURL: item.widget.contentScriptURL,
+      contentScriptFile: item.widget.contentScriptFile,
       contentScript: item.widget.contentScript,
       contentScriptWhen: item.widget.contentScriptWhen,
       allow: item.widget.allow,

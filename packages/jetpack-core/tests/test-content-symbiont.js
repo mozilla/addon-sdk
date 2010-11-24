@@ -29,15 +29,15 @@ exports['test:constructing symbiont && validating API'] = function(test) {
     let contentScripts = ["1;", "2;"];
     let contentSymbiont = Symbiont({
       frame: frame,
-      contentScriptURL: self.data.url("test-content-symbiont.js"),
+      contentScriptFile: self.data.url("test-content-symbiont.js"),
       contentScript: contentScripts,
       contentScriptWhen: "start"
     });
 
     test.assertEqual(
       self.data.url("test-content-symbiont.js"),
-      contentSymbiont.contentScriptURL,
-      "There is one contentScriptURL, as specified in options."
+      contentSymbiont.contentScriptFile,
+      "There is one contentScriptFile, as specified in options."
     );
     test.assertEqual(
       contentScripts.length,

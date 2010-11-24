@@ -72,7 +72,7 @@ Creates a content symbiont.
     Optional.
 </api>
 
-<api name="contentScriptURL">
+<api name="contentScriptFile">
 @property {array}
 The URLs of content scripts to load.  Content scripts specified by this property
 are loaded *before* those specified by the `contentScript` property.
@@ -81,7 +81,7 @@ are loaded *before* those specified by the `contentScript` property.
 <api name="contentScript">
 @property {array}
 The texts of content scripts to load.  Content scripts specified by this
-property are loaded *after* those specified by the `contentScriptURL` property.
+property are loaded *after* those specified by the `contentScriptFile` property.
 </api>
 
 <api name="contentScriptWhen">

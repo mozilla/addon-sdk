@@ -236,7 +236,7 @@ Also, in the real world you probably don't want to include content scripts
 directly in your programs like these examples do.  Instead, make separate files
 in your package's `data` directory, get the URLs of those files using the
 [`self`][self] module, and pass them to menu item constructors using the
-`contentScriptURL` options object property.
+`contentScriptFile` options object property.
 
 First, don't forget to import the module:
 
@@ -351,7 +351,7 @@ A labeled menu item that can perform an action when clicked.
     If the item is contained in the top-level context menu, this is the content
     script or an array of content scripts that the item can use to interact with
     the page.  Ignored if the item is contained in a submenu.
-  @prop [contentScriptURL] {string,array}
+  @prop [contentScriptFile] {string,array}
     If the item is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the item can
     use to interact with the page.  Ignored if the item is contained in a
@@ -391,7 +391,7 @@ A labeled menu item that expands into a submenu.
     If the menu is contained in the top-level context menu, this is the content
     script or an array of content scripts that the menu can use to interact with
     the page.  Ignored if the menu is contained in a submenu.
-  @prop [contentScriptURL] {string,array}
+  @prop [contentScriptFile] {string,array}
     If the menu is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the menu can
     use to interact with the page.  Ignored if the menu is contained in a
