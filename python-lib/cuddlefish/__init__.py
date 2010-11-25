@@ -27,10 +27,10 @@ Supported Commands:
   run        - run program
   xpi        - generate an xpi
 
-Experimental Commands
+Experimental Commands:
   develop    - run development server
 
-Internal Commands
+Internal Commands:
   sdocs      - export static documentation
   testcfx    - test the cfx tool
   testex     - test all example code
