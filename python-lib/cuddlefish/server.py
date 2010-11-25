@@ -438,7 +438,7 @@ def generate_static_docs(env_root, tgz_filename):
     tgz.close()
     shutil.rmtree(staging_dir)
 
-def run_app(harness_root_dir, harness_options, xpts,
+def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
             timeout=None, logfile=None, addons=None,
             host=DEFAULT_HOST,

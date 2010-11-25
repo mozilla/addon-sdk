@@ -132,9 +132,6 @@ def get_config_in_dir(path):
     for key in ['lib', 'tests', 'dependencies', 'packages']:
         normalize_string_or_array(base_json, key)
 
-    if 'xpcom' in base_json:
-        base_json.xpcom = Bunch(base_json.xpcom)
-
     if 'main' not in base_json and 'lib' in base_json:
         for dirname in base_json['lib']:
             program = os.path.join(path, dirname,
