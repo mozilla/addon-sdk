@@ -544,6 +544,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         harness_options[option] = getattr(options, option)
 
     harness_options['metadata'] = packaging.get_metadata(pkg_cfg, deps)
+
     packaging.call_plugins(pkg_cfg, deps)
 
     retval = 0
