@@ -522,8 +522,6 @@ function getDefaults(rootFileSpec) {
     }
 
     options = JSON.parse(jsonData);
-    if ("staticArgs" in options)
-      options.staticArgs = JSON.parse(options.staticArgs);
   } catch (e) {
     defaultLogError(e);
     throw e;

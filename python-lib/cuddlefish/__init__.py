@@ -72,7 +72,7 @@ parser_options = {
                              help="extra harness options as JSON",
                              type="json",
                              metavar=None,
-                             default="{}"),
+                             default={}),
     ("", "--e10s",): dict(dest="enable_e10s",
                           help="enable out-of-process Jetpacks",
                           action="store_true",
@@ -171,9 +171,9 @@ def find_parent_package(cur_dir):
     return None
 
 def check_json(option, opt, value):
+    # We return the parsed JSON here; see bug 610816 for background on why.
     try:
-        # Make sure value is JSON, but keep it JSON.
-        return json.dumps(json.loads(value))
+        return json.loads(value)
     except ValueError:
         raise optparse.OptionValueError("Option %s must be JSON." % opt)
 
