@@ -496,11 +496,19 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         jid = harness_guid
 
     assert not jid.endswith("@jetpack")
-    bundle_id = jid + "@jetpack"
-    # the resource: URLs prefix is treated too much like a DNS hostname
+    if (jid.startswith("jid0-") or jid.startswith("anonid0-")):
+        bundle_id = jid + "@jetpack"
+    # Don't append "@jetpack" to old-style IDs, as they should be exactly
+    # as specified by the addon author so AMO and Firefox continue to treat
+    # their addon bundles as representing the same addon (and also because
+    # they may already have an @ sign in them, and there can be only one).
+    else:
+        bundle_id = jid
+
+    # the resource: URL's prefix is treated too much like a DNS hostname
     unique_prefix = unique_prefix.lower()
-    assert "@" not in unique_prefix
-    assert "." not in unique_prefix
+    unique_prefix = unique_prefix.replace("@", "-at-")
+    unique_prefix = unique_prefix.replace(".", "-dot-")
 
     targets = [target]
     if command == "test":
