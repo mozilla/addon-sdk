@@ -36,7 +36,7 @@ Examples
 Create and show a simple panel with content from the `data/` directory:
 
     const data = require("self").data;
-    let panel = require("panel").Panel({
+    var panel = require("panel").Panel({
       contentURL: data.url("foo.html")
     });
 
@@ -143,7 +143,9 @@ them once the DOM content of the page has been loaded.
 
 <api name="destroy">
 @method
-Destroy the panel, unloading any content that was loaded in it.
+Destroy the panel, unloading any content that was loaded in it. Once
+destroyed, the panel can no longer be used. If you just want to hide
+the panel and might show it later, use `hide` instead.
 </api>
 
 <api name="onMessage">
