@@ -78,10 +78,10 @@ We have already seen the `contentScript` option, which enables you to pass
 in the text of the script itself as a string literal. This version of the API
 avoids the need to maintain a separate file for the content script.
 
-The `contentScriptFile` option enables you to pass in the URL from which the
-content script will be loaded. To supply the file "my-content-script.js",
-located in the /data subdirectory under your package's root directory, use
-a line like:
+The `contentScriptFile` option enables you to pass in the local file URL from
+which the content script will be loaded. To supply the file
+"my-content-script.js", located in the /data subdirectory under your package's
+root directory, use a line like:
 
     // "data" is supplied by the "self" module
     var data = require("self").data;

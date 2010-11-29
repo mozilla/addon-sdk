@@ -84,9 +84,9 @@ Creates a panel.
       Optional.
     Optional.
   @prop [contentScriptFile] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
-    Optional.
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option. Optional.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
     option are loaded *after* those specified by the `contentScriptFile` option.
@@ -128,8 +128,9 @@ Permissions for the content, with the following keys:
 
 <api name="contentScriptFile">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this
-property are loaded *before* those specified by the `contentScript` property.
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
 </api>
 
 <api name="contentScript">

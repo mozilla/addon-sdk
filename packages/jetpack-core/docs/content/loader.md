@@ -45,8 +45,9 @@ in frame every time `contentURL` property is changed:
 @class
 <api name="contentScriptFile">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
 </api>
 
 <api name="contentScript">

@@ -82,8 +82,9 @@ its `destroy` method is called or the add-on is unloaded.
     The boolean key `script` controls if scripts from the page
     are allowed to run. Its default value is false.
   @prop [contentScriptFile] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
     option are loaded *after* those specified by the `contentScriptFile` option.
@@ -110,8 +111,9 @@ The URL of the content loaded.
 
 <api name="contentScriptFile">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
 </api>
 
 <api name="contentScript">

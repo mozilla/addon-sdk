@@ -135,8 +135,8 @@ Represents a widget object.
       Whether or not to execute script in the content.  Defaults to true.
 
   @prop [contentScriptFile] {array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    property are loaded *before* those specified by the `contentScript`
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this property are loaded *before* those specified by the `contentScript`
     property.
 
   @prop [contentScript] {array}
