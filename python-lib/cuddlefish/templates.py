@@ -7,7 +7,7 @@ const data = require("self").data;
 
 let my_widget = widgets.Widget({
     label:"Mozilla website",
-    image:"http://www.mozilla.org/favicon.ico",
+    contentURL:"http://www.mozilla.org/favicon.ico",
     onClick:function(e){
         tabs.open("http://mozilla.org");
     }
