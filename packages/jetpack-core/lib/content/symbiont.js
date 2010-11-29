@@ -79,8 +79,8 @@ const Symbiont = Worker.resolve({ constructor: '_onInit' }).compose({
         this.contentURL = options.contentURL;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
-    if ('contentScriptURL' in options)
-      this.contentScriptURL = options.contentScriptURL;
+    if ('contentScriptFile' in options)
+      this.contentScriptFile = options.contentScriptFile;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('allow' in options)
