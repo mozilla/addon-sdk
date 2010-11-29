@@ -5,7 +5,7 @@ const data = require("self").data;
 exports.main = function(options, callbacks) {
   widgets.Widget({
     label: "Reddit",
-    image: "http://www.reddit.com/static/favicon.ico",
+    contentURL: "http://www.reddit.com/static/favicon.ico",
     panel: panels.Panel({
       width: 240,
       height: 320,

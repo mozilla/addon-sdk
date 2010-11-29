@@ -98,7 +98,7 @@ Represents a widget object.
 
   @prop [panel] {panel}
     An optional `Panel` to open when the user clicks on the widget.  See the
-    [`panel`](#module/jetpack-core/panel) module for more information about the
+    [`panel`](#module/addon-kit/panel) module for more information about the
     `Panel` objects to which this option can be set and the `reddit-panel`
     example add-on for an example of using this option.  Note: If you also
     specify an `onClick` callback function, it will be called instead of the
