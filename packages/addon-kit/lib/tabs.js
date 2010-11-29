@@ -53,7 +53,7 @@ Object.defineProperties(tabs, {
     if (options.inNewWindow)
         return browserWindows.open({ tabs: [ options ] });
     // Open in active window if new window was not required.
-    return browserWindows.activeWindow.tabs.open(options);
+    return browserWindows.activeBrowserWindow.tabs.open(options);
   }}
 });
 // It's a hack but we will be able to remove it once will implemnet CommonJS

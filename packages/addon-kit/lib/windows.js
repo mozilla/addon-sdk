@@ -192,7 +192,13 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
      * @type {Window|null}
      */
     get activeWindow() {
-      let window = WM.getMostRecentWindow(null);
+      return this._activeWindowOfType(null);
+    },
+    get activeBrowserWindow() {
+      return this._activeWindowOfType(BROWSER);
+    },
+    _activeWindowOfType : function _activeWindowOfType(type) {
+      let window = WM.getMostRecentWindow(type);
       return this._isBrowser(window) ? BrowserWindow({ window: window }) : null;
     },
     open: function open(options) {
