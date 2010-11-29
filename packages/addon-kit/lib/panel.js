@@ -129,7 +129,7 @@ const Panel = Symbiont.resolve({
     this._removeAllListeners(this, 'hide');
   },
   destroy: function destroy() {
-    PanelRegistry.remove(this._public);
+    this._destructor();
   },
   /* Public API: Panel.width */
   get width() this._width,
