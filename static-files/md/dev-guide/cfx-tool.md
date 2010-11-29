@@ -212,10 +212,10 @@ Run options:
     -r, --use-server             use development server
 
     -f LOGFILE, --logfile=LOGFILE
-                                log console output to file. This is an
-                                internal option and may be removed in future:
-                                developers are advised to use shell
-                                redirection to log console output.
+                                 log console output to file. This is an
+                                 internal option and may be removed in future:
+                                 developers are advised to use shell
+                                 redirection to log console output.
 
 Test options:
 
