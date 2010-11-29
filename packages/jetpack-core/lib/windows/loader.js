@@ -102,6 +102,7 @@ const WindowLoader = Trait.compose({
       ,
       false
     );
+    this.__window = window;
     // If window is not loaded yet setting up a listener.
     if (STATE_LOADED != window.document.readyState) {
       window.addEventListener(
@@ -113,9 +114,9 @@ const WindowLoader = Trait.compose({
       );
     }
     else { // If window is loaded calling listener next turn of event loop.
-      setTimeout(this._onLoad.bind(this), 0, window);
+      this._onLoad(window)
     }
-    return this.__window = window;
+    return window;
   },
   __window: null,
   /**

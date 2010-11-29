@@ -41,7 +41,7 @@ exports.testActiveTab_getter = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
 
     let url = "data:text/html,<html><head><title>foo</title></head></html>";
     require("tab-browser").addTab(
@@ -63,7 +63,7 @@ exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let url = "data:text/html,<html><head><title>foo</title></head></html>";
 
     tabs.on('ready', function onReady(tab) {
@@ -89,7 +89,7 @@ exports.testActiveTab_setter = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs= require("tabs");
     let url = "data:text/html,<html><head><title>foo</title></head><body>foo</body></html>";
     tabs.open({
       url: url,
@@ -110,7 +110,7 @@ exports.testTabProperties = function(test) {
 exports.testTabsIteratorAndLength = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let startCount = 0;
     for each (let t in tabs) startCount++;
     test.assertEqual(startCount, tabs.length, "length property is correct");
@@ -134,7 +134,7 @@ exports.testTabsIteratorAndLength = function(test) {
 exports.testTabLocation = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let url1 = "data:text/html,foo";
     let url2 = "data:text/html,bar";
 
@@ -159,7 +159,7 @@ exports.testTabLocation = function(test) {
 exports.testTabClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let url = "data:text/html,foo";
 
     test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
@@ -180,7 +180,7 @@ exports.testTabClose = function(test) {
 exports.testTabMove = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let url = "data:text/html,foo";
 
     tabs.open({
@@ -199,7 +199,7 @@ exports.testTabMove = function(test) {
 exports.testOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let url = "data:text/html,default";
     tabs.open({
       url: url,
@@ -219,7 +219,7 @@ exports.testOpenPinned = function(test) {
     // test tab pinning
     test.waitUntilDone();
     openBrowserWindow(function(window, browser) {
-      let { tabs } = require("tabs");
+      let tabs = require("tabs");
       let url = "data:text/html,default";
       tabs.open({
         url: url,
@@ -242,7 +242,7 @@ exports.testPinUnpin = function(test) {
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
     test.waitUntilDone();
     openBrowserWindow(function(window, browser) {
-      let { tabs } = require("tabs");
+      let tabs = require("tabs");
       let url = "data:text/html,default";
       tabs.open({
         url: url,
@@ -265,7 +265,7 @@ exports.testPinUnpin = function(test) {
 exports.testInBackground = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
     let activeUrl = tabs.activeTab.url;
     let url = "data:text/html,background";
     test.assertEqual(activeWindow, window, "activeWindow matches this window");
@@ -288,7 +288,7 @@ exports.testInBackground = function(test) {
 exports.testOpenInNewWindow = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let { tabs } = require("tabs");
+    let tabs = require("tabs");
 
     let cache = [];
     let windowUtils = require("window-utils");
@@ -327,7 +327,7 @@ exports.testOpenInNewWindow = function(test) {
 exports.testTabsEvent_onOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let url = "data:text/html,1";
     let eventCount = 0;
 
@@ -353,7 +353,7 @@ exports.testTabsEvent_onOpen = function(test) {
 exports.testTabsEvent_onClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let url = "data:text/html,onclose";
     let eventCount = 0;
 
@@ -384,7 +384,7 @@ exports.testTabsEvent_onClose = function(test) {
 exports.testTabsEvent_onReady = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let url = "data:text/html,onready";
     let eventCount = 0;
 
@@ -410,7 +410,7 @@ exports.testTabsEvent_onReady = function(test) {
 exports.testTabsEvent_onActivate = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let url = "data:text/html,onactivate";
     let eventCount = 0;
 
@@ -436,7 +436,7 @@ exports.testTabsEvent_onActivate = function(test) {
 exports.testTabsEvent_onDeactivate = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let url = "data:text/html,ondeactivate";
     let eventCount = 0;
 
@@ -467,7 +467,7 @@ exports.testTabsEvent_onDeactivate = function(test) {
 exports.testPerTabEvents = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var { tabs } = require("tabs");
+    var tabs = require("tabs");
     let eventCount = 0;
 
     tabs.open({
