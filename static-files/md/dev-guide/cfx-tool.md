@@ -33,7 +33,7 @@ documentation in a new Firefox window.
 
 Just create a new directory, change into it, and run `cfx init`.
 
-This command will create an skeleton addon, as a starting point for your
+This command will create an skeleton add-on, as a starting point for your
 own add-on development, with the following file structure:
 
     README.md
@@ -86,7 +86,7 @@ it to [addons.mozilla.org][].
 
 #### `cfx run` ####
 
-This tool is used to run the extension code.
+This command is used to run the add-on.
 
 **Supported Options:**
 
@@ -104,7 +104,7 @@ This tool is used to run the extension code.
     -p PROFILEDIR, --profiledir=PROFILEDIR
                                  profile directory to pass to the application
 
-    --pkgdir=PKGDIR   package dir containing the package.json;
+    --pkgdir=PKGDIR              package dir containing the package.json;
                                  default is the current dir
 
     --static-args=STATIC_ARGS
@@ -114,7 +114,7 @@ This tool is used to run the extension code.
                                  XULRunner application extension template
 
 **Internal Options**
-    --addons=ADDONS              paths of addons to install, comma-separated
+    --addons=ADDONS              paths of add-ons to install, comma-separated
 
     --e10s                       enable out-of-process Jetpacks
 
@@ -152,7 +152,7 @@ Run available tests for the specified package.
 
 **Internal Options**
 
-    --addons=ADDONS              paths of addons to install, comma-separated
+    --addons=ADDONS              paths of add-ons to install, comma-separated
 
     --e10s                       enable out-of-process Jetpacks
 
@@ -215,7 +215,7 @@ with, and which binary is used.
     -a APP, --app=APP            application to run: firefox (default), xulrunner,
                                  fennec, or thunderbird
 
-    --addons=ADDONS              paths of addons to install, comma-separated
+    --addons=ADDONS              paths of add-ons to install, comma-separated
 
     -b BINARY, --binary=BINARY   path to application binary
 
@@ -260,7 +260,7 @@ with, and which binary is used.
     -a APP, --app=APP            application to run: firefox (default), xulrunner,
                                  fennec, or thunderbird
 
-    --addons=ADDONS              paths of addons to install, comma-separated
+    --addons=ADDONS              paths of add-ons to install, comma-separated
 
     -b BINARY, --binary=BINARY   path to application binary
 
@@ -303,7 +303,7 @@ and all examples.
     -a APP, --app=APP            application to run: firefox (default), xulrunner,
                                  fennec, or thunderbird
 
-    --addons=ADDONS              paths of addons to install, comma-separated
+    --addons=ADDONS              paths of add-ons to install, comma-separated
 
     -b BINARY, --binary=BINARY   path to application binary
 
