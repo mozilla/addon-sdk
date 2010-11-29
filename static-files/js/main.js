@@ -79,8 +79,7 @@ function startApp(jQuery, window) {
       });
   }
 
-  function renderInterleavedAPIDocs(where, hunks) {
-    $(where).empty();
+  function doRender(where, hunks) {
     function render_hunk (hunk) {
       if (hunk[0] == "markdown") {
         var nh = $("<span>" + markdownToHtml(hunk[1]) + "</span>");
@@ -91,6 +90,49 @@ function startApp(jQuery, window) {
       }
     }
     hunks.forEach(render_hunk);
+  }
+
+  function renderStructuredDocs(where, hunks) {
+    if (hunks.length == 0) return;
+    $(where).empty();
+    var markdown = new Array();
+    var classes = new Array();
+    var functions = new Array();
+    var properties = new Array();
+    var apiHunksExist = false;
+    for (var i = 0; i < hunks.length; i++) {
+      hunk = hunks[i];
+      if (hunk[0] == "markdown"){
+        markdown.push(hunk);
+      }
+      else if (hunk[0] == "api-json") {
+        apiHunksExist = true;
+        if (hunk[1].type == "class") {
+          classes.push(hunk);
+        }
+        else if (hunk[1].type == "function") {
+          functions.push(hunk);
+        }
+        else if (hunk[1].type == "property") {
+          properties.push(hunk);
+        }
+      }
+    }
+    doRender(where, markdown);
+    if (!apiHunksExist) {
+      return;
+    }
+    var heading = $("<div class='api-heading'>API Reference</div>");
+    heading.appendTo(where);
+    if (classes.length > 0) {
+      doRender(where, classes);
+    }
+    if (functions.length > 0) {
+      doRender(where, functions);
+    }
+    if (properties.length > 0) {
+      doRender(where, properties);
+    }
   }
 
   function getPkgFile(pkg, filename, filter, cb) {
@@ -132,7 +174,7 @@ function startApp(jQuery, window) {
         dataType: "json",
         success: function(json) {
           try {
-            renderInterleavedAPIDocs(where, json);
+            renderStructuredDocs(where, json);
           } catch (e) {
             $(where).text("Oops, API docs renderer failed: " + e);
           }
@@ -353,7 +395,7 @@ function startApp(jQuery, window) {
     } else {
       window.setInterval(checkHash, CHECK_HASH_DELAY);
     }
-    
+
     $('#hide-dev-guide-toc').click(function() {
       if ($(this).text() == 'hide') {
         $(this).text('show');

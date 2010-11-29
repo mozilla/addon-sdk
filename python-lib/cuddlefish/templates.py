@@ -13,7 +13,6 @@ let my_widget = widgets.Widget({
     }
 });
 
-widgets.add(my_widget);
 console.log("Jetpack sample addon running.");
 /*Your code is here below*/
 

@@ -11,42 +11,10 @@ Loader is composed from the [EventEmitter] trait, therefore instances
 of Loader and their descendants expose all the public properties
 exposed by EventEmitter along with additional public properties:
 
-<api name="contentScriptURL">
-@property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
-</api>
-
-<api name="contentScript">
-@property {array}
-The texts of content scripts to load.  Content scripts specified by this
-property are loaded *after* those specified by the `contentScriptURL` property.
-</api>
-
-<api name="contentScriptWhen">
-@property {string}
-When to load the content scripts.
-Possible values are "start" (default), which loads them as soon as
-the window object for the page has been created, and "ready", which loads
-them once the DOM content of the page has been loaded.
-</api>
-
-<api name="contentURL">
-@property {URL}
-The URL of the content loaded in the panel.
-</api>
-
-<api name="allow">
-@property {object}
-Permissions for the content, with the following keys:
-@prop script {boolean}
-  Whether or not to execute script in the content.  Defaults to true.
-</api>
-
 Value changes on all of the above mentioned properties emit `propertyChange`
 events on an instances.
 
-**Example:**  
+**Example:**
 
 The following code creates a wrapper on hidden frame that reloads a web page
 in frame every time `contentURL` property is changed:
@@ -72,4 +40,40 @@ in frame every time `contentURL` property is changed:
           this._frame.setAttribute('src', this._contentURL);
       }
     });
+
+<api name="Loader">
+@class
+<api name="contentScriptFile">
+@property {array}
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
+</api>
+
+<api name="contentScript">
+@property {array}
+The texts of content scripts to load.  Content scripts specified by this
+property are loaded *after* those specified by the `contentScriptFile` property.
+</api>
+
+<api name="contentScriptWhen">
+@property {string}
+When to load the content scripts.
+Possible values are "start" (default), which loads them as soon as
+the window object for the page has been created, and "ready", which loads
+them once the DOM content of the page has been loaded.
+</api>
+
+<api name="contentURL">
+@property {URL}
+The URL of the content loaded in the panel.
+</api>
+
+<api name="allow">
+@property {object}
+Permissions for the content, with the following keys:
+@prop script {boolean}
+  Whether or not to execute script in the content.  Defaults to true.
+</api>
+</api>
 

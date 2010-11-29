@@ -22,7 +22,6 @@ usage = """
 
 Package-Specific Commands:
   init       - create a sample addon in an empty directory
-  xpcom      - build xpcom component
   xpi        - generate an xpi
   test       - run tests
   run        - run program
@@ -48,22 +47,22 @@ parser_options = {
                                   help="use named config from local.json",
                                   metavar=None,
                                   default="default"),
-    ("-t", "--templatedir",): dict(dest="templatedir",
-                                   help="XULRunner app/ext. template",
-                                   metavar=None,
-                                   default=None),
-    ("-k", "--extra-packages",): dict(dest="extra_packages",
-                                      help=("extra packages to include, "
-                                            "comma-separated. Default is "
-                                            "'addon-kit'."),
-                                      metavar=None,
-                                      default="addon-kit"),
-    ("-p", "--pkgdir",): dict(dest="pkgdir",
-                              help=("package dir containing "
-                                    "package.json; default is "
-                                    "current directory"),
-                              metavar=None,
-                              default=None),
+    ("", "--templatedir",): dict(dest="templatedir",
+                                 help="XULRunner app/ext. template",
+                                 metavar=None,
+                                 default=None),
+    ("", "--extra-packages",): dict(dest="extra_packages",
+                                    help=("extra packages to include, "
+                                          "comma-separated. Default is "
+                                          "'addon-kit'."),
+                                    metavar=None,
+                                    default="addon-kit"),
+    ("", "--pkgdir",): dict(dest="pkgdir",
+                            help=("package dir containing "
+                                  "package.json; default is "
+                                  "current directory"),
+                            metavar=None,
+                            default=None),
     ("--keydir",): dict(dest="keydir",
                         help=("directory holding private keys;"
                               " default is ~/.jetpack/keys"),
@@ -73,7 +72,7 @@ parser_options = {
                              help="extra harness options as JSON",
                              type="json",
                              metavar=None,
-                             default="{}"),
+                             default={}),
     ("", "--e10s",): dict(dest="enable_e10s",
                           help="enable out-of-process Jetpacks",
                           action="store_true",
@@ -84,20 +83,20 @@ parser_groups = Bunch(
     xpi=Bunch(
         name="XPI Options",
         options={
-            ("-u", "--update-url",): dict(dest="update_url",
-                                          help="update URL in install.rdf",
-                                          metavar=None,
-                                          default=None),
-            ("-l", "--update-link",): dict(dest="update_link",
-                                           help="generate update.rdf",
-                                           metavar=None,
-                                           default=None),
+            ("", "--update-url",): dict(dest="update_url",
+                                        help="update URL in install.rdf",
+                                        metavar=None,
+                                        default=None),
+            ("", "--update-link",): dict(dest="update_link",
+                                         help="generate update.rdf",
+                                         metavar=None,
+                                         default=None),
             }
         ),
     app=Bunch(
         name="Application Options",
         options={
-            ("-P", "--profiledir",): dict(dest="profiledir",
+            ("-p", "--profiledir",): dict(dest="profiledir",
                                           help=("profile directory to "
                                                 "pass to app"),
                                           metavar=None,
@@ -116,27 +115,14 @@ parser_groups = Bunch(
                                          "fennec, or thunderbird"),
                                    metavar=None,
                                    default="firefox"),
-            ("-f", "--logfile",): dict(dest="logfile",
-                                       help="log console output to file",
-                                       metavar=None,
-                                       default=None),
-            ("-r", "--use-server",): dict(dest="use_server",
-                                          help="use development server",
-                                          action="store_true",
-                                          default=False),
-            }
-        ),
-    xpcom=Bunch(
-        name="XPCOM Compilation Options",
-        options={
-            ("-s", "--srcdir",): dict(dest="moz_srcdir",
-                                      help="Mozilla source dir",
-                                      metavar=None,
-                                      default=None),
-            ("-o", "--objdir",): dict(dest="moz_objdir",
-                                      help="Mozilla objdir",
-                                      metavar=None,
-                                      default=None),
+            ("", "--logfile",): dict(dest="logfile",
+                                     help="log console output to file",
+                                     metavar=None,
+                                     default=None),
+            ("", "--use-server",): dict(dest="use_server",
+                                        help="use development server",
+                                        action="store_true",
+                                        default=False),
             }
         ),
     tests=Bunch(
@@ -148,16 +134,17 @@ parser_groups = Bunch(
                                                    "program (default is "
                                                    "test-harness)"),
                                              default="test-harness"),
-            ("-d", "--dep-tests",): dict(dest="dep_tests",
-                                         help="include tests for all deps",
-                                         action="store_true",
-                                         default=False),
-            ("-x", "--times",): dict(dest="iterations",
-                                     type="int",
-                                     help="number of times to run tests",
-                                     default=1),
-            ("-F", "--filter",): dict(dest="filter",
-                                      help="only run tests that match regexp",
+            ("", "--dependencies",): dict(dest="dep_tests",
+                                          help="include tests for all deps",
+                                          action="store_true",
+                                          default=False),
+            ("", "--times",): dict(dest="iterations",
+                                   type="int",
+                                   help="number of times to run tests",
+                                   default=1),
+            ("-f", "--filter",): dict(dest="filter",
+                                      help=("only run tests whose filenames "
+                                            "match FILTER, a regexp"),
                                       metavar=None,
                                       default=None),
             # TODO: This should default to true once our memory debugging
@@ -184,9 +171,9 @@ def find_parent_package(cur_dir):
     return None
 
 def check_json(option, opt, value):
+    # We return the parsed JSON here; see bug 610816 for background on why.
     try:
-        # Make sure value is JSON, but keep it JSON.
-        return json.dumps(json.loads(value))
+        return json.loads(value)
     except ValueError:
         raise optparse.OptionValueError("Option %s must be JSON." % opt)
 
@@ -220,13 +207,6 @@ def parse_args(arguments, parser_options, usage, parser_groups=None,
         parser.exit()
 
     return (options, args)
-
-def get_xpts(component_dirs):
-    files = []
-    for dirname in component_dirs:
-        xpts = glob.glob(os.path.join(dirname, '*.xpt'))
-        files.extend(xpts)
-    return files
 
 def test_all(env_root, defaults):
     fail = False
@@ -282,7 +262,7 @@ def test_all_packages(env_root, defaults):
         if name != "testpkgs":
             deps.append(name)
     print "Testing all available packages: %s." % (", ".join(deps))
-    run(arguments=["test", "--dep-tests"],
+    run(arguments=["test", "--dependencies"],
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
         defaults=defaults)
@@ -300,8 +280,8 @@ def run_development_mode(env_root, defaults):
 
     print "I am starting an instance of %s in development mode." % app
     print "From a separate shell, you can now run cfx commands with"
-    print "'-r' as an option to send the cfx command to this instance."
-    print "All logging messages will appear below."
+    print "'--use-server' as an option to send the cfx command to this"
+    print "instance. All logging messages will appear below."
 
     os.environ['JETPACK_DEV_SERVER_PORT'] = str(port)
     options = {}
@@ -441,32 +421,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         target_cfg_json = os.path.join(options.pkgdir, 'package.json')
         target_cfg = packaging.get_config_in_dir(options.pkgdir)
 
-    if command == "xpcom":
-        if 'xpcom' not in target_cfg:
-            print >>sys.stderr, "package.json does not have a 'xpcom' entry."
-            sys.exit(1)
-        if not (options.moz_srcdir and options.moz_objdir):
-            print >>sys.stderr, "srcdir and objdir not specified."
-            sys.exit(1)
-        options.moz_srcdir = os.path.expanduser(options.moz_srcdir)
-        options.moz_objdir = os.path.expanduser(options.moz_objdir)
-        xpcom = target_cfg.xpcom
-        from cuddlefish.xpcom import build_xpcom_components
-        if 'typelibs' in xpcom:
-            xpt_output_dir = packaging.resolve_dir(target_cfg,
-                                                   xpcom.typelibs)
-        else:
-            xpt_output_dir = None
-        build_xpcom_components(
-            comp_src_dir=packaging.resolve_dir(target_cfg, xpcom.src),
-            moz_srcdir=options.moz_srcdir,
-            moz_objdir=options.moz_objdir,
-            base_output_dir=packaging.resolve_dir(target_cfg, xpcom.dest),
-            xpt_output_dir=xpt_output_dir,
-            module_name=xpcom.module
-            )
-        sys.exit(0)
-
     # At this point, we're either building an XPI or running Jetpack code in
     # a Mozilla application (which includes running tests).
 
@@ -567,15 +521,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         for name in resources:
             resources[name] = os.path.abspath(resources[name])
 
-    dep_xpt_dirs = []
-    for dep in deps:
-        dep_cfg = pkg_cfg.packages[dep]
-        if 'xpcom' in dep_cfg and 'typelibs' in dep_cfg.xpcom:
-            abspath = packaging.resolve_dir(dep_cfg,
-                                            dep_cfg.xpcom.typelibs)
-            dep_xpt_dirs.append(abspath)
-    xpts = get_xpts(dep_xpt_dirs)
-
     harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
         'bootstrap': {
@@ -599,6 +544,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         harness_options[option] = getattr(options, option)
 
     harness_options['metadata'] = packaging.get_metadata(pkg_cfg, deps)
+
     packaging.call_plugins(pkg_cfg, deps)
 
     retval = 0
@@ -637,8 +583,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest,
                   xpi_name=xpi_name,
-                  harness_options=harness_options,
-                  xpts=xpts)
+                  harness_options=harness_options)
     else:
         if options.use_server:
             from cuddlefish.server import run_app
@@ -655,7 +600,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         try:
             retval = run_app(harness_root_dir=app_extension_dir,
                              harness_options=harness_options,
-                             xpts=xpts,
                              app_type=options.app,
                              binary=options.binary,
                              profiledir=options.profiledir,

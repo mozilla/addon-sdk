@@ -59,7 +59,7 @@ const valid = {
     },
     msg: 'The `contentURL` option must be a URL.'
   },
-  contentScriptURL: {
+  contentScriptFile: {
     is: ['undefined', 'null', 'string', 'array'],
     map: function(value) 'undefined' === getTypeOf(value) ? null : value,
     ok: function(value) {
@@ -77,7 +77,7 @@ const valid = {
       }
       return true;
     },
-    msg: 'The `contentScriptURL` option must be a local file URL or an array of'
+    msg: 'The `contentScriptFile` option must be a local file URL or an array of'
           + 'URLs.'
   },
   contentScript: {
@@ -168,16 +168,16 @@ const Loader = EventEmitter.compose({
    * and new value.
    * @type {String[]}
    */
-  get contentScriptURL() this._contentScriptURL,
-  set contentScriptURL(value) {
-    value = validate(value, valid.contentScriptURL);
-    if (value != this._contentScriptURL) {
+  get contentScriptFile() this._contentScriptFile,
+  set contentScriptFile(value) {
+    value = validate(value, valid.contentScriptFile);
+    if (value != this._contentScriptFile) {
       this._emit('propertyChange', { 
-        contentScriptURL: this._contentScriptURL = value
+        contentScriptFile: this._contentScriptFile = value
       });
     }
   },
-  _contentScriptURL: null,
+  _contentScriptFile: null,
   /**
    * The texts of content script.
    * Property change emits `propertyChange` event on instance with this key

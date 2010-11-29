@@ -35,6 +35,11 @@ called `package.json`. This file is also referred to as the
 
 * `url` - the URL of the package's website.
 
+* `icon` - the relative path from the root of the package to a
+  PNG file containing the icon for the package. By default, this
+  is `icon.png`. If the package is built as an XPI, this is used
+  as the extension's icon.
+
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
 

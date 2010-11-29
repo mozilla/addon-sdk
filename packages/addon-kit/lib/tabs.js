@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Dietrich Ayala <dietrich@mozilla.com> (Original author)
  *   Felipe Gomes <felipc@gmail.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,6 +35,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+"use strict";
 
 if (!require("xul-app").is("Firefox")) {
   throw new Error([
@@ -43,28 +45,17 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const tabBrowser = require("tab-browser");
-const TabModule = tabBrowser.TabModule;
+const { browserWindows } = require("windows");
+const { tabs } = require("windows/tabs");
 
-let tabModule = new TabModule();
-
-exports.__defineGetter__("activeTab", function() tabModule.activeTab);
-exports.__defineSetter__("activeTab", function(tab) tabModule.activeTab = tab);
-
-exports.open = tabModule.open;
-exports.__iterator__ = tabModule.__iterator__;
-exports.__defineGetter__("length", function() tabModule.length);
-
-tabBrowser.tabEvents.forEach(function(eventHandler) {
-  // return the collection for each event
-  exports.__defineGetter__(eventHandler, function() tabModule[eventHandler]);
-
-  // make tabs setter for each event, for adding via property assignment
-  exports.__defineSetter__(eventHandler, function(val) tabModule[eventHandler].add(val));
+Object.defineProperties(tabs, {
+  open: { value: function open(options) {
+    if (options.inNewWindow)
+        return browserWindows.open({ tabs: [ options ] });
+    // Open in active window if new window was not required.
+    return browserWindows.activeWindow.tabs.open(options);
+  }}
 });
-
-function unload() {
-  // Unregister tabs event listeners
-  tabBrowser.tabEvents.forEach(function(e) exports[e] = []);
-}
-require("unload").ensure(this);
+// It's a hack but we will be able to remove it once will implemnet CommonJS
+// feature that would allow us to override exports.
+exports.__proto__ = tabs;

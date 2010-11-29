@@ -1,20 +1,30 @@
-.api{ margin-bottom: 10px; }
+
 .api .optional{ font-style: italic;}
-      
-.api>.name{ font-size: 110%; font-weight: bold;}
-.api>.name>.params{ font-weight: normal;}
-.api>.name>.params .default{ color: #777;}
-.api>.name>.params .default:before{ content: "=";}
-.api>.name>.returns{ color: #555;}
-.api>.name>.returns .type{ color: #000;}
-.api>.name>.property_type{ color: #555;}
-.api>.name>.property_type .type{ color: #000;}
+.api-heading{font-size: 200%; font-weight: bold;padding-top:30px;padding-bottom:10px;}
+.api{margin-bottom:30px;}
+.api>.name{font-size: 125%; font-weight: bold; padding:3px;border: solid 1px #EEE;background: #EEE;margin-bottom:10px;}
+
+.class-member-set{margin-bottom:20px;}
+.class-member-set>.name{ font-size: 120%; font-weight: bold; margin-top: 20px; margin-bottom: 5px;}
+
+.class-member{margin-bottom:20px;}
+.class-member>.name{font-size: 110%; font-weight: bold;}
+
+.name>.params{ font-weight: normal;}
+.name>.params .default{ color: #777;}
+.name>.params .default:before{ content: "=";}
+.name>.returns{ color: #555;}
+.name>.returns .type{ color: #000;}
+.name>.property_type{ color: #555;}
+.name>.property_type .type{ color: #000;}
 
 .api>.params, .api>.returns{ background-color: #EEE; margin:3px; }
-.api>.params>.param, .api .prop{ padding: 3px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.3);}
-.api>.params>.param>span:not(.description), .api .prop>span:not(.description){ display:inline-block; width:120px; vertical-align:top; overflow: hidden;}
-      
-.api>.params>.param>.prop{ padding-left: 10px;}
-.api .param>.description, .api .prop>.description{ width: 300px; display:inline-block;vertical-align:top;}
-      
-.api .description p{ margin: 0;}
+.class-member>.params, .class-member>.returns{ background-color: #EEE; margin:3px; }
+.params>.param, .api .prop{ padding: 3px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.3);}
+.params>.param>span:not(.description), .api .prop>span:not(.description){ display:inline-block; width:120px; vertical-align:top; overflow: hidden;}
+
+.params>.param>.prop{ padding-left: 10px;}
+.param>.description, .api .prop>.description{ width: 300px; display:inline-block;vertical-align:top;}
+
+.description p{ margin: 0;margin-bottom:10px}
+.api>.description p{ margin-bottom:10px}

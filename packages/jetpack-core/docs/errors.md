@@ -2,10 +2,6 @@
 
 The `errors` module provides helpers for safely invoking user callbacks.
 
-
-Functions
----------
-
 <api name="catchAndLog">
 @function
   Wraps a callback in a function that when invoked will catch and log any

@@ -85,7 +85,7 @@ const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
   _listeners: EventEmitter.required,
   contentScript: Loader.required,
-  contentScriptURL: Loader.required,
+  contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
   include: null,
   constructor: function PageMod(options) {
@@ -96,8 +96,8 @@ const PageMod = Loader.compose(EventEmitter, {
 
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
-    if ('contentScriptURL' in options)
-      this.contentScriptURL = options.contentScriptURL;
+    if ('contentScriptFile' in options)
+      this.contentScriptFile = options.contentScriptFile;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
     if ('onAttach' in options)
@@ -120,6 +120,10 @@ const PageMod = Loader.compose(EventEmitter, {
     }
 
     this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
+    pageModManager.add(this._public);
+  },
+  destroy: function destroy() {
+    pageModManager.remove(this._public);
   },
   _onContent: function _onContent(window) {
     if (!pageModManager.has(this))
@@ -138,7 +142,7 @@ const PageMod = Loader.compose(EventEmitter, {
     this._emit('attach', Worker({
       window: window.wrappedJSObject,
       contentScript: this.contentScript,
-      contentScriptURL: this.contentScriptURL,
+      contentScriptFile: this.contentScriptFile,
       onError: this._onUncaughtError
     }), this._public);
   },
@@ -187,7 +191,3 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
-
-
-exports.add = pageModManager.add;
-exports.remove = pageModManager.remove;

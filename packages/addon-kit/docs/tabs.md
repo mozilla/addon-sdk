@@ -4,51 +4,139 @@
 
 The `tabs` module provides easy access to tabs and tab-related events.
 
-Introduction
-------------
+Events
+------
 
-Properties
-----------
+Events represent common actions and state changes for tabs and their content.
 
-<api name="activeTab">
-@property {object}
+Listeners are passed the `tab` object that triggered the event.
 
-The currently active tab.  This property can be set to a `tab` object, which
-will focus that tab's parent window and bring the tab to the foreground.
-</api>
+All the tabs and lists of tabs emit following events:
+
+### open ###
+Event emitted when a new tab is open.
+This does not mean that the content has loaded, only that the browser tab
+itself is fully visible to the user.
+
+Tab content related properties (title, thumbnail, favicon, url) will not
+be correct at this point. Use `ready` event listener to be notified when the
+page has loaded.
+
+### close ###
+Event emitted when a tab is closed.
+
+### ready ###
+Event emitted when a tab's content's DOM is ready.
+
+This is equivalent to the `DOMContentLoaded` event for the given content page.
+This event will be emitted multiple times for the same tab, if different content
+is loaded into it.
+
+At this point all the tab content related properties can be used.
+
+### activate ###
+Event emitted when an inactive tab is made active.
+
+### deactivate ###
+Event emitted when the active tab is made inactive.
 
 **Example**
 
-    // get
-    var tabs = require("tabs");
-    console.log("title of active tab is " + tabs.activeTab.title);
+    var tabs = require("tabs").tabs;
 
-    // set
-    tabs.activeTab = anotherTab;
+    // listen for tab openings.
+    tabs.on('open', function onOpen(tab) {
+      myOpenTabs.push(tab);
+    });
+
+    // listen for tab content loadings.
+    tabs.on('ready', function(tab) {
+      console.log('tab is loaded', tab.title, tab.url)
+    });
 
 <api name="tabs">
-@property {array}
+@property {TabList}
 
-The set of open tabs, across all open windows.
-</api>
+The live list of all open tabs, across all open windows.
+
+_See TabList class for more details._
 
 **Example**
 
-    var tabs = require("tabs");
-    for each (tab in tabs) {
+    var tabs= require("tabs").tabs;
+    for each (var tab in tabs) {
       console.log(tab.title);
     }
+</api>
 
-Functions
----------
+<api name="TabList">
+@class
+The set of sorted list of open tabs.
+An instance of `TabList` represents a list of open tabs. `Tablist` can represent
+a list of tabs per window as in the case of `BrowserWindow`'s `tabs` property
+or list of all open tabs as in the case of `tabs` object that is exported by
+this module.
 
+`TabList` instances emit all the events described in the "events" section.
+Listeners are passed the `tab` object that triggered the event.
+
+<api name="active">
+@property {Tab}
+
+The currently active tab in this list. This property is read-only.
+
+**Example**
+
+    // Getting active tab's title.
+    var tabs = require("tabs").tabs;
+    console.log("title of active tab is " + tabs.active.title);
+
+    // Activate tab next to currently active one.
+    tabs.active = tabs[tabs.active++];
+</api>
+<api name="length">
+@property {number}
+
+Number of items in this list.
+</api>
 <api name="open">
 @method
-Open a new tab.
+Open a new tab. If this is a list of tabs for a window, the tab will be opened
+on this window. If this is a list of all tabs, the new tab will be open in the
+active window or in the new window depending on the option being passed.
+
+**Example**
+
+    var tabs = require("tabs").tabs;
+
+    // Open a new tab on active window and make tab active.
+    tabs.open("http://www.mysite.com");
+
+    // Open a new tab in a new window and make it active.
+    tabs.open({
+      url: "http://www.mysite.com",
+      inNewWindow: true
+    });
+
+    // Open a new tab on active window in the background.
+    tabs.open({
+      url: "http://www.mysite.com",
+      inBackground: true
+    });
+
+    // Open a new tab as an apptab and do something once it's open.
+    tabs.open({
+      url: "http://www.mysite.com",
+      pinned: true,
+      onOpen: function onOpen(tab) {
+        // do stuff like listen for content
+        // loading.
+      }
+    });
 
 @param options {object}
 An object containing configurable options for how and where the tab will be
-opened, as well as a callback for being notified when the tab has fully opened.
+opened, as well as a listeners for the tab events.
 
 If the only option being used is `url`, then a bare string URL can be passed to
 `open` instead of adding at a property of the `options` object.
@@ -65,145 +153,65 @@ opened in the first tab in that window. This is an optional property.
 If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
+@prop [pinned] {boolean}
+If present and true, then the new tab will be pinned as an app-tab.
+
 @prop [onOpen] {function}
-A callback function that is called when the tab has loaded. This does not mean
-that the URL content has loaded, only that the browser tab itself is fully
-visible to the user. This is an optional property.
-
+A callback function that will be registered for 'open' event.
+This is an optional property.
+@prop [onClose] {function}
+A callback function that will be registered for 'close' event.
+This is an optional property.
+@prop [onReady] {function}
+A callback function that will be registered for 'ready' event.
+This is an optional property.
+@prop [onActivate] {function}
+A callback function that will be registered for 'activate' event.
+This is an optional property.
+@prop [onDeactivate] {function}
+A callback function that will be registered for 'deactivate' event.
+This is an optional property.
+@prop [onActivate] {function}
+A callback function that will be registered for 'activate' event.
+This is an optional property.
+</api>
 </api>
 
-**Example**
-
-    var tabs = require("tabs");
-
-    // open a new tab and make it active
-    tabs.open("http://www.mysite.com");
-
-    // in a new window
-    tabs.open({
-      url: "http://www.mysite.com",
-      inNewWindow: true
-    });
-
-    // opened in the background
-    tabs.open({
-      url: "http://www.mysite.com",
-      inBackground: true
-    });
-
-    // an onOpen listener
-    tabs.open({
-      url: "http://www.mysite.com",
-      onOpen: function(tab) {
-        // do stuff like listen for content
-        // loading.
-      }
-    });
-
-Events
-------
-
-Events representing common actions and state changes for tabs and their content.
-
-These properties are both `collections` and setters. Listeners can be registered
-by either assigning a callback function to any of these properties, or by
-passing the callback to the properties' `add` method.  Listeners can be removed
-by passing the callback function to the properties' `remove` method.
-
-Listeners are passed the `tab` object that triggered the event.
-
-<api name="onActivate">
-@property {collection}
-Fired when an inactive tab is made active.
-</api>
-
-<api name="onDeactivate">
-@property {collection}
-Fired when the active tab is made inactive.
-</api>
-
-<api name="onOpen">
-@property {collection}
-Fired when a new tab is opened. At this point the page has not finished loading,
-so not all properties of the `tab` object passed to listeners will be available.
-For example, `tab.location` will not be correct. Use `onReady` or `onLoad` to be
-notified when the page has loaded.
-</api>
-
-<api name="onClose">
-@property {collection}
-Fired when a tab is closed.
-</api>
-
-<api name="onReady">
-@property {collection}
-Fired when a tab's content's DOM is ready.
-This is equivalent to the DOMContentLoaded event
-for the given content page.
-</api>
-
-<api name="onLoad">
-@property {collection}
-Fired for each load event in the tab's content page.
-This can fire multiple times, for both content and images.
-</api>
-
-<api name="onPaint">
-@property {collection}
-Fired whenever a portion of the tab's content page is repainted.
-</api>
-
-**Examples**
-
-    var tabs = require("tabs");
-
-    // listen for tab openings via property assignment
-    tabs.onOpen = function(tab) {
-      myOpenTabs.push(tab);
-    }
-
-    // modify the DOM of the page when ready,
-    // by adding listener to the event collection.
-    tabs.onReady.add(function(tab) {
-      tab.contentDocument.body.style.color = "red";
-    });
-
-Tab
-----
-
-A `tab` object represents a single open tab. It contains various tab
+<api name="Tab">
+@class
+A `tab` instance represents a single open tab. It contains various tab
 properties, several methods for manipulation, as well as per-tab event
 registration.
+
+Tabs emit all the events described in the "events" section. Listeners are
+passed the `tab` object that triggered the event.
+
+    var tabs = require("tabs").tabs;
+
+    // Close the active tab.
+    tabs.activeTab.close();
+
+    // Move the active tab one position to the right.
+    tabs.activeTab.index++;
+
+    // Open a tab and listen for content being ready.
+    tabs.open({
+      url: "http://www.mozilla.com",
+      onReady: function(tab) {
+        console.log(tab.title);
+      }
+    });
 
 <api name="title">
 @property {string}
 The title of the page currently loaded in the tab.
-This property is read-only.
+This property can be set to change the tab title.
 </api>
 
-<api name="location">
-@property {Location}
+<api name="url">
+@property {String}
 The URL of the page currently loaded in the tab.
 This property can be set to load a different URL in the tab.
-The value is a Location object, just like window.location in web pages.
-Its toString() method returns a string representation of the URL.
-For more information about Location objects, see their [Mozilla Developer
-Network documentation][MDN].
-[MDN]: https://developer.mozilla.org/en/DOM/window.location#Location_object
-</api>
-
-<api name="contentWindow">
-@property {object}
-The window object for the page currently loaded in the tab.
-This property is read-only, meaning you cannot set it to different window.
-The window itself can be modified.
-</api>
-
-<api name="contentDocument">
-@property {object}
-The document object for the page currently loaded in the tab.
-This property is read-only, meaning you cannot set it to a different document.
-The document itself can be modified.
 </api>
 
 <api name="favicon">
@@ -214,60 +222,38 @@ This property is read-only.
 
 <api name="style">
 @property {string}
-The CSS style for the tab. NOT IMPLEMENTED YET.
+The CSS style for the tab. **NOT IMPLEMENTED YET**.
 </api>
 
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
-This property is read-only.
+This property can be set to change it's relative position.
 </api>
 
 <api name="thumbnail">
-@property {canvas}
-A thumbnail of the page currently loaded in the tab.
+@property {string}
+Data URI of a thumbnail of the page currently loaded in the tab.
 This property is read-only.
 </api>
 
+<api name="pinned">
+@property {boolean}
+Whether or not tab is pinned (Is an AppTab).
+This property can be set to pin / unpin this tab.
+</api>
+
 <api name="close">
-@method 
-Close the tab.
+@method
+Close this tab.
+
+@param [callback] {function}
+A function to be called when the tab finishes its closing process.
+This is an optional arguments.
 </api>
 
-<api name="move">
-@method 
-Move the tab to the specified index in its containing window.
-
-@param index {number}
-The index in the set of tabs to move the tab to. This is a zero-based index.
+<api name="activate">
+@method
+Makes this tab active, which will bring this tab to the foreground.
 </api>
-
-**Events**
-
-Registration of event listeners per tab is supported for all events supported by
-the `tabs` module except for `onOpen`. Tab opening events are available via
-`tabs.onOpen` or for specific tabs via the `onOpen` parameter to `tabs.open()`.
-The event listeners are not passed any parameters, as the caller will already
-have the tab object on which the listener was registered.
-
-**Examples**
-
-    var tabs = require("tabs");
-
-    // close the active tab
-    tabs.activeTab.close();
-
-    // move the active tab one position to the right
-    tabs.activeTab.move(tabs.activeTab.index + 1);
-
-    // open a tab, and listen for content loads
-    tabs.open({
-      url: "http://www.mozilla.com",
-      onOpen: function(tab) {
-
-        // listen for content loads
-        tab.onReady = function() {
-          console.log(tab.title);
-        };
-      }
-    });
+</api>

@@ -46,11 +46,13 @@ const Loader = Trait.compose(
       this._onUnload = options.onUnload;
       if ('window' in options)
         this._window = options.window;
+      this._load();
       this.window = this._window;
     },
     window: null,
     _onLoad: null,
-    _onUnload: null
+    _onUnload: null,
+    _tabOptions: []
   }
 );
 
@@ -61,14 +63,19 @@ exports['test compositions with missing required properties'] = function(test) {
     'should throw missing required property exception'
   );
   test.assertRaises(
-    function() WindowLoader.compose({ _onLoad: null })(),
+    function() WindowLoader.compose({ _onLoad: null, _tabOptions: null })(),
     'Missing required property: _onUnload',
     'should throw missing required property `_onUnload`'
   );
   test.assertRaises(
-    function() WindowLoader.compose({ _onUnload: null })(),
+    function() WindowLoader.compose({ _onUnload: null, _tabOptions: null })(),
     'Missing required property: _onLoad',
     'should throw missing required property `_onLoad`'
+  );
+  test.assertRaises(
+    function() WindowLoader.compose({ _onUnload: null, _onLoad: null })(),
+    'Missing required property: _tabOptions',
+    'should throw missing required property `_tabOptions`'
   );
 };
 

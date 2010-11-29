@@ -52,6 +52,7 @@ const { Cc, Ci } = require('chrome'),
       { WindowDom } = require('windows/dom'),
       { WindowLoader } = require('windows/loader'),
       { WindowTrackerTrait } = require('window-utils'),
+      { Options } = require('tabs/tab'),
       // { Sidebars } = require('window/sidebars');
       { utils } = require('xpcom'),
       apiUtils = require('api-utils'),
@@ -76,6 +77,7 @@ const BrowserWindowTrait = Trait.compose(
   Trait.compose({
     _emit: Trait.required,
     _close: Trait.required,
+    _load: Trait.required,
     /**
      * Constructor returns wrapper of the specified chrome window.
      * @param {nsIWindow} window
@@ -84,14 +86,24 @@ const BrowserWindowTrait = Trait.compose(
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
-      if ('onOpen' in options) this.on('open', options.onOpen);
-      if ('onClose' in options) this.on('close', options.onClose);
-      if ('onReady' in options) this.on('ready', options.onReady);
-      if ('params' in options) this._params = options.params;
-      if ('window' in options) this._window = options.window;
-      this._window; // need to invoke lazy getter.
+      if ('onOpen' in options)
+        this.on('open', options.onOpen);
+      if ('onClose' in options)
+        this.on('close', options.onClose);
+      if ('window' in options)
+        this._window = options.window;
+      if ('tabs' in options) {
+        this._tabOptions = Array.isArray(options.tabs) ?
+                           options.tabs.map(Options) :
+                           [ Options(options.tabs) ];
+      }
+      else if ('url' in options) {
+        this._tabOptions = [ Options(options.url) ];
+      }
+      this._load();
       return this;
     },
+    _tabOptions: [],
     _onLoad: function() {
       try {
         this._initWindowTabTracker();
@@ -100,10 +112,9 @@ const BrowserWindowTrait = Trait.compose(
       }
       this._emit('open', this._public);
     },
-    _onReady: function() {
-      this._emit('ready', this._public);
-    },
     _onUnload: function() {
+      // Need to remove all the tabs before window listener are notified.
+      this._destroyWindowTabTracker();
       this._emit('close', this._public);
       this._window = null;
       // Removing reference from the windows array.
@@ -184,21 +195,10 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       let window = WM.getMostRecentWindow(null);
       return this._isBrowser(window) ? BrowserWindow({ window: window }) : null;
     },
-    set activeWindow(window) {
-      if (window instanceof BrowserWindow)
-        window.focus()
-    },
-    openWindow: function(options) {
+    open: function open(options) {
       if (typeof options === "string")
-        options = { url: options };
-
-      let url = apiUtils.validateOptions(options, {
-        url: { is: ["undefined", "string"] }
-      }).url || "about:blank";
-
-      return BrowserWindow(Object.create(options, {
-        params: { value: [ url ] }
-      }));
+        options = { tabs: [Options(options)] };
+      return BrowserWindow(options);
     },
     /**
      * Returns true if specified window is a browser window.

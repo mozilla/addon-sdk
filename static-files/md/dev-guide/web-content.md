@@ -71,34 +71,34 @@ The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
     contentScript      string, array
-    contentScriptURL   string, array
+    contentScriptFile   string, array
     contentScriptWhen  string
 
 We have already seen the `contentScript` option, which enables you to pass
 in the text of the script itself as a string literal. This version of the API
 avoids the need to maintain a separate file for the content script.
 
-The `contentScriptURL` option enables you to pass in the URL from which the
-content script will be loaded. To supply the file "my-content-script.js",
-located in the /data subdirectory under your package's root directory, use
-a line like:
+The `contentScriptFile` option enables you to pass in the local file URL from
+which the content script will be loaded. To supply the file
+"my-content-script.js", located in the /data subdirectory under your package's
+root directory, use a line like:
 
     // "data" is supplied by the "self" module
     var data = require("self").data;
     ...
-    contentScriptURL: data.url("my-content-script.js")
+    contentScriptFile: data.url("my-content-script.js")
 
-Both `contentScript` and `contentScriptURL` accept an array of strings, so you
+Both `contentScript` and `contentScriptFile` accept an array of strings, so you
 can load multiple scripts, which can also interact directly with each other in
 the content process:
 
     // "data" is supplied by the "self" module
     var data = require("self").data;
     ...
-    contentScriptURL:
+    contentScriptFile:
         [data.url("jquery-1.4.2.min.js"), data.url("my-content-script.js")]
 
-Scripts specified using contentScriptURL are loaded before those specified
+Scripts specified using contentScriptFile are loaded before those specified
 using contentScript. This enables you to load a JavaScript library like jQuery
 by URL, then pass in a simple script inline that can use jQuery.
 
@@ -178,7 +178,7 @@ register as a listener in its constructor:
 
     panel = require("panel").Panel({
       contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
-      contentScriptURL: data.url("panel.js"),
+      contentScriptFile: data.url("panel.js"),
       contentScriptWhen: "ready",
       // Register the handleMessage function as a listener
       onMessage: function handleMessage(message) {
@@ -209,11 +209,10 @@ post messages back to the content script:
       myWorker.postMessage("do not click this link again");
     }
 
-    var pageMod = require("page-mod");
-    var myPageMod = pageMod.add({
+    require("page-mod").PageMod({
       include: ["*"],
       contentScriptWhen: 'ready',
-      contentScriptURL:  data.url("pagemod.js"),
+      contentScriptFile:  data.url("pagemod.js"),
       onAttach: function onAttach(worker, mod) {
         // Register the handleMessage function as a listener
         worker.on('message', handleMessage);
@@ -240,24 +239,24 @@ This is the complete add-on script:
     const panels = require("panel");
     const data = require("self").data;
 
-    widgets.add(widgets.Widget({
+    widgets.Widget({
       label: "Reddit",
       image: "http://www.reddit.com/static/favicon.ico",
       panel: panels.Panel({
         width: 240,
         height: 320,
         contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
-        contentScriptURL: [data.url("jquery-1.4.2.min.js"),
+        contentScriptFile: [data.url("jquery-1.4.2.min.js"),
                            data.url("panel.js")],
         contentScriptWhen: "ready",
         onMessage: function(message) {
           require("tab-browser").addTab(message);
         }
       })
-    }));
+    });
 
 This code supplies two content scripts to the panel's constructor in the
-contentScriptURL option: the jQuery library and the script that intercepts
+contentScriptFile option: the jQuery library and the script that intercepts
 mouse clicks.
 
 It also supplies a function to the `onMessage` option which passes the message

@@ -126,6 +126,7 @@ exports.testManifest = function(test) {
 // E10s Manifest Tests
 
 var e10s = require("e10s");
+var xulApp = require("xul-app");
 
 var e10sModules = {
   "superpower-client": {
@@ -185,6 +186,13 @@ function createE10sHarness(test, modules, onQuit) {
 };
 
 exports.testE10sAdapterWorks = function(test) {
+  if (xulApp.is("Firefox") &&
+      xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
+    test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
+              "so we'll skip it.");
+    return;
+  }
+
   var harness = createE10sHarness(test, e10sModules, function quit(status) {
     test.assertEqual(status, "OK",
                      "require('superpower') should work");
@@ -202,6 +210,13 @@ exports.testE10sAdapterWorks = function(test) {
 // case, though, it's easier to just hack the manifest to point
 // at a different file; the same code is tested.
 exports.testE10sAdapterDoesntWorkOnHackedManifest = function(test) {
+  if (xulApp.is("Firefox") &&
+      xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
+    test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
+              "so we'll skip it.");
+    return;
+  }
+
   var modules = copy(e10sModules);
   modules['superpower'].moduleInfo['e10s-adapter'] = 'somethingelse';
 

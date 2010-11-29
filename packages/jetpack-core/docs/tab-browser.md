@@ -19,12 +19,27 @@ add-on, use the Tabs module (JEP 110).
 The XUL tab element of the currently active tab.
 </api>
 
-Functions
----------
-
 <api name="addTab">
-@method
+@function
 Adds a new tab.
+
+**Example**
+
+    const tabBrowser = require("tab-browser");
+    tabBrowser.addTab("http://google.com");
+
+    const tabBrowser = require("tab-browser");
+    tabBrowser.addTab("http://google.com", {
+      inBackground: true
+    });
+
+    const tabBrowser = require("tab-browser");
+    tabBrowser.addTab("http://google.com", {
+      inNewWindow: true,
+      onLoad: function(tab) {
+        console.log("tab is open.");
+      }
+    });
 
 @returns {element}
 The XUL tab element of the newly created tab.
@@ -51,41 +66,10 @@ The XUL element for the tab is passed as a parameter to
 this function.
 </api>
 
-**Example**
-
-    const tabBrowser = require("tab-browser");
-    tabBrowser.addTab("http://google.com");
-
-    const tabBrowser = require("tab-browser");
-    tabBrowser.addTab("http://google.com", {
-      inBackground: true
-    });
-
-    const tabBrowser = require("tab-browser");
-    tabBrowser.addTab("http://google.com", {
-      inNewWindow: true,
-      onLoad: function(tab) {
-        console.log("tab is open.");
-      }
-    });
-
 <api name="Tracker">
-@method
+@function
 Register a delegate object to be notified when tabbrowsers are created
 and destroyed.
-
-@param delegate {object}
-Delegate object to be notified each time a tabbrowser is created or destroyed.
-The object should contain the following methods:
-
-@prop [onTrack] {function}
-Method of delegate that is called when a new tabbrowser starts to be tracked.
-The tabbrowser element is passed as a parameter to this method.
-
-@prop [onUntrack] {function}
-Method of delegate that is called when a tabbrowser stops being tracked.
-The tabbrowser element is passed as a parameter to this method.
-</api>
 
 The onTrack method will be called once per pre-existing tabbrowser, upon
 tracker registration.
@@ -103,22 +87,23 @@ tracker registration.
     };
     tabBrowser.Tracker(tracker);
 
-<api name="TabTracker">
-@method
-Register a delegate object to be notified when tabs are opened and closed. 
-
 @param delegate {object}
-Delegate object to be notified each time a tab is opened or closed.
+Delegate object to be notified each time a tabbrowser is created or destroyed.
 The object should contain the following methods:
 
 @prop [onTrack] {function}
-Method of delegate that is called when a new tab starts to be tracked.
-The tab element is passed as a parameter to this method.
+Method of delegate that is called when a new tabbrowser starts to be tracked.
+The tabbrowser element is passed as a parameter to this method.
 
 @prop [onUntrack] {function}
-Method of delegate that is called when a tab stops being tracked.
-The tab element is passed as a parameter to this method.
+Method of delegate that is called when a tabbrowser stops being tracked.
+The tabbrowser element is passed as a parameter to this method.
 </api>
+
+<api name="TabTracker">
+@function
+Register a delegate object to be notified when tabs are opened and closed.
+
 
 The onTrack method will be called once per pre-existing tab, upon
 tracker registration.
@@ -135,3 +120,17 @@ tracker registration.
       }
     };
     tabBrowser.TabTracker(tracker);
+
+@param delegate {object}
+Delegate object to be notified each time a tab is opened or closed.
+The object should contain the following methods:
+
+@prop [onTrack] {function}
+Method of delegate that is called when a new tab starts to be tracked.
+The tab element is passed as a parameter to this method.
+
+@prop [onUntrack] {function}
+Method of delegate that is called when a tab stops being tracked.
+The tab element is passed as a parameter to this method.
+</api>
+

@@ -1,14 +1,16 @@
 Add-on SDK README
 ==================
 
-This a work-in-progress implementation of the Add-on SDK. It should
-not be confused with the Jetpack Prototype, which is an entirely
-different project.
-
 Before proceeding, please make sure you've installed Python 2.5
-or later if it's not already on your system:
+or 2.6 if it's not already on your system:
 
   http://python.org/download/
+
+Note that Python 3.0 and 3.1 are not supported in this release.
+
+For Windows users, MozillaBuild (https://wiki.mozilla.org/MozillaBuild)
+will install the correct version of Python and the MSYS package, which
+will make it easier to work with the SDK.
 
 To get started, first enter the same directory that this file is
 in using a shell program. On Unix systems or on Windows with MSYS,

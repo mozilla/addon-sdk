@@ -43,14 +43,14 @@ exports.testActiveTab_getter = function(test) {
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
 
-    let location = "data:text/html,<html><head><title>foo</title></head></html>";
+    let url = "data:text/html,<html><head><title>foo</title></head></html>";
     require("tab-browser").addTab(
-      location,
+      url,
       {
         onLoad: function(e) {
-          test.assert(tabs.activeTab); 
-          test.assertEqual(tabs.activeTab.location, location); 
-          test.assertEqual(tabs.activeTab.title, "foo"); 
+          test.assert(tabs.activeTab);
+          test.assertEqual(tabs.activeTab.url, url);
+          test.assertEqual(tabs.activeTab.title, "foo");
           closeBrowserWindow(window, function() test.done());
         }
       }
@@ -64,25 +64,22 @@ exports.testActiveTab_setter = function(test) {
 
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
-    let location = "data:text/html,<html><head><title>foo</title></head></html>";
+    let url = "data:text/html,<html><head><title>foo</title></head></html>";
 
-    tabs.onReady = function(tab) {
-      tabs.onReady.remove(arguments.callee);
-      test.assertEqual(tabs.activeTab.location, "about:blank", "activeTab location has not changed");
-      test.assertEqual(tab.location, location, "location of new background tab matches");
-      tab.onActivate = function() {
-        tab.onActivate.remove(arguments.callee);
-        // TODO anti-random-fail
-        require("timer").setTimeout(function() {
-          test.assertEqual(tabs.activeTab.location, location, "location after activeTab setter matches");
-          closeBrowserWindow(window, function() test.done());
-        }, 2000);
-      };
-      tabs.activeTab = tab;
-    };
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+      test.assertEqual(tabs.activeTab.url, "about:blank", "activeTab url has not changed");
+      test.assertEqual(tab.url, url, "url of new background tab matches");
+      tabs.on('activate', function onActivate() {
+        tabs.removeListener('activate', onActivate);
+        test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
+        closeBrowserWindow(window, function() test.done());
+      });
+      tab.activate();
+    })
 
     tabs.open({
-      url: location,
+      url: url,
       inBackground: true
     });
   });
@@ -92,19 +89,17 @@ exports.testActiveTab_setter = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs= require("tabs");
     let url = "data:text/html,<html><head><title>foo</title></head><body>foo</body></html>";
     tabs.open({
       url: url,
-      onOpen: function(tab) {
+      onReady: function(tab) {
         test.assertEqual(tab.title, "foo", "title of the new tab matches");
-        test.assertEqual(tab.location, url, "URL of the new tab matches");
-        test.assertEqual(tab.contentWindow, window.content, "contentWindow of the new tab matches");
-        test.assertEqual(tab.contentDocument, window.content.document, "contentDocument of the new tab matches");
+        test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assert(tab.favicon, "favicon of the new tab is not empty");
         test.assertEqual(tab.style, null, "style of the new tab matches");
         test.assertEqual(tab.index, 1, "index of the new tab matches");
-        test.assertNotEqual(tab.thumbnail, null, "thumbnail of the new tab matches");
+        test.assertNotEqual(tab.getThumbnailURL(), null, "thumbnail of the new tab matches");
         closeBrowserWindow(window, function() test.done());
       }
     });
@@ -135,7 +130,7 @@ exports.testTabsIteratorAndLength = function(test) {
   });
 };
 
-// test tab.location setter
+// test tab.url setter
 exports.testTabLocation = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
@@ -143,17 +138,19 @@ exports.testTabLocation = function(test) {
     let url1 = "data:text/html,foo";
     let url2 = "data:text/html,bar";
 
-    tabs.onReady = function(tab) {
-      if (tab.location != url2)
+    tabs.on('ready', function onReady(tab) {
+      if (tab.url != url2)
         return;
-      tabs.onReady.remove(arguments.callee);
+      tabs.removeListener('ready', onReady);
       test.pass("tab.load() loaded the correct url");
       closeBrowserWindow(window, function() test.done());
-    };
+    });
 
     tabs.open({
       url: url1,
-      onOpen: function(tab) tab.location = url2
+      onOpen: function(tab) {
+        tab.url = url2
+      }
     });
   });
 };
@@ -165,14 +162,15 @@ exports.testTabClose = function(test) {
     let tabs = require("tabs");
     let url = "data:text/html,foo";
 
-    test.assertNotEqual(tabs.activeTab.location, url, "tab is now the active tab");
-    tabs.onReady = function(tab) {
-      tabs.onReady.remove(arguments.callee);
-      test.assertEqual(tabs.activeTab.location, tab.location, "tab is now the active tab");
-      tab.close();
-      test.assertNotEqual(tabs.activeTab.location, url, "tab is no longer the active tab");
-      closeBrowserWindow(window, function() test.done());
-    };
+    test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+      test.assertEqual(tabs.activeTab.url, tab.url, "tab is now the active tab");
+      tab.close(function() {
+        closeBrowserWindow(window, function() test.done());
+      });
+      test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
+    });
 
     tabs.open(url);
   });
@@ -189,7 +187,7 @@ exports.testTabMove = function(test) {
       url: url,
       onOpen: function(tab) {
         test.assertEqual(tab.index, 1, "tab index before move matches");
-        tab.move(0);
+        tab.index = 0;
         test.assertEqual(tab.index, 0, "tab index after move matches");
         closeBrowserWindow(window, function() test.done());
       }
@@ -205,8 +203,8 @@ exports.testOpen = function(test) {
     let url = "data:text/html,default";
     tabs.open({
       url: url,
-      onOpen: function(tab) {
-        test.assertEqual(tab.location, url, "URL of the new tab matches");
+      onReady: function(tab) {
+        test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assertEqual(window.content.location, url, "URL of active tab in the current window matches");
         closeBrowserWindow(window, function() test.done());
       }
@@ -218,16 +216,16 @@ exports.testOpen = function(test) {
 exports.testOpenPinned = function(test) {
   const xulApp = require("xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
-    // test tab pinning  
+    // test tab pinning
     test.waitUntilDone();
     openBrowserWindow(function(window, browser) {
       let tabs = require("tabs");
       let url = "data:text/html,default";
       tabs.open({
         url: url,
-        isPinned: true,
+        pinned: true,
         onOpen: function(tab) {
-          test.assertEqual(tab.isPinned, true, "The new tab is pinned");
+          test.assertEqual(tab.pinned, true, "The new tab is pinned");
           closeBrowserWindow(window, function() test.done());
         }
       });
@@ -249,10 +247,10 @@ exports.testPinUnpin = function(test) {
       tabs.open({
         url: url,
         onOpen: function(tab) {
-          tab.pin();
-          test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
-          tab.unpin();
-          test.assertEqual(tab.isPinned, false, "The tab was unpinned correctly");
+          tab.pinned = true;
+          test.assertEqual(tab.pinned, true, "The tab was pinned correctly");
+          tab.pinned = false;
+          test.assertEqual(tab.pinned, false, "The tab was unpinned correctly");
           closeBrowserWindow(window, function() test.done());
         }
       });
@@ -268,17 +266,17 @@ exports.testInBackground = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
-    let activeUrl = tabs.activeTab.location;
+    let activeUrl = tabs.activeTab.url;
     let url = "data:text/html,background";
     test.assertEqual(activeWindow, window, "activeWindow matches this window");
-    tabs.onReady = function(tab) {
-      tabs.onReady.remove(arguments.callee);
-      test.assertEqual(tabs.activeTab.location, activeUrl, "URL of active tab has not changed"); 
-      test.assertEqual(tab.location, url, "URL of the new background tab matches");
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+      test.assertEqual(tabs.activeTab.url, activeUrl, "URL of active tab has not changed");
+      test.assertEqual(tab.url, url, "URL of the new background tab matches");
       test.assertEqual(activeWindow, window, "a new window was not opened");
-      test.assertNotEqual(tabs.activeTab.location, url, "URL of active tab is not the new URL"); 
+      test.assertNotEqual(tabs.activeTab.url, url, "URL of active tab is not the new URL");
       closeBrowserWindow(window, function() test.done());
-    };
+    });
     tabs.open({
       url: url,
       inBackground: true
@@ -308,13 +306,13 @@ exports.testOpenInNewWindow = function(test) {
     tabs.open({
       url: url,
       inNewWindow: true,
-      onOpen: function(tab) {
+      onReady: function(tab) {
         let newWindow = cache[cache.length - 1];
         test.assertEqual(cache.length, startWindowCount + 1, "a new window was opened");
         test.assertEqual(activeWindow, newWindow, "new window is active");
-        test.assertEqual(tab.location, url, "URL of the new tab matches");
+        test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assertEqual(newWindow.content.location, url, "URL of new tab in new window matches");
-        test.assertEqual(tabs.activeTab.location, url, "URL of activeTab matches"); 
+        test.assertEqual(tabs.activeTab.url, url, "URL of activeTab matches");
         for (var i in cache) cache[i] = null;
         wt.unload();
         closeBrowserWindow(newWindow, function() {
@@ -334,19 +332,18 @@ exports.testTabsEvent_onOpen = function(test) {
     let eventCount = 0;
 
     // add listener via property assignment
-    let listener1 = function(tab) {
+    function listener1(tab) {
       eventCount++;
     };
-    tabs.onOpen = listener1;
+    tabs.on('open', listener1);
 
     // add listener via collection add
-    let listener2 = function(tab) {
+    tabs.on('open', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onOpen.remove(listener1);
-      tabs.onOpen.remove(listener2);
+      tabs.removeListener('open', listener1);
+      tabs.removeListener('open', listener2);
       closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onOpen.add(listener2);
+    });
 
     tabs.open(url);
   });
@@ -361,24 +358,23 @@ exports.testTabsEvent_onClose = function(test) {
     let eventCount = 0;
 
     // add listener via property assignment
-    let listener1 = function(tab) {
+    function listener1(tab) {
       eventCount++;
-    };
-    tabs.onClose = listener1;
+    }
+    tabs.on('close', listener1);
 
     // add listener via collection add
-    let listener2 = function(tab) {
+    tabs.on('close', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onClose.remove(listener1);
-      tabs.onClose.remove(listener2);
+      tabs.removeListener('close', listener1);
+      tabs.removeListener('close', listener2);
       closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onClose.add(listener2);
+    });
 
-    tabs.onReady = function(tab) {
-      tabs.onReady.remove(arguments.callee);
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
       tab.close();
-    };
+    });
 
     tabs.open(url);
   });
@@ -393,73 +389,18 @@ exports.testTabsEvent_onReady = function(test) {
     let eventCount = 0;
 
     // add listener via property assignment
-    let listener1 = function(tab) {
+    function listener1(tab) {
       eventCount++;
     };
-    tabs.onReady = listener1;
+    tabs.on('ready', listener1);
 
     // add listener via collection add
-    let listener2 = function(tab) {
+    tabs.on('ready', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onReady.remove(listener1);
-      tabs.onReady.remove(listener2);
+      tabs.removeListener('ready', listener1);
+      tabs.removeListener('ready', listener2);
       closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onReady.add(listener2);
-
-    tabs.open(url);
-  });
-};
-
-// onLoad event handler
-exports.testTabsEvent_onLoad = function(test) {
-  test.waitUntilDone();
-  openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
-    let url = "data:text/html,onload";
-    let eventCount = 0;
-
-    // add listener via property assignment
-    let listener1 = function(tab) {
-      eventCount++;
-    };
-    tabs.onLoad = listener1;
-
-    // add listener via collection add
-    let listener2 = function(tab) {
-      test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onLoad.remove(listener1);
-      tabs.onLoad.remove(listener2);
-      closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onLoad.add(listener2);
-
-    tabs.open(url);
-  });
-};
-
-// onPaint event handler
-exports.testTabsEvent_onPaint = function(test) {
-  test.waitUntilDone();
-  openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
-    let url = "data:text/html,onpaint";
-    let eventCount = 0;
-
-    // add listener via property assignment
-    let listener1 = function(tab) {
-      eventCount++;
-    };
-    tabs.onPaint = listener1;
-
-    // add listener via collection add
-    let listener2 = function(tab) {
-      test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onPaint.remove(listener1);
-      tabs.onPaint.remove(listener2);
-      closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onPaint.add(listener2);
+    });
 
     tabs.open(url);
   });
@@ -474,19 +415,18 @@ exports.testTabsEvent_onActivate = function(test) {
     let eventCount = 0;
 
     // add listener via property assignment
-    let listener1 = function(tab) {
+    function listener1(tab) {
       eventCount++;
     };
-    tabs.onActivate = listener1;
+    tabs.on('activate', listener1);
 
     // add listener via collection add
-    let listener2 = function(tab) {
+    tabs.on('activate', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onActivate.remove(listener1);
-      tabs.onActivate.remove(listener2);
+      tabs.removeListener('activate', listener1);
+      tabs.removeListener('activate', listener2);
       closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onActivate.add(listener2);
+    });
 
     tabs.open(url);
   });
@@ -501,24 +441,23 @@ exports.testTabsEvent_onDeactivate = function(test) {
     let eventCount = 0;
 
     // add listener via property assignment
-    let listener1 = function(tab) {
+    function listener1(tab) {
       eventCount++;
     };
-    tabs.onDeactivate = listener1;
+    tabs.on('deactivate', listener1);
 
     // add listener via collection add
-    let listener2 = function(tab) {
+    tabs.on('deactivate', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
-      tabs.onDeactivate.remove(listener1);
-      tabs.onDeactivate.remove(listener2);
+      tabs.removeListener('deactivate', listener1);
+      tabs.removeListener('deactivate', listener2);
       closeBrowserWindow(window, function() test.done());
-    };
-    tabs.onDeactivate.add(listener2);
+    });
 
-    tabs.onOpen = function(tab) {
-      tabs.onOpen.remove(arguments.callee);
+    tabs.on('open', function onOpen(tab) {
+      tabs.removeListener('open', onOpen);
       tabs.open("data:text/html,foo");
-    };
+    });
 
     tabs.open(url);
   });
@@ -529,36 +468,24 @@ exports.testPerTabEvents = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     var tabs = require("tabs");
-    let url = "data:text/html,foo";
     let eventCount = 0;
 
     tabs.open({
-      url: "about:blank",
+      url: "data:text/html,foo",
       onOpen: function(tab) {
         // add listener via property assignment
-        let listener1 = function() {
+        function listener1() {
           eventCount++;
         };
-        tab.onReady = listener1;
+        tab.on('ready', listener1);
 
         // add listener via collection add
-        let listener2 = function() {
-          eventCount++;
-        };
-        tab.onReady.add(listener2);
-
-        tab.location = url;
-
-        require("timer").setTimeout(function() {
-          // if this never occurs, the test'll timeout and fail.
-          if (eventCount == 2)
-            test.pass("both listeners notified");
-          else
-            test.fail("listeners not notified!");
-          tab.onReady.remove(listener1);
-          tab.onReady.remove(listener2);
+        tab.on('ready', function listener2() {
+          test.assertEqual(eventCount, 1, "both listeners notified");
+          tab.removeListener('ready', listener1);
+          tab.removeListener('ready', listener2);
           closeBrowserWindow(window, function() test.done());
-        }, 1000);
+        });
       }
     });
   });

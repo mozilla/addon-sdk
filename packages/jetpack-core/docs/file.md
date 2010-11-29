@@ -6,7 +6,7 @@
 The `file` module provides access to the local filesystem.
 
 <api name="dirname">
-@method
+@function
   Returns the path of the directory containing the given file.
 @param path {string}
   The path of a file.
@@ -15,7 +15,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="exists">
-@method
+@function
   Returns true if a file exists at the given path and false otherwise.
 @param path {string}
   The path of a file.
@@ -24,7 +24,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="join">
-@method
+@function
   Takes a variable number of strings, joins them on the file system's path
   separator, and returns the result.
 @param ... {strings}
@@ -35,7 +35,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="list">
-@method
+@function
   Returns an array of file names in the given directory.
 @param path {string}
   The path of the directory.
@@ -44,7 +44,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="mkpath">
-@method
+@function
   Makes a new directory named by the given path.  Any subdirectories that do not
   exist are also created.  `mkpath` can be called multiple times on the same
   path.
@@ -53,7 +53,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="open">
-@method
+@function
   Returns a stream providing access to the contents of a file.
 @param path {string}
   The path of the file to open.
@@ -73,7 +73,7 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="read">
-@method
+@function
   Opens a file in text mode and returns a string containing its entire contents.
 @param path {string}
   The path of the file to read.
@@ -82,14 +82,14 @@ The `file` module provides access to the local filesystem.
 </api>
 
 <api name="remove">
-@method
+@function
   Removes a file from the file system.  To remove directories, use `rmdir`.
 @param path {string}
   The path of the file to remove.
 </api>
 
 <api name="rmdir">
-@method
+@function
   Removes a directory from the file system.  If the directory is not empty, an
   exception is thrown.
 @param path {string}
