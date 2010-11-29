@@ -14,10 +14,36 @@ Global Options:
 Global Commands
 ---------------
 
+### Supported Commands ###
+
 **`cfx docs`**
 
 This command launches a mini-server on the localhost to view web-based
 documentation in a new Firefox window.
+
+### Experimental Commands ###
+
+**`cfx develop`**
+
+This initiates an instance of a host application in development mode,
+and allows you to pipe commands into it from another shell without
+having to constantly restart it. Aside from convenience, for SDK
+Platform developers this has the added benefit of making it easier to
+detect leaks.
+
+For example, in shell A, type:
+
+    cfx develop
+
+In shell B, type:
+
+    cfx test -r
+
+This will send `cfx test -r` output to shell A. If you repeat the
+command in shell B, `cfx test -r` output will appear again in shell A
+without restarting the host application.
+
+### Internal Commands ###
 
 **`cfx sdocs`**
 
@@ -49,8 +75,8 @@ and all examples.
 
 Run options:
 
-    -a APP, --app=APP            application to run: firefox (default), xulrunner,
-                                 fennec, or thunderbird
+    -a APP, --app=APP            application to run: firefox (default),
+                                 xulrunner, fennec, or thunderbird
 
     -b BINARY, --binary=BINARY   path to application binary
 
@@ -60,8 +86,10 @@ Run options:
     -r, --use-server             use development server
 
     -f LOGFILE, --logfile=LOGFILE
-                                 log console output to file
-
+                                 log console output to file. This is an
+                                 internal option and may be removed in future:
+                                 developers are advised to use shell
+                                 redirection to log console output.
 
 Test options:
 
@@ -70,29 +98,10 @@ Test options:
     -x ITERATIONS, --times=ITERATIONS
                                  number of times to run tests
 
-**`cfx develop`**
-
-This initiates an instance of a host application in development mode,
-and allows you to pipe commands into it from another shell without
-having to constantly restart it. Aside from convenience, for SDK
-Platform developers this has the added benefit of making it easier to
-detect leaks.
-
-For example, in shell A, type:
-
-    cfx develop
-
-In shell B, type:
-
-    cfx test -r
-
-This will send `cfx test -r` output to shell A. If you repeat the
-command in shell B, `cfx test -r` output will appear again in shell A
-without restarting the host application.
-
-
 Package-Specific Commands
 -------------------------
+
+### Supported Commands
 
 **`cfx init`**
 
@@ -111,39 +120,13 @@ own add-on development, with the following file structure:
     docs/
         main.md
 
-**`cfx xpcom`**
-
-This tool is used to build xpcom objects.
-
-Compile options:
-
-    -s MOZ_SRCDIR, --srcdir=MOZ_SRCDIR
-                                 Mozilla source directory
-
-    -o MOZ_OBJDIR, --objdir=MOZ_OBJDIR
-                                 Mozilla object directory
-
-Package creation/run options:
-
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
-
-    -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
-                                 XULRunner application extension template
-
-    -k EXTRA_PACKAGES, --extra-packages=EXTRA_PACKAGES
-                                 extra packages to include, comma-separated
-
-    -g CONFIG, --use-config=CONFIG
-                                 use named config from local.json
-
 **`cfx xpi`**
 
 <span class="aside"> For more information on how XPIs are generated,
 see the [XPI Generation](#guide/xpi) reference.</span>
 
-This tool is used to build the XPI file that you can distribute by submitting it to
-[addons.mozilla.org][].
+This tool is used to build the XPI file that you can distribute by submitting
+it to [addons.mozilla.org][].
 
 [addons.mozilla.org]: http://addons.mozilla.org
 
@@ -158,8 +141,8 @@ Compile options:
 
 Package creation/run options:
 
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
+    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json;
+                                 default is the current dir
 
     -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
                                  XULRunner application extension template
@@ -179,8 +162,8 @@ This tool is used to run the extension code.
 
 Run options:
 
-    -a APP, --app=APP            application to run: firefox (default), xulrunner,
-                                 fennec, or thunderbird
+    -a APP, --app=APP            application to run: firefox (default),
+                                 xulrunner, fennec, or thunderbird
 
     -b BINARY, --binary=BINARY   path to application binary
 
@@ -190,12 +173,15 @@ Run options:
     -r, --use-server             use development server
 
     -f LOGFILE, --logfile=LOGFILE
-                                 log console output to file
+                                 log console output to file. This is an
+                                 internal option and may be removed in future:
+                                 developers are advised to use shell
+                                 redirection to log console output.
 
 Package creation/run options:
 
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
+    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json;
+                                 default is the current dir
 
     -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
                                  XULRunner application extension template
@@ -226,7 +212,10 @@ Run options:
     -r, --use-server             use development server
 
     -f LOGFILE, --logfile=LOGFILE
-                                 log console output to file
+                                log console output to file. This is an
+                                internal option and may be removed in future:
+                                developers are advised to use shell
+                                redirection to log console output.
 
 Test options:
 
@@ -253,11 +242,11 @@ For example:
 
 Using the above configuration, you can run:
 
-    cfx testall --use-config=ff35
+    cfx test --use-config=ff35
 
 And it would be equivalent to:
 
-    cfx testall -a firefox -b /home/me/firefox-3.5/firefox-bin
+    cfx test -a firefox -b /home/me/firefox-3.5/firefox-bin
 
 This method of defining configuration options can be used for all of the run,
 build, and test tools. If "default" is defined in the `local.json` cfx will use
