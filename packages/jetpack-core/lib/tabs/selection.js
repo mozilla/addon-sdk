@@ -38,37 +38,16 @@
 const { Ci } = require("chrome");
 const { Trait } = require("traits");
 const { EventEmitter } = require("events");
+const selectionUtils = require("utils/selection");
 
 const SELECTION_TYPES = [
   "SELECTALL_REASON",
   "KEYPRESS_REASON",
   "MOUSEUP_REASON"
 ].map(function(reason) Ci.nsISelectionListener[reason])
-const ELEMENT_NAME = "span";
 
 function isObservedSelection(reason, selection)
  !SELECTION_TYPES.some(function(type) reason & type || "" == String(selection))
-
-/**
- * Returns the specified range in a selection without throwing an exception.
- *
- * @param selection
- *        A selection object as described at
- *         https://developer.mozilla.org/en/DOM/Selection
- *
- * @param rangeNumber
- *        Specifies the zero-based range index of the returned selection.
- */
-function safeGetRange(selection, rangeNumber) {
-  try {
-    let range = selection.getRangeAt(rangeNumber);
-    if (range && "" == range.toString())
-      return range;
-  }
-  finally {
-    return null;
-  }
-}
 
 /**
  * Creates an object from which a selection can be set, get, etc. Each
@@ -80,59 +59,26 @@ function safeGetRange(selection, rangeNumber) {
  *        The zero-based range index into the selection
  */
 var Selection = Trait.compose({
-  constructor: function Selection(options) {
-    
+  constructor: function Selection(tab) {
+    this._tab = tab;
     return this;
   },
-  obsolete: false,
-  text: null,
-  html: null,
-  get isContiguous() this._isContiguous,
-  _isContiguous: null
+  get text() selectionUtils.getSelectionText(this._tab._contentWindow),
+  set text(value) selectionUtils.setSelection(this._tab._contentWindow, value),
+  get html() selectionUtils.getSelectionHTML(this._tab._contentWindow),
+  set html(value) selectionUtils.setSelection(this._tab._contentWindow, value),
+  get isContiguous() selectionUtils.isContiguous(this._tab._contentWindow)
 });
-function Selection(rangeNumber) {
-
-  // In order to hide the private rangeNumber argument from API consumers while
-  // still enabling Selection getters/setters to access it, the getters/setters
-  // are defined as lexical closures in the Selector constructor.
-
-  this.__defineGetter__("text", function () getSelection(TEXT, rangeNumber));
-  this.__defineSetter__("text", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("html", function () getSelection(HTML, rangeNumber));
-  this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM, rangeNumber);
-    // It isn't enough to check that rangeCount is zero. If one or more ranges
-    // are selected and then unselected, rangeCount is set to one, not zero.
-    // Therefore, if rangeCount is one, we also check if the selection is
-    // collapsed.
-    if (sel.rangeCount == 0)
-      return null;
-    if (sel.rangeCount == 1) {
-      let range = safeGetRange(sel, 0);
-      return range && range.collapsed ? null : true;
-    }
-    return false;
-  });
-}
 
 /**
  * Trait used to create tab wrappers.
  */
-const TabSelectionTrackerTrait = Trait.compose(EventEmitter, {
+exports.TabSelectionTrackerTrait = Trait.compose(EventEmitter, {
   on: Trait.required,
   _emit: Trait.required,
   _contentWindow: Trait.required,
-  get selection() return this._selection._public,
-  get _selection() return this.__selection,
-  set _selection(value) {
-    if (this.__selection)
-      this.__selection.obsolete = true;
-    this.__selection = value
-  },
-  get _rawSelection() this._contentWindow.getSelection(),
+  get selection() this._selection,
+  _selection: null,
   _selectionTracker: null,
   _initTabSelectionTracker: function _initTabSelectionTracker() {
     this.on('ready', this._addSelectionListener.bind(this));
@@ -140,37 +86,19 @@ const TabSelectionTrackerTrait = Trait.compose(EventEmitter, {
     this._selectionTracker = {
       notifySelectionChanged: this._onSelectionChange.bind(this)
     };
-  },
-  _getSelection(type, rangeNumber) {
-    let selection = this._rawSelection;
-    let range = safeGetRange(selection, rangeNumber);
-    if (range) {
-      // Another way, but this includes the xmlns attribute for all elements in
-      // Gecko 1.9.2+ :
-      // return Cc["@mozilla.org/xmlextras/xmlserializer;1"].
-      //   createInstance(Ci.nsIDOMSerializer).serializeToSTring(range.
-      //     cloneContents());
-      let node = this._contentDocument.createElement(ELEMENT_NAME);
-      node.appendChild(range.cloneContents());
-      return Object.create(Selection.prototype, {
-        text: { value: String(range), writtable: true },
-        html: { value: node.innerHTML, writtable: true }
-      })
-    }
-    return null;
-    throw new Error("Type " + type + " is unrecognized.");
+    this._selection = Selection(this);
   },
   _onSelectionChange: function _onSelectionChange(document, selection, reason) {
     if (isObservedSelection(reason, selection))
-      this._emit('select', this.selection = Selection(selection), this._public);
+      this._emit('select', this.selection, this._public);
   },
   _addSelectionListener: function _addSelectionListener() {
-    let selection = this._rawSelection;
+    let selection = this._contentWindow.getSelection();
     if (selection instanceof Ci.nsISelectionPrivate)
       selection.addSelectionListener(this._selectionTracker);
   },
   _removeSelectionListener: function _removeSelectionListener() {
-    let selection = this._rawSelection;
+    let selection = this._contentWindow.getSelection();
     if (selection && selection instanceof Ci.nsISelectionPrivate)
       selection.removeSelectionListener(this._selectionTracker);
   }

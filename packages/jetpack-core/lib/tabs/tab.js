@@ -37,7 +37,7 @@
 
 const { Trait } = require("traits");
 const { EventEmitter } = require("events");
-const { TabSelectionTrait } = require("./selection");
+const { TabSelectionTrackerTrait } = require("./selection");
 const { validateOptions } = require("api-utils");
 const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
