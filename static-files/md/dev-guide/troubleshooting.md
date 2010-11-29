@@ -1,7 +1,4 @@
 If you're having trouble getting the Add-on SDK up and running, don't panic!
-The SDK is an alpha-stage project under active development, so there are bound
-to be some rough edges.
-
 This page lists some starting points that might help you track down your
 problem.
 
@@ -82,7 +79,7 @@ need to create an account with Bugzilla, Mozilla's bug tracker.
 
 [Mozilla's IRC network]: http://irc.mozilla.org/
 
-[report a bug in the SDK]: https://bugzilla.mozilla.org/enter_bug.cgi?alias=&assigned_to=nobody%40mozilla.org&blocked=&bug_file_loc=http%3A%2F%2F&bug_severity=normal&bug_status=UNCONFIRMED&comment=&component=General&contenttypeentry=&contenttypemethod=autodetect&contenttypeselection=text%2Fplain&data=&dependson=&description=&flag_type-325=X&flag_type-37=X&flag_type-4=X&flag_type-607=X&form_name=enter_bug&keywords=&maketemplate=Remember%20values%20as%20bookmarkable%20template&op_sys=All&priority=--&product=Add-on%20SDK&rep_platform=All&short_desc=&status_whiteboard=&target_milestone=--&version=Trunk
+[report a bug in the SDK]: https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK&component=General
 
 
 Run the SDK's Unit Tests
