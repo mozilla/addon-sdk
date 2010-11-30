@@ -117,6 +117,7 @@ const Panel = Symbiont.resolve({
     this._init(options);
   },
   _destructor: function _destructor() {
+    this.hide();
     this._removeAllListeners('show');
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;

@@ -135,6 +135,23 @@ tests.testSeveralShowHides = function(test) {
   panel.show();
 };
 
+tests.testPanelEventOrder = function(test) {
+  let panel = panels.Panel({ contentURL: "about:buildconfig" });
+  let expectedEvents = ['inited', 'show', 'hide'];
+
+  function when(event, cb) {
+    panel.on(event, function() {
+      test.assertEqual(event, expectedEvents.shift());
+      require("timer").setTimeout(cb, 1);
+    });
+  }
+
+  when('hide', function() { test.done(); });
+  when('show', function() { panel.destroy(); });
+  when('inited', function() { panel.show(); });
+  test.waitUntilDone();
+};
+
 tests.testContentURLOption = function(test) {
   const URL_STRING = "about:buildconfig";
   const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
