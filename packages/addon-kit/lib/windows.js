@@ -195,6 +195,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     },
     open: function open(options) {
       if (typeof options === "string")
+        // `tabs` option is under review and maybe removed.
         options = { tabs: [Options(options)] };
       return BrowserWindow(options);
     },
