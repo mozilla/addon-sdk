@@ -126,7 +126,7 @@ const EventEmitter = Trait.compose({
     let listeners = this._listeners(type).slice(0);
     // If there is no 'error' event listener then throw.
     if (type === ERROR_TYPE && !listeners.length)
-      console.exception(event)
+      console.exception(event);
     if (!listeners.length)
       return false;
     let params = Array.slice(arguments, 1);
