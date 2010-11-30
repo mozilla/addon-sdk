@@ -132,6 +132,8 @@ exports.addTab = function addTab(url, options) {
     if (options.onLoad) {
       let tabBrowser = win.gBrowser.getBrowserForTab(tab);
       tabBrowser.addEventListener("load", function(e) {
+        if (e.target.defaultView.content.location == "about:blank")
+          return;
         // remove event handler from addTab - don't want notified
         // for subsequent loads in same tab.
         tabBrowser.removeEventListener("load", arguments.callee, true);
@@ -549,7 +551,7 @@ function openURLInNewWindow(options, tabConstructor) {
     };
   }
   if (options.isPinned) {
-    addTabOptinos.isPinned = true;
+    addTabOptions.isPinned = true;
   }
   exports.addTab(options.url.toString(), addTabOptions);
 }
