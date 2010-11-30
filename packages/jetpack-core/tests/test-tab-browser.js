@@ -278,7 +278,8 @@ exports.testActiveTab = function(test) {
         
         tabBrowser.addTab(url, {
           inBackground: true,
-          onLoad: function() {
+          onLoad: function(e) {
+            let tabIndex = browser.getBrowserIndexForDocument(e.target);
             test.assertEqual(browser.tabContainer.getItemAtIndex(tabIndex), tabBrowser.activeTab, "activeTab element matches");
             closeBrowserWindow(browserWindow, function() test.done());
           }
@@ -292,18 +293,14 @@ exports.testActiveTab = function(test) {
 exports.testEventsAndLengthStayInModule = function(test) {
   test.waitUntilDone();
   let TabModule = require("tab-browser").TabModule;
-  let tabs = require("tabs");
 
   openTwoWindows(function(window1, window2) {
-    let startingTabs = tabs.length;
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
     
     let counter1 = 0, counter2 = 0;
-    let counterTabs = 0;
     tm1.onOpen = function() ++counter1;
     tm2.onOpen = function() ++counter2;
-    tabs.onOpen = function() ++counterTabs;
 
     let url = "data:text/html,default";
     tm1.open(url);
@@ -316,10 +313,8 @@ exports.testEventsAndLengthStayInModule = function(test) {
       onOpen: function() {
         test.assertEqual(counter1, 2, "Correct number of events fired from window 1");
         test.assertEqual(counter2, 3, "Correct number of events fired from window 2");
-        test.assertEqual(counterTabs, 5, "Correct number of events fired from all windows");
         test.assertEqual(tm1.length, 3, "Correct number of tabs in window 1");
         test.assertEqual(tm2.length, 4, "Correct number of tabs in window 2");
-        test.assertEqual(tabs.length, 5 + startingTabs, "Correct number of tabs in all windows");
         closeTwoWindows(window1, window2, function() test.done());
       }
     });
