@@ -127,7 +127,7 @@ active window or in the new window depending on the option being passed.
     // Open a new tab as an apptab and do something once it's open.
     tabs.open({
       url: "http://www.mysite.com",
-      pinned: true,
+      isPinned: true,
       onOpen: function onOpen(tab) {
         // do stuff like listen for content
         // loading.
@@ -153,8 +153,9 @@ opened in the first tab in that window. This is an optional property.
 If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
-@prop [pinned] {boolean}
-If present and true, then the new tab will be pinned as an app-tab.
+@prop [isPinned] {boolean}
+If present and true, then the new tab will be pinned as an AppTab.
+[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
 
 @prop [onOpen] {function}
 A callback function that will be registered for 'open' event.
@@ -237,10 +238,22 @@ Data URI of a thumbnail of the page currently loaded in the tab.
 This property is read-only.
 </api>
 
-<api name="pinned">
+<api name="isPinned">
 @property {boolean}
-Whether or not tab is pinned (Is an AppTab).
-This property can be set to pin / unpin this tab.
+Whether or not tab is pinned as an [AppTab].
+This property is read-only.
+[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+</api>
+
+<api name="pin">
+@method
+Pins this tab as an [AppTab].
+[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+</api>
+
+<api name="unpin">
+@method
+Unpin this tab.
 </api>
 
 <api name="close">

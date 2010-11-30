@@ -79,8 +79,8 @@ const TabTrait = Trait.compose(EventEmitter, {
     this.on(EVENTS.close.name, this.destroy.bind(this));
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
 
-    this.pinned = options.pinned;
-
+    if (options.isPinned)
+      this.pin();
     // Since we will have to identify tabs by a DOM elements facade function
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
@@ -176,13 +176,14 @@ const TabTrait = Trait.compose(EventEmitter, {
     getThumbnailURIForWindow(this._contentWindow),
   /**
    * Whether or not tab is pinned (Is an app-tab).
-   * Changing value will pin / unpin tab.
    * @type {Boolean}
    */
-  get pinned() this._tab.pinned,
-  set pinned(value) {
-    if (!!value) this._window.gBrowser.pinTab(this._tab);
-    else this._window.gBrowser.unpinTab(this._tab);
+  get isPinned() this._tab.pinned,
+  pin: function pin() {
+    this._window.gBrowser.pinTab(this._tab);
+  },
+  unpin: function unpin() {
+    this._window.gBrowser.unpinTab(this._tab);
   },
   /**
    * Make this tab active.
@@ -224,7 +225,7 @@ function Options(options) {
   return validateOptions(options, {
     url: { is: ["string"] },
     inBackground: { is: ["undefined", "boolean"] },
-    pinned: { is: ["undefined", "boolean"] },
+    isPinned: { is: ["undefined", "boolean"] },
     onOpen: { is: ["undefined", "function"] },
     onClose: { is: ["undefined", "function"] },
     onReady: { is: ["undefined", "function"] },
