@@ -278,8 +278,7 @@ exports.testActiveTab = function(test) {
         
         tabBrowser.addTab(url, {
           inBackground: true,
-          onLoad: function(e) {
-            let tabIndex = browser.getBrowserIndexForDocument(e.target);
+          onLoad: function() {
             test.assertEqual(browser.tabContainer.getItemAtIndex(tabIndex), tabBrowser.activeTab, "activeTab element matches");
             closeBrowserWindow(browserWindow, function() test.done());
           }
