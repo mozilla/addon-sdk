@@ -3,74 +3,175 @@
 The cfx command-line tool gives you access to the SDK documentation and
 development servers as well as testing, running, and building packages.
 
+cfx usage is:
+
+    cfx [options] command [command-specific options]
+
+"Options" are global options applicable to the tool itself or to all
+commands (for example `--help`). "Command-specific options" are only
+applicable to some subset of the commands.
+
+Global Options
+--------------
+
 Any of the cfx commands can be run with the following options:
 
-Global Options:
-
-    -h, --help        - show this help message and exit
+    -h, --help        - show a help message and exit
     -v, --verbose     - enable lots of output
 
+Commands
+--------
 
-Global Commands
----------------
+### Supported Commands ###
 
-**`cfx docs`**
+#### `cfx docs` ####
 
 This command launches a mini-server on the localhost to view web-based
 documentation in a new Firefox window.
 
-**`cfx sdocs`**
+#### `cfx init` ####
 
-Executing this command builds a tarball of the .md and .json files as well as
-the JavaScript needed to render the Markdown correctly. The tarball will be
-saved to the directory in which the command was executed.
+Just create a new directory, change into it, and run `cfx init`.
 
-**`cfx testcfx`**
+This command will create an skeleton add-on, as a starting point for your
+own add-on development, with the following file structure:
 
-This will run a number of tests on the cfx tool, including tests against the
-documentation. Use `cfx testcfx -v` for the specific list of tests.
+    README.md
+    package.json
+    data/
+    lib/
+        main.js
+    tests/
+        test-main.js
+    docs/
+        main.md
 
-**`cfx testpkgs`**
+#### `cfx xpi` ####
 
-This will test all of the available CommonJS packages. Note that the number
-of tests run and their success depends on what application they are run
-with, and which binary is used.
+<span class="aside"> For more information on how XPIs are generated,
+see the [XPI Generation](#guide/xpi) reference.</span>
 
-**`cfx testex`**
+This tool is used to build the XPI file that you can distribute by submitting
+it to [addons.mozilla.org][].
 
-This will test all available example code. Note that the number
-of tests run and their success depends on what application they are run
-with, and which binary is used.
+[addons.mozilla.org]: http://addons.mozilla.org
 
-**`cfx testall`**
+**Supported Options:**
 
-This will test *everything*: the cfx tool, all available CommonJS packages,
-and all examples.
+    --extra-packages=EXTRA_PACKAGES
+                                 extra packages to include, comma-separated
 
-Run options:
+    -g CONFIG, --use-config=CONFIG
+                                 use named config from local.json
+
+    --pkgdir=PKGDIR              package dir containing the package.json;
+                                 default is the current dir
+
+    --static-args=STATIC_ARGS
+                                 extra harness options as JSON
+
+    --templatedir=TEMPLATEDIR
+                                 XULRunner application extension template
+
+    --update-link=UPDATE_LINK
+                                 generate update.rdf
+
+    --update-url=UPDATE_URL
+                                 update URL in install.rdf
+
+**Internal Options**
+
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
+
+#### `cfx run` ####
+
+This command is used to run the add-on.
+
+**Supported Options:**
+
+    -a APP, --app=APP            application to run: firefox (default),
+                                 xulrunner, fennec, or thunderbird
+
+    -b BINARY, --binary=BINARY   path to application binary
+
+    --extra-packages=EXTRA_PACKAGES
+                                 extra packages to include, comma-separated
+
+    -g CONFIG, --use-config=CONFIG
+                                 use named config from local.json
+
+    -p PROFILEDIR, --profiledir=PROFILEDIR
+                                 profile directory to pass to the application
+
+    --pkgdir=PKGDIR              package dir containing the package.json;
+                                 default is the current dir
+
+    --static-args=STATIC_ARGS
+                                 extra harness options as JSON
+
+    --templatedir=TEMPLATEDIR
+                                 XULRunner application extension template
+
+**Internal Options**
+    --addons=ADDONS              paths of add-ons to install, comma-separated
+
+    --e10s                       enable out-of-process Jetpacks
+
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
+
+#### `cfx test` ####
+
+Run available tests for the specified package.
+
+**Supported Options:**
 
     -a APP, --app=APP            application to run: firefox (default), xulrunner,
                                  fennec, or thunderbird
 
     -b BINARY, --binary=BINARY   path to application binary
 
-    -P PROFILEDIR, --profiledir=PROFILEDIR
+    --dependencies               include tests for all dependencies
+
+    -f FILTER, --filter=FILTER
+                                 only run tests whose filenames match FILTER, a regexp
+
+    -g CONFIG, --use-config=CONFIG
+                                 use named config from local.json
+
+    -p PROFILEDIR, --profiledir=PROFILEDIR
                                  profile directory to pass to the application
 
-    -r, --use-server             use development server
-
-    -f LOGFILE, --logfile=LOGFILE
-                                 log console output to file
-
-
-Test options:
-
-    -d, --dep-tests              include tests for all dependencies
-
-    -x ITERATIONS, --times=ITERATIONS
+    --times=ITERATIONS
                                  number of times to run tests
 
-**`cfx develop`**
+**Experimental Options**
+
+    --use-server                 use development server
+
+**Internal Options**
+
+    --addons=ADDONS              paths of add-ons to install, comma-separated
+
+    --e10s                       enable out-of-process Jetpacks
+
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
+
+    --logfile=LOGFILE
+                                 log console output to file
+
+    --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
+
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+### Experimental Commands ###
+
+#### `cfx develop` ####
 
 This initiates an instance of a host application in development mode,
 and allows you to pipe commands into it from another shell without
@@ -84,157 +185,156 @@ For example, in shell A, type:
 
 In shell B, type:
 
-    cfx test -r
+    cfx test --use-server
 
-This will send `cfx test -r` output to shell A. If you repeat the
-command in shell B, `cfx test -r` output will appear again in shell A
+This will send `cfx test --use-server` output to shell A. If you repeat the
+command in shell B, `cfx test --use-server` output will appear again in shell A
 without restarting the host application.
 
+### Internal Commands ###
 
-Package-Specific Commands
--------------------------
+#### `cfx sdocs` ####
 
-**`cfx init`**
+Executing this command builds a tarball of the .md and .json files as well as
+the JavaScript needed to render the Markdown correctly. The tarball will be
+saved to the directory in which the command was executed.
 
-Just create a new directory, change into it, and run `cfx init`.
+#### `cfx testcfx` ####
 
-This command will create an skeleton addon, as a starting point for your
-own add-on development, with the following file structure:
+This will run a number of tests on the cfx tool, including tests against the
+documentation. Use `cfx testcfx -v` for the specific list of tests.
 
-    README.md
-    package.json
-    data/
-    lib/
-        main.js
-    tests/
-        test-main.js
-    docs/
-        main.md
+#### `cfx testpkgs` ####
 
-**`cfx xpcom`**
+This will test all of the available CommonJS packages. Note that the number
+of tests run and their success depends on what application they are run
+with, and which binary is used.
 
-This tool is used to build xpcom objects.
-
-Compile options:
-
-    -s MOZ_SRCDIR, --srcdir=MOZ_SRCDIR
-                                 Mozilla source directory
-
-    -o MOZ_OBJDIR, --objdir=MOZ_OBJDIR
-                                 Mozilla object directory
-
-Package creation/run options:
-
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
-
-    -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
-                                 XULRunner application extension template
-
-    -k EXTRA_PACKAGES, --extra-packages=EXTRA_PACKAGES
-                                 extra packages to include, comma-separated
-
-    -g CONFIG, --use-config=CONFIG
-                                 use named config from local.json
-
-**`cfx xpi`**
-
-<span class="aside"> For more information on how XPIs are generated,
-see the [XPI Generation](#guide/xpi) reference.</span>
-
-This tool is used to build the XPI file that you can distribute by submitting it to
-[addons.mozilla.org][].
-
-[addons.mozilla.org]: http://addons.mozilla.org
-
-Compile options:
-
-    -u UPDATE_URL, --update-url=UPDATE_URL
-                                 update URL in install.rdf
-
-    -l UPDATE_LINK, --update-link=UPDATE_LINK
-                                 generate update.rdf
-
-
-Package creation/run options:
-
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
-
-    -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
-                                 XULRunner application extension template
-
-    -k EXTRA_PACKAGES, --extra-packages=EXTRA_PACKAGES
-                                 extra packages to include, comma-separated
-
-    -g CONFIG, --use-config=CONFIG
-                                 use named config from local.json
-
-    --static-args=STATIC_ARGS
-                                 extra harness options as JSON
-
-**`cfx run`**
-
-This tool is used to run the extension code.
-
-Run options:
+**Options:**
 
     -a APP, --app=APP            application to run: firefox (default), xulrunner,
                                  fennec, or thunderbird
 
+    --addons=ADDONS              paths of add-ons to install, comma-separated
+
     -b BINARY, --binary=BINARY   path to application binary
 
-    -P PROFILEDIR, --profiledir=PROFILEDIR
-                                 profile directory to pass to the application
+    --dependencies               include tests for all dependencies
 
-    -r, --use-server             use development server
-
-    -f LOGFILE, --logfile=LOGFILE
-                                 log console output to file
-
-Package creation/run options:
-
-    -p PKGDIR, --pkgdir=PKGDIR   package dir containing the package.json; default is
-                                 the current dir
-
-    -t TEMPLATEDIR, --templatedir=TEMPLATEDIR
-                                 XULRunner application extension template
-
-    -k EXTRA_PACKAGES, --extra-packages=EXTRA_PACKAGES
-                                 extra packages to include, comma-separated
+    -f FILTER, --filter=FILTER
+                                 only run tests whose filenames match FILTER, a regexp
 
     -g CONFIG, --use-config=CONFIG
                                  use named config from local.json
 
-    --static-args=STATIC_ARGS
-                                 extra harness options as JSON
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
 
-**`cfx test`**
-
-Run available tests for the specified package.
-
-Run options:
-
-    -a APP, --app=APP            application to run: firefox (default), xulrunner,
-                                 fennec, or thunderbird
-
-    -b BINARY, --binary=BINARY   path to application binary
-
-    -P PROFILEDIR, --profiledir=PROFILEDIR
-                                 profile directory to pass to the application
-
-    -r, --use-server             use development server
-
-    -f LOGFILE, --logfile=LOGFILE
+    --logfile=LOGFILE
                                  log console output to file
 
-Test options:
+    -p PROFILEDIR, --profiledir=PROFILEDIR
+                                 profile directory to pass to the application
 
-    -d, --dep-tests              include tests for all dependencies
+    --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
 
-    -x ITERATIONS, --times=ITERATIONS
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+    --times=ITERATIONS
                                  number of times to run tests
 
+    --use-server                 use development server
+
+#### `cfx testex` ####
+
+This will test all available example code. Note that the number
+of tests run and their success depends on what application they are run
+with, and which binary is used.
+
+
+**Options:**
+
+    -a APP, --app=APP            application to run: firefox (default), xulrunner,
+                                 fennec, or thunderbird
+
+    --addons=ADDONS              paths of add-ons to install, comma-separated
+
+    -b BINARY, --binary=BINARY   path to application binary
+
+    --dependencies               include tests for all dependencies
+
+    -f FILTER, --filter=FILTER
+                                 only run tests whose filenames match FILTER, a regexp
+
+    -g CONFIG, --use-config=CONFIG
+                                 use named config from local.json
+
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
+
+    --logfile=LOGFILE
+                                 log console output to file
+
+    -p PROFILEDIR, --profiledir=PROFILEDIR
+                                 profile directory to pass to the application
+
+    --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
+
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+    --times=ITERATIONS
+                                 number of times to run tests
+
+    --use-server                 use development server
+
+#### `cfx testall` ####
+
+This will test *everything*: the cfx tool, all available CommonJS packages,
+and all examples.
+
+**Options:**
+
+    -a APP, --app=APP            application to run: firefox (default), xulrunner,
+                                 fennec, or thunderbird
+
+    --addons=ADDONS              paths of add-ons to install, comma-separated
+
+    -b BINARY, --binary=BINARY   path to application binary
+
+    --dependencies               include tests for all dependencies
+
+    -f FILTER, --filter=FILTER
+                                 only run tests whose filenames match FILTER, a regexp
+
+    -g CONFIG, --use-config=CONFIG
+                                 use named config from local.json
+
+    --keydir=KEYDIR              directory holding private keys; default is
+                                 ~/.jetpack/keys
+
+    --logfile=LOGFILE
+                                 log console output to file
+
+    -p PROFILEDIR, --profiledir=PROFILEDIR
+                                 profile directory to pass to the application
+
+    --profile-memory=PROFILEMEMORY
+                                 profile memory usage (default is false)
+
+    --test-runner-pkg=TEST_RUNNER_PKG
+                                 name of package containing test runner program
+                                 (default is test-harness)
+
+    --times=ITERATIONS
+                                 number of times to run tests
+
+    --use-server                 use development server
 
 Configuring local.json
 ----------------------
@@ -253,11 +353,11 @@ For example:
 
 Using the above configuration, you can run:
 
-    cfx testall --use-config=ff35
+    cfx test --use-config=ff35
 
 And it would be equivalent to:
 
-    cfx testall -a firefox -b /home/me/firefox-3.5/firefox-bin
+    cfx test -a firefox -b /home/me/firefox-3.5/firefox-bin
 
 This method of defining configuration options can be used for all of the run,
 build, and test tools. If "default" is defined in the `local.json` cfx will use

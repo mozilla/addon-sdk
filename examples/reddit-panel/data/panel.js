@@ -7,7 +7,7 @@
 // by the Panel API, which is accessed by the main add-on script in lib/main.js.
 // See that script for more information about how the panel is created.
 
-$(window).click(function (event) {
+window.addEventListener("click", function(event) {
   var t = event.target;
 
   // Don't intercept the click if it isn't on a link.
@@ -16,11 +16,16 @@ $(window).click(function (event) {
 
   // Don't intercept the click if it was on one of the links in the header
   // or next/previous footer, since those links should load in the panel itself.
-  if ($(t).parents('#header').length || $(t).parents('.nextprev').length)
-    return;
+  var x = t.parentNode;
+  while (x && x.getAttribute) {
+    if (x.getAttribute("id") == "header" ||
+        x.getAttribute("class") == "nextprev")
+      return;
+    x = x.parentNode;
+  }
 
   // Intercept the click, passing it to the addon, which will load it in a tab.
   event.stopPropagation();
   event.preventDefault();
   postMessage(t.toString());
-});
+}, false);

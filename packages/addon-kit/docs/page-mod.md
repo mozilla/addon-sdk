@@ -169,13 +169,13 @@ Creates a PageMod.
     a description of match pattern syntax.
     At least one match pattern must be supplied.
     [match-pattern]: #module/jetpack-core/match-pattern
-  @prop [contentScriptURL] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
-    Optional.
+  @prop [contentScriptFile] {string,array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option. Optional.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptURL` option.
+    option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.  Optional.

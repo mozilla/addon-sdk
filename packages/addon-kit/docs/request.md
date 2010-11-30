@@ -28,6 +28,7 @@ each can throw if given an invalid value.
 
 The example below shows how to use Request to get the most recent public tweet.
 
+    var Request = require('request').Request;
     var latestTweetRequest = Request({
       url: "http://api.twitter.com/1/statuses/public_timeline.json",
       onComplete: function (response) {

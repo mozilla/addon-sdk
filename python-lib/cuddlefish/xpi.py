@@ -4,12 +4,16 @@ import zipfile
 import simplejson as json
 
 def build_xpi(template_root_dir, manifest, xpi_name,
-              harness_options, xpts):
+              harness_options):
     zf = zipfile.ZipFile(xpi_name, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
     zf.write('.install.rdf', 'install.rdf')
     os.remove('.install.rdf')
+
+    if 'icon' in harness_options:
+        zf.write(str(harness_options['icon']), 'icon.png')
+        del harness_options['icon']
 
     IGNORED_FILES = [".hgignore", "install.rdf", 
                      "application.ini", xpi_name]
@@ -33,11 +37,6 @@ def build_xpi(template_root_dir, manifest, xpi_name,
             abspath = os.path.join(dirpath, filename)
             arcpath = abspath[len(template_root_dir)+1:]
             zf.write(abspath, arcpath)
-
-    for abspath in xpts:
-        zf.write(str(abspath),
-                 str(os.path.join('components',
-                                  os.path.basename(abspath))))
 
     new_resources = {}
     for resource in harness_options['resources']:

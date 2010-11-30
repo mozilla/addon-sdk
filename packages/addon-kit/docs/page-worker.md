@@ -63,7 +63,7 @@ from the content script.
 @class
 The `Page` object loads the page specified by the `contentURL` option and
 executes any content scripts that have been supplied to it in the
-`contentScript` and/or `contentScriptURL` options.
+`contentScript` and/or `contentScriptFile` options.
 
 The page is not displayed to the user.
 
@@ -81,12 +81,13 @@ its `destroy` method is called or the add-on is unloaded.
     An object with keys to configure the permissions of the Page Worker.
     The boolean key `script` controls if scripts from the page
     are allowed to run. Its default value is false.
-  @prop [contentScriptURL] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
+  @prop [contentScriptFile] {string,array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptURL` option.
+    option are loaded *after* those specified by the `contentScriptFile` option.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.
     Possible values are "start" (default), which loads them as soon as
@@ -108,16 +109,17 @@ The URL of the content loaded.
   are allowed to run.
 </api>
 
-<api name="contentScriptURL">
+<api name="contentScriptFile">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this property
-are loaded *before* those specified by the `contentScript` property.
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
 </api>
 
 <api name="contentScript">
 @property {array}
 The texts of content scripts to load.  Content scripts specified by this
-property are loaded *after* those specified by the `contentScriptURL` property.
+property are loaded *after* those specified by the `contentScriptFile` property.
 </api>
 
 <api name="contentScriptWhen">

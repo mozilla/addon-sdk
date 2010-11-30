@@ -212,18 +212,18 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // sandbox.location = window.location;
     // sandbox.navigator = window.navigator;
 
-    // The order of `contentScriptURL` and `contentScript` evaluation is
+    // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
-    let contentScriptURL = ('contentScriptURL' in port) ? port.contentScriptURL
+    let contentScriptFile = ('contentScriptFile' in port) ? port.contentScriptFile
           : null,
         contentScript = ('contentScript' in port) ? port.contentScript : null;
 
-    if (contentScriptURL) {
-      if (Array.isArray(contentScriptURL))
-        this._importScripts.apply(this, contentScriptURL);
+    if (contentScriptFile) {
+      if (Array.isArray(contentScriptFile))
+        this._importScripts.apply(this, contentScriptFile);
       else
-        this._importScripts(contentScriptURL);
+        this._importScripts(contentScriptFile);
     }
     if (contentScript) {
       this._evaluate(
@@ -279,9 +279,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
    */
   _importScripts: function _importScripts(url) {
     let urls = Array.slice(arguments, 0);
-    for each (let contentScriptURL in urls) {
+    for each (let contentScriptFile in urls) {
       try {
-        let filename = toFilename(contentScriptURL);
+        let filename = toFilename(contentScriptFile);
         this._evaluate(file.read(filename), filename);
       }
       catch(e) {
@@ -320,8 +320,8 @@ const Worker = AsyncEventEmitter.compose({
 
     if ('window' in options)
       this._window = options.window;
-    if ('contentScriptURL' in options)
-      this.contentScriptURL = options.contentScriptURL;
+    if ('contentScriptFile' in options)
+      this.contentScriptFile = options.contentScriptFile;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)

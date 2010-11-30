@@ -67,7 +67,7 @@ class Util(unittest.TestCase):
                 fieldnames.append(k)
         return fields, fieldnames
 
-    def test_no_name(self):
+    def test_preflight(self):
         basedir = self.make_basedir()
         fn = os.path.join(basedir, "package.json")
         keydir = os.path.join(basedir, "keys")
@@ -156,6 +156,36 @@ class Util(unittest.TestCase):
                         in out, out)
         self.failUnless("If you are the original developer" in out, out)
         self.failUnless("Otherwise, if you are a new developer" in out, out)
+
+        # name and anonymous ID? without asking to see its papers, ship it
+        config3 = '{"name": "my-old-skool-package", "id": "anonid0-deadbeef"}'
+        self.write(config3)
+        out = StringIO()
+        cfg = self.get_cfg()
+        config_was_ok, modified = preflight.preflight_config(cfg, fn,
+                                                             stderr=out,
+                                                             keydir=keydir,
+                                                             err_if_privkey_not_found=False)
+        self.failUnlessEqual(config_was_ok, True)
+        self.failUnlessEqual(modified, False)
+        config3a = self.read()
+        self.failUnlessEqual(config3a, config3)
+        self.failUnlessEqual(out.getvalue().strip(), "")
+
+        # name and old-style ID? with nostalgic trepidation, ship it
+        config4 = '{"name": "my-old-skool-package", "id": "foo@bar.baz"}'
+        self.write(config4)
+        out = StringIO()
+        cfg = self.get_cfg()
+        config_was_ok, modified = preflight.preflight_config(cfg, fn,
+                                                             stderr=out,
+                                                             keydir=keydir,
+                                                             err_if_privkey_not_found=False)
+        self.failUnlessEqual(config_was_ok, True)
+        self.failUnlessEqual(modified, False)
+        config4a = self.read()
+        self.failUnlessEqual(config4a, config4)
+        self.failUnlessEqual(out.getvalue().strip(), "")
 
 
 if __name__ == '__main__':

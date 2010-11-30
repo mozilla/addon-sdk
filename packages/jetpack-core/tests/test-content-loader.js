@@ -172,47 +172,47 @@ exports['test:contentScript'] = function(test) {
   );
 };
 
-exports['test:contentScriptURL'] = function(test) {
+exports['test:contentScriptFile'] = function(test) {
   let loader = Loader(), value, uri = self.data.url("test-content-loader.js");
   test.assertEqual(
     null,
-    loader.contentScriptURL,
-    '`contentScriptURL` defaults to `null`'
+    loader.contentScriptFile,
+    '`contentScriptFile` defaults to `null`'
   );
-  loader.contentScriptURL = value = uri;
+  loader.contentScriptFile = value = uri;
   test.assertEqual(
     value,
-    loader.contentScriptURL
+    loader.contentScriptFile
   );
   try {
-    loader.contentScriptURL = { 1: uri }
+    loader.contentScriptFile = { 1: uri }
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptURL` option must be a local file URL or an array of'
+      'The `contentScriptFile` option must be a local file URL or an array of'
           + 'URLs.',
       e.message
     );
   }
   try {
-    loader.contentScriptURL = ['oue', uri]
+    loader.contentScriptFile = ['oue', uri]
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptURL` option must be a local file URL or an array of'
+      'The `contentScriptFile` option must be a local file URL or an array of'
           + 'URLs.',
       e.message
     );
   }
-  loader.contentScriptURL = undefined;
+  loader.contentScriptFile = undefined;
   test.assertEqual(
     null,
-    loader.contentScriptURL
+    loader.contentScriptFile
   );
-  loader.contentScriptURL = value = [uri];
+  loader.contentScriptFile = value = [uri];
   test.assertEqual(
     value,
-    loader.contentScriptURL
+    loader.contentScriptFile
   );
 };
 

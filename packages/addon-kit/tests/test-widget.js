@@ -22,6 +22,9 @@ exports.testConstructor = function(test) {
   let w = widgets.Widget({ label: "foo", content: "bar" });
   test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
 
+  // test widget height
+  test.assertEqual(widgetNode(0).boxObject.height, 16, "widget has correct default height");
+
   w.destroy();
   w.destroy();
   test.pass("Multiple destroys do not cause an error");

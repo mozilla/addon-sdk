@@ -223,9 +223,9 @@ exports.testOpenPinned = function(test) {
       let url = "data:text/html,default";
       tabs.open({
         url: url,
-        pinned: true,
+        isPinned: true,
         onOpen: function(tab) {
-          test.assertEqual(tab.pinned, true, "The new tab is pinned");
+          test.assertEqual(tab.isPinned, true, "The new tab is pinned");
           closeBrowserWindow(window, function() test.done());
         }
       });
@@ -247,10 +247,10 @@ exports.testPinUnpin = function(test) {
       tabs.open({
         url: url,
         onOpen: function(tab) {
-          tab.pinned = true;
-          test.assertEqual(tab.pinned, true, "The tab was pinned correctly");
-          tab.pinned = false;
-          test.assertEqual(tab.pinned, false, "The tab was unpinned correctly");
+          tab.pin();
+          test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
+          tab.unpin();
+          test.assertEqual(tab.isPinned, false, "The tab was unpinned correctly");
           closeBrowserWindow(window, function() test.done());
         }
       });
