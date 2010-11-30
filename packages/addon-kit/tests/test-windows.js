@@ -209,7 +209,7 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(nonBrowserWindow);
     },
     function() {
-      test.assertEqual(windows.activeWindow, null, "Non-browser windows aren't handled by this module");
+      test.assertEqual(windows.activeWindow, window2, "Non-browser windows aren't handled by this module");
       window2.activate();
       continueAfterFocus(rawWindow2);
     },
