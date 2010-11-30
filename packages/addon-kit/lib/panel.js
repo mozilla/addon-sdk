@@ -137,7 +137,6 @@ const Panel = Symbiont.resolve({
   _height: 240,
   /* Public API: Panel.show */
   show: function show(anchor) {
-    // do nothing if already open
     anchor = anchor || null;
     let document = getWindow(anchor).document;
     let xulPanel = this._xulPanel;
@@ -240,6 +239,8 @@ const Panel = Symbiont.resolve({
   _onInit: function _onInit() {
     this._inited = true;
     // perform all deferred tasks like initSymbiont, show, hide ...
+    // TODO: We're publicly exposing a private event here; this
+    // 'inited' event should really be made private, somehow.
     this._emit('inited');
     this._removeAllListeners('inited');
   }
