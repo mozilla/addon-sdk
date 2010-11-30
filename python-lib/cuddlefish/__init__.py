@@ -41,7 +41,6 @@ Experimental and internal commands and options are not supported and may be
 changed or removed in the future.
 """
 
-#XXXadw make sure no options i removed are used by the options obj later
 global_options = [
     (("-v", "--verbose",), dict(dest="verbose",
                                 help="enable lots of output",
