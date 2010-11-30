@@ -116,14 +116,16 @@ parser_groups = (
                                                "'addon-kit'."),
                                          metavar=None,
                                          default="addon-kit",
-                                         cmds=['run', 'xpi'])),
+                                         cmds=['run', 'xpi', 'test', 'testex',
+                                               'testpkgs', 'testall',
+                                               'testcfx'])),
         (("", "--pkgdir",), dict(dest="pkgdir",
                                  help=("package dir containing "
                                        "package.json; default is "
                                        "current directory"),
                                  metavar=None,
                                  default=None,
-                                 cmds=['run', 'xpi'])),
+                                 cmds=['run', 'xpi', 'test'])),
         (("", "--static-args",), dict(dest="static_args",
                                       help="extra harness options as JSON",
                                       type="json",
@@ -138,7 +140,8 @@ parser_groups = (
                                      help="use development server",
                                      action="store_true",
                                      default=False,
-                                     cmds=['testex', 'testpkgs', 'testall'])),
+                                     cmds=['run', 'test', 'testex', 'testpkgs',
+                                           'testall'])),
         ]
      ),
 
@@ -169,12 +172,12 @@ parser_groups = (
                                help="enable out-of-process Jetpacks",
                                action="store_true",
                                default=False,
-                               cmds=['test', 'run'])),
+                               cmds=['test', 'run', 'testex', 'testpkgs'])),
         (("", "--logfile",), dict(dest="logfile",
                                   help="log console output to file",
                                   metavar=None,
                                   default=None,
-                                  cmds=['run', 'test'])),
+                                  cmds=['run', 'test', 'testex', 'testpkgs'])),
         # TODO: This should default to true once our memory debugging
         # issues are resolved; see bug 592774.
         (("", "--profile-memory",), dict(dest="profileMemory",
