@@ -222,9 +222,9 @@ exports.testTrackerWithoutDelegate = function(test) {
                            if (b == browser)];
     test.assertEqual(matches.length, 1,
                      "New browser should be in tracker.");
+    tb.unload();
 
     closeBrowserWindow(browserWindow, function() {
-      tb.unload();
       test.done();
     });
   });
@@ -249,19 +249,36 @@ exports.testTabTracker = function(test) {
 
     let tracked = delegate.tracked;
     let url1 = "data:text/html,1";
-    tabBrowser.addTab(url1, {
-      onLoad: function(e) {
-        test.assertEqual(delegate.tracked, ++tracked, "first tab tracked matched count");
-        test.assertEqual(url1, e.target.defaultView.location, "open() load listener matched URLs")
-        tabBrowser.addTab("data:text/html,2");
-        test.assertEqual(delegate.tracked, ++tracked, "second tab tracked matched count");
-        tabBrowser.addTab("data:text/html,3");
-        test.assertEqual(delegate.tracked, ++tracked, "third tab tracked matched count");
+    let url2 = "data:text/html,2";
+    let url3 = "data:text/html,3";
+    let tabCount = 0; 
+
+    function tabLoadListener(e) {
+      let loadedURL = e.target.defaultView.location;
+      if (loadedURL == url1)
+        tabCount++;
+      else if (loadedURL == url2)
+        tabCount++;
+      else if (loadedURL == url3)
+        tabCount++;
+
+      if (tabCount == 3) {
+        test.assertEqual(delegate.tracked, tracked + 3, "delegate tracked tabs matched count");
+        tabTracker.unload();
         closeBrowserWindow(browserWindow, function() {
-          tabTracker.unload();
-          test.done();
+          require("timer").setTimeout(function() test.done(), 0);
         });
       }
+    }
+
+    tabBrowser.addTab(url1, {
+      onLoad: tabLoadListener
+    });
+    tabBrowser.addTab(url2, {
+      onLoad: tabLoadListener
+    });
+    tabBrowser.addTab(url3, {
+      onLoad: tabLoadListener
     });
   });
 };
@@ -270,17 +287,34 @@ exports.testActiveTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(browserWindow, browser) {
     const tabBrowser = require("tab-browser");
-    let url = "data:text/html,foo";
-    tabBrowser.addTab(url, {
+    const TabModule = require("tab-browser").TabModule;
+    let tm = new TabModule(browserWindow);
+    test.assertEqual(tm.length, 1);
+    let url1 = "data:text/html,foo";
+    let url2 = "data:text/html,bar";
+
+    function tabURL(tab) tab.ownerDocument.defaultView.content.location.toString()
+
+    tabBrowser.addTab(url1, {
       onLoad: function(e) {
+        // make sure we're running in the right window.
+        test.assertEqual(tabBrowser.activeTab.ownerDocument.defaultView, browserWindow, "active window matches");
+        browserWindow.focus();
+
+        test.assertEqual(tabURL(tabBrowser.activeTab), url1, "url1 matches");
         let tabIndex = browser.getBrowserIndexForDocument(e.target);
-        test.assertEqual(browser.tabContainer.getItemAtIndex(tabIndex), tabBrowser.activeTab, "activeTab element matches");
+        let tabAtIndex = browser.tabContainer.getItemAtIndex(tabIndex);
+        test.assertEqual(tabAtIndex, tabBrowser.activeTab, "activeTab element matches");
         
-        tabBrowser.addTab(url, {
+        tabBrowser.addTab(url2, {
           inBackground: true,
           onLoad: function() {
-            test.assertEqual(browser.tabContainer.getItemAtIndex(tabIndex), tabBrowser.activeTab, "activeTab element matches");
-            closeBrowserWindow(browserWindow, function() test.done());
+            test.assertEqual(tabURL(tabBrowser.activeTab), url1, "url1 still matches");
+            let tabAtIndex = browser.tabContainer.getItemAtIndex(tabIndex);
+            test.assertEqual(tabAtIndex, tabBrowser.activeTab, "activeTab element matches");
+            closeBrowserWindow(browserWindow, function() {
+              test.done()
+            });
           }
         });
       }
@@ -292,18 +326,28 @@ exports.testActiveTab = function(test) {
 exports.testEventsAndLengthStayInModule = function(test) {
   test.waitUntilDone();
   let TabModule = require("tab-browser").TabModule;
-  let tabs = require("tabs");
 
   openTwoWindows(function(window1, window2) {
-    let startingTabs = tabs.length;
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
     
     let counter1 = 0, counter2 = 0;
     let counterTabs = 0;
-    tm1.onOpen = function() ++counter1;
-    tm2.onOpen = function() ++counter2;
-    tabs.onOpen = function() ++counterTabs;
+
+    function onOpenListener() {
+      ++counterTabs;
+      if (counterTabs < 5)
+        return;
+      test.assertEqual(counter1, 2, "Correct number of events fired from window 1");
+      test.assertEqual(counter2, 3, "Correct number of events fired from window 2");
+      test.assertEqual(counterTabs, 5, "Correct number of events fired from all windows");
+      test.assertEqual(tm1.length, 3, "Correct number of tabs in window 1");
+      test.assertEqual(tm2.length, 4, "Correct number of tabs in window 2");
+      closeTwoWindows(window1, window2, function() test.done());
+    }
+
+    tm1.onOpen = function() ++counter1 && onOpenListener();
+    tm2.onOpen = function() ++counter2 && onOpenListener();
 
     let url = "data:text/html,default";
     tm1.open(url);
@@ -311,18 +355,7 @@ exports.testEventsAndLengthStayInModule = function(test) {
 
     tm2.open(url);
     tm2.open(url);
-    tm2.open({
-      url: url,
-      onOpen: function() {
-        test.assertEqual(counter1, 2, "Correct number of events fired from window 1");
-        test.assertEqual(counter2, 3, "Correct number of events fired from window 2");
-        test.assertEqual(counterTabs, 5, "Correct number of events fired from all windows");
-        test.assertEqual(tm1.length, 3, "Correct number of tabs in window 1");
-        test.assertEqual(tm2.length, 4, "Correct number of tabs in window 2");
-        test.assertEqual(tabs.length, 5 + startingTabs, "Correct number of tabs in all windows");
-        closeTwoWindows(window1, window2, function() test.done());
-      }
-    });
+    tm2.open(url);
   });
 }
 

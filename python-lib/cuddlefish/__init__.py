@@ -18,145 +18,178 @@ UPDATE_RDF_FILENAME = "%s.update.rdf"
 XPI_FILENAME = "%s.xpi"
 
 usage = """
-%prog [options] [command]
+%prog [options] command [command-specific options]
 
-Package-Specific Commands:
+Supported Commands:
+  docs       - view web-based documentation
   init       - create a sample addon in an empty directory
-  xpi        - generate an xpi
   test       - run tests
   run        - run program
+  xpi        - generate an xpi
 
-Global Commands:
-  docs       - view web-based documentation
-  sdocs      - export static documentation
+Experimental Commands:
   develop    - run development server
 
-Global Tests:
+Internal Commands:
+  sdocs      - export static documentation
   testcfx    - test the cfx tool
   testex     - test all example code
   testpkgs   - test all installed packages
   testall    - test whole environment
+
+Experimental and internal commands and options are not supported and may be
+changed or removed in the future.
 """
 
-parser_options = {
-    ("-v", "--verbose",): dict(dest="verbose",
-                               help="enable lots of output",
-                               action="store_true",
-                               default=False),
-    ("-g", "--use-config",): dict(dest="config",
-                                  help="use named config from local.json",
-                                  metavar=None,
-                                  default="default"),
-    ("", "--templatedir",): dict(dest="templatedir",
-                                 help="XULRunner app/ext. template",
-                                 metavar=None,
-                                 default=None),
-    ("", "--extra-packages",): dict(dest="extra_packages",
-                                    help=("extra packages to include, "
-                                          "comma-separated. Default is "
-                                          "'addon-kit'."),
-                                    metavar=None,
-                                    default="addon-kit"),
-    ("", "--pkgdir",): dict(dest="pkgdir",
-                            help=("package dir containing "
-                                  "package.json; default is "
-                                  "current directory"),
-                            metavar=None,
-                            default=None),
-    ("--keydir",): dict(dest="keydir",
-                        help=("directory holding private keys;"
-                              " default is ~/.jetpack/keys"),
-                        metavar=None,
-                        default=os.path.expanduser("~/.jetpack/keys")),
-    ("--static-args",): dict(dest="static_args",
-                             help="extra harness options as JSON",
-                             type="json",
-                             metavar=None,
-                             default={}),
-    ("", "--e10s",): dict(dest="enable_e10s",
-                          help="enable out-of-process Jetpacks",
-                          action="store_true",
-                          default=False)
-    }
+global_options = [
+    (("-v", "--verbose",), dict(dest="verbose",
+                                help="enable lots of output",
+                                action="store_true",
+                                default=False)),
+    ]
 
-parser_groups = Bunch(
-    xpi=Bunch(
-        name="XPI Options",
-        options={
-            ("", "--update-url",): dict(dest="update_url",
-                                        help="update URL in install.rdf",
-                                        metavar=None,
-                                        default=None),
-            ("", "--update-link",): dict(dest="update_link",
-                                         help="generate update.rdf",
-                                         metavar=None,
-                                         default=None),
-            }
-        ),
-    app=Bunch(
-        name="Application Options",
-        options={
-            ("-p", "--profiledir",): dict(dest="profiledir",
-                                          help=("profile directory to "
-                                                "pass to app"),
-                                          metavar=None,
-                                          default=None),
-            ("-b", "--binary",): dict(dest="binary",
-                                      help="path to app binary", 
-                                      metavar=None,
-                                      default=None),
-            ("", "--addons",): dict(dest="addons",
-                                    help=("paths of addons to install, "
-                                          "comma-separated"),
-                                    metavar=None, default=None),
-            ("-a", "--app",): dict(dest="app",
-                                   help=("app to run: "
-                                         "firefox (default), xulrunner, "
-                                         "fennec, or thunderbird"),
-                                   metavar=None,
-                                   default="firefox"),
-            ("", "--logfile",): dict(dest="logfile",
-                                     help="log console output to file",
+parser_groups = (
+    ("Supported Command-Specific Options", [
+        (("", "--update-url",), dict(dest="update_url",
+                                     help="update URL in install.rdf",
                                      metavar=None,
-                                     default=None),
-            ("", "--use-server",): dict(dest="use_server",
-                                        help="use development server",
-                                        action="store_true",
-                                        default=False),
-            }
-        ),
-    tests=Bunch(
-        name="Testing Options",
-        options={
-            ("", "--test-runner-pkg",): dict(dest="test_runner_pkg",
-                                             help=("name of package "
-                                                   "containing test runner "
-                                                   "program (default is "
-                                                   "test-harness)"),
-                                             default="test-harness"),
-            ("", "--dependencies",): dict(dest="dep_tests",
-                                          help="include tests for all deps",
-                                          action="store_true",
-                                          default=False),
-            ("", "--times",): dict(dest="iterations",
-                                   type="int",
-                                   help="number of times to run tests",
-                                   default=1),
-            ("-f", "--filter",): dict(dest="filter",
-                                      help=("only run tests whose filenames "
-                                            "match FILTER, a regexp"),
+                                     default=None,
+                                     cmds=['xpi'])),
+        (("", "--update-link",), dict(dest="update_link",
+                                      help="generate update.rdf",
                                       metavar=None,
-                                      default=None),
-            # TODO: This should default to true once our memory debugging
-            # issues are resolved; see bug 592774.
-            ("-m", "--profile-memory",): dict(dest="profileMemory",
-                                              help=("profile memory usage "
-                                                    "(default is false)"),
-                                              type="int",
-                                              action="store",
-                                              default=0)
-            }
-        ),
+                                      default=None,
+                                      cmds=['xpi'])),
+        (("-p", "--profiledir",), dict(dest="profiledir",
+                                       help=("profile directory to pass to "
+                                             "app"),
+                                       metavar=None,
+                                       default=None,
+                                       cmds=['test', 'run', 'testex',
+                                             'testpkgs', 'testall'])),
+        (("-b", "--binary",), dict(dest="binary",
+                                   help="path to app binary",
+                                   metavar=None,
+                                   default=None,
+                                   cmds=['test', 'run', 'testex', 'testpkgs',
+                                         'testall'])),
+        (("-a", "--app",), dict(dest="app",
+                                help=("app to run: firefox (default), "
+                                      "xulrunner, fennec, or thunderbird"),
+                                metavar=None,
+                                default="firefox",
+                                cmds=['test', 'run', 'testex', 'testpkgs',
+                                      'testall'])),
+        (("", "--dependencies",), dict(dest="dep_tests",
+                                       help="include tests for all deps",
+                                       action="store_true",
+                                       default=False,
+                                       cmds=['test', 'testex', 'testpkgs',
+                                             'testall'])),
+        (("", "--times",), dict(dest="iterations",
+                                type="int",
+                                help="number of times to run tests",
+                                default=1,
+                                cmds=['test', 'testex', 'testpkgs',
+                                      'testall'])),
+        (("-f", "--filter",), dict(dest="filter",
+                                   help=("only run tests whose filenames "
+                                         "match FILTER, a regexp"),
+                                   metavar=None,
+                                   default=None,
+                                   cmds=['test', 'testex', 'testpkgs',
+                                         'testall'])),
+        (("-g", "--use-config",), dict(dest="config",
+                                       help="use named config from local.json",
+                                       metavar=None,
+                                       default="default",
+                                       cmds=['test', 'run', 'xpi', 'testex',
+                                             'testpkgs', 'testall'])),
+        (("", "--templatedir",), dict(dest="templatedir",
+                                      help="XULRunner app/ext. template",
+                                      metavar=None,
+                                      default=None,
+                                      cmds=['run', 'xpi'])),
+        (("", "--extra-packages",), dict(dest="extra_packages",
+                                         help=("extra packages to include, "
+                                               "comma-separated. Default is "
+                                               "'addon-kit'."),
+                                         metavar=None,
+                                         default="addon-kit",
+                                         cmds=['run', 'xpi', 'test', 'testex',
+                                               'testpkgs', 'testall',
+                                               'testcfx'])),
+        (("", "--pkgdir",), dict(dest="pkgdir",
+                                 help=("package dir containing "
+                                       "package.json; default is "
+                                       "current directory"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'xpi', 'test'])),
+        (("", "--static-args",), dict(dest="static_args",
+                                      help="extra harness options as JSON",
+                                      type="json",
+                                      metavar=None,
+                                      default="{}",
+                                      cmds=['run', 'xpi'])),
+        ]
+     ),
+
+    ("Experimental Command-Specific Options", [
+        (("", "--use-server",), dict(dest="use_server",
+                                     help="use development server",
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test', 'testex', 'testpkgs',
+                                           'testall'])),
+        ]
+     ),
+
+    ("Internal Command-Specific Options", [
+        (("", "--addons",), dict(dest="addons",
+                                 help=("paths of addons to install, "
+                                       "comma-separated"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['test', 'run', 'testex', 'testpkgs',
+                                       'testall'])),
+        (("", "--test-runner-pkg",), dict(dest="test_runner_pkg",
+                                          help=("name of package "
+                                                "containing test runner "
+                                                "program (default is "
+                                                "test-harness)"),
+                                          default="test-harness",
+                                          cmds=['test', 'testex', 'testpkgs',
+                                                'testall'])),
+        (("", "--keydir",), dict(dest="keydir",
+                                 help=("directory holding private keys;"
+                                       " default is ~/.jetpack/keys"),
+                                 metavar=None,
+                                 default=os.path.expanduser("~/.jetpack/keys"),
+                                 cmds=['test', 'run', 'xpi', 'testex',
+                                       'testpkgs', 'testall'])),
+        (("", "--e10s",), dict(dest="enable_e10s",
+                               help="enable out-of-process Jetpacks",
+                               action="store_true",
+                               default=False,
+                               cmds=['test', 'run', 'testex', 'testpkgs'])),
+        (("", "--logfile",), dict(dest="logfile",
+                                  help="log console output to file",
+                                  metavar=None,
+                                  default=None,
+                                  cmds=['run', 'test', 'testex', 'testpkgs'])),
+        # TODO: This should default to true once our memory debugging
+        # issues are resolved; see bug 592774.
+        (("", "--profile-memory",), dict(dest="profileMemory",
+                                         help=("profile memory usage "
+                                               "(default is false)"),
+                                         type="int",
+                                         action="store",
+                                         default=0,
+                                         cmds=['test', 'testex', 'testpkgs',
+                                               'testall'])),
+        ]
+     ),
     )
 
 # Maximum time we'll wait for tests to finish, in seconds.
@@ -182,20 +215,35 @@ class CfxOption(optparse.Option):
     TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
     TYPE_CHECKER['json'] = check_json
 
-def parse_args(arguments, parser_options, usage, parser_groups=None,
-               defaults=None):
+def parse_args(arguments, global_options, usage, parser_groups, defaults=None):
     parser = optparse.OptionParser(usage=usage.strip(), option_class=CfxOption)
 
-    for names, opts in parser_options.items():
+    def name_cmp(a, b):
+        # a[0]    = name sequence
+        # a[0][0] = short name (possibly empty string)
+        # a[0][1] = long name
+        names = []
+        for seq in (a, b):
+            names.append(seq[0][0][1:] if seq[0][0] else seq[0][1][2:])
+        return cmp(*names)
+
+    global_options.sort(name_cmp)
+    for names, opts in global_options:
         parser.add_option(*names, **opts)
 
-    if parser_groups:
-        for group_info in parser_groups.values():
-            group = optparse.OptionGroup(parser, group_info.name,
-                                         group_info.get('description'))
-            for names, opts in group_info.options.items():
-                group.add_option(*names, **opts)
-            parser.add_option_group(group)
+    for group_name, options in parser_groups:
+        group = optparse.OptionGroup(parser, group_name)
+        options.sort(name_cmp)
+        for names, opts in options:
+            if 'cmds' in opts:
+                cmds = opts['cmds']
+                del opts['cmds']
+                cmds.sort()
+                if not 'help' in opts:
+                    opts['help'] = ""
+                opts['help'] += " (%s)" % ", ".join(cmds)
+            group.add_option(*names, **opts)
+        parser.add_option_group(group)
 
     if defaults:
         parser.set_defaults(**defaults)
@@ -346,7 +394,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT')):
     parser_kwargs = dict(arguments=arguments,
-                         parser_options=parser_options,
+                         global_options=global_options,
                          parser_groups=parser_groups,
                          usage=usage,
                          defaults=defaults)
