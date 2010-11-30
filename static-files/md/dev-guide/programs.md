@@ -116,12 +116,27 @@ This is a global accessible by any module and is very useful for debugging.
 ### Running It ###
 
 To run your program, navigate to the root of your package directory
-in your shell and run:
+in your shell and type:
 
     cfx run
 
-That will load an instance of Firefox (or your default application)
-with your program installed.
+The first time you do this, you'll see a message like this:
+
+    No 'id' in package.json: creating a new keypair for you.
+    package.json modified: please re-run 'cfx run'
+
+Run it again, and it will run an instance of Firefox (or your default
+application) with your add-on installed.
+
+The ID that `cfx` generated the first time you executed `cfx run` is called the
+**Program ID** and it is important. It is a unique identifier for your add-on
+and is used for a variety of purposes. For example: mozilla.addons.org uses it
+to distinguish between new add-ons and updates to existing add-ons, and the
+[`simple-storage`](#module/addon-kit/simple-storage) module uses it to figure
+out which stored data belongs to which add-on.
+
+To learn more about the Program ID refer to the [Program ID](#guide/program-id)
+document.
 
 ### Trying It Out ###
 
@@ -139,11 +154,6 @@ Your program is packaged like any other extension for a Mozilla-based
 application, as a XPI file. The Add-on SDK simplifies the packaging
 process by generating this file for you.
 
-<span class="aside"> Each program (such as an add-on) gets a
-separate cryptographic keypair. Your program is signed by the private
-key, and the public key is used as the "ID". See
-[XPI Generation](#guide/xpi) for more details.</span>
-
 To package your program as a XPI, navigate to the root of your package
 directory in your shell and run `cfx xpi`. The first time you do this,
 you'll see a message about generating a keypair and modifying your
@@ -154,6 +164,15 @@ When you re-run it, you should see a message:
 
 The my-first-package.xpi file can be found in the directory in which you ran
 the command.
+
+#### The Program ID ####
+
+The ID that `cfx` generated the first time you executed `cfx run` is called the
+**Program ID** and it is important. It is a unique identifier for your add-on
+and is used for a variety of purposes. For example: mozilla.addons.org uses it
+to distinguish between new add-ons and updates to existing add-ons, and the
+[`simple-storage`](#module/addon-kit/simple-storage) module uses it to figure
+out which stored data belongs to which add-on.
 
 ### Checking the Package ###
 

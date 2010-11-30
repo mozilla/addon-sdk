@@ -98,7 +98,7 @@ Represents a widget object.
 
   @prop [panel] {panel}
     An optional `Panel` to open when the user clicks on the widget.  See the
-    [`panel`](#module/jetpack-core/panel) module for more information about the
+    [`panel`](#module/addon-kit/panel) module for more information about the
     `Panel` objects to which this option can be set and the `reddit-panel`
     example add-on for an example of using this option.  Note: If you also
     specify an `onClick` callback function, it will be called instead of the
@@ -134,13 +134,15 @@ Represents a widget object.
     @prop [script] {boolean}
       Whether or not to execute script in the content.  Defaults to true.
 
-  @prop [contentScriptURL] {array}
-    The URLs of content scripts to load.  Content scripts specified by this property
-    are loaded *before* those specified by the `contentScript` property.
+  @prop [contentScriptFile] {array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this property are loaded *before* those specified by the `contentScript`
+    property.
 
   @prop [contentScript] {array}
     The texts of content scripts to load.  Content scripts specified by this
-    property are loaded *after* those specified by the `contentScriptURL` property.
+    property are loaded *after* those specified by the `contentScriptFile`
+    property.
 
   @prop [contentScriptWhen] {string}
     When to load the content scripts.

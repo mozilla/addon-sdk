@@ -126,8 +126,8 @@ const Widget = Trait.compose(Loader, Trait.compose({
 
     if ("contentScriptWhen" in options)
       this.contentScriptWhen = options.contentScriptWhen;
-    if ("contentScriptURL" in options)
-      this.contentScriptURL = options.contentScriptURL;
+    if ("contentScriptFile" in options)
+      this.contentScriptFile = options.contentScriptFile;
     if ("contentScript" in options)
       this.contentScript = options.contentScript;
     if ("allow" in options)
@@ -360,8 +360,9 @@ BrowserWindow.prototype = {
         // TODO: needs localization
         container.setAttribute("toolbarname", "Add-ons Toolbar");
 
-        container.style.height = "100px";
-        container.style.padding = "0px";
+        container.setAttribute("align", "right");
+        container.style.minHeight = "18px";
+        container.style.padding = "2px";
         container.style.margin = "0px";
 
         toolbox.appendChild(container);
@@ -421,11 +422,12 @@ BrowserWindow.prototype = {
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);
 
-    // TODO move into a stylesheet
+    // TODO move into a stylesheet, configurable by consumers.
+    // Either widget.style, exposing the style object, or a URL
+    // (eg, can load local stylesheet file).
     node.setAttribute("style", [
-        "overflow: hidden; padding: 0px; min-height: 16px; ",
-        "border: 1px solid #71798F; -moz-box-shadow: 1px 1px 3px #71798F; ",
-        "-moz-border-radius: 3px;"
+        "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
+        "min-height: 16px; max-height: 16px;",
     ].join(""));
 
     node.style.minWidth = widget.width + "px";
@@ -506,7 +508,7 @@ BrowserWindow.prototype = {
     item.symbiont = Symbiont({
       frame: iframe,
       contentURL: contentURL,
-      contentScriptURL: item.widget.contentScriptURL,
+      contentScriptFile: item.widget.contentScriptFile,
       contentScript: item.widget.contentScript,
       contentScriptWhen: item.widget.contentScriptWhen,
       allow: item.widget.allow,

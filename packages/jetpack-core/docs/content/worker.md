@@ -53,13 +53,13 @@ Creates a content worker.
 Options for the constructor, with the following keys:
   @prop window {object}
     The content window to create JavaScript sandbox for communication with.
-  @prop [contentScriptURL] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
-    Optional.
+  @prop [contentScriptFile] {string,array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option. Optional.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptURL` option.
+    option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
   @prop [onMessage] {function}
     Functions that will registered as a listener to a 'message' events.

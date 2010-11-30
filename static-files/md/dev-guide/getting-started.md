@@ -9,7 +9,8 @@ To develop with the new Add-on SDK, you'll need:
 Verify that Python is in your path.
 </span>
 
-* [Python] 2.5 or greater.
+* [Python] 2.5 or 2.6. Note that versions 3.0 and 3.1 of Python are not
+  supported in this release.
 
 * A working version of Firefox, Thunderbird, or the [XULRunner SDK] that
   uses Gecko 1.9.2 or later (e.g., Firefox 3.6).

@@ -45,7 +45,7 @@ tests.testUnwrappedDOM = function(test) {
 tests.testPageProperties = function(test) {
   let page = new Page();
 
-  for each (let prop in ['contentURL', 'allow', 'contentScriptURL',
+  for each (let prop in ['contentURL', 'allow', 'contentScriptFile',
                          'contentScript', 'contentScriptWhen', 'on',
                          'postMessage', 'removeListener']) {
     test.assert(prop in page, prop + " property is defined on page.");
@@ -230,7 +230,7 @@ tests.testLoadContentPage = function(test) {
       test[message.shift()].apply(test, message);
     },
     contentURL: require("self").data.url("test-page-worker.html"),
-    contentScriptURL: require("self").data.url("test-page-worker.js")
+    contentScriptFile: require("self").data.url("test-page-worker.js")
   });
 
 }

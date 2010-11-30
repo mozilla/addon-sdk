@@ -281,7 +281,7 @@ function optionsRules() {
                v.every(function (s) typeof(s) === "string");
       }
     },
-    contentScriptURL: {
+    contentScriptFile: {
       is: ["string", "array", "undefined"],
       ok: function (v) {
         if (!v)
@@ -295,7 +295,7 @@ function optionsRules() {
         catch (err) {}
         return false;
       },
-      msg: "The 'contentScriptURL' option must be a local file URL or " +
+      msg: "The 'contentScriptFile' option must be a local file URL or " +
            "an array of local file URLs."
     },
     onMessage: {
@@ -318,8 +318,8 @@ function defineItemProps(item, options) {
   item.__defineGetter__("contentScript", function () {
     return "contentScript" in options ? options.contentScript : undefined;
   });
-  item.__defineGetter__("contentScriptURL", function () {
-    return "contentScriptURL" in options ? options.contentScriptURL : undefined;
+  item.__defineGetter__("contentScriptFile", function () {
+    return "contentScriptFile" in options ? options.contentScriptFile : undefined;
   });
   item.__defineGetter__("onMessage", function () {
     return "onMessage" in options ? options.onMessage : undefined;
@@ -603,7 +603,7 @@ WorkerRegistry.prototype = {
     let worker = ContextMenuWorker({
       window: win.wrappedJSObject,
       contentScript: item.contentScript,
-      contentScriptURL: item.contentScriptURL,
+      contentScriptFile: item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
     worker.on("message", function workerOnMessage(msg) {

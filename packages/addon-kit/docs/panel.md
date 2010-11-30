@@ -63,7 +63,7 @@ using `remove()`.
 
 The content of a panel is specified using the `contentURL` option. An add-on
 can interact with the content of a panel using content scripts which it
-supplies in the `contentScript` and/or `contentScriptURL` options. For example,
+supplies in the `contentScript` and/or `contentScriptFile` options. For example,
 a content script could create a menu and send the user's selection to the
 add-on.
 <api name="Panel">
@@ -83,13 +83,13 @@ Creates a panel.
       Whether or not to execute script in the content.  Defaults to true.
       Optional.
     Optional.
-  @prop [contentScriptURL] {string,array}
-    The URLs of content scripts to load.  Content scripts specified by this
-    option are loaded *before* those specified by the `contentScript` option.
-    Optional.
+  @prop [contentScriptFile] {string,array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option. Optional.
   @prop [contentScript] {string,array}
     The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptURL` option.
+    option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.  Optional.
@@ -126,16 +126,17 @@ Permissions for the content, with the following keys:
   Whether or not to execute script in the content.  Defaults to true.
 </api>
 
-<api name="contentScriptURL">
+<api name="contentScriptFile">
 @property {array}
-The URLs of content scripts to load.  Content scripts specified by this
-property are loaded *before* those specified by the `contentScript` property.
+The local file URLs of content scripts to load.  Content scripts specified by
+this property are loaded *before* those specified by the `contentScript`
+property.
 </api>
 
 <api name="contentScript">
 @property {array}
 The texts of content scripts to load.  Content scripts specified by this
-property are loaded *after* those specified by the `contentScriptURL` property.
+property are loaded *after* those specified by the `contentScriptFile` property.
 </api>
 
 <api name="contentScriptWhen">
