@@ -185,8 +185,8 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseOver: function(widget) {
-      test.pass("onMouseOver called");
+    onMouseover: function(widget) {
+      test.pass("onMouseover called");
       widget.destroy();
       doneTest();
     }
@@ -200,8 +200,8 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseOut: function(widget) {
-      test.pass("onMouseOut called");
+    onMouseout: function(widget) {
+      test.pass("onMouseout called");
       widget.destroy();
       doneTest();
     }
@@ -230,8 +230,8 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseOver: function(widget) {
-      test.pass("onMouseOver called");
+    onMouseover: function(widget) {
+      test.pass("onMouseover called");
       widget.destroy();
       doneTest();
     }
@@ -245,8 +245,8 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseOut: function(widget) {
-      test.pass("onMouseOut called");
+    onMouseout: function(widget) {
+      test.pass("onMouseout called");
       widget.destroy();
       doneTest();
     }
