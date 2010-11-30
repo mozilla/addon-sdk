@@ -146,10 +146,11 @@ tests.testPanelEventOrder = function(test) {
     });
   }
 
-  when('hide', function() { test.done(); });
-  when('show', function() { panel.destroy(); });
-  when('inited', function() { panel.show(); });
   test.waitUntilDone();
+
+  when('inited', function() { panel.show(); });
+  when('show', function() { panel.destroy(); });
+  when('hide', function() { test.done(); });
 };
 
 tests.testContentURLOption = function(test) {
