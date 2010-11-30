@@ -59,8 +59,6 @@ require("xpcom").utils.defineLazyServiceGetter(
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
       ON_HIDE = 'popuphidden',
-      ERR_ADD = "You have to add the panel via require('panel').add() " +
-                "before you can show it.",
       validNumber = { is: ['number', 'undefined', 'null'] };
 
 /**
@@ -238,8 +236,6 @@ const Panel = Symbiont.resolve({
   },
   /**
    * Notification that panel was fully initialized.
-   * This will be called another time when panel was added if it
-   * was initialized before.
    */
   _onInit: function _onInit() {
     this._inited = true;
