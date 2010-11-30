@@ -135,7 +135,53 @@ tests.testSeveralShowHides = function(test) {
   panel.show();
 };
 
-tests.testPanelEventOrder = function(test) {
+function makeEventOrderTest(options) {
+  let expectedEvents = options.expect.slice();
+
+  return function(test) {
+    let panel = panels.Panel({ contentURL: "about:buildconfig" });
+
+    function when(event, cb) {
+      panel.on(event, function() {
+        test.assertEqual(event, expectedEvents.shift());
+        require("timer").setTimeout(cb, 1);
+      });
+    }
+
+    test.waitUntilDone();
+    options.test(test, when, panel);
+  }
+}
+
+tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
+  expect: ['inited', 'show', 'hide'],
+  test: function(test, when, panel) {
+    when('inited', function() { panel.show(); });
+    when('show', function() { panel.destroy(); });
+    when('hide', function() { test.done(); });
+  }
+});
+
+tests.testShowThenWaitForInitThenDestroy = makeEventOrderTest({
+  expect: ['inited', 'show', 'hide'],
+  test: function(test, when, panel) {
+    panel.show();
+    when('inited', function() {});
+    when('show', function() { panel.destroy(); });
+    when('hide', function() { test.done(); });
+  }
+});
+
+tests.testShowThenHideThenDestroy = makeEventOrderTest({
+  expect: ['show', 'hide'],
+  test: function(test, when, panel) {
+    panel.show();
+    when('show', function() { panel.hide(); });
+    when('hide', function() { panel.destroy(); test.done(); });
+  }
+});
+
+function(test) {
   let panel = panels.Panel({ contentURL: "about:buildconfig" });
   let expectedEvents = ['inited', 'show', 'hide'];
 
