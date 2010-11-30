@@ -136,68 +136,50 @@ tests.testSeveralShowHides = function(test) {
 };
 
 function makeEventOrderTest(options) {
-  let expectedEvents = options.expect.slice();
+  let expectedEvents = [];
 
   return function(test) {
     let panel = panels.Panel({ contentURL: "about:buildconfig" });
 
-    function when(event, cb) {
+    function expect(event, cb) {
+      expectedEvents.push(event);
       panel.on(event, function() {
         test.assertEqual(event, expectedEvents.shift());
-        require("timer").setTimeout(cb, 1);
+        if (cb)
+          require("timer").setTimeout(cb, 1);
       });
+      return {then: expect};
     }
 
     test.waitUntilDone();
-    options.test(test, when, panel);
+    options.test(test, expect, panel);
   }
 }
 
 tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
-  expect: ['inited', 'show', 'hide'],
-  test: function(test, when, panel) {
-    when('inited', function() { panel.show(); });
-    when('show', function() { panel.destroy(); });
-    when('hide', function() { test.done(); });
+  test: function(test, expect, panel) {
+    expect('inited', function() { panel.show(); }).
+      then('show', function() { panel.destroy(); }).
+      then('hide', function() { test.done(); });
   }
 });
 
 tests.testShowThenWaitForInitThenDestroy = makeEventOrderTest({
-  expect: ['inited', 'show', 'hide'],
-  test: function(test, when, panel) {
+  test: function(test, expect, panel) {
     panel.show();
-    when('inited', function() {});
-    when('show', function() { panel.destroy(); });
-    when('hide', function() { test.done(); });
+    expect('inited').
+      then('show', function() { panel.destroy(); }).
+      then('hide', function() { test.done(); });
   }
 });
 
 tests.testShowThenHideThenDestroy = makeEventOrderTest({
-  expect: ['show', 'hide'],
-  test: function(test, when, panel) {
+  test: function(test, expect, panel) {
     panel.show();
-    when('show', function() { panel.hide(); });
-    when('hide', function() { panel.destroy(); test.done(); });
+    expect('show', function() { panel.hide(); }).
+      then('hide', function() { panel.destroy(); test.done(); });
   }
 });
-
-function(test) {
-  let panel = panels.Panel({ contentURL: "about:buildconfig" });
-  let expectedEvents = ['inited', 'show', 'hide'];
-
-  function when(event, cb) {
-    panel.on(event, function() {
-      test.assertEqual(event, expectedEvents.shift());
-      require("timer").setTimeout(cb, 1);
-    });
-  }
-
-  test.waitUntilDone();
-
-  when('inited', function() { panel.show(); });
-  when('show', function() { panel.destroy(); });
-  when('hide', function() { test.done(); });
-};
 
 tests.testContentURLOption = function(test) {
   const URL_STRING = "about:buildconfig";
