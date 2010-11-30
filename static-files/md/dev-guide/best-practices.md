@@ -56,7 +56,7 @@ documentation], the [xhr module source code], and the [xhr module test
 suite].
 
   [Security Roadmap]: #guide/security-roadmap
-  [xhr module documentation]: #module/jetpack-core/xhr
-  [xhr module source code]: packages/jetpack-core/lib/xhr.js
-  [xhr module test suite]: packages/jetpack-core/tests/test-xhr.js
+  [xhr module documentation]: #module/api-utils/xhr
+  [xhr module source code]: packages/api-utils/lib/xhr.js
+  [xhr module test suite]: packages/api-utils/tests/test-xhr.js
   [Chrome Object Wrappers]: https://wiki.mozilla.org/XPConnect_Chrome_Object_Wrapper

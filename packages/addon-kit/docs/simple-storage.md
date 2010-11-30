@@ -96,7 +96,7 @@ sensitive data.
 
 Because any kind of data can be placed into simple storage, support for private
 browsing is not built into the module.  Instead, use the `private-browsing`
-module in the `jetpack-core` package to check private browsing status and
+module in the `api-utils` package to check private browsing status and
 respond accordingly.
 
 For example, the URLs your users visit should not be stored during private

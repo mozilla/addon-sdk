@@ -112,7 +112,7 @@ something like this:
     OK
     Total time: 4.036381 seconds
     Program terminated successfully.
-    Testing all available packages: nsjetpack, test-harness, jetpack-core, development-mode.
+    Testing all available packages: nsjetpack, test-harness, api-utils, development-mode.
     Using binary at '/Applications/Firefox.app/Contents/MacOS/firefox-bin'.
     Using profile at '/var/folders/FL/FLC+17D+ERKgQe4K+HC9pE+++TI/-Tmp-/tmp-dzeaA.mozrunner'.
     .........................................................................  

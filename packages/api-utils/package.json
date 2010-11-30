@@ -1,5 +1,5 @@
 {
-    "name": "jetpack-core",
+    "name": "api-utils",
     "description": "Foundational infrastructure and utilities.",
     "keywords": ["javascript", "engine", "platform", "xulrunner",
                  "jetpack-low-level"],

@@ -39,7 +39,7 @@
 const { Trait } = require('traits');
 
 /**
- * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/list
+ * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/list
  */
 const Iterable = Trait.compose({
   /**

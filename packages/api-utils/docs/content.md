@@ -5,7 +5,7 @@ The `content` module exports three different traits [Loader], [Worker] and
 Rather, they are intended to be used by other modules that provide high
 level APIs to programs or libraries.
 
-[Loader]:#module/jetpack-core/content/loader
-[Worker]:#module/jetpack-core/content/worker
-[Symbiont]:#module/jetpack-core/content/symbiont
+[Loader]:#module/api-utils/content/loader
+[Worker]:#module/api-utils/content/worker
+[Symbiont]:#module/api-utils/content/symbiont
 
