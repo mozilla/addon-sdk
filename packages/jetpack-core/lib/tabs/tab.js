@@ -81,8 +81,7 @@ const TabTrait = Trait.compose(EventEmitter, {
 
     if (options.isPinned)
       this.pin();
-    if (!options.inBackground)
-        this.activate();
+
     // Since we will have to identify tabs by a DOM elements facade function
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
