@@ -125,15 +125,8 @@ const EventEmitter = Trait.compose({
   _emit: function _emit(type, event) {
     let listeners = this._listeners(type).slice(0);
     // If there is no 'error' event listener then throw.
-    if (type === ERROR_TYPE && !listeners.length) {
-      if (event && event.constructor && (
-          'Error' == event.constructor.name ||
-          'Error' == Object.getPrototypeOf(event.constructor.prototype).name
-        )
-      )
-        throw event;
-      throw new Error(UNCAUGHT_ERROR + ':\n' + event);
-    }
+    if (type === ERROR_TYPE && !listeners.length)
+      console.exception(event);
     if (!listeners.length)
       return false;
     let params = Array.slice(arguments, 1);
