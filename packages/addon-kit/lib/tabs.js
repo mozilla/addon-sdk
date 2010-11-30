@@ -47,11 +47,31 @@ if (!require("xul-app").is("Firefox")) {
 
 const { browserWindows } = require("windows");
 const { tabs } = require("windows/tabs");
+const { Options, setTabListeners } = require("tabs/tab")
 
 Object.defineProperties(tabs, {
   open: { value: function open(options) {
-    if (options.inNewWindow)
-        return browserWindows.open({ tabs: [ options ] });
+    options = Options(options)
+    if (options.inNewWindow) {
+        return browserWindows.open({
+          url: options.url,
+          // Setting listener on open window which is called just after tabs
+          // list is initialized.
+          onOpen: function onOpen({ tabs: { activeTab } }) {
+            browserWindows.removeListener('open', onOpen);
+            // Setting all the listeners.
+            setTabListeners(options, activeTab);
+            if (options.isPinned) // Pin tab if it was intended.
+              activeTab.pin();
+            // open and activate events are already emitted so we have to
+            // call them manually.
+            if (options.onOpen)
+              options.onOpen(activeTab);
+            if (options.onActivate)
+              options.onActivate(activeTab);
+          }
+        });
+    }
     // Open in active window if new window was not required.
     return browserWindows.activeWindow.tabs.open(options);
   }}

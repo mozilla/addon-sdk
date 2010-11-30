@@ -93,16 +93,6 @@ Open a new window.
       }
     });
 
-    // Open new window with two tabs.
-    windows.open({
-      tabs: [
-        "http://www.mysite.com",
-        { url: "http:/mozilla.com",
-          pinned: true                // Open this tab as apptab.
-        }
-      ]
-    });
-
 @param options {object}
 An object containing configurable options for how this window will be opened,
 as well as a callback for being notified when the window has fully opened.
@@ -113,13 +103,6 @@ If the only option being used is `url`, then a bare string URL can be passed to
 @prop url {string}
 String URL to be opened in the new window.
 This is a required property.
-
-@prop [tabs] {array}
-Array of objects containing configurable options for tabs or URL strings.
-The property can be used to open new window with a several tabs. Each element
-of the array is an options object or URL string passed to the
-[TabList's open method](#module/addon-kit/tabs).
-This is an optional property.
 
 @prop [onOpen] {function}
 A callback function that is called when the window has opened. This does not

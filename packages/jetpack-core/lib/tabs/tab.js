@@ -71,7 +71,7 @@ const TabTrait = Trait.compose(EventEmitter, {
     for each (let type in EVENTS) {
       let listener = options[type.listener];
       if (listener)
-        this.on(type.name, options[type.listener]);
+        this.on(type.name, listener);
       if ('ready' != type.name) // window spreads this event.
         window.tabs.on(type.name, this._onEvent.bind(this, type.name));
     }
@@ -79,8 +79,6 @@ const TabTrait = Trait.compose(EventEmitter, {
     this.on(EVENTS.close.name, this.destroy.bind(this));
     this._browser.addEventListener(EVENTS.ready.dom, this._onReady, true);
 
-    if (options.isPinned)
-      this.pin();
     // Since we will have to identify tabs by a DOM elements facade function
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
@@ -218,12 +216,20 @@ function Tab(options) {
 Tab.prototype = TabTrait.prototype;
 exports.Tab = Tab;
 
+exports.setTabListeners = function setTabListeners(listeners, tab) {
+  for each (let type in EVENTS) {
+    if (type.listener in listeners)
+      tab.on(type.name, listeners[type.listener]);
+  }
+}
+
 function Options(options) {
   if ("string" === typeof options)
     options = { url: options };
 
   return validateOptions(options, {
     url: { is: ["string"] },
+    inNewWindow: { is: ["undefined", "boolean"] },
     inBackground: { is: ["undefined", "boolean"] },
     isPinned: { is: ["undefined", "boolean"] },
     onOpen: { is: ["undefined", "function"] },

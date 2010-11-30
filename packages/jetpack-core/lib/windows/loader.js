@@ -65,7 +65,6 @@ const WindowLoader = Trait.compose({
    * @param {nsIWindow} window
    */
   _onLoad: Trait.required,
-  _tabOptions: Trait.required,
   /**
    * Internal listener that is called when `_window`'s DOM 'unload' event
    * is dispatched. Please note that this trait will not handle exceptions that
@@ -73,10 +72,11 @@ const WindowLoader = Trait.compose({
    * handling them.
    */
   _onUnload: Trait.required,
-  _load: function _load() {
+  _load: function _load(url) {
     if (this.__window) return;
     let params = PARAMS.slice()
-    params.push(this._tabOptions.map(function(options) options.url).join("|"))
+    if (url)
+      params.push(url);
     let browser =  WM.getMostRecentWindow(BROWSER);
     this._window = browser.openDialog.apply(browser, params);
   },

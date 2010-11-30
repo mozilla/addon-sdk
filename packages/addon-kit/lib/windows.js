@@ -92,18 +92,10 @@ const BrowserWindowTrait = Trait.compose(
         this.on('close', options.onClose);
       if ('window' in options)
         this._window = options.window;
-      if ('tabs' in options) {
-        this._tabOptions = Array.isArray(options.tabs) ?
-                           options.tabs.map(Options) :
-                           [ Options(options.tabs) ];
-      }
-      else if ('url' in options) {
-        this._tabOptions = [ Options(options.url) ];
-      }
-      this._load();
+
+      this._load(options.url);
       return this;
     },
-    _tabOptions: [],
     _onLoad: function() {
       try {
         this._initWindowTabTracker();
@@ -195,7 +187,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     },
     open: function open(options) {
       if (typeof options === "string")
-        options = { tabs: [Options(options)] };
+        options = { url: options };
       return BrowserWindow(options);
     },
     /**

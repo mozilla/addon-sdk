@@ -38,7 +38,7 @@
 
 const { Trait } = require("traits");
 const { List } = require("list");
-const { Tab, Options } = require("tabs/tab");
+const { Tab, Options, setTabListeners } = require("tabs/tab");
 const { EventEmitter } = require("events");
 const { EVENTS } = require("tabs/events");
 
@@ -59,7 +59,6 @@ const WindowTabTracker = Trait.compose({
    * Function used to emit events.
    */
   _emit: Trait.required,
-  _tabOptions: Trait.required,
   /**
    * Function to add event listeners.
    */
@@ -106,10 +105,7 @@ const WindowTabTracker = Trait.compose({
    * @param {Event} event
    */
   _onTabEvent: function _onTabEvent(type, event) {
-    let options = this._tabOptions.shift() || {};
-    options.tab = event.target;
-    options.window = this._public;
-    var tab = Tab(options);
+    var tab = Tab({ tab: event.target, window: this._public });
     // Piping 'ready' events from open tabs to the window listeners.
     if (type == EVENTS.open)
       tab.on(EVENTS.ready.name, this._emitEvent.bind(this, EVENTS.ready));
@@ -167,11 +163,20 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
 
     open: function open(options) {
       options = Options(options);
-      this._window._tabOptions.push(options);
-      let tab = this._window._window.gBrowser.addTab(options.url);
-      if (!options.inBackground)
-        this._window._window.gBrowser.selectedTab = tab;
-    }
+      this.on('open', function onOpen(tab, window) {
+        this.removeListener('open', onOpen);
+        // setting all the options
+        if (!options.inBackground)
+          tab.activate()
+        if (options.isPinned)
+          tab.pin();
+        // setting all the listeners
+        setTabListeners(options, tab);
+      });
+      this._window._window.gBrowser.addTab(options.url);
+      // Setting a listener to set all the tab event listeners
+      // once tab is open.
+      }
   // This is ugly, but necessary. Will be removed by #596248
   }).resolve({ toString: null })
 );
