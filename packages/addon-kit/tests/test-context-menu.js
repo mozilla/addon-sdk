@@ -1280,17 +1280,27 @@ TestHelper.prototype = {
       this.test.done();
     }
 
-    this.contextMenuPopup.hidePopup();
+    function closeBrowserWindow() {
+      if (this.oldBrowserWindow) {
+        this.delayedEventListener(this.browserWindow, "unload", commonDone,
+                                  false);
+        this.browserWindow.close();
+        this.browserWindow = this.oldBrowserWindow;
+        delete this.oldBrowserWindow;
+      }
+      else {
+        commonDone.call(this);
+      }
+    };
 
-    if (this.oldBrowserWindow) {
-      this.delayedEventListener(this.browserWindow, "unload", commonDone,
-                                false);
-      this.browserWindow.close();
-      this.browserWindow = this.oldBrowserWindow;
-      delete this.oldBrowserWindow;
+    if (this.contextMenuPopup.state == "closed") {
+      closeBrowserWindow.call(this);
     }
     else {
-      commonDone.call(this);
+      this.delayedEventListener(this.contextMenuPopup, "popuphidden",
+                                function () closeBrowserWindow.call(this),
+                                false);
+      this.contextMenuPopup.hidePopup();
     }
   },
 

@@ -8,8 +8,25 @@ This module currently only supports browser windows and does not provide
 access to non-browser windows such as the Bookmarks Library, preferences
 or other non-browser windows created via add-ons.
 
+Events
+------
+
+Events represent common actions and state changes for windows.
+
+Listeners are passed the `window` object that triggered the event.
+
+All the windows and lists of windows emit following events:
+
+### open ###
+Event emitted when a new window is open.
+This does not mean that the content has loaded, only that the browser window
+itself is fully visible to the user.
+
+### close ###
+Event emitted when a window is closed.
+
 <api name="browserWindows">
-@property {object}
+@property {List}
 An object that contains various properties and methods to access
 functionality from browser windows, such as opening new windows, accessing
 their tabs or switching the current active window.
@@ -23,14 +40,7 @@ their tabs or switching the current active window.
 
     console.log(windows.browserWindows.length);
 
-###Events###
-The `browserWindows` generates two event types:
-
-***open***: called when a new window is opened.
-
-***closed***: called when a window is closed.
-
-Listeners are passed the `window` object that triggered the event.
+Object emits all the events listed under "Events" section.
 
 ####Examples####
 
@@ -47,10 +57,9 @@ Listeners are passed the `window` object that triggered the event.
     });
 
 <api name="activeWindow">
-@property {object}
+@property {BrowserWindow}
 
-The currently active window.  This property can be set to a `window` object,
-which will focus that window and bring it to the foreground.
+The currently active window. This property is read-only.
 
 **Example**
 
@@ -59,24 +68,24 @@ which will focus that window and bring it to the foreground.
     console.log("title of active window is " +
                 windows.browserWindows.activeWindow.title);
 
+    anotherWindow.activate();
     // set
-    windows.activeWindow = anotherWindow;
-
+    windows.activeWindow == anotherWindow // true
 </api>
 
 </api>
 
-<api name="openWindow">
+<api name="open">
 @function
 Open a new window.
 
     var windows = require("windows").browserWindows;
 
-    // open a new window
-    windows.openWindow("http://www.mysite.com");
+    // Open a new window.
+    windows.open("http://www.mysite.com");
 
-    // an onOpen listener
-    windows.openWindow({
+    // Open a new window and set a listener for "open" event.
+    windows.open({
       url: "http://www.mysite.com",
       onOpen: function(window) {
         // do stuff like listen for content
@@ -89,7 +98,7 @@ An object containing configurable options for how this window will be opened,
 as well as a callback for being notified when the window has fully opened.
 
 If the only option being used is `url`, then a bare string URL can be passed to
-`openWindow` instead of specifying it as a property of the `options` object.
+`open` instead of specifying it as a property of the `options` object.
 
 @prop url {string}
 String URL to be opened in the new window.
@@ -103,19 +112,14 @@ functional and its properties can be accessed. This is an optional property.
 @prop [onClose] {function}
 A callback function that is called when the window will be called.
 This is an optional property.
-
-@prop [onReady] {function}
-A callback function that is called when the URL content has loaded. This is an
-optional property.
-
 </api>
 
 </api>
 
-<api name="Window">
+<api name="BrowserWindow">
 @class
-A `window` object represents a single open window. Window instances can be
-retrieved from the `browserWindows` object.
+A `BrowserWindow` instance represents a single open window. They can be
+retrieved from the `browserWindows` property exported by this module.
 
     var windows = require("windows").browserWindows;
 
@@ -132,7 +136,6 @@ retrieved from the `browserWindows` object.
     // close the active window
     windows.activeWindow.close();
 
-    // close the active window
     windows.activeWindow.close(function() {
       console.log("The active window was closed");
     });
@@ -145,23 +148,25 @@ This property is read-only.
 </api>
 
 <api name="tabs">
-@property {object}
-An object representing all the open tabs on the window. This object
-has all the properties and methods of the `tabs` module.
+@property {TabList}
+An instance of [TabList](#module/addon-kit/tabs) representing the live list of
+all the open tabs for this window.
 This property is read-only.
 </api>
 
-<api name="focus">
+<api name="activate">
 @method
-Makes window active
+Makes window active, which will focus that window and bring it to the
+foreground.
 </api>
 
 <api name="close">
 @method
 Close the window.
 
-@param callback {function}
+@param [callback] {function}
 A function to be called when the window finishes its closing process.
+This is an optional argument.
 </api>
 
 </api>

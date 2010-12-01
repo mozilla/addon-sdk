@@ -28,7 +28,7 @@ exports.main = function(options, callbacks) {
   // When you click the widget, the panel will pop up.
   widgets.Widget({
     label: "Mom",
-    image: iconURL,
+    contentURL: iconURL,
     panel: myPanel
   });
 

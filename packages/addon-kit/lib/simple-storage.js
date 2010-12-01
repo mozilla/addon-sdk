@@ -47,10 +47,10 @@ const unload = require("unload");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
 
-const WRITE_PERIOD_PREF = "jetpack.jetpack-core.simple-storage.writePeriod";
+const WRITE_PERIOD_PREF = "jetpack.addon-kit.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
 
-const QUOTA_PREF = "jetpack.jetpack-core.simple-storage.quota";
+const QUOTA_PREF = "jetpack.addon-kit.simple-storage.quota";
 const QUOTA_DEFAULT = 5242880; // 5 MiB
 
 

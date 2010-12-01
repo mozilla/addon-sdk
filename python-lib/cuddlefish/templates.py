@@ -7,8 +7,8 @@ const data = require("self").data;
 
 let my_widget = widgets.Widget({
     label:"Mozilla website",
-    image:"http://www.mozilla.org/favicon.ico",
-    onClick:function(e){
+    contentURL:"http://www.mozilla.org/favicon.ico",
+    onClick:function(widget){
         tabs.open("http://mozilla.org");
     }
 });
@@ -45,8 +45,8 @@ exports.test_open_tab = function(test){
     const tabs = require("tabs");
     tabs.open({
         url : "http://www.mozilla.org",
-        onOpen : function(tab){
-            test.assert(tab.location=="http://www.mozilla.org/");
+        onReady : function(tab){
+            test.assertEqual(tab.url,"http://www.mozilla.org/");
             test.done();
         }
     });

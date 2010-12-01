@@ -1,10 +1,11 @@
+let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let URL = require("url").URL;
 let tests = {}, panels, Panel;
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
+  let panel = Panel({
     contentURL: "about:buildconfig",
     contentScript: "postMessage(1); on('message', function() postMessage(2));",
     onMessage: function (message) {
@@ -15,17 +16,17 @@ tests.testPanel = function(test) {
           break;
         case 2:
           test.pass("The panel posted a message and received a response.");
-          panels.remove(panel);
+          panel.destroy();
           test.done();
           break;
       }
     }
-  }));
+  });
 };
 
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
+  let panel = Panel({
     contentScript: "postMessage('')",
     contentScriptWhen: "ready",
     onMessage: function (message) {
@@ -36,39 +37,68 @@ tests.testShowHidePanel = function(test) {
       panel.hide();
     },
     onHide: function () {
-      panels.remove(panel);
+      panel.destroy();
       test.pass("The panel was hidden.");
       test.done();
     }
-  }));
+  });
 };
 
 tests.testResizePanel = function(test) {
   test.waitUntilDone();
-  let panel = panels.add(Panel({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
-    height: 10,
-    width: 10,
-    onMessage: function (message) {
-      panel.show();
-    },
-    onShow: function () {
-      panel.resize(100,100);
-      panel.hide();
-    },
-    onHide: function () {
-      test.assert((panel.width == 100) && (panel.height == 100),
-        "The panel was resized.");
-      test.done();
-    }
-  }));
+
+  // These tests fail on Linux if the browser window in which the panel
+  // is displayed is not active.  And depending on what other tests have run
+  // before this one, it might not be (the untitled window in which the test
+  // runner executes is often active).  So we make sure the browser window
+  // is focused by focusing it before running the tests.  Then, to be the best
+  // possible test citizen, we refocus whatever window was focused before we
+  // started running these tests.
+
+  let activeWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                     getService(Ci.nsIWindowMediator).
+                     getMostRecentWindow(null);
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  function onFocus() {
+    browserWindow.removeEventListener("focus", onFocus, true);
+
+    let panel = Panel({
+      contentScript: "postMessage('')",
+      contentScriptWhen: "ready",
+      height: 10,
+      width: 10,
+      onMessage: function (message) {
+        panel.show();
+      },
+      onShow: function () {
+        panel.resize(100,100);
+        panel.hide();
+      },
+      onHide: function () {
+        test.assert((panel.width == 100) && (panel.height == 100),
+          "The panel was resized.");
+        activeWindow.focus();
+        test.done();
+      }
+    });
+  }
+
+  if (browserWindow === activeWindow) {
+    onFocus();
+  }
+  else {
+    browserWindow.addEventListener("focus", onFocus, true);
+    browserWindow.focus();
+  }
 };
 
 tests.testHideBeforeShow = function(test) {
   test.waitUntilDone();
   let showCalled = false;
-  let panel = panels.add(Panel({
+  let panel = Panel({
     onShow: function () {
       showCalled = true;
     },
@@ -76,7 +106,7 @@ tests.testHideBeforeShow = function(test) {
       test.assert(!showCalled, 'must not emit show if was hidden before');
       test.done();
     }
-  }));
+  });
   panel.show();
   panel.hide();
 };
@@ -84,7 +114,7 @@ tests.testHideBeforeShow = function(test) {
 tests.testSeveralShowHides = function(test) {
   test.waitUntilDone();
   let hideCalled = 0;
-  let panel = panels.add(panels.Panel({
+  let panel = panels.Panel({
     contentURL: "about:buildconfig",
     onShow: function () {
       panel.hide();
@@ -98,12 +128,58 @@ tests.testSeveralShowHides = function(test) {
         test.done();
       }
     }
-  }));
+  });
   panel.on('error', function(e) {
     test.fail('error was emitted:' + e.message + '\n' + e.stack);
   });
   panel.show();
 };
+
+function makeEventOrderTest(options) {
+  let expectedEvents = [];
+
+  return function(test) {
+    let panel = panels.Panel({ contentURL: "about:buildconfig" });
+
+    function expect(event, cb) {
+      expectedEvents.push(event);
+      panel.on(event, function() {
+        test.assertEqual(event, expectedEvents.shift());
+        if (cb)
+          require("timer").setTimeout(cb, 1);
+      });
+      return {then: expect};
+    }
+
+    test.waitUntilDone();
+    options.test(test, expect, panel);
+  }
+}
+
+tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
+  test: function(test, expect, panel) {
+    expect('inited', function() { panel.show(); }).
+      then('show', function() { panel.destroy(); }).
+      then('hide', function() { test.done(); });
+  }
+});
+
+tests.testShowThenWaitForInitThenDestroy = makeEventOrderTest({
+  test: function(test, expect, panel) {
+    panel.show();
+    expect('inited').
+      then('show', function() { panel.destroy(); }).
+      then('hide', function() { test.done(); });
+  }
+});
+
+tests.testShowThenHideThenDestroy = makeEventOrderTest({
+  test: function(test, expect, panel) {
+    panel.show();
+    expect('show', function() { panel.hide(); }).
+      then('hide', function() { panel.destroy(); test.done(); });
+  }
+});
 
 tests.testContentURLOption = function(test) {
   const URL_STRING = "about:buildconfig";
