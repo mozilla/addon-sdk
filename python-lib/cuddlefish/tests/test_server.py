@@ -52,7 +52,7 @@ class UnprivilegedServerTests(unittest.TestCase):
 
     def test_package_file_200(self):
         readme = self.request('/packages/api-utils/README.md')
-        self.assertTrue('Jetpack Core' in readme)
+        self.assertTrue('API Utils' in readme)
 
     def test_packages_index_json_200(self):
         info = server.json.loads(self.request('/packages/index.json'))
