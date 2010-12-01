@@ -294,7 +294,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
 /**
  * Message-passing facility for communication between code running
  * in the content and add-on process.
- * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/content/worker
+ * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/content/worker
  */
 const Worker = AsyncEventEmitter.compose({
   on: Trait.required,

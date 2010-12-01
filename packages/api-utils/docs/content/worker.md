@@ -45,7 +45,7 @@ that occurs in one of the content scripts.
     });
     worker.postMessage({ name: 'worker'});
 
-[EventEmitter]:#module/jetpack-core/events
+[EventEmitter]:#module/api-utils/events
 <api name="Worker">
 @constructor
 Creates a content worker.

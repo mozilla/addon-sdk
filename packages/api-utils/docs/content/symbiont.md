@@ -36,7 +36,7 @@ Examples
 
 See the [panel] module for a real-world example of usage of this module.
 
-[panel]:#module/jetpack-core/panel
+[panel]:#module/api-utils/panel
 
 Reference
 ---------
@@ -48,14 +48,14 @@ of Symbiont and their descendants expose all the public properties
 exposed by [Worker] along with additional public properties that
 are listed below:
 
-[Worker]:#module/jetpack-core/content/worker
+[Worker]:#module/api-utils/content/worker
 <api name="Symbiont">
 @constructor
 Creates a content symbiont.
 @param options {object}
   Options for the constructor. Includes all the keys that [Worker] constructor
   accepts and few additional:
-[Worker]:#module/jetpack-core/panel
+[Worker]:#module/api-utils/panel
   @prop [frame] {object}
     The host application frame in which the page is loaded.
     If frame is not provided hidden one will be created.

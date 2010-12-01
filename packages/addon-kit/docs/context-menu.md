@@ -103,7 +103,7 @@ following types.  Each is a constructor exported by the `context-menu` module.
       the patterns.  These are the same match pattern strings that you use with
       the <a href="#module/addon-kit/page-mod"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="#module/jetpack-core/match-pattern">Read more about patterns</a>.
+      <a href="#module/api-utils/match-pattern">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -455,8 +455,8 @@ top-level context menu.
   Contexts above.
 @param matchPattern {string,array}
   A [match pattern] string or an array of match pattern strings.
-  [match pattern]: #module/jetpack-core/match-pattern
+  [match pattern]: #module/api-utils/match-pattern
 </api>
 </api>
 
-[self]: #module/jetpack-core/self
+[self]: #module/api-utils/self

@@ -25,8 +25,8 @@ For more information on Low-Level Modules, see the
 [Low-Level Module Best Practices] appendix.
 </span>
 
-__Jetpack Core__: A small, self-contained set of low-level modules that forms
-the base functionality for the SDK. The Core can be "bootstrapped" into
+__API Utils__: A small, self-contained set of low-level modules that forms
+the base functionality for the SDK. The library can be "bootstrapped" into
 any Mozilla application or extension.
 
 __Jetpack Prototype__: A Mozilla Labs experiment that predated and inspired

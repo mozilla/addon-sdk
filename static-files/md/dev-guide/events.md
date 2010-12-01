@@ -1,5 +1,5 @@
 The Add-on SDK supports event-driven programming through its
-[`EventEmitter`](#module/jetpack-core/events) framework. Objects emit events
+[`EventEmitter`](#module/api-utils/events) framework. Objects emit events
 on state changes that might be of interest to add-on code, such as browser
 windows opening, pages loading, network requests completing, and mouse clicks.
 By registering a listener function to an event emitter an add-on can receive

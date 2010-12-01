@@ -66,8 +66,8 @@ The `file` module provides access to the local filesystem.
   `"r"` is assumed, and the file is opened in read-only text mode.
 @returns {stream}
   A stream that can be used to access or modify the contents of the file.  See
-  [`text-streams`](#module/jetpack-core/text-streams) and
-  [`byte-streams`](#module/jetpack-core/byte-streams) for more information.
+  [`text-streams`](#module/api-utils/text-streams) and
+  [`byte-streams`](#module/api-utils/byte-streams) for more information.
   Opened files should always be closed after use by calling `close` on the
   returned stream.
 </api>
