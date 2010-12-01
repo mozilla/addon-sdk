@@ -48,7 +48,6 @@ const { Ci } = require("chrome");
 const { validateOptions: valid } = require("api-utils");
 const { Symbiont } = require("content");
 const { EventEmitter } = require('events');
-const { Registry } = require('utils/registry');
 
 require("xpcom").utils.defineLazyServiceGetter(
   this,
@@ -60,8 +59,6 @@ require("xpcom").utils.defineLazyServiceGetter(
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
       ON_HIDE = 'popuphidden',
-      ERR_ADD = "You have to add the panel via require('panel').add() " +
-                "before you can show it.",
       validNumber = { is: ['number', 'undefined', 'null'] };
 
 /**
@@ -101,8 +98,6 @@ const Panel = Symbiont.resolve({
   constructor: function Panel(options) {
     this._onShow = this._onShow.bind(this);
     this._onHide = this._onHide.bind(this);
-    PanelRegistry.on('add', this._onAdd.bind(this));
-    PanelRegistry.on('remove', this._onRemove.bind(this));
     this.on('inited', this._onSymbiontInit.bind(this));
 
     options = options || {};
@@ -120,12 +115,15 @@ const Panel = Symbiont.resolve({
     this._init(options);
   },
   _destructor: function _destructor() {
-    PanelRegistry.remove(this._public);
+    this.hide();
     this._removeAllListeners('show');
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;
     this._symbiontDestructor(this);
     this._removeAllListeners(this, 'hide');
+  },
+  destroy: function destroy() {
+    this._destructor();
   },
   /* Public API: Panel.width */
   get width() this._width,
@@ -139,10 +137,6 @@ const Panel = Symbiont.resolve({
   _height: 240,
   /* Public API: Panel.show */
   show: function show(anchor) {
-    // do nothing if already open
-    if (!PanelRegistry.has(this))
-      throw new Error(ERR_ADD);
-
     anchor = anchor || null;
     let document = getWindow(anchor).document;
     let xulPanel = this._xulPanel;
@@ -171,9 +165,6 @@ const Panel = Symbiont.resolve({
   },
   /* Public API: Panel.hide */
   hide: function hide() {
-    if (!PanelRegistry.has(this))
-      throw new Error(ERR_ADD);
-
     // The popuphiding handler takes care of swapping back the frame loaders
     // and removing the XUL panel from the application window, we just have to
     // trigger it by hiding the popup.
@@ -243,40 +234,19 @@ const Panel = Symbiont.resolve({
     }
   },
   /**
-   * Notification that panel was added.
-   */
-  _onAdd: function _onAdd(self) {
-    if (self == this._public && this._inited)
-      this._onInit();
-  },
-  /**
-   * Notification that panel was removed.
-   */
-  _onRemove: function _onRemove(self) {
-    if (self == this._public)
-        this.hide();
-  },
-  /**
    * Notification that panel was fully initialized.
-   * This will be called another time when panel was added if it
-   * was initialized before.
    */
   _onInit: function _onInit() {
     this._inited = true;
-    if (PanelRegistry.has(this)) {
-      // perform all deferred tasks like initSymbiont, show, hide ...
-      this._emit('inited');
-      this._removeAllListeners('inited');
-    }
+    // perform all deferred tasks like initSymbiont, show, hide ...
+    // TODO: We're publicly exposing a private event here; this
+    // 'inited' event should really be made private, somehow.
+    this._emit('inited');
+    this._removeAllListeners('inited');
   }
 });
 exports.Panel = function(options) Panel(options)
 exports.Panel.prototype = Panel.prototype;
-
-const PanelRegistry = Registry(Panel);
-
-exports.add = PanelRegistry.add;
-exports.remove = PanelRegistry.remove;
 
 function getWindow(anchor) {
   let window;

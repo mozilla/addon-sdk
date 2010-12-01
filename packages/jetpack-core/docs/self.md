@@ -45,11 +45,9 @@ content frame. The URL instance can be passed to a content frame constructor,
 such as the Panel:
 
     var self = require("self");
-    var panels = require("panel");
-    var myPanel = panels.Panel({
+    var myPanel = require("panel").Panel({
       contentURL: self.data.url("my-panel-content.html")
     });
-    panels.add(myPanel);
     myPanel.show();
 
 @param name {string} The filename to be read, relative to the
