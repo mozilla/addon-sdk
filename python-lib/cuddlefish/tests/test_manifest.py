@@ -82,6 +82,74 @@ class Require(unittest.TestCase, Extra):
         self.failUnlessKeysAre(requires, ["one", "two"])
         self.failUnlessEqual(chrome, False)
 
+        # define calls
+
+        mod = """define('one', ['two', 'numbers/three'], function(t, th) {});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["two", "numbers/three"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """define(
+        ['odd',
+        "numbers/four"], function() {});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["odd", "numbers/four"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """define(function(require, exports, module) {
+                var a = require("some/module/a"),
+                    b = require('b/v1');
+                exports.a = a;
+                //This is a fakeout: require('bad');
+                /* And another var bad = require('bad2'); */
+                require('foo').goFoo();
+            });"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["some/module/a", "b/v1", "foo"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """define (
+            "foo",
+            ["bar"], function (bar) {
+                var me = require("me");
+            }
+        )"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["bar", "me"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """define(['se' + 'ven', 'eight', nine], function () {});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["eight"])
+        self.failUnlessEqual(chrome, False)
+
+        # async require calls
+
+        mod = """require(['one'], function(one) {var o = require("one");});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["one"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """require([  'one' ], function(one) {var t = require("two");});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """require ( ['two', 'numbers/three'], function(t, th) {});"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["two", "numbers/three"])
+        self.failUnlessEqual(chrome, False)
+
+        mod = """require (
+            ["bar", "fa" + 'ke'  ], function (bar) {
+                var me = require("me");
+                // require("bad").doBad();
+            }
+        )"""
+        requires, chrome = self.scan(mod)
+        self.failUnlessKeysAre(requires, ["bar", "me"])
+        self.failUnlessEqual(chrome, False)
+
 def scan2(text, fn="fake.js"):
     stderr = StringIO()
     lines = StringIO(text).readlines()

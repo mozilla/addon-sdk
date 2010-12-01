@@ -204,21 +204,11 @@
      this.securityPolicy = options.securityPolicy;
    };
 
-   // START Support functions for Async module-style
-   var ostring = Object.prototype.toString;
-   function isFunction(it) {
-     return ostring.call(it) === "[object Function]";
-   }
-   function isArray(it) {
-     return ostring.call(it) === "[object Array]";
-   }
-   // END Support functions for Async module-style
-
    exports.Loader.prototype = {
      _makeApi: function _makeApi(basePath) {
        var self = this;
 
-       function require(module) {
+       function syncRequire(module) {
          var exports;
 
          if (self.getModuleExports)
@@ -301,7 +291,7 @@
        function asyncRequire(deps, callback) {
          if (typeof deps === "string" && !callback) {
            // Just return the module wanted via sync require.
-           return require(deps);
+           return syncRequire(deps);
          } else {
            asyncMain(null, basePath, null, deps, callback);
            return undefined;
@@ -328,7 +318,7 @@
 
          // If just a define({}) call (no dependencies),
          // adjust args accordingly.
-         if (!isArray(deps)) {
+         if (!Array.isArray(deps)) {
            callback = deps;
            deps = null;
          }
@@ -340,7 +330,7 @@
 
          // If the callback is not an actual function, it means it already
          // has the definition of the module as a literal value.
-         if (!deps && callback && !isFunction(callback)) {
+         if (!deps && callback && typeof callback !== 'function') {
            self.modules[namePath] = callback;
            return;
          }
@@ -375,7 +365,7 @@
        // function if "exports" is not a dependency.
        function asyncMain (name, namePath, exports, deps, callback) {
 
-         if (isFunction(deps)) {
+         if (typeof deps === 'function') {
            callback = deps;
            deps = null;
          }
@@ -437,7 +427,7 @@
                var depPath = self.fs.resolveModule(basePath, dep);
 
                if (!self.modules[depPath]) {
-                 require(dep);
+                 syncRequire(dep);
                }
                depModules.push(self.modules[depPath]);
              }

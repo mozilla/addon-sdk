@@ -9,7 +9,10 @@ REQUIRE_RE = r"(?<![\'\"])require\s*\(\s*[\'\"]([^\'\"]+?)[\'\"]\s*\)"
 # detect the define idiom of the form:
 #   define("module name", ["dep1", "dep2", "dep3"], function() {})
 # by capturing the contents of the list in a group.
-DEF_RE = re.compile(r"(require|define)\s*\(([\'\"][^\'\"]+[\'\"]\s*,)?\s*\[([^\]]+)\]")
+DEF_RE = re.compile(r"(require|define)\s*\(\s*([\'\"][^\'\"]+[\'\"]\s*,)?\s*\[([^\]]+)\]")
+
+# Out of the async dependencies, do not allow quotes in them.
+DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 
 def scan_requirements_with_grep(fn, lines):
     requires = Bunch()
@@ -34,8 +37,10 @@ def scan_requirements_with_grep(fn, lines):
         for strbit in match.group(3).split(","):
             strbit = strbit.strip()
             # There could be a trailing comma netting us just whitespace, so
-            # filter that out.
-            if strbit:
+            # filter that out. Make sure that only string values with
+            # quotes around them are allowed, and no quotes are inside
+            # the quoted value.
+            if strbit and DEF_RE_ALLOWED.match(strbit):
                 modname = strbit[1:-1]
                 requires[modname] = Bunch()
 
