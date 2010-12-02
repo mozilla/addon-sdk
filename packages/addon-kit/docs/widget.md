@@ -112,18 +112,23 @@ Represents a widget object.
 
   @prop [onClick] {callback}
     An optional function to be called when the widget is clicked. It is called
-    as `onClick(widget, event)`. `widget` is the `Widget` instance, and `event`
-    is the standard DOM event object.
+    as `onClick(widget)`, where `widget` is the `Widget` instance.
+
+  @prop [onMessage] {callback}
+    An optional function to be called when the widget's content scripts post
+    a message. It is called as `onMessage(widget, message)`, where `widget` is
+    the `Widget` instance and `message` is the JSON-able data posted by the
+    content script.
 
   @prop [onMouseover] {callback}
     An optional function to be called when the user passes the mouse over the
-    widget. It is called as `onMouseover(widget, event)`. `widget` is the
-    `Widget` instance, and `event` is the standard DOM event object.
+    widget. It is called as `onMouseover(widget)`, where `widget` is the
+    `Widget` instance.
 
   @prop [onMouseout] {callback}
     An optional function to be called when the mouse is no longer over the
-    widget. It is called as `onMouseout(widget, event)`. `widget` is the
-    `Widget` instance, and `event` is the standard DOM event object.
+    widget. It is called as `onMouseout(widget)`, where `widget` is the
+    `Widget` instance.
 
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
@@ -149,9 +154,6 @@ Represents a widget object.
     Possible values are "start" (default), which loads them as soon as
     the window object for the page has been created, and "ready", which loads
     them once the DOM content of the page has been loaded.
-
-  @prop [onMessage] {array}
-    Functions to call when a content script sends the widget a message.
 </api>
 <api name="destroy">
 @method
