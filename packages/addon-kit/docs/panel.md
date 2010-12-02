@@ -163,7 +163,7 @@ The message to send.  Must be stringifiable to JSON.
 <api name="show">
 @method
 Display the panel.
-@param [anchor] {DOM node handle}
+@param [anchor] {handle}
 A handle to a DOM node in a page to which the panel should appear to be
 connected.  If not given, the panel is centered inside the most recent browser
 window.
