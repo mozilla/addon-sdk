@@ -59,20 +59,21 @@ you can assign a listener function to this property as an alternative to
 calling the object's `on()` method.
 
 For example: the [`widget`](#modules/addon-kit/widget) object emits an event
-when the widget is clicked. The widget supplies two arguments to the listener:
-the first is the widget itself and the second is a DOM click event.
+when the widget is clicked. The widget supplies a single argument to the
+listener, the widget itself.
 
 The following add-on creates a widget and assigns a listener to the
 `onClick` property of the `options` object supplied to the widget's
 constructor. The listener loads the Google home page:
 
     var widgets = require("widget");
+    var tabs = require("tabs");
 
     widgets.Widget({
       label: "Widget with an image and a click handler",
-      image: "http://www.google.com/favicon.ico",
-      onClick: function(emitter, event) {
-        event.view.content.location = "http://www.google.com";
+      contentURL: "http://www.google.com/favicon.ico",
+      onClick: function(widget) {
+        tabs.open({ url: "http://www.google.com/" });
       }
     });
 
@@ -80,14 +81,15 @@ This is exactly equivalent to constructing the widget and then calling the
 widget's `on()` method:
 
     var widgets = require("widget");
+    var tabs = require("tabs");
 
     var widget = widgets.Widget({
       label: "Widget with an image and a click handler",
-      image: "http://www.google.com/favicon.ico"
+      contentURL: "http://www.google.com/favicon.ico"
     });
 
-    widget.on("click", function(emitter, event) {
-      event.view.content.location = "http://www.google.com";
+    widget.on("click", function(emitter) {
+      tabs.open({ url: "http://www.google.com/" });
     });
 
 ## Removing Event Listeners ##
