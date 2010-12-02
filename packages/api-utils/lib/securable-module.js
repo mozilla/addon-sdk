@@ -245,11 +245,18 @@
                })(sandbox.globalScope.Iterator)
              );
              sandbox.evaluate("var exports = {};");
+             sandbox.evaluate("var module = {exports: exports};");
+             sandbox.evaluate("module.id = '" + module + "';");
+             // circular imports will be inconsistent: if module A assigns to
+             // module.exports, any modules loaded for the first time from
+             // within A will get an empty object from require("A") . We could
+             // forcibly break import cycles by removing the next line.
              self.modules[path] = sandbox.getProperty("exports");
              self.module_infos[path] = module_info;
              if (self.modifyModuleSandbox)
                self.modifyModuleSandbox(sandbox, module_info);
              sandbox.evaluate(module_info);
+             self.modules[path] = sandbox.getProperty("module").exports;
            }
            exports = self.modules[path];
          }
