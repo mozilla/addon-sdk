@@ -8,10 +8,23 @@ Events
 ------
 
 Events represent common actions and state changes for tabs and their content.
+Event listeners are passed the `Tab` object that triggered the event.
 
-Listeners are passed the `tab` object that triggered the event.
+For example:
 
-All the tabs and lists of tabs emit following events:
+    var tabs = require("tabs");
+
+    // Listen for tab openings.
+    tabs.on('open', function onOpen(tab) {
+      myOpenTabs.push(tab);
+    });
+
+    // Listen for tab content loads.
+    tabs.on('ready', function(tab) {
+      console.log('tab is loaded', tab.title, tab.url)
+    });
+
+All `Tab` objects and the `tabs` module itself emit the following events:
 
 ### open ###
 Event emitted when a new tab is open.
@@ -40,74 +53,42 @@ Event emitted when an inactive tab is made active.
 ### deactivate ###
 Event emitted when the active tab is made inactive.
 
-**Example**
+Tab Enumeration
+---------------
 
-    var tabs = require("tabs").tabs;
+All tabs across all windows can be enumerated by using the `tabs` module itself
+like so:
 
-    // listen for tab openings.
-    tabs.on('open', function onOpen(tab) {
-      myOpenTabs.push(tab);
-    });
-
-    // listen for tab content loadings.
-    tabs.on('ready', function(tab) {
-      console.log('tab is loaded', tab.title, tab.url)
-    });
-
-<api name="tabs">
-@property {TabList}
-
-The live list of all open tabs, across all open windows.
-
-_See TabList class for more details._
-
-**Example**
-
-    var tabs= require("tabs").tabs;
-    for each (var tab in tabs) {
+    var tabs = require("tabs");
+    for each (var tab in tabs)
       console.log(tab.title);
-    }
-</api>
 
-<api name="TabList">
-@class
-The set of sorted list of open tabs.
-An instance of `TabList` represents a list of open tabs. `Tablist` can represent
-a list of tabs per window as in the case of `BrowserWindow`'s `tabs` property
-or list of all open tabs as in the case of `tabs` object that is exported by
-this module.
-
-`TabList` instances emit all the events described in the "events" section.
-Listeners are passed the `tab` object that triggered the event.
-
-<api name="active">
+<api name="activeTab">
 @property {Tab}
 
-The currently active tab in this list. This property is read-only.
+The currently active tab in the active window. This property is read-only. To
+activate a `Tab` object, call its `activate` method.
 
 **Example**
 
-    // Getting active tab's title.
-    var tabs = require("tabs").tabs;
-    console.log("title of active tab is " + tabs.active.title);
-
-    // Activate tab next to currently active one.
-    tabs.active = tabs[tabs.active++];
+    // Get the active tab's title.
+    var tabs = require("tabs");
+    console.log("title of active tab is " + tabs.activeTab.title);
 </api>
+
 <api name="length">
 @property {number}
-
-Number of items in this list.
+The number of open tabs across all windows.
 </api>
+
 <api name="open">
-@method
-Open a new tab. If this is a list of tabs for a window, the tab will be opened
-on this window. If this is a list of all tabs, the new tab will be open in the
-active window or in the new window depending on the option being passed.
+@function
+Opens a new tab. The new tab will open in the active window or in a new window,
+depending on the `inNewWindow` option.
 
 **Example**
 
-    var tabs = require("tabs").tabs;
+    var tabs = require("tabs");
 
     // Open a new tab on active window and make tab active.
     tabs.open("http://www.mysite.com");
@@ -124,7 +105,7 @@ active window or in the new window depending on the option being passed.
       inBackground: true
     });
 
-    // Open a new tab as an apptab and do something once it's open.
+    // Open a new tab as an app tab and do something once it's open.
     tabs.open({
       url: "http://www.mysite.com",
       isPinned: true,
@@ -154,8 +135,8 @@ If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
 @prop [isPinned] {boolean}
-If present and true, then the new tab will be pinned as an AppTab.
-[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+If present and true, then the new tab will be pinned as an app tab.
+[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
 
 @prop [onOpen] {function}
 A callback function that will be registered for 'open' event.
@@ -176,32 +157,15 @@ This is an optional property.
 A callback function that will be registered for 'activate' event.
 This is an optional property.
 </api>
-</api>
 
 <api name="Tab">
 @class
-A `tab` instance represents a single open tab. It contains various tab
+A `Tab` instance represents a single open tab. It contains various tab
 properties, several methods for manipulation, as well as per-tab event
 registration.
 
-Tabs emit all the events described in the "events" section. Listeners are
-passed the `tab` object that triggered the event.
-
-    var tabs = require("tabs").tabs;
-
-    // Close the active tab.
-    tabs.activeTab.close();
-
-    // Move the active tab one position to the right.
-    tabs.activeTab.index++;
-
-    // Open a tab and listen for content being ready.
-    tabs.open({
-      url: "http://www.mozilla.com",
-      onReady: function(tab) {
-        console.log(tab.title);
-      }
-    });
+Tabs emit all the events described in the Events section. Listeners are
+passed the `Tab` object that triggered the event.
 
 <api name="title">
 @property {string}
@@ -221,11 +185,6 @@ The URL of the favicon for the page currently loaded in the tab.
 This property is read-only.
 </api>
 
-<api name="style">
-@property {string}
-The CSS style for the tab. **NOT IMPLEMENTED YET**.
-</api>
-
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
@@ -240,29 +199,29 @@ This property is read-only.
 
 <api name="isPinned">
 @property {boolean}
-Whether or not tab is pinned as an [AppTab].
+Whether or not tab is pinned as an [app tab].
 This property is read-only.
-[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
 </api>
 
 <api name="pin">
 @method
-Pins this tab as an [AppTab].
-[AppTab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+Pins this tab as an [app tab].
+[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
 </api>
 
 <api name="unpin">
 @method
-Unpin this tab.
+Unpins this tab.
 </api>
 
 <api name="close">
 @method
-Close this tab.
+Closes this tab.
 
 @param [callback] {function}
 A function to be called when the tab finishes its closing process.
-This is an optional arguments.
+This is an optional argument.
 </api>
 
 <api name="activate">
