@@ -24,7 +24,7 @@ For example:
       console.log('tab is loaded', tab.title, tab.url)
     });
 
-All `Tab` objects and the `tabs` module itself emit following events:
+All `Tab` objects and the `tabs` module itself emit the following events:
 
 ### open ###
 Event emitted when a new tab is open.
