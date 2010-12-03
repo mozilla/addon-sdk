@@ -1,4 +1,3 @@
-Welcome to the Add-on SDK.
 
 Prerequisites
 -------------
