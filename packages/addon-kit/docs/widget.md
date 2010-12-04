@@ -2,7 +2,7 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-The `widget` module lets your add-on provide a simple user interface that is
+The `widget` module provides your add-on with a simple user interface that is
 consistent with other add-ons and blends in well with Firefox.
 
 ## Introduction ##
@@ -54,6 +54,30 @@ widget's content has loaded, you can make a small script that calls back to the
 widget when it finishes loading.
 
 [content scripts]: #guide/web-content
+
+## Events ##
+
+Widgets emit the following types of [events](#guide/events).
+
+### click ###
+
+This event is emitted when the widget is clicked.  Listeners are passed the
+widget as their first argument.
+
+### message ###
+
+This event is emitted when the widget's content scripts post a message.
+Listeners are passed the widget and message as their first and second arguments.
+
+### mouseover ###
+
+This event is emitted when the user moves the mouse over the widget.  Listeners
+are passed the widget as their first argument.
+
+### mouseout ###
+
+This event is emitted when the user moves the mouse away from the widget.
+Listeners are passed the widget as their first argument.
 
 ## Examples ##
 
@@ -126,80 +150,70 @@ create your content scripts in separate files and pass their URLs using the
 <api-name="Widget">
 @class
 Represents a widget object.
+
 <api name="Widget">
 @constructor {options}
-  Creates a new widget.  The widget is immediately added to the widget bar.
+  Creates a new widget.  The widget is immediately added to the add-on bar.
 
 @param options {object}
   An object with the following keys:
 
-  @prop [label] {string}
+  @prop label {string}
     A required string description of the widget used for accessibility,
     title bars, and error reporting.
 
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
-    It may contain raw HTML content. Widgets must have either the `content` property or the
+    It may contain HTML. Widgets must have either the `content` property or the
     `contentURL` property set.
 
   @prop [contentURL] {URL}
     An optional string URL to content to load into the widget. This can be
-    local content via the `self` module, or remote content, and can be an image
-    or web content. Widgets must have either the `content` property or the
+    [local content](#guide/web-content) or remote content, an image or web
+    content. Widgets must have either the `content` property or the
     `contentURL` property set.
 
   @prop [panel] {panel}
-    An optional `Panel` to open when the user clicks on the widget.  See the
-    [`panel`](#module/addon-kit/panel) module for more information about the
-    `Panel` objects to which this option can be set and the `reddit-panel`
-    example add-on for an example of using this option.  Note: If you also
-    specify an `onClick` callback function, it will be called instead of the
-    panel being opened.  However, you can then show the panel from the `onClick`
-    callback function by calling `panel.show()`.
+    An optional [panel](#module/addon-kit/panel) to open when the user clicks on
+    the widget. Note: If you also register a "click" listener, it will be called
+    instead of the panel being opened.  However, you can show the panel from the
+    listener by calling `widget.panel.show()`, where `widget` is the first
+    argument passed to the listener.
 
   @prop [width] {integer}
-    Optional width in pixels of the widget. This property can be updated after
-    the widget has been created, to resize it. If not given, a default width is
+    Optional width in pixels of the widget. If not given, a default width is
     used.
 
-  @prop [onClick] {callback}
-    An optional function to be called when the widget is clicked. It is called
-    as `onClick(widget)`, where `widget` is the `Widget` instance.
+  @prop [onClick] {function}
+    An optional "click" event listener.  See Events above.
 
-  @prop [onMessage] {callback}
-    An optional function to be called when the widget's content scripts post
-    a message. It is called as `onMessage(widget, message)`, where `widget` is
-    the `Widget` instance and `message` is the JSON-able data posted by the
-    content script.
+  @prop [onMessage] {function}
+    An optional "message" event listener.  See Events above.
 
-  @prop [onMouseover] {callback}
-    An optional function to be called when the user passes the mouse over the
-    widget. It is called as `onMouseover(widget)`, where `widget` is the
-    `Widget` instance.
+  @prop [onMouseover] {function}
+    An optional "mouseover" event listener.  See Events above.
 
-  @prop [onMouseout] {callback}
-    An optional function to be called when the mouse is no longer over the
-    widget. It is called as `onMouseout(widget)`, where `widget` is the
-    `Widget` instance.
+  @prop [onMouseout] {function}
+    An optional "mouseout" event listener.  See Events above.
 
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
     given, the `label` is used.
 
   @prop [allow] {object}
-    Permissions for the content, with the following keys:
-    @prop [script] {boolean}
-      Whether or not to execute script in the content.  Defaults to true.
+    An optional object describing permissions for the content.  It should
+    contain a single key named `script` whose value is a boolean that indicates
+    whether or not to execute script in the content.  `script` defaults to true.
 
-  @prop [contentScriptFile] {array}
-    The local file URLs of content scripts to load.  Content scripts specified
-    by this property are loaded *before* those specified by the `contentScript`
-    property.
+  @prop [contentScriptFile] {string,array}
+    A local file URL or an array of local file URLs of content scripts to load.
+    Content scripts specified by this property are loaded *before* those
+    specified by the `contentScript` property.
 
-  @prop [contentScript] {array}
-    The texts of content scripts to load.  Content scripts specified by this
-    property are loaded *after* those specified by the `contentScriptFile`
-    property.
+  @prop [contentScript] {string,array}
+    A string or an array of strings containing the texts of content scripts to
+    load.  Content scripts specified by this property are loaded *after* those
+    specified by the `contentScriptFile` property.
 
   @prop [contentScriptWhen] {string}
     When to load the content scripts.
@@ -207,8 +221,92 @@ Represents a widget object.
     the window object for the page has been created, and "ready", which loads
     them once the DOM content of the page has been loaded.
 </api>
+
 <api name="destroy">
 @method
-  Removes the widget from the widget bar.
+  Removes the widget from the add-on bar.
 </api>
+
+<api name="on">
+@method
+  Registers an event listener with the widget.
+@param type {string}
+  The type of event to listen for.
+@param listener {function}
+  The listener function that handles the event.
+</api>
+
+<api name="removeListener">
+@method
+  Unregisters an event listener from the widget.
+@param type {string}
+  The type of event for which `listener` was registered.
+@param listener {function}
+  The listener function that was registered.
+</api>
+
+<api name="label">
+@property {string}
+  The widget's label.  Read-only.
+</api>
+
+<api name="content">
+@property {string}
+  A string containing the widget's content.  It can contain HTML.  Setting it
+  updates the widget's appearance immediately.  However, if the widget was
+  created using `contentURL`, then this property is meaningless, and setting it
+  has no effect.
+</api>
+
+<api name="contentURL">
+@property {string}
+  The URL of content to load into the widget.  This can be
+  [local content](#guide/web-content) or remote content, an image or web
+  content.  Setting it updates the widget's appearance immediately.  However,
+  if the widget was created using `content`, then this property is meaningless,
+  and setting it has no effect.
+</api>
+
+<api name="panel">
+@property {string}
+  A [panel](#module/addon-kit/panel) to open when the user clicks on the widget.
+</api>
+
+<api name="width">
+@property {number}
+  The widget's width in pixels.  Setting it updates the widget's appearance
+  immediately.
+</api>
+
+<api name="tooltip">
+@property {string}
+  The text of the tooltip that appears when the user hovers over the widget.
+</api>
+
+<api name="allow">
+@property {object}
+  A object describing permissions for the content.  It contains a single key
+  named `script` whose value is a boolean that indicates whether or not to
+  execute script in the content.
+</api>
+
+<api name="contentScriptFile">
+@property {string,array}
+  A local file URL or an array of local file URLs of content scripts to load.
+</api>
+
+<api name="contentScript">
+@property {string,array}
+  A string or an array of strings containing the texts of content scripts to
+  load.
+</api>
+
+<api name="contentScriptWhen">
+@property {string}
+  A string indicating when to load the content scripts.  Possible values are
+  "start" (default), which loads them as soon as the window object for the page
+  has been created, and "ready", which loads them once the DOM content of the
+  page has been loaded.
+</api>
+
 </api>
