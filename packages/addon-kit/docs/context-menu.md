@@ -232,11 +232,11 @@ Each of these examples can be added to the top-level scope of your program; you
 only need to create an item once.  See the Introduction above for further
 discussion.
 
-Also, in the real world you probably don't want to include content scripts
-directly in your programs like these examples do.  Instead, make separate files
-in your package's `data` directory, get the URLs of those files using the
-[`self`][self] module, and pass them to menu item constructors using the
-`contentScriptFile` options object property.
+For conciseness, these examples create their content scripts as strings and use
+the `contentScript` property.  In your own add-ons, you will probably want to
+create your content scripts in separate files and pass their URLs using the
+`contentScriptFile` property.  See
+[Working with Content Scripts](#guide/web-content) for more information.
 
 First, don't forget to import the module:
 
@@ -458,5 +458,3 @@ top-level context menu.
   [match pattern]: #module/api-utils/match-pattern
 </api>
 </api>
-
-[self]: #module/api-utils/self
