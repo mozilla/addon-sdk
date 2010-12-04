@@ -71,7 +71,7 @@ The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
     contentScript      string, array
-    contentScriptFile   string, array
+    contentScriptFile  string, array
     contentScriptWhen  string
 
 We have already seen the `contentScript` option, which enables you to pass
