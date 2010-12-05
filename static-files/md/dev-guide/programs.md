@@ -46,16 +46,16 @@ following content:
 
       // When we receive the message, call the Google Translate API with the
       // selected text and replace it with the translation.
-      onMessage: function (selectionInfo) {
+      onMessage: function (event) {
         var req = request.Request({
           url: "http://ajax.googleapis.com/ajax/services/language/translate",
           content: {
             v: "1.0",
-            q: selectionInfo.text,
+            q: event.data.text,
             langpair: "|en"
           },
           headers: {
-            Referer: selectionInfo.url
+            Referer: event.data.url
           },
           onComplete: function (response) {
             selection.text = response.json.responseData.translatedText;
