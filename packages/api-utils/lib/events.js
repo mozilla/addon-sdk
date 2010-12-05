@@ -138,7 +138,7 @@ const EventEmitter = Trait.compose({
    *    The object on which listeners will be called.
    * @returns {boolean}
    */
-  _emitOnObject: function _emit(targetObj, type, event /* , ... */) {
+  _emitOnObject: function _emitOnObject(targetObj, type, event /* , ... */) {
     let listeners = this._listeners(type).slice(0);
     // If there is no 'error' event listener then throw.
     if (type === ERROR_TYPE && !listeners.length)
