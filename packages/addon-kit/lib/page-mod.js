@@ -180,6 +180,9 @@ const PageModManager = Registry.resolve({
   },
   _onContentWindow: function _onContentWindow(domObj) {
     let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
+    // XML documents don't have windows, and we don't yet support them.
+    if (!window)
+      return;
     for (let rule in RULES)
       if (RULES[rule].test(window.document.URL))
         this._emit(rule, window);
