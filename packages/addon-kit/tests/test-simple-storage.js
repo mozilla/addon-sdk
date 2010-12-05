@@ -158,9 +158,10 @@ exports.testQuotaExceededHandle = function (test) {
 
   let loader = newLoader(test);
   let ss = loader.require("simple-storage");
-  ss.on("OverQuota", function (storage) {
-    test.assertEqual(storage, ss, "storage should be simple storage");
+  ss.on("OverQuota", function (event) {
     test.pass("OverQuota was emitted as expected");
+    test.assertEqual(this, ss, "`this` should be simple storage");
+    test.assertEqual(event.emitter, ss, "emitter should be simple storage");
     ss.storage = { x: 4, y: 5 };
 
     manager(loader).jsonStore.onWrite = function () {
