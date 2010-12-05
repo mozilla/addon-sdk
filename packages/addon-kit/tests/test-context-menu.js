@@ -348,13 +348,14 @@ exports.testContentContextArgs = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function (node) {' +
+    contentScript: 'on("context", function (evt) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  postMessage(evt.node instanceof Ci.nsIDOMHTMLElement);' +
                    '  return false;' +
                    '});',
-    onMessage: function (isElt) {
-      test.assert(isElt, "node should be an HTML element");
+    onMessage: function (evt) {
+      test.assert(evt.data, "node should be an HTML element");
+      test.assertEqual(evt.emitter, item, "event.emitter should be item");
       test.done();
     }
   });
@@ -760,17 +761,17 @@ exports.testItemClick = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item data",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'on("click", function (evt) {' +
                    '  let Ci = Components.interfaces;' +
                    '  postMessage({' +
-                   '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
-                   '    data: data' +
+                   '    isElt: evt.node instanceof Ci.nsIDOMHTMLElement,' +
+                   '    data: evt.data' +
                    '  });' +
                    '});',
-    onMessage: function (data) {
+    onMessage: function (evt) {
       test.assertEqual(this, item, "`this` inside onMessage should be item");
-      test.assert(data.isElt, "node should be an HTML element");
-      test.assertEqual(data.data, item.data, "data should be item data");
+      test.assert(evt.data.isElt, "node should be an HTML element");
+      test.assertEqual(evt.data.data, item.data, "data should be item data");
       test.done();
     }
   });
@@ -806,17 +807,18 @@ exports.testMenuClick = function (test) {
 
   let topMenu = new loader.cm.Menu({
     label: "top menu",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'on("click", function (evt) {' +
                    '  let Ci = Components.interfaces;' +
                    '  postMessage({' +
-                   '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
-                   '    data: data' +
+                   '    isAnchor:' +
+                   '      evt.node instanceof Ci.nsIDOMHTMLAnchorElement,' +
+                   '    data: evt.data' +
                    '  });' +
                    '});',
-    onMessage: function (data) {
+    onMessage: function (evt) {
       test.assertEqual(this, topMenu, "`this` inside top menu should be menu");
-      test.assert(data.isAnchor, "Clicked node should be anchor");
-      test.assertEqual(data.data, item.data,
+      test.assert(evt.data.isAnchor, "Clicked node should be anchor");
+      test.assertEqual(evt.data.data, item.data,
                        "Clicked item data should be correct");
       test.done();
     },
@@ -1026,15 +1028,15 @@ exports.testContentCommunication = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'var potato;' +
-                   'on("context", function (node) {' +
+                   'on("context", function () {' +
                    '  potato = "potato";' +
                    '  return true;' +
                    '});' +
                    'on("click", function () {' +
                    '  postMessage(potato);' +
                    '});',
-    onMessage: function (potato) {
-      test.assertEqual(potato, "potato", "That's a lot of potatoes!");
+    onMessage: function (evt) {
+      test.assertEqual(evt.data, "potato", "That's a lot of potatoes!");
       test.done();
     }
   });
