@@ -40,10 +40,9 @@
 exports.testOnClick = function (test) {
   let [loader, mockAlertServ] = makeLoader(test);
   let opts = {
-    onClick: function (clickedData, self) {
-      test.assertEqual(self, opts, "`self` should be onClick's argument");
+    onClick: function (event) {
       test.assertEqual(this, opts, "|this| should be onClick's parent object");
-      test.assertEqual(clickedData, this.data,
+      test.assertEqual(event.data, this.data,
                        "data passed to onClick should be correct");
     },
     data: "test data",
