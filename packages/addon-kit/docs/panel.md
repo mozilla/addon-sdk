@@ -11,7 +11,8 @@ them.
 Introduction
 ------------
 
-The module exports a single constructor function, `Panel`, which constructs a new panel.
+The module exports a single constructor function `Panel` which constructs a
+new panel.
 
 A panel's content is loaded as soon as it is created, before the panel is shown,
 and the content remains loaded when a panel is hidden, so it is possible
@@ -20,15 +21,33 @@ in preparation for the next time it is shown.
 
 Panels can be anchored to a particular element in a DOM window, including both
 chrome elements, i.e. parts of the host application interface, and content
-elements, i.e. parts of a web page in an application tab.  Panels that are
-anchored to an element should have an arrow that points from the panel to the
-element, but that has not yet been implemented.  The work to implement it is
-tracked in bug 554937.
+elements, i.e. parts of a web page in an application tab.
 
 Panels have associated content scripts, which are JavaScript scripts that have
-access to the content loaded into the panels.  Programs can specify one or more
-content scripts to load for a panel, and the program can communicate with those
-scripts via an asynchronous message passing API.
+access to the content loaded into the panels.  An add-on can specify one or more
+content scripts to load for a panel, and the add-on can communicate with those
+scripts via an asynchronous message passing API.  See
+[Working with Content Scripts](#guide/web-content) for more information.
+
+Events
+------
+
+Panels emit the following types of [events](#guide/events).
+
+### message ###
+
+This event is emitted when the panel's content scripts post a message.
+Listeners are passed the message as their first argument.
+
+### show ###
+
+This event is emitted when the panel is shown.  Listeners are passed the panel
+as their first argument.
+
+### hide ###
+
+This event is emitted when the panel is hidden.  Listeners are passed the panel
+as their first argument.
 
 Examples
 --------
@@ -50,16 +69,16 @@ example using panels.
 The Panel object represents a floating modal dialog that can by an add-on to
 present user interface content.
 
-Once a panel object has been created it can be activated using the global
-`add()` function and can subsequently be shown and hidden using its `show()`
-and `hide()` methods. Once a panel is no longer needed it can be deactivated
-using `remove()`.
+Once a panel object has been created it can be shown and hidden using its
+`show()` and `hide()` methods. Once a panel is no longer needed it can be
+deactivated using `destroy()`.
 
 The content of a panel is specified using the `contentURL` option. An add-on
 can interact with the content of a panel using content scripts which it
 supplies in the `contentScript` and/or `contentScriptFile` options. For example,
 a content script could create a menu and send the user's selection to the
 add-on.
+
 <api name="Panel">
 @constructor
 Creates a panel.
@@ -69,33 +88,31 @@ Creates a panel.
     The width of the panel in pixels. Optional.
   @prop [height] {number}
     The height of the panel in pixels. Optional.
-  @prop [contentURL] {URL,string}
+  @prop [contentURL] {string}
     The URL of the content to load in the panel.
   @prop [allow] {object}
-    Permissions for the content, with the following keys:
-    @prop [script] {boolean}
-      Whether or not to execute script in the content.  Defaults to true.
-      Optional.
-    Optional.
+    An optional object describing permissions for the content.  It should
+    contain a single key named `script` whose value is a boolean that indicates
+    whether or not to execute script in the content.  `script` defaults to true.
   @prop [contentScriptFile] {string,array}
-    The local file URLs of content scripts to load.  Content scripts specified
-    by this option are loaded *before* those specified by the `contentScript`
-    option. Optional.
+    A local file URL or an array of local file URLs of content scripts to load.
+    Content scripts specified by this property are loaded *before* those
+    specified by the `contentScript` property.
   @prop [contentScript] {string,array}
-    The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptFile` option.
-    Optional.
+    A string or an array of strings containing the texts of content scripts to
+    load.  Content scripts specified by this property are loaded *after* those
+    specified by the `contentScriptFile` property.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.  Optional.
     Possible values are "start" (default), which loads them as soon as
     the window object for the page has been created, and "ready", which loads
     them once the DOM content of the page has been loaded.
-  @prop onMessage {function,array}
-    Functions to call when a content script sends the program a message.
-  @prop onShow {function,array}
-    Functions to call when the panel is shown.
-  @prop onHide {function,array}
-    Functions to call when the panel is hidden.
+  @prop [onMessage] {function}
+    An optional "message" event listener.  See Events above.
+  @prop [onShow] {function}
+    An optional "show" event listener.  See Events above.
+  @prop [onHide] {function}
+    An optional "hide" event listener.  See Events above.
 </api>
 
 <api name="height">
@@ -110,27 +127,28 @@ The width of the panel in pixels.
 
 <api name="contentURL">
 @property {URL}
-The URL of the content loaded in the panel.
+The [URL](#module/api-utils/url) of the content loaded in the panel.
 </api>
 
 <api name="allow">
 @property {object}
-Permissions for the content, with the following keys:
-@prop script {boolean}
-  Whether or not to execute script in the content.  Defaults to true.
+An object describing permissions for the content.  It contains a single key
+named `script` whose value is a boolean that indicates whether or not to execute
+script in the content.
 </api>
 
 <api name="contentScriptFile">
-@property {array}
-The local file URLs of content scripts to load.  Content scripts specified by
-this property are loaded *before* those specified by the `contentScript`
-property.
+@property {string,array}
+A local file URL or an array of local file URLs of content scripts to load.
+Content scripts specified by this property are loaded *before* those
+specified by the `contentScript` property.
 </api>
 
 <api name="contentScript">
-@property {array}
-The texts of content scripts to load.  Content scripts specified by this
-property are loaded *after* those specified by the `contentScriptFile` property.
+@property {string,array}
+A string or an array of strings containing the texts of content scripts to
+load.  Content scripts specified by this property are loaded *after* those
+specified by the `contentScriptFile` property.
 </api>
 
 <api name="contentScriptWhen">
@@ -143,26 +161,21 @@ them once the DOM content of the page has been loaded.
 
 <api name="destroy">
 @method
-Destroy the panel, unloading any content that was loaded in it. Once
+Destroys the panel, unloading any content that was loaded in it. Once
 destroyed, the panel can no longer be used. If you just want to hide
 the panel and might show it later, use `hide` instead.
 </api>
 
-<api name="onMessage">
-@property {array}
-Functions to call when a content script sends the panel a message.
-</api>
-
 <api name="postMessage">
 @method
-Send a message to the content scripts.
-@param message {string,number,object,array,boolean}
+Sends a message to the content scripts.
+@param message {value}
 The message to send.  Must be stringifiable to JSON.
 </api>
 
 <api name="show">
 @method
-Display the panel.
+Displays the panel.
 @param [anchor] {handle}
 A handle to a DOM node in a page to which the panel should appear to be
 connected.  If not given, the panel is centered inside the most recent browser
@@ -171,28 +184,33 @@ window.
 
 <api name="hide">
 @method
-Stop displaying the panel.
+Stops displaying the panel.
 </api>
 
 <api name="resize">
 @method
-Resizes the panel to its new dimensions.
+Resizes the panel.
 @param width {number}
 The new width of the panel in pixels.
 @param height {number}
 The new height of the panel in pixels.
 </api>
+
+<api name="on">
+@method
+  Registers an event listener with the panel.
+@param type {string}
+  The type of event to listen for.
+@param listener {function}
+  The listener function that handles the event.
 </api>
 
-<api name="add">
-@function
-Register a panel, loading its content and preparing it to be shown when its
-`show` method is invoked.
-@param panel {Panel} the panel to add
+<api name="removeListener">
+@method
+  Unregisters an event listener from the panel.
+@param type {string}
+  The type of event for which `listener` was registered.
+@param listener {function}
+  The listener function that was registered.
 </api>
-
-<api name="remove">
-@function
-Unregister a panel, unloading the content that was loaded in it.
-@param panel {Panel} the panel to remove
 </api>
