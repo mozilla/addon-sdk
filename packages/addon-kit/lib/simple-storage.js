@@ -247,9 +247,7 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
       filename: this.filename,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      onOverQuota: this._emitOnObject.bind(this, exports, "OverQuota", {
-        emitter: exports
-      })
+      onOverQuota: this._emitEventObject.bind(this, "OverQuota", {}, exports)
     });
   }
 }))();

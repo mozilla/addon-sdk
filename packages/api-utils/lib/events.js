@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Drew Willcoxon <adw@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -132,10 +133,17 @@ const EventEmitter = Trait.compose({
    * A version of _emit that lets you specify the object on which listeners are
    * called.  This is a hack that is sometimes necessary when such an object
    * (exports, for example) cannot be an EventEmitter for some reason, but other
-   * object(s) managing events for the object are EventEmitters.
+   * object(s) managing events for the object are EventEmitters.  Once bug
+   * 577782 is fixed, this method shouldn't be necessary.
    *
    * @param {object} targetObj
    *    The object on which listeners will be called.
+   * @param {string} type
+   *    The event name.
+   * @param {value} event
+   *    The first argument to pass to listeners.
+   * @param {value} ...
+   *    More arguments to pass to listeners.
    * @returns {boolean}
    */
   _emitOnObject: function _emitOnObject(targetObj, type, event /* , ... */) {
@@ -154,6 +162,52 @@ const EventEmitter = Trait.compose({
       }
     }
     return true;
+  },
+
+  /**
+   * A version of _emit intended for high-level APIs that passes a single event
+   * object to listeners.  The `emitter` property of the event object is
+   * automatically set to the object on which listeners are called.
+   *
+   * @param {string} type
+   *    The event name.
+   * @param {object} [eventObj]
+   *    An optional object to use as the event object passed to listeners.  If
+   *    not given, an empty object is used.  However, in either case its
+   *    `emitter` property is set.
+   * @param {object} [targetObj]
+   *    An optional object on which listeners will be called.  If not given,
+   *    this._public is used.
+   * @returns {boolean}
+   */
+  _emitEventObject: function _emitEventObject(type, eventObj, targetObj) {
+    targetObj = targetObj || this._public;
+    eventObj = eventObj || {};
+    eventObj.emitter = targetObj;
+    return this._emitOnObject(targetObj, type, eventObj);
+  },
+
+  /**
+   * A version of _emit intended for high-level APIs that passes a single event
+   * object to "message" event listeners.  The `data` property of the event
+   * object is automatically set to the given message, and the `emitter`
+   * property is automatically set to the object on which listeners are called.
+   *
+   * @param {value} message
+   *    The message.
+   * @param {object} [eventObj]
+   *    An optional object to use as the event object passed to listeners.  If
+   *    not given, an empty object is used.  However, in either case its `data`
+   *    and `emitter` properties are set.
+   * @param {object} [targetObj]
+   *    An optional object on which listeners will be called.  If not given,
+   *    this._public is used.
+   * @returns {boolean}
+   */
+  _emitMessage: function _emitMessage(message, eventObj, targetObj) {
+    eventObj = eventObj || {};
+    eventObj.data = message;
+    return this._emitEventObject("message", eventObj, targetObj);
   },
 
   /**
