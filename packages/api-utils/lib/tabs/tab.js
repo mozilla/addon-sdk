@@ -40,7 +40,6 @@ const { EventEmitter } = require("events");
 const { validateOptions } = require("api-utils");
 const { Enqueued } = require("utils/function");
 const { EVENTS } = require("tabs/events");
-const { getThumbnailURIForWindow } = require("utils/thumbnail");
 const { getFaviconURIForLocation } = require("utils/data");
 
 
@@ -169,12 +168,6 @@ const TabTrait = Trait.compose(EventEmitter, {
   get index()
     this._window.gBrowser.getBrowserIndexForDocument(this._contentDocument),
   set index(value) this._window.gBrowser.moveTabTo(this._tab, value),
-  /**
-   * Thumbnail data URI of the page currently loaded in this tab.
-   * @type {String}
-   */
-  getThumbnailURL: function getThumbnailURL()
-    getThumbnailURIForWindow(this._contentWindow),
   /**
    * Whether or not tab is pinned (Is an app-tab).
    * @type {Boolean}

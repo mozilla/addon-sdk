@@ -31,7 +31,7 @@ Event emitted when a new tab is open.
 This does not mean that the content has loaded, only that the browser tab
 itself is fully visible to the user.
 
-Tab content related properties (title, thumbnail, favicon, url) will not
+Tab content related properties (title, favicon, url) will not
 be correct at this point. Use `ready` event listener to be notified when the
 page has loaded.
 
@@ -189,12 +189,6 @@ This property is read-only.
 @property {integer}
 The index of the tab relative to other tabs in the application window.
 This property can be set to change it's relative position.
-</api>
-
-<api name="thumbnail">
-@property {string}
-Data URI of a thumbnail of the page currently loaded in the tab.
-This property is read-only.
 </api>
 
 <api name="isPinned">

@@ -359,7 +359,6 @@ let TabModule = exports.TabModule = function TabModule(window) {
     });
     this.__defineGetter__("style", function() null); // TODO
     this.__defineGetter__("index", function() win.gBrowser.getBrowserIndexForDocument(browser.contentDocument));
-    this.__defineGetter__("thumbnail", function() getThumbnailCanvasForTab(element, browser.contentWindow));
 
     this.close = function() win.gBrowser.removeTab(element);
     this.move = function(index) {
