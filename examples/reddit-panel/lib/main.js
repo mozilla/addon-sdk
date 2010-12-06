@@ -12,7 +12,7 @@ exports.main = function(options, callbacks) {
       contentScriptFile: [data.url("panel.js")],
       contentScriptWhen: "ready",
       onMessage: function(message) {
-        require("tab-browser").addTab(message);
+        require("tabs").open(message);
       }
     })
   });
