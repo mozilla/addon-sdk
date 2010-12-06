@@ -238,22 +238,19 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
     this._removeAllListeners("error");
   },
 
-  // Must be called before use.
   constructor: function manager_constructor() {
     // Log unhandled errors.
     this.on("error", console.exception.bind(console));
     unload.ensure(this);
 
-    let fname = this.filename;
     this.jsonStore = new JsonStore({
-      filename: fname,
+      filename: this.filename,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      onOverQuota: this._emit.bind(this, "OverQuota", exports)
+      onOverQuota: this._emitEventObject.bind(this, "OverQuota", {}, exports)
     });
   }
 }))();
 
 exports.on = manager.on;
 exports.removeListener = manager.removeListener;
-

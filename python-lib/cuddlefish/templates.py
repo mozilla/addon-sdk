@@ -8,7 +8,7 @@ const data = require("self").data;
 let my_widget = widgets.Widget({
     label:"Mozilla website",
     contentURL:"http://www.mozilla.org/favicon.ico",
-    onClick:function(widget){
+    onClick:function(event){
         tabs.open("http://mozilla.org");
     }
 });
@@ -33,8 +33,8 @@ exports.test_id = function(test){
 exports.test_url = function(test){
     require("request").Request({
         url:"http://www.mozilla.org",
-        onComplete:function(response){
-            test.assertEqual(response.statusText,"OK");
+        onComplete:function(event){
+            test.assertEqual(event.response.statusText,"OK");
             test.done();
         }
     }).get();

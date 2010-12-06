@@ -71,7 +71,7 @@ The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
     contentScript      string, array
-    contentScriptFile   string, array
+    contentScriptFile  string, array
     contentScriptWhen  string
 
 We have already seen the `contentScript` option, which enables you to pass
@@ -250,7 +250,7 @@ This is the complete add-on script:
                            data.url("panel.js")],
         contentScriptWhen: "ready",
         onMessage: function(message) {
-          require("tab-browser").addTab(message);
+          require("tabs").open(message);
         }
       })
     });
@@ -259,10 +259,10 @@ This code supplies two content scripts to the panel's constructor in the
 contentScriptFile option: the jQuery library and the script that intercepts
 mouse clicks.
 
-It also supplies a function to the `onMessage` option which passes the message
-parameter (the story URL) into the `addTab` function from the
-[tab-browser](#module/api-utils/tab-browser) module. This is the target for
-messages from any content scripts associated with the panel.
+It also supplies a function to the `onMessage` option which in turn passes the
+`message` argument (the story URL) into the `open` function of the
+[tabs](#module/addon-kit/tabs) module. This is the target for messages from all
+content scripts associated with the panel.
 
 This is the content script that intercepts the link clicks:
 
