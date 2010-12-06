@@ -229,7 +229,7 @@ let SelectionListenerManager = {
 
   // The collection of listeners wanting to be notified of selection changes
   listeners: EventEmitter.compose({
-    emit: function emit() this._emit.apply(this, arguments),
+    emit: function emit(type) this._emitEventObject(type, {}, exports),
     off: function() this._removeAllListeners.apply(this, arguments)
   })(),
   /**
@@ -250,7 +250,7 @@ let SelectionListenerManager = {
     if (!["SELECTALL", "KEYPRESS", "MOUSEUP"].some(function(type) reason &
       Ci.nsISelectionListener[type + "_REASON"]) || selection.toString() == "")
         return;
-    setTimeout(this.listeners.emit, 0, 'select', exports)
+    setTimeout(this.listeners.emit, 0, 'select')
   },
 
   /**
