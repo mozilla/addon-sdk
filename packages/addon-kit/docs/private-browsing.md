@@ -2,25 +2,20 @@
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-
-The `private-browsing` module allows you to access the private browsing service
-- detecting if it is active and adding callbacks for transitioning into and out
-of private browsing mode.
-
-Private browsing is a singleton, so in most cases it will be easiest to store it
-in a variable.
-
-    var pb = require("private-browsing");
+The `private-browsing` module allows you to access Firefox's private browsing
+mode, detecting if it is active and when its state changes.
 
 ## Events ##
 
 When the browser starts or stops private browsing mode, the following events
-are emitted:
+are emitted.  In each case, listeners are passed an event object that has a
+single property `emitter` whose value is the private browsing module itself.
 
 ### start ###
 Emitted when the browser starts private browsing mode.
 
-    pb.on("start", function() {
+    var pb = require("private-browsing");
+    pb.on("start", function(event) {
       // Do something when the browser starts private browsing mode.
     });
 
@@ -28,8 +23,8 @@ Emitted when the browser starts private browsing mode.
 ### stop ###
 Emitted when the browser stops private browsing mode.
 
-
-    pb.on("stop", function() {
+    var pb = require("private-browsing");
+    pb.on("stop", function(event) {
       // Do something when the browser stops private browsing mode.
     });
 
