@@ -60,7 +60,8 @@ calling the object's `on()` method.
 
 For example: the [`widget`](#modules/addon-kit/widget) object emits an event
 when the widget is clicked. The widget supplies a single argument to the
-listener, the widget itself.
+listener, an event object with a property named `emitter` whose value is the
+widget itself.
 
 The following add-on creates a widget and assigns a listener to the
 `onClick` property of the `options` object supplied to the widget's
@@ -72,8 +73,8 @@ constructor. The listener loads the Google home page:
     widgets.Widget({
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
-      onClick: function(widget) {
-        tabs.open({ url: "http://www.google.com/" });
+      onClick: function(event) {
+        tabs.open("http://www.google.com/");
       }
     });
 
@@ -88,8 +89,8 @@ widget's `on()` method:
       contentURL: "http://www.google.com/favicon.ico"
     });
 
-    widget.on("click", function(emitter) {
-      tabs.open({ url: "http://www.google.com/" });
+    widget.on("click", function(event) {
+      tabs.open("http://www.google.com/");
     });
 
 ## Removing Event Listeners ##

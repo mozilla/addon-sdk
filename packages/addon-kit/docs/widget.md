@@ -61,23 +61,28 @@ Widgets emit the following types of [events](#guide/events).
 
 ### click ###
 
-This event is emitted when the widget is clicked.  Listeners are passed the
-widget as their first argument.
+This event is emitted when the widget is clicked.  Listeners are passed an event
+object that has a single property named `emitter` whose value is the widget that
+was clicked.
 
 ### message ###
 
 This event is emitted when the widget's content scripts post a message.
-Listeners are passed the widget and message as their first and second arguments.
+Listeners are passed an event object that has two properties named `emitter` and
+`data`.  `emitter` is the widget that was clicked.  `data` is the message posted
+by the content script.
 
 ### mouseover ###
 
 This event is emitted when the user moves the mouse over the widget.  Listeners
-are passed the widget as their first argument.
+are passed an event object that has a single property named `emitter` whose
+value is the widget that was clicked.
 
 ### mouseout ###
 
 This event is emitted when the user moves the mouse away from the widget.
-Listeners are passed the widget as their first argument.
+Listeners are passed an event object that has a single property named `emitter`
+whose value is the widget that was clicked.
 
 ## Examples ##
 
@@ -93,7 +98,7 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
-      onClick: function() {
+      onClick: function(event) {
         require("tabs").activeTab.url = "http://www.google.com/";
       }
     });
@@ -102,10 +107,10 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with changing image on mouseover",
       contentURL: "http://www.yahoo.com/favicon.ico",
-      onMouseover: function() {
+      onMouseover: function(event) {
         this.contentURL = "http://www.bing.com/favicon.ico";
       },
-      onMouseout: function() {
+      onMouseout: function(event) {
         this.contentURL = "http://www.yahoo.com/favicon.ico";
       }
     });
@@ -129,10 +134,11 @@ create your content scripts in separate files and pass their URLs using the
                      'setTimeout(function() {' +
                      '  document.location = "http://www.flickr.com/explore/";' +
                      '}, 5 * 60 * 1000);',
-      onMessage: function(widget, message) {
-        widget.contentURL = message;
+      onMessage: function(event) {
+        var imgSrc = event.data;
+        this.contentURL = imgSrc;
       },
-      onClick: function() {
+      onClick: function(event) {
         require("tabs").activeTab.url = this.contentURL;
       }
     });
@@ -177,8 +183,7 @@ Represents a widget object.
     An optional [panel](#module/addon-kit/panel) to open when the user clicks on
     the widget. Note: If you also register a "click" listener, it will be called
     instead of the panel being opened.  However, you can show the panel from the
-    listener by calling `widget.panel.show()`, where `widget` is the first
-    argument passed to the listener.
+    listener by calling `this.panel.show()`.
 
   @prop [width] {integer}
     Optional width in pixels of the widget. If not given, a default width is
