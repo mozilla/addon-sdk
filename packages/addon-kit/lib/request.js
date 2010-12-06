@@ -113,7 +113,7 @@ function Request(options) {
       if (request.readyState == 4) {
         response = new Response(request);
         errors.catchAndLog(function () {
-          self._emit('complete', response, _public);
+          self._emitEventObject('complete', { response: response });
         })();
       }
     }
