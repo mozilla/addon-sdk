@@ -434,7 +434,7 @@ const ContextMenuWorker = Worker.compose({
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
     let listeners = this._port._listeners("context");
     for (let i = 0; i < listeners.length; i++)
-      if (listeners[i].call(this._port._sandbox, popupNode))
+      if (listeners[i].call(this._port._sandbox, { node: popupNode }))
         return true;
     return false;
   },
@@ -443,7 +443,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._port._emit("click", popupNode, clickedItemData);
+    this._port._emit("click", { node: popupNode, data: clickedItemData });
   },
 
   // Frees the worker's resources.
@@ -609,7 +609,7 @@ WorkerRegistry.prototype = {
     worker.on("message", function workerOnMessage(msg) {
       if (item.onMessage) {
         try {
-          item.onMessage(msg);
+          item.onMessage({ data: msg, emitter: item });
         }
         catch (err) {
           console.exception(err);

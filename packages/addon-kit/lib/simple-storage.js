@@ -47,10 +47,10 @@ const unload = require("unload");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
 
-const WRITE_PERIOD_PREF = "jetpack.jetpack-core.simple-storage.writePeriod";
+const WRITE_PERIOD_PREF = "jetpack.addon-kit.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
 
-const QUOTA_PREF = "jetpack.jetpack-core.simple-storage.quota";
+const QUOTA_PREF = "jetpack.addon-kit.simple-storage.quota";
 const QUOTA_DEFAULT = 5242880; // 5 MiB
 
 
@@ -238,22 +238,19 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
     this._removeAllListeners("error");
   },
 
-  // Must be called before use.
   constructor: function manager_constructor() {
     // Log unhandled errors.
     this.on("error", console.exception.bind(console));
     unload.ensure(this);
 
-    let fname = this.filename;
     this.jsonStore = new JsonStore({
-      filename: fname,
+      filename: this.filename,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      onOverQuota: this._emit.bind(this, "OverQuota", exports)
+      onOverQuota: this._emitEventObject.bind(this, "OverQuota", {}, exports)
     });
   }
 }))();
 
 exports.on = manager.on;
 exports.removeListener = manager.removeListener;
-

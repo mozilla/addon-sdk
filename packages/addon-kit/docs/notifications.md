@@ -17,10 +17,8 @@ the console.
       title: "Jabberwocky",
       text: "'Twas brillig, and the slithy toves",
       data: "did gyre and gimble in the wabe",
-      onClick: function (data) {
-        console.log(data);
-        // console.log(this.data) would produce the
-        // same result in this case.
+      onClick: function (event) {
+        console.log(event.data);
       }
     });
 
@@ -50,7 +48,8 @@ the `self` module documentation for more information.)
     a data URI, or a URL returned by the `self` module.
   @prop [onClick] {function}
     A function to be called when the user clicks the message.  It will be passed
-    the value of `data`.
+    an event object with a single property named `data` whose value is the value
+    of the `data` property used in the notification.
   @prop [data] {string}
-    A string that will be passed to `onClick`.
+    A string that will be passed in the event object to `onClick`.
 </api>

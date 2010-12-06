@@ -1,4 +1,4 @@
-The `request` module lets you make simple, yet powerful network requests.
+The `request` module lets you make simple yet powerful network requests.
 
 <api name="Request">
 @class
@@ -10,8 +10,9 @@ a callback which will be executed once the request completes.
 Once a `Request` object has been created a `GET` request can be executed by
 calling its `get()` method, or a `POST` request by calling its `post()` method.
 
-When the server completes the request, the `Request` returns a
-`Response` object to the caller containing the response and calls the callback.
+When the server completes the request, the `Request` object emits a "complete"
+event.  Registered event listeners are passed a single event object with a
+`response` property whose value is a `Response` object.
 
 Each `Request` object is designed to be used once. Once `GET` or `POST` are
 called, attempting to call either will throw an error.
@@ -31,17 +32,18 @@ The example below shows how to use Request to get the most recent public tweet.
     var Request = require('request').Request;
     var latestTweetRequest = Request({
       url: "http://api.twitter.com/1/statuses/public_timeline.json",
-      onComplete: function (response) {
-        var tweet = response.json[0];
+      onComplete: function (event) {
+        var tweet = event.response.json[0];
         console.log("User: " + tweet.user.screen_name);
         console.log("Tweet: " + tweet.text);
       }
     });
+
     // Be a good consumer and check for rate limiting before doing more.
     Request({
       url: "http://api.twitter.com/1/account/rate_limit_status.json",
-      onComplete: function (response) {
-        if (response.json.remaining_hits) {
+      onComplete: function (event) {
+        if (event.response.json.remaining_hits) {
           latestTweetRequest.get();
         } else {
           console.log("You have been rate limited!");
@@ -58,10 +60,11 @@ set several properties on the resulting `Request`.
     @prop url {string}
     This is the url to which the request will be made.
 
-    @prop onComplete {callback}
-    This function will be called when the request has received a response. In
-    terms of XHR, when `readyState == 4`. The `response` & `request` objects
-    are passed to the callback as arguments.
+    @prop [onComplete] {function}
+    This function will be called when the request has received a response (or in
+    terms of XHR, when `readyState == 4`). The function is passed a single event
+    object that has two properties, `response` and `emitter`.  `response` is the
+    `Response` object, and `emitter` is the `Request` object.
 
     @prop [headers] {object}
     An unordered collection of name/value pairs representing headers to send

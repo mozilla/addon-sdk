@@ -197,28 +197,28 @@ class Package(unittest.TestCase):
         self.assertFalse(manifest['resource:foo/foo.js']['e10s-adapter'])
 
     def test_bug_596573(self):
-        jp_tests = "packages/jetpack-core/tests"
+        jp_tests = "packages/api-utils/tests"
         manifest, has_problems = scan_package("prefix", "resource:foo",
-                                              "jetpack-core", "tests", jp_tests)
+                                              "api-utils", "tests", jp_tests)
         found = [i.name for i in manifest.values()
                  if i.name == "interoperablejs-read-only/compliance/" +
                                "nested/a/b/c/d"]
         self.failUnless(len(found) == 1)
         
     def test_jetpack_core(self):
-        # this has a side-effect of asserting that all the SDK's jetpack-core
+        # this has a side-effect of asserting that all the SDK's api-utils
         # modules are clean.
-        jp_core = "packages/jetpack-core/lib"
+        jp_core = "packages/api-utils/lib"
         assert os.path.isdir(jp_core) # we expect to be run from the SDK top
         stderr = StringIO()
         manifest, has_problems = scan_package("prefix-", "resource:foo/",
-                                              "jetpack-core", "lib",
+                                              "api-utils", "lib",
                                               jp_core, stderr)
         stderr.seek(0)
         err = stderr.readlines()
         self.failUnlessEqual(err, [], "".join(err))
         self.failUnlessEqual(has_problems, False)
-        update_manifest_with_fileinfo(["jetpack-core"], "jetpack-core",
+        update_manifest_with_fileinfo(["api-utils"], "api-utils",
                                       manifest)
 
         # look at a few samples from the manifest: this depends upon the
@@ -229,13 +229,13 @@ class Package(unittest.TestCase):
         tb = manifest["resource:foo/tab-browser.js"]
         self.failUnlessEqual(tb.chrome, True)
         self.failUnlessEqual(tb.name, "tab-browser")
-        self.failUnlessEqual(tb.packageName, "jetpack-core")
+        self.failUnlessEqual(tb.packageName, "api-utils")
         self.failUnless("window-utils" in tb.requires, tb.requires.values())
         self.failUnlessEqual(tb.requires["window-utils"].url,
                              "resource:foo/window-utils.js")
         self.failUnlessEqual(tb.sectionName, "lib")
         self.failUnlessEqual(tb.zipname,
-                             "resources/prefix-jetpack-core-lib/tab-browser.js")
+                             "resources/prefix-api-utils-lib/tab-browser.js")
         h = tb.hash
         self.failUnless(re.search(r'^[0-9a-f]{64}$', h), h)
         # don't assert the actual value, since that will change each time

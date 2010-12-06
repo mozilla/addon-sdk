@@ -48,7 +48,7 @@ relationships. The gray fill represents code written by the add-on developer.
 ![Content script overview](media/content-scripting-overview.jpg)
 
 This might sound complicated but it doesn't need to be. The following add-on
-uses the [page-mod](#module/jetpack-core/page-mod) module to replace the
+uses the [page-mod](#module/api-utils/page-mod) module to replace the
 content of any web page in the `.co.uk` domain by executing a content script
 in the context of that page:
 
@@ -71,7 +71,7 @@ The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
     contentScript      string, array
-    contentScriptFile   string, array
+    contentScriptFile  string, array
     contentScriptWhen  string
 
 We have already seen the `contentScript` option, which enables you to pass
@@ -250,7 +250,7 @@ This is the complete add-on script:
                            data.url("panel.js")],
         contentScriptWhen: "ready",
         onMessage: function(message) {
-          require("tab-browser").addTab(message);
+          require("tabs").open(message);
         }
       })
     });
@@ -259,10 +259,10 @@ This code supplies two content scripts to the panel's constructor in the
 contentScriptFile option: the jQuery library and the script that intercepts
 mouse clicks.
 
-It also supplies a function to the `onMessage` option which passes the message
-parameter (the story URL) into the `addTab` function from the
-[tab-browser](#module/jetpack-core/tab-browser) module. This is the target for
-messages from any content scripts associated with the panel.
+It also supplies a function to the `onMessage` option which in turn passes the
+`message` argument (the story URL) into the `open` function of the
+[tabs](#module/addon-kit/tabs) module. This is the target for messages from all
+content scripts associated with the panel.
 
 This is the content script that intercepts the link clicks:
 

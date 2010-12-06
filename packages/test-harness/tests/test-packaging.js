@@ -45,7 +45,7 @@ exports.testPackagingGetModuleInfo = function(test) {
                    'info.packageData works');
   test.assert("observer-service" in info.dependencies);
   test.assertEqual(info.dependencies["observer-service"].url,
-                   "resource://testpkgs-jetpack-core-lib/observer-service.js");
+                   "resource://testpkgs-api-utils-lib/observer-service.js");
   test.assert(info.needsChrome,
               'module "run-tests" needs chrome');
 

@@ -183,4 +183,4 @@ Once you're ready, move on to the next section: [Programs].
   [Markdown]: http://daringfireball.net/projects/markdown/
   [Programs]: #guide/programs
   [Globals]: #guide/globals
-  [unit-test]: #module/jetpack-core/unit-test
+  [unit-test]: #module/api-utils/unit-test

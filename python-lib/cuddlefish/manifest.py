@@ -106,7 +106,7 @@ def scan_package(prefix, resource_url, pkg_name, section, dirname,
     for dirpath, dirnames, filenames in os.walk(dirname):
         for fn in [fn for fn in filenames if fn.endswith(".js")]:
             modname = os.path.splitext(fn)[0]
-            # turn "packages/jetpack-core/lib/content/foo" into "content/foo"
+            # turn "packages/api-utils/lib/content/foo" into "content/foo"
             reldir = dirpath[len(dirname)+1:]
             if reldir:
                 modname = "/".join(reldir.split(os.sep) + [modname])
@@ -160,7 +160,7 @@ def update_manifest_with_fileinfo(deps, loader, manifest):
         for reqname in i.requires:
             # now where will this requirement come from? This code tries to
             # duplicate the behavior of the LocalFileSystem.resolveModule
-            # method in packages/jetpack-core/lib/securable-module.js . Our
+            # method in packages/api-utils/lib/securable-module.js . Our
             # goal is to find a specific .js file, at link time, and record
             # as much information as we can about it in the manifest. Some of
             # this information is destined for the runtime, which will

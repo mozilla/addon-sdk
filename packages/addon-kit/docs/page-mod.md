@@ -29,7 +29,7 @@ To create a PageMod the add-on developer supplies:
 
 * a set of rules to select the desired subset of web pages based on their URL.
 Each rule is specified using the
-[match-pattern](#module/jetpack-core/match-pattern) syntax.
+[match-pattern](#module/api-utils/match-pattern) syntax.
 
 * a set of content scripts to execute in the context of the desired pages.
 
@@ -168,7 +168,7 @@ Creates a PageMod.
     the pages to which the PageMod applies.  See the [match-pattern] module for
     a description of match pattern syntax.
     At least one match pattern must be supplied.
-    [match-pattern]: #module/jetpack-core/match-pattern
+    [match-pattern]: #module/api-utils/match-pattern
   @prop [contentScriptFile] {string,array}
     The local file URLs of content scripts to load.  Content scripts specified
     by this option are loaded *before* those specified by the `contentScript`
@@ -201,8 +201,8 @@ applies.  See the [match-pattern] module for a description of match patterns.
 Rules can be added to the list by calling its `add` method and removed by
 calling its `remove` method.
 
-[List]: https://jetpack.mozillalabs.com/sdk/latest/docs/#module/jetpack-core/list
-[match-pattern]: #module/jetpack-core/match-pattern
+[List]: https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/list
+[match-pattern]: #module/api-utils/match-pattern
 </api>
 
 <api name="destroy">
