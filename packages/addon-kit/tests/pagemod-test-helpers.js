@@ -12,7 +12,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   if (!xulApp.versionInRange(xulApp.platformVersion, "1.9.3a3", "*") &&
       !xulApp.versionInRange(xulApp.platformVersion, "1.9.2.7", "1.9.2.*")) {
     test.pass("Note: not testing PageMod, as it doesn't work on this platform version");
-    return;
+    return null;
   }
 
   var wm = Cc['@mozilla.org/appshell/window-mediator;1']
@@ -21,7 +21,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   if (!browserWindow) {
     test.pass("page-mod tests: could not find the browser window, so " +
               "will not run. Use -a firefox to run the pagemod tests.")
-    return;
+    return null;
   }
 
   test.waitUntilDone();
@@ -45,4 +45,6 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
     });
   }
   b.addEventListener("load", onPageLoad, true);
+
+  return pageMods;
 }
