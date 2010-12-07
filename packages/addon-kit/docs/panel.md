@@ -37,17 +37,15 @@ Panels emit the following types of [events](#guide/events).
 ### message ###
 
 This event is emitted when the panel's content scripts post a message.
-Listeners are passed the message as their first argument.
+Listeners are passed the message as their first and only argument.
 
 ### show ###
 
-This event is emitted when the panel is shown.  Listeners are passed the panel
-as their first argument.
+This event is emitted when the panel is shown.
 
 ### hide ###
 
-This event is emitted when the panel is hidden.  Listeners are passed the panel
-as their first argument.
+This event is emitted when the panel is hidden.
 
 Examples
 --------

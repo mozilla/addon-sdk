@@ -6,7 +6,7 @@ const tabs = require("tabs");
 var widget = widgets.Widget({
   label: "Mozilla website",
   contentURL: "http://www.mozilla.org/favicon.ico",
-  onClick: function(event) {
+  onClick: function() {
     tabs.open("http://www.mozilla.org/");
   }
 });
@@ -29,8 +29,8 @@ exports.test_id = function(test) {
 exports.test_url = function(test) {
   require("request").Request({
     url: "http://www.mozilla.org/",
-    onComplete: function(event) {
-      test.assertEqual(event.response.statusText, "OK");
+    onComplete: function(response) {
+      test.assertEqual(response.statusText, "OK");
       test.done();
     }
   }).get();

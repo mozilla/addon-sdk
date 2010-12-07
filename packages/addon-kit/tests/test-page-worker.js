@@ -12,6 +12,7 @@ tests.testSimplePageCreation = function(test) {
     onMessage: function (message) {
       test.assertEqual(message, "about:blank",
                        "Page Worker should start with a blank page by default");
+      test.assertEqual(this, page, "The 'this' object is the page itself.");
       test.done();
     }
   });
