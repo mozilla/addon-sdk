@@ -78,8 +78,8 @@ exports.testPageModIncludes = function(test) {
           window[msg] = true;
         }
       },
-      onAttach: function(worker, mod) {
-        worker.postMessage(mod.include[0]);
+      onAttach: function(worker) {
+        worker.postMessage(this.include[0]);
       }
     };
   }
