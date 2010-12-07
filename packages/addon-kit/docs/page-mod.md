@@ -63,7 +63,7 @@ script can interact with the DOM itself:
 ### <a name="pagemod-content-scripts">Communicating With Content Scripts</a>###
 
 When a matching page is loaded the `PageMod` will call the function that the
-add-on code supplied to `onAttach`. The `PageMod` supplies one arguments to
+add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
 this function: a `worker` object.
 
 The worker can be thought of as the add-on's end of
