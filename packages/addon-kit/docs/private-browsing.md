@@ -8,14 +8,13 @@ mode, detecting if it is active and when its state changes.
 ## Events ##
 
 When the browser starts or stops private browsing mode, the following events
-are emitted.  In each case, listeners are passed an event object that has a
-single property `emitter` whose value is the private browsing module itself.
+are emitted.
 
 ### start ###
 Emitted when the browser starts private browsing mode.
 
     var pb = require("private-browsing");
-    pb.on("start", function(event) {
+    pb.on("start", function() {
       // Do something when the browser starts private browsing mode.
     });
 
@@ -24,7 +23,7 @@ Emitted when the browser starts private browsing mode.
 Emitted when the browser stops private browsing mode.
 
     var pb = require("private-browsing");
-    pb.on("stop", function(event) {
+    pb.on("stop", function() {
       // Do something when the browser stops private browsing mode.
     });
 

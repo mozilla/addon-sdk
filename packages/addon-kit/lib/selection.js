@@ -229,7 +229,7 @@ let SelectionListenerManager = {
 
   // The collection of listeners wanting to be notified of selection changes
   listeners: EventEmitter.compose({
-    emit: function emit(type) this._emitEventObject(type, {}, exports),
+    emit: function emit(type) this._emitOnObject(exports, type),
     off: function() this._removeAllListeners.apply(this, arguments)
   })(),
   /**
