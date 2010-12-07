@@ -191,17 +191,16 @@ The index of the tab relative to other tabs in the application window.
 This property can be set to change it's relative position.
 </api>
 
-<api name="thumbnail">
-@property {string}
-Data URI of a thumbnail of the page currently loaded in the tab.
-This property is read-only.
-</api>
-
 <api name="isPinned">
 @property {boolean}
 Whether or not tab is pinned as an [app tab].
 This property is read-only.
 [app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+</api>
+
+<api name="getThumbnail">
+@property {method}
+Returns thumbnail data URI of the page currently loaded in this tab.
 </api>
 
 <api name="pin">
