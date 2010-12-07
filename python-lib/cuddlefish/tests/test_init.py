@@ -45,7 +45,7 @@ class TestInit(unittest.TestCase):
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
         self.failIfEqual(init_run,0)
-        self.assertTrue("This tool must be run in an empty directory." in err)
+        self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
         self.run_init_in_subdir("tmp_addon_sample",self.do_test_init)
