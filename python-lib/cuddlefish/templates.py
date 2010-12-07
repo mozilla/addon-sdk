@@ -5,12 +5,12 @@ const tabs = require("tabs");
 const panels = require("panel");
 const data = require("self").data;
 
-let my_widget = widgets.Widget({
-    label:"Mozilla website",
-    contentURL:"http://www.mozilla.org/favicon.ico",
-    onClick:function(event){
-        tabs.open("http://mozilla.org");
-    }
+var widget = widgets.Widget({
+  label: "Mozilla website",
+  contentURL: "http://www.mozilla.org/favicon.ico",
+  onClick: function() {
+    tabs.open("http://www.mozilla.org/");
+  }
 });
 
 console.log("Jetpack sample addon running.");
