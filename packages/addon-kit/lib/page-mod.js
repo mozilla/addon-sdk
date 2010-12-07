@@ -144,7 +144,7 @@ const PageMod = Loader.compose(EventEmitter, {
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
       onError: this._onUncaughtError
-    }), this._public);
+    }));
   },
   _onRuleAdd: function _onRuleAdd(url) {
     pageModManager.on(url, this._onContent);

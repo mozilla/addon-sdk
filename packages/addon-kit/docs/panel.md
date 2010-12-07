@@ -26,9 +26,28 @@ element, but that has not yet been implemented.  The work to implement it is
 tracked in bug 554937.
 
 Panels have associated content scripts, which are JavaScript scripts that have
-access to the content loaded into the panels.  Programs can specify one or more
-content scripts to load for a panel, and the program can communicate with those
-scripts via an asynchronous message passing API.
+access to the content loaded into the panels.  An add-on can specify one or more
+content scripts to load for a panel, and the add-on can communicate with those
+scripts via an asynchronous message passing API.  See
+[Working with Content Scripts](#guide/web-content) for more information.
+
+Events
+------
+
+Panels emit the following types of [events](#guide/events).
+
+### message ###
+
+This event is emitted when the panel's content scripts post a message.
+Listeners are passed the message as their first and only argument.
+
+### show ###
+
+This event is emitted when the panel is shown.
+
+### hide ###
+
+This event is emitted when the panel is hidden.
 
 Examples
 --------
