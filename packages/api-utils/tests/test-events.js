@@ -5,8 +5,6 @@ const EventEmitter = require('events').EventEmitter.compose({
   listeners: function(type) this._listeners(type),
   emit: function() this._emit.apply(this, arguments),
   emitOnObject: function() this._emitOnObject.apply(this, arguments),
-  emitEventObject: function() this._emitEventObject.apply(this, arguments),
-  emitMessage: function() this._emitMessage.apply(this, arguments),
   removeAllListeners: function(type) this._removeAllListeners(type)
 });
 
@@ -161,55 +159,4 @@ exports['test:emitOnObject'] = function(test) {
   });
   let obj = {};
   e.emitOnObject(obj, "bar");
-};
-
-exports['test:emitEventObject'] = function(test) {
-  let e = new EventEmitter();
-
-  e.on("foo", function(evt) {
-    test.assertEqual(this, e, "`this` should be emitter");
-    test.assert(!!evt, "Should have been passed an event object");
-    test.assertEqual(evt.emitter, e, "event.emitter should be emitter");
-  });
-  e.emitEventObject("foo");
-
-  e.on("bar", function(evt) {
-    test.assertEqual(evt.bar, evtObj.bar, "Passing event object should work");
-  });
-  let evtObj = { bar: 1337 };
-  e.emitEventObject("bar", evtObj);
-
-  e.on("baz", function(evt) {
-    test.assertEqual(evt.emitter, obj, "`this` should be other object");
-  });
-  let obj = {};
-  e.emitEventObject("baz", {}, obj);
-};
-
-exports['test:emitMessage'] = function(test) {
-  let e = new EventEmitter();
-
-  e.on("message", function(evt) {
-    test.assertEqual(this, e, "`this` should be emitter");
-    test.assert(!!evt, "Should have been passed an event object");
-    test.assertEqual(evt.emitter, e, "event.emitter should be emitter");
-    test.assertEqual(evt.data, msg, "event.data should be message");
-  });
-  let msg = "howdy";
-  e.emitMessage(msg);
-  e.removeAllListeners("message");
-
-  e.on("message", function(evt) {
-    test.assertEqual(evt.bar, evtObj.bar, "Passing event object should work");
-  });
-  let evtObj = { bar: 1337 };
-  e.emitMessage(msg, evtObj);
-  e.removeAllListeners("message");
-
-  e.on("message", function(evt) {
-    test.assertEqual(evt.emitter, obj, "`this` should be other object");
-  });
-  let obj = {};
-  e.emitMessage(msg, {}, obj);
-  e.removeAllListeners("message");
 };
