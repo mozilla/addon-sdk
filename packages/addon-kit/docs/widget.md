@@ -61,28 +61,20 @@ Widgets emit the following types of [events](#guide/events).
 
 ### click ###
 
-This event is emitted when the widget is clicked.  Listeners are passed an event
-object that has a single property named `emitter` whose value is the widget that
-was clicked.
+This event is emitted when the widget is clicked.
 
 ### message ###
 
 This event is emitted when the widget's content scripts post a message.
-Listeners are passed an event object that has two properties named `emitter` and
-`data`.  `emitter` is the widget that was clicked.  `data` is the message posted
-by the content script.
+Listeners are passed the message as their first argument.
 
 ### mouseover ###
 
-This event is emitted when the user moves the mouse over the widget.  Listeners
-are passed an event object that has a single property named `emitter` whose
-value is the widget that was clicked.
+This event is emitted when the user moves the mouse over the widget.
 
 ### mouseout ###
 
 This event is emitted when the user moves the mouse away from the widget.
-Listeners are passed an event object that has a single property named `emitter`
-whose value is the widget that was clicked.
 
 ## Examples ##
 
@@ -98,7 +90,7 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
-      onClick: function(event) {
+      onClick: function() {
         require("tabs").activeTab.url = "http://www.google.com/";
       }
     });
@@ -107,10 +99,10 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with changing image on mouseover",
       contentURL: "http://www.yahoo.com/favicon.ico",
-      onMouseover: function(event) {
+      onMouseover: function() {
         this.contentURL = "http://www.bing.com/favicon.ico";
       },
-      onMouseout: function(event) {
+      onMouseout: function() {
         this.contentURL = "http://www.yahoo.com/favicon.ico";
       }
     });
@@ -134,11 +126,10 @@ create your content scripts in separate files and pass their URLs using the
                      'setTimeout(function() {' +
                      '  document.location = "http://www.flickr.com/explore/";' +
                      '}, 5 * 60 * 1000);',
-      onMessage: function(event) {
-        var imgSrc = event.data;
+      onMessage: function(imgSrc) {
         this.contentURL = imgSrc;
       },
-      onClick: function(event) {
+      onClick: function() {
         require("tabs").activeTab.url = this.contentURL;
       }
     });

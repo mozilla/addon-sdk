@@ -372,7 +372,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         return 1
     # if current dir isn't empty
     if len(os.listdir(path)) > 0:
-        print >>err, 'This tool must be run in an empty directory.'
+        print >>err, 'This command must be run in an empty directory.'
         return 1
     for d in ['lib','data','tests','docs']:
         os.mkdir(os.path.join(path,d))
@@ -387,8 +387,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* lib/main.js written'
     open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
     print >>out, '* docs/main.md written'
-    print >>out, '''\nYour sample add-on is now ready for testing:
-    try "cfx test" and then "cfx run". Have fun!"'''
+    print >>out, '\nYour sample add-on is now ready.'
+    print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,

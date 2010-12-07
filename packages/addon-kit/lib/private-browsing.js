@@ -56,7 +56,7 @@ if (require("xul-app").is("Firefox")) {
 const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
     // Binding method to instance since it will be used with `setTimeout`.
-    this._emitEventObject = this._emitEventObject.bind(this);
+    this._emitOnObject = this._emitOnObject.bind(this);
     this.unload = this.unload.bind(this);
     // Report unhandled errors from listeners
     this.on("error", console.exception.bind(console));
@@ -74,8 +74,7 @@ const privateBrowsing = EventEmitter.compose({
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {
     let isActive = this._isActive = pbService.privateBrowsingEnabled;
-    setTimeout(this._emitEventObject, 0, isActive ? ON_START : ON_STOP, {},
-               exports);
+    setTimeout(this._emitOnObject, 0, exports, isActive ? ON_START : ON_STOP);
   },
   get isActive() this._isActive,
   set isActive(value) {

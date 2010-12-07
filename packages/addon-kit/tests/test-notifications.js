@@ -42,9 +42,9 @@ exports.testOnClick = function (test) {
   let notifs = loader.require("notifications");
   let data = "test data";
   let opts = {
-    onClick: function (event) {
+    onClick: function (clickedData) {
       test.assertEqual(this, notifs, "|this| should be notifications module");
-      test.assertEqual(event.data, data,
+      test.assertEqual(clickedData, data,
                        "data passed to onClick should be correct");
     },
     data: data,

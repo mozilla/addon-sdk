@@ -43,8 +43,8 @@ the change:
 
 It is not possible to enumerate the set of listeners for a given event.
 
-The value of `this` in the listener function is the event emitter instance on
-which `on()` was called.
+The value of `this` in the listener function is the object that emitted
+the event.
 
 ### Adding Listeners in Constructors ###
 
@@ -59,9 +59,7 @@ you can assign a listener function to this property as an alternative to
 calling the object's `on()` method.
 
 For example: the [`widget`](#modules/addon-kit/widget) object emits an event
-when the widget is clicked. The widget supplies a single argument to the
-listener, an event object with a property named `emitter` whose value is the
-widget itself.
+when the widget is clicked.
 
 The following add-on creates a widget and assigns a listener to the
 `onClick` property of the `options` object supplied to the widget's
@@ -73,7 +71,7 @@ constructor. The listener loads the Google home page:
     widgets.Widget({
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
-      onClick: function(event) {
+      onClick: function() {
         tabs.open("http://www.google.com/");
       }
     });
@@ -89,7 +87,7 @@ widget's `on()` method:
       contentURL: "http://www.google.com/favicon.ico"
     });
 
-    widget.on("click", function(event) {
+    widget.on("click", function() {
       tabs.open("http://www.google.com/");
     });
 

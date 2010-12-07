@@ -214,7 +214,7 @@ const Panel = Symbiont.resolve({
     try {
       this._frameLoadersSwapped = false;
       this._xulPanel = null;
-      this._emit('hide', this._public);
+      this._emit('hide');
     } catch(e) {
       this._emit('error', e);
     }
@@ -228,7 +228,7 @@ const Panel = Symbiont.resolve({
       if (!this._inited) // defer if not initialized yet
         return this.on('inited', this._onShow.bind(this));
       this._frameLoadersSwapped = true;
-      this._emit('show', this._public);
+      this._emit('show');
     } catch(e) {
       this._emit('error', e);
     }

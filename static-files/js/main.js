@@ -8,6 +8,7 @@ function startApp(jQuery, window) {
   const DEFAULT_HASH = "guide/welcome";
   const IDLE_PING_DELAY = 500;
   const CHECK_HASH_DELAY = 100;
+  const DOCUMENT_TITLE_ROOT = "Add-on SDK Documentation";
 
   function checkHash() {
     var hash = window.location.hash;
@@ -21,18 +22,28 @@ function startApp(jQuery, window) {
 
   function onHash(hash) {
     var parts = hash.split("/");
+    documentName = "";
     switch (parts[0]) {
     case "package":
       showPackageDetail(parts[1]);
+      documentName = parts[1];
       break;
     case "module":
       var pkgName = parts[1];
       var moduleName = parts.slice(2).join("/");
       showModuleDetail(pkgName, moduleName);
+      documentName = moduleName;
       break;
     case "guide":
       showGuideDetail(parts[1]);
+      documentName = $('#' + parts[1]).text();
       break;
+    }
+    if (documentName.length > 0) {
+      document.title = documentName + " - " + DOCUMENT_TITLE_ROOT;
+    }
+    else {
+      document.title = DOCUMENT_TITLE_ROOT;
     }
   }
 

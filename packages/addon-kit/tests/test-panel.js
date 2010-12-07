@@ -9,6 +9,7 @@ tests.testPanel = function(test) {
     contentURL: "about:buildconfig",
     contentScript: "postMessage(1); on('message', function() postMessage(2));",
     onMessage: function (message) {
+      test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {
         case 1:
           test.pass("The panel was loaded.");
@@ -34,11 +35,13 @@ tests.testShowHidePanel = function(test) {
     },
     onShow: function () {
       test.pass("The panel was shown.");
+      test.assertEqual(this, panel, "The 'this' object is the panel.");
       panel.hide();
     },
     onHide: function () {
-      panel.destroy();
       test.pass("The panel was hidden.");
+      test.assertEqual(this, panel, "The 'this' object is the panel.");
+      panel.destroy();
       test.done();
     }
   });

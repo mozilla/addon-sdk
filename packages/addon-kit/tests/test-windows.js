@@ -47,6 +47,8 @@ exports.testOpenAndCloseWindow = function(test) {
   windows.open({
     url: "data:text/html,<title>windows API test</title>",
     onOpen: function(window) {
+      test.assertEqual(this, windows,
+                       "The 'this' object is the windows object.");
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
       test.assertEqual(windows.length, 2, "Two windows open");
       window.tabs.activeTab.on('ready', function onReady(tab) {
@@ -78,6 +80,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
   }
 
    function listener1() {
+    test.assertEqual(this, windows, "The 'this' object is the windows object.");
     if (received.listener1)
       test.fail("Event received twice");
     received.listener1 = true;
@@ -90,6 +93,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
   }
 
   function listener3() {
+    test.assertEqual(this, windows, "The 'this' object is the windows object.");
     if (received.listener3)
       test.fail("Event received twice");
     received.listener3 = true;
