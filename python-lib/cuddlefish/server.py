@@ -66,6 +66,12 @@ if wsgiref_available:
         def log_message(self, *args, **kwargs):
             pass
 
+# Due to https://bugzilla.mozilla.org/show_bug.cgi?id=616922,
+# per http://bugs.python.org/issue10551, call mimetypes.init with an empty list
+# argument to the `files` parameter to force the module to ignore the Windows
+# registry, whose consultation can lead to unpredictable results in unit tests.
+mimetypes.init(files=[])
+
 def guess_mime_type(url):
     """
     Attempts to guess a MIME type for a given URL.
