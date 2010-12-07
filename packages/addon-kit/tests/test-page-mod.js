@@ -17,11 +17,15 @@ exports.delay = function(test) {
 /* Tests for the PageMod APIs */
 
 exports.testPageMod1 = function(test) {
-  testPageMod(test, "about:", [{
+  let pageMod;
+  [pageMod] = testPageMod(test, "about:", [{
       include: "about:*",
       contentScriptWhen: 'ready',
       contentScript: 'new ' + function WorkerScope() {
         window.document.body.setAttribute("JEP-107", "worked");
+      },
+      onAttach: function() {
+        test.assertEqual(this, pageMod, "The 'this' object is the page mod.");
       }
     }],
     function(win, done) {
