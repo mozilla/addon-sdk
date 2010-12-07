@@ -43,8 +43,8 @@ the change:
 
 It is not possible to enumerate the set of listeners for a given event.
 
-The value of `this` in the listener function is the event emitter instance on
-which `on()` was called.
+The value of `this` in the listener function is the object that emitted
+the event.
 
 ### Adding Listeners in Constructors ###
 
