@@ -73,11 +73,8 @@ if (pbService) {
 
   exports.testStart = function(test) {
     test.waitUntilDone();
-    pb.on("start", function onStart(evt) {
+    pb.on("start", function onStart() {
       test.assertEqual(this, pb, "`this` should be private-browsing module");
-      test.assert(!!evt, "Listener should be passed event object");
-      test.assertEqual(evt.emitter, pb,
-                       "event.emitter should be private-browsing module");
       test.assert(pbService.privateBrowsingEnabled,
                   'private mode is active when "start" event is emitted');
       test.assert(pb.isActive,
@@ -90,11 +87,8 @@ if (pbService) {
 
   exports.testStop = function(test) {
     test.waitUntilDone();
-    pb.on("stop", function onStop(evt) {
+    pb.on("stop", function onStop() {
       test.assertEqual(this, pb, "`this` should be private-browsing module");
-      test.assert(!!evt, "Listener should be passed event object");
-      test.assertEqual(evt.emitter, pb,
-                       "event.emitter should be private-browsing module");
       test.assertEqual(pbService.privateBrowsingEnabled, false,
                        "private mode is disabled when stop event is emitted");
       test.assertEqual(pb.isActive, false,
