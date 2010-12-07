@@ -184,11 +184,10 @@ Creates a PageMod.
     them once the DOM content of the page has been loaded.
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
-a matching page. The function will be called with one argument:
-
-* A `worker` object which the add-on script can use to communicate with
-the content scripts attached to the page in question. See "[Communicating with
-content scripts](#pagemod-content-scripts)" for more details.
+a matching page. The function will be called with one argument, a `worker`
+object which the add-on script can use to communicate with the content scripts
+attached to the page in question. See "[Communicating with content
+scripts](#pagemod-content-scripts)" for more details.
 
 </api>
 
