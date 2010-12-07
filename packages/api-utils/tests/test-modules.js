@@ -19,7 +19,7 @@ exports.testSimpleRequire = function (test) {
     test.assertEqual(blue.name, 'blue', 'Simple require for blue');
     test.assertEqual(orange.name, 'orange', 'Simple require for orange');
     test.assertEqual(orange.parentType, 'color',
-                     'Simple require dependency check for orange');    
+                     'Simple require dependency check for orange');
   });
 }
 
@@ -64,7 +64,7 @@ exports.testAnonExportsReturn = function (test) {
   require(['modules/tiger', 'modules/cheetah'], function (tiger, cheetah) {
     test.assertEqual('lion', lion, 'Check lion name');
     test.assertEqual('tiger', tiger.name, 'Check tiger name');
-    test.assertEqual('cat', tiger.type, 'Check tiger type');    
+    test.assertEqual('cat', tiger.type, 'Check tiger type');
     test.assertEqual('cheetah', cheetah(), 'Check cheetah name');
   });
 }
@@ -75,9 +75,11 @@ exports.testCircular = function (test) {
       castor = require('modules/castor');
 
   test.assertEqual(pollux.name, 'pollux', 'Pollux\'s name');
-  test.assertEqual(pollux.getCastorName(), 'castor', 'Castor\'s name from Pollux.');
+  test.assertEqual(pollux.getCastorName(),
+                   'castor', 'Castor\'s name from Pollux.');
   test.assertEqual(castor.name, 'castor', 'Castor\'s name');
-  test.assertEqual(castor.getPolluxName(), 'pollux', 'Pollux\'s name from Castor.');
+  test.assertEqual(castor.getPolluxName(), 'pollux',
+                   'Pollux\'s name from Castor.');
 }
 
 // test a bad module that asks for exports but also does a define() return
@@ -99,13 +101,44 @@ exports.testBadExportAndReturn = function (test) {
   try {
     var bad = require('modules/badFirst');
   } catch(e) {
-    passed = /after another module has referenced its exported value/.test(e.toString());
+    passed = /after another module has referenced its exported value/
+             .test(e.toString());
   }
   test.assertEqual(passed, true, 'Make sure return after an exported ' +
                                  'value is grabbed by another module fails.');
 }
 
+// test a bad name in a define() call, where it does not match the expected
+// name for the module.
+exports.testBadDefineName = function (test) {
+  var passed = false;
+  try {
+    var sheep = require('modules/sheep');
+  } catch(e) {
+    passed = /Mismatched define/.test(e.toString());
+  }
+  test.assertEqual(passed, true, 'Make sure name in define call matches ' +
+                                 'the expected name for the module.');
+}
 
+// only allow one define call per file.
+exports.testOneDefine = function (test) {
+  var passed = false;
+  try {
+    var dupe = require('modules/dupe');
+  } catch(e) {
+    passed = /Only one call to define/.test(e.toString());
+  }
+  test.assertEqual(passed, true, 'Only allow one define call per module');
+}
 
-// Test circular dependency where one part uses define() return.
-
+// only allow one define call per file, testing a bad nested define call.
+exports.testOneDefineNested = function (test) {
+  var passed = false;
+  try {
+    var dupe = require('modules/dupeNested');
+  } catch(e) {
+    passed = /Only one call to define/.test(e.toString());
+  }
+  test.assertEqual(passed, true, 'Only allow one define call per module');
+}

@@ -198,6 +198,8 @@
      this.modules = {};
      this.pathAccessed = options.pathAccessed;
      this.module_infos = {};
+     this.pathToModule = {};
+     this.defineUsed = {};
      this.globals = options.globals;
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
@@ -225,6 +227,9 @@
              self.pathAccessed[path] = 0;
            }
            self.pathAccessed[path] += 1;
+
+           // Remember the name of the module as it maps to its path
+           self.pathToModule[path] = module;
 
            if (path in self.modules) {
              module_info = self.module_infos[path];
@@ -305,6 +310,14 @@
        // argument's name.
        function define (name, deps, callback) {
 
+         // Only allow one call to define per module/file.
+         if (self.defineUsed[basePath]) {
+           throw new Error("Only one call to define() allowed per file: " +
+                            basePath);
+         } else {
+           self.defineUsed[basePath] = true;
+         }
+
          // For anonymous modules, the namePath is the basePath
          var namePath = basePath,
              exports = {}, exported;
@@ -325,7 +338,15 @@
 
          // Set up the path if we have a name
          if (name) {
+           // Make sure that the name matches the expected name, otherwise
+           // throw an error.
            namePath = self.fs.resolveModule(basePath, name);
+           if (self.pathToModule[namePath] !== name) {
+             throw new Error("Mismatched define(). Named module " + name +
+                             " does not match expected name of " +
+                             self.pathToModule[basePath] +
+                             " in " + basePath);
+           }
          }
 
          // If the callback is not an actual function, it means it already
@@ -381,7 +402,7 @@
            // look for require calls, and pull them into the dependencies.
            // The comment regexp is not very robust, but good enough to
            // avoid commented out require calls and to find normal, sync
-           // require calls in the function. 
+           // require calls in the function.
            callback
                .toString()
                .replace(commentRegExp, "")
