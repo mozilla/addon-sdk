@@ -6,7 +6,7 @@ const tabs = require("tabs");
 var widget = widgets.Widget({
   label: "Mozilla website",
   contentURL: "http://www.mozilla.org/favicon.ico",
-  onClick: function(event) {
+  onClick: function() {
     tabs.open("http://www.mozilla.org/");
   }
 });
