@@ -57,8 +57,8 @@ following content:
           headers: {
             Referer: selectionInfo.url
           },
-          onComplete: function (event) {
-            selection.text = event.response.json.responseData.translatedText;
+          onComplete: function (response) {
+            selection.text = response.json.responseData.translatedText;
           }
         });
         req.get();
