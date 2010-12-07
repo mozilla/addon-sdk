@@ -493,8 +493,8 @@
        return this.sandboxes[path];
      },
 
-     require: function require(module) {
-       return (this._makeApi(null).require)(module);
+     require: function require(module, callback) {
+       return (this._makeApi(null).require)(module, callback);
      },
 
      runScript: function runScript(options, extraOutput) {

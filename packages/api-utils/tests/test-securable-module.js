@@ -239,6 +239,20 @@ var beetFs = {
          });
        loader.require("program");
      }
+
+    // Confirm callback-based require works from an instantiated loader.
+    // TODO: confirm this test works?
+    loader = new SecurableModule.Loader(
+         {rootPath: rootDir,
+          defaultPrincipal: "system",
+          globals: {sys: {print: log}}
+         });
+    loader.require(["subtract"], function (mod) {
+      var subtract = mod.subtract(3, 1);
+      assert.isEqual(2, mod.subtract(3, 1),
+                      "subtract module works with callback-style require");
+    });
+
    };
 
    if (global.window) {
