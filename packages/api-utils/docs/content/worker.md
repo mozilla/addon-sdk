@@ -35,7 +35,7 @@ that occurs in one of the content scripts.
     const workers = require("content/worker");
     let worker =  workers.Worker({
       window: require("window-utils").activeWindow,
-      contentScript: "self.onMessage = function(data) { " +
+      contentScript: "onMessage = function(data) { " +
                      "  postMessage(window.location + ': Hi ' + data.name); " +
                      "};",
       onMessage: function(msg) {
