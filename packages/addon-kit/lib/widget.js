@@ -201,6 +201,10 @@ const Widget = Trait.compose(Loader, Trait.compose({
   },
   _panel: null,
 
+  postMessage: function Widget_postMessage(message) {
+    browserManager.updateItem(this._public, "postMessage", message);
+  },
+
   destroy: function Widget_destroy() {
     browserManager.removeItem(this._public);
   }
@@ -405,6 +409,9 @@ BrowserWindow.prototype = {
           break;
         case "tooltip":
           item.node.setAttribute("tooltiptext", value);
+          break;
+        case "postMessage":
+          item.symbiont.postMessage(value);
           break;
       }
     }

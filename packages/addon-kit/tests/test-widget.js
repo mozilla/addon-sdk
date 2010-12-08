@@ -72,10 +72,8 @@ exports.testConstructor = function(test) {
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
 
-  /**
-   * Helper for testing a single widget.
-   * Confirms proper addition and content setup.
-   */
+  // Helper for testing a single widget.
+  // Confirms proper addition and content setup.
   function testSingleWidget(widgetOptions) {
     let startCount = widgetCount();
     let widget = widgets.Widget(widgetOptions);
@@ -493,6 +491,26 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
     })
   });
   test.waitUntilDone();
+};
+
+exports.testWidgetMessaging = function testWidgetMessaging(test) {
+  test.waitUntilDone();
+  let origMessage = "foo";
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    label: "foo",
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    onMessage: function(message) {
+      if (message == "ready")
+        widget.postMessage(origMessage);
+      else {
+        test.assertEqual(origMessage, message);
+        test.done();
+      }
+    }
+  });
 };
 
 /******************* helpers *********************/
