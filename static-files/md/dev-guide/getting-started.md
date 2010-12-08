@@ -10,8 +10,8 @@ Verify that Python is in your path.
 * [Python] 2.5 or 2.6. Note that versions 3.0 and 3.1 of Python are not
   supported in this release.
 
-* A working version of Firefox, Thunderbird, or the [XULRunner SDK] that
-  uses Gecko 1.9.2 or later (e.g., Firefox 3.6).
+* A working version of Firefox that uses Gecko 2.0.0.7 or later
+  (e.g., Firefox 4.0b7).
 
   [Python]: http://www.python.org/
   [XULRunner SDK]: https://developer.mozilla.org/en/Gecko_SDK
