@@ -143,6 +143,16 @@ exports.testAdapterOnlyModule = makeConsoleTest({
   ]
 });
 
+exports.testSyncCallReturnValueArrivesAfterAsyncMsgSends = makeConsoleTest({
+  main: "e10s-samples/bug-617499-main",
+  expect: [
+    ["log", "about to send sync message to firefox"],
+    ["log", "i am an async message from firefox"],
+    ["log", "returned from sync message to firefox"],
+    ["quit", "OK"]
+  ]
+});
+
 exports.testCommonJSCompliance = function(test) {
   if (xulApp.is("Firefox") &&
       xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
