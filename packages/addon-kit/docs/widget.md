@@ -153,6 +153,18 @@ create your content scripts in separate files and pass their URLs using the
       myWidget.width += 10;
     }, 1000);
 
+    // A widget communicating bi-directionally with a content script.
+    let widget = widgets.Widget({
+      label: "bi-directional communication!",
+      content: "<foo>bar</foo>",
+      contentScriptWhen: "ready",
+      contentScript: "this.onMessage = function(message) { alert('got message!'); }; postMessage('ready');",
+      onMessage: function(message) {
+        if (message.data == "ready")
+          widget.postMessage(origMessage);
+      }
+    });
+
 <api-name="Widget">
 @class
 Represents a widget object.
