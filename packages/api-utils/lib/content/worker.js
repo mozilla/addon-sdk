@@ -189,7 +189,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         configurable: true
       },
       console: { value: console, configurable: true },
-   });
+    });
     // Chain the global object for the sandbox to the global object for
     // the frame.  This supports JavaScript libraries like jQuery that depend
     // on the presence of certain properties in the global object, like window,
