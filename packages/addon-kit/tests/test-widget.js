@@ -493,7 +493,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
   test.waitUntilDone();
 };
 
-exports.testWidgetMessaging = function testPanelWidgetMessaging(test) {
+exports.testWidgetMessaging = function testWidgetMessaging(test) {
   test.waitUntilDone();
   let origMessage = "foo";
   const widgets = require("widget");
@@ -501,12 +501,12 @@ exports.testWidgetMessaging = function testPanelWidgetMessaging(test) {
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
-    contentScript: "this.onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
     onMessage: function(message) {
-      if (message.data == "ready")
+      if (message == "ready")
         widget.postMessage(origMessage);
       else {
-        test.assertEqual(origMessage, message.data);
+        test.assertEqual(origMessage, message);
         test.done();
       }
     }
