@@ -34,6 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+(function(exports) {
 const // local shortcuts
   hasOwn = Object.prototype.hasOwnProperty,
   getGetter = Object.prototype.__lookupGetter__,
@@ -569,3 +570,4 @@ exports.init = function init(Object, Array, Function) {
   }
 };
 exports.init(Object, Array, Function);
+})(this.exports ? exports : {});
