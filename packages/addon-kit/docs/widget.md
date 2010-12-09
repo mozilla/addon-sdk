@@ -170,7 +170,7 @@ Represents a widget object.
     content. Widgets must have either the `content` property or the
     `contentURL` property set.
 
-  @prop [panel] {panel}
+  @prop [panel] {Panel}
     An optional [panel](#module/addon-kit/panel) to open when the user clicks on
     the widget. Note: If you also register a "click" listener, it will be called
     instead of the panel being opened.  However, you can show the panel from the
@@ -264,7 +264,7 @@ Represents a widget object.
 </api>
 
 <api name="panel">
-@property {string}
+@property {Panel}
   A [panel](#module/addon-kit/panel) to open when the user clicks on the widget.
 </api>
 
