@@ -128,7 +128,7 @@ The width of the panel in pixels.
 </api>
 
 <api name="contentURL">
-@property {URL}
+@property {string}
 The URL of the content loaded in the panel.
 </api>
 

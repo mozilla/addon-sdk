@@ -113,8 +113,8 @@ tests.testAutoDestructor = function(test) {
 tests.testValidateOptions = function(test) {
   test.assertRaises(
     function () Page({ contentURL: 'home' }),
-    "The `contentURL` option must be a URL.",
-    "Validation correctly denied a non-string content"
+    "The `contentURL` option must be a valid URL.",
+    "Validation correctly denied a non-URL contentURL"
   );
 
   test.assertRaises(
