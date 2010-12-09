@@ -44,12 +44,12 @@
 
    // Load the SecurableModule prerequisite.
    var securableModule;
+   var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
 
    if (global.require)
      // We're being loaded in a SecurableModule.
      securableModule = require("securable-module");
    else {
-     var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
      var ios = Cc['@mozilla.org/network/io-service;1']
                .getService(Ci.nsIIOService);
      var securableModuleURI = ios.newURI("securable-module.js", null,
@@ -74,6 +74,9 @@
        }
      }
    }
+
+   var localFS = new securableModule.LocalFileSystem(myURI);
+   var es5code = localFS.getFile(localFS.resolveModule(null, "es5"));
 
    function unloadLoader(reason) {
      this.require("unload").send(reason);
@@ -121,11 +124,7 @@
    }
 
    function modifyModuleSandbox(sandbox, options) {
-     let ES5 = this.require('es5');
-     if ('init' in ES5) {
-       let { Object, Array, Function } = sandbox.globalScope;
-       ES5.init(Object, Array, Function);
-     }
+     sandbox.evaluate(es5code);
      var filename = options.filename ? options.filename : null;
      sandbox.defineProperty("__url__", filename);
    }
