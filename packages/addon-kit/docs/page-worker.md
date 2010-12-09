@@ -75,7 +75,7 @@ its `destroy` method is called or the add-on is unloaded.
 @param [options] {object}
   The *`options`* parameter is optional, and if given it should be an object
   with any of the following keys:
-  @prop [contentURL] {URL,string}
+  @prop [contentURL] {string}
     The URL of the content to load in the panel.
   @prop [allow] {object}
     An object with keys to configure the permissions of the Page Worker.
@@ -98,7 +98,7 @@ its `destroy` method is called or the add-on is unloaded.
 </api>
 
 <api name="contentURL">
-@property {URL}
+@property {string}
 The URL of the content loaded.
 </api>
 
