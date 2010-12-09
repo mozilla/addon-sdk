@@ -32,12 +32,13 @@ that occurs in one of the content scripts.
 
 **Example**
 
-    const workers = require("content/worker");
-    let worker =  workers.Worker({
-      window: require("window-utils").activeWindow,
-      contentScript: "self.onMessage = function(data) { " +
-                     "  postMessage(window.location + ': Hi ' + data.name); " +
-                     "};",
+    let worker =  Worker({
+      window: myWindow,
+      contentScript: 'new ' + function WorkerGlobalScope() {
+        self.on('message', function onMessage(data) {
+            postMessage(window.location + ': Hi ' + data.name);
+        })
+      },
       onMessage: function(msg) {
         console.log(msg);
       }
