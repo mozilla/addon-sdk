@@ -146,13 +146,10 @@ create your content scripts in separate files and pass their URLs using the
 
     // A widget communicating bi-directionally with a content script.
     let widget = widgets.Widget({
-      label: "Bi-directional communication!",
+      label: "bi-directional communication!",
       content: "<foo>bar</foo>",
       contentScriptWhen: "ready",
-      contentScript: 'on("message", function(message) {' +
-                     '  alert("Got message: " + message);' +
-                     '});' +
-                     'postMessage("ready");",
+      contentScript: "this.onMessage = function(message) { alert('got message!'); }; postMessage('ready');",
       onMessage: function(message) {
         if (message == "ready")
           widget.postMessage("me too");
@@ -236,13 +233,6 @@ Represents a widget object.
 <api name="destroy">
 @method
   Removes the widget from the add-on bar.
-</api>
-
-<api name="postMessage">
-@method
-  Sends a message to the widget's content scripts.
-@param data {value}
-  The message to send.  Must be JSON-able.
 </api>
 
 <api name="on">
