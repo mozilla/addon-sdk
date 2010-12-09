@@ -47,7 +47,6 @@ const file = require("file");
 // map of property validations
 const valid = {
   contentURL: {
-    map: function (value) URL(value),
     ok: function (value) {
       try {
         URL(value);
@@ -57,7 +56,7 @@ const valid = {
       }
       return true;
     },
-    msg: 'The `contentURL` option must be a URL.'
+    msg: 'The `contentURL` option must be a valid URL.'
   },
   contentScriptFile: {
     is: ['undefined', 'null', 'string', 'array'],
@@ -136,7 +135,7 @@ const Loader = EventEmitter.compose({
   get contentURL() this._contentURL,
   set contentURL(value) {
     value = validate(value, valid.contentURL);
-    if (this._contentURL + '' != value + '') {
+    if (this._contentURL != value) {
       this._emit('propertyChange', {
         contentURL: this._contentURL = value
       });

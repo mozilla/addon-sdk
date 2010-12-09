@@ -277,9 +277,9 @@ Represents a widget object.
 </api>
 
 <api name="contentURL">
-@property {URL}
-  The [URL](#module/api-utils/url) of content to load into the widget.  This can
-  be [local content](#guide/web-content) or remote content, an image or web
+@property {string}
+  The URL of content to load into the widget.  This can be
+  [local content](#guide/web-content) or remote content, an image or web
   content.  Setting it updates the widget's appearance immediately.  However,
   if the widget was created using `content`, then this property is meaningless,
   and setting it has no effect.

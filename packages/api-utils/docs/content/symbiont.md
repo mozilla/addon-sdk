@@ -94,7 +94,7 @@ them once the DOM content of the page has been loaded.
 </api>
 
 <api name="contentURL">
-@property {URL}
+@property {string}
 The URL of the content loaded.
 </api>
 
