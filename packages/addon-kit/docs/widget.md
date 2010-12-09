@@ -151,8 +151,8 @@ create your content scripts in separate files and pass their URLs using the
       contentScriptWhen: "ready",
       contentScript: "this.onMessage = function(message) { alert('got message!'); }; postMessage('ready');",
       onMessage: function(message) {
-        if (message == "ready")
-          widget.postMessage("me too");
+        if (message.data == "ready")
+          widget.postMessage(origMessage);
       }
     });
 
