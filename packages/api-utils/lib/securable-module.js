@@ -244,11 +244,11 @@
                  };
                })(sandbox.globalScope.Iterator)
              );
-             sandbox.evaluate("var exports = {};");
-             self.modules[path] = sandbox.getProperty("exports");
              self.module_infos[path] = module_info;
              if (self.modifyModuleSandbox)
                self.modifyModuleSandbox(sandbox, module_info);
+             sandbox.evaluate("var exports = {};");
+             self.modules[path] = sandbox.getProperty("exports");
              sandbox.evaluate(module_info);
            }
            exports = self.modules[path];
