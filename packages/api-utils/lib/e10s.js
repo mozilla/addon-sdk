@@ -209,6 +209,8 @@ exports.createProcess = function createProcess(options) {
     });
 
   process.eval(require("self").data.url("bootstrap-remote-process.js"));
+  process.sendMessage("addInjectedSandboxScript",
+                      require("cuddlefish").es5code);
 
   return process;
 };

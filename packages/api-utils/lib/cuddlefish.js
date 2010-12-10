@@ -76,7 +76,10 @@
    }
 
    var localFS = new securableModule.LocalFileSystem(myURI);
-   var es5code = localFS.getFile(localFS.resolveModule(null, "es5"));
+   var es5path = localFS.resolveModule(null, "es5");
+   var es5code = exports.es5code = localFS.getFile(es5path);
+
+   es5code.filename = es5path;
 
    function unloadLoader(reason) {
      this.require("unload").send(reason);
@@ -91,7 +94,7 @@
            var loader = this;
            return {
              main: function main(options, callbacks) {
-               var e10s = loader.require("e10s");  
+               var e10s = loader.require("e10s");
                var process = e10s.createProcess();
                loader.console.log("starting main in remote process.");
                process.sendMessage("startMain", options.main);

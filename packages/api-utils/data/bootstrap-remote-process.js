@@ -43,6 +43,8 @@
 
 var global = this;
 
+var injectedSandboxScripts = [];
+
 // Taken from plain-text-console.js.
 function stringify(arg) {
   try {
@@ -111,21 +113,13 @@ function makeRequire(base) {
     }
 
     var module = createSandbox();
-    if (!sysPrint && !ES5 && !loadingES5) {
-      loadingES5 = true;
-      ES5 = makeRequire(null)("es5");
+
+    function injectScript(script) {
+      evalInSandbox(module, '//@line 1 "' + script.filename + 
+                    '"\n' + script.contents);  
     }
 
-    if (!sysPrint && ES5 && 'init' in ES5) {
-      ES5.init(module.Object, module.Array, module.Function);
-      module.Iterator = (function(DefaultIterator) {
-        return function Iterator(obj, keysOnly) {
-          if ("__iterator__" in obj && !keysOnly)
-            return obj.__iterator__.call(obj, false, true);
-          return DefaultIterator(obj, keysOnly);
-        };
-      })(module.Iterator);
-    }
+    injectedSandboxScripts.forEach(injectScript);
 
     modules[response.script.filename] = resolvedNames[name] = module;
   
@@ -145,25 +139,18 @@ function makeRequire(base) {
            module[name] = global[name];
          });
 
-    // This is for running CommonJS compliance tests only.
-    if (sysPrint)
-      module.sys = { print: sysPrint };
+    injectScript(response.script);
 
-    evalInSandbox(module, '//@line 1 "' + response.script.filename + 
-                  '"\n' + response.script.contents);
-  
     return module.exports;
   };
   return require;
 }
 
-// This is for running CommonJS compliance tests only.
-var sysPrint = null;
-registerReceiver("enableSysPrint", function() {
-  sysPrint = function sysPrint(msg, type) {
-    sendMessage("sys:print", msg, type);
-  }
-});
+registerReceiver(
+  "addInjectedSandboxScript",
+  function(name, script) {
+    injectedSandboxScripts.push(script);
+  });
 
 registerReceiver(
   "startMain",
@@ -182,6 +169,3 @@ registerReceiver(
     if ('main' in main)
       main.main(options, callbacks);
   });
-
-var ES5;
-var loadingES5 = false;
