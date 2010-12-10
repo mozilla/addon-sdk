@@ -7,6 +7,7 @@ from copy import copy
 import simplejson as json
 from cuddlefish import packaging
 from cuddlefish.bunch import Bunch
+from cuddlefish.version import get_version
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
 MOZRUNNER_BIN_NOT_FOUND_HELP = """
@@ -601,15 +602,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['metadata'] = packaging.get_metadata(pkg_cfg, deps)
 
-    mydir = os.path.dirname(os.path.abspath(__file__))
-    sdk_version = ""
-    try:
-        sdk_top = os.path.dirname(os.path.dirname(mydir))
-        f = open(os.path.join(sdk_top, ".version"), "r")
-        sdk_version = f.read().strip()
-    except EnvironmentError:
-        # unable to open .version file
-        pass
+    sdk_version = get_version(env_root)
     harness_options['sdkVersion'] = sdk_version
 
     packaging.call_plugins(pkg_cfg, deps)
@@ -619,6 +612,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if options.templatedir:
         app_extension_dir = os.path.abspath(options.templatedir)
     else:
+        mydir = os.path.dirname(os.path.abspath(__file__))
         if sys.platform == "darwin":
             # If we're on OS X, at least point into the XULRunner
             # app dir so we run as a proper app if using XULRunner.
