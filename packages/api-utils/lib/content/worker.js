@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const ES5 = require('es5');
+const es5code = require('cuddlefish').es5code;
 const { Trait } = require('traits');
 const { EventEmitter } = require('events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -170,7 +170,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     );
 
     // Shimming natives in sandbox so that they support ES5 features
-    ES5.init(sandbox.Object, sandbox.Array, sandbox.Function);
+    Cu.evalInSandbox(es5code.contents, sandbox, "1.8", es5code.filename);
 
     let window = port._window;
     let publicAPI = this._public;
