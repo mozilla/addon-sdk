@@ -41,41 +41,6 @@
 // Set up our "proxy" objects that just send messages to our parent
 // process to do the real work.
 
-var injectedSandboxScripts = [];
-
-// Taken from plain-text-console.js.
-function stringify(arg) {
-  try {
-    return String(arg);
-  }
-  catch(ex) {
-    return "<toString() error>";
-  }
-}
-
-var console = {
-  exception: function(e) {
-    sendMessage('console:exception', e);
-  },
-  trace: function() {
-    sendMessage('console:trace', new Error());
-  }
-};
-
-['log', 'debug', 'info', 'warn', 'error'].forEach(function(method) {
-  console[method] = function() {
-    sendMessage('console:' + method, Array.map(arguments, stringify));
-  }
-});
-
-var memory = {
-  track: function() {
-    /* TODO */
-  }
-};
-
-var modules = {};
-
 var chrome = {
   createHandle: function() {
     return createHandle();
@@ -100,6 +65,41 @@ var chrome = {
   }
 };
 
+var injectedSandboxScripts = [];
+
+// Taken from plain-text-console.js.
+function stringify(arg) {
+  try {
+    return String(arg);
+  }
+  catch(ex) {
+    return "<toString() error>";
+  }
+}
+
+var console = {
+  exception: function(e) {
+    chrome.send('console:exception', e);
+  },
+  trace: function() {
+    chrome.send('console:trace', new Error());
+  }
+};
+
+['log', 'debug', 'info', 'warn', 'error'].forEach(function(method) {
+  console[method] = function() {
+    chrome.send('console:' + method, Array.map(arguments, stringify));
+  }
+});
+
+var memory = {
+  track: function() {
+    /* TODO */
+  }
+};
+
+var modules = {};
+
 function makeRequire(base) {
   var resolvedNames = {};  
 
@@ -111,7 +111,7 @@ function makeRequire(base) {
 
     // if not, resolve relative import names by asking the browser-process
     // side for the URL/filename of the module this points to
-    var response = callMessage("require", base, name)[0];
+    var response = chrome.call("require", base, name);
     switch (response.code) {
     case "not-found":
       throw new Error("Unknown module '" + name + "'.");
@@ -162,13 +162,13 @@ function makeRequire(base) {
   return require;
 }
 
-registerReceiver(
+chrome.on(
   "addInjectedSandboxScript",
   function(name, script) {
     injectedSandboxScripts.push(script);
   });
 
-registerReceiver(
+chrome.on(
   "startMain",
   function(name, mainName, options) {
     var mainRequire = makeRequire(null);
@@ -178,7 +178,7 @@ registerReceiver(
       quit: function quit(status) {
         if (status === undefined)
           status = "OK";
-        sendMessage("quit", status);
+        chrome.send("quit", status);
       }
     };
 
