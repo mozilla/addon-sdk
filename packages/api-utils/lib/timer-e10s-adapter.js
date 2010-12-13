@@ -58,15 +58,15 @@ if (this.chrome) {
       cb(); // yay race conditions
   });
 } else {
-  exports.register = function(process) {
+  exports.register = function(addon) {
     var timer = require("timer");
-    process.registerReceiver("setTimeout", function(name, ms) {
+    addon.on("setTimeout", function(name, ms) {
       var id = timer.setTimeout(function() {
-        process.sendMessage("onTimeout", id);
+        addon.send("onTimeout", id);
       }, ms);
       return id;
     });
-    process.registerReceiver("clearTimeout", function(name, id) {
+    addon.on("clearTimeout", function(name, id) {
       timer.clearTimeout(id);
     });
   };

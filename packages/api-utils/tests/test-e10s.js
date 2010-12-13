@@ -59,7 +59,7 @@ function makeConsoleTest(options) {
         test.done();
       }
     });
-    process.sendMessage("startMain", options.main);
+    process.send("startMain", options.main);
     test.waitUntilDone();
   };
 }
@@ -223,12 +223,12 @@ exports.testCommonJSCompliance = function(test) {
       };      
     }
 
-    process.sendMessage("addInjectedSandboxScript", {
+    process.send("addInjectedSandboxScript", {
       filename: "<string>",
       contents: "(" + uneval(injectSysPrint) + ")(this);"
     });
 
-    process.sendMessage("startMain", "program");
+    process.send("startMain", "program");
   }
 
   function runNextComplianceTest() {

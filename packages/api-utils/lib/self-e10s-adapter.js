@@ -78,17 +78,17 @@ if (this.chrome) {
     throw new Error("No data for package " + pkgName);
   }
 
-  exports.register = function(process) {
-    process.registerReceiver("self:id", function(name) {
+  exports.register = function(addon) {
+    addon.on("self:id", function(name) {
       return id;
     });
-    process.registerReceiver("self:load", function(name, path, stack) {
+    addon.on("self:load", function(name, path, stack) {
       let data_url = getURL(path, stack, 1);
       let fn = url.toFilename(data_url);
       let data = file.read(fn);
       return data;
     });
-    process.registerReceiver("self:url", function(name, path, stack) {
+    addon.on("self:url", function(name, path, stack) {
       return getURL(path, stack, 1);
     });
   }

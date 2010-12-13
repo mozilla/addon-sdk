@@ -75,8 +75,8 @@ if (this.chrome) {
     chrome.send("testsFound", tests, options.finderHandle);
   }
 } else {
-  exports.register = function(process) {
-    process.registerReceiver("testDone", function(name, remoteTest) {
+  exports.register = function(addon) {
+    addon.on("testDone", function(name, remoteTest) {
       var runner = remoteTest.testHandle.runner;
       runner.passed += remoteTest.passed;
       runner.failed += remoteTest.failed;
@@ -85,21 +85,21 @@ if (this.chrome) {
       runner.test.errors = remoteTest.errors;
       runner.done();
     });
-    process.registerReceiver("testPass", function(name, remoteTest, msg) {
+    addon.on("testPass", function(name, remoteTest, msg) {
       remoteTest.testHandle.runner.pass(msg);
     });
-    process.registerReceiver("testFail", function(name, remoteTest, msg) {
+    addon.on("testFail", function(name, remoteTest, msg) {
       remoteTest.testHandle.runner.fail(msg);
     });
-    process.registerReceiver("testsFound", function(name, remoteTests,
-                                                    finderHandle) {
+    addon.on("testsFound", function(name, remoteTests,
+                                    finderHandle) {
       var tests = [];
       remoteTests.forEach(function(remoteTest) {
         tests.push({
           testFunction: function(runner) {
             remoteTest.testHandle.runner = runner;
             runner.waitUntilDone();
-            process.sendMessage("runTest", remoteTest);
+            addon.send("runTest", remoteTest);
           },
           name: remoteTest.name
         });

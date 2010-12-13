@@ -102,7 +102,7 @@ TestFinder.prototype = {
       finderHandle.onTestsFound = function(testsFound) {
         cb(tests.concat(testsFound));
       };
-      process.sendMessage("startMain", "find-tests", {
+      process.send("startMain", "find-tests", {
         suites: remoteSuites,
         finderHandle: finderHandle
       });
