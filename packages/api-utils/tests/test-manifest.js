@@ -169,7 +169,7 @@ function copy(obj) {
 function createE10sHarness(test, modules, onQuit) {
   var harness = createHarness(test, modules);
 
-  var process = e10s.createProcess({
+  var process = e10s.createAddonProcess({
     packaging: harness.packaging,
     loader: harness.loader,
     console: harness.console,

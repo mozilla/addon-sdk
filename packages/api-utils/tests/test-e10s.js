@@ -51,7 +51,7 @@ function makeConsoleTest(options) {
       fakeConsole[name] = function() { msg(name, arguments); };
     });
 
-    var process = e10s.createProcess({
+    var process = e10s.createAddonProcess({
       console: fakeConsole,
       quit: function(status) {
         addAction(["quit", status]);
@@ -198,7 +198,7 @@ exports.testCommonJSCompliance = function(test) {
       },
       __proto__: console
     };
-    var process = e10s.createProcess({
+    var process = e10s.createAddonProcess({
       loader: loader,
       packaging: {
         getModuleInfo: function(url) {

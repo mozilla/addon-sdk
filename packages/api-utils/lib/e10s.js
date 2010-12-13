@@ -90,7 +90,7 @@ function makeScriptFrom(fs, moduleURL) {
 
 var defaultConsole = console;
 
-exports.createProcess = function createProcess(options) {
+exports.createAddonProcess = function createAddonProcess(options) {
   if (!options)
     options = {};
 
