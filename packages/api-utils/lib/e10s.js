@@ -44,7 +44,24 @@ let jetpackService = Cc["@mozilla.org/jetpack/service;1"]
                      .getService(Ci.nsIJetpackService);
 
 function AddonProcess(jetpack) {
+  var syncListeners = {};
+
   this.on = function(name, cb) {
+    jetpack.registerReceiver(name, function() {
+      try {
+        // Intentionally do not return the return value of
+        // the function; we want developers to use registerCall() for that.
+        cb.apply(undefined, arguments);
+      } catch (e) {
+        console.exception(e);
+      }
+    });
+  };
+
+  this.registerCall = function(name, cb) {
+    if (name in syncListeners)
+      throw new Error("call already registered for '" + name + "'");
+    syncListeners[name] = true;
     jetpack.registerReceiver(name, errors.catchAndLog(cb));
   };
 
@@ -125,14 +142,18 @@ exports.createProcess = function createProcess(options) {
     console.exception(remoteException(exception));
   });
   
-  process.on(
+  jetpack.registerReceiver("dump", function(name, msg) {
+    dump(msg);
+  });
+
+  jetpack.registerReceiver(
     "core:exception",
     function(name, exception) {
       console.log("An exception occurred in the child Jetpack process.");
       console.exception(remoteException(exception));
     });
 
-  process.on(
+  process.registerCall(
     "require",
     function(name, base, path) {
       var loader = options.loader || require("parent-loader");

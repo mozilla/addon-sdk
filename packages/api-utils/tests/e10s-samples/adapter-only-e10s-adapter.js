@@ -4,7 +4,7 @@ if (this.chrome) {
   };
 } else {
   exports.register = function(addon) {
-    addon.on("superpower", function(name, a, b) {
+    addon.registerCall("superpower", function(name, a, b) {
       return "hello " + a + " " + b;
     });
   };

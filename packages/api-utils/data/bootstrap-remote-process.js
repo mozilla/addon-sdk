@@ -56,19 +56,26 @@ var chrome = {
   removeListener: function(type, listener) {
     unregisterReceiver(type, listener);
   },
-  send: function() {
-    sendMessage.apply(undefined, arguments);
+  send: function(type) {
+    sendMessage.apply(this, arguments);
   },
-  call: function(type) {
-    var result = callMessage.apply(undefined, arguments);
+  call: function(name) {
+    var result = callMessage.apply(this, arguments);
     if (result.length > 1)
-      throw new Error("More than one result received for message '" + type +
+      throw new Error("More than one result received for call '" + name +
                       "': " + result.length);
     if (result.length == 0)
-      throw new Error("No receiver!");
+      throw new Error("No receiver registered for call '" + name + "'");
     return result[0];
   }
 };
+
+// Use this for really low-level debugging of this script.
+function dump(msg) {
+  // Don't use chrome.send() to avoid infinite recursion when
+  // debugging chrome.send() itself.
+  sendMessage("dump", msg);
+}
 
 // Taken from plain-text-console.js.
 function stringify(arg) {

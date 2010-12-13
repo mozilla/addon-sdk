@@ -6,7 +6,7 @@ if (this.chrome) {
   var superpower = require("e10s-samples/superpower");
 
   exports.register = function(addon) {
-    addon.on("superpower", function(name, a, b) {
+    addon.registerCall("superpower", function(name, a, b) {
       return superpower.use(a, b);
     });
   };

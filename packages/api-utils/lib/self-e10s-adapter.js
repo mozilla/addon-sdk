@@ -79,16 +79,16 @@ if (this.chrome) {
   }
 
   exports.register = function(addon) {
-    addon.on("self:id", function(name) {
+    addon.registerCall("self:id", function(name) {
       return id;
     });
-    addon.on("self:load", function(name, path, stack) {
+    addon.registerCall("self:load", function(name, path, stack) {
       let data_url = getURL(path, stack, 1);
       let fn = url.toFilename(data_url);
       let data = file.read(fn);
       return data;
     });
-    addon.on("self:url", function(name, path, stack) {
+    addon.registerCall("self:url", function(name, path, stack) {
       return getURL(path, stack, 1);
     });
   }
