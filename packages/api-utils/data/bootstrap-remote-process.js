@@ -38,9 +38,14 @@
 // infrastructure and receivers needed to start a Jetpack-based addon
 // in a separate process.
 
-// Set up our "proxy" objects that just send messages to our parent
-// process to do the real work.
+// A list of scripts to inject into all new CommonJS module sandboxes.
+var injectedSandboxScripts = [];
 
+// A table of all CommonJS modules currently loaded.
+var modules = {};
+
+// This object represents the chrome process, and can be used to
+// communicate with it.
 var chrome = {
   createHandle: function() {
     return createHandle();
@@ -65,8 +70,6 @@ var chrome = {
   }
 };
 
-var injectedSandboxScripts = [];
-
 // Taken from plain-text-console.js.
 function stringify(arg) {
   try {
@@ -77,6 +80,8 @@ function stringify(arg) {
   }
 }
 
+// Set up our "proxy" objects that just send messages to our parent
+// process to do the real work.
 var console = {
   exception: function(e) {
     chrome.send('console:exception', e);
@@ -97,8 +102,6 @@ var memory = {
     /* TODO */
   }
 };
-
-var modules = {};
 
 function makeRequire(base) {
   var resolvedNames = {};  
