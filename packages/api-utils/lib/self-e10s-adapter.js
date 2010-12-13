@@ -38,14 +38,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (this.sendMessage) {
-  exports.id = callMessage("self:id")[0];
+if (this.chrome) {
+  exports.id = chrome.call("self:id");
   exports.data = {
     load: function(path) {
-      return callMessage("self:load", path, new Error().stack)[0];
+      return chrome.call("self:load", path, new Error().stack);
     },
     url: function(path) {
-      return callMessage("self:url", path, new Error().stack)[0];
+      return chrome.call("self:url", path, new Error().stack);
     }
   };
 } else {

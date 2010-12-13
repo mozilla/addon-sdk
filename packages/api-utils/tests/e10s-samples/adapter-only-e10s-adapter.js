@@ -1,6 +1,6 @@
-if (this.sendMessage) {
+if (this.chrome) {
   exports.use = function(a, b) {
-    return callMessage("superpower", a, b)[0];
+    return chrome.call("superpower", a, b);
   };
 } else {
   exports.register = function(process) {

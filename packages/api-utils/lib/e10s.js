@@ -88,6 +88,7 @@ exports.createProcess = function createProcess(options) {
     options = {};
 
   var process = new JetpackProcess();
+  var registeredModules = {};
 
   var console = options.console || defaultConsole;
   var pkg = options.packaging || packaging;
@@ -170,7 +171,13 @@ exports.createProcess = function createProcess(options) {
         if (adapterModuleInfo) {
           // e10s adapter found!
           try {
-            loader.require(adapterModuleName).register(process);
+            if (!(adapterModuleURL in registeredModules)) {
+              // This e10s adapter has already been loaded for this
+              // addon process, and we only really need to give it the
+              // absolute URL of the adapter.
+              registeredModules[adapterModuleURL] = true;
+              loader.require(adapterModuleName).register(process);
+            }
           } catch (e) {
             console.exception(e);
             return {code: "error"};

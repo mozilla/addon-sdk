@@ -41,8 +41,6 @@
 // Set up our "proxy" objects that just send messages to our parent
 // process to do the real work.
 
-var global = this;
-
 var injectedSandboxScripts = [];
 
 // Taken from plain-text-console.js.
@@ -77,6 +75,30 @@ var memory = {
 };
 
 var modules = {};
+
+var chrome = {
+  createHandle: function() {
+    return createHandle();
+  },
+  on: function(type, listener) {
+    registerReceiver(type, listener);
+  },
+  removeListener: function(type, listener) {
+    unregisterReceiver(type, listener);
+  },
+  send: function() {
+    sendMessage.apply(undefined, arguments);
+  },
+  call: function(type) {
+    var result = callMessage.apply(undefined, arguments);
+    if (result.length > 1)
+      throw new Error("More than one result received for message '" + type +
+                      "': " + result.length);
+    if (result.length == 0)
+      throw new Error("No receiver!");
+    return result[0];
+  }
+};
 
 function makeRequire(base) {
   var resolvedNames = {};  
@@ -131,13 +153,7 @@ function makeRequire(base) {
     module.__url__ = response.script.filename;
   
     if (response.needsMessaging)
-      ["registerReceiver",
-       "createHandle",
-       "sendMessage",
-       "callMessage"].forEach(
-         function(name) {
-           module[name] = global[name];
-         });
+      module.chrome = chrome;
 
     injectScript(response.script);
 
