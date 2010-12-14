@@ -97,7 +97,7 @@ TestFinder.prototype = {
       });
 
     if (this.testOutOfProcess && remoteSuites.length > 0) {
-      var process = require("e10s").createAddonProcess();
+      var process = require("e10s").AddonProcess();
       var finderHandle = process.createHandle();
       finderHandle.onTestsFound = function(testsFound) {
         cb(tests.concat(testsFound));
