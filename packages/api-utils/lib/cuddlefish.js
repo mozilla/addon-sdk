@@ -44,12 +44,12 @@
 
    // Load the SecurableModule prerequisite.
    var securableModule;
+   var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
 
    if (global.require)
      // We're being loaded in a SecurableModule.
      securableModule = require("securable-module");
    else {
-     var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
      var ios = Cc['@mozilla.org/network/io-service;1']
                .getService(Ci.nsIIOService);
      var securableModuleURI = ios.newURI("securable-module.js", null,
@@ -75,12 +75,18 @@
      }
    }
 
+   var localFS = new securableModule.LocalFileSystem(myURI);
+   var es5path = localFS.resolveModule(null, "es5");
+   var es5code = exports.es5code = localFS.getFile(es5path);
+
+   es5code.filename = es5path;
+
    function unloadLoader(reason) {
      this.require("unload").send(reason);
    }
 
    function maybeLoadMainInJetpackProcess(delegate, packaging) {
-     return function getModuleExports(basePath, module) {     
+     return function getModuleExports(basePath, module) {
        if (module == packaging.options.main) {
          var mainURL = this.fs.resolveModule(basePath, module);
          var mainInfo = packaging.getModuleInfo(mainURL);
@@ -88,7 +94,7 @@
            var loader = this;
            return {
              main: function main(options, callbacks) {
-               var e10s = loader.require("e10s");  
+               var e10s = loader.require("e10s");
                var process = e10s.createProcess();
                loader.console.log("starting main in remote process.");
                process.sendMessage("startMain", options.main);
@@ -120,16 +126,8 @@
      };
    }
 
-   function modifyModuleSandbox(sandbox, options, module) {
-     // Let's not infinitely recurse.
-     if (module === 'es5')
-       return;
-
-     let ES5 = this.require('es5');
-     if ('init' in ES5) {
-       let { Object, Array, Function } = sandbox.globalScope;
-       ES5.init(Object, Array, Function);
-     }
+   function modifyModuleSandbox(sandbox, options) {
+     sandbox.evaluate(es5code);
      var filename = options.filename ? options.filename : null;
      sandbox.defineProperty("__url__", filename);
    }
@@ -142,7 +140,7 @@
          }
          let mi = packaging.getModuleInfo(basePath);
          if (mi.needsChrome)
-           /* The module requires chrome, it can import whatever it 
+           /* The module requires chrome, it can import whatever it
             * wants. */
            return true;
          if (!mi.dependencies) {
@@ -165,14 +163,14 @@
              } else if (should_load != is_loading) {
                loader.console.warn("require(" + module + ") (called from " +
                                    basePath + ") is loading " + is_loading +
-                                   ", but is supposed to be loading " + 
+                                   ", but is supposed to be loading " +
                                    should_load);
                //return false; // enable this in 0.9
              }
-             return true; 
+             return true;
            }
          }
-         loader.console.warn("undeclared require(" + module + 
+         loader.console.warn("undeclared require(" + module +
                              ") called from " + basePath);
          //return false;  // enable this in 0.9
          return true;

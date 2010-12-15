@@ -61,28 +61,20 @@ Widgets emit the following types of [events](#guide/events).
 
 ### click ###
 
-This event is emitted when the widget is clicked.  Listeners are passed an event
-object that has a single property named `emitter` whose value is the widget that
-was clicked.
+This event is emitted when the widget is clicked.
 
 ### message ###
 
 This event is emitted when the widget's content scripts post a message.
-Listeners are passed an event object that has two properties named `emitter` and
-`data`.  `emitter` is the widget that was clicked.  `data` is the message posted
-by the content script.
+Listeners are passed the message as their first argument.
 
 ### mouseover ###
 
-This event is emitted when the user moves the mouse over the widget.  Listeners
-are passed an event object that has a single property named `emitter` whose
-value is the widget that was clicked.
+This event is emitted when the user moves the mouse over the widget.
 
 ### mouseout ###
 
 This event is emitted when the user moves the mouse away from the widget.
-Listeners are passed an event object that has a single property named `emitter`
-whose value is the widget that was clicked.
 
 ## Examples ##
 
@@ -98,7 +90,7 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
-      onClick: function(event) {
+      onClick: function() {
         require("tabs").activeTab.url = "http://www.google.com/";
       }
     });
@@ -107,10 +99,10 @@ create your content scripts in separate files and pass their URLs using the
     widgets.Widget({
       label: "Widget with changing image on mouseover",
       contentURL: "http://www.yahoo.com/favicon.ico",
-      onMouseover: function(event) {
+      onMouseover: function() {
         this.contentURL = "http://www.bing.com/favicon.ico";
       },
-      onMouseout: function(event) {
+      onMouseout: function() {
         this.contentURL = "http://www.yahoo.com/favicon.ico";
       }
     });
@@ -134,11 +126,10 @@ create your content scripts in separate files and pass their URLs using the
                      'setTimeout(function() {' +
                      '  document.location = "http://www.flickr.com/explore/";' +
                      '}, 5 * 60 * 1000);',
-      onMessage: function(event) {
-        var imgSrc = event.data;
+      onMessage: function(imgSrc) {
         this.contentURL = imgSrc;
       },
-      onClick: function(event) {
+      onClick: function() {
         require("tabs").activeTab.url = this.contentURL;
       }
     });
@@ -152,6 +143,21 @@ create your content scripts in separate files and pass their URLs using the
     require("timer").setInterval(function() {
       myWidget.width += 10;
     }, 1000);
+
+    // A widget communicating bi-directionally with a content script.
+    let widget = widgets.Widget({
+      label: "Bi-directional communication!",
+      content: "<foo>bar</foo>",
+      contentScriptWhen: "ready",
+      contentScript: 'on("message", function(message) {' +
+                     '  alert("Got message: " + message);' +
+                     '});' +
+                     'postMessage("ready");",
+      onMessage: function(message) {
+        if (message == "ready")
+          widget.postMessage("me too");
+      }
+    });
 
 <api-name="Widget">
 @class
@@ -179,7 +185,7 @@ Represents a widget object.
     content. Widgets must have either the `content` property or the
     `contentURL` property set.
 
-  @prop [panel] {panel}
+  @prop [panel] {Panel}
     An optional [panel](#module/addon-kit/panel) to open when the user clicks on
     the widget. Note: If you also register a "click" listener, it will be called
     instead of the panel being opened.  However, you can show the panel from the
@@ -232,6 +238,13 @@ Represents a widget object.
   Removes the widget from the add-on bar.
 </api>
 
+<api name="postMessage">
+@method
+  Sends a message to the widget's content scripts.
+@param data {value}
+  The message to send.  Must be JSON-able.
+</api>
+
 <api name="on">
 @method
   Registers an event listener with the widget.
@@ -264,16 +277,16 @@ Represents a widget object.
 </api>
 
 <api name="contentURL">
-@property {URL}
-  The [URL](#module/api-utils/url) of content to load into the widget.  This can
-  be [local content](#guide/web-content) or remote content, an image or web
+@property {string}
+  The URL of content to load into the widget.  This can be
+  [local content](#guide/web-content) or remote content, an image or web
   content.  Setting it updates the widget's appearance immediately.  However,
   if the widget was created using `content`, then this property is meaningless,
   and setting it has no effect.
 </api>
 
 <api name="panel">
-@property {string}
+@property {Panel}
   A [panel](#module/addon-kit/panel) to open when the user clicks on the widget.
 </api>
 

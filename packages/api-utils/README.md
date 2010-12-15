@@ -24,4 +24,8 @@ API Utils also has the following characteristics:
 API Utils is intended to be very small and only contain the bare
 minimum of functionality that all extensions need.
 
+Note that the API Utils package has not fully stabilized yet, meaning that
+we do still expect to make incompatible changes to its APIs in future releases
+of the SDK.
+
   [nose]: http://code.google.com/p/python-nose/

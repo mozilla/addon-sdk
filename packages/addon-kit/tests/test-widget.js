@@ -72,10 +72,8 @@ exports.testConstructor = function(test) {
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
 
-  /**
-   * Helper for testing a single widget.
-   * Confirms proper addition and content setup.
-   */
+  // Helper for testing a single widget.
+  // Confirms proper addition and content setup.
   function testSingleWidget(widgetOptions) {
     let startCount = widgetCount();
     let widget = widgets.Widget(widgetOptions);
@@ -108,9 +106,9 @@ exports.testConstructor = function(test) {
     content: "oh yeah",
     contentScript: "postMessage(document.body.innerHTML);",
     contentScriptWhen: "ready",
-    onMessage: function ({ emitter: widget, data: message }) {
-      test.assertEqual(widget.content, message, "content matches");
-      widget.destroy();
+    onMessage: function (message) {
+      test.assertEqual(this.content, message, "content matches");
+      this.destroy();
       doneTest();
     }
   }));
@@ -121,9 +119,9 @@ exports.testConstructor = function(test) {
     content: "<div>oh yeah</div>",
     contentScript: "postMessage(document.body.innerHTML);",
     contentScriptWhen: "ready",
-    onMessage: function ({ emitter: widget, data: message }) {
-      test.assertEqual(widget.content, message, "content matches");
-      widget.destroy();
+    onMessage: function (message) {
+      test.assertEqual(this.content, message, "content matches");
+      this.destroy();
       doneTest();
     }
   }));
@@ -136,11 +134,11 @@ exports.testConstructor = function(test) {
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
     contentScriptWhen: "ready",
-    onMessage: function ({ emitter: widget, data: message }) {
+    onMessage: function (message) {
       test.assertEqual(message.title, "foo", "title matches");
       test.assertEqual(message.tag, "P", "element matches");
       test.assertEqual(message.content, "bar", "element content matches");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -153,11 +151,11 @@ exports.testConstructor = function(test) {
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
     contentScriptWhen: "ready",
-    onMessage: function ({ emitter: widget, data: message }) {
+    onMessage: function (message) {
       test.assertEqual(message.title, "foo", "title matches");
       test.assertEqual(message.tag, "P", "element matches");
       test.assertEqual(message.content, "bar", "element content matches");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -170,9 +168,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('click', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onClick: function({ emitter: widget }) {
+    onClick: function() {
       test.pass("onClick called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -185,9 +183,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseover: function({ emitter: widget }) {
+    onMouseover: function() {
       test.pass("onMouseover called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -200,9 +198,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseout: function({ emitter: widget }) {
+    onMouseout: function() {
       test.pass("onMouseout called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -215,9 +213,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('click', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onClick: function({ emitter: widget }) {
+    onClick: function() {
       test.pass("onClick called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -230,9 +228,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseover: function({ emitter: widget }) {
+    onMouseover: function() {
       test.pass("onMouseover called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -245,9 +243,9 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onMouseout: function({ emitter: widget }) {
+    onMouseout: function() {
       test.pass("onMouseout called");
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -270,14 +268,14 @@ exports.testConstructor = function(test) {
     content: "<div id='me'>foo</div>",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "ready",
-    onMessage: function({ emitter: widget, data: message }) {
-      if (!widget.flag) {
-        widget.content = "<div id='me'>bar</div>";
-        widget.flag = 1;
+    onMessage: function(message) {
+      if (!this.flag) {
+        this.content = "<div id='me'>bar</div>";
+        this.flag = 1;
       }
       else {
-        test.assertEqual(widget.content, "<div id='me'>bar</div>");
-        widget.destroy();
+        test.assertEqual(this.content, "<div id='me'>bar</div>");
+        this.destroy();
         doneTest();
       }
     }
@@ -291,17 +289,17 @@ exports.testConstructor = function(test) {
     contentURL: url1,
     contentScript: "postMessage(document.location.href);",
     contentScriptWhen: "ready",
-    onMessage: function({ emitter: widget, data: message }) {
-      if (!widget.flag) {
-        test.assertEqual(widget.contentURL.toString(), url1);
+    onMessage: function(message) {
+      if (!this.flag) {
+        test.assertEqual(this.contentURL.toString(), url1);
         test.assertEqual(message, url1);
-        widget.contentURL = url2;
-        widget.flag = 1;
+        this.contentURL = url2;
+        this.flag = 1;
       }
       else {
-        test.assertEqual(widget.contentURL.toString(), url2);
+        test.assertEqual(this.contentURL.toString(), url2);
         test.assertEqual(message, url2);
-        widget.destroy();
+        this.destroy();
         doneTest();
       }
     }
@@ -314,9 +312,9 @@ exports.testConstructor = function(test) {
     tooltip: "foo",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "start",
-    onMessage: function({ emitter: widget, data: message }) {
-      test.assertEqual(widget.tooltip, "foo", "tooltip matches");
-      widget.destroy();
+    onMessage: function(message) {
+      test.assertEqual(this.tooltip, "foo", "tooltip matches");
+      this.destroy();
       doneTest();
     }
   }));
@@ -327,9 +325,9 @@ exports.testConstructor = function(test) {
     content: "oh yeah",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "start",
-    onMessage: function({ emitter: widget, data: message }) {
-      test.assertEqual(widget.tooltip, widget.label, "tooltip fallbacks to label");
-      widget.destroy();
+    onMessage: function(message) {
+      test.assertEqual(this.tooltip, this.label, "tooltip fallbacks to label");
+      this.destroy();
       doneTest();
     }
   }));
@@ -342,10 +340,10 @@ exports.testConstructor = function(test) {
     content: "<div id='me'>foo</div>",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "start",
-    onMessage: function({ emitter: widget, data: message }) {
-      widget.tooltip = "bar";
-      test.assertEqual(widget.tooltip, "bar", "tooltip gets updated");
-      widget.destroy();
+    onMessage: function(message) {
+      this.tooltip = "bar";
+      test.assertEqual(this.tooltip, "bar", "tooltip gets updated");
+      this.destroy();
       doneTest();
     }
   }));
@@ -411,17 +409,17 @@ exports.testConstructor = function(test) {
     width: 200,
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
     contentScriptWhen: "ready",
-    onMessage: function({ emitter: widget, data: message }) {
-      test.assertEqual(widget.width, 200);
+    onMessage: function(message) {
+      test.assertEqual(this.width, 200);
 
       let node = widgetNode(0);
-      test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
-      test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
-      widget.width = 300;
-      test.assertEqual(widget.width, node.style.minWidth.replace("px", ""));
-      test.assertEqual(widget.width, node.firstElementChild.style.width.replace("px", ""));
+      test.assertEqual(this.width, node.style.minWidth.replace("px", ""));
+      test.assertEqual(this.width, node.firstElementChild.style.width.replace("px", ""));
+      this.width = 300;
+      test.assertEqual(this.width, node.style.minWidth.replace("px", ""));
+      test.assertEqual(this.width, node.firstElementChild.style.width.replace("px", ""));
 
-      widget.destroy();
+      this.destroy();
       doneTest();
     }
   }));
@@ -476,9 +474,9 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
                    "evt.initEvent('click', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "ready",
-    onClick: function({ emitter: widget }) {
+    onClick: function() {
       onClickCalled = true;
-      widget.panel.show();
+      this.panel.show();
     },
     panel: require("panel").Panel({
       contentURL: "data:text/html,<body>Look ma, a panel!</body>",
@@ -493,6 +491,26 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
     })
   });
   test.waitUntilDone();
+};
+
+exports.testWidgetMessaging = function testWidgetMessaging(test) {
+  test.waitUntilDone();
+  let origMessage = "foo";
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    label: "foo",
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    onMessage: function(message) {
+      if (message == "ready")
+        widget.postMessage(origMessage);
+      else {
+        test.assertEqual(origMessage, message);
+        test.done();
+      }
+    }
+  });
 };
 
 /******************* helpers *********************/

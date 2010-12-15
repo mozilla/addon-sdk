@@ -99,7 +99,7 @@ exports.testTabProperties = function(test) {
         test.assert(tab.favicon, "favicon of the new tab is not empty");
         test.assertEqual(tab.style, null, "style of the new tab matches");
         test.assertEqual(tab.index, 1, "index of the new tab matches");
-        test.assertNotEqual(tab.getThumbnailURL(), null, "thumbnail of the new tab matches");
+        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
         closeBrowserWindow(window, function() test.done());
       }
     });

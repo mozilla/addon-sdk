@@ -254,25 +254,11 @@
              var api = self._makeApi(path);
              sandbox.defineProperty('require', api.require);
              sandbox.defineProperty('define', api.define);
-             // Override the default Iterator function with one that passes
-             // a second argument to custom iterator methods that identifies
-             // the call as originating from an Iterator function so the custom
-             // iterator method can return [key, value] pairs just like default
-             // iterators called via the default Iterator function.
-             sandbox.defineProperty('Iterator',
-               (function(DefaultIterator) {
-                 return function Iterator(obj, keysOnly) {
-                   if ("__iterator__" in obj && !keysOnly)
-                     return obj.__iterator__.call(obj, false, true);
-                   return DefaultIterator(obj, keysOnly);
-                 };
-               })(sandbox.globalScope.Iterator)
-             );
-             sandbox.evaluate("var exports = {};");
-             self.modules[path] = sandbox.getProperty("exports");
              self.module_infos[path] = module_info;
              if (self.modifyModuleSandbox)
                self.modifyModuleSandbox(sandbox, module_info);
+             sandbox.evaluate("var exports = {};");
+             self.modules[path] = sandbox.getProperty("exports");
              sandbox.evaluate(module_info);
            }
            exports = self.modules[path];

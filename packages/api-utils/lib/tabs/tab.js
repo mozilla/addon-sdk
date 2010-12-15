@@ -173,7 +173,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Thumbnail data URI of the page currently loaded in this tab.
    * @type {String}
    */
-  getThumbnailURL: function getThumbnailURL()
+  getThumbnail: function getThumbnail()
     getThumbnailURIForWindow(this._contentWindow),
   /**
    * Whether or not tab is pinned (Is an app-tab).

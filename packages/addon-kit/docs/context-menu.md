@@ -143,15 +143,14 @@ on a page whose URL contains "mozilla" as a substring:
 
     var myItem = contextMenu.Item({
       label: "My Mozilla Item",
-      contentScript: 'on("context", function (event) {' +
+      contentScript: 'on("context", function (node) {' +
                      '  return /mozilla/.test(document.URL);' +
                      '});'
     });
 
-Note that the listener function has a parameter called `event`.  This is an
-object with a single property `node`, which is the node in the page that the
-user context-clicked to invoke the menu.  You can use it to determine whether
-your item should be shown.
+Note that the listener function has a parameter called `node`.  This is the node
+in the page that the user context-clicked to invoke the menu.  You can use it to
+determine whether your item should be shown.
 
 You can both specify declarative contexts and listen for contexts in a content
 script.  In that case, the declarative contexts are evaluated first.  If they
@@ -163,8 +162,8 @@ This example takes advantage of that fact.  The listener can be assured that
     var myItem = contextMenu.Item({
       label: "My Mozilla Image Item",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("context", function (event) {' +
-                     '  return /mozilla/.test(event.node.src);' +
+      contentScript: 'on("context", function (node) {' +
+                     '  return /mozilla/.test(node.src);' +
                      '});'
     });
 
@@ -184,23 +183,21 @@ script like so:
 
     var myItem = contextMenu.Item({
       label: "My Item",
-      contentScript: 'on("click", function (event) {' +
+      contentScript: 'on("click", function (node, data) {' +
                      '  console.log("Item clicked!");' +
                      '});'
     });
 
-Note that the listener function has a parameter called `event`.  As with the
-`"context"` event, this is an object that describes an event, in this case the
-`"click"` event.  It has two properties, `node` and `data`.  `node` is the node
-that the user context-clicked to invoke the menu.  You can use it when
-performing some action.  `data` is the `data` property of the menu item that was
-clicked.  Since only top-level menu items have content scripts, `data` comes in
-handy for `Menu`s with sub-items.  For example:
+Note that the listener function has parameters called `node` and `data`.  `node`
+is the node that the user context-clicked to invoke the menu.  You can use it
+when performing some action.  `data` is the `data` property of the menu item
+that was clicked.  Since only top-level menu items have content scripts, this
+comes in handy for `Menu`s with sub-items.  For example:
 
     var myMenu = contextMenu.Menu({
       label: "My Menu",
-      contentScript: 'on("click", function (event) {' +
-                     '  console.log("You clicked " + event.data);' +
+      contentScript: 'on("click", function (node, data) {' +
+                     '  console.log("You clicked " + data);' +
                      '});',
       items: [
         contextMenu.Item({ label: "Item 1", data: "item1" }),
@@ -218,19 +215,14 @@ associated with the content script, the content script can call the global
     var myItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (event) {' +
-                     '  postMessage(event.node.src);' +
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
                      '});',
-      onMessage: function (event) {
-        var imgSrc = event.data;
+      onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
       }
     });
 
-The `event` object passed to `onMessage` has two properties, `data` and
-`emitter`.  `data` is the message passed from the content script's
-`postMessage`.  `emitter` is the item that owns the content script, in this
-case `myItem`.
 
 
 Examples
@@ -255,12 +247,11 @@ part of the page:
 
     var pageSourceItem = contextMenu.Item({
       label: "Edit Page Source",
-      contentScript: 'on("click", function (event) {' +
+      contentScript: 'on("click", function (node, data) {' +
                      '  postMessage(document.URL);' +
                      '});',
-      onMessage: function (event) {
-        var pageURL = event.data;
-        editSource(page.URL);
+      onMessage: function (pageURL) {
+        editSource(pageURL);
       }
     });
 
@@ -269,11 +260,10 @@ Show an "Edit Image" item when the menu is invoked on an image:
     var editImageItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (event) {' +
-                     '  postMessage(event.node.src);' +
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
                      '});',
-      onMessage: function (event) {
-        var imgSrc = event.data;
+      onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
       }
     });
@@ -287,11 +277,10 @@ mozilla.org or mozilla.com page:
         contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
         contextMenu.SelectorContext("img")
       ],
-      contentScript: 'on("click", function (event) {' +
-                     '  postMessage(event.node.src);' +
+      contentScript: 'on("click", function (node, data) {' +
+                     '  postMessage(node.src);' +
                      '});',
-      onMessage: function (event) {
-        var imgSrc = event.data;
+      onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
       }
     });
@@ -302,19 +291,18 @@ Show an "Edit Page Images" item when the page contains at least one image:
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
       context: contextMenu.PageContext(),
-      contentScript: 'on("context", function (event) {' +
+      contentScript: 'on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
                      '});' +
-                     'on("click", function (event) {' +
+                     'on("click", function (node, data) {' +
                      '  var imgs = document.querySelectorAll("img");' +
                      '  var imgSrcs = [];' +
                      '  for (var i = 0 ; i < imgs.length; i++)' +
                      '    imgSrcs.push(imgs[i].src);' +
                      '  postMessage(imgSrcs);' +
                      '});',
-      onMessage: function (event) {
-        var imgSrcs = event.data;
+      onMessage: function (imgSrcs) {
         openImageEditor(imgSrcs);
       }
     });
@@ -333,8 +321,8 @@ Google or Wikipedia with the text contained in the anchor:
     var searchMenu = contextMenu.Menu({
       label: "Search With",
       context: contextMenu.SelectorContext("a[href]"),
-      contentScript: 'on("click", function (event) {' +
-                     '  var searchURL = event.data + event.node.textContent;' +
+      contentScript: 'on("click", function (node, data) {' +
+                     '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
                      '});',
       items: [googleItem, wikipediaItem]
@@ -371,8 +359,8 @@ A labeled menu item that can perform an action when clicked.
   @prop [onMessage] {function}
     If the item is contained in the top-level context menu, this function will
     be called when the content script calls `postMessage`.  It will be passed
-    an event object with one property `data` whose value is the data that was
-    passed to `postMessage`.  Ignored if the item is contained in a submenu.
+    the data that was passed to `postMessage`.  Ignored if the item is contained
+    in a submenu.
 </api>
 <api name="destroy">
 @method
@@ -411,8 +399,8 @@ A labeled menu item that expands into a submenu.
   @prop [onMessage] {function}
     If the menu is contained in the top-level context menu, this function will
     be called when the content script calls `postMessage`.  It will be passed
-    an event object with one property `data` whose value is the data that was
-    passed to `postMessage`.  Ignored if the item is contained in a submenu.
+    the data that was passed to `postMessage`.  Ignored if the item is contained
+    in a submenu.
 </api>
 <api name="destroy">
 @method

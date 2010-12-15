@@ -12,6 +12,7 @@ tests.testSimplePageCreation = function(test) {
     onMessage: function (message) {
       test.assertEqual(message, "about:blank",
                        "Page Worker should start with a blank page by default");
+      test.assertEqual(this, page, "The 'this' object is the page itself.");
       test.done();
     }
   });
@@ -112,8 +113,8 @@ tests.testAutoDestructor = function(test) {
 tests.testValidateOptions = function(test) {
   test.assertRaises(
     function () Page({ contentURL: 'home' }),
-    "The `contentURL` option must be a URL.",
-    "Validation correctly denied a non-string content"
+    "The `contentURL` option must be a valid URL.",
+    "Validation correctly denied a non-URL contentURL"
   );
 
   test.assertRaises(

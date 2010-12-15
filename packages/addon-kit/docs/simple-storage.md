@@ -58,13 +58,10 @@ should not let that happen.
 To listen for quota notifications, register a listener for the `"OverQuota"`
 event.  It will be called when your storage goes over quota.
 
-    function myOnOverQuotaListener(event) {
+    function myOnOverQuotaListener() {
       console.log("Uh oh.");
     }
     simpleStorage.on("OverQuota", myOnOverQuotaListener);
-
-Note that the listener is passed an event object.  It has a single property
-named `emitter` whose value is the simple storage module.
 
 Listeners can also be removed:
 
