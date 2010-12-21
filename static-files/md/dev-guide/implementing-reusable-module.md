@@ -197,10 +197,9 @@ implementation as their only argument.
 Obviously, you don't have to pass the `--verbose` option to `cfx` if you don't
 want to; doing so just makes the output easier to read.
 
-## Next: Programming With the SDK ##
+## Next: Introducing the SDK's APIs ##
 
-Next we'll take a look at some aspects of programming with the SDK,
-starting with its [event handling framework](#guide/events).
+Next we'll summarise the [APIs provided by the SDK](#guide/api-guide).
 
   [CommonJS Specification]: http://wiki.commonjs.org/wiki/Modules/1.0
   [Globals]: #guide/globals
