@@ -88,7 +88,7 @@ loaded until its `destroy` method is called or the add-on is unloaded.
   @prop [allow] {object}
     An object with keys to configure the permissions on the page worker. The
     boolean key `script` controls if scripts from the page are allowed to run.
-    `script` defaults to false.
+    `script` defaults to true.
   @prop [contentScriptFile] {string,array}
     A local file URL or an array of local file URLs of content scripts to load.
     Content scripts specified by this option are loaded *before* those specified
@@ -102,8 +102,8 @@ loaded until its `destroy` method is called or the add-on is unloaded.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.
     Possible values are "start" (default), which loads them as soon as
-    the window object for the page worker has been created, and "ready", which
-    loads them once the DOM content of the page worker has been loaded.
+    the document element for the page worker has been created, and "ready",
+    which loads them once the DOM content of the page worker has been loaded.
   @prop [onMessage] {function}
     An optional "message" event listener.  See Events above.
 </api>
@@ -117,7 +117,7 @@ The URL of the content loaded.
 @property {object}
   A object describing permissions for the content.  It contains a single key
   named `script` whose value is a boolean that indicates whether or not to
-  execute script in the content.
+  execute script in the content.  `script` defaults to true.
 </api>
 
 <api name="contentScriptFile">
@@ -134,9 +134,9 @@ load.
 <api name="contentScriptWhen">
 @property {string}
 When to load the content scripts.
-Possible values are "start" (default), which loads them as soon as
-the window object for the page worker has been created, and "ready", which loads
-them once the DOM content of the page worker has been loaded.
+Possible values are "start" (default), which loads them as soon as the document
+element for the page worker has been created, and "ready", which loads them once
+the DOM content of the page worker has been loaded.
 </api>
 
 <api name="destroy">
