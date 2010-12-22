@@ -34,11 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (this.sendMessage) {
+if (this.chrome) {
   var timer = require("timer");
   var ut = require("unit-test");
 
-  registerReceiver(
+  chrome.on(
     "runTest",
     function(name, test) {
       var runner = new ut.TestRunner();
@@ -48,7 +48,7 @@ if (this.sendMessage) {
           test.passed = runner.test.passed;
           test.failed = runner.test.failed;
           test.errors = runner.test.errors;
-          sendMessage("testDone", test);
+          chrome.send("testDone", test);
         }
       });
     });
@@ -66,17 +66,17 @@ if (this.sendMessage) {
     options.suites.forEach(function(suite) {
       var module = require(suite);
       for (testName in module) {
-        var handle = createHandle();
+        var handle = chrome.createHandle();
         handle.testFunction = makeTest(suite, testName, module[testName]);
         handle.name = suite + "." + testName;
         tests.push({testHandle: handle, name: handle.name});
       }
     });
-    sendMessage("testsFound", tests, options.finderHandle);
+    chrome.send("testsFound", tests, options.finderHandle);
   }
 } else {
-  exports.register = function(process) {
-    process.registerReceiver("testDone", function(name, remoteTest) {
+  exports.register = function(addon) {
+    addon.on("testDone", function(name, remoteTest) {
       var runner = remoteTest.testHandle.runner;
       runner.passed += remoteTest.passed;
       runner.failed += remoteTest.failed;
@@ -85,21 +85,21 @@ if (this.sendMessage) {
       runner.test.errors = remoteTest.errors;
       runner.done();
     });
-    process.registerReceiver("testPass", function(name, remoteTest, msg) {
+    addon.on("testPass", function(name, remoteTest, msg) {
       remoteTest.testHandle.runner.pass(msg);
     });
-    process.registerReceiver("testFail", function(name, remoteTest, msg) {
+    addon.on("testFail", function(name, remoteTest, msg) {
       remoteTest.testHandle.runner.fail(msg);
     });
-    process.registerReceiver("testsFound", function(name, remoteTests,
-                                                    finderHandle) {
+    addon.on("testsFound", function(name, remoteTests,
+                                    finderHandle) {
       var tests = [];
       remoteTests.forEach(function(remoteTest) {
         tests.push({
           testFunction: function(runner) {
             remoteTest.testHandle.runner = runner;
             runner.waitUntilDone();
-            process.sendMessage("runTest", remoteTest);
+            addon.send("runTest", remoteTest);
           },
           name: remoteTest.name
         });

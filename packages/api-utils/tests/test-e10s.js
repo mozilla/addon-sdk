@@ -51,7 +51,7 @@ function makeConsoleTest(options) {
       fakeConsole[name] = function() { msg(name, arguments); };
     });
 
-    var process = e10s.createProcess({
+    var process = e10s.AddonProcess({
       console: fakeConsole,
       quit: function(status) {
         addAction(["quit", status]);
@@ -59,7 +59,7 @@ function makeConsoleTest(options) {
         test.done();
       }
     });
-    process.sendMessage("startMain", options.main);
+    process.send("startMain", options.main);
     test.waitUntilDone();
   };
 }
@@ -208,7 +208,7 @@ exports.testCommonJSCompliance = function(test) {
       },
       __proto__: console
     };
-    var process = e10s.createProcess({
+    var process = e10s.AddonProcess({
       loader: loader,
       packaging: {
         getModuleInfo: function(url) {
@@ -233,12 +233,12 @@ exports.testCommonJSCompliance = function(test) {
       };      
     }
 
-    process.sendMessage("addInjectedSandboxScript", {
+    process.send("addInjectedSandboxScript", {
       filename: "<string>",
       contents: "(" + uneval(injectSysPrint) + ")(this);"
     });
 
-    process.sendMessage("startMain", "program");
+    process.send("startMain", "program");
   }
 
   function runNextComplianceTest() {

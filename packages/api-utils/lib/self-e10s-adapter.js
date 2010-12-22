@@ -38,14 +38,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (this.sendMessage) {
-  exports.id = callMessage("self:id")[0];
+if (this.chrome) {
+  exports.id = chrome.call("self:id");
   exports.data = {
     load: function(path) {
-      return callMessage("self:load", path, new Error().stack)[0];
+      return chrome.call("self:load", path, new Error().stack);
     },
     url: function(path) {
-      return callMessage("self:url", path, new Error().stack)[0];
+      return chrome.call("self:url", path, new Error().stack);
     }
   };
 } else {
@@ -78,17 +78,17 @@ if (this.sendMessage) {
     throw new Error("No data for package " + pkgName);
   }
 
-  exports.register = function(process) {
-    process.registerReceiver("self:id", function(name) {
+  exports.register = function(addon) {
+    addon.registerCall("self:id", function(name) {
       return id;
     });
-    process.registerReceiver("self:load", function(name, path, stack) {
+    addon.registerCall("self:load", function(name, path, stack) {
       let data_url = getURL(path, stack, 1);
       let fn = url.toFilename(data_url);
       let data = file.read(fn);
       return data;
     });
-    process.registerReceiver("self:url", function(name, path, stack) {
+    addon.registerCall("self:url", function(name, path, stack) {
       return getURL(path, stack, 1);
     });
   }
