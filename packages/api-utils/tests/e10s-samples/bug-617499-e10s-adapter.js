@@ -1,17 +1,17 @@
-if (this.sendMessage) {
+if (this.chrome) {
   // TODO: register receiver for async msg.
-  registerReceiver("asyncy", function() {
+  chrome.on("asyncy", function() {
     console.log("i am an async message from firefox");
   });
   exports.go = function() {
     console.log("about to send sync message to firefox");
-    callMessage("superpower");
+    chrome.call("superpower");
     console.log("returned from sync message to firefox");
   };
 } else {
-  exports.register = function(process) {
-    process.registerReceiver("superpower", function(name) {
-      process.sendMessage("asyncy");
+  exports.register = function(addon) {
+    addon.registerCall("superpower", function(name) {
+      addon.send("asyncy");
     });
   };
 }
