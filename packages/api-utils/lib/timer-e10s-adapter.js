@@ -38,35 +38,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (this.sendMessage) {
+if (this.chrome) {
   var callbacks = {};
   exports.setTimeout = function setTimeout(cb, ms) {
-    var id = callMessage("setTimeout", ms)[0];
+    var id = chrome.call("setTimeout", ms);
     callbacks[id] = cb;
     return id;
   };
 
   exports.clearTimeout = function clearTimeout(id) {
     delete callbacks[id];
-    sendMessage("clearTimeout", id);
+    chrome.send("clearTimeout", id);
   };
   
-  registerReceiver("onTimeout", function(name, id) {
+  chrome.on("onTimeout", function(name, id) {
     var cb = callbacks[id];
     delete callbacks[id];
     if (cb)
       cb(); // yay race conditions
   });
 } else {
-  exports.register = function(process) {
+  exports.register = function(addon) {
     var timer = require("timer");
-    process.registerReceiver("setTimeout", function(name, ms) {
+    addon.registerCall("setTimeout", function(name, ms) {
       var id = timer.setTimeout(function() {
-        process.sendMessage("onTimeout", id);
+        addon.send("onTimeout", id);
       }, ms);
       return id;
     });
-    process.registerReceiver("clearTimeout", function(name, id) {
+    addon.on("clearTimeout", function(name, id) {
       timer.clearTimeout(id);
     });
   };

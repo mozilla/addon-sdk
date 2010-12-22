@@ -38,12 +38,44 @@
 // infrastructure and receivers needed to start a Jetpack-based addon
 // in a separate process.
 
-// Set up our "proxy" objects that just send messages to our parent
-// process to do the real work.
-
-var global = this;
-
+// A list of scripts to inject into all new CommonJS module sandboxes.
 var injectedSandboxScripts = [];
+
+// A table of all CommonJS modules currently loaded.
+var modules = {};
+
+// This object represents the chrome process, and can be used to
+// communicate with it.
+var chrome = {
+  createHandle: function() {
+    return createHandle();
+  },
+  on: function(type, listener) {
+    registerReceiver(type, listener);
+  },
+  removeListener: function(type, listener) {
+    unregisterReceiver(type, listener);
+  },
+  send: function(type) {
+    sendMessage.apply(this, arguments);
+  },
+  call: function(name) {
+    var result = callMessage.apply(this, arguments);
+    if (result.length > 1)
+      throw new Error("More than one result received for call '" + name +
+                      "': " + result.length);
+    if (result.length == 0)
+      throw new Error("No receiver registered for call '" + name + "'");
+    return result[0];
+  }
+};
+
+// Use this for really low-level debugging of this script.
+function dump(msg) {
+  // Don't use chrome.send() to avoid infinite recursion when
+  // debugging chrome.send() itself.
+  sendMessage("dump", msg);
+}
 
 // Taken from plain-text-console.js.
 function stringify(arg) {
@@ -55,18 +87,20 @@ function stringify(arg) {
   }
 }
 
+// Set up our "proxy" objects that just send messages to our parent
+// process to do the real work.
 var console = {
   exception: function(e) {
-    sendMessage('console:exception', e);
+    chrome.send('console:exception', e);
   },
   trace: function() {
-    sendMessage('console:trace', new Error());
+    chrome.send('console:trace', new Error());
   }
 };
 
 ['log', 'debug', 'info', 'warn', 'error'].forEach(function(method) {
   console[method] = function() {
-    sendMessage('console:' + method, Array.map(arguments, stringify));
+    chrome.send('console:' + method, Array.map(arguments, stringify));
   }
 });
 
@@ -75,8 +109,6 @@ var memory = {
     /* TODO */
   }
 };
-
-var modules = {};
 
 function makeRequire(base) {
   var resolvedNames = {};  
@@ -89,7 +121,7 @@ function makeRequire(base) {
 
     // if not, resolve relative import names by asking the browser-process
     // side for the URL/filename of the module this points to
-    var response = callMessage("require", base, name)[0];
+    var response = chrome.call("require", base, name);
     switch (response.code) {
     case "not-found":
       throw new Error("Unknown module '" + name + "'.");
@@ -131,13 +163,7 @@ function makeRequire(base) {
     module.__url__ = response.script.filename;
   
     if (response.needsMessaging)
-      ["registerReceiver",
-       "createHandle",
-       "sendMessage",
-       "callMessage"].forEach(
-         function(name) {
-           module[name] = global[name];
-         });
+      module.chrome = chrome;
 
     injectScript(response.script);
 
@@ -146,13 +172,13 @@ function makeRequire(base) {
   return require;
 }
 
-registerReceiver(
+chrome.on(
   "addInjectedSandboxScript",
   function(name, script) {
     injectedSandboxScripts.push(script);
   });
 
-registerReceiver(
+chrome.on(
   "startMain",
   function(name, mainName, options) {
     var mainRequire = makeRequire(null);
@@ -162,7 +188,7 @@ registerReceiver(
       quit: function quit(status) {
         if (status === undefined)
           status = "OK";
-        sendMessage("quit", status);
+        chrome.send("quit", status);
       }
     };
 

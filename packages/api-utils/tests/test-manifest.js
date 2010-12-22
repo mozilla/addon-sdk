@@ -153,7 +153,7 @@ var e10sModules = {
     }
   },
   "superpower-e10s-adapter": {
-    code: 'exports.register = function(process) {}',
+    code: 'exports.register = function(addon) {}',
     moduleInfo: {
       dependencies: {},
       needsChrome: false
@@ -169,7 +169,7 @@ function copy(obj) {
 function createE10sHarness(test, modules, onQuit) {
   var harness = createHarness(test, modules);
 
-  var process = e10s.createProcess({
+  var process = e10s.AddonProcess({
     packaging: harness.packaging,
     loader: harness.loader,
     console: harness.console,
@@ -199,7 +199,7 @@ exports.testE10sAdapterWorks = function(test) {
     harness.checkWarnings([], "no warnings logged");
   });
 
-  harness.process.sendMessage("startMain", "superpower-client");  
+  harness.process.send("startMain", "superpower-client");  
 };
 
 // We want to test to make sure that the runtime behavior matches
@@ -229,5 +229,5 @@ exports.testE10sAdapterDoesntWorkOnHackedManifest = function(test) {
     ], "warning logged when found adapter conflicts w/ manifest");
   });
 
-  harness.process.sendMessage("startMain", "superpower-client");  
+  harness.process.send("startMain", "superpower-client");  
 };
