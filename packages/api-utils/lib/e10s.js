@@ -43,33 +43,40 @@ let errors = require("errors");
 let jetpackService = Cc["@mozilla.org/jetpack/service;1"]
                      .getService(Ci.nsIJetpackService);
 
-function JetpackProcess() {
-  var process = jetpackService.createJetpack();
+function AddonProcess(jetpack) {
+  var syncListeners = {};
 
-  this.registerReceiver = function(name, cb) {
-    process.registerReceiver(name, errors.catchAndLog(cb));
+  this.on = function(name, cb) {
+    jetpack.registerReceiver(name, function() {
+      try {
+        // Intentionally do not return the return value of
+        // the function; we want developers to use registerCall() for that.
+        cb.apply(undefined, arguments);
+      } catch (e) {
+        console.exception(e);
+      }
+    });
   };
 
-  this.sendMessage = function() {
-    return process.sendMessage.apply(this, arguments);
+  this.registerCall = function(name, cb) {
+    if (name in syncListeners)
+      throw new Error("call already registered for '" + name + "'");
+    syncListeners[name] = true;
+    jetpack.registerReceiver(name, errors.catchAndLog(cb));
+  };
+
+  this.send = function() {
+    return jetpack.sendMessage.apply(this, arguments);
   };
   
   this.createHandle = function() {
-    return process.createHandle();
+    return jetpack.createHandle();
   };
 
   this.destroy = function() {
     try {
-      process.destroy();
+      jetpack.destroy();
     } catch (e if e.result == Cr.NS_ERROR_NOT_INITIALIZED) {}
-  };
-
-  this.eval = function(urlObj) {
-    var filename = url.toFilename(urlObj);
-    // The try ... catch is a workaround for bug 589308.
-    process.evalScript('//@line 1 "' + filename + '"\n' +
-                       "try { " + file.read(filename) + " } catch (e) { " +
-                       "sendMessage('core:exception', e); }");
   };
 }
 
@@ -83,11 +90,13 @@ function makeScriptFrom(fs, moduleURL) {
 
 var defaultConsole = console;
 
-exports.createProcess = function createProcess(options) {
+exports.AddonProcess = function createAddonProcess(options) {
   if (!options)
     options = {};
 
-  var process = new JetpackProcess();
+  var jetpack = jetpackService.createJetpack();  
+  var process = new AddonProcess(jetpack);
+  var registeredModules = {};
 
   var console = options.console || defaultConsole;
   var pkg = options.packaging || packaging;
@@ -104,7 +113,7 @@ exports.createProcess = function createProcess(options) {
   // communicate with us.
 
   ['log', 'debug', 'info', 'warn', 'error'].forEach(function(method) {
-    process.registerReceiver("console:" + method, function(name, args) {
+    process.on("console:" + method, function(name, args) {
       console[method].apply(console, args);
     });
   });
@@ -118,29 +127,33 @@ exports.createProcess = function createProcess(options) {
     };
   }
   
-  process.registerReceiver("quit", function(name, status) {
+  process.on("quit", function(name, status) {
     if (options.quit)
       options.quit(status);
   });
 
-  process.registerReceiver("console:trace", function(name, exception) {
+  process.on("console:trace", function(name, exception) {
     var traceback = require("traceback");
     var stack = traceback.fromException(remoteException(exception));
     console.log(traceback.format(stack.slice(0, -2)));
   });
 
-  process.registerReceiver("console:exception", function(name, exception) {
+  process.on("console:exception", function(name, exception) {
     console.exception(remoteException(exception));
   });
   
-  process.registerReceiver(
+  jetpack.registerReceiver("dump", function(name, msg) {
+    dump(msg);
+  });
+
+  jetpack.registerReceiver(
     "core:exception",
     function(name, exception) {
       console.log("An exception occurred in the child Jetpack process.");
       console.exception(remoteException(exception));
     });
 
-  process.registerReceiver(
+  process.registerCall(
     "require",
     function(name, base, path) {
       var loader = options.loader || require("parent-loader");
@@ -170,7 +183,13 @@ exports.createProcess = function createProcess(options) {
         if (adapterModuleInfo) {
           // e10s adapter found!
           try {
-            loader.require(adapterModuleName).register(process);
+            if (!(adapterModuleURL in registeredModules)) {
+              // This e10s adapter has already been loaded for this
+              // addon process, and we only really need to give it the
+              // absolute URL of the adapter.
+              registeredModules[adapterModuleURL] = true;
+              loader.require(adapterModuleName).register(process);
+            }
           } catch (e) {
             console.exception(e);
             return {code: "error"};
@@ -208,9 +227,17 @@ exports.createProcess = function createProcess(options) {
       }
     });
 
-  process.eval(require("self").data.url("bootstrap-remote-process.js"));
-  process.sendMessage("addInjectedSandboxScript",
-                      require("cuddlefish").es5code);
+  var bootURL = require("self").data.url("bootstrap-remote-process.js");
+  var bootFilename = url.toFilename(bootURL);
+  var bootJS = file.read(bootFilename);
+
+  // The try ... catch is a workaround for bug 589308.
+  jetpack.evalScript('//@line 1 "' + bootFilename + '"\n' +
+                     "try { " + bootJS + " } catch (e) { " +
+                     "sendMessage('core:exception', e); }");
+
+  process.send("addInjectedSandboxScript",
+               require("cuddlefish").es5code);
 
   return process;
 };

@@ -51,7 +51,7 @@ function makeConsoleTest(options) {
       fakeConsole[name] = function() { msg(name, arguments); };
     });
 
-    var process = e10s.createProcess({
+    var process = e10s.AddonProcess({
       console: fakeConsole,
       quit: function(status) {
         addAction(["quit", status]);
@@ -59,7 +59,7 @@ function makeConsoleTest(options) {
         test.done();
       }
     });
-    process.sendMessage("startMain", options.main);
+    process.send("startMain", options.main);
     test.waitUntilDone();
   };
 }
@@ -143,6 +143,16 @@ exports.testAdapterOnlyModule = makeConsoleTest({
   ]
 });
 
+exports.testSyncCallReturnValueArrivesAfterAsyncMsgSends = makeConsoleTest({
+  main: "e10s-samples/bug-617499-main",
+  expect: [
+    ["log", "about to send sync message to firefox"],
+    ["log", "i am an async message from firefox"],
+    ["log", "returned from sync message to firefox"],
+    ["quit", "OK"]
+  ]
+});
+
 exports.testCommonJSCompliance = function(test) {
   if (xulApp.is("Firefox") &&
       xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
@@ -198,7 +208,7 @@ exports.testCommonJSCompliance = function(test) {
       },
       __proto__: console
     };
-    var process = e10s.createProcess({
+    var process = e10s.AddonProcess({
       loader: loader,
       packaging: {
         getModuleInfo: function(url) {
@@ -223,12 +233,12 @@ exports.testCommonJSCompliance = function(test) {
       };      
     }
 
-    process.sendMessage("addInjectedSandboxScript", {
+    process.send("addInjectedSandboxScript", {
       filename: "<string>",
       contents: "(" + uneval(injectSysPrint) + ")(this);"
     });
 
-    process.sendMessage("startMain", "program");
+    process.send("startMain", "program");
   }
 
   function runNextComplianceTest() {
