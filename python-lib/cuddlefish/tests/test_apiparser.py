@@ -21,11 +21,13 @@ class ParserTests(unittest.TestCase):
         #for i,h in enumerate(parsed):
         #    print i, h
         self.assertEqual(parsed[0],
+                         ("version", 2))
+        self.assertEqual(parsed[1],
                          ("markdown", "# Title #\n\nSome text here\n\n"))
-        self.assertEqual(parsed[1][0], "api-json")
-        p_test = parsed[1][1]
+        self.assertEqual(parsed[2][0], "api-json")
+        p_test = parsed[2][1]
         self.assertEqual(p_test["name"], "test")
-        self.assertEqual(p_test["type"], "method")
+        self.assertEqual(p_test["type"], "function")
         self.assertEqual(p_test["signature"], "test(argOne, argTwo, \
 argThree, options)")
         self.assertEqual(p_test["description"],
@@ -95,12 +97,12 @@ And this time we have
 A multiline description
 Written as haiku""")
 
-        self.assertEqual(parsed[2][0], "markdown")
-        self.assertEqual(parsed[2][1], "\n\nThis text appears between the \
+        self.assertEqual(parsed[3][0], "markdown")
+        self.assertEqual(parsed[3][1], "\n\nThis text appears between the \
 API blocks.\n\n")
 
-        self.assertEqual(parsed[3][0], "api-json")
-        p_test = parsed[3][1]
+        self.assertEqual(parsed[4][0], "api-json")
+        p_test = parsed[4][1]
 
         expected = {'line_number': 28,
  'name': 'append',
@@ -162,13 +164,13 @@ clicked'},
              'name': 'options',
              'description': 'Pass in all of your options here.'}],
  'signature': 'append(options)',
- 'type': 'method',
+ 'type': 'function',
  'description': 'This is a list of options to specify modifications to your \
 slideBar instance.'}
         self.assertEqual(p_test, expected)
 
-        self.assertEqual(parsed[5][0], "api-json")
-        p_test = parsed[5][1]
+        self.assertEqual(parsed[6][0], "api-json")
+        p_test = parsed[6][1]
         self.assertEqual(p_test["name"], "cool-func.dot")
         self.assertEqual(p_test["signature"], "cool-func.dot(howMuch, double, \
 options, onemore, options2)")
@@ -196,18 +198,18 @@ some **realy** fancy things. Like `code`, or even
                           "description": "Do something random?",
                           })
 
-        p_test = parsed[7][1]
+        p_test = parsed[8][1]
         self.assertEqual(p_test["signature"],"random()")
 
         # tests for classes
         #1) empty class
-        p_test = parsed[9][1]
+        p_test = parsed[10][1]
         self.assertEqual(len(p_test), 4)
         self.assertEqual(p_test["name"], "empty-class")
         self.assertEqual(p_test["description"], "This class contains nothing.")
         self.assertEqual(p_test["type"], "class")
         # 2) class with just one ctor
-        p_test = parsed[11][1]
+        p_test = parsed[12][1]
         self.assertEqual(len(p_test), 5)
         self.assertEqual(p_test["name"], "only-one-ctor")
         self.assertEqual(p_test["description"], "This class contains only \
@@ -217,7 +219,7 @@ one constructor.")
         self.assertEqual(len(constructors), 1)
         self._test_class_constructor(constructors[0], "one-constructor")
         # 3) class with 2 ctors
-        p_test = parsed[13][1]
+        p_test = parsed[14][1]
         self.assertEqual(len(p_test), 5)
         self.assertEqual(p_test["name"], "two-ctors")
         self.assertEqual(p_test["description"], "This class contains two \
@@ -228,7 +230,7 @@ constructors.")
         self._test_class_constructor(constructors[0], "one-constructor")
         self._test_class_constructor(constructors[1], "another-constructor")
         # 4) class with ctor + method
-        p_test = parsed[15][1]
+        p_test = parsed[16][1]
         self.assertEqual(len(p_test), 6)
         self.assertEqual(p_test["name"], "ctor-and-method")
         self.assertEqual(p_test["description"], "This class contains one \
@@ -241,7 +243,7 @@ constructor and one method.")
         self.assertEqual(len(methods), 1)
         self._test_class_method(methods[0])
         # 5) class with ctor + method + property
-        p_test = parsed[17][1]
+        p_test = parsed[18][1]
         self.assertEqual(len(p_test), 7)
         self.assertEqual(p_test["name"], "ctor-and-method-and-prop")
         self.assertEqual(p_test["description"], "This class contains one \
@@ -323,7 +325,7 @@ This is a function which does nothing in particular.
 </api>
 '''
         parsed = self.parse_text(md)
-        r = parsed[0][1]["returns"]
+        r = parsed[1][1]["returns"]
         self.assertEqual(r["props"][0]["name"], "firststring")
         self.assertEqual(r["props"][0],
                          {"name": "firststring",
@@ -353,7 +355,7 @@ This is a function which does nothing in particular.
 </api>
 '''
         parsed = self.parse_text(md)
-        r = parsed[0][1]["returns"]
+        r = parsed[1][1]["returns"]
         self.assertEqual(r["description"], "A one-line description.")
 
     def test_return_description_2(self):
@@ -374,7 +376,7 @@ This is a function which does nothing in particular.
 </api>
 '''
         parsed = self.parse_text(md)
-        r = parsed[0][1]["returns"]
+        r = parsed[1][1]["returns"]
         self.assertEqual(r["description"],
                          "A six-line description\n"
                          "which is consistently indented by two spaces\n"
@@ -394,7 +396,7 @@ This is a function which does nothing in particular.
 </api>
 '''
         parsed = self.parse_text(md)
-        r = parsed[0][1]["returns"]
+        r = parsed[1][1]["returns"]
         self.assertEqual(r["description"], "A one-line untyped description.")
 
     # if the return value was supposed to be an array, the correct syntax
@@ -414,7 +416,7 @@ This is a function which returns an array.
 </api>
 '''
         parsed = self.parse_text(md)
-        r = parsed[0][1]["returns"]
+        r = parsed[1][1]["returns"]
         self.assertEqual(r["description"],
                          "Array consists of two elements, a string and a url.")
 
@@ -471,8 +473,8 @@ An object property named test of type foo.
 </api>
 '''
         parsed = self.parse_text(md)
-        self.assertEqual(parsed[0][0], 'api-json')
-        actual_api_json_obj = parsed[0][1]
+        self.assertEqual(parsed[1][0], 'api-json')
+        actual_api_json_obj = parsed[1][1]
         expected_api_json_obj = {
             'line_number': 1,
             'property_type': 'foo',

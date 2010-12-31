@@ -90,62 +90,6 @@ function startApp(jQuery, window) {
       });
   }
 
-  function doRender(where, hunks) {
-    function render_hunk (hunk) {
-      if (hunk[0] == "markdown") {
-        var nh = $("<span>" + markdownToHtml(hunk[1]) + "</span>");
-        nh.appendTo(where);
-      } else if (hunk[0] == "api-json") {
-        var $el = $("<div class='api'/>").appendTo(where);
-        renderDocumentationJSON(hunk[1], $el);
-      }
-    }
-    hunks.forEach(render_hunk);
-  }
-
-  function renderStructuredDocs(where, hunks) {
-    if (hunks.length == 0) return;
-    $(where).empty();
-    var markdown = new Array();
-    var classes = new Array();
-    var functions = new Array();
-    var properties = new Array();
-    var apiHunksExist = false;
-    for (var i = 0; i < hunks.length; i++) {
-      hunk = hunks[i];
-      if (hunk[0] == "markdown"){
-        markdown.push(hunk);
-      }
-      else if (hunk[0] == "api-json") {
-        apiHunksExist = true;
-        if (hunk[1].type == "class") {
-          classes.push(hunk);
-        }
-        else if (hunk[1].type == "function") {
-          functions.push(hunk);
-        }
-        else if (hunk[1].type == "property") {
-          properties.push(hunk);
-        }
-      }
-    }
-    doRender(where, markdown);
-    if (!apiHunksExist) {
-      return;
-    }
-    var heading = $("<div class='api-heading'>API Reference</div>");
-    heading.appendTo(where);
-    if (classes.length > 0) {
-      doRender(where, classes);
-    }
-    if (functions.length > 0) {
-      doRender(where, functions);
-    }
-    if (properties.length > 0) {
-      doRender(where, properties);
-    }
-  }
-
   function getPkgFile(pkg, filename, filter, cb) {
     if (pkgHasFile(pkg, filename)) {
       var options = {
@@ -178,14 +122,15 @@ function startApp(jQuery, window) {
     errorDisplay.fadeIn();
   }
 
-  function renderPkgAPI(pkg, source_filename, json_filename, where, donecb) {
+  function renderPkgAPI(pkg, source_filename, div_filename, where, donecb) {
     if (pkgHasFile(pkg, source_filename)) {
       var options = {
-        url: pkgFileUrl(pkg, json_filename),
-        dataType: "json",
-        success: function(json) {
+        url: pkgFileUrl(pkg, div_filename),
+        dataType: "html",
+        success: function(div_text) {
           try {
-            renderStructuredDocs(where, json);
+            $(where).empty();
+            $(div_text).appendTo(where)
           } catch (e) {
             $(where).text("Oops, API docs renderer failed: " + e);
           }
@@ -277,10 +222,11 @@ function startApp(jQuery, window) {
     var entry = $("#templates .module-detail").clone();
     var source_filename = "docs/" + moduleName + ".md";
     var json_filename = "docs/" + moduleName + ".md.json";
+    var div_filename = "docs/" + moduleName + ".md.div";
 
     entry.find(".name").text(moduleName);
     queueMainContent(entry, function () {
-      renderPkgAPI(pkg, source_filename, json_filename, entry.find(".docs"),
+      renderPkgAPI(pkg, source_filename, div_filename, entry.find(".docs"),
                    function(please_display) {
                      showMainContent(entry, pkgFileUrl(pkg, source_filename));
                    });
