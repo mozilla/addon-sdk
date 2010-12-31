@@ -92,14 +92,14 @@ let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].
 exports.set = function(aData, aDataType) {
   let options = {
     data: aData,
-    datatype: aDataType || "text/unicode"
+    datatype: aDataType || "text"
   };
   options = apiUtils.validateOptions(options, {
     data: {
       is: ["string"]
     },
     datatype: {
-      is: ["null", "undefined", "string"]
+      is: ["string"]
     }
   });
 
@@ -153,11 +153,11 @@ exports.set = function(aData, aDataType) {
 
 exports.get = function(aDataType) {
   let options = {
-    datatype: aDataType
+    datatype: aDataType || "text"
   };
   options = apiUtils.validateOptions(options, {
     datatype: {
-      is: ["null", "undefined", "string"]
+      is: ["string"]
     }
   });
 
@@ -167,7 +167,7 @@ exports.get = function(aDataType) {
     throw new Error("Couldn't set the clipboard due to an internal error " + 
                     "(couldn't create a Transferable object).");
 
-  var flavor = aDataType ? fromJetpackFlavor(aDataType) : "text/unicode";
+  var flavor = fromJetpackFlavor(options.datatype);
 
   // Ensure that the user hasn't requested a flavor that we don't support.
   if (!flavor)
