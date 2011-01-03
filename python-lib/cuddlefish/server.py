@@ -16,6 +16,7 @@ import traceback
 from cuddlefish import packaging
 from cuddlefish import Bunch
 from cuddlefish import apiparser
+from cuddlefish import apirenderer
 import simplejson as json
 
 try:
@@ -140,6 +141,18 @@ class Server(object):
                                 [('Content-type', "text/plain")])
             return [str(e)]
 
+    def _respond_with_apidoc_div(self, path):
+        docs_md = open(path, 'r').read()
+        try:
+            parsed = apirenderer.md_to_div(path)
+            self.start_response('200 OK',
+                                [('Content-type', "text/html")])
+            return [parsed]
+        except apirenderer.ParseError, e:
+            self.start_response('500 Parse Error',
+                                [('Content-type', "text/plain")])
+            return [str(e)]
+
     def _get_files_in_dir(self, path):
         data = {}
         files = os.listdir(path)
@@ -199,17 +212,23 @@ class Server(object):
             else:
                 dir_path = os.path.join(root_dir, *parts[1:])
                 dir_path = os.path.normpath(dir_path)
-                parse_apidoc = False
+                parse_json = False
+                parse_div = False
                 if dir_path.endswith(".md.json"):
-                    parse_apidoc = True
+                    parse_json = True
                     dir_path = dir_path[:-len(".json")]
+                if dir_path.endswith(".md.div"):
+                    parse_div = True
+                    dir_path = dir_path[:-len(".div")]
                 if not (dir_path.startswith(root_dir) and
                         os.path.exists(dir_path) and
                         os.path.isfile(dir_path)):
                     return self._respond('404 Not Found')
                 else:
-                    if parse_apidoc:
+                    if parse_json:
                         return self._respond_with_apidoc_json(dir_path)
+                    elif parse_div:
+                        return self._respond_with_apidoc_div(dir_path)
                     else:
                         return self._respond_with_file(dir_path)
 
@@ -437,6 +456,12 @@ def generate_static_docs(env_root, tgz_filename):
                     docs_parsed = list(apiparser.parse_hunks(docs_md))
                     docs_json = json.dumps(docs_parsed)
                     open(dest_path + ".json", "w").write(docs_json)
+                    # write the HTML div files
+                    docs_div = apirenderer.json_to_div(docs_parsed, src_path)
+                    open(dest_path + ".div.html", "w").write(docs_div)
+                    # write the standalone HTML files
+                    docs_html = apirenderer.json_to_html(docs_parsed, src_path)
+                    open(dest_path + ".html", "w").write(docs_html)
 
     # finally, build a tarfile out of everything
     tgz = tarfile.open(tgz_filename, 'w:gz')

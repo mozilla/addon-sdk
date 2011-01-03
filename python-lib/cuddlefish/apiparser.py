@@ -1,5 +1,7 @@
 import sys, re, textwrap
 
+VERSION = 2
+
 class ParseError(Exception):
     # args[1] is the line number that caused the problem
     def __init__(self, why, lineno):
@@ -239,6 +241,7 @@ def parse_hunks(text):
     # return a list of tuples. Each is one of:
     #    ("raw", string)         : non-API blocks
     #    ("api-json", dict)  : API blocks
+    yield ("version", VERSION)
     lines = text.splitlines(True)
     line_number = 0
     markdown_string = ""
