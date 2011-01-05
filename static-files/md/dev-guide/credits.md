@@ -13,6 +13,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Lloyd Hilaiel
 * Eric H. Jung
 * Hrishikesh Kale
+* Wes Kocher
 * Edward Lee
 * Myk Melez
 * Zandr Milewski
