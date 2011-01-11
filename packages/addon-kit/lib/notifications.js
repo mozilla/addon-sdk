@@ -42,22 +42,17 @@ const apiUtils = require("api-utils");
 const errors = require("errors");
 
 try {
-  // The unit test sets this to a mock alert service.
-  var gAlertServ = Cc["@mozilla.org/alerts-service;1"].
-                   getService(Ci.nsIAlertsService);
+  let alertServ = Cc["@mozilla.org/alerts-service;1"].
+                  getService(Ci.nsIAlertsService);
+
+  // The unit test sets this to a mock notification function.
+  var notify = alertServ.showAlertNotification.bind(alertServ);
 }
 catch (err) {
   // An exception will be thrown if the platform doesn't provide an alert
-  // service, e.g., if Growl is not installed on OS X.  In that case, create a
-  // mock alert service that just logs to the console.
-  gAlertServ = {
-    showAlertNotification: function (iconURL, title, text) {
-      title = title ? "[" + title + "]" : "";
-      text = text || "";
-      let str = [title, text].filter(function (s) s).join(" ");
-      console.log(str);
-    }
-  };
+  // service, e.g., if Growl is not installed on OS X.  In that case, use a
+  // mock notification function that just logs to the console.
+  notify = notifyUsingConsole;
 }
 
 exports.notify = function notifications_notify(options) {
@@ -68,22 +63,31 @@ exports.notify = function notifications_notify(options) {
         errors.catchAndLog(valOpts.onClick).call(exports, valOpts.data);
     }
   };
-  function notify() {
-    gAlertServ.showAlertNotification(valOpts.iconURL, valOpts.title,
-                                     valOpts.text, !!clickObserver,
-                                     valOpts.data, clickObserver);
+  function notifyWithOpts(notifyFn) {
+    notifyFn(valOpts.iconURL, valOpts.title, valOpts.text, !!clickObserver,
+             valOpts.data, clickObserver);
   }
   try {
-    notify();
+    notifyWithOpts(notify);
   }
   catch (err if err instanceof Ci.nsIException &&
                 err.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
     console.warn("The notification icon named by " + valOpts.iconURL +
                  " does not exist.  A default icon will be used instead.");
     delete valOpts.iconURL;
-    notify();
+    notifyWithOpts(notify);
+  }
+  catch (err) {
+    notifyWithOpts(notifyUsingConsole);
   }
 };
+
+function notifyUsingConsole(iconURL, title, text) {
+  title = title ? "[" + title + "]" : "";
+  text = text || "";
+  let str = [title, text].filter(function (s) s).join(" ");
+  console.log(str);
+}
 
 function validateOptions(options) {
   return apiUtils.validateOptions(options, {
