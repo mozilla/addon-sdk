@@ -37,7 +37,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci, Cr } = require("chrome");
 const apiUtils = require("api-utils");
 const errors = require("errors");
 
@@ -68,9 +68,21 @@ exports.notify = function notifications_notify(options) {
         errors.catchAndLog(valOpts.onClick).call(exports, valOpts.data);
     }
   };
-  gAlertServ.showAlertNotification(valOpts.iconURL, valOpts.title,
-                                   valOpts.text, !!clickObserver, valOpts.data,
-                                   clickObserver);
+  function notify() {
+    gAlertServ.showAlertNotification(valOpts.iconURL, valOpts.title,
+                                     valOpts.text, !!clickObserver,
+                                     valOpts.data, clickObserver);
+  }
+  try {
+    notify();
+  }
+  catch (err if err instanceof Ci.nsIException &&
+                err.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
+    console.warn("The notification icon named by " + valOpts.iconURL +
+                 " does not exist.  A default icon will be used instead.");
+    delete valOpts.iconURL;
+    notify();
+  }
 };
 
 function validateOptions(options) {
