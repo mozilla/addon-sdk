@@ -3,7 +3,7 @@
 Some text here
 
 <api name="test">
-@method
+@function
 This is a function which does nothing in particular.
 @returns {object}
   @prop firststring {string} First string
@@ -26,7 +26,7 @@ This is a function which does nothing in particular.
 This text appears between the API blocks.
 
 <api name="append">
-@method
+@function
 This is a list of options to specify modifications to your slideBar instance.
 @param options
        Pass in all of your options here.
@@ -48,7 +48,7 @@ This is a list of options to specify modifications to your slideBar instance.
 Wooo, more text.
 
 <api name="cool-func.dot">
-@constructor
+@function
 @returns {string} A value telling you just how cool you are.
 A boa-constructor!
 This description can go on for a while, and can even contain
@@ -73,7 +73,7 @@ some **realy** fancy things. Like `code`, or even
 </api>
 
 <api name="random">
-@method
+@function
 A function that returns a random integer between 0 and 10.
 @returns {int} The random number.
 </api>

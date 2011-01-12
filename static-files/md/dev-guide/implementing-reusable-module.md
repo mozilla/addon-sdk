@@ -157,32 +157,32 @@ expected exception is raised.
 At this point your package ought to look like this:
 
 <pre>
-    /translator
-        package.json
-        README.md
-        /docs
-            main.md
-        /lib
-            main.js
-            translate.js
-        /tests
-            test-translator.js
+  /translator
+      package.json
+      README.md
+      /docs
+          main.md
+      /lib
+          main.js
+          translate.js
+      /tests
+          test-translator.js
 </pre>
 
 Now execute `cfx --verbose test` from under the package root directory.
 You should see something like this:
 
 <pre>
-    Running tests on Firefox 4.0b7/Gecko 2.0b7 ...
-    info: executing 'test-translator.test_languages'
-    info: pass: a == b == "Lizard"
-    info: pass: a == b == "Lizard"
-    info: pass: a == b == "Lizard"
-    info: executing 'test-translator.test_error'
-    info: pass: a == b == "Text to translate must not be empty"
+  Running tests on Firefox 4.0b7/Gecko 2.0b7 ...
+  info: executing 'test-translator.test_languages'
+  info: pass: a == b == "Lizard"
+  info: pass: a == b == "Lizard"
+  info: pass: a == b == "Lizard"
+  info: executing 'test-translator.test_error'
+  info: pass: a == b == "Text to translate must not be empty"
 
-    4 of 4 tests passed.
-    OK
+  4 of 4 tests passed.
+  OK
 </pre>
 
 What happens here is that `cfx test`:
@@ -199,7 +199,7 @@ want to; doing so just makes the output easier to read.
 
 ## Next: Introducing the SDK's APIs ##
 
-Next we'll summarise the [APIs provided by the SDK](#guide/api-guide).
+Next we'll summarize the [APIs provided by the SDK](#guide/api-guide).
 
   [CommonJS Specification]: http://wiki.commonjs.org/wiki/Modules/1.0
   [Globals]: #guide/globals

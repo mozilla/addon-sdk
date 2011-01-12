@@ -19,7 +19,6 @@ function _createApiTitle(doc, prefix){
   }
 }
 
-
 function _createTitle(doc){
   if (doc.type == "property") {
     return _createPropertyTitle(doc, "");

@@ -1,4 +1,4 @@
-<!-- contributed by Paul O’Shannessy [paul@oshannessy.com]  -->
+<!-- contributed by Paul O'Shannessy [paul@oshannessy.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 

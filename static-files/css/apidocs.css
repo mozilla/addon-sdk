@@ -1,30 +1,138 @@
+/*
+Some global styles for api_refernece
+*/
 
-.api .optional{ font-style: italic;}
-.api-heading{font-size: 200%; font-weight: bold;padding-top:30px;padding-bottom:10px;}
-.api{margin-bottom:30px;}
-.api>.name{font-size: 125%; font-weight: bold; padding:3px;border: solid 1px #EEE;background: #EEE;margin-bottom:10px;}
+.api_reference p
+  {
+  margin-top: 0px;
+  margin-bottom: 5px;
+  }
 
-.class-member-set{margin-bottom:20px;}
-.class-member-set>.name{ font-size: 120%; font-weight: bold; margin-top: 20px; margin-bottom: 5px;}
+.api_reference .datatype
+  {
+  font-style: italic;
+  }
 
-.class-member{margin-bottom:20px;}
-.class-member>.name{font-size: 110%; font-weight: bold;}
+/***
+HEADINGS
+Text title for some collection of API elements, like "Properties" or "Methods".
+***/
 
-.name>.params{ font-weight: normal;}
-.name>.params .default{ color: #777;}
-.name>.params .default:before{ content: "=";}
-.name>.returns{ color: #555;}
-.name>.returns .type{ color: #000;}
-.name>.property_type{ color: #555;}
-.name>.property_type .type{ color: #000;}
+/* generic style for all headers */
+.api_header
+  {
+  font-weight: bold;
+  }
 
-.api>.params, .api>.returns{ background-color: #EEE; margin:3px; }
-.class-member>.params, .class-member>.returns{ background-color: #EEE; margin:3px; }
-.params>.param, .api .prop{ padding: 3px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.3);}
-.params>.param>span:not(.description), .api .prop>span:not(.description){ display:inline-block; width:120px; vertical-align:top; overflow: hidden;}
+/* top level heading: something like "API Reference" */
+h2.api_header
+  {
+  font-size: 200%;
+  margin-top:30px;
+  margin-bottom:10px;
+  }
 
-.params>.param>.prop{ padding-left: 10px;}
-.param>.description, .api .prop>.description{ width: 300px; display:inline-block;vertical-align:top;}
+/* next-level heading: something like "Classes", "Global Functions" */
+h3.api_header
+  {
+  font-size: 150%;
+  margin-top:20px;
+  margin-bottom:10px;
+  padding: 3px;
+  border: solid 1px #EEE;
+  background: #EEE;
+  }
 
-.description p{ margin: 0;margin-bottom:10px}
-.api>.description p{ margin-bottom:10px}
+/* next-level heading: something like "Methods", "Object properties" */
+.api_reference>.api_component_group>.api_component>.api_component_group>.api_header
+  {
+  font-size: 125%;
+  margin-top:20px;
+  margin-bottom:5px;
+  border-bottom: solid 2px #EEE;
+  }
+
+/***
+NAMES
+Name of some API component, like widget or postMessage()
+***/
+
+/* default style for all names */
+.api_name
+  {
+  font-weight: bold;
+  }
+
+/* top level api component: module-level classes,functions, properties */
+h4.api_name
+  {
+  font-weight: normal;
+  font-size: 150%;
+  padding: 3px;
+  border: solid 1px #EEE;
+  background: #EEE;
+  margin-bottom:5px;
+  }
+
+/* next level API component: methods or object properties */
+.api_reference>.api_component_group>.api_component>.api_component_group>.api_component>.api_name
+  {
+  font-size: 120%;
+  font-weight: bold;
+  margin-bottom:0px;
+  }
+
+/***
+Spacing components and component groups
+***/
+
+/*
+Top level API component, like a global class, function, or property
+*/
+.api_reference>.api_component_group>.api_component
+  {
+  margin-bottom: 50px;
+  }
+
+/*
+Next-level API component, like a class method
+*/
+.api_reference>.api_component_group>.api_component>.api_component_group>.api_component
+  {
+  margin-bottom: 20px;
+  }
+
+/*
+All collections of API components
+*/
+.api_component_group
+  {
+  margin-bottom: 30px;
+  }
+
+/***PARAMETERS and RETURNS***/
+/*
+Parameters and returns have a grey background
+*/
+.parameter_set, .returns
+  {
+  background-color: #EEE;
+  }
+
+/*
+Parameter components are divided by a thin border
+*/
+.parameter_set .api_component
+  {
+  padding: 3px;
+  border-top: 2px solid rgba(255,255,255,.3);
+  }
+
+/*
+Subcomponents of parameters are indented
+*/
+.parameter_set>.api_component>.api_component
+ {
+  padding-left: 20px;
+ }
+
