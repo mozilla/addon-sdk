@@ -86,7 +86,7 @@
    }
 
    function maybeLoadMainInJetpackProcess(delegate, packaging) {
-     return function getModuleExports(basePath, module) {
+     return function getModuleExports(basePath, module) {     
        if (module == packaging.options.main) {
          var mainURL = this.fs.resolveModule(basePath, module);
          var mainInfo = packaging.getModuleInfo(mainURL);
@@ -140,7 +140,7 @@
          }
          let mi = packaging.getModuleInfo(basePath);
          if (mi.needsChrome)
-           /* The module requires chrome, it can import whatever it
+           /* The module requires chrome, it can import whatever it 
             * wants. */
            return true;
          if (!mi.dependencies) {
@@ -163,14 +163,14 @@
              } else if (should_load != is_loading) {
                loader.console.warn("require(" + module + ") (called from " +
                                    basePath + ") is loading " + is_loading +
-                                   ", but is supposed to be loading " +
+                                   ", but is supposed to be loading " + 
                                    should_load);
                //return false; // enable this in 0.9
              }
-             return true;
+             return true; 
            }
          }
-         loader.console.warn("undeclared require(" + module +
+         loader.console.warn("undeclared require(" + module + 
                              ") called from " + basePath);
          //return false;  // enable this in 0.9
          return true;

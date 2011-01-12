@@ -241,15 +241,19 @@ var beetFs = {
      }
 
     // Confirm callback-based require works from an instantiated loader.
-    // TODO: confirm this test works?
+    // want to be back in api-utils/tests directory instead of
+    // what rootDir is now:
+    // api-utils/tests/interoperablejs-read-only/compliance/
+    var moduleDir = rootDir.parent.parent;
+    moduleDir.append("modules"),
     loader = new SecurableModule.Loader(
-         {rootPath: rootDir,
+         {rootPath: moduleDir,
           defaultPrincipal: "system",
           globals: {sys: {print: log}}
          });
-    loader.require(["subtract"], function (mod) {
-      var subtract = mod.subtract(3, 1);
-      assert.isEqual(2, mod.subtract(3, 1),
+
+    loader.require(["subtract"], function (subtract) {
+      assert.isEqual(2, subtract(3, 1),
                       "subtract module works with callback-style require");
     });
 
