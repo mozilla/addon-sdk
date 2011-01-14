@@ -44,3 +44,19 @@ exports.testCatchAndLogProps = function(test) {
               (thing.bar() == "err"),
               "multiple props should be wrapped if array passed in");
 };
+
+exports.testCatchAndReturn = function(test) {
+  var wrapped = errors.catchAndReturn(function(x) {
+                                        if (x == 1)
+                                          return "one";
+                                        if (x == 2)
+                                          throw new Error("two");
+                                        return this + x;
+                                      });
+
+  test.assertEqual(wrapped(1).returnValue, "one",
+                   "arg should be passed; return value should be returned");
+  test.assert(wrapped(2).exception, "exception should be returned");
+  test.assertEqual(wrapped.call("hi", 3).returnValue, "hi3",
+                   "`this` should be set correctly");
+};
