@@ -98,6 +98,10 @@ const FENNEC_ID = "{a23983c0-fd0e-11dc-95ff-0800200c9a66}";
 
 function buildHarnessService(rootFileSpec, dump, logError,
                              onQuit, options) {
+  if (arguments.length == 1) {
+    ({dump, logError, onQuit, options}) = getDefaults(rootFileSpec);
+  }
+
   // The loader for securable modules, typically a Cuddlefish loader.
   var loader;
 
@@ -571,12 +575,7 @@ function getDefaults(rootFileSpec) {
 
 function NSGetModule(compMgr, fileSpec) {
   var rootFileSpec = fileSpec.parent.parent;
-  var defaults = getDefaults(rootFileSpec);
-  var HarnessService = buildHarnessService(rootFileSpec,
-                                           defaults.dump,
-                                           defaults.logError,
-                                           defaults.onQuit,
-                                           defaults.options);
+  var HarnessService = buildHarnessService(rootFileSpec);
   return XPCOMUtils.generateModule([HarnessService]);
 }
 
