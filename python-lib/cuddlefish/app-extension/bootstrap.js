@@ -92,9 +92,9 @@ function setupHarness(installPath, loadReason) {
   };
 
   if (loadReason == "startup")
-    // Simulate an app-startup event; the harness service will take care of
+    // Simulate a startup event; the harness service will take care of
     // waiting until the app is ready for the extension's code to run.
-    harnessService.observe(null, "app-startup", null);
+    harnessService.observe(null, "profile-after-change", null);
   else
     harnessService.load(loadReason);
 }

@@ -275,7 +275,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
 
     get classID() { return Components.ID(options.bootstrap.classID); },
 
-    _xpcom_categories: [{ category: "app-startup", service: true }],
+    _xpcom_categories: [{ category: "profile-after-change" }],
 
     _xpcom_factory: {
       get singleton() {
@@ -368,7 +368,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     observe: function Harness_observe(subject, topic, data) {
       try {
         switch (topic) {
-        case "app-startup":
+        case "profile-after-change":
           var appInfo = Cc["@mozilla.org/xre/app-info;1"]
                         .getService(Ci.nsIXULAppInfo);
           switch (appInfo.ID) {
@@ -609,17 +609,27 @@ var lifeCycleObserver192 = {
   },
 
   // This must be called first to initialize the singleton.  It must be called
-  // before profile-after-change.
+  // on profile-after-change.
   init: function lifeCycleObserver192_init(bundleID, logError) {
-    // This component is present in 1.9.2 but not 1.9.3.
+    // This component is present in 1.9.2 but not 2.0.
     if ("@mozilla.org/extensions/manager;1" in Cc && !this._inited) {
-      // Need an event that's sent before the HarnessService is loaded but after
-      // the preferences service is available.  profile-after-change works.
-      obSvc.addObserver(this, "profile-after-change", true);
       obSvc.addObserver(this, "em-action-requested", true);
       this._bundleID = bundleID;
       this._logError = logError;
       this._inited = true;
+
+      try {
+        // This throws if the pref doesn't exist, which is the case when no
+        // new add-ons were installed.
+        var addonIdStr = Cc["@mozilla.org/preferences-service;1"].
+                         getService(Ci.nsIPrefBranch).
+                         getCharPref("extensions.newAddons");
+      }
+      catch (err) {}
+      if (addonIdStr) {
+        var addonIds = addonIdStr.split(",");
+        this._addonIsNew = addonIds.indexOf(this._bundleID) >= 0;
+      }
     }
   },
 
@@ -633,22 +643,7 @@ var lifeCycleObserver192 = {
 
   observe: function lifeCycleObserver192_observe(subj, topic, data) {
     try {
-      if (topic === "profile-after-change") {
-        obSvc.removeObserver(this, topic);
-        try {
-          // This throws if the pref doesn't exist, which is the case when no
-          // new add-ons were installed.
-          var addonIdStr = Cc["@mozilla.org/preferences-service;1"].
-                           getService(Ci.nsIPrefBranch).
-                           getCharPref("extensions.newAddons");
-        }
-        catch (err) {}
-        if (addonIdStr) {
-          var addonIds = addonIdStr.split(",");
-          this._addonIsNew = addonIds.indexOf(this._bundleID) >= 0;
-        }
-      }
-      else if (topic === "em-action-requested") {
+      if (topic === "em-action-requested") {
         if (subj instanceof Ci.nsIUpdateItem && subj.id === this._bundleID)
           this._emState = data;
       }
