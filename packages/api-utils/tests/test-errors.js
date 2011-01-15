@@ -57,6 +57,10 @@ exports.testCatchAndReturn = function(test) {
   test.assertEqual(wrapped(1).returnValue, "one",
                    "arg should be passed; return value should be returned");
   test.assert(wrapped(2).exception, "exception should be returned");
+  test.assertEqual(wrapped(2).exception.message, "two", "message is correct");
+  test.assert(wrapped(2).exception.fileName.indexOf("test-errors.js") != -1,
+              "filename is present");
+  test.assert(wrapped(2).exception.stack, "stack is available");
   test.assertEqual(wrapped.call("hi", 3).returnValue, "hi3",
                    "`this` should be set correctly");
 };
