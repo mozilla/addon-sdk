@@ -571,6 +571,24 @@ function getDefaults(rootFileSpec) {
           logError: logError};
 }
 
+// Gecko 2, entry point for non-bootstrapped extensions (which register this
+// component via chrome.manifest.)
+// FIXME: no install/uninstall notifications on 2.0 for non-bootstrapped addons
+function NSGetFactory(cid) {
+  try {
+    if (!NSGetFactory.fn) {
+      var rootFileSpec = __LOCATION__.parent.parent;
+      var HarnessService = buildHarnessService(rootFileSpec);
+      NSGetFactory.fn = XPCOMUtils.generateNSGetFactory([HarnessService]);
+    }
+  } catch(e) {
+    Components.utils.reportError(e);
+    dump(e);
+    throw e;
+  }
+  return NSGetFactory.fn(cid);
+}
+
 // Everything below is only used on Gecko 1.9.2 or below.
 
 function NSGetModule(compMgr, fileSpec) {
