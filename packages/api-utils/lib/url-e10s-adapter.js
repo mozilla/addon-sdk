@@ -36,8 +36,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 if (this.chrome) {
-  exports.toFilename   = chrome.call.bind(chrome, "url:toFilename");
-  exports.fromFilename = chrome.call.bind(chrome, "url:fromFilename");
+  exports.toFilename   = function(spec) chrome.call("url:toFilename", spec);
+  exports.fromFilename = function(spec) chrome.call("url:fromFilename", spec);
 
   let URL = exports.URL = function URL(spec, base) {
     // We have to force the `spec` and `base` arguments, if defined, to be
