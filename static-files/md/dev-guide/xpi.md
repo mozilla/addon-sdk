@@ -44,6 +44,7 @@ packages, structured like so:
     {
       "description": "A package used by 'aardvark' as a library."
     }
+
 </pre>
 
 Note that our `packages` directory could actually contain more
@@ -64,6 +65,7 @@ a XPI file:
     // by loading its harness-options.json, registering all its resource
     // directories, executing its loader, and then executing its program's
     // main() function.
+
 </pre>
 
 A template different than the default can be specified via the
@@ -171,6 +173,7 @@ auto-generated files:
       "resource://guid-aardvark-lib/"
      ]
     }
+
 </pre>
 
 It can be observed from the listing above that the `barbeque` package's `lib`
