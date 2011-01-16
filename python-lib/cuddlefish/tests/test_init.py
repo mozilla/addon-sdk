@@ -2,7 +2,7 @@ import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish import run_in_temp_subdir
-from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
+from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS
 from cuddlefish import packaging
 
 class TestInit(unittest.TestCase):
