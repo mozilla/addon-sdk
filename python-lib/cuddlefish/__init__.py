@@ -327,7 +327,9 @@ def test_all_examples(env_root, defaults):
         fail = (exit_code != 0) or fail
 
     def test_addon_templates(basedir, tmpl):
-        initializer(env_root, ["init"], tmpl)
+        # override keydir to avoid polluting ~/.jetpack/keys/.
+        keydir = os.path.join(basedir, "..", "jetpack-keys")
+        initializer(env_root, ["init"], tmpl, keydir)
         return run_test(basedir)
 
     for tmpl in addon_templates.keys():
@@ -414,7 +416,8 @@ def run_in_temp_subdir(dirname, f, *args, **kwargs):
     finally:
         os.chdir(top)
 
-def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
+def initializer(env_root, args, template_name, keydir,
+                out=sys.stdout, err=sys.stderr):
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than one argument
@@ -457,6 +460,8 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
             print >>out, '* %s written' % (template_file_path)
         else:
             assert template_content == EMPTY_FOLDER
+
+    findTargetCfg(path, require_id=True, err=err, keydir=keydir)
 
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
@@ -511,7 +516,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     command = args[0]
 
     if command == "init":
-        initializer(env_root, args, options.template)
+        initializer(env_root, args, options.template, options.keydir)
         return
     if command == "develop":
         run_development_mode(env_root, defaults=options.__dict__)
