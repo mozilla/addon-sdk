@@ -21,7 +21,7 @@ class TestInit(unittest.TestCase):
     def do_test_init(self,basedir):
         # Let's init the addon, no error admited
         out, err = StringIO(), StringIO()
-        init_run = initializer(None, ["init"], out, err)
+        init_run = initializer(None, ["init"], "default", out, err)
         out, err = out.getvalue(), err.getvalue()
         self.assertEqual(init_run, 0)
         self.assertTrue("* lib directory created" in out)
@@ -42,7 +42,7 @@ class TestInit(unittest.TestCase):
 
         # Let's check that the addon is initialized
         out, err = StringIO(), StringIO()
-        init_run = initializer(None, ["init"], out, err)
+        init_run = initializer(None, ["init"], "default", out, err)
         out, err = out.getvalue(), err.getvalue()
         self.failIfEqual(init_run,0)
         self.assertTrue("This command must be run in an empty directory." in err)
@@ -53,7 +53,7 @@ class TestInit(unittest.TestCase):
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail
         out,err = StringIO(), StringIO()
-        init_run = initializer(None, ["init", "ignored-dirname"], out, err)
+        init_run = initializer(None, ["init", "ignored-dirname"], "default", out, err)
         out, err = out.getvalue(), err.getvalue()
         self.failIfEqual(init_run, 0)
         self.assertTrue("Too many arguments" in err)
