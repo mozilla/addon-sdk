@@ -1,22 +1,10 @@
 import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
+from cuddlefish import run_in_temp_subdir
 from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
 
 class TestInit(unittest.TestCase):
-
-    def run_init_in_subdir(self, dirname, f, *args, **kwargs):
-        top = os.path.abspath(os.getcwd())
-        basedir = os.path.abspath(os.path.join(".test_tmp",self.id(),dirname))
-        if os.path.isdir(basedir):
-            assert basedir.startswith(top)
-            shutil.rmtree(basedir)
-        os.makedirs(basedir)
-        try:
-            os.chdir(basedir)
-            return f(basedir, *args, **kwargs)
-        finally:
-            os.chdir(top)
 
     def do_test_init(self,basedir):
         # Let's init the addon, no error admited
@@ -48,7 +36,8 @@ class TestInit(unittest.TestCase):
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
-        self.run_init_in_subdir("tmp_addon_sample",self.do_test_init)
+        run_in_temp_subdir(os.path.join(self.id(), "tmp_addon_sample"),
+                           self.do_test_init)
 
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail
@@ -59,7 +48,8 @@ class TestInit(unittest.TestCase):
         self.assertTrue("Too many arguments" in err)
 
     def test_args(self):
-        self.run_init_in_subdir("tmp_addon_sample", self.do_test_args)
+        run_in_temp_subdir(os.path.join(self.id(), "tmp_addon_sample"),
+                           self.do_test_args)
 
 if __name__ == "__main__":
     unittest.main()
