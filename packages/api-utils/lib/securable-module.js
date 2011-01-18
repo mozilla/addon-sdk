@@ -48,6 +48,19 @@
    var systemPrincipal = Cc["@mozilla.org/systemprincipal;1"]
                          .createInstance(Ci.nsIPrincipal);
 
+   // Even though manifest.py does some dependency scanning, that
+   // scan is done as part of an evaluation of what the add-on needs
+   // for security purposes. The following regexps are used to scan for
+   // dependencies inside a simplified define() callback:
+   // define(function(require, exports, module){ var a = require('a'); });
+   // and are used at runtime ensure the dependencies needed by
+   // the define factory function are already evaluated and ready.
+   // Even though this loader is a sync loader, and could fetch the module
+   // as the require() call happens, it would differ in behavior as
+   // compared to the async browser case, which would make sure to execute
+   // the dependencies first before executing the define() factory function.
+   // So this dependency scanning and evaluation is kept to match the
+   // async behavior.
    var commentRegExp = /(\/\*([\s\S]*?)\*\/|\/\/(.*)$)/mg;
    var cjsRequireRegExp = /require\(["']([\w\!\-_\.\/]+)["']\)/g;
    var cjsStandardDeps = ['require', 'exports', 'module'];
