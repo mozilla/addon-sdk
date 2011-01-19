@@ -270,9 +270,29 @@
              self.module_infos[path] = module_info;
              if (self.modifyModuleSandbox)
                self.modifyModuleSandbox(sandbox, module_info);
-             sandbox.evaluate("var exports = {};");
+             /* set up an environment in which module code can use CommonJS
+                patterns like:
+                  module.exports = newobj;
+                  module.setExports(newobj);
+                  if (module.id == "main") stuff();
+                  define("async", function() {return newobj});
+              */
+             sandbox.evaluate("var module = {exports: {}};");
+             sandbox.evaluate("module.setExports = function(obj) {module.exports = obj; return obj;};");
+             sandbox.evaluate("var exports = module.exports;");
+             sandbox.evaluate("module.id = '" + module + "';");
+             var preeval_exports = sandbox.getProperty("exports");
              self.modules[path] = sandbox.getProperty("exports");
              sandbox.evaluate(module_info);
+             var posteval_exports = sandbox.getProperty("module").exports;
+             if (posteval_exports !== preeval_exports) {
+               /* if they used module.exports= or module.setExports(), get
+                  the new value now. If they used define(), we must be
+                  careful to leave self.modules[path] alone, as it will have
+                  been modified in the asyncMain() callback-handling code,
+                  fired during sandbox.evaluate(). */
+               self.modules[path] = posteval_exports;
+             }
            }
            exports = self.modules[path];
          }
