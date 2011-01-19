@@ -6,6 +6,14 @@ COMMENT_PREFIXES = ["//", "/*", "*", "\'", "\""]
 
 REQUIRE_RE = r"(?<![\'\"])require\s*\(\s*[\'\"]([^\'\"]+?)[\'\"]\s*\)"
 
+# detect the define idiom of the form:
+#   define("module name", ["dep1", "dep2", "dep3"], function() {})
+# by capturing the contents of the list in a group.
+DEF_RE = re.compile(r"(require|define)\s*\(\s*([\'\"][^\'\"]+[\'\"]\s*,)?\s*\[([^\]]+)\]")
+
+# Out of the async dependencies, do not allow quotes in them.
+DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
+
 def scan_requirements_with_grep(fn, lines):
     requires = Bunch()
     for line in lines:
@@ -21,6 +29,21 @@ def scan_requirements_with_grep(fn, lines):
             if mo:
                 modname = mo.group(1)
                 requires[modname] = Bunch()
+
+    # define() can happen across multiple lines, so join everyone up.
+    wholeshebang = "\n".join(lines)
+    for match in DEF_RE.finditer(wholeshebang):
+        # this should net us a list of string literals separated by commas
+        for strbit in match.group(3).split(","):
+            strbit = strbit.strip()
+            # There could be a trailing comma netting us just whitespace, so
+            # filter that out. Make sure that only string values with
+            # quotes around them are allowed, and no quotes are inside
+            # the quoted value.
+            if strbit and DEF_RE_ALLOWED.match(strbit):
+                modname = strbit[1:-1]
+                requires[modname] = Bunch()
+
     return requires
 
 MUST_ASK_FOR_CHROME =  """\
