@@ -291,6 +291,12 @@
                   careful to leave self.modules[path] alone, as it will have
                   been modified in the asyncMain() callback-handling code,
                   fired during sandbox.evaluate(). */
+               if (self.defineUsed[path]) {
+                   // you can do one or the other, not both
+                   throw new Error("define() was used, so module.exports= and "
+                                   + "module.setExports() may not be used: "
+                                   + path);
+               }
                self.modules[path] = posteval_exports;
              }
            }
