@@ -1,10 +1,17 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 
-The `notifications` module allows you to display transient [toaster]()- or
-[Growl]()-style messages to the user.
+The `notifications` module allows you to display transient, [toaster][]-style
+desktop messages to the user.
+
+This API supports desktop notifications on Windows, OS X using [Growl][], and
+Linux using libnotify.  If the user's system does not support desktop
+notifications or if its notifications service is not running, then notifications
+made with this API are logged to Firefox's error console and, if the user
+launched Firefox from the command line, the terminal.
 
 [toaster]: http://en.wikipedia.org/wiki/Toast_%28computing%29
 [Growl]: http://growl.info/
+
 
 Examples
 --------
@@ -19,13 +26,12 @@ the console.
       data: "did gyre and gimble in the wabe",
       onClick: function (data) {
         console.log(data);
-        // console.log(this.data) would produce the
-        // same result in this case.
+        // console.log(this.data) would produce the same result.
       }
     });
 
 This one displays an icon that's stored in the add-on's `data` directory.  (See
-the `self` module documentation for more information.)
+the [`self`](#module/api-utils/self) module documentation for more information.)
 
     var notifications = require("notifications");
     var self = require("self");
@@ -47,7 +53,8 @@ the `self` module documentation for more information.)
     A string to display as the body of the message.
   @prop [iconURL] {string}
     The URL of an icon to display inside the message.  It may be a remote URL,
-    a data URI, or a URL returned by the `self` module.
+    a data URI, or a URL returned by the [`self`](#module/api-utils/self)
+    module.
   @prop [onClick] {function}
     A function to be called when the user clicks the message.  It will be passed
     the value of `data`.

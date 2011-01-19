@@ -152,7 +152,7 @@ create your content scripts in separate files and pass their URLs using the
       contentScript: 'on("message", function(message) {' +
                      '  alert("Got message: " + message);' +
                      '});' +
-                     'postMessage("ready");",
+                     'postMessage("ready");',
       onMessage: function(message) {
         if (message == "ready")
           widget.postMessage("me too");

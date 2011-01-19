@@ -149,9 +149,11 @@ attached and registers a listener function that simply logs the message:
 
 The console output of this add-on is:
 
-    info: Attaching content scripts
-    info: Content script 1 is attached to http://www.mozilla.com/en-US/
-    info: Content script 2 is attached to http://www.mozilla.com/en-US/
+<pre>
+  info: Attaching content scripts
+  info: Content script 1 is attached to http://www.mozilla.com/en-US/
+  info: Content script 2 is attached to http://www.mozilla.com/en-US/
+</pre>
 
 <api name="PageMod">
 @class

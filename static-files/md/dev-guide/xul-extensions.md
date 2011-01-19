@@ -46,7 +46,9 @@ Now you can run Firefox with your XUL extension *and* our test module installed
 by executing the following command from the package folder,
 `addon-sdk/packages/my-extension`:
 
-    cfx run -t extension
+<pre>
+  cfx run -t extension
+</pre>
 
 (The `-t` parameter is actually the path to the folder with the "template"
 extension to install when running the specified application).
@@ -68,10 +70,12 @@ The first time you invoke `cfx xpi` or `cfx run`, the `cfx` tool will modify
 your `package.json` (if necessary) provide you with an `id` value. The result
 will look something like this:
 
-    {
-      "id": "jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk",
-      // other properties here
-    }
+<pre>
+  {
+    "id": "jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk",
+    // other properties here
+  }
+</pre>
 
 Now we can use CommonJS modules from regular extension code using this code:
 
@@ -92,7 +96,9 @@ Check out [XPI Generation](#guide/xpi) for an overview of how this works.
 </span>
 As with regular add-ons, you can use `cfx` to create an XPI from your package:
 
-    cfx xpi -t extension
+<pre>
+  cfx xpi -t extension
+</pre>
 
 **Note 1**: `cfx` attempts to update the `install.rdf` with the package metadata, so if
 you get RDF-related errors when using that, try using `install.rdf` from the

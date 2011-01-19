@@ -199,6 +199,16 @@ function startApp(jQuery, window) {
     }, 10);
   }
 
+  function highlight() {
+    $("code").parent("pre").addClass("brush: js");
+    //remove the inner <code> tags
+    $('pre>code').each(function() {
+      var inner = $(this).contents();
+      $(this).replaceWith(inner);
+    })
+    SyntaxHighlighter.highlight();
+  }
+
   function showMainContent(query, url) {
     if (queuedContent != query)
       return;
@@ -215,6 +225,7 @@ function startApp(jQuery, window) {
     fixInternalLinkTargets(query);
     showSidenotes(query);
     queuedContent = null;
+    highlight();
   }
 
   function showModuleDetail(pkgName, moduleName) {

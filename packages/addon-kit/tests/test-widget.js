@@ -507,6 +507,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
         widget.postMessage(origMessage);
       else {
         test.assertEqual(origMessage, message);
+        widget.destroy();
         test.done();
       }
     }

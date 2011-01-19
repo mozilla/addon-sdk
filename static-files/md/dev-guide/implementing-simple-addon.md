@@ -60,14 +60,14 @@ directory. This contains information about your add-on and should look
 something like this:
 
 <pre>
-{
+  {
     "name":"translator",
     "fullName":"translator",
     "description":"This is an example of addon description.",
     "author":"",
     "license":"MPL",
     "version":"0.1"
-}
+  }
 </pre>
 
 Finally, `cfx init` creates some example files under `docs`, `lib`, and
@@ -192,8 +192,10 @@ the text you selected should be replaced with its English translation.
 
 You will also see output like this appear in the console:
 
-    info: input: Quoi de neuf chez Mozilla?
-    info: output: What's New in Mozilla?
+<pre>
+  info: input: Quoi de neuf chez Mozilla?
+  info: output: What's New in Mozilla?
+</pre>
 
 ## Packaging It ##
 
@@ -204,7 +206,9 @@ process by generating this file for you.
 To package your program as a XPI, navigate to the root of your package
 directory in your shell and run `cfx xpi`. You should see a message:
 
-    Exporting extension to translator.xpi.
+<pre>
+  Exporting extension to translator.xpi.
+</pre>
 
 The `translator.xpi` file can be found in the directory in which you ran
 the command.
