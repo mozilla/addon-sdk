@@ -479,8 +479,13 @@ def run_app(harness_root_dir, harness_options,
                                      API_PATH,
                                      TASK_QUEUE_PATH,
                                      TASK_QUEUE_SET)
-    response = urllib2.urlopen(url, payload)
-    print response.read()
+    try:
+        response = urllib2.urlopen(url, payload)
+        print response.read()
+    except urllib2.URLError, e:
+        print "ERROR: %s while attempting to load %s" % (e, url)
+        print "Is 'cfx develop' running?\n"
+        raise e
     return 0
 
 if __name__ == '__main__':
