@@ -71,6 +71,6 @@ function makeLoader(test) {
     }
   };
   let scope = loader.findSandboxForModule("notifications").globalScope;
-  scope.gAlertServ = mockAlertServ;
+  scope.notify = mockAlertServ.showAlertNotification.bind(mockAlertServ);
   return [loader, mockAlertServ];
 };

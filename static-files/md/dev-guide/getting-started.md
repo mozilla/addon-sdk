@@ -37,11 +37,15 @@ another. Each installation is called a *virtual environment*.
 
 Then, if you're on Linux, OS X, or another Unix-based system, run:
 
-    source bin/activate
+<pre>
+  source bin/activate
+</pre>
 
 Otherwise, if you're on Windows, run:
 
-    bin\activate
+<pre>
+  bin\activate
+</pre>
 
 Now the beginning of your command prompt should contain the text
 `(addon-sdk)`, which means that your shell has entered a special
@@ -70,12 +74,16 @@ things.
 
 Run this at your shell prompt:
 
-    cfx
+<pre>
+  cfx
+</pre>
 
 It should produce output whose first line looks something like this, followed by
 many lines of usage information:
 
-    Usage: cfx [options] [command]
+<pre>
+  Usage: cfx [options] [command]
+</pre>
 
 This is the `cfx` command-line program.  It's your primary interface to the
 Add-on SDK.  You use it to launch Firefox and test your add-on, package your
