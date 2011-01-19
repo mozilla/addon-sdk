@@ -10,7 +10,6 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Hernán Rodriguez Colmeiro
 * Felipe Gomes
 * Irakli Gozalishvili
-* KWierso
 * Luca Greco
 * Lloyd Hilaiel
 * Eric H. Jung
