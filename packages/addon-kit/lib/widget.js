@@ -450,9 +450,6 @@ BrowserWindow.prototype = {
     this._fillItem(item);
 
     this._items.push(item);
-
-    if (this.container.collapsed)
-      this._onToggleUI();
   },
 
   // Initial population of a widget's content.

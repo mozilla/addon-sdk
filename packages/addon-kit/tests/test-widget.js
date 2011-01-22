@@ -18,6 +18,11 @@ exports.testConstructor = function(test) {
   let widgetStartCount = widgetCount();
   function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
+  // ensure add-on bar is visible for the tests. 
+  if (container().collapsed)
+    container().collapsed = false;
+  test.assert(!container().collapsed, "add-on bar is visible");
+
   // Test basic construct/destroy
   let w = widgets.Widget({ label: "foo", content: "bar" });
   test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
@@ -390,15 +395,13 @@ exports.testConstructor = function(test) {
       doc.dispatchEvent(keyEvent);
     }
 
-    test.assert(container().collapsed, "UI is not visible when no widgets");
-    let w = widgets.Widget({label: "foo", content: "bar"});
-    test.assert(container(), "UI exists when widgets are created");
-    test.assertEqual(container().collapsed, false, "UI is visible by default");
+    if (container().collapsed)
+      container().collapsed = false;
+    test.assertEqual(container().collapsed, false, "ensure add-on bar is visible before testing kb shortcut");
     toggleUI(); 
     test.assertEqual(container().collapsed, true, "keyboard shortcut hides UI when visible");
     toggleUI(); 
     test.assertEqual(container().collapsed, false, "keyboard shortcut shows UI when hidden");
-    w.destroy();
     doneTest();
   });
 
