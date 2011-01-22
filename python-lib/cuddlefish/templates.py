@@ -44,9 +44,9 @@ exports.test_url = function(test) {
 exports.test_open_tab = function(test) {
   const tabs = require("tabs");
   tabs.open({
-    url: "http://www.mozilla.org/",
+    url: "about:",
     onReady: function(tab) {
-      test.assertEqual(tab.url, "http://www.mozilla.org/");
+      test.assertEqual(tab.url, "about:");
       test.done();
     }
   });
