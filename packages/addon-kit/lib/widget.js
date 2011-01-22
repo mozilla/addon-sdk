@@ -432,7 +432,7 @@ BrowserWindow.prototype = {
     // (eg, can load local stylesheet file).
     node.setAttribute("style", [
         "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
-        "min-height: 16px; max-height: 16px;",
+        "min-height: 16px; height: 16px;",
     ].join(""));
 
     node.style.minWidth = widget.width + "px";
