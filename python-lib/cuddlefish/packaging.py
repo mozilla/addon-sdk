@@ -13,9 +13,10 @@ DEFAULT_LOADER = 'api-utils'
 DEFAULT_PROGRAM_MODULE = 'main'
 
 DEFAULT_ICON = 'icon.png'
+DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author',
-                  'contributors', 'license', 'url', 'icon']
+                  'contributors', 'license', 'url', 'icon', 'icon64']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -131,6 +132,10 @@ def get_config_in_dir(path):
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
         base_json['icon'] = DEFAULT_ICON
+
+    if (not base_json.get('icon64') and
+        os.path.isfile(os.path.join(path, DEFAULT_ICON64))):
+        base_json['icon64'] = DEFAULT_ICON64
 
     for key in ['lib', 'tests', 'dependencies', 'packages']:
         normalize_string_or_array(base_json, key)
@@ -272,9 +277,12 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         add_dep_to_build(DEFAULT_LOADER)
 
     if 'icon' in target_cfg:
-        build['icon'] = os.path.join(target_cfg.root_dir,
-                                     target_cfg.icon)
+        build['icon'] = os.path.join(target_cfg.root_dir, target_cfg.icon)
         del target_cfg['icon']
+
+    if 'icon64' in target_cfg:
+        build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
+        del target_cfg['icon64']
 
     # now go back through and find out where each module lives, to record the
     # pathname in the manifest

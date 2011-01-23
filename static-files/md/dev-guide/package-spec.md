@@ -38,7 +38,12 @@ called `package.json`. This file is also referred to as the
 * `icon` - the relative path from the root of the package to a
   PNG file containing the icon for the package. By default, this
   is `icon.png`. If the package is built as an XPI, this is used
-  as the extension's icon.
+  as the extension's icon to display in the Add-on Manager's add-ons list.
+
+* `icon64` - the relative path from the root of the package to a
+  PNG file containing the icon64 for the package. By default, this
+  is `icon64.png`. If the package is built as an XPI, this is used
+  as the extension's icon to display in the Addon Manager's add-on details view.
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
