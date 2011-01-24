@@ -645,7 +645,13 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if "id" in target_cfg:
         jid = target_cfg["id"]
         assert not jid.endswith("@jetpack")
-        unique_prefix = '%s-' % jid # used for resource: URLs
+        # The old-style IDs (see below) may use the {UUID} form, which is not
+        # suitable for the unique_prefix, as it's used to form the 'resource:'
+        # URLs. In this case we'll strip the braces.
+        if jid[0] == "{" and jid[-1] == "}":
+            unique_prefix = '%s-' % jid[1:-1]
+        else:
+            unique_prefix = '%s-' % jid
     else:
         assert command == "test"
         # The Jetpack ID is not required for cfx test, in which case we have to
