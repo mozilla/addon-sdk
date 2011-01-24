@@ -6,6 +6,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Will Bamberg
 * Zbigniew Braniecki
 * Daniel Buchner
+* James Burke
 * Hernán Rodriguez Colmeiro
 * Felipe Gomes
 * Irakli Gozalishvili

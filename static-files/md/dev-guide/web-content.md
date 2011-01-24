@@ -231,19 +231,19 @@ When the user clicks on the title of a story in the panel, the add-on opens
 the linked story in a new tab in the main browser window.
 
 To accomplish this the add-on needs to run a content script in the context of
-the Reddit page which  intercepts mouse clicks on title links and fetches the
-link target's URL. The content script then needs to send the URL to the add-on
+the Reddit page which intercepts mouse clicks on each title link and fetches the
+link's target URL. The content script then needs to send the URL to the add-on
 script.
 
 This is the complete add-on script:
 
-    const widgets = require("widget");
-    const panels = require("panel");
-    const data = require("self").data;
+    var widgets = require("widget");
+    var panels = require("panel");
+    var data = require("self").data;
 
     widgets.Widget({
       label: "Reddit",
-      image: "http://www.reddit.com/static/favicon.ico",
+      contentURL: "http://www.reddit.com/static/favicon.ico",
       panel: panels.Panel({
         width: 240,
         height: 320,
@@ -258,15 +258,15 @@ This is the complete add-on script:
     });
 
 This code supplies two content scripts to the panel's constructor in the
-contentScriptFile option: the jQuery library and the script that intercepts
-mouse clicks.
+`contentScriptFile` option: the jQuery library and the script that intercepts
+link clicks.
 
 It also supplies a function to the `onMessage` option which in turn passes the
 `message` argument (the story URL) into the `open` function of the
 [tabs](#module/addon-kit/tabs) module. This is the target for messages from all
 content scripts associated with the panel.
 
-This is the content script that intercepts the link clicks:
+This is the `panel.js` content script that intercepts link clicks:
 
     $(window).click(function (event) {
       var t = event.target;
@@ -288,8 +288,8 @@ This is the content script that intercepts the link clicks:
       postMessage(t.toString());
     });
 
-This script uses jQuery to interact with the DOM of the page. The content
-script uses `postMessage` to pass the URL back to the add-on script.
+This script uses jQuery to interact with the DOM of the page and the
+`postMessage` function to pass URLs back to the add-on script.
 
 See the `examples/reddit-panel` directory for the complete example (including
 the content script containing jQuery).
