@@ -19,7 +19,7 @@ Verify that Python is in your path.
 ## Installation ##
 
 At the time of this writing, the latest stable version of the Add-on
-SDK is 1.0b2pre. You can obtain it as a [tarball] or a [zip file].
+SDK is 1.0b3pre. You can obtain it as a [tarball] or a [zip file].
 
 Alternatively, you can get the latest development version of the
 Add-on SDK from its [HG repository].
