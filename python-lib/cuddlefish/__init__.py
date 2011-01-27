@@ -675,7 +675,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons)
         except Exception, e:
-            if e.message.startswith(MOZRUNNER_BIN_NOT_FOUND):
+            if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
                 retval = -1
             else:
