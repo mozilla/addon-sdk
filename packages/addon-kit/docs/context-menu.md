@@ -236,7 +236,8 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](#guide/web-content) for more information.
+[Working with Content Scripts](#guide/addon-development/web-content) for more
+information.
 
 First, don't forget to import the module:
 

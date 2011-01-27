@@ -1,3 +1,5 @@
+# Credits #
+
 We'd like to thank our many Jetpack project contributors!  They include:
 
 * Adamantium

@@ -1,4 +1,5 @@
 <!-- contributed by Noelle Murata [fiveinchpixie@gmail.com] -->
+# cfx #
 
 The cfx command-line tool gives you access to the SDK documentation and
 development servers as well as testing, running, and building packages.
@@ -55,7 +56,7 @@ own add-on development, with the following file structure:
 #### `cfx xpi` ####
 
 <span class="aside"> For more information on how XPIs are generated,
-see the [XPI Generation](#guide/xpi) reference.</span>
+see the [XPI Generation](#guide/module-development/xpi) reference.</span>
 
 This tool is used to build the XPI file that you can distribute by submitting
 it to [addons.mozilla.org][].

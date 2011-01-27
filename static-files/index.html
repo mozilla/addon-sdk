@@ -3,82 +3,124 @@
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
   <base target="_blank"/>
-  <link rel="stylesheet" type="text/css" media="all" href="css/base.css" />
-  <link rel="stylesheet" type="text/css" media="all" href="css/apidocs.css" />
   <script type="text/javascript" src="syntaxhighlighter/scripts/shCore.js"></script>
   <script type="text/javascript" src="syntaxhighlighter/scripts/shBrushJScript.js"></script>
   <link rel="stylesheet" type="text/css" href="syntaxhighlighter/styles/shCore.css" />
   <link rel="stylesheet" type="text/css" href="syntaxhighlighter/styles/shThemeDefault.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="css/base.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="css/sdk-docs.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="css/api-reference.css" />
   <title>Add-on SDK Documentation</title>
 </head>
 <body>
 <div id="container">
   <div id="cannot-ping">
-    Cannot contact documentation server. You may want to run
-    `cfx docs`.
+    Cannot contact documentation server. You may want to run `cfx docs`.
   </div>
   <div id="columns">
+
   <div id="left-column">
-    <h1>Add-on SDK Docs</h1>
 
-    <h2  class="link" "section" id="welcome">Home</h2>
+    <h1 class="site-title">
+      <a href="/" target="_self" title="Return to the Add-on SDK's homepage">
+        <img alt="Firefox" src="https://addons.mozilla.org/media/img/zamboni/app_icons/firefox.png"> Add-on SDK</a>
+    </h1>
 
-    <h2 id="dev-guide-header">Developer Guide <a id="hide-dev-guide-toc">hide</a></h2>
+    <div class="sidebar-section" id="addon-development">
+      <h2 class="link sidebar-section-header" id="addon-development/about">Developer Guide</h2>
+      <div class="sidebar-section-contents" id="default-section-contents">
 
-    <div id="dev-guide-toc">
-      <div class="section" id="tutorial-header">Tutorial</div>
-      <ol id="tutorials">
-        <li class="link" id="getting-started">Getting Started</li>
-        <li class="link" id="implementing-simple-addon">A Simple Add-on</li>
-        <li class="link" id="implementing-reusable-module">Reusable Modules</li>
-        <li class="link" id="api-guide">API Overview</li>
-           <ol>
-             <li class="link" id="api-idioms">Common Idioms</li>
-             <li class="link" id="api-modules">Module Overview</li>
-          </ol>
-        </ol>
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="addon-development/tutorials">Tutorials</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li><h4 class="link" id="addon-development/getting-started">Getting Started</h4>
+            <ul>
+              <li class="link" id="addon-development/installation">Installation</li>
+              <li class="link" id="addon-development/implementing-simple-addon">A Simple Add-on</li>
+              <li class="link" id="addon-development/commonjs">CommonJS</li>
+              <li class="link" id="addon-development/implementing-reusable-module">Reusable Modules</li>
+              <li class="link" id="addon-development/troubleshooting">Troubleshooting</li>
+            </ul></li>
+            <li><h4 class="link" id="addon-development/api-intro">Introducing the APIs</h4>
+            <ul>
+              <li class="link" id="addon-development/api-idioms">Common Idioms</li>
+              <li class="link" id="addon-development/api-modules">API Overview</li>
+            </ul></li>
+          </ul>
+          </div>
+        </div>
 
-      <div class="section" id="programming-guides">Programming with the SDK</div>
-          <ol>
-          <li class="link" id="events">Working with Events</li>
-          <li class="link" id="web-content">Working with Content Scripts</li>
-        </ol>
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="addon-development/guides">Programming Guides</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li><h4 class="link" id="addon-development/events">Working with Events</h4></li>
+            <li><h4 class="link" id="addon-development/web-content">Working with Content Scripts</h4></li>
+            <li><h4 class="link" id="addon-development/program-id">The Program ID</h4></li>
+          </ul>
+          </div>
+        </div>
 
-      <div class="section" id="reference-header">Reference</div>
-        <ol id="reference">
-          <li class="link" id="globals">Globals</li>
-          <li class="link" id="cfx-tool">cfx Tool</li>
-          <li class="link" id="package-spec">Package Specification</li>
-          <li class="link" id="glossary">Glossary</li>
-          <li class="link" id="program-id">Program ID</li>
-          <li class="link" id="troubleshooting">Troubleshooting</li>
-        </ol>
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="addon-development/reference">Reference</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li id="high-level-package-summaries"></li>
+            <li><h4 class="link" id="addon-development/globals">Globals</h4></li>
+            <li><h4 class="link" id="addon-development/cfx-tool">cfx</h4></li>
+            <li><h4 class="link" id="addon-development/package-spec">Package Specification</h4></li>
+          </ul>
+          </div>
+        </div>
 
-      <div class="section" id="experimental-header">Experimental</div>
-        <ol id="experimental">
-          <li class="link" id="xul-extensions">Using the SDK with XUL extensions</li>
-        </ol>
-
-      <div class="section" id="internals-header">Internals</div>
-        <ol id="internals">
-          <li class="link" id="best-practices">Low-Level Module Best Practices</li>
-          <li class="link" id="chrome">Chrome Authority / Manifest Generation</li>
-          <li class="link" id="xpi">XPI Generation</li>
-          <li class="link" id="internal-globals">Internal Globals</li>
-          <li class="link" id="e10s">Out-of-Process Add-ons</li>
-        </ol>
-
-      <div class="section" id="appendices-header">Appendices</div>
-      <ol id="appendices">
-        <li><a href="https://wiki.mozilla.org/Labs/Jetpack/Release_Notes">Release Notes</a></li>
-        <li class="link" id="credits">Credits</li>
-      </ol>
-
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="addon-development/experimental">Experimental</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li><h4 class="link" id="addon-development/xul-extensions">XUL Extensions</h4></li>
+          </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <h2 id="package-reference">Package Reference</h2>
-    <div id="more-packages">More...</div>
+    <div class="sidebar-section" id="module-development">
+      <h2 class="link sidebar-section-header" id="module-development/about">Internals Guide</h2>
+      <div class="sidebar-section-contents">
+
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="module-development/guides">Programming Guides</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li><h4 class="link" id="module-development/best-practices">Low-Level Module Best Practices</h4>
+            <li><h4 class="link" id="module-development/chrome">Chrome Authority</h4>
+            <li><h4 class="link" id="module-development/xpi">XPI Generation</h4>
+            <li><h4 class="link" id="module-development/e10s">Out-of-Process Add-ons</h4>
+          </ul>
+          </div>
+        </div>
+
+        <div class="sidebar-subsection">
+          <h3 class="link sidebar-subsection-header" id="module-development/reference">Reference</h3>
+          <div class="sidebar-subsection-contents">
+          <ul>
+            <li id="low-level-package-summaries"></li>
+            <li><h4 class="link" id="module-development/globals">Globals</h4></li>
+          </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="appendices">
+        <h3><a href="https://wiki.mozilla.org/Labs/Jetpack/Release_Notes">Release Notes</a></h3>
+        <h3 class="link" id="appendices/glossary">Glossary</h3>
+        <h3 class="link" id="appendices/credits">Credits</h3>
+    </div>
+
   </div>
+
   <div id="main-content">
     <div id="right-column">
     </div>
@@ -93,14 +135,18 @@
     ]</span>
   </div>
 </div>
+
 <div id="templates">
+
   <div class="module-detail">
     <div class="docs"><p>This module has no documentation.</p></div>
   </div>
+
   <div class="module-parse-error">
     <h1>Parse Error in <span class="filename"></span></h1>
     <div class="technical-error"></div>
   </div>
+
   <div class="package-detail">
     <h1>Package &ldquo;<span class="name"></span>&rdquo;</h1>
     <table class="meta-table">
@@ -127,15 +173,23 @@
     </table>
     <div class="docs"><p>This package has no documentation.</p></div>
   </div>
+
   <div class="guide-section">
-    <h1 class="name"></h1>
     <div class="docs"><p>This section does not yet exist.</p></div>
   </div>
+
   <div class="package-entry">
-    <a class="name" target="_self"></a>
-    <span class="description"></span>
+    <h3><a class="name" target="_self"></a></h3>
+    <ul class="modules"></ul>
+    <br>
+    <div class="docs"></div>
+  </div>
+
+  <div class="package-summary">
+    <h4><a class="name" target="_self"></a></h4>
     <ul class="modules"></ul>
   </div>
+
 </div>
 </body>
 <script src="js/jquery.js"></script>

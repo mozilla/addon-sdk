@@ -1,3 +1,5 @@
+# Common Idioms #
+
 ## Constructors ##
 
 Many SDK modules export constructors that create object instances for use
@@ -23,7 +25,8 @@ can emit events such as pages loading, windows opening and user interactions.
 Add-on developers can register listeners with event emitters and are then
 notified when the events occur.
 
-To learn more about events, see the [Working with Events](#guide/events) page.
+To learn more about events, see the
+[Working with Events](#guide/addon-development/events) page.
 
 ## Content Scripting ##
 
@@ -41,7 +44,7 @@ Objects that implement this scheme include properties that specify which
 content scripts should be run and when.
 
 To learn more about content scripts, see the [Working with Content Scripts
-](#guide/web-content) page.
+](#guide/addon-development/web-content) page.
 
 <br>
-**Next**: [module overview](#guide/api-modules).
+**Next**: [module overview](#guide/addon-development/api-modules).

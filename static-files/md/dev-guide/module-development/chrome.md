@@ -1,3 +1,5 @@
+# Chrome Authority #
+
 ## Using Chrome Authority ##
 
 The most powerful low-level modules are run with "chrome privileges",

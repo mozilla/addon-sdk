@@ -1,3 +1,4 @@
+# Installation #
 
 ## Prerequisites ##
 
@@ -22,7 +23,8 @@ At the time of this writing, the latest stable version of the Add-on
 SDK is 1.0b3pre. You can obtain it as a [tarball] or a [zip file].
 
 Alternatively, you can get the latest development version of the
-Add-on SDK from its [HG repository].
+Add-on SDK from its
+[GitHub repository](https://github.com/mozilla/addon-sdk).
 
 Regardless of which option you choose, navigate to the root directory
 of your checkout with a shell/command prompt. This directory should
@@ -57,7 +59,6 @@ At any time, you can leave a virtual environment by running
 
   [tarball]: https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz
   [zip file]: https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip
-  [HG repository]: http://hg.mozilla.org/labs/jetpack-sdk/
 
 ## Sanity Check ##
 
@@ -99,5 +100,4 @@ it in your web browser.
 ## Implementing an add-on ##
 
 Next we'll go through the process of [implementing a
-simple add-on](#guide/implementing-simple-addon).
-
+simple add-on](#guide/addon-development/implementing-simple-addon).

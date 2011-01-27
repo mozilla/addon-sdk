@@ -1,3 +1,5 @@
+# XPI Generation #
+
 <span class="aside">
 Note that some parts of the following text have been simplified to
 allow you get a better idea of what's going on when a XPI is created.
@@ -189,4 +191,4 @@ examples is a unique identifier that the SDK prepends to all
 `resource:` URIs to namespace the XPI's resources so they don't
 collide with anything else, including other extensions built by the
 SDK and containing the same packages. This GUID is built from the
-[Program ID](#guide/program-id).
+[Program ID](#guide/addon-development/program-id).

@@ -1,3 +1,5 @@
+# Troubleshoooting #
+
 If you're having trouble getting the Add-on SDK up and running, don't panic!
 This page lists some starting points that might help you track down your
 problem.
@@ -31,7 +33,7 @@ When you run `cfx` to test your add-on or run unit tests, it prints out the
 location of the Firefox or XULRunner binary that it found, so you can check its
 output to be sure.
 
-[cfx Tool]: #guide/cfx-tool
+[cfx Tool]: #guide/addon-development/cfx-tool
 
 
 Check Your Text Console

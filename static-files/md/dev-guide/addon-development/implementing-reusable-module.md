@@ -1,3 +1,5 @@
+# Implementing Reusable Modules #
+
 So far we've seen how you can use the SDK to build a simple add-on. But you
 can also use the SDK to create reusable CommonJS modules with clearly defined
 APIs. These modules are then usable by any other program which follows the
@@ -10,8 +12,8 @@ and provides some encapsulation as each module will export only what it chooses
 to, so you can change the internals of the module without breaking its users.
 
 In this example we'll start with the [translator
-add-on](#guide/implementing-simple-addon), and create a separate module
-containing the code that performs the translation.
+add-on](#guide/addon-development/implementing-simple-addon), and create a
+separate module containing the code that performs the translation.
 
 ## Implementing "translate.js" ##
 
@@ -199,8 +201,9 @@ want to; doing so just makes the output easier to read.
 
 ## Next: Introducing the SDK's APIs ##
 
-Next we'll summarize the [APIs provided by the SDK](#guide/api-guide).
+Next we'll summarize the
+[APIs provided by the SDK](#guide/addon-development/api-intro).
 
   [CommonJS Specification]: http://wiki.commonjs.org/wiki/Modules/1.0
-  [Globals]: #guide/globals
+  [Globals]: #guide/addon-development/globals
   [unit-test]: #module/api-utils/unit-test

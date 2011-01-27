@@ -24,15 +24,16 @@ chrome elements, i.e. parts of the host application interface, and content
 elements, i.e. parts of a web page in an application tab.
 
 Panels have associated content scripts, which are JavaScript scripts that have
-access to the content loaded into the panels.  An add-on can specify one or more
-content scripts to load for a panel, and the add-on can communicate with those
-scripts via an asynchronous message passing API.  See
-[Working with Content Scripts](#guide/web-content) for more information.
+access to the content loaded into the panels.  An add-on can specify one or
+more content scripts to load for a panel, and the add-on can communicate with
+those scripts via an asynchronous message passing API.  See
+[Working with Content Scripts](#guide/addon-development/web-content) for more
+information.
 
 Events
 ------
 
-Panels emit the following types of [events](#guide/events).
+Panels emit the following types of [events](#guide/addon-development/events).
 
 ### message ###
 
@@ -59,8 +60,8 @@ Create and show a simple panel with content from the `data/` directory:
 
     panel.show();
 
-The tutorial section on [web content](#guide/web-content) has a more complex
-example using panels.
+The tutorial section on [web content](#guide/addon-development/web-content) has
+a more complex example using panels.
 
 <api name="Panel">
 @class

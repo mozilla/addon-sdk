@@ -1,22 +1,24 @@
+# Working with Content Scripts #
+
 Almost all interesting add-ons will need to interact with web content or the
 browser's user interface. For example, they may need to access and modify the
 content of web pages or be notified when the user clicks a link.
 
 The SDK provides several core modules to support this:
 
-***[panel](#module/addon-kit/panel)***<br>
+**[panel](#module/addon-kit/panel)**<br>
 Create a dialog that can host web content.
 
-***[page-worker](#module/addon-kit/page-worker)***<br>
+**[page-worker](#module/addon-kit/page-worker)**<br>
 Retrieve a page and access its content, without displaying it to the user.
 
-***[page-mod](#module/addon-kit/page-mod)***<br>
+**[page-mod](#module/addon-kit/page-mod)**<br>
 Execute scripts in the context of selected web pages.
 
-***[widget](#module/addon-kit/widget)***<br>
+**[widget](#module/addon-kit/widget)**<br>
 Host an add-on's user interface, including web content.
 
-***[context-menu](#module/addon-kit/context-menu)***<br>
+**[context-menu](#module/addon-kit/context-menu)**<br>
 Add items to the browser's context menu.
 
 The Mozilla platform is moving towards a model in which it uses separate
@@ -32,8 +34,8 @@ _content scripts_.
 
 A single add-on may use multiple content scripts, and content scripts loaded
 into the same context can interact directly with each other as well as with
-the web content itself. See the section below on [content script
-access](#content-script-access).
+the web content itself. See the section below on content script
+access.
 
 The add-on script and content script communicate by passing messages across
 the process boundary rather than directly accessing each other's state.
@@ -48,7 +50,7 @@ relationships. The gray fill represents code written by the add-on developer.
 ![Content script overview](media/content-scripting-overview.jpg)
 
 This might sound complicated but it doesn't need to be. The following add-on
-uses the [page-mod](#module/api-utils/page-mod) module to replace the
+uses the [page-mod](#module/addon-kit/page-mod) module to replace the
 content of any web page in the `.co.uk` domain by executing a content script
 in the context of that page:
 
@@ -65,8 +67,8 @@ In this example the content script is supplied directly to the page mod via
 the `contentScript` option in its constructor, and does not need to be
 maintained as a separate file at all.
 
-Loading content scripts
------------------------
+## Loading content scripts ##
+
 The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
@@ -113,7 +115,8 @@ page is inserted into the DOM.
 * "ready" loads the scripts after the DOM for the page has been loaded. If
 your scripts need to access the DOM content you must specify "ready" here.
 
-###<a name="content-script-access">Content script access</a>
+### <a name="content-script-access">Content script access </a>
+
 Content scripts loaded into the same global execution context can interact
 with each other directly as well as with the web content itself. However,
 content scripts which have been loaded into different execution contexts
@@ -136,8 +139,8 @@ to page B.
 The web content has no access to objects created by the content script, unless
 the content script explicitly makes them available.
 
-Communicating with content scripts
-----------------------------------
+## Communicating with content scripts ##
+
 To enable add-on scripts and content scripts to communicate with each other
 content modules support an API similar to the [Web Worker
 API](https://developer.mozilla.org/En/Using_web_workers).
@@ -153,7 +156,8 @@ Because content modules expose Worker functionality in slightly different ways
 we'll talk first about what the content script needs to do to support its end
 of the conversation.
 
-###Message handling in the content script
+### Message handling in the content script ###
+
 For a content script to be able to receive messages from the add-on script it
 must register as a listener, specifying the function that will be called when
 the add-on script sends it a message. It can do this by implementing the
@@ -172,7 +176,8 @@ The message itself can be any value that is serializable to JSON. For example:
 a string, number, boolean, array of JSON-serializable values or an object
 whose property values are JSON-serializable.
 
-###Message handling in the add-on script
+### Message handling in the add-on script ###
+
 The worker API is not exposed to add-on code in quite the same way in all
 modules. The panel and page objects integrate the worker API directly. So to
 receive messages from a content script associated with a panel you can
@@ -223,9 +228,10 @@ post messages back to the content script:
       }
     });
 
-###Examples###
+### Examples ###
 
-####Reddit example####
+#### Reddit example ####
+
 This example add-on creates a panel containing the mobile version of Reddit.
 When the user clicks on the title of a story in the panel, the add-on opens
 the linked story in a new tab in the main browser window.

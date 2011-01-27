@@ -1,3 +1,4 @@
+# The Program ID #
 
 The Program ID is a unique identifier for your add-on and is used for a variety
 of purposes. For example: [addons.mozilla.org](http://addons.mozilla.org) uses

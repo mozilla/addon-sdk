@@ -1,3 +1,5 @@
+# Using the SDK with XUL extensions #
+
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
 can be helpful if you want to use some of SDK APIs, if you like the way
 modules help separate your code into testable and re-usable pieces,

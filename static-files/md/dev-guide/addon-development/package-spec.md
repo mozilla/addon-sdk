@@ -1,7 +1,4 @@
-<span class="aside">
-For a gentle introduction to packaging, see the [Packaging](#guide/packaging)
-tutorial.
-</span>
+# Package Specification #
 
 A *package* is a directory that, at minimum, contains a JSON file
 called `package.json`. This file is also referred to as the
@@ -9,7 +6,7 @@ called `package.json`. This file is also referred to as the
 
 ## The Package Manifest ##
 
-`package.json` may contain the following keys: 
+`package.json` may contain the following keys:
 
 * `name` - the name of the package. The package system will only load
   one package with a given name. This name cannot contain spaces. The
@@ -89,8 +86,7 @@ API documentation.
 
 Packages may optionally contain a directory called `data` into which
 arbitrary files may be placed, such as images or text files. The
-URL for these resources may be reached via the `packaging` global
-defined in the [Globals] appendix.
+URL for these resources may be reached using the
+[self](#module/api-utils/self) module.
 
   [Markdown]: http://daringfireball.net/projects/markdown/
-  [Globals]: #guide/globals

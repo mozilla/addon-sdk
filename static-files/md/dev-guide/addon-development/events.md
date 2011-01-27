@@ -1,3 +1,5 @@
+# Working with Events #
+
 The Add-on SDK supports event-driven programming through its
 [`EventEmitter`](#module/api-utils/events) framework. Objects emit events
 on state changes that might be of interest to add-on code, such as browser
@@ -58,7 +60,7 @@ with "on": for example, "onOpen", "onReady" and so on. Then in the constructor
 you can assign a listener function to this property as an alternative to
 calling the object's `on()` method.
 
-For example: the [`widget`](#modules/addon-kit/widget) object emits an event
+For example: the [`widget`](#module/addon-kit/widget) object emits an event
 when the widget is clicked.
 
 The following add-on creates a widget and assigns a listener to the
@@ -137,10 +139,10 @@ These two parts communicate using a message-passing mechanism in which the
 message recipient can emit `message` and `error` events. Thus an add-on can
 receive messages from a content script by supplying a `message` listener to the
 event emitter's `on()` method. Most, but not all, of the messaging APIs use
-the [`worker`](#modules/jetpack-code/content/worker) module to implement
+the [`worker`](#module/api-utils/content/worker) module to implement
 message events.
 
-For example, the [`page-mod`](#modules/addon-kit/page-mod) module provides a
+For example, the [`page-mod`](#module/addon-kit/page-mod) module provides a
 mechanism to execute scripts in the context of selected web pages. These
 scripts are content scripts.
 
@@ -176,4 +178,4 @@ console.
     });
 
 The next section provides much more detail on [interacting with web
-content](#guide/web-content) using content scripts.
+content](#guide/addon-development/web-content) using content scripts.

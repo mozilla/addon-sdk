@@ -1,3 +1,4 @@
+# Internals > Globals #
 
 Globals in this section are subject to change in the future and/or are likely
 to be of interest to SDK module developers, rather than add-on developers.
@@ -5,7 +6,7 @@ to be of interest to SDK module developers, rather than add-on developers.
 ## Components ##
 
 To access the infamous and powerful `Components` object, see the
-[Chrome Authority](#guide/chrome) documentation.
+[Chrome Authority](#guide/module-development/chrome) documentation.
 
 ## \_\_url\_\_ ##
 
@@ -94,4 +95,4 @@ Each element of the array is an object with the following keys:
 Returns an `Array` containing the names of all bins that aren't
 currently empty.
 
-  [Package Specification]: #guide/package-spec
+  [Package Specification]: #guide/addon-development/package-spec

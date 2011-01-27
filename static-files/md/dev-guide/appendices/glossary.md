@@ -1,7 +1,7 @@
-<span class="aside">
+# Glossary #
+
 Terminology is important.  Here's a glossary of terms used for the SDK
 so all developers speak the same language.
-</span>
 
 __Add-on__: A software package that adds functionality to a Mozilla application,
 which can be built with either Mozilla's traditional add-on platform or the SDK.
@@ -66,4 +66,4 @@ __Unprivileged Module__: A CommonJS module that may be run
 without unrestricted access to the Mozilla platform, and which may use
 all applicable globals that don't require chrome privileges.
 
-  [Low-Level Module Best Practices]: #guide/best-practices
+  [Low-Level Module Best Practices]: #guide/module-development/best-practices

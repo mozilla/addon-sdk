@@ -174,6 +174,11 @@ class Server(object):
             root_dir = pkg_cfg.packages[pkg].root_dir
             files = self._get_files_in_dir(root_dir)
             pkg_cfg.packages[pkg].files = files
+            try:
+                readme = open(root_dir + '/README.md').read()
+                pkg_cfg.packages[pkg].readme = readme
+            except IOError:
+                pass
             del pkg_cfg.packages[pkg].root_dir
         return pkg_cfg.packages
 
