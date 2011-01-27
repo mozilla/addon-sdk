@@ -113,7 +113,12 @@ exports.join = function join(base) {
 };
 
 exports.dirname = function dirname(path) {
-  return MozFile(path).parent.path;
+  var parent = MozFile(path).parent;
+  return parent ? parent.path : "";
+};
+
+exports.basename = function basename(path) {
+  return MozFile(path).leafName;
 };
 
 exports.list = function list(path) {
