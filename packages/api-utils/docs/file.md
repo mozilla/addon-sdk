@@ -5,9 +5,21 @@
 
 The `file` module provides access to the local filesystem.
 
+<api name="basename">
+@function
+  Returns the last component of the given path.  For example,
+  `basename("/foo/bar/baz")` returns `"baz"`.  If the path has no components,
+  the empty string is returned.
+@param path {string}
+  The path of a file.
+@returns {string}
+  The last component of the given path.
+</api>
+
 <api name="dirname">
 @function
-  Returns the path of the directory containing the given file.
+  Returns the path of the directory containing the given file.  If the file is
+  at the top of the volume, the empty string is returned.
 @param path {string}
   The path of a file.
 @returns {string}

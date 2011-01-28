@@ -1,6 +1,7 @@
 <span class="aside">
 For more information on testing in the Add-on SDK, see the
-[Packaging](#guide/packaging) tutorial.
+[Reusable Modules](#guide/addon-development/implementing-reusable-module)
+tutorial.
 </span>
 
 This package contains a program that finds and runs tests. It is

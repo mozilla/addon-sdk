@@ -3,7 +3,7 @@
 
 
 The `traceback` module contains functionality similar to
-Python's [traceback] module.
+Python's [traceback](http://docs.python.org/library/traceback.html) module.
 
 ## JSON Traceback Objects ##
 
@@ -39,9 +39,8 @@ element thus represents a stack frame and has the following keys:
   exception where exception is an `nsIException`.
 </api>
 
-See [nsIException] for more information.
-
-[nsIException]: https://developer.mozilla.org/en/NsIException
+See [nsIException](https://developer.mozilla.org/en/NsIException) for more
+information.
 
 <api name="get">
 @function
@@ -61,5 +60,3 @@ stack at the point this function is called is used.
 @param [tbOrException] {object}
 </api>
 
-
-  [traceback]: http://docs.python.org/library/traceback.html

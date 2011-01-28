@@ -1,6 +1,7 @@
 The `self` module provides access to data that is bundled with the add-on
-as a whole. It also provides the "add-on ID", a value which is unique for each
-add-on.
+as a whole. It also provides access to the
+[Program ID](#guide/addon-development/program-id), a value which is unique for
+each add-on.
 
 <api name="id">
 @property {string}
@@ -14,8 +15,8 @@ Eventually, this ID will be unspoofable (see
 </api>
 
 <span class="aside">
-The [Package Specification](#guide/package-spec) section explains the
-`package.json` file.
+The [Package Specification](#guide/addon-development/package-spec) section
+explains the `package.json` file.
 </span>
 
 <api name="data">
