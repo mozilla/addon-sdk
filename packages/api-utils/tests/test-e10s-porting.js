@@ -16,7 +16,7 @@ const E10S_COMPATIBLE_TEST_SUITES = [
   'test-self.js'
 ];
 
-exports.testRunE10SCompatibleTestSuites = function(test) {
+exports.runE10SCompatibleTestSuites = function(test) {
   var xulApp = require("xul-app");
   if (xulApp.is("Firefox") &&
       xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
@@ -24,7 +24,15 @@ exports.testRunE10SCompatibleTestSuites = function(test) {
               "so we'll skip it.");
     return;
   }
-  
+
+  // If the "jetpack/service" XPCOM component is not present, then the host
+  // application does not support e10s, so we can't run any e10s-compatible
+  // test suites under e10s mode.
+  if (!require("chrome").Cc["@mozilla.org/jetpack/service;1"]) {
+    test.pass("This application does not support e10s.");
+    return;
+  }
+
   if (packaging.enableE10s) {
     // Don't worry about running these E10S-compatible test
     // suites, cfx will find them by default because its
@@ -64,16 +72,3 @@ exports.testRunE10SCompatibleTestSuites = function(test) {
   });
   test.waitUntilDone();
 };
-
-// If the "jetpack/service" XPCOM component is not present, then the host
-// application does not support e10s, so remove all tests above from exports,
-// and add one dummy test that passes.
-if (!require("chrome").Cc["@mozilla.org/jetpack/service;1"]) {
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
-  }
-  exports.testAppDoesNotSupportE10S = function (test) {
-    test.pass("This application does not support e10s.");
-  };
-}
