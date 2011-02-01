@@ -197,7 +197,7 @@ def run_app(harness_root_dir, harness_options,
         addons = list(addons)
 
     cmdargs = []
-    preferences = DEFAULT_COMMON_PREFS
+    preferences = dict(DEFAULT_COMMON_PREFS)
 
     if app_type == "xulrunner":
         profile_class = XulrunnerAppProfile
