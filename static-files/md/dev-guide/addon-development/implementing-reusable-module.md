@@ -15,10 +15,10 @@ In this example we'll start with the [translator
 add-on](#guide/addon-development/implementing-simple-addon), and create a
 separate module containing the code that performs the translation.
 
-## Implementing "translate.js" ##
+## Implementing "translator.js" ##
 
 In the `lib` directory under your translator's root, create a new file called
-`translate.js` with the following contents:
+`translator.js` with the following contents:
 
     // Import the APIs we need.
     var request = require("request");
@@ -26,18 +26,18 @@ In the `lib` directory under your translator's root, create a new file called
     // Define the 'translate' function using Request
     function translate(text, callback) {
       if (text.length == 0) {
-        throw ("Text to translate must not be empty")
+        throw ("Text to translate must not be empty");
       }
       var req = request.Request({
-          url: "http://ajax.googleapis.com/ajax/services/language/translate",
-          content: {
-            v: "1.0",
-            q: text,
-            langpair: "|en"
-          },
-          onComplete: function (response) {
-            callback(response.json.responseData.translatedText);
-          }
+        url: "http://ajax.googleapis.com/ajax/services/language/translate",
+        content: {
+          v: "1.0",
+          q: text,
+          langpair: "|en"
+        },
+        onComplete: function (response) {
+          callback(response.json.responseData.translatedText);
+        }
       });
       req.get();
     }
@@ -130,9 +130,9 @@ place create a file called `test-translator.js` with the following contents:
 
     exports.test_error = function(test) {
       test.assertRaises(function() {
-          translator.translate("", check_translation);
-        },
-        "Text to translate must not be empty");
+        translator.translate("", check_translation);
+      },
+      "Text to translate must not be empty");
     };
 
 This file exports four functions, each of which expects to receive
@@ -166,7 +166,7 @@ At this point your package ought to look like this:
           main.md
       /lib
           main.js
-          translate.js
+          translator.js
       /tests
           test-translator.js
 </pre>
