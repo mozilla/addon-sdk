@@ -1,17 +1,14 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 
-The `notifications` module allows you to display transient, [toaster][]-style
+The `notifications` module allows you to display transient,
+[toaster](http://en.wikipedia.org/wiki/Toast_%28computing%29)-style
 desktop messages to the user.
 
-This API supports desktop notifications on Windows, OS X using [Growl][], and
-Linux using libnotify.  If the user's system does not support desktop
-notifications or if its notifications service is not running, then notifications
-made with this API are logged to Firefox's error console and, if the user
-launched Firefox from the command line, the terminal.
-
-[toaster]: http://en.wikipedia.org/wiki/Toast_%28computing%29
-[Growl]: http://growl.info/
-
+This API supports desktop notifications on Windows, OS X using
+[Growl](http://growl.info/), and Linux using libnotify.  If the user's system
+does not support desktop notifications or if its notifications service is not
+running, then notifications made with this API are logged to Firefox's error
+console and, if the user launched Firefox from the command line, the terminal.
 
 Examples
 --------

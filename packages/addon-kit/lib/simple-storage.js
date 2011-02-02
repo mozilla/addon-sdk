@@ -47,11 +47,13 @@ const unload = require("unload");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
 
-const WRITE_PERIOD_PREF = "jetpack.addon-kit.simple-storage.writePeriod";
+const WRITE_PERIOD_PREF = "extensions.addon-sdk.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
 
-const QUOTA_PREF = "jetpack.addon-kit.simple-storage.quota";
+const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 const QUOTA_DEFAULT = 5242880; // 5 MiB
+
+const JETPACK_DIR_BASENAME = "jetpack";
 
 
 // simpleStorage.storage
@@ -107,11 +109,11 @@ JsonStore.prototype = {
       // This'll throw if the file doesn't exist.
       file.remove(this.filename);
       let parentPath = this.filename;
-      while (true) {
+      do {
         parentPath = file.dirname(parentPath);
         // This'll throw if the dir isn't empty.
         file.rmdir(parentPath);
-      }
+      } while (file.basename(parentPath) !== JETPACK_DIR_BASENAME);
     }
     catch (err) {}
   },
@@ -207,7 +209,7 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
     let storeFile = Cc["@mozilla.org/file/directory_service;1"].
                     getService(Ci.nsIProperties).
                     get("ProfD", Ci.nsIFile);
-    storeFile.append("jetpack");
+    storeFile.append(JETPACK_DIR_BASENAME);
     storeFile.append(jpSelf.id);
     storeFile.append("simple-storage");
     file.mkpath(storeFile.path);

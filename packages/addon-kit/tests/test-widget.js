@@ -28,7 +28,7 @@ exports.testConstructor = function(test) {
   test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
 
   // test widget height
-  test.assertEqual(widgetNode(0).firstChild.boxObject.height, 16, "content iframe has correct default height");
+  test.assertEqual(widgetNode(0).boxObject.height, 16, "widget has correct default height");
 
   w.destroy();
   w.destroy();

@@ -1,7 +1,8 @@
 The `securable-module` module allows for the recursive loading
-and sandboxing of [CommonJS Modules] (formerly called
-SecurableModules). This allows, for instance, the creation of "mini
-platforms" that manage the sandboxed evaluation of code.
+and sandboxing of
+[CommonJS Modules](http://wiki.commonjs.org/wiki/Modules/1.0)
+(formerly called SecurableModules). This allows, for instance,
+the creation of "mini platforms" that manage the sandboxed evaluation of code.
 
 ## Loader Objects ##
 
@@ -90,4 +91,3 @@ the following keys:
   </tr>
 </table>
 
-  [CommonJS Modules]: http://wiki.commonjs.org/wiki/Modules/1.0

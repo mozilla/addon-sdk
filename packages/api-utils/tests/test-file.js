@@ -24,6 +24,36 @@ exports.testDirName = function(test) {
   test.assertEqual(file.dirname(aDir),
                    aDir.slice(0, aDir.lastIndexOf("test-file")-1),
                    "file.dirname() of file should return its dir");
+
+  while (aDir)
+    aDir = file.dirname(aDir);
+  test.assertEqual(aDir, "",
+                   "dirname should return empty string when dir has no parent");
+};
+
+exports.testBasename = function(test) {
+  // Get the top-most path -- the path with no basename.  E.g., on Unix-like
+  // systems this will be /.  We'll use it below to build up some test paths.
+  // We have to go to this trouble because file.join() needs a legal path as a
+  // base case; join("foo", "bar") doesn't work unfortunately.
+  var topPath = url.toFilename(myurl);
+  var parentPath = file.dirname(topPath);
+  while (parentPath) {
+    topPath = parentPath;
+    parentPath = file.dirname(topPath);
+  }
+
+  var path = topPath;
+  test.assertEqual(file.basename(path), "",
+                   "basename should work on paths with no components");
+
+  path = file.join(path, "foo");
+  test.assertEqual(file.basename(path), "foo",
+                   "basename should work on paths with a single component");
+
+  path = file.join(path, "bar");
+  test.assertEqual(file.basename(path), "bar",
+                   "basename should work on paths with multiple components");
 };
 
 exports.testList = function(test) {
