@@ -591,10 +591,6 @@ BrowserWindow.prototype = {
         this._items.splice(this._items.indexOf(entry), 1);
       }
     }, this);
-
-    // remove the add-on bar if no more items
-    if (this._items.length == 0)
-      this._hideContainer();
   },
 
   // Undoes all modifications to the window. The BrowserWindow
