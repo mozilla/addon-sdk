@@ -380,6 +380,61 @@ exports.testTabsEvent_onClose = function(test) {
   });
 };
 
+// onClose event handler when a window is closed
+exports.testTabsEvent_onCloseWindow = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    var tabs = require("tabs");
+
+    let closeCount = 0, individualCloseCount = 0;
+    function listener() {
+      closeCount++;
+    }
+    tabs.on('close', listener);
+
+    // One tab is already open with the window
+    let openTabs = 1;
+    function testCasePossiblyLoaded() {
+      if (++openTabs == 4) {
+        beginCloseWindow();
+      }
+    }
+
+    tabs.open({
+      url: "data:text/html,tab2",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    tabs.open({
+      url: "data:text/html,tab3",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    tabs.open({
+      url: "data:text/html,tab4",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    function beginCloseWindow() {
+      closeBrowserWindow(window, function testFinished() {
+        tabs.removeListener("close", listener);
+
+        test.assertEqual(closeCount, 4, "Correct number of close events received");
+        test.assertEqual(individualCloseCount, 3,
+                         "Each tab with an attached onClose listener received a close " +
+                         "event when the window was closed");
+
+        test.done();
+      });
+    }
+
+  });
+}
+
 // onReady event handler
 exports.testTabsEvent_onReady = function(test) {
   test.waitUntilDone();
