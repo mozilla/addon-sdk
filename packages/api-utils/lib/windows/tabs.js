@@ -94,7 +94,7 @@ const WindowTabTracker = Trait.compose({
   },
   _destroyWindowTabTracker: function _destroyWindowTabTracker() {
     for each (tab in this.tabs)
-      tab.close();
+      this._emitEvent(EVENTS.close, tab);
     this._tabs._clear();
   },
   /**
