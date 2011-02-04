@@ -15,5 +15,6 @@ Assign focus to the textArea.
 */
 self.on('message', function() {
   var textArea = document.getElementById('annotation-box');
+  textArea.value = '';
   textArea.focus();
 })

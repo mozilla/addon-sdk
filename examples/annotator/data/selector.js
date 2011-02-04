@@ -55,6 +55,6 @@ $('*').mouseenter(function() {
   });
 })
 
-$("p").mouseout(function() {
+$('*').mouseout(function() {
   resetMatchedElement();
 })
