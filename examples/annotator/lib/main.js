@@ -17,6 +17,8 @@ Global variables
 var annotatorIsOn = false;
 var selectors = [];
 var annotators = [];
+if (!simpleStorage.storage.array)
+  simpleStorage.storage.array = [];
 
 /*
 The add-on is active if it is on AND private browsing is off
@@ -88,8 +90,6 @@ function handleNewAnnotation(annotationText, anchor) {
 
 exports.main = function(options, callbacks) {
 
-  if (!simpleStorage.storage.array)
-    simpleStorage.storage.array = [];
 /*
 The annotationEditor panel is the UI component used for creating
 new annotations. It contains a text area for the user to
@@ -105,8 +105,8 @@ When we receives this message we create a new annotation using the anchor
 and the text the user entered, store it, and hide the panel.
 */
   annotationEditor = panels.Panel({
-    width: 200,
-    height: 180,
+    width: 220,
+    height: 220,
     contentURL: data.url('editor/annotation-editor.html'),
     contentScriptFile: data.url('editor/annotation-editor.js'),
     contentScriptWhen: 'ready',

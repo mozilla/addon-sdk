@@ -1,8 +1,10 @@
 # Annotator Design Overview #
 
-The annotator uses content scripts to get user input and to examine the DOM of
-pages loaded by the user. Meanwhile the `main` module contains the
-application logic and mediates interactions between the different SDK objects.
+The annotator uses content scripts to build user interfaces, get user input,
+and examine the DOM of pages loaded by the user.
+
+Meanwhile the `main` module contains the application logic and mediates
+interactions between the different SDK objects.
 
 We could represent the overall design as follows:
 

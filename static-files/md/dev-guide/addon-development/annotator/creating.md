@@ -19,13 +19,13 @@ the annotator will be able to identify annotated elements correctly later on.
 
 If the page element is eligible for annotation, then the selector highlights
 that element and binds a click handler to it. The click handler sends a message
-called 'show' back to the main add-on code containing: the URL for the page,
-the ID attribute value, and the content of the page element.
+called `show` back to the main add-on code. The `show` message contains: the URL
+for the page, the ID attribute value, and the content of the page element.
 
 Finally, the selector listens for the window's `unload` event and sends the
 main add-on code a message called `detach` when unload occurs. This is so the
 main add-on can remove the worker associated with this page (eventually,
-`page-mod` should have its own 'unload' event, but this is the workaround for
+`page-mod` should have its own `unload` event, but this is the workaround for
 the present).
 
     var matchedElement = null;
@@ -184,28 +184,36 @@ two files: the HTML content for the panel and its content script.
 The HTML is very simple:
 
 <script type="syntaxhighlighter" class="brush: js"><![CDATA[
-  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-    <head>
-      <title>Annotation</title>
-      <style type="text/css" media="all">
-        body {
-          font: 100% arial, helvetica, sans-serif;
-          background-color: #F5F5F5;
-        }
-      </style>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <title>Annotation</title>
+  <style type="text/css" media="all">
+  body {
+    font: 100% arial, helvetica, sans-serif;
+    background-color: #F5F5F5;
+  }
+  textarea {
+    width: 180px;
+    height: 180px;
+    margin: 10px;
+    padding:0px;
+  }
+  </style>
 
-    </head>
+</head>
 
-    <body>
+<body>
 
-      <textarea rows='10' cols='20' id='annotation-box'></textarea>
-    
-    </body>
+<textarea rows='10' cols='20' id='annotation-box'>
+</textarea>
 
-  </html>
+</body>
+
+</html>
+
 ]]>
 </script>
 
@@ -239,12 +247,17 @@ Save this inside `editor` as `annotation-editor.js`.
 
 ### Updating main.js again ###
 
-Now we'll update `main.js` again to create the editor and use it. Add the
-following code to the `main` function:
+Now we'll update `main.js` again to create the editor and use it.
+
+First, add the `require` line to start using the `panel` module:
+
+    const panels = require('panel');
+
+Then add the following code to the `main` function:
 
     annotationEditor = panels.Panel({
-      width: 200,
-      height: 180,
+      width: 220,
+      height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
       contentScriptWhen: 'ready',
