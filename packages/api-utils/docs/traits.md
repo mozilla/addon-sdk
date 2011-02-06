@@ -7,39 +7,36 @@ constructs an instance of `Trait`.
 Traits
 ------
 
-[Traits] are a simple composition mechanism for structuring object-oriented
-programs. Traits are similar to [interfaces], except that they often define
-only a part of an object's data and behavior and are intended to be used in
-conjunction with other traits to completely define the object.
+[Traits](http://en.wikipedia.org/wiki/Trait_%28computer_science%29) are a
+simple composition mechanism for structuring object-oriented programs. Traits
+are similar to
+[interfaces](http://en.wikipedia.org/wiki/Interface_%28object-oriented_programming%29),
+except that they often define only a part of an object's data and behavior and
+are intended to be used in conjunction with other traits to completely define
+the object.
 
-Traits are also considered to be a more robust alternative to [mixins]
-because, name conflicts have to be resolved explicitly by composer & because
-trait composition is order-independent (hence more declarative).
+Traits are also considered to be a more robust alternative to
+[mixins](http://en.wikipedia.org/wiki/Mixins) because, name conflicts have to
+be resolved explicitly by composer & because trait composition is
+order-independent (hence more declarative).
 
 
 There are some other implementations of traits in JavaScript & some ideas /
 APIs are borrowed from them:
 
-- [traitsjs]
-- [joose]
+- [traitsjs](http://www.traitsjs.org/)
+- [joose](http://code.google.com/p/joose-js/)
 
 Object-capability security model
 --------------------------------
 
-Implementation uses an [object-capability security model] to allow protection
-of private APIs. At the same private APIs can be shared between among trait
-composition parties. To put it simply: All the properties whose names start
-with `"_"` are considered to be **private**, and are unaccessible from anywhere
-except other **public** methods / accessors of the instance that had been
-defined during composition.
-
-
-[object-capability security model]:http://en.wikipedia.org/wiki/Object-capability_model
-[traitsjs]:http://www.traitsjs.org/
-[joose]:http://code.google.com/p/joose-js/
-[Traits]:http://en.wikipedia.org/wiki/Trait_%28computer_science%29
-[interfaces]:http://en.wikipedia.org/wiki/Interface_%28object-oriented_programming%29
-[mixins]:http://en.wikipedia.org/wiki/Mixins
+Implementation uses an
+[object-capability security model](http://en.wikipedia.org/wiki/Object-capability_model)
+to allow protection of private APIs. At the same private APIs can be shared
+between among trait composition parties. To put it simply: All the properties
+whose names start with `"_"` are considered to be **private**, and are
+unaccessible from anywhere except other **public** methods / accessors of the
+instance that had been defined during composition.
 
 <api name="Trait">
 @class

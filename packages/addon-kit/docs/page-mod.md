@@ -23,7 +23,7 @@ Like all modules that interact with web content, page-mod uses content
 scripts that execute in the content process and defines a messaging API to
 communicate between the content scripts and the main add-on script. For more
 details on content scripting see the tutorial on [interacting with web
-content](#guide/web-content).
+content](#guide/addon-development/web-content).
 
 To create a PageMod the add-on developer supplies:
 
@@ -167,10 +167,11 @@ Creates a PageMod.
   Options for the PageMod, with the following keys:
   @prop include {string,array}
     A match pattern string or an array of match pattern strings.  These define
-    the pages to which the PageMod applies.  See the [match-pattern] module for
+    the pages to which the PageMod applies.  See the
+    [match-pattern](#module/api-utils/match-pattern) module for
     a description of match pattern syntax.
     At least one match pattern must be supplied.
-    [match-pattern]: #module/api-utils/match-pattern
+
   @prop [contentScriptFile] {string,array}
     The local file URLs of content scripts to load.  Content scripts specified
     by this option are loaded *before* those specified by the `contentScript`
@@ -188,20 +189,18 @@ Creates a PageMod.
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`
 object which the add-on script can use to communicate with the content scripts
-attached to the page in question. See "[Communicating with content
-scripts](#pagemod-content-scripts)" for more details.
+attached to the page in question.
 
 </api>
 
 <api name="include">
 @property {List}
-A [List] of match pattern strings.  These define the pages to which the page mod
-applies.  See the [match-pattern] module for a description of match patterns.
-Rules can be added to the list by calling its `add` method and removed by
-calling its `remove` method.
+A [list](#module/api-utils/list) of match pattern strings.  These define the
+pages to which the page mod applies.  See the
+[match-pattern](#module/api-utils/match-pattern) module for a description of
+match patterns. Rules can be added to the list by calling its `add` method and
+removed by calling its `remove` method.
 
-[List]: https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/list
-[match-pattern]: #module/api-utils/match-pattern
 </api>
 
 <api name="destroy">
