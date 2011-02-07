@@ -16,5 +16,5 @@ exports.testID = function(test) {
   // anything in particular.  Just assert that it is not empty.
   test.assert(self.id.length > 0);
   test.assertEqual(self.data.url("sample.html"),
-                   "resource://reading-data-reading-data-data/sample.html");
+                   "resource://anonid0-reading-data-reading-data-data/sample.html");
 };

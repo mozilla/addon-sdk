@@ -510,6 +510,17 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     target = target_cfg.name
 
+    # the harness_guid is used for an XPCOM class ID. We use the
+    # JetpackID for the add-on ID and the XPCOM contract ID.
+    if "harnessClassID" in target_cfg:
+        # For the sake of non-bootstrapped extensions, we allow to specify the
+        # classID of harness' XPCOM component in package.json. This makes it
+        # possible to register the component using a static chrome.manifest file
+        harness_guid = target_cfg["harnessClassID"]
+    else:
+        import uuid
+        harness_guid = str(uuid.uuid4())
+
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
@@ -534,20 +545,21 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                          " 'cfx %s'" % command)
                 sys.exit(1)
         # if we make it this far, we have a JID
+    else:
+        assert command == "test"
+
+    if "id" in target_cfg:
         jid = target_cfg["id"]
         assert not jid.endswith("@jetpack")
         unique_prefix = '%s-' % jid # used for resource: URLs
-
-        # the harness_guid is used for an XPCOM class ID. We use the
-        # JetpackID for the add-on ID and the XPCOM contract ID.
-        import uuid
-        harness_guid = str(uuid.uuid4())
-
     else:
+        # The Jetpack ID is not required for cfx test, in which case we have to
+        # make one up based on the GUID.
         if options.use_server:
+            # The harness' contractID (hence also the jid and the harness_guid)
+            # need to be static in the "development mode", so that bootstrap.js
+            # can unload the previous version of the package being developed.
             harness_guid = '2974c5b5-b671-46f8-a4bb-63c6eca6261b'
-        else:
-            harness_guid = '6724fc1b-3ec4-40e2-8583-8061088b3185'
         unique_prefix = '%s-' % target
         jid = harness_guid
 
