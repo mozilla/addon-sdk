@@ -3,21 +3,21 @@
 In this chapter we'll use a page-mod to locate elements of Web pages that have
 annotations associated with them, and a panel to display the annotations.
 
-## Annotator page-mod ##
+## Matcher page-mod ##
 
-### Annotator Content Script ###
+### Matcher Content Script ###
 
-The content script for the 'annotator' page-mod is initialized with a list
+The content script for the `matcher` page-mod is initialized with a list
 of all the annotations that the user has created. 
 
-When a page is loaded the annotator searches the DOM for elements that match
+When a page is loaded the matcher searches the DOM for elements that match
 annotations. If it finds any it binds functions to that element's
 [mouseenter](http://api.jquery.com/mouseenter/) and
 [mouseleave](http://api.jquery.com/mouseleave/) events to send messages to the
 main add-on code asking it to show or hide the annotation.
 
-Like the selector, the annotator also listens for the window's `unload` event
-and on unload sends a 'detach' message to the main add-on code, so the add-on
+Like the selector, the matcher also listens for the window's `unload` event
+and on unload sends a `detach` message to the main add-on code, so the add-on
 can clean it up.
 
 The complete content script is here:
@@ -55,22 +55,22 @@ The complete content script is here:
       $(annotationAnchor).attr('annotation', annotation.annotationText);
     }
 
-Save this in `data` as 'annotator.js'.
+Save this in `data` as 'matcher.js'.
 
 ### Updating main.js ###
 
-First, initialize an array to hold workers associated with the annotator's
+First, initialize an array to hold workers associated with the matcher's
 content scripts:
 
-    var annotators = [];
+    var matchers = [];
 
-In the `main` function, add the code to create the annotator:
+In the `main` function, add the code to create the matcher:
 
-    annotator = pageMod.PageMod({
+    matcher = pageMod.PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                          data.url('annotator.js')],
+                          data.url('matcher.js')],
       onAttach: function(worker) {
         if(simpleStorage.storage.array) {
           worker.postMessage(simpleStorage.storage.array);
@@ -86,11 +86,11 @@ In the `main` function, add the code to create the annotator:
               annotation.hide();
               break;
             case 'detach':
-              detachWorker(this, annotators);
+              detachWorker(this, matchers);
               break;
           }
         });
-        annotators.push(worker);
+        matchers.push(worker);
       }
     });
 
@@ -101,26 +101,104 @@ function:
 annotations
 
 * provides a handler for messages from that content script, handling the three
-messages - 'show', 'hide' and 'detach' - that the content script might send
+messages - `show`, `hide` and `detach` - that the content script might send
 
 * adds the worker to an array, so we it can send messages back later.
 
-Then in the module's scope implement a function to update the annotator's
-workers, and edit `handleNewAnnotation` to call it when the user enters a new
-annotation:
+Then in the module's scope implement a function to update the matcher's
+workers, and edit `handleNewAnnotation` to call the update function when the
+user enters a new annotation:
 
-    function updateAnnotators() {
-      annotators.forEach(
-        function (annotators) {
-        annotators.postMessage(simpleStorage.storage.array);
+    function updateMatchers() {
+      matchers.forEach(function (matcher) {
+        matcher.postMessage(simpleStorage.storage.array);
       });
     }
 
-<p>
+<br>
 
     function handleNewAnnotation(annotationText, anchor) {
       var newAnnotation = new Annotation(annotationText, anchor);
       simpleStorage.storage.array.push(newAnnotation);
-      updateAnnotators();
+      updateMatchers();
     }
+<br>
 
+## Annotation panel ##
+
+The annotation panel just shows the content of the annotation.
+
+There are two files associated with the annotation panel:
+
+* a simple HTML file to use as a template
+* a simple content script to build the panel's content
+
+These files will live in a new subdirectory of `data` which we'll call
+`annotation`.
+
+### Annotation panel HTML ###
+
+<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<title>Annotation</title>
+	<style type="text/css" media="all">
+
+	body {
+		font: 100% arial, helvetica, sans-serif;
+		background-color: #F5F5F5;
+	}
+
+	div {
+		text-align:left;
+	}
+
+	</style>
+
+</head>
+
+<body>
+
+<div id = "annotation">
+</div>
+
+</body>
+</html>
+]]>
+</script>
+
+Save this as `annotation.html`.
+
+### Annotation panel Content Script ###
+
+The annotation panel has a minimal content script, that sets the text:
+
+    self.on('message', function(message) {
+      $('#annotation').text(message);
+    })
+
+Save this as `annotation.js`.
+
+### Updating main.js ###
+
+Finally, update `main.js` with the code to construct the annotation panel:
+
+    annotation = panels.Panel({
+      width: 200,
+      height: 180,
+      contentURL: data.url('annotation/annotation.html'),
+      contentScriptFile: [data.url('jquery-1.4.2.min.js'),
+                          data.url('annotation/annotation.js')],
+      contentScriptWhen: 'ready',
+      onShow: function() {
+        this.postMessage(this.content);
+      }
+    });
+
+Execute `cfx run` one last time. Activate the annotator and enter an
+annotation. You should see a yellow border around the item you annotated:
+
+When you move your mouse over the item, the annotation should appear:

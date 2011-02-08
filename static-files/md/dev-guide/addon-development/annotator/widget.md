@@ -1,26 +1,33 @@
 # Implementing the Widget #
 
+We'll want the widget to do two things:
+
+* On a left-click, the widget should activate or deactivate the annotator.
+* On a right-click, the widget should display a list of all the annotations
+the user has created.
+
+Because the widget's `click` event does not distinguish left and right mouse
+clicks, we'll use a content script to capture the click events and send the
+corresponding message back to our add-on.
+
+The widget will have two icons: one to display when it's active, one to display
+when it's inactive.
+
+So there are three files we'll need to create: the widget's content script and
+its two icons.
+
+Let's get started by creating a directory called "annotator". Navigate to it
+and type `cfx init`.
+
 Inside the `data` subdirectory create another subdirectory `widget`. We'll
 keep the widget's files here. (Note that this isn't mandatory: you could just
 keep them all under `data`.  But it seems tidier this way.)
 
-We'll want the widget to do two things:
-
-* On a left-click, the widget should activate or deactivate the annotator.
-
-* On a right-click, the widget should display a list of all the annotations
-the user has created.
-
 ## The Widget's Content Script ##
 
-Because the widget's `click` event does not distinguish left and right mouse
-clicks, we'll use a content script to capture the click events and send the
-corresponding message back to our add-on:
+The widget's content script just listens for left- and right- mouse clicks and
+posts the corresponding message to the add-on code:
 
-    /*
-    Listen for left and right click events and send the corresponding message
-    to the content script.
-    */
     this.addEventListener('click', function(event) {
       if(event.button == 0 && event.shiftKey == false)
         postMessage('left-click');
@@ -34,10 +41,7 @@ Save this in your `widget` directory as `widget.js`.
 
 ## The Widget's Icons ##
 
-The widget has two icons, one to display when it's active, one to display when
-it's inactive.
-
-You can copy the icons from here:
+You can copy the widget's icons from here:
 
 <img style="margin-left:40px; margin-right:20px;" src="media/annotator/pencil-on.jpg" alt="Active Annotator">
 <img style="margin-left:20px; margin-right:20px;" src="media/annotator/pencil-off.jpg" alt="Inactive Annotator">
@@ -46,17 +50,13 @@ You can copy the icons from here:
 
 ## main.js ##
 
-Now in the `lib` directory open `main.js` and add something like the following:
+Now in the `lib` directory open `main.js` and replace its contents with this:
 
-    // Import the modules we need.
     const widgets = require('widget');
     const data = require('self').data;
 
     var annotatorIsOn = false;
 
-    /*
-    Toggle activation: update the on/off state
-    */
     function toggleActivation() {
       annotatorIsOn = !annotatorIsOn;
       return annotatorIsOn;

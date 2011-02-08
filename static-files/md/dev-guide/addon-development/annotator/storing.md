@@ -16,14 +16,14 @@ First, import the `simple-storage` module with a declaration like:
 
     const simpleStorage = require('simple-storage');
 
-Initialize the array:
+In the module scope, initialize the array:
 
-
+    if (!simpleStorage.storage.array)
+      simpleStorage.storage.array = [];
 
 Now we'll add a function to the module scope which deals with a new
 annotation. The annotation is composed of the text the user entered and the
-'annotation anchor', which consists of the URL, element ID and element content
-which the `selector` page-mod retrieved.
+'annotation anchor', which consists of the URL, element ID and element content:
 
     function handleNewAnnotation(annotationText, anchor) {
       var newAnnotation = new Annotation(annotationText, anchor);
@@ -40,7 +40,8 @@ need to supply:
       this.anchorText = anchor[2];
     }
 
-Edit the `annotation-editor`'s `onMessage` handler to call our new function:
+Now we need to link this code to the annotation editor, so that when the user
+presses 'return' in the editor, we create and store the new annotation:
 
     annotationEditor = panels.Panel({
       width: 220,
@@ -62,57 +63,19 @@ Edit the `annotation-editor`'s `onMessage` handler to call our new function:
 
 To prove that this works, let's implement the part of the add-on that displays
 all the previously entered annotations. This is implemented as a panel that's
-shown in response to the widget's 'right-click' message. Here's the code to
-create the panel, which can go in the `main` function.
+shown in response to the widget's `right-click` message.
 
-    annotationList = panels.Panel({
-      width: 420,
-      height: 150,
-      contentURL: data.url('list/annotation-list.html'),
-      contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                          data.url('list/annotation-list.js')],
-      contentScriptWhen: 'ready',
-      onShow: function() {
-        this.postMessage(simpleStorage.storage.array);
-      },
-      onMessage: function(message) {
-          require('tabs').open(message);
-      }
-    })
+The panel has three new files associated with it:
 
-When the panel is shown we send it the array of stored annotations.
+* a content-script which builds the panel content
+* a simple HTML file used as a template for the panel's content
+* a simple CSS file to provide some basic styling.
 
-The user will be able to click links in the panel, but we want to open them in
-the main browser window rather than the panel. So the panel's content script
-will send the URL to the add-on where we use the `tabs` module to open it in
-a new tab.
-
-Update the widget code to show the panel on receipt of a 'right-click'
-message:
-
-    widget = widgets.Widget({
-      label: 'Annotator',
-      contentURL: data.url('widget/pencil-off.jpg'),
-      contentScriptWhen: 'ready',
-      contentScriptFile: data.url('widget/widget.js'),
-      onMessage: function(message) {
-        if (message == 'left-click') {
-          console.log('activate/deactivate');
-          toggleActivation()?
-                            widget.contentURL=data.url('widget/pencil-on.jpg')
-                           :widget.contentURL=data.url('widget/pencil-off.jpg');
-        }
-        else if (message == 'right-click') {
-          console.log('show annotation list');
-          annotationList.show();
-        }
-      }
-    });
+These three files can all go in a new subdirectory of `data` which we will call `list`.
 
 ### Annotation List Content Script ###
 
-Here's the annotation list's content script, which you can save as
-`annotation-list.js` in a new `list` subdirectory of `data`:
+Here's the annotation list's content script:
 
     onMessage = function onMessage(storedAnnotations) {
       var annotationList = $('#annotation-list');
@@ -135,8 +98,13 @@ Here's the annotation list's content script, which you can save as
         })
     };
 
-It builds the DOM for the panel from the array of annotations it is given, and
-binds a click handler to the links to post the URL to the add-on.
+It builds the DOM for the panel from the array of annotations it is given.
+
+The user will be able to click links in the panel, but we want to open them in
+the main browser window rather than the panel. So the content script binds a
+click handler to the links which will send the URL to the add-on.
+
+Save this file in `data/list` as `annotation-list.js`.
 
 ### Annotation List HTML and CSS ###
 
@@ -211,8 +179,54 @@ h1
 ]]>
 </script>
 
-Save these in `data/list` as 'annotation-list.html' and 'annotation-list.css'
+Save these in `data/list` as `annotation-list.html` and `annotation-list.css`
 respectively.
+
+### Updating main.js ###
+
+Here's the code to create the panel, which can go in the `main` function.
+
+    annotationList = panels.Panel({
+      width: 420,
+      height: 180,
+      contentURL: data.url('list/annotation-list.html'),
+      contentScriptFile: [data.url('jquery-1.4.2.min.js'),
+                          data.url('list/annotation-list.js')],
+      contentScriptWhen: 'ready',
+      onShow: function() {
+        this.postMessage(simpleStorage.storage.array);
+      },
+      onMessage: function(message) {
+          require('tabs').open(message);
+      }
+    });
+
+Since this panel's content script uses jQuery we will pass that in too: again,
+make sure the name of it matches the version of jQuery you downloaded.
+
+When the panel is shown we send it the array of stored annotations. When the
+panel sends us a URL we use the `tabs` module to open it in a new tab.
+
+Finally we just need to connect this to the widget's `right-click` message:
+
+    widget = widgets.Widget({
+      label: 'Annotator',
+      contentURL: data.url('widget/pencil-off.jpg'),
+      contentScriptWhen: 'ready',
+      contentScriptFile: data.url('widget/widget.js'),
+      onMessage: function(message) {
+        if (message == 'left-click') {
+          console.log('activate/deactivate');
+          toggleActivation()?
+                            widget.contentURL=data.url('widget/pencil-on.jpg')
+                           :widget.contentURL=data.url('widget/pencil-off.jpg');
+        }
+        else if (message == 'right-click') {
+          console.log('show annotation list');
+          annotationList.show();
+        }
+      }
+    });
 
 This time execute `cfx xpi` to build the XPI for the add-on, and install it in
 Firefox. Activate the add-on, add an annotation, and then right-click the
@@ -251,7 +265,8 @@ under quota.)
 ## Respecting Private Browsing ##
 
 Since annotations record the user's browsing history we should prevent the user
-from creating annotations while the browser is in [Private Browsing](http://support.mozilla.com/en-US/kb/Private%20Browsing) mode.
+from creating annotations while the browser is in
+[Private Browsing](http://support.mozilla.com/en-US/kb/Private%20Browsing) mode.
 
 First let's import the `private-browsing` module into `main.js`:
 
@@ -277,6 +292,7 @@ function instead:
         function (selector) {
           selector.postMessage(canEnterAnnotations());
       })
+    }
 <p>
 
     function toggleActivation() {
@@ -309,7 +325,7 @@ function instead:
     });
 
 We want to stop the user changing the underlying activation state when in
-Private Browsing mode:
+Private Browsing mode, so we'll edit `toggleActivation` again:
 
     function toggleActivation() {
       if (privateBrowsing.isActive) {
@@ -339,5 +355,6 @@ selectors:
 Try it: execute `cfx run`, and experiment with switching the annotator on and
 off while in and out of Private Browsing mode.
 
-Now we can create and store annotations, the last piece is to display them when
-the user reloads the page, which we'll cover in the [final section](#guide/addon-development/annotator/displaying).
+Now we can create and store annotations, the last piece is to
+[display them
+when the user loads the page](#guide/addon-development/annotator/displaying).

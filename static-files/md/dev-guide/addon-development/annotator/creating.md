@@ -19,11 +19,11 @@ the annotator will be able to identify annotated elements correctly later on.
 
 If the page element is eligible for annotation, then the selector highlights
 that element and binds a click handler to it. The click handler sends a message
-called `show` back to the main add-on code. The `show` message contains: the URL
+called 'show' back to the main add-on code. The 'show' message contains: the URL
 for the page, the ID attribute value, and the content of the page element.
 
 Finally, the selector listens for the window's `unload` event and sends the
-main add-on code a message called `detach` when unload occurs. This is so the
+main add-on code a message called 'detach' when unload occurs. This is so the
 main add-on can remove the worker associated with this page (eventually,
 `page-mod` should have its own `unload` event, but this is the workaround for
 the present).
@@ -82,7 +82,7 @@ Because this code uses jQuery, you'll need to
 
 ### Updating main.js ###
 
-Go back to `main.js` and add the code to create the selector into the main
+Go back to `main.js` and add the code to create the selector into the `main`
 function:
 
     selector = pageMod.PageMod({
@@ -97,8 +97,7 @@ function:
         worker.on('message', function(message) {
         switch(message[0]) {
           case 'show':
-            annotationEditor.anchor = message[1];
-            annotationEditor.show();
+            console.log(message);
             break;
           case 'detach':
             detachWorker(this, selectors);
@@ -107,6 +106,9 @@ function:
         })
       }
     });
+
+Make sure the name you use to load jQuery matches the name of the jQuery
+version you downloaded.
 
 The page-mod matches anything: so each time the user loads a page the page-mod
 emits the `attach` event, which will call the handler function we've assigned
@@ -126,8 +128,8 @@ later on
 `show` we will just log the content for the time being. If the message is
 `detach` we remove the worker from the `selectors` array
 
-At the top of the file import the page-mod and declare an array for the
-workers:
+At the top of the file import the `page-mod` module and declare an array for
+the workers:
 
     const pageMod = require('page-mod');
     var selectors = [];
@@ -224,8 +226,8 @@ Save this inside `editor` as `annotation-editor.html`.
 In the corresponding content script we do two things:
 
 * handle a message from the add-on code by giving the text area focus
-* listen for the return key and when it is, send the contents of the text area
-to the add-on
+* listen for the return key and when it is pressed, send the contents of the
+text area to the add-on.
 
 <p>
 
@@ -249,7 +251,7 @@ Save this inside `editor` as `annotation-editor.js`.
 
 Now we'll update `main.js` again to create the editor and use it.
 
-First, add the `require` line to start using the `panel` module:
+First, import the `panel` module:
 
     const panels = require('panel');
 
@@ -273,10 +275,10 @@ Then add the following code to the `main` function:
       }
     });
 
-We create the editor but don't show it yet. 
-We send the editor the `focus` message when it is shown, so it will give the
-text area focus. When the panel sends us its message we log the message and
-hide the panel.
+We create the editor panel but don't show it. 
+We will send the editor panel the `focus` message when it is shown, so it will
+give the text area focus. When the editor panel sends us its message we log the
+message and hide the panel.
 
 The only thing left is to link the editor to the selector. So edit the message
 handler assigned to the selector so that on receiving the `show` message we
@@ -313,7 +315,7 @@ with a text area for a note:
 </div>
 <br>
 
-Enter the note and press <return>: you should see console output like this:
+Enter the note and press 'return': you should see console output like this:
 
 <pre>
   info: https://developer.mozilla.org/en-US/mozilla,fave-tools,
