@@ -1,9 +1,19 @@
 var xulApp = require("xul-app");
-var e10s = require('e10s');
 var timer = require('timer');
+
+// If the "jetpack/service" XPCOM component is not present, then the host app
+// does not support e10s, so we can't run any e10s tests, so we check for E10S
+// support here and then return early in test functions without it.
+var hasE10S =
+  typeof require("chrome").Cc["@mozilla.org/jetpack/service;1"] != "undefined";
 
 function makeConsoleTest(options) {
   return function(test) {
+    if (!hasE10S) {
+      test.pass("This application does not support e10s.");
+      return;
+    }
+
     if (xulApp.is("Firefox") &&
         xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
       test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
@@ -51,7 +61,7 @@ function makeConsoleTest(options) {
       fakeConsole[name] = function() { msg(name, arguments); };
     });
 
-    var process = e10s.AddonProcess({
+    var process = require('e10s').AddonProcess({
       console: fakeConsole,
       quit: function(status) {
         addAction(["quit", status]);
@@ -154,6 +164,11 @@ exports.testSyncCallReturnValueArrivesAfterAsyncMsgSends = makeConsoleTest({
 });
 
 exports.testCommonJSCompliance = function(test) {
+  if (!hasE10S) {
+    test.pass("This application does not support e10s.");
+    return;
+  }
+
   if (xulApp.is("Firefox") &&
       xulApp.versionInRange(xulApp.version, "4.0b7", "4.0b8pre")) {
     test.pass("Due to bug 609066, Firefox 4.0b7 will never pass this test, " +
@@ -208,7 +223,7 @@ exports.testCommonJSCompliance = function(test) {
       },
       __proto__: console
     };
-    var process = e10s.AddonProcess({
+    var process = require("e10s").AddonProcess({
       loader: loader,
       packaging: {
         getModuleInfo: function(url) {

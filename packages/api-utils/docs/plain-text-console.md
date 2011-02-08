@@ -2,7 +2,6 @@ The `plain-text-console` module provides a minimalist implementation
 of the `console` global, which simply logs all messages to
 standard output.
 
-For documentation on the `console` global, see the [Globals]
-appendix.
+For documentation on the `console` global, see the
+[Globals](#guide/addon-development/globals) reference.
 
-  [Globals]: #guide/globals

@@ -174,6 +174,11 @@ class Server(object):
             root_dir = pkg_cfg.packages[pkg].root_dir
             files = self._get_files_in_dir(root_dir)
             pkg_cfg.packages[pkg].files = files
+            try:
+                readme = open(root_dir + '/README.md').read()
+                pkg_cfg.packages[pkg].readme = readme
+            except IOError:
+                pass
             del pkg_cfg.packages[pkg].root_dir
         return pkg_cfg.packages
 
@@ -458,7 +463,7 @@ def generate_static_docs(env_root, tgz_filename):
                     open(dest_path + ".json", "w").write(docs_json)
                     # write the HTML div files
                     docs_div = apirenderer.json_to_div(docs_parsed, src_path)
-                    open(dest_path + ".div.html", "w").write(docs_div)
+                    open(dest_path + ".div", "w").write(docs_div)
                     # write the standalone HTML files
                     docs_html = apirenderer.json_to_html(docs_parsed, src_path)
                     open(dest_path + ".html", "w").write(docs_html)

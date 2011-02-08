@@ -18,7 +18,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
     IGNORED_FILES = [".hgignore", "install.rdf", 
                      "application.ini", xpi_name]
     IGNORED_FILE_SUFFIXES = ["~"]
-    IGNORED_DIRS = [".svn", ".hg", "defaults"]
+    IGNORED_DIRS = [".svn", ".hg"]
 
     def filter_filenames(filenames):
         for filename in filenames:

@@ -41,7 +41,7 @@
 const file = require("file");
 const prefs = require("preferences-service");
 
-const QUOTA_PREF = "jetpack.addon-kit.simple-storage.quota";
+const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 
 let {Cc,Ci} = require("chrome");
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].

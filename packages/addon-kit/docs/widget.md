@@ -53,11 +53,11 @@ handled by [content scripts].  So, for example, to be notified when your
 widget's content has loaded, you can make a small script that calls back to the
 widget when it finishes loading.
 
-[content scripts]: #guide/web-content
+[content scripts]: #guide/addon-development/web-content
 
 ## Events ##
 
-Widgets emit the following types of [events](#guide/events).
+Widgets emit the following types of [events](#guide/addon-development/events).
 
 ### click ###
 
@@ -82,7 +82,8 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](#guide/web-content) for more information.
+[Working with Content Scripts](#guide/addon-development/web-content) for more
+information.
 
     const widgets = require("widget");
 
@@ -181,8 +182,8 @@ Represents a widget object.
 
   @prop [contentURL] {string}
     An optional string URL to content to load into the widget. This can be
-    [local content](#guide/web-content) or remote content, an image or web
-    content. Widgets must have either the `content` property or the
+    [local content](#guide/addon-development/web-content) or remote content, an
+    image or web content. Widgets must have either the `content` property or the
     `contentURL` property set.
 
   @prop [panel] {Panel}
@@ -279,10 +280,10 @@ Represents a widget object.
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget.  This can be
-  [local content](#guide/web-content) or remote content, an image or web
-  content.  Setting it updates the widget's appearance immediately.  However,
-  if the widget was created using `content`, then this property is meaningless,
-  and setting it has no effect.
+  [local content](#guide/addon-development/web-content) or remote content, an
+  image or web content.  Setting it updates the widget's appearance
+  immediately.  However, if the widget was created using `content`, then this
+  property is meaningless, and setting it has no effect.
 </api>
 
 <api name="panel">

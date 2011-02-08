@@ -295,13 +295,20 @@ def test_all_examples(env_root, defaults):
     examples = [dirname for dirname in os.listdir(examples_dir)
                 if os.path.isdir(os.path.join(examples_dir, dirname))]
     examples.sort()
+    fail = False
     for dirname in examples:
         print "Testing %s..." % dirname
-        run(arguments=["test",
-                       "--pkgdir",
-                       os.path.join(examples_dir, dirname)],
-            defaults=defaults,
-            env_root=env_root)
+        try:
+            run(arguments=["test",
+                           "--pkgdir",
+                           os.path.join(examples_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+
+    if fail:
+        sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
     deps = []
@@ -668,7 +675,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons)
         except Exception, e:
-            if e.message.startswith(MOZRUNNER_BIN_NOT_FOUND):
+            if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
                 retval = -1
             else:
