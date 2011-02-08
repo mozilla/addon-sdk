@@ -137,7 +137,7 @@ class Function_Doc(API_Renderer):
         if not self.returns:
             return ''
         text = 'Returns: ' + span_wrap(self.returns['type'], DATATYPE)
-        text += self.returns['description']
+        text += markdown.markdown(self.returns['description'])
         return tag_wrap(text, RETURNS)
 
 class Parameter_Doc(API_Renderer):
