@@ -188,7 +188,7 @@ Here's the code to create the panel, which can go in the `main` function.
 
     annotationList = panels.Panel({
       width: 420,
-      height: 180,
+      height: 200,
       contentURL: data.url('list/annotation-list.html'),
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('list/annotation-list.js')],

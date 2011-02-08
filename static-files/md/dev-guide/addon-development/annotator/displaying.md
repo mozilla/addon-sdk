@@ -201,4 +201,19 @@ Finally, update `main.js` with the code to construct the annotation panel:
 Execute `cfx run` one last time. Activate the annotator and enter an
 annotation. You should see a yellow border around the item you annotated:
 
+<div align="center">
+<img src="media/annotator/matcher.png" alt="Annotator Matcher">
+</div>
+<br>
+
 When you move your mouse over the item, the annotation should appear:
+
+<div align="center">
+<img src="media/annotator/annotation-panel.png" alt="Annotation Panel">
+</div>
+<br>
+
+Obviously this add-on isn't complete yet. It could do with more beautiful
+styling, and it certainly needs a way to delete annotations. But we hope this
+gives you an idea of the things that are possible with the modules in the
+`addon-kit` package.
