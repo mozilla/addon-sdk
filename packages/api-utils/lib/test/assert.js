@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:ts=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -33,6 +34,10 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+"use strict";
+
+const { isFunction, isNull, isObject, isString, isRegExp, isArray,
+        isUndefined, instanceOf, source } = require("utils/type");
 
 /**
  * The `AssertionError` is defined in assert.
@@ -46,20 +51,23 @@
  */
 function AssertionError(options) {
   let assertionError = Object.create(AssertionError.prototype);
+
   if ("string" === typeof options)
     options = { message: options };
-  if ('actual' in options)
+  if ("actual" in options)
     assertionError.actual = options.actual;
-  if ('expected' in options)
+  if ("expected" in options)
     assertionError.expected = options.expected;
-  if ('operator' in options)
+  if ("operator" in options)
     assertionError.operator = options.operator;
+
   assertionError.message = options.message;
   assertionError.stack = new Error().stack;
+  return assertionError;
 }
 AssertionError.prototype = Object.create(Error.prototype, {
   constructor: { value: AssertionError },
-  name: { value: 'AssertionError', enumerable: true },
+  name: { value: "AssertionError", enumerable: true },
   toString: { value: function toString() {
     let value;
     if (this.message) {
@@ -68,9 +76,9 @@ AssertionError.prototype = Object.create(Error.prototype, {
     else {
       value = [
         this.name + " : ",
-        represent(this.expected),
+        source(this.expected),
         this.operator,
-        represent(this.actual)
+        source(this.actual)
       ].join(" ");
     }
     return value;
@@ -97,7 +105,7 @@ Assert.prototype = {
         actual: value,
         expected: true,
         message: message,
-        operator: '=='
+        operator: "=="
       });
     }
     else {
@@ -105,66 +113,71 @@ Assert.prototype = {
     }
   },
   /**
-   * The equality assertion tests shallow, coercive equality with `=`.
+   * The equality assertion tests shallow, coercive equality with `==`.
    * @example
-   *    assert.equal(actual, expected, message_opt)
+   *    assert.equal(1, 1, "one is one");
    */
   equal: function equal(actual, expected, message) {
-    if (actual != expected) {
+    if (actual == expected) {
+      this.pass(message);
+    }
+    else {
       this.fail({
         actual: actual,
         expected: expected,
         message: message,
-        operator: '=='
+        operator: "=="
       });
-    }
-    else {
-      this.pass(message);
     }
   },
   /**
    * The non-equality assertion tests for whether two objects are not equal
    * with `!=`.
    * @example
-   *    assert.notEqual(actual, expected, message_opt)
+   *    assert.notEqual(1, 2, "one is not two");
    */
   notEqual: function notEqual(actual, expected, message) {
-    if (actual == expected) {
-      this.fail({
-        actual: actual,
-        expected: expected,
-        message: message,
-        operator: '!=',
-      });
-    } else {
+    if (actual != expected) {
       this.pass(message);
-    }
-  },
-  /**
-   * The equivalence assertion tests a deep equality relation.
-   * @example
-   *    assert.deepEqual(actual, expected, message_opt)
-   */
-   deepEqual: function deepEqual(actual, expected, message) {
-    if (!_deepEqual(actual, expected)) {
-      this.fail({
-        actual: actual,
-        expected: expected,
-        message: message,
-        operator: 'deepEqual'
-      });
     }
     else {
-      this.pass(message);
+      this.fail({
+        actual: actual,
+        expected: expected,
+        message: message,
+        operator: "!=",
+      });
     }
   },
   /**
-   * The non-equivalence assertion tests for any deep inequality.
+   * The equivalence assertion tests a deep (with `===`) equality relation.
    * @example
-   *    assert.notDeepEqual(actual, expected, message_opt)
+   *    assert.deepEqual({ a: "foo" }, { a: "foo" }, "equivalent objects")
+   */
+   deepEqual: function deepEqual(actual, expected, message) {
+    if (isDeepEqual(actual, expected)) {
+      this.pass(message);
+    }
+    else {
+      this.fail({
+        actual: actual,
+        expected: expected,
+        message: message,
+        operator: "deepEqual"
+      });
+    }
+  },
+  /**
+   * The non-equivalence assertion tests for any deep (with `===`) inequality.
+   * @example
+   *    assert.notDeepEqual({ a: "foo" }, Object.create({ a: "foo" }),
+   *                        "object's inherit from different prototypes");
    */
   notDeepEqual: function notDeepEqual(actual, expected, message) {
-    if (_deepEqual(actual, expected)) {
+    if (!isDeepEqual(actual, expected)) {
+      this.pass(message);
+    }
+    else {
       this.fail({
         actual: actual,
         expected: expected,
@@ -172,76 +185,118 @@ Assert.prototype = {
         operator: "notDeepEqual"
       });
     }
-    else {
-      pass(message);
-    }
   },
   /**
    * The strict equality assertion tests strict equality, as determined by
    * `===`.
    * @example
-   *    assert.strictEqual(actual, expected, message_opt)
+   *    assert.strictEqual(null, null, "`null` is `null`")
    */
   strictEqual: function strictEqual(actual, expected, message) {
-    if (actual !== expected) {
-      this.fail({
-        actual: actual,
-        expected: expected,
-        message: message,
-        operator: '==='
-      });
-    } else {
-      this.pass(message);
-    }
-  },
-  // 10. The strict non-equality assertion tests for strict inequality, as
-  // determined by !==.assert.notStrictEqual(actual, expected, message_opt);
-  notStrictEqual: function notStrictEqual(actual, expected, message) {
     if (actual === expected) {
-      this.fail({
-        actual: actual,
-        expected: expected,
-        message: message,
-        operator: '!=='
-      })
+      this.pass(message);
     }
     else {
+      this.fail({
+        actual: actual,
+        expected: expected,
+        message: message,
+        operator: "==="
+      });
+    }
+  },
+  /**
+   * The strict non-equality assertion tests for strict inequality, as
+   * determined by `!==`.
+   * @example
+   *    assert.notStrictEqual(null, undefined, "`null` is not `undefined`");
+   */
+  notStrictEqual: function notStrictEqual(actual, expected, message) {
+    if (actual !== expected) {
       this.pass(message);
     }
+    else {
+      this.fail({
+        actual: actual,
+        expected: expected,
+        message: message,
+        operator: "!=="
+      })
+    }
   }
-  // 11. Expected to throw an error:
-  // assert.throws(block, Error_opt, message_opt);
-, throws: function raises(block, Error, message) {
+  /**
+   * The assertion whether or not given `block` throws an exception. If optional
+   * `Error` argument is provided and it's type of function thrown error is
+   * asserted to be an instance of it, if type of `Error` is string then message
+   * of throw exception is asserted to contain it.
+   * @param {Function} block
+   *    Function that is expected to throw.
+   * @param {Error|RegExp|String} [Error]
+   *    Error constructor that is expected to be thrown or a string that
+   *    must be contained by a message of the thrown exception, or a RegExp
+   *    matching a message of the thrown exception.
+   * @param {String} message
+   *    Description message
+   *
+   * @examples
+   *
+   *    assert.throws(function block() {
+   *      doSomething(4)
+   *    }, "Object is expected", "Incorrect argument is passed");
+   *
+   *    assert.throws(function block() {
+   *      Object.create(5)
+   *    }, TypeError, "TypeError is thrown");
+   */
+, throws: function throws(block, Error, message) {
     let threw = false;
     let exception = null;
-    if ("string" == typeof Error && undefined == message) {
+
+    // If third argument is not provided and second argument is a string it
+    // means that optional `Error` argument was not passed, so we shift
+    // arguments.
+    if (isString(Error) && isUndefined(message)) {
       message = Error;
       Error = undefined;
     }
+
+    // Executing given `block`.
     try {
       block();
-    } catch (e) {
+    }
+    catch (e) {
       threw = true;
       exception = e;
     }
-    if (threw &&
-        (!Error || ("string" == typeof Error &&
-                    0 <= exception.message.indexOf(Error)) ||
-         ('function' == typeof Error && 'RegExp' == Error.constructor.name
-          && Error.test(exception.message)) ||
-         ('function' == typeof exception && exception instanceof Error))) {
+
+    // If exception was thrown and `Error` argument was not passed assert is
+    // passed.
+    if (threw && (isUndefined(Error) ||
+                 // If passed `Error` was a string asserting if exception
+                 // message contains it.
+                 (isString(Error) && 0 <= exception.message.indexOf(Error)) ||
+                 // If passed `Error` is RegExp using it's test method to
+                 // assert thrown exception message.
+                 (isRegExp(Error) && Error.test(exception.message)) ||
+                 // If passed `Error` is a constructor function testing if
+                 // thrown exception is an instance of it.
+                 (isFunction(Error) && instanceOf(exception, Error))))
+    {
       this.pass(message);
     }
+
+    // Otherwise we report assertion failure.
     else {
       let failure = {
         message: message,
         operator: "throws"
-      }
+      };
 
       if (exception)
-        failure = e.actual = exception
+        failure = e.actual = exception;
+
       if (Error)
-        failure = e.expected = Error
+        failure = e.expected = Error;
 
       this.fail(failure);
     }
@@ -249,77 +304,30 @@ Assert.prototype = {
 };
 exports.Assert = Assert;
 
-/**
- * Internal utility function that is used to generate
- * textual representation of things passed to it.
- */
-function represent(thing) {
-  let result;
-  switch(typeof(thing)) {
-    case "string":
-      result = '"' + thing + '"';
-      break;
-    case "number":
-      result = thing;
-      break;
-    case "object":
-      if (null === thing) {
-        result = 'null';
-        break;
-      }
-      let names = []
-      for (let name in thing)
-        names.push(name);
-      result = thing;
-      if (names.length > 0) {
-        result += " - {";
-        result += names.slice(0, 7).map(function(n) {
-          let repr = n + ": ";
-          try {
-            repr += 'object' == typeof thing[n] ? "{...}" : represent(thing[n]);
-          } catch(e) {
-            repr += "[Exception!]";
-          }
-          return repr;
-        }).join(", ");
-        if (names.length > 7)
-          result += ", ...";
-        result += "}";
-      }
-      break;
-    case "function":
-      result = thing.toString().split('\n').slice(0, 2).join('\n') + '\n...}'
-      break;
-    default:
-      result = '' + thing;
-   }
-   return result;
-}
+function isDeepEqual(actual, expected) {
 
-
-function _deepEqual(actual, expected) {
   // 7.1. All identical values are equivalent, as determined by ===.
   if (actual === expected) {
     return true;
   }
+
   // 7.2. If the expected value is a Date object, the actual value is
   // equivalent if it is also a Date object that refers to the same time.
-  else if ((actual instanceof Date && expected instanceof Date) ||
-           (typeof actual == typeof expected && typeof actual == 'object' &&
-            actual.constructor && expected.constructor &&
-            'Date' == actual.constructor.name &&
-            'Date' == expected.constructor.name)) {
+  else if (isDate(actual) && isDate(expected)) {
     return actual.getTime() === expected.getTime();
   }
-  // 7.3. Other pairs that do not both pass typeof value == "object",
-  // equivalence is determined by ==.
-  else if ('object' != typeof actual && 'object' != typeof expected) {
-    return actual == expected;
-  }
+
   // XXX specification bug: this should be specified
-  else if ('string' == typeof expected || 'string' == typeof actual) {
+  else if (isAtom(actual) || isAtom(actual)) {
     return expected === actual;
   }
+
+  // 7.3. Other pairs that do not both pass typeof value == "object",
+  // equivalence is determined by ==.
+  else if (!isObject(actual) && !isObject(expected)) {
+    return actual == expected;
+  }
+
   // 7.4. For all other Object pairs, including Array objects, equivalence is
   // determined by having the same number of owned properties (as verified
   // with Object.prototype.hasOwnProperty.call), the same set of keys
@@ -327,27 +335,22 @@ function _deepEqual(actual, expected) {
   // corresponding key, and an identical "prototype" property. Note: this
   // accounts for both named and indexed properties on Arrays.
   else {
-    return actual.prototype === expected.prototype && _equiv(actual, expected);
+    return actual.prototype === expected.prototype &&
+           isEquivalent(actual, expected);
   }
 }
 
-function _equiv(a, b, stack) {
-  return (a !== null && a !== undefined && b !== null && b !== undefined &&
-          _equivArray(Object.keys(a).sort(), Object.keys(b).sort()) &&
+function isEquivalent(a, b, stack) {
+  return isEquivalentArray(Object.keys(a).sort(),
+                           Object.keys(b).sort()) &&
           Object.keys(a).every(function(key) {
-            return _deepEqual(a[key], b[key], stack);
-          }));
+            return isDeepEqual(a[key], b[key], stack)
+          });
 }
 
-function _arrayLike(thing) {
-  return ((Array.isArray && Array.isArray(thing)) ||
-          ('[object Array]' == Object.prototype.toString.call(thing)) ||
-          ('[object Arguments]' == Object.prototype.toString.call(thing)));
-}
-
-function _equivArray(a, b, stack) {
-  return (_arrayLike(a) && _arrayLike(b) &&
-          Array.prototype.every.call(a, function(value, index) {
-            return _deepEqual(value, b[index])
-          }));
+function isArrayEquivalent(a, b, stack) {
+  return isArray(a) && isArray(b) &&
+         a.every(function(value, index) {
+           return isDeepEqual(value, b[index]);
+         });
 }
