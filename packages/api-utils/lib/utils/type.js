@@ -132,10 +132,16 @@ var isArray = Array.isArray || function isArray(value) {
 }
 exports.isArray = isArray;
 
-function isArguments() {
+/**
+ * Returns `true` if `value` is an Arguments object.
+ * @examples
+ *    (function(){ return isArguments(arguments); })(1, 2, 3); // true
+ *    isArguments([1,2,3]); // false
+ */
+function isArguments(value) {
   Object.prototype.toString.call(value) === "[object Arguments]";
 }
-exports.isArguments = isArguments
+exports.isArguments = isArguments;
 
 /**
  * Returns true if it is a primitive `value`. (null, undefined, number, boolean)
@@ -203,7 +209,7 @@ function isJSON(value, visited) {
 }
 exports.isJSON = function (value) {
   return isJSON(value);
-}
+};
 
 /**
  * Returns if `value` is an instance of a given `Type`. This is exactly same as
@@ -232,6 +238,14 @@ function instanceOf(value, Type) {
 }
 exports.instanceOf = instanceOf;
 
+/**
+ * Function returns textual representation of a value passed to it. Function
+ * takes additional `indent` argument that is used for indentation. Also
+ * optional `limit` argument may be passed to limit amount of detail returned.
+ * @param {Object} value
+ * @param {String} [indent="    "]
+ * @param {Number} [limit]
+ */
 function source(value, indent, limit, offset) {
   var result;
   var names;
@@ -239,7 +253,7 @@ function source(value, indent, limit, offset) {
 
   indent = indent || "    ";
   offset = (offset || "");
-  result = ""
+  result = "";
 
   if (isUndefined(value)) {
     result += "undefined";
@@ -264,7 +278,7 @@ function source(value, indent, limit, offset) {
 
     result += "[\n";
     result += value.map(function(value) {
-      return offset + indent + source(value, indent, limit, offset + indent)
+      return offset + indent + source(value, indent, limit, offset + indent);
     }).join(",\n");
     result += isCompact && value.length > limit ?
               ",\n" + offset + "...]" : "\n" + offset + "]";
@@ -294,19 +308,21 @@ function source(value, indent, limit, offset) {
         result += source(descriptor.value, indent, _limit, indent + offset);
       }
       else {
+
         if (descriptor.get) {
           result += offset + indent + "get " + name + " ";
           accessor = source(descriptor.get, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"))
+          result += accessor.substr(accessor.indexOf("{"));
         }
+
         if (descriptor.set) {
           result += offset + indent + "set " + name + " ";
           accessor = source(descriptor.set, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"))
+          result += accessor.substr(accessor.indexOf("{"));
         }
       }
       return result;
-    }).join(',\n');
+    }).join(",\n");
 
     if (isCompact) {
       if (names.length > limit && limit > 0) {
@@ -330,4 +346,4 @@ function source(value, indent, limit, offset) {
 }
 exports.source = function (value, indentation, limit) {
   return source(value, indentation, limit);
-}
+};

@@ -77,4 +77,4 @@ exports["test json"] = function (assert) {
 };
 
 if (module == require.main)
-  require("test").run(exports)
+  require("test").run(exports);

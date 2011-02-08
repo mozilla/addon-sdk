@@ -112,6 +112,7 @@ Assert.prototype = {
       this.pass(message);
     }
   },
+
   /**
    * The equality assertion tests shallow, coercive equality with `==`.
    * @example
@@ -130,6 +131,7 @@ Assert.prototype = {
       });
     }
   },
+
   /**
    * The non-equality assertion tests for whether two objects are not equal
    * with `!=`.
@@ -149,6 +151,7 @@ Assert.prototype = {
       });
     }
   },
+
   /**
    * The equivalence assertion tests a deep (with `===`) equality relation.
    * @example
@@ -167,6 +170,7 @@ Assert.prototype = {
       });
     }
   },
+
   /**
    * The non-equivalence assertion tests for any deep (with `===`) inequality.
    * @example
@@ -186,6 +190,7 @@ Assert.prototype = {
       });
     }
   },
+
   /**
    * The strict equality assertion tests strict equality, as determined by
    * `===`.
@@ -205,6 +210,7 @@ Assert.prototype = {
       });
     }
   },
+
   /**
    * The strict non-equality assertion tests for strict inequality, as
    * determined by `!==`.
@@ -223,7 +229,8 @@ Assert.prototype = {
         operator: "!=="
       })
     }
-  }
+  },
+
   /**
    * The assertion whether or not given `block` throws an exception. If optional
    * `Error` argument is provided and it's type of function thrown error is
@@ -248,7 +255,7 @@ Assert.prototype = {
    *      Object.create(5)
    *    }, TypeError, "TypeError is thrown");
    */
-, throws: function throws(block, Error, message) {
+  throws: function throws(block, Error, message) {
     let threw = false;
     let exception = null;
 

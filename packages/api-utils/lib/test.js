@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:ts=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -125,4 +126,4 @@ exports.run = function run(exports) {
   // those to a given `exports` object since that where jetpack test runner
   // will look for them.
   defineTestSuite(exports, suite);
-}
+};
