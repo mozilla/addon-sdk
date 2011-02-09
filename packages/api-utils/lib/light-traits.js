@@ -567,7 +567,7 @@ Object.freeze(compose.prototype);
 Trait.required = Object.freeze(Object.create(Object.prototype, {
   toString: {
     value: Object.freeze(function toString() {
-      return '<Trait.required>';
+      return "<Trait.required>";
     })
   }
 }));

@@ -1,4 +1,4 @@
-'use strict'
+"use strict";
 
 var Trait = require("light-traits").Trait;
 var utils = require("./utils");
@@ -37,7 +37,7 @@ exports["test composition with conflict"] = function(assert) {
         configurable: true,
         enumerable: true
       },
-      c: { 
+      c: {
         value: method,
         configurable: true
       }
@@ -62,7 +62,7 @@ exports["test identical props does not cause conflict"] = function(assert) {
         configurable: true,
         enumerable: true
       },
-      b: { 
+      b: {
         value: 1
       }
     },
@@ -116,7 +116,7 @@ exports["test compose is neutral wrt conflicts"] = function(assert) {
     { b: { value: 0, writable: true, configurable: true, enumerable: false } }
   );
 
-  var expected = { a: Conflict('a'), b: Data(0, false) };
+  var expected = { a: Conflict("a"), b: Data(0, false) };
 
   assert.equalTraits(actual, expected);
 };
@@ -130,7 +130,7 @@ exports["test conflicting prop overrides Trait.required"] = function(assert) {
     { a: { value: Trait.required } }
   );
 
-  var expected = { a: Conflict('a') };
+  var expected = { a: Conflict("a") };
 
   assert.equalTraits(actual, expected);
 };
@@ -151,13 +151,13 @@ exports["test compose is commutative"] = function(assert) {
 
 exports["test compose is commutative, also for required/conflicting props"] = function(assert) {
   var actual = Trait.compose(
-    { 
+    {
       a: { value: 0 },
       b: { value: 1 },
       c: { value: 3 },
       e: { value: Trait.required }
     },
-    { 
+    {
       c: { value: 2 },
       d: { get: method }
     }
@@ -165,7 +165,7 @@ exports["test compose is commutative, also for required/conflicting props"] = fu
 
   var expected = Trait.compose(
     Trait({ c: 3 }),
-    { 
+    {
       c: { value: 2 },
       d: { get: method },
       a: { value: 0 },
@@ -179,7 +179,7 @@ exports["test compose is commutative, also for required/conflicting props"] = fu
 
 exports["test compose is associative"] = function(assert) {
   var actual = Trait.compose(
-    { 
+    {
       a: { value: 0 },
       b: { value: 1 },
       c: { value: 3 },
@@ -199,12 +199,12 @@ exports["test compose is associative"] = function(assert) {
         c: { value: 3 },
         d: { value: Trait.required }
       },
-      { 
+      {
         c: { value: 3 },
         d: { value: Trait.required }
       }
     ),
-    { 
+    {
       c: { value: 2 },
       d: { value: method },
       e: { value: "foo" }
@@ -214,7 +214,7 @@ exports["test compose is associative"] = function(assert) {
   assert.equalTraits(actual, expected);
 };
 
-exports['test diamond import of same prop do not conflict'] = function(assert) {
+exports["test diamond import of same prop do not conflict"] = function(assert) {
   var actual = Trait.compose(
     Trait.compose(
       { b: { value: 2 } },
@@ -240,9 +240,9 @@ exports['test diamond import of same prop do not conflict'] = function(assert) {
 exports["test create simple"] = function(assert) {
   var o1 = Trait.compose(
     Trait({ a: 1 }),
-    { 
-      b: { 
-        value: function() { 
+    {
+      b: {
+        value: function() {
           return this.a;
         }
       }
@@ -250,8 +250,8 @@ exports["test create simple"] = function(assert) {
   ).create(Object.prototype);
 
   assert.equal(Object.getPrototypeOf(o1), Object.prototype, "o1 prototype");
-  assert.equal(1, o1.a, 'o1.a');
-  assert.equal(1, o1.b(), 'o1.b()');
+  assert.equal(1, o1.a, "o1.a");
+  assert.equal(1, o1.b(), "o1.b()");
   assert.equal(Object.keys(o1).length, 1, "Object.keys(o1).length === 2");
 };
 
@@ -261,9 +261,9 @@ exports["test create with Array.prototype"] = function(assert) {
 };
 
 exports["test exception for incomplete required properties"] = function(assert) {
-  assert.throws(function() { 
+  assert.throws(function() {
     Trait({ foo: Trait.required }).create(Object.prototype)
-  }, "Missing required property: `foo`', 'required prop error");
+  }, "Missing required property: `foo`", "required prop error");
 }
 
 exports["test exception for unresolved conflicts"] = function(assert) {
@@ -286,9 +286,9 @@ exports["test conflicting properties are present"] = function(assert) {
 
 exports["test diamond with conflicts"] = function(assert) {
   function makeT1(x) {
-    return { 
+    return {
       m: {
-        value: function() { 
+        value: function() {
           return x
         }
       }
@@ -297,7 +297,7 @@ exports["test diamond with conflicts"] = function(assert) {
 
   function makeT2(x) {
     return Trait.compose(
-      Trait({ t2: 'foo' }),
+      Trait({ t2: "foo" }),
       makeT1(x)
     );
   };
@@ -305,7 +305,7 @@ exports["test diamond with conflicts"] = function(assert) {
   function makeT3(x) {
     return Trait.compose(
       {
-        t3: { value: 'bar' }
+        t3: { value: "bar" }
       },
       makeT1(x)
     );
@@ -322,10 +322,10 @@ exports["test providing requirements through proto"] = function(assert) {
   var t = Trait.compose(
     {},
     { required: { required: true } }
-  ).create({ required: 'test' });
+  ).create({ required: "test" });
 
   assert.equal(t.required, "test", "property from proto is inherited");
 };
 
 if (module == require.main)
-  require('test').run(exports);
+  require("test").run(exports);
