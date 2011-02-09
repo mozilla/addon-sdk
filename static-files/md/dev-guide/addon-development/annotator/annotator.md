@@ -24,4 +24,3 @@ If you want to refer to the complete add-on you can find it under the
 ### [Storing Annotations](#guide/addon-development/annotator/storing) ###
 
 ### [Displaying Annotations](#guide/addon-development/annotator/displaying) ###
-
