@@ -51,3 +51,12 @@ We'll use the `simple-storage` module to store annotations.
 Because we are recording potentially sensitive information, we want to prevent
 the user creating annotations when in private browsing mode, so we'll use the
 `private-browsing` module for that.
+
+## Getting Started ##
+
+
+Let's get started by creating a directory called "annotator". Navigate to it
+and type `cfx init`.
+
+Next, we will implement the
+[widget](#guide/addon-development/annotator/widget).

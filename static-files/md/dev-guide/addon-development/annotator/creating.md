@@ -8,22 +8,23 @@ text itself.
 
 ### Selector Content Scripts ###
 
-The **selector** page mod can be switched on and off using a message from the
-main add-on code. It is initially inactive.
+The selector page mod can be switched on and off using a message from the
+main add-on code. It is initially off.
 
 It listens for [mouseenter](http://api.jquery.com/mouseenter/) events.
 When a mouseenter event is triggered the selector checks whether the element
 is eligible for annotation. An event is eligible if it, or one of its ancestors
-in the DOM tree, has an ID attribute. The idea is to make it more likely that
-the annotator will be able to identify annotated elements correctly later on.
+in the DOM tree, has an ID attribute. The idea here is to make it more likely
+that the annotator will be able to identify annotated elements correctly later
+on.
 
 If the page element is eligible for annotation, then the selector highlights
 that element and binds a click handler to it. The click handler sends a message
-called 'show' back to the main add-on code. The 'show' message contains: the URL
+called `show` back to the main add-on code. The `show` message contains: the URL
 for the page, the ID attribute value, and the content of the page element.
 
 Finally, the selector listens for the window's `unload` event and sends the
-main add-on code a message called 'detach' when unload occurs. This is so the
+main add-on code a message called `detach` when unload occurs. This is so the
 main add-on can remove the worker associated with this page (eventually,
 `page-mod` should have its own `unload` event, but this is the workaround for
 the present).
@@ -119,10 +120,10 @@ running in that particular page context. For a more detailed discussion of the
 way `page-mod` uses workers, see the
 [page-mod documentation](#module/addon-kit/page-mod).
 
-In the attach handler we do three things to the new worker:
+In the attach handler we do three things:
 
-* send it a message with the current activation status
-* add this worker to an array called `selectors` so we can send it messages
+* send the content script a message with the current activation status
+* add the worker to an array called `selectors` so we can send it messages
 later on
 * assign a message handler for messages from this worker. If the message is
 `show` we will just log the content for the time being. If the message is
@@ -172,14 +173,15 @@ Click on the highlight and you should see something like this in the console
 output:
 
 <pre>
-  info: https://developer.mozilla.org/en-US/mozilla,fave-tools,The main
-  issue-tracker for Mozilla projects.
+  info: show,http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/,
+  post-2249,When you submit a new add-on, you will have to choose between 2
+  review tracks: Full Review and Preliminary Review.
 </pre>
 
 ## Annotation Editor Panel ##
 
 Next, create a subdirectory under `data` called `editor`. This will contain
-two files: the HTML content for the panel and its content script.
+two files: the HTML content, and the content script.
 
 ### Annotation Editor HTML ###
 
@@ -219,7 +221,7 @@ The HTML is very simple:
 ]]>
 </script>
 
-Save this inside `editor` as `annotation-editor.html`.
+Save this inside `data/editor` as `annotation-editor.html`.
 
 ### Annotation Editor Content Script ###
 
@@ -229,7 +231,7 @@ In the corresponding content script we do two things:
 * listen for the return key and when it is pressed, send the contents of the
 text area to the add-on.
 
-<p>
+<br>
 
     var textArea = document.getElementById('annotation-box');
     textArea.onkeyup = function(event) {
@@ -245,7 +247,7 @@ text area to the add-on.
       textArea.focus();
     })
 
-Save this inside `editor` as `annotation-editor.js`.
+Save this inside `data/editor` as `annotation-editor.js`.
 
 ### Updating main.js again ###
 
@@ -267,7 +269,7 @@ Then add the following code to the `main` function:
         if (message) {
           console.log(this.anchor);
           console.log(message);
-          }
+        }
         annotationEditor.hide();
       },
       onShow: function() {
@@ -275,7 +277,7 @@ Then add the following code to the `main` function:
       }
     });
 
-We create the editor panel but don't show it. 
+We create the editor panel but don't show it.
 We will send the editor panel the `focus` message when it is shown, so it will
 give the text area focus. When the editor panel sends us its message we log the
 message and hide the panel.
@@ -318,9 +320,11 @@ with a text area for a note:
 Enter the note and press 'return': you should see console output like this:
 
 <pre>
-  info: https://developer.mozilla.org/en-US/mozilla,fave-tools,
-  The main issue-tracker for Mozilla projects.
-  info: How interesting!
+  info: http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/,
+  post-2249,When you submit a new add-on, you will have to choose between 2
+  review tracks: Full Review and Preliminary Review.
+  info: We should ask for Full Review if possible.
+
 </pre>
 
 That's a complete annotation, and in the next section we'll deal with

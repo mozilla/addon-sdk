@@ -50,7 +50,8 @@ $('*').mouseenter(function() {
   $(matchedElement).bind('click.annotator', function(event) {
     event.stopPropagation();
     event.preventDefault();
-    postMessage(['show', [document.location.toString(), $(ancestor).attr("id"),
+    postMessage(['show', [document.location.toString(),
+                $(ancestor).attr("id"),
                 $(matchedElement).text()]]);
   });
 })

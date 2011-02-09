@@ -1,6 +1,6 @@
 # Implementing the Widget #
 
-We'll want the widget to do two things:
+We want the widget to do two things:
 
 * On a left-click, the widget should activate or deactivate the annotator.
 * On a right-click, the widget should display a list of all the annotations
@@ -15,9 +15,6 @@ when it's inactive.
 
 So there are three files we'll need to create: the widget's content script and
 its two icons.
-
-Let's get started by creating a directory called "annotator". Navigate to it
-and type `cfx init`.
 
 Inside the `data` subdirectory create another subdirectory `widget`. We'll
 keep the widget's files here. (Note that this isn't mandatory: you could just
@@ -37,7 +34,7 @@ posts the corresponding message to the add-on code:
         event.preventDefault();
     }, true);
 
-Save this in your `widget` directory as `widget.js`.
+Save this in your `data/widget` directory as `widget.js`.
 
 ## The Widget's Icons ##
 
@@ -46,7 +43,7 @@ You can copy the widget's icons from here:
 <img style="margin-left:40px; margin-right:20px;" src="media/annotator/pencil-on.jpg" alt="Active Annotator">
 <img style="margin-left:20px; margin-right:20px;" src="media/annotator/pencil-off.jpg" alt="Inactive Annotator">
 
-(Or make your own if you're feeling creative.) Save them in your `widget` directory.
+(Or make your own if you're feeling creative.) Save them in your `data/widget` directory.
 
 ## main.js ##
 

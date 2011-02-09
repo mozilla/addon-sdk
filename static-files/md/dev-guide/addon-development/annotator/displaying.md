@@ -7,17 +7,17 @@ annotations associated with them, and a panel to display the annotations.
 
 ### Matcher Content Script ###
 
-The content script for the `matcher` page-mod is initialized with a list
-of all the annotations that the user has created. 
+The content script for the matcher page-mod is initialized with a list
+of all the annotations that the user has created.
 
 When a page is loaded the matcher searches the DOM for elements that match
 annotations. If it finds any it binds functions to that element's
 [mouseenter](http://api.jquery.com/mouseenter/) and
 [mouseleave](http://api.jquery.com/mouseleave/) events to send messages to the
-main add-on code asking it to show or hide the annotation.
+`main` module, asking it to show or hide the annotation.
 
 Like the selector, the matcher also listens for the window's `unload` event
-and on unload sends a `detach` message to the main add-on code, so the add-on
+and on unload sends a `detach` message to the `main` module, so the add-on
 can clean it up.
 
 The complete content script is here:
@@ -55,7 +55,7 @@ The complete content script is here:
       $(annotationAnchor).attr('annotation', annotation.annotationText);
     }
 
-Save this in `data` as 'matcher.js'.
+Save this in `data` as `matcher.js`.
 
 ### Updating main.js ###
 
@@ -106,7 +106,7 @@ messages - `show`, `hide` and `detach` - that the content script might send
 * adds the worker to an array, so we it can send messages back later.
 
 Then in the module's scope implement a function to update the matcher's
-workers, and edit `handleNewAnnotation` to call the update function when the
+workers, and edit `handleNewAnnotation` to call this new function when the
 user enters a new annotation:
 
     function updateMatchers() {
@@ -170,7 +170,7 @@ These files will live in a new subdirectory of `data` which we'll call
 ]]>
 </script>
 
-Save this as `annotation.html`.
+Save this in `data/annotation` as `annotation.html`.
 
 ### Annotation panel Content Script ###
 
@@ -180,7 +180,7 @@ The annotation panel has a minimal content script, that sets the text:
       $('#annotation').text(message);
     })
 
-Save this as `annotation.js`.
+Save this in `data/annotation` as `annotation.js`.
 
 ### Updating main.js ###
 
@@ -214,6 +214,9 @@ When you move your mouse over the item, the annotation should appear:
 <br>
 
 Obviously this add-on isn't complete yet. It could do with more beautiful
-styling, and it certainly needs a way to delete annotations. But we hope this
-gives you an idea of the things that are possible with the modules in the
-`addon-kit` package.
+styling, it certainly needs a way to delete annotations, it should deal with
+`OverQuota` more reliably, and the matcher could be made to match more
+reliably.
+
+But we hope this gives you an idea of the things that are possible with the
+modules in the `addon-kit` package.

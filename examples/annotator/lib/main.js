@@ -1,10 +1,9 @@
 // Import the modules we need.
-const contextMenu = require('context-menu');
-const panels = require('panel');
 const widgets = require('widget');
 const data = require('self').data;
-const simpleStorage = require('simple-storage');
 const pageMod = require('page-mod');
+const panels = require('panel');
+const simpleStorage = require('simple-storage');
 const privateBrowsing = require('private-browsing');
 const notifications = require("notifications");
 
@@ -12,18 +11,19 @@ const notifications = require("notifications");
 Global variables
 * Boolean to indicate whether the add-on is switched on or not
 * Array for all workers associated with the 'selector' page mod
-* Array for all workers associated with the 'annotator' page mod
+* Array for all workers associated with the 'matcher' page mod
 */
 var annotatorIsOn = false;
 var selectors = [];
-var annotators = [];
+var matchers = [];
+
 if (!simpleStorage.storage.array)
   simpleStorage.storage.array = [];
 
 /*
-The add-on is active if it is on AND private browsing is off
+You can add annotations iff the add-on is on AND private browsing is off
 */
-function addonIsActive() {
+function canEnterAnnotations() {
   return (annotatorIsOn && !privateBrowsing.isActive);
 }
 
@@ -40,17 +40,16 @@ Function to tell the selector page mod that the add-on has become (in)active
 function activateSelectors() {
   selectors.forEach(
     function (selector) {
-      selector.postMessage(addonIsActive());
+      selector.postMessage(canEnterAnnotations());
   })
 }
 
 /*
-Update the annotators: call this whenever the set of annotations changes
+Update the matchers: call this whenever the set of annotations changes
 */
-function updateAnnotators() {
-  annotators.forEach(
-    function (annotators) {
-    annotators.postMessage(simpleStorage.storage.array);
+function updateMatchers() {
+  matchers.forEach(function (matcher) {
+    matcher.postMessage(simpleStorage.storage.array);
   });
 }
 
@@ -64,7 +63,7 @@ function toggleActivation() {
   }
   annotatorIsOn = !annotatorIsOn;
   activateSelectors();
-  return addonIsActive();
+  return canEnterAnnotations();
 }
 
 /*
@@ -85,10 +84,70 @@ notify all the annotators of the change.
 function handleNewAnnotation(annotationText, anchor) {
   var newAnnotation = new Annotation(annotationText, anchor);
   simpleStorage.storage.array.push(newAnnotation);
-  updateAnnotators();
+  updateMatchers();
 }
 
 exports.main = function(options, callbacks) {
+/*
+The widget provides a mechanism to switch the selector on or off, and to
+view the list of annotations.
+
+The selector is switched on/off with a left-click, and the list of annotations
+is displayed on a right-click.
+*/
+widget = widgets.Widget({
+    label: 'Annotator',
+    contentURL: data.url('widget/pencil-off.jpg'),
+    contentScriptWhen: 'ready',
+    contentScriptFile: data.url('widget/widget.js'),
+    onMessage: function(message) {
+      if (message == 'left-click') {
+        console.log('activate/deactivate');
+        toggleActivation()?
+                          widget.contentURL=data.url('widget/pencil-on.jpg')
+                         :widget.contentURL=data.url('widget/pencil-off.jpg');
+      }
+      else if (message == 'right-click') {
+        console.log('show annotation list');
+        annotationList.show();
+      }
+    }
+  });
+
+/*
+The selector page-mod enables the user to select page elements to annotate.
+
+It is attached to all pages but only operates if the add-on is active.
+
+The content script highlights any page elements which can be annotated. If the
+user clicks a highlighted element it sends a message to the add-on containing
+information about the element clicked, which is called the anchor of the
+annotation.
+
+When we receive this message we assign the anchor to the annotationEditor and
+display it.
+*/
+  selector = pageMod.PageMod({
+    include: ['*'],
+    contentScriptWhen: 'ready',
+    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
+                        data.url('selector.js')],
+    onAttach: function(worker) {
+      worker.postMessage(canEnterAnnotations());
+      worker.on('message', function(message) {
+        switch(message[0]) {
+          case 'show':
+            annotationEditor.anchor = message[1];
+            annotationEditor.show();
+            break;
+          case 'detach':
+            detachWorker(this, selectors);
+            break;
+        }
+      })
+      selectors.push(worker);
+    }
+  });
 
 /*
 The annotationEditor panel is the UI component used for creating
@@ -121,23 +180,6 @@ and the text the user entered, store it, and hide the panel.
   });
 
 /*
-The annotation panel is the UI component that displays an annotation.
-
-When we are ready to show it we assign its 'content' attribute to contain
-the annotation text, and that gets sent to the content process in onShow().
-*/
-  annotation = panels.Panel({
-    width: 200,
-    height: 180,
-    contentURL: data.url('annotation/annotation.html'),
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'), data.url('annotation/annotation.js')],
-    contentScriptWhen: 'ready',
-    onShow: function() {
-      this.postMessage(this.content);
-    }
-  });
-
-/*
 The annotationList panel is the UI component that lists all the annotations
 the user has entered.
 
@@ -148,8 +190,8 @@ intercepts clicks on the links, passing them back to the add-on to open them
 in the browser.
 */
   annotationList = panels.Panel({
-    width: 480,
-    height: 320,
+    width: 420,
+    height: 200,
     contentURL: data.url('list/annotation-list.html'),
     contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                         data.url('list/annotation-list.js')],
@@ -160,45 +202,39 @@ in the browser.
     onMessage: function(message) {
       require('tabs').open(message);
     }
-  })
+  });
 
 /*
-The selector page-mod enables the user to select page elements to annotate.
-
-It is attached to all pages but only operates if the add-on is active.
-
-The content script highlights any page elements which can be annotated. If the
-user clicks a highlighted element it sends a message to the add-on containing
-information about the element clicked, which is called the anchor of the
-annotation.
-
-When we receive this message we assign the anchor to the annotationEditor and
-display it.
+We listen for the OverQuota event from simple-storage.
+If it fires we just notify the user and delete the most
+recent annotations until we are back in quota.
 */
-  selector = pageMod.PageMod({
-    include: ['*'],
-    contentScriptWhen: 'ready',
-    contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('selector.js')],
-    onAttach: function(worker) {
-      worker.postMessage(addonIsActive());
-      worker.on('message', function(message) {
-        switch(message[0]) {
-          case 'show':
-            annotationEditor.anchor = message[1];
-            annotationEditor.show();
-            break;
-          case 'detach':
-            detachWorker(this, selectors);
-            break;
-        }
-      })
-      selectors.push(worker);
+  simpleStorage.on("OverQuota", function () {
+    notifications.notify({
+      title: 'Storage space exceeded',
+      text: 'Removing recent annotations'});
+    while (simpleStorage.quotaUsage > 1)
+      simpleStorage.storage.array.pop();
+  });
+
+/*
+We listen for private browsing start/stop events to change the widget icon
+and to notify the selectors of the change in state.
+*/
+  privateBrowsing.on('start', function() {
+    widget.contentURL=data.url('widget/pencil-off.jpg');
+    activateSelectors();
+  });
+
+  privateBrowsing.on('stop', function() {
+    if (canEnterAnnotations()) {
+      widget.contentURL=data.url('widget/pencil-on.jpg');
+      activateSelectors();
     }
   });
 
 /*
-The annotator page-mod locates anchors on web pages and prepares for the
+The matcher page-mod locates anchors on web pages and prepares for the
 annotation to be displayed.
 
 It is attached to all pages, and when it is attached we pass it the complete
@@ -209,15 +245,15 @@ messages to the add-on.
 When the add-on receives the 'show' message it assigns the annotation text to
 the annotation panel and shows it.
 
-Note that the annotator is active whether or not the add-on is active:
+Note that the matcher is active whether or not the add-on is active:
 'inactive' only means that the user can't create new add-ons, they can still
 see old ones.
 */
-  annotator = pageMod.PageMod({
+  matcher = pageMod.PageMod({
     include: ['*'],
     contentScriptWhen: 'ready',
     contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('annotator.js')],
+                        data.url('matcher.js')],
     onAttach: function(worker) {
       if(simpleStorage.storage.array) {
         worker.postMessage(simpleStorage.storage.array);
@@ -233,66 +269,30 @@ see old ones.
             annotation.hide();
             break;
           case 'detach':
-            detachWorker(this, annotators);
+            detachWorker(this, matchers);
             break;
         }
       });
-      annotators.push(worker);
+      matchers.push(worker);
     }
   });
 
 /*
-The widget provides a mechanism to switch the selector on or off, and to
-view the list of annotations.
+The annotation panel is the UI component that displays an annotation.
 
-The selector is switched on/off with a left-click, and the list of annotations
-is displayed on a right-click.
+When we are ready to show it we assign its 'content' attribute to contain
+the annotation text, and that gets sent to the content process in onShow().
 */
-  widget = widgets.Widget({
-    label: 'Annotator',
-    contentURL: data.url('widget/pencil-off.jpg'),
-    contentScriptWhen: 'ready',
+  annotation = panels.Panel({
+    width: 200,
+    height: 180,
+    contentURL: data.url('annotation/annotation.html'),
     contentScriptFile: [data.url('jquery-1.4.2.min.js'),
-                        data.url('widget/widget.js')],
-    onMessage: function(message) {
-      if (message == 'left-click') {
-        toggleActivation()?
-                          widget.contentURL=data.url('widget/pencil-on.jpg')
-                         :widget.contentURL=data.url('widget/pencil-off.jpg');
-      }
-      else if (message == 'right-click') {
-        annotationList.show();
-      }
+                        data.url('annotation/annotation.js')],
+    contentScriptWhen: 'ready',
+    onShow: function() {
+      this.postMessage(this.content);
     }
-  });
-
-/*
-We listen for private browsing start/stop events to change the widget icon
-and to notify the selectors of the change in state.
-*/
-  privateBrowsing.on('start', function() {
-    widget.contentURL=data.url('widget/pencil-off.jpg');
-    activateSelectors();
-  });
-
-  privateBrowsing.on('stop', function() {
-    if (addonIsActive()) {
-      widget.contentURL=data.url('widget/pencil-on.jpg');
-      activateSelectors();
-    }
-  });
-
-/*
-We listen for the OverQuota event from simple-storage.
-If it fires we just notify the user and delete the most
-recent annotations until we are back in quota.
-*/
-  simpleStorage.on("OverQuota", function () {
-    notifications.notify({
-      title: 'Storage space exceeded',
-      text: 'Removing recent annotations'});
-    while (simpleStorage.quotaUsage > 1)
-      simpleStorage.storage.array.pop();
   });
 
 }

@@ -197,7 +197,7 @@ Here's the code to create the panel, which can go in the `main` function.
         this.postMessage(simpleStorage.storage.array);
       },
       onMessage: function(message) {
-          require('tabs').open(message);
+        require('tabs').open(message);
       }
     });
 
@@ -207,7 +207,7 @@ make sure the name of it matches the version of jQuery you downloaded.
 When the panel is shown we send it the array of stored annotations. When the
 panel sends us a URL we use the `tabs` module to open it in a new tab.
 
-Finally we just need to connect this to the widget's `right-click` message:
+Finally we need to connect this to the widget's `right-click` message:
 
     widget = widgets.Widget({
       label: 'Annotator',
@@ -256,6 +256,11 @@ respond to it. Add the following to your add-on's `main` function:
       while (simpleStorage.quotaUsage > 1)
         simpleStorage.storage.array.pop();
     });
+
+Because we use a notification to alert the user, we need to import the
+`notifications` module:
+
+    const notifications = require("notifications");
 
 (It should be obvious that this is an incredibly unhelpful way to deal with the
 problem. A real add-on should give the user a chance to choose which data to
