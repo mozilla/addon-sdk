@@ -74,7 +74,7 @@ var AssertDescriptor = {
           expected: expectedKeys.sort().join(","),
         });
       }
-      else if (difference = findNonEquivalentPropertyName(actual, expected)) {
+      else if ((difference = findNonEquivalentPropertyName(actual, expected))) {
         this.fail({
           operator: "equalTraits",
           message: "Traits define non-equivalent property `" + difference + "`",
