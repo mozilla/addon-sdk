@@ -334,6 +334,10 @@ const Worker = AsyncEventEmitter.compose({
     WorkerGlobalScope(this); // will set this._port pointing to the private API
   },
 
+  get url() {
+    return this._window.document.location.href;
+  },
+
   /**
    * Tells _port to unload itself and removes all the references from itself.
    */
