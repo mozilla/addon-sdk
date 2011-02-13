@@ -92,10 +92,6 @@ pre,code, kbd, tt, samp, tt {
   font-family: "andale mono",monospace;
 }
 
-ul {
-  list-style: none;
-}
-
 li {
   margin-left: 2em;
 }

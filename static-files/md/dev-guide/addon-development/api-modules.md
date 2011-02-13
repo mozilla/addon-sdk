@@ -14,11 +14,22 @@ The SDK provides four modules to help you build a UI.
 
 ### [panel](#module/addon-kit/panel) ###
 
-A panel is a dialog. Its content is specified as HTML. You can execute scripts
-in the panel's context to interact with the content and send messages back to
-the main add-on code.
+A panel is a dialog. Its content is specified as HTML and you can execute
+scripts in it, so the appearance and behaviour of the panel is limited only
+by what you can do using HTML, CSS and JavaScript.
 
-You can use a panel anywhere your application needs to display a dialog.
+You can build or load the content locally or load it from a remote server.
+The screenshot below shows a panel whose content is built from the list of
+currently open tabs:
+
+<div align="center">
+<img src="media/screenshots/modules/panel-tabs-osx.png"
+alt="List open tabs panel">
+</div>
+<br>
+
+Scripts executing in the panel's context can exchange messages with the main
+add-on code.
 
 ### [widget](#module/addon-kit/widget) ###
 
@@ -28,15 +39,35 @@ A widget is a small piece of HTML content which is displayed in the Firefox 4
 Widgets are generally used in one of two different contexts:
 
 * to display compact content that should always be visible to the user, such as
-the time in a selected time zone or the weather
+the time in a selected time zone or the weather. The screenshot below shows a
+widget that displays the time in the selected city:
+
+<div align="center">
+<img src='media/screenshots/modules/widget-content-osx.png'
+alt="Mozilla widget content">
+</div>
+<br>
 
 * to provide a way for the user to access other parts of an add-on's user
 interface. For example, a widget might display only an icon, but open a
-settings dialog when the user clicks it.
+settings dialog when the user clicks it. The widget below displays only the
+Mozilla icon:
 
-To simplify your code in the latter case, you can attach a panel object to
-your widget: then, when the user clicks the widget, the widget will display
-the panel. The `reddit-panel` example demonstrates this.
+<div align="center">
+<img src="media/screenshots/modules/widget-icon-osx.png"
+alt="Mozilla widget icon">
+</div>
+<br>
+
+To simplify your code in the latter case, you can assign a panel object to
+your widget. Then when the user clicks the widget, the widget will display
+the panel anchored to the widget. The `reddit-panel` example demonstrates this:
+
+<div align="center">
+<img src="media/screenshots/modules/reddit-panel-osx.png" alt="Reddit panel">
+</div>
+<br>
+
 
 ### [context-menu](#module/addon-kit/context-menu) ###
 
@@ -47,9 +78,30 @@ You can define the context in which the item is shown using any
 of a number of predefined contexts (for example, when some content on the page
 is selected) or define your own contexts using scripts.
 
+In the screenshot below an add-on has added a new submenu to the context menu
+associated with `img` elements:
+
+<div align="center">
+<img src="media/screenshots/modules/context-menu-image-osx.png"
+alt="Context-menu">
+</div>
+<br>
+
+
 ### [notifications](#module/addon-kit/notifications) ###
 
 This module enables an add-on to display transient messages to the user.
+
+It uses the platform's notification service ([Growl](http://growl.info/) on Mac
+OS X and Windows, libnotify on Linux), so the notification will appear slightly
+different on different platforms. On Mac OS X a notification will look
+something like this:
+
+<div align="center">
+<img src="media/screenshots/modules/notification-growl-osx.png" alt="Growl
+notification">
+</div>
+<br>
 
 ## Interacting with the Web ##
 

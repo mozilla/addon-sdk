@@ -193,6 +193,7 @@ table.meta-table {
 
 .sidebar-section ul {
   margin-bottom: 0.2em;
+  list-style: none;
 }
 
 .sidebar-section h2, .sidebar-section h3, .sidebar-section h4 {
