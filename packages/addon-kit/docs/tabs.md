@@ -36,7 +36,8 @@ be correct at this point. Use `ready` event listener to be notified when the
 page has loaded.
 
 ### close ###
-Event emitted when a tab is closed.
+Event emitted when a tab is closed. In addition, when a window is closed,
+this event will be emitted for each of the open tabs in that window.
 
 ### ready ###
 Event emitted when a tab's content's DOM is ready.
