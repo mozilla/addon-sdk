@@ -52,7 +52,7 @@ const { isFunction, isNull, isObject, isString, isRegExp, isArray,
 function AssertionError(options) {
   let assertionError = Object.create(AssertionError.prototype);
 
-  if ("string" === typeof options)
+  if (isString(options))
     options = { message: options };
   if ("actual" in options)
     assertionError.actual = options.actual;
@@ -238,7 +238,7 @@ Assert.prototype = {
    * of throw exception is asserted to contain it.
    * @param {Function} block
    *    Function that is expected to throw.
-   * @param {Error|RegExp|String} [Error]
+   * @param {Error|RegExp} [Error]
    *    Error constructor that is expected to be thrown or a string that
    *    must be contained by a message of the thrown exception, or a RegExp
    *    matching a message of the thrown exception.
@@ -279,9 +279,6 @@ Assert.prototype = {
     // If exception was thrown and `Error` argument was not passed assert is
     // passed.
     if (threw && (isUndefined(Error) ||
-                 // If passed `Error` was a string asserting if exception
-                 // message contains it.
-                 (isString(Error) && 0 <= exception.message.indexOf(Error)) ||
                  // If passed `Error` is RegExp using it's test method to
                  // assert thrown exception message.
                  (isRegExp(Error) && Error.test(exception.message)) ||

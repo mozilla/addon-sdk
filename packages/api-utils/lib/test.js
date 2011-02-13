@@ -54,7 +54,7 @@ function defineTestSuite(target, suite, prefix) {
   // See for details: http://wiki.commonjs.org/wiki/Unit_Testing/1.1
   let Assert = suite.Assert || BaseAssert;
 
-  // Going through each item in the test suit and wrapping it into a
+  // Going through each item in the test suite and wrapping it into a
   // Jetpack test format.
   Object.keys(suite).forEach(function(key) {
 
@@ -109,7 +109,7 @@ function defineTestSuite(target, suite, prefix) {
 /**
  * This function is a CommonJS test runner function, but since Jetpack test
  * runner and test format is different from CommonJS this function shims given
- * `exports` with all its tests into a Jetpack test format so that build in
+ * `exports` with all its tests into a Jetpack test format so that build-in
  * test runner will be able to run CommonJS test without manual changes.
  */
 exports.run = function run(exports) {
