@@ -37,7 +37,7 @@
 "use strict";
 
 const { isFunction, isNull, isObject, isString, isRegExp, isArray,
-        isUndefined, instanceOf, source } = require("utils/type");
+        isUndefined, instanceOf, source } = require("type");
 
 /**
  * The `AssertionError` is defined in assert.

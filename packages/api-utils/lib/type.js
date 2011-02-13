@@ -38,7 +38,7 @@
 "use strict";
 
 /**
- * Returns `true` if `value` is not an `undefined`.
+ * Returns `true` if `value` is `undefined`.
  * @examples
  *    var foo; isUndefined(foo); // true
  *    isUndefined(0); // false
@@ -144,27 +144,29 @@ function isArguments(value) {
 exports.isArguments = isArguments;
 
 /**
- * Returns true if it is a primitive `value`. (null, undefined, number, boolean)
+ * Returns true if it is a primitive `value`. (null, undefined, number,
+ * boolean, string)
  * @examples
- *    isAtom(3) // true
- *    isAtom('foo') // true
- *    isAtom({ bar: 3 }) // false
+ *    isPrimitive(3) // true
+ *    isPrimitive('foo') // true
+ *    isPrimitive({ bar: 3 }) // false
  */
-function isAtom(value) {
+function isPrimitive(value) {
   return !isFunction(value) && !isObject(value);
 }
-exports.isAtom = isAtom;
+exports.isPrimitive = isPrimitive;
 
 /**
- * Returns `true` if `value` is a flat (is direct decedent of
- * `Object.prototype`) object.
+ * Returns `true` if given `object` is flat (it is direct decedent of
+ * `Object.prototype` or `null`).
  * @examples
  *    isFlat({}) // true
  *    isFlat(new Type()) // false
  */
 function isFlat(object) {
-  return isObject(object) &&
-         isNull(Object.getPrototypeOf(Object.getPrototypeOf(object)));
+  return isObject(object) && (isNull(Object.getPrototypeOf(object)) ||
+                              isNull(Object.getPrototypeOf(
+                                     Object.getPrototypeOf(object))));
 }
 exports.isFlat = isFlat;
 
@@ -189,7 +191,7 @@ function isJSON(value, visited) {
     // Adding value to array of visited values.
     (visited || (visited = [])).push(value);
             // If `value` is an atom return `true` cause it's valid JSON.
-    return  isAtom(value) ||
+    return  isPrimitive(value) ||
             // If `value` is an array of JSON values that has not been visited
             // yet.
             (isArray(value) &&  value.every(function(element) {
@@ -221,10 +223,10 @@ function instanceOf(value, Type) {
   var isConstructorNameSame;
   var isConstructorSourceSame;
 
-  // If `instanceof` returned `true` we know result right a way.
+  // If `instanceof` returned `true` we know result right away.
   var isInstanceOf = value instanceof Type;
 
-  // If `instanceof` returned `false` we do ductype check since `Type` may be
+  // If `instanceof` returned `false` we do ducktype check since `Type` may be
   // from a different sandbox. If a constructor of the `value` or a constructor
   // of the value's prototype has same name and source we assume that it's an
   // instance of the Type.
@@ -295,8 +297,8 @@ function source(value, indent, limit, offset) {
       if (0 <= name.indexOf(" "))
         name = '"' + name + '"';
 
-      if (descriptor.writtable)
-        result += "writtable ";
+      if (descriptor.writable)
+        result += "writable ";
       if (descriptor.configurable)
         result += "configurable ";
       if (descriptor.enumerable)
