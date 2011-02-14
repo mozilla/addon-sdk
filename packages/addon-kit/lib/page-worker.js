@@ -44,9 +44,6 @@
 const { Symbiont } = require("content");
 const { Trait } = require("traits");
 
-const ERR_DESTROYED =
-  "The page has been destroyed and can no longer be used.";
-
 if (!require("xul-app").isOneOf(["Firefox", "Thunderbird"])) {
   throw new Error([
     "The page-worker module currently supports only Firefox and Thunderbird. ",
@@ -58,12 +55,14 @@ if (!require("xul-app").isOneOf(["Firefox", "Thunderbird"])) {
 
 const Page = Trait.compose(
   Symbiont.resolve({
-    constructor: '_initSymbiont',
-    postMessage: '_postMessage'
+    constructor: '_initSymbiont'
   }),
   {
     _frame: Trait.required,
     _initFrame: Trait.required,
+    postMessage: Symbiont.required,
+    on: Symbiont.required,
+    destroy: Symbiont.required,
 
     constructor: function Page(options) {
       options = options || {};
@@ -87,14 +86,7 @@ const Page = Trait.compose(
 
       this._initSymbiont();
     },
-    postMessage: function postMessage(message) {
-      if (!this._frame)
-        throw new Error(ERR_DESTROYED);
-      this._postMessage(message);
-    },
-    destroy: function destroy() {
-      this._destructor();
-    },
+    
     _onChange: function _onChange(e) {
       if ('contentURL' in e)
         this._initFrame(this._frame);

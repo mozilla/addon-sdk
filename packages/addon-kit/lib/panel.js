@@ -67,7 +67,7 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 const Panel = Symbiont.resolve({
   constructor: '_init',
   _onInit: '_onSymbiontInit',
-  _destructor: '_symbiontDestructor'
+  destroy: '_symbiontDestructor'
 }).compose({
   _frame: Symbiont.required,
   _init: Symbiont.required,

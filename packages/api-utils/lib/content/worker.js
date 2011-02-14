@@ -49,6 +49,9 @@ const unload = require('unload');
 
 const JS_VERSION = '1.8';
 
+const ERR_DESTROYED =
+  "The page has been destroyed and can no longer be used.";
+
 /**
  * Extended `EventEmitter` allowing us to emit events asynchronously.
  */
@@ -71,9 +74,11 @@ const AsyncEventEmitter = EventEmitter.compose({
  * _Later this will be sending data across process boundaries._
  * @param {JSON|String|Number|Boolean} data
  */
-function postMessage(data)
+function postMessage(data) {
+  if (!this._port)
+    throw new Error(ERR_DESTROYED);
   this._port._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
-
+}
 
 /**
  * Local trait providing implementation of the workers global scope.
@@ -329,7 +334,7 @@ const Worker = AsyncEventEmitter.compose({
     if ('onMessage' in options)
         this.on('message', options.onMessage);
 
-    unload.when(this._deconstructWorker.bind(this));
+    unload.when(this.destroy.bind(this));
 
     WorkerGlobalScope(this); // will set this._port pointing to the private API
   },
@@ -341,7 +346,7 @@ const Worker = AsyncEventEmitter.compose({
   /**
    * Tells _port to unload itself and removes all the references from itself.
    */
-  _deconstructWorker: function _deconstructWorker() {
+  destroy: function destroy() {
     this._removeAllListeners('message');
     this._removeAllListeners('error');
     if (this._port) // maybe unloaded before port is created

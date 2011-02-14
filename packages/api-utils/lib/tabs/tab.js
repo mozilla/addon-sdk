@@ -186,6 +186,17 @@ const TabTrait = Trait.compose(EventEmitter, {
   unpin: function unpin() {
     this._window.gBrowser.unpinTab(this._tab);
   },
+  
+  /**
+   * Create a worker for this tab, first argument is options given to Worker.
+   * @type {Worker}
+   */
+  attach: function attach(options) {
+    let { Worker } = require("content/worker");
+    options.window = this._contentWindow.wrappedJSObject;
+    return Worker(options);
+  },
+  
   /**
    * Make this tab active.
    * Please note: That this function is called synchronous since in E10S that
