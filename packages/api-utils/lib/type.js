@@ -272,7 +272,7 @@ function source(value, indent, limit, offset) {
       value = value.splice(0, 2);
       value.push("...}");
     }
-    result += value.join(offset + "\n");
+    result += value.join("\n" + offset);
   }
   else if (isArray(value)) {
     if (isCompact)
