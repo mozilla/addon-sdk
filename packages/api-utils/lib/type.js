@@ -248,14 +248,16 @@ exports.instanceOf = instanceOf;
  * @param {String} [indent="    "]
  * @param {Number} [limit]
  */
-function source(value, indent, limit, offset) {
+function source(value, indent, limit, offset, visited) {
   var result;
   var names;
+  var nestingIndex;
   var isCompact = !isUndefined(limit);
 
   indent = indent || "    ";
   offset = (offset || "");
   result = "";
+  visited = visited || [];
 
   if (isUndefined(value)) {
     result += "undefined";
@@ -275,71 +277,90 @@ function source(value, indent, limit, offset) {
     result += value.join("\n" + offset);
   }
   else if (isArray(value)) {
-    if (isCompact)
-      value = value.slice(0, limit);
-
-    result += "[\n";
-    result += value.map(function(value) {
-      return offset + indent + source(value, indent, limit, offset + indent);
-    }).join(",\n");
-    result += isCompact && value.length > limit ?
-              ",\n" + offset + "...]" : "\n" + offset + "]";
-  }
-  else if (isObject(value)) {
-      names = Object.keys(value);
-
-    result += "{ // " + value + "\n";
-    result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
-      var _limit = isCompact ? limit - 1 : limit;
-      var descriptor = Object.getOwnPropertyDescriptor(value, name);
-      var result = offset + indent + "// ";
-      var accessor;
-      if (0 <= name.indexOf(" "))
-        name = '"' + name + '"';
-
-      if (descriptor.writable)
-        result += "writable ";
-      if (descriptor.configurable)
-        result += "configurable ";
-      if (descriptor.enumerable)
-        result += "enumerable ";
-
-      result += "\n";
-      if ("value" in descriptor) {
-        result += offset + indent + name + ": ";
-        result += source(descriptor.value, indent, _limit, indent + offset);
-      }
-      else {
-
-        if (descriptor.get) {
-          result += offset + indent + "get " + name + " ";
-          accessor = source(descriptor.get, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"));
-        }
-
-        if (descriptor.set) {
-          result += offset + indent + "set " + name + " ";
-          accessor = source(descriptor.set, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"));
-        }
-      }
-      return result;
-    }).join(",\n");
-
-    if (isCompact) {
-      if (names.length > limit && limit > 0) {
-        result += ",\n" + offset  + indent + "//...";
-      }
+    if ((nestingIndex = (visited.indexOf(value) + 1))) {
+      result = "#" + nestingIndex + "#"
     }
     else {
-      if (names.length)
-        result += ",";
+      visited.push(value)
 
-      result += "\n" + offset + indent + '"__proto__": ';
-      result += source(Object.getPrototypeOf(value), indent, 0, offset + indent);
+      if (isCompact)
+        value = value.slice(0, limit);
+
+      result += "[\n";
+      result += value.map(function(value) {
+        return offset + indent + source(value, indent, limit, offset + indent,
+                                        visited);
+      }).join(",\n");
+      result += isCompact && value.length > limit ?
+                ",\n" + offset + "...]" : "\n" + offset + "]";
     }
+  }
+  else if (isObject(value)) {
+    if ((nestingIndex = (visited.indexOf(value) + 1))) {
+      result = "#" + nestingIndex + "#"
+    }
+    else {
+      visited.push(value)
 
-    result += "\n" + offset + "}";
+      names = Object.keys(value);
+
+      result += "{ // " + value + "\n";
+      result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
+        var _limit = isCompact ? limit - 1 : limit;
+        var descriptor = Object.getOwnPropertyDescriptor(value, name);
+        var result = offset + indent + "// ";
+        var accessor;
+        if (0 <= name.indexOf(" "))
+          name = '"' + name + '"';
+
+        if (descriptor.writable)
+          result += "writable ";
+        if (descriptor.configurable)
+          result += "configurable ";
+        if (descriptor.enumerable)
+          result += "enumerable ";
+
+        result += "\n";
+        if ("value" in descriptor) {
+          result += offset + indent + name + ": ";
+          result += source(descriptor.value, indent, _limit, indent + offset,
+                           visited);
+        }
+        else {
+
+          if (descriptor.get) {
+            result += offset + indent + "get " + name + " ";
+            accessor = source(descriptor.get, indent, _limit, indent + offset,
+                              visited);
+            result += accessor.substr(accessor.indexOf("{"));
+          }
+
+          if (descriptor.set) {
+            result += offset + indent + "set " + name + " ";
+            accessor = source(descriptor.set, indent, _limit, indent + offset,
+                              visited);
+            result += accessor.substr(accessor.indexOf("{"));
+          }
+        }
+        return result;
+      }).join(",\n");
+
+      if (isCompact) {
+        if (names.length > limit && limit > 0) {
+          result += ",\n" + offset  + indent + "//...";
+        }
+      }
+      else {
+        if (names.length)
+          result += ",";
+
+        result += "\n" + offset + indent + '"__proto__": ';
+        result += source(Object.getPrototypeOf(value), indent, 0,
+                         offset + indent);
+      }
+
+      result += "\n" + offset + "}";
+    }
   }
   else {
     result += String(value);
