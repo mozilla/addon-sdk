@@ -286,7 +286,7 @@ function source(value, indent, limit, offset) {
               ",\n" + offset + "...]" : "\n" + offset + "]";
   }
   else if (isObject(value)) {
-    names = Object.getOwnPropertyNames(value);
+      names = Object.keys(value);
 
     result += "{ // " + value + "\n";
     result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
