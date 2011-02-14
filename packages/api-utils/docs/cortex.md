@@ -69,7 +69,7 @@ both own and inherited private properties, it does not addresses following:
 ## Temper proving with property descriptor maps ##
 
 In ES5 new property descriptor maps were introduced, which can be used as a
-building blocks for defining reusable peace of functionality. At some degree
+building blocks for defining reusable peace of functionality. To some degree
 they are similar to a `prototype` objects, and can be used so to define pieces
 of functionality that is considered to be private (In contrast to `prototype`
 they are not exposed by default).
