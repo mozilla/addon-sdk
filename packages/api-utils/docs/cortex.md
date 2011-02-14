@@ -15,8 +15,8 @@ in lexical scope:
       }
     }
 
-This provides desired result, but has side effect of degradet code readability,
-specially with object-oriented programs. Another disadvantage with this pattern
+This provides desired result, but has side effect of degrading code readability,
+especially with object-oriented programs. Another disadvantage with this pattern
 is that there is no immediate solution for inheriting access to the privates
 (illustrated by the following example):
 
@@ -24,7 +24,7 @@ is that there is no immediate solution for inheriting access to the privates
       this.hello = function hello() {
         return _secret;
       }
-      this.bye = functino bye() {
+      this.bye = function bye() {
         return _secret;
       }
     }
@@ -70,8 +70,8 @@ both own and inherited private properties, it does not addresses following:
 
 In ES5 new property descriptor maps were introduced, which can be used as a
 building blocks for defining reusable peace of functionality. At some degree
-they are similar to a `prototype` objects, and can be used so to define peaces
-of functionality that is considered to be private (In constrast to `prototype`
+they are similar to a `prototype` objects, and can be used so to define pieces
+of functionality that is considered to be private (In contrast to `prototype`
 they are not exposed by default).
 
     function Foo() {
@@ -90,63 +90,68 @@ they are not exposed by default).
     function Derived() {
       var derived = Object.create(Derived.prototype, DerivedDescriptor);
       var facade = Object.create(Derived.prototype);
-      facade.hello = derived.hello.bind(derived)
-      facade.bye = derived.bye.bind(derived)
-      return facade
+      facade.hello = derived.hello.bind(derived);
+      facade.bye = derived.bye.bind(derived);
+      return facade;
     }
-    Derived.prototype = Object.create(Foo.prototype)
+    Derived.prototype = Object.create(Foo.prototype);
     Derived.prototype.bye = function bye() {
-      return 'Bye ' + this._secret
-    }
-    DerivedDescriptor = {}
+      return 'Bye ' + this._secret;
+    };
+    DerivedDescriptor = {};
 
     Object.keys(FooDescriptor).forEach(function(key) {
-      DerivedDescriptor[key] = FooDescriptor[key]
-    })
+      DerivedDescriptor[key] = FooDescriptor[key];
+    });
 
 ## cortex objects ##
 
 Last approach solves all of the concerns, but adds complexity, verbosity
-and decreases code readability. Combination of `cortex`'s and `Trait`'s
+and decreases code readability. Combination of `Cortex`'s and `Trait`'s
 will gracefully solve all these issues and keep code clean:
 
-    var cortex = require('cortex').cortex;
+    var Cortex = require('cortex').Cortex;
     var Trait = require('light-traits').Trait;
 
-    var TFoo = Trait({
+    var FooTrait = Trait({
       _secret: 'secret',
       hello: function hello() {
         return 'Hello ' + this._secret;
       }
     });
     function Foo() {
-      return cortex(TFoo.create(Foo.prototype));
+      return Cortex(FooTrait.create(Foo.prototype));
     }
 
-    var TDerived = Trait.compose(TFoo, Trait({
+    var DerivedTrait = Trait.compose(FooTrait, Trait({
       bye: function bye() {
-        return 'Bye ' this._secret;
+        return 'Bye ' + this._secret;
       }
     }));
     function Derived() {
-      var derived = TDerived.create(Derived.prototype);
-      return cortex(derived);
+      var derived = DerivedTrait.create(Derived.prototype);
+      return Cortex(derived);
     }
 
-Function `cortex` takes any object and returns a proxy for it's public
+Function `Cortex` takes any object and returns a proxy for its public
 properties. By default properties are considered to be public if they don't
-start with `"_"`, but default behavior can be overided if needed, by passing
+start with `"_"`, but default behavior can be overridden if needed, by passing
 array of public property names as a second argument.
 
 ## Gotchas ##
 
-- `cortex` is just an utility function to create a proxy objet and it does not
-  solves `prototype` related issue highlighted earlier, but since traits make
-  use of property descriptor maps instead of `prototype` it is not an issue. In
-  case you want to use `cortex` function with an objects that make use of
-  `prototype` chain you should ethier make sure that you don't have any private
-  properties that could be compromised or alternatively you can call `cortex`
-  with third optional `prototype` argument. In later case returned proxy will
-  inherit from the given prototype and `prototype` chain of wrapped object will
-  be unaccessible, also you should be awary that in such case behavior of
-  `instanceof` will be different.
+`Cortex` is just a utility function to create a proxy object, and it does not
+solve the `prototype`-related issues highlighted earlier, but since traits make
+use of property descriptor maps instead of `prototype`s, there aren't any
+issues with using `Cortex` to wrap objects created from traits.
+
+If you want to use `Cortex` with an object that uses a `prototype` chain,
+however, you should either make sure you don't have any private properties
+in the prototype chain or pass the optional third `prototype` argument.
+
+In the latter case, the returned proxy will inherit from the given prototype,
+and the `prototype` chain of the wrapped object will be inaccessible.
+However, note that the behavior of the `instanceof` operator will vary,
+as `proxy instanceof Constructor` will return false even if the Constructor
+function's prototype is in the wrapped object's prototype chain.
+

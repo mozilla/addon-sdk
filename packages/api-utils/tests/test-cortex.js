@@ -2,7 +2,7 @@
 
 "use strict";
 
-var cortex = require("cortex").cortex;
+var Cortex = require("cortex").Cortex;
 
 exports["test property changes propagate"] = function (assert) {
   var source = {
@@ -18,7 +18,7 @@ exports["test property changes propagate"] = function (assert) {
       return this._foo + a + b
     }
   };
-  var fixture = cortex(source);
+  var fixture = Cortex(source);
 
   assert.ok(!('_foo' in fixture),
             "properties that start with `_` are omitted");
@@ -62,9 +62,9 @@ exports["test immunity of inheritance"] = function(assert) {
     }}
   });
 
-  var fixture = cortex(source);
+  var fixture = Cortex(source);
 
-  assert.ok(cortex({}, null, Type.prototype) instanceof Type,
+  assert.ok(Cortex({}, null, Type.prototype) instanceof Type,
             "if custom prototype is providede cortex will inherit from it");
   assert.ok(fixture instanceof Type,
             "if no prototype is given cortex inherits from object's prototype");
@@ -93,7 +93,7 @@ exports["test customized public properties"] = function(assert) {
     }
   };
   
-  var fixture = cortex(source, ['_a', 'get']);
+  var fixture = Cortex(source, ['_a', 'get']);
   fixture._a += "#change";
 
 
