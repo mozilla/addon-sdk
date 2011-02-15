@@ -7,6 +7,7 @@ import shutil
 
 import simplejson as json
 import mozrunner
+from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 
@@ -50,7 +51,6 @@ def follow_file(filename):
 
 class FennecProfile(mozrunner.Profile):
     preferences = {}
-
     names = ['fennec']
 
 class FennecRunner(mozrunner.Runner):
@@ -78,9 +78,7 @@ class FennecRunner(mozrunner.Runner):
         return self.__real_binary
 
 class XulrunnerAppProfile(mozrunner.Profile):
-    preferences = {'browser.dom.window.dump.enabled': True,
-                   'javascript.options.strict': True}
-
+    preferences = {}
     names = []
 
 class XulrunnerAppRunner(mozrunner.Runner):
@@ -199,7 +197,7 @@ def run_app(harness_root_dir, harness_options,
         addons = list(addons)
 
     cmdargs = []
-    preferences = {}
+    preferences = dict(DEFAULT_COMMON_PREFS)
 
     if app_type == "xulrunner":
         profile_class = XulrunnerAppProfile
@@ -209,11 +207,11 @@ def run_app(harness_root_dir, harness_options,
         addons.append(harness_root_dir)
         if app_type == "firefox":
             profile_class = mozrunner.FirefoxProfile
-            preferences = DEFAULT_FIREFOX_PREFS
+            preferences.update(DEFAULT_FIREFOX_PREFS)
             runner_class = mozrunner.FirefoxRunner
         elif app_type == "thunderbird":
             profile_class = mozrunner.ThunderbirdProfile
-            preferences = DEFAULT_THUNDERBIRD_PREFS
+            preferences.update(DEFAULT_THUNDERBIRD_PREFS)
             runner_class = mozrunner.ThunderbirdRunner
         elif app_type == "fennec":
             profile_class = FennecProfile

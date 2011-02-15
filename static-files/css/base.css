@@ -1,236 +1,121 @@
+/*
+The file contains generic style rules, that don't depend on any special structure
+*/
+
+* {
+  background: transparent;
+  border: 0;
+  font-size: 100%;
+  margin: 0;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+html {
+  background-color: #fff;
+  background-image: url(/media/bg-header.png);
+  background-position: left top;
+  background-repeat: repeat-x;
+}
+
 body {
-    font-family: Helvetica Neue, Arial, sans-serif;
-    font-size: 9pt;
-    background: white;
-    margin: 0;
+  color: #444;
+  font-size: 13px;
+  line-height: 1.538em;
+  margin: 0 auto;
+  min-width: 780px;
+  position: relative;
+  font-family: "helvetica neue",arial,helvetica,sans-serif;
+  font-style: normal;
 }
 
-a {
-    color: black;
-}
-
-a:hover {
-    background: yellow;
+strong {
+  font-weight: bold;
 }
 
 h1 {
-    margin: 0;
-    padding-bottom: 1em;
+  font-size: 2.571em;
+  line-height: 1em;
+  margin-bottom: .5833em;
+  margin-top: .1667em;
+  font-family: georgia,serif;
+  font-weight: normal;
 }
 
-.docs ul {
-    padding-left: 2em;
+h2 {
+  color: #C63717;
+  font-size: 2.154em;
+  font-weight: normal;
+  line-height: 1em;
+  margin-bottom: .5em;
+  margin-top: .5em;
+  font-family: georgia,serif;
+  font-style: italic;
 }
 
-#cannot-ping {
-    padding: 0.5em;
-    background: #aa0000;
-    color: white;
-    display: none;
+h3 {
+  color: #011234;
+  font-size: 1.385em;
+  font-weight: normal;
+  line-height: 1.111em;
+  margin-bottom: .778em;
+  margin-top: 1.556em;
+  font-family: georgia,serif;
+  font-style: italic;
 }
 
-#columns {
-    display: table;
-    height: 100%;
+h4 {
+  color: #235;
+  font-size: 1em;
 }
 
-#left-column {
-    width: 25em;
-    background: #f0f0f0;
-    padding: 1em;
-    display: table-cell;
+h5, h6 {
+  font-size: 1em;
 }
 
-#right-column {
-    width: 40em;
-    padding: 1em;
-    display: table-cell;
+a:link {
+  color: #003595;
+  text-decoration: none;
 }
 
-#sidenotes {
-    width: 15em;
-    display: table-cell;
+a:visited {
+  color: #003595;
+  text-decoration: none;
 }
 
-#footer {
-    background: #555555;
-    color: white;
-    padding: 0.5em;
+a:hover, a:focus, a:active {
+  color: #003595;
+  text-decoration: underline;
 }
 
-#footer .actions {
-    display: block;
-    float: right;
+pre,code, kbd, tt, samp, tt {
+  font-family: "andale mono",monospace;
 }
 
-#view-source {
-    color: white;
-    text-decoration: none;
-}
-
-#view-source:hover {
-    color: black;
-}
-
-.meta-header {
-    font-weight: bold;
-}
-
-#more-packages {
-    font-size: 8pt;
-    color: gray;
-    cursor: pointer;
-}
-  
-.package-entry {
-    color: gray;
-    padding-bottom: 1em;
-}
-
-.package-entry .name {
-    font-weight: bold;
-    color: black;
-}
-
-.package-entry .description {
-}
-
-.package-entry .modules {
-    font-size: 8pt;
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-    padding-left: 2em;
-}
-
-.package-detail .modules {
-    padding-left: 0;
-}
-
-.package-entry .module,
-.package-detail .module {
-    display: inline;
-    margin-right: 1em;
-    white-space: nowrap;
-}
-
-.package-entry .module a:not(:hover) {
-    color: gray;
-}
-
-pre {
-    padding-left: 1em;
-}
-
-pre, code {
-    font-family: Monaco, Lucida Console, monospace;
-    font-size: 8pt;
-}
-
-code em, code strong {
-  font-size: 9pt;
-}
-
-#templates {
-    display: none;
-}
-
-#left-column a {
-    text-decoration: none;
-}
-
-#dev-guide-toc ol {
-    padding-left: 2em;
-}
-
-#dev-guide-toc #tutorials {
-    list-style: decimal;
-}
-
-#dev-guide-toc #appendices {
-    list-style: upper-alpha;
-}
-
-#dev-guide-toc .section {
-    font-weight: bold;
-}
-
-.aside {
-    color: gray;
-    border-left: gray 1px solid;
-    padding-left: 1em;
-    padding-right: 1em;
-    position: absolute;
-    display: block;
-}
-
-#dev-guide-header {
-    /* TODO: This is a dumb place to put a margin-top. */
-    margin-top: 0.25em;
-}
-
-#dev-guide-header:hover #hide-dev-guide-toc {
-    visibility: visible;
-}
-
-#hide-dev-guide-toc {
-    font-size: 0.6em;
-    padding: 0.05em 0.4em;
-    visibility: hidden;
-}
-
-#hide-dev-guide-toc:hover {
-    -moz-border-radius: 2em;
-    background: #555;
-    color: #fff;
-    cursor: pointer;
+li {
+  margin-left: 2em;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  border-collapse: collapse;
+  border-spacing: 0;
 }
 
-table, td, tr {
-    border: 1px black solid;
+ol {
+  list-style-type: decimal;
+  margin-left: 2em;
 }
 
-td {
-    padding: 0.5em;
+dt {
+  font-weight: bold;
+  margin-top: 1.5em;
 }
 
-/* Rule to fix quirks-mode inheritance behavior */
-table, caption {
-  font-size: inherit;
-  font-weight: inherit;
-  font-style: inherit;
-  font-variant: inherit;
+ul ul, ol ol, ol ul, ul ol {
+  margin-bottom: 0;
 }
 
-table.meta-table, .meta-table td, .meta-table tr {
-    vertical-align: top;
-    border: none;
-    padding: 0;
-    padding-top: 0.25em;
-    padding-bottom: 0.25em;
-    padding-right: 5em;
-}
-
-table.meta-table {
-    margin-top: 0.5em;
-    border-top: 1px dotted gray;
-    border-bottom: 1px dotted gray;
-}
-
-.package-detail .authors, .package-detail .dependencies,
-.package-detail .version, .package-detail .license {
-    font-family: Monaco, Lucida Console, monospace;
-    font-size: 8pt;
-    white-space: pre;
-}
-
-.technical-error {
-    font-family: Monaco, Lucida Console, monospace;
-    font-size: 8pt;
-    white-space: pre-wrap;
-    color: red;
+p, ul, ol, dl, address, table, pre, form, fieldset {
+  font-size: 1em;
+  margin-bottom: 1.5em;
 }

@@ -1,11 +1,12 @@
 function startApp(jQuery, window) {
   var $ = jQuery;
   var document = window.document;
-  var packages = null;
+  var packagesJSON = null;;
   var currentHash = "";
   var shouldFadeAndScroll = true;
 
   const DEFAULT_HASH = "guide/welcome";
+  const DEFAULT_SIDEBAR_SECTION = "#guide/addon-development/about";
   const IDLE_PING_DELAY = 500;
   const CHECK_HASH_DELAY = 100;
   const DOCUMENT_TITLE_ROOT = "Add-on SDK Documentation";
@@ -35,15 +36,10 @@ function startApp(jQuery, window) {
       documentName = moduleName;
       break;
     case "guide":
-      showGuideDetail(parts[1]);
+      var guidePagePath = hash.slice(parts[0].length + 1);
+      showGuideDetail(guidePagePath);
       documentName = $('#' + parts[1]).text();
       break;
-    }
-    if (documentName.length > 0) {
-      document.title = documentName + " - " + DOCUMENT_TITLE_ROOT;
-    }
-    else {
-      document.title = DOCUMENT_TITLE_ROOT;
     }
   }
 
@@ -199,7 +195,7 @@ function startApp(jQuery, window) {
     }, 10);
   }
 
-  function highlight() {
+  function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
     $('pre>code').each(function() {
@@ -207,6 +203,28 @@ function startApp(jQuery, window) {
       $(this).replaceWith(inner);
     })
     SyntaxHighlighter.highlight();
+  }
+
+  function highlightCurrentPage() {
+    $(".current-page").removeClass('current-page');
+    $(".current-section").removeClass('current-section');
+    currentHash = window.location.hash;
+    if (currentHash.length <= 1) {
+      currentSideBarSection = $('#default-section-contents');
+    }
+    else {
+      $('a[href="' + currentHash + '"]').parent().addClass('current-page');
+      currentSideBarSection = null;
+      if ( $('.current-page').hasClass('sidebar-section-header') ) {
+        currentSideBarSection = $('.current-page').next();
+      }
+      else {
+        currentSideBarSection = $('.current-page').closest('.sidebar-section-contents');
+      }
+    }
+    $('.sidebar-section-contents').hide();
+    $(currentSideBarSection).parent().addClass('current-section');
+    $(currentSideBarSection).show();
   }
 
   function showMainContent(query, url) {
@@ -223,13 +241,22 @@ function startApp(jQuery, window) {
       $("#main-content").show();
     shouldFadeAndScroll = false;
     fixInternalLinkTargets(query);
+    processPackages();
     showSidenotes(query);
     queuedContent = null;
-    highlight();
+    documentName = $("#main-content h1:first").text();
+    if (documentName.length > 0) {
+      document.title = documentName + " - " + DOCUMENT_TITLE_ROOT;
+    }
+    else {
+      document.title = DOCUMENT_TITLE_ROOT;
+    }
+    highlightCurrentPage();
+    highlightCode();
   }
 
   function showModuleDetail(pkgName, moduleName) {
-    var pkg = packages[pkgName];
+    var pkg = packagesJSON[pkgName];
     var entry = $("#templates .module-detail").clone();
     var source_filename = "docs/" + moduleName + ".md";
     var json_filename = "docs/" + moduleName + ".md.json";
@@ -272,7 +299,7 @@ function startApp(jQuery, window) {
   }
 
   function showPackageDetail(name) {
-    var pkg = packages[name];
+    var pkg = packagesJSON[name];
     var entry = $("#templates .package-detail").clone();
     var filename = "README.md";
 
@@ -316,70 +343,69 @@ function startApp(jQuery, window) {
       errorDisplay.hide();
       errorDisplay.fadeIn();
     }
-    finalizeSetup();
   }
 
-  function processPackages(packagesJSON) {
-    packages = packagesJSON;
+  function isLowLevelPackage(pkg) {
+    return ('keywords' in pkg && pkg.keywords.indexOf &&
+        pkg.keywords.indexOf('jetpack-low-level') != -1);
+  }
 
+  function isHighLevelPackage(pkg) {
+    return !isLowLevelPackage(pkg);
+  }
+
+  function processPackages() {
+    processPackageList('#high-level-packages',
+                       'package-entry', isHighLevelPackage);
+    processPackageList('#low-level-packages',
+                       'package-entry', isLowLevelPackage);
+    processPackageList('#high-level-package-summaries',
+                       'package-summary', isHighLevelPackage);
+    processPackageList('#low-level-package-summaries',
+                       'package-summary', isLowLevelPackage);
+  }
+
+  function processPackageList(pkgListLocation, pkgEntryTemplateName, filter) {
+    $(pkgListLocation).empty();
+    var pkgList = $("<div></div>");
+    $(pkgListLocation).append(pkgList);
+    pkgList.hide();
+    getProcessedPackageList(pkgList, pkgEntryTemplateName, filter);
+    pkgList.fadeIn();
+  }
+
+  function getProcessedPackageList(pkgList, pkgEntryTemplateName, filter) {
     var sortedPackages = [];
-    for (name in packages)
+    for (name in packagesJSON)
       sortedPackages.push(name);
     sortedPackages.sort();
-    var entries = $("<div></div>");
-    var lowLevelEntries = $("<div></div>");
-    $("#package-reference").after(entries);
-    $("#more-packages").after(lowLevelEntries);
-    entries.hide();
-    lowLevelEntries.hide();
     sortedPackages.forEach(
       function(name) {
-        var pkg = packages[name];
-        var entry = $("#templates .package-entry").clone();
+        var pkg = packagesJSON[name];
+        var entry = $("#templates ." + pkgEntryTemplateName).clone();
         var hash = "#package/" + pkg.name;
         entry.find(".name").text(pkg.name).attr("href", hash);
-        entry.find(".description").text(pkg.description);
-
         listModules(pkg, entry);
-
-        if ('keywords' in pkg && pkg.keywords.indexOf &&
-            pkg.keywords.indexOf('jetpack-low-level') != -1)
-          lowLevelEntries.append(entry);
-        else
-          entries.append(entry);
+        if (pkg.readme)
+          entry.find(".docs").html(markdownToHtml(pkg.readme));
+        if (filter(pkg))
+          pkgList.append(entry);
       });
-    entries.fadeIn();
-    $("#more-packages").one('click', function() {
-      $(this).hide();
-      lowLevelEntries.slideDown();
-    });
-    finalizeSetup();
   }
 
-  function finalizeSetup() {
+  function finalizeSetup(packages) {
+    packagesJSON = packages;
     checkHash();
     if ("onhashchange" in window) {
       window.addEventListener("hashchange", checkHash, false);
     } else {
       window.setInterval(checkHash, CHECK_HASH_DELAY);
     }
-
-    $('#hide-dev-guide-toc').click(function() {
-      if ($(this).text() == 'hide') {
-        $(this).text('show');
-        $('#dev-guide-toc').hide('fast');
-      } else {
-        $(this).text('hide');
-        $('#dev-guide-toc').show('fast');
-      }
-    });
   }
 
   function showGuideDetail(name) {
     var entry = $("#templates .guide-section").clone();
     var url = "md/dev-guide/" + name + ".md";
-
-    entry.find(".name").text($("#dev-guide-toc #" + name).text());
     queueMainContent(entry, function () {
       var options = {
         url: url,
@@ -457,9 +483,8 @@ function startApp(jQuery, window) {
   linkDeveloperGuide();
   jQuery.ajax({url: "packages/index.json",
                dataType: "json",
-               success: processPackages,
+               success: finalizeSetup,
                error: onPackageError});
-
   $("a[href]").live("click", function () {
     var href = $(this).attr("href");
     if (href.length && href[0] == "#")

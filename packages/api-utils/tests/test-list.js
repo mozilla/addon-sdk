@@ -144,3 +144,51 @@ exports['test:removing adding elements'] = function(test) {
   assertList(test, array, fixture);
 };
 
+exports['test:add list item from Iterator'] = function(test) {
+  let array = [1, 2, 3, 4], sum = 0, added = false;
+
+  let fixture = List.compose({
+    add: function() this._add.apply(this, arguments),
+  }).apply(null, array);
+
+  for each (let item in fixture) {
+    sum += item;
+
+    if (!added) {
+      fixture.add(5);
+      added = true;
+    }
+  }
+
+  test.assertEqual(sum, 1 + 2 + 3 + 4);
+};
+
+exports['test:remove list item from Iterator'] = function(test) {
+  let array = [1, 2, 3, 4], sum = 0;
+
+  let fixture = List.compose({
+    remove: function() this._remove.apply(this, arguments),
+  }).apply(null, array);
+
+  for each (let item in fixture) {
+    sum += item;
+    fixture.remove(item);
+  }
+
+  test.assertEqual(sum, 1 + 2 + 3 + 4);
+};
+
+exports['test:clear list from Iterator'] = function(test) {
+  let array = [1, 2, 3, 4], sum = 0;
+
+  let fixture = List.compose({
+    clear: function() this._clear()
+  }).apply(null, array);
+
+  for each (let item in fixture) {
+    sum += item;
+    fixture.clear();
+  }
+
+  test.assertEqual(sum, 1 + 2 + 3 + 4);
+};

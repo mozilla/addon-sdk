@@ -7,46 +7,47 @@ Patterns
 There are four kinds of patterns.  The first three use an asterisk as a
 glob-style wildcard.  Note that these are not regular expressions.
 
-1. **A single asterisk** matches any URL with an `http`, `https`, or `ftp`
-   scheme.
+1.   **A single asterisk** matches any URL with an `http`, `https`, or `ftp`
+     scheme.
 
-   *Example:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;**`*`**
+     *Example:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;**`*`**
 
-   *Example matching URLs:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`https://example.com/`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`ftp://example.com/`
+     *Example matching URLs:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`https://example.com/`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`ftp://example.com/`
 
-2. **A domain name prefixed with an asterisk and dot** matches any URL of that
-   domain or a subdomain.
+2.   **A domain name prefixed with an asterisk and dot** matches any URL of that
+     domain or a subdomain.
 
-   *Example:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;**`*.example.com`**
+     *Example:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;**`*.example.com`**
 
-   *Example matching URLs:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://foo.example.com/`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://bar.foo.example.com/`
+     *Example matching URLs:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://foo.example.com/`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://bar.foo.example.com/`
 
-3. **A URL suffixed with an asterisk** matches that URL and any URL prefixed
-   with the pattern.
+3.   **A URL suffixed with an asterisk** matches that URL and any URL prefixed
+     with the pattern.
 
-   *Example:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/*`**
+     *Example:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/*`**
 
-   *Example matching URLs:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo`<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo/bar`
+     *Example matching URLs:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo/bar`
 
-4. **A URL** matches only that URL.
+4.   **A URL** matches only that URL.
 
-   *Example:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/`**
+     *Example:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/`**
 
-   *Example matching URLs:*<br>
-   &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`
+     *Example matching URLs:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`
+
 
 Examples
 --------

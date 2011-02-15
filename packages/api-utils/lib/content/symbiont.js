@@ -58,9 +58,13 @@ const ON_READY = 'DOMContentLoaded';
  * that will be loaded in the provided frame, if frame is not provided
  * Worker will create hidden one.
  */
-const Symbiont = Worker.resolve({ constructor: '_onInit' }).compose({
+const Symbiont = Worker.resolve({
+    constructor: '_onInit',
+    destroy: '_workerDestroy'
+  }).compose({
   _window: Worker.required,
   _onInit: Worker.required,
+  
   /**
    * The constructor requires all the options that are required by
    * `require('content').Worker` with the difference that the `frame` option
@@ -101,9 +105,9 @@ const Symbiont = Worker.resolve({ constructor: '_onInit' }).compose({
       }));
     }
 
-    unload.when(this._destructor.bind(this));
+    unload.when(this.destroy.bind(this));
   },
-  _destructor: function _destructor() {
+  destroy: function destroy() {
     // The frame might not have been initialized yet.
     if (!this._frame)
       return;
@@ -114,6 +118,8 @@ const Symbiont = Worker.resolve({ constructor: '_onInit' }).compose({
       observers.remove(ON_START, this._onStart);
 
     this._frame = null;
+    
+    this._workerDestroy();
   },
   /**
    * XUL iframe or browser elements with attribute `type` being `content`.

@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:ts=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -34,7 +35,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const BaseAssert = require('./test/assert').Assert;
+"use strict";
+
+const BaseAssert = require("./test/assert").Assert;
+const { isFunction, isObject } = require("type");
 
 /**
  * Function takes test `suite` object in CommonJS format and defines all of the
@@ -48,24 +52,29 @@ function defineTestSuite(target, suite, prefix) {
   // from and passed to a test function (This allows custom assertion functions)
   // See for details: http://wiki.commonjs.org/wiki/Unit_Testing/1.1
   let Assert = suite.Assert || BaseAssert;
-  // Going through each item in the test suit and wrapping it into a
+  // Going through each item in the test suite and wrapping it into a
   // Jetpack test format.
   Object.keys(suite).forEach(function(key) {
      // If name starts with test then it's a test function or suite.
     if (key.indexOf("test") === 0) {
       let test = suite[key];
+
       // For each test function so we create a wrapper test function in a
       // jetpack format and copy that to a `target` exports.
-      if (typeof test == "function") {
-        // Since names of the test may match across suits we use full object
+      if (isFunction(test)) {
+
+        // Since names of the test may match across suites we use full object
         // path as a name to avoid overriding same function.
         target[prefix + key] = function(options) {
-          // Creating `assert` funcitons for this test.
+
+          // Creating `assert` functions for this test.
           let assert = Assert(options);
-          // If CommonJS test function expects more then one argument
+
+          // If CommonJS test function expects more than one argument
           // it means that test is async and second argument is a callback
           // to notify that test is finished.
           if (1 < test.length) {
+
             // Letting test runner know that test is executed async and
             // creating a callback function that CommonJS tests will call
             // once it's done.
@@ -74,6 +83,7 @@ function defineTestSuite(target, suite, prefix) {
               options.done();
             });
           }
+
           // Otherwise CommonJS test is synchronous so we call it only with
           // one argument.
           else {
@@ -81,10 +91,11 @@ function defineTestSuite(target, suite, prefix) {
           }
         }
       }
+
       // If it's an object then it's a test suite containing test function
-      // and / or nested test suits. In that case we just extend prefix used
+      // and / or nested test suites. In that case we just extend prefix used
       // and call this function to copy and wrap tests from nested suite.
-      else if (typeof test == "object") {
+      else if (isObject(test)) {
         test.Assert = test.Assert || Assert;
         defineTestSuite(target, test, prefix + key + ".");
       }
@@ -95,10 +106,11 @@ function defineTestSuite(target, suite, prefix) {
 /**
  * This function is a CommonJS test runner function, but since Jetpack test
  * runner and test format is different from CommonJS this function shims given
- * `exports` with all it's tests into a Jetpack test format so that build in
+ * `exports` with all its tests into a Jetpack test format so that the built-in
  * test runner will be able to run CommonJS test without manual changes.
  */
 exports.run = function run(exports) {
+
   // We can't leave old properties on exports since those are test in a CommonJS
   // format that why we move everything to a new `suite` object.
   let suite = {};
@@ -106,8 +118,9 @@ exports.run = function run(exports) {
     suite[key] = exports[key];
     delete exports[key];
   });
+
   // Now we wrap all the CommonJS tests to a Jetpack format and define
   // those to a given `exports` object since that where jetpack test runner
   // will look for them.
   defineTestSuite(exports, suite);
-}
+};

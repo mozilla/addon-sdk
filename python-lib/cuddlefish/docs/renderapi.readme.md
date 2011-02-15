@@ -7,7 +7,7 @@ front-end code wanting to style the docs in some particular way.
 
 renderapi generates two sorts of files:
 
-- a file called "<module-name>.div.html": this is the contents of the parsed
+- a file called "<module-name>.div": this is the contents of the parsed
 Markdown file rendered inside a well-defined DIV tag
 
 - a file called "<module-name>.html": this is the DIV from above inserted into

@@ -8,10 +8,8 @@ import tarfile
 import subprocess
 import optparse
 import sys, re
-import win32api
+#import win32api
 
-
-global zip, gz
 
 class SDK:
     def __init__(self):
@@ -28,7 +26,7 @@ class SDK:
             # The following are the parameters that can be used to pass a dynamic URL, a specific path or a binry. The binary is not used yet. It will be used in version 2.0
             # If a dynamic path is to be mentioned, it should start with a '/'. For eg. "/Desktop"
             parser = optparse.OptionParser()
-            parser.add_option('-u', '--url', dest = 'url', default = 'ftp://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip')
+            parser.add_option('-u', '--url', dest = 'url', default = 'https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/addon-sdk-latest.zip')
             parser.add_option('-p', '--path', dest = 'path', default = self.default_path)
             parser.add_option('-b', '--binary', dest = 'binary')#, default='/Applications/Firefox.app')
             (options, args) = parser.parse_args()
@@ -36,21 +34,17 @@ class SDK:
             # Get the URL from the parameter
             self.link = options.url
             # Set the base path for the user. If the user supplies the path, use the home variable as well. Else, take the default path of this script as the installation directory.
-            #global base_path
             if options.path!=self.default_path:
                 if self.mswindows:
                     self.base_path = home + str(options.path).strip() + '\\'
-                    assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
                 else:
                     self.base_path = home + str(options.path).strip() + '/'
-                assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
             else:
                 if self.mswindows:
                     self.base_path = str(options.path).strip() + '\\'
-                    assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
                 else:
                     self.base_path = str(options.path).strip() + '/'
-                    assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
+            assert ' ' not in self.base_path, "You cannot have a space in your home path. Please remove the space before you continue."
             print('Your Base path is =' + self.base_path)
             
             # This assignment is not used in this program. It will be used in version 2 of this script.
@@ -83,12 +77,11 @@ class SDK:
             print e.args[0] 
             sys.exit(1)
 
-# Download function - to download the SDK from the URL to the local machine.
+    # Download function - to download the SDK from the URL to the local machine.
     def download(self,url,fpath,fname):
         try:
             # Start the download
             print("Downloading...Please be patient!")
-            #file = urllib.urlretrieve(url,filename = fname)
             urllib.urlretrieve(url,filename = fname)
             print('Download was successful.')
         except ValueError: # Handles broken URL errors.
@@ -98,7 +91,7 @@ class SDK:
             print '\nURL not correct. Check again!'
             raise
 
-# Function to extract the downloaded zipfile.
+    # Function to extract the downloaded zipfile.
     def extract(self, zipfilepath, extfile):
         try:
             # Timeout is set to 30 seconds. 
@@ -119,7 +112,6 @@ class SDK:
                     print "I/O error - Cannot perform extract operation: {1}".format(errno, strerror)
                     raise
                 list = f.namelist()[0]
-                #print('File List= ' + list)
                 temp_name = list.split('/')
                 print('Folder Name= ' +temp_name[0])
                 self.folder_name = temp_name[0]
@@ -157,7 +149,7 @@ class SDK:
             
             #No need to handle for windows because windows automatically replaces old files with new files. It does not ask the user(as it does in Mac/Unix)
             if self.mswindows==False:
-                watch = threading.Timer(timeout, kill_process, args=(pid, kill_check ))
+                watch = threading.Timer(timeout, kill_process, args=(pid, kill_check, self.mswindows ))
                 watch.start()
                 (stdout, stderr) = p.communicate()
                 watch.cancel() # if it's still waiting to run
@@ -175,10 +167,10 @@ class SDK:
             print "Error during file extraction: ", sys.exc_info()[0]
             raise
 
-# Function to run the cfx testall comands and to make sure the SDK is not broken.
+    # Function to run the cfx testall comands and to make sure the SDK is not broken.
     def run_testall(self, home_path, folder_name):
         try:
-            timeout = 300
+            timeout = 500
 
             self.new_dir = home_path + folder_name
             try:
@@ -193,19 +185,16 @@ class SDK:
             kill_check = threading.Event()
 
             # Set the path for the logs. They will be in the parent directory of the Jetpack SDK.
-            #global base_path
             log_path = home_path + 'tests.log'
 
             # Subprocess call to set up the jetpack environment and to start the tests. Also sends the output to a log file.
             if self.bin != None:
                 if self.mswindows:
-                    #p = subprocess.Popen("bin\\activate && cfx testall -a firefox -b \"" + self.bin + "\" >"+log_path , stdout=subprocess.PIPE, shell=True)
                     p = subprocess.Popen("bin\\activate && cfx testall -a firefox -b \"" + self.bin + "\"" , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     proc_handle = p._handle
                     (stdout,stderr) = p.communicate()
                 else:
-                    #p = subprocess.Popen('. bin/activate; cfx testall -a firefox -b ' + self.bin +' > '+log_path , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    p = subprocess.Popen('. bin/activate; cfx testall -a firefox -b ' + self.bin  , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('. bin/activate; cfx testall -a firefox -b ' + self.bin , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout,stderr) = p.communicate()
             elif self.bin == None:
@@ -214,7 +203,7 @@ class SDK:
                     proc_handle = p._handle
                     (stdout,stderr) = p.communicate()
                 else:
-                    p = subprocess.Popen('. bin/activate; cfx testall -a firefox> '+log_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('. bin/activate; cfx testall -a firefox > '+log_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout,stderr) = p.communicate()
                     
@@ -267,27 +256,25 @@ class SDK:
             # Subprocess call to test the sample example for packaging.
             if self.bin!=None:
                 if self.mswindows:
-                    #p = subprocess.Popen("bin\\activate && cfx -p examples\\reading-data run -a firefox -b \"" + self.bin + "\" || cfx -p examples\\reading-data run -a firefox  -b \"" + self.bin + "\" >" +exlog_path, stdout=subprocess.PIPE, shell=True)
-                    p = subprocess.Popen("bin\\activate && cfx -p examples\\reading-data run -a firefox -b \"" + self.bin + "\" || cfx -p examples\\reading-data run -a firefox  -b \"" + self.bin + "\"", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('bin\\activate && cfx run --pkgdir examples\\reading-data  --static-args="{\"quitWhenDone\":true}" -b \"" + self.bin + "\"' , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     proc_handle = p._handle
                     (stdout, stderr) = p.communicate()
                 else:
-                    p = subprocess.Popen('. bin/activate; cfx -p examples/reading-data run -a firefox -b ' + self.bin +';cfx -p examples/reading-data run -a firefox -b ' + self.bin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('. bin/activate; cfx run --pkgdir examples/reading-data  --static-args=\'{\"quitWhenDone\":true}\' -b ' + self.bin , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout, stderr) = p.communicate()
             elif self.bin==None:
                 if self.mswindows:
-                    #p = subprocess.Popen('bin\\activate && cfx -p examples\\reading-data run -a firefox || cfx -p examples\\reading-data run -a firefox > '+exlog_path, stdout=subprocess.PIPE, shell=True)
-                    p = subprocess.Popen('bin\\activate && cfx -p examples\\reading-data run -a firefox || cfx -p examples\\reading-data run -a firefox ', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('bin\\activate && cfx run  --pkgdir examples\\reading-data --static-args="{\"quitWhenDone\":true}"', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     proc_handle = p._handle
                     (stdout, stderr) = p.communicate()
                 else:
-                    p = subprocess.Popen('. bin/activate; cfx -p examples/reading-data run -a firefox; cfx -p examples/reading-data run -a firefox ', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('. bin/activate; cfx run --pkgdir examples/reading-data --static-args=\'{\"quitWhenDone\":true}\' ', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     pid = p.pid
                     (stdout, stderr) = p.communicate()
             
             #Write the output to log file
-            f=open(exlog_path,'w')
+            f=open(exlog_path,"w")
             f.write(stdout+stderr)
             f.close()
             
@@ -297,7 +284,6 @@ class SDK:
             else:
                 watch = threading.Timer(timeout, kill_process, args=(pid, kill_check, self.mswindows))
             watch.start()
-            (stdout, stderr) = p.communicate()
             watch.cancel() # if it's still waiting to run
             success = not kill_check.isSet()
             if not success:
@@ -325,39 +311,36 @@ class SDK:
     
 def result_sdk(sdk_dir):
     log_path = sdk_dir + 'tests.log'
+    print 'Results are logged at:' + log_path
     try:
         f = open(log_path,'r')
-    except IOError : # Handles file errors
+    # Handles file errors
+    except IOError : 
         print 'I/O error - Cannot open test log at ' + log_path
         raise
 
-    # Search for the words 'FAIL' or 'warning' in the log. If found, report them.
-    err = re.search('FAIL',f.read())
-    
-    if err:
-        for line in open(log_path):
-            n = re.search('\d+ of \d+ tests passed',line,re.I)
-            if n:
-                print n.group()
-        print ('\nOverall result - ' + str(err.group()) + '. Look at the test log at '+log_path)
-        return 1
+    for line in reversed(open(log_path).readlines()):
+        if line.strip()=='FAIL':
+            print ('\nOverall result - FAIL. Look at the test log at '+log_path)
+            return 1
     return 0
+    
 
 def result_example(sdk_dir):
-    exlog_path = sdk_dir + '/test-example.log'
+    exlog_path = sdk_dir + 'test-example.log'
+    print 'Sample test results are logged at:' + exlog_path
     try:
         f = open(exlog_path,'r')
-    except IOError : # Handles file errors
+    # Handles file errors
+    except IOError : 
         print 'I/O error - Cannot open sample test log at ' + exlog_path
         raise
-    m = re.search('FAIL',f.read())
-    if m:
-        for line in open(exlog_path):
-            n = re.search('OK',line,re.I)
-            if n:
-                print n.group()
-        print ('\nOverall result - ' + str(m.group()) + '. Look at the example log at '+exlog_path)
-        return 1
+    
+    #Read the file in reverse and check for the keyword 'FAIL'.
+    for line in reversed(open(exlog_path).readlines()):
+        if line.strip()=='FAIL':
+            print ('\nOverall result for Sample tests - FAIL. Look at the test log at '+exlog_path)
+            return 1
     return 0
 
 def kill_process(process, kill_check, mswindows):
@@ -368,11 +351,10 @@ def kill_process(process, kill_check, mswindows):
         os.kill(process, signal.SIGKILL)
     kill_check.set()# tell the main routine to kill. Used SIGKILL to hard kill the process.
     return
-    
 
 if __name__ == "__main__":
-        obj = SDK()
-        obj.download(obj.link,obj.fpath,obj.fname)
-        obj.extract(obj.base_path,obj.fname)
-        obj.run_testall(obj.base_path,obj.folder_name)
-        obj.package(obj.base_path)
+    obj = SDK()
+    obj.download(obj.link,obj.fpath,obj.fname)
+    obj.extract(obj.base_path,obj.fname)
+    obj.run_testall(obj.base_path,obj.folder_name)
+    obj.package(obj.base_path)

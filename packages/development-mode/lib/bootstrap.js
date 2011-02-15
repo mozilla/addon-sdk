@@ -48,14 +48,15 @@ var manager = Cm;
 manager.QueryInterface(Ci.nsIComponentRegistrar);
 
 // Attempts to unload and then unregister the XPCOM component with the
-// given contract ID and class ID, if it is managed by us.
-function maybeUnload(contractID, classID) {
+// given contract ID, if it is managed by us.
+function maybeUnload(contractID) {
   if (contractID in gServices) {
     try {
       gServices[contractID].unload();
     } catch (e) {
       console.exception(e);
     }
+    var classID = gServices[contractID].classID;
     delete gServices[contractID];
     maybeUnregister(contractID, classID);
   }
@@ -76,9 +77,9 @@ function maybeUnregister(contractID, classID) {
 // A quit callable that is passed to the main() function of any
 // Jetpack Program we manage. Whenever said program quits, we will
 // automatically take care of unloading and unregistering it.
-function makeQuit(contractID, classID) {
+function makeQuit(contractID) {
   return function quit(status) {
-    maybeUnload(contractID, classID);
+    maybeUnload(contractID);
   };
 }
 
@@ -86,8 +87,8 @@ function logError(e) {
   console.exception(e);
 }
 
-function makeUnloader(contractID, classID) {
-  return {unload: function unload() { maybeUnload(contractID, classID); }};
+function makeUnloader(contractID) {
+  return {unload: function unload() { maybeUnload(contractID); }};
 }
 
 // The main public function of this module; given a JSON harness options
@@ -99,7 +100,7 @@ exports.run = function run(options, rootDirPath, dump) {
   var contractID = options.bootstrap.contractID;
   var classID = components.ID(options.bootstrap.classID);
 
-  maybeUnload(contractID, classID);
+  maybeUnload(contractID);
   options.runImmediately = true;
 
   var rootDir = Cc["@mozilla.org/file/local;1"]
@@ -114,8 +115,7 @@ exports.run = function run(options, rootDirPath, dump) {
   var HarnessService = packaging.buildHarnessService(rootDir,
                                                      dump,
                                                      logError,
-                                                     makeQuit(contractID,
-                                                              classID),
+                                                     makeQuit(contractID),
                                                      options);
   var factory = HarnessService.prototype._xpcom_factory;
   var proto = HarnessService.prototype;

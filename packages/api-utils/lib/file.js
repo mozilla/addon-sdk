@@ -113,7 +113,17 @@ exports.join = function join(base) {
 };
 
 exports.dirname = function dirname(path) {
-  return MozFile(path).parent.path;
+  var parent = MozFile(path).parent;
+  return parent ? parent.path : "";
+};
+
+exports.basename = function basename(path) {
+  var leafName = MozFile(path).leafName;
+
+  // On Windows, leafName when the path is a volume letter and colon ("c:") is
+  // the path itself.  But such a path has no basename, so we want the empty
+  // string.
+  return leafName == path ? "" : leafName;
 };
 
 exports.list = function list(path) {

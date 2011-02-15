@@ -67,7 +67,7 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 const Panel = Symbiont.resolve({
   constructor: '_init',
   _onInit: '_onSymbiontInit',
-  _destructor: '_symbiontDestructor'
+  destroy: '_symbiontDestructor'
 }).compose({
   _frame: Symbiont.required,
   _init: Symbiont.required,
@@ -146,6 +146,9 @@ const Panel = Symbiont.resolve({
       frame.setAttribute('type', 'content');
       frame.setAttribute('flex', '1');
       frame.setAttribute('transparent', 'transparent');
+      // Load an empty document in order to have an immediatly loaded iframe, 
+      // so swapFrameLoaders is going to work without having to wait for load.
+      frame.setAttribute("src","data:,"); 
       xulPanel.appendChild(frame);
       document.getElementById("mainPopupSet").appendChild(xulPanel);
     }

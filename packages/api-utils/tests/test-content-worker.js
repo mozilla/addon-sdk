@@ -19,9 +19,10 @@ function makeWindow() {
 
 const { Worker } = require('content/worker');
 exports['test:sample'] = function(test) {
+  let window = makeWindow();
   test.waitUntilDone();
   let worker =  Worker({
-    window: makeWindow(),
+    window: window,
     contentScript: 'new ' + function WorkerScope() {
       // window is accessible
       let myLocation = window.location.toString();
@@ -32,9 +33,15 @@ exports['test:sample'] = function(test) {
     },
     onMessage: function(msg) {
       test.assertEqual('bye!', msg);
+      test.assertEqual(worker.url, window.document.location.href);
       test.done();
     }
   });
   worker.postMessage('hi!');
+  
+  // As window has just being created, its document is still loading, 
+  // and we have about:blank document before the expected one
+  test.assertEqual(worker.url, "about:blank");
+  test.assertEqual(worker.url, window.document.location.href);
 }
 
