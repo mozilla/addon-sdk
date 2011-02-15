@@ -38,12 +38,16 @@ exports["test inheritence"] = function (assert) {
   let f2 = Object.create(Type.prototype, properties);
 
   assert.equal(Type.prototype, prototype, "prototype did not changed");
-  assert.equal(f1.constructor, f2.constructor, "constructors match");
   assert.equal(f1.constructor, Type, "consturctor is a Type function");
-  assert.equal(Object.getPrototypeOf(f1), Object.getPrototypeOf(f2),
-               "prototoypes match");
+  assert.equal(f2.constructor, Type, "sandbox: consturctor is a Type function");
   assert.equal(Object.getPrototypeOf(f1), Type.prototype,
-               "getPrototypeOf returns `Type.prototype`");
+               "prototype is `Type.prototype`");
+  assert.equal(sandbox.getPrototypeOf(f1), Type.prototype,
+               "`getPrototypeOf` in sandbox returs `Type.prototype`");
+  assert.equal(Object.getPrototypeOf(f2), Type.prototype,
+               "sandbox: prototype is `Type.prototype`");
+  assert.equal(sandbox.getPrototypeOf(f2), Type.prototype,
+               "getPrototypeOf in sandbox returns `Type.prototype`");
 };
 
 exports["test writable / non-writable properties"] = function (assert) {
