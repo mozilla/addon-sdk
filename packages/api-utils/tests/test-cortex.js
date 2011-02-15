@@ -105,4 +105,4 @@ exports["test customized public properties"] = function(assert) {
 }
 
 //if (require.main == module)
-  require("test").run(exports)
+  require("test").run(exports);
