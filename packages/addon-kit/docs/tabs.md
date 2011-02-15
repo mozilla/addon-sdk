@@ -228,4 +228,39 @@ This is an optional argument.
 @method
 Makes this tab active, which will bring this tab to the foreground.
 </api>
+
+<api name="attach">
+@method
+  Create a page mod and attach it to the document in the tab.
+**Example**
+
+    var tabs = require("tabs");
+    
+    tabs.activeTab.attach({
+      contentScript: 
+        'document.body.style.border="5px solid black";' +
+        'postMessage(document.getElementById("#my-watched-element").innerText);',
+      onMessage: function (data) {
+        // data is equal to the text of my DOM element with ID "#my-watched-element"
+        
+      }
+    });
+    
+@param options {object}
+  Options for the page mod, with the following keys:
+
+@prop [contentScriptFile] {string,array}
+    The local file URLs of content scripts to load.  Content scripts specified
+    by this option are loaded *before* those specified by the `contentScript`
+    option. Optional.
+@prop [contentScript] {string,array}
+    The texts of content scripts to load.  Content scripts specified by this
+    option are loaded *after* those specified by the `contentScriptFile` option.
+    Optional.
+@prop [onMessage] {function}
+    A function called when the page mod receives a message from content scripts. 
+    Listeners are passed a single argument, the message posted from the 
+    content script.
+</api>
+
 </api>
