@@ -242,5 +242,37 @@ exports["test enumerable / non-enumerable properties"] = function (assert) {
                        "sandbox: property `f` defaults to non-enumerable");
 };
 
+exports["property names / keys"] = function (assert) {
+  let sandbox = Sandboxed();
+  let properties = {
+    a: { value: "a", enumerable: false },
+    b: { value: "b", enumerable: true },
+    c: { value: "c" },
+    d: { get: function() "d", enumerable: false },
+    e: { get: function() "e", enumerable: true },
+    f: { get: function() "f" }
+  };
+
+  let f1 = Object.create(Object.prototype, properties);
+  let f2 = sandbox.create(Object.prototype, properties);
+
+  assert.equal(Object.keys(f1).length, 6, "6 own properties");
+  assert.equal(Object.keys(f2).length, 6,
+               "sandbox: 6 own properties");
+  assert.equal(sandbox.keys(f1).length, 6,
+               "`getOwnPropertyNames` from sandbox reports 6 own properties");
+  assert.equal(sandbox.keys(f2).length, 6,
+               "`getOwnPropertyNames` from sandbox reports 6 own properties");
+
+  assert.equal(Object.keys(f1).length, 4, "4 own enumerable properties");
+  assert.equal(Object.keys(f2).length, 4,
+               "sandbox: 6 own enumerable properties");
+  assert.equal(sandbox.keys(f1).length, 4,
+               "`keys` from sandbox reports 4 own properties");
+  assert.equal(sandbox.keys(f2).length, 4,
+               "`keys` from sandbox reports 4 own properties");
+
+};
+
 if (module == require.main)
   require("test").run(exports);
