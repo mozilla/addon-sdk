@@ -91,6 +91,10 @@ exports.exists = function exists(filename) {
   return MozFile(filename).exists();
 };
 
+exports.isFile = function isFile(filename) {
+  return MozFile(filename).isFile();
+};
+
 exports.read = function read(filename) {
   var stream = exports.open(filename);
   try {
