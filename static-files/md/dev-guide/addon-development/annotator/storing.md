@@ -8,7 +8,7 @@ we will cover three topics relating to persistent storage:
 * handling exhaustion of the storage quota allocated to you
 * respecting Private Browsing
 
-## Storing new annotations ##
+## Storing New Annotations ##
 
 In this section we are only touching the `main.js` file.
 

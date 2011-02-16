@@ -1,6 +1,6 @@
 # Displaying Annotations #
 
-In this chapter we'll use a page-mod to locate elements of Web pages that have
+In this chapter we'll use a page-mod to locate elements of web pages that have
 annotations associated with them, and a panel to display the annotations.
 
 ## Matcher page-mod ##
@@ -66,7 +66,7 @@ content scripts:
 
 In the `main` function, add the code to create the matcher:
 
-    matcher = pageMod.PageMod({
+    var matcher = pageMod.PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
@@ -126,7 +126,7 @@ user enters a new annotation:
 
 ## Annotation panel ##
 
-The annotation panel just shows the content of the annotation.
+The annotation panel just shows the content of an annotation.
 
 There are two files associated with the annotation panel:
 
@@ -174,7 +174,7 @@ Save this in `data/annotation` as `annotation.html`.
 
 ### Annotation panel Content Script ###
 
-The annotation panel has a minimal content script, that sets the text:
+The annotation panel has a minimal content script that sets the text:
 
     self.on('message', function(message) {
       $('#annotation').text(message);
@@ -186,7 +186,7 @@ Save this in `data/annotation` as `annotation.js`.
 
 Finally, update `main.js` with the code to construct the annotation panel:
 
-    annotation = panels.Panel({
+    var annotation = panels.Panel({
       width: 200,
       height: 180,
       contentURL: data.url('annotation/annotation.html'),

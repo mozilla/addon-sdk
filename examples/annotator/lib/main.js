@@ -5,7 +5,7 @@ const pageMod = require('page-mod');
 const panels = require('panel');
 const simpleStorage = require('simple-storage');
 const privateBrowsing = require('private-browsing');
-const notifications = require("notifications");
+const notifications = require('notifications');
 
 /*
 Global variables

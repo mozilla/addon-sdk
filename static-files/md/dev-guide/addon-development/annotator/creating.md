@@ -11,23 +11,29 @@ text itself.
 The selector page mod can be switched on and off using a message from the
 main add-on code. It is initially off.
 
-It listens for [mouseenter](http://api.jquery.com/mouseenter/) events.
+It uses [jQuery](http://jquery.com/) to examine and manipulate the DOM.
+
+It listens for occurrences of the
+[jQuery mouseenter](http://api.jquery.com/mouseenter/) event.
+
 When a mouseenter event is triggered the selector checks whether the element
-is eligible for annotation. An event is eligible if it, or one of its ancestors
-in the DOM tree, has an ID attribute. The idea here is to make it more likely
-that the annotator will be able to identify annotated elements correctly later
-on.
+is eligible for annotation. An element is eligible if it, or one of its
+ancestors in the DOM tree, has an attribute named `"id"`. The idea here is to
+make it more likely that the annotator will be able to identify annotated
+elements correctly later on.
 
 If the page element is eligible for annotation, then the selector highlights
 that element and binds a click handler to it. The click handler sends a message
 called `show` back to the main add-on code. The `show` message contains: the URL
-for the page, the ID attribute value, and the content of the page element.
+for the page, the ID attribute value, and the text content of the page element.
+
+<span class="aside"> Eventually,
+`page-mod` should have its own `unload` event, but this is the workaround for
+the present.</span>
 
 Finally, the selector listens for the window's `unload` event and sends the
 main add-on code a message called `detach` when unload occurs. This is so the
-main add-on can remove the worker associated with this page (eventually,
-`page-mod` should have its own `unload` event, but this is the workaround for
-the present).
+main add-on can remove the worker associated with this page.
 
     var matchedElement = null;
     var originalBgColor = null;
@@ -45,7 +51,7 @@ the present).
       if (!active) {
         resetMatchedElement();
       }
-    })
+    });
 
     $('*').mouseenter(function() {
       if (!active || $(this).hasClass('annotated')) {
@@ -59,18 +65,22 @@ the present).
       $(matchedElement).bind('click.annotator', function(event) {
         event.stopPropagation();
         event.preventDefault();
-        postMessage(['show', [document.location.toString(),
-                    $(ancestor).attr("id"),
-                    $(matchedElement).text()]]);
+        postMessage({
+          kind: 'show',
+          anchor: [
+            document.location.toString(),
+            $(ancestor).attr("id"),
+            $(matchedElement).text()
+          ]
       });
-    })
+    });
 
     $('*').mouseout(function() {
       resetMatchedElement();
-    })
+    });
 
     window.addEventListener('unload', function() {
-        postMessage(['detach']);
+        postMessage({kind: 'detach'});
       },
       false);
 
@@ -86,7 +96,7 @@ Because this code uses jQuery, you'll need to
 Go back to `main.js` and add the code to create the selector into the `main`
 function:
 
-    selector = pageMod.PageMod({
+    var selector = pageMod.PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
@@ -111,8 +121,8 @@ function:
 Make sure the name you use to load jQuery matches the name of the jQuery
 version you downloaded.
 
-The page-mod matches anything: so each time the user loads a page the page-mod
-emits the `attach` event, which will call the handler function we've assigned
+The page-mod matches all pages, so each time the user loads a page the page-mod
+emits the `attach` event, which will call the listener function we've assigned
 to `onAttach`. The handler is passed a
 [worker](#module/api-utils/content/worker) object. Each worker represents a
 channel of communication between the add-on code and any content scripts
@@ -127,7 +137,7 @@ In the attach handler we do three things:
 later on
 * assign a message handler for messages from this worker. If the message is
 `show` we will just log the content for the time being. If the message is
-`detach` we remove the worker from the `selectors` array
+`detach` we remove the worker from the `selectors` array.
 
 At the top of the file import the `page-mod` module and declare an array for
 the workers:
@@ -161,8 +171,10 @@ Edit `toggleActivation` to notify the workers of a change in activation state:
     }
 
 Save the file and execute `cfx run` again. Activate the annotator by clicking
-the widget and load a page. You should see the highlight appearing when you
-move the mouse over certain elements:
+the widget and load a page: the screenshot below uses
+[http://blog.mozilla.com/addons/2011/02/04/
+overview-amo-review-process/](http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/).
+You should see the highlight appearing when you move the mouse over certain elements:
 
 <div align="center">
 <img src="media/annotator/highlight.png" alt="Annotator Highlighting">
@@ -180,7 +192,15 @@ output:
 
 ## Annotation Editor Panel ##
 
-Next, create a subdirectory under `data` called `editor`. This will contain
+So far we have a page-mod that can highlight elements and send information
+about them to the main add-on code. Next we will create the editor panel,
+which enables the user to enter an annotation associated with the selected
+element.
+
+We will supply the panel's content as an HTML file, and will also supply a
+content script to execute in the panel's context.
+
+So create a subdirectory under `data` called `editor`. This will contain
 two files: the HTML content, and the content script.
 
 ### Annotation Editor HTML ###
@@ -203,7 +223,7 @@ The HTML is very simple:
     width: 180px;
     height: 180px;
     margin: 10px;
-    padding:0px;
+    padding: 0px;
   }
   </style>
 
@@ -249,7 +269,7 @@ text area to the add-on.
 
 Save this inside `data/editor` as `annotation-editor.js`.
 
-### Updating main.js again ###
+### Updating main.js Again ###
 
 Now we'll update `main.js` again to create the editor and use it.
 
@@ -259,16 +279,16 @@ First, import the `panel` module:
 
 Then add the following code to the `main` function:
 
-    annotationEditor = panels.Panel({
+    var annotationEditor = panels.Panel({
       width: 220,
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
       contentScriptWhen: 'ready',
-      onMessage: function(message) {
-        if (message) {
-          console.log(this.anchor);
-          console.log(message);
+      onMessage: function(annotationText) {
+        if (annotationText) {
+          console.log(this.annotationAnchor);
+          console.log(annotationText);
         }
         annotationEditor.hide();
       },
@@ -284,9 +304,10 @@ message and hide the panel.
 
 The only thing left is to link the editor to the selector. So edit the message
 handler assigned to the selector so that on receiving the `show` message we
-assign the content of the message to the panel, and show the panel:
+assign the content of the message to the panel using a new property
+"annotationAnchor", and show the panel:
 
-    selector = pageMod.PageMod({
+    var selector = pageMod.PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
@@ -296,7 +317,7 @@ assign the content of the message to the panel, and show the panel:
         worker.on('message', function(message) {
           switch(message[0]) {
             case 'show':
-              annotationEditor.anchor = message[1];
+              annotationEditor.annotationAnchor = message[1];
               annotationEditor.show();
               break;
             case 'detach':

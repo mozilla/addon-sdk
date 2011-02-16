@@ -19,11 +19,8 @@ The annotator's main user interface consists of a widget and three panels.
 
 * The widget is used to switch the annotator on and off, and to display a list
 of all the stored annotations.
-
 * The **annotation-editor** panel enables the user to enter a new annotation.
-
 * The **annotation-list** panel shows a list of all stored annotations.
-
 * The **annotation** panel displays a single annotation.
 
 Additionally, we use the `notifications` module to notify the user when the
@@ -31,7 +28,8 @@ add-on's storage quota is full.
 
 ## Working with the DOM ##
 
-We'll use two page-mods:
+We'll use two page-mods to interact with the DOMs of pages that the user has
+opened.
 
 * The **selector** enables the user to choose an element to annotate.
 It identifies page elements which are eligible for annotation, highlights them
