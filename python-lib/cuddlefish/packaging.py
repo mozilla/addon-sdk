@@ -16,7 +16,7 @@ DEFAULT_PROGRAM_MODULE = 'main'
 DEFAULT_ICON = 'icon.png'
 DEFAULT_ICON64 = 'icon64.png'
 
-METADATA_PROPS = ['name', 'description', 'keywords', 'author',
+METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'contributors', 'license', 'url', 'icon', 'icon64']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
