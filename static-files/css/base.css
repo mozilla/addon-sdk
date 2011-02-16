@@ -13,7 +13,7 @@ The file contains generic style rules, that don't depend on any special structur
 
 html {
   background-color: #fff;
-  background-image: url(/media/bg-header.png);
+  background-image: url(../media/bg-header.png);
   background-position: left top;
   background-repeat: repeat-x;
 }
@@ -22,9 +22,6 @@ body {
   color: #444;
   font-size: 13px;
   line-height: 1.538em;
-  margin: 0 auto;
-  min-width: 780px;
-  position: relative;
   font-family: "helvetica neue",arial,helvetica,sans-serif;
   font-style: normal;
 }

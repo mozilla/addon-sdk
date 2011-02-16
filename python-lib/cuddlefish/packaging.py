@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import copy
 
 import simplejson as json
 from cuddlefish.bunch import Bunch
@@ -13,9 +14,10 @@ DEFAULT_LOADER = 'api-utils'
 DEFAULT_PROGRAM_MODULE = 'main'
 
 DEFAULT_ICON = 'icon.png'
+DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author',
-                  'contributors', 'license', 'url', 'icon']
+                  'contributors', 'license', 'url', 'icon', 'icon64']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -131,6 +133,10 @@ def get_config_in_dir(path):
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
         base_json['icon'] = DEFAULT_ICON
+
+    if (not base_json.get('icon64') and
+        os.path.isfile(os.path.join(path, DEFAULT_ICON64))):
+        base_json['icon64'] = DEFAULT_ICON64
 
     for key in ['lib', 'tests', 'dependencies', 'packages']:
         normalize_string_or_array(base_json, key)
@@ -272,15 +278,52 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         add_dep_to_build(DEFAULT_LOADER)
 
     if 'icon' in target_cfg:
-        build['icon'] = os.path.join(target_cfg.root_dir,
-                                     target_cfg.icon)
+        build['icon'] = os.path.join(target_cfg.root_dir, target_cfg.icon)
         del target_cfg['icon']
+
+    if 'icon64' in target_cfg:
+        build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
+        del target_cfg['icon64']
 
     # now go back through and find out where each module lives, to record the
     # pathname in the manifest
     update_manifest_with_fileinfo(deps, DEFAULT_LOADER, manifest)
 
     return build
+
+def _get_files_in_dir(path):
+    data = {}
+    files = os.listdir(path)
+    for filename in files:
+        fullpath = os.path.join(path, filename)
+        if os.path.isdir(fullpath):
+            data[filename] = _get_files_in_dir(fullpath)
+        else:
+            try:
+                info = os.stat(fullpath)
+                data[filename] = dict(size=info.st_size)
+            except OSError:
+                pass
+    return data
+
+def build_pkg_index(pkg_cfg):
+    pkg_cfg = copy.deepcopy(pkg_cfg)
+    for pkg in pkg_cfg.packages:
+        root_dir = pkg_cfg.packages[pkg].root_dir
+        files = _get_files_in_dir(root_dir)
+        pkg_cfg.packages[pkg].files = files
+        try:
+            readme = open(root_dir + '/README.md').read()
+            pkg_cfg.packages[pkg].readme = readme
+        except IOError:
+            pass
+        del pkg_cfg.packages[pkg].root_dir
+    return pkg_cfg.packages
+
+def build_pkg_cfg(root):
+    pkg_cfg = build_config(root, Bunch(name='dummy'))
+    del pkg_cfg.packages['dummy']
+    return pkg_cfg
 
 def call_plugins(pkg_cfg, deps):
     for dep in deps:

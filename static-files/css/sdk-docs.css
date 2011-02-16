@@ -1,41 +1,50 @@
 
-#cannot-ping {
-  padding: 0.5em;
-  background: #aa0000;
-  color: white;
-  display: none;
-}
-
 #columns {
-  display: table;
   height: 100%;
 }
 
 #left-column {
-  width: 25em;
+  float: left;
+  width: 18em;
   padding: 1em;
-  display: table-cell;
 }
 
 #right-column {
-  width: 40em;
+  float: left;
+  width: 55%;
   padding: 1em;
-  display: table-cell;
+  padding-top: 3em;
 }
 
-#sidenotes {
-  width: 15em;
-  display: table-cell;
+.aside {
+  color: gray;
+  float: right;
+  padding-left: 1em;
+  margin-left: 1em;
+  margin-right: -10%;
+  width: 25%;
+  border-left: 1px solid gray;
+}
+
+.site-logo {
+  float:left;
+
+  }
+
+.site-title a, .site-title a:visited, .site-title a:hover, .site-title a:focus {
+  color: #444;
+  font-family: MetaBlack,'Trebuchet MS',sans-serif;
+  font-size: 0.8em;
+  font-weight: bold;
+  line-height: 1.2em;
+  text-decoration: none;
+  padding-left: 0.2em;
+  display:inline;
 }
 
 #footer .actions {
   display: block;
   float: right;
-}
-
-#view-source {
-  color: white;
-  text-decoration: none;
 }
 
 .meta-header {
@@ -53,10 +62,11 @@
 }
 
 .module {
-  padding-left: 0.5em;
-  padding-right: 0.5em;
   margin-top: 0.2em;
   margin-bottom: 0.2em;
+  padding-left: 0em;
+  padding-right: 0em;
+  margin-right: 1.0em;
 }
 
 .package-summary .module {
@@ -76,19 +86,6 @@
   font-family: Monaco, Lucida Console, monospace;
   font-size: 0.8em;
   white-space: pre;
-}
-
-#templates {
-  display: none;
-}
-
-.aside {
-  color: gray;
-  border-left: gray 1px solid;
-  padding-left: 1em;
-  padding-right: 1em;
-  position: absolute;
-  display: block;
 }
 
 table {
@@ -135,7 +132,7 @@ table.meta-table {
 }
 
 #footer {
-  background: #33559b url(/media/bg-footer.png) 0 0 repeat-x;
+  background: #33559b url(../media/bg-footer.png) 0 0 repeat-x;
   clear: both;
   color: #476FBE;
   display: block;
@@ -154,22 +151,6 @@ table.meta-table {
   text-decoration: underline;
 }
 
-.site-title a, .site-title a:visited, .site-title a:hover, .site-title a:focus {
-  color: #444;
-  font-family: MetaBlack,'Trebuchet MS',sans-serif;
-  font-size: 1.0em;
-  font-weight: bold;
-  line-height: 2.0em;
-  text-decoration: none;
-  text-transform: none;
-  vertical-align: top;
-  padding-left: 0.2em;
-}
-
-.site-title img {
-  vertical-align: bottom;
-}
-
 #right-column h1 {
   font-size: 2.2em;
 }
@@ -179,6 +160,7 @@ table.meta-table {
 }
 
 .sidebar-section {
+  clear: both;
   background-color: #E0EFFD;
   margin-bottom: 1.0em;
   border-style: solid;
@@ -207,11 +189,6 @@ table.meta-table {
 
 .sidebar-section .modules {
   padding-left: 25px;
-}
-
-.sidebar-section .module {
-  padding-left: 0.5em;
-  padding-right: 0.5em;
 }
 
 .sidebar-section h2, .sidebar-section h3 {
@@ -248,4 +225,10 @@ table.meta-table {
 
 .sidebar-section .current-page {
   background: white;
+}
+
+.image-center {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }

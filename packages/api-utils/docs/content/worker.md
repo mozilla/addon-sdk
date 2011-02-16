@@ -73,5 +73,11 @@ script was loaded.
 @param data {number,string,JSON}
 The data to send. Must be stringifiable to JSON.
 </api>
+
+<api name="url">
+@property {string}
+The URL of the content.
+</api>
+
 </api>
 

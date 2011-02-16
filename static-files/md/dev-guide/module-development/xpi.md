@@ -19,6 +19,17 @@ packages, structured like so:
 <pre>
   >>> from cuddlefish.tests.test_xpi import document_dir
   >>> document_dir('packages')
+  aardvark/docs/aardvark-feeder.md:
+    The `aardvark-feeder` module simplifies feeding aardvarks.
+  <BLANKLINE>
+    <api name="feed">
+    @function
+      Feed the aardvark.
+    @param food {string}
+      The food.  Aardvarks will eat anything.
+    </api>
+  aardvark/docs/main.md:
+  <BLANKLINE>
   aardvark/lib/main.js:
     exports.main = function(options, callbacks) {
       console.log("1 + 1 =", require("bar-module").add(1, 1));
@@ -26,7 +37,9 @@ packages, structured like so:
     };
   aardvark/package.json:
     {
+      "author": "Jon Smith",
       "description": "A package w/ a main module; can be built into an extension.",
+      "keywords": ["potato"],
       "dependencies": ["api-utils", "barbeque"]
     }
   api-utils/lib/loader.js:
@@ -36,6 +49,7 @@ packages, structured like so:
   api-utils/package.json:
     {
       "description": "A foundational package that provides a CommonJS module loader implementation.",
+      "keywords": ["potato", "jetpack-low-level"],
       "loader": "lib/loader.js"
     }
   barbeque/lib/bar-module.js:
@@ -44,6 +58,7 @@ packages, structured like so:
     };
   barbeque/package.json:
     {
+      "keywords": ["potato", "jetpack-low-level"],
       "description": "A package used by 'aardvark' as a library."
     }
 
@@ -191,4 +206,4 @@ examples is a unique identifier that the SDK prepends to all
 `resource:` URIs to namespace the XPI's resources so they don't
 collide with anything else, including other extensions built by the
 SDK and containing the same packages. This GUID is built from the
-[Program ID](#guide/addon-development/program-id).
+[Program ID](dev-guide/addon-development/program-id.html).

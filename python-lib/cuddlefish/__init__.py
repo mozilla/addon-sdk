@@ -154,6 +154,12 @@ parser_groups = (
                                  default=None,
                                  cmds=['test', 'run', 'testex', 'testpkgs',
                                        'testall'])),
+        (("", "--baseurl",), dict(dest="baseurl",
+                                 help=("root of static docs tree: "
+                                       "for example: 'http://me.com/the_docs/'"),
+                                 metavar=None,
+                                 default='',
+                                 cmds=['sdocs'])),
         (("", "--test-runner-pkg",), dict(dest="test_runner_pkg",
                                           help=("name of package "
                                                 "containing test runner "
@@ -455,7 +461,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
         # TODO: Allow user to change this filename via cmd line.
         filename = 'addon-sdk-docs.tgz'
-        cuddlefish.server.generate_static_docs(env_root, filename)
+        cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
         print "Wrote %s." % filename
         return
 

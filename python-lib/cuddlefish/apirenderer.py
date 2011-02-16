@@ -272,7 +272,7 @@ def json_to_html(json, markdown_filename):
 # take the name of a Markdown file
 # return the HTML DIV containing the rendered component
 def md_to_div(markdown_filename):
-    markdown_contents = open(markdown_filename).read()
+    markdown_contents = open(markdown_filename).read().decode('utf8')
     json = list(apiparser.parse_hunks(markdown_contents))
     return json_to_div(json, markdown_filename)
 
