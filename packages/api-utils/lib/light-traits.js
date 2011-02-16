@@ -178,7 +178,7 @@ function exclude(names, trait) {
 
     // If property is not excluded (the array of names does not contain it),
     // or it is a "required" property, copy it to the resulting composition.
-    if (~names.indexOf(name) || isRequiredProperty(trait, name))
+    if (!~names.indexOf(name) || isRequiredProperty(trait, name))
       composition[name] = trait[name];
 
     // For all the names in the exclude name array we create required
