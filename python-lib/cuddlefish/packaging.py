@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import copy
 
 import simplejson as json
 from cuddlefish.bunch import Bunch
@@ -281,6 +282,40 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
     update_manifest_with_fileinfo(deps, DEFAULT_LOADER, manifest)
 
     return build
+
+def _get_files_in_dir(path):
+    data = {}
+    files = os.listdir(path)
+    for filename in files:
+        fullpath = os.path.join(path, filename)
+        if os.path.isdir(fullpath):
+            data[filename] = _get_files_in_dir(fullpath)
+        else:
+            try:
+                info = os.stat(fullpath)
+                data[filename] = dict(size=info.st_size)
+            except OSError:
+                pass
+    return data
+
+def build_pkg_index(pkg_cfg):
+    pkg_cfg = copy.deepcopy(pkg_cfg)
+    for pkg in pkg_cfg.packages:
+        root_dir = pkg_cfg.packages[pkg].root_dir
+        files = _get_files_in_dir(root_dir)
+        pkg_cfg.packages[pkg].files = files
+        try:
+            readme = open(root_dir + '/README.md').read()
+            pkg_cfg.packages[pkg].readme = readme
+        except IOError:
+            pass
+        del pkg_cfg.packages[pkg].root_dir
+    return pkg_cfg.packages
+
+def build_pkg_cfg(root):
+    pkg_cfg = build_config(root, Bunch(name='dummy'))
+    del pkg_cfg.packages['dummy']
+    return pkg_cfg
 
 def call_plugins(pkg_cfg, deps):
     for dep in deps:

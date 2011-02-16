@@ -1,6 +1,7 @@
 import os
 import unittest
 
+from cuddlefish import webdocs
 from cuddlefish import server
 from cuddlefish.tests import env_root
 
@@ -15,7 +16,8 @@ class ServerTests(unittest.TestCase):
 
 class UnprivilegedServerTests(unittest.TestCase):
     def request(self, path, method='GET'):
-        app = server.make_wsgi_app(env_root, task_queue=None,
+        web_docs = webdocs.WebDocs(env_root)
+        app = server.make_wsgi_app(env_root, web_docs, task_queue=None,
                                    expose_privileged_api=False)
 
         def start_response(code, headers):

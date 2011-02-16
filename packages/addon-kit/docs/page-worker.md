@@ -14,13 +14,13 @@ Page workers have associated content scripts, which are JavaScript scripts that
 have access to the content loaded into the pages.  You can specify scripts to
 load for a page worker, and you communicate with those scripts over an
 asynchronous JSON pipe.  For more information on content scripts, see
-[Working with Content Scripts](#guide/addon-development/web-content).
+[Working with Content Scripts](dev-guide/addon-development/web-content.html).
 
 Events
 ------
 
 Page workers emit the following types of
-[events](#guide/addon-development/events):
+[events](dev-guide/addon-development/events.html):
 
 ### message ###
 
@@ -42,8 +42,8 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](#guide/addon-development/web-content) for more
-information.
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+for more information.
 
 ### Print all header titles from a Wikipedia article ###
 
@@ -95,8 +95,8 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     A local file URL or an array of local file URLs of content scripts to load.
     Content scripts specified by this option are loaded *before* those specified
     by the `contentScript` option.  See
-    [Working with Content Scripts](#guide/addon-development/web-content) for
-    help on setting this property.
+    [Working with Content Scripts](dev-guide/addon-development/web-content.html)
+    for help on setting this property.
   @prop [contentScript] {string,array}
     A string or an array of strings containing the texts of content scripts to
     load.  Content scripts specified by this option are loaded *after* those
@@ -157,7 +157,8 @@ The message to send.  Must be JSON-able.
 <api name="on">
 @method
 Registers an event listener with the page worker.  See
-[Working with Events](#guide/addon-development/events) for help with events.
+[Working with Events](dev-guide/addon-development/events.html) for help with
+events.
 @param type {string}
 The type of event to listen for.
 @param listener {function}

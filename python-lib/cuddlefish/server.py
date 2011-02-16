@@ -12,11 +12,14 @@ import SocketServer
 import shutil
 import tarfile
 import traceback
+import markdown
+import errno
 
 from cuddlefish import packaging
 from cuddlefish import Bunch
 from cuddlefish import apiparser
 from cuddlefish import apirenderer
+from cuddlefish import webdocs
 import simplejson as json
 
 try:
@@ -33,6 +36,7 @@ except ImportError:
 DEV_SERVER_PORT = 15832
 DEFAULT_PORT = 8888
 DEFAULT_HOST = '127.0.0.1'
+DEFAULT_PAGE = 'dev-guide/welcome.html'
 
 API_PATH = 'api'
 IDLE_PATH = 'idle'
@@ -98,7 +102,9 @@ def guess_mime_type(url):
     MIME_TYPES = dict(json="text/plain",
                       cpp="text/plain",
                       c="text/plain",
-                      h="text/plain")
+                      h="text/plain",
+                      css="text/css",
+                      js="text/javascript")
 
     ext = url.split(".")[-1]
     if ext in MIME_TYPES:
@@ -110,132 +116,59 @@ def guess_mime_type(url):
     return mimetype
 
 class Server(object):
-    def __init__(self, env_root, task_queue, expose_privileged_api=True):
+    def __init__(self, env_root, \
+                 webdocs, task_queue, expose_privileged_api=True):
         self.env_root = env_root
         self.expose_privileged_api = expose_privileged_api
         self.root = os.path.join(self.env_root, 'static-files')
         self.index = os.path.join(self.root, 'index.html')
         self.task_queue = task_queue
+        self.web_docs = webdocs
 
-    def _respond(self, message):
-        self.start_response(message,
-                            [('Content-type', 'text/plain')])
+    def _error(self, message):
+        self.start_response(message, [('Content-type', 'text/plain')])
         yield message
 
-    def _respond_with_file(self, path):
-        url = urllib.pathname2url(path)
-        mimetype = guess_mime_type(url)
-        self.start_response('200 OK',
-                            [('Content-type', mimetype)])
-        yield open(path, 'r').read()
-
-    def _respond_with_apidoc_json(self, path):
-        docs_md = open(path, 'r').read()
+    def _respond(self, parts):
+        response = ''
+        mimetype = 'text/html'
         try:
-            parsed = list(apiparser.parse_hunks(docs_md))
-            self.start_response('200 OK',
-                                [('Content-type', "text/plain")])
-            return [json.dumps(parsed)]
-        except apiparser.ParseError, e:
-            self.start_response('500 Parse Error',
-                                [('Content-type', "text/plain")])
-            return [str(e)]
-
-    def _respond_with_apidoc_div(self, path):
-        docs_md = open(path, 'r').read()
-        try:
-            parsed = apirenderer.md_to_div(path)
-            self.start_response('200 OK',
-                                [('Content-type', "text/html")])
-            return [parsed]
-        except apirenderer.ParseError, e:
-            self.start_response('500 Parse Error',
-                                [('Content-type', "text/plain")])
-            return [str(e)]
-
-    def _get_files_in_dir(self, path):
-        data = {}
-        files = os.listdir(path)
-        for filename in files:
-            fullpath = os.path.join(path, filename)
-            if os.path.isdir(fullpath):
-                data[filename] = self._get_files_in_dir(fullpath)
+            if parts[0] == 'dev-guide':
+                path = os.path.join(self.env_root, \
+                                    'static-files', 'md', *parts)
+                response = self.web_docs.create_guide_page(path)
+            elif parts[0] == 'packages':
+                 if len(parts) > 1 and parts[1] == 'index.json':
+                     mimetype = 'text/plain'
+                     response = json.dumps(self.web_docs.packages_json)
+                 elif self._is_package_file_request(parts):
+                     path = os.path.join(self.env_root, *parts)
+                     response = self.web_docs.create_package_page(path)
+                 else:
+                     path = os.path.join(self.env_root, *parts)
+                     response = self.web_docs.create_module_page(path)
             else:
-                try:
-                    info = os.stat(fullpath)
-                    data[filename] = dict(size=info.st_size)
-                except OSError:
-                    pass
-        return data
-
-    def build_pkg_index(self, pkg_cfg):
-        pkg_cfg = copy.deepcopy(pkg_cfg)
-        for pkg in pkg_cfg.packages:
-            root_dir = pkg_cfg.packages[pkg].root_dir
-            files = self._get_files_in_dir(root_dir)
-            pkg_cfg.packages[pkg].files = files
-            try:
-                readme = open(root_dir + '/README.md').read()
-                pkg_cfg.packages[pkg].readme = readme
-            except IOError:
-                pass
-            del pkg_cfg.packages[pkg].root_dir
-        return pkg_cfg.packages
-
-    def build_pkg_cfg(self):
-        pkg_cfg = packaging.build_config(self.env_root,
-                                         Bunch(name='dummy'))
-        del pkg_cfg.packages['dummy']
-        return pkg_cfg
-
-    def _respond_with_pkg_file(self, parts):
-        if not parts:
-            return self._respond('404 Not Found')
-
-        try:
-            pkg_cfg = self.build_pkg_cfg()
-        except packaging.Error, e:
-            self.start_response('500 Internal Server Error',
-                                [('Content-type', 'text/plain')])
-            return [traceback.format_exc()]
-
-        if parts[0] == 'index.json':
-            # TODO: This should really be of JSON's mime type,
-            # but Firefox doesn't let us browse this way so
-            # we'll just return text/plain for now.
-            self.start_response('200 OK',
-                                [('Content-type', 'text/plain')])
-            return [json.dumps(self.build_pkg_index(pkg_cfg))]
-
-        pkg_name = parts[0]
-        if pkg_name not in pkg_cfg.packages:
-            return self._respond('404 Not Found')
+                path = os.path.join(self.root, *parts)
+                url = urllib.pathname2url(path)
+                mimetype = guess_mime_type(url)
+                response = open(path, 'r').read()
+        except IOError, e:
+            if e.errno==errno.ENOENT:
+                return self._error('404 Not Found')
+            else:
+                return self._error('500 Internal Server Error')
+        except:
+                return self._error('500 Internal Server Error')
         else:
-            root_dir = pkg_cfg.packages[pkg_name].root_dir
-            if len(parts) == 1:
-                return self._respond('404 Not Found')
-            else:
-                dir_path = os.path.join(root_dir, *parts[1:])
-                dir_path = os.path.normpath(dir_path)
-                parse_json = False
-                parse_div = False
-                if dir_path.endswith(".md.json"):
-                    parse_json = True
-                    dir_path = dir_path[:-len(".json")]
-                if dir_path.endswith(".md.div"):
-                    parse_div = True
-                    dir_path = dir_path[:-len(".div")]
-                if not (dir_path.startswith(root_dir) and
-                        os.path.exists(dir_path) and
-                        os.path.isfile(dir_path)):
-                    return self._respond('404 Not Found')
-                else:
-                    if parse_json:
-                        return self._respond_with_apidoc_json(dir_path)
-                    elif parse_div:
-                        return self._respond_with_apidoc_div(dir_path)
-                    else:
-                        return self._respond_with_file(dir_path)
+            self.start_response('200 OK', [('Content-type', mimetype)])
+            return [response]
+
+    def _is_package_file_request(self, parts):
+        # format of a package file request is always:
+        # "packages/<package_name>/<package_name>.html"
+        if len(parts) != 3:
+            return False
+        return (parts[0] == 'packages') and ((parts[1] + '.html') == parts[2])
 
     def _respond_with_api(self, parts):
         parts = [part for part in parts
@@ -243,18 +176,18 @@ class Server(object):
 
         if parts[0] == TASK_QUEUE_PATH:
             if not self.expose_privileged_api:
-                return self._respond('501 Not Implemented')
+                return self._error('501 Not Implemented')
             if len(parts) == 2:
                 if parts[1] == TASK_QUEUE_SET:
                     if self.environ['REQUEST_METHOD'] != 'POST':
-                        return self._respond('400 Bad Request')
+                        return self._error('400 Bad Request')
                     input = self.environ['wsgi.input']
                     try:
                         clength = int(self.environ['CONTENT_LENGTH'])
                         content = input.read(clength)
                         content = json.loads(content)
                     except ValueError:
-                        return self._respond('400 Bad Request')
+                        return self._error('400 Bad Request')
                     self.task_queue.put(content)
                     self.start_response('200 OK',
                                         [('Content-type', 'text/plain')])
@@ -271,57 +204,35 @@ class Server(object):
                         return ['']
                     return [json.dumps(task)]
                 else:
-                    return self._respond('404 Not Found')
+                    return self._error('404 Not Found')
             else:
-                return self._respond('404 Not Found')
+                return self._error('404 Not Found')
         elif parts[0] == IDLE_PATH:
             if not self.expose_privileged_api:
-                return self._respond('501 Not Implemented')
-            # TODO: Yuck, we're accessing a protected property; any
-            # way to wait for a second w/o doing this?
-            sock = self.environ['wsgi.input']._sock
-            sock.settimeout(1.0)
-            for i in range(IDLE_TIMEOUT):
-                try:
-                    sock.recv(1)
-                except socket.timeout:
-                    pass
-                if not _idle_event.isSet():
-                    _idle_event.set()
-            self.start_response('200 OK',
-                                [('Content-type', 'text/plain')])
-            return ['Idle complete (%s seconds)' % IDLE_TIMEOUT]
+                return self._error('501 Not Implemented')
+            if not _idle_event.isSet():
+                _idle_event.set()
+            return
         else:
-            return self._respond('404 Not Found')
+            return self._error('404 Not Found')
 
     def app(self, environ, start_response):
         self.environ = environ
         self.start_response = start_response
-
         parts = environ['PATH_INFO'].split('/')[1:]
         if not parts:
             # Expect some sort of rewrite rule, etc. to always ensure
             # that we have at least a '/' as our path.
-            return self._respond('404 Not Found')
+            return self._error('404 Not Found')
         if not parts[0]:
-            parts = ['index.html']
+            parts = DEFAULT_PAGE.split('/')
         if parts[0] == API_PATH:
             return self._respond_with_api(parts[1:])
-        elif parts[0] == 'packages':
-            return self._respond_with_pkg_file(parts[1:])
-        else:
-            fullpath = os.path.join(self.root, *parts)
-            fullpath = os.path.normpath(fullpath)
-            if not (fullpath.startswith(self.root) and
-                    os.path.exists(fullpath) and
-                    os.path.isfile(fullpath)):
-                return self._respond('404 Not Found')
-            else:
-                return self._respond_with_file(fullpath)
+        return self._respond(parts)
 
-def make_wsgi_app(env_root, task_queue, expose_privileged_api=True):
+def make_wsgi_app(env_root, webdocs, task_queue, expose_privileged_api=True):
     def app(environ, start_response):
-        server = Server(env_root, task_queue, expose_privileged_api)
+        server = Server(env_root, webdocs, task_queue, expose_privileged_api)
         return server.app(environ, start_response)
     return app
 
@@ -336,8 +247,9 @@ def make_httpd(env_root, host=DEFAULT_HOST, port=DEFAULT_PORT,
         handler_class = QuietWSGIRequestHandler
 
     tq = Queue.Queue()
+    web_docs = webdocs.WebDocs(env_root)
     httpd = simple_server.make_server(host, port,
-                                      make_wsgi_app(env_root, tq),
+                                      make_wsgi_app(env_root, web_docs, tq),
                                       ThreadedWSGIServer,
                                       handler_class)
     return httpd
@@ -381,8 +293,8 @@ def start_daemonic(httpd, host=DEFAULT_HOST, port=DEFAULT_PORT):
         if _idle_event.isSet():
             _idle_event.clear()
         else:
-            #print ("Web browser is no longer viewing %s, "
-            #       "shutting down server." % get_url(host, port))
+#            print ("Web browser is no longer viewing %s, "
+#                   "shutting down server." % get_url(host, port))
             break
 
 def start(env_root=None, host=DEFAULT_HOST, port=DEFAULT_PORT,
@@ -397,8 +309,9 @@ def start(env_root=None, host=DEFAULT_HOST, port=DEFAULT_PORT,
     except KeyboardInterrupt:
         print "Ctrl-C received, exiting."
 
-def generate_static_docs(env_root, tgz_filename):
-    server = Server(env_root=env_root,
+def generate_static_docs(env_root, tgz_filename, base_url = ''):
+    web_docs = webdocs.WebDocs(env_root, base_url)
+    server = Server(env_root, web_docs,
                     task_queue=None,
                     expose_privileged_api=False)
     staging_dir = os.path.join(env_root, "addon-sdk-docs")
@@ -417,10 +330,10 @@ def generate_static_docs(env_root, tgz_filename):
     # then copy docs from each package
     os.mkdir(os.path.join(staging_dir, "packages"))
 
-    pkg_cfg = server.build_pkg_cfg()
+    pkg_cfg = packaging.build_pkg_cfg(server.env_root)
 
     # starting with the (generated) index file
-    index = json.dumps(server.build_pkg_index(pkg_cfg))
+    index = json.dumps(packaging.build_pkg_index(pkg_cfg))
     index_path = os.path.join(staging_dir, "packages", 'index.json')
     open(index_path, 'w').write(index)
 
@@ -437,6 +350,11 @@ def generate_static_docs(env_root, tgz_filename):
         if os.path.exists(src_readme):
             shutil.copyfile(src_readme,
                             os.path.join(dest_dir, "README.md"))
+
+        # create the package page
+        package_doc_html = web_docs.create_package_page(src_dir)
+        open(os.path.join(dest_dir, pkg_name + ".html"), "w")\
+            .write(package_doc_html)
 
         docs_src_dir = os.path.join(src_dir, "docs")
         docs_dest_dir = os.path.join(dest_dir, "docs")
@@ -465,8 +383,34 @@ def generate_static_docs(env_root, tgz_filename):
                     docs_div = apirenderer.json_to_div(docs_parsed, src_path)
                     open(dest_path + ".div", "w").write(docs_div)
                     # write the standalone HTML files
-                    docs_html = apirenderer.json_to_html(docs_parsed, src_path)
-                    open(dest_path + ".html", "w").write(docs_html)
+                    docs_html = web_docs.create_module_page(src_path)
+                    open(dest_path[:-3] + ".html", "w").write(docs_html)
+
+    dev_guide_src = os.path.join(server.root, 'md/dev-guide')
+    dev_guide_dest = os.path.join(staging_dir, 'dev-guide')
+    if not os.path.exists(dev_guide_dest):
+        os.mkdir(dev_guide_dest)
+    for (dirpath, dirnames, filenames) in os.walk(dev_guide_src):
+        assert dirpath.startswith(dev_guide_src)
+        relpath = dirpath[len(dev_guide_src)+1:]
+        for dirname in dirnames:
+            dest_path = os.path.join(dev_guide_dest, relpath, dirname)
+            if not os.path.exists(dest_path):
+                os.mkdir(dest_path)
+        for filename in filenames:
+            if filename.endswith("~"):
+                continue
+            src_path = os.path.join(dirpath, filename)
+            dest_path = os.path.join(dev_guide_dest, relpath, filename)
+            if filename.endswith(".md"):
+                # write the standalone HTML files
+                docs_html = web_docs.create_guide_page(src_path)
+                open(dest_path[:-3] + ".html", "w").write(docs_html)
+
+    # make /md/dev-guide/welcome.html the top level index file
+    shutil.copy(os.path.join(dev_guide_dest, 'welcome.html'), \
+                os.path.join(staging_dir, 'index.html'))
+
 
     # finally, build a tarfile out of everything
     tgz = tarfile.open(tgz_filename, 'w:gz')

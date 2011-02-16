@@ -1,3 +1,4 @@
+
 # Using the SDK with XUL extensions #
 
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
@@ -7,27 +8,13 @@ or if you'd like to gradually migrate an existing extension over to the SDK.
 
 Running an SDK-based add-on in Firefox
 ------------------
-We assume you have already completed the [Getting Started](#guide/getting-started),
-[Packaging](#guide/packaging), and [Programs](#guide/programs) steps of the
-main tutorial. You should have a package called "my-first-package" (including a
-`package.json` manifest) and modules named "my-module" and "main".
+We assume you have already completed the
+[Getting Started](dev-guide/addon-development/getting-started.html) tutorial.
+You should have a package called `translator` (including a `package.json`
+manifest) and modules named `translator` and `main`.
+
 You have used `cfx run` to run the program, which creates a
-[keypair](#guide/xpi) for you.
-
-Let's now use `cfx` to run Firefox with your extension.
-
-First, modify `main.js` - comment out the `callbacks.quit()` call so that we
-can see the Firefox main window when using `cfx run`:
-
-    exports.main = function(options, callbacks) {
-      console.log("Hello World!");
-      // Don't need to quit right away: no callbacks.quit();
-    }
-
-Now go to the package directory and run `cfx run` to load
-the module in Firefox.
-
-This will start Firefox with a clean profile and our package installed.
+[key pair](/dev-guide/addon-development/program-id.html) for you.
 
 Getting your XUL extension to run with Add-on SDK
 ------------------
@@ -39,7 +26,7 @@ runs tests).
 </span>
 Copy the extension template the SDK uses to run add-ons from
 `addon-sdk/python-lib/cuddlefish/app-extension` to your own folder, for
-example `addon-sdk/packages/my-first-package/extension`.
+example `addon-sdk/packages/translator/extension`.
 
 Copy your other extension files to `addon-sdk/packages/my-extension/extension`
 (`components`, `chrome.manifest` and chrome files, etc).
@@ -86,16 +73,15 @@ Now we can use CommonJS modules from regular extension code using this code:
         "@mozilla.org/harness-service;1?id="jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk"].
         getService().wrappedJSObject.loader.require(module);
     }
-    alert(loadSDKModule("my-module").add(1, 3)); // alerts 4!
+    loadSDKModule("translator").translate("Bonjour tout le monde", function(translation) {
+      alert(translation);
+    });
 
 You can test this code by pasting it into the Error Console of the Firefox
 instance that appears when you use `cfx run -t extension`.
 
 Packaging the extension into an XPI
 ------------------
-<span class="aside">
-Check out [XPI Generation](#guide/xpi) for an overview of how this works.
-</span>
 As with regular add-ons, you can use `cfx` to create an XPI from your package:
 
 <pre>

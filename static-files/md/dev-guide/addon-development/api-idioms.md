@@ -26,14 +26,14 @@ Add-on developers can register listeners with event emitters and are then
 notified when the events occur.
 
 To learn more about events, see the
-[Working with Events](#guide/addon-development/events) page.
+[Working with Events](dev-guide/addon-development/events.html) page.
 
 ## Content Scripting ##
 
 Several modules need to interact directly with web content, either web content
-they host themselves (such as the [`panel`](#module/addon-kit/panel) module) or
+they host themselves (such as the [`panel`](packages/addon-kit/docs/panel.html) module) or
 web content hosted by the browser (such as the
-[`page-mod`](#module/addon-kit/page-mod)).
+[`page-mod`](packages/addon-kit/docs/page-mod.html)).
 
 These modules follow a common pattern in which the code
 that actually interacts with the content is executed as a separate script
@@ -44,7 +44,7 @@ Objects that implement this scheme include properties that specify which
 content scripts should be run and when.
 
 To learn more about content scripts, see the [Working with Content Scripts
-](#guide/addon-development/web-content) page.
+](dev-guide/addon-development/web-content.html) page.
 
 <br>
-**Next**: [module overview](#guide/addon-development/api-modules).
+**Next**: [module overview](dev-guide/addon-development/api-modules.html).

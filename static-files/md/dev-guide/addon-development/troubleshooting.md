@@ -33,7 +33,7 @@ When you run `cfx` to test your add-on or run unit tests, it prints out the
 location of the Firefox or XULRunner binary that it found, so you can check its
 output to be sure.
 
-[cfx Tool]: #guide/addon-development/cfx-tool
+[cfx Tool]: dev-guide/addon-development/cfx-tool.html
 
 
 Check Your Text Console
@@ -57,12 +57,13 @@ Search for Known Issues
 -----------------------
 
 Someone else might have experienced your problem, too.  Other users often post
-problems to the [project mailing list].  You can also browse the list of
-[known issues] or [search] for specific keywords.
+problems to the [project mailing list][jetpack-list].  You can also browse the
+list of [known issues][bugzilla-known] or [search][bugzilla-search] for
+specific keywords.
 
-[known issues]: https://bugzilla.mozilla.org/buglist.cgi?order=Bug%20Number&resolution=---&resolution=DUPLICATE&query_format=advanced&product=Add-on%20SDK
+[bugzilla-known]: https://bugzilla.mozilla.org/buglist.cgi?order=Bug%20Number&resolution=---&resolution=DUPLICATE&query_format=advanced&product=Add-on%20SDK
 
-[search]: https://bugzilla.mozilla.org/query.cgi?format=advanced&product=Add-on%20SDK
+[bugzilla-search]: https://bugzilla.mozilla.org/query.cgi?format=advanced&product=Add-on%20SDK
 
 
 Contact the Project Team and User Group
@@ -72,18 +73,20 @@ SDK users and project team members discuss problems and proposals on the
 [project mailing list].  Someone else may have had the same problem you do, so
 try searching the list.  You're welcome to post a question, too.
 
-You can also chat with other SDK users in [#jetpack] on [Mozilla's IRC network].
+You can also chat with other SDK users in [#jetpack][#jetpack] on
+[Mozilla's IRC network][IRC].
 
-And if you'd like to [report a bug in the SDK], that's always welcome!  You will
-need to create an account with Bugzilla, Mozilla's bug tracker.
+And if you'd like to [report a bug in the SDK][bugzilla-report], that's always
+welcome!  You will need to create an account with Bugzilla, Mozilla's bug
+tracker.
 
-[project mailing list]: http://groups.google.com/group/mozilla-labs-jetpack/topics
+[jetpack-list]: http://groups.google.com/group/mozilla-labs-jetpack/topics
 
-[#jetpack]: http://mibbit.com/?channel=%23jetpack&server=irc.mozilla.org
+[#jetpack]:http://mibbit.com/?channel=%23jetpack&server=irc.mozilla.org
 
-[Mozilla's IRC network]: http://irc.mozilla.org/
+[IRC]: http://irc.mozilla.org/
 
-[report a bug in the SDK]: https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK&component=General
+[bugzilla-report]: https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK&component=General
 
 
 Run the SDK's Unit Tests
