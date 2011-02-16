@@ -16,7 +16,7 @@ First, import the `simple-storage` module with a declaration like:
 
     const simpleStorage = require('simple-storage');
 
-In the module scope, initialize the array:
+In the module scope, initialize an array which will contain the stored annotations:
 
     if (!simpleStorage.storage.array)
       simpleStorage.storage.array = [];
