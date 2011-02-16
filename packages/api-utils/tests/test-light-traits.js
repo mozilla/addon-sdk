@@ -1,7 +1,6 @@
 "use strict";
 
-exports["test traits"] = require("./traits/test-all");
+exports["test traits from objects"] = require("./traits/object-tests");
+exports["test traits from descriptors"] = require("./traits/descriptor-tests");
 
-// Disabling this check since it is not yet supported by jetpack.
-// if (module == require.main)
-  require("test").run(exports);
+require("test").run(exports);
