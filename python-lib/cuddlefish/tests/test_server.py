@@ -65,7 +65,7 @@ class UnprivilegedServerTests(unittest.TestCase):
         self.assertEqual(self.request(''), '404 Not Found')
 
     def test_ensure_index_returned_on_root_path(self):
-        self.assertTrue('<html>' in self.request('/'))
+        self.assertTrue('<html' in self.request('/'))
 
 if __name__ == '__main__':
     unittest.main()
