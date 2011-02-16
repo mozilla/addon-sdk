@@ -176,9 +176,9 @@ function exclude(names, trait) {
   var composition = Object.create(Trait.prototype);
   Object.keys(trait).forEach(function(name) {
 
-    // If property is not excluded (array of names does not contains it) or
-    // it is a "required" property coping it to resulting composition.
-    if (0 > names.indexOf(name) || isRequiredProperty(trait, name))
+    // If property is not excluded (the array of names does not contain it),
+    // or it is a "required" property, copy it to the resulting composition.
+    if (~names.indexOf(name) || isRequiredProperty(trait, name))
       composition[name] = trait[name];
 
     // For all the names in the exclude name array we create required
