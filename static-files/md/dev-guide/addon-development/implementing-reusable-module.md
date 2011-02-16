@@ -62,25 +62,34 @@ module:
     var selection = require("selection");
     var translator = require("translator");
 
-    // Create a new context menu item.
-    var menuItem = contextMenu.Item({
-      label: "Translate Selection",
-      // Show this item when a selection exists.
-      context: contextMenu.SelectionContext(),
-      // When this item is clicked, post a message to the item with the
-      // selected text and current URL.
-      contentScript: 'on("click", function () {' +
-                     '  var text = window.getSelection().toString();' +
-                     '  postMessage(text);' +
-                     '});',
+    exports.main = function(options, callbacks) {
+      console.log(options.loadReason);
 
-      // When we receive the message, call the translator with the
-      // selected text and replace it with the translation.
-      onMessage: function (text) {
-        translator.translate(text, function(translation) {
-                                      selection.text = translation; })
-      }
-    });
+      // Create a new context menu item.
+      var menuItem = contextMenu.Item({
+        label: "Translate Selection",
+        // Show this item when a selection exists.
+        context: contextMenu.SelectionContext(),
+        // When this item is clicked, post a message to the item with the
+        // selected text and current URL.
+        contentScript: 'on("click", function () {' +
+                       '  var text = window.getSelection().toString();' +
+                       '  postMessage(text);' +
+                       '});',
+
+        // When we receive the message, call the translator with the
+        // selected text and replace it with the translation.
+        onMessage: function (text) {
+          translator.translate(text, function(translation) {
+                                        selection.text = translation; })
+        }
+      });
+    };
+
+    exports.onUnload = function (reason) {
+      console.log(reason);
+    };
+
 
 Next, execute `cfx run` again, and try out the add-on. It should work in
 exactly the same way as the previous version, except that now the core
