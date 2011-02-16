@@ -612,6 +612,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         'jetpackID': jid,
         'bundleID': bundle_id,
         'staticArgs': options.static_args,
+        'name': target,
         }
 
     harness_options.update(build)
