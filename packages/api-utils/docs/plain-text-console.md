@@ -3,5 +3,5 @@ of the `console` global, which simply logs all messages to
 standard output.
 
 For documentation on the `console` global, see the
-[Globals](#guide/addon-development/globals) reference.
+[Globals](dev-guide/addon-development/globals.html) reference.
 

@@ -1,4 +1,3 @@
-<!-- contributed by Noelle Murata [fiveinchpixie@gmail.com] -->
 # cfx #
 
 The cfx command-line tool gives you access to the SDK documentation and
@@ -56,12 +55,11 @@ own add-on development, with the following file structure:
 #### `cfx xpi` ####
 
 <span class="aside"> For more information on how XPIs are generated,
-see the [XPI Generation](#guide/module-development/xpi) reference.</span>
+see the
+[XPI Generation](dev-guide/module-development/xpi.html) reference.</span>
 
 This tool is used to build the XPI file that you can distribute by submitting
-it to [addons.mozilla.org][].
-
-[addons.mozilla.org]: http://addons.mozilla.org
+it to [addons.mozilla.org](http://addons.mozilla.org).
 
 **Supported Options:**
 

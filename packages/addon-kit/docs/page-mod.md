@@ -23,13 +23,13 @@ Like all modules that interact with web content, page-mod uses content
 scripts that execute in the content process and defines a messaging API to
 communicate between the content scripts and the main add-on script. For more
 details on content scripting see the tutorial on [interacting with web
-content](#guide/addon-development/web-content).
+content](dev-guide/addon-development/web-content.html).
 
 To create a PageMod the add-on developer supplies:
 
 * a set of rules to select the desired subset of web pages based on their URL.
 Each rule is specified using the
-[match-pattern](#module/api-utils/match-pattern) syntax.
+[match-pattern](packages/api-utils/docs/match-pattern.html) syntax.
 
 * a set of content scripts to execute in the context of the desired pages.
 
@@ -168,7 +168,7 @@ Creates a PageMod.
   @prop include {string,array}
     A match pattern string or an array of match pattern strings.  These define
     the pages to which the PageMod applies.  See the
-    [match-pattern](#module/api-utils/match-pattern) module for
+    [match-pattern](packages/api-utils/docs/match-pattern.html) module for
     a description of match pattern syntax.
     At least one match pattern must be supplied.
 
@@ -195,11 +195,11 @@ attached to the page in question.
 
 <api name="include">
 @property {List}
-A [list](#module/api-utils/list) of match pattern strings.  These define the
-pages to which the page mod applies.  See the
-[match-pattern](#module/api-utils/match-pattern) module for a description of
-match patterns. Rules can be added to the list by calling its `add` method and
-removed by calling its `remove` method.
+A [list](packages/api-utils/docs/list.html) of match pattern strings.  These
+define the pages to which the page mod applies.  See the
+[match-pattern](packages/api-utils/docs/match-pattern.html) module for a
+description of match patterns. Rules can be added to the list by calling its
+`add` method and removed by calling its `remove` method.
 
 </api>
 

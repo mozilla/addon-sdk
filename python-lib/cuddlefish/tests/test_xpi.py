@@ -34,9 +34,17 @@ class Bug588119Tests(unittest.TestCase):
         self.makexpi('implicit-icon')
         assert 'icon.png' in self.xpi.namelist()
 
+    def testPackageWithImplicitIcon64(self):
+        self.makexpi('implicit-icon')
+        assert 'icon64.png' in self.xpi.namelist()
+
     def testPackageWithExplicitIcon(self):
         self.makexpi('explicit-icon')
         assert 'icon.png' in self.xpi.namelist()
+
+    def testPackageWithExplicitIcon64(self):
+        self.makexpi('explicit-icon')
+        assert 'icon64.png' in self.xpi.namelist()
 
     def testPackageWithNoIcon(self):
         self.makexpi('no-icon')
@@ -45,6 +53,10 @@ class Bug588119Tests(unittest.TestCase):
     def testIconPathNotInHarnessOptions(self):
         self.makexpi('implicit-icon')
         assert 'icon' not in self.xpi_harness_options
+
+    def testIcon64PathNotInHarnessOptions(self):
+        self.makexpi('implicit-icon')
+        assert 'icon64' not in self.xpi_harness_options
 
 def document_dir(name):
     if name in ['packages', 'xpi-template']:

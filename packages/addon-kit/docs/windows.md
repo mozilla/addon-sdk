@@ -114,8 +114,6 @@ A callback function that is called when the window will be called.
 This is an optional property.
 </api>
 
-</api>
-
 <api name="BrowserWindow">
 @class
 A `BrowserWindow` instance represents a single open window. They can be
@@ -150,8 +148,8 @@ This property is read-only.
 <api name="tabs">
 @property {TabList}
 A live list of tabs in this window. This object has the same interface as the
-[`tabs` API](#module/addon-kit/tabs), except it contains only the tabs in this
-window, not all tabs in all windows. This property is read-only.
+[`tabs` API](packages/addon-kit/docs/tabs.html), except it contains only the
+tabs in this window, not all tabs in all windows. This property is read-only.
 </api>
 
 <api name="activate">

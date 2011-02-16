@@ -1,6 +1,6 @@
 "use strict"
 
-var utils = require("utils/type");
+var utils = require("type");
 
 exports["test function"] = function (assert) {
   assert.ok(utils.isFunction(function(){}), "value is function");
@@ -11,13 +11,14 @@ exports["test function"] = function (assert) {
 };
 
 exports["test atoms"] = function (assert) {
-  assert.ok(utils.isAtom(2), "number is atom");
-  assert.ok(utils.isAtom(NaN), "`NaN` is atom");
-  assert.ok(utils.isAtom(undefined), "`undefined` is atom");
-  assert.ok(utils.isAtom(null), "`null` is atom");
-  assert.ok(utils.isAtom(Infinity), "`Infinity` is atom");
-  assert.ok(utils.isAtom("foo"), "strings are atoms");
-  assert.ok(utils.isAtom(true) && utils.isAtom(false), "booleans are atoms");
+  assert.ok(utils.isPrimitive(2), "number is primitive");
+  assert.ok(utils.isPrimitive(NaN), "`NaN` is primitve");
+  assert.ok(utils.isPrimitive(undefined), "`undefined` is primitive");
+  assert.ok(utils.isPrimitive(null), "`null` is primitive");
+  assert.ok(utils.isPrimitive(Infinity), "`Infinity` is primitive");
+  assert.ok(utils.isPrimitive("foo"), "strings are primitive");
+  assert.ok(utils.isPrimitive(true) && utils.isPrimitive(false),
+            "booleans are primitive");
 };
 
 exports["test object"] = function (assert) {
@@ -27,9 +28,10 @@ exports["test object"] = function (assert) {
 };
 
 exports["test flat objects"] = function (assert) {
-  assert.ok(utils.isFlat({}), "`{}` is a plain object");
-  assert.ok(!utils.isFlat([]), "`[]` is not a plain object");
-  assert.ok(!utils.isFlat(new function() {}), "derived objects are not plain");
+  assert.ok(utils.isFlat({}), "`{}` is a flat object");
+  assert.ok(!utils.isFlat([]), "`[]` is not a flat object");
+  assert.ok(!utils.isFlat(new function() {}), "derived objects are not flat");
+  assert.ok(utils.isFlat(Object.prototype), "Object.prototype is flat"); 
 };
 
 exports["test json atoms"] = function (assert) {
@@ -73,8 +75,7 @@ exports["test json"] = function (assert) {
             "json can not contain functions");
 
   assert.ok(!utils.isJSON(Object.create({})),
-            "json must be direct decedant of `Object.prototype`");
+            "json must be direct descendant of `Object.prototype`");
 };
 
-if (module == require.main)
-  require("test").run(exports);
+require("test").run(exports);

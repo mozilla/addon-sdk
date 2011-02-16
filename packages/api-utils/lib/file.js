@@ -91,6 +91,10 @@ exports.exists = function exists(filename) {
   return MozFile(filename).exists();
 };
 
+exports.isFile = function isFile(filename) {
+  return MozFile(filename).isFile();
+};
+
 exports.read = function read(filename) {
   var stream = exports.open(filename);
   try {
@@ -118,7 +122,12 @@ exports.dirname = function dirname(path) {
 };
 
 exports.basename = function basename(path) {
-  return MozFile(path).leafName;
+  var leafName = MozFile(path).leafName;
+
+  // On Windows, leafName when the path is a volume letter and colon ("c:") is
+  // the path itself.  But such a path has no basename, so we want the empty
+  // string.
+  return leafName == path ? "" : leafName;
 };
 
 exports.list = function list(path) {

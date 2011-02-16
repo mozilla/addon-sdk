@@ -38,7 +38,7 @@
 "use strict";
 
 const BaseAssert = require("./test/assert").Assert;
-const { isFunction, isObject } = require("utils/type");
+const { isFunction, isObject } = require("type");
 
 /**
  * Function takes test `suite` object in CommonJS format and defines all of the
@@ -48,16 +48,13 @@ const { isFunction, isObject } = require("utils/type");
  */
 function defineTestSuite(target, suite, prefix) {
   prefix = prefix || "";
-
   // If suite defines `Assert` that's what `assert` object have to be created
   // from and passed to a test function (This allows custom assertion functions)
   // See for details: http://wiki.commonjs.org/wiki/Unit_Testing/1.1
   let Assert = suite.Assert || BaseAssert;
-
-  // Going through each item in the test suit and wrapping it into a
+  // Going through each item in the test suite and wrapping it into a
   // Jetpack test format.
   Object.keys(suite).forEach(function(key) {
-
      // If name starts with test then it's a test function or suite.
     if (key.indexOf("test") === 0) {
       let test = suite[key];
@@ -109,7 +106,7 @@ function defineTestSuite(target, suite, prefix) {
 /**
  * This function is a CommonJS test runner function, but since Jetpack test
  * runner and test format is different from CommonJS this function shims given
- * `exports` with all its tests into a Jetpack test format so that build in
+ * `exports` with all its tests into a Jetpack test format so that the built-in
  * test runner will be able to run CommonJS test without manual changes.
  */
 exports.run = function run(exports) {

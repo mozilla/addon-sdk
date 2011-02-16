@@ -423,7 +423,8 @@ let browserManager = {
 
 // A type of Worker tailored to our uses.
 const ContextMenuWorker = Worker.compose({
-
+  destroy: Worker.required,
+  
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
     return this._port._listeners("context").length > 0;
@@ -444,12 +445,8 @@ const ContextMenuWorker = Worker.compose({
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
     this._port._emit("click", popupNode, clickedItemData);
-  },
-
-  // Frees the worker's resources.
-  destroy: function CMW_destroy() {
-    this._deconstructWorker();
   }
+
 });
 
 

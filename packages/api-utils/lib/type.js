@@ -38,7 +38,7 @@
 "use strict";
 
 /**
- * Returns `true` if `value` is not an `undefined`.
+ * Returns `true` if `value` is `undefined`.
  * @examples
  *    var foo; isUndefined(foo); // true
  *    isUndefined(0); // false
@@ -85,7 +85,7 @@ exports.isNumber = isNumber;
  *    isRegExp(/moe/); // true
  */
 function isRegExp(value) {
-  return isObject(value) && instanceOf(RegExp);
+  return isObject(value) && instanceOf(value, RegExp);
 }
 exports.isRegExp = isRegExp;
 
@@ -144,27 +144,29 @@ function isArguments(value) {
 exports.isArguments = isArguments;
 
 /**
- * Returns true if it is a primitive `value`. (null, undefined, number, boolean)
+ * Returns true if it is a primitive `value`. (null, undefined, number,
+ * boolean, string)
  * @examples
- *    isAtom(3) // true
- *    isAtom('foo') // true
- *    isAtom({ bar: 3 }) // false
+ *    isPrimitive(3) // true
+ *    isPrimitive('foo') // true
+ *    isPrimitive({ bar: 3 }) // false
  */
-function isAtom(value) {
+function isPrimitive(value) {
   return !isFunction(value) && !isObject(value);
 }
-exports.isAtom = isAtom;
+exports.isPrimitive = isPrimitive;
 
 /**
- * Returns `true` if `value` is a flat (is direct decedent of
- * `Object.prototype`) object.
+ * Returns `true` if given `object` is flat (it is direct decedent of
+ * `Object.prototype` or `null`).
  * @examples
  *    isFlat({}) // true
  *    isFlat(new Type()) // false
  */
 function isFlat(object) {
-  return isObject(object) &&
-         isNull(Object.getPrototypeOf(Object.getPrototypeOf(object)));
+  return isObject(object) && (isNull(Object.getPrototypeOf(object)) ||
+                              isNull(Object.getPrototypeOf(
+                                     Object.getPrototypeOf(object))));
 }
 exports.isFlat = isFlat;
 
@@ -189,7 +191,7 @@ function isJSON(value, visited) {
     // Adding value to array of visited values.
     (visited || (visited = [])).push(value);
             // If `value` is an atom return `true` cause it's valid JSON.
-    return  isAtom(value) ||
+    return  isPrimitive(value) ||
             // If `value` is an array of JSON values that has not been visited
             // yet.
             (isArray(value) &&  value.every(function(element) {
@@ -221,10 +223,10 @@ function instanceOf(value, Type) {
   var isConstructorNameSame;
   var isConstructorSourceSame;
 
-  // If `instanceof` returned `true` we know result right a way.
+  // If `instanceof` returned `true` we know result right away.
   var isInstanceOf = value instanceof Type;
 
-  // If `instanceof` returned `false` we do ductype check since `Type` may be
+  // If `instanceof` returned `false` we do ducktype check since `Type` may be
   // from a different sandbox. If a constructor of the `value` or a constructor
   // of the value's prototype has same name and source we assume that it's an
   // instance of the Type.
@@ -246,14 +248,16 @@ exports.instanceOf = instanceOf;
  * @param {String} [indent="    "]
  * @param {Number} [limit]
  */
-function source(value, indent, limit, offset) {
+function source(value, indent, limit, offset, visited) {
   var result;
   var names;
+  var nestingIndex;
   var isCompact = !isUndefined(limit);
 
   indent = indent || "    ";
   offset = (offset || "");
   result = "";
+  visited = visited || [];
 
   if (isUndefined(value)) {
     result += "undefined";
@@ -270,74 +274,93 @@ function source(value, indent, limit, offset) {
       value = value.splice(0, 2);
       value.push("...}");
     }
-    result += value.join(offset + "\n");
+    result += value.join("\n" + offset);
   }
   else if (isArray(value)) {
-    if (isCompact)
-      value = value.slice(0, limit);
-
-    result += "[\n";
-    result += value.map(function(value) {
-      return offset + indent + source(value, indent, limit, offset + indent);
-    }).join(",\n");
-    result += isCompact && value.length > limit ?
-              ",\n" + offset + "...]" : "\n" + offset + "]";
-  }
-  else if (isObject(value)) {
-    names = Object.getOwnPropertyNames(value);
-
-    result += "{ // " + value + "\n";
-    result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
-      var _limit = isCompact ? limit - 1 : limit;
-      var descriptor = Object.getOwnPropertyDescriptor(value, name);
-      var result = offset + indent + "// ";
-      var accessor;
-      if (0 <= name.indexOf(" "))
-        name = '"' + name + '"';
-
-      if (descriptor.writtable)
-        result += "writtable ";
-      if (descriptor.configurable)
-        result += "configurable ";
-      if (descriptor.enumerable)
-        result += "enumerable ";
-
-      result += "\n";
-      if ("value" in descriptor) {
-        result += offset + indent + name + ": ";
-        result += source(descriptor.value, indent, _limit, indent + offset);
-      }
-      else {
-
-        if (descriptor.get) {
-          result += offset + indent + "get " + name + " ";
-          accessor = source(descriptor.get, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"));
-        }
-
-        if (descriptor.set) {
-          result += offset + indent + "set " + name + " ";
-          accessor = source(descriptor.set, indent, _limit, indent + offset);
-          result += accessor.substr(accessor.indexOf("{"));
-        }
-      }
-      return result;
-    }).join(",\n");
-
-    if (isCompact) {
-      if (names.length > limit && limit > 0) {
-        result += ",\n" + offset  + indent + "//...";
-      }
+    if ((nestingIndex = (visited.indexOf(value) + 1))) {
+      result = "#" + nestingIndex + "#";
     }
     else {
-      if (names.length)
-        result += ",";
+      visited.push(value);
 
-      result += "\n" + offset + indent + '"__proto__": ';
-      result += source(Object.getPrototypeOf(value), indent, 0, offset + indent);
+      if (isCompact)
+        value = value.slice(0, limit);
+
+      result += "[\n";
+      result += value.map(function(value) {
+        return offset + indent + source(value, indent, limit, offset + indent,
+                                        visited);
+      }).join(",\n");
+      result += isCompact && value.length > limit ?
+                ",\n" + offset + "...]" : "\n" + offset + "]";
     }
+  }
+  else if (isObject(value)) {
+    if ((nestingIndex = (visited.indexOf(value) + 1))) {
+      result = "#" + nestingIndex + "#"
+    }
+    else {
+      visited.push(value)
 
-    result += "\n" + offset + "}";
+      names = Object.keys(value);
+
+      result += "{ // " + value + "\n";
+      result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
+        var _limit = isCompact ? limit - 1 : limit;
+        var descriptor = Object.getOwnPropertyDescriptor(value, name);
+        var result = offset + indent + "// ";
+        var accessor;
+        if (0 <= name.indexOf(" "))
+          name = '"' + name + '"';
+
+        if (descriptor.writable)
+          result += "writable ";
+        if (descriptor.configurable)
+          result += "configurable ";
+        if (descriptor.enumerable)
+          result += "enumerable ";
+
+        result += "\n";
+        if ("value" in descriptor) {
+          result += offset + indent + name + ": ";
+          result += source(descriptor.value, indent, _limit, indent + offset,
+                           visited);
+        }
+        else {
+
+          if (descriptor.get) {
+            result += offset + indent + "get " + name + " ";
+            accessor = source(descriptor.get, indent, _limit, indent + offset,
+                              visited);
+            result += accessor.substr(accessor.indexOf("{"));
+          }
+
+          if (descriptor.set) {
+            result += offset + indent + "set " + name + " ";
+            accessor = source(descriptor.set, indent, _limit, indent + offset,
+                              visited);
+            result += accessor.substr(accessor.indexOf("{"));
+          }
+        }
+        return result;
+      }).join(",\n");
+
+      if (isCompact) {
+        if (names.length > limit && limit > 0) {
+          result += ",\n" + offset  + indent + "//...";
+        }
+      }
+      else {
+        if (names.length)
+          result += ",";
+
+        result += "\n" + offset + indent + '"__proto__": ';
+        result += source(Object.getPrototypeOf(value), indent, 0,
+                         offset + indent);
+      }
+
+      result += "\n" + offset + "}";
+    }
   }
   else {
     result += String(value);
