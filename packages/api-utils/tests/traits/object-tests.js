@@ -252,13 +252,13 @@ exports["test create with Array.prototype"] = function (assert) {
 exports["test exception for incomplete required properties"] = function (assert) {
   assert.throws(function () {
     Trait({ foo: Trait.required }).create(Object.prototype);
-  }, "Missing required property: `foo`", "required prop error");
+  }, /Missing required property: `foo`/, "required prop error");
 };
 
 exports["test exception for unresolved conflicts"] = function (assert) {
   assert.throws(function () {
     Trait.compose(Trait({ a: 0 }), Trait({ a: 1 })).create({});
-  }, "Remaining conflicting property: `a`", "conflicting prop error");
+  }, /Remaining conflicting property: `a`/, "conflicting prop error");
 };
 
 exports["test verify that required properties are present but undefined"] = function (assert) {
@@ -267,7 +267,7 @@ exports["test verify that required properties are present but undefined"] = func
   assert.ok("foo" in o4, "required property present");
   assert.throws(function () {
     o4.foo;
-  }, "Missing required property: `foo`", "required prop error");
+  }, /Missing required property: `foo`/, "required prop error");
 };
 
 exports["test verify that conflicting properties are present"] = function (assert) {
@@ -277,7 +277,7 @@ exports["test verify that conflicting properties are present"] = function (asser
   assert.ok("a" in o5, "conflicting property present");
   assert.throws(function () {
     o5.a;
-  }, "Remaining conflicting property: `a`", "conflicting prop access error");
+  }, /Remaining conflicting property: `a`/, "conflicting prop access error");
 };
 
 exports["test diamond with conflicts"] = function (assert) {
@@ -305,7 +305,7 @@ exports["test diamond with conflicts"] = function (assert) {
 
   assert.throws(function () {
     T4.create(Object.prototype);
-  }, "Remaining conflicting property: `m`", "diamond prop conflict");
+  }, /Remaining conflicting property: `m`/, "diamond prop conflict");
 };
 
 exports["test providing requirements through proto"] = function (assert) {
