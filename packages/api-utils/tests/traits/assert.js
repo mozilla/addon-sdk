@@ -19,9 +19,9 @@ function equalDescriptors(actual, expected) {
   return actual.get === expected.get &&
          actual.set === expected.set &&
          actual.value === expected.value &&
-         (actual.enumerable !== true) === (expected.enumerable !== true) &&
-         (actual.configurable !== true) === (expected.configurable !== true) &&
-         (actual.writable !== true) === (expected.writable !== true);
+         !!actual.enumerable === !!expected.enumerable &&
+         !!actual.configurable === !!expected.configurable &&
+         !!actual.writable === !!expected.writable;
 }
 
 /**
