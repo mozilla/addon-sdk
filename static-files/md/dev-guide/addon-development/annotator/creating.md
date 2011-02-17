@@ -75,7 +75,7 @@ for the page, the ID attribute value, and the text content of the page element.
     });
 
 Conversely, the add-on resets the matched element on
-[mouseout](http://api.jquery.com/mouseenter/):
+[mouseout](http://api.jquery.com/mouseout/):
 
     $('*').mouseout(function() {
       resetMatchedElement();
