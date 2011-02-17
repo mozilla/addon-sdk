@@ -26,6 +26,19 @@
   border-left: 1px solid gray;
 }
 
+.warning {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  display: block;
+  padding: 1em;
+  border: solid 2px black;
+  width: 75%;
+  background-color: #C63717;
+  color: white;
+}
+
 .site-logo {
   float:left;
 }

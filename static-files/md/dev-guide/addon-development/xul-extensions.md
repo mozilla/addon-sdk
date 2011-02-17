@@ -1,6 +1,13 @@
 
 # Using the SDK with XUL extensions #
 
+<div class="warning">
+Note that the technique described here doesn't work in the current version of
+the SDK, but we're working on a replacement.
+<a href="http://groups.google.com/group/mozilla-labs-jetpack/browse_thread/thread/356a7fd464b1043c/ca4e885dfd19edab?lnk=gst&q=xul+extensions#ca4e885dfd19edab"> Check the mailing list</a>
+for more details.
+</div>
+
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
 can be helpful if you want to use some of SDK APIs, if you like the way
 modules help separate your code into testable and re-usable pieces,
