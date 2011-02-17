@@ -43,21 +43,21 @@ need to supply:
 Now we need to link this code to the annotation editor, so that when the user
 presses the return key in the editor, we create and store the new annotation:
 
-  var annotationEditor = panels.Panel({
-    width: 220,
-    height: 220,
-    contentURL: data.url('editor/annotation-editor.html'),
-    contentScriptFile: data.url('editor/annotation-editor.js'),
-    contentScriptWhen: 'ready',
-    onMessage: function(annotationText) {
-      if (annotationText)
-        handleNewAnnotation(annotationText, this.annotationAnchor);
-      annotationEditor.hide();
-    },
-    onShow: function() {
-      this.postMessage('focus');
-    }
-  });
+    var annotationEditor = panels.Panel({
+      width: 220,
+      height: 220,
+      contentURL: data.url('editor/annotation-editor.html'),
+      contentScriptFile: data.url('editor/annotation-editor.js'),
+      contentScriptWhen: 'ready',
+      onMessage: function(annotationText) {
+        if (annotationText)
+          handleNewAnnotation(annotationText, this.annotationAnchor);
+        annotationEditor.hide();
+      },
+      onShow: function() {
+        this.postMessage('focus');
+      }
+    });
 
 ## Listing Stored Annotations ##
 
