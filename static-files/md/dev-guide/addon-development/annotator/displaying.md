@@ -28,23 +28,26 @@ The complete content script is here:
           if(annotation.url == document.location.toString()) {
             createAnchor(annotation);
           }
-      })
+      });
 
       $('.annotated').css('border', 'solid 3px yellow');
 
       $('.annotated').bind('mouseenter', function(event) {
-        postMessage(['show', $(this).attr('annotation')]);
+        postMessage({
+          kind: 'show',
+          annotationText: $(this).attr('annotation')
+        });
         event.stopPropagation();
         event.preventDefault();
       });
-
+ 
       $('.annotated').bind('mouseleave', function() {
-        postMessage(['hide']);
+        postMessage({kind: 'hide'});
       });
-    })
+    });
 
     window.addEventListener('unload', function() {
-      postMessage(['detach']);
+      postMessage({kind: 'detach'});
     }, false);
 
     function createAnchor(annotation) {
@@ -72,13 +75,13 @@ In the `main` function, add the code to create the matcher:
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('matcher.js')],
       onAttach: function(worker) {
-        if(simpleStorage.storage.array) {
-          worker.postMessage(simpleStorage.storage.array);
+        if(simpleStorage.storage.annotations) {
+          worker.postMessage(simpleStorage.storage.annotations);
         }
         worker.on('message', function(message) {
-          switch(message[0]) {
+          switch(message.kind) {
             case 'show':
-              annotation.content = message[1];
+              annotation.content = message.annotationText;
               annotation.show();
               break;
             case 'hide':
@@ -109,7 +112,7 @@ user enters a new annotation:
 
     function updateMatchers() {
       matchers.forEach(function (matcher) {
-        matcher.postMessage(simpleStorage.storage.array);
+        matcher.postMessage(simpleStorage.storage.annotations);
       });
     }
 
@@ -117,7 +120,7 @@ user enters a new annotation:
 
     function handleNewAnnotation(annotationText, anchor) {
       var newAnnotation = new Annotation(annotationText, anchor);
-      simpleStorage.storage.array.push(newAnnotation);
+      simpleStorage.storage.annotations.push(newAnnotation);
       updateMatchers();
     }
 <br>
@@ -174,9 +177,9 @@ Save this in `data/annotation` as `annotation.html`.
 
 The annotation panel has a minimal content script that sets the text:
 
-    self.on('message', function(message) {
-      $('#annotation').text(message);
-    })
+  self.on('message', function(message) {
+    $('#annotation').text(message);
+  });
 
 Save this in `data/annotation` as `annotation.js`.
 

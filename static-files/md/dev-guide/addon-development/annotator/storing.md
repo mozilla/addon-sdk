@@ -95,7 +95,7 @@ Here's the annotation list's content script:
           annotationHtml.find('.annotation-text')
                         .text(storedAnnotation.annotationText);
           annotationList.append(annotationHtml);
-        })
+        });
     };
 
 It builds the DOM for the panel from the array of annotations it is given.
@@ -300,7 +300,7 @@ function instead:
       selectors.forEach(
         function (selector) {
           selector.postMessage(canEnterAnnotations());
-      })
+      });
     }
 <br>
 
@@ -317,18 +317,17 @@ function instead:
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {
-        console.log('attach');
         worker.postMessage(canEnterAnnotations());
         selectors.push(worker);
         worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            annotationEditor.annotationAnchor = message.anchor;
-            annotationEditor.show();
-            break;
-          case 'detach':
-            detachWorker(this, selectors);
-            break;
+          switch(message.kind) {
+            case 'show':
+              annotationEditor.annotationAnchor = message.anchor;
+              annotationEditor.show();
+              break;
+            case 'detach':
+              detachWorker(this, selectors);
+              break;
           }
         })
       }
