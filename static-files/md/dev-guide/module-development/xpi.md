@@ -40,6 +40,7 @@ packages, structured like so:
       "author": "Jon Smith",
       "description": "A package w/ a main module; can be built into an extension.",
       "keywords": ["potato"],
+      "version": "1.0",
       "dependencies": ["api-utils", "barbeque"]
     }
   api-utils/lib/loader.js:
