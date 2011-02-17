@@ -9,9 +9,8 @@ interactions between the different SDK objects.
 We could represent the basic interactions between the `main` module and the
 various content scripts like this:
 
-<div align="center">
-<img src="media/annotator/annotator-design.png" alt="Annotator Design">
-</div>
+<img class="image-center"
+src="media/annotator/annotator-design.png" alt="Annotator Design">
 
 ## User Interface ##
 
@@ -57,4 +56,4 @@ Let's get started by creating a directory called "annotator". Navigate to it
 and type `cfx init`.
 
 Next, we will implement the
-[widget](#guide/addon-development/annotator/widget).
+[widget](dev-guide/addon-development/annotator/widget.html).

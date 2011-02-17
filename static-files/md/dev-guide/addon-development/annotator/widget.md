@@ -2,6 +2,12 @@
 
 We want the widget to do two things:
 
+<span class="aside">
+[Bug 634712](https://bugzilla.mozilla.org/show_bug.cgi?id=634712) asks that
+the widget API should emit separate, or at least distinguishable, events for
+left and right mouse clicks, and when it is fixed this widget won't need a
+content script any more.</span>
+
 * On a left-click, the widget should activate or deactivate the annotator.
 * On a right-click, the widget should display a list of all the annotations
 the user has created.
@@ -59,20 +65,20 @@ Now in the `lib` directory open `main.js` and replace its contents with this:
       return annotatorIsOn;
     }
 
-    exports.main = function(options, callbacks) {
+    exports.main = function() {
 
-      widget = widgets.Widget({
+      var widget = widgets.Widget({
         label: 'Annotator',
-        contentURL: data.url('widget/pencil-off.jpg'),
+        contentURL: data.url('widget/pencil-off.png'),
         contentScriptWhen: 'ready',
         contentScriptFile: data.url('widget/widget.js'),
         onMessage: function(message) {
           if (message == 'left-click') {
             console.log('activate/deactivate');
-            toggleActivation()?
-                              widget.contentURL=data.url('widget/pencil-on.jpg')
-                             :widget.contentURL=data.url('widget/pencil-off.jpg');
-          }
+            widget.contentURL = toggleActivation() ?
+                      data.url('widget/pencil-on.png') :
+                      data.url('widget/pencil-off.png');
+            }
           else if (message == 'right-click') {
             console.log('show annotation list');
           }
@@ -82,6 +88,10 @@ Now in the `lib` directory open `main.js` and replace its contents with this:
 
 The annotator is inactive by default. It creates the widget and responds to
 messages from the widget's content script by toggling its activation state.
+<span class="aside">Note that due to
+[bug 626326](https://bugzilla.mozilla.org/show_bug.cgi?id=626326) the add-on
+bar's context menu is displayed, despite the `event.preventDefault()` call
+in the widget's content script.</span>
 Since we don't have any code to display annotations yet, we just log the
 right-click events to the console.
 
@@ -97,4 +107,4 @@ Left- and right-clicks should produce the appropriate debug output, and a
 left-click should also change the widget icon to signal that it is active.
 
 Next we'll add the code to
-[create annotations](#guide/addon-development/annotator/creating).
+[create annotations](dev-guide/addon-development/annotator/creating.html).

@@ -1,8 +1,8 @@
 # Storing Annotations #
 
 Now we are able to create annotations, let's store them using the
-[`simple-storage`](#module/addon-kit/simple-storage) module. In this chapter
-we will cover three topics relating to persistent storage:
+[`simple-storage`](packages/addon-kit/docs/simple-storage.html) module. In
+this chapter we will cover three topics relating to persistent storage:
 
 * using `simple-storage` to persist objects
 * handling exhaustion of the storage quota allocated to you
@@ -18,16 +18,16 @@ First, import the `simple-storage` module with a declaration like:
 
 In the module scope, initialize an array which will contain the stored annotations:
 
-    if (!simpleStorage.storage.array)
-      simpleStorage.storage.array = [];
+    if (!simpleStorage.storage.annotations)
+      simpleStorage.storage.annotations = [];
 
 Now we'll add a function to the module scope which deals with a new
 annotation. The annotation is composed of the text the user entered and the
-'annotation anchor', which consists of the URL, element ID and element content:
+"annotation anchor", which consists of the URL, element ID and element content:
 
     function handleNewAnnotation(annotationText, anchor) {
       var newAnnotation = new Annotation(annotationText, anchor);
-      simpleStorage.storage.array.push(newAnnotation);
+      simpleStorage.storage.annotations.push(newAnnotation);
     }
 
 This function calls a constructor for an `Annotation` object, which we also
@@ -41,9 +41,9 @@ need to supply:
     }
 
 Now we need to link this code to the annotation editor, so that when the user
-presses 'return' in the editor, we create and store the new annotation:
+presses the return key in the editor, we create and store the new annotation:
 
-    annotationEditor = panels.Panel({
+    var annotationEditor = panels.Panel({
       width: 220,
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
@@ -51,7 +51,7 @@ presses 'return' in the editor, we create and store the new annotation:
       contentScriptWhen: 'ready',
       onMessage: function(message) {
         if (message)
-          handleNewAnnotation(message, this.anchor);
+          handleNewAnnotation(message, this.annotationAnchor);
         annotationEditor.hide();
       },
       onShow: function() {
@@ -110,7 +110,7 @@ Save this file in `data/list` as `annotation-list.js`.
 
 Here's the HTML for the annotation list:
 
-<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
 <html>
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
@@ -139,7 +139,7 @@ Here's the HTML for the annotation list:
 
 Here's the corresponding CSS:
 
-<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+<script type="syntaxhighlighter" class="brush: css"><![CDATA[
 #annotation-list .annotation-details
   {
   padding: 10px;
@@ -186,7 +186,7 @@ respectively.
 
 Here's the code to create the panel, which can go in the `main` function.
 
-    annotationList = panels.Panel({
+    var annotationList = panels.Panel({
       width: 420,
       height: 200,
       contentURL: data.url('list/annotation-list.html'),
@@ -194,7 +194,7 @@ Here's the code to create the panel, which can go in the `main` function.
                           data.url('list/annotation-list.js')],
       contentScriptWhen: 'ready',
       onShow: function() {
-        this.postMessage(simpleStorage.storage.array);
+        this.postMessage(simpleStorage.storage.annotations);
       },
       onMessage: function(message) {
         require('tabs').open(message);
@@ -209,17 +209,17 @@ panel sends us a URL we use the `tabs` module to open it in a new tab.
 
 Finally we need to connect this to the widget's `right-click` message:
 
-    widget = widgets.Widget({
+    var widget = widgets.Widget({
       label: 'Annotator',
-      contentURL: data.url('widget/pencil-off.jpg'),
+      contentURL: data.url('widget/pencil-off.png'),
       contentScriptWhen: 'ready',
       contentScriptFile: data.url('widget/widget.js'),
       onMessage: function(message) {
         if (message == 'left-click') {
           console.log('activate/deactivate');
-          toggleActivation()?
-                            widget.contentURL=data.url('widget/pencil-on.jpg')
-                           :widget.contentURL=data.url('widget/pencil-off.jpg');
+          widget.contentURL = toggleActivation() ?
+                    data.url('widget/pencil-on.png') :
+                    data.url('widget/pencil-off.png');
         }
         else if (message == 'right-click') {
           console.log('show annotation list');
@@ -232,11 +232,15 @@ This time execute `cfx xpi` to build the XPI for the add-on, and install it in
 Firefox. Activate the add-on, add an annotation, and then right-click the
 widget. You should see something like this:
 
-<div align="center">
-<img src="media/annotator/annotation-list.png" alt="Annotation List">
-</div>
+<img class="image-center"
+src="media/annotator/annotation-list.png" alt="Annotation List">
 <br>
 
+<span class="aside">
+Until now we've always run `cfx run` rather than building an XPI and installing
+the add-on in Firefox. If the annotation does not reappear when you restart
+Firefox, double check you installed the add-on and didn't just use `cfx run`
+again.</span>
 Restart Firefox, right-click the widget again, and check that the annotation
 is still there.
 
@@ -298,34 +302,35 @@ function instead:
           selector.postMessage(canEnterAnnotations());
       })
     }
-<p>
+<br>
 
     function toggleActivation() {
       annotatorIsOn = !annotatorIsOn;
       activateSelectors();
       return canEnterAnnotations();
     }
-<p>
+<br>
 
-    selector = pageMod.PageMod({
+    var selector = pageMod.PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {
+        console.log('attach');
         worker.postMessage(canEnterAnnotations());
+        selectors.push(worker);
         worker.on('message', function(message) {
-          switch(message[0]) {
-            case 'show':
-              annotationEditor.anchor = message[1];
-              annotationEditor.show();
-              break;
-            case 'detach':
-              detachWorker(this, selectors);
-              break;
+        switch(message.kind) {
+          case 'show':
+            annotationEditor.annotationAnchor = message.anchor;
+            annotationEditor.show();
+            break;
+          case 'detach':
+            detachWorker(this, selectors);
+            break;
           }
         })
-        selectors.push(worker);
       }
     });
 
@@ -346,13 +351,13 @@ changes in Private Browsing state by changing the icon and notifying the
 selectors:
 
     privateBrowsing.on('start', function() {
-      widget.contentURL=data.url('widget/pencil-off.jpg');
+      widget.contentURL = data.url('widget/pencil-off.png');
       activateSelectors();
     });
 
     privateBrowsing.on('stop', function() {
       if (canEnterAnnotations()) {
-        widget.contentURL=data.url('widget/pencil-on.jpg');
+        widget.contentURL = data.url('widget/pencil-on.png');
         activateSelectors();
       }
     });
@@ -361,5 +366,5 @@ Try it: execute `cfx run`, and experiment with switching the annotator on and
 off while in and out of Private Browsing mode.
 
 Now we can create and store annotations, the last piece is to
-[display them
-when the user loads the page](#guide/addon-development/annotator/displaying).
+[display them when the user loads the
+page](dev-guide/addon-development/annotator/displaying.html).

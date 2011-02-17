@@ -15,13 +15,13 @@ the implementation, step by step.
 If you want to refer to the complete add-on you can find it under the
 `examples` directory.
 
-* [Design Overview](#guide/addon-development/annotator/overview)
+* [Design Overview](dev-guide/addon-development/annotator/overview.html)
 
-* [Implementing the Widget](#guide/addon-development/annotator/widget)
+* [Implementing the Widget](dev-guide/addon-development/annotator/widget.html)
 
-* [Creating Annotations](#guide/addon-development/annotator/creating)
+* [Creating Annotations](dev-guide/addon-development/annotator/creating.html)
 
-* [Storing Annotations](#guide/addon-development/annotator/storing)
+* [Storing Annotations](dev-guide/addon-development/annotator/storing.html)
 
-* [Displaying Annotations](#guide/addon-development/annotator/displaying)
+* [Displaying Annotations](dev-guide/addon-development/annotator/displaying.html)
 

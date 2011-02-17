@@ -11,7 +11,7 @@
 
 #right-column {
   float: left;
-  width: 55%;
+  width: 60%;
   padding: 1em;
   padding-top: 3em;
 }
@@ -28,8 +28,7 @@
 
 .site-logo {
   float:left;
-
-  }
+}
 
 .site-title a, .site-title a:visited, .site-title a:hover, .site-title a:focus {
   color: #444;

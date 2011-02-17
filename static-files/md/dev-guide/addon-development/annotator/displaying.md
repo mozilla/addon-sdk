@@ -99,10 +99,8 @@ function:
 
 * initializes the content script instance with the current set of
 annotations
-
 * provides a handler for messages from that content script, handling the three
 messages - `show`, `hide` and `detach` - that the content script might send
-
 * adds the worker to an array, so we it can send messages back later.
 
 Then in the module's scope implement a function to update the matcher's
@@ -138,7 +136,7 @@ These files will live in a new subdirectory of `data` which we'll call
 
 ### Annotation panel HTML ###
 
-<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
@@ -201,16 +199,14 @@ Finally, update `main.js` with the code to construct the annotation panel:
 Execute `cfx run` one last time. Activate the annotator and enter an
 annotation. You should see a yellow border around the item you annotated:
 
-<div align="center">
-<img src="media/annotator/matcher.png" alt="Annotator Matcher">
-</div>
+<img class="image-center"
+src="media/annotator/matcher.png" alt="Annotator Matcher">
 <br>
 
 When you move your mouse over the item, the annotation should appear:
 
-<div align="center">
-<img src="media/annotator/annotation-panel.png" alt="Annotation Panel">
-</div>
+<img class="image-center"
+src="media/annotator/annotation-panel.png" alt="Annotation Panel">
 <br>
 
 Obviously this add-on isn't complete yet. It could do with more beautiful

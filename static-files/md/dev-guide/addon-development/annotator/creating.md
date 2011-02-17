@@ -8,32 +8,16 @@ text itself.
 
 ### Selector Content Scripts ###
 
+The content script for the selector page-mod uses [jQuery](http://jquery.com/)
+to examine and manipulate the DOM.
+
+Its main job is to maintain a "matched element": this is the page element that
+is the current candidate for an annotation. The matched element is highlighted
+and has a click handler bound to it which sends a message to the main add-on
+code.
+
 The selector page mod can be switched on and off using a message from the
-main add-on code. It is initially off.
-
-It uses [jQuery](http://jquery.com/) to examine and manipulate the DOM.
-
-It listens for occurrences of the
-[jQuery mouseenter](http://api.jquery.com/mouseenter/) event.
-
-When a mouseenter event is triggered the selector checks whether the element
-is eligible for annotation. An element is eligible if it, or one of its
-ancestors in the DOM tree, has an attribute named `"id"`. The idea here is to
-make it more likely that the annotator will be able to identify annotated
-elements correctly later on.
-
-If the page element is eligible for annotation, then the selector highlights
-that element and binds a click handler to it. The click handler sends a message
-called `show` back to the main add-on code. The `show` message contains: the URL
-for the page, the ID attribute value, and the text content of the page element.
-
-<span class="aside"> Eventually,
-`page-mod` should have its own `unload` event, but this is the workaround for
-the present.</span>
-
-Finally, the selector listens for the window's `unload` event and sends the
-main add-on code a message called `detach` when unload occurs. This is so the
-main add-on can remove the worker associated with this page.
+main add-on code. It is initially off:
 
     var matchedElement = null;
     var originalBgColor = null;
@@ -52,6 +36,20 @@ main add-on can remove the worker associated with this page.
         resetMatchedElement();
       }
     });
+
+This selector listens for occurrences of the
+[jQuery mouseenter](http://api.jquery.com/mouseenter/) event.
+
+When a mouseenter event is triggered the selector checks whether the element
+is eligible for annotation. An element is eligible if it, or one of its
+ancestors in the DOM tree, has an attribute named `"id"`. The idea here is to
+make it more likely that the annotator will be able to identify annotated
+elements correctly later on.
+
+If the page element is eligible for annotation, then the selector highlights
+that element and binds a click handler to it. The click handler sends a message
+called `show` back to the main add-on code. The `show` message contains: the URL
+for the page, the ID attribute value, and the text content of the page element.
 
     $('*').mouseenter(function() {
       if (!active || $(this).hasClass('annotated')) {
@@ -72,12 +70,24 @@ main add-on can remove the worker associated with this page.
             $(ancestor).attr("id"),
             $(matchedElement).text()
           ]
+       });
       });
     });
+
+Conversely, the add-on resets the matched element on
+[mouseout](http://api.jquery.com/mouseenter/):
 
     $('*').mouseout(function() {
       resetMatchedElement();
     });
+
+<span class="aside"> Eventually,
+`page-mod` should have its own `unload` event, but this is the workaround for
+now.</span>
+
+Finally, the selector listens for the window's `unload` event and sends the
+main add-on code a message called `detach` when unload occurs. This is so the
+main add-on can remove the worker associated with this page.
 
     window.addEventListener('unload', function() {
         postMessage({kind: 'detach'});
@@ -106,9 +116,10 @@ function:
         worker.postMessage(annotatorIsOn);
         selectors.push(worker);
         worker.on('message', function(message) {
-        switch(message[0]) {
+        switch(message.kind) {
           case 'show':
-            console.log(message);
+            console.log(message.kind);
+            console.log(message.anchor);
             break;
           case 'detach':
             detachWorker(this, selectors);
@@ -124,11 +135,11 @@ version you downloaded.
 The page-mod matches all pages, so each time the user loads a page the page-mod
 emits the `attach` event, which will call the listener function we've assigned
 to `onAttach`. The handler is passed a
-[worker](#module/api-utils/content/worker) object. Each worker represents a
-channel of communication between the add-on code and any content scripts
-running in that particular page context. For a more detailed discussion of the
-way `page-mod` uses workers, see the
-[page-mod documentation](#module/addon-kit/page-mod).
+[worker](packages/api-utils/docs/content/worker.html) object. Each worker
+represents a channel of communication between the add-on code and any content
+scripts running in that particular page context. For a more detailed discussion
+of the way `page-mod` uses workers, see the
+[page-mod documentation](packages/addon-kit/docs/page-mod.html).
 
 In the attach handler we do three things:
 
@@ -176,16 +187,15 @@ the widget and load a page: the screenshot below uses
 overview-amo-review-process/](http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/).
 You should see the highlight appearing when you move the mouse over certain elements:
 
-<div align="center">
-<img src="media/annotator/highlight.png" alt="Annotator Highlighting">
-</div>
-<br>
+<img class="image-center"
+src="media/annotator/highlight.png" alt="Annotator Highlighting">
 
 Click on the highlight and you should see something like this in the console
 output:
 
 <pre>
-  info: show,http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/,
+  info: show
+  info: http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/,
   post-2249,When you submit a new add-on, you will have to choose between 2
   review tracks: Full Review and Preliminary Review.
 </pre>
@@ -207,7 +217,7 @@ two files: the HTML content, and the content script.
 
 The HTML is very simple:
 
-<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
@@ -251,7 +261,7 @@ In the corresponding content script we do two things:
 * listen for the return key and when it is pressed, send the contents of the
 text area to the add-on.
 
-<br>
+Here's the code:
 
     var textArea = document.getElementById('annotation-box');
     textArea.onkeyup = function(event) {
@@ -265,7 +275,7 @@ text area to the add-on.
       var textArea = document.getElementById('annotation-box');
       textArea.value = '';
       textArea.focus();
-    })
+    });
 
 Save this inside `data/editor` as `annotation-editor.js`.
 
@@ -314,10 +324,11 @@ assign the content of the message to the panel using a new property
                           data.url('selector.js')],
       onAttach: function(worker) {
         worker.postMessage(annotatorIsOn);
+        selectors.push(worker);
         worker.on('message', function(message) {
-          switch(message[0]) {
+          switch(message.kind) {
             case 'show':
-              annotationEditor.annotationAnchor = message[1];
+              annotationEditor.annotationAnchor = message.anchor;
               annotationEditor.show();
               break;
             case 'detach':
@@ -325,7 +336,6 @@ assign the content of the message to the panel using a new property
               break;
           }
         })
-        selectors.push(worker);
       }
     });
 
@@ -333,20 +343,19 @@ Execute `cfx run` again, activate the annotator, move your mouse over an
 element and click the element when it is highlighted. You should see a panel
 with a text area for a note:
 
-<div align="center">
-<img src="media/annotator/editor-panel.png" alt="Annotator Editor Panel">
-</div>
+<img class="image-center"
+src="media/annotator/editor-panel.png" alt="Annotator Editor Panel">
 <br>
 
-Enter the note and press 'return': you should see console output like this:
+Enter the note and press the return key: you should see console output like
+this:
 
 <pre>
   info: http://blog.mozilla.com/addons/2011/02/04/overview-amo-review-process/,
   post-2249,When you submit a new add-on, you will have to choose between 2
   review tracks: Full Review and Preliminary Review.
   info: We should ask for Full Review if possible.
-
 </pre>
 
 That's a complete annotation, and in the next section we'll deal with
-[storing it](#guide/addon-development/annotator/storing).
+[storing it](dev-guide/addon-development/annotator/storing.html).
