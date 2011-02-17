@@ -21,27 +21,30 @@ self.on('message', function onMessage(annotations) {
       if(annotation.url == document.location.toString()) {
         createAnchor(annotation);
       }
-  })
+  });
 
   $('.annotated').css('border', 'solid 3px yellow');
 
   $('.annotated').bind('mouseenter', function(event) {
-    postMessage(['show', $(this).attr('annotation')]);
+    postMessage({
+      kind: 'show',
+      annotationText: $(this).attr('annotation')
+    });
     event.stopPropagation();
     event.preventDefault();
   });
 
   $('.annotated').bind('mouseleave', function() {
-    postMessage(['hide']);
+    postMessage({kind: 'hide'});
   });
-})
+});
 
 /*
 Since there is no onDetach event for panels, we listen for the window's
 unload event and send the add-on a detach message.
 */
 window.addEventListener('unload', function() {
-  postMessage(['detach']);
+  postMessage({kind: 'detach'});
 }, false);
 
 function createAnchor(annotation) {

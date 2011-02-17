@@ -40,7 +40,7 @@ The complete content script is here:
         event.stopPropagation();
         event.preventDefault();
       });
- 
+
       $('.annotated').bind('mouseleave', function() {
         postMessage({kind: 'hide'});
       });
@@ -177,9 +177,9 @@ Save this in `data/annotation` as `annotation.html`.
 
 The annotation panel has a minimal content script that sets the text:
 
-  self.on('message', function(message) {
-    $('#annotation').text(message);
-  });
+     self.on('message', function(message) {
+      $('#annotation').text(message);
+    });
 
 Save this in `data/annotation` as `annotation.js`.
 

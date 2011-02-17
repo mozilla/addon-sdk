@@ -125,7 +125,7 @@ function:
             detachWorker(this, selectors);
             break;
           }
-        })
+        });
       }
     });
 
@@ -171,8 +171,7 @@ Edit `toggleActivation` to notify the workers of a change in activation state:
       selectors.forEach(
         function (selector) {
           selector.postMessage(annotatorIsOn);
-        }
-      )
+      });
     }
 
     function toggleActivation() {
@@ -181,6 +180,9 @@ Edit `toggleActivation` to notify the workers of a change in activation state:
       return annotatorIsOn;
     }
 
+<span class="aside">We'll be using this URL in all our screenshots. Because
+`cfx run` doesn't preserve browsing history, if you want to play along it's
+worth taking a note of the URL.</span>
 Save the file and execute `cfx run` again. Activate the annotator by clicking
 the widget and load a page: the screenshot below uses
 [http://blog.mozilla.com/addons/2011/02/04/
@@ -335,7 +337,7 @@ assign the content of the message to the panel using a new property
               detachWorker(this, selectors);
               break;
           }
-        })
+        });
       }
     });
 
