@@ -258,7 +258,7 @@ respond to it. Add the following to your add-on's `main` function:
         title: 'Storage space exceeded',
         text: 'Removing recent annotations'});
       while (simpleStorage.quotaUsage > 1)
-        simpleStorage.storage.array.pop();
+        simpleStorage.storage.annotations.pop();
     });
 
 Because we use a notification to alert the user, we need to import the

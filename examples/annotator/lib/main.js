@@ -214,7 +214,7 @@ recent annotations until we are back in quota.
       title: 'Storage space exceeded',
       text: 'Removing recent annotations'});
     while (simpleStorage.quotaUsage > 1)
-      simpleStorage.storage.array.pop();
+      simpleStorage.storage.annotations.pop();
   });
 
 /*
