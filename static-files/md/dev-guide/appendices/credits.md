@@ -21,10 +21,9 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Myk Melez
 * Zandr Milewski
 * Noelle Murata
-* Joe R. Nassimian
+* Joe R. Nassimian ([placidrage](https://github.com/placidrage))
 * Nick Nguyen
 * Paul O’Shannessy
-* [placidrage](https://github.com/placidrage)
 * Alexandre Poirot
 * Nickolay Ponomarev
 * Aza Raskin
