@@ -173,20 +173,23 @@ function overrideBuiltInMethods(target, source) {
  *    var newTrait = exclude(["name", ...], trait)
  */
 function exclude(names, trait) {
-  var composition = Object.create(Trait.prototype);
+  var map = {};
+
   Object.keys(trait).forEach(function(name) {
 
     // If property is not excluded (the array of names does not contain it),
-    // or it is a "required" property, copy it to the resulting composition.
+    // or it is a "required" property, copy it to the property descriptor `map`
+    // that will be used for creation of resulting trait.
     if (!~names.indexOf(name) || isRequiredProperty(trait, name))
-      composition[name] = trait[name];
+      map[name] = { value: trait[name], enumerable: true };
 
-    // For all the names in the exclude name array we create required
-    // property descriptors and copy them to the resulting composition.
+    // For all the `names` in the exclude name array we create required
+    // property descriptors and copy them to the `map`.
     else
-      composition[name] = RequiredPropertyDescriptor(name);
+      map[name] = { value: RequiredPropertyDescriptor(name), enumerable: true };
   });
-  return composition;
+
+  return Object.create(Trait.prototype, map);
 }
 
 /**
@@ -217,10 +220,12 @@ function exclude(names, trait) {
  *    var t2 = compose(exclude(["a"], t), { a: { required: true }, b: t[a] });
  */
 function rename(renames, trait) {
-  var composition = Object.create(Trait.prototype);
+  var map = {};
 
-  // Loop over all the properties in the `trait` and copy them to a new trait,
-  // renaming them as specified in `renames`.
+  // Loop over all the properties of the given `trait` and copy them to a
+  // property descriptor `map` that will be used for the creation of the
+  // resulting trait.  Also, rename properties in the `map` as specified by
+  // `renames`.
   Object.keys(trait).forEach(function(name) {
     var alias;
 
@@ -230,45 +235,62 @@ function rename(renames, trait) {
     if (owns(renames, name) && !isRequiredProperty(trait, name)) {
       alias = renames[name];
 
-      // If the result trait already has the `alias`, and it isn't a "required"
+      // If the `map` already has the `alias`, and it isn't a "required"
       // property, that means the `alias` conflicts with an existing name for a
       // provided trait (that can happen if >=2 properties are aliased to the
-      // same name), so we have to mark it as a conflicting property.
-      // Otherwise, everything is fine, so we assign the value to the `alias`
-      // in the result trait.
-      if (owns(composition, alias) && !isRequiredProperty(composition, alias))
-        composition[alias] = ConflictPropertyDescriptor(alias);
-      else
-        composition[alias] = trait[name];
+      // same name). In this case we mark it as a conflicting property.
+      // Otherwise, everything is fine, and we copy property with an `alias`
+      // name.
+      if (owns(map, alias) && !map[alias].value.required) {
+        map[alias] = {
+          value: ConflictPropertyDescriptor(alias),
+          enumerable: true
+        };
+      }
+      else {
+        map[alias] = {
+          value: trait[name],
+          enumerable: true
+        };
+      }
 
       // Regardless of whether or not the rename was successful, we check to
-      // see if the original name exists in the result trait (such a property
-      // could exist if previous another property was aliased to this name).
+      // see if the original `name` exists in the map (such a property
+      // could exist if previous another property was aliased to this `name`).
       // If it isn't, we mark it as "required", to make sure the caller
       // provides another value for the old name, which methods of the trait
       // might continue to reference.
-      if (!owns(composition, name))
-        composition[name] = RequiredPropertyDescriptor(name);
+      if (!owns(map, name)) {
+        map[name] = {
+          value: RequiredPropertyDescriptor(name),
+          enumerable: true
+        };
+      }
     }
 
     // Otherwise, either the property isn't in the `renames` map (thus the
     // caller is not trying to rename it) or it is a "required" property.
     // Either way, we don't have to alias the property, we just have to copy it
-    // to the result trait.
+    // to the map.
     else {
-      // The property isn't in the result trait yet, so we copy it over.
-      if (!owns(composition, name))
-        composition[name] = trait[name];
+      // The property isn't in the map yet, so we copy it over.
+      if (!owns(map, name)) {
+        map[name] = { value: trait[name], enumerable: true };
+      }
 
-      // The property is already in the result trait (that means another
-      // property was aliased with this name, which creates a conflict if
-      // the property is not marked as "required"), so we have to mark
-      // it as a "conflict" property.
-      else if (!isRequiredProperty(trait, name))
-        composition[name] = ConflictPropertyDescriptor(name);
+      // The property is already in the map (that means another property was
+      // aliased with this `name`, which creates a conflict if the property is
+      // not marked as "required"), so we have to mark it as a "conflict"
+      // property.
+      else if (!isRequiredProperty(trait, name)) {
+        map[name] = {
+          value: ConflictPropertyDescriptor(name),
+          enumerable: true
+        };
+      }
     }
   });
-  return composition;
+  return Object.create(Trait.prototype, map);
 }
 
 /**
@@ -324,26 +346,42 @@ function resolve(resolutions, trait) {
  *    given argument.
  */
 function trait(object) {
+  var map;
   var trait = object;
+
   if (!(object instanceof Trait)) {
+    // If the passed `object` is not already an instance of `Trait`, we create
+    // a property descriptor `map` containing descriptors for the own properties
+    // of the given `object`.  `map` is then used to create a `Trait` instance
+    // after all properties are mapped.  Note that we can't create a trait and
+    // then just copy properties into it since that will fail for inherited
+    // read-only properties.
+    map = {};
 
-    // If passed `object` is not already an instance of `Trait` we create
-    // one and map own properties of a given `object` to it.
-    trait = Object.create(Trait.prototype);
-
-    // Each own property of a given `object` is mapped to a result trait.
+    // Each own property of the given `object` is mapped to a data property
+    // whose value is a property descriptor.
     Object.keys(object).forEach(function (name) {
 
       // If property of an `object` is equal to a `Trait.required`, it means
       // that it was marked as "required" property, in which case we map it
-      // to "required" property descriptor on result trait.
-      if (Trait.required == Object.getOwnPropertyDescriptor(object, name).value)
-        trait[name] = RequiredPropertyDescriptor(name);
-
+      // to "required" property.
+      if (Trait.required ==
+          Object.getOwnPropertyDescriptor(object, name).value) {
+        map[name] = {
+          value: RequiredPropertyDescriptor(name),
+          enumerable: true
+        };
+      }
       // Otherwise property is mapped to it's property descriptor.
-      else
-        trait[name] = Object.getOwnPropertyDescriptor(object, name);
+      else {
+        map[name] = {
+          value: Object.getOwnPropertyDescriptor(object, name),
+          enumerable: true
+        };
+      }
     });
+
+    trait = Object.create(Trait.prototype, map);
   }
   return trait;
 }
@@ -359,43 +397,47 @@ function trait(object) {
  * irrelevant.
  */
 function compose(trait1, trait2/*, ...*/) {
-  // Create a new instance of `Trait` that will be the result of this
-  // composition and the target object to which all properties from the passed
-  // traits are copied.
-  var composition = Object.create(Trait.prototype);
+  // Create a new property descriptor `map` to which all the own properties
+  // of the passed traits are copied.  This map will be used to create a `Trait`
+  // instance that will be the result of this composition.
+  var map = {};
 
   // Properties of each passed trait are copied to the composition.
   Array.prototype.forEach.call(arguments, function(trait) {
     // Copying each property of the given trait.
     Object.keys(trait).forEach(function(name) {
 
-      // If composition already owns a property with the `name` and it is not
+      // If `map` already owns a property with the `name` and it is not
       // marked "required".
-      if (owns(composition, name) && !isRequiredProperty(composition, name)) {
+      if (owns(map, name) && !map[name].value.required) {
 
-        // If source trait's property with the `name` is marked as required we
-        // do nothing, as requirement was already resolved by a composition
-        // (because it already contains non-required property with that name).
-        // But if properties are just different, we have a name clash and we
-        // substitute it with a property that is marked "conflict".
+        // If the source trait's property with the `name` is marked as
+        // "required", we do nothing, as the requirement was already resolved
+        // by a property in the `map` (because it already contains a
+        // non-required property with that `name`).  But if properties are just
+        // different, we have a name clash and we substitute it with a property
+        // that is marked "conflict".
         if (!isRequiredProperty(trait, name) &&
-            !equivalentDescriptors(composition[name], trait[name])
-        )
-          composition[name] = ConflictPropertyDescriptor(name);
+            !equivalentDescriptors(map[name].value, trait[name])
+        ) {
+          map[name] = {
+            value: ConflictPropertyDescriptor(name),
+            enumerable: true
+          };
+        }
       }
 
-      // Otherwise, the `composition` does not have an own property with the
-      // `name`, or it is marked "required". Either way trait's property is
-      // copied to the composition (If property of the composition is marked
-      // "required" it is going to be resolved by the property that is being
-      // copied).
+      // Otherwise, the `map` does not have an own property with the `name`, or
+      // it is marked "required".  Either way, the trait's property is copied to
+      // the map (if the property of the `map` is marked "required", it is going
+      // to be resolved by the property that is being copied).
       else {
-        composition[name] = trait[name];
+        map[name] = { value: trait[name], enumerable: true };
       }
     });
   });
 
-  return composition;
+  return Object.create(Trait.prototype, map);
 }
 
 /**
