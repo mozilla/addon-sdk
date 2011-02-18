@@ -43,7 +43,7 @@ const { URL } = require("url");
 exports.MatchPattern = MatchPattern;
 
 function MatchPattern(pattern) {
-    console.log("typeof pattern" + typeof pattern);
+    console.log("typeof pattern = " + typeof pattern);
     console.log("pattern = " + pattern.toSource());
     console.log("pattern instanceof RegExp = " + (pattern instanceof RegExp));
   if (pattern instanceof RegExp) {
