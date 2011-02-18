@@ -223,8 +223,9 @@ function rename(renames, trait) {
   var map = {};
 
   // Loop over all the properties of the given `trait` and copy them to a
-  // property descriptor `map` that will be used to for creation of resulting
-  // trait. Also renaming properties in the `map` as specified by `renames`.
+  // property descriptor `map` that will be used for the creation of the
+  // resulting trait.  Also, rename properties in the `map` as specified by
+  // `renames`.
   Object.keys(trait).forEach(function(name) {
     var alias;
 
@@ -257,7 +258,7 @@ function rename(renames, trait) {
       // see if the original `name` exists in the map (such a property
       // could exist if previous another property was aliased to this `name`).
       // If it isn't, we mark it as "required", to make sure the caller
-      // provides another value for the old name, to which methods of the trait
+      // provides another value for the old name, which methods of the trait
       // might continue to reference.
       if (!owns(map, name)) {
         map[name] = {
@@ -349,16 +350,16 @@ function trait(object) {
   var trait = object;
 
   if (!(object instanceof Trait)) {
-    // If passed `object` is not already an instance of `Trait` we create
-    // a property descriptor `map` containing descriptors of own properties of
-    // a given `object`. `map` is used to create a `Trait` instance after all
-    // properties are mapped. Please note that we can't create trait and then
-    // just copy properties into it since that will fails for inherited
-    // "read-only" properties.
+    // If the passed `object` is not already an instance of `Trait`, we create
+    // a property descriptor `map` containing descriptors for the own properties
+    // of the given `object`.  `map` is then used to create a `Trait` instance
+    // after all properties are mapped.  Note that we can't create a trait and
+    // then just copy properties into it since that will fail for inherited
+    // read-only properties.
     map = {};
 
-    // Each own property of a given `object` is mapped to a data property, who's
-    // value is a property descriptor.
+    // Each own property of the given `object` is mapped to a data property
+    // whose value is a property descriptor.
     Object.keys(object).forEach(function (name) {
 
       // If property of an `object` is equal to a `Trait.required`, it means
@@ -396,9 +397,9 @@ function trait(object) {
  * irrelevant.
  */
 function compose(trait1, trait2/*, ...*/) {
-  // Create a new property descriptor `map` to which all own properties of the
-  // passed traits are copied. This map will be used to create a `Trait`
-  // instance that will be result of this composition.
+  // Create a new property descriptor `map` to which all the own properties
+  // of the passed traits are copied.  This map will be used to create a `Trait`
+  // instance that will be the result of this composition.
   var map = {};
 
   // Properties of each passed trait are copied to the composition.
@@ -410,11 +411,12 @@ function compose(trait1, trait2/*, ...*/) {
       // marked "required".
       if (owns(map, name) && !map[name].value.required) {
 
-        // If source trait's property with the `name` is marked as "required"
-        // we do nothing, as requirement was already resolved by a property in
-        // the `map` (because it already contains non-required property with
-        // that `name`). But if properties are just different, we have a name
-        // clash and we substitute it with a property that is marked "conflict".
+        // If the source trait's property with the `name` is marked as
+        // "required", we do nothing, as the requirement was already resolved
+        // by a property in the `map` (because it already contains a
+        // non-required property with that `name`).  But if properties are just
+        // different, we have a name clash and we substitute it with a property
+        // that is marked "conflict".
         if (!isRequiredProperty(trait, name) &&
             !equivalentDescriptors(map[name].value, trait[name])
         ) {
@@ -426,9 +428,9 @@ function compose(trait1, trait2/*, ...*/) {
       }
 
       // Otherwise, the `map` does not have an own property with the `name`, or
-      // it is marked "required". Either way trait's property is copied to the
-      // map (If property of the `map` is marked "required" it is going to be
-      // resolved by the property that is being copied).
+      // it is marked "required".  Either way, the trait's property is copied to
+      // the map (if the property of the `map` is marked "required", it is going
+      // to be resolved by the property that is being copied).
       else {
         map[name] = { value: trait[name], enumerable: true };
       }

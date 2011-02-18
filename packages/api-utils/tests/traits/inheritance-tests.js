@@ -52,11 +52,11 @@ exports["test custom toString and constructor"] = function(assert) {
 };
 
 exports["test resolve constructor"] = function (assert) {
-  function Type() {};
+  function Type() {}
   var T1 = Trait({ constructor: Type }).resolve({ constructor: '_foo' });
   var f1 = T1.create();
 
-  assert.equal(f1._foo, Type, "costructor was resolved");
+  assert.equal(f1._foo, Type, "constructor was resolved");
   assert.equal(f1.constructor, Trait, "constructor of prototype is inherited");
   assert.equal(f1.toString(), "[object Trait]", "toString is inherited");
 };
@@ -71,14 +71,14 @@ exports["test compose read-only"] = function (assert) {
   var f1 = new Type();
 
   assert.equal(Object.getPrototypeOf(f1), Type.prototype, "inherits correctly");
-  assert.equal(f1.constructor, Type, "constructor was overided");
+  assert.equal(f1.constructor, Type, "constructor was overridden");
   assert.equal(f1.toString(), "[object Type]", "toString was inherited");
   assert.equal(f1.a, "a", "property a was resolved");
   assert.equal(f1.b, "b", "property a was renamed to b");
   assert.ok(!Object.getOwnPropertyDescriptor(Type.prototype, "a"),
             "a is not on the prototype of the instance");
 
-  var proto = Object.getPrototypeOf(Type.prototype)
+  var proto = Object.getPrototypeOf(Type.prototype);
   var dc = Object.getOwnPropertyDescriptor(Type.prototype, "constructor");
   var db = Object.getOwnPropertyDescriptor(Type.prototype, "b");
   var da = Object.getOwnPropertyDescriptor(proto, "a");
