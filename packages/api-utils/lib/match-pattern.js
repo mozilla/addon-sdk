@@ -43,11 +43,8 @@ const { URL } = require("url");
 exports.MatchPattern = MatchPattern;
 
 function MatchPattern(pattern) {
-    console.log("typeof pattern = " + typeof pattern);
-    console.log("pattern = " + pattern.toSource());
-    console.log("pattern instanceof RegExp = " + (pattern instanceof RegExp));
-  if (pattern instanceof RegExp) {
-      this.regexp = pattern;
+  if ((pattern.indexOf("/") === 0) && (pattern.lastIndexOf("/") === (pattern.length - 1))) {
+      this.regexp = new RegExp(pattern.substring(1,pattern.length-1));
   } else {
     let firstWildcardPosition = pattern.indexOf("*");
     let lastWildcardPosition = pattern.lastIndexOf("*");
