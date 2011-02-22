@@ -1,10 +1,10 @@
-
 /*
 Construct the HTML for the annotation list.
 
 Bind a function to click events on the link that send a message back to
 the add-on code, so it can open the link in the main browser.
 */
+
 onMessage = function onMessage(storedAnnotations) {
   var annotationList = $('#annotation-list');
   annotationList.empty();
@@ -23,5 +23,5 @@ onMessage = function onMessage(storedAnnotations) {
       annotationHtml.find('.annotation-text')
                     .text(storedAnnotation.annotationText);
       annotationList.append(annotationHtml);
-    })
+    });
 };

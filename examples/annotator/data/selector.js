@@ -27,16 +27,7 @@ self.on('message', function onMessage(activation) {
   if (!active) {
     resetMatchedElement();
   }
-})
-
-/*
-Since there is no onDetach event for panels, we listen for the window's
-unload event and send the add-on a detach message.
-*/
-window.addEventListener('unload', function() {
-    postMessage(['detach']);
-  },
-  false);
+});
 
 $('*').mouseenter(function() {
   if (!active || $(this).hasClass('annotated')) {
@@ -50,11 +41,26 @@ $('*').mouseenter(function() {
   $(matchedElement).bind('click.annotator', function(event) {
     event.stopPropagation();
     event.preventDefault();
-    postMessage(['show', [document.location.toString(), $(ancestor).attr("id"),
-                $(matchedElement).text()]]);
+    postMessage({
+      kind: 'show',
+      anchor: [
+        document.location.toString(),
+        $(ancestor).attr("id"),
+        $(matchedElement).text()
+      ]
+   });
   });
-})
+});
 
-$("p").mouseout(function() {
+$('*').mouseout(function() {
   resetMatchedElement();
-})
+});
+
+/*
+Since there is no onDetach event for panels, we listen for the window's
+unload event and send the add-on a detach message.
+*/
+window.addEventListener('unload', function() {
+    postMessage({kind: 'detach'});
+  },
+  false);

@@ -109,15 +109,17 @@ const PageMod = Loader.compose(EventEmitter, {
     let rules = this.include = Rules();
     rules.on('add', this._onRuleAdd = this._onRuleAdd.bind(this));
     rules.on('remove', this._onRuleRemove = this._onRuleRemove.bind(this));
-    try {
-      if (Array.isArray(include))
-        rules.add.apply(null, include);
-      else
-        rules.add(include);
-    }
-    catch(e) {
-      throw new Error(ERR_INCLUDE)
-    }
+
+    // Validate 'include'
+    if (typeof(include) == "object" && !Array.isArray(include))
+      throw new Error(ERR_INCLUDE);
+    if (typeof(include) == "number" || typeof(include) == "undefined")
+      throw new Error(ERR_INCLUDE);
+
+    if (Array.isArray(include))
+      rules.add.apply(null, include);
+    else
+      rules.add(include);
 
     this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
     pageModManager.add(this._public);

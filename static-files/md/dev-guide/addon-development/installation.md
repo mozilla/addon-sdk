@@ -4,23 +4,22 @@
 
 To develop with the new Add-on SDK, you'll need:
 
-<span class="aside">
+<div class="aside">
 Verify that Python is in your path.
-</span>
+</div>
 
-* [Python] 2.5 or 2.6. Note that versions 3.0 and 3.1 of Python are not
-  supported in this release.
+* [Python](http://www.python.org/) 2.5 or 2.6. Note that versions 3.0 and 3.1
+  of Python are not supported in this release.
 
 * A working version of Firefox that uses Gecko 2.0.0.7 or later
   (e.g., Firefox 4.0b7).
 
-  [Python]: http://www.python.org/
-  [XULRunner SDK]: https://developer.mozilla.org/en/Gecko_SDK
-
 ## Installation ##
 
 At the time of this writing, the latest stable version of the Add-on
-SDK is 1.0b3pre. You can obtain it as a [tarball] or a [zip file].
+SDK is 1.0b3pre. You can obtain it as a
+[tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
+or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
 
 Alternatively, you can get the latest development version of the
 Add-on SDK from its
@@ -57,20 +56,15 @@ command-line tools.
 At any time, you can leave a virtual environment by running
 `deactivate`.
 
-  [tarball]: https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz
-  [zip file]: https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip
-
 ## Sanity Check ##
 
 <span class="aside">
-Unit and behavioral [testing] is something that
+Unit and behavioral testing is something that
 we're trying to make as easy and fast as possible in the Add-on SDK,
 because it's imperative that we know when breakages occur between the
 Mozilla platform and the SDK. We also need to make sure that creating
 new functionality or modifying existing code doesn't break other
 things.
-
-  [testing]: http://www.mindview.net/WebLog/log-0025
 </span>
 
 Run this at your shell prompt:
@@ -100,4 +94,4 @@ it in your web browser.
 ## Implementing an add-on ##
 
 Next we'll go through the process of [implementing a
-simple add-on](#guide/addon-development/implementing-simple-addon).
+simple add-on](dev-guide/addon-development/implementing-simple-addon.html).

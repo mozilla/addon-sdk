@@ -57,13 +57,14 @@ tests.testResizePanel = function(test) {
   // possible test citizen, we refocus whatever window was focused before we
   // started running these tests.
 
-  let activeWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                     getService(Ci.nsIWindowMediator).
-                     getMostRecentWindow(null);
+  let activeWindow = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+                      getService(Ci.nsIWindowWatcher).
+                      activeWindow;
   let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
-
+  
+  
   function onFocus() {
     browserWindow.removeEventListener("focus", onFocus, true);
 
@@ -82,7 +83,8 @@ tests.testResizePanel = function(test) {
       onHide: function () {
         test.assert((panel.width == 100) && (panel.height == 100),
           "The panel was resized.");
-        activeWindow.focus();
+        if (activeWindow)
+          activeWindow.focus();
         test.done();
       }
     });

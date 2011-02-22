@@ -27,13 +27,14 @@ Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
 those scripts via an asynchronous message passing API.  See
-[Working with Content Scripts](#guide/addon-development/web-content) for more
-information.
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+for more information.
 
 Events
 ------
 
-Panels emit the following types of [events](#guide/addon-development/events).
+Panels emit the following types of
+[events](dev-guide/addon-development/events.html).
 
 ### message ###
 
@@ -60,7 +61,8 @@ Create and show a simple panel with content from the `data/` directory:
 
     panel.show();
 
-The tutorial section on [web content](#guide/addon-development/web-content) has
+The tutorial section on
+[web content](dev-guide/addon-development/web-content.html) has
 a more complex example using panels.
 
 <api name="Panel">
