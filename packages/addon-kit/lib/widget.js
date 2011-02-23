@@ -317,31 +317,7 @@ BrowserWindow.prototype = {
     //   symbiont: contentSymbiont
     // }
     this._items = [];
-
-    // Add keypress listener
-    this.window.addEventListener("keypress", this, false);
-  },
-
-  // nsIDOMEventListener
-  handleEvent: function BW_handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "keypress":
-        this._onKeyPress(aEvent);
-        break;
-    }
-  },
-
-  _onKeyPress: function BW__onKeyPress(aEvent) {
-    let accelKey = /^Mac/.test(this.window.navigator.platform) ?
-                   aEvent.metaKey : aEvent.ctrlKey;
-    let nonAccelKey = /^Mac/.test(this.window.navigator.platform) ?
-                            aEvent.ctrlKey : aEvent.metaKey;
-    if (aEvent.which == aEvent.DOM_VK_U && aEvent.shiftKey &&
-        accelKey && !nonAccelKey && !aEvent.altKey) {
-      this._onToggleUI();
-      // Work around bug 582052 by preventing the (nonexistent) default action.
-      aEvent.preventDefault();
-    }
+    
   },
 
   get container() {

@@ -376,32 +376,6 @@ exports.testConstructor = function(test) {
     }});
   });
 
-  // test the visibility keyboard shortcut
-  tests.push(function() {
-    // Test hide/show the widget bar
-    function toggleUI() {
-      let keyEvent = doc.createEvent("KeyEvents");
-      let ctrlKey = false, metaKey = false, shiftKey = true, altKey = false, charCode = keyEvent.DOM_VK_U, keyCode = 0;
-      if(/^Mac/.test(browserWindow.navigator.platform))
-        metaKey = true;
-      else
-        ctrlKey = true;
-      keyEvent.initKeyEvent("keypress", true, true, browserWindow, ctrlKey, altKey, shiftKey, metaKey, keyCode, charCode);
-      doc.dispatchEvent(keyEvent);
-    }
-
-    test.assert(container().collapsed, "UI is not visible when no widgets");
-    let w = widgets.Widget({label: "foo", content: "bar"});
-    test.assert(container(), "UI exists when widgets are created");
-    test.assertEqual(container().collapsed, false, "UI is visible by default");
-    toggleUI(); 
-    test.assertEqual(container().collapsed, true, "keyboard shortcut hides UI when visible");
-    toggleUI(); 
-    test.assertEqual(container().collapsed, false, "keyboard shortcut shows UI when hidden");
-    w.destroy();
-    doneTest();
-  });
-
   // test widget.width
   tests.push(function() testSingleWidget({
     label: "test widget.width",
