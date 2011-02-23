@@ -71,7 +71,20 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({label: "foo", content: "", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
-
+  
+  // Test concurrent widget module instances on addon-bar hiding
+  let loader = test.makeSandboxedLoader();
+  let anotherWidgetsInstance = loader.require("widget");
+  test.assert(container().collapsed, "UI is not visible when no widgets");
+  let w1 = widgets.Widget({label: "foo", content: "bar"});
+  test.assert(!container().collapsed, "UI visible when we add a first widget");
+  let w2 = anotherWidgetsInstance.Widget({label: "foo", content: "bar"});
+  test.assert(!container().collapsed, "UI still visible when we add a second widget");
+  w1.destroy();
+  test.assert(!container().collapsed, "UI still visible when we remove one of two widgets");
+  w2.destroy();
+  test.assert(container().collapsed, "UI is hidden when we remove the second widget");
+  
   // Helper for testing a single widget.
   // Confirms proper addition and content setup.
   function testSingleWidget(widgetOptions) {

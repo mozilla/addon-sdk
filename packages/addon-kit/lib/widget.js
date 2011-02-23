@@ -572,7 +572,7 @@ BrowserWindow.prototype = {
     }, this);
 
     // remove the add-on bar if no more items
-    if (this._items.length == 0)
+    if (this.container.getElementsByTagName("toolbaritem").length == 0)
       this._hideContainer();
   },
 
