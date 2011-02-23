@@ -19,11 +19,11 @@ def get_modules(modules_json):
     modules = []
     for module in modules_json:
         if '.js' in module:
-            modules.append(module[:-3])
+            modules.append([module[:-3]])
         else:
             sub_modules = get_modules(modules_json[module])
             for sub_module in sub_modules:
-                modules.append(module + '/' + sub_module)
+                modules.append([module, sub_module[0]])
     return modules
 
 def get_documented_modules(root, package_name, modules_json):
@@ -31,7 +31,8 @@ def get_documented_modules(root, package_name, modules_json):
     module_md_root = os.path.join(root, 'packages', package_name, 'docs')
     documented_modules = []
     for module in modules:
-        if module_md_exists(module_md_root, module):
+        path = os.path.join(*module)
+        if module_md_exists(module_md_root, path):
             documented_modules.append(module)
     return documented_modules
 
@@ -77,7 +78,7 @@ class WebDocs(object):
 
     def create_package_page(self, path):
         path, ext = os.path.splitext(path)
-        package_name = path.split('/')[-1]
+        head, package_name = os.path.split(path)
         package_content = self._create_package_detail(package_name)
         return self._create_page(package_content)
 
@@ -93,9 +94,9 @@ class WebDocs(object):
         modules.sort()
         module_items = ''
         for module in modules:
-            module_link = tag_wrap(module, 'a', \
+            module_link = tag_wrap('/'.join(module), 'a', \
                 {'href':'packages/' + package_name + \
-                 '/docs/' + module + '.html'})
+                 '/docs/' + '/'.join(module) + '.html'})
             module_items += tag_wrap(module_link, 'li', {'class':'module'})
         return tag_wrap(module_items, 'ul', {'class':'modules'})
 
