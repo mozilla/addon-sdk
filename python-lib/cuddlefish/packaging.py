@@ -234,8 +234,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # configuration dict.
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
-                name = "-".join([prefix + cfg.name,
-                                 os.path.basename(dirname)])
+                lib_base = os.path.basename(dirname)
+                if lib_base == '.': 
+                    lib_base = 'root'
+                name = "-".join([prefix + cfg.name, lib_base])
                 validate_resource_hostname(name)
                 if name in build.resources:
                     raise KeyError('resource already defined', name)
