@@ -40,6 +40,20 @@ the event listener is not called during the current emit.
   The listener function that processes the event.
 </api>
 
+<api name="once">
+@method
+Registers an event `listener` that will be called only once, next time event of
+specified `type` is emitted.
+
+If the event listener is being registered while an event is being processed,
+the event listener is not called during the current emit.
+
+@param type {String}
+  They type of event.
+@param listener {Function}
+  The listener function that processes the event.
+</api>
+
 <api name="removeListener">
 @method
 Unregisters an event `listener` for the specified event `type`.

@@ -160,3 +160,15 @@ exports['test:emitOnObject'] = function(test) {
   let obj = {};
   e.emitOnObject(obj, "bar");
 };
+
+exports['test:once'] = function(test) {
+  let e = new EventEmitter();
+  let called = false;
+
+  e.once('foo', function(value) {
+    test.assert(!called, "listenere called only once");
+    test.assertEqual(value, "bar", "correct argument was passed");
+  });
+  e.emit('foo', 'bar')
+  e.emit('foo', 'baz')
+};

@@ -74,6 +74,20 @@ const EventEmitter = Trait.compose({
     return this._public;
   },
   /**
+   * Registers an event `listener` is called once when event of a specified
+   * `type` is emitted.
+   * @param {String} type
+   *    The type of the event.
+   * @param {Function} listener
+   *
+   */
+  once: function once(type, listener) {
+    this.on(type, function selfRemovableListener() {
+      this.removeListener(type, selfRemovableListener);
+      listener.apply(this, arguments);
+    });
+  },
+  /**
    * Unregister `listener` for the specified event type.
    * @param {String} type
    *    The type of event.
