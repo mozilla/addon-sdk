@@ -380,6 +380,61 @@ exports.testTabsEvent_onClose = function(test) {
   });
 };
 
+// onClose event handler when a window is closed
+exports.testTabsEvent_onCloseWindow = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    var tabs = require("tabs");
+
+    let closeCount = 0, individualCloseCount = 0;
+    function listener() {
+      closeCount++;
+    }
+    tabs.on('close', listener);
+
+    // One tab is already open with the window
+    let openTabs = 1;
+    function testCasePossiblyLoaded() {
+      if (++openTabs == 4) {
+        beginCloseWindow();
+      }
+    }
+
+    tabs.open({
+      url: "data:text/html,tab2",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    tabs.open({
+      url: "data:text/html,tab3",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    tabs.open({
+      url: "data:text/html,tab4",
+      onOpen: function() testCasePossiblyLoaded(),
+      onClose: function() individualCloseCount++
+    });
+
+    function beginCloseWindow() {
+      closeBrowserWindow(window, function testFinished() {
+        tabs.removeListener("close", listener);
+
+        test.assertEqual(closeCount, 4, "Correct number of close events received");
+        test.assertEqual(individualCloseCount, 3,
+                         "Each tab with an attached onClose listener received a close " +
+                         "event when the window was closed");
+
+        test.done();
+      });
+    }
+
+  });
+}
+
 // onReady event handler
 exports.testTabsEvent_onReady = function(test) {
   test.waitUntilDone();
@@ -490,6 +545,120 @@ exports.testPerTabEvents = function(test) {
     });
   });
 };
+
+exports.testAttachOnOpen = function (test) {
+  // Take care that attach has to be called on tab ready and not on tab open.
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    
+    tabs.open({
+      url: "data:text/html,foobar",
+      onOpen: function (tab) {
+        let worker = tab.attach({
+          contentScript: 'postMessage(document.location.href); ',
+          onMessage: function (msg) {
+            test.assertEqual(msg, "about:blank", 
+              "Worker document url is about:blank on open");
+            worker.destroy();
+            closeBrowserWindow(window, function() test.done());
+          }
+        });
+      }
+    });
+    
+  });
+}
+
+exports.testAttachAll = function (test) {
+  // Example of attach that process all tab documents
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let firstLocation = "data:text/html,foobar";
+    let secondLocation = "data:text/html,bar";
+    let thirdLocation = "data:text/html,fox";
+    let onMessageCount = 0;
+    let onReadyCount = 0;
+    
+    let worker = null;
+    tabs.open({
+      url: firstLocation,
+      onReady: function (tab) {
+        onReadyCount++;
+        if (onReadyCount==1) {
+          worker = tab.attach({
+            contentScript: 'self.on("message", ' +
+                           '  function () postMessage(document.location.href)' +
+                           ');',
+            onMessage: function (msg) {
+              console.log("onmessage...");
+              onMessageCount++;
+              if (onMessageCount==1) {
+                test.assertEqual(msg, firstLocation, 
+                  "Worker document url is equal to the 1st document");
+                tab.url = secondLocation;
+              } 
+              else if (onMessageCount==2) {
+                test.assertEqual(msg, secondLocation, 
+                  "Worker document url is equal to the 2nd document");
+                worker.destroy();
+                tab.url = thirdLocation;
+              } else {
+                test.fail("Got unexpected message ("+onMessageCount+")");
+              }
+            }
+          });
+          worker.postMessage("new-doc");
+        } 
+        else if (onReadyCount==2) {
+          worker.postMessage("new-doc");
+        } 
+        else if (onReadyCount==3) {
+          test.assertRaises(function () {
+              worker.postMessage("new-doc");
+            }, 
+            /The page has been destroyed/, 
+            "Last postMessage throw because worker is destroyed");
+          closeBrowserWindow(window, function() test.done());
+        }
+        
+      }
+    });
+    
+  });
+}
+
+
+exports.testAttachWrappers = function (test) {
+  // Check that content script has access to unwrapped values
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let document = "data:text/html,<script>var globalJSVar=true;</script>";
+    let count = 0;
+    
+    tabs.open({
+      url: document,
+      onReady: function (tab) {
+        let worker = tab.attach({
+          contentScript: 'try {' +
+                         '  postMessage(globalJSVar);' +
+                         '  postMessage(window.globalJSVar);' +
+                         '} catch(e) {' +
+                         '  postMessage(e.message);' +
+                         '}',
+          onMessage: function (msg) {
+            test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");
+            if (count++==1)
+              closeBrowserWindow(window, function() test.done());
+          }
+        });
+      }
+    });
+    
+  });
+}
 
 /******************* helpers *********************/
 

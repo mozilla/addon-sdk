@@ -317,31 +317,7 @@ BrowserWindow.prototype = {
     //   symbiont: contentSymbiont
     // }
     this._items = [];
-
-    // Add keypress listener
-    this.window.addEventListener("keypress", this, false);
-  },
-
-  // nsIDOMEventListener
-  handleEvent: function BW_handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "keypress":
-        this._onKeyPress(aEvent);
-        break;
-    }
-  },
-
-  _onKeyPress: function BW__onKeyPress(aEvent) {
-    let accelKey = /^Mac/.test(this.window.navigator.platform) ?
-                   aEvent.metaKey : aEvent.ctrlKey;
-    let nonAccelKey = /^Mac/.test(this.window.navigator.platform) ?
-                            aEvent.ctrlKey : aEvent.metaKey;
-    if (aEvent.which == aEvent.DOM_VK_U && aEvent.shiftKey &&
-        accelKey && !nonAccelKey && !aEvent.altKey) {
-      this._onToggleUI();
-      // Work around bug 582052 by preventing the (nonexistent) default action.
-      aEvent.preventDefault();
-    }
+    
   },
 
   get container() {
@@ -432,7 +408,7 @@ BrowserWindow.prototype = {
     // (eg, can load local stylesheet file).
     node.setAttribute("style", [
         "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
-        "min-height: 16px; max-height: 16px;",
+        "min-height: 16px; max-height: 16px; height: 16px;",
     ].join(""));
 
     node.style.minWidth = widget.width + "px";
@@ -600,7 +576,7 @@ BrowserWindow.prototype = {
     }, this);
 
     // remove the add-on bar if no more items
-    if (this._items.length == 0)
+    if (this.container.getElementsByTagName("toolbaritem").length == 0)
       this._hideContainer();
   },
 

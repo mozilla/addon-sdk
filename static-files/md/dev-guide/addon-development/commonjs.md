@@ -30,9 +30,10 @@ Minimally, a package must include a package descriptor file named
 `package.json`: this file contains information about the package such as a short
 description, the authors, and the other packages it depends on.
 
+<span class="aside">This isn't quite true until
+[bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed.</span>
 Packages must also follow a particular directory structure, which is the
-structure `cfx init` created for your add-on. *Note: this isn't quite true until
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed*.
+structure `cfx init` created for your add-on.
 
 ## CommonJS and the Add-on SDK ##
 
@@ -58,4 +59,4 @@ module in an add-on, and to make your modules available to any code that want
 to use them.
 
 In the next section we'll see how you can use the SDK implement and test your
-own [reusable modules](#guide/addon-development/implementing-reusable-module).
+own [reusable modules](dev-guide/addon-development/implementing-reusable-module.html).

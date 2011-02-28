@@ -34,11 +34,6 @@ characteristics:
     This means that multiple instances of different versions of
     the same module may exist in an application at once.
 
-<span class="aside">
-For more information on the security aspects of the Add-on SDK, see the
-[Security Roadmap] appendix.
-</span>
-
   * **Security Conscious**. Because the precise details of the SDK's
     security model are still unknown, we can't yet make low-level
     modules truly secure. However, we can document the *intended*
@@ -57,8 +52,7 @@ The current best practices are illustrated well by the [xhr module
 documentation], the [xhr module source code], and the [xhr module test
 suite].
 
-  [Security Roadmap]: #guide/security-roadmap
-  [xhr module documentation]: #module/api-utils/xhr
+  [xhr module documentation]: packages/api-utils/docs/xhr.html
   [xhr module source code]: packages/api-utils/lib/xhr.js
   [xhr module test suite]: packages/api-utils/tests/test-xhr.js
   [Chrome Object Wrappers]: https://wiki.mozilla.org/XPConnect_Chrome_Object_Wrapper
