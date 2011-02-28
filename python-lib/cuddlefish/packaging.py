@@ -301,10 +301,10 @@ def _get_files_in_dir(path):
         else:
             try:
                 info = os.stat(fullpath)
-                data[filename] = dict(size=info.st_size)
+                data[filename] = ("file", dict(size=info.st_size))
             except OSError:
                 pass
-    return data
+    return ("directory", data)
 
 def build_pkg_index(pkg_cfg):
     pkg_cfg = copy.deepcopy(pkg_cfg)
