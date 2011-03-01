@@ -398,7 +398,20 @@ BrowserWindow.prototype = {
     // XUL element container for widget
     let node = this.doc.createElement("toolbaritem");
     let guid = require("xpcom").makeUuid().toString();
-    let id = "widget:" + guid;
+    
+    // Temporary fix around require("self") failing on unit-test execution ...
+    let jetpackID = "testID";
+    try{
+      jetpackID = require("self").id;
+    }catch(e){}
+    
+    // Compute a widget id with jetpack id and widget.id attribute if there is
+    // one, else base64 widget.label (as label is required attribute)
+    let id = "widget:" + jetpackID + "-";
+    if (widget.id)
+      id += widget.id;
+    else
+      id += this.window.btoa(widget.label);
     node.setAttribute("id", id);
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);
@@ -418,17 +431,51 @@ BrowserWindow.prototype = {
     let palette = toolbox.palette;
     palette.appendChild(node);
 
-    // Add the item to the toolbar
-    this.container.insertItem(id, null, null, false);
-
+    // Search for widget toolbar by reading currentset's toolbars attribute
+    let container = null;
+    let toolbars = this.doc.getElementsByTagName("toolbar");
+    for(let i=0; i<toolbars.length; i++) {
+      let toolbar = toolbars[i];
+      if (toolbar.getAttribute("currentset").indexOf(id)==-1)
+        continue;
+      container = toolbar;
+    }
+    
+    // if widget isn't in any toolbar, add it to the addon-bar
+    // TODO: we may want some "first-launch" module to do this only on very 
+    // first execution
+    if (!container)
+      container = this.container;
+    
+    // Now retrieve a reference to the next toolbar item
+    // by reading currentset attribute on the toolbar
+    let nextNode = null;
+    let currentSet = container.getAttribute("currentset");
+    let ids = (currentSet == "__empty") ? [] : currentSet.split(",");
+    let idx = ids.indexOf(id);
+    if (idx != -1) {
+      for(let i=idx; i<ids.length; i++) {
+        nextNode = this.doc.getElementById(ids[i]);
+        if (nextNode)
+          break;
+      }
+    }
+    
+    // Finally insert our widget in the right toolbar and in the right position
+    container.insertItem(id, nextNode, null, false);
+    
     let item = {widget: widget, node: node};
 
     this._fillItem(item);
 
     this._items.push(item);
-
-    if (this.container.collapsed)
+    
+    // Display addon-bar if it was hidden
+    // TODO: we may want some "first-launch" module to do this only on very 
+    // first execution
+    if (container == this.container && this.container.collapsed) {
       this._onToggleUI();
+    }
   },
 
   // Initial population of a widget's content.
@@ -565,7 +612,7 @@ BrowserWindow.prototype = {
         for (let [type, listener] in Iterator(entry.eventListeners))
           entry.node.firstElementChild.removeEventListener(type, listener, true);
         // remove dom node
-        this.container.removeChild(entry.node);
+        entry.node.parentNode.removeChild(entry.node);
         // remove entry
         this._items.splice(this._items.indexOf(entry), 1);
       }
