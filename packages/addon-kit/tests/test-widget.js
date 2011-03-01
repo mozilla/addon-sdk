@@ -12,6 +12,7 @@ exports.testConstructor = function(test) {
 
   let browserWindow = windowUtils.activeBrowserWindow;
   let doc = browserWindow.document;
+  let AddonsMgrListener = browserWindow.AddonsMgrListener;
 
   function container() doc.getElementById("addon-bar");
   function widgetCount() container() ? container().getElementsByTagName("toolbaritem").length : 0;
@@ -19,13 +20,17 @@ exports.testConstructor = function(test) {
   function widgetNode(index) container() ? container().getElementsByTagName("toolbaritem")[index] : null;
 
   // Test basic construct/destroy
+  AddonsMgrListener.onInstalling();
   let w = widgets.Widget({ label: "foo", content: "bar" });
+  AddonsMgrListener.onInstalled();
   test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
-
+  
   // test widget height
   test.assertEqual(widgetNode(0).firstChild.boxObject.height, 16, "widget has correct default height");
-
+  
+  AddonsMgrListener.onUninstalling();
   w.destroy();
+  AddonsMgrListener.onUninstalled();
   w.destroy();
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
@@ -75,15 +80,23 @@ exports.testConstructor = function(test) {
   // Test concurrent widget module instances on addon-bar hiding
   let loader = test.makeSandboxedLoader();
   let anotherWidgetsInstance = loader.require("widget");
-  test.assert(container().collapsed, "UI is not visible when no widgets");
+  test.assert(container().collapsed, "UI is hidden when no widgets");
+  AddonsMgrListener.onInstalling();
   let w1 = widgets.Widget({label: "foo", content: "bar"});
-  test.assert(!container().collapsed, "UI visible when we add a first widget");
+  test.assert(container().collapsed, "UI is still hidden when we just added the widget");
+  AddonsMgrListener.onInstalled();
+  test.assert(!container().collapsed, "UI become visible when we notify AddonsMgrListener about end of addon installation");
   let w2 = anotherWidgetsInstance.Widget({label: "foo", content: "bar"});
   test.assert(!container().collapsed, "UI still visible when we add a second widget");
+  AddonsMgrListener.onUninstalling();
   w1.destroy();
+  AddonsMgrListener.onUninstalled();
   test.assert(!container().collapsed, "UI still visible when we remove one of two widgets");
+  AddonsMgrListener.onUninstalling();
   w2.destroy();
-  test.assert(container().collapsed, "UI is hidden when we remove the second widget");
+  test.assert(!container().collapsed, "UI is still visible when we have removed all widget but still not called onUninstalled");
+  AddonsMgrListener.onUninstalled();
+  test.assert(container().collapsed, "UI is hidden when we have removed all widget and called onUninstalled");
   
   // Helper for testing a single widget.
   // Confirms proper addition and content setup.

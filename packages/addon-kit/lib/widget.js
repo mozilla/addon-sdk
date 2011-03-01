@@ -354,17 +354,6 @@ BrowserWindow.prototype = {
     return this._container;
   },
 
-  // Hide container
-  _hideContainer: function BW__hideContainer() {
-    if (this._container)
-      this._container.collapsed = true;
-  },
-
-  // Update the visibility state for the addon bar.
-  _onToggleUI: function BW__onToggleUI() {
-    this.container.collapsed = !this.container.collapsed;
-  },
-
   // Adds an array of items to the window.
   addItems: function BW_addItems(items) {
     items.forEach(this._addItemToWindow, this);
@@ -469,13 +458,6 @@ BrowserWindow.prototype = {
     this._fillItem(item);
 
     this._items.push(item);
-    
-    // Display addon-bar if it was hidden
-    // TODO: we may want some "first-launch" module to do this only on very 
-    // first execution
-    if (container == this.container && this.container.collapsed) {
-      this._onToggleUI();
-    }
   },
 
   // Initial population of a widget's content.
@@ -617,10 +599,6 @@ BrowserWindow.prototype = {
         this._items.splice(this._items.indexOf(entry), 1);
       }
     }, this);
-
-    // remove the add-on bar if no more items
-    if (this.container.getElementsByTagName("toolbaritem").length == 0)
-      this._hideContainer();
   },
 
   // Undoes all modifications to the window. The BrowserWindow
