@@ -342,7 +342,12 @@ const Worker = AsyncEventEmitter.compose({
   get url() {
     return this._window.document.location.href;
   },
-
+  
+  get tab() {
+    let tab = require("tabs/tab");
+    return tab.getTabForWindow(this._window);
+  },
+  
   /**
    * Tells _port to unload itself and removes all the references from itself.
    */

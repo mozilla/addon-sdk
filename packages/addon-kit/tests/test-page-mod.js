@@ -204,3 +204,26 @@ exports.testCommunication2 = function(test) {
   );
 };
 
+exports.testRelatedTab = function(test) {
+  test.waitUntilDone();
+  
+  let tabs = require("tabs");
+  let tab;
+  let pageMod = new require("page-mod").PageMod({
+    include: "about:*",
+    onAttach: function(worker) {
+      test.assertEqual(tab, worker.tab, "Worker.tab is valid");
+      pageMod.destroy();
+      tab.close();
+      test.done();
+    }
+  });
+  
+  tabs.open({
+    url: "about:",
+    onOpen: function onOpen(t) {
+      tab = t;
+    }
+  });
+  
+}
