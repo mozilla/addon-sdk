@@ -107,7 +107,9 @@ const Widget = Trait.compose(Loader, Trait.compose({
     this._label = validate("label", options.label, valid.label);
 
     this.tooltip = "tooltip" in options ? options.tooltip : this._label
-
+    
+    if ("id" in options)
+      this._id = options.id;
     if ("width" in options)
       this.width = options.width;
     if ("panel" in options)
@@ -165,6 +167,9 @@ const Widget = Trait.compose(Loader, Trait.compose({
     }
   },
 
+  get id() this._id,
+  _id: null,
+  
   get label() this._label,
   _label: null,
 
@@ -261,6 +266,18 @@ let browserManager = {
     let idx = this.items.indexOf(item);
     if (idx > -1)
       throw new Error("The widget " + item + " has already been added.");
+    if (item.id) {
+      let sameId = this.items.filter(function(i) (i.id || i.label) == item.id);
+      if (sameId.length > 0)
+        throw new Error("This widget ID is already used: " + item);
+    } 
+    else {
+      let sameLabel = this.items.filter(
+        function(i) (i.id || i.label) == item.label);
+      if (sameLabel.length > 0)
+        throw new Error("This widget label is already used, you need to add " +
+          "a widget id attribute or use a unique label.");
+    }
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
   },
@@ -390,9 +407,9 @@ BrowserWindow.prototype = {
     
     // Temporary fix around require("self") failing on unit-test execution ...
     let jetpackID = "testID";
-    try{
+    try {
       jetpackID = require("self").id;
-    }catch(e){}
+    } catch(e) {}
     
     // Compute a widget id with jetpack id and widget.id attribute if there is
     // one, else base64 widget.label (as label is required attribute)

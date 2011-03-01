@@ -77,6 +77,36 @@ exports.testConstructor = function(test) {
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
   
+  // Test duplicated label
+  let duplicateLabel = widgets.Widget({label: "foo", content: "bar"});
+  test.assertRaises(
+    function() widgets.Widget({label: "foo", content: "bar"}),
+    /This widget label is already used, you need to add a widget id attribute/,
+    "throws on duplicated label");
+  duplicateLabel.destroy();
+  
+  // Test duplicated ID
+  let duplicateID = widgets.Widget({id: "foo", label: "bar", content: "bar"});
+  test.assertRaises(
+    function() widgets.Widget({id: "foo", label: "bar", content: "bar"}),
+    /This widget ID is already used:/,
+    "throws on duplicated id");
+  duplicateID.destroy();
+  
+  // Test duplicated ID/label
+  let duplicateID = widgets.Widget({id: "foo", label: "bar", content: "bar"});
+  test.assertRaises(
+    function() widgets.Widget({label: "foo", content: "bar"}),
+    /This widget label is already used, you need to add a widget id attribute/,
+    "throws on duplicated id");
+  duplicateID.destroy();
+  
+  // Test duplicate label, different ID
+  let w1 = widgets.Widget({id: "id1", label: "foo", content: "bar"});
+  let w2 = widgets.Widget({id: "id2", label: "foo", content: "bar"});
+  w1.destroy();
+  w2.destroy();
+  
   // Test concurrent widget module instances on addon-bar hiding
   let loader = test.makeSandboxedLoader();
   let anotherWidgetsInstance = loader.require("widget");
@@ -86,7 +116,7 @@ exports.testConstructor = function(test) {
   test.assert(container().collapsed, "UI is still hidden when we just added the widget");
   AddonsMgrListener.onInstalled();
   test.assert(!container().collapsed, "UI become visible when we notify AddonsMgrListener about end of addon installation");
-  let w2 = anotherWidgetsInstance.Widget({label: "foo", content: "bar"});
+  let w2 = anotherWidgetsInstance.Widget({label: "bar", content: "foo"});
   test.assert(!container().collapsed, "UI still visible when we add a second widget");
   AddonsMgrListener.onUninstalling();
   w1.destroy();
