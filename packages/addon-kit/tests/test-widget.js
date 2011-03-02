@@ -107,6 +107,24 @@ exports.testConstructor = function(test) {
   w1.destroy();
   w2.destroy();
   
+  // Test position restore on create/destroy/create
+  // Create 3 ordered widgets
+  let w1 = widgets.Widget({label: "first", content: "bar"});
+  let w2 = widgets.Widget({label: "second", content: "bar"});
+  let w3 = widgets.Widget({label: "third", content: "bar"});
+  // Update toolbar set list (done at firefox extinction)
+  container().setAttribute("currentset", container().currentSet);
+  // Remove the middle widget
+  test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is the second widget inserted");
+  w2.destroy();
+  test.assertEqual(widgetNode(1).getAttribute("label"), "third", "second widget is removed, so second widget is now the third one");
+  w2 = widgets.Widget({label: "second", content: "bar"});
+  test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is created again, at the same location");
+  // Cleanup this testcase
+  w1.destroy();
+  w2.destroy();
+  w3.destroy();
+  
   // Test concurrent widget module instances on addon-bar hiding
   let loader = test.makeSandboxedLoader();
   let anotherWidgetsInstance = loader.require("widget");
