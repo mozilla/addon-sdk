@@ -118,7 +118,7 @@ Creates a panel.
 
 <api name="isOpen">
 @property {boolean}
-Tells if the panel is currently open or not.
+Tells if the panel is currently open or not. This property is read-only.
 </api>
 
 <api name="height">
