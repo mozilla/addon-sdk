@@ -110,6 +110,10 @@ const Widget = Trait.compose(Loader, Trait.compose({
     
     if ("id" in options)
       this._id = options.id;
+    else
+      console.warn('You should set an "id" attribute to your widget ' + 
+        'in order to be able to remember its position.');
+    
     if ("width" in options)
       this.width = options.width;
     if ("panel" in options)
@@ -267,16 +271,11 @@ let browserManager = {
     if (idx > -1)
       throw new Error("The widget " + item + " has already been added.");
     if (item.id) {
-      let sameId = this.items.filter(function(i) (i.id || i.label) == item.id);
+      let sameId = this.items.filter(function(i) i.id == item.id);
       if (sameId.length > 0)
-        throw new Error("This widget ID is already used: " + item);
-    } 
-    else {
-      let sameLabel = this.items.filter(
-        function(i) (i.id || i.label) == item.label);
-      if (sameLabel.length > 0)
-        throw new Error("This widget label is already used, you need to add " +
-          "a widget id attribute or use a unique label.");
+        throw new Error("This widget ID is already used: " + item.id);
+    } else {
+      item.id = this.items.length;
     }
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
@@ -411,13 +410,8 @@ BrowserWindow.prototype = {
       jetpackID = require("self").id;
     } catch(e) {}
     
-    // Compute a widget id with jetpack id and widget.id attribute if there is
-    // one, else base64 widget.label (as label is required attribute)
-    let id = "widget:" + jetpackID + "-";
-    if (widget.id)
-      id += widget.id;
-    else
-      id += this.window.btoa(widget.label);
+    // Compute an unique and stable widget id with jetpack id and widget.id
+    let id = "widget:" + jetpackID + "-" + widget.id;
     node.setAttribute("id", id);
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);

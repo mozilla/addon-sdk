@@ -21,7 +21,7 @@ exports.testConstructor = function(test) {
 
   // Test basic construct/destroy
   AddonsMgrListener.onInstalling();
-  let w = widgets.Widget({ label: "foo", content: "bar" });
+  let w = widgets.Widget({ id: "fooID", label: "foo", content: "bar" });
   AddonsMgrListener.onInstalled();
   test.assertEqual(widgetCount(), widgetStartCount + 1, "panel has correct number of child elements after widget construction");
   
@@ -40,7 +40,7 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({}),
     "The widget must have a non-empty label property.",
     "throws on no properties");
-
+  
   // Test no label
   test.assertRaises(
     function() widgets.Widget({content: "foo"}),
@@ -52,52 +52,36 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({label: "", content: "foo"}),
     "The widget must have a non-empty label property.",
     "throws on empty label");
-
+  
   // Test no content or image
   test.assertRaises(
-    function() widgets.Widget({label: "foo"}),
+    function() widgets.Widget({id: "fooID", label: "foo"}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on no content");
-
+  
   // Test empty content, no image
   test.assertRaises(
-    function() widgets.Widget({label: "foo", content: ""}),
+    function() widgets.Widget({id:"fooID", label: "foo", content: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
 
   // Test empty image, no content
   test.assertRaises(
-    function() widgets.Widget({label: "foo", image: ""}),
+    function() widgets.Widget({id:"fooID", label: "foo", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
 
   // Test empty content, empty image
   test.assertRaises(
-    function() widgets.Widget({label: "foo", content: "", image: ""}),
+    function() widgets.Widget({id:"fooID", label: "foo", content: "", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
   
-  // Test duplicated label
-  let duplicateLabel = widgets.Widget({label: "foo", content: "bar"});
-  test.assertRaises(
-    function() widgets.Widget({label: "foo", content: "bar"}),
-    /This widget label is already used, you need to add a widget id attribute/,
-    "throws on duplicated label");
-  duplicateLabel.destroy();
-  
   // Test duplicated ID
-  let duplicateID = widgets.Widget({id: "foo", label: "bar", content: "bar"});
+  let duplicateID = widgets.Widget({id: "foo", label: "foo", content: "bar"});
   test.assertRaises(
     function() widgets.Widget({id: "foo", label: "bar", content: "bar"}),
     /This widget ID is already used:/,
-    "throws on duplicated id");
-  duplicateID.destroy();
-  
-  // Test duplicated ID/label
-  let duplicateID = widgets.Widget({id: "foo", label: "bar", content: "bar"});
-  test.assertRaises(
-    function() widgets.Widget({label: "foo", content: "bar"}),
-    /This widget label is already used, you need to add a widget id attribute/,
     "throws on duplicated id");
   duplicateID.destroy();
   
@@ -109,16 +93,16 @@ exports.testConstructor = function(test) {
   
   // Test position restore on create/destroy/create
   // Create 3 ordered widgets
-  let w1 = widgets.Widget({label: "first", content: "bar"});
-  let w2 = widgets.Widget({label: "second", content: "bar"});
-  let w3 = widgets.Widget({label: "third", content: "bar"});
+  let w1 = widgets.Widget({id: "first", label:"first", content: "bar"});
+  let w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
+  let w3 = widgets.Widget({id: "third", label:"third", content: "bar"});
   // Update toolbar set list (done at firefox extinction)
   container().setAttribute("currentset", container().currentSet);
   // Remove the middle widget
   test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is the second widget inserted");
   w2.destroy();
   test.assertEqual(widgetNode(1).getAttribute("label"), "third", "second widget is removed, so second widget is now the third one");
-  w2 = widgets.Widget({label: "second", content: "bar"});
+  w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
   test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is created again, at the same location");
   // Cleanup this testcase
   w1.destroy();
@@ -130,11 +114,11 @@ exports.testConstructor = function(test) {
   let anotherWidgetsInstance = loader.require("widget");
   test.assert(container().collapsed, "UI is hidden when no widgets");
   AddonsMgrListener.onInstalling();
-  let w1 = widgets.Widget({label: "foo", content: "bar"});
+  let w1 = widgets.Widget({id: "foo", label: "foo", content: "bar"});
   test.assert(container().collapsed, "UI is still hidden when we just added the widget");
   AddonsMgrListener.onInstalled();
   test.assert(!container().collapsed, "UI become visible when we notify AddonsMgrListener about end of addon installation");
-  let w2 = anotherWidgetsInstance.Widget({label: "bar", content: "foo"});
+  let w2 = anotherWidgetsInstance.Widget({id: "bar", label: "bar", content: "foo"});
   test.assert(!container().collapsed, "UI still visible when we add a second widget");
   AddonsMgrListener.onUninstalling();
   w1.destroy();
@@ -176,6 +160,7 @@ exports.testConstructor = function(test) {
 
   // text widget
   tests.push(function() testSingleWidget({
+    id: "text",
     label: "text widget",
     content: "oh yeah",
     contentScript: "postMessage(document.body.innerHTML);",
@@ -189,6 +174,7 @@ exports.testConstructor = function(test) {
 
   // html widget
   tests.push(function() testSingleWidget({
+    id: "html",
     label: "html widget",
     content: "<div>oh yeah</div>",
     contentScript: "postMessage(document.body.innerHTML);",
@@ -202,6 +188,7 @@ exports.testConstructor = function(test) {
 
   // image url widget
   tests.push(function() testSingleWidget({
+    id: "image",
     label: "image url widget",
     contentURL: require("self").data.url("test.html"),
     contentScript: "postMessage({title: document.title, " +
@@ -219,6 +206,7 @@ exports.testConstructor = function(test) {
 
   // web uri widget
   tests.push(function() testSingleWidget({
+    id: "web",
     label: "web uri widget",
     contentURL: require("self").data.url("test.html"),
     contentScript: "postMessage({title: document.title, " +
@@ -236,6 +224,7 @@ exports.testConstructor = function(test) {
 
   // event: onclick + content
   tests.push(function() testSingleWidget({
+    id: "click",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -251,6 +240,7 @@ exports.testConstructor = function(test) {
 
   // event: onmouseover + content
   tests.push(function() testSingleWidget({
+    id: "mouseover",
     label: "mouseover test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -266,6 +256,7 @@ exports.testConstructor = function(test) {
 
   // event: onmouseout + content
   tests.push(function() testSingleWidget({
+    id: "mouseout",
     label: "mouseout test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -281,6 +272,7 @@ exports.testConstructor = function(test) {
 
   // event: onclick + image
   tests.push(function() testSingleWidget({
+    id: "click",
     label: "click test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -296,6 +288,7 @@ exports.testConstructor = function(test) {
 
   // event: onmouseover + image
   tests.push(function() testSingleWidget({
+    id: "mouseover",
     label: "mouseover test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -311,6 +304,7 @@ exports.testConstructor = function(test) {
 
   // event: onmouseout + image
   tests.push(function() testSingleWidget({
+    id: "mouseout",
     label: "mouseout test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -326,8 +320,8 @@ exports.testConstructor = function(test) {
 
   // test multiple widgets
   tests.push(function() {
-    let w1 = widgets.Widget({label: "first widget", content: "first content"});
-    let w2 = widgets.Widget({label: "second widget", content: "second content"});
+    let w1 = widgets.Widget({id: "first", label: "first widget", content: "first content"});
+    let w2 = widgets.Widget({id: "second", label: "second widget", content: "second content"});
 
     w1.destroy();
     w2.destroy();
@@ -338,6 +332,7 @@ exports.testConstructor = function(test) {
   // test updating widget content
   let loads = 0;
   tests.push(function() testSingleWidget({
+    id: "content",
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
@@ -359,6 +354,7 @@ exports.testConstructor = function(test) {
   let url1 = "data:text/html,<body>foodle</body>";
   let url2 = "data:text/html,<body>nistel</body>";
   tests.push(function() testSingleWidget({
+    id: "content",
     label: "content update test widget",
     contentURL: url1,
     contentScript: "postMessage(document.location.href);",
@@ -381,6 +377,7 @@ exports.testConstructor = function(test) {
 
   // test tooltip
   tests.push(function() testSingleWidget({
+    id: "text",
     label: "text widget",
     content: "oh yeah",
     tooltip: "foo",
@@ -395,6 +392,7 @@ exports.testConstructor = function(test) {
 
   // test tooltip fallback to label
   tests.push(function() testSingleWidget({
+    id: "fallback",
     label: "fallback",
     content: "oh yeah",
     contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
@@ -409,6 +407,7 @@ exports.testConstructor = function(test) {
   // test updating widget tooltip
   let updated = false;
   tests.push(function() testSingleWidget({
+    id: "tooltip",
     label: "tooltip update test widget",
     tooltip: "foo",
     content: "<div id='me'>foo</div>",
@@ -431,11 +430,11 @@ exports.testConstructor = function(test) {
       function widgetCount2() container() ? container().childNodes.length : 0;
       let widgetStartCount2 = widgetCount2();
 
-      let w1Opts = {label: "first widget", content: "first content"};
+      let w1Opts = {id:"first", label: "first widget", content: "first content"};
       let w1 = testSingleWidget(w1Opts);
       test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after first widget");
 
-      let w2Opts = {label: "second widget", content: "second content"};
+      let w2Opts = {id:"second", label: "second widget", content: "second content"};
       let w2 = testSingleWidget(w2Opts);
       test.assertEqual(widgetCount2(), widgetStartCount2 + 2, "2nd window has correct number of child elements after second widget");
 
@@ -452,6 +451,7 @@ exports.testConstructor = function(test) {
 
   // test widget.width
   tests.push(function() testSingleWidget({
+    id: "text",
     label: "test widget.width",
     content: "test width",
     width: 200,
@@ -480,6 +480,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
   const widgets = require("widget");
 
   let widget1 = widgets.Widget({
+    id: "panel1",
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -503,6 +504,7 @@ exports.testPanelWidget2 = function testPanelWidget2(test) {
   test.assertRaises(
     function() {
       widgets.Widget({
+        id: "panel2",
         label: "panel widget 2",
         panel: {}
       });
@@ -516,6 +518,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
   const widgets = require("widget");
   let onClickCalled = false;
   let widget3 = widgets.Widget({
+    id: "panel3",
     label: "panel widget 3",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
@@ -546,6 +549,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
   let origMessage = "foo";
   const widgets = require("widget");
   let widget = widgets.Widget({
+    id: "foo",
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
