@@ -173,9 +173,8 @@ Represents a widget object.
     title bars, and error reporting.
 
   @prop id {string}
-    Optional string needed to define a widget identifier, 
-    mandatory if you use the same label for multiple widgets. 
-    (Used to remember custom user widget location in firefox)
+    Optional string used to define a widget identifier. Mandatory if you want 
+    to remember widget location in firefox.
   
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
