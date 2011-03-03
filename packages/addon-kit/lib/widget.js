@@ -402,13 +402,14 @@ BrowserWindow.prototype = {
     node.setAttribute("id", id);
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);
+    node.setAttribute("align", "center");
 
     // TODO move into a stylesheet, configurable by consumers.
     // Either widget.style, exposing the style object, or a URL
     // (eg, can load local stylesheet file).
     node.setAttribute("style", [
         "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
-        "min-height: 16px; max-height: 16px; height: 16px;",
+        "min-height: 16px;",
     ].join(""));
 
     node.style.minWidth = widget.width + "px";
@@ -439,6 +440,7 @@ BrowserWindow.prototype = {
     iframe.setAttribute("transparent", "transparent");
     iframe.style.overflow = "hidden";
     iframe.style.height = "16px";
+    iframe.style.maxHeight = "16px";
     iframe.style.width = item.widget.width + "px";
     iframe.setAttribute("flex", "1");
     iframe.style.border = "none";
