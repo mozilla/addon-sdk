@@ -71,7 +71,20 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({label: "foo", content: "", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
-
+  
+  // Test concurrent widget module instances on addon-bar hiding
+  let loader = test.makeSandboxedLoader();
+  let anotherWidgetsInstance = loader.require("widget");
+  test.assert(container().collapsed, "UI is not visible when no widgets");
+  let w1 = widgets.Widget({label: "foo", content: "bar"});
+  test.assert(!container().collapsed, "UI visible when we add a first widget");
+  let w2 = anotherWidgetsInstance.Widget({label: "foo", content: "bar"});
+  test.assert(!container().collapsed, "UI still visible when we add a second widget");
+  w1.destroy();
+  test.assert(!container().collapsed, "UI still visible when we remove one of two widgets");
+  w2.destroy();
+  test.assert(container().collapsed, "UI is hidden when we remove the second widget");
+  
   // Helper for testing a single widget.
   // Confirms proper addition and content setup.
   function testSingleWidget(widgetOptions) {
@@ -374,32 +387,6 @@ exports.testConstructor = function(test) {
         doneTest();
       });
     }});
-  });
-
-  // test the visibility keyboard shortcut
-  tests.push(function() {
-    // Test hide/show the widget bar
-    function toggleUI() {
-      let keyEvent = doc.createEvent("KeyEvents");
-      let ctrlKey = false, metaKey = false, shiftKey = true, altKey = false, charCode = keyEvent.DOM_VK_U, keyCode = 0;
-      if(/^Mac/.test(browserWindow.navigator.platform))
-        metaKey = true;
-      else
-        ctrlKey = true;
-      keyEvent.initKeyEvent("keypress", true, true, browserWindow, ctrlKey, altKey, shiftKey, metaKey, keyCode, charCode);
-      doc.dispatchEvent(keyEvent);
-    }
-
-    test.assert(container().collapsed, "UI is not visible when no widgets");
-    let w = widgets.Widget({label: "foo", content: "bar"});
-    test.assert(container(), "UI exists when widgets are created");
-    test.assertEqual(container().collapsed, false, "UI is visible by default");
-    toggleUI(); 
-    test.assertEqual(container().collapsed, true, "keyboard shortcut hides UI when visible");
-    toggleUI(); 
-    test.assertEqual(container().collapsed, false, "keyboard shortcut shows UI when hidden");
-    w.destroy();
-    doneTest();
   });
 
   // test widget.width

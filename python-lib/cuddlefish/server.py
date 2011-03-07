@@ -386,7 +386,7 @@ def generate_static_docs(env_root, tgz_filename, base_url = ''):
                     docs_html = web_docs.create_module_page(src_path)
                     open(dest_path[:-3] + ".html", "w").write(docs_html)
 
-    dev_guide_src = os.path.join(server.root, 'md/dev-guide')
+    dev_guide_src = os.path.join(server.root, 'md', 'dev-guide')
     dev_guide_dest = os.path.join(staging_dir, 'dev-guide')
     if not os.path.exists(dev_guide_dest):
         os.mkdir(dev_guide_dest)

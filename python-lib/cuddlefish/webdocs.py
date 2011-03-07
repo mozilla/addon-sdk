@@ -17,13 +17,15 @@ DEFAULT_TITLE = 'Add-on SDK Documentation'
 
 def get_modules(modules_json):
     modules = []
-    for module in modules_json:
-        if '.js' in module:
-            modules.append(module[:-3])
-        else:
-            sub_modules = get_modules(modules_json[module])
+    for name in modules_json:
+        typ = modules_json[name][0]
+        if typ == "directory":
+            sub_modules = get_modules(modules_json[name][1])
             for sub_module in sub_modules:
-                modules.append(module + '/' + sub_module)
+                modules.append([name, sub_module[0]])
+        elif typ == "file":
+            if not name.startswith(".") and name.endswith('.js'):
+                modules.append([name[:-3]])
     return modules
 
 def get_documented_modules(root, package_name, modules_json):
@@ -31,7 +33,8 @@ def get_documented_modules(root, package_name, modules_json):
     module_md_root = os.path.join(root, 'packages', package_name, 'docs')
     documented_modules = []
     for module in modules:
-        if module_md_exists(module_md_root, module):
+        path = os.path.join(*module)
+        if module_md_exists(module_md_root, path):
             documented_modules.append(module)
     return documented_modules
 
@@ -50,7 +53,7 @@ def is_high_level(package_json):
     return not is_low_level(package_json)
 
 def is_low_level(package_json):
-    return 'jetpack-low-level' in package_json['keywords']
+    return 'jetpack-low-level' in package_json.get('keywords', [])
 
 def insert_after(target, insertion_point_id, text_to_insert):
     insertion_point = target.find(insertion_point_id) + len(insertion_point_id)
@@ -77,7 +80,7 @@ class WebDocs(object):
 
     def create_package_page(self, path):
         path, ext = os.path.splitext(path)
-        package_name = path.split('/')[-1]
+        head, package_name = os.path.split(path)
         package_content = self._create_package_detail(package_name)
         return self._create_page(package_content)
 
@@ -88,14 +91,14 @@ class WebDocs(object):
 
     def _create_module_list(self, package_json):
         package_name = package_json['name']
-        modules = get_documented_modules(self.root, package_name, \
-                              package_json['files']['lib'])
+        libs = package_json['files'][1]['lib'][1]
+        modules = get_documented_modules(self.root, package_name, libs)
         modules.sort()
         module_items = ''
         for module in modules:
-            module_link = tag_wrap(module, 'a', \
+            module_link = tag_wrap('/'.join(module), 'a', \
                 {'href':'packages/' + package_name + \
-                 '/docs/' + module + '.html'})
+                 '/docs/' + '/'.join(module) + '.html'})
             module_items += tag_wrap(module_link, 'li', {'class':'module'})
         return tag_wrap(module_items, 'ul', {'class':'modules'})
 

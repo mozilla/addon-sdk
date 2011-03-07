@@ -33,6 +33,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+"use strict";
 
 var {Cc,Ci} = require("chrome");
 
@@ -678,8 +679,9 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
+  
   if (callback) {
-    function onLoad(event) {
+    window.addEventListener("load", function onLoad(event) {
       if (event.target && event.target.defaultView == window) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
@@ -689,9 +691,7 @@ function openBrowserWindow(callback, url) {
           }, 10);
         } catch (e) { console.exception(e); }
       }
-    }
-
-    window.addEventListener("load", onLoad, true);
+    }, true);
   }
 
   return window;
@@ -699,8 +699,8 @@ function openBrowserWindow(callback, url) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  window.addEventListener("unload", function() {
-    window.removeEventListener("unload", arguments.callee, false);
+  window.addEventListener("unload", function unload() {
+    window.removeEventListener("unload", unload, false);
     callback();
   }, false);
   window.close();
