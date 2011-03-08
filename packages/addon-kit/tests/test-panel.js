@@ -139,6 +139,35 @@ tests.testSeveralShowHides = function(test) {
   panel.show();
 };
 
+tests.testNameAndTitlebar = function(test) {
+  test.waitUntilDone();
+  let panelTitle = "Panelwerld!";
+  let panel = panels.Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "postMessage('')",
+    contentScriptWhen: "ready",
+    titlebar: true,
+    name: panelTitle,
+    onMessage: function() {
+      panel.show();
+    },
+    onShow: function () {
+      test.pass("the panel was shown");
+      test.assert(panel.titlebar, "the panel has a titlebar");
+      test.assertEqual(panel.name, panelTitle, "the panel's name attribute is" +
+        "equal to Panelwerld!");
+      panel.hide();
+    },
+    onHide: function () {
+      test.pass("panel hidden");
+      test.done();
+    }
+  });
+  panel.on('error', function(e) {
+    test.fail('error was emitted:' + e.message + '\n' + e.stack);
+  });
+};
+
 function makeEventOrderTest(options) {
   let expectedEvents = [];
 

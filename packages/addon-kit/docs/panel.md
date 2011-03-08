@@ -1,5 +1,6 @@
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
+<!-- contributed by Rob Campbell [rcampbell@mozilla.com] -->
 
 The `panel` module creates floating modal "popup dialogs" that appear on top of
 web content and browser chrome and persist until dismissed by users or programs.
@@ -89,12 +90,19 @@ Creates a panel.
     The width of the panel in pixels. Optional.
   @prop [height] {number}
     The height of the panel in pixels. Optional.
+  @prop [name] {string}
+    An optional string giving the panel a name. If used with the [titlebar]
+    option, the name will be used as the titlebar's label.
+  @prop [titlebar] {boolean}
+    An optional boolean property enabling or disabling a draggable titlebar in
+    the panel. If set to true, the properties "noautohide" and "close"
+    (button) will also be set for the panel.
   @prop [contentURL] {string}
     The URL of the content to load in the panel.
   @prop [allow] {object}
-    An optional object describing permissions for the content.  It should
+    An optional object describing permissions for the content. It should
     contain a single key named `script` whose value is a boolean that indicates
-    whether or not to execute script in the content.  `script` defaults to true.
+    whether or not to execute script in the content. `script` defaults to true.
   @prop [contentScriptFile] {string,array}
     A local file URL or an array of local file URLs of content scripts to load.
     Content scripts specified by this property are loaded *before* those
@@ -124,6 +132,16 @@ The height of the panel in pixels.
 <api name="width">
 @property {number}
 The width of the panel in pixels.
+</api>
+
+<api name="titlebar">
+@property {boolean}
+Create the panel with a titlebar.
+</api>
+
+<api name="name">
+@property {string}
+The name of the panel. Will be used as the panel's titlebar label if present.
 </api>
 
 <api name="contentURL">

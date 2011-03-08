@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Myk Melez <myk@mozilla.org> (Original Author)
  *   Irakli Gozalishvili <gozala@mazilla.com>
+ *   Rob Campbell <rcampbell@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -111,6 +112,10 @@ const Panel = Symbiont.resolve({
       this.height = options.height;
     if ('contentURL' in options)
       this.contentURL = options.contentURL;
+    if ('name' in options)
+      this.name = options.name;
+    if ('titlebar' in options)
+      this.titlebar = options.titlebar;
 
     this._init(options);
   },
@@ -133,8 +138,14 @@ const Panel = Symbiont.resolve({
   /* Public API: Panel.height */
   get height() this._height,
   set height(value)
-    this._height =  valid({ $: value }, { $: validNumber }).$ || this._height,
+    this._height = valid({ $: value }, { $: validNumber }).$ || this._height,
   _height: 240,
+  /* Public API: Panel.titlebar */
+  get titlebar() this._titlebar,
+  set titlebar(value) this._titlebar = value,
+  /* Public API: Panel.name */
+  get name() this._name,
+  set name(value) this._name = value,
   /* Public API: Panel.show */
   show: function show(anchor) {
     anchor = anchor || null;
@@ -148,9 +159,16 @@ const Panel = Symbiont.resolve({
       frame.setAttribute('transparent', 'transparent');
       // Load an empty document in order to have an immediatly loaded iframe, 
       // so swapFrameLoaders is going to work without having to wait for load.
-      frame.setAttribute("src","data:,"); 
+      frame.setAttribute("src", "data:,"); 
       xulPanel.appendChild(frame);
       document.getElementById("mainPopupSet").appendChild(xulPanel);
+    }
+    if (this.titlebar) {
+      xulPanel.setAttribute("titlebar", "normal");
+      xulPanel.setAttribute("noautohide", "true");
+      xulPanel.setAttribute("close", "true");
+      if (this.name)
+        xulPanel.label = this.name;
     }
     let { width, height } = this, when = 'before_start', x, y;
     // Open the popup by the anchor.
