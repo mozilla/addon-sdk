@@ -11,7 +11,7 @@ Module exports `create` method allowing users to store credentials in the
 application built-in password manager. Function takes `options` object as an
 argument containing fields necessary to create a login credential. Properties
 of an `options` depend on type of an authentication but regardless of that,
-there are two optional callback `onDone` and `onError` properties that may
+there are two optional callback `onComplete` and `onError` properties that may
 be passed to observe success or failure of performed operation.
 
 
@@ -20,7 +20,7 @@ An object containing fields associated to a credential being created. Some
 fields are necessary for one type of authentication and not for second. Please
 see examples to find more details.
 
-@prop user {string}
+@prop username {string}
 The user name for the login.
 
 @prop password {string}
@@ -41,7 +41,7 @@ The HTTP Realm for which the login was requested. When an HTTP server sends a
 result did not include a realm, then option must be omitted. For logins
 obtained from HTML forms, this field must be omitted. 
 
-@prop [userField] {string}
+@prop [usernameField] {string}
 The `name` attribute for the user name input in a form. Non-form logins
 must omit this field.
 
@@ -49,7 +49,7 @@ must omit this field.
 The `name` attribute for the password input in a form. Non-form logins
 must omit this field.
 
-@prop  [onDone] {function}
+@prop  [onComplete] {function}
 The callback function that is called once `login` is stored in the manager.
 
 @prop [onError] {function}
@@ -64,8 +64,8 @@ credentials for such a web site:
     require("login-manager").create({
       url: "http://www.example.com",
       formSubmitURL: "http://login.example.com",
-      user: "joe",
-      userField: "uname",
+      username: "joe",
+      usernameField: "uname",
       password: "SeCrEt123",
       passwordField: "pword"
     });
@@ -88,7 +88,7 @@ contain different fields:
     require("login-manager").create({
       url: "http://www.example.com",
       realm: "ExampleCo Login",
-      user: "joe",
+      username: "joe",
       password: "SeCrEt123",
     });
 
@@ -109,15 +109,15 @@ In such case `realm` string briefly denotes the login's purpose.
 
     require("login-manager").create({
       realm: "User Registration",
-      user: "joe",
+      username: "joe",
       password: "SeCrEt123",
     });
 </api>
 
-<api name="find">
+<api name="search">
 @function
 
-Module exports `find` function that may be used to locate a credential stored
+Module exports `search` function that may be used to locate a credential stored
 in the applications built-in login manager.
 
 @param options {object}
@@ -125,14 +125,14 @@ An object containing fields associated to a credential being searched. It may
 contain any of the fields described by `create`. Those properties will be used
 to narrow down a search results.
 
-The `onDone` callback is called with an array of matched logins.
+The `onComplete` callback is called with an array of matched logins.
 
-    require("login-manager").find({
+    require("login-manager").search({
       url: "http://www.example.com",
-      user: "joe",
-      onDone: function onDone(logins) {
+      username: "joe",
+      onComplete: function onComplete(logins) {
         logins.forEach(function(login) {
-          // Do something with a `login.user` & `login.password`
+          // Do something with a `login.username` & `login.password`
         });
       })
     });
@@ -143,14 +143,14 @@ The `onDone` callback is called with an array of matched logins.
 @param options {object}
 When removing a password the specified `options` object must exactly match what
 was stored (including a `password`). For this reason it is recommended to chain
-this function with `find` to make sure that only necessary matches are removed.
+this function with `search` to make sure that only necessary matches are removed.
 
 The `onError` callback is called on attempt to remove a non-existing login.
 
-    require("login-manager").find({
+    require("login-manager").search({
       url: "http://www.example.com",
-      user: "joe",
-      onDone: function onDone(logins) {
+      username: "joe",
+      onComplete: function onComplete(logins) {
         logins.forEach(require("login-manager").remove);
       })
     });
@@ -163,12 +163,12 @@ rather simple. It's just matter of calling `create` after `remove` succeeds:
 
     require("login-manager").remove({
       realm: "User Registration",
-      user: "joe",
+      username: "joe",
       password: "SeCrEt123"
-      onDone: function onDone() {
+      onComplete: function onComplete() {
         require("login-manager").create({
           realm: "User Registration",
-          user: "joe",
+          username: "joe",
           password: "{{new password}}"
         })
       }
