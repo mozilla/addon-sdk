@@ -111,7 +111,7 @@ parser_groups = (
                                       help="XULRunner app/ext. template",
                                       metavar=None,
                                       default=None,
-                                      cmds=['run', 'xpi'])),
+                                      cmds=['run', 'xpi', 'test'])),
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
@@ -598,6 +598,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print >>sys.stderr, "Unknown command: %s" % command
         print >>sys.stderr, "Try using '--help' for assistance."
         sys.exit(1)
+
+    if "templatedir" in target_cfg:
+        if options.templatedir:
+            print >>sys.stderr, "The --templatedir option can not be used " \
+                                "when package.json specifies 'templatedir'."
+            sys.exit(1)
+        options.templatedir = os.path.join(target_cfg["root_dir"],
+                                           target_cfg["templatedir"])
 
     if use_main and 'main' not in target_cfg:
         # If the user supplies a template dir, then the main
