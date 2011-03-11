@@ -38,58 +38,75 @@
 
 "use strict";
 
-var Cc = require("chrome").Cc;
-var Ci = require("chrome").Ci;
-var components = require("chrome").components;
+const { Cc, Ci, components: { Constructor: CC } } = require("chrome");
+const { id: ADDON_ID } = require("self");
+const loginManager = Cc["@mozilla.org/login-manager;1"].
+                     getService(Ci.nsILoginManager);
+const LoginInfo = CC("@mozilla.org/login-manager/loginInfo;1", "nsILoginInfo",
+                     "init");
+const ADDON_URI = "jetpack:" + ADDON_ID;
 
-function getLoginInfo(username, pass,
-        domain, realm) {
-    var nsLoginInfo = new components.
-        Constructor("@mozilla.org/login-manager/loginInfo;1",
-            Ci.nsILoginInfo, "init");
-    return new nsLoginInfo(domain,
-        null, realm, username, pass, "", "");
+function query(loginInfo)
+  Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
+
+function Login(options) {
+  let login = Object.create(Login.prototype);
+  Object.keys(options || {}).forEach(function(key) {
+    if (key === 'url')
+      login.hostname = options.url;
+    else if (key === 'realm')
+      login.httpRealm = options.realm;
+    else 
+      login[key] = options[key];
+  });
+
+  return login;
 }
+Login.prototype.toJSON = function toJSON() {
+  return {
+    url: this.hostname || ADDON_URI,
+    realm: this.httpRealm || null,
+    formSubmitURL: this.formSubmitURL || null,
+    username: this.username || null,
+    password: this.password || null,
+    usernameField: this.usernameField || '',
+    passwordField: this.passwordField || '',
+  }
+};
+Login.prototype.toLoginInfo = function toLoginInfo() {
+  let { url, realm, formSubmitURL, username, password, usernameField,
+        passwordField } = this.toJSON();
 
-function getPasswordManager() {
-    return Cc["@mozilla.org/login-manager;1"].
-        getService(Ci.nsILoginManager);
-}
-
-exports.setLogin = function setLogin (username, pass,
-        domain, realm)  {
-    var lInfo = getLoginInfo(username, pass, domain, realm);
-    getPasswordManager().addLogin(lInfo);
+  return new LoginInfo(url, formSubmitURL, realm, username, password,
+                       usernameField, passwordField);
 };
 
-var getPassword = exports.getPassword = function getPassword(username,
-    domain, realm)  {
+function loginToJSON(value) Login(value).toJSON()
 
-    var pwMgr = getPasswordManager();
-    var logins = pwMgr.findLogins({}, domain, "", realm);
-    var ourLogins = Array.filter(logins, function (x) {
-        return (x.username = username);
-    }, this);
-    // What to do when we have more than one password?
-    if (ourLogins.length > 0) {
-        return ourLogins[0].password;
-    } else {
-        return null;
-    }
+/**
+ * Returns array of `nsILoginInfo` objects that are stored in the login manager
+ * and have all the properties with matching values as a given `options` object.
+ * @param {Object} options
+ * @returns {nsILoginInfo[]}
+ */
+exports.search = function search(options)
+  loginManager.getAllLogins().filter(query, Login(options)).map(loginToJSON);
+
+/**
+ * Stores login info created from the given `options` to the applications
+ * built-in login management system.
+ * @param {Object} options.
+ */
+exports.store = function store(options) {
+  loginManager.addLogin(Login(options).toLoginInfo());
 };
 
-exports.removeLogin = function removeLogin(username,
-    domain, realm) {
-    var pass = getPassword(username, domain, realm);
-    var pwMgr = getPasswordManager();
-    var logins = pwMgr.findLogins({}, domain, "", realm);
-
-    // Don't do Array.forEach here ... emulating break there
-    // is an abomination
-    for (var i = 0, ii = logins.length; i < ii; i++) {
-        if (logins[i].username === username) {
-            pwMgr.removeLogin(logins[i]);
-            break;
-        }
-    }
+/**
+ * Removes login info from the applications built-in login management system.
+ * _Please note: When removing a login info the specified properties must
+ * exactly match to the one that is already stored or exception will be thrown._
+ * @param {Object} options.
+ */
+exports.remove = function remove(options) {
+  loginManager.removeLogin(Login(options).toLoginInfo());
 };
