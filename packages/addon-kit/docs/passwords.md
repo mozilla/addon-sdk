@@ -1,8 +1,84 @@
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com]  -->
 
-Add-ons often need to securely store passwords to an external sites, web
-applications, and so on. This module provides API for storing and searching
-credentials in the application built-in password manager.
+The `passwords` module allows consumers to interact with an applications
+built-in password management system, in order to:
+
+1. Retrieve credentials for a website, to access the user's account on the
+   website and retrieve information about the user.
+2. Securely store credentials that are associated with the add-on, to access
+   them in subsequent sessions.
+3. Store credentials that are associated with a particular website so that both
+   add-on and the user (when visiting the site without the add-on) can access
+   them in subsequent sessions.
+
+<api name="search">
+@function
+
+Module exports `search` function that may be used to locate a credential stored
+in the applications built-in login management system.
+
+@param options {object}
+An object containing fields associated with a credential being searched. It may
+contain any combination of the following fields: `username`, `password`,
+`realm`, `url`, `usernameField`, `passwordField`. All those fields are
+described in details under `create` section. Given fields will be used as search
+terms to narrow down a search results.
+
+Options need to contain `onComplete` callback property which will be called
+with an array of matched credentials.
+
+## Searching for add-on associated credential ##
+
+    require("passwords").search({
+      realm: "{{add-on}} Login",
+      onComplete: function onComplete(credentials) {
+        // credentials is an array of all credentials with a given `realm`.
+        credentials.forEach(function(credential) {
+          // Your logic goes here.
+        });
+      }
+    });
+
+## Searching a credentials for a given user name ##
+
+    require("passwords").search({
+      username: "jack",
+      onComplete: function onComplete(credentials) {
+        // credentials is an array of all credentials with a given `username`.
+        credentials.forEach(function(credential) {
+          // Your logic goes here.
+        });
+      }
+    });
+
+## Searching web page associated credentials ##
+
+    require("passwords").search({
+      url: "http://www.example.com",
+      onComplete: function onComplete(credentials) {
+        // credentials is an array of all credentials associated with given url.
+        credentials.forEach(function(credential) {
+          // Your logic goes here.
+        });
+      }
+    });
+
+## Combining search temps together ##
+
+    require("passwords").search({
+      url: "http://www.example.com",
+      username: "jack",
+      realm: "Login",
+      onComplete: function onComplete(credentials) {
+        // credentials is an array of all credentials associated with given url
+        // and given realm for useres with given username. 
+        credentials.forEach(function(credential) {
+          // Your logic goes here.
+        });
+      }
+    });
+
+</api>
 
 <api name="create">
 @function 
@@ -13,7 +89,6 @@ argument containing fields necessary to create a login credential. Properties
 of an `options` depend on type of an authentication but regardless of that,
 there are two optional callback `onComplete` and `onError` properties that may
 be passed to observe success or failure of performed operation.
-
 
 @param options {object}
 An object containing fields associated to a credential being created. Some
@@ -40,6 +115,9 @@ The HTTP Realm for which the login was requested. When an HTTP server sends a
 "protection space." See [RFC 2617](http://tools.ietf.org/html/rfc2617). If the
 result did not include a realm, then option must be omitted. For logins
 obtained from HTML forms, this field must be omitted. 
+For add-on associated credentials this field briefly denotes the credentials
+purpose (It is displayed as a description in the applications built-in login
+management UI).
 
 @prop [usernameField] {string}
 The `name` attribute for the user name input in a form. Non-form logins
@@ -50,18 +128,29 @@ The `name` attribute for the password input in a form. Non-form logins
 must omit this field.
 
 @prop  [onComplete] {function}
-The callback function that is called once `login` is stored in the manager.
+The callback function that is called once credential is stored.
 
 @prop [onError] {function}
-The callback function that is called if storing a login failed. Function is
+The callback function that is called if storing a credential failed. Function is
 passed an `error` containing a reason of a failure.
 
-## Creating a login for a web page ##
+## Creating an add-on associated credential ##
+
+Add-ons also may store credentials that are not associated with any web sites.
+In such case `realm` string briefly denotes the login's purpose.
+
+    require("passwords").create({
+      realm: "User Registration",
+      username: "joe",
+      password: "SeCrEt123",
+    });
+
+## Creating a web page associated credential ##
 
 Most sites use HTML form login based authentication. Following example stores
 credentials for such a web site:
 
-    require("login-manager").create({
+    require("passwords").create({
       url: "http://www.example.com",
       formSubmitURL: "http://login.example.com",
       username: "joe",
@@ -85,7 +174,7 @@ following HTML:
 Some web sites use HTTP/FTP authentication mechanism and associated credentials
 contain different fields:
 
-    require("login-manager").create({
+    require("passwords").create({
       url: "http://www.example.com",
       realm: "ExampleCo Login",
       username: "joe",
@@ -102,71 +191,37 @@ sends a reply such as:
 If website does not sends `realm` string with `WWW-Authenticate` header then
 `realm` property must be omitted.
 
-## Creating a local add-on login ##
-
-Add-ons also may store credentials that are not associated with any web sites.
-In such case `realm` string briefly denotes the login's purpose.
-
-    require("login-manager").create({
-      realm: "User Registration",
-      username: "joe",
-      password: "SeCrEt123",
-    });
-</api>
-
-<api name="search">
-@function
-
-Module exports `search` function that may be used to locate a credential stored
-in the applications built-in login manager.
-
-@param options {object}
-An object containing fields associated to a credential being searched. It may
-contain any of the fields described by `create`. Those properties will be used
-to narrow down a search results.
-
-The `onComplete` callback is called with an array of matched logins.
-
-    require("login-manager").search({
-      url: "http://www.example.com",
-      username: "joe",
-      onComplete: function onComplete(logins) {
-        logins.forEach(function(login) {
-          // Do something with a `login.username` & `login.password`
-        });
-      })
-    });
 </api>
 
 <api name="remove">
 @function
 @param options {object}
-When removing a password the specified `options` object must exactly match what
-was stored (including a `password`). For this reason it is recommended to chain
-this function with `search` to make sure that only necessary matches are removed.
+When removing a credentials the specified `options` object must exactly match
+what was stored (including a `password`). For this reason it is recommended to
+chain this function with `search` to make sure that only necessary matches are
+removed.
 
-The `onError` callback is called on attempt to remove a non-existing login.
+## Removing a credential ##
 
-    require("login-manager").search({
+    require("passwords").search({
       url: "http://www.example.com",
       username: "joe",
-      onComplete: function onComplete(logins) {
-        logins.forEach(require("login-manager").remove);
+      onComplete: function onComplete(credentials) {
+        credentials.forEach(require("passwords").remove);
       })
     });
-</api>
 
-## Changing a login ##
+## Changing a credential ##
 
 There is no direct function to change an existing login, still doing it is
 rather simple. It's just matter of calling `create` after `remove` succeeds:
 
-    require("login-manager").remove({
+    require("passwords").remove({
       realm: "User Registration",
       username: "joe",
       password: "SeCrEt123"
       onComplete: function onComplete() {
-        require("login-manager").create({
+        require("passwords").create({
           realm: "User Registration",
           username: "joe",
           password: "{{new password}}"
@@ -174,3 +229,4 @@ rather simple. It's just matter of calling `create` after `remove` succeeds:
       }
     });
 
+</api>
