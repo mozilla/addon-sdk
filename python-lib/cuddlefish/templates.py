@@ -56,6 +56,23 @@ exports.test_open_tab = function(test) {
 };
 '''
 
+TEST_XUL_MODULE='''\
+const {Cu} = require("chrome");
+
+exports.test_modules = function(test) {
+  // test that chrome.manifest was processed by checking that the resource://
+  // URL registered in the manifest works.
+  var obj = {};
+  Cu.import("resource://%(name)s-res/module.jsm", obj);
+  test.assertEqual(obj.exported_test, "foo");
+};
+'''
+
+XUL_MODULE='''\
+EXPORTED_SYMBOLS = ["exported_test"]
+var exported_test = "foo";
+'''
+
 #Template used by main.md
 MAIN_JS_DOC = '''\
 The main module is a program that creates a widget.  When a user clicks on
@@ -101,9 +118,15 @@ def copy_from_template(path_in_template):
 
 def write_xul_chrome_manifest(target_cfg, env_root):
   return """\
+# This registers the 'harness' component, which is the entry point
+# for the Addon SDK-based part of the extension.
 component {%(harness_guid)s} components/harness.js
 contract @mozilla.org/harness-service;1?id=%(id)s {%(harness_guid)s}
 category profile-after-change %(name)s-harness @mozilla.org/harness-service;1?id=%(id)s
+
+# This is used in tests/test-module.js to test that chrome.manifest
+# was loaded for this extension.
+resource %(name)s-res modules/
 """ % {"harness_guid": target_cfg["harnessClassID"],
        "id": target_cfg["id"],
        "name": target_cfg["name"]}
@@ -140,11 +163,13 @@ addon_templates = {
       "data/": EMPTY_FOLDER,
       "docs/main.md": MAIN_JS_DOC,
       "tests/test-main.js": TEST_MAIN_JS,
+      "tests/test-module.js": TEST_XUL_MODULE,
       "README.md": README_DOC,
       "extension/chrome.manifest": write_xul_chrome_manifest,
       "extension/install.rdf": write_xul_install_rdf,
       "extension/components/harness.js":
-        copy_from_template("components/harness.js")
+        copy_from_template("components/harness.js"),
+      "extension/modules/module.jsm": XUL_MODULE
     }
   }
 }
