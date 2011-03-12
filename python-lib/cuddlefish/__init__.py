@@ -462,7 +462,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
-def findTargetCfg(pkgdir, require_id=False,
+def findTargetCfg(pkgdir, require_id=False, err=sys.stderr,
                   keydir=None):
     """Returns the package configuration based (see packaging.
        get_config_in_dir) on <pkgdir>/package.json,
@@ -476,16 +476,17 @@ def findTargetCfg(pkgdir, require_id=False,
         config_was_ok, modified = preflight_config(
             target_cfg,
             target_cfg_json,
+            stderr=err,
             keydir=keydir,
             err_if_privkey_not_found=False
             )
         if not config_was_ok:
             if modified:
-                target_cfg = findTargetCfg(pkgdir)
+                target_cfg = findTargetCfg(pkgdir, err=err)
             else:
-                print >>sys.stderr, ("package.json needs modification:"
-                                     " please update it and then re-run"
-                                     " cfx")
+                print >>err, ("package.json needs modification:"
+                              " please update it and then re-run"
+                              " cfx")
                 sys.exit(1)
         assert "id" in target_cfg
     return target_cfg
