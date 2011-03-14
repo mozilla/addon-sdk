@@ -98,4 +98,34 @@ exports["test web page associated credentials"] = function(assert) {
   assert.ok(!search(options).length, "remove worked");
 };
 
+exports["test site authentication credentials"] = function(assert) {
+  let options = {
+    url: "http://test.authentication.com/",
+    username: "u",
+    password: "p",
+    realm: "r"
+  };
+
+  store(options);
+  assert.ok(search().length, "credential was stored");
+  assert.ok(search(options).length, "stored credential found");
+  assert.ok(search({ username: options.username }).length, "found by username");
+  assert.ok(search({ password: options.password }).length, "found by password");
+  assert.ok(search({ realm: options.realm }).length, "found by realm");
+  assert.ok(search({ url: options.url }).length, "found by url");
+
+  let credential = search(options)[0];
+  assert.equal(credential.url, options.url, "url matches");
+  assert.equal(credential.username, options.username, "username matches");
+  assert.equal(credential.password, options.password, "password matches");
+  assert.equal(credential.realm, options.realm, "realm matches");
+  assert.equal(credential.formSubmitURL, null,
+               "`formSubmitURL` is `null` for site authentication credentials");
+  assert.equal(credential.usernameField, "", "usernameField is empty");
+  assert.equal(credential.passwordField, "", "passwordField is empty");
+
+  remove(search(options)[0]);
+  assert.ok(!search(options).length, "remove worked");
+};
+
 require("test").run(exports);
