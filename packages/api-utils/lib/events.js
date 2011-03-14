@@ -38,7 +38,7 @@
 
 "use strict";
 
-const { Trait } = require('traits');
+const { Trait } = require('light-traits');
 
 const ERROR_TYPE = 'error',
       UNCAUGHT_ERROR = 'An error event was dispatched for which there was'
@@ -52,7 +52,7 @@ const ERROR_TYPE = 'error',
  * @see http://nodejs.org/api.html#EventEmitter
  * @see http://livedocs.adobe.com/flash/9.0/ActionScriptLangRefV3/flash/events/EventDispatcher.html
  */
-const EventEmitter = Trait.compose({
+const eventEmitter =  {
   /**
    * Registers an event `listener` that is called every time events of
    * specified `type` are emitted.
@@ -173,6 +173,6 @@ const EventEmitter = Trait.compose({
     this._listeners(type).splice(0);
     return this;
   }
-});
-exports.EventEmitter = EventEmitter;
-
+};
+exports.EventEmitter = require("traits").Trait.compose(eventEmitter);
+exports.EventEmitterTrait = Trait(eventEmitter);

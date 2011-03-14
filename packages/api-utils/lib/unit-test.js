@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:st=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -19,6 +20,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -261,6 +263,7 @@ TestRunner.prototype = {
     this.isDone = false;
     this.onDone = options.onDone;
     this.waitTimeout = null;
+    this.testFailureLogged = false;
 
     try {
       this.test.testFunction(this);
