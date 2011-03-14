@@ -137,8 +137,8 @@ const Panel = Symbiont.resolve({
     this._height =  valid({ $: value }, { $: validNumber }).$ || this._height,
   _height: 240,
 
-  /* Public API: Panel.isOpen */
-  get isOpen() !!this._xulPanel && this._xulPanel.state == "open",
+  /* Public API: Panel.isShowing */
+  get isShowing() !!this._xulPanel && this._xulPanel.state == "open",
 
   /* Public API: Panel.show */
   show: function show(anchor) {
