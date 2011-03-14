@@ -570,6 +570,12 @@ BrowserWindow.prototype = {
         this.container.removeChild(entry.node);
         // remove entry
         this._items.splice(this._items.indexOf(entry), 1);
+        // cleanup symbiont
+        entry.symbiont.destroy();
+        // cleanup entry itself
+        entry.eventListeners = null;
+        entry.widget = null;
+        entry.symbiont = null;
       }
     }, this);
 
