@@ -30,6 +30,7 @@ using a URL with the `contentURL` property.
 For example, this widget contains an image, so it looks like a simple icon:
 
     require("widget").Widget({
+      id: "mozilla-icon", 
       label: "My Mozilla Widget",
       contentURL: "http://www.mozilla.org/favicon.ico"
     });
@@ -39,6 +40,7 @@ Upon creation, the widget is automatically added to the add-on bar.
 This widget contains an entire web page:
 
     require("widget").Widget({
+      id: "hello-display",
       label: "My Hello Widget",
       content: "Hello!",
       width: 50
