@@ -35,21 +35,22 @@ the event listener is not called during the current emit.
     });
 
 @param type {String}
-  The type of event.
+  The type of the event.
 @param listener {Function}
   The listener function that processes the event.
 </api>
 
 <api name="once">
 @method
-Registers an event `listener` that will be called only once, next time event of
-specified `type` is emitted.
+Registers an event `listener` that will only be called once, the next time
+an event of the specified `type` is emitted.
 
-If the event listener is being registered while an event is being processed,
-the event listener is not called during the current emit.
+If the event listener is registered while an event of the specified `type`
+is being emitted, the event listener will not be called during the current
+emit.
 
 @param type {String}
-  They type of event.
+  The type of the event.
 @param listener {Function}
   The listener function that processes the event.
 </api>
@@ -66,7 +67,7 @@ still triggered by the current emit. After it is removed, the event listener
 is never invoked again (unless registered again for future processing).
 
 @param type {String}
-  The type of event.
+  The type of the event.
 @param listener {Function}
   The listener function that processes the event.
 </api>

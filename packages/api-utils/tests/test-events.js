@@ -166,9 +166,10 @@ exports['test:once'] = function(test) {
   let called = false;
 
   e.once('foo', function(value) {
-    test.assert(!called, "listenere called only once");
+    test.assert(!called, "listener called only once");
     test.assertEqual(value, "bar", "correct argument was passed");
   });
-  e.emit('foo', 'bar')
-  e.emit('foo', 'baz')
+
+  e.emit('foo', 'bar');
+  e.emit('foo', 'baz');
 };

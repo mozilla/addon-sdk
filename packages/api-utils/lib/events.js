@@ -73,13 +73,14 @@ const EventEmitter = Trait.compose({
       listeners.push(listener);
     return this._public;
   },
+
   /**
-   * Registers an event `listener` is called once when event of a specified
-   * `type` is emitted.
+   * Registers an event `listener` that is called once the next time an event
+   * of the specified `type` is emitted.
    * @param {String} type
    *    The type of the event.
    * @param {Function} listener
-   *
+   *    The listener function that processes the event.
    */
   once: function once(type, listener) {
     this.on(type, function selfRemovableListener() {
@@ -87,6 +88,7 @@ const EventEmitter = Trait.compose({
       listener.apply(this, arguments);
     });
   },
+
   /**
    * Unregister `listener` for the specified event type.
    * @param {String} type
@@ -103,10 +105,12 @@ const EventEmitter = Trait.compose({
       listeners.splice(index, 1);
     return this._public;
   },
+
   /**
    * Hash of listeners on this EventEmitter.
    */
   _events: null,
+
   /**
    * Returns an array of listeners for the specified event `type`. This array
    * can be manipulated, e.g. to remove listeners.
@@ -117,6 +121,7 @@ const EventEmitter = Trait.compose({
     let events = this._events || (this._events = {});
     return events[type] || (events[type] = []);
   },
+
   /**
    * Execute each of the listeners in order with the supplied arguments.
    * Returns `true` if listener for this event was called, `false` if there are
