@@ -105,9 +105,11 @@ exports.testConstructor = function(test) {
   w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
   test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is created again, at the same location");
   // Cleanup this testcase
+  AddonsMgrListener.onUninstalling();
   w1.destroy();
   w2.destroy();
   w3.destroy();
+  AddonsMgrListener.onUninstalled();
   
   // Test concurrent widget module instances on addon-bar hiding
   let loader = test.makeSandboxedLoader();
@@ -115,7 +117,10 @@ exports.testConstructor = function(test) {
   test.assert(container().collapsed, "UI is hidden when no widgets");
   AddonsMgrListener.onInstalling();
   let w1 = widgets.Widget({id: "foo", label: "foo", content: "bar"});
-  test.assert(container().collapsed, "UI is still hidden when we just added the widget");
+  // Ideally we would let AddonsMgrListener display the addon bar
+  // But, for now, addon bar is immediatly displayed by sdk code
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=627484
+  test.assert(!container().collapsed, "UI is already visible when we just added the widget");
   AddonsMgrListener.onInstalled();
   test.assert(!container().collapsed, "UI become visible when we notify AddonsMgrListener about end of addon installation");
   let w2 = anotherWidgetsInstance.Widget({id: "bar", label: "bar", content: "foo"});

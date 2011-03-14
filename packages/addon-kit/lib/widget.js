@@ -450,8 +450,15 @@ BrowserWindow.prototype = {
     // if widget isn't in any toolbar, add it to the addon-bar
     // TODO: we may want some "first-launch" module to do this only on very 
     // first execution
-    if (!container)
+    if (!container) {
+      // TODO: find a way to make the following code work when we use "cfx run":
+      // http://mxr.mozilla.org/mozilla-central/source/browser/base/content/browser.js#8586
+      // until then, force display of addon bar directly from sdk code
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=627484
+      if (this.container.collapsed)
+        this.window.toggleAddonBar();
       container = this.container;
+    }
     
     // Now retrieve a reference to the next toolbar item
     // by reading currentset attribute on the toolbar
