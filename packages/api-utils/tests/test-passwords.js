@@ -5,19 +5,19 @@ const { store, search, remove } = require("passwords/utils");
 exports["test store requires `password` field"] = function(assert) {
   assert.throws(function() {
     store({ username: "foo", realm: "bar" });
-  }, '`passowrd` is required');
+  }, "`password` is required");
 };
 
 exports["test store requires `username` field"] = function(assert) {
   assert.throws(function() {
-    store({ passowrd: "foo", realm: "bar" });
-  }, '`passowrd` is required');
+    store({ password: "foo", realm: "bar" });
+  }, "`username` is required");
 };
 
 exports["test store requires `realm` field"] = function(assert) {
   assert.throws(function() {
-    store({ username: "foo", passowrd: "bar" });
-  }, '`passowrd` is required');
+    store({ username: "foo", password: "bar" });
+  }, "`password` is required");
 };
 
 exports["test can't store same login twice"] = function(assert) {
