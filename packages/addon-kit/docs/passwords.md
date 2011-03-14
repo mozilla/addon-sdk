@@ -21,7 +21,7 @@ in the applications built-in login management system.
 An object containing fields associated with a credential being searched. It may
 contain any combination of the following fields: `username`, `password`,
 `realm`, `url`, `usernameField`, `passwordField`. All those fields are
-described in details under `create` section. Given fields will be used as search
+described in details under `store` section. Given fields will be used as search
 terms to narrow down a search results.
 
 Options need to contain `onComplete` callback property which will be called
@@ -80,10 +80,10 @@ with an array of matched credentials.
 
 </api>
 
-<api name="create">
+<api name="store">
 @function 
 
-Module exports `create` method allowing users to store credentials in the
+Module exports `store` method allowing users to store credentials in the
 application built-in password manager. Function takes `options` object as an
 argument containing fields necessary to create a login credential. Properties
 of an `options` depend on type of an authentication but regardless of that,
@@ -91,9 +91,9 @@ there are two optional callback `onComplete` and `onError` properties that may
 be passed to observe success or failure of performed operation.
 
 @param options {object}
-An object containing fields associated to a credential being created. Some
-fields are necessary for one type of authentication and not for second. Please
-see examples to find more details.
+An object containing fields associated to a credential being created and stored.
+Some fields are necessary for one type of authentication and not for second.
+Please see examples to find more details.
 
 @prop username {string}
 The user name for the login.
@@ -134,23 +134,23 @@ The callback function that is called once credential is stored.
 The callback function that is called if storing a credential failed. Function is
 passed an `error` containing a reason of a failure.
 
-## Creating an add-on associated credential ##
+## Storing an add-on associated credential ##
 
 Add-ons also may store credentials that are not associated with any web sites.
 In such case `realm` string briefly denotes the login's purpose.
 
-    require("passwords").create({
+    require("passwords").store({
       realm: "User Registration",
       username: "joe",
       password: "SeCrEt123",
     });
 
-## Creating a web page associated credential ##
+## Storing a web page associated credential ##
 
 Most sites use HTML form login based authentication. Following example stores
 credentials for such a web site:
 
-    require("passwords").create({
+    require("passwords").store({
       url: "http://www.example.com",
       formSubmitURL: "http://login.example.com",
       username: "joe",
@@ -169,12 +169,12 @@ following HTML:
           <label>Password:</label> <input type="password" name="pword">    
     </form>
 
-## Creating a site authentication login ##
+## Storing a site authentication login ##
 
 Some web sites use HTTP/FTP authentication mechanism and associated credentials
 contain different fields:
 
-    require("passwords").create({
+    require("passwords").store({
       url: "http://www.example.com",
       realm: "ExampleCo Login",
       username: "joe",
@@ -214,14 +214,14 @@ removed.
 ## Changing a credential ##
 
 There is no direct function to change an existing login, still doing it is
-rather simple. It's just matter of calling `create` after `remove` succeeds:
+rather simple. It's just matter of calling `store` after `remove` succeeds:
 
     require("passwords").remove({
       realm: "User Registration",
       username: "joe",
       password: "SeCrEt123"
       onComplete: function onComplete() {
-        require("passwords").create({
+        require("passwords").store({
           realm: "User Registration",
           username: "joe",
           password: "{{new password}}"
