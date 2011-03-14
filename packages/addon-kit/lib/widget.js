@@ -280,9 +280,8 @@ let browserManager = {
     }
   },
 
-  // Registers an item with the manager. It's added to the add-on bar of
-  // all currently registered windows, and when new windows are registered it
-  // will be added to them, too.
+  // Registers an item with the manager. It's added to all currently registered 
+  // windows, and when new windows are registered it will be added to them, too.
   addItem: function browserManager_addItem(item) {
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
@@ -296,8 +295,8 @@ let browserManager = {
       this.windows.forEach(function (w) w.updateItem(item, property, value));
   },
 
-  // Unregisters an item from the manager.  It's removed from the addon-bar
-  // of all windows that are currently registered.
+  // Unregisters an item from the manager.  It's removed from all windows that 
+  // are currently registered.
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
     if (idx > -1) {
@@ -438,12 +437,12 @@ BrowserWindow.prototype = {
     let palette = toolbox.palette;
     palette.appendChild(node);
 
-    // Search for widget toolbar by reading currentset's toolbars attribute
+    // Search for widget toolbar by reading toolbar's currentset attribute
     let container = null;
     let toolbars = this.doc.getElementsByTagName("toolbar");
     for(let i = 0, l = toolbars.length; i < l; i++) {
       let toolbar = toolbars[i];
-      if (toolbar.getAttribute("currentset").indexOf(id)==-1)
+      if (toolbar.getAttribute("currentset").indexOf(id) == -1)
         continue;
       container = toolbar;
     }
@@ -461,7 +460,7 @@ BrowserWindow.prototype = {
     let ids = (currentSet == "__empty") ? [] : currentSet.split(",");
     let idx = ids.indexOf(id);
     if (idx != -1) {
-      for(let i=idx; i<ids.length; i++) {
+      for(let i = idx; i < ids.length; i++) {
         nextNode = this.doc.getElementById(ids[i]);
         if (nextNode)
           break;
