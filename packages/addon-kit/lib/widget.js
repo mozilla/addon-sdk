@@ -111,8 +111,10 @@ const Widget = Trait.compose(Loader, Trait.compose({
     if ("id" in options)
       this._id = options.id;
     else
-      console.warn('You should set an "id" attribute to your widget ' + 
-        'in order to be able to remember its position.');
+      console.warn('You have to define an unique "id" attribute to your widget ' 
+        + 'in order to be able to remember its position.');
+    
+    browserManager.validate(this._public);
     
     if ("width" in options)
       this.width = options.width;
@@ -262,11 +264,10 @@ let browserManager = {
       }
     }
   },
-
-  // Registers an item with the manager. It's added to the add-on bar of
-  // all currently registered windows, and when new windows are registered it
-  // will be added to them, too.
-  addItem: function browserManager_addItem(item) {
+  
+  // Used to validate widget by browserManager before adding it,
+  // in order to check input very early in widget constructor
+  validate : function (item) {
     let idx = this.items.indexOf(item);
     if (idx > -1)
       throw new Error("The widget " + item + " has already been added.");
@@ -277,6 +278,12 @@ let browserManager = {
     } else {
       item.id = this.items.length;
     }
+  },
+
+  // Registers an item with the manager. It's added to the add-on bar of
+  // all currently registered windows, and when new windows are registered it
+  // will be added to them, too.
+  addItem: function browserManager_addItem(item) {
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
   },
@@ -434,7 +441,7 @@ BrowserWindow.prototype = {
     // Search for widget toolbar by reading currentset's toolbars attribute
     let container = null;
     let toolbars = this.doc.getElementsByTagName("toolbar");
-    for(let i=0; i<toolbars.length; i++) {
+    for(let i = 0, l = toolbars.length; i < l; i++) {
       let toolbar = toolbars[i];
       if (toolbar.getAttribute("currentset").indexOf(id)==-1)
         continue;
