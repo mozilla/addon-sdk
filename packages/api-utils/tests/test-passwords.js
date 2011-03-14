@@ -20,6 +20,15 @@ exports["test store requires `realm` field"] = function(assert) {
   }, '`passowrd` is required');
 };
 
+exports["test can't store same login twice"] = function(assert) {
+  let options = { username: "user", password: "pass", realm: "realm" };
+  store(options);
+  assert.throws(function() {
+    store(options);
+  }, "can't store same pass twice");
+  remove(options);
+};
+
 exports["test remove throws if no login found"] = function(assert) {
   assert.throws(function() {
     remove({ username: "foo", password: "bar", realm: "baz" });
