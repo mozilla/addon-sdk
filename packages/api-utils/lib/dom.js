@@ -38,10 +38,11 @@
 "use strict";
 
 function singularify(text) {
-  return text[text.length - 1] === "s" ? text.substr(0, text.length - 1) : text
+  return text[text.length - 1] === "s" ? text.substr(0, text.length - 1) : text;
 }
+
 function getInitializerName(category) {
-  return "init" + singularify(category)
+  return "init" + singularify(category);
 }
 
 const events = {
@@ -71,6 +72,7 @@ const events = {
     capture = capture || false;
     element.addEventListener(type, listener, capture);
   },
+
   /**
    * Registers an event `listener` on a given `element`, that will be called
    * only once, next time event of specified `type` is dispatched on the
@@ -99,6 +101,7 @@ const events = {
       listener.apply(this, arguments);
     }, capture);
   },
+
   /**
    * Unregisters an event `listener` on a given `element` for the events of the
    * specified `type`.
@@ -124,6 +127,7 @@ const events = {
   removeListener: function removeListener(element, type, listener, capture) {
     element.removeEventListener(type, listener, capture);
   },
+
   /**
    * Emits event of the specified `type` and `category` on the given `element`.
    * Specified `settings` are used to initialize event before dispatching it.

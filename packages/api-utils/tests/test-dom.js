@@ -1,16 +1,17 @@
-'use strict';
+"use strict";
 
 const { events } = require("dom");
 const { activeBrowserWindow: { document } } = require("window-utils");
-const window = document.window
+const window = document.window;
 
-exports['test on / emit'] = function (assert, done) {
+exports["test on / emit"] = function (assert, done) {
   let element = document.createElement("div");
   events.on(element, "click", function listener(event) {
     assert.equal(event.target, element, "event has correct target");
     events.removeListener(element, "click", listener);
     done();
   });
+
   events.emit(element, "click", {
     category: "MouseEvents",
     settings: [
@@ -19,7 +20,7 @@ exports['test on / emit'] = function (assert, done) {
   });
 };
 
-exports['test remove'] = function (assert, done) {
+exports["test remove"] = function (assert, done) {
   let element = document.createElement("span");
   let l1 = 0;
   let l2 = 0;
@@ -49,7 +50,7 @@ exports['test remove'] = function (assert, done) {
   events.emit(element, "click", options);
 };
 
-exports['test once'] = function (assert, done) {
+exports["test once"] = function (assert, done) {
   let element = document.createElement("h1");
   let l1 = 0;
   let l2 = 0;
@@ -65,6 +66,7 @@ exports['test once'] = function (assert, done) {
     assert.equal(event.target, element, "event target is a correct element");
     l1 ++;
   });
+
   events.on(element, "click", function listener(event) {
     l2 ++;
     if (l2 > 3) {
@@ -79,4 +81,4 @@ exports['test once'] = function (assert, done) {
   events.emit(element, "click", options);
 }
 
-require('test').run(exports)
+require("test").run(exports);
