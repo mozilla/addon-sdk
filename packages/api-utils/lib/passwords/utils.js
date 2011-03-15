@@ -38,11 +38,10 @@
 
 "use strict";
 
-const { id: ADDON_ID } = require("self");
 const { Cc, Ci, components: { CConstructor } } = require("chrome");
+const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
-const ADDON_URI = "jetpack:" + ADDON_ID;
 const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
                                "nsILoginInfo", "init");
 

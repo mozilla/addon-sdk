@@ -46,8 +46,8 @@ exports["test addon associated credentials"] = function(assert) {
   assert.ok(search({ realm: options.realm }).length, "found by realm");
 
   let credential = search(options)[0];
-  assert.equal(credential.url.indexOf("jetpack:"), 0,
-               "`jetpack:` uri is used for add-on associated credentials");
+  assert.equal(credential.url.indexOf("addon:"), 0,
+               "`addon:` uri is used for add-on associated credentials");
   assert.equal(credential.username, options.username, "username matches");
   assert.equal(credential.password, options.password, "password matches");
   assert.equal(credential.realm, options.realm, "realm matches");

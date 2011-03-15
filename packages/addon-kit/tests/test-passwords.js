@@ -109,8 +109,8 @@ exports["test addon associated credentials"] = function(assert, done) {
         password: "bar",
         realm: "baz",
         onComplete: function onComplete([credential]) {
-          assert.equal(credential.url.indexOf("jetpack:"), 0,
-                       "`jetpack:` uri is used for add-on credentials");
+          assert.equal(credential.url.indexOf("addon:"), 0,
+                       "`addon:` uri is used for add-on credentials");
           assert.equal(credential.username, "foo",
                        "username matches");
           assert.equal(credential.password, "bar",
