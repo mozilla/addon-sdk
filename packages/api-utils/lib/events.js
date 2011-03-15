@@ -38,16 +38,15 @@
 
 "use strict";
 
-const { Trait } = require('light-traits');
-
 const ERROR_TYPE = 'error',
       UNCAUGHT_ERROR = 'An error event was dispatched for which there was'
         + ' no listener.',
       BAD_LISTENER = 'The event listener must be a function.';
 /**
- * EventEmitter is a trait for objects that emit events. It implements an
- * interface like `EventTarget` from DOM Level 2, which is implemented by Node
- * objects in implementations that support the DOM Event Model.
+ * This object is used to create an `EventEmitter` that, useful for composing
+ * objects that emit events. It implements an interface like `EventTarget` from
+ * DOM Level 2, which is implemented by Node objects in implementations that
+ * support the DOM Event Model.
  * @see http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventTarget
  * @see http://nodejs.org/api.html#EventEmitter
  * @see http://livedocs.adobe.com/flash/9.0/ActionScriptLangRefV3/flash/events/EventDispatcher.html
@@ -175,4 +174,4 @@ const eventEmitter =  {
   }
 };
 exports.EventEmitter = require("traits").Trait.compose(eventEmitter);
-exports.EventEmitterTrait = Trait(eventEmitter);
+exports.EventEmitterTrait = require('light-traits').Trait(eventEmitter);
