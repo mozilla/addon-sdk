@@ -84,7 +84,7 @@ with an array of matched credentials.
 @function 
 
 Module exports `store` method allowing users to store credentials in the
-application built-in password manager. Function takes `options` object as an
+application built-in login manager. Function takes an `options` object as an
 argument containing fields necessary to create a login credential. Properties
 of an `options` depend on type of authentication, but regardless of that,
 there are two optional callback `onComplete` and `onError` properties that may
