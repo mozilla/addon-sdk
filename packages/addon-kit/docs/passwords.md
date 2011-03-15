@@ -108,6 +108,9 @@ The `url` to which the login applies, formatted as a URL (for example,
 @prop [formSubmitURL] {string}
 The URL a form-based login was submitted to. For logins obtained from HTML
 forms, this field is the `action` attribute from the form element, with the
+with the path removedwith the path removed (for example, "http://www.site.com").
+Forms with no `action` attribute default to submitting to their origin URL, so
+that should be stored here.
 
 @prop [realm] {string}
 The HTTP Realm for which the login was requested. When an HTTP server sends a
