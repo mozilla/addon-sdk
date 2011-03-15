@@ -45,7 +45,7 @@ const loginManager = Cc["@mozilla.org/login-manager;1"].
 const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
                                "nsILoginInfo", "init");
 
-function query(loginInfo)
+function filterMatchingLogins(loginInfo)
   Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
 
 function Login(options) {
@@ -88,8 +88,11 @@ function loginToJSON(value) Login(value).toJSON()
  * @param {Object} options
  * @returns {nsILoginInfo[]}
  */
-exports.search = function search(options)
-  loginManager.getAllLogins().filter(query, Login(options)).map(loginToJSON);
+exports.search = function search(options) {
+  return loginManager.getAllLogins()
+                     .filter(filterMatchingLogins, Login(options))
+                     .map(loginToJSON);
+};
 
 /**
  * Stores login info created from the given `options` to the applications
