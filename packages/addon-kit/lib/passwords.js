@@ -49,7 +49,7 @@ const defer = require("utils/function").Enqueued;
  * @returns {Function[]}
  *    Array with two elements `onComplete` and `onError` functions.
  */
-function getCallbaks(options) {
+function getCallbacks(options) {
   let value = [
     'onComplete' in options ? defer(options.onComplete) : null,
     'onError' in options ? defer(options.onError) : defer(console.exception)
@@ -68,7 +68,7 @@ function getCallbaks(options) {
  */
 function createWrapperMethod(wrapped) {
   return function (options) {
-    let [ onComplete, onError ] = getCallbaks(options);
+    let [ onComplete, onError ] = getCallbacks(options);
     try {
       onComplete(wrapped(options));
     } catch (exception) {
