@@ -1,6 +1,6 @@
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com]  -->
 
-The `passwords` module allows consumers to interact with an applications
+The `passwords` module allows consumers to interact with an application's
 built-in password management system, in order to:
 
 1. Retrieve credentials for a website, to access the user's account on the
@@ -15,7 +15,7 @@ built-in password management system, in order to:
 @function
 
 Module exports `search` function that may be used to locate a credential stored
-in the applications built-in login management system.
+in the application's built-in login management system.
 
 @param options {object}
 An object containing fields associated with a credential being searched. It may
@@ -116,7 +116,7 @@ The HTTP Realm for which the login was requested. When an HTTP server sends a
 result did not include a realm, then option must be omitted. For logins
 obtained from HTML forms, this field must be omitted. 
 For add-on associated credentials this field briefly denotes the credentials
-purpose (It is displayed as a description in the applications built-in login
+purpose (It is displayed as a description in the application's built-in login
 management UI).
 
 @prop [usernameField] {string}
