@@ -38,7 +38,7 @@
 
 "use strict";
 
-const { Cc, Ci, components: { CConstructor } } = require("chrome");
+const { Cc, Ci, components: { Constructor: CConstructor } } = require("chrome");
 const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
