@@ -38,16 +38,15 @@
 
 const { EventEmitterTrait: EventEmitter } = require("events");
 const { WindowTracker } = require("window-utils");
-const { Cortex } = require("cortex");
 
-// Creating an event emitter object that we will use to collect event listeners
-// & and to call them when events occur.
-const observer = EventEmitter.create();
-// Connecting `WindowTracker` to an event emitter we created above so that,
-// events will get emitted for each window tracked / untracked.
-const tracker = new WindowTracker({
-  onTrack: observer._emit.bind(observer, "open"),
-  onUntrack: observer._emit.bind(observer, "close")
-});
-
-module.exports = observer;
+// Creating an event emitter object that we will use to collect an event
+// listeners & for emitting events when they occur. Also we use `WindowTracker`
+// is used to observe actual window events.
+module.exports = new WindowTracker(EventEmitter.create({
+  onTrack: function onTrack(chromeWindow) {
+    this._emit("open", chromeWindow);
+  },
+  onUntrack: function onUntrack(chromeWindow) {
+    this._emit("close", chromeWindow);
+  }
+})).delegate;
