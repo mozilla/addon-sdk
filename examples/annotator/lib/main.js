@@ -96,6 +96,7 @@ The selector is switched on/off with a left-click, and the list of annotations
 is displayed on a right-click.
 */
   var widget = widgets.Widget({
+    id: 'toggle-switch',
     label: 'Annotator',
     contentURL: data.url('widget/pencil-off.png'),
     contentScriptWhen: 'ready',

@@ -3,6 +3,7 @@ const data = require("self").data;
 
 exports.main = function(options, callbacks) {
   widgets.Widget({
+    id: "show-reddit-btn",
     label: "Reddit",
     contentURL: "http://www.reddit.com/static/favicon.ico",
     panel: require("panel").Panel({

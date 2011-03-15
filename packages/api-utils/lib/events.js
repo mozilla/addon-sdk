@@ -38,16 +38,15 @@
 
 "use strict";
 
-const { Trait } = require('light-traits');
-
 const ERROR_TYPE = 'error',
       UNCAUGHT_ERROR = 'An error event was dispatched for which there was'
         + ' no listener.',
       BAD_LISTENER = 'The event listener must be a function.';
 /**
- * EventEmitter is a trait for objects that emit events. It implements an
- * interface like `EventTarget` from DOM Level 2, which is implemented by Node
- * objects in implementations that support the DOM Event Model.
+ * This object is used to create an `EventEmitter` that, useful for composing
+ * objects that emit events. It implements an interface like `EventTarget` from
+ * DOM Level 2, which is implemented by Node objects in implementations that
+ * support the DOM Event Model.
  * @see http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventTarget
  * @see http://nodejs.org/api.html#EventEmitter
  * @see http://livedocs.adobe.com/flash/9.0/ActionScriptLangRefV3/flash/events/EventDispatcher.html
@@ -73,6 +72,22 @@ const eventEmitter =  {
       listeners.push(listener);
     return this._public;
   },
+
+  /**
+   * Registers an event `listener` that is called once the next time an event
+   * of the specified `type` is emitted.
+   * @param {String} type
+   *    The type of the event.
+   * @param {Function} listener
+   *    The listener function that processes the event.
+   */
+  once: function once(type, listener) {
+    this.on(type, function selfRemovableListener() {
+      this.removeListener(type, selfRemovableListener);
+      listener.apply(this, arguments);
+    });
+  },
+
   /**
    * Unregister `listener` for the specified event type.
    * @param {String} type
@@ -89,10 +104,12 @@ const eventEmitter =  {
       listeners.splice(index, 1);
     return this._public;
   },
+
   /**
    * Hash of listeners on this EventEmitter.
    */
   _events: null,
+
   /**
    * Returns an array of listeners for the specified event `type`. This array
    * can be manipulated, e.g. to remove listeners.
@@ -103,6 +120,7 @@ const eventEmitter =  {
     let events = this._events || (this._events = {});
     return events[type] || (events[type] = []);
   },
+
   /**
    * Execute each of the listeners in order with the supplied arguments.
    * Returns `true` if listener for this event was called, `false` if there are
@@ -175,4 +193,4 @@ const eventEmitter =  {
   }
 };
 exports.EventEmitter = require("traits").Trait.compose(eventEmitter);
-exports.EventEmitterTrait = Trait(eventEmitter);
+exports.EventEmitterTrait = require('light-traits').Trait(eventEmitter);
