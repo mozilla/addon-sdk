@@ -37,121 +37,97 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { Cc, Ci } = require("chrome");
-const windowUtils = require("window-utils");
-const apiutils = require("api-utils");
-const { browserWindows: windows } = require("windows");
+"use strict";
 
-let modifiers = {
-  "ALT": Ci.nsIDOMKeyEvent.DOM_VK_ALT,
-  "SHIFT": Ci.nsIDOMKeyEvent.DOM_VK_SHIFT,
-  "CONTROL": Ci.nsIDOMKeyEvent.DOM_VK_CONTROL,
-  "META": Ci.nsIDOMKeyEvent.DOM_VK_META
-};
+const keyboardObserver = require("keyboard/observer");
+const { MODIFIERS, getKeyForCode, stringify } = require("keyboard/utils");
+const array = require("array");
+const type = require("type");
 
-let shortcuts = {
+const INVALID_SHORTCUT = "Shortcut string must contain one or more modifiers " +
+                         "and only one key";
+const SHORTCUTS = {};
 
-  _handlers: [],
+function Shortcut(options) {
+  // Making sure that function returns same thing regardless of `new` being used
+  // with it.
+  if (!(this instanceof Shortcut))
+    return new Shortcut(options);
 
-  // nsIDOMEventListener
-  handleEvent: function (event) {
-    if (event.type === "keypress")
-        this._onKeyPress(aEvent);
-  },
-
-  _onKeyPress: function (event) {
-      let whichKey = event.which;
-      let shiftKey = event.shiftKey;
-      let altKey = event.altKey;
-      let ctlKey = event.ctrlKey;
-      let metaKey = event.metaKey;
-
-      let matches = this._findMatches(whichKey, shiftKey, altKey, ctlKey, metaKey);
-      if (matches) {
-        matches.every(function(e,i,a){
-            //console.log ("mostrecenttab: shortcuts: Calling handler");
-            e.handler();
-            
-            // Work around bug 582052 by preventing the (nonexistent) default action.
-            aEvent.preventDefault();
-
-            return false;
-        });
+  if (type.isString(options)) {
+    let elements = options.toLowerCase().split(' ');
+    let modifiers = this.modifiers = [];
+    elements.forEach(function(name) {
+      if (name in MODIFIERS) {
+        array.add(modifiers, MODIFIERS[name]);
+      } else {
+        if (!this.key)
+          this.key = name;
+        else
+          throw new TypeError(INVALID_SHORTCUT);
       }
-  },
-
-  _findMatches: function (whichKey, shiftKey, altKey, ctlKey, metaKey) {
-      //console.log ("mostrecenttab: shortcuts: searching " + this._handlers.length + " handlers");
-      return this._handlers.filter(function(e,i,a) {
-        if (e.key.charCodeAt(0) === whichKey) {
-            if (e.modifiers.every(function(mod) {
-          switch (mod) {
-          case "ALT": return altKey;
-          case "SHIFT": return shiftKey;
-          case "CONTROL": return ctlKey;
-          case "META": return metaKey;
-          };}))
-            {
-          //console.log ("mostrecenttab: shortcuts: key match");
-          return true;
-            }
-        }
-        return false;
-      });
-  },
-
-    /** Register a keyboard shortcut.
-  @arg options An object with values
-    key: the key to use. e.g. "`"
-    modifiers: an array with zero or more of the strings "SHIFT", "ALT", "CONTROL", "META"
-    handler: the function to call when the shortcut is pressed
-  */
-  register: function (options) {
-    options = apiutils.validateOptions(options, {
-      key: {
-        is: ["string"],
-        ok: function (v) v.length > 0,
-        msg: "The shortcut must have a non-empty key property."
-      },
-      modifiers: {
-        is: ["array", "null", "undefined"],
-        ok: function (v) v.every(function(m) modifiers[m]),
-        msg: "The shortcut modifier property contains an invalid value."
-      },
-      handler: {
-        is: ["function"],
-        msg: "The shortcut must have a non-empty handler property."
-      },
-    });
-
-      this._handlers.push (options);
-  },
-
-    /** Called to unload the module. Clears the list of shortcuts.
-     */
-  unload: function () {
-      _handlers = null;
+    }, this);
+  } else {
+    this.modifiers = array.unique(options.modifiers, []);
+    this.key = String(options.key);
+    if (onExecute in option)
+      this.onExecute = options.onExecute;
   }
-};
-require("unload").ensure(shortcuts);
 
-let windowTracker = new windowUtils.WindowTracker({
-  onTrack: function(aWindow) {
-    aWindow.addEventListener("keypress", shortcuts, false);
-  },
-  onUntrack: function(aWindow) {
-    aWindow.removeEventListener("keypress", shortcuts, false);
-  }
-});
-require("unload").ensure(windowTracker);
+  this.modifiers = this.modifiers.sort();
+  this.id = this.toString();
 
-
-/** Register a keyboard shortcut.
-    @arg options An object with values
-    key: the key to use. e.g. "`"
-    modifiers: an array with zero or more of the strings "SHIFT", "ALT", "CONTROL", "META"
-    handler: the function to call when the shortcut is pressed
-*/
-exports.register = function (options) {
-    return shortcuts.register(options);
+  SHORTCUTS[this.id] = this;
 }
+Shortcut.prototype.toString = function toString() {
+  return stringify(this.key, this.modifiers);
+};
+Shortcut.prototype.toJSON = function toJSON() {
+  return JSON.parse(JSON.stringify({
+    modifiers: this.modifiers,
+    key: this.key
+  }));
+};
+exports.Shortcut = Shortcut;
+
+function onKeypress(event, window) {
+  let { which, keyCode, shiftKey, altKey, ctlKey, metaKey, isChar } = event;
+  let key, modifiers = [];
+
+  if (shiftKey)
+    modifiers.push("shift");
+  if (altKey)
+    modifiers.push("alt");
+  if (ctlKey)
+    modifiers.push("control");
+  if (metaKey)
+    modifiers.push("meta");
+
+  // If it's a printable character we just lower case it.
+  if (isChar)
+    key = String.fromCharCode(which).toLowerCase();
+  // If it's not a printable character then we fall back to a human readable
+  // equivalent of one of the following constants.
+  // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
+  // If event has a `keyCode` we use it to search a right name of the key,
+  // otherwise we fall back to `which`.
+  else
+    key = getKeyForCode(keyCode || which)
+
+  let id = stringify(key, modifiers.sort());
+
+  console.log(id);
+  let shortcut = SHORTCUTS[id];
+  if (shortcut && shortcut.onExecute) {
+    try {
+      shortcut.onExecute();
+    } catch (exception) {
+      console.exception(exception);
+    } finally {
+      // Work around bug 582052 by preventing the (nonexistent) default action.
+      e.preventDefault();
+    }
+  }
+}
+
+keyboardObserver.on("keypress", onKeypress);
