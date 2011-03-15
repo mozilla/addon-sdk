@@ -66,7 +66,7 @@ var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
   this.print = print;
 
   // Binding all the public methods to an instance so that they can be used
-  // as callback / listener functions strait away.
+  // as callback / listener functions straightaway.
   this.log = this.log.bind(this);
   this.info = this.info.bind(this);
   this.warn = this.warn.bind(this);
