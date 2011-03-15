@@ -38,13 +38,13 @@
 
 "use strict";
 
-const { Cc, Ci, components: { Constructor: CC } } = require("chrome");
 const { id: ADDON_ID } = require("self");
+const { Cc, Ci, components: { CConstructor } } = require("chrome");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
-const LoginInfo = CC("@mozilla.org/login-manager/loginInfo;1", "nsILoginInfo",
-                     "init");
 const ADDON_URI = "jetpack:" + ADDON_ID;
+const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
+                               "nsILoginInfo", "init");
 
 function query(loginInfo)
   Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
