@@ -37,9 +37,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const {Cc,Ci} = require("chrome");
-let windowUtils = require("window-utils");
-let apiutils = require("api-utils");
+const { Cc, Ci } = require("chrome");
+const windowUtils = require("window-utils");
+const apiutils = require("api-utils");
+const { browserWindows: windows } = require("windows");
 
 let modifiers = {
   "ALT": Ci.nsIDOMKeyEvent.DOM_VK_ALT,
@@ -50,62 +51,52 @@ let modifiers = {
 
 let shortcuts = {
 
-    _handlers: new Array(),
+  _handlers: [],
 
   // nsIDOMEventListener
-  handleEvent: function (aEvent) {
-      //console.log ("mostrecenttab: shortcuts: got event: which=" + aEvent.which + ", type=" + aEvent.type);
-    switch (aEvent.type) {
-      case "keypress":
+  handleEvent: function (event) {
+    if (event.type === "keypress")
         this._onKeyPress(aEvent);
-        break;
-    }
   },
 
-  _onKeyPress: function (aEvent) {
-      //console.log ("mostrecenttab: shortcuts: _onKeyPress");
-      let windows = require("windows").browserWindows;
-      let whichKey = aEvent.which;
-      let shiftKey = aEvent.shiftKey;
-      let altKey = aEvent.altKey;
-      let ctlKey = aEvent.ctrlKey;
-      let metaKey = aEvent.metaKey;
-
-      //console.log ("mostrecenttab: shortcuts: Calling this.findMatches");
+  _onKeyPress: function (event) {
+      let whichKey = event.which;
+      let shiftKey = event.shiftKey;
+      let altKey = event.altKey;
+      let ctlKey = event.ctrlKey;
+      let metaKey = event.metaKey;
 
       let matches = this._findMatches(whichKey, shiftKey, altKey, ctlKey, metaKey);
       if (matches) {
-    //console.log ("mostrecenttab: shortcuts: matches found");
-    
-    matches.every(function(e,i,a){
-        //console.log ("mostrecenttab: shortcuts: Calling handler");
-        e.handler();
-        
-        // Work around bug 582052 by preventing the (nonexistent) default action.
-        aEvent.preventDefault();
+        matches.every(function(e,i,a){
+            //console.log ("mostrecenttab: shortcuts: Calling handler");
+            e.handler();
+            
+            // Work around bug 582052 by preventing the (nonexistent) default action.
+            aEvent.preventDefault();
 
-        return false;
-    });
+            return false;
+        });
       }
   },
 
   _findMatches: function (whichKey, shiftKey, altKey, ctlKey, metaKey) {
       //console.log ("mostrecenttab: shortcuts: searching " + this._handlers.length + " handlers");
       return this._handlers.filter(function(e,i,a) {
-    if (e.key.charCodeAt(0) === whichKey) {
-        if (e.modifiers.every(function(mod) {
-      switch (mod) {
-      case "ALT": return altKey;
-      case "SHIFT": return shiftKey;
-      case "CONTROL": return ctlKey;
-      case "META": return metaKey;
-      };}))
-        {
-      //console.log ("mostrecenttab: shortcuts: key match");
-      return true;
+        if (e.key.charCodeAt(0) === whichKey) {
+            if (e.modifiers.every(function(mod) {
+          switch (mod) {
+          case "ALT": return altKey;
+          case "SHIFT": return shiftKey;
+          case "CONTROL": return ctlKey;
+          case "META": return metaKey;
+          };}))
+            {
+          //console.log ("mostrecenttab: shortcuts: key match");
+          return true;
+            }
         }
-    }
-    return false;
+        return false;
       });
   },
 
