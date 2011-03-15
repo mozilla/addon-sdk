@@ -21,8 +21,8 @@ in the application's built-in login management system.
 An object containing fields associated with a credential being searched. It may
 contain any combination of the following fields: `username`, `password`,
 `realm`, `url`, `usernameField`, `passwordField`. All those fields are
-described in details under `store` section. Given fields will be used as search
-terms to narrow down a search results.
+described in details under the `store` section. Given fields will be used as
+search terms to narrow down search results.
 
 Options need to contain `onComplete` callback property which will be called
 with an array of matched credentials.
@@ -86,7 +86,7 @@ with an array of matched credentials.
 Module exports `store` method allowing users to store credentials in the
 application built-in password manager. Function takes `options` object as an
 argument containing fields necessary to create a login credential. Properties
-of an `options` depend on type of an authentication but regardless of that,
+of an `options` depend on type of authentication, but regardless of that,
 there are two optional callback `onComplete` and `onError` properties that may
 be passed to observe success or failure of performed operation.
 
