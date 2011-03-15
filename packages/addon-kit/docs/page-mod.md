@@ -60,7 +60,7 @@ script can interact with the DOM itself:
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
-### <a name="pagemod-content-scripts">Communicating With Content Scripts</a>###
+## Communicating With Content Scripts ##
 
 When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
@@ -154,6 +154,57 @@ The console output of this add-on is:
   info: Content script 1 is attached to http://www.mozilla.com/en-US/
   info: Content script 2 is attached to http://www.mozilla.com/en-US/
 </pre>
+
+### Mapping workers to tabs ###
+
+The [`worker`](packages/api-utils/docs/content/worker.html) has a `tab`
+property which returns the tab associated with this worker. You can use this
+to access the [`tabs API`](packages/addon-kit/docs/tabs.html) for the tab
+associated with a specific page:
+
+    var pageMod = require("page-mod");
+    var tabs = require("tabs");
+
+    pageMod.PageMod({
+      include: ["*"],
+      onAttach: function onAttach(worker) {
+        console.log(worker.tab.title);
+      }
+    });
+
+### Attaching content scripts to tabs ###
+
+We've seen that the page mod API attaches content scripts to pages based on
+their URL. Sometimes, though, we don't care about the URL: we just want
+to execute a script on demand in the context of a particular tab.
+
+For example, we might want to run a script in the context of the currently
+active tab when the user clicks a widget: to block certain content, to
+change the font style, or to display the page's DOM structure.
+
+Using the `attach` method of the [`tab`](packages/addon-kit/docs/tabs.html)
+object, you can attach a set of content scripts to a particular tab. The
+scripts are executed immediately.
+
+The following add-on creates a widget which, when clicked, highlights all the
+`div` elements in the page loaded into the active tab:
+
+    const widgets = require("widget");
+    const tabs = require("tabs");
+
+    var widget = widgets.Widget({
+      label: "Show divs",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        tabs.activeTab.attach({
+          contentScript:
+            'var divs = document.getElementsByTagName("div");' +
+            'for (var i = 0; i < divs.length; ++i) {' +
+              'divs[i].setAttribute("style", "border: solid red 1px;");' +
+            '}'
+        });
+      }
+    });
 
 <api name="PageMod">
 @class
