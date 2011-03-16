@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Myk Melez <myk@mozilla.org> (Original Author)
  *   Irakli Gozalishvili <gozala@mazilla.com>
+ *   Mihai Sucan <mihai.sucan@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -136,6 +137,10 @@ const Panel = Symbiont.resolve({
   set height(value)
     this._height =  valid({ $: value }, { $: validNumber }).$ || this._height,
   _height: 240,
+
+  /* Public API: Panel.isShowing */
+  get isShowing() !!this._xulPanel && this._xulPanel.state == "open",
+
   /* Public API: Panel.show */
   show: function show(anchor) {
     anchor = anchor || null;

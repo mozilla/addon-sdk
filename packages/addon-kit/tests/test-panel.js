@@ -35,11 +35,13 @@ tests.testShowHidePanel = function(test) {
     onShow: function () {
       test.pass("The panel was shown.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, true, "panel.isShowing == true.");
       panel.hide();
     },
     onHide: function () {
       test.pass("The panel was hidden.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, false, "panel.isShowing == false.");
       panel.destroy();
       test.done();
     }
