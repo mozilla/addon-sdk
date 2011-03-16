@@ -103,8 +103,10 @@ The password for the login.
 
 @prop [url] {string}
 The `url` to which the login applies, formatted as a URL (for example,
-"http://www.site.com"). A port number (":123") may be appended. (`url` should
-not include path from the full URL, it will be stripped out if included).
+"http://www.site.com"). A port number (":123") may be appended.
+
+_Please note: `http`, `https` and `ftp` URLs should not include path from the
+full URL, it will be stripped out if included._
 
 @prop [formSubmitURL] {string}
 The URL a form-based login was submitted to. For logins obtained from HTML

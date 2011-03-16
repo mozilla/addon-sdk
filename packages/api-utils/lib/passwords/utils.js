@@ -50,16 +50,19 @@ function filterMatchingLogins(loginInfo)
   Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
 
 /**
- * Removes `user`, `password` and `path` fields from the given `url`.
+ * Removes `user`, `password` and `path` fields from the given `url` if it's
+ * 'http', 'https' or 'ftp'. All other URLs are returned unchanged.
  * @example
  * http://user:pass@www.site.com/foo/?bar=baz#bang -> http://www.site.com
  */
 function normalizeURL(url) {
   let { scheme, host, port } = parseURL(url);
-  // If it's add-on URI don't normalize as part after ":" is `path` and we don't
-  // want to strip it out.
-  return scheme === "addon" ? url :
-         scheme + "://" + (host || "") + (port ? ":" + port : "")
+  // We normalizing URL only if it's `http`, `https` or `ftp` all other types of
+  // URLs (`resource`, `chrome`, etc..) should not be normalized as they are
+  // used with add-on associated credentials path is relevant there.
+  return scheme === "http" || scheme === "https" || scheme === "ftp" ?
+         scheme + "://" + (host || "") + (port ? ":" + port : "") :
+         url
 }
 
 function Login(options) {
