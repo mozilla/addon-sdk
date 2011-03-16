@@ -92,11 +92,11 @@
      var es5code = exports.es5code = localFS.getFile(es5path);
      es5code.filename = es5path;
 
-      return function modifyModuleSandbox(sandbox, options) {
-         sandbox.evaluate(es5code);
-         var filename = options.filename ? options.filename : null;
-         sandbox.defineProperty("__url__", filename);
-      }
+     return function modifyModuleSandbox(sandbox, options) {
+       sandbox.evaluate(es5code);
+       var filename = options.filename ? options.filename : null;
+       sandbox.defineProperty("__url__", filename);
+     }
    }
 
    function unloadLoader(reason) {
