@@ -5,7 +5,7 @@ exports.testConstructor = function(test) {
   const tabBrowser = require("tab-browser");
 
   test.waitUntilDone(30000);
-
+  
   const widgets = require("widget");
   const url = require("url");
   const windowUtils = require("window-utils");
@@ -164,7 +164,7 @@ exports.testConstructor = function(test) {
   function doneTest() nextTest();
 
   // text widget
-  tests.push(function() testSingleWidget({
+  tests.push(function testTextWidget() testSingleWidget({
     id: "text",
     label: "text widget",
     content: "oh yeah",
@@ -178,7 +178,7 @@ exports.testConstructor = function(test) {
   }));
 
   // html widget
-  tests.push(function() testSingleWidget({
+  tests.push(function testHTMLWidget() testSingleWidget({
     id: "html",
     label: "html widget",
     content: "<div>oh yeah</div>",
@@ -192,7 +192,7 @@ exports.testConstructor = function(test) {
   }));
 
   // image url widget
-  tests.push(function() testSingleWidget({
+  tests.push(function testImageURLWidget() testSingleWidget({
     id: "image",
     label: "image url widget",
     contentURL: require("self").data.url("test.html"),
@@ -210,7 +210,7 @@ exports.testConstructor = function(test) {
   }));
 
   // web uri widget
-  tests.push(function() testSingleWidget({
+  tests.push(function testWebURIWidget() testSingleWidget({
     id: "web",
     label: "web uri widget",
     contentURL: require("self").data.url("test.html"),
@@ -228,7 +228,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onclick + content
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnclickEventContent() testSingleWidget({
     id: "click",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
@@ -244,7 +244,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onmouseover + content
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnmouseoverEventContent() testSingleWidget({
     id: "mouseover",
     label: "mouseover test widget - content",
     content: "<div id='me'>foo</div>",
@@ -260,7 +260,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onmouseout + content
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnmouseoutEventContent() testSingleWidget({
     id: "mouseout",
     label: "mouseout test widget - content",
     content: "<div id='me'>foo</div>",
@@ -276,7 +276,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onclick + image
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnclickEventImage() testSingleWidget({
     id: "click",
     label: "click test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
@@ -292,7 +292,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onmouseover + image
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnmouseoverEventImage() testSingleWidget({
     id: "mouseover",
     label: "mouseover test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
@@ -308,7 +308,7 @@ exports.testConstructor = function(test) {
   }));
 
   // event: onmouseout + image
-  tests.push(function() testSingleWidget({
+  tests.push(function testOnmouseoutEventImage() testSingleWidget({
     id: "mouseout",
     label: "mouseout test widget - image",
     contentURL: require("self").data.url("moz_favicon.ico"),
@@ -324,7 +324,7 @@ exports.testConstructor = function(test) {
   }));
 
   // test multiple widgets
-  tests.push(function() {
+  tests.push(function testMultipleWidgets() {
     let w1 = widgets.Widget({id: "first", label: "first widget", content: "first content"});
     let w2 = widgets.Widget({id: "second", label: "second widget", content: "second content"});
 
@@ -336,7 +336,7 @@ exports.testConstructor = function(test) {
 
   // test updating widget content
   let loads = 0;
-  tests.push(function() testSingleWidget({
+  tests.push(function testUpdatingWidgetContent() testSingleWidget({
     id: "content",
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
@@ -358,7 +358,8 @@ exports.testConstructor = function(test) {
   // test updating widget contentURL
   let url1 = "data:text/html,<body>foodle</body>";
   let url2 = "data:text/html,<body>nistel</body>";
-  tests.push(function() testSingleWidget({
+  
+  tests.push(function testUpdatingContentURL() testSingleWidget({
     id: "content",
     label: "content update test widget",
     contentURL: url1,
@@ -381,7 +382,7 @@ exports.testConstructor = function(test) {
   }));
 
   // test tooltip
-  tests.push(function() testSingleWidget({
+  tests.push(function testTooltip() testSingleWidget({
     id: "text",
     label: "text widget",
     content: "oh yeah",
@@ -396,7 +397,7 @@ exports.testConstructor = function(test) {
   }));
 
   // test tooltip fallback to label
-  tests.push(function() testSingleWidget({
+  tests.push(function testTooltipFallback() testSingleWidget({
     id: "fallback",
     label: "fallback",
     content: "oh yeah",
@@ -411,7 +412,7 @@ exports.testConstructor = function(test) {
 
   // test updating widget tooltip
   let updated = false;
-  tests.push(function() testSingleWidget({
+  tests.push(function testUpdatingTooltip() testSingleWidget({
     id: "tooltip",
     label: "tooltip update test widget",
     tooltip: "foo",
@@ -427,7 +428,7 @@ exports.testConstructor = function(test) {
   }));
 
   // test multiple windows
-  tests.push(function() {
+  tests.push(function testMultipleWindows() {
     tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
       let browserWindow = e.target.defaultView;
       let doc = browserWindow.document;
@@ -455,7 +456,7 @@ exports.testConstructor = function(test) {
   });
 
   // test widget.width
-  tests.push(function() testSingleWidget({
+  tests.push(function testWidgetWidth() testSingleWidget({
     id: "text",
     label: "test widget.width",
     content: "test width",
@@ -472,6 +473,30 @@ exports.testConstructor = function(test) {
       test.assertEqual(this.width, node.style.minWidth.replace("px", ""));
       test.assertEqual(this.width, node.firstElementChild.style.width.replace("px", ""));
 
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  // test click handler not respond to right-click
+  let clickCount = 0;
+  tests.push(function testNoRightClick() testSingleWidget({
+    label: "click test widget - content",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('MouseEvents'); " +
+                   "evt.initMouseEvent('click', true, true, window, " +
+                   "  0, 0, 0, 0, 0, false, false, false, false, 2, null); " +
+                   "document.getElementById('me').dispatchEvent(evt); " +
+                   "evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt); " +
+                   "evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseover', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onClick: function() clickCount++,
+    onMouseover: function() {
+      test.assertEqual(clickCount, 1, "right click wasn't sent to click handler");
       this.destroy();
       doneTest();
     }
