@@ -10,8 +10,8 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Daniel Buchner
 * James Burke
 * Hernán Rodriguez Colmeiro
-* Felipe Gomes
 * fuzzykiller
+* Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
 * Lloyd Hilaiel
@@ -25,6 +25,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Joe R. Nassimian ([placidrage](https://github.com/placidrage))
 * Nick Nguyen
 * Paul O’Shannessy
+* l.m.orchard
 * Alexandre Poirot
 * Nickolay Ponomarev
 * Aza Raskin
