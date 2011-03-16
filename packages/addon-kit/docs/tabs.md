@@ -239,7 +239,7 @@ Makes this tab active, which will bring this tab to the foreground.
     tabs.activeTab.attach({
       contentScript: 
         'document.body.style.border="5px solid black";' +
-        'postMessage(document.getElementById("#my-watched-element").innerText);',
+        'postMessage(document.getElementById("#my-watched-element").textContent);',
       onMessage: function (data) {
         // data is equal to the text of my DOM element with ID "#my-watched-element"
         
