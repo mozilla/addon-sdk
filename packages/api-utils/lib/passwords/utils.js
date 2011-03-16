@@ -42,17 +42,34 @@ const { Cc, Ci, components: { Constructor: CConstructor } } = require("chrome");
 const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
+const { URL: parseURL } = require("url");
 const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
                                "nsILoginInfo", "init");
 
 function filterMatchingLogins(loginInfo)
   Object.keys(this).every(function(key) loginInfo[key] === this[key], this);
 
+/**
+ * Removes `user`, `password` and `path` fields from the given `url`.
+ * @example
+ * http://user:pass@www.site.com/foo/?bar=baz#bang -> http://www.site.com
+ */
+function normalizeURL(url) {
+  let { scheme, host, port } = parseURL(url);
+  // If it's add-on URI don't normalize as part after ":" is `path` and we don't
+  // want to strip it out.
+  return scheme === "addon" ? url :
+         scheme + "://" + (host || "") + (port ? ":" + port : "")
+}
+
 function Login(options) {
   let login = Object.create(Login.prototype);
   Object.keys(options || {}).forEach(function(key) {
     if (key === 'url')
-      login.hostname = options.url;
+      login.hostname = normalizeURL(options.url);
+    else if (key === 'formSubmitURL')
+      login.formSubmitURL = options.formSubmitURL ?
+                            normalizeURL(options.formSubmitURL) : null;
     else if (key === 'realm')
       login.httpRealm = options.realm;
     else 

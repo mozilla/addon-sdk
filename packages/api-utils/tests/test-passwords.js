@@ -62,14 +62,21 @@ exports["test addon associated credentials"] = function(assert) {
 
 exports["test web page associated credentials"] = function(assert) {
   let options = {
-    url: "http://foo.bar.com",
-    formSubmitURL: "http://login.foo.bar.com",
+    url: "http://www.example.com",
+    formSubmitURL: "http://login.example.com",
     username: "user",
     password: "pass",
     usernameField: "user-f",
     passwordField: "pass-f"
   };
-  store(options);
+  store({
+    url: "http://www.example.com/login",
+    formSubmitURL: "http://login.example.com/foo/authenticate.cgi",
+    username: options.username,
+    password: options.password,
+    usernameField: options.usernameField,
+    passwordField: options.passwordField
+  });
 
   assert.ok(search().length, "credential was stored");
   assert.ok(search(options).length, "stored credential found");
@@ -100,7 +107,7 @@ exports["test web page associated credentials"] = function(assert) {
 
 exports["test site authentication credentials"] = function(assert) {
   let options = {
-    url: "http://test.authentication.com/",
+    url: "http://test.authentication.com",
     username: "u",
     password: "p",
     realm: "r"

@@ -103,14 +103,16 @@ The password for the login.
 
 @prop [url] {string}
 The `url` to which the login applies, formatted as a URL (for example,
-"http://www.site.com"). A port number (":123") may be appended.
+"http://www.site.com"). A port number (":123") may be appended. (`url` should
+not include path from the full URL, it will be stripped out if included).
 
 @prop [formSubmitURL] {string}
 The URL a form-based login was submitted to. For logins obtained from HTML
 forms, this field is the `action` attribute from the form element, with the
 with the path removedwith the path removed (for example, "http://www.site.com").
 Forms with no `action` attribute default to submitting to their origin URL, so
-that should be stored here.
+that should be stored here. (`formSubmitURL` should not include path from the
+full URL, it will be stripped out if included).
 
 @prop [realm] {string}
 The HTTP Realm for which the login was requested. When an HTTP server sends a

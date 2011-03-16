@@ -147,8 +147,8 @@ exports["test addon associated credentials"] = function(assert, done) {
 
 exports["test web page associated credentials"] = function(assert, done) {
   store({
-    url: "http://bar.foo.com",
-    formSubmitURL: "http://login.foo.com",
+    url: "http://bar.foo.com/authentication/?login",
+    formSubmitURL: "http://login.foo.com/authenticate.cgi",
     username: "user",
     password: "pass",
     usernameField: "user-f",
@@ -201,18 +201,18 @@ exports["test web page associated credentials"] = function(assert, done) {
 
 exports["test site authentication credentials"] = function(assert, done) {
   store({
-    url: "http://authentication.com/",
+    url: "http://authentication.com",
     username: "U",
     password: "P",
     realm: "R",
     onComplete: function onComplete() {
       search({
-        url: "http://authentication.com/",
+        url: "http://authentication.com",
         username: "U",
         password: "P",
         realm: "R",
         onComplete: function onComplete([credential]) {
-          assert.equal(credential.url,"http://authentication.com/",
+          assert.equal(credential.url,"http://authentication.com",
                        "url matches");
           assert.equal(credential.username, "U", "username matches");
           assert.equal(credential.password, "P", "password matches");
