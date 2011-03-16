@@ -108,7 +108,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
 
   setInterval: function setInterval(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timers.setInterval(function(port) {
+    return timer.setInterval(function(port) {
       try {
         callback.apply(null, params); 
       } catch(e) {
