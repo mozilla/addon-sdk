@@ -11,6 +11,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * James Burke
 * Hernán Rodriguez Colmeiro
 * Felipe Gomes
+* fuzzykiller
 * Irakli Gozalishvili
 * Luca Greco
 * Lloyd Hilaiel
