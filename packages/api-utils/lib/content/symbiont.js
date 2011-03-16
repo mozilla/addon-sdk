@@ -163,7 +163,7 @@ const Symbiont = Worker.resolve({
    */
   _onStart: function _onStart(domObj) {
     let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
-    if (window == this._frame.contentWindow) {
+    if (window && window == this._frame.contentWindow) {
       observers.remove(ON_START, this._onStart);
       this._window = window.wrappedJSObject;
       this._onInit();
