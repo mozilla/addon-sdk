@@ -77,12 +77,15 @@ The `file` module provides access to the local filesystem.
   mode, and its contents are assumed to be UTF-8.  If *`mode`* is not given,
   `"r"` is assumed, and the file is opened in read-only text mode.
 @returns {stream}
-  A stream that can be used to access or modify the contents of the file.  See
-  [`text-streams`](packages/api-utils/docs/text-streams.html) and
+  If the file is opened in text read-only `mode`, a `TextReader` is returned,
+  and if text write-only mode, a `TextWriter` is returned.  See
+  [`text-streams`](packages/api-utils/docs/text-streams.html) for information on
+  these text stream objects.  If the file is opened in binary read-only `mode`,
+  a `ByteReader` is returned, and if binary write-only mode, a `ByteWriter` is
+  returned.  See
   [`byte-streams`](packages/api-utils/docs/byte-streams.html) for more
-  information.
-  Opened files should always be closed after use by calling `close` on the
-  returned stream.
+  information on these byte stream objects.  Opened files should always be
+  closed after use by calling `close` on the returned stream.
 </api>
 
 <api name="read">
