@@ -154,9 +154,6 @@ This is an optional property.
 @prop [onDeactivate] {function}
 A callback function that will be registered for 'deactivate' event.
 This is an optional property.
-@prop [onActivate] {function}
-A callback function that will be registered for 'activate' event.
-This is an optional property.
 </api>
 
 <api name="Tab">
