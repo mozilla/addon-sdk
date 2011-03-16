@@ -17,7 +17,7 @@ Verify that Python is in your path.
 ## Installation ##
 
 At the time of this writing, the latest stable version of the Add-on
-SDK is 1.0b4pre. You can obtain it as a
+SDK is 1.0b4. You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
 
