@@ -57,9 +57,9 @@ function filterMatchingLogins(loginInfo)
  */
 function normalizeURL(url) {
   let { scheme, host, port } = parseURL(url);
-  // We normalizing URL only if it's `http`, `https` or `ftp` all other types of
+  // We normalize URL only if it's `http`, `https` or `ftp`. All other types of
   // URLs (`resource`, `chrome`, etc..) should not be normalized as they are
-  // used with add-on associated credentials path is relevant there.
+  // used with add-on associated credentials path.
   return scheme === "http" || scheme === "https" || scheme === "ftp" ?
          scheme + "://" + (host || "") + (port ? ":" + port : "") :
          url
