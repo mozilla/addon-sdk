@@ -41,18 +41,20 @@
 
 const keyboardObserver = require("keyboard/observer");
 const { MODIFIERS, getKeyForCode, stringify } = require("keyboard/utils");
+const { Cortex } = require("cortex");
+const { Trait } = require("light-traits");
 const array = require("array");
 const type = require("type");
 
-const INVALID_SHORTCUT = "Shortcut string must contain one or more modifiers " +
+const INVALID_SHORTCUT = "Hotkey string must contain one or more modifiers " +
                          "and only one key";
-const SHORTCUTS = {};
+const HOTKEYS = {};
 
-function Shortcut(options) {
+function Hotkey(options) {
   // Making sure that function returns same thing regardless of `new` being used
   // with it.
-  if (!(this instanceof Shortcut))
-    return new Shortcut(options);
+  if (!(this instanceof Hotkey))
+    return new Hotkey(options);
 
   if (type.isString(options)) {
     let elements = options.toLowerCase().split(' ');
@@ -70,25 +72,30 @@ function Shortcut(options) {
   } else {
     this.modifiers = array.unique(options.modifiers, []);
     this.key = String(options.key);
-    if (onExecute in option)
-      this.onExecute = options.onExecute;
+    if (onPress in option)
+      this.onPress = options.onPress;
   }
 
   this.modifiers = this.modifiers.sort();
   this.id = this.toString();
 
-  SHORTCUTS[this.id] = this;
+  HOTKEYS[this.id] = this;
+
+  return Cortex(this);
 }
-Shortcut.prototype.toString = function toString() {
+Hotkey.prototype.destroy = function destroy() {
+  delete HOTKEYS[this.id];
+};
+Hotkey.prototype.toString = function toString() {
   return stringify(this.key, this.modifiers);
 };
-Shortcut.prototype.toJSON = function toJSON() {
+Hotkey.prototype.toJSON = function toJSON() {
   return JSON.parse(JSON.stringify({
     modifiers: this.modifiers,
     key: this.key
   }));
 };
-exports.Shortcut = Shortcut;
+exports.Hotkey = Hotkey;
 
 function onKeypress(event, window) {
   let { which, keyCode, shiftKey, altKey, ctlKey, metaKey, isChar } = event;
@@ -116,11 +123,10 @@ function onKeypress(event, window) {
 
   let id = stringify(key, modifiers.sort());
 
-  console.log(id);
-  let shortcut = SHORTCUTS[id];
-  if (shortcut && shortcut.onExecute) {
+  let hotkey = HOTKEYS[id];
+  if (hotkey && HOTKEYS.onPress) {
     try {
-      shortcut.onExecute();
+      hotkey.onPress();
     } catch (exception) {
       console.exception(exception);
     } finally {
