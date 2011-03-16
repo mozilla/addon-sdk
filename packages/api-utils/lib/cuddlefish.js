@@ -76,17 +76,35 @@
    }
 
    var localFS = new securableModule.LocalFileSystem(myURI);
-   var es5path = localFS.resolveModule(null, "es5");
-   var es5code = exports.es5code = localFS.getFile(es5path);
 
-   es5code.filename = es5path;
+   function createSandboxModifier() {
+     // If XULRunner version is >= 2.* then we have built-in implementation of
+     // ES5 additions.
+     var hasES5 = Cc["@mozilla.org/xre/app-info;1"].
+                  getService(Ci.nsIXULAppInfo).platformVersion[0] >= 2;
+     // In such case execution of "es5" module only slows down startup, there
+     // for we don't return  `modifyModuleSandbox` function to avoid that.
+     if (hasES5) return;
+
+     // If we got that far then we are on pre 2.* so we create a function that
+     // can be used to modify module sandboxes to add ES5 functionality.
+     var es5path = localFS.resolveModule(null, "es5");
+     var es5code = exports.es5code = localFS.getFile(es5path);
+     es5code.filename = es5path;
+
+     return function modifyModuleSandbox(sandbox, options) {
+       sandbox.evaluate(es5code);
+       var filename = options.filename ? options.filename : null;
+       sandbox.defineProperty("__url__", filename);
+     }
+   }
 
    function unloadLoader(reason) {
      this.require("unload").send(reason);
    }
 
    function maybeLoadMainInJetpackProcess(delegate, packaging) {
-     return function getModuleExports(basePath, module) {     
+     return function getModuleExports(basePath, module) {
        if (module == packaging.options.main) {
          var mainURL = this.fs.resolveModule(basePath, module);
          var mainInfo = packaging.getModuleInfo(mainURL);
@@ -126,12 +144,6 @@
      };
    }
 
-   function modifyModuleSandbox(sandbox, options) {
-     sandbox.evaluate(es5code);
-     var filename = options.filename ? options.filename : null;
-     sandbox.defineProperty("__url__", filename);
-   }
-
    function makeManifestChecker(packaging) {
      var mc = {
        _allow: function _allow(loader, basePath, module, module_info) {
@@ -140,7 +152,7 @@
          }
          let mi = packaging.getModuleInfo(basePath);
          if (mi.needsChrome)
-           /* The module requires chrome, it can import whatever it 
+           /* The module requires chrome, it can import whatever it
             * wants. */
            return true;
          if (!mi.dependencies) {
@@ -163,14 +175,14 @@
              } else if (should_load != is_loading) {
                loader.console.warn("require(" + module + ") (called from " +
                                    basePath + ") is loading " + is_loading +
-                                   ", but is supposed to be loading " + 
+                                   ", but is supposed to be loading " +
                                    should_load);
                //return false; // enable this in 0.9
              }
-             return true; 
+             return true;
            }
          }
-         loader.console.warn("undeclared require(" + module + 
+         loader.console.warn("undeclared require(" + module +
                              ") called from " + basePath);
          //return false;  // enable this in 0.9
          return true;
@@ -227,7 +239,7 @@
                           fs: options.fs,
                           defaultPrincipal: "system",
                           globals: globals,
-                          modifyModuleSandbox: modifyModuleSandbox,
+                          modifyModuleSandbox: createSandboxModifier(),
                           securityPolicy: manifestChecker,
                           getModuleExports: getModuleExports};
 
