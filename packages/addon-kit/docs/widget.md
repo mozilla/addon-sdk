@@ -7,10 +7,12 @@ consistent with other add-ons and blends in well with Firefox.
 
 ## Introduction ##
 
-"Widgets" are small pieces of content that live in the Firefox 4 [add-on bar].
-They can be simple icons or complex web pages.  You can attach [panels] to them
-that open when they're clicked, or you can define a custom click handler to
-perform some other action, like opening a web page in a tab.
+"Widgets" are small pieces of content that live in the Firefox 4
+[add-on bar](https://developer.mozilla.org/en/The_add-on_bar).
+They can be simple icons or complex web pages.  You can attach
+[panels](packages/addon-kit/docs/panel.html) to them that open when they're
+clicked, or you can define a custom click handler to perform some other action,
+like opening a web page in a tab.
 
 There are a few advantages to using widgets over an ad hoc user interface.
 First, your users will be accustomed to interacting with add-ons via widgets and
@@ -18,9 +20,6 @@ the add-on bar.  Second, it allows Firefox to treat your interface as a
 first-class citizen.  For example, in the future Firefox may allow the user to
 drag widgets from the add-on bar to other toolbars.  By exposing your interface
 as a widget, your add-on would automatically inherit such functionality.
-
-[add-on bar]: https://developer.mozilla.org/en/The_add-on_bar
-[panels]: #module/addon-kit/panel
 
 ## Creation and Content ##
 
@@ -31,6 +30,7 @@ using a URL with the `contentURL` property.
 For example, this widget contains an image, so it looks like a simple icon:
 
     require("widget").Widget({
+      id: "mozilla-icon", 
       label: "My Mozilla Widget",
       contentURL: "http://www.mozilla.org/favicon.ico"
     });
@@ -40,6 +40,7 @@ Upon creation, the widget is automatically added to the add-on bar.
 This widget contains an entire web page:
 
     require("widget").Widget({
+      id: "hello-display",
       label: "My Hello Widget",
       content: "Hello!",
       width: 50
@@ -49,15 +50,13 @@ Widgets are quite small by default, so this example used the `width` property to
 grow it in order to show all the text.
 
 As with many SDK APIs, communication with the content inside your widgets is
-handled by [content scripts].  So, for example, to be notified when your
-widget's content has loaded, you can make a small script that calls back to the
-widget when it finishes loading.
-
-[content scripts]: #guide/addon-development/web-content
+handled by [content scripts](dev-guide/addon-development/web-content.html).
+So, for example, to be notified when your widget's content has loaded, you can
+make a small script that calls back to the widget when it finishes loading.
 
 ## Events ##
 
-Widgets emit the following types of [events](#guide/addon-development/events).
+Widgets emit the following types of [events](dev-guide/addon-development/events.html).
 
 ### click ###
 
@@ -82,13 +81,14 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](#guide/addon-development/web-content) for more
+[Working with Content Scripts](dev-guide/addon-development/web-content.html) for more
 information.
 
     const widgets = require("widget");
 
     // A basic click-able image widget.
     widgets.Widget({
+      id: "google-link",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
       onClick: function() {
@@ -98,6 +98,7 @@ information.
 
     // A widget that changes display on mouseover.
     widgets.Widget({
+      id: "mouseover-effect",
       label: "Widget with changing image on mouseover",
       contentURL: "http://www.yahoo.com/favicon.ico",
       onMouseover: function() {
@@ -110,6 +111,7 @@ information.
 
     // A widget that updates content on a timer.
     widgets.Widget({
+      id: "auto-update-widget",
       label: "Widget that updates content on a timer",
       content: "0",
       contentScript: 'setTimeout(function() {' +
@@ -120,6 +122,7 @@ information.
 
     // A widget that loads a random Flickr photo every 5 minutes.
     widgets.Widget({
+      id: "random-flickr",
       label: "Random Flickr Photo Widget",
       contentURL: "http://www.flickr.com/explore/",
       contentScriptWhen: "ready",
@@ -137,6 +140,7 @@ information.
 
     // A widget created with a specified width, that grows.
     let myWidget = widgets.Widget({
+      id: "widget-effect",
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
       width: 50,
@@ -147,6 +151,7 @@ information.
 
     // A widget communicating bi-directionally with a content script.
     let widget = widgets.Widget({
+      id: "message-test",
       label: "Bi-directional communication!",
       content: "<foo>bar</foo>",
       contentScriptWhen: "ready",
@@ -175,6 +180,11 @@ Represents a widget object.
     A required string description of the widget used for accessibility,
     title bars, and error reporting.
 
+  @prop id {string}
+    Mandatory string used to identify your widget in order to save it's 
+    location when user customizes it in the browser. 
+    This string has to be unique and must not be changed in time.
+  
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
     It may contain HTML. Widgets must have either the `content` property or the
@@ -182,15 +192,15 @@ Represents a widget object.
 
   @prop [contentURL] {string}
     An optional string URL to content to load into the widget. This can be
-    [local content](#guide/addon-development/web-content) or remote content, an
-    image or web content. Widgets must have either the `content` property or the
-    `contentURL` property set.
+    [local content](dev-guide/addon-development/web-content.html) or remote
+    content, an image or web content. Widgets must have either the `content`
+    property or the `contentURL` property set.
 
   @prop [panel] {Panel}
-    An optional [panel](#module/addon-kit/panel) to open when the user clicks on
-    the widget. Note: If you also register a "click" listener, it will be called
-    instead of the panel being opened.  However, you can show the panel from the
-    listener by calling `this.panel.show()`.
+    An optional [panel](packages/addon-kit/docs/panel.html) to open when the
+    user clicks on the widget. Note: If you also register a "click" listener,
+    it will be called instead of the panel being opened.  However, you can show
+    the panel from the listener by calling `this.panel.show()`.
 
   @prop [width] {integer}
     Optional width in pixels of the widget. If not given, a default width is
@@ -280,15 +290,16 @@ Represents a widget object.
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget.  This can be
-  [local content](#guide/addon-development/web-content) or remote content, an
-  image or web content.  Setting it updates the widget's appearance
+  [local content](dev-guide/addon-development/web-content.html) or remote
+  content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
 </api>
 
 <api name="panel">
 @property {Panel}
-  A [panel](#module/addon-kit/panel) to open when the user clicks on the widget.
+  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  the widget.
 </api>
 
 <api name="width">

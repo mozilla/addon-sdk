@@ -35,6 +35,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
+const { Ci } = require('chrome');
 const { Trait } = require("traits");
 const { EventEmitter } = require("events");
 const { validateOptions } = require("api-utils");
@@ -186,6 +187,17 @@ const TabTrait = Trait.compose(EventEmitter, {
   unpin: function unpin() {
     this._window.gBrowser.unpinTab(this._tab);
   },
+  
+  /**
+   * Create a worker for this tab, first argument is options given to Worker.
+   * @type {Worker}
+   */
+  attach: function attach(options) {
+    let { Worker } = require("content/worker");
+    options.window = this._contentWindow.wrappedJSObject;
+    return Worker(options);
+  },
+  
   /**
    * Make this tab active.
    * Please note: That this function is called synchronous since in E10S that
@@ -235,3 +247,50 @@ function Options(options) {
   });
 }
 exports.Options = Options;
+
+
+exports.getTabForWindow = function (win) {
+  // Get browser window
+  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIWebNavigation)
+                     .QueryInterface(Ci.nsIDocShellTreeItem)
+                     .rootTreeItem
+                     .QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIDOMWindow);
+  if (!topWindow.gBrowser) return null;
+  
+  // Get top window object, in case we are in a content iframe
+  let topContentWindow;
+  try {
+    topContentWindow= win.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIWebNavigation)
+                            .QueryInterface(Ci.nsIDocShellTreeItem)
+                            .treeOwner
+                            .QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDOMWindow);
+  } catch(e) {
+    // It may throw if win is not a valid content window
+    return null;
+  }
+  
+  function getWindowID(obj) {
+    return obj.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIDOMWindowUtils)
+              .currentInnerWindowID;
+  }
+  
+  // Search for related Tab
+  let topWindowId = getWindowID(topContentWindow);
+  for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
+    let w = topWindow.gBrowser.browsers[i].contentWindow;
+    if (getWindowID(w) == topWindowId) {
+      return Tab({
+        window: require("windows").BrowserWindow({window:topContentWindow}),
+        tab: topWindow.gBrowser.tabs[i]
+      });
+    }
+  }
+  
+  // We were unable to find the related tab!
+  return null;
+}

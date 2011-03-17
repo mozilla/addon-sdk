@@ -35,11 +35,13 @@ tests.testShowHidePanel = function(test) {
     onShow: function () {
       test.pass("The panel was shown.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, true, "panel.isShowing == true.");
       panel.hide();
     },
     onHide: function () {
       test.pass("The panel was hidden.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, false, "panel.isShowing == false.");
       panel.destroy();
       test.done();
     }
@@ -57,13 +59,14 @@ tests.testResizePanel = function(test) {
   // possible test citizen, we refocus whatever window was focused before we
   // started running these tests.
 
-  let activeWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
-                     getService(Ci.nsIWindowMediator).
-                     getMostRecentWindow(null);
+  let activeWindow = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+                      getService(Ci.nsIWindowWatcher).
+                      activeWindow;
   let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
-
+  
+  
   function onFocus() {
     browserWindow.removeEventListener("focus", onFocus, true);
 
@@ -82,7 +85,8 @@ tests.testResizePanel = function(test) {
       onHide: function () {
         test.assert((panel.width == 100) && (panel.height == 100),
           "The panel was resized.");
-        activeWindow.focus();
+        if (activeWindow)
+          activeWindow.focus();
         test.done();
       }
     });
@@ -135,6 +139,59 @@ tests.testSeveralShowHides = function(test) {
     test.fail('error was emitted:' + e.message + '\n' + e.stack);
   });
   panel.show();
+};
+
+tests.testAnchorAndArrow = function(test) {
+  test.waitUntilDone(20000);
+  let count = 0;
+  function newPanel(anchor) {
+    let panel = panels.Panel({
+      contentURL: "data:text/html,<html><body style='padding: 0; margin: 0; " +
+                  "background: gray; text-align: center;'>Anchor: " +
+                  anchor.id + "</body></html>",
+      width: 200,
+      height: 100,
+      onShow: function () {
+        count++;
+        panel.destroy();
+        if (count==5) {
+          test.pass("All anchored panel test displayed");
+          test.done();
+        }
+      }
+    });
+    panel.show(anchor);
+  }
+  
+  let tabs= require("tabs");
+  let url = 'data:text/html,' +
+    '<html><head><title>foo</title></head><body>' + 
+    '<style>div {background: gray; position: absolute; width: 300px; ' +
+           'border: 2px solid black;}</style>' +
+    '<div id="tl" style="top: 0px; left: 0px;">Top Left</div>' +
+    '<div id="tr" style="top: 0px; right: 0px;">Top Right</div>' +
+    '<div id="bl" style="bottom: 0px; left: 0px;">Bottom Left</div>' +
+    '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
+    '</body></html>';
+  
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+      let window = browserWindow.content;
+      newPanel(window.document.getElementById('tl'));
+      newPanel(window.document.getElementById('tr'));
+      newPanel(window.document.getElementById('bl'));
+      newPanel(window.document.getElementById('br'));
+      let anchor = browserWindow.document.getElementById("identity-box");
+      newPanel(anchor);
+    }
+  });
+  
+  
+  
 };
 
 function makeEventOrderTest(options) {

@@ -38,3 +38,4 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue('api-utils' in packages.aardvark.dependencies)
         self.assertEqual(packages['api-utils'].loader, 'lib/loader.js')
         self.assertTrue(packages.aardvark.main == 'main')
+        self.assertTrue(packages.aardvark.version == "1.0")

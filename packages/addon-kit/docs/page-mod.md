@@ -23,13 +23,13 @@ Like all modules that interact with web content, page-mod uses content
 scripts that execute in the content process and defines a messaging API to
 communicate between the content scripts and the main add-on script. For more
 details on content scripting see the tutorial on [interacting with web
-content](#guide/addon-development/web-content).
+content](dev-guide/addon-development/web-content.html).
 
 To create a PageMod the add-on developer supplies:
 
 * a set of rules to select the desired subset of web pages based on their URL.
 Each rule is specified using the
-[match-pattern](#module/api-utils/match-pattern) syntax.
+[match-pattern](packages/api-utils/docs/match-pattern.html) syntax.
 
 * a set of content scripts to execute in the context of the desired pages.
 
@@ -60,7 +60,7 @@ script can interact with the DOM itself:
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
-### <a name="pagemod-content-scripts">Communicating With Content Scripts</a>###
+## Communicating With Content Scripts ##
 
 When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
@@ -155,6 +155,57 @@ The console output of this add-on is:
   info: Content script 2 is attached to http://www.mozilla.com/en-US/
 </pre>
 
+### Mapping workers to tabs ###
+
+The [`worker`](packages/api-utils/docs/content/worker.html) has a `tab`
+property which returns the tab associated with this worker. You can use this
+to access the [`tabs API`](packages/addon-kit/docs/tabs.html) for the tab
+associated with a specific page:
+
+    var pageMod = require("page-mod");
+    var tabs = require("tabs");
+
+    pageMod.PageMod({
+      include: ["*"],
+      onAttach: function onAttach(worker) {
+        console.log(worker.tab.title);
+      }
+    });
+
+### Attaching content scripts to tabs ###
+
+We've seen that the page mod API attaches content scripts to pages based on
+their URL. Sometimes, though, we don't care about the URL: we just want
+to execute a script on demand in the context of a particular tab.
+
+For example, we might want to run a script in the context of the currently
+active tab when the user clicks a widget: to block certain content, to
+change the font style, or to display the page's DOM structure.
+
+Using the `attach` method of the [`tab`](packages/addon-kit/docs/tabs.html)
+object, you can attach a set of content scripts to a particular tab. The
+scripts are executed immediately.
+
+The following add-on creates a widget which, when clicked, highlights all the
+`div` elements in the page loaded into the active tab:
+
+    const widgets = require("widget");
+    const tabs = require("tabs");
+
+    var widget = widgets.Widget({
+      label: "Show divs",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        tabs.activeTab.attach({
+          contentScript:
+            'var divs = document.getElementsByTagName("div");' +
+            'for (var i = 0; i < divs.length; ++i) {' +
+              'divs[i].setAttribute("style", "border: solid red 1px;");' +
+            '}'
+        });
+      }
+    });
+
 <api name="PageMod">
 @class
 A PageMod object. Once activated a page mod will execute the supplied content
@@ -168,7 +219,7 @@ Creates a PageMod.
   @prop include {string,array}
     A match pattern string or an array of match pattern strings.  These define
     the pages to which the PageMod applies.  See the
-    [match-pattern](#module/api-utils/match-pattern) module for
+    [match-pattern](packages/api-utils/docs/match-pattern.html) module for
     a description of match pattern syntax.
     At least one match pattern must be supplied.
 
@@ -195,11 +246,11 @@ attached to the page in question.
 
 <api name="include">
 @property {List}
-A [list](#module/api-utils/list) of match pattern strings.  These define the
-pages to which the page mod applies.  See the
-[match-pattern](#module/api-utils/match-pattern) module for a description of
-match patterns. Rules can be added to the list by calling its `add` method and
-removed by calling its `remove` method.
+A [list](packages/api-utils/docs/list.html) of match pattern strings.  These
+define the pages to which the page mod applies.  See the
+[match-pattern](packages/api-utils/docs/match-pattern.html) module for a
+description of match patterns. Rules can be added to the list by calling its
+`add` method and removed by calling its `remove` method.
 
 </api>
 

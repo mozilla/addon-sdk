@@ -6,7 +6,7 @@ to be of interest to SDK module developers, rather than add-on developers.
 ## Components ##
 
 To access the infamous and powerful `Components` object, see the
-[Chrome Authority](#guide/module-development/chrome) documentation.
+[Chrome Authority](dev-guide/module-development/chrome.html) documentation.
 
 ## \_\_url\_\_ ##
 
@@ -95,4 +95,4 @@ Each element of the array is an object with the following keys:
 Returns an `Array` containing the names of all bins that aren't
 currently empty.
 
-  [Package Specification]: #guide/addon-development/package-spec
+  [Package Specification]: dev-guide/addon-development/package-spec.html

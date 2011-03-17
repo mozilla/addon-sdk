@@ -79,5 +79,12 @@ The data to send. Must be stringifiable to JSON.
 The URL of the content.
 </api>
 
+<api name="tab">
+@property {object}
+If this worker is attached to a content document, returns the related 
+[tab](#module/addon-kit/tabs).
+
+</api>
+
 </api>
 

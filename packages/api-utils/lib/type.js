@@ -278,10 +278,10 @@ function source(value, indent, limit, offset, visited) {
   }
   else if (isArray(value)) {
     if ((nestingIndex = (visited.indexOf(value) + 1))) {
-      result = "#" + nestingIndex + "#"
+      result = "#" + nestingIndex + "#";
     }
     else {
-      visited.push(value)
+      visited.push(value);
 
       if (isCompact)
         value = value.slice(0, limit);

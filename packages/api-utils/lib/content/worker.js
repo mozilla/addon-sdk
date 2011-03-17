@@ -49,6 +49,9 @@ const unload = require('unload');
 
 const JS_VERSION = '1.8';
 
+const ERR_DESTROYED =
+  "The page has been destroyed and can no longer be used.";
+
 /**
  * Extended `EventEmitter` allowing us to emit events asynchronously.
  */
@@ -65,15 +68,17 @@ const AsyncEventEmitter = EventEmitter.compose({
 
 /**
  * Function for sending data to the port. Used to send messages
- * form the worker to the symbiont and other way round.
+ * from the worker to the symbiont and other way round.
  * Function validates that data is a `JSON` or primitive value and emits
  * 'message' event on the port in the next turn of the event loop.
  * _Later this will be sending data across process boundaries._
  * @param {JSON|String|Number|Boolean} data
  */
-function postMessage(data)
+function postMessage(data) {
+  if (!this._port)
+    throw new Error(ERR_DESTROYED);
   this._port._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
-
+}
 
 /**
  * Local trait providing implementation of the workers global scope.
@@ -103,7 +108,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
 
   setInterval: function setInterval(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timers.setInterval(function(port) {
+    return timer.setInterval(function(port) {
       try {
         callback.apply(null, params); 
       } catch(e) {
@@ -270,7 +275,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   },
   /**
    * Imports scripts to the sandbox by reading files under urls and
-   * evaluating it's source. If exception occurs during evaluation
+   * evaluating its source. If exception occurs during evaluation
    * `"error"` event is emitted on the worker.
    * This is actually an analog to the `importScript` method in web
    * workers but in our case it's not exposed even though content
@@ -303,7 +308,7 @@ const Worker = AsyncEventEmitter.compose({
 
   /**
    * Sends a message to the worker's global scope. Method takes single
-   * argument, which represents data to be send to the worker. The data may
+   * argument, which represents data to be sent to the worker. The data may
    * be any primitive type value or `JSON`. Call of this method asynchronously
    * emits `message` event with data value in the global scope of this
    * symbiont.
@@ -329,7 +334,7 @@ const Worker = AsyncEventEmitter.compose({
     if ('onMessage' in options)
         this.on('message', options.onMessage);
 
-    unload.when(this._deconstructWorker.bind(this));
+    unload.when(this.destroy.bind(this));
 
     WorkerGlobalScope(this); // will set this._port pointing to the private API
   },
@@ -337,11 +342,16 @@ const Worker = AsyncEventEmitter.compose({
   get url() {
     return this._window.document.location.href;
   },
-
+  
+  get tab() {
+    let tab = require("tabs/tab");
+    return tab.getTabForWindow(this._window);
+  },
+  
   /**
    * Tells _port to unload itself and removes all the references from itself.
    */
-  _deconstructWorker: function _deconstructWorker() {
+  destroy: function destroy() {
     this._removeAllListeners('message');
     this._removeAllListeners('error');
     if (this._port) // maybe unloaded before port is created

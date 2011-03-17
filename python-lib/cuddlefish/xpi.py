@@ -15,10 +15,14 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         zf.write(str(harness_options['icon']), 'icon.png')
         del harness_options['icon']
 
+    if 'icon64' in harness_options:
+        zf.write(str(harness_options['icon64']), 'icon64.png')
+        del harness_options['icon64']
+
     IGNORED_FILES = [".hgignore", "install.rdf", 
                      "application.ini", xpi_name]
     IGNORED_FILE_SUFFIXES = ["~"]
-    IGNORED_DIRS = [".svn", ".hg"]
+    IGNORED_DIRS = [".svn", ".hg", ".git"]
 
     def filter_filenames(filenames):
         for filename in filenames:

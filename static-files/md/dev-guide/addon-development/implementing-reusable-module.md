@@ -12,8 +12,8 @@ and provides some encapsulation as each module will export only what it chooses
 to, so you can change the internals of the module without breaking its users.
 
 In this example we'll start with the [translator
-add-on](#guide/addon-development/implementing-simple-addon), and create a
-separate module containing the code that performs the translation.
+add-on](dev-guide/addon-development/implementing-simple-addon.html), and create
+a separate module containing the code that performs the translation.
 
 ## Implementing "translator.js" ##
 
@@ -62,25 +62,34 @@ module:
     var selection = require("selection");
     var translator = require("translator");
 
-    // Create a new context menu item.
-    var menuItem = contextMenu.Item({
-      label: "Translate Selection",
-      // Show this item when a selection exists.
-      context: contextMenu.SelectionContext(),
-      // When this item is clicked, post a message to the item with the
-      // selected text and current URL.
-      contentScript: 'on("click", function () {' +
-                     '  var text = window.getSelection().toString();' +
-                     '  postMessage(text);' +
-                     '});',
+    exports.main = function(options, callbacks) {
+      console.log(options.loadReason);
 
-      // When we receive the message, call the translator with the
-      // selected text and replace it with the translation.
-      onMessage: function (text) {
-        translator.translate(text, function(translation) {
-                                      selection.text = translation; })
-      }
-    });
+      // Create a new context menu item.
+      var menuItem = contextMenu.Item({
+        label: "Translate Selection",
+        // Show this item when a selection exists.
+        context: contextMenu.SelectionContext(),
+        // When this item is clicked, post a message to the item with the
+        // selected text and current URL.
+        contentScript: 'on("click", function () {' +
+                       '  var text = window.getSelection().toString();' +
+                       '  postMessage(text);' +
+                       '});',
+
+        // When we receive the message, call the translator with the
+        // selected text and replace it with the translation.
+        onMessage: function (text) {
+          translator.translate(text, function(translation) {
+                                        selection.text = translation; })
+        }
+      });
+    };
+
+    exports.onUnload = function (reason) {
+      console.log(reason);
+    };
+
 
 Next, execute `cfx run` again, and try out the add-on. It should work in
 exactly the same way as the previous version, except that now the core
@@ -89,15 +98,14 @@ to *any other program* that imports it.
 
 ## Testing Your Module ##
 
-<span class="aside">
-Until [614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712)) is fixed
-unit tests must be stored under `tests`, not `test`.
-</span>
-
 The SDK provides a framework to help test any modules you develop. To
 demonstrate this we will add some slightly unlikely tests for the translator
 module.
 
+<span class="aside">
+Until [bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed
+unit tests must be stored under `tests`, not `test`.
+</span>
 Navigate to the `tests` directory and delete the `test-main.js` file. In its
 place create a file called `test-translator.js` with the following contents:
 
@@ -137,8 +145,8 @@ place create a file called `test-translator.js` with the following contents:
 
 This file exports four functions, each of which expects to receive
 a single argument which is a `test` object. `test` is supplied by the
-[`unit-test`](#module/api-utils/unit-test) module and provides functions to
-simplify unit testing.
+[`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
+functions to simplify unit testing.
 
 <span class="aside">
 `waitUntilDone()` and `done()` are needed here because the translator is
@@ -202,8 +210,5 @@ want to; doing so just makes the output easier to read.
 ## Next: Introducing the SDK's APIs ##
 
 Next we'll summarize the
-[APIs provided by the SDK](#guide/addon-development/api-intro).
+[APIs provided by the SDK](dev-guide/addon-development/api-intro.html).
 
-  [CommonJS Specification]: http://wiki.commonjs.org/wiki/Modules/1.0
-  [Globals]: #guide/addon-development/globals
-  [unit-test]: #module/api-utils/unit-test

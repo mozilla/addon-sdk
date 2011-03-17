@@ -35,7 +35,8 @@
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from ctypes import c_void_p, POINTER, sizeof, Structure, windll, WinError, WINFUNCTYPE
-from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LPCWSTR, LPWSTR, UINT, WORD
+from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, LPCWSTR, LPWSTR, UINT, WORD, \
+                            c_buffer, c_ulong, byref
 from qijo import QueryInformationJobObject
 
 LPVOID = c_void_p
@@ -313,6 +314,7 @@ INFINITE = -1
 WAIT_TIMEOUT = 0x0102
 WAIT_OBJECT_0 = 0x0
 WAIT_ABANDONED = 0x0080
+WAIT_FAILED = 0xFFFFFFFF
 
 # GetExitCodeProcess()
 

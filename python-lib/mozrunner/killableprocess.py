@@ -135,6 +135,8 @@ class Popen(subprocess.Popen):
             creationflags |= winprocess.CREATE_SUSPENDED
             creationflags |= winprocess.CREATE_UNICODE_ENVIRONMENT
             if canCreateJob:
+                # Uncomment this line below to discover very useful things about your environment
+                #print "++++ killableprocess: releng twistd patch not applied, we can create job objects"
                 creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
 
             # create the process
@@ -158,7 +160,7 @@ class Popen(subprocess.Popen):
                 winprocess.AssignProcessToJobObject(self._job, int(hp))
             else:
                 self._job = None
-                    
+
             winprocess.ResumeThread(int(ht))
             ht.Close()
 
@@ -173,15 +175,12 @@ class Popen(subprocess.Popen):
     def kill(self, group=True):
         """Kill the process. If group=True, all sub-processes will also be killed."""
         self.kill_called = True
+
         if mswindows:
             if group and self._job:
                 winprocess.TerminateJobObject(self._job, 127)
             else:
-                try:
-                    winprocess.TerminateProcess(self._handle, 127)
-                except:
-                    # TODO: better error handling here
-                    pass
+                winprocess.TerminateProcess(self._handle, 127)
             self.returncode = 127    
         else:
             if group:
@@ -197,13 +196,9 @@ class Popen(subprocess.Popen):
         If timeout seconds are reached and the process has not terminated,
         it will be forcefully killed. If timeout is -1, wait will not
         time out."""
-        
         if timeout is not None:
             # timeout is now in milliseconds
             timeout = timeout * 1000
-
-        if self.returncode is not None:
-            return self.returncode
 
         starttime = datetime.datetime.now()
 
@@ -212,26 +207,50 @@ class Popen(subprocess.Popen):
                 timeout = -1
             rc = winprocess.WaitForSingleObject(self._handle, timeout)
             
-            if rc != winprocess.WAIT_TIMEOUT:
+            if (rc == winprocess.WAIT_OBJECT_0 or
+                rc == winprocess.WAIT_ABANDONED or
+                rc == winprocess.WAIT_FAILED):
+                # Object has either signaled, or the API call has failed.  In 
+                # both cases we want to give the OS the benefit of the doubt
+                # and supply a little time before we start shooting processes
+                # with an M-16.
+
+                # Returns 1 if running, 0 if not, -1 if timed out                
                 def check():
                     now = datetime.datetime.now()
                     diff = now - starttime
                     if (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000):
                         if self._job:
                             if (winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0):
-                                return True
+                                # Job Object is still containing active processes
+                                return 1
                         else:
-                            return True
-                    return False
-                while check():
+                            # No job, we use GetExitCodeProcess, which will tell us if the process is still active
+                            self.returncode = winprocess.GetExitCodeProcess(self._handle)
+                            if (self.returncode == win32con.STILL_ACTIVE):
+                                # Process still active, continue waiting
+                                return 1
+                        # Process not active, return 0
+                        return 0
+                    else:
+                        # Timed out, return -1
+                        return -1
+
+                notdone = check()
+                while notdone == 1:
                     time.sleep(.5)
-            
-            now = datetime.datetime.now()
-            diff = now - starttime
-            if (diff.seconds * 1000 * 1000 + diff.microseconds) > (timeout * 1000):
-                self.kill(group)
+                    notdone = check()
+
+                if notdone == -1:
+                    # Then check timed out, we have a hung process, attempt
+                    # last ditch kill with explosives
+                    self.kill(group)
+                                
             else:
-                self.returncode = winprocess.GetExitCodeProcess(self._handle)
+                # In this case waitforsingleobject timed out.  We have to
+                # take the process behind the woodshed and shoot it.
+                self.kill(group)
+
         else:
             if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
                 def group_wait(timeout):

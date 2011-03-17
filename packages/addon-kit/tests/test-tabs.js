@@ -33,6 +33,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+"use strict";
 
 var {Cc,Ci} = require("chrome");
 
@@ -546,6 +547,120 @@ exports.testPerTabEvents = function(test) {
   });
 };
 
+exports.testAttachOnOpen = function (test) {
+  // Take care that attach has to be called on tab ready and not on tab open.
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    
+    tabs.open({
+      url: "data:text/html,foobar",
+      onOpen: function (tab) {
+        let worker = tab.attach({
+          contentScript: 'postMessage(document.location.href); ',
+          onMessage: function (msg) {
+            test.assertEqual(msg, "about:blank", 
+              "Worker document url is about:blank on open");
+            worker.destroy();
+            closeBrowserWindow(window, function() test.done());
+          }
+        });
+      }
+    });
+    
+  });
+}
+
+exports.testAttachAll = function (test) {
+  // Example of attach that process all tab documents
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let firstLocation = "data:text/html,foobar";
+    let secondLocation = "data:text/html,bar";
+    let thirdLocation = "data:text/html,fox";
+    let onMessageCount = 0;
+    let onReadyCount = 0;
+    
+    let worker = null;
+    tabs.open({
+      url: firstLocation,
+      onReady: function (tab) {
+        onReadyCount++;
+        if (onReadyCount==1) {
+          worker = tab.attach({
+            contentScript: 'self.on("message", ' +
+                           '  function () postMessage(document.location.href)' +
+                           ');',
+            onMessage: function (msg) {
+              console.log("onmessage...");
+              onMessageCount++;
+              if (onMessageCount==1) {
+                test.assertEqual(msg, firstLocation, 
+                  "Worker document url is equal to the 1st document");
+                tab.url = secondLocation;
+              } 
+              else if (onMessageCount==2) {
+                test.assertEqual(msg, secondLocation, 
+                  "Worker document url is equal to the 2nd document");
+                worker.destroy();
+                tab.url = thirdLocation;
+              } else {
+                test.fail("Got unexpected message ("+onMessageCount+")");
+              }
+            }
+          });
+          worker.postMessage("new-doc");
+        } 
+        else if (onReadyCount==2) {
+          worker.postMessage("new-doc");
+        } 
+        else if (onReadyCount==3) {
+          test.assertRaises(function () {
+              worker.postMessage("new-doc");
+            }, 
+            /The page has been destroyed/, 
+            "Last postMessage throw because worker is destroyed");
+          closeBrowserWindow(window, function() test.done());
+        }
+        
+      }
+    });
+    
+  });
+}
+
+
+exports.testAttachWrappers = function (test) {
+  // Check that content script has access to unwrapped values
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let document = "data:text/html,<script>var globalJSVar=true;</script>";
+    let count = 0;
+    
+    tabs.open({
+      url: document,
+      onReady: function (tab) {
+        let worker = tab.attach({
+          contentScript: 'try {' +
+                         '  postMessage(globalJSVar);' +
+                         '  postMessage(window.globalJSVar);' +
+                         '} catch(e) {' +
+                         '  postMessage(e.message);' +
+                         '}',
+          onMessage: function (msg) {
+            test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");
+            if (count++==1)
+              closeBrowserWindow(window, function() test.done());
+          }
+        });
+      }
+    });
+    
+  });
+}
+
 /******************* helpers *********************/
 
 // Helper for getting the active window
@@ -564,8 +679,9 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
+  
   if (callback) {
-    function onLoad(event) {
+    window.addEventListener("load", function onLoad(event) {
       if (event.target && event.target.defaultView == window) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
@@ -575,9 +691,7 @@ function openBrowserWindow(callback, url) {
           }, 10);
         } catch (e) { console.exception(e); }
       }
-    }
-
-    window.addEventListener("load", onLoad, true);
+    }, true);
   }
 
   return window;
@@ -585,8 +699,8 @@ function openBrowserWindow(callback, url) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  window.addEventListener("unload", function() {
-    window.removeEventListener("unload", arguments.callee, false);
+  window.addEventListener("unload", function unload() {
+    window.removeEventListener("unload", unload, false);
     callback();
   }, false);
   window.close();
