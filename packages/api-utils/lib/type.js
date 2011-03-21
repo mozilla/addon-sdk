@@ -95,7 +95,7 @@ exports.isRegExp = isRegExp;
  *    isDate(new Date()); // true
  */
 function isDate(value) {
-  return isObject(value) && instanceOf(Date);
+  return isObject(value) && instanceOf(value, Date);
 }
 exports.isDate = isDate;
 
@@ -230,7 +230,7 @@ function instanceOf(value, Type) {
   // from a different sandbox. If a constructor of the `value` or a constructor
   // of the value's prototype has same name and source we assume that it's an
   // instance of the Type.
-  if (!isInstanceOf) {
+  if (!isInstanceOf && value) {
     isConstructorNameSame = value.constructor.name === Type.name;
     isConstructorSourceSame = String(value.constructor) == String(Type);
     isInstanceOf = (isConstructorNameSame && isConstructorSourceSame) ||

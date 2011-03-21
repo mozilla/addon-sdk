@@ -44,6 +44,13 @@ exports["test json atoms"] = function (assert) {
   assert.ok(utils.isJSON("foo bar"), "strings are JSON");
 };
 
+exports["test instanceOf"] = function (assert) {
+  assert.ok(utils.instanceOf(assert, Object),
+            "assert is object from other sandbox");
+  assert.ok(utils.instanceOf(new Date(), Date), "instance of date");
+  assert.ok(!utils.instanceOf(null, Object), "null is not an instance");
+};
+
 exports["test json"] = function (assert) {
   assert.ok(!utils.isJSON(function(){}), "functions are not json");
   assert.ok(utils.isJSON({}), "`{}` is JSON");
