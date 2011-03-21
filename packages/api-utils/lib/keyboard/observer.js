@@ -40,6 +40,7 @@
 const { Trait } = require("light-traits");
 const { EventEmitterTrait: EventEmitter } = require("events");
 const { DOMEventAssembler } = require("events/assembler");
+const { windowIterator } = require('window-utils');
 const windowObserver = require("windows/observer");
 
 // Event emitter objects used to register listeners and emit events on them
@@ -70,6 +71,10 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
 windowObserver.on("open", observer.observe.bind(observer));
 // Removing each closed window form the list of observed windows.
 windowObserver.on("close", observer.ignore.bind(observer));
+
+// Making observer aware of already opened windows.
+for each (let window in windowIterator())
+  observer.observe(window);
 
 require("unload").when(function() { observer._events = {} });
 
