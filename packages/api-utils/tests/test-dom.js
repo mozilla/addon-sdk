@@ -1,6 +1,6 @@
 "use strict";
 
-const { events } = require("dom");
+const events = require("dom/events");
 const { activeBrowserWindow: { document } } = require("window-utils");
 const window = document.window;
 
