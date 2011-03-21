@@ -39,7 +39,7 @@
 
 const { Cc, Ci } = require("chrome");
 const runtime = require("runtime");
-const type = require("type");
+const { isString } = require("type");
 const array = require("array");
 
 
@@ -103,9 +103,9 @@ exports.getCodeForKey = function getCodeForKey(key) {
  *    // 'alt shift d'
  */
 var normalize = exports.normalize = function normalize(hotkey, separator) {
-  if (type.isString(hotkey))
-    hotkey = toJSON(hotkey);
-  return toString(hotkey)
+  if (!isString(hotkey))
+    hotkey = toString(hotkey);
+  return toString(toJSON(hotkey));
 };
 
 /*
