@@ -8,6 +8,11 @@ let resourcePackages = packaging.options.resourcePackages;
 let id = packaging.jetpackID;
 exports.id = id;
 
+// Some XPCOM APIs require valid URIs as an argument for certain operations (see
+// `nsILoginManager` for example). This property represents add-on associated
+// unique URI string that can be used for that.
+exports.uri = "addon:" + id;
+
 // what URI was our Nth parent stack frame loaded from? We use this to
 // determine "who" has called our load() or url() methods. This is an
 // unpleasant hack that needs to be replaced: the real question to ask is

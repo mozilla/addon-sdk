@@ -568,8 +568,13 @@ BrowserWindow.prototype = {
     }
 
     let listener = function(e) {
-      // Ignore event firings that target the iframe
+      // Ignore event firings that target the iframe.
       if (e.target == item.node.firstElementChild)
+        return;
+
+      // The widget only supports left-click for now,
+      // so ignore right-clicks.
+      if (e.type == "click" && e.button == 2)
         return;
 
       // Proxy event to the widget

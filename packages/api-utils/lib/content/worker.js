@@ -68,7 +68,7 @@ const AsyncEventEmitter = EventEmitter.compose({
 
 /**
  * Function for sending data to the port. Used to send messages
- * form the worker to the symbiont and other way round.
+ * from the worker to the symbiont and other way round.
  * Function validates that data is a `JSON` or primitive value and emits
  * 'message' event on the port in the next turn of the event loop.
  * _Later this will be sending data across process boundaries._
@@ -108,7 +108,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
 
   setInterval: function setInterval(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timers.setInterval(function(port) {
+    return timer.setInterval(function(port) {
       try {
         callback.apply(null, params); 
       } catch(e) {
@@ -275,7 +275,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   },
   /**
    * Imports scripts to the sandbox by reading files under urls and
-   * evaluating it's source. If exception occurs during evaluation
+   * evaluating its source. If exception occurs during evaluation
    * `"error"` event is emitted on the worker.
    * This is actually an analog to the `importScript` method in web
    * workers but in our case it's not exposed even though content
@@ -308,7 +308,7 @@ const Worker = AsyncEventEmitter.compose({
 
   /**
    * Sends a message to the worker's global scope. Method takes single
-   * argument, which represents data to be send to the worker. The data may
+   * argument, which represents data to be sent to the worker. The data may
    * be any primitive type value or `JSON`. Call of this method asynchronously
    * emits `message` event with data value in the global scope of this
    * symbiont.
