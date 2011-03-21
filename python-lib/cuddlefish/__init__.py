@@ -385,7 +385,9 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>err, 'Too many arguments.'
         return 1
     # if current dir isn't empty
-    if len(os.listdir(path)) > 0:
+    dir_list = os.listdir(path)
+    vcs = ['.hg', '.git', '.svn']
+    if len(filter(lambda d: d not in vcs, dir_list)) > 0:
         print >>err, 'This command must be run in an empty directory.'
         return 1
     for d in ['lib','data','tests','docs']:
@@ -416,7 +418,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     (options, args) = parse_args(**parser_kwargs)
 
     config_args = get_config_args(options.config, env_root);
-    
+
     # reparse configs with arguments from local.json
     if config_args:
         parser_kwargs['arguments'] += config_args
