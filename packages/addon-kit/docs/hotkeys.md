@@ -3,81 +3,78 @@
 Some add-ons may wish to define keyboard shortcuts for certain operations. This
 module exposes API to create those.
 
-<api name="create">
-@function
+<api name="Hotkey">
+@class
 
-Module exports `create` method allowing users to create a general keyboard
-shortcuts.
+Module exports `Hotkey` constructor allowing users to create a general, global
+`hotkey`.
 
-@param bindings {Object}
-Function takes `bindings` object as an argument that is a map of
-key bindings. Property names of the given `bindings` object represents unique
-identifiers (application wide) for the keyboard binding, that is described by
-a value of that property.
+<api name="Hotkey">
+@constructor
+Creates a global hotkey who's `onPress` listener method is invoked when key
+combination defined by `hotkey` is pressed.
 
-_Please note: Bindings with conflicting identifier names will be just ignored,
-so please make sure that no other binding has a same name._
+ _Please note: If more then one `hotkey` is created for the same key
+ combination, listener is executed only on the last one create._
 
-Each property of the `bindings` object has to contain either `key` or
-`keycode` property and optionally `modifiers` property.
+@param options {Object}
+  Options for the hotkey, with the following keys:
 
-  @prop [key] {String}
-  The `key` property is used to specify the key that must be pressed. However,
-  there will also be cases where you want to refer to keys that cannot be
-  specified with a character (such as the Enter key or the function keys). The
-  key attribute can only be used for printable characters. Another property,
-  `keycode` can be used for non-printable characters.
+@prop combination {String}
+Key combination in the format of `'modifier key'`:
 
-  @prop [keycode] {String}
-    The `keycode` attribute should be set to a special code which represents the
-    key you want. A table of the keys can be found under the [following link]
-    (https://developer.mozilla.org/en/XUL_Tutorial/Keyboard_Shortcuts#Keycode_attribute).
-    _Please note: Not all of the keys are available on all keyboards._
-  @prop [modifiers] {String[]}
-    The modifiers that must be pressed are indicated with the array of modifier
-    keys. Following list of modifier keys are supported:
+      "accel s"
+      "meta shift i"
+      "control alt d"
 
-    - "alt"
-      The user must press the Alt key. On the Macintosh, this is the Option key.
-    - "control"
-      The user must press the Control key.
-    - "meta"
-      The user must press the Meta key. This is the Command key on the
-      Macintosh.
-    - "shift"
-      The user must press the Shift key.
-    - "accel"
-      The user must press the special accelerator key. The key used for
-      keyboard shortcuts on the user's platform. Usually, this would be the
-      value you would use.
-  @prop  [onInvoke] {function}
-  The callback function that is called after keyboard shortuct is invoked.
+Modifier keynames:
+
+- **shift**: The Shift key.
+- **alt**: The Alt key. On the Macintosh, this is the Option key. On
+  Macintosh this can only be used in conjunction with another modifier,
+  since `Alt+Letter` combinations are reserved for entering special
+  characters in text.
+- **meta**: The Meta key. On the Macintosh, this is the Command key.
+- **control**: The Control key.
+- **accel**: The key used for keyboard shortcuts on the user's platform,
+  which is Control on Windows and Linux, and Command on Mac. Usually, this
+  would be the value you would use.
+
+@prop onPress {Function}
+Function that is invoked when the key combination `hotkey` is pressed.
+
+</api>
+<api name="key">
+@property {String}
+`key` of the combination defining this hotkey.
+</api>
+<api name="modifiers">
+@property {String[]}
+Array of `modifier` that is contained by combination defining this hotkey.
+</api>
+<api name="destroy">
+@method
+Stops the hotkey from reacting on the key combinations. Once destroyed hotkey
+can no longer be used.
+</api>
+</api>
 
 ## Example ##
 
     // Define keyboard shortcuts for showing and hiding a custom panel.
-    var keybindings = require("key-bindings");
-    keybindings.create({
-      "openSamplePanel": {
-        modifiers: ["accel"],
-        key: "p",
-        onInvoke: openSamplePanel
-      },
-      "hideSamplePanel": {
-        modimodifiers: ["accel", "shift"],
-        key: "p",
-        onInvoke: hideSamplePanel
+    var Hotkey = require("hotkeys");
+    var showHotKey = Hotkey({
+      combination: "accel shift p",
+      onPress: function() {
+        showMyPanel();
       }
     });
-
-</api>
-<api name="bindings">
-@property {Object}
-
-Map of all the bindings that are already registered. The map may be used to
-make sure that no other binding with conflicting name or key combination is
-registered already.
-</api>
+    var hideHotKey = Hotkey({
+      combination: "accel alt shift p",
+      onPress: function() {
+        hideMyPanel();
+      }
+    });
 
 [Mozilla keyboard planning FAQ]:http://www.mozilla.org/access/keyboard/
 [keyboard shortcuts]:https://developer.mozilla.org/en/XUL_Tutorial/Keyboard_Shortcuts
