@@ -60,22 +60,21 @@ function Options(options) {
 }
 
 var keyEvent = exports.keyEvent = function keyEvent(element, type, options) {
-  var { bubbles, cancelable, window, view,
-        control, alt, shift, meta, key } = options || {};
+  options = options;
 
   emit(element, type, {
     initializer: INITIALIZER,
     category: CATEGORY,
     settings: [
-      bubbles !== false,
-      cancelable !== false,
-      window || view || null,
-      !!control,
-      !!alt,
-      !!shift,
-      !!meta,
-      getCodeForKey(key) || 0,
-      key.charCodeAt(0)
+      !('bubbles' in options) || options.bubbles !== false,
+      !('cancelable' in options) || options.cancelable !== false,
+      'window' in options && options.window ? options.window : null,
+      'control' in options && !!options.control,
+      'alt' in options && !!options.alt,
+      'shift' in options && !!options.shift,
+      'meta' in options && !!options.meta,
+      getCodeForKey(options.key) || 0,
+      options.key.charCodeAt(0)
     ]
   });
 }

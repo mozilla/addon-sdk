@@ -98,16 +98,18 @@ exports.unregister = function unregister(hotkey, listener) {
 const hotkeys = exports.hotkeys = {};
 
 keyboardObserver.on("keypress", function onKeypress(event, window) {
-  let { which, keyCode, shiftKey, altKey, ctlKey, metaKey, isChar } = event;
   let key, modifiers = [];
+  let isChar = 'isChar' in event && event.isChar;
+  let which = 'which' in event ? event.which : null;
+  let keyCode = 'keyCode' in event ? event.keyCode : null;
 
-  if (shiftKey)
+  if ('shiftKey' in event && event.shiftKey)
     modifiers.push("shift");
-  if (altKey)
+  if ('altKey' in event && event.altKey)
     modifiers.push("alt");
-  if (ctlKey)
+  if ('ctlKey' in event && event.ctlKey)
     modifiers.push("control");
-  if (metaKey)
+  if ('metaKey' in event && event.metaKey)
     modifiers.push("meta");
 
   // If it's a printable character we just lower case it.
