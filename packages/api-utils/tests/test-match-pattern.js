@@ -83,6 +83,7 @@ exports.testMatchPatternTestFalse = function(test) {
   ok("*.example.com", "http://example.net");
   ok("*.example.com", "http://foo.com");
   ok("*.example.com", "http://example.com.foo");
+  ok("*.example2.com", "http://example.com");
 
   ok("http://example.com/*", null);
   ok("http://example.com/*", "");
