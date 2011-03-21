@@ -387,7 +387,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     # if current dir isn't empty
     dir_list = os.listdir(path)
     vcs = ['.hg', '.git', '.svn']
-    if len(filter(lambda d: d not in vcs, dir_list)) > 0:
+    if len([d for d in dir_list if d not in vcs]) > 0:
         print >>err, 'This command must be run in an empty directory.'
         return 1
     for d in ['lib','data','tests','docs']:
