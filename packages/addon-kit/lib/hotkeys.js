@@ -37,21 +37,25 @@
 
 "use strict";
 
-var utils = require("keyboard/hotkeys");
+const { toJSON, toString: stringify } = require("keyboard/utils");
+const { register, unregister } = require("keyboard/hotkeys");
 
-var Hotkey = exports.Hotkey = function Hotkey(options) {
-  var { key, modifiers } = utils.toJSON(options);
+const Hotkey = exports.Hotkey = function Hotkey(options) {
+  if (!(this instanceof Hotkey))
+    return new Hotkey(options);
+
+  let { key, modifiers } = toJSON(options.combination);
   this.key = key;
   this.modifiers = modifiers;
   this.onPress = options.onPress;
-  utils.register(this.toString(), this.onPress);
+  register(this.toString(), this.onPress);
   return Object.freeze(this);
-}
+};
 Hotkey.prototype.destroy = function destroy() {
-  delete utils.unregister[this.toString(), this.onPress];
+  unregister(this.toString(), this.onPress);
 };
 Hotkey.prototype.toString = function toString() {
-  return utils.toString(this);
+  return stringify(this);
 };
 Hotkey.prototype.toJSON = function toJSON() {
   return { modifiers: this.modifiers, key: key };
