@@ -71,4 +71,6 @@ windowObserver.on("open", observer.observe.bind(observer));
 // Removing each closed window form the list of observed windows.
 windowObserver.on("close", observer.ignore.bind(observer));
 
+require("unload").when(function() { observer._events = {} });
+
 module.exports = observer;
