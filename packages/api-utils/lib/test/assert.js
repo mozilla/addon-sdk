@@ -36,8 +36,8 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { isFunction, isNull, isObject, isString, isRegExp, isArray,
-        isUndefined, instanceOf, source } = require("type");
+const { isFunction, isNull, isObject, isString, isRegExp, isArray, isDate,
+        isPrimitive, isUndefined, instanceOf, source } = require("type");
 
 /**
  * The `AssertionError` is defined in assert.
