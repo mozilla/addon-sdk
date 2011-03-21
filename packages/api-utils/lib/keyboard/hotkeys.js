@@ -123,9 +123,9 @@ keyboardObserver.on("keypress", function onKeypress(event, window) {
   else
     key = getKeyForCode(keyCode || which)
 
-  let hotkey = normalize({ key: key, modifiers: modifiers });
+  let combination = normalize({ key: key, modifiers: modifiers });
+  let hotkey = hotkeys[combination];
 
-  let hotkey = hotkeys[id];
   if (hotkey) {
     try {
       hotkey();
@@ -133,7 +133,7 @@ keyboardObserver.on("keypress", function onKeypress(event, window) {
       console.exception(exception);
     } finally {
       // Work around bug 582052 by preventing the (nonexistent) default action.
-      e.preventDefault();
+      event.preventDefault();
     }
   }
 });
