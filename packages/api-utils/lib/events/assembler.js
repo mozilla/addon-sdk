@@ -38,7 +38,7 @@
 "use strict";
 
 const { Trait } = require("light-traits");
-const { events } = require("dom");
+const { removeListener, on } = require("dom/events");
 
 /**
  * Trait may be used for building objects / composing traits that wish to handle
@@ -69,7 +69,7 @@ exports.DOMEventAssembler = Trait({
    */
   observe: function observe(eventTarget) {
     this.supportedEventsTypes.forEach(function(eventType) {
-      events.on(eventTarget, eventType, this);
+      on(eventTarget, eventType, this);
     }, this);
   },
   /**
@@ -79,7 +79,7 @@ exports.DOMEventAssembler = Trait({
    */
   ignore: function ignore(eventTarget) {
     this.supportedEventsTypes.forEach(function(eventType) {
-      events.removeListener(eventTarget, eventType, this);
+      removeListener(eventTarget, eventType, this);
     }, this);
   }
 });
