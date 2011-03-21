@@ -345,7 +345,7 @@ function isDeepEqual(actual, expected) {
 }
 
 function isEquivalent(a, b, stack) {
-  return isEquivalentArray(Object.keys(a).sort(),
+  return isArrayEquivalent(Object.keys(a).sort(),
                            Object.keys(b).sort()) &&
           Object.keys(a).every(function(key) {
             return isDeepEqual(a[key], b[key], stack)
