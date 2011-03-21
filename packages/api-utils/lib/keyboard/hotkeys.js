@@ -40,64 +40,64 @@
 "use strict";
 
 const keyboardObserver = require("keyboard/observer");
-const { MODIFIERS, getKeyForCode, stringify } = require("keyboard/utils");
-const { Cortex } = require("cortex");
-const { Trait } = require("light-traits");
-const array = require("array");
-const type = require("type");
+const { getKeyForCode, normalize } = require("keyboard/utils");
 
-const INVALID_SHORTCUT = "Hotkey string must contain one or more modifiers " +
-                         "and only one key";
-const HOTKEYS = {};
-
-function Hotkey(options) {
-  // Making sure that function returns same thing regardless of `new` being used
-  // with it.
-  if (!(this instanceof Hotkey))
-    return new Hotkey(options);
-
-  if (type.isString(options)) {
-    let elements = options.toLowerCase().split(' ');
-    let modifiers = this.modifiers = [];
-    elements.forEach(function(name) {
-      if (name in MODIFIERS) {
-        array.add(modifiers, MODIFIERS[name]);
-      } else {
-        if (!this.key)
-          this.key = name;
-        else
-          throw new TypeError(INVALID_SHORTCUT);
-      }
-    }, this);
-  } else {
-    this.modifiers = array.unique(options.modifiers, []);
-    this.key = String(options.key);
-    if (onPress in option)
-      this.onPress = options.onPress;
-  }
-
-  this.modifiers = this.modifiers.sort();
-  this.id = this.toString();
-
-  HOTKEYS[this.id] = this;
-
-  return Cortex(this);
-}
-Hotkey.prototype.destroy = function destroy() {
-  delete HOTKEYS[this.id];
+/**
+ * Register a global `hotkey` that executes `listener` when the key combination
+ * in `hotkey` is pressed. If more then one `listener` is registered on the same
+ * key combination only last one will be executed.
+ *
+ * @param {string} hotkey
+ *    Key combination in the format of 'modifier key'.
+ *
+ * Examples:
+ *
+ *     "accel s"
+ *     "meta shift i"
+ *     "control alt d"
+ *
+ * Modifier keynames:
+ *
+ *  - **shift**: The Shift key.
+ *  - **alt**: The Alt key. On the Macintosh, this is the Option key. On
+ *    Macintosh this can only be used in conjunction with another modifier,
+ *    since `Alt+Letter` combinations are reserved for entering special
+ *    characters in text.
+ *  - **meta**: The Meta key. On the Macintosh, this is the Command key.
+ *  - **control**: The Control key.
+ *  - **accel**: The key used for keyboard shortcuts on the user's platform,
+ *    which is Control on Windows and Linux, and Command on Mac. Usually, this
+ *    would be the value you would use.
+ *
+ * @param {function} listener
+ *    Function to execute when the `hotkey` is executed.
+ */
+exports.register = function register(hotkey, listener) {
+  hotkey = normalize(hotkey);
+  hotkeys[hotkey] = listener;
 };
-Hotkey.prototype.toString = function toString() {
-  return stringify(this.key, this.modifiers);
-};
-Hotkey.prototype.toJSON = function toJSON() {
-  return JSON.parse(JSON.stringify({
-    modifiers: this.modifiers,
-    key: this.key
-  }));
-};
-exports.Hotkey = Hotkey;
 
-function onKeypress(event, window) {
+/**
+ * Unregister a global `hotkey`. If passed `listener` is not the one registered
+ * for the given `hotkey` call to this function will be ignored.
+ *
+ * @param {string} hotkey
+ *    Key combination in the format of 'modifier key'.
+ * @param {function} listener
+ *    Function that will be invoked when the `hotkey` is pressed.
+ */
+exports.unregister = function unregister(hotkey, listener) {
+  hotkey = normalize(hotkey);
+  if (hotkeys[hotkey] === listener)
+    delete hotkeys[hotkey];
+};
+
+/**
+ * Map of hotkeys and associated functions.
+ */
+const hotkeys = exports.hotkeys = {};
+
+keyboardObserver.on("keypress", function onKeypress(event, window) {
   let { which, keyCode, shiftKey, altKey, ctlKey, metaKey, isChar } = event;
   let key, modifiers = [];
 
@@ -121,12 +121,12 @@ function onKeypress(event, window) {
   else
     key = getKeyForCode(keyCode || which)
 
-  let id = stringify(key, modifiers.sort());
+  let hotkey = normalize({ key: key, modifiers: modifiers });
 
-  let hotkey = HOTKEYS[id];
-  if (hotkey && HOTKEYS.onPress) {
+  let hotkey = hotkeys[id];
+  if (hotkey) {
     try {
-      hotkey.onPress();
+      hotkey();
     } catch (exception) {
       console.exception(exception);
     } finally {
@@ -134,6 +134,4 @@ function onKeypress(event, window) {
       e.preventDefault();
     }
   }
-}
-
-keyboardObserver.on("keypress", onKeypress);
+});

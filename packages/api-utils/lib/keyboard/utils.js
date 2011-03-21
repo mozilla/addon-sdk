@@ -39,6 +39,12 @@
 
 const { Cc, Ci } = require("chrome");
 const runtime = require("runtime");
+const type = require("type");
+const array = require("array");
+
+
+const INVALID_COMBINATION = "Hotkey string must contain one or more modifiers " +
+                         "and only one key";
 
 // Key codes for non printable chars.
 // @See: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
@@ -49,10 +55,21 @@ const MODIFIERS = exports.MODIFIERS = {
   'accel': runtime.OS === "Darwin" ? 'meta' : 'control',
   'meta': 'meta',
   'control': 'control',
+  'ctrl': 'control',
   'option': 'alt',
   'command': 'meta',
   'alt': 'alt',
   'shift': 'shift'
+};
+
+// Map of keys that contain `_` chars.
+const ALIAS_KEYS = exports.KEYS = {
+  'backspace': DOM_VK_CODES.BACK_SPACE,
+  'capslock': DOM_VK_CODES.CAPS_LOCK,
+  'pageup': DOM_VK_CODES.PAGE_UP,
+  'pagedown': DOM_VK_CODES.PAGE_DOWN,
+  'numlock': DOM_VK_CODES.NUM_LOCK,
+  'scrolllock': DOM_VK_CODES.SCROLL_LOCK
 };
 
 exports.getKeyForCode = function getKeyForCode(code) {
@@ -65,8 +82,91 @@ exports.getKeyForCode = function getKeyForCode(code) {
   }
 };
 
-exports.stringify = function stringify(key, modifiers) {
-  let keys = modifiers.slice();
-  keys.push(key);
-  return keys.join(" ");
+exports.getCodeForKey = function getCodeForKey(key) {
+  return ALIAS_KEYS[key] || DOM_VK_CODES["DOM_VK_" + key.toUpperCase()];
+};
+
+/**
+ * Utility function that takes string or JSON that defines a `hotkey` and
+ * returns normalized string version of it.
+ * @param {JSON|String} hotkey
+ * @param {String} [separator=" "]
+ *    Optional string that represents separator used to concatenate keys in the
+ *    given `hotkey`.
+ * @returns {String}
+ * @examples
+ *
+ *    require("keyboard/hotkeys").normalize("b Shift accel");
+ *    // 'control shift b' -> on windows & linux
+ *    // 'meta shift b'    -> on mac
+ *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
+ *    // 'alt shift d'
+ */
+var normalize = exports.normalize = function normalize(hotkey, separator) {
+  if (type.isString(hotkey))
+    hotkey = toJSON(hotkey);
+  return toString(hotkey)
+};
+
+/*
+ * Utility function that splits a string of characters that defines a `hotkey`
+ * into modifier keys and the defining key.
+ * @param {String} hotkey
+ * @param {String} [separator=" "]
+ *    Optional string that represents separator used to concatenate keys in the
+ *    given `hotkey`.
+ * @returns {JSON}
+ * @expamples
+ *
+ *    require("keyboard/hotkeys").toJSON("accel shift b");
+ *    // { key: 'b', modifiers: [ 'control', 'shift' ] } -> on windows & linux
+ *    // { key: 'b', modifiers: [ 'meta', 'shift' ] }    -> on mac
+ *
+ *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
+ *    // { key: 'd', modifiers: [ 'alt', 'shift' ] }
+ */
+var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
+  let value = {};
+  let modifiers = [];
+  let keys = hotkey.toLowerCase().split(separator || " ");
+  keys.forEach(function(name) {
+    if (name in MODIFIERS) {
+      array.add(modifiers, MODIFIERS[name]);
+    } else {
+      if (!value.key)
+        value.key = name;
+      else
+        throw new TypeError(INVALID_COMBINATION);
+    }
+  });
+  value.modifiers = modifiers.sort();
+  return value;
+};
+
+/**
+ * Utility function that takes object that defines a `hotkey` and returns
+ * string representation of it.
+ *
+ * _Please note that this function does not validates data neither it normalizes
+ * it, if you are unsure that data is well formed use `normalize` function
+ * instead.
+ *
+ * @param {JSON} hotkey
+ * @param {String} [separator=" "]
+ *    Optional string that represents separator used to concatenate keys in the
+ *    given `hotkey`.
+ * @returns {String}
+ * @expamples
+ *
+ *    require("keyboard/hotkeys").toString({
+ *      key: 'b',
+ *      modifiers: [ 'control', 'shift' ]
+ *    }, '+');
+ *    // 'control+shift+b
+ *
+ */
+var toString = exports.toString = function toString(hotkey, separator) {
+  let keys = hotkey.modifiers.slice();
+  keys.push(hotkey.key);
+  return keys.join(separator || " ");
 };
