@@ -45,7 +45,8 @@ exports.MatchPattern = MatchPattern;
 function MatchPattern(pattern) {
   if (typeof pattern.test == "function") {
       this.regexp = pattern;
-  } else {
+  }
+  else {
     let firstWildcardPosition = pattern.indexOf("*");
     let lastWildcardPosition = pattern.lastIndexOf("*");
     if (firstWildcardPosition != lastWildcardPosition)
