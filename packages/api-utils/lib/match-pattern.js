@@ -50,33 +50,33 @@ function MatchPattern(pattern) {
     let firstWildcardPosition = pattern.indexOf("*");
     let lastWildcardPosition = pattern.lastIndexOf("*");
     if (firstWildcardPosition != lastWildcardPosition)
-        throw new Error("There can be at most one '*' character in a wildcard.");
+      throw new Error("There can be at most one '*' character in a wildcard.");
 
     if (firstWildcardPosition == 0) {
-        if (pattern.length == 1)
+      if (pattern.length == 1)
         this.anyWebPage = true;
-        else if (pattern[1] != ".")
+      else if (pattern[1] != ".")
         throw new Error("Expected a *.<domain name> string, got: " + pattern);
-        else
+      else
         this.domain = pattern.substr(2);
     }
     else {
-        if (pattern.indexOf(":") == -1) {
+      if (pattern.indexOf(":") == -1) {
         throw new Error("When not using *.example.org wildcard, the string " +
                         "supplied is expected to be either an exact URL to " +
                         "match or a URL prefix. The provided string ('" +
                         pattern + "') is unlikely to match any pages.");
-        }
+      }
 
-        if (firstWildcardPosition == -1)
+      if (firstWildcardPosition == -1)
         this.exactURL = pattern;
-        else if (firstWildcardPosition == pattern.length - 1)
+      else if (firstWildcardPosition == pattern.length - 1)
         this.urlPrefix = pattern.substr(0, pattern.length - 1);
-        else {
+      else {
         throw new Error("The provided wildcard ('" + pattern + "') has a '*' " +
                         "in an unexpected position. It is expected to be the " +
                         "first or the last character in the wildcard.");
-        }
+      }
     }
   }
 }
