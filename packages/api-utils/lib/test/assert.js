@@ -322,7 +322,7 @@ function isDeepEqual(actual, expected) {
   }
 
   // XXX specification bug: this should be specified
-  else if (isPrimitive(actual) || isPrimitive(actual)) {
+  else if (isPrimitive(actual) || isPrimitive(expected)) {
     return expected === actual;
   }
 
