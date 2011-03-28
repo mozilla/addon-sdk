@@ -32,10 +32,10 @@ code resides.
 
 Thus, for example, if a package contains a resource at
 `data/mydata.dat` and a module at `lib/foo.js`, the module at
-`lib/foo.js` may make the following call to retrieve an absolute url
+`lib/foo.js` may make the following call to retrieve an absolute URL
 to `data/mydata.dat`:
 
-    var mydata = packaging.getURLForData("/mydata.dat");
+    var myDataURL = packaging.getURLForData("/mydata.dat");
 
 If the calling package has no `data` directory, an exception is
 thrown.
