@@ -7,6 +7,7 @@ let packageData = packaging.options.packageData;
 let resourcePackages = packaging.options.resourcePackages;
 let id = packaging.jetpackID;
 exports.id = id;
+exports.name = packaging.options.name;
 
 // Some XPCOM APIs require valid URIs as an argument for certain operations (see
 // `nsILoginManager` for example). This property represents add-on associated
