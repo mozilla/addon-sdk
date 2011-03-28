@@ -41,6 +41,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
       pageMods.forEach(function(mod) mod.destroy());
       // XXX leaks reported if we don't close the tab?
       tabBrowser.removeTab(newTab);
+      loader.unload();
       test.done();
     });
   }
