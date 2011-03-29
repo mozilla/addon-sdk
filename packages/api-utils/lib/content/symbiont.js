@@ -98,28 +98,35 @@ const Symbiont = Worker.resolve({
     }
     else {
       let self = this;
-       hiddenFrames.add(hiddenFrames.HiddenFrame({
+      this._hiddenFrame = hiddenFrames.HiddenFrame({
         onReady: function onFrame() {
           self._initFrame(this.element);
         }
-      }));
+      });
+      hiddenFrames.add(this._hiddenFrame);
     }
 
     unload.when(this.destroy.bind(this));
   },
   destroy: function destroy() {
+    this._workerDestroy();
+    this._cleanUpFrame();
+    this._frame = null;
+    if (this._hiddenFrame) {
+      hiddenFrames.remove(this._hiddenFrame);
+      this._hiddenFrame = null;
+    }
+  },
+  
+  _cleanUpFrame: function _cleanUpFrame() {
     // The frame might not have been initialized yet.
     if (!this._frame)
       return;
-
+    
     if ('ready' === this.contentScriptWhen)
       this._frame.removeEventListener(ON_READY, this._onReady, true);
     else
       observers.remove(ON_START, this._onStart);
-
-    this._frame = null;
-    
-    this._workerDestroy();
   },
   /**
    * XUL iframe or browser elements with attribute `type` being `content`.
@@ -132,6 +139,14 @@ const Symbiont = Worker.resolve({
    * Removes listener, sets right permissions to the frame and loads content.
    */
   _initFrame: function _initFrame(frame) {
+    // We need to remove observers from the current iframe
+    // before adding new ones to avoid leaking the iframe,
+    // whether initFrame is being called with a new iframe
+    // or an existing one (which happens when page-worker
+    // calls initFrame multiple times with the same iframe).
+    if (this._frame)
+      this._cleanUpFrame();
+    
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
