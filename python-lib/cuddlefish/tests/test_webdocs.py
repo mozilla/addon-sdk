@@ -68,13 +68,13 @@ class WebDocTests(unittest.TestCase):
             '<p>The <code>aardvark-feeder</code> module simplifies feeding aardvarks.</p>'\
             in module)
         self.assertTrue(\
-            '<h2 class="api_header">\n\nAPI Reference\n</h2>'\
+            '<h2 class="api_header">API Reference</h2>'\
             in module)
         self.assertTrue(\
-            '<h3 class="api_header">\n\nFunctions\n</h3>'\
+            '<h3 class="api_header">Functions</h3>'\
             in module)
         self.assertTrue(\
-            '<h4 class="api_name">\n\nfeed(food)\n</h4>'\
+            '<h4 class="api_name">feed(food)</h4>'\
             in module)
         self.assertTrue(
             '<p>Feed the aardvark.</p>'\

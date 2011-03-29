@@ -237,7 +237,7 @@ def make_wsgi_app(env_root, webdocs, task_queue, expose_privileged_api=True):
     return app
 
 def get_url(host=DEFAULT_HOST, port=DEFAULT_PORT):
-    return "http://%s:%d" % (host, port)
+    return "http://%s:%d/" % (host, port)
 
 def make_httpd(env_root, host=DEFAULT_HOST, port=DEFAULT_PORT,
                quiet=True):
@@ -247,7 +247,8 @@ def make_httpd(env_root, host=DEFAULT_HOST, port=DEFAULT_PORT,
         handler_class = QuietWSGIRequestHandler
 
     tq = Queue.Queue()
-    web_docs = webdocs.WebDocs(env_root)
+    url = get_url(host, port)
+    web_docs = webdocs.WebDocs(env_root, url)
     httpd = simple_server.make_server(host, port,
                                       make_wsgi_app(env_root, web_docs, tq),
                                       ThreadedWSGIServer,

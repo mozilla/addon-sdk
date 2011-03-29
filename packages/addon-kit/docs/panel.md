@@ -116,6 +116,11 @@ Creates a panel.
     An optional "hide" event listener.  See Events above.
 </api>
 
+<api name="isShowing">
+@property {boolean}
+Tells if the panel is currently shown or not. This property is read-only.
+</api>
+
 <api name="height">
 @property {number}
 The height of the panel in pixels.

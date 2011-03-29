@@ -248,6 +248,7 @@ This is the complete add-on script:
     var data = require("self").data;
 
     widgets.Widget({
+      id: "open-reddit-btn",
       label: "Reddit",
       contentURL: "http://www.reddit.com/static/favicon.ico",
       panel: panels.Panel({

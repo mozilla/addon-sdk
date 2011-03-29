@@ -12,9 +12,9 @@ For Windows users, MozillaBuild (https://wiki.mozilla.org/MozillaBuild)
 will install the correct version of Python and the MSYS package, which
 will make it easier to work with the SDK.
 
-To get started, first enter the same directory that this file is
-in using a shell program. On Unix systems or on Windows with MSYS,
-you can execute the following command:
+To get started, first enter the same directory that this README file
+is in (the SDK's root directory) using a shell program. On Unix systems
+or on Windows with MSYS, you can execute the following command:
 
   source bin/activate
 

@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 // For more information on the context in which this script is executed, see:
-// https://wiki.mozilla.org/Extension_Manager:Bootstrapped_Extensions
+// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -69,14 +69,7 @@ function setupHarness(installPath, loadReason) {
                .getService(Ci.mozIJSSubScriptLoader);
   loader.loadSubScript(path, harness);
 
-  var defaults = harness.getDefaults(installPath);
-  var HarnessService = harness.buildHarnessService(
-    installPath,
-    defaults.dump,
-    defaults.logError,
-    defaults.onQuit,
-    defaults.options
-  );
+  var HarnessService = harness.buildHarnessService(installPath);
   var factory = HarnessService.prototype._xpcom_factory;
   var proto = HarnessService.prototype;
 
@@ -99,9 +92,9 @@ function setupHarness(installPath, loadReason) {
   };
 
   if (loadReason == "startup")
-    // Simulate an app-startup event; the harness service will take care of
+    // Simulate a startup event; the harness service will take care of
     // waiting until the app is ready for the extension's code to run.
-    harnessService.observe(null, "app-startup", null);
+    harnessService.observe(null, "profile-after-change", null);
   else
     harnessService.load(loadReason);
 }
