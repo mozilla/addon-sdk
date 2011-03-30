@@ -58,7 +58,7 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      ValueError: invalid resource hostname: BLARG
+      ValueError: package names need to be lowercase: BLARG
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):

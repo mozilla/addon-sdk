@@ -82,6 +82,9 @@ if (this.chrome) {
     addon.registerCall("self:id", function(name) {
       return id;
     });
+    addon.registerCall("self:name", function(name) {
+      return packaging.options.name;
+    });
     addon.registerCall("self:load", function(name, path, stack) {
       let data_url = getURL(path, stack, 1);
       let fn = url.toFilename(data_url);

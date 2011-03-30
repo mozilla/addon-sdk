@@ -7,7 +7,6 @@ const ERRORS = {
   FILE_NOT_FOUND: /^path does not exist: .+$/,
   NOT_A_DIRECTORY: /^path is not a directory: .+$/,
   NOT_A_FILE: /^path is not a file: .+$/,
-  STREAM_CLOSED: /^The stream is closed/
 };
 
 var myurl = __url__;

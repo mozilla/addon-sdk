@@ -481,6 +481,7 @@ exports.testConstructor = function(test) {
   // test click handler not respond to right-click
   let clickCount = 0;
   tests.push(function testNoRightClick() testSingleWidget({
+    id: "click-content",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
     contentScript: "var evt = document.createEvent('MouseEvents'); " +
