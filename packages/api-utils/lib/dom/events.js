@@ -38,10 +38,17 @@
 
 "use strict";
 
+// Utility function that returns copy of the given `text` with last character
+// removed if it is `"s"`.
 function singularify(text) {
   return text[text.length - 1] === "s" ? text.substr(0, text.length - 1) : text;
 }
 
+// Utility function that takes event type, argument is passed to
+// `document.createEvent` and returns name of the initializer method of the
+// given event. Please note that there are some event types whose initializer
+// methods can't be guessed by this function. For more details see following
+// link: https://developer.mozilla.org/En/DOM/Document.createEvent
 function getInitializerName(category) {
   return "init" + singularify(category);
 }
