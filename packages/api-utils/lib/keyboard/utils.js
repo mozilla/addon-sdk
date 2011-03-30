@@ -44,8 +44,8 @@ const { isString } = require("type");
 const array = require("array");
 
 
-const INVALID_COMBINATION = "Hotkey string must contain one or more modifiers " +
-                         "and only one key";
+const INVALID_COMBINATION = "Hotkey string must contain one or more " +
+                            "modifiers and only one key";
 
 // Key codes for non printable chars.
 // @See: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl

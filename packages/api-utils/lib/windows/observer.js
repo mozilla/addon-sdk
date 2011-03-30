@@ -41,19 +41,19 @@
 const { EventEmitterTrait: EventEmitter } = require("events");
 const { WindowTracker } = require("window-utils");
 
-var observer;
-
-// Creating an event emitter object that we will use to collect an event
-// listeners & for emitting events when they occur. Also we use `WindowTracker`
-// is used to observe actual window events.
-module.exports = new WindowTracker(observer = EventEmitter.create({
+// Creating an event emitter object that will spread use window events to it's
+// listeners when they occur.
+const observer = module.exports = EventEmitter.create({
   onTrack: function onTrack(chromeWindow) {
     this._emit("open", chromeWindow);
   },
   onUntrack: function onUntrack(chromeWindow) {
     this._emit("close", chromeWindow);
   }
-})).delegate;
+});
 
+// Using `WindowTracker` to track window events.
+new WindowTracker(observer);
+
+// Getting rid of all listeners when add-on is unloaded.
 require("unload").when(function() { observer._events = {} });
-
