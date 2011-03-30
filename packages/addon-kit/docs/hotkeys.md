@@ -1,7 +1,7 @@
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com]  -->
 
 Some add-ons may wish to define keyboard shortcuts for certain operations. This
-module exposes API to create those.
+module exposes an API to create those.
 
 <api name="Hotkey">
 @class
@@ -14,8 +14,8 @@ Module exports `Hotkey` constructor allowing users to create a general, global
 Creates a global hotkey who's `onPress` listener method is invoked when key
 combination defined by `hotkey` is pressed.
 
- _Please note: If more then one `hotkey` is created for the same key
- combination, listener is executed only on the last one create._
+Please note: If more than one `hotkey` is created for the same key
+combination, the listener is executed only on the last one created
 
 @param options {Object}
   Options for the hotkey, with the following keys:
