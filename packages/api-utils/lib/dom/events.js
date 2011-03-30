@@ -74,11 +74,12 @@ function getInitializerName(category) {
  *    See [DOM Level 3 Events](http://www.w3.org/TR/DOM-Level-3-Events/#event-flow)
  *    for a detailed explanation.
  */
-var on = exports.on = function on(element, type, listener, capture) {
+function on(element, type, listener, capture) {
   // `capture` defaults to `false`.
   capture = capture || false;
   element.addEventListener(type, listener, capture);
-};
+}
+exports.on = on;
 
 /**
  * Registers an event `listener` on a given `element`, that will be called
@@ -102,12 +103,13 @@ var on = exports.on = function on(element, type, listener, capture) {
  *    See [DOM Level 3 Events](http://www.w3.org/TR/DOM-Level-3-Events/#event-flow)
  *    for a detailed explanation.
  */
-exports.once = function once(element, type, listener, capture) {
+function once(element, type, listener, capture) {
   on(element, type, function selfRemovableListener(event) {
     removeListener(element, type, selfRemovableListener, capture);
     listener.apply(this, arguments);
   }, capture);
-};
+}
+exports.once = once;
 
 /**
  * Unregisters an event `listener` on a given `element` for the events of the
@@ -131,10 +133,10 @@ exports.once = function once(element, type, listener, capture) {
  *    See [DOM Level 3 Events](http://www.w3.org/TR/DOM-Level-3-Events/#event-flow)
  *    for a detailed explanation.
  */
-var removeListener = exports.removeListener =
-    function removeListener(element, type, listener, capture) {
-      element.removeEventListener(type, listener, capture);
-    };
+function removeListener(element, type, listener, capture) {
+  element.removeEventListener(type, listener, capture);
+}
+exports.removeListener = removeListener;
 
 /**
  * Emits event of the specified `type` and `category` on the given `element`.
@@ -156,12 +158,12 @@ var removeListener = exports.removeListener =
  *      initializer after firs `type` argument.
  * @see https://developer.mozilla.org/En/DOM/Document.createEvent
  */
-exports.emit =
-  function emit(element, type, { category, initializer, settings }) {
-    category = category || "UIEvents";
-    initializer = initializer || getInitializerName(category);
-    let document = element.ownerDocument;
-    let event = document.createEvent(category);
-    event[initializer].apply(event, [type].concat(settings));
-    element.dispatchEvent(event);
-  };
+function emit(element, type, { category, initializer, settings }) {
+  category = category || "UIEvents";
+  initializer = initializer || getInitializerName(category);
+  let document = element.ownerDocument;
+  let event = document.createEvent(category);
+  event[initializer].apply(event, [type].concat(settings));
+  element.dispatchEvent(event);
+};
+exports.emit = emit;
