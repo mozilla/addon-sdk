@@ -36,8 +36,8 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { isFunction, isNull, isObject, isString, isRegExp, isArray,
-        isUndefined, instanceOf, source } = require("type");
+const { isFunction, isNull, isObject, isString, isRegExp, isArray, isDate,
+        isPrimitive, isUndefined, instanceOf, source } = require("type");
 
 /**
  * The `AssertionError` is defined in assert.
@@ -322,7 +322,7 @@ function isDeepEqual(actual, expected) {
   }
 
   // XXX specification bug: this should be specified
-  else if (isAtom(actual) || isAtom(actual)) {
+  else if (isPrimitive(actual) || isPrimitive(expected)) {
     return expected === actual;
   }
 
@@ -345,7 +345,7 @@ function isDeepEqual(actual, expected) {
 }
 
 function isEquivalent(a, b, stack) {
-  return isEquivalentArray(Object.keys(a).sort(),
+  return isArrayEquivalent(Object.keys(a).sort(),
                            Object.keys(b).sort()) &&
           Object.keys(a).every(function(key) {
             return isDeepEqual(a[key], b[key], stack)
