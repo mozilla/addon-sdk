@@ -32,16 +32,23 @@ in the context of the page.
 
 These globals are available regardless of the security context of the code.
 
-<code>**console**</code>
+### console ###
 
-`console` is an object with the following methods:
+The `console` object enables your add-on to log messages. If you have started
+the host application for your add-on from the command line (for example, by
+executing `cfx run` or `cfx test`) then these messages appear in the command
+shell you used. If the add-on has been installed in the host application, then
+the messages appear in the host application's
+[Error Console](https://developer.mozilla.org/en/Error_Console).
+
+The `console` object has the following methods:
 
 <code>console.**log**(*object*[, *object*, ...])</code>
 
-Logs an informational message to the console. Depending on console's
-underlying implementation and user interface, you may be able to
-introspect into the properties of non-primitive objects that are
-logged.
+Logs an informational message to the shell.
+Depending on the console's underlying implementation and user interface,
+you may be able to introspect into the properties of non-primitive objects
+that are logged.
 
 <code>console.**info**(*object*[, *object*, ...])</code>
 
@@ -49,15 +56,15 @@ A synonym for `console.log()`.
 
 <code>console.**warn**(*object*[, *object*, ...])</code>
 
-Logs a warning message to the console.
+Logs a warning message.
 
 <code>console.**error**(*object*[, *object*, ...])</code>
 
-Logs an error message to the console.
+Logs an error message.
 
 <code>console.**debug**(*object*[, *object*, ...])</code>
 
-Logs a debug message to the console.
+Logs a debug message.
 
 <code>console.**exception**(*exception*)</code>
 
@@ -66,5 +73,5 @@ about the exception's stack traceback if one is available.
 
 <code>console.**trace**()</code>
 
-Inserts a stack trace into the console at the point this function is called.
+Logs a stack trace at the point this function is called.
 

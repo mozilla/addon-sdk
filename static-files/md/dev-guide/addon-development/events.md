@@ -71,6 +71,7 @@ constructor. The listener loads the Google home page:
     var tabs = require("tabs");
 
     widgets.Widget({
+      id: "google-link",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
       onClick: function() {
@@ -85,6 +86,7 @@ widget's `on()` method:
     var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "google-link-alternative",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico"
     });

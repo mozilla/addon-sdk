@@ -125,6 +125,8 @@ const PageMod = Loader.compose(EventEmitter, {
     pageModManager.add(this._public);
   },
   destroy: function destroy() {
+    for each (let rule in this.include)
+      this.include.remove(rule);
     pageModManager.remove(this._public);
   },
   _onContent: function _onContent(window) {

@@ -8,6 +8,10 @@ which can be built with either Mozilla's traditional add-on platform or the SDK.
 
 __Add-on SDK__: A toolchain and associated applications for developing add-ons.
 
+__API Utils__: A small, self-contained set of low-level modules that forms
+the base functionality for the SDK. The library can be "bootstrapped" into
+any Mozilla application or extension.
+
 __CFX__: A command-line build, testing, and packaging tool for SDK-based code.
 
 __CommonJS__: A specification for a cross-platform JavaScript module
@@ -20,14 +24,11 @@ to all modules, such as `console` and `memory`. Includes
 CommonJS globals like `require` and standard JavaScript globals such
 as `Array` and `Math`.
 
-<span class="aside">
-For more information on Low-Level Modules, see the
-[Low-Level Module Best Practices] appendix.
-</span>
-
-__API Utils__: A small, self-contained set of low-level modules that forms
-the base functionality for the SDK. The library can be "bootstrapped" into
-any Mozilla application or extension.
+<span><a name="host-application">__Host Application__:</a> Add-ons are executed in
+the context of a host application, which is the application they are extending.
+Firefox and Thunderbird are the most obvious hosts for Mozilla add-ons, but
+at present only Firefox is supported as a host for add-ons developed using the
+Add-on SDK.</span>
 
 __Jetpack Prototype__: A Mozilla Labs experiment that predated and inspired
 the SDK. The SDK incorporates many ideas and some code from the prototype.
@@ -37,6 +38,11 @@ exposing CommonJS modules to each other in a given security context,
 while providing each module with necessary globals and
 enforcing security boundaries between the modules as necessary. It's
 entirely possible for Loaders to create new Loaders.
+
+<span class="aside">
+For more information on Low-Level Modules, see the
+[Low-Level Module Best Practices] appendix.
+</span>
 
 __Low-Level Module__: A module with the following properties:
 

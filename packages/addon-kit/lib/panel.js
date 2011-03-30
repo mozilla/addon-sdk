@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Myk Melez <myk@mozilla.org> (Original Author)
  *   Irakli Gozalishvili <gozala@mazilla.com>
+ *   Mihai Sucan <mihai.sucan@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -48,6 +49,7 @@ const { Ci } = require("chrome");
 const { validateOptions: valid } = require("api-utils");
 const { Symbiont } = require("content");
 const { EventEmitter } = require('events');
+const timer = require("timer");
 
 require("xpcom").utils.defineLazyServiceGetter(
   this,
@@ -135,6 +137,10 @@ const Panel = Symbiont.resolve({
   set height(value)
     this._height =  valid({ $: value }, { $: validNumber }).$ || this._height,
   _height: 240,
+
+  /* Public API: Panel.isShowing */
+  get isShowing() !!this._xulPanel && this._xulPanel.state == "open",
+
   /* Public API: Panel.show */
   show: function show(anchor) {
     anchor = anchor || null;
@@ -142,28 +148,93 @@ const Panel = Symbiont.resolve({
     let xulPanel = this._xulPanel;
     if (!xulPanel) {
       xulPanel = this._xulPanel = document.createElementNS(XUL_NS, 'panel');
+      xulPanel.setAttribute("type", "arrow");
+      
+      // One anonymous node has a big padding that doesn't work well with 
+      // Jetpack, as we would like to display an iframe that completely fills 
+      // the panel. 
+      // -> Use a XBL wrapper with inner stylesheet to remove this padding.
+      let css = ".panel-inner-arrowcontent, .panel-arrowcontent {padding: 0;}";
+      let originalXBL = "chrome://global/content/bindings/popup.xml#arrowpanel";
+      let binding = 
+      '<bindings xmlns="http://www.mozilla.org/xbl">' +
+        '<binding id="id" extends="' + originalXBL + '">' + 
+          '<resources>' + 
+            '<stylesheet src="data:text/css,' + 
+              document.defaultView.encodeURIComponent(css) + '"/>' +
+          '</resources>' +
+        '</binding>' +
+      '</bindings>';
+      xulPanel.style.MozBinding = 'url("data:text/xml,' + 
+        document.defaultView.encodeURIComponent(binding) + '")';
+      
       let frame = document.createElementNS(XUL_NS, 'iframe');
       frame.setAttribute('type', 'content');
       frame.setAttribute('flex', '1');
       frame.setAttribute('transparent', 'transparent');
+      
       // Load an empty document in order to have an immediatly loaded iframe, 
       // so swapFrameLoaders is going to work without having to wait for load.
       frame.setAttribute("src","data:,"); 
+      
       xulPanel.appendChild(frame);
       document.getElementById("mainPopupSet").appendChild(xulPanel);
     }
-    let { width, height } = this, when = 'before_start', x, y;
-    // Open the popup by the anchor.
-    // TODO: make the XUL panel an arrow panel so it gets positioned
-    // automagically once arrow panels are implemented in bug 554937.
+    let { width, height } = this, x, y, position;
+    
     if (!anchor) {
       // Open the popup in the middle of the window.
       x = document.documentElement.clientWidth / 2 - width / 2;
       y = document.documentElement.clientHeight / 2 - height / 2;
-      when = null;
+      position = null;
+    } 
+    else {
+      // Open the popup by the anchor.
+      let rect = anchor.getBoundingClientRect();
+      
+      let window = anchor.ownerDocument.defaultView;
+      
+      let zoom = window.mozScreenPixelsPerCSSPixel;
+      let screenX = rect.left + window.mozInnerScreenX * zoom;
+      let screenY = rect.top + window.mozInnerScreenY * zoom;
+      
+      // Set up the vertical position of the popup relative to the anchor
+      // (always display the arrow on anchor center)
+      let horizontal, vertical;
+      if (screenY > window.screen.availHeight / 2 + height)
+        vertical = "top";
+      else
+        vertical = "bottom";
+      
+      if (screenY > window.screen.availWidth / 2 + width)
+        horizontal = "left";
+      else
+        horizontal = "right";
+      
+      let verticalInverse = vertical == "top" ? "bottom" : "top";
+      position = vertical + "center " + verticalInverse + horizontal;
+      
+      // Allow panel to flip itself if the panel can't be displayed at the
+      // specified position (useful if we compute a bad position or if the 
+      // user moves the window and panel remains visible)
+      xulPanel.setAttribute("flip","both");
     }
-    xulPanel.sizeTo(width, height);
-    xulPanel.openPopup(anchor, when, x, y);
+    
+    // Resize the iframe instead of using panel.sizeTo
+    // because sizeTo doesn't work with arrow panels
+    xulPanel.firstChild.style.width = width + "px";
+    xulPanel.firstChild.style.height = height + "px";
+    
+    // Wait for the XBL binding to be constructed
+    function waitForBinding() {
+      if (!xulPanel.openPopup) {
+        timer.setTimeout(waitForBinding, 50);
+        return;
+      }
+      xulPanel.openPopup(anchor, position, x, y);
+    }
+    waitForBinding();
+    
     return this._public;
   },
   /* Public API: Panel.hide */

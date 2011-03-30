@@ -154,9 +154,6 @@ This is an optional property.
 @prop [onDeactivate] {function}
 A callback function that will be registered for 'deactivate' event.
 This is an optional property.
-@prop [onActivate] {function}
-A callback function that will be registered for 'activate' event.
-This is an optional property.
 </api>
 
 <api name="Tab">
@@ -232,20 +229,21 @@ Makes this tab active, which will bring this tab to the foreground.
 <api name="attach">
 @method
   Create a page mod and attach it to the document in the tab.
+  
 **Example**
 
     var tabs = require("tabs");
     
-    tabs.activeTab.attach({
+    var worker = tabs.activeTab.attach({
       contentScript: 
-        'document.body.style.border="5px solid black";' +
-        'postMessage(document.getElementById("#my-watched-element").innerText);',
+        'document.body.style.border = "5px solid black";' +
+        'postMessage(document.getElementById("#my-watched-element").textContent);',
       onMessage: function (data) {
         // data is equal to the text of my DOM element with ID "#my-watched-element"
         
       }
     });
-    
+
 @param options {object}
   Options for the page mod, with the following keys:
 
@@ -261,6 +259,11 @@ Makes this tab active, which will bring this tab to the foreground.
     A function called when the page mod receives a message from content scripts. 
     Listeners are passed a single argument, the message posted from the 
     content script.
+
+@returns {Worker}
+  See [Content Scripts guide](dev-guide/addon-development/web-content.html)
+  to learn how to use the `Worker` object to communicate with the content script.
+
 </api>
 
 </api>

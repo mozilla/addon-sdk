@@ -146,11 +146,15 @@ table.meta-table {
 #footer {
   background: #33559b url(../media/bg-footer.png) 0 0 repeat-x;
   clear: both;
-  color: #476FBE;
+  color: white;
   display: block;
   font-family: Georgia,serif;
   min-width: 978px;
   padding: 123px 0 5px 0;
+}
+
+#footer .full-name {
+  margin-left: 0.5em;
 }
 
 #footer a:link,#footer a:visited {

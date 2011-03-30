@@ -27,6 +27,7 @@ exports.main = function(options, callbacks) {
   // Create a widget that displays the image.  We'll attach the panel to it.
   // When you click the widget, the panel will pop up.
   widgets.Widget({
+    id: "test-widget",
     label: "Mom",
     contentURL: iconURL,
     panel: myPanel

@@ -7,7 +7,7 @@ const {Cc,Ci} = require("chrome");
  * and checks the effect of the page mod on 'onload' event via testCallback.
  */
 exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
-                                           testCallback) {
+                                           testCallback, timeout) {
   var xulApp = require("xul-app");
   if (!xulApp.versionInRange(xulApp.platformVersion, "1.9.3a3", "*") &&
       !xulApp.versionInRange(xulApp.platformVersion, "1.9.2.7", "1.9.2.*")) {
@@ -24,7 +24,11 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
     return null;
   }
 
-  test.waitUntilDone();
+  if (timeout !== undefined)
+    test.waitUntilDone(timeout);
+  else
+    test.waitUntilDone();
+
   let loader = test.makeSandboxedLoader();
   let pageMod = loader.require("page-mod");
 
@@ -41,6 +45,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
       pageMods.forEach(function(mod) mod.destroy());
       // XXX leaks reported if we don't close the tab?
       tabBrowser.removeTab(newTab);
+      loader.unload();
       test.done();
     });
   }

@@ -107,7 +107,15 @@ const Widget = Trait.compose(Loader, Trait.compose({
     this._label = validate("label", options.label, valid.label);
 
     this.tooltip = "tooltip" in options ? options.tooltip : this._label
-
+    
+    if ("id" in options)
+      this._id = options.id;
+    else
+      console.warn('You have to define an unique "id" attribute to your widget ' 
+        + 'in order to be able to remember its position.');
+    
+    browserManager.validate(this._public);
+    
     if ("width" in options)
       this.width = options.width;
     if ("panel" in options)
@@ -165,6 +173,9 @@ const Widget = Trait.compose(Loader, Trait.compose({
     }
   },
 
+  get id() this._id,
+  _id: null,
+  
   get label() this._label,
   _label: null,
 
@@ -253,14 +264,25 @@ let browserManager = {
       }
     }
   },
-
-  // Registers an item with the manager. It's added to the add-on bar of
-  // all currently registered windows, and when new windows are registered it
-  // will be added to them, too.
-  addItem: function browserManager_addItem(item) {
+  
+  // Used to validate widget by browserManager before adding it,
+  // in order to check input very early in widget constructor
+  validate : function (item) {
     let idx = this.items.indexOf(item);
     if (idx > -1)
       throw new Error("The widget " + item + " has already been added.");
+    if (item.id) {
+      let sameId = this.items.filter(function(i) i.id == item.id);
+      if (sameId.length > 0)
+        throw new Error("This widget ID is already used: " + item.id);
+    } else {
+      item.id = this.items.length;
+    }
+  },
+
+  // Registers an item with the manager. It's added to all currently registered 
+  // windows, and when new windows are registered it will be added to them, too.
+  addItem: function browserManager_addItem(item) {
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
   },
@@ -273,8 +295,8 @@ let browserManager = {
       this.windows.forEach(function (w) w.updateItem(item, property, value));
   },
 
-  // Unregisters an item from the manager.  It's removed from the addon-bar
-  // of all windows that are currently registered.
+  // Unregisters an item from the manager.  It's removed from all windows that 
+  // are currently registered.
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
     if (idx > -1) {
@@ -354,17 +376,6 @@ BrowserWindow.prototype = {
     return this._container;
   },
 
-  // Hide container
-  _hideContainer: function BW__hideContainer() {
-    if (this._container)
-      this._container.collapsed = true;
-  },
-
-  // Update the visibility state for the addon bar.
-  _onToggleUI: function BW__onToggleUI() {
-    this.container.collapsed = !this.container.collapsed;
-  },
-
   // Adds an array of items to the window.
   addItems: function BW_addItems(items) {
     items.forEach(this._addItemToWindow, this);
@@ -398,7 +409,15 @@ BrowserWindow.prototype = {
     // XUL element container for widget
     let node = this.doc.createElement("toolbaritem");
     let guid = require("xpcom").makeUuid().toString();
-    let id = "widget:" + guid;
+    
+    // Temporary fix around require("self") failing on unit-test execution ...
+    let jetpackID = "testID";
+    try {
+      jetpackID = require("self").id;
+    } catch(e) {}
+    
+    // Compute an unique and stable widget id with jetpack id and widget.id
+    let id = "widget:" + jetpackID + "-" + widget.id;
     node.setAttribute("id", id);
     node.setAttribute("label", widget.label);
     node.setAttribute("tooltiptext", widget.tooltip);
@@ -419,17 +438,51 @@ BrowserWindow.prototype = {
     let palette = toolbox.palette;
     palette.appendChild(node);
 
-    // Add the item to the toolbar
-    this.container.insertItem(id, null, null, false);
-
+    // Search for widget toolbar by reading toolbar's currentset attribute
+    let container = null;
+    let toolbars = this.doc.getElementsByTagName("toolbar");
+    for(let i = 0, l = toolbars.length; i < l; i++) {
+      let toolbar = toolbars[i];
+      if (toolbar.getAttribute("currentset").indexOf(id) == -1)
+        continue;
+      container = toolbar;
+    }
+    
+    // if widget isn't in any toolbar, add it to the addon-bar
+    // TODO: we may want some "first-launch" module to do this only on very 
+    // first execution
+    if (!container) {
+      // TODO: find a way to make the following code work when we use "cfx run":
+      // http://mxr.mozilla.org/mozilla-central/source/browser/base/content/browser.js#8586
+      // until then, force display of addon bar directly from sdk code
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=627484
+      if (this.container.collapsed)
+        this.window.toggleAddonBar();
+      container = this.container;
+    }
+    
+    // Now retrieve a reference to the next toolbar item
+    // by reading currentset attribute on the toolbar
+    let nextNode = null;
+    let currentSet = container.getAttribute("currentset");
+    let ids = (currentSet == "__empty") ? [] : currentSet.split(",");
+    let idx = ids.indexOf(id);
+    if (idx != -1) {
+      for(let i = idx; i < ids.length; i++) {
+        nextNode = this.doc.getElementById(ids[i]);
+        if (nextNode)
+          break;
+      }
+    }
+    
+    // Finally insert our widget in the right toolbar and in the right position
+    container.insertItem(id, nextNode, null, false);
+    
     let item = {widget: widget, node: node};
 
     this._fillItem(item);
 
     this._items.push(item);
-
-    if (this.container.collapsed)
-      this._onToggleUI();
   },
 
   // Initial population of a widget's content.
@@ -515,8 +568,13 @@ BrowserWindow.prototype = {
     }
 
     let listener = function(e) {
-      // Ignore event firings that target the iframe
+      // Ignore event firings that target the iframe.
       if (e.target == item.node.firstElementChild)
+        return;
+
+      // The widget only supports left-click for now,
+      // so ignore right-clicks.
+      if (e.type == "click" && e.button == 2)
         return;
 
       // Proxy event to the widget
@@ -567,15 +625,17 @@ BrowserWindow.prototype = {
         for (let [type, listener] in Iterator(entry.eventListeners))
           entry.node.firstElementChild.removeEventListener(type, listener, true);
         // remove dom node
-        this.container.removeChild(entry.node);
+        entry.node.parentNode.removeChild(entry.node);
         // remove entry
         this._items.splice(this._items.indexOf(entry), 1);
+        // cleanup symbiont
+        entry.symbiont.destroy();
+        // cleanup entry itself
+        entry.eventListeners = null;
+        entry.widget = null;
+        entry.symbiont = null;
       }
     }, this);
-
-    // remove the add-on bar if no more items
-    if (this.container.getElementsByTagName("toolbaritem").length == 0)
-      this._hideContainer();
   },
 
   // Undoes all modifications to the window. The BrowserWindow

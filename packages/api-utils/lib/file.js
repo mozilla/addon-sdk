@@ -40,7 +40,6 @@
 const {Cc,Ci,Cr} = require("chrome");
 const byteStreams = require("byte-streams");
 const textStreams = require("text-streams");
-const xpcom = require("xpcom");
 
 // Flags passed when opening a file.  See nsprpub/pr/include/prio.h.
 const OPEN_FLAGS = {
@@ -80,11 +79,18 @@ function ensureFile(file) {
 }
 
 function ensureExists(file) {
-  if (!file.exists()) {
-    throw xpcom.friendlyError(Cr.NS_ERROR_FILE_NOT_FOUND, {
-      filename: file.path
-    });
+  if (!file.exists())
+    throw friendlyError(Cr.NS_ERROR_FILE_NOT_FOUND, file.path);
+}
+
+function friendlyError(errOrResult, filename) {
+  var isResult = typeof(errOrResult) === "number";
+  var result = isResult ? errOrResult : errOrResult.result;
+  switch (result) {
+  case Cr.NS_ERROR_FILE_NOT_FOUND:
+    return new Error("path does not exist: " + filename);
   }
+  return isResult ? new Error("XPCOM error code: " + errOrResult) : errOrResult;
 }
 
 exports.exists = function exists(filename) {
@@ -164,7 +170,7 @@ exports.open = function open(filename, mode) {
       stream.init(file, openFlags, permFlags, 0);
     }
     catch (err) {
-      throw xpcom.friendlyError(err, { filename: filename });
+      throw friendlyError(err, filename);
     }
     return /b/.test(mode) ?
            new byteStreams.ByteWriter(stream) :
@@ -179,7 +185,7 @@ exports.open = function open(filename, mode) {
     stream.init(file, OPEN_FLAGS.RDONLY, 0, 0);
   }
   catch (err) {
-    throw xpcom.friendlyError(err, { filename: filename });
+    throw friendlyError(err, filename);
   }
   return /b/.test(mode) ?
          new byteStreams.ByteReader(stream) :

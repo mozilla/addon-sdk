@@ -201,10 +201,18 @@ for anything, and only includes them to illustrate their use.
 ### Logging ###
 
 Note the calls to `console.log()` here. `console` is a global object accessible
-by any module and is very useful for debugging. `console.log(message)` writes
-`message` to the console. For more information on the globals available to your
-code see the [Globals](dev-guide/addon-development/globals.html) reference
-section.
+by any module, which you can use to write error, warning, or informational
+messages.
+
+For an extension which has been packaged as an XPI file and installed into
+Firefox, the messages are sent to Firefox's
+[Error Console](https://developer.mozilla.org/en/Error_Console). If you are
+launching Firefox from the command line using `cfx`, as you will be for
+development and debugging, then the messages are sent to the command shell
+from which you launched Firefox.
+
+For more information on the `console` object see the
+[Globals](dev-guide/addon-development/globals.html) reference section.
 
 ## Running It ##
 
@@ -245,7 +253,7 @@ translation:
 
 ![translator context-menu](media/screenshots/translator/translated-osx.png)
 
-You will also see output like this appear in the console:
+You will also see output like this appear in your command shell:
 
 <pre>
   info: input: Le projet Mozilla est une communauté mondiale de personnes
@@ -261,11 +269,11 @@ You will also see output like this appear in the console:
   We are best known for creating the Mozilla Firefox Web browser.
 </pre>
 
-## Packaging It ##
+## Preparing Your Add-on for Deployment ##
 
-Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Add-on SDK simplifies the packaging
-process by generating this file for you.
+Once you have finished testing your add-on you can package it for deployment
+like any other Firefox add-on, as a XPI file. The Add-on SDK simplifies the
+packaging process by generating this file for you.
 
 To package your program as a XPI, navigate to the root of your package
 directory in your shell and run `cfx xpi`. You should see a message:
