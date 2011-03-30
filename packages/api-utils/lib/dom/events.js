@@ -148,8 +148,8 @@ exports.removeListener = removeListener;
  *    [event type](https://developer.mozilla.org/en/DOM/event.type).
  * @param {Object} options
  *    Options object containing following properties:
- *    - `category`: String passed to the `document.createEvent` if not present
- *      "UIEvents" is used instead.
+ *    - `category`: String passed to the `document.createEvent`. Option is
+ *      optional and defaults to "UIEvents".
  *    - `initializer`: If passed it will be used as name of the method used
  *      to initialize event. If omitted name will be generated from the
  *      `category` field by prefixing it with `"init"` and removing last
