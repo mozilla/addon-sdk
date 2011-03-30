@@ -54,8 +54,8 @@ Array of `modifier` that is contained by combination defining this hotkey.
 </api>
 <api name="destroy">
 @method
-Stops the hotkey from reacting on the key combinations. Once destroyed hotkey
-can no longer be used.
+Stops this instance of `Hotkey` from reacting on the key combinations. Once
+destroyed it can no longer be used.
 </api>
 </api>
 
