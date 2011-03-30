@@ -45,11 +45,18 @@ const Hotkey = exports.Hotkey = function Hotkey(options) {
   if (!(this instanceof Hotkey))
     return new Hotkey(options);
 
+  // Parsing key combination string.
   let { key, modifiers } = toJSON(options.combination);
   this.key = key;
   this.modifiers = modifiers;
   this.onPress = options.onPress;
+  // Registering listener on keyboard combination enclosed by this hotkey.
+  // Please note that `this.toString()` is a normalized version of
+  // `options.combination` where order of modifiers is sorted and `accel` is
+  // replaced with platform specific key.
   register(this.toString(), this.onPress);
+  // We freeze instance before returning it in order to make it's properties
+  // read-only.
   return Object.freeze(this);
 };
 Hotkey.prototype.destroy = function destroy() {
