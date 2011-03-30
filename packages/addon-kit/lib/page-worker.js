@@ -88,7 +88,7 @@ const Page = Trait.compose(
     },
     
     _onChange: function _onChange(e) {
-      if ('contentURL' in e)
+      if ('contentURL' in e && this._frame)
         this._initFrame(this._frame);
     }
   }

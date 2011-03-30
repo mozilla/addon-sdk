@@ -1275,8 +1275,36 @@ TestHelper.prototype = {
         this.tabBrowser.removeTab(this.tab);
         this.tabBrowser.selectedTab = this.oldSelectedTab;
       }
-      while (this.loaders.length)
+      while (this.loaders.length) {
+        let browserManager = this.loaders[0].globalScope.browserManager;
+        let browserWins = browserManager.windows.slice();
         this.loaders[0].unload();
+
+        // Make sure the browser manager is cleaned up.
+        this.test.assertEqual(browserManager.windows.length, 0,
+                              "browserManager should have no windows left");
+        this.test.assertEqual(browserManager.items.length, 0,
+                              "browserManager should have no items left");
+
+        // Make sure the browser manager's worker registry is cleaned up.
+        let numWins = 0;
+        for (let winKey in browserManager.workerReg.wins)
+          numWins++;
+        this.test.assertEqual(numWins, 0,
+          "browserManager worker registry should have no windows left");
+
+        let numItemLists = 0;
+        for each (let itemList in browserManager.workerReg.items)
+          numItemLists++;
+        this.test.assertEqual(numItemLists, 0,
+          "browserManager worker registry should have no item lists left");
+
+        let numMatrixRows = 0;
+        for (winKey in browserManager.workerReg.workers)
+          numMatrixRows++;
+        this.test.assertEqual(numMatrixRows, 0,
+          "browserManager worker registry's worker matrix should be empty");
+      }
       this.test.done();
     }
 
