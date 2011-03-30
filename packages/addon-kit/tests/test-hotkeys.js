@@ -26,4 +26,26 @@ exports["test hotkey: accel alt shift"] = function(assert, done) {
   keyPress(element, "accel-shift-p");
 };
 
+exports["test invalid combos"] = function(assert) {
+  assert.throws(function() {
+    Hotkey({
+      combo: "d",
+      onPress: function() {}
+    });
+  }, "throws if no modifier is present");
+  assert.throws(function() {
+    Hotkey({
+      combo: "alt",
+      onPress: function() {}
+    });
+  }, "throws if no key is present");
+  assert.throws(function() {
+    Hotkey({
+      combo: "alt p b",
+      onPress: function() {}
+    });
+  }, "throws if more then one key is present");
+
+};
+
 require("test").run(exports);
