@@ -20,6 +20,10 @@ class TestInit(unittest.TestCase):
 
     def do_test_init(self,basedir):
         # Let's init the addon, no error admited
+        f = open(".ignoreme","w")
+        f.write("stuff")
+        f.close()
+
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
@@ -60,6 +64,21 @@ class TestInit(unittest.TestCase):
 
     def test_args(self):
         self.run_init_in_subdir("tmp_addon_sample", self.do_test_args)
+
+    def _test_existing_files(self, basedir):
+        f = open("pay_attention_to_me","w")
+        f.write("stuff")
+        f.close()
+        out,err = StringIO(), StringIO()
+        rc = initializer(None, ["init"], out, err)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc, 1)
+        self.failUnless("This command must be run in an empty directory" in err,
+                        err)
+        self.failIf(os.path.exists("lib"))
+
+    def test_existing_files(self):
+        self.run_init_in_subdir("existing_files", self._test_existing_files)
 
 if __name__ == "__main__":
     unittest.main()
