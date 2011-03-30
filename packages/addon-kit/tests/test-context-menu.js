@@ -1033,11 +1033,13 @@ exports.testContentCommunication = function (test) {
                    'on("click", function () {' +
                    '  postMessage(potato);' +
                    '});',
-    onMessage: function (data) {
-      test.assertEqual(data, "potato", "That's a lot of potatoes!");
-      test.done();
-    }
+    });
+
+  item.on("message", function(data) {
+    test.assertEqual(data, "potato", "That's a lot of potatoes!");
+    test.done();
   });
+
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);

@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -52,6 +53,7 @@ const collection = require("collection");
 const { Worker } = require("content");
 const url = require("url");
 const { MatchPattern } = require("match-pattern");
+const { EventEmitterTrait: EventEmitter } = require("events");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -105,6 +107,9 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLTextAreaElement,
 ];
 
+// This is object is used to access private methods of the `Item` and `Menu`
+// instances.
+const PRIVATE = { valueOf: function valueOf() 'privates accessor' }
 
 exports.Item = apiUtils.publicConstructor(Item);
 exports.Menu = apiUtils.publicConstructor(Menu);
@@ -321,9 +326,6 @@ function defineItemProps(item, options) {
   item.__defineGetter__("contentScriptFile", function () {
     return "contentScriptFile" in options ? options.contentScriptFile : undefined;
   });
-  item.__defineGetter__("onMessage", function () {
-    return "onMessage" in options ? options.onMessage : undefined;
-  });
 
   collection.addCollectionProperty(item, "context");
   if (options.context)
@@ -332,6 +334,27 @@ function defineItemProps(item, options) {
   item.destroy = function Item_destroy() {
     browserManager.removeItem(item);
   };
+
+  // Creating version of `item` that is an event emitter.
+  let privateItem = EventEmitter.create(item);
+  // Overriding `Object.prototype.valueOf` to make private version of this
+  // item accessible from other components that have access to the `PRIVATE`
+  // constant, which are only components defined in the lexical scope of this
+  // module.
+  item.valueOf = function Item_valueOf(unlocker) {
+    return unlocker === PRIVATE ? privateItem : this;
+  };
+  // Coping all the own public methods of `privateItem` to the `item` and bound
+  // them to the `privateItem`. Note: that only own properties are copied, which
+  // are methods defined by `EventEmitter` trait only.
+  Object.keys(privateItem).forEach(function(key) {
+    if (key[0] !== "_")
+      item[key] = privateItem[key].bind(privateItem);
+  });
+  
+  // Registering listener if one was passed to a constructor.
+  if ("onMessage" in options)
+    privateItem.on("message", options.onMessage);
 }
 
 // Does a binary search on elts, a NodeList, and returns the DOM element
@@ -604,13 +627,11 @@ WorkerRegistry.prototype = {
       onError: function (err) console.exception(err)
     });
     worker.on("message", function workerOnMessage(msg) {
-      if (item.onMessage) {
-        try {
-          item.onMessage(msg);
-        }
-        catch (err) {
-          console.exception(err);
-        }
+      try {
+        item.valueOf(PRIVATE)._emitOnObject(item, "message", msg);
+      }
+      catch (err) {
+        console.exception(err);
       }
     });
     return worker;
