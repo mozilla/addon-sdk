@@ -38,10 +38,29 @@
 
 "use strict";
 
+/**
+ * Returns `true` if given `array` contains given `element` or `false`
+ * otherwise.
+ * @param {Array} array
+ *    Target array.
+ * @param {Object|String|Number|Boolean} element
+ *    Element being looked up.
+ * @returns {Boolean}
+ */
 var has = exports.has = function has(array, element) {
+  // shorter and faster equivalent of `array.indexOf(element) >= 0`
   return !!~array.indexOf(element);
 };
 
+/**
+ * Adds given `element` to the given `array` if it does not contains it yet.
+ * `true` is returned if element was added otherwise `false` is returned.
+ * @param {Array} array
+ *    Target array.
+ * @param {Object|String|Number|Boolean} element
+ *    Element to be added.
+ * @returns {Boolean}
+ */
 var add = exports.add = function add(array, element) {
   var result;
   if ((result = !has(array, element)))
@@ -50,6 +69,16 @@ var add = exports.add = function add(array, element) {
   return result;
 };
 
+/**
+ * Removes first occurrence of the given `element` from the given `array`, if
+ * `array` does not contains given `element` `false` is returned otherwise
+ * `true` is returned.
+ * @param {Array} array
+ *    Target array.
+ * @param {Object|String|Number|Boolean} element
+ *    Element to be removed.
+ * @returns {Boolean}
+ */
 exports.remove = function remove(array, element) {
   var result;
   if ((result = has(array, element)))
@@ -58,6 +87,12 @@ exports.remove = function remove(array, element) {
   return result;
 };
 
+/**
+ * Produces a duplicate-free version of the given `array`.
+ * @param {Array} array
+ *    Source array.
+ * @returns {Array}
+ */
 exports.unique = function unique(array) {
   var value = [];
   return array.forEach(function(element) {
