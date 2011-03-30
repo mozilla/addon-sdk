@@ -1,5 +1,5 @@
-/* vim:ts=2:sts=2:sw=2:
- * ***** BEGIN LICENSE BLOCK *****
+/* vim:set ts=2 sw=2 sts=2 et: */
+/* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -14,7 +14,8 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is Mozilla.
+ * The Initial Developer of the Original Code is
+ * the Mozilla Foundation.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *

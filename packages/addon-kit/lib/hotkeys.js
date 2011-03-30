@@ -12,9 +12,10 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Jetpack Packages.
+ * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is Red Hat.
+ * The Initial Developer of the Original Code is
+ * the Mozilla Foundation.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
