@@ -38,7 +38,7 @@
 
 "use strict";
 
-const { toJSON, toString: stringify } = require("keyboard/utils");
+const { toJSON: jsonify, toString: stringify } = require("keyboard/utils");
 const { register, unregister } = require("keyboard/hotkeys");
 
 const Hotkey = exports.Hotkey = function Hotkey(options) {
@@ -46,10 +46,9 @@ const Hotkey = exports.Hotkey = function Hotkey(options) {
     return new Hotkey(options);
 
   // Parsing key combination string.
-  let { key, modifiers } = toJSON(options.combination);
-  this.key = key;
-  this.modifiers = modifiers;
+  let hotkey = jsonify(options.combo);
   this.onPress = options.onPress;
+  this.toString = stringify.bind(null, hotkey);
   // Registering listener on keyboard combination enclosed by this hotkey.
   // Please note that `this.toString()` is a normalized version of
   // `options.combination` where order of modifiers is sorted and `accel` is
@@ -61,10 +60,4 @@ const Hotkey = exports.Hotkey = function Hotkey(options) {
 };
 Hotkey.prototype.destroy = function destroy() {
   unregister(this.toString(), this.onPress);
-};
-Hotkey.prototype.toString = function toString() {
-  return stringify(this);
-};
-Hotkey.prototype.toJSON = function toJSON() {
-  return { modifiers: this.modifiers, key: key };
 };

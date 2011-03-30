@@ -44,6 +44,8 @@ const { isString } = require("type");
 const array = require("array");
 
 
+const SWP = "{{SEPARATOR}}";
+const SEPARATOR = "-"
 const INVALID_COMBINATION = "Hotkey string must contain one or more " +
                             "modifiers and only one key";
 
@@ -127,10 +129,19 @@ var normalize = exports.normalize = function normalize(hotkey, separator) {
  *    // { key: 'd', modifiers: [ 'alt', 'shift' ] }
  */
 var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
+  separator = separator || SEPARATOR;
+  // Since default separator is `-`, combination may take form of `alt--`. To
+  // avoid misbehavior we replace `--` with `-{{SEPARATOR}}` where
+  // `{{SEPARATOR}}` can be swapped later.
+  hotkey = hotkey.toLowerCase().replace(separator + separator, separator + SWP);
+
   let value = {};
   let modifiers = [];
-  let keys = hotkey.toLowerCase().split(separator || " ");
+  let keys = hotkey.split(separator);
   keys.forEach(function(name) {
+    // If name is `SEPARATOR` than we swap it back.
+    if (name === SWP)
+      name = separator;
     if (name in MODIFIERS) {
       array.add(modifiers, MODIFIERS[name]);
     } else {
@@ -140,6 +151,10 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
         throw new TypeError(INVALID_COMBINATION);
     }
   });
+
+  if (!value.key || !modifiers.length)
+      throw new TypeError(INVALID_COMBINATION);
+
   value.modifiers = modifiers.sort();
   return value;
 };
@@ -169,5 +184,5 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
 var toString = exports.toString = function toString(hotkey, separator) {
   let keys = hotkey.modifiers.slice();
   keys.push(hotkey.key);
-  return keys.join(separator || " ");
+  return keys.join(separator || SEPARATOR);
 };

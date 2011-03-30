@@ -20,19 +20,19 @@ combination, the listener is executed only on the last one created
 @param options {Object}
   Options for the hotkey, with the following keys:
 
-@prop combination {String}
-Key combination in the format of `'modifier key'`:
+@prop combo {String}
+Key combination in the format of `'modifier-key'`:
 
-      "accel s"
-      "meta shift i"
-      "control alt d"
+      "accel-s"
+      "meta-shift-i"
+      "control-alt-d"
 
 Modifier keynames:
 
 - **shift**: The Shift key.
 - **alt**: The Alt key. On the Macintosh, this is the Option key. On
   Macintosh this can only be used in conjunction with another modifier,
-  since `Alt+Letter` combinations are reserved for entering special
+  since `Alt-Letter` combinations are reserved for entering special
   characters in text.
 - **meta**: The Meta key. On the Macintosh, this is the Command key.
 - **control**: The Control key.
@@ -43,14 +43,6 @@ Modifier keynames:
 @prop onPress {Function}
 Function that is invoked when the key combination `hotkey` is pressed.
 
-</api>
-<api name="key">
-@property {String}
-`key` of the combination defining this hotkey.
-</api>
-<api name="modifiers">
-@property {String[]}
-Array of `modifier` that is contained by combination defining this hotkey.
 </api>
 <api name="destroy">
 @method
@@ -64,13 +56,13 @@ destroyed it can no longer be used.
     // Define keyboard shortcuts for showing and hiding a custom panel.
     var Hotkey = require("hotkeys");
     var showHotKey = Hotkey({
-      combination: "accel shift p",
+      combo: "accel-shift-p",
       onPress: function() {
         showMyPanel();
       }
     });
     var hideHotKey = Hotkey({
-      combination: "accel alt shift p",
+      combo: "accel-alt-shift-p",
       onPress: function() {
         hideMyPanel();
       }
@@ -78,4 +70,3 @@ destroyed it can no longer be used.
 
 [Mozilla keyboard planning FAQ]:http://www.mozilla.org/access/keyboard/
 [keyboard shortcuts]:https://developer.mozilla.org/en/XUL_Tutorial/Keyboard_Shortcuts
-
