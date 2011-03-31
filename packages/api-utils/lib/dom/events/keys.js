@@ -61,19 +61,18 @@ function Options(options) {
 }
 
 var keyEvent = exports.keyEvent = function keyEvent(element, type, options) {
-  options = options;
 
   emit(element, type, {
     initializer: INITIALIZER,
     category: CATEGORY,
     settings: [
-      !('bubbles' in options) || options.bubbles !== false,
-      !('cancelable' in options) || options.cancelable !== false,
-      'window' in options && options.window ? options.window : null,
-      'control' in options && !!options.control,
-      'alt' in options && !!options.alt,
-      'shift' in options && !!options.shift,
-      'meta' in options && !!options.meta,
+      !("bubbles" in options) || options.bubbles !== false,
+      !("cancelable" in options) || options.cancelable !== false,
+      "window" in options && options.window ? options.window : null,
+      "control" in options && !!options.control,
+      "alt" in options && !!options.alt,
+      "shift" in options && !!options.shift,
+      "meta" in options && !!options.meta,
       getCodeForKey(options.key) || 0,
       options.key.charCodeAt(0)
     ]
