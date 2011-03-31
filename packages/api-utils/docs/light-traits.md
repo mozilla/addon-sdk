@@ -1,4 +1,3 @@
-# Traits #
 
 [Traits](http://en.wikipedia.org/wiki/Trait_%28computer_science%29) are a simple
 mechanism for structuring object-oriented programs. They represent reusable and

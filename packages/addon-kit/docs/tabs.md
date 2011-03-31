@@ -136,8 +136,8 @@ If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
 @prop [isPinned] {boolean}
-If present and true, then the new tab will be pinned as an app tab.
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+If present and true, then the new tab will be pinned as an
+[app tab](http://support.mozilla.com/en-US/kb/what-are-app-tabs).
 
 @prop [onOpen] {function}
 A callback function that will be registered for 'open' event.
@@ -191,9 +191,9 @@ This property can be set to change it's relative position.
 
 <api name="isPinned">
 @property {boolean}
-Whether or not tab is pinned as an [app tab].
+Whether or not tab is pinned as an [app tab][].
 This property is read-only.
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+[app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
 </api>
 
 <api name="getThumbnail">
@@ -203,8 +203,8 @@ Returns thumbnail data URI of the page currently loaded in this tab.
 
 <api name="pin">
 @method
-Pins this tab as an [app tab].
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+Pins this tab as an [app tab][].
+[app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
 </api>
 
 <api name="unpin">

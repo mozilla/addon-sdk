@@ -4,9 +4,6 @@ The `traits` module provides base building blocks for secure object
 composition. It exports base trait / constructor function that
 constructs an instance of `Trait`.
 
-Traits
-------
-
 [Traits](http://en.wikipedia.org/wiki/Trait_%28computer_science%29) are a
 simple composition mechanism for structuring object-oriented programs. Traits
 are similar to
