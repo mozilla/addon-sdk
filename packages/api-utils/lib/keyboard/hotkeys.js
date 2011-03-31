@@ -107,7 +107,7 @@ keyboardObserver.on("keypress", function onKeypress(event, window) {
     modifiers.push("shift");
   if ("altKey" in event && event.altKey)
     modifiers.push("alt");
-  if ('ctlKey' in event && event.ctlKey)
+  if ("ctrlKey" in event && event.ctrlKey)
     modifiers.push("control");
   if ("metaKey" in event && event.metaKey)
     modifiers.push("meta");
