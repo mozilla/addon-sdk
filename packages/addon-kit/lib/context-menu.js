@@ -107,8 +107,8 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLTextAreaElement,
 ];
 
-// This is object is used to access private methods of the `Item` and `Menu`
-// instances.
+// This object is used elsewhere in this file to access private versions of
+// `Item` and `Menu` instances.
 const PRIVATE = { valueOf: function valueOf() 'privates accessor' }
 
 exports.Item = apiUtils.publicConstructor(Item);
@@ -335,24 +335,25 @@ function defineItemProps(item, options) {
     browserManager.removeItem(item);
   };
 
-  // Creating version of `item` that is an event emitter.
+  // Create a private version of the `item` that is an event emitter.
   let privateItem = EventEmitter.create(item);
-  // Overriding `Object.prototype.valueOf` to make private version of this
-  // item accessible from other components that have access to the `PRIVATE`
-  // constant, which are only components defined in the lexical scope of this
-  // module.
+  // Override `Object.prototype.valueOf` to make the private version of the
+  // item accessible to anyone with access to the `PRIVATE` constant. Only this
+  // file has access to `PRIVATE`, so only this file has access to the private
+  // version.
   item.valueOf = function Item_valueOf(unlocker) {
     return unlocker === PRIVATE ? privateItem : this;
   };
-  // Coping all the own public methods of `privateItem` to the `item` and bound
-  // them to the `privateItem`. Note: that only own properties are copied, which
-  // are methods defined by `EventEmitter` trait only.
-  Object.keys(privateItem).forEach(function(key) {
+
+  // Add all of `privateItem`'s own public methods to the item and bind them to
+  // `privateItem`. These are the methods defined by the `EventEmitter` trait.
+  // This will allow clients to treat the item as an event emitter.
+  Object.keys(privateItem).forEach(function (key) {
     if (key[0] !== "_")
       item[key] = privateItem[key].bind(privateItem);
   });
-  
-  // Registering listener if one was passed to a constructor.
+
+  // Register a message listener if one was passed to the constructor.
   if ("onMessage" in options)
     privateItem.on("message", options.onMessage);
 }
@@ -447,7 +448,7 @@ let browserManager = {
 // A type of Worker tailored to our uses.
 const ContextMenuWorker = Worker.compose({
   destroy: Worker.required,
-  
+
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
     return this._port._listeners("context").length > 0;
