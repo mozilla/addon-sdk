@@ -112,16 +112,19 @@ keyboardObserver.on("keypress", function onKeypress(event, window) {
   if ("metaKey" in event && event.metaKey)
     modifiers.push("meta");
 
-  // If it's a printable character we just lower case it.
-  if (isChar)
-    key = String.fromCharCode(which).toLowerCase();
   // If it's not a printable character then we fall back to a human readable
   // equivalent of one of the following constants.
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
-  // If event has a `keyCode` we use it to search a right name of the key,
-  // otherwise we fall back to `which`.
-  else
-    key = getKeyForCode(keyCode || which)
+  if (!isChar)
+    key = getKeyForCode(keyCode);
+
+  // If don't have a key yet then it's either printable character so we just
+  // create a string from it's charcode. For some keys like "!" `isChar` is
+  // `false` but it's still printable and that's also a case when
+  // `getKeyForCode` returns `undefined`.
+  if (!key)
+    key = String.fromCharCode(which);
+
 
   let combination = normalize({ key: key, modifiers: modifiers });
   let hotkey = hotkeys[combination];
