@@ -86,7 +86,9 @@ exports.getKeyForCode = function getKeyForCode(code) {
 };
 
 exports.getCodeForKey = function getCodeForKey(key) {
-  return ALIAS_KEYS[key] || DOM_VK_CODES["DOM_VK_" + key.toUpperCase()];
+  return key in ALIAS_KEYS ? ALIAS_KEYS[key] :
+         (key = "DOM_VK_" + key.toUpperCase()) in DOM_VK_CODES ?
+         DOM_VK_CODES[key] : undefined;
 };
 
 /**
