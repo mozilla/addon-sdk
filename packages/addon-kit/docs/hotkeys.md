@@ -6,13 +6,13 @@ module exposes an API to create those.
 <api name="Hotkey">
 @class
 
-Module exports `Hotkey` constructor allowing users to create a general, global
-`hotkey`.
+Module exports `Hotkey` constructor allowing users to create a `hotkey` for the
+host application.
 
 <api name="Hotkey">
 @constructor
-Creates a global hotkey who's `onPress` listener method is invoked when key
-combination defined by `hotkey` is pressed.
+Creates a hotkey who's `onPress` listener method is invoked when key combination
+defined by `hotkey` is pressed.
 
 Please note: If more than one `hotkey` is created for the same key
 combination, the listener is executed only on the last one created

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -109,8 +109,8 @@ exports.getCodeForKey = function getCodeForKey(key) {
  */
 var normalize = exports.normalize = function normalize(hotkey, separator) {
   if (!isString(hotkey))
-    hotkey = toString(hotkey);
-  return toString(toJSON(hotkey));
+    hotkey = toString(hotkey, separator);
+  return toString(toJSON(hotkey, separator), separator);
 };
 
 /*
@@ -121,7 +121,7 @@ var normalize = exports.normalize = function normalize(hotkey, separator) {
  *    Optional string that represents separator used to concatenate keys in the
  *    given `hotkey`.
  * @returns {JSON}
- * @expamples
+ * @examples
  *
  *    require("keyboard/hotkeys").toJSON("accel shift b");
  *    // { key: 'b', modifiers: [ 'control', 'shift' ] } -> on windows & linux
@@ -174,7 +174,7 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
  *    Optional string that represents separator used to concatenate keys in the
  *    given `hotkey`.
  * @returns {String}
- * @expamples
+ * @examples
  *
  *    require("keyboard/hotkeys").toString({
  *      key: 'b',

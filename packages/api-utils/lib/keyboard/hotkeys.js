@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -79,7 +79,7 @@ exports.register = function register(hotkey, listener) {
 
 /**
  * Unregister a global `hotkey`. If passed `listener` is not the one registered
- * for the given `hotkey` call to this function will be ignored.
+ * for the given `hotkey`, the call to this function will be ignored.
  *
  * @param {string} hotkey
  *    Key combination in the format of 'modifier key'.

@@ -16,7 +16,7 @@
  *
  * The Initial Developer of the Original Code is
  * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -39,7 +39,7 @@
 "use strict";
 
 /**
- * Returns `true` if given `array` contains given `element` or `false`
+ * Returns `true` if given `array` contain given `element` or `false`
  * otherwise.
  * @param {Array} array
  *    Target array.
@@ -53,7 +53,7 @@ var has = exports.has = function has(array, element) {
 };
 
 /**
- * Adds given `element` to the given `array` if it does not contains it yet.
+ * Adds given `element` to the given `array` if it does not contain it yet.
  * `true` is returned if element was added otherwise `false` is returned.
  * @param {Array} array
  *    Target array.
@@ -70,8 +70,8 @@ var add = exports.add = function add(array, element) {
 };
 
 /**
- * Removes first occurrence of the given `element` from the given `array`, if
- * `array` does not contains given `element` `false` is returned otherwise
+ * Removes first occurrence of the given `element` from the given `array`. If
+ * `array` does not contain given `element` `false` is returned otherwise
  * `true` is returned.
  * @param {Array} array
  *    Target array.
