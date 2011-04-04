@@ -474,9 +474,15 @@ const ContextMenuWorker = Worker.compose({
   // true.  popupNode is the node that was context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
     let listeners = this._port._listeners("context");
-    for (let i = 0; i < listeners.length; i++)
-      if (listeners[i].call(this._port._sandbox, popupNode))
-        return true;
+    for (let i = 0; i < listeners.length; i++) {
+      try {
+        if (listeners[i].call(this._port._sandbox, popupNode))
+          return true;
+      }
+      catch (err) {
+        console.exception(err);
+      }
+    }
     return false;
   },
 
