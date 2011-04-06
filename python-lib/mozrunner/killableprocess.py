@@ -73,6 +73,7 @@ mswindows = (sys.platform == "win32")
 
 if mswindows:
     import winprocess
+    import win32con
 else:
     import signal
 
