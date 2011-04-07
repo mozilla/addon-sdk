@@ -4,6 +4,7 @@ import time
 import tempfile
 import atexit
 import shutil
+import re
 
 import simplejson as json
 import mozrunner
@@ -265,6 +266,22 @@ def run_app(harness_root_dir, harness_options,
                           kp_kwargs=popen_kwargs)
 
     print "Using binary at '%s'." % runner.binary
+    
+    platform_repo = runner.get_repositoryInfo().get('platform_repository')
+    mo = re.search(r"mozilla-(\d+)", platform_repo)
+    if not mo:
+        print "unable to find a mozilla version string in", platform_repo
+        return
+    version = mo.group(1)
+    if int(version) < 2:
+        print """
+cfx requires Firefox 4 or greater and is unable to find a compatible binary.
+Please install a newer version of Firefox or provide the path to your existing 
+compatible version with the --binary flag: 
+    
+  cfx --binary=PATH_TO_FIREFOX_BINARY"""
+        return
+    
     print "Using profile at '%s'." % profile.profile
 
     runner.start()
