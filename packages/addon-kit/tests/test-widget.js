@@ -138,6 +138,11 @@ exports.testConstructor = function(test) {
   // Helper for testing a single widget.
   // Confirms proper addition and content setup.
   function testSingleWidget(widgetOptions) {
+    // We have to display which test is being run, because here we do not
+    // use the regular test framework but rather a custom one that iterates
+    // the `tests` array.
+    console.info("executing: " + widgetOptions.id);
+    
     let startCount = widgetCount();
     let widget = widgets.Widget(widgetOptions);
     let node = widgetNode(startCount);
@@ -590,6 +595,47 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
         widget.postMessage(origMessage);
       else {
         test.assertEqual(origMessage, message);
+        widget.destroy();
+        test.done();
+      }
+    }
+  });
+};
+
+exports.testWidgetMove = function testWidgetMove(test) {
+  test.waitUntilDone();
+  
+  let windowUtils = require("window-utils");
+  let widgets = require("widget");
+  
+  let browserWindow = windowUtils.activeBrowserWindow;
+  let doc = browserWindow.document;
+  
+  let label = "unique-widget-label";
+  let origMessage = "message after node move";
+  let gotFirstReady = false;
+  
+  let widget = widgets.Widget({
+    id: "foo",
+    label: label,
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    onMessage: function(message) {
+      if (message == "ready") {
+        if (!gotFirstReady) {
+          test.pass("Got first ready event");
+          let widgetNode = doc.querySelector('toolbaritem[label="' + label + '"]');
+          let parent = widgetNode.parentNode;
+          parent.insertBefore(widgetNode, parent.firstChild);
+          gotFirstReady = true;
+        } else {
+          test.pass("Got second ready event");
+          widget.postMessage(origMessage);
+        }
+      }
+      else {
+        test.assertEqual(origMessage, message, "Got message after node move");
         widget.destroy();
         test.done();
       }
