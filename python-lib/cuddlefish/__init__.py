@@ -384,8 +384,9 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if len(args) > 1:
         print >>err, 'Too many arguments.'
         return 1
-    # if current dir isn't empty
-    if len(os.listdir(path)) > 0:
+    # avoid clobbering existing files, but we tolerate things like .git
+    existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
+    if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
     for d in ['lib','data','tests','docs']:

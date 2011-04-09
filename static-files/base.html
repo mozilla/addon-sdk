@@ -13,6 +13,7 @@
   <link rel="stylesheet" type="text/css" media="all" href="css/base.css">
   <link rel="stylesheet" type="text/css" media="all" href="css/sdk-docs.css">
   <link rel="stylesheet" type="text/css" media="all" href="css/api-reference.css">
+  <link rel="shortcut icon" type="image/x-icon" href="media/favicon.png">
   <title></title>
 </head>
 <body>
@@ -20,13 +21,12 @@
   <div id="columns">
 
   <div id="left-column">
-
-    <img class="site-logo" alt="Firefox" src="https://addons.mozilla.org/media/img/zamboni/app_icons/firefox.png">
-
-    <h1 class="site-title">
-      <a href="dev-guide/welcome.html" title="Return to the Add-on SDK's homepage">
-        Add-on SDK</a>
-    </h1>
+    <div class="title">
+      <img class="logo" alt="Firefox" src="media/firefox-32.png">
+      <span class="title-text">
+        <a href="dev-guide/welcome.html" title="Return to the Add-on SDK's homepage">Add-on SDK</a>
+      </span>
+    </div>
 
     <div class="sidebar-section" id="addon-development">
       <h2 class="sidebar-section-header"><a href="dev-guide/addon-development/about.html">Developer Guide</a></h2>
@@ -74,7 +74,7 @@
 
         <div class="sidebar-subsection">
           <h3 class="sidebar-subsection-header"><a href="dev-guide/addon-development/reference.html">Reference</a></h3>
-          <div class="sidebar-subsection-contents">
+          <div class="sidebar-subsection-contents always-show">
           <ul>
             <li id="high-level-package-summaries"></li>
             <li><h4><a href="dev-guide/addon-development/globals.html">Globals</a></h4></li>
@@ -129,18 +129,19 @@
         <h3><a href="dev-guide/appendices/credits.html">Credits</a></h3>
 
     </div>
-
+<!--end of left column-->
   </div>
 
   <div id="main-content">
-    <div id="right-column">
-    </div>
+    <div id="right-column"></div>
   </div>
+<!--end of columns-->
   </div>
-  <div id="footer">
-    <span class="full-name">Add-on SDK Documentation v1.0b4pre</span>
-  </div>
-
+<div id="push"></div>
+<!--end of container-->
+</div>
+<div id="footer">
+  <span class="full-name">Add-on SDK Documentation v1.0b4pre</span>
 </div>
 
 <script type="text/javascript" src="js/jquery.js"></script>

@@ -4,7 +4,7 @@
 
 The `unload` module allows modules to register callbacks that are called
 when they are unloaded.  It is similar to the CommonJS module of the same
-name in the [Narwhal] platform.
+name in the [Narwhal][] platform.
 
 [Narwhal]: http://narwhaljs.org/
 

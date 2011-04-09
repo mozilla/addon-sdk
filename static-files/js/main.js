@@ -25,17 +25,18 @@ function run(jQuery) {
     $('a[href="' + currentPage + '"]').parent().addClass('current-page');
 
     currentSideBarSection = null;
-    if ( $('.current-page').hasClass('sidebar-section-header') ) {
+    if ( $('.current-page').hasClass('sidebar-subsection-header') ) {
       currentSideBarSection = $('.current-page').next();
     }
     else {
       currentSideBarSection =
-        $('.current-page').closest('.sidebar-section-contents');
+        $('.current-page').closest('.sidebar-subsection-contents');
     }
     if ($(currentSideBarSection).length == 0)
       currentSideBarSection = $('#default-section-contents');
 
-    $('.sidebar-section-contents').hide();
+    $('.sidebar-subsection-contents').hide();
+    $('.always-show').show();
     $(currentSideBarSection).parent().addClass('current-section');
     $(currentSideBarSection).show();
   }

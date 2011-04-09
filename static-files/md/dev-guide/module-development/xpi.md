@@ -118,39 +118,11 @@ auto-generated files:
 
 <pre>
   >>> document_dir('xpi-output')
-  install.rdf:
-    <RDF><!-- Extension metadata is here. --></RDF>
   components/harness.js:
     // This file contains XPCOM code that bootstraps an SDK-based add-on
     // by loading its harness-options.json, registering all its resource
     // directories, executing its loader, and then executing its program's
     // main() function.
-  resources/guid-api-utils-lib/:
-  <BLANKLINE>
-  resources/guid-api-utils-lib/loader.js:
-    // This module will be imported by the XPCOM harness/boostrapper
-    // via Components.utils.import() and is responsible for creating a
-    // CommonJS module loader.
-  resources/guid-aardvark-lib/:
-  <BLANKLINE>
-  resources/guid-aardvark-lib/ignore_me:
-    The docs processor should tolerate (by ignoring) random non-.js files in lib
-    directories, such as those left around by editors, version-control systems,
-    or OS metadata like .DS_Store . This file exercises that tolerance.
-  resources/guid-aardvark-lib/main.js:
-    exports.main = function(options, callbacks) {
-      console.log("1 + 1 =", require("bar-module").add(1, 1));
-      callbacks.quit();
-    };
-  resources/guid-aardvark-lib/surprise.js/ignore_me_too:
-    The docs processor should also ignore directories named *.js, and their
-    contents.
-  resources/guid-barbeque-lib/:
-  <BLANKLINE>
-  resources/guid-barbeque-lib/bar-module.js:
-    exports.add = function add(a, b) {
-      return a + b;
-    };
   harness-options.json:
     {
      "loader": "resource://guid-api-utils-lib/loader.js",
@@ -217,6 +189,34 @@ auto-generated files:
       "resource://guid-aardvark-lib/"
      ]
     }
+  install.rdf:
+    <RDF><!-- Extension metadata is here. --></RDF>
+  resources/guid-aardvark-lib/:
+  <BLANKLINE>
+  resources/guid-aardvark-lib/ignore_me:
+    The docs processor should tolerate (by ignoring) random non-.js files in lib
+    directories, such as those left around by editors, version-control systems,
+    or OS metadata like .DS_Store . This file exercises that tolerance.
+  resources/guid-aardvark-lib/main.js:
+    exports.main = function(options, callbacks) {
+      console.log("1 + 1 =", require("bar-module").add(1, 1));
+      callbacks.quit();
+    };
+  resources/guid-aardvark-lib/surprise.js/ignore_me_too:
+    The docs processor should also ignore directories named *.js, and their
+    contents.
+  resources/guid-api-utils-lib/:
+  <BLANKLINE>
+  resources/guid-api-utils-lib/loader.js:
+    // This module will be imported by the XPCOM harness/boostrapper
+    // via Components.utils.import() and is responsible for creating a
+    // CommonJS module loader.
+  resources/guid-barbeque-lib/:
+  <BLANKLINE>
+  resources/guid-barbeque-lib/bar-module.js:
+    exports.add = function add(a, b) {
+      return a + b;
+    };
 
 </pre>
 

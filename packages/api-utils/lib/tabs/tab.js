@@ -262,12 +262,7 @@ exports.getTabForWindow = function (win) {
   // Get top window object, in case we are in a content iframe
   let topContentWindow;
   try {
-    topContentWindow= win.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIWebNavigation)
-                            .QueryInterface(Ci.nsIDocShellTreeItem)
-                            .treeOwner
-                            .QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDOMWindow);
+    topContentWindow = win.top;
   } catch(e) {
     // It may throw if win is not a valid content window
     return null;

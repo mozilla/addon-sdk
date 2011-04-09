@@ -16,18 +16,25 @@ Verify that Python is in your path.
 
 ## Installation ##
 
+<span class="aside">
+Alternatively, you can get the latest development version of the
+Add-on SDK from its
+[GitHub repository](https://github.com/mozilla/addon-sdk).
+</span>
+
 At the time of this writing, the latest stable version of the Add-on
 SDK is 1.0b4pre. You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
 
-Alternatively, you can get the latest development version of the
-Add-on SDK from its
-[GitHub repository](https://github.com/mozilla/addon-sdk).
+Extract the file contents wherever you choose, and navigate to the root
+directory of the SDK with a shell/command prompt. For example:
 
-Regardless of which option you choose, navigate to the root directory
-of your checkout with a shell/command prompt. This directory should
-be called `addon-sdk`.
+<pre>
+  ~/mozilla > tar -xf addon-sdk-1.0b4.tar.gz
+  ~/mozilla > cd addon-sdk-1.0b4
+  ~/mozilla/addon-sdk-1.0b4 >
+</pre>
 
 <span class="aside">
 Unlike many development tools, there isn't a system-wide location for
@@ -39,13 +46,13 @@ another. Each installation is called a *virtual environment*.
 Then, if you're on Linux, OS X, or another Unix-based system, run:
 
 <pre>
-  source bin/activate
+  ~/mozilla/addon-sdk-1.0b4 > source bin/activate
 </pre>
 
 Otherwise, if you're on Windows, run:
 
 <pre>
-  bin\activate
+  C:\Users\Mozilla\addon-sdk-1.0b4> bin\activate
 </pre>
 
 Now the beginning of your command prompt should contain the text
@@ -70,7 +77,7 @@ things.
 Run this at your shell prompt:
 
 <pre>
-  cfx
+  ~/mozilla/addon-sdk-1.0b4 > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by

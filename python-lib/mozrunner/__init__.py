@@ -48,6 +48,7 @@ import optparse
 import killableprocess
 import subprocess
 import platform
+import shutil
 
 from distutils import dir_util
 from time import sleep
@@ -258,8 +259,11 @@ class Profile(object):
 
     def cleanup(self):
         """Cleanup operations on the profile."""
+        def oncleanup_error(function, path, excinfo):
+            #TODO: How should we handle this?
+            print "Error Cleaning up: " + str(excinfo[1])
         if self.create_new:
-            rmtree(self.profile)
+            shutil.rmtree(self.profile, False, oncleanup_error)
         else:
             self.clean_preferences()
             self.clean_addons()
@@ -457,6 +461,10 @@ class Runner(object):
         else:
             try:
                 self.process_handler.kill(group=True)
+                # On windows, it sometimes behooves one to wait for dust to settle
+                # after killing processes.  Let's try that.
+                # TODO: Bug 640047 is invesitgating the correct way to handle this case
+                self.process_handler.wait(timeout=10)
             except Exception, e:
                 logger.error('Cannot kill process, '+type(e).__name__+' '+e.message)
 

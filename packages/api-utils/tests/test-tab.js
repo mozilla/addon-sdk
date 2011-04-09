@@ -2,6 +2,15 @@ const tabAPI = require("tabs/tab");
 const tabs = require("tabs"); // From addon-kit
 const windowUtils = require("window-utils");
 
+// The primary test tab
+var primaryTab;
+
+// We have an auxiliary tab to test background tabs.
+var auxTab;
+
+// The window for the outer iframe in the primary test page
+var iframeWin;
+
 exports.testGetTabForWindow = function(test) {
   test.waitUntilDone();
   
@@ -18,10 +27,25 @@ exports.testGetTabForWindow = function(test) {
     '<iframe id="sub-iframe" src="data:text/html,'+subSubDocument+'" />');
   let url = 'data:text/html,' + encodeURIComponent(
     'Content<br/><iframe id="iframe" src="data:text/html,'+subDocument+'" />');
-  
+
+  // Open up a new tab in the background.
+  //
+  // This lets us test whether GetTabForWindow works even when the tab in
+  // question is not active.
+  tabs.open({
+    inBackground: true,
+    url: "about:mozilla",
+    onReady: function(tab) { auxTab = tab; step2(url, test);},
+    onActivate: function(tab) { step3(test); }
+    });
+}
+
+function step2(url, test) {
+
   tabs.open({
     url: url,
     onReady: function(tab) {
+      primaryTab = tab;
       let window = windowUtils.activeBrowserWindow.content;
       
       let matchedTab = tabAPI.getTabForWindow(window);
@@ -35,7 +59,7 @@ exports.testGetTabForWindow = function(test) {
           timer.setTimeout(waitForFrames, 100);
           return;
         }
-        let iframeWin = iframe.contentWindow;
+        iframeWin = iframe.contentWindow;
         let subIframe = iframeWin.document.getElementById("sub-iframe");
         if (!subIframe) {
           timer.setTimeout(waitForFrames, 100);
@@ -60,13 +84,23 @@ exports.testGetTabForWindow = function(test) {
         matchedTab = tabAPI.getTabForWindow(subSubIframeWin);
         test.assertEqual(matchedTab, tab, 
           "We are able to find the tab with a sub-sub-iframe window object");
-        
-        tab.close(function () {
-          test.done();
-        });
+
+        // Put our primary tab in the background and test again.
+        // The onActivate listener will take us to step3.
+        auxTab.activate();
       }
       waitForFrames();
-      
     }
   });
-};
+}
+
+function step3(test) {
+
+  let matchedTab = tabAPI.getTabForWindow(iframeWin);
+  test.assertEqual(matchedTab, primaryTab,
+    "We get the correct tab even when it's in the background");
+
+  primaryTab.close(function () {
+      auxTab.close(function () { test.done();});
+    });
+}

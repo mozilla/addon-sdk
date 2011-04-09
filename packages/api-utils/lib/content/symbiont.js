@@ -98,28 +98,35 @@ const Symbiont = Worker.resolve({
     }
     else {
       let self = this;
-       hiddenFrames.add(hiddenFrames.HiddenFrame({
+      this._hiddenFrame = hiddenFrames.HiddenFrame({
         onReady: function onFrame() {
           self._initFrame(this.element);
         }
-      }));
+      });
+      hiddenFrames.add(this._hiddenFrame);
     }
 
     unload.when(this.destroy.bind(this));
   },
   destroy: function destroy() {
+    this._workerDestroy();
+    this._cleanUpFrame();
+    this._frame = null;
+    if (this._hiddenFrame) {
+      hiddenFrames.remove(this._hiddenFrame);
+      this._hiddenFrame = null;
+    }
+  },
+  
+  _cleanUpFrame: function _cleanUpFrame() {
     // The frame might not have been initialized yet.
     if (!this._frame)
       return;
-
+    
     if ('ready' === this.contentScriptWhen)
       this._frame.removeEventListener(ON_READY, this._onReady, true);
     else
       observers.remove(ON_START, this._onStart);
-
-    this._frame = null;
-    
-    this._workerDestroy();
   },
   /**
    * XUL iframe or browser elements with attribute `type` being `content`.
@@ -132,10 +139,25 @@ const Symbiont = Worker.resolve({
    * Removes listener, sets right permissions to the frame and loads content.
    */
   _initFrame: function _initFrame(frame) {
+    // We need to remove observers from the current iframe
+    // before adding new ones to avoid leaking the iframe,
+    // whether initFrame is being called with a new iframe
+    // or an existing one (which happens when page-worker
+    // calls initFrame multiple times with the same iframe).
+    if (this._frame)
+      this._cleanUpFrame();
+    
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    if ('ready' === this.contentScriptWhen) {
+    if (frame.contentDocument.readyState == "complete" && 
+        frame.contentDocument.location == this._contentURL) {
+      // In some cases src doesn't change and document is already ready
+      // (for ex: when the user moves a widget while customizing toolbars.)
+      this._window = frame.contentWindow.wrappedJSObject;
+      this._onInit();
+    }
+    else if ('ready' === this.contentScriptWhen) {
       frame.addEventListener(
         ON_READY,
         this._onReady = this._onReady.bind(this),
@@ -163,7 +185,7 @@ const Symbiont = Worker.resolve({
    */
   _onStart: function _onStart(domObj) {
     let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
-    if (window == this._frame.contentWindow) {
+    if (window && window == this._frame.contentWindow) {
       observers.remove(ON_START, this._onStart);
       this._window = window.wrappedJSObject;
       this._onInit();
