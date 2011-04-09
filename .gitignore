@@ -11,3 +11,5 @@ jetpack-sdk-docs/
 # You can do this by creating ~/.gitignore and then running:
 #
 # git config --global core.excludesfile ~/.gitignore
+*.swp
+*.pyc
