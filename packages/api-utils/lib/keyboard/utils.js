@@ -46,8 +46,8 @@ const array = require("array");
 
 const SWP = "{{SEPARATOR}}";
 const SEPARATOR = "-"
-const INVALID_COMBINATION = "Hotkey string must contain one or more " +
-                            "modifiers and only one key";
+const INVALID_COMBINATION = "Key combination must have zero or more " 
+                            "modifiers and one and only one key";
 
 // Key codes for non printable chars.
 // @See: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
@@ -92,12 +92,12 @@ exports.getCodeForKey = function getCodeForKey(key) {
 };
 
 /**
- * Utility function that takes string or JSON that defines a `hotkey` and
+ * Utility function that takes string or JSON that defines a key combination and
  * returns normalized string version of it.
- * @param {JSON|String} hotkey
+ * @param {JSON|String} keyCombo
  * @param {String} [separator=" "]
- *    Optional string that represents separator used to concatenate keys in the
- *    given `hotkey`.
+ *    Optional string that represents separator used to concatenate components 
+ *    in the given key combination.
  * @returns {String}
  * @examples
  *
@@ -107,19 +107,19 @@ exports.getCodeForKey = function getCodeForKey(key) {
  *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
  *    // 'alt shift d'
  */
-var normalize = exports.normalize = function normalize(hotkey, separator) {
-  if (!isString(hotkey))
-    hotkey = toString(hotkey, separator);
-  return toString(toJSON(hotkey, separator), separator);
+var normalize = exports.normalize = function normalize(keyCombo, separator) {
+  if (!isString(keyCombo))
+    keyCombo = toString(keyCombo, separator);
+  return toString(toJSON(keyCombo, separator), separator);
 };
 
 /*
- * Utility function that splits a string of characters that defines a `hotkey`
- * into modifier keys and the defining key.
- * @param {String} hotkey
+ * Utility function that splits a string of characters that defines a 
+ * key combination into modifier keys and the defining key.
+ * @param {String} keyCombo
  * @param {String} [separator=" "]
  *    Optional string that represents separator used to concatenate keys in the
- *    given `hotkey`.
+ *    given key combination.
  * @returns {JSON}
  * @examples
  *
@@ -130,16 +130,16 @@ var normalize = exports.normalize = function normalize(hotkey, separator) {
  *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
  *    // { key: 'd', modifiers: [ 'alt', 'shift' ] }
  */
-var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
+var toJSON = exports.toJSON = function toJSON(keyCombo, separator) {
   separator = separator || SEPARATOR;
   // Since default separator is `-`, combination may take form of `alt--`. To
   // avoid misbehavior we replace `--` with `-{{SEPARATOR}}` where
   // `{{SEPARATOR}}` can be swapped later.
-  hotkey = hotkey.toLowerCase().replace(separator + separator, separator + SWP);
+  keyCombo = keyCombo.toLowerCase().replace(separator + separator, separator + SWP);
 
   let value = {};
   let modifiers = [];
-  let keys = hotkey.split(separator);
+  let keys = keyCombo.split(separator);
   keys.forEach(function(name) {
     // If name is `SEPARATOR` than we swap it back.
     if (name === SWP)
@@ -154,7 +154,7 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
     }
   });
 
-  if (!value.key || !modifiers.length)
+  if (!value.key)
       throw new TypeError(INVALID_COMBINATION);
 
   value.modifiers = modifiers.sort();
@@ -162,17 +162,17 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
 };
 
 /**
- * Utility function that takes object that defines a `hotkey` and returns
+ * Utility function that takes object that defines a key combination and returns
  * string representation of it.
  *
  * _Please note that this function does not validates data neither it normalizes
  * it, if you are unsure that data is well formed use `normalize` function
  * instead.
  *
- * @param {JSON} hotkey
+ * @param {JSON} keyCombo
  * @param {String} [separator=" "]
  *    Optional string that represents separator used to concatenate keys in the
- *    given `hotkey`.
+ *    given key combination.
  * @returns {String}
  * @examples
  *
@@ -183,8 +183,8 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
  *    // 'control+shift+b
  *
  */
-var toString = exports.toString = function toString(hotkey, separator) {
-  let keys = hotkey.modifiers.slice();
-  keys.push(hotkey.key);
+var toString = exports.toString = function toString(keyCombo, separator) {
+  let keys = keyCombo.modifiers.slice();
+  keys.push(keyCombo.key);
   return keys.join(separator || SEPARATOR);
 };

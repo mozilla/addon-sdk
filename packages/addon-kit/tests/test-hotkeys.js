@@ -101,6 +101,7 @@ exports["test no exception on unmodified keypress"] = function(assert) {
 		}
 	});
 	keyPress(element, "a");
+    assert.pass();
 }
 
 require("test").run(exports);
