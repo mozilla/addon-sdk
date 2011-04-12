@@ -46,8 +46,6 @@ const array = require("array");
 
 const SWP = "{{SEPARATOR}}";
 const SEPARATOR = "-"
-const INVALID_COMBINATION = "Key combination must have zero or more " 
-                            "modifiers and one and only one key";
 
 // Key codes for non printable chars.
 // @See: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
@@ -94,7 +92,7 @@ exports.getCodeForKey = function getCodeForKey(key) {
 /**
  * Utility function that takes string or JSON that defines a key combination and
  * returns normalized string version of it.
- * @param {JSON|String} keyCombo
+ * @param {JSON|String} combo
  * @param {String} [separator=" "]
  *    Optional string that represents separator used to concatenate components 
  *    in the given key combination.
@@ -107,16 +105,16 @@ exports.getCodeForKey = function getCodeForKey(key) {
  *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
  *    // 'alt shift d'
  */
-var normalize = exports.normalize = function normalize(keyCombo, separator) {
-  if (!isString(keyCombo))
-    keyCombo = toString(keyCombo, separator);
-  return toString(toJSON(keyCombo, separator), separator);
+var normalize = exports.normalize = function normalize(combo, separator) {
+  if (!isString(combo))
+    combo = toString(combo, separator);
+  return toString(toJSON(combo, separator), separator);
 };
 
 /*
  * Utility function that splits a string of characters that defines a 
  * key combination into modifier keys and the defining key.
- * @param {String} keyCombo
+ * @param {String} combo
  * @param {String} [separator=" "]
  *    Optional string that represents separator used to concatenate keys in the
  *    given key combination.
@@ -130,32 +128,26 @@ var normalize = exports.normalize = function normalize(keyCombo, separator) {
  *    require("keyboard/hotkeys").normalize("alt-d-shift", "-");
  *    // { key: 'd', modifiers: [ 'alt', 'shift' ] }
  */
-var toJSON = exports.toJSON = function toJSON(keyCombo, separator) {
+var toJSON = exports.toJSON = function toJSON(combo, separator) {
   separator = separator || SEPARATOR;
   // Since default separator is `-`, combination may take form of `alt--`. To
   // avoid misbehavior we replace `--` with `-{{SEPARATOR}}` where
   // `{{SEPARATOR}}` can be swapped later.
-  keyCombo = keyCombo.toLowerCase().replace(separator + separator, separator + SWP);
+  combo = combo.toLowerCase().replace(separator + separator, separator + SWP);
 
   let value = {};
   let modifiers = [];
-  let keys = keyCombo.split(separator);
+  let keys = combo.split(separator);
   keys.forEach(function(name) {
     // If name is `SEPARATOR` than we swap it back.
     if (name === SWP)
       name = separator;
     if (name in MODIFIERS) {
       array.add(modifiers, MODIFIERS[name]);
-    } else {
-      if (!value.key)
+    } else if (!value.key) {
         value.key = name;
-      else
-        throw new TypeError(INVALID_COMBINATION);
     }
   });
-
-  if (!value.key)
-      throw new TypeError(INVALID_COMBINATION);
 
   value.modifiers = modifiers.sort();
   return value;
@@ -169,7 +161,7 @@ var toJSON = exports.toJSON = function toJSON(keyCombo, separator) {
  * it, if you are unsure that data is well formed use `normalize` function
  * instead.
  *
- * @param {JSON} keyCombo
+ * @param {JSON} combo
  * @param {String} [separator=" "]
  *    Optional string that represents separator used to concatenate keys in the
  *    given key combination.
@@ -183,8 +175,8 @@ var toJSON = exports.toJSON = function toJSON(keyCombo, separator) {
  *    // 'control+shift+b
  *
  */
-var toString = exports.toString = function toString(keyCombo, separator) {
-  let keys = keyCombo.modifiers.slice();
-  keys.push(keyCombo.key);
+var toString = exports.toString = function toString(combo, separator) {
+  let keys = combo.modifiers.slice();
+  keys.push(combo.key);
   return keys.join(separator || SEPARATOR);
 };
