@@ -305,6 +305,65 @@ exports.testURLContextNoMatch = function (test) {
 };
 
 
+// Removing a non-matching URL context after its item is created and the page is
+// loaded should cause the item's content script to be evaluated.
+exports.testURLContextRemove = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let shouldBeEvaled = false;
+  let context = loader.cm.URLContext("*.bogus.com");
+  let item = loader.cm.Item({
+    label: "item",
+    context: context,
+    contentScript: 'postMessage("ok");',
+    onMessage: function (msg) {
+      test.assert(shouldBeEvaled,
+                  "content script should be evaluated when expected");
+      shouldBeEvaled = false;
+      test.done();
+    }
+  });
+
+  test.withTestDoc(function (window, doc) {
+    shouldBeEvaled = true;
+    item.context.remove(context);
+  });
+};
+
+
+// Adding a non-matching URL context after its item is created and the page is
+// loaded should cause the item's worker to be destroyed.
+exports.testURLContextAdd = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({ label: "item" });
+
+  test.withTestDoc(function (window, doc) {
+    let privatePropsKey = loader.globalScope.PRIVATE_PROPS_KEY;
+    let workerReg = item.valueOf(privatePropsKey).workerReg;
+
+    let found = false;
+    for each (let winWorker in workerReg.winWorkers) {
+      if (winWorker.win === window) {
+        found = true;
+        break;
+      }
+    }
+    this.test.assert(found, "window should be present in worker registry");
+
+    item.context.add(loader.cm.URLContext("*.bogus.com"));
+
+    for each (let winWorker in workerReg.winWorkers)
+      this.test.assertNotEqual(winWorker.win, window,
+        "window should not be present in worker registry");
+
+    test.done();
+  });
+};
+
+
 // Content contexts that return true should cause their items to be present
 // in the menu.
 exports.testContentContextMatch = function (test) {
@@ -1278,7 +1337,8 @@ TestHelper.prototype = {
       }
       while (this.loaders.length) {
         let browserManager = this.loaders[0].globalScope.browserManager;
-        let browserWins = browserManager.windows.slice();
+        let items = browserManager.items.slice();
+        let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
         this.loaders[0].unload();
 
         // Make sure the browser manager is cleaned up.
@@ -1287,24 +1347,15 @@ TestHelper.prototype = {
         this.test.assertEqual(browserManager.items.length, 0,
                               "browserManager should have no items left");
 
-        // Make sure the browser manager's worker registry is cleaned up.
-        let numWins = 0;
-        for (let winKey in browserManager.workerReg.wins)
-          numWins++;
-        this.test.assertEqual(numWins, 0,
-          "browserManager worker registry should have no windows left");
-
-        let numItemLists = 0;
-        for each (let itemList in browserManager.workerReg.items)
-          numItemLists++;
-        this.test.assertEqual(numItemLists, 0,
-          "browserManager worker registry should have no item lists left");
-
-        let numMatrixRows = 0;
-        for (winKey in browserManager.workerReg.workers)
-          numMatrixRows++;
-        this.test.assertEqual(numMatrixRows, 0,
-          "browserManager worker registry's worker matrix should be empty");
+        // Make sure the items' worker registries are cleaned up.
+        items.forEach(function (item) {
+          let workerReg = item.valueOf(privatePropsKey).workerReg;
+          this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
+                                "worker registry should be empty");
+          this.test.assertEqual(
+            Object.keys(workerReg.winsWithoutWorkers).length, 0,
+            "worker registry list of windows without workers should be empty");
+        }, this);
       }
       this.test.done();
     }
