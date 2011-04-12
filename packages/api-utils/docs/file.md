@@ -96,8 +96,8 @@ The `file` module provides access to the local filesystem.
 @param [mode] {string}
   An optional string, each character of which describes a characteristic of the
   returned stream.  If the string contains `"b"`, the contents will be returned 
-  in binary mode. If `"b"` is not present, the file contents will be returned in
-  text mode. 
+  in binary mode. If `"b"` is not present or `mode` is not given, the file
+  contents will be returned in text mode. 
 @returns {string}
   A string containing the file's entire contents.
 </api>
