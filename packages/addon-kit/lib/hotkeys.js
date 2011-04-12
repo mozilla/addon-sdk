@@ -38,7 +38,8 @@
 
 "use strict";
 
-const INVALID_HOTKEY = "Hotkey must have at least one modifier." 
+const INVALID_HOTKEY = "Hotkey key combination must contain one or more " 
+                     + "modifiers and only one key"
 
 const { toJSON: jsonify, toString: stringify } = require("keyboard/utils");
 const { register, unregister } = require("keyboard/hotkeys");
@@ -49,7 +50,7 @@ const Hotkey = exports.Hotkey = function Hotkey(options) {
 
   // Parsing key combination string.
   let hotkey = jsonify(options.combo);
-  if (!hotkey.modifiers.length) {
+  if (!hotkey.key || !hotkey.modifiers.length) {
     throw new TypeError(INVALID_HOTKEY);
   }
 
