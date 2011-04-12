@@ -63,6 +63,9 @@ exports.testMatchPatternTestTrue = function(test) {
 
   ok("http://example.com", "http://example.com");
   ok("http://example.com/ice-cream", "http://example.com/ice-cream");
+
+  ok(/http[s]?:\/\/bugzilla\..*\/.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/http[s]?:\/\/bugzilla\..*\/.*/, "https://bugzilla.mozilla.org/show_bug.cgi?id=627386");
 };
 
 exports.testMatchPatternTestFalse = function(test) {

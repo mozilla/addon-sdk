@@ -43,35 +43,40 @@ const { URL } = require("url");
 exports.MatchPattern = MatchPattern;
 
 function MatchPattern(pattern) {
-  let firstWildcardPosition = pattern.indexOf("*");
-  let lastWildcardPosition = pattern.lastIndexOf("*");
-  if (firstWildcardPosition != lastWildcardPosition)
-    throw new Error("There can be at most one '*' character in a wildcard.");
-
-  if (firstWildcardPosition == 0) {
-    if (pattern.length == 1)
-      this.anyWebPage = true;
-    else if (pattern[1] != ".")
-      throw new Error("Expected a *.<domain name> string, got: " + pattern);
-    else
-      this.domain = pattern.substr(2);
+  if (typeof pattern.test == "function") {
+      this.regexp = pattern;
   }
   else {
-    if (pattern.indexOf(":") == -1) {
-      throw new Error("When not using *.example.org wildcard, the string " +
-                      "supplied is expected to be either an exact URL to " +
-                      "match or a URL prefix. The provided string ('" +
-                      pattern + "') is unlikely to match any pages.");
-    }
+    let firstWildcardPosition = pattern.indexOf("*");
+    let lastWildcardPosition = pattern.lastIndexOf("*");
+    if (firstWildcardPosition != lastWildcardPosition)
+      throw new Error("There can be at most one '*' character in a wildcard.");
 
-    if (firstWildcardPosition == -1)
-      this.exactURL = pattern;
-    else if (firstWildcardPosition == pattern.length - 1)
-      this.urlPrefix = pattern.substr(0, pattern.length - 1);
+    if (firstWildcardPosition == 0) {
+      if (pattern.length == 1)
+        this.anyWebPage = true;
+      else if (pattern[1] != ".")
+        throw new Error("Expected a *.<domain name> string, got: " + pattern);
+      else
+        this.domain = pattern.substr(2);
+    }
     else {
-      throw new Error("The provided wildcard ('" + pattern + "') has a '*' " +
-                      "in an unexpected position. It is expected to be the " +
-                      "first or the last character in the wildcard.");
+      if (pattern.indexOf(":") == -1) {
+        throw new Error("When not using *.example.org wildcard, the string " +
+                        "supplied is expected to be either an exact URL to " +
+                        "match or a URL prefix. The provided string ('" +
+                        pattern + "') is unlikely to match any pages.");
+      }
+
+      if (firstWildcardPosition == -1)
+        this.exactURL = pattern;
+      else if (firstWildcardPosition == pattern.length - 1)
+        this.urlPrefix = pattern.substr(0, pattern.length - 1);
+      else {
+        throw new Error("The provided wildcard ('" + pattern + "') has a '*' " +
+                        "in an unexpected position. It is expected to be the " +
+                        "first or the last character in the wildcard.");
+      }
     }
   }
 }
@@ -86,6 +91,8 @@ MatchPattern.prototype = {
       return false;
     }
 
+    if (this.regexp && this.regexp.test(urlStr))
+      return true;
     if (this.anyWebPage && /^(https?|ftp)$/.test(url.scheme))
       return true;
     if (this.exactURL && this.exactURL == urlStr)
