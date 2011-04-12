@@ -95,13 +95,12 @@ exports["test invalid combos"] = function(assert) {
 
 exports["test no exception on unmodified keypress"] = function(assert) {
   var element = require("window-utils").activeWindow.document.documentElement;
-	var someHotkey = Hotkey({
-		combo: "control-alt-!",
-		onPress: function() {
-		}
-	});
-	keyPress(element, "a");
-    assert.pass();
+    Hotkey = Hotkey({
+      combo: "control-alt-!",
+      onPress: function() {}
+  });
+  keyPress(element, "a");
+  assert.pass();
 }
 
 require("test").run(exports);
