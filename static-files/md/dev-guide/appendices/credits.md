@@ -12,6 +12,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * James Burke
 * Hernán Rodriguez Colmeiro
 * fuzzykiller
+* [Marcio Galli](https://github.com/taboca)
 * Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
