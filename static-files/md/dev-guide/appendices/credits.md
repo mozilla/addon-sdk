@@ -10,6 +10,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Zbigniew Braniecki
 * Daniel Buchner
 * James Burke
+* [Matěj Cepl](https://github.com/mcepl)
 * Hernán Rodriguez Colmeiro
 * fuzzykiller
 * [Marcio Galli](https://github.com/taboca)
@@ -17,6 +18,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Irakli Gozalishvili
 * Luca Greco
 * Lloyd Hilaiel
+* Bobby Holley
 * Eric H. Jung
 * Hrishikesh Kale
 * Wes Kocher
