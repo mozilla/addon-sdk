@@ -294,6 +294,8 @@ def test_cfx(env_root, verbose):
     os.chdir(env_root)
     retval = cuddlefish.tests.run(verbose)
     os.chdir(olddir)
+    # tests write to stderr. flush everything now to avoid confusion later.
+    sys.stdout.flush(); sys.stderr.flush()
     return retval
 
 def test_all_examples(env_root, defaults):
