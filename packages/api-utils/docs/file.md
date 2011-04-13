@@ -90,9 +90,14 @@ The `file` module provides access to the local filesystem.
 
 <api name="read">
 @function
-  Opens a file in text mode and returns a string containing its entire contents.
+  Opens a file and returns a string containing its entire contents.
 @param path {string}
   The path of the file to read.
+@param [mode] {string}
+  An optional string, each character of which describes a characteristic of the
+  returned stream.  If the string contains `"b"`, the contents will be returned 
+  in binary mode. If `"b"` is not present or `mode` is not given, the file
+  contents will be returned in text mode. 
 @returns {string}
   A string containing the file's entire contents.
 </api>

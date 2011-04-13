@@ -101,8 +101,11 @@ exports.isFile = function isFile(filename) {
   return MozFile(filename).isFile();
 };
 
-exports.read = function read(filename) {
-  var stream = exports.open(filename);
+exports.read = function read(filename, mode) {
+  if (typeof(mode) !== "string")
+    mode = /b/.test(mode) ? "b" : "";
+
+  var stream = exports.open(filename, mode);
   try {
     var str = stream.read();
   }
