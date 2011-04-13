@@ -103,7 +103,10 @@ exports.isFile = function isFile(filename) {
 
 exports.read = function read(filename, mode) {
   if (typeof(mode) !== "string")
-    mode = /b/.test(mode) ? "b" : "";
+    mode = "";
+
+  // Ensure mode is read-only.
+  mode = /b/.test(mode) ? "b" : "";
 
   var stream = exports.open(filename, mode);
   try {
