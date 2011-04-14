@@ -263,38 +263,51 @@ def parse_args(arguments, global_options, usage, parser_groups, defaults=None):
 
     return (options, args)
 
+# all tests emit progress messages to stderr, not stdout. (the mozrunner
+# console output goes to stderr and is hard to change, and
+# unittest.TextTestRunner prefers stderr, so we send everything else there
+# too, to keep all the messages in order)
+
 def test_all(env_root, defaults):
     fail = False
 
-    print "Testing cfx..."
+    print >>sys.stderr, "Testing cfx..."
+    sys.stderr.flush()
     result = test_cfx(env_root, defaults['verbose'])
     if result.failures or result.errors:
         fail = True
+
+    print >>sys.stderr, "Testing all examples..."
+    sys.stderr.flush()
 
     try:
         test_all_examples(env_root, defaults)
     except SystemExit, e:
         fail = (e.code != 0) or fail
 
+    print >>sys.stderr, "Testing all packages..."
+    sys.stderr.flush()
     try:
         test_all_packages(env_root, defaults)
     except SystemExit, e:
         fail = (e.code != 0) or fail
 
     if fail:
-        print "Some tests were unsuccessful."
+        print >>sys.stderr, "Some tests were unsuccessful."
         sys.exit(1)
-    print "All tests were successful. Ship it!"
+    print >>sys.stderr, "All tests were successful. Ship it!"
     sys.exit(0)
 
 def test_cfx(env_root, verbose):
     import cuddlefish.tests
 
+    # tests write to stderr. flush everything before and after to avoid
+    # confusion later.
+    sys.stdout.flush(); sys.stderr.flush()
     olddir = os.getcwd()
     os.chdir(env_root)
     retval = cuddlefish.tests.run(verbose)
     os.chdir(olddir)
-    # tests write to stderr. flush everything now to avoid confusion later.
     sys.stdout.flush(); sys.stderr.flush()
     return retval
 
@@ -305,7 +318,8 @@ def test_all_examples(env_root, defaults):
     examples.sort()
     fail = False
     for dirname in examples:
-        print "Testing %s..." % dirname
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
         try:
             run(arguments=["test",
                            "--pkgdir",
@@ -325,7 +339,8 @@ def test_all_packages(env_root, defaults):
     for name in pkg_cfg.packages:
         if name != "testpkgs":
             deps.append(name)
-    print "Testing all available packages: %s." % (", ".join(deps))
+    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(deps))
+    sys.stderr.flush()
     run(arguments=["test", "--dependencies"],
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,

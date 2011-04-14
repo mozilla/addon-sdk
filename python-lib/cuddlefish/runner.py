@@ -264,8 +264,10 @@ def run_app(harness_root_dir, harness_options,
                           cmdargs=cmdargs,
                           kp_kwargs=popen_kwargs)
 
-    print "Using binary at '%s'." % runner.binary
-    print "Using profile at '%s'." % profile.profile
+    sys.stdout.flush(); sys.stderr.flush()
+    print >>sys.stderr, "Using binary at '%s'." % runner.binary
+    print >>sys.stderr, "Using profile at '%s'." % profile.profile
+    sys.stderr.flush()
 
     runner.start()
 
@@ -277,8 +279,8 @@ def run_app(harness_root_dir, harness_options,
             if logfile_tail:
                 new_chars = logfile_tail.next()
                 if new_chars:
-                    sys.stdout.write(new_chars)
-                    sys.stdout.flush()
+                    sys.stderr.write(new_chars)
+                    sys.stderr.flush()
             if os.path.exists(resultfile):
                 output = open(resultfile).read()
                 if output in ['OK', 'FAIL']:
@@ -295,11 +297,11 @@ def run_app(harness_root_dir, harness_options,
         if profile:
             profile.cleanup()
 
-    print "Total time: %f seconds" % (time.time() - starttime)
+    print >>sys.stderr, "Total time: %f seconds" % (time.time() - starttime)
 
     if output == 'OK':
-        print "Program terminated successfully."
+        print >>sys.stderr, "Program terminated successfully."
         return 0
     else:
-        print "Program terminated unsuccessfully."
+        print >>sys.stderr, "Program terminated unsuccessfully."
         return -1
