@@ -200,7 +200,7 @@ parser_groups = (
     )
 
 # Maximum time we'll wait for tests to finish, in seconds.
-TEST_RUN_TIMEOUT = 5 * 60
+TEST_RUN_TIMEOUT = 10 * 60
 
 def find_parent_package(cur_dir):
     tail = True
