@@ -273,6 +273,8 @@ def run_app(harness_root_dir, harness_options,
 
     done = False
     output = None
+    chime_interval = 5
+    next_chime = 0 + chime_interval
     try:
         while not done:
             time.sleep(0.05)
@@ -288,6 +290,11 @@ def run_app(harness_root_dir, harness_options,
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
+            elapsed = time.time() - starttime
+            if elapsed > next_chime:
+                sys.stderr.write("\n(elapsed time: %d seconds)\n" % elapsed)
+                sys.stderr.flush()
+                next_chime += chime_interval
     except:
         runner.stop()
         raise
