@@ -170,9 +170,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // resolved some test leaks; that was before I started clearing the
     // principal of the sandbox on unload, though, so perhaps it is no longer
     // a problem.
-    let sandbox = this._sandbox = new Cu.Sandbox(
-      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
-    );
+    let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
+    let sandbox = this._sandbox = new Cu.Sandbox(port._window.window);
 
     // Shimming natives in sandbox so that they support ES5 features
     Cu.evalInSandbox(es5code.contents, sandbox, "1.8", es5code.filename);
@@ -199,7 +198,23 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // the frame.  This supports JavaScript libraries like jQuery that depend
     // on the presence of certain properties in the global object, like window,
     // document, location, and navigator.
-    sandbox.__proto__ = window;
+    sandbox.__proto__ = {
+      __proto__: window,
+      // Some frameworks introduce globals by setting properties on the global
+      // window -> window.Sizzle = ....
+      // We need to return global object instead of window here in order to make
+      // such globals accessible.
+      window: sandbox,
+      top: sandbox
+    };
+    /*
+    sandbox.Object = window.Object;
+    sandbox.Array = window.Array;
+    sandbox.Function = window.Function;
+    sandbox.undefined = window.undefined;
+    sandbox.Boolean = window.Boolean;
+    sandbox.String = window.String;
+    */
     // Alternate approach:
     // Define each individual global on which JavaScript libraries depend
     // in the global object of the sandbox.  This is hard to get right,
