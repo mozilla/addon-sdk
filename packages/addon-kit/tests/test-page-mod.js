@@ -204,6 +204,44 @@ exports.testCommunication2 = function(test) {
   );
 };
 
+exports.testEventEmitter = function(test) {
+  let workerDone = false,
+      callbackDone = null;
+
+  testPageMod(test, "about:", [{
+      include: "about:*",
+      contentScript: 'new ' + function WorkerScope() {
+        self.on('addon-to-content', function(data) {
+          self.emit('content-to-addon', data);
+        });
+      },
+      onAttach: function(worker) {
+        worker.on('error', function(e) {
+          test.fail('Errors were reported : '+e);
+        });
+        worker.on('content-to-addon', function(value) {
+          test.assertEqual(
+            "worked",
+            value,
+            "EventEmitter API works!"
+          );          
+          if (callbackDone)
+            callbackDone();
+          else
+            workerDone = true;
+        });
+        worker.emit('addon-to-content', 'worked');
+      }
+    }],
+    function(win, done) {
+      if (workerDone)
+        done();
+      else
+        callbackDone = done;
+    }
+  );
+};
+
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
   

@@ -81,6 +81,16 @@ function postMessage(data) {
 }
 
 /**
+ * Same than postMessage but with a custom event name
+ * @param {String} eventName {JSON|String|Number|Boolean} data
+ */
+function emit(name, data) {
+  if (!this._port)
+    throw new Error(ERR_DESTROYED);
+  this._port._asyncEmit(name,  JSON.parse(JSON.stringify(data)));
+}
+
+/**
  * Local trait providing implementation of the workers global scope.
  * Used to configure global object in the sandbox.
  * @see http://www.w3.org/TR/workers/#workerglobalscope
@@ -137,6 +147,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
    * @see postMesssage
    */
   postMessage: postMessage,
+  
+  /**
+   * @see emit
+   */
+  emit: emit,
 
   /**
    * Alias to the global scope in the context of worker. Similar to
@@ -175,14 +190,15 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     );
 
     // Shimming natives in sandbox so that they support ES5 features
-    Cu.evalInSandbox(es5code.contents, sandbox, "1.8", es5code.filename);
+    Cu.evalInSandbox(es5code.contents, sandbox, JS_VERSION, es5code.filename);
 
     let window = port._window;
     let publicAPI = this._public;
-
-    let keys = Object.getOwnPropertyNames(publicAPI);
+    
+    // List of content script globals:
+    let keys = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 
+      'postMessage', 'self'];
     for each (let key in keys) {
-      if ('onMessage' === key) continue;
       Object.defineProperty(
         sandbox, key, Object.getOwnPropertyDescriptor(publicAPI, key)
       );
@@ -195,6 +211,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       },
       console: { value: console, configurable: true },
     });
+    
     // Chain the global object for the sandbox to the global object for
     // the frame.  This supports JavaScript libraries like jQuery that depend
     // on the presence of certain properties in the global object, like window,
@@ -319,6 +336,19 @@ const Worker = AsyncEventEmitter.compose({
    * @param {Number|String|JSON} data
    */
   postMessage: postMessage,
+  
+  /**
+   * Alternative way to send a message to the worker's global scope. 
+   * Method takes two arguments:
+   *  - eventName (string) which is the name to identify one kind of event,
+   *  - data (value, JSON) which represents data to be sent to the worker. 
+   * The data may be any primitive type value or `JSON`. 
+   *
+   * Event listeners can be set by calling `self.on` with a first argument 
+   * string being your event name
+   * @param {String} eventName, {Number|String|JSON} data
+   */
+  emit: emit,
 
   constructor: function Worker(options) {
     options = options || {};
@@ -359,6 +389,7 @@ const Worker = AsyncEventEmitter.compose({
     this._port = null;
     this._window = null;
   },
+  
   /**
    * Reference to the global scope of the worker.
    * @type {WorkerGlobalScope}

@@ -45,3 +45,37 @@ exports['test:sample'] = function(test) {
   test.assertEqual(worker.url, window.document.location.href);
 }
 
+exports['test:emit'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.on('addon-to-content', function (data) {
+          self.emit('content-to-addon', data);
+        });
+        
+        // Check for global pollution
+        if (typeof on != "undefined")
+          postMessage("`on` is in globals");
+        if (typeof once != "undefined")
+          postMessage("`once` is in globals");
+        if (typeof emit != "undefined")
+          postMessage("`emit` is in globals");
+        
+      },
+      onMessage: function(msg) {
+        test.fail("Got an unexpected message : "+msg);
+      }
+    });
+  
+  // Validate worker.on and worker.emit
+  worker.on('content-to-addon', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.emit('addon-to-content', 'event data');
+  
+}
