@@ -29,6 +29,12 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(configs.build.loader,
                          'resource://guid-foo-lib/foo-loader.js')
 
+    def test_bug_614712(self):
+        configs = get_configs('commonjs-naming', 'bug-614712-files')
+        packages = configs.pkg_cfg.packages
+        self.assertEqual(packages['original-naming'].tests, ['tests'])
+        self.assertEqual(packages['commonjs-naming'].tests, ['test'])
+
     def test_basic(self):
         configs = get_configs('aardvark')
         packages = configs.pkg_cfg.packages
@@ -39,3 +45,6 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(packages['api-utils'].loader, 'lib/loader.js')
         self.assertTrue(packages.aardvark.main == 'main')
         self.assertTrue(packages.aardvark.version == "1.0")
+
+if __name__ == "__main__":
+    unittest.main()
