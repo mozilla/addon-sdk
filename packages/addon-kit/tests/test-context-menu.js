@@ -1126,7 +1126,9 @@ if (!require("xul-app").is("Firefox")) {
 // WARNING: This looks up items in popups by comparing labels, so don't give two
 // items the same label.
 function TestHelper(test) {
-  test.waitUntilDone();
+  // default waitUntilDone timeout is 10s, which is too short on the win7
+  // buildslave
+  test.waitUntilDone(30*1000);
   this.test = test;
   this.loaders = [];
   this.browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
