@@ -287,6 +287,9 @@ def run_app(harness_root_dir, harness_options,
                 output = open(resultfile).read()
                 if output in ['OK', 'FAIL']:
                     done = True
+                else:
+                    sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
+                    sys.stderr.write("'"+output+"'\n")
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
