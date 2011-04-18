@@ -93,6 +93,9 @@ const Symbiont = Worker.resolve({
         this.on('error', options.onError);
     if ('onMessage' in options)
         this.on('message', options.onMessage);
+    if ('wrapped' in options)
+      this._wrapped = options.wrapped;
+    
     if ('frame' in options) {
       this._initFrame(options.frame);
     }

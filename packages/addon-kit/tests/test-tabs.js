@@ -632,7 +632,8 @@ exports.testAttachAll = function (test) {
 
 
 exports.testAttachWrappers = function (test) {
-  // Check that content script has access to unwrapped values
+  // Check that content script has access to unwrapped values throught 
+  // wrappedJSObject or unsafeWindow
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
@@ -644,15 +645,35 @@ exports.testAttachWrappers = function (test) {
       onReady: function (tab) {
         let worker = tab.attach({
           contentScript: 'try {' +
-                         '  postMessage(globalJSVar);' +
-                         '  postMessage(window.globalJSVar);' +
+                         '  postMessage(typeof globalJSVar);' +
+                         '  postMessage(typeof window.globalJSVar);' +
+                         '  postMessage(typeof window.wrappedJSObject);' +
+                         '  postMessage(window.wrappedJSObject.globalJSVar);' +
+                         '  postMessage(unsafeWindow.globalJSVar);' +
                          '} catch(e) {' +
                          '  postMessage(e.message);' +
                          '}',
           onMessage: function (msg) {
-            test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");
-            if (count++==1)
+            count++;
+            if (count == 1) {
+              test.assertEqual(msg, "undefined", 
+                "Global doesn't appear in content script globals");
+            }
+            else if (count == 2) {
+              test.assertEqual(msg, "undefined", 
+                "Global doesn't appear in content script window object");
+            }
+            else if (count == 3) {
+              test.assertEqual(msg, "object", 
+                "content script window object has a wrappedJSObject attribute");
+            }
+            else if (count == 4) {
+              test.assertEqual(msg, true, "Global is in wrappedJSObject");
+            }
+            else if (count == 5) {
+              test.assertEqual(msg, true, "Global is in unsafeWindow");
               closeBrowserWindow(window, function() test.done());
+            }
           }
         });
       }

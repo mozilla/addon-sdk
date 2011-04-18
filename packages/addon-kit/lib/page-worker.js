@@ -63,7 +63,7 @@ const Page = Trait.compose(
     postMessage: Symbiont.required,
     on: Symbiont.required,
     destroy: Symbiont.required,
-
+    
     constructor: function Page(options) {
       options = options || {};
 
@@ -83,8 +83,10 @@ const Page = Trait.compose(
         this.on('message', options.onMessage);
 
       this.on('propertyChange', this._onChange.bind(this));
-
-      this._initSymbiont();
+      
+      this._initSymbiont({
+        wrapped: false
+      });
     },
     
     _onChange: function _onChange(e) {

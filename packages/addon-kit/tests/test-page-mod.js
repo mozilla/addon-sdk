@@ -39,6 +39,11 @@ exports.testPageMod1 = function(test) {
   );
 };
 
+/** 
+ * This test still allow to modify directly document globals throught window
+ * because about: is on the same "domain" or security level than test script
+ * so there is no wrappers built over window object
+ */
 exports.testPageMod2 = function(test) {
   testPageMod(test, "about:", [{
       include: "about:*",
@@ -65,6 +70,32 @@ exports.testPageMod2 = function(test) {
     });
 };
 
+exports.testPageModWrappers = function(test) {
+  let html = "<script>var documentGlobal = true;</script>";
+  testPageMod(test, "data:text/html,"+html, [{
+      include: "data:*",
+      contentScript: [
+        'new ' + function contentScript() {
+          var scritpGlobal = true;
+          window.injectedGlobal = true;
+          unsafeWindow.injectedThroughtUnsafewin = true;
+        }
+      ]
+    }], function(win, done) {
+      test.assertEqual("documentGlobal" in win, true,
+                       "test `win` object behaves correctly");
+      test.assertEqual("scriptGlobal" in win, false,
+                       "content script globals doesn't pollute document globals");
+      test.assertEqual("injectedGlobal" in win, false,
+                       "we are not able to injected globals throught window");
+      test.assertEqual("injectedThroughtUnsafewin" in win, true,
+                       "we are able to injected globals throught unsafeWindow");
+      
+      done();
+    });
+};
+
+
 exports.testPageModIncludes = function(test) {
   var asserts = [];
   function createPageModTest(include, expectedMatch) {
@@ -79,7 +110,7 @@ exports.testPageModIncludes = function(test) {
       include: include,
       contentScript: 'new ' + function() {
         onMessage = function(msg) {
-          window[msg] = true;
+          unsafeWindow[msg] = true;
         }
       },
       onAttach: function(worker) {
