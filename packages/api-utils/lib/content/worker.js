@@ -169,8 +169,17 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let sandbox = this._sandbox = new Cu.Sandbox(window, {
         sandboxPrototype: wrappedWindow,
         wantXrays: port._wrapped 
-      });
-    
+    });
+
+    // Overriding default `window` and `top` properties so that they refer to
+    // the sandbox itself. This is necessary as some frameworks define globals
+    // and then refer to them via `window.variable` which breaks them. This
+    // works around this issue.
+    Object.defineProperties(sandbox, {
+      window: { get: function() sandbox },
+      top: { get: function() sandbox },
+    });
+
     // Greasemonkey convention
     // http://wiki.greasespot.net/UnsafeWindow
     // - `window` global is wrapped, so you have native DOM function
