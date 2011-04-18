@@ -157,13 +157,13 @@ def preflight_config(target_cfg, filename, stderr=sys.stderr, keydir=None,
         config["id"] = jid
         modified = True
 
-    # make sure we have the privkey: this catches the case where developer B
-    # copies an add-on from developer A and then (accidentally) tries to
-    # publish it without replacing the JID
-
-    sk = check_for_privkey(keydir, config["id"], stderr)
-    if not sk and err_if_privkey_not_found:
-        return False, False
+    if err_if_privkey_not_found:
+        # make sure we have the privkey: this catches the case where developer B
+        # copies an add-on from developer A and then (accidentally) tries to
+        # publish it without replacing the JID
+        sk = check_for_privkey(keydir, config["id"], stderr)
+        if not sk:
+            return False, False
 
     if modified:
         i = 0
