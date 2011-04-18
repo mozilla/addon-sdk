@@ -144,7 +144,7 @@ tests.testSeveralShowHides = function(test) {
 tests.testAnchorAndArrow = function(test) {
   test.waitUntilDone(20000);
   let count = 0;
-  function newPanel(anchor) {
+  function newPanel(tab, anchor) {
     let panel = panels.Panel({
       contentURL: "data:text/html,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
@@ -156,7 +156,9 @@ tests.testAnchorAndArrow = function(test) {
         panel.destroy();
         if (count==5) {
           test.pass("All anchored panel test displayed");
-          test.done();
+          tab.close(function () {
+            test.done();
+          });
         }
       }
     });
@@ -181,12 +183,12 @@ tests.testAnchorAndArrow = function(test) {
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
       let window = browserWindow.content;
-      newPanel(window.document.getElementById('tl'));
-      newPanel(window.document.getElementById('tr'));
-      newPanel(window.document.getElementById('bl'));
-      newPanel(window.document.getElementById('br'));
+      newPanel(tab, window.document.getElementById('tl'));
+      newPanel(tab, window.document.getElementById('tr'));
+      newPanel(tab, window.document.getElementById('bl'));
+      newPanel(tab, window.document.getElementById('br'));
       let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(anchor);
+      newPanel(tab, anchor);
     }
   });
   

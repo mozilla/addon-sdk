@@ -213,12 +213,19 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(nonBrowserWindow);
     },
     function() {
+      /**
+       * Bug 614079: This test fails intermittently on some specific linux 
+       *             environnements, without being able to reproduce it in same
+       *             distribution with same window manager.
+       *             Disable it until being able to reproduce it easily.
+      
       // On linux, focus is not consistent, so we can't be sure
       // what window will be on top.
       // Here when we focus "non-browser" window, 
       // Any Browser window may be selected as "active". 
       test.assert(windows.activeWindow == window2 || windows.activeWindow == window3, 
         "Non-browser windows aren't handled by this module");
+      */
       window2.activate();
       continueAfterFocus(rawWindow2);
     },

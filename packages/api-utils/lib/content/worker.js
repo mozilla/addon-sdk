@@ -154,29 +154,36 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // connect ports
     this._port = port;
     port._port = this;
-
+    
     this.on('unload', this._destructor = this._destructor.bind(this));
-
-    // XXX I think the principal should be `this._port._frame.contentWindow`,
-    // but script doesn't work correctly when I set it to that value.
-    // Events don't get registered; even dump() fails.
-    //
-    // FIXME: figure out the problem and resolve it, so we can restrict
-    // the sandbox to the same set of privileges the page has (plus any others
-    // it gets to access through the object that created it).
-    //
-    // XXX when testing `this._port.frame.contentWindow`, I found that setting
-    // the principal to its `this._port.frame.contentWindow.wrappedJSObject`
-    // resolved some test leaks; that was before I started clearing the
-    // principal of the sandbox on unload, though, so perhaps it is no longer
-    // a problem.
-    let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
-    let sandbox = this._sandbox = new Cu.Sandbox(port._window.window);
-
+    
+    // We receive an unwrapped window, with raw js access
+    let window = port._window;
+    // Then we rebuild a wrapped window
+    let wrappedWindow = new XPCNativeWrapper(window);
+    
+    // Create the sandbox and bind it to a wrappedWindow in order for content
+    // scripts to have access all standards globals (window, document, ...)
+    // but with a wrapper in order to avoid target document JS pollution
+    // and improve security comprehension for addon developers.
+    let sandbox = this._sandbox = new Cu.Sandbox(window, {
+        sandboxPrototype: wrappedWindow,
+        wantXrays: port._wrapped 
+      });
+    
+    // Greasemonkey convention
+    // http://wiki.greasespot.net/UnsafeWindow
+    // - `window` global is wrapped, so you have native DOM function
+    // (even if the target document tried to overload them)
+    // and none of target javascripts globals are accessible throught window.
+    // - `unsafeWindow` global gives raw access to target global object
+    // so you have access to all document javascript values and you may be 
+    // trapped by some unexpected function overload!
+    sandbox.unsafeWindow = window;
+    
     // Shimming natives in sandbox so that they support ES5 features
     Cu.evalInSandbox(es5code.contents, sandbox, "1.8", es5code.filename);
-
-    let window = port._window;
+    
     let publicAPI = this._public;
 
     let keys = Object.getOwnPropertyNames(publicAPI);
@@ -194,43 +201,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       },
       console: { value: console, configurable: true },
     });
-    // Chain the global object for the sandbox to the global object for
-    // the frame.  This supports JavaScript libraries like jQuery that depend
-    // on the presence of certain properties in the global object, like window,
-    // document, location, and navigator.
-    sandbox.__proto__ = {
-      __proto__: window,
-      // Some frameworks introduce globals by setting properties on the global
-      // window -> window.Sizzle = ....
-      // We need to return global object instead of window here in order to make
-      // such globals accessible.
-      window: sandbox,
-      top: sandbox
-    };
-    /*
-    sandbox.Object = window.Object;
-    sandbox.Array = window.Array;
-    sandbox.Function = window.Function;
-    sandbox.undefined = window.undefined;
-    sandbox.Boolean = window.Boolean;
-    sandbox.String = window.String;
-    */
-    // Alternate approach:
-    // Define each individual global on which JavaScript libraries depend
-    // in the global object of the sandbox.  This is hard to get right,
-    // since it requires a priori knowledge of the libraries developers use,
-    // and exceptions in those libraries aren't always reported.  It's also
-    // brittle, prone to breaking when those libraries change.  But it might
-    // make it easier to avoid namespace conflicts.
-    // In my testing with jQuery, I found that the library needed window,
-    // document, location, and navigator to avoid throwing exceptions,
-    // although even with those globals defined, the library still doesn't
-    // work, so it also needs something else about which it unfortunately does
-    // not complain.
-    // sandbox.window = window;
-    // sandbox.document = window.document;
-    // sandbox.location = window.location;
-    // sandbox.navigator = window.navigator;
 
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
@@ -353,6 +323,14 @@ const Worker = AsyncEventEmitter.compose({
 
     WorkerGlobalScope(this); // will set this._port pointing to the private API
   },
+  
+  /**
+   * Attribute read by WorkerGlobalScope during sandbox creation in order to 
+   * setup content script with wrapped object or not.
+   * We should enforce use of wrapped object in most cases as it solves many
+   * security issues around Javascript used by multiple entities.
+   */
+  _wrapped: true,
 
   get url() {
     return this._window.document.location.href;
