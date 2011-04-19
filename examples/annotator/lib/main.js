@@ -142,10 +142,10 @@ display it.
             annotationEditor.annotationAnchor = message.anchor;
             annotationEditor.show();
             break;
-          case 'detach':
-            detachWorker(this, selectors);
-            break;
         }
+      });
+      worker.on('detach', function () {
+        detachWorker(this, selectors);
       });
     }
   });
@@ -269,10 +269,10 @@ see old ones.
             annotation.content = null;
             annotation.hide();
             break;
-          case 'detach':
-            detachWorker(this, matchers);
-            break;
         }
+      });
+      worker.on('detach', function () {
+        detachWorker(this, matchers);
       });
       matchers.push(worker);
     }

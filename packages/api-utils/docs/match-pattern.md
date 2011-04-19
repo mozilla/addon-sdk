@@ -8,7 +8,9 @@ There are four kinds of patterns.  The first three use an asterisk as a
 glob-style wildcard.  Note that these are not regular expressions.
 
 1.   **A single asterisk** matches any URL with an `http`, `https`, or `ftp`
-     scheme.
+     scheme. Note that it won't match URLs containing any other schemes, such
+     as `file` URLs: to match these you need to specify the scheme explicitly
+     (see item 5.)
 
      *Example:*<br>
      &nbsp;&nbsp;&nbsp;&nbsp;**`*`**
@@ -48,7 +50,19 @@ glob-style wildcard.  Note that these are not regular expressions.
      *Example matching URLs:*<br>
      &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`
 
+5.  **A scheme followed by an asterisk** matches all documents accessed using
+     that scheme.<br>
+     To match local files, use `file://*`.<br>
+     To match files stored in your add-on's `data` directory, use
+     `resource://*`.
+    
+    *Example:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;**`file://*`**
 
+     *Example matching URLs:*<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`file://C:/Users/User/Desktop/test-file.html`<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;`file:///home/user/test-file.png`<br>
+     
 Examples
 --------
 

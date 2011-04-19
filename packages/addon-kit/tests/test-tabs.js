@@ -571,61 +571,86 @@ exports.testAttachOnOpen = function (test) {
   });
 }
 
-exports.testAttachAll = function (test) {
-  // Example of attach that process all tab documents
+exports.testAttachOnMultipleDocuments = function (test) {
+  // Example of attach that process multiple tab documents
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
     let firstLocation = "data:text/html,foobar";
     let secondLocation = "data:text/html,bar";
     let thirdLocation = "data:text/html,fox";
-    let onMessageCount = 0;
     let onReadyCount = 0;
-    
-    let worker = null;
+    let worker1 = null;
+    let worker2 = null;
+    let detachEventCount = 0;
     tabs.open({
       url: firstLocation,
       onReady: function (tab) {
         onReadyCount++;
-        if (onReadyCount==1) {
-          worker = tab.attach({
+        if (onReadyCount == 1) {
+          worker1 = tab.attach({
             contentScript: 'self.on("message", ' +
                            '  function () postMessage(document.location.href)' +
                            ');',
             onMessage: function (msg) {
-              console.log("onmessage...");
-              onMessageCount++;
-              if (onMessageCount==1) {
-                test.assertEqual(msg, firstLocation, 
-                  "Worker document url is equal to the 1st document");
-                tab.url = secondLocation;
-              } 
-              else if (onMessageCount==2) {
-                test.assertEqual(msg, secondLocation, 
-                  "Worker document url is equal to the 2nd document");
-                worker.destroy();
-                tab.url = thirdLocation;
-              } else {
-                test.fail("Got unexpected message ("+onMessageCount+")");
-              }
+              test.assertEqual(msg, firstLocation, 
+                               "Worker url is equal to the 1st document");
+              tab.url = secondLocation;
+            },
+            onDetach: function () {
+              detachEventCount++;
+              test.pass("Got worker1 detach event");
+              test.assertRaises(function () {
+                  worker1.postMessage("ex-1");
+                }, 
+                /The page has been destroyed/, 
+                "postMessage throw because worker1 is destroyed");
+              checkEnd();
             }
           });
-          worker.postMessage("new-doc");
+          worker1.postMessage("new-doc-1");
         } 
-        else if (onReadyCount==2) {
-          worker.postMessage("new-doc");
+        else if (onReadyCount == 2) {
+          
+          worker2 = tab.attach({
+            contentScript: 'self.on("message", ' +
+                           '  function () postMessage(document.location.href)' +
+                           ');',
+            onMessage: function (msg) {
+              test.assertEqual(msg, secondLocation, 
+                               "Worker url is equal to the 2nd document");
+              tab.url = thirdLocation;
+            },
+            onDetach: function () {
+              detachEventCount++;
+              test.pass("Got worker2 detach event");
+              test.assertRaises(function () {
+                  worker2.postMessage("ex-2");
+                }, 
+                /The page has been destroyed/, 
+                "postMessage throw because worker2 is destroyed");
+              checkEnd();
+            }
+          });
+          worker2.postMessage("new-doc-2");
         } 
-        else if (onReadyCount==3) {
-          test.assertRaises(function () {
-              worker.postMessage("new-doc");
-            }, 
-            /The page has been destroyed/, 
-            "Last postMessage throw because worker is destroyed");
-          closeBrowserWindow(window, function() test.done());
+        else if (onReadyCount == 3) {
+          
+          tab.close();
+          
         }
         
       }
     });
+    
+    function checkEnd() {
+      if (detachEventCount != 2)
+        return;
+      
+      test.pass("Got all detach events");
+      
+      closeBrowserWindow(window, function() test.done());
+    }
     
   });
 }
