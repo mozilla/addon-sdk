@@ -85,28 +85,6 @@
      this.require("unload").send(reason);
    }
 
-   function maybeLoadMainInJetpackProcess(delegate, packaging) {
-     return function getModuleExports(basePath, module) {     
-       if (module == packaging.options.main) {
-         var mainURL = this.fs.resolveModule(basePath, module);
-         var mainInfo = packaging.getModuleInfo(mainURL);
-         if (! "chrome" in mainInfo.requirements) {
-           var loader = this;
-           return {
-             main: function main(options, callbacks) {
-               var e10s = loader.require("e10s");
-               var process = e10s.AddonProcess();
-               loader.console.log("starting main in remote process.");
-               process.send("startMain", options.main);
-             }
-           };
-         } else
-           return null;
-       }
-       return (delegate ? delegate.call(this, basePath, module) : null);
-     };
-   }
-
    function makeGetModuleExports(delegate) {
      return function getModuleExports(basePath, module) {
        switch (module) {
@@ -148,12 +126,6 @@
        throw new Error('options.modules is no longer supported');
 
      var getModuleExports = makeGetModuleExports(options.getModuleExports);
-
-     if (options.packaging) {
-       if (options.packaging.enableE10s)
-         getModuleExports = maybeLoadMainInJetpackProcess(getModuleExports,
-                                                          options.packaging);
-     }
 
      var manifest = {};
      if ("packaging" in options)
