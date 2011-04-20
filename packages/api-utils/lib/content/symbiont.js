@@ -106,7 +106,7 @@ const Symbiont = Worker.resolve({
       hiddenFrames.add(this._hiddenFrame);
     }
 
-    unload.when(this.destroy.bind(this));
+    unload.ensure(this._public, "destroy");
   },
   destroy: function destroy() {
     this._workerDestroy();

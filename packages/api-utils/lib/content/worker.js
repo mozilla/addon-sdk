@@ -350,7 +350,7 @@ const Worker = AsyncEventEmitter.compose({
     observers.add("inner-window-destroyed", 
                   this._documentUnload = this._documentUnload.bind(this));
     
-    unload.when(this.destroy = this.destroy.bind(this));
+    unload.ensure(this._public, "destroy");
   },
   
   _documentUnload: function _documentUnload(subject, topic, data) {

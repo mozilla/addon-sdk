@@ -12,20 +12,22 @@ name in the [Narwhal][] platform.
 @function
   Calling `ensure()` on an object does two things:
 
-  1. It replaces `object.unload()` with a wrapper method that will never call
-     `object.unload()` more than once.
+  1. It replaces a destructor method with a wrapper method that will never call
+     the destructor more than once.
   2. It ensures that this wrapper method is called when `send()` is
      called.
 
   Therefore, when you register an object with `ensure()`, you can call its
-  `unload()` method yourself, you can let it happen for you, or you can do both.
+  destructor method yourself, you can let it happen for you, or you can do both.
 
-  `object.unload()` will be called with a single argument describing the reason
-  for the unload; see `when()`.  If `object` does not have an `unload()` method,
-  then an exception is thrown when `ensure()` is called.
+  The destructor will be called with a single argument describing the reason
+  for the unload; see `when()`. If `object` does not have the expected 
+  destructor method, then an exception is thrown when `ensure()` is called.
 
 @param object {object}
-  An object that defines an `unload()` method.
+  An object that defines a destructor method.
+@param [name] {string}
+  Optional name of the destructor method. Default is `unload`.
 </api>
 
 <api name="when">

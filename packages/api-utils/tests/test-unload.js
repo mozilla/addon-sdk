@@ -45,33 +45,25 @@ exports.testUnloading = function(test) {
   var ul = loader.require("unload");
   var unloadCalled = 0;
   function unload() { unloadCalled++; }
-  var obj1 = {};
-  var obj2 = {};
-  ul.addMethod(obj1, unload);
-  ul.addMethod(obj2, unload);
+  ul.when(unload);
+
+  // This should be ignored, as we already registered it
+  ul.when(unload);
+
+  function unload2() { unloadCalled++; }
+  ul.when(unload2);
   loader.unload();
   test.assertEqual(unloadCalled, 2,
-                   "All unloaders are called on unload.");
-};
-
-exports.testAddMethod = function(test) {
-  var obj = {unloadCalled: 0};
-  function unloadObj() { this.unloadCalled++; }
-
-  unload.addMethod(obj, unloadObj);
-
-  obj.unload();
-  test.assertEqual(obj.unloadCalled, 1,
-                   "unloader function should be called");
-  obj.unload();
-  test.assertEqual(obj.unloadCalled, 1,
-                   "unloader func should not be called more than once");
+                   "Unloader functions are called on unload.");
 };
 
 exports.testEnsure = function(test) {
   test.assertRaises(function() { unload.ensure({}); },
                     "object has no 'unload' property",
                     "passing obj with no unload prop should fail");
+  test.assertRaises(function() { unload.ensure({}, "destroy"); },
+                    "object has no 'destroy' property",
+                    "passing obj with no custom unload prop should fail");
 
   var called = 0;
   var obj = {unload: function() { called++; }};
@@ -83,6 +75,64 @@ exports.testEnsure = function(test) {
   obj.unload();
   test.assertEqual(called, 1,
                    "unload() should be called only once");
+};
+
+/**
+ * Check that destructors are called only once with Traits.
+ * - check that public API is calling the destructor and unregister it,
+ * - check that composed traits with multiple ensure calls, leads to only
+ * one destructor call.
+ */
+exports.testEnsureWithTraits = function(test) {
+
+  let { Trait } = require("traits");
+  let loader = test.makeSandboxedLoader();
+  let ul = loader.require("unload");
+
+  let called = 0;
+  let composedCalled = 0;
+  let composedTrait = Trait.compose({
+      constructor: function () {
+        ul.ensure(this._public);
+      },
+      unload: function unload() {
+        composedCalled++;
+      }
+    });
+  let obj = Trait.compose(
+    composedTrait.resolve({
+      constructor: "_constructor",
+      unload : "_unload" 
+    }), {
+      constructor: function constructor() {
+        ul.ensure(this._public);
+        this._constructor();
+      },
+      unload: function unload() {
+        called++;
+        this._unload();
+      }
+    })();
+
+  obj.unload();
+  test.assertEqual(called, 1,
+                   "unload() should be called");
+
+  test.assertEqual(composedCalled, 1,
+                   "composed object unload() should be called");
+
+  obj.unload();
+  test.assertEqual(called, 1,
+                   "unload() should be called only once");
+  test.assertEqual(composedCalled, 1,
+                   "composed object unload() should be called only once");
+
+  loader.unload();
+  test.assertEqual(called, 1,
+                   "unload() should be called only once, after addon unload");
+  test.assertEqual(composedCalled, 1,
+                   "composed object unload() should be called only once, " +
+                   "after addon unload");
 };
 
 exports.testReason = function (test) {
