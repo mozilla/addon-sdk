@@ -91,8 +91,8 @@ TestFinder.prototype = {
                     testFunction: self._makeTest(suite, name, module[name]),
                     name: suite + "." + name
                   });
-            if (!moduleInfo.needsChrome)
-              remoteSuites.push(suite);
+            //if (!"chrome" in moduleInfo.requirements)
+            //  remoteSuites.push(suite);
           });
       });
 
