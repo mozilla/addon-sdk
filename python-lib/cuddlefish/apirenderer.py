@@ -91,7 +91,7 @@ def span_wrap(text, classname):
 
 class API_Renderer(object):
     def __init__(self, json, tag):
-        self.name = json['name']
+        self.name = json.get('name', None)
         self.tag = tag
         self.description = json.get('description', '')
         self.json = json
@@ -117,6 +117,32 @@ class Class_Doc(API_Renderer):
 
     def render_subcomponents(self):
         return render_object_contents(self.json)
+
+class Event_Doc(API_Renderer):
+    def __init__(self, json, tag):
+        API_Renderer.__init__(self, json, tag)
+        self.arguments_json = json.get('arguments', None)
+
+    def render_name(self):
+        return self.name
+
+    def render_subcomponents(self):
+        if  not self.arguments_json:
+            return ''
+        text = ''.join([render_comp(Argument_Doc(argument_json, 'div')) \
+                       for argument_json in self.arguments_json])
+        return tag_wrap(text, PARAMETER_SET)
+
+class Argument_Doc(API_Renderer):
+    def __init__(self, json, tag):
+        API_Renderer.__init__(self, json, tag)
+        self.datatype = json.get('datatype', None)
+
+    def render_name(self):
+        return span_wrap(self.datatype, DATATYPE)
+
+    def render_subcomponents(self):
+        return ''
 
 class Function_Doc(API_Renderer):
     def __init__(self, json, tag):
@@ -184,6 +210,8 @@ def render_object_contents(json):
     text += render_comp_group(methods, 'Methods', Function_Doc)
     properties = json.get('properties', None)
     text += render_comp_group(properties, 'Properties', Property_Doc)
+    events = json.get('events', None)
+    text += render_comp_group(events, 'Events', Event_Doc)
     return text
 
 def render_comp(component):
@@ -228,6 +256,9 @@ def render_api_reference(api_docs):
     # 4) a component group called 'Properties' containing any global properties
     properties = [api for api in api_docs if api['type'] == 'property']
     text += render_comp_group(properties, 'Properties', Property_Doc, 'h3', 'h4')
+    # 5) a component group called 'Events' containing any global events
+    events = [api for api in api_docs if api['type'] == 'event']
+    text += render_comp_group(events, 'Events', Event_Doc, 'h3', 'h4')
     return tag_wrap(text, API_REFERENCE)
 
 # take the JSON output of apiparser

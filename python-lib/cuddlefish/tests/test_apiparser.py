@@ -21,7 +21,7 @@ class ParserTests(unittest.TestCase):
         #for i,h in enumerate(parsed):
         #    print i, h
         self.assertEqual(parsed[0],
-                         ("version", 3))
+                         ("version", 4))
         self.assertEqual(parsed[1],
                          ("markdown", "# Title #\n\nSome text here\n\n"))
         self.assertEqual(parsed[2][0], "api-json")
@@ -117,7 +117,7 @@ method of accessing your features slideBar'},
                        'datatype': 'string/xml',
                        'name': 'html',
                        'description': 'The content of the feature, either \
-as an HTML string,\nor an E4X document fragment (e.g., <><h1>Hi!</h1></>)'},
+as an HTML string,\nor an E4X document fragment.'},
                       {'line_number': 37,
                        'required': False,
                        'datatype': 'uri',
@@ -244,10 +244,10 @@ constructor and one method.")
         self._test_class_method(methods[0])
         # 5) class with ctor + method + property
         p_test = parsed[18][1]
-        self.assertEqual(len(p_test), 7)
-        self.assertEqual(p_test["name"], "ctor-and-method-and-prop")
+        self.assertEqual(len(p_test), 8)
+        self.assertEqual(p_test["name"], "ctor-method-prop-event")
         self.assertEqual(p_test["description"], "This class contains one \
-constructor, one method, and one property.")
+constructor, one method, one property and an event.")
         self.assertEqual(p_test["type"], "class")
         constructors = p_test["constructors"]
         self.assertEqual(len(constructors), 1)
@@ -258,6 +258,9 @@ constructor, one method, and one property.")
         properties = p_test["properties"]
         self.assertEqual(len(properties), 1)
         self._test_class_property(properties[0])
+        events = p_test["events"]
+        self.assertEqual(len(events), 1)
+        self._test_class_event(events[0])
 
         self.assertEqual(parsed[-1][0], "markdown")
         self.assertEqual(parsed[-1][1], "\n\nSome more text here, \
@@ -285,6 +288,18 @@ at the end of the file.\n\n")
         self.assertEqual(prop["name"], "a-property")
         self.assertEqual(prop["description"], "Represents stuff.")
         self.assertEqual(prop["datatype"], "bool")
+
+    def _test_class_event(self, event):
+        self.assertEqual(event["type"], "event")
+        self.assertEqual(event["name"], "message")
+        self.assertEqual(event["description"], "Event emitted when the \
+content script sends a message to the add-on.")
+        arguments = event["arguments"]
+        self.assertEqual(len(arguments), 1)
+        argument = arguments[0]
+        self.assertEqual(argument["datatype"], "JSON")
+        self.assertEqual(argument["description"], "The message itself as a \
+JSON-serialized object.")
 
     def test_missing_return_propname(self):
         md = '''\
