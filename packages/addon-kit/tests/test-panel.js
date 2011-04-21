@@ -6,7 +6,7 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(1); on('message', function() postMessage(2));",
+    contentScript: "postMessage(1); self.on('message', function() postMessage(2));",
     onMessage: function (message) {
       test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {

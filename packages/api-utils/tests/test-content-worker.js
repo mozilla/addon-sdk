@@ -71,11 +71,45 @@ exports['test:emit'] = function(test) {
       }
     });
   
-  // Validate worker.on and worker.emit
-  worker.on('content-to-addon', function (data) {
+  // Validate worker.port
+  worker.port.on('content-to-addon', function (data) {
     test.assertEqual(data, "event data");
     test.done();
   });
-  worker.emit('addon-to-content', 'event data');
+  worker.port.emit('addon-to-content', 'event data');
   
 }
+
+exports['test:emit hack message'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.on('message', function (data) {
+          self.emit('message', data);
+        });
+      },
+      onMessage: function(msg) {
+        test.fail("Got an unexpected message : "+msg);
+      },
+      onError: function(e) {
+        test.fail("Got exception: "+e);
+      }
+    });
+  
+  // Events `mesage` are routed to port when they come from content script
+  // but they behave exactly like postMessage when they come from addon
+  worker.port.on('message', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.on('message', function (data) {
+    test.fail("Got an unexpected message : "+msg);
+  });
+  worker.port.emit('message', 'event data');
+  
+}
+

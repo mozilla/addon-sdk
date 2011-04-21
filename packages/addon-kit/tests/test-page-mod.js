@@ -219,7 +219,7 @@ exports.testEventEmitter = function(test) {
         worker.on('error', function(e) {
           test.fail('Errors were reported : '+e);
         });
-        worker.on('content-to-addon', function(value) {
+        worker.port.on('content-to-addon', function(value) {
           test.assertEqual(
             "worked",
             value,
@@ -230,7 +230,7 @@ exports.testEventEmitter = function(test) {
           else
             workerDone = true;
         });
-        worker.emit('addon-to-content', 'worked');
+        worker.port.emit('addon-to-content', 'worked');
       }
     }],
     function(win, done) {
