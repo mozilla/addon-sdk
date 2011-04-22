@@ -365,18 +365,21 @@ const Worker = AsyncEventEmitter.compose({
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
     
-    let self = this;
-    this.port = AsyncEventEmitter.compose({
-      constructor: function () {
-        // Hack Traits in order to be able to send event to this.port
-        self._port = this;
-      },
-      emit: function (type, data) {
-        self._contentWorker._asyncEmit(type, data);
-      }
-    })();
-    
-    WorkerGlobalScope(this); // will set this._port pointing to the private API
+    // create a new event emitter.
+    let addonWorker = this;
+    this._port = require("events").EventEmitterTrait.create({
+        emit: function (type, data) {
+          addonWorker._contentWorker._asyncEmit(type, data);
+        }
+      });
+    // create emit that executes in next turn of event loop.
+    this._port._asyncEmit = require('utils/function').Enqueued(this._port._emit);
+    // expose wrapped port, that exposes only public properties. 
+    this.port = require('cortex').Cortex(this._port);
+
+    // will set this._contentWorker pointing to the private API:
+    WorkerGlobalScope(this);  
+
     
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
