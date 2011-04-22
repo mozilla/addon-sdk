@@ -62,3 +62,71 @@ exports['test:sample'] = function(test) {
   
 }
 
+exports['test:emit'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.on('addon-to-content', function (data) {
+          self.emit('content-to-addon', data);
+        });
+        
+        // Check for global pollution
+        if (typeof on != "undefined")
+          postMessage("`on` is in globals");
+        if (typeof once != "undefined")
+          postMessage("`once` is in globals");
+        if (typeof emit != "undefined")
+          postMessage("`emit` is in globals");
+        
+      },
+      onMessage: function(msg) {
+        test.fail("Got an unexpected message : "+msg);
+      }
+    });
+  
+  // Validate worker.port
+  worker.port.on('content-to-addon', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.port.emit('addon-to-content', 'event data');
+  
+}
+
+exports['test:emit hack message'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.on('message', function (data) {
+          self.emit('message', data);
+        });
+      },
+      onMessage: function(msg) {
+        test.fail("Got an unexpected message : "+msg);
+      },
+      onError: function(e) {
+        test.fail("Got exception: "+e);
+      }
+    });
+  
+  // Events `mesage` are routed to port when they come from content script
+  // but they behave exactly like postMessage when they come from addon
+  worker.port.on('message', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.on('message', function (data) {
+    test.fail("Got an unexpected message : "+msg);
+  });
+  worker.port.emit('message', 'event data');
+  
+}
+
