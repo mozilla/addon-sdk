@@ -406,15 +406,15 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','tests','docs']:
+    for d in ['lib','data','test','docs']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
     print >>out, '* README.md written'
     open('package.json','w').write(PACKAGE_JSON % {'name':addon})
     print >>out, '* package.json written'
-    open(os.path.join(path,'tests','test-main.js'),'w').write(TEST_MAIN_JS)
-    print >>out, '* tests/test-main.js written'
+    open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
+    print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
     print >>out, '* lib/main.js written'
     open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
