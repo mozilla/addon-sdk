@@ -251,12 +251,18 @@ exports.Options = Options;
 
 exports.getTabForWindow = function (win) {
   // Get browser window
-  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIWebNavigation)
-                     .QueryInterface(Ci.nsIDocShellTreeItem)
-                     .rootTreeItem
-                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDOMWindow);
+  let topWindow;
+  try {
+      topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIWebNavigation)
+                         .QueryInterface(Ci.nsIDocShellTreeItem)
+                         .rootTreeItem
+                         .QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDOMWindow);
+  } catch(e) {
+    // win.QueryInterface(Ci.nsIInterfaceRequestor) may be null sometimes
+    return null;
+  }
   if (!topWindow.gBrowser) return null;
   
   // Get top window object, in case we are in a content iframe
