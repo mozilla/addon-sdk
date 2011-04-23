@@ -45,7 +45,6 @@ const { Cc, Ci } = require('chrome'),
       URI_BROWSER = 'chrome://browser/content/browser.xul',
       NAME = '_blank',
       FEATURES = 'chrome,all,dialog=no',
-      PARAMS = [ URI_BROWSER, NAME, FEATURES ],
       ON_LOAD = 'load',
       ON_UNLOAD = 'unload',
       STATE_LOADED = 'complete',
@@ -75,7 +74,14 @@ const WindowLoader = Trait.compose({
   _onUnload: Trait.required,
   _load: function _load() {
     if (this.__window) return;
-    let params = PARAMS.slice()
+    let params = [ URI_BROWSER ];
+    if (!'_name' in this)
+        this._name = NAME;
+    params.push(this._name);
+    if ('_features' in this)
+        params.push(this._features);
+    else
+        params.push(FEATURES);
     params.push(this._tabOptions.map(function(options) options.url).join("|"))
     let browser =  WM.getMostRecentWindow(BROWSER);
     this._window = browser.openDialog.apply(browser, params);
