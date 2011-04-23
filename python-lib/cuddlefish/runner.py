@@ -255,6 +255,9 @@ def run_app(harness_root_dir, harness_options,
     popen_kwargs = {}
     profile = None
 
+#    cmdargs.append('-chromebug')
+#    cmdargs.append('-purgecaches')
+
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)

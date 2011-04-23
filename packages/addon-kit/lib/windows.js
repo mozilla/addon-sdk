@@ -86,6 +86,10 @@ const BrowserWindowTrait = Trait.compose(
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
+      if ('name' in options)
+        this._name = options.name;
+      if ('features' in options)
+        this._features = options.features;
       if ('onOpen' in options)
         this.on('open', options.onOpen);
       if ('onClose' in options)
@@ -126,6 +130,18 @@ const BrowserWindowTrait = Trait.compose(
       // maybe we should deprecate this with message ?
       if (callback) this.on('close', callback);
       return this._close();
+    },
+    get name() {
+      return this._name;
+    },
+    get window() {
+      return this._window;
+    },
+    get document() {
+      return this._window.document;
+    },    
+    focus: function focus() {
+      return this._window.focus();
     }
   })
 );

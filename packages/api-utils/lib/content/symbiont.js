@@ -148,7 +148,8 @@ const Symbiont = Worker.resolve({
       this._cleanUpFrame();
     
     this._frame = frame;
-    frame.docShell.allowJavascript = this.allow.script;
+    if (typeof frame.docShell != "undefined")
+        frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
     if (frame.contentDocument.readyState == "complete" && 
         frame.contentDocument.location == this._contentURL) {
