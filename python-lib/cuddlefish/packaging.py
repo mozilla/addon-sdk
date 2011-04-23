@@ -131,6 +131,10 @@ def get_config_in_dir(path):
     if 'name' not in base_json:
         base_json.name = os.path.basename(path)
 
+    if (not base_json.get('tests') and
+        os.path.isdir(os.path.join(path, 'test'))):
+        base_json['tests'] = 'test'
+
     for dirname in ['lib', 'tests', 'data', 'packages']:
         apply_default_dir(base_json, path, dirname)
 

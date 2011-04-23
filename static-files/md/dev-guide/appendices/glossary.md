@@ -41,7 +41,7 @@ entirely possible for Loaders to create new Loaders.
 
 <span class="aside">
 For more information on Low-Level Modules, see the
-[Low-Level Module Best Practices] appendix.
+[Low-Level Module Best Practices][] appendix.
 </span>
 
 __Low-Level Module__: A module with the following properties:

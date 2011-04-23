@@ -9,19 +9,12 @@
     <em:bootstrap>true</em:bootstrap>
     <em:unpack>true</em:unpack>
 
-    <!-- Target Application this extension can install into, 
-         with minimum and maximum supported versions. For a list 
-         of valid values, see:
-
-         https://addons.mozilla.org/en-US/firefox/pages/appversions
-     --> 
-
     <!-- Firefox -->
     <em:targetApplication>
       <Description>
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
         <em:minVersion>4.0b7</em:minVersion>
-        <em:maxVersion>4.2a1pre</em:maxVersion>
+        <em:maxVersion>6.0a1</em:maxVersion>
       </Description>
     </em:targetApplication>
 

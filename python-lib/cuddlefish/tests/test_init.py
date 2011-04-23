@@ -35,7 +35,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue(len(os.listdir(basedir))>0)
         main_js = os.path.join(basedir,"lib","main.js")
         package_json = os.path.join(basedir,"package.json")
-        test_main_js = os.path.join(basedir,"tests","test-main.js")
+        test_main_js = os.path.join(basedir,"test","test-main.js")
         self.assertTrue(os.path.exists(main_js))
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))

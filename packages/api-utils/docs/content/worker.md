@@ -1,22 +1,24 @@
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-Introduction
-------------
+This module exports the `Worker` trait, which may be used to construct objects
+implementing the [Worker][] interface defined by the W3C, with minor
+differences.
 
-Module exports `Worker` trait may be used for constructing objects
-implementing [Worker] interface defined by the W3C, with minor differences.
 Content workers are message-passing facilities for communication between
-code running in the content and add-on process. It is important to note that
-unlike "web workers," this workers run in the same process as web content and
-browser chrome, and therefore code within workers can block UI.
+[content scripts](dev-guide/addon-development/web-content.html) and the main
+add-on code.
+
+It is important to note that unlike "web workers," these workers run in the
+same process as web content and browser chrome, so code within workers can
+block the UI.
 
 [Worker]:http://www.w3.org/TR/workers/#worker
 
 <api name="Worker">
 @class
-Worker is composed from the [EventEmitter] trait, therefore instances
+Worker is composed from the [EventEmitter][] trait, therefore instances
 of Worker and their descendants expose all the public properties
-exposed by [EventEmitter] along with additional public properties that
+exposed by [EventEmitter][] along with additional public properties that
 are listed below.
 
 Content workers may emit two types of events:
@@ -44,7 +46,8 @@ that occurs in one of the content scripts.
     });
     worker.postMessage({ name: 'worker'});
 
-[EventEmitter]:#module/api-utils/events
+[EventEmitter]:packages/api-utils/docs/events.html
+
 <api name="Worker">
 @constructor
 Creates a content worker.
@@ -82,7 +85,7 @@ The URL of the content.
 <api name="tab">
 @property {object}
 If this worker is attached to a content document, returns the related 
-[tab](#module/addon-kit/tabs).
+[tab](packages/addon-kit/docs/tabs.html).
 
 </api>
 

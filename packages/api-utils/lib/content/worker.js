@@ -46,6 +46,7 @@ const timer = require('timer');
 const { toFilename } = require('url');
 const file = require('file');
 const unload = require('unload');
+const observers = require("observer-service");
 
 const JS_VERSION = '1.8';
 
@@ -330,13 +331,32 @@ const Worker = AsyncEventEmitter.compose({
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)
-        this.on('error', options.onError);
+      this.on('error', options.onError);
     if ('onMessage' in options)
-        this.on('message', options.onMessage);
-
-    unload.when(this.destroy.bind(this));
+      this.on('message', options.onMessage);
+    if ('onDetach' in options)
+      this.on('detach', options.onDetach);
 
     WorkerGlobalScope(this); // will set this._port pointing to the private API
+    
+    // Track document unload to destroy this worker.
+    // We can't watch for unload event on page's window object as it 
+    // prevents bfcache from working: 
+    // https://developer.mozilla.org/En/Working_with_BFCache
+    this._windowID = this._window.
+                     QueryInterface(Ci.nsIInterfaceRequestor).
+                     getInterface(Ci.nsIDOMWindowUtils).
+                     currentInnerWindowID;
+    observers.add("inner-window-destroyed", 
+                  this._documentUnload = this._documentUnload.bind(this));
+    
+    unload.ensure(this._public, "destroy");
+  },
+  
+  _documentUnload: function _documentUnload(subject, topic, data) {
+    let innerWinID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    if (innerWinID != this._windowID) return;
+    this._workerCleanup();
   },
 
   get url() {
@@ -349,16 +369,32 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   /**
-   * Tells _port to unload itself and removes all the references from itself.
+   * Destroy completely the worker: internal and external references
    */
   destroy: function destroy() {
+    this._workerCleanup();
     this._removeAllListeners('message');
     this._removeAllListeners('error');
-    if (this._port) // maybe unloaded before port is created
-      this._port._emit('unload');
+    this._removeAllListeners('detach');
+  },
+  
+  /**
+   * Remove all internal references to the attached document
+   * Tells _port to unload itself and removes all the references from itself.
+   */
+  _workerCleanup: function _workerCleanup() {
+    // May be already unloaded, or not already inited 
+    // As Symbiont call worker.constructor on document load
+    if (!this._port)
+      return;
+    this._port._emit('unload');
     this._port = null;
     this._window = null;
+    observers.remove("inner-window-destroyed", this._documentUnload);
+    this._windowID = null;
+    this._emit("detach");
   },
+  
   /**
    * Reference to the global scope of the worker.
    * @type {WorkerGlobalScope}

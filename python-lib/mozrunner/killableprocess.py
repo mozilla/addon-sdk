@@ -76,6 +76,11 @@ if mswindows:
 else:
     import signal
 
+# This is normally defined in win32con, but we don't want
+# to incur the huge tree of dependencies (pywin32 and friends)
+# just to get one constant.  So here's our hack
+STILL_ACTIVE = 259
+
 def call(*args, **kwargs):
     waitargs = {}
     if "timeout" in kwargs:
@@ -227,7 +232,7 @@ class Popen(subprocess.Popen):
                         else:
                             # No job, we use GetExitCodeProcess, which will tell us if the process is still active
                             self.returncode = winprocess.GetExitCodeProcess(self._handle)
-                            if (self.returncode == win32con.STILL_ACTIVE):
+                            if (self.returncode == STILL_ACTIVE):
                                 # Process still active, continue waiting
                                 return 1
                         # Process not active, return 0

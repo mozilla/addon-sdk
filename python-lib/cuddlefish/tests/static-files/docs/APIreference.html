@@ -178,8 +178,8 @@
       </div>
       
       <div class="api_component">
-        <h4 class="api_name">ctor-and-method-and-prop</h4>
-        <p>This class contains one constructor, one method, and one property.</p>
+        <h4 class="api_name">ctor-method-prop-event</h4>
+        <p>This class contains one constructor, one method, one property and an event.</p>
         <div class="api_component_group">
           <div class="api_header">Constructors</div>
           
@@ -222,6 +222,24 @@
           <div class="api_component">
             <div class="api_name">a-property : <span class="datatype">bool</span></div>
             <p>Represents stuff.</p>
+          </div>
+          
+        </div>
+        
+        <div class="api_component_group">
+          <div class="api_header">Events</div>
+          
+          <div class="api_component">
+            <div class="api_name">message</div>
+            <p>Event emitted when the content script sends a message to the add-on.</p>
+            <div class="parameter_set">
+              <div class="api_component">
+                <div class="api_name"><span class="datatype">JSON</span></div>
+                <p>The message itself as a JSON-serialized object.</p>
+              </div>
+              
+            </div>
+            
           </div>
           
         </div>
@@ -298,7 +316,7 @@
             <div class="api_component">
               <div class="api_name">[ html : <span class="datatype">string/xml</span> ]</div>
               <p>The content of the feature, either as an HTML string,
-              or an E4X document fragment (e.g., &lt;&gt;<h1>Hi!</h1></>)</p>
+              or an E4X document fragment.</p>
             </div>
             
             <div class="api_component">
@@ -411,6 +429,24 @@
         <h4 class="api_name">random()</h4>
         <p>A function that returns a random integer between 0 and 10.</p>
         <div class="returns">Returns: <span class="datatype">int</span><p>The random number.</p>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+    <div class="api_component_group">
+      <h3 class="api_header">Events</h3>
+      
+      <div class="api_component">
+        <h4 class="api_name">open</h4>
+        <p>A module-level event called open.</p>
+        <div class="parameter_set">
+          <div class="api_component">
+            <div class="api_name"><span class="datatype">bool</span></div>
+            <p>Yes, it's open.</p>
+          </div>
+          
         </div>
         
       </div>

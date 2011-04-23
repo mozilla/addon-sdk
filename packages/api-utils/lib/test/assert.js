@@ -297,10 +297,10 @@ Assert.prototype = {
       };
 
       if (exception)
-        failure = e.actual = exception;
+        failure.actual = exception;
 
       if (Error)
-        failure = e.expected = Error;
+        failure.expected = Error;
 
       this.fail(failure);
     }

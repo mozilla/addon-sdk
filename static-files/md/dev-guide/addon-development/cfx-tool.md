@@ -432,7 +432,7 @@ to find new versions of your add-on.
 To do this, include a URL in the XPI called the
 [updateURL](https://developer.mozilla.org/en/install_manifests#updateURL): the
 host application will go here to get information about updates. At the
-updateURL you host a file in the
+`updateURL` you host a file in the
 [update RDF](https://developer.mozilla.org/en/extension_versioning,_update_and_compatibility#Update_RDF_Format)
 format: among other things, this includes another URL called `updateLink` which
 points to the updated XPI itself.
@@ -446,18 +446,22 @@ the supplied URL in the update RDF as the value of `updateLink`.
 The `--update-url` option embeds the supplied URL in the XPI file, as the value
 of `updateURL`.
 
+Note that as the [add-on documentation](https://developer.mozilla.org/en/extension_versioning,_update_and_compatibility#Securing_Updates)
+explains, you should make sure the update procedure for your add-on is secure,
+and this usually involves using HTTPS for the links.
+
 So if we run the following command:
 
 <pre>
-  cfx xpi --update-link http://example.com/addon/latest
-          --update-url http://example.com/addon/update_rdf
+  cfx xpi --update-link https://example.com/addon/latest
+          --update-url https://example.com/addon/update_rdf
 </pre>
 
 `cfx` will create two files:
 
 * an XPI file which embeds
-`http://example.com/addon/update_rdf` as the value of `updateURL`
-* an RDF file which embeds `http://example.com/addon/latest` as the value of
+`https://example.com/addon/update_rdf` as the value of `updateURL`
+* an RDF file which embeds `https://example.com/addon/latest` as the value of
 `updateLink`.
 
 #### Supported Options ####
