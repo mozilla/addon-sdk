@@ -101,6 +101,10 @@ exports.isFile = function isFile(filename) {
   return MozFile(filename).isFile();
 };
 
+exports.mtime = function isFile(filename) {
+  return MozFile(filename).lastModifiedTime;
+};
+
 exports.read = function read(filename) {
   var stream = exports.open(filename);
   try {
@@ -111,6 +115,18 @@ exports.read = function read(filename) {
   }
 
   return str;
+};
+
+exports.write = function write(filename, data) {
+  var stream = exports.open(filename, "w");
+  var size;
+  try {
+    size = stream.write(data);
+  }
+  finally {
+    stream.close();
+  }
+  return size;
 };
 
 exports.join = function join(base) {
