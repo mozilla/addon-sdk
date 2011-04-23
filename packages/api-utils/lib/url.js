@@ -94,6 +94,13 @@ let toFilename = exports.toFilename = function toFilename(url) {
 };
 
 function URL(url, base) {
+
+  // NOTE: This needs to be here to catch all cases when PINF JS loader is used
+  // TODO: Move to "normalize()" callback?
+  url = url.replace(/^\/__PWD__\/resource:\//, "resource://");
+  if(base)
+      base = base.replace(/^\/__PWD__\/resource:\//, "resource://");
+
   var uri = newURI(url, base);
 
   var userPass = null;
