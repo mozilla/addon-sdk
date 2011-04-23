@@ -143,12 +143,16 @@ const PageMod = Loader.compose(EventEmitter, {
     this._onAttach(window);
   },
   _onAttach: function _onAttach(window) {
-    this._emit('attach', Worker({
+    let worker = Worker({
       window: window.wrappedJSObject,
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
       onError: this._onUncaughtError
-    }));
+    });
+    this._emit('attach', worker);
+    worker.once('detach', function detach() {
+      worker.destroy();
+    });
   },
   _onRuleAdd: function _onRuleAdd(url) {
     pageModManager.on(url, this._onContent);

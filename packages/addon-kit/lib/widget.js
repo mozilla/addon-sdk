@@ -594,6 +594,7 @@ BrowserWindow.prototype = {
     
     // On document load, make modifications required for nice default
     // presentation.
+    let self = this;
     function loadListener(e) {
       // Ignore event firings that target the iframe
       if (e.target == iframe)
@@ -601,6 +602,11 @@ BrowserWindow.prototype = {
       // Ignore about:blank loads
       if (e.type == "load" && e.target.location == "about:blank")
         return;
+      
+      // We may have had an unload event before that cleaned up the symbiont
+      if (!item.symbiont)
+        self.setContent(item);
+      
       let doc = e.target;
       if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
         // Force image content to size.
@@ -612,8 +618,26 @@ BrowserWindow.prototype = {
       // Allow all content to fill the box by default.
       doc.body.style.margin = "0";
     }
-    iframe.addEventListener("load", loadListener, true, true);
+    iframe.addEventListener("load", loadListener, true);
     item.eventListeners["load"] = loadListener;
+    
+    // Register a listener to unload symbiont if the toolbaritem is moved
+    // on user toolbars customization
+    function unloadListener(e) {
+      if (e.target.location == "about:blank")
+        return;
+      item.symbiont.destroy();
+      item.symbiont = null;
+      // This may fail but not always, it depends on how the node is 
+      // moved or removed
+      try {
+        self.setContent(item);
+      } catch(e) {}
+      
+    }
+    
+    iframe.addEventListener("unload", unloadListener, true);
+    item.eventListeners["unload"] = unloadListener;
   },
 
   // Removes an array of items from the window.

@@ -11,6 +11,10 @@ The file contains generic style rules, that don't depend on any special structur
   vertical-align: baseline;
 }
 
+html, body {
+  height: 100%;
+}
+
 html {
   background-color: #fff;
   background-image: url(../media/bg-header.png);
@@ -19,7 +23,6 @@ html {
 }
 
 body {
-  color: #444;
   font-size: 13px;
   line-height: 1.538em;
   font-family: "helvetica neue",arial,helvetica,sans-serif;
@@ -40,7 +43,7 @@ h1 {
 }
 
 h2 {
-  color: #C63717;
+  color: #011234;
   font-size: 2.154em;
   font-weight: normal;
   line-height: 1em;

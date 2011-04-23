@@ -33,7 +33,7 @@ This is a list of options to specify modifications to your slideBar instance.
   @prop [icon] {uri} The HREF of an icon to show as the method of accessing your features slideBar
   @prop [html] {string/xml}
         The content of the feature, either as an HTML string,
-        or an E4X document fragment (e.g., <><h1>Hi!</h1></>)
+        or an E4X document fragment.
   @prop [url] {uri} The url to load into the content area of the feature
   @prop [width] {int} Width of the content area and the selected slide size
   @prop [persist] {bool}
@@ -122,9 +122,9 @@ Does things.
 </api>
 </api>
 
-<api name="ctor-and-method-and-prop">
+<api name="ctor-method-prop-event">
 @class
-This class contains one constructor, one method, and one property.
+This class contains one constructor, one method, one property and an event.
 <api name="one-constructor">
 @constructor
 The first constructor.
@@ -139,6 +139,19 @@ Does things.
 @property {bool}
 Represents stuff.
 </api>
+<api name="message">
+@event
+Event emitted when the content script sends a message to the add-on.
+@argument {JSON}
+The message itself as a JSON-serialized object.
+</api>
+</api>
+
+<api name="open">
+@event
+A module-level event called open.
+@argument {bool}
+Yes, it's open.
 </api>
 
 Some more text here, at the end of the file.

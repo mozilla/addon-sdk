@@ -8,23 +8,6 @@ This module currently only supports browser windows and does not provide
 access to non-browser windows such as the Bookmarks Library, preferences
 or other non-browser windows created via add-ons.
 
-Events
-------
-
-Events represent common actions and state changes for windows.
-
-Listeners are passed the `window` object that triggered the event.
-
-All the windows and lists of windows emit following events:
-
-### open ###
-Event emitted when a new window is open.
-This does not mean that the content has loaded, only that the browser window
-itself is fully visible to the user.
-
-### close ###
-Event emitted when a window is closed.
-
 <api name="browserWindows">
 @property {List}
 An object that contains various properties and methods to access
@@ -169,3 +152,18 @@ This is an optional argument.
 
 </api>
 
+<api name="open">
+@event
+Event emitted when a new window is open.
+This does not mean that the content has loaded, only that the browser window
+itself is fully visible to the user.
+@argument {Window}
+Listeners are passed the `window` object that triggered the event.
+</api>
+
+<api name="close">
+@event
+Event emitted when a window is closed.
+@argument {Window}
+Listeners are passed the `window` object that triggered the event.
+</api>

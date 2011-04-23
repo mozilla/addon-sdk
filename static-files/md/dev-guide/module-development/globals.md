@@ -16,7 +16,7 @@ been retrieved.  If the code has no identifiable URL, this value may be `null`.
 ## packaging ##
 
 <span class="aside">
-For more information on packaging, see the [Package Specification] appendix.
+For more information on packaging, see the [Package Specification][] appendix.
 </span>
 
 The `packaging` global contains methods and metadata related to

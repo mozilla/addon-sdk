@@ -106,7 +106,7 @@ const Symbiont = Worker.resolve({
       hiddenFrames.add(this._hiddenFrame);
     }
 
-    unload.when(this.destroy.bind(this));
+    unload.ensure(this._public, "destroy");
   },
   destroy: function destroy() {
     this._workerDestroy();
@@ -150,7 +150,14 @@ const Symbiont = Worker.resolve({
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    if ('ready' === this.contentScriptWhen) {
+    if (frame.contentDocument.readyState == "complete" && 
+        frame.contentDocument.location == this._contentURL) {
+      // In some cases src doesn't change and document is already ready
+      // (for ex: when the user moves a widget while customizing toolbars.)
+      this._window = frame.contentWindow.wrappedJSObject;
+      this._onInit();
+    }
+    else if ('ready' === this.contentScriptWhen) {
       frame.addEventListener(
         ON_READY,
         this._onReady = this._onReady.bind(this),

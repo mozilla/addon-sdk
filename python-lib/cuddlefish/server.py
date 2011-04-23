@@ -212,7 +212,8 @@ class Server(object):
                 return self._error('501 Not Implemented')
             if not _idle_event.isSet():
                 _idle_event.set()
-            return
+            self.start_response('200 OK', [('Content-type', 'text/plain')])
+            return ['']
         else:
             return self._error('404 Not Found')
 

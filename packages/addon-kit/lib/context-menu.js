@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -52,6 +53,7 @@ const collection = require("collection");
 const { Worker } = require("content");
 const url = require("url");
 const { MatchPattern } = require("match-pattern");
+const { EventEmitterTrait: EventEmitter } = require("events");
 const observerServ = require("observer-service");
 
 // All user items we add have this class name.
@@ -106,6 +108,11 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLTextAreaElement,
 ];
 
+// This object is used elsewhere in this file to access private properties of
+// Item and Menu instances.
+const PRIVATE_PROPS_KEY = {
+  valueOf: function valueOf() "private properties key"
+};
 
 exports.Item = apiUtils.publicConstructor(Item);
 exports.Menu = apiUtils.publicConstructor(Menu);
@@ -241,8 +248,13 @@ function URLContext(patterns) {
     throw err;
   }
 
+  const self = this;
+
   this.isCurrent = function URLContext_isCurrent(popupNode) {
-    let url = popupNode.ownerDocument.URL;
+    return self.isCurrentForURL(popupNode.ownerDocument.URL);
+  };
+
+  this.isCurrentForURL = function URLContext_isCurrentForURL(url) {
     return patterns.some(function (p) p.test(url));
   };
 }
@@ -310,9 +322,7 @@ function optionsRules() {
 // options is a validated options object.
 function defineItemProps(item, options) {
   // TODO: Add setter for label?  It would require finding the item's DOM
-  // element and changing its attributes as well.  Note however that
-  // WorkerRegistry relies on label remaining constant, so if setters are added,
-  // that would need fixing.
+  // element and changing its attributes as well.
   item.__defineGetter__("label", function () options.label);
 
   // Stupid ternaries to avoid Spidermonkey strict warnings.
@@ -323,16 +333,63 @@ function defineItemProps(item, options) {
     return "contentScriptFile" in options ? options.contentScriptFile :
            undefined;
   });
-  item.__defineGetter__("onMessage", function () {
-    return "onMessage" in options ? options.onMessage : undefined;
+
+  item.destroy = function Item_destroy() {
+    browserManager.removeItem(item);
+  };
+
+  // Create a private properties object for the item.
+  let privateProps = {
+    eventEmitter: EventEmitter.create(item),
+    workerReg: new WorkerRegistry(item)
+  };
+
+  // This makes the private properties accessible to anyone with access to the
+  // PRIVATE_PROPS_KEY object.  Only this file has has access to it, so only
+  // this file has access to the private properties.
+  item.valueOf = function Item_valueOf(key) {
+    return key === PRIVATE_PROPS_KEY ? privateProps : item;
+  };
+
+  // Add all of privateProps.eventEmitter's own public methods to the item,
+  // binding them to eventEmitter.  This will allow clients to treat the item as
+  // an event emitter.
+  Object.keys(privateProps.eventEmitter).forEach(function (key) {
+    if (key[0] !== "_")
+      item[key] =
+        privateProps.eventEmitter[key].bind(privateProps.eventEmitter);
   });
 
+  // Register a message listener if one was passed to the constructor.
+  if ("onMessage" in options)
+    privateProps.eventEmitter.on("message", options.onMessage);
+
+  // When a URL context is removed (by calling item.context.remove(urlContext)),
+  // we may need to create workers for windows containing pages that the item
+  // now matches.  Likewise, when a URL context is added, we need to destroy
+  // workers for windows containing pages that the item now does not match.
+  //
+  // collection doesn't provide a way to listen for removals.  utils/registry
+  // does, but it doesn't allow its elements to be enumerated.  So as a hack,
+  // use a collection for item.context and replace its add and remove methods.
   collection.addCollectionProperty(item, "context");
   if (options.context)
     item.context.add(options.context);
 
-  item.destroy = function Item_destroy() {
-    browserManager.removeItem(item);
+  let add = item.context.add;
+  item.context.add = function itemContextAdd() {
+    let args = Array.slice(arguments);
+    add.apply(item.context, args);
+    if (args.some(function (a) a instanceof URLContext))
+      privateProps.workerReg.destroyUnneededWorkers();
+  };
+
+  let remove = item.context.remove;
+  item.context.remove = function itemContextRemove() {
+    let args = Array.slice(arguments);
+    remove.apply(item.context, args);
+    if (args.some(function (a) a instanceof URLContext))
+      privateProps.workerReg.createNeededWorkers();
   };
 }
 
@@ -368,7 +425,6 @@ let browserManager = {
   addItem: function browserManager_addItem(item) {
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
-    this.workerReg.registerItems([item]);
   },
 
   // Registers the manager to listen for window openings and closings.  Note
@@ -376,23 +432,27 @@ let browserManager = {
   // there are open windows.
   init: function browserManager_init() {
     require("unload").ensure(this);
-    this.workerReg = new WorkerRegistry();
     let windowTracker = new (require("window-utils").WindowTracker)(this);
 
     // On inner-window-destroyed, remove the destroyed inner window's outer
-    // window from the worker registry.
+    // window from all items' worker registries.
     observerServ.add("inner-window-destroyed", function observe(subj) {
       let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
-      this.workerReg.unregisterContentWin(innerWinID);
+      this.items.forEach(function (item) {
+        let workerReg = item.valueOf(PRIVATE_PROPS_KEY).workerReg;
+        workerReg.unregisterContentWin(innerWinID);
+      });
     }, this);
   },
 
   // When the window tracker is unloaded, it'll call our onUntrack for every
   // open browser window, so there's no need to do that here.  The only other
-  // things to clean up are items and the worker registry.
+  // things to clean up are items and their worker registries.
   unload: function browserManager_unload() {
+    this.items.forEach(function (item) {
+      item.valueOf(PRIVATE_PROPS_KEY).workerReg.destroy();
+    });
     this.items.splice(0, this.items.length);
-    this.workerReg.destroy();
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.
@@ -426,7 +486,7 @@ let browserManager = {
     if (idx >= 0) {
       this.items.splice(idx, 1);
       this.windows.forEach(function (w) w.removeItems([item]));
-      this.workerReg.unregisterItems([item]);
+      item.valueOf(PRIVATE_PROPS_KEY).workerReg.destroy();
     }
   },
 
@@ -450,9 +510,15 @@ const ContextMenuWorker = Worker.compose({
   // true.  popupNode is the node that was context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
     let listeners = this._port._listeners("context");
-    for (let i = 0; i < listeners.length; i++)
-      if (listeners[i].call(this._port._sandbox, popupNode))
-        return true;
+    for (let i = 0; i < listeners.length; i++) {
+      try {
+        if (listeners[i].call(this._port._sandbox, popupNode))
+          return true;
+      }
+      catch (err) {
+        console.exception(err);
+      }
+    }
     return false;
   },
 
@@ -466,224 +532,115 @@ const ContextMenuWorker = Worker.compose({
 
 
 // This class creates and stores content workers for pairs of menu items and
-// content windows.  Since workers need to be looked up every time the context
-// menu is shown, the main purpose of this class, in addition to creating and
-// storing workers, is to provide fast lookup of workers given a menu item and
-// content window.
-function WorkerRegistry() {
-  // This is a matrix.  The first index addresses content window keys, the
-  // second menu item keys.  Each entry in the matrix stores workers for pairs
-  // of content windows and menu items.
-  //
-  // More specifically, workers[w][i] is an array of objects { item, worker }.
-  // w is a content window key.  i is a menu item key.  item is a menu item
-  // whose key is i.  worker is the content worker created from the window-item
-  // pair.
-  //
-  // Keys are just a way to provide O(1) lookup of a window or item.  Actually,
-  // unlike window keys, menu item keys are not required to be unique, which has
-  // two consequences: 1) menu item lookup using a key may be more than O(1) in
-  // time, and 2) workers[w][i] is an array and not a single object.  Keys are
-  // not expected to change over the lifetime of a window or menu item.
-  //
-  // This structure is fairly simple and allows worker lookups in constant time
-  // in the best case.  In the worst case, however -- when all menu items have
-  // the same key -- lookup is O(I), where I is the number of items in the
-  // registry.  I don't expect any given developer to create many items with the
-  // same key, so I think it's a good trade-off.
-  //
-  // If there are registered windows but no registered items or vice versa, this
-  // will be empty.
-  this.workers = {};
+// content windows.  Use one instance for each item.  Not all pairs need a
+// worker: if an item has a URL context that does not match a window's page,
+// then no worker is created for the pair.
+function WorkerRegistry(item) {
+  this.item = item;
 
-  // A map of items, item key => item list.  Item keys are not unique, so each
-  // maps to a list of items with the same key.
-  this.items = {};
+  // inner window ID => { win, worker }
+  this.winWorkers = {};
 
-  // A map of content windows, window key => window.
-  this.wins = {};
+  // inner window ID => content window
+  this.winsWithoutWorkers = {};
 }
 
 WorkerRegistry.prototype = {
 
-  // Registers a content window, creating workers for each pair formed by the
-  // window and all previously registered menu items.
+  // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let winKey = this._winKey(win);
-    for (let [itemKey, itemList] in Iterator(this.items)) {
-      itemList.forEach(function (item) {
-        this._registerPair(win, winKey, item, itemKey);
-      }, this);
-    }
-    this.wins[winKey] = win;
+    let innerWinID = this._innerWinID(win);
+    if (this._doesURLNeedWorker(win.document.URL))
+      this.winWorkers[innerWinID] = { win: win, worker: this._makeWorker(win) };
+    else
+      this.winsWithoutWorkers[innerWinID] = win;
   },
 
-  // Registers an array of menu items, creating workers for each pair formed by
-  // the items and all previously registered content windows.
-  registerItems: function WR_registerItems(items) {
-    items.forEach(function (item) {
-      let itemKey = this._itemKey(item);
-      for (let [winKey, win] in Iterator(this.wins))
-        this._registerPair(win, winKey, item, itemKey);
-      this.items[itemKey] = this.items[itemKey] || [];
-      this.items[itemKey].push(item);
-    }, this);
-  },
-
-  // Unregisters a content window, destroying all related workers.
+  // Unregisters a content window, destroying its related worker if it has one.
   unregisterContentWin: function WR_unregisterContentWin(innerWinID) {
-    let winKey = innerWinID;
-
     // Sometimes inner-window-destroyed is sent for a window that's not
     // registered, which implies that DOMContentLoaded is not dispatched to any
     // tabbrowser for that inner window's outer window...  So rather than
     // erroneously throwing an error if the window is not registered, don't
     // assume that the window is registered in the first place.
-
-    // Remove the window's entry in the worker matrix.
-    if (winKey in this.workers) {
-      let itemKeyToEntriesMap = this.workers[winKey];
-      for each (let entries in itemKeyToEntriesMap)
-        entries.forEach(function (entry) this._destroyEntry(entry), this);
-      delete this.workers[winKey];
+    if (innerWinID in this.winWorkers) {
+      let winWorker = this.winWorkers[innerWinID];
+      winWorker.worker.destroy();
+      delete winWorker.worker;
+      delete winWorker.win;
+      delete this.winWorkers[innerWinID];
     }
-
-    // Remove the window from the window map.
-    delete this.wins[winKey];
+    else
+      delete this.winsWithoutWorkers[innerWinID];
   },
 
-  // Unregisters an array of menu items, destroying all related workers.
-  unregisterItems: function WR_unregisterItems(items) {
-    // Remove each item in each window-row in the worker matrix.
-    items.forEach(function (item) {
-      let itemKey = this._itemKey(item);
-      for (let [winKey, win] in Iterator(this.wins)) {
-        let numEntriesForKeyPair = this._unregisterPair(winKey, item, itemKey);
-
-        // If there are no more worker entries for this window key and item key
-        // pair, remove the item-column.
-        if (!numEntriesForKeyPair)
-          delete this.workers[winKey][itemKey];
-      }
-
-      // Remove the item from its list in the map of items.
-      if (!(itemKey in this.items))
-        throw new Error("Internal error: item key not in item map.");
-      let itemList = this.items[itemKey];
-      let idx = itemList.indexOf(item);
-      if (idx < 0)
-        throw new Error("Internal error: item not in item list.");
-      itemList.splice(idx, 1);
-
-      // Remove the item key from the map if its chain is empty.
-      if (!itemList.length)
-        delete this.items[itemKey];
-    }, this);
+  // Creates a worker for each window that needs a worker but doesn't have one.
+  createNeededWorkers: function WR_createNeededWorkers() {
+    for (let [innerWinID, win] in Iterator(this.winsWithoutWorkers)) {
+      delete this.winsWithoutWorkers[innerWinID];
+      this.registerContentWin(win);
+    }
   },
 
-  // Returns the worker for the given window-item pair, or null if none exists.
-  find: function WR_find(contentWin, item) {
-    let winKey = this._winKey(contentWin);
-    if (winKey in this.workers) {
-      let itemKey = this._itemKey(item);
-      if (itemKey in this.workers[winKey]) {
-        let entries = this.workers[winKey][itemKey];
-        let idx = this._indexOfEntry(entries, item);
-        if (idx >= 0)
-          return entries[idx].worker;
+  // Destroys the worker for each window that has a worker but doesn't need it.
+  destroyUnneededWorkers: function WR_destroyUnneededWorkers() {
+    for (let [innerWinID, winWorker] in Iterator(this.winWorkers)) {
+      if (!this._doesURLNeedWorker(winWorker.win.document.URL)) {
+        this.unregisterContentWin(innerWinID);
+        this.winsWithoutWorkers[innerWinID] = winWorker.win;
       }
     }
-    return null;
   },
 
-  // Unregisters all content windows and items, destroying all workers.
+  // Returns the worker for the item-window pair or null if none exists.
+  find: function WR_find(contentWin) {
+    let innerWinID = this._innerWinID(contentWin);
+    return (innerWinID in this.winWorkers) ?
+           this.winWorkers[innerWinID].worker :
+           null;
+  },
+
+  // Unregisters all content windows in the registry, destroying all workers.
   destroy: function WR_destroy() {
-    for (let winKey in this.wins)
-      this.unregisterContentWin(winKey);
-
-    // Calling unregisterContentWin for all windows clears the window map and
-    // the worker matrix.  The only thing left to do is clear the item map.
-    for (let [itemKey, itemList] in Iterator(this.items)) {
-      itemList.splice(0, itemList.length);
-      delete this.items[itemKey];
-    }
+    for (let innerWinID in this.winWorkers)
+      this.unregisterContentWin(innerWinID);
+    for (let innerWinID in this.winsWithoutWorkers)
+      this.unregisterContentWin(innerWinID);
   },
 
-  // Creates a worker for the given window-item pair and adds it to the worker
-  // matrix.
-  _registerPair: function WR__registerPair(win, winKey, item, itemKey) {
-    let worker = this._makeWorker(win, item);
-    this.workers[winKey] = this.workers[winKey] || {};
-    this.workers[winKey][itemKey] = this.workers[winKey][itemKey] || [];
-    this.workers[winKey][itemKey].push({
-      win: win,
-      item: item,
-      worker: worker
-    });
+  // Returns false if the item has a URL context that does not match the given
+  // URL.
+  _doesURLNeedWorker: function WR__doesURLNeedWorker(url) {
+    for (let ctxt in this.item.context)
+      if ((ctxt instanceof URLContext) && !ctxt.isCurrentForURL(url))
+        return false;
+    return true;
   },
 
-  // Removes the worker entry of the given window-item pair from the worker
-  // matrix.  Returns the number of remaining items paired with the window.
-  _unregisterPair: function WR__unregisterPair(winKey, item, itemKey) {
-    if (!(winKey in this.workers))
-      throw new Error("Internal error: window key not in registry.");
-    if (!(itemKey in this.workers[winKey]))
-      throw new Error("Internal error: item key not in registry.");
-    let entries = this.workers[winKey][itemKey];
-    let idx = this._indexOfEntry(entries, item);
-    if (idx < 0)
-      throw new Error("Internal error: target pair not found.");
-    this._destroyEntry(entries[idx]);
-    entries.splice(idx, 1);
-    return entries.length;
-  },
-
-  // Returns the index of the worker entry in the given list containing the
-  // given item.
-  _indexOfEntry: function WR__indexOfEntry(entries, item) {
-    let idx = 0;
-    for (; idx < entries.length; idx++)
-      if (entries[idx].item === item)
-        break;
-    return idx >= entries.length ? -1 : idx;
-  },
-
-  _makeWorker: function WR__makeWorker(win, item) {
+  _makeWorker: function WR__makeWorker(win) {
     let worker = ContextMenuWorker({
       window: win.wrappedJSObject,
-      contentScript: item.contentScript,
-      contentScriptFile: item.contentScriptFile,
+      contentScript: this.item.contentScript,
+      contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
-    worker.on("message", function workerOnMessage(msg) {
-      if (item.onMessage) {
-        try {
-          item.onMessage(msg);
-        }
-        catch (err) {
-          console.exception(err);
-        }
+    let (item = this.item) worker.on("message", function workerOnMessage(msg) {
+      try {
+        let eventEmitter = item.valueOf(PRIVATE_PROPS_KEY).eventEmitter;
+        eventEmitter._emitOnObject(item, "message", msg);
+      }
+      catch (err) {
+        console.exception(err);
       }
     });
     return worker;
   },
 
-  _destroyEntry: function WR__destroyEntry(entry) {
-    entry.worker.destroy();
-    delete entry.worker;
-    delete entry.item;
-  },
-
-  _winKey: function WR__winKey(win) {
+  _innerWinID: function WR__innerWinID(win) {
     return win.
            QueryInterface(Ci.nsIInterfaceRequestor).
            getInterface(Ci.nsIDOMWindowUtils).
            currentInnerWindowID;
-  },
-
-  _itemKey: function WR__itemKey(item) {
-    // We rely on label remaining constant over the lifetime of the item.
-    return item.label;
   }
 };
 
@@ -744,12 +701,12 @@ BrowserWindow.prototype = {
   // Returns true if all of item's contexts are current in the window.
   areAllContextsCurrent: function BW_areAllContextsCurrent(item, popupNode) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = browserManager.workerReg.find(win, item);
+    let worker = item.valueOf(PRIVATE_PROPS_KEY).workerReg.find(win);
 
-    // If the worker for the content-window-item pair doesn't exist (e.g.,
-    // because the page hasn't loaded yet), we can't really make a good decision
-    // since the content script may have a context listener.  So just don't show
-    // the item at all.
+    // If the worker for the item-window pair doesn't exist (e.g., because the
+    // page hasn't loaded yet), we can't really make a good decision since the
+    // content script may have a context listener.  So just don't show the item
+    // at all.
     if (!worker)
       return false;
 
@@ -792,7 +749,7 @@ BrowserWindow.prototype = {
   // clickedItemData.
   fireClick: function BW_fireClick(item, popupNode, clickedItemData) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = browserManager.workerReg.find(win, item);
+    let worker = item.valueOf(PRIVATE_PROPS_KEY).workerReg.find(win);
     if (worker)
       worker.fireClick(popupNode, clickedItemData);
   },
@@ -818,7 +775,9 @@ BrowserWindow.prototype = {
   },
 
   _registerContentWin: function BW__registerContentWin(win) {
-    browserManager.workerReg.registerContentWin(win);
+    browserManager.items.forEach(function (item) {
+      item.valueOf(PRIVATE_PROPS_KEY).workerReg.registerContentWin(win);
+    });
   }
 };
 

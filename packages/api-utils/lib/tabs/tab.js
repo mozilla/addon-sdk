@@ -195,7 +195,11 @@ const TabTrait = Trait.compose(EventEmitter, {
   attach: function attach(options) {
     let { Worker } = require("content/worker");
     options.window = this._contentWindow.wrappedJSObject;
-    return Worker(options);
+    let worker = Worker(options);
+    worker.once("detach", function detach() {
+      worker.destroy();
+    });
+    return worker;
   },
   
   /**
@@ -262,12 +266,7 @@ exports.getTabForWindow = function (win) {
   // Get top window object, in case we are in a content iframe
   let topContentWindow;
   try {
-    topContentWindow= win.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIWebNavigation)
-                            .QueryInterface(Ci.nsIDocShellTreeItem)
-                            .treeOwner
-                            .QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDOMWindow);
+    topContentWindow = win.top;
   } catch(e) {
     // It may throw if win is not a valid content window
     return null;
