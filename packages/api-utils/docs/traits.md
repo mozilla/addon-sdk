@@ -67,13 +67,15 @@ Let's say we want to define a reusable piece of code for a lists of elements.
       // private API:
       _list: null,
       // public API
-      constructor: function List() this._list = [],
+      constructor: function List() {
+        this._list = [];
+      },
       get length() this._list.length,
       add: function add(item) this._list.push(item),
       remove: function remove(item) {
         let list = this._list;
         let index = list.indexOf(item);
-        if (0 <= index) list.slice(index, 1);
+        if (0 <= index) list.splice(index, 1);
       }
     });
 
@@ -125,14 +127,14 @@ Singleton, used during trait composition to define "required" properties.
     let c1 = Enumerable();      // Error: Missing required property: list
 
     const EnumerableList = List.compose({
-      get list: this._list.slice(0)
+      get list() this._list.slice(0)
     }, Enumerable);
 
     let c2 = EnumerableList();
     c2.add('test')
     c2.length                   // 1
     c2.list[0]                  // 'test'
-    c2.forEach(console.log)     // > info: 'test'
+    c2.forEach(console.log)     // > info: 'test 0 test'
 
 </api>
 
@@ -197,7 +199,7 @@ the leftmost trait are never overridden.
     // throws error with message 'Remaining conflicting property: constructor'
     ConstructableList(1, 2, 3);
 
-    var ConstructableList = List.overridden({
+    var ConstructableList = List.override({
       constructor: function List() this._list = Array.slice(arguments)
     });
     ConstructableList(1, 2, 3).length       // 3
