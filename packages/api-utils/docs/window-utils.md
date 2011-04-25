@@ -37,11 +37,11 @@ uninstalled, whichever comes first.)
 
     var delegate = {
       onTrack: function (window) {
-        console.log("Tracking a window: " + window.document.URL);
+        console.log("Tracking a window: " + window.location);
         // Modify the window!
       },
       onUntrack: function (window) {
-        console.log("Untracking a window: " + window.document.URL);
+        console.log("Untracking a window: " + window.location);
         // Undo your modifications!
       }
     };
@@ -65,7 +65,7 @@ uninstalled, whichever comes first.)
 
     var winUtils = require("window-utils");
     for (window in winUtils.windowIterator())
-      console.log("An open window! " + window.document.URL);
+      console.log("An open window! " + window.location);
 
 </api>
 
