@@ -30,13 +30,18 @@ def get_modules(modules_json):
 
 def get_documented_modules(root, package_name, modules_json):
     modules = get_modules(modules_json)
-    module_md_root = os.path.join(root, 'packages', package_name, 'docs')
+    doc_prefix = 'doc'
+    module_md_root = os.path.join(root, 'packages', package_name, 'doc')
+    mmr2 = os.path.join(root, 'packages', package_name, 'docs')
+    if os.path.isdir(mmr2):
+        doc_prefix = 'docs'
+        module_md_root = mmr2
     documented_modules = []
     for module in modules:
         path = os.path.join(*module)
         if module_md_exists(module_md_root, path):
             documented_modules.append(module)
-    return documented_modules
+    return doc_prefix, documented_modules
 
 def module_md_exists(root, module_name):
     module_md_path = os.path.join(root, module_name + '.md')
@@ -92,13 +97,14 @@ class WebDocs(object):
     def _create_module_list(self, package_json):
         package_name = package_json['name']
         libs = package_json['files'][1]['lib'][1]
-        modules = get_documented_modules(self.root, package_name, libs)
+        doc_prefix, modules = get_documented_modules(self.root, package_name,
+                                                     libs)
         modules.sort()
         module_items = ''
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
                 {'href':'packages/' + package_name + \
-                 '/docs/' + '/'.join(module) + '.html'})
+                 '/' + doc_prefix + '/' + '/'.join(module) + '.html'})
             module_items += tag_wrap(module_link, 'li', {'class':'module'})
         return tag_wrap(module_items, 'ul', {'class':'modules'})
 

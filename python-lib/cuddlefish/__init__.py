@@ -406,7 +406,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','test','docs']:
+    for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
@@ -417,8 +417,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
-    print >>out, '* docs/main.md written'
+    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
+    print >>out, '* doc/main.md written'
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0

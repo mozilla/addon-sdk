@@ -19,7 +19,7 @@ packages, structured like so:
 <pre>
   >>> from cuddlefish.tests.test_xpi import document_dir
   >>> document_dir('packages')
-  aardvark/docs/aardvark-feeder.md:
+  aardvark/doc/aardvark-feeder.md:
     The `aardvark-feeder` module simplifies feeding aardvarks.
   <BLANKLINE>
     <api name="feed">
@@ -28,7 +28,7 @@ packages, structured like so:
     @param food {string}
       The food.  Aardvarks will eat anything.
     </api>
-  aardvark/docs/main.md:
+  aardvark/doc/main.md:
   <BLANKLINE>
   aardvark/lib/ignore_me:
     The docs processor should tolerate (by ignoring) random non-.js files in lib

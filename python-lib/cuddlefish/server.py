@@ -358,8 +358,11 @@ def generate_static_docs(env_root, tgz_filename, base_url = ''):
         open(os.path.join(dest_dir, pkg_name + ".html"), "w")\
             .write(package_doc_html)
 
-        docs_src_dir = os.path.join(src_dir, "docs")
-        docs_dest_dir = os.path.join(dest_dir, "docs")
+        docs_src_dir = os.path.join(src_dir, "doc")
+        docs_dest_dir = os.path.join(dest_dir, "doc")
+        if os.path.isdir(os.path.join(src_dir, "docs")):
+            docs_src_dir = os.path.join(src_dir, "docs")
+            docs_dest_dir = os.path.join(dest_dir, "docs")
         if not os.path.exists(docs_dest_dir):
             os.mkdir(docs_dest_dir)
         for (dirpath, dirnames, filenames) in os.walk(docs_src_dir):
