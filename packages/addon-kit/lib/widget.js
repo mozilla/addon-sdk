@@ -257,14 +257,13 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     // Emit an `attach` event with a WidgetView instance without private attrs
     this._emit("attach", Cortex(view));
     
-    // Watch for it destruction
-    let self = this;
-    view.once("detach", function () {
-      let idx = self._views.indexOf(view);
-      self._views.splice(idx, 1);
-    });
-    
     return view;
+  },
+  
+  // a WidgetView instance is destroyed
+  _viewDestroyed: function (view) {
+    let idx = this._views.indexOf(view);
+    this._views.splice(idx, 1);
   },
 
   postMessage: function Widget_postMessage(message) {
@@ -330,6 +329,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   
   _onDestroy: function WidgetView__onDestroy() {
     this._emit("detach");
+    this._mainWidget._viewDestroyed(this);
   },
   
   postMessage: function WidgetView_postMessage(message) {
