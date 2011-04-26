@@ -171,13 +171,13 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // create an event emitter that receive and send events from/to the addon
     let contentWorker = this;
     this._port = EventEmitterTrait.create({
-        emit: function () {
-          if (!contentWorker._addonWorker)
-            throw new Error(ERR_DESTROYED);
-          let scope = contentWorker._addonWorker._port;
-          scope._asyncEmit.apply(scope, arguments);
-        }
-      });
+      emit: function () {
+        if (!contentWorker._addonWorker)
+          throw new Error(ERR_DESTROYED);
+        let scope = contentWorker._addonWorker._port;
+        scope._asyncEmit.apply(scope, arguments);
+      }
+    });
     // create emit that executes in next turn of event loop.
     this._port._asyncEmit = Enqueued(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
@@ -388,13 +388,13 @@ const Worker = AsyncEventEmitter.compose({
     // create an event emitter that receive and send events from/to the worker
     let addonWorker = this;
     this._port = EventEmitterTrait.create({
-        emit: function () {
-          if (!addonWorker._contentWorker)
-            throw new Error(ERR_DESTROYED);
-          let scope = addonWorker._contentWorker._port;
-          scope._asyncEmit.apply(scope, arguments);
-        }
-      });
+      emit: function () {
+        if (!addonWorker._contentWorker)
+          throw new Error(ERR_DESTROYED);
+        let scope = addonWorker._contentWorker._port;
+        scope._asyncEmit.apply(scope, arguments);
+      }
+    });
     // create emit that executes in next turn of event loop.
     this._port._asyncEmit = Enqueued(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
