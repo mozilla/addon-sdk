@@ -71,9 +71,11 @@ exports.testActiveTab_setter = function(test) {
       tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.activeTab.url, "about:blank", "activeTab url has not changed");
       test.assertEqual(tab.url, url, "url of new background tab matches");
-      tabs.on('activate', function onActivate() {
+      tabs.on('activate', function onActivate(eventTab) {
         tabs.removeListener('activate', onActivate);
         test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
+        test.assertEqual(eventTab, tab, "event argument is the activated tab");
+        test.assertEqual(eventTab, tabs.activeTab, "the tab is the active one");
         closeBrowserWindow(window, function() test.done());
       });
       tab.activate();
