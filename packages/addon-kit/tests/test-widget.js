@@ -96,8 +96,6 @@ exports.testConstructor = function(test) {
   let w1 = widgets.Widget({id: "first", label:"first", content: "bar"});
   let w2 = widgets.Widget({id: "second", label:"second", content: "bar"});
   let w3 = widgets.Widget({id: "third", label:"third", content: "bar"});
-  // Update toolbar set list (done at firefox extinction)
-  container().setAttribute("currentset", container().currentSet);
   // Remove the middle widget
   test.assertEqual(widgetNode(1).getAttribute("label"), "second", "second widget is the second widget inserted");
   w2.destroy();

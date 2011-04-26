@@ -478,6 +478,8 @@ BrowserWindow.prototype = {
     // Finally insert our widget in the right toolbar and in the right position
     container.insertItem(id, nextNode, null, false);
     
+    container.setAttribute("currentset", container.currentSet);
+    
     let item = {widget: widget, node: node};
 
     this._fillItem(item);
