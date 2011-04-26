@@ -663,12 +663,6 @@ function BrowserWindow(window) {
 
   // Listen for page loads on the tabbrowser so we can create workers.
   window.gBrowser.addEventListener("DOMContentLoaded", this, false);
-
-  // Register content windows that are already open and loaded.
-  let browsers = window.gBrowser.browsers;
-  for (let i = 0; i < browsers.length; i++)
-    if (browsers[i].contentDocument.readyState === "complete")
-      this._registerContentWin(browsers[i].contentWindow);
 }
 
 BrowserWindow.prototype = {
@@ -676,6 +670,17 @@ BrowserWindow.prototype = {
   // Adds an array of items to the window's context menu.
   addItems: function BW_addItems(items) {
     this.contextMenuPopup.addItems(items);
+
+    // Register all open and loaded content windows in this browser window with
+    // each item's worker registry.
+    items.forEach(function (item) {
+      this.window.gBrowser.browsers.forEach(function (browser) {
+        if (browser.contentDocument.readyState === "complete") {
+          item.valueOf(PRIVATE_PROPS_KEY).workerReg.
+            registerContentWin(browser.contentWindow);
+        }
+      }, this);
+    }, this);
   },
 
   // The context specified for a top-level item may not match exactly the real

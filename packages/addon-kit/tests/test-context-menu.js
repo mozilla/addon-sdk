@@ -1107,6 +1107,29 @@ exports.testContentCommunication = function (test) {
 };
 
 
+// When the context menu is invoked on a tab that was already open when the
+// module was loaded, it should contain the expected items and content workers
+// should function as expected.
+exports.testLoadWithOpenTab = function (test) {
+  test = new TestHelper(test);
+  test.withTestDoc(function (window, doc) {
+    let loader = test.newLoader();
+    let item = new loader.cm.Item({
+      label: "item",
+      contentScript: 'on("click", function () postMessage("click"));',
+      onMessage: function (msg) {
+        if (msg === "click")
+          test.done();
+      }
+    });
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.getItemElt(popup, item).click();
+    });
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
