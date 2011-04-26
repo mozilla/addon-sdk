@@ -109,7 +109,7 @@ const valid = {
 const widgetAttributes = {
   label: valid.label,
   id: valid.id,
-  tootip: valid.string,
+  tooltip: valid.string,
   width: valid.width,
   content: valid.string,
   panel: valid.panel
