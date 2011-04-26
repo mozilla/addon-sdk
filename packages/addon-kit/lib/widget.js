@@ -444,62 +444,20 @@ let browserManager = {
 //
 // This is where the core of how a widget's content is added to a window lives.
 //
-// TODO: If other apps besides Firefox want to support the add-on bar in
-// whatever way is appropriate for them, plugging in a substitute for this class
-// should be the way to do it.  Make it easy for them.  See bug 560716.
 function BrowserWindow(window) {
   this.window = window;
   this.doc = window.document;
-  this._init();
+  // Array of objects:
+  // {
+  //   widget: widget object,
+  //   node: dom node,
+  //   eventListeners: hash of event listeners
+  //   symbiont: contentSymbiont
+  // }
+  this._items = [];
 }
 
 BrowserWindow.prototype = {
-
-  _init: function BW__init() {
-    // Array of objects:
-    // {
-    //   widget: widget object,
-    //   node: dom node,
-    //   eventListeners: hash of event listeners
-    //   symbiont: contentSymbiont
-    // }
-    this._items = [];
-    
-  },
-
-  get container() {
-    if (!this._container) {
-      // If being run in a version of Firefox <4, create a separate
-      // addon bar. TODO: just use the status bar?
-      let container = this.doc.getElementById("addon-bar");
-      if (!container) {
-        let toolbox = this.doc.createElement("toolbox");
-
-        // Share browser's palette.
-        let browserToolbox = this.doc.getElementById("navigator-toolbox");
-        toolbox.palette = browserToolbox.palette;
-
-        container = this.doc.createElement("toolbar");
-        container.setAttribute("id", "addon-bar");
-        container.setAttribute("customizable", "true");
-        // TODO: needs localization
-        container.setAttribute("toolbarname", "Add-ons Toolbar");
-
-        container.setAttribute("align", "right");
-        container.style.minHeight = "18px";
-        container.style.padding = "2px";
-        container.style.margin = "0px";
-
-        toolbox.appendChild(container);
-
-        let statusbar = this.doc.getElementById("status-bar");
-        statusbar.parentNode.insertBefore(toolbox, statusbar);
-      }
-
-      this._container = container;
-    }
-    return this._container;
-  },
 
   // Adds an array of items to the window.
   addItems: function BW_addItems(items) {
@@ -579,13 +537,13 @@ BrowserWindow.prototype = {
     // TODO: we may want some "first-launch" module to do this only on very 
     // first execution
     if (!container) {
+      container = this.doc.getElementById("addon-bar");
       // TODO: find a way to make the following code work when we use "cfx run":
       // http://mxr.mozilla.org/mozilla-central/source/browser/base/content/browser.js#8586
       // until then, force display of addon bar directly from sdk code
       // https://bugzilla.mozilla.org/show_bug.cgi?id=627484
-      if (this.container.collapsed)
+      if (container.collapsed)
         this.window.toggleAddonBar();
-      container = this.container;
     }
     
     // Now retrieve a reference to the next toolbar item
@@ -799,8 +757,6 @@ BrowserWindow.prototype = {
     let len = this._items.length;
     for (let i = 0; i < len; i++)
       this.removeItems([this._items[0].widget]);
-
-    this.window.removeEventListener("keypress", this, false);
   }
 };
 
