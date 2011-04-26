@@ -70,6 +70,7 @@ const panels = require("panel");
 const { EventEmitter } = require("events");
 const { Trait } = require("traits");
 const { Loader, Symbiont } = require("content");
+const timer = require("timer");
 
 const valid = {
   number: { is: ["null", "undefined", "number"] },
@@ -93,16 +94,9 @@ function validate(name, suspect, validation) {
   return validateOptions($1, $2)[name]
 }
 
-const eventBus = Trait.compose(EventEmitter, Trait.compose({
-  constructor: function EventBus() this
-}))();
-
 // The widget object.
 const Widget = Trait.compose(Loader, Trait.compose({
   constructor: function Widget(options) {
-
-    eventBus.on('event', this._onEvent.bind(this));
-    this.on('error', this._defaultErrorHandler.bind(this));
 
     this._label = validate("label", options.label, valid.label);
 
@@ -114,7 +108,7 @@ const Widget = Trait.compose(Loader, Trait.compose({
       console.warn('You have to define an unique "id" attribute to your widget ' 
         + 'in order to be able to remember its position.');
     
-    browserManager.validate(this._public);
+    browserManager.validate(this);
     
     if ("width" in options)
       this.width = options.width;
@@ -142,8 +136,10 @@ const Widget = Trait.compose(Loader, Trait.compose({
       this.allow = options.allow;
     if ("onError" in options)
       this.on("error", options.onError);
+    else
+      this.on('error', this._defaultErrorHandler.bind(this));
     if ("onMessage" in options)
-        this.on("message", options.onMessage);
+      this.on("message", options.onMessage);
 
     if (!(this._content || this.contentURL))
       throw new Error(ERR_CONTENT);
@@ -151,10 +147,10 @@ const Widget = Trait.compose(Loader, Trait.compose({
     let self = this;
     this.on('propertyChange', function(change) {
       if ('contentURL' in change)
-        browserManager.updateItem(self._public, "contentURL", self.contentURL);
+        browserManager.updateItem(self, "contentURL", self.contentURL);
     });
 
-    browserManager.addItem(this._public);
+    browserManager.addItem(this);
   },
 
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
@@ -162,15 +158,13 @@ const Widget = Trait.compose(Loader, Trait.compose({
       console.exception(e)
   },
 
-  _onEvent: function Widget__onEvent(type, target, eventData, domNode) {
-    if (target === this._public) {
-      this._emit(type, eventData);
+  _onEvent: function Widget__onEvent(type, eventData, domNode) {
+    this._emit(type, eventData);
 
-      // Special case for click events: if the widget doesn't have a click
-      // handler, but it does have a panel, display the panel.
-      if ("click" == type && !this._listeners("click").length && this.panel)
-        this.panel.show(domNode);
-    }
+    // Special case for click events: if the widget doesn't have a click
+    // handler, but it does have a panel, display the panel.
+    if ("click" == type && !this._listeners("click").length && this.panel)
+      this.panel.show(domNode);
   },
 
   get id() this._id,
@@ -184,7 +178,7 @@ const Widget = Trait.compose(Loader, Trait.compose({
     value = validate("width", value, valid.number);
     if (null === value || undefined === value) value = 16;
     if (value !== this._width)
-      browserManager.updateItem(this._public, "width", this._width = value);
+      browserManager.updateItem(this, "width", this._width = value);
   },
   _width: 16,
 
@@ -192,7 +186,7 @@ const Widget = Trait.compose(Loader, Trait.compose({
   set tooltip(value) {
     value = validate("tooltip", value, valid.string);
     if (value !== this._tooltip)
-      browserManager.updateItem(this._public, "tooltip", this._tooltip = value);
+      browserManager.updateItem(this, "tooltip", this._tooltip = value);
   },
   _tooltip: null,
 
@@ -200,7 +194,7 @@ const Widget = Trait.compose(Loader, Trait.compose({
   set content(value) {
     value = validate("content", value, valid.string);
     if (value !== this._content)
-      browserManager.updateItem(this._public, "content", this._content = value);
+      browserManager.updateItem(this, "content", this._content = value);
   },
   _content: null,
 
@@ -213,11 +207,11 @@ const Widget = Trait.compose(Loader, Trait.compose({
   _panel: null,
 
   postMessage: function Widget_postMessage(message) {
-    browserManager.updateItem(this._public, "postMessage", message);
+    browserManager.updateItem(this, "postMessage", message);
   },
 
   destroy: function Widget_destroy() {
-    browserManager.removeItem(this._public);
+    browserManager.removeItem(this);
   }
 }));
 exports.Widget = function(options) Widget(options);
@@ -551,8 +545,8 @@ BrowserWindow.prototype = {
       contentScriptWhen: item.widget.contentScriptWhen,
       allow: item.widget.allow,
       onMessage: function(message) {
-        require("timer").setTimeout(function() {
-          eventBus._emit("event", "message", item.widget, message);
+        timer.setTimeout(function() {
+          item.widget._onEvent("message", message);
         }, 0);
       }
     });
@@ -580,8 +574,8 @@ BrowserWindow.prototype = {
         return;
 
       // Proxy event to the widget
-      require("timer").setTimeout(function() {
-        eventBus._emit("event", EVENTS[e.type], item.widget, null, item.node);
+      timer.setTimeout(function() {
+        item.widget._onEvent(EVENTS[e.type], null, item.node);
       }, 0);
     };
 
