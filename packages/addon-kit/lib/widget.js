@@ -48,7 +48,9 @@ const CONTENT_TYPE_IMAGE  = 3;
 
 const ERR_CONTENT = "No content or contentURL property found. Widgets must "
                          + "have one or the other.",
-      ERR_LABEL = "The widget must have a non-empty label property.";
+      ERR_LABEL = "The widget must have a non-empty label property.",
+      ERR_ID = "You have to define an unique `id` attribute to your widget " +
+               "in order to be able to remember its position.";
 
 // Supported events, mapping from DOM event names to our event names
 const EVENTS = {
@@ -67,14 +69,23 @@ if (!require("xul-app").is("Firefox")) {
 
 const { validateOptions } = require("api-utils");
 const panels = require("panel");
-const { EventEmitter } = require("events");
+const { EventEmitter, EventEmitterTrait } = require("events");
 const { Trait } = require("traits");
+const LightTrait = require('light-traits').Trait;
 const { Loader, Symbiont } = require("content");
 const timer = require("timer");
+const { Cortex } = require('cortex');
 
+// Data types definition
 const valid = {
   number: { is: ["null", "undefined", "number"] },
   string: { is: ["null", "undefined", "string"] },
+  id: {
+    is: ["string"],
+    ok: function (v) v.length > 0,
+    msg: ERR_ID,
+    readonly: true
+  },
   label: {
     is: ["string"],
     ok: function (v) v.length > 0,
@@ -83,10 +94,40 @@ const valid = {
   panel: {
     is: ["null", "undefined", "object"],
     ok: function(v) !v || v instanceof panels.Panel
-  }
-}
+  },
+  width: {
+    is: ["null", "undefined", "number"],
+    map: function (v) {
+      if (null === v || undefined === v) v = 16;
+      return v;
+    },
+    defaultValue: 16
+  },
+};
 
-function validate(name, suspect, validation) {
+// Widgets attributes definition
+const widgetAttributes = {
+  label: valid.label,
+  id: valid.id,
+  tootip: valid.string,
+  width: valid.width,
+  content: valid.string,
+  panel: valid.panel
+};
+
+// Only import data definition from loader, no more compose with it as `Model`
+// functions allow to recreate easily all Loader code.
+let loaderAttributes = require("content/loader").validationAttributes;
+for(let i in loaderAttributes)
+  widgetAttributes[i] = loaderAttributes[i];
+
+widgetAttributes.contentURL.optional = true;
+
+// `Model` utility functions that help creating these various Widgets objects
+const Model = {};
+
+// Validate one attribute using api-utils.js:validateOptions function
+Model._validate = function Model_validate(name, suspect, validation) {
   let $1 = {}
   $1[name] = suspect
   let $2 = {}
@@ -94,65 +135,65 @@ function validate(name, suspect, validation) {
   return validateOptions($1, $2)[name]
 }
 
-// The widget object.
-const Widget = Trait.compose(Loader, Trait.compose({
-  constructor: function Widget(options) {
-
-    this._label = validate("label", options.label, valid.label);
-
-    this.tooltip = "tooltip" in options ? options.tooltip : this._label
+// Validate and define, on a given object, a set of attribute
+Model.setAttributes = function Model_setAttributes(object, attrs, values) {
+  let properties = {};
+  for(let name in attrs) {
+    let value = values[name];
+    let req = attrs[name];
     
-    if ("id" in options)
-      this._id = options.id;
-    else
-      console.warn('You have to define an unique "id" attribute to your widget ' 
-        + 'in order to be able to remember its position.');
+    // Retrieve default value from typedef if the value is not defined
+    if ((typeof value == "undefined" || value == null) && req.defaultValue)
+      value = req.defaultValue;
     
-    browserManager.validate(this);
+    // Check for valid value if value is defined or mandatory
+    if (!req.optional || typeof value != "undefined")
+      value = Model._validate(name, value, req);
     
-    if ("width" in options)
-      this.width = options.width;
-    if ("panel" in options)
-      this.panel = options.panel;
+    // In any case, define this property on `object`
+    let property = Model._setupProperty(name, value);
+    
+    // Delete setter of readonly properties
+    // Do not do delete property.set as it brokes Cortex
+    if (req.readonly)
+      property.set = function () {};
+    
+    properties[name] = property;
+  }
+  Object.defineProperties(object, properties);
+}
 
-    if ("onClick" in options)
-      this.on("click", options.onClick);
-    if ("onMouseover" in options)
-      this.on("mouseover", options.onMouseover);
-    if ("onMouseout" in options)
-      this.on("mouseout", options.onMouseout);
-    if ("content" in options)
-      this._content = options.content;
-    if ("contentURL" in options)
-      this.contentURL = options.contentURL;
+// Generate ES5 property definition for a given attribute
+Model._setupProperty = function (name, value) {
+  return {
+    get: function () {
+      return value;
+    },
+    set: function (newValue) {
+      value = newValue;
+      // The main goal of all this Model stuff is here:
+      // We want to forward all changes to some listeners
+      this._emit("change", name, value);
+    },
+    enumerable: true,
+    configurable: false
+  };
+}
 
-    if ("contentScriptWhen" in options)
-      this.contentScriptWhen = options.contentScriptWhen;
-    if ("contentScriptFile" in options)
-      this.contentScriptFile = options.contentScriptFile;
-    if ("contentScript" in options)
-      this.contentScript = options.contentScript;
-    if ("allow" in options)
-      this.allow = options.allow;
-    if ("onError" in options)
-      this.on("error", options.onError);
-    else
-      this.on('error', this._defaultErrorHandler.bind(this));
-    if ("onMessage" in options)
-      this.on("message", options.onMessage);
+// Automagically register listerners in options dictionnary
+// by detecting listener attributes with name starting with `on`
+Model.setEvents = function (object, events, listeners) {
+  for(let i = 0, l = events.length; i < l; i++) {
+    let name = events[i];
+    let onName = "on" + name[0].toUpperCase() + name.substr(1);
+    if (!listeners[onName])
+      continue;
+    object.on(name, listeners[onName].bind(object));
+  }
+}
 
-    if (!(this._content || this.contentURL))
-      throw new Error(ERR_CONTENT);
-
-    let self = this;
-    this.on('propertyChange', function(change) {
-      if ('contentURL' in change)
-        browserManager.updateItem(self, "contentURL", self.contentURL);
-    });
-
-    browserManager.addItem(this);
-  },
-
+const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
+  
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
     if (1 == this._listeners('error').length)
       console.exception(e)
@@ -167,45 +208,6 @@ const Widget = Trait.compose(Loader, Trait.compose({
       this.panel.show(domNode);
   },
 
-  get id() this._id,
-  _id: null,
-  
-  get label() this._label,
-  _label: null,
-
-  get width() this._width,
-  set width(value) {
-    value = validate("width", value, valid.number);
-    if (null === value || undefined === value) value = 16;
-    if (value !== this._width)
-      browserManager.updateItem(this, "width", this._width = value);
-  },
-  _width: 16,
-
-  get tooltip() this._tooltip,
-  set tooltip(value) {
-    value = validate("tooltip", value, valid.string);
-    if (value !== this._tooltip)
-      browserManager.updateItem(this, "tooltip", this._tooltip = value);
-  },
-  _tooltip: null,
-
-  get content() this._content,
-  set content(value) {
-    value = validate("content", value, valid.string);
-    if (value !== this._content)
-      browserManager.updateItem(this, "content", this._content = value);
-  },
-  _content: null,
-
-  get panel() this._panel,
-  set panel(value) {
-    value = validate("panel", value, valid.panel);
-    if (value !== this._panel)
-      this._panel = value;
-  },
-  _panel: null,
-
   postMessage: function Widget_postMessage(message) {
     browserManager.updateItem(this, "postMessage", message);
   },
@@ -213,9 +215,51 @@ const Widget = Trait.compose(Loader, Trait.compose({
   destroy: function Widget_destroy() {
     browserManager.removeItem(this);
   }
+
 }));
-exports.Widget = function(options) Widget(options);
-exports.Widget.prototype = Widget.prototype;
+
+// Widget constructor
+const Widget = function Widget(options) {
+  let w = WidgetTrait.create(options);
+  
+  Model.setAttributes(w, widgetAttributes, options);
+  
+  browserManager.validate(w);
+  
+  // We must have at least content or contentURL defined
+  if (!(w.content || w.contentURL))
+    throw new Error(ERR_CONTENT);
+  
+  if (!w.tooltip)
+    w.tooltip = w.label;
+  
+  let events = [
+    "click", "mouseover", "mouseout", 
+    "error",
+    "message"
+  ];
+  Model.setEvents(w, events, options);
+  
+  if (!options.onError)
+    w.on('error', w._defaultErrorHandler.bind(w));
+  
+  // Forward attributes changes to browserManager
+  w.on('change', function(name, value) {
+    if (name == 'tooltip' && !value)
+      w.tooltip = w.label;
+    if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1)
+      browserManager.updateItem(w, name, value);
+  });
+
+  // Register this widget to browser manager in order to create new widget on
+  // all new windows
+  browserManager.addItem(w);
+  
+  // Return a Cortex of widget in order to hide private attributes like _onEvent
+  return Cortex(w);
+}
+exports.Widget = Widget;
+
 
 // Keeps track of all browser windows.
 // Exposes methods for adding/removing/updating widgets
