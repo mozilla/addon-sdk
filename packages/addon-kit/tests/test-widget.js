@@ -600,6 +600,30 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
   });
 };
 
+exports.testWidgetViews = function testWidgetViews(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    onAttach: function(view) {
+      test.pass("WidgetView created");
+      view.on("message", function () {
+        test.pass("Got message in WidgetView");
+        widget.destroy();
+      });
+      view.on("detach", function () {
+        test.pass("WidgetView destroyed");
+        test.done();
+      });
+    }
+  });
+  
+};
+
 exports.testWidgetMove = function testWidgetMove(test) {
   test.waitUntilDone();
   

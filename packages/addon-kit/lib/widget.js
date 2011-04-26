@@ -194,22 +194,81 @@ Model.setEvents = function (object, events, listeners) {
 
 const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   
+  _initWidget: function Widget__initWidget(options) {
+    Model.setAttributes(this, widgetAttributes, options);
+    
+    browserManager.validate(this);
+    
+    // We must have at least content or contentURL defined
+    if (!(this.content || this.contentURL))
+      throw new Error(ERR_CONTENT);
+    
+    this._views = [];
+    
+    if (!this.tooltip)
+      this.tooltip = this.label;
+    
+    let events = [
+      "click", "mouseover", "mouseout", 
+      "error",
+      "message",
+      "attach"
+    ];
+    Model.setEvents(this, events, options);
+    
+    if (!options.onError)
+      this.on('error', this._defaultErrorHandler.bind(this));
+    
+    this.on('change', this._onChange.bind(this));
+
+    // Register this widget to browser manager in order to create new widget on
+    // all new windows
+    browserManager.addItem(this);
+  },
+  
+  _onChange: function Widget__onChange(name, value) {
+    if (name == 'tooltip' && !value) {
+      this.tooltip = this.label;
+      return;
+    }
+    
+    // Forward attributes changes to WidgetViews
+    if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1) {
+      this._views.forEach(function(v) v[name] = value);
+    }
+  },
+  
   _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
     if (1 == this._listeners('error').length)
       console.exception(e)
   },
 
-  _onEvent: function Widget__onEvent(type, eventData, domNode) {
+  _onEvent: function Widget__onEvent(type, eventData) {
     this._emit(type, eventData);
-
-    // Special case for click events: if the widget doesn't have a click
-    // handler, but it does have a panel, display the panel.
-    if ("click" == type && !this._listeners("click").length && this.panel)
-      this.panel.show(domNode);
+  },
+  
+  _createView: function Widget__createView() {
+    // Create a new WidgetView instance
+    let view = WidgetView(this);
+    
+    // Keep a reference to it
+    this._views.push(view);
+    
+    // Emit an `attach` event with a WidgetView instance without private attrs
+    this._emit("attach", Cortex(view));
+    
+    // Watch for it destruction
+    let self = this;
+    view.once("detach", function () {
+      let idx = self._views.indexOf(view);
+      self._views.splice(idx, 1);
+    });
+    
+    return view;
   },
 
   postMessage: function Widget_postMessage(message) {
-    browserManager.updateItem(this, "postMessage", message);
+    this._views.forEach(function(v) v.postMessage(message));
   },
 
   destroy: function Widget_destroy() {
@@ -220,46 +279,74 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
 // Widget constructor
 const Widget = function Widget(options) {
-  let w = WidgetTrait.create(options);
-  
-  Model.setAttributes(w, widgetAttributes, options);
-  
-  browserManager.validate(w);
-  
-  // We must have at least content or contentURL defined
-  if (!(w.content || w.contentURL))
-    throw new Error(ERR_CONTENT);
-  
-  if (!w.tooltip)
-    w.tooltip = w.label;
-  
-  let events = [
-    "click", "mouseover", "mouseout", 
-    "error",
-    "message"
-  ];
-  Model.setEvents(w, events, options);
-  
-  if (!options.onError)
-    w.on('error', w._defaultErrorHandler.bind(w));
-  
-  // Forward attributes changes to browserManager
-  w.on('change', function(name, value) {
-    if (name == 'tooltip' && !value)
-      w.tooltip = w.label;
-    if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1)
-      browserManager.updateItem(w, name, value);
-  });
-
-  // Register this widget to browser manager in order to create new widget on
-  // all new windows
-  browserManager.addItem(w);
+  let w = WidgetTrait.create();
+  w._initWidget(options);
   
   // Return a Cortex of widget in order to hide private attributes like _onEvent
   return Cortex(w);
 }
 exports.Widget = Widget;
 
+// -----------------------------------------------------------------------------
+
+const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
+
+  _initWidgetView: function WidgetView__initWidgetView(mainWidget) {
+    this._mainWidget = mainWidget;
+    
+    Model.setAttributes(this, widgetAttributes, mainWidget);
+    
+    this.on('error', this._defaultErrorHandler.bind(this));
+    
+    this.on('change', this._onChange.bind(this));
+  },
+  
+  _onChange: function WidgetView__onChange(name, value) {
+    if (name == 'tooltip' && !value)
+      this.tooltip = this.label;
+    
+    if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1) {
+      browserManager.updateItem(this._mainWidget, name, value);
+    }
+  },
+  
+  _defaultErrorHandler: function WidgetView__defaultErrorHandler(e) {
+    if (1 == this._listeners('error').length)
+      console.exception(e)
+  },
+
+  _onEvent: function WidgetView__onEvent(type, eventData, domNode) {
+    // Dispatch event in view
+    this._emit(type, eventData);
+    
+    // And forward it to the main Widget object
+    this._mainWidget._onEvent(type, eventData);
+
+    // Special case for click events: if the widget doesn't have a click
+    // handler, but it does have a panel, display the panel.
+    if ("click" == type && !this._listeners("click").length && this.panel)
+      this.panel.show(domNode);
+  },
+  
+  _onDestroy: function WidgetView__onDestroy() {
+    this._emit("detach");
+  },
+  
+  postMessage: function WidgetView_postMessage(message) {
+    browserManager.updateItem(this._mainWidget, "postMessage", message);
+  },
+
+  destroy: function WidgetView_destroy() {
+    throw "Not implemented";
+  }
+
+}));
+
+const WidgetView = function WidgetView(mainWidget) {
+  let w = WidgetViewTrait.create();
+  w._initWidgetView(mainWidget);
+  return w;
+}
 
 // Keeps track of all browser windows.
 // Exposes methods for adding/removing/updating widgets
@@ -421,7 +508,7 @@ BrowserWindow.prototype = {
 
   // Update a property of a widget.
   updateItem: function BW_updateItem(updatedItem, property, value) {
-    let item = this._items.filter(function(item) item.widget == updatedItem).shift();
+    let item = this._items.filter(function(item) item.widget._mainWidget == updatedItem).shift();
     if (item) {
       switch(property) {
         case "contentURL":
@@ -443,7 +530,9 @@ BrowserWindow.prototype = {
   },
 
   // Add a widget to this window.
-  _addItemToWindow: function BW__addItemToWindow(widget) {
+  _addItemToWindow: function BW__addItemToWindow(mainWidget) {
+    let widget = mainWidget._createView();
+    
     // XUL element container for widget
     let node = this.doc.createElement("toolbaritem");
     let guid = require("xpcom").makeUuid().toString();
@@ -683,7 +772,7 @@ BrowserWindow.prototype = {
   // Removes an array of items from the window.
   removeItems: function BW_removeItems(removedItems) {
     removedItems.forEach(function(removedItem) {
-      let entry = this._items.filter(function(entry) entry.widget == removedItem).shift();
+      let entry = this._items.filter(function(entry) entry.widget._mainWidget == removedItem).shift();
       if (entry) {
         // remove event listeners
         for (let [type, listener] in Iterator(entry.eventListeners))
@@ -694,6 +783,7 @@ BrowserWindow.prototype = {
         this._items.splice(this._items.indexOf(entry), 1);
         // cleanup symbiont
         entry.symbiont.destroy();
+        entry.widget._onDestroy();
         // cleanup entry itself
         entry.eventListeners = null;
         entry.widget = null;
