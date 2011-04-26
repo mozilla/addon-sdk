@@ -40,13 +40,15 @@
 
 const es5code = require('cuddlefish').es5code;
 const { Trait } = require('traits');
-const { EventEmitter } = require('events');
+const { EventEmitter, EventEmitterTrait } = require('events');
 const { Ci, Cu, Cc } = require('chrome');
 const timer = require('timer');
 const { toFilename } = require('url');
 const file = require('file');
 const unload = require('unload');
 const observers = require("observer-service");
+const { Cortex } = require('cortex');
+const { Enqueued } = require('utils/function');
 
 const JS_VERSION = '1.8';
 
@@ -135,15 +137,18 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   },
   
   /**
-   * Same than postMessage but with a custom event name
-   * @param {String} type 
-   * @param {JSON|String|Number|Boolean} data
+   * EventEmitter instance, that behave asynchronously.
+   * Suggested way to send and receive message to/from the worker's scope. 
+   * Event listeners can be set by calling `self.on` in the worker.
+   * Event can be dispatch by calling `self.emit` in the worker.
    */
-  emit: function emit(type, data) {
-    if (!this._addonWorker)
-      throw new Error(ERR_DESTROYED);
-    this._addonWorker._port._asyncEmit(type,  JSON.parse(JSON.stringify(data)));
-  },
+  port: null,
+  
+  /**
+   * Same object than this.port but private API.
+   * Allow access to _asyncEmit, in order to send event to port.
+   */
+  _port: null,
 
   /**
    * Alias to the global scope in the context of worker. Similar to
@@ -162,7 +167,22 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // Hack in order to allow addon worker to access _asyncEmit
     // as this is the private object of WorkerGlobalScope
     worker._contentWorker = this;
-
+    
+    // create an event emitter that receive and send events from/to the addon
+    let contentWorker = this;
+    this._port = EventEmitterTrait.create({
+        emit: function () {
+          if (!contentWorker._addonWorker)
+            throw new Error(ERR_DESTROYED);
+          let scope = contentWorker._addonWorker._port;
+          scope._asyncEmit.apply(scope, arguments);
+        }
+      });
+    // create emit that executes in next turn of event loop.
+    this._port._asyncEmit = Enqueued(this._port._emit);
+    // expose wrapped port, that exposes only public properties. 
+    this.port = Cortex(this._port);
+    
     // XXX I think the principal should be `this._port._frame.contentWindow`,
     // but script doesn't work correctly when I set it to that value.
     // Events don't get registered; even dump() fails.
@@ -338,8 +358,8 @@ const Worker = AsyncEventEmitter.compose({
   /**
    * EventEmitter instance, that behave asynchronously.
    * Suggested way to send and receive message to/from the worker's scope. 
-   * Event listeners can be set by calling `self.on` in the worker.
-   * Event can be dispatch by calling `self.emit` in the worker.
+   * Event listeners can be set by calling `worker.on` in the addon.
+   * Event can be dispatch by calling `worker.emit` in the addon.
    */
   port: null,
   
@@ -365,17 +385,20 @@ const Worker = AsyncEventEmitter.compose({
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
     
-    // create a new event emitter.
+    // create an event emitter that receive and send events from/to the worker
     let addonWorker = this;
-    this._port = require("events").EventEmitterTrait.create({
-        emit: function (type, data) {
-          addonWorker._contentWorker._asyncEmit(type, data);
+    this._port = EventEmitterTrait.create({
+        emit: function () {
+          if (!addonWorker._contentWorker)
+            throw new Error(ERR_DESTROYED);
+          let scope = addonWorker._contentWorker._port;
+          scope._asyncEmit.apply(scope, arguments);
         }
       });
     // create emit that executes in next turn of event loop.
-    this._port._asyncEmit = require('utils/function').Enqueued(this._port._emit);
+    this._port._asyncEmit = Enqueued(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
-    this.port = require('cortex').Cortex(this._port);
+    this.port = Cortex(this._port);
 
     // will set this._contentWorker pointing to the private API:
     WorkerGlobalScope(this);  

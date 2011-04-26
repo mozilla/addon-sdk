@@ -70,8 +70,8 @@ exports['test:emit'] = function(test) {
       window: window,
       contentScript: 'new ' + function WorkerScope() {
         // Validate self.on and self.emit
-        self.on('addon-to-content', function (data) {
-          self.emit('content-to-addon', data);
+        self.port.on('addon-to-content', function (data) {
+          self.port.emit('content-to-addon', data);
         });
         
         // Check for global pollution
@@ -104,21 +104,20 @@ exports['test:emit hack message'] = function(test) {
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
-        // Validate self.on and self.emit
-        self.on('message', function (data) {
-          self.emit('message', data);
+        // Validate self.port
+        self.port.on('message', function (data) {
+          self.port.emit('message', data);
         });
-      },
-      onMessage: function(msg) {
-        test.fail("Got an unexpected message : "+msg);
+        // We should not receive message on self, but only on self.port
+        self.on('message', function (data) {
+          self.postMessage('message', data);
+        });
       },
       onError: function(e) {
         test.fail("Got exception: "+e);
       }
     });
   
-  // Events `mesage` are routed to port when they come from content script
-  // but they behave exactly like postMessage when they come from addon
   worker.port.on('message', function (data) {
     test.assertEqual(data, "event data");
     test.done();
@@ -130,3 +129,27 @@ exports['test:emit hack message'] = function(test) {
   
 }
 
+exports['test:n-arguments emit'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.port.on('addon-to-content', function (a1, a2, a3) {
+          self.port.emit('content-to-addon', a1, a2, a3);
+        });
+      }
+    });
+  
+  // Validate worker.port
+  worker.port.on('content-to-addon', function (arg1, arg2, arg3) {
+    test.assertEqual(arg1, "first argument");
+    test.assertEqual(arg2, "second");
+    test.assertEqual(arg3, "third");
+    test.done();
+  });
+  worker.port.emit('addon-to-content', 'first argument', 'second', 'third');
+  
+}

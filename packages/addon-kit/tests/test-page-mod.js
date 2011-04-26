@@ -211,8 +211,8 @@ exports.testEventEmitter = function(test) {
   testPageMod(test, "about:", [{
       include: "about:*",
       contentScript: 'new ' + function WorkerScope() {
-        self.on('addon-to-content', function(data) {
-          self.emit('content-to-addon', data);
+        self.port.on('addon-to-content', function(data) {
+          self.port.emit('content-to-addon', data);
         });
       },
       onAttach: function(worker) {
