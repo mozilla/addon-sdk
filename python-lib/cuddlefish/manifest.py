@@ -1,6 +1,7 @@
 
 import os, sys, re, hashlib
 import simplejson as json
+SEP = os.path.sep
 
 def js_zipname(packagename, modulename):
     return "%s-lib/%s.js" % (packagename, modulename)
@@ -102,8 +103,8 @@ def get_datafiles(datadir):
                        if dirname not in IGNORED_DIRS]
         for filename in filenames:
             fullname = os.path.join(dirpath, filename)
-            assert fullname.startswith(datadir+"/"), "%s/ not in %s" % (datadir, fullname)
-            yield fullname[len(datadir+"/"):]
+            assert fullname.startswith(datadir+SEP), "%s%s not in %s" % (datadir, SEP, fullname)
+            yield fullname[len(datadir+SEP):]
 
 
 class DataMap:
