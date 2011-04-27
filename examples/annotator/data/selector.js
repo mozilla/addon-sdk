@@ -41,14 +41,13 @@ $('*').mouseenter(function() {
   $(matchedElement).bind('click.annotator', function(event) {
     event.stopPropagation();
     event.preventDefault();
-    postMessage({
-      kind: 'show',
-      anchor: [
+    self.port.emit('show',
+      [
         document.location.toString(),
         $(ancestor).attr("id"),
         $(matchedElement).text()
       ]
-   });
+   );
   });
 });
 

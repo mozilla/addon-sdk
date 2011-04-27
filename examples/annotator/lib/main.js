@@ -136,13 +136,9 @@ display it.
     onAttach: function(worker) {
       worker.postMessage(canEnterAnnotations());
       selectors.push(worker);
-      worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            annotationEditor.annotationAnchor = message.anchor;
-            annotationEditor.show();
-            break;
-        }
+      worker.port.on('show', function(data) {
+        annotationEditor.annotationAnchor = data;
+        annotationEditor.show();
       });
       worker.on('detach', function () {
         detachWorker(this, selectors);
@@ -258,17 +254,13 @@ see old ones.
       if(simpleStorage.storage.annotations) {
         worker.postMessage(simpleStorage.storage.annotations);
       }
-      worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            annotation.content = message.annotationText;
-            annotation.show();
-            break;
-          case 'hide':
-            annotation.content = null;
-            annotation.hide();
-            break;
-        }
+      worker.port.on('show', function(data) {
+        annotation.content = data;
+        annotation.show();
+      });
+      worker.port.on('hide', function() {
+        annotation.content = null;
+        annotation.hide();
       });
       worker.on('detach', function () {
         detachWorker(this, matchers);
