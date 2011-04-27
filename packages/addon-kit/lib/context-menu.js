@@ -503,16 +503,16 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._port._listeners("context").length > 0;
+    return this._contentWorker._listeners("context").length > 0;
   },
 
   // Returns true if any of the context listeners in the worker's port return
   // true.  popupNode is the node that was context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._port._listeners("context");
+    let listeners = this._contentWorker._listeners("context");
     for (let i = 0; i < listeners.length; i++) {
       try {
-        if (listeners[i].call(this._port._sandbox, popupNode))
+        if (listeners[i].call(this._contentWorker._sandbox, popupNode))
           return true;
       }
       catch (err) {
@@ -526,7 +526,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._port._emit("click", popupNode, clickedItemData);
+    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
   }
 });
 
