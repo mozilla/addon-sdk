@@ -96,7 +96,7 @@ exports.testBadExportAndReturn = function (test) {
 // test a bad circular dependency, where an exported value is needed, but
 // the return value happens too late, a module already asked for the exported
 // value.
-exports.testBadExportAndReturn = function (test) {
+exports.testBadExportAndReturnCircular = function (test) {
   var passed = false;
   try {
     var bad = require('modules/badFirst');
@@ -106,19 +106,6 @@ exports.testBadExportAndReturn = function (test) {
   }
   test.assertEqual(passed, true, 'Make sure return after an exported ' +
                                  'value is grabbed by another module fails.');
-}
-
-// test a bad name in a define() call, where it does not match the expected
-// name for the module.
-exports.testBadDefineName = function (test) {
-  var passed = false;
-  try {
-    var sheep = require('modules/sheep');
-  } catch(e) {
-    passed = /Mismatched define/.test(e.toString());
-  }
-  test.assertEqual(passed, true, 'Make sure name in define call matches ' +
-                                 'the expected name for the module.');
 }
 
 // only allow one define call per file.

@@ -227,30 +227,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     bundleID: options.bundleID,
 
     getModuleInfo: function getModuleInfo(path) {
-      var i = this.__packages[path];
-      var info = { dependencies: i.requires,
-                   needsChrome: i.chrome,
-                   'e10s-adapter': i['e10s-adapter'],
-                   name: i.name,
-                   packageName: i.packageName,
-                   hash: i.hash
-                   };
-      if (info.packageName in options.packageData)
-        info.packageData = options.packageData[info.packageName];
-      return info;
-    },
-
-    // TODO: This has been superseded by require('self').getURL() and
-    // should be deprecated.
-    getURLForData: function getURLForData(path) {
-      var traceback = this.__loader.require("traceback");
-      var callerInfo = traceback.get().slice(-2)[0];
-      var info = this.getModuleInfo(callerInfo.filename);
-      if ('packageData' in info) {
-        var url = this.__loader.require("url");
-        return url.URL(path, info.packageData).toString();
-      } else
-        throw new Error("No data for package " + pkgName);
+      return this.__packages[path];
     },
 
     createLoader: function createLoader() {

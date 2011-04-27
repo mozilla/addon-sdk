@@ -62,7 +62,6 @@ TestFinder.prototype = {
   findTests: function findTests(cb) {
     var self = this;
     var tests = [];
-    var remoteSuites = [];
     var filter;
 
     if (typeof(this.filter) == "string") {
@@ -81,9 +80,6 @@ TestFinder.prototype = {
 
         suites.forEach(
           function(suite) {
-            var loader = require("parent-loader");
-            var url = loader.fs.resolveModule(null, suite);
-            var moduleInfo = packaging.getModuleInfo(url);
             var module = require(suite);
             if (self.testInProcess)
               for (name in module)
@@ -91,22 +87,9 @@ TestFinder.prototype = {
                     testFunction: self._makeTest(suite, name, module[name]),
                     name: suite + "." + name
                   });
-            if (!moduleInfo.needsChrome)
-              remoteSuites.push(suite);
           });
       });
 
-    if (this.testOutOfProcess && remoteSuites.length > 0) {
-      var process = require("e10s").AddonProcess();
-      var finderHandle = process.createHandle();
-      finderHandle.onTestsFound = function(testsFound) {
-        cb(tests.concat(testsFound));
-      };
-      process.send("startMain", "find-tests", {
-        suites: remoteSuites,
-        finderHandle: finderHandle
-      });
-    } else
-      cb(tests);
+    cb(tests);
   }
 };

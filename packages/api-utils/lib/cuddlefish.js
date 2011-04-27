@@ -46,10 +46,10 @@
    var securableModule;
    var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
 
-   if (global.require)
+   if (global.require) {
      // We're being loaded in a SecurableModule.
      securableModule = require("securable-module");
-   else {
+   } else {
      var ios = Cc['@mozilla.org/network/io-service;1']
                .getService(Ci.nsIIOService);
      var securableModuleURI = ios.newURI("securable-module.js", null,
@@ -85,28 +85,6 @@
      this.require("unload").send(reason);
    }
 
-   function maybeLoadMainInJetpackProcess(delegate, packaging) {
-     return function getModuleExports(basePath, module) {     
-       if (module == packaging.options.main) {
-         var mainURL = this.fs.resolveModule(basePath, module);
-         var mainInfo = packaging.getModuleInfo(mainURL);
-         if (!mainInfo.needsChrome) {
-           var loader = this;
-           return {
-             main: function main(options, callbacks) {
-               var e10s = loader.require("e10s");
-               var process = e10s.AddonProcess();
-               loader.console.log("starting main in remote process.");
-               process.send("startMain", options.main);
-             }
-           };
-         } else
-           return null;
-       }
-       return (delegate ? delegate.call(this, basePath, module) : null);
-     };
-   }
-
    function makeGetModuleExports(delegate) {
      return function getModuleExports(basePath, module) {
        switch (module) {
@@ -132,71 +110,6 @@
      sandbox.defineProperty("__url__", filename);
    }
 
-   function makeManifestChecker(packaging) {
-     var mc = {
-       _allow: function _allow(loader, basePath, module, module_info) {
-         if (!basePath) {
-           return true; /* top-level import */
-         }
-         let mi = packaging.getModuleInfo(basePath);
-         if (mi.needsChrome)
-           /* The module requires chrome, it can import whatever it 
-            * wants. */
-           return true;
-         if (!mi.dependencies) {
-           /* the parent isn't in the manifest: we know nothing about it */
-         } else {
-           if (mi.dependencies[module]) {
-             /* they're on the list: the require() is allowed, but let's
-                check that they're loading the right thing */
-             let parent_mi = packaging.getModuleInfo(basePath);
-             // parent_mi is the parent, who invoked require()
-             // module_info is the child, the output of resolveModule
-             var should_load = parent_mi.dependencies[module].url;
-             var is_loading = module_info.filename;
-             if (!should_load) {
-               /* the linker wasn't able to find the target module when the
-               XPI was constructed. */
-               loader.console.warn("require("+ module +") (called from " +
-                                   basePath + ") is loading " + is_loading +
-                                   ", but the manifest couldn't find it");
-             } else if (should_load != is_loading) {
-               loader.console.warn("require(" + module + ") (called from " +
-                                   basePath + ") is loading " + is_loading +
-                                   ", but is supposed to be loading " + 
-                                   should_load);
-               //return false; // enable this in 0.9
-             }
-             return true; 
-           }
-         }
-         loader.console.warn("undeclared require(" + module + 
-                             ") called from " + basePath);
-         //return false;  // enable this in 0.9
-         return true;
-       },
-       allowEval: function allowEval(loader, basePath, module, module_info) {
-         return this._allow(loader, basePath, module, module_info);
-       },
-
-       allowImport: function allowImport(loader, basePath, module, module_info,
-                                         exports) {
-         if (module == "chrome") {
-           let parent_mi = packaging.getModuleInfo(basePath);
-           if (parent_mi.needsChrome)
-             return true; /* chrome is on the list, allow it */
-           loader.console.warn("undeclared require(chrome) called from " +
-                               basePath);
-           //return false;  // enable this in 0.9
-           return true;
-         }
-
-         return this._allow(loader, basePath, module, module_info);
-       }
-     };
-     return mc;
-   }
-
    var Loader = exports.Loader = function Loader(options) {
      var globals = {};
 
@@ -214,21 +127,16 @@
 
      var getModuleExports = makeGetModuleExports(options.getModuleExports);
 
-     var manifestChecker = undefined;
-     if (options.packaging) {
-       manifestChecker = makeManifestChecker(options.packaging);
-       if (options.packaging.enableE10s)
-         getModuleExports = maybeLoadMainInJetpackProcess(getModuleExports,
-                                                          options.packaging);
-     }
-
+     var manifest = {};
+     if ("packaging" in options)
+       manifest = options.packaging.options.manifest;
      var loaderOptions = {rootPath: options.rootPath,
                           rootPaths: options.rootPaths,
                           fs: options.fs,
                           defaultPrincipal: "system",
                           globals: globals,
                           modifyModuleSandbox: modifyModuleSandbox,
-                          securityPolicy: manifestChecker,
+                          manifest: manifest,
                           getModuleExports: getModuleExports};
 
      var loader = new securableModule.Loader(loaderOptions);

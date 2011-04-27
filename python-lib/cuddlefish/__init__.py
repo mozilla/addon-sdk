@@ -679,27 +679,33 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
+    from cuddlefish.manifest import build_manifest
+    uri_prefix = "resource://%s" % unique_prefix
+    include_tests = False #bool(command=="test")
+    manifest = build_manifest(target_cfg, pkg_cfg, uri_prefix, include_tests)
+    harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
         from cuddlefish.rdf import gen_manifest, RDFUpdate
 
-        manifest = gen_manifest(template_root_dir=app_extension_dir,
-                                target_cfg=target_cfg,
-                                bundle_id=bundle_id,
-                                update_url=options.update_url,
-                                bootstrap=True)
+        manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
+                                    target_cfg=target_cfg,
+                                    bundle_id=bundle_id,
+                                    update_url=options.update_url,
+                                    bootstrap=True)
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
             print "Exporting update description to %s." % rdf_name
             update = RDFUpdate()
-            update.add(manifest, options.update_link)
+            update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
         xpi_name = XPI_FILENAME % target_cfg.name
         print "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
-                  manifest=manifest,
+                  manifest=manifest_rdf,
                   xpi_name=xpi_name,
                   harness_options=harness_options)
     else:
