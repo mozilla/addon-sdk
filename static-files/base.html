@@ -17,10 +17,14 @@
   <title></title>
 </head>
 <body>
-<div id="container">
-  <div id="columns">
+  <div id="container">
 
-  <div id="left-column">
+  <div id="main-content-column" class="column">
+    <div id="toc"></div>
+    <div id="main-content"></div>
+  </div>
+
+  <div id="sidebar" class="column">
     <div class="title">
       <img class="logo" alt="Firefox" src="media/firefox-32.png">
       <span class="title-text">
@@ -132,17 +136,13 @@
 <!--end of left column-->
   </div>
 
-  <div id="main-content">
-    <div id="right-column"></div>
+
   </div>
-<!--end of columns-->
+
+  <div id="footer">
+    <span class="full-name">Add-on SDK Documentation v1.0b4pre</span>
   </div>
-<div id="push"></div>
-<!--end of container-->
-</div>
-<div id="footer">
-  <span class="full-name">Add-on SDK Documentation v1.0b4pre</span>
-</div>
+
 
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/main.js"></script>

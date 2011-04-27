@@ -1,22 +1,69 @@
-
-/*
-#container and #push CSS is
-used to implement a 'sticky footer'
-*/
-#container {
-  min-height: 100%;
-  height: auto !important;
-  height: 100%;
-  margin: 0 auto -4em;
+body {
+  min-width: 530px;         /* 2 x sidebar fullwidth + main-content padding */
 }
 
-#footer, #push {
-  height: 4em;
-  clear: both;
+#container {
+  padding-left: 235px;      /* sidebar fullwidth -5(?) */
+  padding-right: 65px;     /* main-content padding*/
+  padding-top: 10px;
+}
+
+#container .column {
+  position: relative;
+  float: left;
+}
+
+#main-content-column {
+  width: 100%;
+  padding-right: 50px;
+}
+
+#sidebar {
+  width: 200px;        /* sidebar usable width (fullwidth - padding) */
+  right: 280px;        /* sidebar fullwidth + main-content padding */
+  padding-left: 10px;
+  padding-right: 20px;
+  margin-left: -100%;
+}
+
+.api_reference h3, .api_reference  h4,
+.api_reference  h5, .api_reference  h6 {
+  overflow:auto;
+ }
+
+#toc {
+  width: 180px;
+  float: right;
+  font-size: 0.9em;
+  overflow: hidden;
+  margin-top: 40px;         /* to line up with sidebar: title-height + title padding */
+  margin-left: 20px;
+  margin-bottom: 1em;
+}
+
+.title {
+  height: 30px;
+  margin-bottom: 10px;
+}
+
+.sidebar-section, #toc {
+  border-style: solid;
+  border-color: #a0d0fb;
+  border-width: 1px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -khtml-border-radius: 5px;
+  border-radius: 5px;
+}
+
+.sidebar-section {
+  background-color: #d1e8fd;
+  margin-bottom: 1.0em;
 }
 
 #footer {
   background: #33559b url(../media/bg-footer.png) 0 0 repeat-x;
+  clear: both;
   color: white;
   display: block;
   font-family: Georgia,serif;
@@ -24,26 +71,44 @@ used to implement a 'sticky footer'
   padding: 400px 0 0 0;
 }
 
-#left-column {
-  float: left;
-  width: 18em;
-  margin: 1em;
-}
-
-#right-column {
-  float: left;
-  width: 60%;
-  margin: 1em;
-}
-
 .aside {
   color: gray;
   float: right;
   padding-left: 1em;
   margin-left: 1em;
-  margin-right: -10%;
+  margin-right: 0;
   width: 25%;
   border-left: 1px solid gray;
+}
+
+#toc a {
+  display: block;
+  }
+
+#toc a[class = H2] {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-left: 0.5em;
+}
+
+#toc a[class = H3] {
+  margin-left: 0.5em;
+  font-weight: bold;
+}
+
+#toc a[class = H4] {
+  margin-left: 1.5em;
+  font-family: "andale mono", monospace;
+}
+
+#toc a[class = H5] {
+  margin-left: 2.5em;
+  font-weight: bold;
+}
+
+#toc a[class = H6] {
+  margin-left: 3em;
+  font-family: "andale mono", monospace;
 }
 
 .warning {
@@ -57,10 +122,6 @@ used to implement a 'sticky footer'
   width: 75%;
   background-color: #C63717;
   color: white;
-}
-
-.title {
-  margin-bottom: 10px;
 }
 
 .logo {
@@ -133,6 +194,7 @@ td {
 }
 
 /* Rule to fix quirks-mode inheritance behavior */
+
 table, caption {
   font-size: inherit;
   font-weight: inherit;
@@ -155,37 +217,16 @@ table.meta-table {
   border-bottom: 1px dotted gray;
 }
 
-.technical-error {
-  font-family: Monaco, Lucida Console, monospace;
-  font-size: 8pt;
-  white-space: pre-wrap;
-  color: red;
-}
-
 #footer .full-name {
   margin-left: 0.5em;
 }
 
-#right-column h1 {
+#main-content h1 {
   font-size: 2.2em;
 }
 
-#right-column h2 {
+#main-content h2 {
   font-size: 1.7em;
-}
-
-.sidebar-section {
-  clear: both;
-  background-color: #d1e8fd;
-  margin-bottom: 1.0em;
-  border-style: solid;
-  border-color: #a0d0fb;
-  border-width: 1px;
-
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px;
 }
 
 .sidebar-subsection-contents {
@@ -254,7 +295,7 @@ table.meta-table {
   margin-left: 0;
 }
 
-.current-section {
+.current-section, #toc {
   background: #F0F8FF;
 }
 
