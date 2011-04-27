@@ -40,13 +40,15 @@
 
 const es5code = require('cuddlefish').es5code;
 const { Trait } = require('traits');
-const { EventEmitter } = require('events');
+const { EventEmitter, EventEmitterTrait } = require('events');
 const { Ci, Cu, Cc } = require('chrome');
 const timer = require('timer');
 const { toFilename } = require('url');
 const file = require('file');
 const unload = require('unload');
 const observers = require("observer-service");
+const { Cortex } = require('cortex');
+const { Enqueued } = require('utils/function');
 
 const JS_VERSION = '1.8';
 
@@ -68,20 +70,6 @@ const AsyncEventEmitter = EventEmitter.compose({
 });
 
 /**
- * Function for sending data to the port. Used to send messages
- * from the worker to the symbiont and other way round.
- * Function validates that data is a `JSON` or primitive value and emits
- * 'message' event on the port in the next turn of the event loop.
- * _Later this will be sending data across process boundaries._
- * @param {JSON|String|Number|Boolean} data
- */
-function postMessage(data) {
-  if (!this._port)
-    throw new Error(ERR_DESTROYED);
-  this._port._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
-}
-
-/**
  * Local trait providing implementation of the workers global scope.
  * Used to configure global object in the sandbox.
  * @see http://www.w3.org/TR/workers/#workerglobalscope
@@ -97,25 +85,25 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   // @see http://www.w3.org/TR/workers/#workerutils
   setTimeout: function setTimeout(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timer.setTimeout(function(port) {
+    return timer.setTimeout(function(worker) {
       try {
         callback.apply(null, params);
       } catch(e) {
-        port._asyncEmit('error', e);
+        worker._asyncEmit('error', e);
       }
-    }, delay, this._port);
+    }, delay, this._addonWorker);
   },
   clearTimeout: timer.clearTimeout,
 
   setInterval: function setInterval(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timer.setInterval(function(port) {
+    return timer.setInterval(function(worker) {
       try {
         callback.apply(null, params); 
       } catch(e) {
-        port._asyncEmit('error', e);
+        worker._asyncEmit('error', e);
       }
-    }, delay, this._port);
+    }, delay, this._addonWorker);
   },
   clearInterval: timer.clearInterval,
 
@@ -135,9 +123,31 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   _onMessage: undefined,
 
   /**
-   * @see postMesssage
+   * Function for sending data to the addon side.
+   * Validates that data is a `JSON` or primitive value and emits
+   * 'message' event on the worker in the next turn of the event loop.
+   * _Later this will be sending data across process boundaries._
+   * @param {JSON|String|Number|Boolean} data
    */
-  postMessage: postMessage,
+  postMessage: function postMessage(data) {
+    if (!this._addonWorker)
+      throw new Error(ERR_DESTROYED);
+    this._addonWorker._asyncEmit('message',  
+                                      JSON.parse(JSON.stringify(data)));
+  },
+  
+  /**
+   * EventEmitter, that behaves (calls listeners) asynchronously.
+   * A way to send customized messages to / from the worker.
+   * Events from in the worker can be observed / emitted via self.on / self.emit 
+   */
+  get port() this._port._public,
+  
+  /**
+   * Same object than this.port but private API.
+   * Allow access to _asyncEmit, in order to send event to port.
+   */
+  _port: null,
 
   /**
    * Alias to the global scope in the context of worker. Similar to
@@ -145,19 +155,33 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
    */
   get self() this._public,
 
-
   /**
    * Configures sandbox and loads content scripts into it.
-   * @param {Worker} port
+   * @param {Worker} worker
    *    content worker
    */
-  constructor: function WorkerGlobalScope(port) {
-    // connect ports
-    this._port = port;
-    port._port = this;
-
-    this.on('unload', this._destructor = this._destructor.bind(this));
-
+  constructor: function WorkerGlobalScope(worker) {
+    this._addonWorker = worker;
+    
+    // Hack in order to allow addon worker to access _asyncEmit
+    // as this is the private object of WorkerGlobalScope
+    worker._contentWorker = this;
+    
+    // create an event emitter that receive and send events from/to the addon
+    let contentWorker = this;
+    this._port = EventEmitterTrait.create({
+      emit: function () {
+        if (!contentWorker._addonWorker)
+          throw new Error(ERR_DESTROYED);
+        let scope = contentWorker._addonWorker._port;
+        scope._asyncEmit.apply(scope, arguments);
+      }
+    });
+    // create emit that executes in next turn of event loop.
+    this._port._asyncEmit = Enqueued(this._port._emit);
+    // expose wrapped port, that exposes only public properties. 
+    this._port._public = Cortex(this._port);
+    
     // XXX I think the principal should be `this._port._frame.contentWindow`,
     // but script doesn't work correctly when I set it to that value.
     // Events don't get registered; even dump() fails.
@@ -176,14 +200,15 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     );
 
     // Shimming natives in sandbox so that they support ES5 features
-    Cu.evalInSandbox(es5code.contents, sandbox, "1.8", es5code.filename);
+    Cu.evalInSandbox(es5code.contents, sandbox, JS_VERSION, es5code.filename);
 
-    let window = port._window;
+    let window = worker._window;
     let publicAPI = this._public;
-
-    let keys = Object.getOwnPropertyNames(publicAPI);
+    
+    // List of content script globals:
+    let keys = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 
+                'postMessage', 'self'];
     for each (let key in keys) {
-      if ('onMessage' === key) continue;
       Object.defineProperty(
         sandbox, key, Object.getOwnPropertyDescriptor(publicAPI, key)
       );
@@ -196,6 +221,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       },
       console: { value: console, configurable: true },
     });
+    
     // Chain the global object for the sandbox to the global object for
     // the frame.  This supports JavaScript libraries like jQuery that depend
     // on the presence of certain properties in the global object, like window,
@@ -221,9 +247,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
-    let contentScriptFile = ('contentScriptFile' in port) ? port.contentScriptFile
+    let contentScriptFile = ('contentScriptFile' in worker) ? worker.contentScriptFile
           : null,
-        contentScript = ('contentScript' in port) ? port.contentScript : null;
+        contentScript = ('contentScript' in worker) ? worker.contentScript : null;
 
     if (contentScriptFile) {
       if (Array.isArray(contentScriptFile))
@@ -245,19 +271,22 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     for (let key in publicAPI)
       delete sandbox[key];
     this._sandbox = null;
-    this._port = null;
+    this._addonWorker = null;
     this._onMessage = undefined;
   },
+  
   /**
    * JavaScript sandbox where all the content scripts are evaluated.
    * {Sandbox}
    */
   _sandbox: null,
+  
   /**
-   * Reference to the worker.
+   * Reference to the addon side of the worker.
    * @type {Worker}
    */
-  _port: null,
+  _addonWorker: null,
+  
   /**
    * Evaluates code in the sandbox.
    * @param {String} code
@@ -271,7 +300,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       Cu.evalInSandbox(code, this._sandbox, JS_VERSION, filename, 1);
     }
     catch(e) {
-      this._port._asyncEmit('error', e);
+      this._addonWorker._asyncEmit('error', e);
     }
   },
   /**
@@ -291,7 +320,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         this._evaluate(file.read(filename), filename);
       }
       catch(e) {
-        this._port._asyncEmit('error', e)
+        this._addonWorker._asyncEmit('error', e)
       }
     }
   }
@@ -306,7 +335,7 @@ const Worker = AsyncEventEmitter.compose({
   on: Trait.required,
   _asyncEmit: Trait.required,
   _removeAllListeners: Trait.required,
-
+  
   /**
    * Sends a message to the worker's global scope. Method takes single
    * argument, which represents data to be sent to the worker. The data may
@@ -319,8 +348,26 @@ const Worker = AsyncEventEmitter.compose({
    * implementing `onMessage` function in the global scope of this worker.
    * @param {Number|String|JSON} data
    */
-  postMessage: postMessage,
-
+  postMessage: function postMessage(data) {
+    if (!this._contentWorker)
+      throw new Error(ERR_DESTROYED);
+    this._contentWorker._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
+  },
+  
+  /**
+   * EventEmitter, that behaves (calls listeners) asynchronously.
+   * A way to send customized messages to / from the worker.
+   * Events from in the worker can be observed / emitted via 
+   * worker.on / worker.emit.
+   */
+  get port() this._port._public,
+  
+  /**
+   * Same object than this.port but private API.
+   * Allow access to _asyncEmit, in order to send event to port.
+   */
+  _port: null,
+  
   constructor: function Worker(options) {
     options = options || {};
 
@@ -336,8 +383,25 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
+    
+    // create an event emitter that receive and send events from/to the worker
+    let addonWorker = this;
+    this._port = EventEmitterTrait.create({
+      emit: function () {
+        if (!addonWorker._contentWorker)
+          throw new Error(ERR_DESTROYED);
+        let scope = addonWorker._contentWorker._port;
+        scope._asyncEmit.apply(scope, arguments);
+      }
+    });
+    // create emit that executes in next turn of event loop.
+    this._port._asyncEmit = Enqueued(this._port._emit);
+    // expose wrapped port, that exposes only public properties. 
+    this._port._public = Cortex(this._port);
 
-    WorkerGlobalScope(this); // will set this._port pointing to the private API
+    // will set this._contentWorker pointing to the private API:
+    WorkerGlobalScope(this);  
+
     
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
@@ -369,7 +433,8 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   /**
-   * Destroy completely the worker: internal and external references
+   * Tells content worker to unload itself and 
+   * removes all the references from itself.
    */
   destroy: function destroy() {
     this._workerCleanup();
@@ -383,12 +448,11 @@ const Worker = AsyncEventEmitter.compose({
    * Tells _port to unload itself and removes all the references from itself.
    */
   _workerCleanup: function _workerCleanup() {
-    // May be already unloaded, or not already inited 
+    // maybe unloaded before content side is created
     // As Symbiont call worker.constructor on document load
-    if (!this._port)
-      return;
-    this._port._emit('unload');
-    this._port = null;
+    if (this._contentWorker) 
+      this._contentWorker._destructor();
+    this._contentWorker = null;
     this._window = null;
     observers.remove("inner-window-destroyed", this._documentUnload);
     this._windowID = null;
@@ -396,10 +460,10 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   /**
-   * Reference to the global scope of the worker.
+   * Reference to the content side of the worker.
    * @type {WorkerGlobalScope}
    */
-  _port: null,
+  _contentWorker: null,
 
   /**
    * Reference to the window that is accessible from

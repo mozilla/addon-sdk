@@ -62,3 +62,94 @@ exports['test:sample'] = function(test) {
   
 }
 
+exports['test:emit'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.port.on('addon-to-content', function (data) {
+          self.port.emit('content-to-addon', data);
+        });
+        
+        // Check for global pollution
+        if (typeof on != "undefined")
+          postMessage("`on` is in globals");
+        if (typeof once != "undefined")
+          postMessage("`once` is in globals");
+        if (typeof emit != "undefined")
+          postMessage("`emit` is in globals");
+        
+      },
+      onMessage: function(msg) {
+        test.fail("Got an unexpected message : "+msg);
+      }
+    });
+  
+  // Validate worker.port
+  worker.port.on('content-to-addon', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.port.emit('addon-to-content', 'event data');
+  
+}
+
+exports['test:emit hack message'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.port
+        self.port.on('message', function (data) {
+          self.port.emit('message', data);
+        });
+        // We should not receive message on self, but only on self.port
+        self.on('message', function (data) {
+          self.postMessage('message', data);
+        });
+      },
+      onError: function(e) {
+        test.fail("Got exception: "+e);
+      }
+    });
+  
+  worker.port.on('message', function (data) {
+    test.assertEqual(data, "event data");
+    test.done();
+  });
+  worker.on('message', function (data) {
+    test.fail("Got an unexpected message : "+msg);
+  });
+  worker.port.emit('message', 'event data');
+  
+}
+
+exports['test:n-arguments emit'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+  
+  let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        // Validate self.on and self.emit
+        self.port.on('addon-to-content', function (a1, a2, a3) {
+          self.port.emit('content-to-addon', a1, a2, a3);
+        });
+      }
+    });
+  
+  // Validate worker.port
+  worker.port.on('content-to-addon', function (arg1, arg2, arg3) {
+    test.assertEqual(arg1, "first argument");
+    test.assertEqual(arg2, "second");
+    test.assertEqual(arg3, "third");
+    test.done();
+  });
+  worker.port.emit('addon-to-content', 'first argument', 'second', 'third');
+  
+}
