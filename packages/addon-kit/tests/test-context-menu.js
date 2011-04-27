@@ -1116,7 +1116,7 @@ exports.testLoadWithOpenTab = function (test) {
     let loader = test.newLoader();
     let item = new loader.cm.Item({
       label: "item",
-      contentScript: 'on("click", function () postMessage("click"));',
+      contentScript: 'self.on("click", function () postMessage("click"));',
       onMessage: function (msg) {
         if (msg === "click")
           test.done();
