@@ -137,12 +137,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   },
   
   /**
-   * EventEmitter instance, that behave asynchronously.
-   * Suggested way to send and receive message to/from the worker's scope. 
-   * Event listeners can be set by calling `self.on` in the worker.
-   * Event can be dispatch by calling `self.emit` in the worker.
+   * EventEmitter, that behaves (calls listeners) asynchronously.
+   * A way to send customized messages to / from the worker.
+   * Events from in the worker can be observed / emitted via self.on / self.emit 
    */
-  port: null,
+  get port() this._port._public,
   
   /**
    * Same object than this.port but private API.
@@ -181,7 +180,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // create emit that executes in next turn of event loop.
     this._port._asyncEmit = Enqueued(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
-    this.port = Cortex(this._port);
+    this._port._public = Cortex(this._port);
     
     // XXX I think the principal should be `this._port._frame.contentWindow`,
     // but script doesn't work correctly when I set it to that value.
@@ -356,12 +355,12 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   /**
-   * EventEmitter instance, that behave asynchronously.
-   * Suggested way to send and receive message to/from the worker's scope. 
-   * Event listeners can be set by calling `worker.on` in the addon.
-   * Event can be dispatch by calling `worker.emit` in the addon.
+   * EventEmitter, that behaves (calls listeners) asynchronously.
+   * A way to send customized messages to / from the worker.
+   * Events from in the worker can be observed / emitted via 
+   * worker.on / worker.emit.
    */
-  port: null,
+  get port() this._port._public,
   
   /**
    * Same object than this.port but private API.
@@ -398,7 +397,7 @@ const Worker = AsyncEventEmitter.compose({
     // create emit that executes in next turn of event loop.
     this._port._asyncEmit = Enqueued(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
-    this.port = Cortex(this._port);
+    this._port._public = Cortex(this._port);
 
     // will set this._contentWorker pointing to the private API:
     WorkerGlobalScope(this);  
