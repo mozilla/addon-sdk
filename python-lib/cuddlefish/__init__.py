@@ -148,6 +148,15 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test', 'testex', 'testpkgs',
                                            'testall'])),
+        (("", "--no-run",), dict(dest="no_run",
+                                     help=("Instead of launching the "
+                                           "application, just show the command "
+                                           "for doing so.  Use this to launch "
+                                           "the application in a debugger like "
+                                           "gdb."),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
         ]
      ),
 
@@ -715,7 +724,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              verbose=options.verbose,
                              timeout=timeout,
                              logfile=options.logfile,
-                             addons=options.addons)
+                             addons=options.addons,
+                             norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
