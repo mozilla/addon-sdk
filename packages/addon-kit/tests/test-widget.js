@@ -172,7 +172,7 @@ exports.testConstructor = function(test) {
     label: "text widget",
     content: "oh yeah",
     contentScript: "postMessage(document.body.innerHTML);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(this.content, message, "content matches");
       this.destroy();
@@ -186,7 +186,7 @@ exports.testConstructor = function(test) {
     label: "html widget",
     content: "<div>oh yeah</div>",
     contentScript: "postMessage(document.body.innerHTML);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(this.content, message, "content matches");
       this.destroy();
@@ -202,7 +202,7 @@ exports.testConstructor = function(test) {
     contentScript: "postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(message.title, "foo", "title matches");
       test.assertEqual(message.tag, "P", "element matches");
@@ -220,7 +220,7 @@ exports.testConstructor = function(test) {
     contentScript: "postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(message.title, "foo", "title matches");
       test.assertEqual(message.tag, "P", "element matches");
@@ -238,7 +238,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('click', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onClick: function() {
       test.pass("onClick called");
       this.destroy();
@@ -254,7 +254,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMouseover: function() {
       test.pass("onMouseover called");
       this.destroy();
@@ -270,7 +270,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMouseout: function() {
       test.pass("onMouseout called");
       this.destroy();
@@ -286,7 +286,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('click', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onClick: function() {
       test.pass("onClick called");
       this.destroy();
@@ -302,7 +302,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMouseover: function() {
       test.pass("onMouseover called");
       this.destroy();
@@ -318,7 +318,7 @@ exports.testConstructor = function(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMouseout: function() {
       test.pass("onMouseout called");
       this.destroy();
@@ -343,7 +343,7 @@ exports.testConstructor = function(test) {
     id: "content",
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
-    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScript: "postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       if (!this.flag) {
@@ -367,7 +367,7 @@ exports.testConstructor = function(test) {
     label: "content update test widget",
     contentURL: url1,
     contentScript: "postMessage(document.location.href);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function(message) {
       if (!this.flag) {
         test.assertEqual(this.contentURL.toString(), url1);
@@ -390,8 +390,8 @@ exports.testConstructor = function(test) {
     label: "text widget",
     content: "oh yeah",
     tooltip: "foo",
-    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
-    contentScriptWhen: "start",
+    contentScript: "postMessage(1)",
+    contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.tooltip, "foo", "tooltip matches");
       this.destroy();
@@ -404,8 +404,8 @@ exports.testConstructor = function(test) {
     id: "fallback",
     label: "fallback",
     content: "oh yeah",
-    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
-    contentScriptWhen: "start",
+    contentScript: "postMessage(1)",
+    contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.tooltip, this.label, "tooltip fallbacks to label");
       this.destroy();
@@ -420,8 +420,8 @@ exports.testConstructor = function(test) {
     label: "tooltip update test widget",
     tooltip: "foo",
     content: "<div id='me'>foo</div>",
-    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
-    contentScriptWhen: "start",
+    contentScript: "postMessage(1)",
+    contentScriptWhen: "ready",
     onMessage: function(message) {
       this.tooltip = "bar";
       test.assertEqual(this.tooltip, "bar", "tooltip gets updated");
@@ -464,7 +464,7 @@ exports.testConstructor = function(test) {
     label: "test widget.width",
     content: "test width",
     width: 200,
-    contentScript: "document.addEventListener('DOMContentLoaded', function() postMessage(1), false);",
+    contentScript: "postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.width, 200);
@@ -497,7 +497,7 @@ exports.testConstructor = function(test) {
                    "evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onClick: function() clickCount++,
     onMouseover: function() {
       test.assertEqual(clickCount, 1, "right click wasn't sent to click handler");
@@ -520,7 +520,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('click', true, true ); " +
                    "document.body.dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     panel: require("panel").Panel({
       contentURL: "data:text/html,<body>Look ma, a panel!</body>",
       onShow: function() {
@@ -558,7 +558,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('click', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onClick: function() {
       onClickCalled = true;
       this.panel.show();
@@ -586,7 +586,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
     id: "foo",
     label: "foo",
     content: "<bar>baz</bar>",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
     onMessage: function(message) {
       if (message == "ready")

@@ -20,7 +20,7 @@ exports.testPageMod1 = function(test) {
   let pageMod;
   [pageMod] = testPageMod(test, "about:", [{
       include: "about:*",
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         window.document.body.setAttribute("JEP-107", "worked");
       },
@@ -82,6 +82,10 @@ exports.testPageModIncludes = function(test) {
           window[msg] = true;
         }
       },
+      // The testPageMod callback with test assertions is called on 'end',
+      // and we want this page mod to be attached before it gets called,
+      // so we attach it on 'start'.
+      contentScriptWhen: 'start',
       onAttach: function(worker) {
         worker.postMessage(this.include[0]);
       }
@@ -118,7 +122,7 @@ exports.testCommunication1 = function(test) {
 
   testPageMod(test, "about:", [{
       include: "about:*",
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         self.on('message', function(msg) {
           document.body.setAttribute('JEP-107', 'worked');

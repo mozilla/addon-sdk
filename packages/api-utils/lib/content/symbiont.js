@@ -44,13 +44,6 @@ const { Loader } = require('./loader');
 const hiddenFrames = require("hidden-frame");
 const observers = require('observer-service');
 const unload = require("unload");
-const xulApp = require("xul-app");
-
-const HAS_DOCUMENT_ELEMENT_INSERTED =
-        xulApp.versionInRange(xulApp.platformVersion, "2.0b6", "*");
-const ON_START = HAS_DOCUMENT_ELEMENT_INSERTED ? 'document-element-inserted' :
-                 'content-document-global-created';
-const ON_READY = 'DOMContentLoaded';
 
 /**
  * This trait is layered on top of `Worker` and in contrast to symbiont
@@ -59,11 +52,9 @@ const ON_READY = 'DOMContentLoaded';
  * Worker will create hidden one.
  */
 const Symbiont = Worker.resolve({
-    constructor: '_onInit',
+    constructor: '_initWorker',
     destroy: '_workerDestroy'
-  }).compose({
-  _window: Worker.required,
-  _onInit: Worker.required,
+  }).compose(Loader, {
   
   /**
    * The constructor requires all the options that are required by
@@ -108,9 +99,9 @@ const Symbiont = Worker.resolve({
 
     unload.ensure(this._public, "destroy");
   },
+  
   destroy: function destroy() {
     this._workerDestroy();
-    this._cleanUpFrame();
     this._frame = null;
     if (this._hiddenFrame) {
       hiddenFrames.remove(this._hiddenFrame);
@@ -118,35 +109,18 @@ const Symbiont = Worker.resolve({
     }
   },
   
-  _cleanUpFrame: function _cleanUpFrame() {
-    // The frame might not have been initialized yet.
-    if (!this._frame)
-      return;
-    
-    if ('ready' === this.contentScriptWhen)
-      this._frame.removeEventListener(ON_READY, this._onReady, true);
-    else
-      observers.remove(ON_START, this._onStart);
-  },
   /**
    * XUL iframe or browser elements with attribute `type` being `content`.
    * Used to create `ContentSymbiont` from.
    * @type {nsIFrame|nsIBrowser}
    */
   _frame: null,
- /**
+  
+  /**
    * Listener to the `'frameReady"` event (emitted when `iframe` is ready).
    * Removes listener, sets right permissions to the frame and loads content.
    */
   _initFrame: function _initFrame(frame) {
-    // We need to remove observers from the current iframe
-    // before adding new ones to avoid leaking the iframe,
-    // whether initFrame is being called with a new iframe
-    // or an existing one (which happens when page-worker
-    // calls initFrame multiple times with the same iframe).
-    if (this._frame)
-      this._cleanUpFrame();
-    
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
@@ -154,43 +128,47 @@ const Symbiont = Worker.resolve({
         frame.contentDocument.location == this._contentURL) {
       // In some cases src doesn't change and document is already ready
       // (for ex: when the user moves a widget while customizing toolbars.)
-      this._window = frame.contentWindow.wrappedJSObject;
       this._onInit();
+      return;
     }
-    else if ('ready' === this.contentScriptWhen) {
-      frame.addEventListener(
-        ON_READY,
-        this._onReady = this._onReady.bind(this),
-        true
-      );
-    } else {
-      observers.add(ON_START, this._onStart = this._onStart.bind(this));
+    
+    let self = this;
+    
+    if ('start' == this.contentScriptWhen) {
+      observers.add('document-element-inserted', 
+        function onStart(doc) {
+        
+          let window = doc.defaultView;
+          if (window && window == frame.contentWindow) {
+            observers.remove('document-element-inserted', onStart);
+            self._onInit();
+          }
+          
+        });
+      return;
     }
+    
+    let eventName = 'end' == this.contentScriptWhen ? 'load' : 'DOMContentLoaded';
+    let self = this;
+    frame.addEventListener(eventName, 
+      function _onReady(event) {
+        
+        if (event.target != frame.contentDocument)
+          return;
+        frame.removeEventListener(eventName, _onReady, true);
+        self._onInit();
+        
+      }, true);
+    
   },
+  
   /**
-   * Creates port when the DOM is ready. Called if the value of
-   * `contentScriptWhen` is "ready".
+   * Called by Symbiont itself when the frame is ready to load  
+   * content scripts according to contentScriptWhen. Overloaded by Panel. 
    */
-  _onReady: function _onReady(event) {
-    let frame = this._frame;
-    if (event.target == frame.contentDocument) {
-      frame.removeEventListener(ON_READY, this._onReady, true);
-      this._window = frame.contentWindow.wrappedJSObject;
-      this._onInit();
-    }
-  },
-  /**
-   * Creates port when the global object is created. Called if the value of
-   * `contentScriptWhen` is "start".
-   */
-  _onStart: function _onStart(domObj) {
-    let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
-    if (window && window == this._frame.contentWindow) {
-      observers.remove(ON_START, this._onStart);
-      this._window = window.wrappedJSObject;
-      this._onInit();
-    }
+  _onInit: function () {
+    this._initWorker({ window: this._frame.contentWindow.wrappedJSObject });
   }
-}, Loader);
+  
+});
 exports.Symbiont = Symbiont;
-

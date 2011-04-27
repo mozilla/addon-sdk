@@ -101,6 +101,7 @@ exports["test:communication with worker global scope"] = function(test) {
             postMessage(5);
         };
       } + '()',
+      contentScriptWhen: 'ready',
       onMessage: onMessage1
     });
     

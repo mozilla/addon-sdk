@@ -108,7 +108,7 @@ function:
 
     var selector = pageMod.PageMod({
       include: ['*'],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {
@@ -296,7 +296,6 @@ Then add the following code to the `main` function:
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
-      contentScriptWhen: 'ready',
       onMessage: function(annotationText) {
         if (annotationText) {
           console.log(this.annotationAnchor);
@@ -321,7 +320,7 @@ assign the content of the message to the panel using a new property
 
     var selector = pageMod.PageMod({
       include: ['*'],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {

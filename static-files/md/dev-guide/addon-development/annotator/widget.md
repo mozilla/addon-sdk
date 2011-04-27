@@ -70,7 +70,6 @@ Now in the `lib` directory open `main.js` and replace its contents with this:
       var widget = widgets.Widget({
         label: 'Annotator',
         contentURL: data.url('widget/pencil-off.png'),
-        contentScriptWhen: 'ready',
         contentScriptFile: data.url('widget/widget.js'),
         onMessage: function(message) {
           if (message == 'left-click') {

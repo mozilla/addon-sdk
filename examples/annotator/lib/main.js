@@ -169,7 +169,6 @@ and the text the user entered, store it, and hide the panel.
     height: 220,
     contentURL: data.url('editor/annotation-editor.html'),
     contentScriptFile: data.url('editor/annotation-editor.js'),
-    contentScriptWhen: 'ready',
     onMessage: function(annotationText) {
       if (annotationText)
         handleNewAnnotation(annotationText, this.annotationAnchor);

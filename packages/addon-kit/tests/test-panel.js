@@ -28,7 +28,7 @@ tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       panel.show();
     },
@@ -72,7 +72,7 @@ tests.testResizePanel = function(test) {
 
     let panel = Panel({
       contentScript: "postMessage('')",
-      contentScriptWhen: "ready",
+      contentScriptWhen: "end",
       height: 10,
       width: 10,
       onMessage: function (message) {
