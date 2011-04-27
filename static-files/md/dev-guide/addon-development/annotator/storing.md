@@ -48,7 +48,6 @@ presses the return key in the editor, we create and store the new annotation:
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
-      contentScriptWhen: 'ready',
       onMessage: function(annotationText) {
         if (annotationText)
           handleNewAnnotation(annotationText, this.annotationAnchor);
@@ -192,7 +191,6 @@ Here's the code to create the panel, which can go in the `main` function.
       contentURL: data.url('list/annotation-list.html'),
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('list/annotation-list.js')],
-      contentScriptWhen: 'ready',
       onShow: function() {
         this.postMessage(simpleStorage.storage.annotations);
       },
@@ -212,7 +210,6 @@ Finally we need to connect this to the widget's `right-click` message:
     var widget = widgets.Widget({
       label: 'Annotator',
       contentURL: data.url('widget/pencil-off.png'),
-      contentScriptWhen: 'ready',
       contentScriptFile: data.url('widget/widget.js'),
       onMessage: function(message) {
         if (message == 'left-click') {
@@ -313,7 +310,6 @@ function instead:
 
     var selector = pageMod.PageMod({
       include: ['*'],
-      contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {

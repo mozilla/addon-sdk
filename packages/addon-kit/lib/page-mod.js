@@ -55,7 +55,6 @@ const HAS_DOCUMENT_ELEMENT_INSERTED =
         xulApp.versionInRange(xulApp.platformVersion, "2.0b6", "*");
 const ON_CONTENT = HAS_DOCUMENT_ELEMENT_INSERTED ? 'document-element-inserted' :
                    'content-document-global-created';
-const ON_READY = 'DOMContentLoaded';
 const ERR_INCLUDE = 'The PageMod must have a string or array `include` option.';
 
 // rules registry
@@ -63,7 +62,8 @@ const RULES = {};
 
 const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
   add: function() Array.slice(arguments).forEach(function onAdd(rule) {
-    if (this._has(rule)) return;
+    if (this._has(rule))
+      return;
     // registering rule to the rules registry
     if (!(rule in RULES))
       RULES[rule] = new MatchPattern(rule);
@@ -71,7 +71,8 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
     this._emit('add', rule);
   }.bind(this)),
   remove: function() Array.slice(arguments).forEach(function onRemove(rule) {
-    if (!this._has(rule)) return;
+    if (!this._has(rule))
+      return;
     this._remove(rule);
     this._emit('remove', rule);
   }.bind(this)),
@@ -89,8 +90,6 @@ const PageMod = Loader.compose(EventEmitter, {
   contentScriptWhen: Loader.required,
   include: null,
   constructor: function PageMod(options) {
-    this._onAttach = this._onAttach.bind(this);
-    this._onReady = this._onReady.bind(this);
     this._onContent = this._onContent.bind(this);
     options = options || {};
 
@@ -124,25 +123,34 @@ const PageMod = Loader.compose(EventEmitter, {
     this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
     pageModManager.add(this._public);
   },
+
   destroy: function destroy() {
     for each (let rule in this.include)
       this.include.remove(rule);
     pageModManager.remove(this._public);
   },
+
   _onContent: function _onContent(window) {
+    // not registered yet
     if (!pageModManager.has(this))
-      return; // not registered yet
-    if ('ready' == this.contentScriptWhen)
-      window.addEventListener(ON_READY, this._onReady , false);
-    else
-      this._onAttach(window);
+      return;
+    
+    if ('start' == this.contentScriptWhen) {
+      this._createWorker(window);
+      return;
+    }
+    
+    let eventName = 'end' == this.contentScriptWhen ? 'load' : 'DOMContentLoaded';
+    let self = this;
+    window.addEventListener(eventName, function onReady(event) {
+      if (event.target.defaultView != window)
+        return;
+      window.removeEventListener(eventName, onReady, true);
+      
+      self._createWorker(window);
+    }, true);
   },
-  _onReady: function _onReady(event) {
-    let window = event.target.defaultView;
-    window.removeEventListener(ON_READY, this._onReady, false);
-    this._onAttach(window);
-  },
-  _onAttach: function _onAttach(window) {
+  _createWorker: function _createWorker(window) {
     let worker = Worker({
       window: window.wrappedJSObject,
       contentScript: this.contentScript,

@@ -19,10 +19,6 @@ and the content remains loaded when a panel is hidden, so it is possible
 to keep a panel around in the background, updating its content as appropriate
 in preparation for the next time it is shown.
 
-Panels can be anchored to a particular element in a DOM window, including both
-chrome elements, i.e. parts of the host application interface, and content
-elements, i.e. parts of a web page in an application tab.
-
 Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
@@ -184,8 +180,9 @@ The message to send.  Must be stringifiable to JSON.
 Displays the panel.
 @param [anchor] {handle}
 A handle to a DOM node in a page to which the panel should appear to be
-connected.  If not given, the panel is centered inside the most recent browser
-window.
+anchored.  If not given, the panel is centered inside the most recent browser
+window. Note that it is not currently possible to anchor panels in this way
+using only the high level APIs.
 </api>
 
 <api name="hide">

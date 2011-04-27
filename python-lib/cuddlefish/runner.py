@@ -187,7 +187,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None):
+            timeout=None, logfile=None, addons=None, norun=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -248,8 +248,13 @@ def run_app(harness_root_dir, harness_options,
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
-    env['HARNESS_OPTIONS'] = json.dumps(harness_options)
-
+    if norun:
+        cmdargs.append("-no-remote")
+        optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
+        open(optionsFile, "w").write(str(json.dumps(harness_options)))
+    else:
+        env['HARNESS_OPTIONS'] = json.dumps(harness_options)
+    
     starttime = time.time()
 
     popen_kwargs = {}
@@ -268,7 +273,12 @@ def run_app(harness_root_dir, harness_options,
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
     sys.stderr.flush()
-
+    
+    if norun:
+        print "To launch the application, enter the following command:"
+        print " ".join(runner.command) + " " + (" ".join(runner.cmdargs))
+        return 0
+    
     runner.start()
 
     done = False

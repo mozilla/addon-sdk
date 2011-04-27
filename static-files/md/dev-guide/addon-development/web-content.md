@@ -58,7 +58,7 @@ in the context of that page:
 
     pageMod.add(new pageMod.PageMod({
       include: ["*.co.uk"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'document.body.innerHTML = ' +
                      '"<h1>this page has been eaten</h1>";'
     }));
@@ -114,6 +114,9 @@ page is inserted into the DOM.
 
 * "ready" loads the scripts after the DOM for the page has been loaded. If
 your scripts need to access the DOM content you must specify "ready" here.
+
+* "end" loads the scripts after all content (DOM, JS, CSS, images) for the page 
+has been loaded. (default)
 
 ### Content script access ###
 
@@ -186,7 +189,6 @@ register as a listener in its constructor:
     panel = require("panel").Panel({
       contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
       contentScriptFile: data.url("panel.js"),
-      contentScriptWhen: "ready",
       // Register the handleMessage function as a listener
       onMessage: function handleMessage(message) {
         // Handle the message
@@ -218,7 +220,7 @@ post messages back to the content script:
 
     require("page-mod").PageMod({
       include: ["*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScriptFile:  data.url("pagemod.js"),
       onAttach: function onAttach(worker, mod) {
         // Register the handleMessage function as a listener
@@ -257,7 +259,6 @@ This is the complete add-on script:
         contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
         contentScriptFile: [data.url("jquery-1.4.2.min.js"),
                            data.url("panel.js")],
-        contentScriptWhen: "ready",
         onMessage: function(message) {
           require("tabs").open(message);
         }

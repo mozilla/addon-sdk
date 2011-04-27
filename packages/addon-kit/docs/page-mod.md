@@ -49,13 +49,13 @@ loaded:
       contentScript: 'window.alert("Page matches ruleset");'
     });
 
-If you specify a value of "ready" for `contentScriptWhen` then the content
-script can interact with the DOM itself:
+If you specify a value of "ready" or "end" for `contentScriptWhen`,
+then the content script can interact with the DOM itself:
 
     var pageMod = require("page-mod");
     pageMod.PageMod({
       include: "*.org",
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
@@ -90,7 +90,7 @@ This is demonstrated in the following example:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: "onMessage = function onMessage(message) {" +
                      "  window.alert(message);};",
       onAttach: function onAttach(worker) {
@@ -132,7 +132,7 @@ attached and registers a listener function that simply logs the message:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: ["postMessage('Content script 1 is attached to '+ " +
                       "document.URL);",
                       "postMessage('Content script 2 is attached to '+ " +
@@ -233,9 +233,11 @@ Creates a PageMod.
     Optional.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.  Optional.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+    Possible values are "end" (default), which loads them once all page contents 
+    have been loaded, "ready", which loads them once DOM nodes are 
+    ready (i.e. like DOMContentLoaded event), and "start", which loads them once
+    the `window` object for the page has been created, but before any scripts 
+    specified by the page have been loaded.
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`

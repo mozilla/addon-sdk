@@ -12,7 +12,6 @@ exports.main = function(options, callbacks) {
       contentURL: "http://www.reddit.com/.mobile?keep_extension=True",
       contentScriptFile: [data.url("jquery-1.4.4.min.js"),
                           data.url("panel.js")],
-      contentScriptWhen: "ready",
       onMessage: function(message) {
         require("tabs").open(message);
       }

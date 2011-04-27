@@ -291,7 +291,7 @@ class FirefoxProfile(Profile):
     @property
     def names(self):
         if sys.platform == 'darwin':
-            return ['firefox', 'minefield', 'shiretoko']
+            return ['firefox', 'nightly', 'shiretoko']
         if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
             return ['firefox', 'mozilla-firefox', 'iceweasel']
         if os.name == 'nt' or sys.platform == 'cygwin':
@@ -375,8 +375,8 @@ class Runner(object):
                 if binary is None:
                     for bin in [(program_files, 'Mozilla Firefox', 'firefox.exe'),
                                 (os.environ.get("ProgramFiles(x86)"),'Mozilla Firefox', 'firefox.exe'),
-                                (program_files,'Minefield', 'firefox.exe'),
-                                (os.environ.get("ProgramFiles(x86)"),'Minefield', 'firefox.exe')
+                                (program_files,'Nightly', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Nightly', 'firefox.exe')
                                 ]:
                         path = os.path.join(*bin)
                         if os.path.isfile(path):
@@ -480,7 +480,7 @@ class FirefoxRunner(Runner):
     @property
     def names(self):
         if sys.platform == 'darwin':
-            return ['firefox', 'minefield', 'shiretoko']
+            return ['firefox', 'nightly', 'shiretoko']
         if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
             return ['firefox', 'mozilla-firefox', 'iceweasel']
         if os.name == 'nt' or sys.platform == 'cygwin':

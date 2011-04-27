@@ -111,6 +111,11 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['run', 'xpi'])),
+        (("", "--package-path",), dict(dest="packagepath", action="append",
+                                       help="extra directories for package search",
+                                       metavar=None,
+                                       default=[],
+                                       cmds=['run', 'xpi', 'test'])),
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
@@ -143,6 +148,15 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test', 'testex', 'testpkgs',
                                            'testall'])),
+        (("", "--no-run",), dict(dest="no_run",
+                                     help=("Instead of launching the "
+                                           "application, just show the command "
+                                           "for doing so.  Use this to launch "
+                                           "the application in a debugger like "
+                                           "gdb."),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
         ]
      ),
 
@@ -406,19 +420,19 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','tests','docs']:
+    for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
     print >>out, '* README.md written'
     open('package.json','w').write(PACKAGE_JSON % {'name':addon})
     print >>out, '* package.json written'
-    open(os.path.join(path,'tests','test-main.js'),'w').write(TEST_MAIN_JS)
-    print >>out, '* tests/test-main.js written'
+    open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
+    print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
-    print >>out, '* docs/main.md written'
+    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
+    print >>out, '* doc/main.md written'
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
@@ -530,7 +544,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             sys.exit(1)
 
     if not pkg_cfg:
-        pkg_cfg = packaging.build_config(env_root, target_cfg)
+        pkg_cfg = packaging.build_config(env_root, target_cfg, options.packagepath)
 
     target = target_cfg.name
 
@@ -716,7 +730,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              verbose=options.verbose,
                              timeout=timeout,
                              logfile=options.logfile,
-                             addons=options.addons)
+                             addons=options.addons,
+                             norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()

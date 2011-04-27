@@ -1,6 +1,7 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
+const timer = require("timer");
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL
@@ -41,13 +42,19 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
 
   function onPageLoad() {
     b.removeEventListener("load", onPageLoad, true);
-    testCallback(b.contentWindow.wrappedJSObject, function done() {
-      pageMods.forEach(function(mod) mod.destroy());
-      // XXX leaks reported if we don't close the tab?
-      tabBrowser.removeTab(newTab);
-      loader.unload();
-      test.done();
-    });
+    // Delay callback execute as page-mod content scripts may be executed on
+    // load event. So page-mod actions may not be already done.
+    // If we delay even more contentScriptWhen:'end', we may want to modify
+    // this code again.
+    timer.setTimeout(testCallback, 0,
+      b.contentWindow.wrappedJSObject, 
+      function done() {
+        pageMods.forEach(function(mod) mod.destroy());
+        // XXX leaks reported if we don't close the tab?
+        tabBrowser.removeTab(newTab);
+        loader.unload();
+        test.done();
+      });
   }
   b.addEventListener("load", onPageLoad, true);
 

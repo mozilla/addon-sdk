@@ -55,6 +55,7 @@ const url = require("url");
 const { MatchPattern } = require("match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("events");
 const observerServ = require("observer-service");
+const jpSelf = require("self");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -75,15 +76,15 @@ const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_THRESH_PREF =
   "extensions.addon-sdk.context-menu.overflowThreshold";
 
-// The label of the overflow sub-<menu>.
+// The label of the overflow sub-xul:menu.
 //
 // TODO: Localize this.
 const OVERFLOW_MENU_LABEL = "Add-ons";
 
-// The ID of the overflow sub-<menu>.
+// The ID of the overflow sub-xul:menu.
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 
-// The ID of the overflow submenu's <menupopup>.
+// The ID of the overflow submenu's xul:menupopup.
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
 // These are used by PageContext.isCurrent below.  If the popupNode or any of
@@ -113,6 +114,10 @@ const NON_PAGE_CONTEXT_ELTS = [
 const PRIVATE_PROPS_KEY = {
   valueOf: function valueOf() "private properties key"
 };
+
+// Used as an internal ID for items and as part of a public ID for item DOM
+// elements.
+let nextItemID = 0;
 
 exports.Item = apiUtils.publicConstructor(Item);
 exports.Menu = apiUtils.publicConstructor(Menu);
@@ -157,8 +162,8 @@ function Menu(options) {
     return '[object Menu "' + options.label + '"]';
   };
 
-  browserManager.addItem(this);
   options.items.forEach(function (i) browserManager.removeItem(i));
+  browserManager.addItem(this);
 }
 
 function Separator() {
@@ -321,9 +326,12 @@ function optionsRules() {
 // item is the Item or Menu object on which to define the properties, and
 // options is a validated options object.
 function defineItemProps(item, options) {
-  // TODO: Add setter for label?  It would require finding the item's DOM
-  // element and changing its attributes as well.
   item.__defineGetter__("label", function () options.label);
+  item.__defineSetter__("label", function setItemLabel(val) {
+    let { label } = apiUtils.validateOptions({ label: val }, optionsRules());
+    options.label = label;
+    browserManager.setItemLabel(item, label);
+  });
 
   // Stupid ternaries to avoid Spidermonkey strict warnings.
   item.__defineGetter__("contentScript", function () {
@@ -341,7 +349,8 @@ function defineItemProps(item, options) {
   // Create a private properties object for the item.
   let privateProps = {
     eventEmitter: EventEmitter.create(item),
-    workerReg: new WorkerRegistry(item)
+    workerReg: new WorkerRegistry(item),
+    id: nextItemID++
   };
 
   // This makes the private properties accessible to anyone with access to the
@@ -413,6 +422,20 @@ function insertionPoint(targetLabel, elts) {
   return elts[from] || null;
 }
 
+// Builds an ID suitable for a DOM element from the given item ID.  The optional
+// suffix will be appended to the returned ID.
+function domEltIDFromItemID(itemID, suffix) {
+  suffix = suffix || "";
+  if (!/^[-a-z]*$/.test(suffix))
+    throw new Error("Internal error: suffix must match the regexp [-a-z]*");
+  return jpSelf.id + "-context-menu-item-" + itemID + suffix;
+}
+
+// Parses the item ID out of the given DOM element ID and returns it.
+function itemIDFromDOMEltID(domEltID) {
+  return Number(/([0-9]+)[-a-z]*$/.exec(domEltID)[1]);
+}
+
 
 // Keeps track of all browser windows.
 let browserManager = {
@@ -425,6 +448,12 @@ let browserManager = {
   addItem: function browserManager_addItem(item) {
     this.items.push(item);
     this.windows.forEach(function (w) w.addItems([item]));
+  },
+
+  // Sets the given item's label in all the browser windows.  See
+  // ContextMenuPopup.setItemLabel.
+  setItemLabel: function browserManager_setItemLabel(item, label) {
+    this.windows.forEach(function (w) w.setItemLabel(item, label));
   },
 
   // Registers the manager to listen for window openings and closings.  Note
@@ -503,16 +532,16 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._port._listeners("context").length > 0;
+    return this._contentWorker._listeners("context").length > 0;
   },
 
   // Returns true if any of the context listeners in the worker's port return
   // true.  popupNode is the node that was context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._port._listeners("context");
+    let listeners = this._contentWorker._listeners("context");
     for (let i = 0; i < listeners.length; i++) {
       try {
-        if (listeners[i].call(this._port._sandbox, popupNode))
+        if (listeners[i].call(this._contentWorker._sandbox, popupNode))
           return true;
       }
       catch (err) {
@@ -526,7 +555,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._port._emit("click", popupNode, clickedItemData);
+    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
   }
 });
 
@@ -663,12 +692,6 @@ function BrowserWindow(window) {
 
   // Listen for page loads on the tabbrowser so we can create workers.
   window.gBrowser.addEventListener("DOMContentLoaded", this, false);
-
-  // Register content windows that are already open and loaded.
-  let browsers = window.gBrowser.browsers;
-  for (let i = 0; i < browsers.length; i++)
-    if (browsers[i].contentDocument.readyState === "complete")
-      this._registerContentWin(browsers[i].contentWindow);
 }
 
 BrowserWindow.prototype = {
@@ -676,6 +699,23 @@ BrowserWindow.prototype = {
   // Adds an array of items to the window's context menu.
   addItems: function BW_addItems(items) {
     this.contextMenuPopup.addItems(items);
+
+    // Register all open and loaded content windows in this browser window with
+    // each item's worker registry.
+    items.forEach(function (item) {
+      this.window.gBrowser.browsers.forEach(function (browser) {
+        if (browser.contentDocument.readyState === "complete") {
+          item.valueOf(PRIVATE_PROPS_KEY).workerReg.
+            registerContentWin(browser.contentWindow);
+        }
+      }, this);
+    }, this);
+  },
+
+  // Sets the given item's label in the browser window's context menu.  See
+  // ContextMenuPopup.setItemLabel.
+  setItemLabel: function BW_setItemLabel(item, label) {
+    this.contextMenuPopup.setItemLabel(item, label);
   },
 
   // The context specified for a top-level item may not match exactly the real
@@ -783,8 +823,8 @@ BrowserWindow.prototype = {
 
 
 // Represents a container of items that's the child of the given Menu and Popup.
-// popupElt is a <menupopup> that represents the popup in the DOM, and window is
-// the BrowserWindow containing the popup.  The popup is responsible for
+// popupElt is a xul:menupopup that represents the popup in the DOM, and window
+// is the BrowserWindow containing the popup.  The popup is responsible for
 // creating and adding items to poupElt and handling command events.
 function Popup(parentMenu, parentPopup, popupElt, window) {
   this.parentMenu = parentMenu;
@@ -793,8 +833,8 @@ function Popup(parentMenu, parentPopup, popupElt, window) {
   this.window = window;
   this.doc = popupElt.ownerDocument;
 
-  // Keeps track of the DOM elements owned by this popup: { item, elt }.
-  this.itemWrappers = [];
+  // item ID => { item, domElt }
+  this.items = {};
 
   popupElt.addEventListener("command", this, false);
 }
@@ -803,11 +843,14 @@ Popup.prototype = {
 
   // Adds an array of items to the popup.
   addItems: function Popup_addItems(items) {
-    for (let i = 0; i < items.length; i++) {
-      let wrapper = { item: items[i], elt: this._makeItemElt(items[i]) };
-      this.itemWrappers.push(wrapper);
-      this.popupElt.appendChild(wrapper.elt);
-    }
+    items.forEach(function (item) {
+      let domElt = this._makeItemElt(item);
+      this.items[item.valueOf(PRIVATE_PROPS_KEY).id] = {
+        item: item,
+        domElt: domElt
+      };
+      this.popupElt.appendChild(domElt);
+    }, this);
   },
 
   // Undoes all modifications to the popup.  The popup should not be used
@@ -827,9 +870,9 @@ Popup.prototype = {
         // If the event originated at an item in the popup, dispatch a click.
         // Also set Popup.clickedItem and popupNode so ancestor popups know
         // which item was clicked and under what context.
-        let childItemWrapper = this._findItemWrapper(elt);
-        if (childItemWrapper) {
-          let clickedItem = childItemWrapper.item;
+        let itemID = itemIDFromDOMEltID(elt.id);
+        if (itemID in this.items) {
+          let clickedItem = this.items[itemID].item;
           let topLevelItem = this._topLevelItem(clickedItem);
           let popupNode = this.window.adjustPopupNode(this.window.popupNode,
                                                       topLevelItem);
@@ -850,24 +893,11 @@ Popup.prototype = {
     }
   },
 
-  // Returns true if the DOM element is owned by the wrapper.
-  _eltMatchesItemWrapper: function Popup__eltMatchesItemWrap(elt, itemWrapper) {
-    return elt == itemWrapper.elt;
-  },
-
-  // Given a DOM element, returns the item wrapper that owns it or null if none.
-  _findItemWrapper: function Popup__findItemWrapper(elt) {
-    for (let i = 0; i < this.itemWrappers.length; i++) {
-      let wrapper = this.itemWrappers[i];
-      if (this._eltMatchesItemWrapper(elt, wrapper))
-        return wrapper;
-    }
-    return null;
-  },
-
   // Returns a DOM element representing the item.  All elements will have the
-  // ITEM_CLASS class, and className can optionally be used to add another.
-  _makeItemElt: function Popup__makeItemElt(item, className) {
+  // ITEM_CLASS class, and className can optionally be used to add another.  The
+  // element will have a unique ID.  idSuffix, if given, will be appended to the
+  // ID.
+  _makeItemElt: function Popup__makeItemElt(item, className, idSuffix) {
     let elt = item instanceof Item ? this._makeMenuitem(item, className) :
               item instanceof Menu ? this._makeMenu(item, className) :
               item instanceof Separator ? this._makeSeparator(className) :
@@ -875,10 +905,11 @@ Popup.prototype = {
     if (!elt)
       throw new Error("Internal error: can't make element, unknown item type");
 
+    elt.id = domEltIDFromItemID(item.valueOf(PRIVATE_PROPS_KEY).id, idSuffix);
     return elt;
   },
 
-  // Returns a new <menu> representing the menu.
+  // Returns a new xul:menu representing the menu.
   _makeMenu: function Popup__makeMenu(menu, className) {
     let menuElt = this.doc.createElement("menu");
     menuElt.className = ITEM_CLASS + (className ? " " + className : "");
@@ -894,7 +925,7 @@ Popup.prototype = {
     return menuElt;
   },
 
-  // Returns a new <menuitem> representing the item.
+  // Returns a new xul:menuitem representing the item.
   _makeMenuitem: function Popup__makeMenuitem(item, className) {
     let elt = this.doc.createElement("menuitem");
     elt.className = ITEM_CLASS + (className ? " " + className : "");
@@ -904,7 +935,7 @@ Popup.prototype = {
     return elt;
   },
 
-  // Returns a new <menuseparator>.
+  // Returns a new xul:menuseparator.
   _makeSeparator: function Popup__makeSeparator(className) {
     let elt = this.doc.createElement("menuseparator");
     elt.className = ITEM_CLASS + (className ? " " + className : "");
@@ -933,42 +964,48 @@ function ContextMenuPopup(popupElt, window) {
 
   // Adds an array of items to the popup.
   this.addItems = function CMP_addItems(items) {
-    // Don't do anything if there are no items.
-    if (items.length) {
-      ensureStaticEltsExist();
-      ensureListeningForPopups();
+    if (!items.length)
+      return;
 
-      // Add each item to the top-level menu and the overflow submenu.
-      let submenuPopup = overflowPopup();
-      for (let i = 0; i < items.length; i++) {
-        let item = items[i];
-        let wrapper = {
-          item: item,
-          elt: this._makeItemElt(item, TOPLEVEL_ITEM_CLASS),
-          overflowElt: this._makeItemElt(item, OVERFLOW_ITEM_CLASS)
-        };
-        this.itemWrappers.push(wrapper);
+    ensureStaticEltsExist();
+    ensureListeningForPopups();
 
-        let targetElt = insertionPoint(item.label, topLevelElts());
-        this.popupElt.insertBefore(wrapper.elt, targetElt);
+    // Add each item to the top-level menu and the overflow submenu.
+    items.forEach(function (item) {
+      let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+      let domElt = self._makeItemElt(item, TOPLEVEL_ITEM_CLASS);
+      let overflowDOMElt = self._makeItemElt(item, OVERFLOW_ITEM_CLASS,
+                                             "-overflow");
+      self.items[itemID] = {
+        item: item,
+        domElt: domElt,
+        overflowDOMElt: overflowDOMElt
+      };
+      insertItemInSortedOrder(item);
+    }, self);
+  };
 
-        targetElt = insertionPoint(item.label, overflowElts());
-        submenuPopup.insertBefore(wrapper.overflowElt, targetElt);
-      }
-    }
+  // Sets the given item's label if the item has a DOM element.  The item is
+  // re-inserted into the popup so that it remains in sorted order.  If the item
+  // has no DOM element yet, does nothing.
+  this.setItemLabel = function CMP_setItemLabel(item, label) {
+    let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+    if (!(itemID in self.items))
+      return;
+
+    let { domElt, overflowDOMElt } = self.items[itemID];
+    domElt.parentNode.removeChild(domElt);
+    overflowDOMElt.parentNode.removeChild(overflowDOMElt);
+    domElt.setAttribute("label", label);
+    overflowDOMElt.setAttribute("label", label);
+    insertItemInSortedOrder(item);
   };
 
   // Undoes all modifications to the popup.  The popup should not be used
   // afterward.
   this.destroy = function CMP_destroy() {
-    // Remove all the items registered with this instance of the module from the
-    // top-level menu and overflow submenu.
-    let submenuPopup = overflowPopup();
-    for (let i = 0; i < this.itemWrappers.length; i++) {
-      this.popupElt.removeChild(this.itemWrappers[i].elt);
-      if (submenuPopup)
-        submenuPopup.removeChild(this.itemWrappers[i].overflowElt);
-    }
+    for each (let { item } in self.items)
+      self.removeItems([item]);
 
     // If there are no more items from any instance of the module, remove the
     // separator and overflow submenu, if they exist.
@@ -976,19 +1013,19 @@ function ContextMenuPopup(popupElt, window) {
     if (!elts.length) {
       let submenu = overflowMenu();
       if (submenu)
-        this.popupElt.removeChild(submenu);
+        self.popupElt.removeChild(submenu);
 
       let sep = separator();
       if (sep)
-        this.popupElt.removeChild(sep);
+        self.popupElt.removeChild(sep);
     }
 
     // Remove event listeners.
-    if (this._listeningForPopups) {
-      this.popupElt.removeEventListener("popupshowing", this, false);
-      delete this._listeningForPopups;
+    if (self._listeningForPopups) {
+      self.popupElt.removeEventListener("popupshowing", self, false);
+      delete self._listeningForPopups;
     }
-    this.__proto__.destroy.call(this);
+    self.__proto__.destroy.call(self);
   };
 
   // The context menu popup needs to handle popupshowing in addition to command
@@ -997,7 +1034,7 @@ function ContextMenuPopup(popupElt, window) {
   // is responsible for showing and hiding the items it owns.
   this.handleEvent = function CMP_handleEvent(event) {
     if (event.type === "command") {
-      this.__proto__.handleEvent.call(this, event);
+      self.__proto__.handleEvent.call(self, event);
     }
     else if (event.type === "popupshowing" && event.target === popupElt) {
       try {
@@ -1008,14 +1045,13 @@ function ContextMenuPopup(popupElt, window) {
 
         // Show and hide items.  Set a "jetpackContextCurrent" property on the
         // DOM elements to signal which of our items match the current context.
-        this.itemWrappers.forEach(function (wrapper) {
-          let contextCurr = window.areAllContextsCurrent(wrapper.item,
-                                                         popupNode);
-          wrapper.elt.jetpackContextCurrent = contextCurr;
-          wrapper.overflowElt.jetpackContextCurrent = contextCurr;
-          wrapper.elt.hidden = !contextCurr;
-          wrapper.overflowElt.hidden = !contextCurr;
-        });
+        for each (let { item, domElt, overflowDOMElt } in self.items) {
+          let contextCurr = window.areAllContextsCurrent(item, popupNode);
+          domElt.jetpackContextCurrent = contextCurr;
+          domElt.hidden = !contextCurr;
+          overflowDOMElt.jetpackContextCurrent = contextCurr;
+          overflowDOMElt.hidden = !contextCurr;
+        }
 
         // Get the total number of items that match the current context.  It's a
         // little tricky:  There may be other instances of this module loaded,
@@ -1051,25 +1087,13 @@ function ContextMenuPopup(popupElt, window) {
 
   // Removes an array of items from the popup.
   this.removeItems = function CMP_removeItems(items) {
-    let overPopup = overflowPopup();
-    for (let i = 0; i < items.length; i++) {
-      let idx = indexOfItemWrapper(items[i]);
-      if (idx < 0) {
-        // Don't throw here; continue the loop.
-        let err = new Error("Internal error: item for removal not found.");
-        console.exception(err);
-      }
-
-      let wrapper = this.itemWrappers[idx];
-      this.popupElt.removeChild(wrapper.elt);
-      overPopup.removeChild(wrapper.overflowElt);
-      this.itemWrappers.splice(idx, 1);
-    }
-  };
-
-  // Returns true if the DOM element is owned by the wrapper.
-  this._eltMatchesItemWrapper = function CMP__eltMatchesWrap(elt, itemWrapper) {
-    return elt == itemWrapper.elt || elt == itemWrapper.overflowElt;
+    items.forEach(function (item) {
+      let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+      let { domElt, overflowDOMElt } = self.items[itemID];
+      domElt.parentNode.removeChild(domElt);
+      overflowDOMElt.parentNode.removeChild(overflowDOMElt);
+      delete self.items[itemID];
+    }, self);
   };
 
   // Adds the popupshowing listener if it hasn't been added already.
@@ -1095,16 +1119,16 @@ function ContextMenuPopup(popupElt, window) {
     }
   }
 
-  // Returns the index of the item wrapper containing item, -1 if none.
-  function indexOfItemWrapper(item) {
-    for (let i = 0; i < self.itemWrappers.length; i++) {
-      if (self.itemWrappers[i].item === item)
-        return i;
-    }
-    return -1;
+  // Inserts the given item's DOM element into the popup in sorted order.
+  function insertItemInSortedOrder(item) {
+    let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+    self.popupElt.insertBefore(self.items[itemID].domElt,
+                               insertionPoint(item.label, topLevelElts()));
+    overflowPopup().insertBefore(self.items[itemID].overflowDOMElt,
+                                 insertionPoint(item.label, overflowElts()));
   }
 
-  // Creates and returns the <menu> that's shown when too many items are added
+  // Creates and returns the xul:menu that's shown when too many items are added
   // to the popup.
   function makeOverflowMenu() {
     let submenu = self.doc.createElement("menu");
@@ -1116,8 +1140,8 @@ function ContextMenuPopup(popupElt, window) {
     return submenu;
   }
 
-  // Creates and returns the <menuseparator> that separates the standard context
-  // menu items from our items.
+  // Creates and returns the xul:menuseparator that separates the standard
+  // context menu items from our items.
   function makeSeparator() {
     let elt = self.doc.createElement("menuseparator");
     elt.id = SEPARATOR_ID;
@@ -1129,12 +1153,12 @@ function ContextMenuPopup(popupElt, window) {
     return overflowPopup().getElementsByClassName(OVERFLOW_ITEM_CLASS);
   }
 
-  // Returns the overflow <menu>.
+  // Returns the overflow xul:menu.
   function overflowMenu() {
     return self.doc.getElementById(OVERFLOW_MENU_ID);
   }
 
-  // Returns the overflow <menupopup>.
+  // Returns the overflow xul:menupopup.
   function overflowPopup() {
     return self.doc.getElementById(OVERFLOW_POPUP_ID);
   }
@@ -1146,7 +1170,7 @@ function ContextMenuPopup(popupElt, window) {
     return prefs.get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
   }
 
-  // Returns the <menuseparator>.
+  // Returns the xul:menuseparator.
   function separator() {
     return self.doc.getElementById(SEPARATOR_ID);
   }
