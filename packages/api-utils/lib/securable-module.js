@@ -203,43 +203,78 @@
      this.sandboxes = {};
      this.modules = {};
      this.pathAccessed = options.pathAccessed;
-     this.pathToModule = {};
      this.defineUsed = {};
      this.globals = options.globals;
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
-     this.manifest = options.manifest;
-     if (this.manifest === undefined)
-       this.manifest = {};
+     this.manifest = options.manifest || {};
    };
 
    exports.Loader.prototype = {
      _makeApi: function _makeApi(basePath) {
+       /*
+        * _makeApi() creates a pair of specialized require()/define()
+        * functions for use by the code that comes from 'basePath' (which is
+        * a resource: URI pointing to some module, e.g. main.js). This
+        * require/define pair knows what main.js is allowed to import, in
+        * particular it knows what the link-time module search algorithm has
+        * found for each imported name (so if they require "panel", they'll
+        * get the one from addon-kit, not from some other package).
+        * 
+        * When some other module (e.g. panel.js) is loaded, they'll get a
+        * different require/define pair, specialized for them.
+        */
        var self = this;
+       let reqs;
+       if (basePath && (basePath in self.manifest))
+         reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
-         if (!basePath || (! (basePath in self.manifest))) {
-           // if we don't know about you, you can do anything you want.
-           // You're going to have to search for your own modules, though.
-           return loadMaybeMagicModule(module, null);
-         } else {
-           // if we do know about you, you must follow the manifest..
-           let reqs = self.manifest[basePath].requirements;
+         if (reqs) {
+           // if we know about you, you must follow the manifest
            if (module in reqs)
              return loadMaybeMagicModule(module, reqs[module]);
+           // if you invoke chrome, you can go off-manifest and search
            if ("chrome" in reqs)
              return loadMaybeMagicModule(module, null);
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
+         } else {
+           // if we don't know about you, you can do anything you want.
+           // You're going to have to search for your own modules, though.
+           return loadMaybeMagicModule(module, null);
          }
        }
 
-       function loadMaybeMagicModule(module, moduleData) {
+       function loadMaybeMagicModule(moduleName, moduleData) {
+         /*
+          * If we get here, we're allowed to import this module, we just have
+          * to figure out how.
+          * 
+          * 'moduleName' is the unmodified argument passed to require(),
+          * so it might be "panel" or "pkg/foo" or even "./bar" for relative
+          * imports. 'moduleData' is the manifest entry that tells us how
+          * we're supposed to import this module: usually it's an object with
+          * a .uri, but for certain "magic" modules it might be empty. If
+          * it's 'null' then we're supposed to search all known packages for
+          * it.
+          */
+
          if (self.getModuleExports) {
-           let exports = self.getModuleExports(basePath, module);
+           /* this currently handles 'chrome' and 'parent-loader' */
+           let exports = self.getModuleExports(basePath, moduleName);
            if (exports)
              return exports;
          }
-         if (module == "self") {
+         if (moduleName == "self") {
+           /* The 'self' module is magic: when someone requires 'self', the
+            * module they get is supposed to be specialized for the *package*
+            * that they live in (so pkg1/foo.js will get 'self' for pkg1,
+            * while pkg2/bar.js will get a 'self' for pkg2). To accomplish
+            * this, we don't give them the real self.js module directly:
+            * instead, we load self.js and invoke its makeSelfModule()
+            * function, passing in the manifest's moduleData, which will
+            * include enough information to create the specialized module.
+            */
            if (!moduleData) {
              // we don't know where you live, so we must search for your data
              // resource://api-utils-api-utils-tests/test-self.js
@@ -261,13 +296,19 @@
 
          if (!moduleData) {
            // search
-           let path = self.fs.resolveModule(basePath, module);
+           let path = self.fs.resolveModule(basePath, moduleName);
            if (!path)
-             throw new Error('Module "' + module + '" not found');
+             throw new Error('Module "' + moduleName + '" not found');
            moduleData = {uri: path};
          }
 
-         // Track accesses to this module via its normalized path
+         // Track accesses to this module via its normalized path. This lets
+         // us detect cases where foo.js uses define() with a callback that
+         // wants to return a new value for the 'foo' module, but something
+         // inside that callback (probably in some sub-function) references
+         // 'foo' too early. If this happens, we throw an exception when the
+         // callback finishes. The code for that is in define() below: search
+         // for self.pathAccessed .
          if (!self.pathAccessed[moduleData.uri]) {
            self.pathAccessed[moduleData.uri] = 0;
          }
@@ -286,9 +327,6 @@
          }
          // any manifest-based permission checks have already been done
          let path = moduleData.uri;
-
-         // Remember the name of the module as it maps to its path
-         //self.pathToModule[path] = module;
 
          let moduleContents = self.fs.getFile(path);
          var sandbox = self.sandboxFactory.createSandbox(moduleContents);
