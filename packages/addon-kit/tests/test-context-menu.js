@@ -43,6 +43,8 @@ let {Cc,Ci} = require("chrome");
 const ITEM_CLASS = "jetpack-context-menu-item";
 const SEPARATOR_ID = "jetpack-context-menu-separator";
 const OVERFLOW_THRESH_DEFAULT = 10;
+const OVERFLOW_THRESH_PREF =
+  "extensions.addon-sdk.context-menu.overflowThreshold";
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
@@ -1130,6 +1132,106 @@ exports.testLoadWithOpenTab = function (test) {
 };
 
 
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu.
+exports.testSetLabelBeforeShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu.
+exports.testSetLabelAfterShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelBeforeShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelAfterShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+      test.done();
+    });
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1427,7 +1529,9 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader();
+    let loader = this.test.makeSandboxedLoader({
+      globals: { packaging: packaging }
+    });
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
@@ -1446,7 +1550,11 @@ TestHelper.prototype = {
 
   // Returns true if the number of presentItems crosses the overflow threshold.
   shouldOverflow: function (presentItems) {
-    return presentItems.length > OVERFLOW_THRESH_DEFAULT;
+    return presentItems.length >
+           (this.loaders.length ?
+            this.loaders[0].loader.require("preferences-service").
+              get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT) :
+            OVERFLOW_THRESH_DEFAULT);
   },
 
   // Opens the context menu on the current page.  If targetNode is null, the

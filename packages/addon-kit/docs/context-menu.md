@@ -174,12 +174,13 @@ context listener returns true.
 Handling Menu Item Clicks
 -------------------------
 
-When the user clicks your menu item, an event named `"click"` is dispatched to
-the item's content script.  Content scripts let you interact with pages in the
-browser, and they also let you handle menu item clicks.
+In addition to using content scripts to listen for the `"context"` event as
+described above, you use content scripts to handle item clicks.  When the user
+clicks your menu item, an event named `"click"` is dispatched to the item's
+content script.
 
-Therefore, to handle a click, listen for `"click"` events in your content
-script like so:
+Therefore, to handle an item click, listen for the `"click"` event in that
+item's content script like so:
 
     var myItem = contextMenu.Item({
       label: "My Item",
@@ -329,6 +330,18 @@ Google or Wikipedia with the text contained in the anchor:
       items: [googleItem, wikipediaItem]
     });
 
+Dynamically set an item's label based on the number of times it's been clicked:
+
+    var numClicks = 0;
+    contextMenu.Item({
+      label: "Click Me: " + numClicks,
+      contentScript: 'self.on("click", postMessage);',
+      onMessage: function () {
+        this.label = "Click Me: " + (++numClicks);
+      }
+    });
+
+
 <api name="Item">
 @class
 A labeled menu item that can perform an action when clicked.
@@ -362,6 +375,35 @@ A labeled menu item that can perform an action when clicked.
     be called when the content script calls `postMessage`.  It will be passed
     the data that was passed to `postMessage`.  Ignored if the item is contained
     in a submenu.
+</api>
+<api name="label">
+@property {string}
+  The menu item's label.  You can set this after creating the item to update its
+  label later.
+</api>
+<api name="data">
+@property {string}
+  An arbitrary value associated with the menu item during creation.  Currently
+  this property is read-only.
+</api>
+<api name="context">
+@property {list}
+  A list of declarative contexts for which the menu item will appear in the
+  context menu.  Contexts can be added by calling `context.add()` and removed by
+  called `context.remove()`.  This property is meaningful only for items
+  contained in the top-level context menu.
+</api>
+<api name="contentScript">
+@property {string,array}
+  The content script or the array of content scripts associated with the menu
+  item during creation.  This property is meaningful only for items contained in
+  the top-level context menu.
+</api>
+<api name="contentScriptFile">
+@property {string,array}
+  The URL of a content script or the array of such URLs associated with the menu
+  item during creation.  This property is meaningful only for items contained in
+  the top-level context menu.
 </api>
 <api name="destroy">
 @method
@@ -402,6 +444,35 @@ A labeled menu item that expands into a submenu.
     be called when the content script calls `postMessage`.  It will be passed
     the data that was passed to `postMessage`.  Ignored if the item is contained
     in a submenu.
+</api>
+<api name="label">
+@property {string}
+  The menu's label.  You can set this after creating the menu to update its
+  label later.
+</api>
+<api name="items">
+@property {array}
+  The menu items contained in the menu.  Currently the items in the menu cannot
+  be changed by modifying this property.
+</api>
+<api name="context">
+@property {list}
+  A list of declarative contexts for which the menu will appear in the context
+  menu.  Contexts can be added by calling `context.add()` and removed by called
+  `context.remove()`.  This property is meaningful only for menus contained in
+  the top-level context menu.
+</api>
+<api name="contentScript">
+@property {string,array}
+  The content script or the array of content scripts associated with the menu
+  during creation.  This property is meaningful only for menus contained in the
+  top-level context menu.
+</api>
+<api name="contentScriptFile">
+@property {string,array}
+  The URL of a content script or the array of such URLs associated with the menu
+  during creation.  This property is meaningful only for menus contained in the
+  top-level context menu.
 </api>
 <api name="destroy">
 @method
