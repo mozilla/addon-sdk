@@ -76,6 +76,7 @@ const LightTrait = require('light-traits').Trait;
 const { Loader, Symbiont } = require("content");
 const timer = require("timer");
 const { Cortex } = require('cortex');
+const windowsAPI = require("windows");
 
 // Data types definition
 const valid = {
@@ -265,7 +266,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._views.push(view);
     
     // Emit an `attach` event with a WidgetView instance without private attrs
-    this._emit("attach", Cortex(view));
+    this._emit("attach", view._public);
     
     return view;
   },
@@ -275,7 +276,16 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     let idx = this._views.indexOf(view);
     this._views.splice(idx, 1);
   },
-
+  
+  getView: function Widget_getView(window) {
+    for (let i = this._views.length-1; i>=0; i--) {
+      let view = this._views[i];
+      if (view._isInWindow(window))
+        return view._public;
+    }
+    return null;
+  },
+  
   postMessage: function Widget_postMessage(message) {
     this._views.forEach(function(v) v.postMessage(message));
   },
@@ -321,6 +331,10 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   // set right after constructor call
   _chrome: null,
   
+  // Public interface of the WidgetView, passed in `attach` event or in
+  // Widget.getView
+  _public: null,
+  
   _initWidgetView: function WidgetView__initWidgetView(mainWidget) {
     this._mainWidget = mainWidget;
     
@@ -329,6 +343,8 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this.on('error', this._defaultErrorHandler.bind(this));
     
     this.on('change', this._onChange.bind(this));
+    
+    this._public = Cortex(this);
   },
   
   _onChange: function WidgetView__onChange(name, value) {
@@ -351,12 +367,21 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._emit(type, eventData);
     
     // And forward it to the main Widget object
-    this._mainWidget._onEvent(type, eventData);
+    if ("click" == type || type.indexOf("mouse") == 0)
+      this._mainWidget._onEvent(type, this._public);
+    else
+      this._mainWidget._onEvent(type, eventData);
 
     // Special case for click events: if the widget doesn't have a click
     // handler, but it does have a panel, display the panel.
     if ("click" == type && !this._listeners("click").length && this.panel)
       this.panel.show(domNode);
+  },
+  
+  _isInWindow: function WidgetView__isInWindow(window) {
+    return windowsAPI.BrowserWindow({
+      window: this._chrome.window
+    }) == window;
   },
   
   postMessage: function WidgetView_postMessage(message) {
@@ -485,7 +510,8 @@ BrowserWindow.prototype = {
     // Create a ChromeView instance
     let item = new WidgetChrome({
         widget: widget,
-        doc: this.doc
+        doc: this.doc,
+        window: this.window
       });
     
     widget._chrome = item;
@@ -556,6 +582,7 @@ BrowserWindow.prototype = {
  *  - watch for DOM events and forward them to WidgetView
  */
 function WidgetChrome(options) {
+  this.window = options.window;
   this._doc = options.doc;
   this._widget = options.widget;
   this._symbiont = null; // set later

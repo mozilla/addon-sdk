@@ -624,6 +624,35 @@ exports.testWidgetViews = function testWidgetViews(test) {
   
 };
 
+exports.testWidgetViewsEvents = function testWidgetViews(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let view = null;
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onAttach: function(attachView) {
+      view = attachView;
+      test.pass("Got attach event");
+    },
+    onClick: function (eventView) {
+      test.assertEqual(view, eventView, 
+                         "event first argument is equal to the WidgetView");
+      let view2 = widget.getView(require("windows").browserWindows.activeWindow);
+      test.assertEqual(view, view2, 
+                         "widget.getView return the same WidgetView");
+      widget.destroy();
+      test.done();
+    }
+  });
+  
+};
+
 exports.testWidgetMove = function testWidgetMove(test) {
   test.waitUntilDone();
   
