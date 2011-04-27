@@ -99,12 +99,17 @@ exports.testPageModIncludes = function(test) {
       createPageModTest("about:", false),
       createPageModTest("about:buildconfig", true)
     ],
-    function(win, done) {
-      asserts.forEach(function(fn) {
-        fn(test, win);
-      })
-      done();
-    });
+    function (win, done) {
+      test.waitUntil(function () win["about:buildconfig"],
+                     "about:buildconfig page-mod to be executed")
+          .then(function () {
+            asserts.forEach(function(fn) {
+              fn(test, win);
+            });
+            done();
+          });
+    }
+    );
 };
 
 exports.testPageModErrorHandling = function(test) {
