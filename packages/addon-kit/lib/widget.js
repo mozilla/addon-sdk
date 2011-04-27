@@ -24,6 +24,7 @@
  *   Dietrich Ayala <dietrich@mozilla.com> (Original Author)
  *   Drew Willcoxon <adw@mozilla.com>
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Alexandre Poirot <apoirot@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -192,6 +193,15 @@ Model.setEvents = function (object, events, listeners) {
   }
 }
 
+
+
+/**
+ * Main Widget class: entry point of the widget API
+ *
+ * Allow to control all widget across all existing windows with a single object.
+ * Widget.getView allow to retrieve a WidgetView instance to control a widget
+ * specific to one window.
+ */
 const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   
   _initWidget: function Widget__initWidget(options) {
@@ -271,6 +281,17 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
 
   destroy: function Widget_destroy() {
+    if (this.panel)
+      this.panel.destroy();
+    
+    // Dispatch destroy calls to views
+    // we need to go backward as we remove items from this array in 
+    // _viewDestroyed
+    for (let i = this._views.length-1; i>=0; i--)
+      this._views[i].destroy();
+    
+    // Unregister widget to stop creating it over new windows
+    // and allow creation of new widget with same id
     browserManager.removeItem(this);
   }
 
@@ -286,10 +307,20 @@ const Widget = function Widget(options) {
 }
 exports.Widget = Widget;
 
-// -----------------------------------------------------------------------------
 
+
+/**
+ * WidgetView is an instance of a widget for a specific window.
+ *
+ * This is an external API that can be retrieve with Widget.getView or
+ * by watching `attach` event on Widget.
+ */
 const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
-
+  
+  // Reference to the matching WidgetChrome
+  // set right after constructor call
+  _chrome: null,
+  
   _initWidgetView: function WidgetView__initWidgetView(mainWidget) {
     this._mainWidget = mainWidget;
     
@@ -304,8 +335,9 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     if (name == 'tooltip' && !value)
       this.tooltip = this.label;
     
+    // Forward attributes changes to WidgetChrome instance
     if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1) {
-      browserManager.updateItem(this._mainWidget, name, value);
+      this._chrome.update(this._mainWidget, name, value);
     }
   },
   
@@ -327,17 +359,14 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
       this.panel.show(domNode);
   },
   
-  _onDestroy: function WidgetView__onDestroy() {
-    this._emit("detach");
-    this._mainWidget._viewDestroyed(this);
-  },
-  
   postMessage: function WidgetView_postMessage(message) {
-    browserManager.updateItem(this._mainWidget, "postMessage", message);
+    this._chrome.update(this._mainWidget, "postMessage", message);
   },
 
   destroy: function WidgetView_destroy() {
-    throw "Not implemented";
+    this._chrome.destroy();
+    this._emit("detach");
+    this._mainWidget._viewDestroyed(this);
   }
 
 }));
@@ -348,9 +377,14 @@ const WidgetView = function WidgetView(mainWidget) {
   return w;
 }
 
-// Keeps track of all browser windows.
-// Exposes methods for adding/removing/updating widgets
-// across all open windows (and future ones).
+
+
+/** 
+ * Keeps track of all browser windows.
+ * Exposes methods for adding/removing widgets
+ * across all open windows (and future ones).
+ * Create a new instance of BrowserWindow per window.
+ */
 let browserManager = {
   items: [],
   windows: [],
@@ -382,8 +416,7 @@ let browserManager = {
     if (this._isBrowserWindow(window)) {
       for (let i = 0; i < this.windows.length; i++) {
         if (this.windows[i].window == window) {
-          let win = this.windows.splice(i, 1)[0];
-          win.destroy();
+          this.windows.splice(i, 1)[0];
           return;
         }
       }
@@ -412,24 +445,12 @@ let browserManager = {
     this.windows.forEach(function (w) w.addItems([item]));
   },
 
-  // Updates the content of an item registered with the manager,
-  // propagating the change to all windows.
-  updateItem: function browserManager_updateItem(item, property, value) {
-    let idx = this.items.indexOf(item);
-    if (idx != -1)
-      this.windows.forEach(function (w) w.updateItem(item, property, value));
-  },
-
   // Unregisters an item from the manager.  It's removed from all windows that 
   // are currently registered.
   removeItem: function browserManager_removeItem(item) {
     let idx = this.items.indexOf(item);
-    if (idx > -1) {
+    if (idx > -1)
       this.items.splice(idx, 1);
-      if (item.panel)
-        item.panel.destroy();
-      this.windows.forEach(function (w) w.removeItems([item]));
-    }
   },
 
   _isBrowserWindow: function browserManager__isBrowserWindow(win) {
@@ -438,23 +459,16 @@ let browserManager = {
   }
 };
 
-// Keeps track of a single browser window.  Responsible for providing a
-// description of the window's current context and determining whether an item
-// matches the current context.
-//
-// This is where the core of how a widget's content is added to a window lives.
-//
+
+
+/** 
+ * Keeps track of a single browser window.
+ *
+ * This is where the core of how a widget's content is added to a window lives.
+ */
 function BrowserWindow(window) {
   this.window = window;
   this.doc = window.document;
-  // Array of objects:
-  // {
-  //   widget: widget object,
-  //   node: dom node,
-  //   eventListeners: hash of event listeners
-  //   symbiont: contentSymbiont
-  // }
-  this._items = [];
 }
 
 BrowserWindow.prototype = {
@@ -463,61 +477,27 @@ BrowserWindow.prototype = {
   addItems: function BW_addItems(items) {
     items.forEach(this._addItemToWindow, this);
   },
-
-  // Update a property of a widget.
-  updateItem: function BW_updateItem(updatedItem, property, value) {
-    let item = this._items.filter(function(item) item.widget._mainWidget == updatedItem).shift();
-    if (item) {
-      switch(property) {
-        case "contentURL":
-        case "content":
-          this.setContent(item);
-          break;
-        case "width":
-          item.node.style.minWidth = value + "px";
-          item.node.querySelector("iframe").style.width = value + "px";
-          break;
-        case "tooltip":
-          item.node.setAttribute("tooltiptext", value);
-          break;
-        case "postMessage":
-          item.symbiont.postMessage(value);
-          break;
-      }
-    }
-  },
-
-  // Add a widget to this window.
+  
   _addItemToWindow: function BW__addItemToWindow(mainWidget) {
+    // Create a WidgetView instance
     let widget = mainWidget._createView();
     
-    // XUL element container for widget
-    let node = this.doc.createElement("toolbaritem");
-    let guid = require("xpcom").makeUuid().toString();
+    // Create a ChromeView instance
+    let item = new WidgetChrome({
+        widget: widget,
+        doc: this.doc
+      });
     
-    // Temporary fix around require("self") failing on unit-test execution ...
-    let jetpackID = "testID";
-    try {
-      jetpackID = require("self").id;
-    } catch(e) {}
+    widget._chrome = item;
+      
+    this._insertNodeInToolbar(item.node);
     
-    // Compute an unique and stable widget id with jetpack id and widget.id
-    let id = "widget:" + jetpackID + "-" + widget.id;
-    node.setAttribute("id", id);
-    node.setAttribute("label", widget.label);
-    node.setAttribute("tooltiptext", widget.tooltip);
-    node.setAttribute("align", "center");
-
-    // TODO move into a stylesheet, configurable by consumers.
-    // Either widget.style, exposing the style object, or a URL
-    // (eg, can load local stylesheet file).
-    node.setAttribute("style", [
-        "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
-        "min-height: 16px;",
-    ].join(""));
-
-    node.style.minWidth = widget.width + "px";
-
+    // We need to insert Widget DOM Node before finishing widget view creation
+    // (because fill create an iframe and try to access its docShell)
+    item.fill();
+  },
+  
+  _insertNodeInToolbar: function (node) {
     // Add to the customization palette
     let toolbox = this.doc.getElementById("navigator-toolbox");
     let palette = toolbox.palette;
@@ -526,6 +506,7 @@ BrowserWindow.prototype = {
     // Search for widget toolbar by reading toolbar's currentset attribute
     let container = null;
     let toolbars = this.doc.getElementsByTagName("toolbar");
+    let id = node.getAttribute("id");
     for(let i = 0, l = toolbars.length; i < l; i++) {
       let toolbar = toolbars[i];
       if (toolbar.getAttribute("currentset").indexOf(id) == -1)
@@ -564,201 +545,248 @@ BrowserWindow.prototype = {
     container.insertItem(id, nextNode, null, false);
     
     container.setAttribute("currentset", container.currentSet);
-    
-    let item = {widget: widget, node: node};
-
-    this._fillItem(item);
-
-    this._items.push(item);
-  },
-
-  // Initial population of a widget's content.
-  _fillItem: function BS__fillItem(item) {
-    // Create element
-    var iframe = this.doc.createElement("iframe");
-    iframe.setAttribute("type", "content");
-    iframe.setAttribute("transparent", "transparent");
-    iframe.style.overflow = "hidden";
-    iframe.style.height = "16px";
-    iframe.style.maxHeight = "16px";
-    iframe.style.width = item.widget.width + "px";
-    iframe.setAttribute("flex", "1");
-    iframe.style.border = "none";
-    iframe.style.padding = "0px";
-    
-    // Do this early, because things like contentWindow are null
-    // until the node is attached to a document.
-    item.node.appendChild(iframe);
-
-    // add event handlers
-    this.addEventHandlers(item);
-
-    // set content
-    this.setContent(item);
-  },
-
-  // Get widget content type.
-  getContentType: function BW_getContentType(widget) {
-    if (widget.content)
-      return CONTENT_TYPE_HTML;
-    return (widget.contentURL && /\.(jpg|gif|png|ico)$/.test(widget.contentURL))
-      ? CONTENT_TYPE_IMAGE : CONTENT_TYPE_URI;
-  },
-
-  // Set widget content.
-  setContent: function BW_setContent(item) {
-    let type = this.getContentType(item.widget);
-    let contentURL = null;
-
-    switch (type) {
-      case CONTENT_TYPE_HTML:
-        contentURL = "data:text/html," + encodeURI(item.widget.content);
-        break;
-      case CONTENT_TYPE_URI:
-        contentURL = item.widget.contentURL;
-        break;
-      case CONTENT_TYPE_IMAGE:
-        let imageURL = item.widget.contentURL;
-        contentURL = "data:text/html,<html><body><img src='" +
-                     encodeURI(imageURL) + "'></body></html>";
-        break;
-      default:
-        throw new Error("The widget's type cannot be determined.");
-    }
-
-    let iframe = item.node.firstElementChild;
-
-    item.symbiont = Symbiont({
-      frame: iframe,
-      contentURL: contentURL,
-      contentScriptFile: item.widget.contentScriptFile,
-      contentScript: item.widget.contentScript,
-      contentScriptWhen: item.widget.contentScriptWhen,
-      allow: item.widget.allow,
-      onMessage: function(message) {
-        timer.setTimeout(function() {
-          item.widget._onEvent("message", message);
-        }, 0);
-      }
-    });
-  },
-
-  // Set up all supported events for a widget.
-  addEventHandlers: function BW_addEventHandlers(item) {
-    let contentType = this.getContentType(item.widget);
-
-    // Detect if document consists of a single image.
-    function isImageDoc(doc) {
-      return doc.body.childNodes.length == 1 &&
-             doc.body.firstElementChild &&
-             doc.body.firstElementChild.tagName == "IMG";
-    }
-
-    let listener = function(e) {
-      // Ignore event firings that target the iframe.
-      if (e.target == item.node.firstElementChild)
-        return;
-
-      // The widget only supports left-click for now,
-      // so ignore right-clicks.
-      if (e.type == "click" && e.button == 2)
-        return;
-
-      // Proxy event to the widget
-      timer.setTimeout(function() {
-        item.widget._onEvent(EVENTS[e.type], null, item.node);
-      }, 0);
-    };
-
-    item.eventListeners = {};
-    let iframe = item.node.firstElementChild;
-    for (let [type, method] in Iterator(EVENTS)) {
-      iframe.addEventListener(type, listener, true, true);
-
-      // Store listeners for later removal
-      item.eventListeners[type] = listener;
-    }
-    
-    // On document load, make modifications required for nice default
-    // presentation.
-    let self = this;
-    function loadListener(e) {
-      // Ignore event firings that target the iframe
-      if (e.target == iframe)
-        return;
-      // Ignore about:blank loads
-      if (e.type == "load" && e.target.location == "about:blank")
-        return;
-      
-      // We may have had an unload event before that cleaned up the symbiont
-      if (!item.symbiont)
-        self.setContent(item);
-      
-      let doc = e.target;
-      if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
-        // Force image content to size.
-        // Add-on authors must size their images correctly.
-        doc.body.firstElementChild.style.width = item.widget.width + "px";
-        doc.body.firstElementChild.style.height = "16px";
-      }
-
-      // Allow all content to fill the box by default.
-      doc.body.style.margin = "0";
-    }
-    iframe.addEventListener("load", loadListener, true);
-    item.eventListeners["load"] = loadListener;
-    
-    // Register a listener to unload symbiont if the toolbaritem is moved
-    // on user toolbars customization
-    function unloadListener(e) {
-      if (e.target.location == "about:blank")
-        return;
-      item.symbiont.destroy();
-      item.symbiont = null;
-      // This may fail but not always, it depends on how the node is 
-      // moved or removed
-      try {
-        self.setContent(item);
-      } catch(e) {}
-      
-    }
-    
-    iframe.addEventListener("unload", unloadListener, true);
-    item.eventListeners["unload"] = unloadListener;
-  },
-
-  // Removes an array of items from the window.
-  removeItems: function BW_removeItems(removedItems) {
-    removedItems.forEach(function(removedItem) {
-      let entry = this._items.filter(function(entry) entry.widget._mainWidget == removedItem).shift();
-      if (entry) {
-        // remove event listeners
-        for (let [type, listener] in Iterator(entry.eventListeners))
-          entry.node.firstElementChild.removeEventListener(type, listener, true);
-        // remove dom node
-        entry.node.parentNode.removeChild(entry.node);
-        // remove entry
-        this._items.splice(this._items.indexOf(entry), 1);
-        // cleanup symbiont
-        entry.symbiont.destroy();
-        entry.widget._onDestroy();
-        // cleanup entry itself
-        entry.eventListeners = null;
-        entry.widget = null;
-        entry.symbiont = null;
-      }
-    }, this);
-  },
-
-  // Undoes all modifications to the window. The BrowserWindow
-  // should not be used afterward.
-  destroy: function BW_destroy() {
-    // Remove all items from the panel
-    let len = this._items.length;
-    for (let i = 0; i < len; i++)
-      this.removeItems([this._items[0].widget]);
   }
-};
+}
+
+
+/**
+ * Final Widget instance that handles chrome DOM Node:
+ *  - create initial DOM nodes
+ *  - receive instruction from WidgetView throught update method and update DOM
+ *  - watch for DOM events and forward them to WidgetView
+ */
+function WidgetChrome(options) {
+  this._doc = options.doc;
+  this._widget = options.widget;
+  this._symbiont = null; // set later
+  this.node = null; // set later
+  
+  this._createNode();
+}
+
+// Update a property of a widget.
+WidgetChrome.prototype.update = function CW_update(updatedItem, property, value) {
+  switch(property) {
+    case "contentURL":
+    case "content":
+      this.setContent();
+      break;
+    case "width":
+      this.node.style.minWidth = value + "px";
+      this.node.querySelector("iframe").style.width = value + "px";
+      break;
+    case "tooltip":
+      this.node.setAttribute("tooltiptext", value);
+      break;
+    case "postMessage":
+      this._symbiont.postMessage(value);
+      break;
+  }
+}
+
+// Add a widget to this window.
+WidgetChrome.prototype._createNode = function CW__createNode() {
+  // XUL element container for widget
+  let node = this._doc.createElement("toolbaritem");
+  let guid = require("xpcom").makeUuid().toString();
+  
+  // Temporary fix around require("self") failing on unit-test execution ...
+  let jetpackID = "testID";
+  try {
+    jetpackID = require("self").id;
+  } catch(e) {}
+  
+  // Compute an unique and stable widget id with jetpack id and widget.id
+  let id = "widget:" + jetpackID + "-" + this._widget.id;
+  node.setAttribute("id", id);
+  node.setAttribute("label", this._widget.label);
+  node.setAttribute("tooltiptext", this._widget.tooltip);
+  node.setAttribute("align", "center");
+
+  // TODO move into a stylesheet, configurable by consumers.
+  // Either widget.style, exposing the style object, or a URL
+  // (eg, can load local stylesheet file).
+  node.setAttribute("style", [
+      "overflow: hidden; margin: 1px 2px 1px 2px; padding: 0px;",
+      "min-height: 16px;",
+  ].join(""));
+
+  node.style.minWidth = this._widget.width + "px";
+  
+  this.node = node;
+}
+
+// Initial population of a widget's content.
+WidgetChrome.prototype.fill = function CW_fill() {
+  // Create element
+  var iframe = this._doc.createElement("iframe");
+  iframe.setAttribute("type", "content");
+  iframe.setAttribute("transparent", "transparent");
+  iframe.style.overflow = "hidden";
+  iframe.style.height = "16px";
+  iframe.style.maxHeight = "16px";
+  iframe.style.width = this._widget.width + "px";
+  iframe.setAttribute("flex", "1");
+  iframe.style.border = "none";
+  iframe.style.padding = "0px";
+  
+  // Do this early, because things like contentWindow are null
+  // until the node is attached to a document.
+  this.node.appendChild(iframe);
+
+  // add event handlers
+  this.addEventHandlers();
+
+  // set content
+  this.setContent();
+}
+
+// Get widget content type.
+WidgetChrome.prototype.getContentType = function CW_getContentType() {
+  if (this._widget.content)
+    return CONTENT_TYPE_HTML;
+  return (this._widget.contentURL && /\.(jpg|gif|png|ico)$/.test(this._widget.contentURL))
+    ? CONTENT_TYPE_IMAGE : CONTENT_TYPE_URI;
+}
+
+// Set widget content.
+WidgetChrome.prototype.setContent = function CW_setContent() {
+  let type = this.getContentType();
+  let contentURL = null;
+
+  switch (type) {
+    case CONTENT_TYPE_HTML:
+      contentURL = "data:text/html," + encodeURI(this._widget.content);
+      break;
+    case CONTENT_TYPE_URI:
+      contentURL = this._widget.contentURL;
+      break;
+    case CONTENT_TYPE_IMAGE:
+      let imageURL = this._widget.contentURL;
+      contentURL = "data:text/html,<html><body><img src='" +
+                   encodeURI(imageURL) + "'></body></html>";
+      break;
+    default:
+      throw new Error("The widget's type cannot be determined.");
+  }
+
+  let iframe = this.node.firstElementChild;
+
+  let self = this;
+  this._symbiont = Symbiont({
+    frame: iframe,
+    contentURL: contentURL,
+    contentScriptFile: this._widget.contentScriptFile,
+    contentScript: this._widget.contentScript,
+    contentScriptWhen: this._widget.contentScriptWhen,
+    allow: this._widget.allow,
+    onMessage: function(message) {
+      timer.setTimeout(function() {
+        self._widget._onEvent("message", message);
+      }, 0);
+    }
+  });
+}
+
+// Set up all supported events for a widget.
+WidgetChrome.prototype.addEventHandlers = function CW_addEventHandlers() {
+  let contentType = this.getContentType();
+
+  // Detect if document consists of a single image.
+  function isImageDoc(doc) {
+    return doc.body.childNodes.length == 1 &&
+           doc.body.firstElementChild &&
+           doc.body.firstElementChild.tagName == "IMG";
+  }
+
+  let self = this;
+  let listener = function(e) {
+    // Ignore event firings that target the iframe.
+    if (e.target == self.node.firstElementChild)
+      return;
+
+    // The widget only supports left-click for now,
+    // so ignore right-clicks.
+    if (e.type == "click" && e.button == 2)
+      return;
+
+    // Proxy event to the widget
+    timer.setTimeout(function() {
+      self._widget._onEvent(EVENTS[e.type], null, self.node);
+    }, 0);
+  };
+
+  this.eventListeners = {};
+  let iframe = this.node.firstElementChild;
+  for (let [type, method] in Iterator(EVENTS)) {
+    iframe.addEventListener(type, listener, true, true);
+
+    // Store listeners for later removal
+    this.eventListeners[type] = listener;
+  }
+  
+  // On document load, make modifications required for nice default
+  // presentation.
+  let self = this;
+  function loadListener(e) {
+    // Ignore event firings that target the iframe
+    if (e.target == iframe)
+      return;
+    // Ignore about:blank loads
+    if (e.type == "load" && e.target.location == "about:blank")
+      return;
+    
+    // We may have had an unload event before that cleaned up the symbiont
+    if (!self._symbiont)
+      self.setContent();
+    
+    let doc = e.target;
+    if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
+      // Force image content to size.
+      // Add-on authors must size their images correctly.
+      doc.body.firstElementChild.style.width = self._widget.width + "px";
+      doc.body.firstElementChild.style.height = "16px";
+    }
+
+    // Allow all content to fill the box by default.
+    doc.body.style.margin = "0";
+  }
+  iframe.addEventListener("load", loadListener, true);
+  this.eventListeners["load"] = loadListener;
+  
+  // Register a listener to unload symbiont if the toolbaritem is moved
+  // on user toolbars customization
+  function unloadListener(e) {
+    if (e.target.location == "about:blank")
+      return;
+    self._symbiont.destroy();
+    self._symbiont = null;
+    // This may fail but not always, it depends on how the node is 
+    // moved or removed
+    try {
+      self.setContent();
+    } catch(e) {}
+    
+  }
+  
+  iframe.addEventListener("unload", unloadListener, true);
+  this.eventListeners["unload"] = unloadListener;
+}
+
+// Remove and unregister the widget from everything
+WidgetChrome.prototype.destroy = function CW_destroy(removedItems) {
+  // remove event listeners
+  for (let [type, listener] in Iterator(this.eventListeners))
+    this.node.firstElementChild.removeEventListener(type, listener, true);
+  // remove dom node
+  this.node.parentNode.removeChild(this.node);
+  // cleanup symbiont
+  this._symbiont.destroy();
+  // cleanup itself
+  this.eventListeners = null;
+  this._widget = null;
+  this._symbiont = null;
+}
 
 // Init the browserManager only after setting prototypes and such above, because
 // it will cause browserManager.onTrack to be called immediately if there are

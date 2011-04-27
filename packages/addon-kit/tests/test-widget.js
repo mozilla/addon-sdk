@@ -34,7 +34,7 @@ exports.testConstructor = function(test) {
   w.destroy();
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
-
+  
   // Test nothing
   test.assertRaises(
     function() widgets.Widget({}),
