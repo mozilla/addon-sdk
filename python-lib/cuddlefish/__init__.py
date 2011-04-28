@@ -209,6 +209,12 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
+        (("", "--binary-args",), dict(dest="cmdargs",
+                                 help=("additional arguments passed to the "
+                                       "binary"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'test'])),
         ]
      ),
     )
@@ -731,6 +737,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              timeout=timeout,
                              logfile=options.logfile,
                              addons=options.addons,
+                             args=options.cmdargs,
                              norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
