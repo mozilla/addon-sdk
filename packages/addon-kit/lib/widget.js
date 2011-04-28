@@ -50,8 +50,9 @@ const CONTENT_TYPE_IMAGE  = 3;
 const ERR_CONTENT = "No content or contentURL property found. Widgets must "
                          + "have one or the other.",
       ERR_LABEL = "The widget must have a non-empty label property.",
-      ERR_ID = "You have to define an unique `id` attribute to your widget " +
-               "in order to be able to remember its position.";
+      ERR_ID = "You have to specify a unique value for the id property of " +
+               "your widget in order for the application to remember its " +
+               "position.";
 
 // Supported events, mapping from DOM event names to our event names
 const EVENTS = {
@@ -108,7 +109,7 @@ const valid = {
 };
 
 // Widgets attributes definition
-const widgetAttributes = {
+let widgetAttributes = {
   label: valid.label,
   id: valid.id,
   tooltip: valid.string,
@@ -126,110 +127,115 @@ for (let i in loaderAttributes)
 widgetAttributes.contentURL.optional = true;
 
 // Widgets public events list, that are automatically binded in options object
-let widgetEvents = [
-  "click", "mouseover", "mouseout", 
+const WIDGET_EVENTS = [
+  "click",
+  "mouseover",
+  "mouseout",
   "error",
   "message",
   "attach"
 ];
 
 // `Model` utility functions that help creating these various Widgets objects
-const Model = {};
+let model = {
 
-// Validate one attribute using api-utils.js:validateOptions function
-Model._validate = function Model_validate(name, suspect, validation) {
-  let $1 = {};
-  $1[name] = suspect;
-  let $2 = {};
-  $2[name] = validation;
-  return validateOptions($1, $2)[name];
-}
+  // Validate one attribute using api-utils.js:validateOptions function
+  _validate: function _validate(name, suspect, validation) {
+    let $1 = {};
+    $1[name] = suspect;
+    let $2 = {};
+    $2[name] = validation;
+    return validateOptions($1, $2)[name];
+  },
 
-/**
- * This method has two purposes:
- * 1/ Validate and define, on a given object, a set of attribute
- * 2/ Emit a "change" event on this object when an attribute is changed
- *
- * @params {Object} object
- *    Object that we can to bind attributes on and watch for their changes.
- *    This object must have an EventEmitter interface, or, at least `_emit`
- *    method
- * @params {Object} attrs
- *    Dictionary of attributes definition following api-utils:validateOptions 
- *    scheme
- * @params {Object} values
- *    Dictionary of attributes default values
- */
-Model.setAttributes = function Model_setAttributes(object, attrs, values) {
-  let properties = {};
-  for (let name in attrs) {
-    let value = values[name];
-    let req = attrs[name];
-    
-    // Retrieve default value from typedef if the value is not defined
-    if ((typeof value == "undefined" || value == null) && req.defaultValue)
-      value = req.defaultValue;
-    
-    // Check for valid value if value is defined or mandatory
-    if (!req.optional || typeof value != "undefined")
-      value = Model._validate(name, value, req);
-    
-    // In any case, define this property on `object`
-    let property = null;
-    if (req.readonly)
-      property = {
-        value: value,
-        writable: false,
-        enumerable: true,
-        configurable: false
-      };
-    else
-      property = Model._createWritableProperty(name, value);
-    
-    properties[name] = property;
+  /**
+   * This method has two purposes:
+   * 1/ Validate and define, on a given object, a set of attribute
+   * 2/ Emit a "change" event on this object when an attribute is changed
+   *
+   * @params {Object} object
+   *    Object on which we can bind attributes on and watch for their changes.
+   *    This object must have an EventEmitter interface, or, at least `_emit`
+   *    method
+   * @params {Object} attrs
+   *    Dictionary of attributes definition following api-utils:validateOptions 
+   *    scheme
+   * @params {Object} values
+   *    Dictionary of attributes default values
+   */
+  setAttributes: function setAttributes(object, attrs, values) {
+    let properties = {};
+    for (let name in attrs) {
+      let value = values[name];
+      let req = attrs[name];
+      
+      // Retrieve default value from typedef if the value is not defined
+      if ((typeof value == "undefined" || value == null) && req.defaultValue)
+        value = req.defaultValue;
+      
+      // Check for valid value if value is defined or mandatory
+      if (!req.optional || typeof value != "undefined")
+        value = model._validate(name, value, req);
+      
+      // In any case, define this property on `object`
+      let property = null;
+      if (req.readonly) {
+        property = {
+          value: value,
+          writable: false,
+          enumerable: true,
+          configurable: false
+        };
+      }
+      else {
+        property = model._createWritableProperty(name, value);
+      }
+      
+      properties[name] = property;
+    }
+    Object.defineProperties(object, properties);
+  },
+
+  // Generate ES5 property definition for a given attribute
+  _createWritableProperty: function _createWritableProperty(name, value) {
+    return {
+      get: function () {
+        return value;
+      },
+      set: function (newValue) {
+        value = newValue;
+        // The main goal of all this Model stuff is here:
+        // We want to forward all changes to some listeners
+        this._emit("change", name, value);
+      },
+      enumerable: true,
+      configurable: false
+    };
+  },
+
+  /**
+   * Automagically register listeners in options dictionary
+   * by detecting listener attributes with name starting with `on`
+   *
+   * @params {Object} object
+   *    Target object that need to follow EventEmitter interface, or, at least, 
+   *    having `on` method.
+   * @params {Array} events
+   *    List of events name to automatically bind.
+   * @params {Object} listeners
+   *    Dictionary of event listener functions to register.
+   */
+  setEvents: function setEvents(object, events, listeners) {
+    for (let i = 0, l = events.length; i < l; i++) {
+      let name = events[i];
+      let onName = "on" + name[0].toUpperCase() + name.substr(1);
+      if (!listeners[onName])
+        continue;
+      object.on(name, listeners[onName].bind(object));
+    }
   }
-  Object.defineProperties(object, properties);
-}
 
-// Generate ES5 property definition for a given attribute
-Model._createWritableProperty = function Model__createWritableProperty(name, value) {
-  return {
-    get: function () {
-      return value;
-    },
-    set: function (newValue) {
-      value = newValue;
-      // The main goal of all this Model stuff is here:
-      // We want to forward all changes to some listeners
-      this._emit("change", name, value);
-    },
-    enumerable: true,
-    configurable: false
-  };
-}
-
-/**
- * Automagically register listerners in options dictionnary
- * by detecting listener attributes with name starting with `on`
- *
- * @params {Object} object
- *    Target object that need to follow EventEmitter interface, or, at least, 
- *    having `on` method.
- * @params {Array} events
- *    List of events name to automatically bind.
- * @params {Object} listeners
- *    Dictionary of event listener functions to register.
- */
-Model.setEvents = function Model_setEvents(object, events, listeners) {
-  for (let i = 0, l = events.length; i < l; i++) {
-    let name = events[i];
-    let onName = "on" + name[0].toUpperCase() + name.substr(1);
-    if (!listeners[onName])
-      continue;
-    object.on(name, listeners[onName].bind(object));
-  }
-}
-
+};
 
 
 /**
@@ -241,8 +247,8 @@ Model.setEvents = function Model_setEvents(object, events, listeners) {
  */
 const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   
-  _initWidget: function Widget__initWidget(options) {
-    Model.setAttributes(this, widgetAttributes, options);
+  _initWidget: function _initWidget(options) {
+    model.setAttributes(this, widgetAttributes, options);
     
     browserManager.validate(this);
     
@@ -256,7 +262,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     if (!this.tooltip)
       this.tooltip = this.label;
     
-    Model.setEvents(this, widgetEvents, options);
+    model.setEvents(this, WIDGET_EVENTS, options);
     
     this.on('change', this._onChange.bind(this));
 
@@ -265,7 +271,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     browserManager.addItem(this);
   },
   
-  _onChange: function Widget__onChange(name, value) {
+  _onChange: function _onChange(name, value) {
     // Set tooltip to label value if we don't have tooltip defined
     if (name == 'tooltip' && !value) {
       // we need to change tooltip again in order to change the value of the 
@@ -280,11 +286,11 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     }
   },
 
-  _onEvent: function Widget__onEvent(type, eventData) {
+  _onEvent: function _onEvent(type, eventData) {
     this._emit(type, eventData);
   },
   
-  _createView: function Widget__createView() {
+  _createView: function _createView() {
     // Create a new WidgetView instance
     let view = WidgetView(this);
     
@@ -298,13 +304,13 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   // a WidgetView instance is destroyed
-  _onViewDestroyed: function Widget__onViewDestroyed(view) {
+  _onViewDestroyed: function _onViewDestroyed(view) {
     let idx = this._views.indexOf(view);
     this._views.splice(idx, 1);
   },
   
-  getView: function Widget_getView(window) {
-    for (let i = this._views.length-1; i>=0; i--) {
+  getView: function getView(window) {
+    for (let i = this._views.length - 1; i >= 0; i--) {
       let view = this._views[i];
       if (view._isInWindow(window))
         return view._public;
@@ -312,18 +318,18 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     return null;
   },
   
-  postMessage: function Widget_postMessage(message) {
+  postMessage: function postMessage(message) {
     this._views.forEach(function(v) v.postMessage(message));
   },
 
-  destroy: function Widget_destroy() {
+  destroy: function destroy() {
     if (this.panel)
       this.panel.destroy();
     
     // Dispatch destroy calls to views
     // we need to go backward as we remove items from this array in 
     // _onViewDestroyed
-    for (let i = this._views.length-1; i>=0; i--)
+    for (let i = this._views.length - 1; i >= 0; i--)
       this._views[i].destroy();
     
     // Unregister widget to stop creating it over new windows
@@ -364,7 +370,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   _initWidgetView: function WidgetView__initWidgetView(baseWidget) {
     this._baseWidget = baseWidget;
     
-    Model.setAttributes(this, widgetAttributes, baseWidget);
+    model.setAttributes(this, widgetAttributes, baseWidget);
     
     this.on('change', this._onChange.bind(this));
     
@@ -597,9 +603,9 @@ BrowserWindow.prototype = {
 
 
 /**
- * Final Widget instance that handles chrome DOM Node:
+ * Final Widget class that handles chrome DOM Node:
  *  - create initial DOM nodes
- *  - receive instruction from WidgetView throught update method and update DOM
+ *  - receive instruction from WidgetView through update method and update DOM
  *  - watch for DOM events and forward them to WidgetView
  */
 function WidgetChrome(options) {

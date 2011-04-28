@@ -624,7 +624,7 @@ exports.testWidgetViews = function testWidgetViews(test) {
   
 };
 
-exports.testWidgetViewsEvents = function testWidgetViews(test) {
+exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
   test.waitUntilDone();
   const widgets = require("widget");
   let view = null;
