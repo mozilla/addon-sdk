@@ -16,7 +16,7 @@ onMessage = function onMessage(storedAnnotations) {
       annotationHtml.find('.url').bind('click', function(event) {
         event.stopPropagation();
         event.preventDefault();
-        postMessage(storedAnnotation.url);
+        self.postMessage(storedAnnotation.url);
       });
       annotationHtml.find('.selection-text')
                     .text(storedAnnotation.anchorText);

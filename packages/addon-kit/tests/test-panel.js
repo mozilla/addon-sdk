@@ -6,7 +6,7 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(1); self.on('message', function() postMessage(2));",
+    contentScript: "self.postMessage(1); self.on('message', function() self.postMessage(2));",
     onMessage: function (message) {
       test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {
@@ -27,7 +27,7 @@ tests.testPanel = function(test) {
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
-    contentScript: "postMessage('')",
+    contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function (message) {
       panel.show();
@@ -71,7 +71,7 @@ tests.testResizePanel = function(test) {
     browserWindow.removeEventListener("focus", onFocus, true);
 
     let panel = Panel({
-      contentScript: "postMessage('')",
+      contentScript: "self.postMessage('')",
       contentScriptWhen: "end",
       height: 10,
       width: 10,

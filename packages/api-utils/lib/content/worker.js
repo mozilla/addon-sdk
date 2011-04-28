@@ -207,7 +207,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     
     // List of content script globals:
     let keys = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 
-                'postMessage', 'self'];
+                'self'];
     for each (let key in keys) {
       Object.defineProperty(
         sandbox, key, Object.getOwnPropertyDescriptor(publicAPI, key)
@@ -220,6 +220,29 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         configurable: true
       },
       console: { value: console, configurable: true },
+      
+      // Deprecated use of on/postMessage from globals
+      on: {
+        value: function () {
+          console.warn("The global `on()` function in content scripts is " +
+                       "deprecated in favor of the `self.on()` function, " +
+                       "which works the same. Replace calls to `on()` with " +
+                       "calls to `self.on()`");
+          publicAPI.on.apply(publicAPI, arguments);
+        },
+        configurable: true
+      }, 
+      postMessage: {
+        value: function () {
+          console.warn("The global `postMessage()` function in content " +
+                       "scripts is deprecated in favor of the " +
+                       "`self.postMessage()` function, which works the same. " +
+                       "Replace calls to `postMessage()` with calls to " +
+                       "`self.postMessage()`.");
+          publicAPI.postMessage.apply(publicAPI, arguments);
+        },
+        configurable: true
+      }
     });
     
     // Chain the global object for the sandbox to the global object for

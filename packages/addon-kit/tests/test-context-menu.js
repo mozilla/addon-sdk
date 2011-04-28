@@ -318,7 +318,7 @@ exports.testURLContextRemove = function (test) {
   let item = loader.cm.Item({
     label: "item",
     context: context,
-    contentScript: 'postMessage("ok");',
+    contentScript: 'self.postMessage("ok");',
     onMessage: function (msg) {
       test.assert(shouldBeEvaled,
                   "content script should be evaluated when expected");
@@ -411,7 +411,7 @@ exports.testContentContextArgs = function (test) {
     label: "item",
     contentScript: 'self.on("context", function (node) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  self.postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
                    '  return false;' +
                    '});',
     onMessage: function (isElt) {
@@ -433,7 +433,7 @@ exports.testMultipleContexts = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     context: [loader.cm.SelectorContext("a[href]"), loader.cm.PageContext()],
-    contentScript: 'self.on("context", function () postMessage());',
+    contentScript: 'self.on("context", function () self.postMessage());',
     onMessage: function () {
       test.fail("Context listener should not be called");
     }
@@ -823,7 +823,7 @@ exports.testItemClick = function (test) {
     data: "item data",
     contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
                    '    data: data' +
                    '  });' +
@@ -869,7 +869,7 @@ exports.testMenuClick = function (test) {
     label: "top menu",
     contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
                    '    data: data' +
                    '  });' +
@@ -1092,7 +1092,7 @@ exports.testContentCommunication = function (test) {
                    '  return true;' +
                    '});' +
                    'self.on("click", function () {' +
-                   '  postMessage(potato);' +
+                   '  self.postMessage(potato);' +
                    '});',
   });
 
@@ -1118,7 +1118,7 @@ exports.testLoadWithOpenTab = function (test) {
     let loader = test.newLoader();
     let item = new loader.cm.Item({
       label: "item",
-      contentScript: 'self.on("click", function () postMessage("click"));',
+      contentScript: 'self.on("click", function () self.postMessage("click"));',
       onMessage: function (msg) {
         if (msg === "click")
           test.done();
