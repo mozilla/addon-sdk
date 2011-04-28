@@ -339,18 +339,34 @@ def test_all_examples(env_root, defaults):
     examples = [dirname for dirname in os.listdir(examples_dir)
                 if os.path.isdir(os.path.join(examples_dir, dirname))]
     examples.sort()
+
+    def run_test(pkgdir):
+        try:
+            run(arguments=["test", "--pkgdir", pkgdir],
+                defaults=defaults,
+                env_root=env_root)
+            assert False, "run() always exit()s"
+        except SystemExit, e:
+            return e.code
+
     fail = False
     for dirname in examples:
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
-        try:
-            run(arguments=["test",
-                           "--pkgdir",
-                           os.path.join(examples_dir, dirname)],
-                defaults=defaults,
-                env_root=env_root)
-        except SystemExit, e:
-            fail = (e.code != 0) or fail
+        exit_code = run_test(os.path.join(examples_dir, dirname))
+        fail = (exit_code != 0) or fail
+
+    def test_addon_templates(basedir, tmpl):
+        initializer(env_root, ["init"], tmpl)
+        return run_test(basedir)
+
+    for tmpl in addon_templates.keys():
+        print >>sys.stderr, "Testing 'cfx init --template %s'..." % tmpl
+        sys.stderr.flush()
+        exit_code = run_in_temp_subdir("test-example-%s" % tmpl,
+                                       test_addon_templates,
+                                       tmpl)
+        fail = (exit_code != 0) or fail
 
     if fail:
         sys.exit(-1)
@@ -415,6 +431,20 @@ def get_config_args(name, env_root):
         print >>sys.stderr, "Config for '%s' must be a list of strings." % name
         sys.exit(1)
     return config
+
+def run_in_temp_subdir(dirname, f, *args, **kwargs):
+    import shutil
+    top = os.path.abspath(os.getcwd())
+    basedir = os.path.abspath(os.path.join(".test_tmp", dirname))
+    if os.path.isdir(basedir):
+        assert basedir.startswith(top)
+        shutil.rmtree(basedir)
+    os.makedirs(basedir)
+    try:
+        os.chdir(basedir)
+        return f(basedir, *args, **kwargs)
+    finally:
+        os.chdir(top)
 
 def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     path = os.getcwd()
