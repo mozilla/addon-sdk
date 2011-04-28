@@ -5,7 +5,6 @@ import copy
 
 import simplejson as json
 from cuddlefish.bunch import Bunch
-from manifest import scan_package, update_manifest_with_fileinfo
 
 MANIFEST_NAME = 'package.json'
 
@@ -58,13 +57,17 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      ValueError: invalid resource hostname: BLARG
+      ValueError: package names need to be lowercase: BLARG
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
       ...
       ValueError: invalid resource hostname: foo@bar
     """
+
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
+    if not name.islower():
+        raise ValueError('package names need to be lowercase: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
         raise ValueError('invalid resource hostname: %s' % name)
@@ -127,6 +130,10 @@ def get_config_in_dir(path):
     if 'name' not in base_json:
         base_json.name = os.path.basename(path)
 
+    if (not base_json.get('tests') and
+        os.path.isdir(os.path.join(path, 'test'))):
+        base_json['tests'] = 'test'
+
     for dirname in ['lib', 'tests', 'data', 'packages']:
         apply_default_dir(base_json, path, dirname)
 
@@ -158,7 +165,7 @@ def _is_same_file(a, b):
         return os.path.samefile(a, b)
     return a == b
 
-def build_config(root_dir, target_cfg):
+def build_config(root_dir, target_cfg, packagepath=[]):
     dirs_to_scan = []
 
     def add_packages_from_config(pkgconfig):
@@ -171,6 +178,7 @@ def build_config(root_dir, target_cfg):
     packages_dir = os.path.join(root_dir, 'packages')
     if os.path.exists(packages_dir) and os.path.isdir(packages_dir):
         dirs_to_scan.append(packages_dir)
+    dirs_to_scan.extend(packagepath)
 
     packages = Bunch({target_cfg.name: target_cfg})
 
@@ -179,6 +187,8 @@ def build_config(root_dir, target_cfg):
         package_paths = [os.path.join(packages_dir, dirname)
                          for dirname in os.listdir(packages_dir)
                          if not dirname.startswith('.')]
+        package_paths = [dirname for dirname in package_paths
+                         if os.path.isdir(dirname)]
 
         for path in package_paths:
             pkgconfig = get_config_in_dir(path)
@@ -216,12 +226,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                               default_loader=DEFAULT_LOADER):
     validate_resource_hostname(prefix)
 
-    manifest = {}
     build = Bunch(resources=Bunch(),
                   resourcePackages=Bunch(),
                   packageData=Bunch(),
                   rootPaths=[],
-                  manifest=manifest,
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -234,8 +242,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # configuration dict.
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
-                name = "-".join([prefix + cfg.name,
-                                 os.path.basename(dirname)])
+                lib_base = os.path.basename(dirname)
+                if lib_base == '.': 
+                    lib_base = 'root'
+                name = "-".join([prefix + cfg.name, lib_base])
                 validate_resource_hostname(name)
                 if name in build.resources:
                     raise KeyError('resource already defined', name)
@@ -245,14 +255,6 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
 
                 if is_code:
                     build.rootPaths.insert(0, resource_url)
-                    pkg_manifest, problems = scan_package(prefix, resource_url,
-                                                          cfg.name,
-                                                          section, dirname)
-                    if problems:
-                        # the relevant instructions have already been written
-                        # to stderr
-                        raise BadChromeMarkerError()
-                    manifest.update(pkg_manifest)
 
                 if is_data:
                     build.packageData[cfg.name] = resource_url
@@ -284,10 +286,6 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
     if 'icon64' in target_cfg:
         build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
         del target_cfg['icon64']
-
-    # now go back through and find out where each module lives, to record the
-    # pathname in the manifest
-    update_manifest_with_fileinfo(deps, DEFAULT_LOADER, manifest)
 
     return build
 

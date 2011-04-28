@@ -187,7 +187,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None):
+            timeout=None, logfile=None, addons=None, norun=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -248,8 +248,13 @@ def run_app(harness_root_dir, harness_options,
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
-    env['HARNESS_OPTIONS'] = json.dumps(harness_options)
-
+    if norun:
+        cmdargs.append("-no-remote")
+        optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
+        open(optionsFile, "w").write(str(json.dumps(harness_options)))
+    else:
+        env['HARNESS_OPTIONS'] = json.dumps(harness_options)
+    
     starttime = time.time()
 
     popen_kwargs = {}
@@ -264,28 +269,45 @@ def run_app(harness_root_dir, harness_options,
                           cmdargs=cmdargs,
                           kp_kwargs=popen_kwargs)
 
-    print "Using binary at '%s'." % runner.binary
-    print "Using profile at '%s'." % profile.profile
-
+    sys.stdout.flush(); sys.stderr.flush()
+    print >>sys.stderr, "Using binary at '%s'." % runner.binary
+    print >>sys.stderr, "Using profile at '%s'." % profile.profile
+    sys.stderr.flush()
+    
+    if norun:
+        print "To launch the application, enter the following command:"
+        print " ".join(runner.command) + " " + (" ".join(runner.cmdargs))
+        return 0
+    
     runner.start()
 
     done = False
     output = None
+    chime_interval = 5
+    next_chime = 0 + chime_interval
     try:
         while not done:
             time.sleep(0.05)
             if logfile_tail:
                 new_chars = logfile_tail.next()
                 if new_chars:
-                    sys.stdout.write(new_chars)
-                    sys.stdout.flush()
+                    sys.stderr.write(new_chars)
+                    sys.stderr.flush()
             if os.path.exists(resultfile):
                 output = open(resultfile).read()
                 if output in ['OK', 'FAIL']:
                     done = True
+                else:
+                    sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
+                    sys.stderr.write("'"+output+"'\n")
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
+            elapsed = time.time() - starttime
+            if elapsed > next_chime:
+                sys.stderr.write("\n(elapsed time: %d seconds)\n" % elapsed)
+                sys.stderr.flush()
+                next_chime += chime_interval
     except:
         runner.stop()
         raise
@@ -295,11 +317,11 @@ def run_app(harness_root_dir, harness_options,
         if profile:
             profile.cleanup()
 
-    print "Total time: %f seconds" % (time.time() - starttime)
+    print >>sys.stderr, "Total time: %f seconds" % (time.time() - starttime)
 
     if output == 'OK':
-        print "Program terminated successfully."
+        print >>sys.stderr, "Program terminated successfully."
         return 0
     else:
-        print "Program terminated unsuccessfully."
+        print >>sys.stderr, "Program terminated unsuccessfully."
         return -1

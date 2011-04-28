@@ -63,6 +63,9 @@ exports.testMatchPatternTestTrue = function(test) {
 
   ok("http://example.com", "http://example.com");
   ok("http://example.com/ice-cream", "http://example.com/ice-cream");
+
+  ok(/http[s]?:\/\/bugzilla\..*\/.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/http[s]?:\/\/bugzilla\..*\/.*/, "https://bugzilla.mozilla.org/show_bug.cgi?id=627386");
 };
 
 exports.testMatchPatternTestFalse = function(test) {
@@ -83,6 +86,7 @@ exports.testMatchPatternTestFalse = function(test) {
   ok("*.example.com", "http://example.net");
   ok("*.example.com", "http://foo.com");
   ok("*.example.com", "http://example.com.foo");
+  ok("*.example2.com", "http://example.com");
 
   ok("http://example.com/*", null);
   ok("http://example.com/*", "");

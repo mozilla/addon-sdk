@@ -64,6 +64,16 @@ var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
     prefs.setBoolPref("browser.dom.window.dump.enabled", true);
   }
   this.print = print;
+
+  // Binding all the public methods to an instance so that they can be used
+  // as callback / listener functions straightaway.
+  this.log = this.log.bind(this);
+  this.info = this.info.bind(this);
+  this.warn = this.warn.bind(this);
+  this.error = this.error.bind(this);
+  this.debug = this.debug.bind(this);
+  this.exception = this.exception.bind(this);
+  this.trace = this.trace.bind(this);
 };
 
 Console.prototype = {

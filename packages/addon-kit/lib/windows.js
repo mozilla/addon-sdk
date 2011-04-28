@@ -177,7 +177,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       this._trackedWindows = [];
       this._initList();
       this._initTracker();
-      unload.when(this._destructor.bind(this));
+      unload.ensure(this, "_destructor");
     },
     _destructor: function _destructor() {
       this._removeAllListeners('open');

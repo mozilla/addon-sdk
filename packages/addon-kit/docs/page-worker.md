@@ -16,25 +16,6 @@ load for a page worker, and you communicate with those scripts over an
 asynchronous JSON pipe.  For more information on content scripts, see
 [Working with Content Scripts](dev-guide/addon-development/web-content.html).
 
-Events
-------
-
-Page workers emit the following types of
-[events](dev-guide/addon-development/events.html):
-
-### message ###
-
-This event is emitted when the page worker receives a message from its
-content scripts.  Listeners are passed a single argument, the message posted
-from the content script.
-
-### error ###
-
-This event is emitted when an uncaught runtime error occurs in the page worker's
-content scripts.  Listeners are passed a single argument, the
-[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
-object.
-
 Examples
 --------
 
@@ -173,4 +154,26 @@ The type of event for which `listener` was registered.
 @param listener {function}
 The listener function that was registered.
 </api>
+
+<api name="message">
+@event
+This event is emitted when the page worker receives a message from its
+content scripts.
+
+@argument {JSON}
+Listeners are passed a single argument, the message posted
+from the content script. The message must be stringifiable to JSON.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in the page worker's
+content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
 </api>

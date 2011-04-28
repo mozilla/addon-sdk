@@ -53,7 +53,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         module = web_docs.create_module_page(os.path.join(\
-            root + '/packages/aardvark/docs/aardvark-feeder.blah'))
+            root + '/packages/aardvark/doc/aardvark-feeder.blah'))
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
@@ -68,13 +68,13 @@ class WebDocTests(unittest.TestCase):
             '<p>The <code>aardvark-feeder</code> module simplifies feeding aardvarks.</p>'\
             in module)
         self.assertTrue(\
-            '<h2 class="api_header">\n\nAPI Reference\n</h2>'\
+            '<h2 class="api_header">API Reference</h2>'\
             in module)
         self.assertTrue(\
-            '<h3 class="api_header">\n\nFunctions\n</h3>'\
+            '<h3 class="api_header">Functions</h3>'\
             in module)
         self.assertTrue(\
-            '<h4 class="api_name">\n\nfeed(food)\n</h4>'\
+            '<h4 class="api_name">feed(food)</h4>'\
             in module)
         self.assertTrue(
             '<p>Feed the aardvark.</p>'\
@@ -84,7 +84,7 @@ class WebDocTests(unittest.TestCase):
         self.assertTrue(\
             '<a href="packages/aardvark/aardvark.html"' in doc)
         self.assertTrue(\
-            '<a href="packages/aardvark/docs/main.html">main</a>' in doc)
+            '<a href="packages/aardvark/doc/main.html">main</a>' in doc)
 
 if __name__ == "__main__":
     unittest.main()

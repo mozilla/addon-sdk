@@ -78,7 +78,7 @@ def normpath(path):
 
 def document_zip_file(path):
     zip = zipfile.ZipFile(path, 'r')
-    for name in zip.namelist():
+    for name in sorted(zip.namelist()):
         contents = zip.read(name)
         lines = contents.splitlines()
         if len(lines) == 1 and name.endswith('.json') and len(lines[0]) > 75:

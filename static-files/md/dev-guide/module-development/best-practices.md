@@ -48,11 +48,5 @@ characteristics:
     3. Potential ways in which the module's functionality might
        be attenuated to reduce authority
 
-The current best practices are illustrated well by the [xhr module
-documentation], the [xhr module source code], and the [xhr module test
-suite].
-
-  [xhr module documentation]: packages/api-utils/docs/xhr.html
-  [xhr module source code]: packages/api-utils/lib/xhr.js
-  [xhr module test suite]: packages/api-utils/tests/test-xhr.js
-  [Chrome Object Wrappers]: https://wiki.mozilla.org/XPConnect_Chrome_Object_Wrapper
+The current best practices are illustrated well by the
+[xhr module](packages/api-utils/docs/xhr.html).

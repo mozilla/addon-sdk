@@ -8,6 +8,7 @@ const widgets = require("widget");
 const tabs = require("tabs");
 
 var widget = widgets.Widget({
+  id: "mozilla-link",
   label: "Mozilla website",
   contentURL: "http://www.mozilla.org/favicon.ico",
   onClick: function() {
@@ -90,8 +91,8 @@ addon_templates = {
     "content": {
       "lib/main.js": MAIN_JS,
       "data/": EMPTY_FOLDER,
-      "docs/main.md": MAIN_JS_DOC,
-      "tests/test-main.js": TEST_MAIN_JS,
+      "doc/main.md": MAIN_JS_DOC,
+      "test/test-main.js": TEST_MAIN_JS,
       "README.md": README_DOC,
       "package.json": PACKAGE_JSON
     }

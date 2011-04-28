@@ -71,7 +71,7 @@ In the `main` function, add the code to create the matcher:
 
     var matcher = pageMod.PageMod({
       include: ['*'],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('matcher.js')],
       onAttach: function(worker) {
@@ -193,7 +193,6 @@ Finally, update `main.js` with the code to construct the annotation panel:
       contentURL: data.url('annotation/annotation.html'),
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('annotation/annotation.js')],
-      contentScriptWhen: 'ready',
       onShow: function() {
         this.postMessage(this.content);
       }

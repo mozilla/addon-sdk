@@ -212,7 +212,8 @@ class Server(object):
                 return self._error('501 Not Implemented')
             if not _idle_event.isSet():
                 _idle_event.set()
-            return
+            self.start_response('200 OK', [('Content-type', 'text/plain')])
+            return ['']
         else:
             return self._error('404 Not Found')
 
@@ -237,7 +238,7 @@ def make_wsgi_app(env_root, webdocs, task_queue, expose_privileged_api=True):
     return app
 
 def get_url(host=DEFAULT_HOST, port=DEFAULT_PORT):
-    return "http://%s:%d" % (host, port)
+    return "http://%s:%d/" % (host, port)
 
 def make_httpd(env_root, host=DEFAULT_HOST, port=DEFAULT_PORT,
                quiet=True):
@@ -247,7 +248,8 @@ def make_httpd(env_root, host=DEFAULT_HOST, port=DEFAULT_PORT,
         handler_class = QuietWSGIRequestHandler
 
     tq = Queue.Queue()
-    web_docs = webdocs.WebDocs(env_root)
+    url = get_url(host, port)
+    web_docs = webdocs.WebDocs(env_root, url)
     httpd = simple_server.make_server(host, port,
                                       make_wsgi_app(env_root, web_docs, tq),
                                       ThreadedWSGIServer,
@@ -356,8 +358,11 @@ def generate_static_docs(env_root, tgz_filename, base_url = ''):
         open(os.path.join(dest_dir, pkg_name + ".html"), "w")\
             .write(package_doc_html)
 
-        docs_src_dir = os.path.join(src_dir, "docs")
-        docs_dest_dir = os.path.join(dest_dir, "docs")
+        docs_src_dir = os.path.join(src_dir, "doc")
+        docs_dest_dir = os.path.join(dest_dir, "doc")
+        if os.path.isdir(os.path.join(src_dir, "docs")):
+            docs_src_dir = os.path.join(src_dir, "docs")
+            docs_dest_dir = os.path.join(dest_dir, "docs")
         if not os.path.exists(docs_dest_dir):
             os.mkdir(docs_dest_dir)
         for (dirpath, dirnames, filenames) in os.walk(docs_src_dir):

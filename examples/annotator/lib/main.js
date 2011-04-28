@@ -96,6 +96,7 @@ The selector is switched on/off with a left-click, and the list of annotations
 is displayed on a right-click.
 */
   var widget = widgets.Widget({
+    id: 'toggle-switch',
     label: 'Annotator',
     contentURL: data.url('widget/pencil-off.png'),
     contentScriptWhen: 'ready',
@@ -135,16 +136,12 @@ display it.
     onAttach: function(worker) {
       worker.postMessage(canEnterAnnotations());
       selectors.push(worker);
-      worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            annotationEditor.annotationAnchor = message.anchor;
-            annotationEditor.show();
-            break;
-          case 'detach':
-            detachWorker(this, selectors);
-            break;
-        }
+      worker.port.on('show', function(data) {
+        annotationEditor.annotationAnchor = data;
+        annotationEditor.show();
+      });
+      worker.on('detach', function () {
+        detachWorker(this, selectors);
       });
     }
   });
@@ -168,7 +165,6 @@ and the text the user entered, store it, and hide the panel.
     height: 220,
     contentURL: data.url('editor/annotation-editor.html'),
     contentScriptFile: data.url('editor/annotation-editor.js'),
-    contentScriptWhen: 'ready',
     onMessage: function(annotationText) {
       if (annotationText)
         handleNewAnnotation(annotationText, this.annotationAnchor);
@@ -258,20 +254,16 @@ see old ones.
       if(simpleStorage.storage.annotations) {
         worker.postMessage(simpleStorage.storage.annotations);
       }
-      worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            annotation.content = message.annotationText;
-            annotation.show();
-            break;
-          case 'hide':
-            annotation.content = null;
-            annotation.hide();
-            break;
-          case 'detach':
-            detachWorker(this, matchers);
-            break;
-        }
+      worker.port.on('show', function(data) {
+        annotation.content = data;
+        annotation.show();
+      });
+      worker.port.on('hide', function() {
+        annotation.content = null;
+        annotation.hide();
+      });
+      worker.on('detach', function () {
+        detachWorker(this, matchers);
       });
       matchers.push(worker);
     }

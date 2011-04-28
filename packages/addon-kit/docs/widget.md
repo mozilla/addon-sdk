@@ -30,6 +30,7 @@ using a URL with the `contentURL` property.
 For example, this widget contains an image, so it looks like a simple icon:
 
     require("widget").Widget({
+      id: "mozilla-icon", 
       label: "My Mozilla Widget",
       contentURL: "http://www.mozilla.org/favicon.ico"
     });
@@ -39,6 +40,7 @@ Upon creation, the widget is automatically added to the add-on bar.
 This widget contains an entire web page:
 
     require("widget").Widget({
+      id: "hello-display",
       label: "My Hello Widget",
       content: "Hello!",
       width: 50
@@ -86,6 +88,7 @@ information.
 
     // A basic click-able image widget.
     widgets.Widget({
+      id: "google-link",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
       onClick: function() {
@@ -95,6 +98,7 @@ information.
 
     // A widget that changes display on mouseover.
     widgets.Widget({
+      id: "mouseover-effect",
       label: "Widget with changing image on mouseover",
       contentURL: "http://www.yahoo.com/favicon.ico",
       onMouseover: function() {
@@ -107,6 +111,7 @@ information.
 
     // A widget that updates content on a timer.
     widgets.Widget({
+      id: "auto-update-widget",
       label: "Widget that updates content on a timer",
       content: "0",
       contentScript: 'setTimeout(function() {' +
@@ -117,6 +122,7 @@ information.
 
     // A widget that loads a random Flickr photo every 5 minutes.
     widgets.Widget({
+      id: "random-flickr",
       label: "Random Flickr Photo Widget",
       contentURL: "http://www.flickr.com/explore/",
       contentScriptWhen: "ready",
@@ -134,6 +140,7 @@ information.
 
     // A widget created with a specified width, that grows.
     let myWidget = widgets.Widget({
+      id: "widget-effect",
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
       width: 50,
@@ -144,6 +151,7 @@ information.
 
     // A widget communicating bi-directionally with a content script.
     let widget = widgets.Widget({
+      id: "message-test",
       label: "Bi-directional communication!",
       content: "<foo>bar</foo>",
       contentScriptWhen: "ready",
@@ -172,6 +180,11 @@ Represents a widget object.
     A required string description of the widget used for accessibility,
     title bars, and error reporting.
 
+  @prop id {string}
+    Mandatory string used to identify your widget in order to save it's 
+    location when user customizes it in the browser. 
+    This string has to be unique and must not be changed in time.
+  
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
     It may contain HTML. Widgets must have either the `content` property or the

@@ -5,9 +5,8 @@ The `observer-service` module provides access to the
 application-wide observer service singleton.
 
 For a list of common observer topics across a variety of Mozilla-based
-applications, see the MDC page on [Observer Notifications].
-
-[Observer Notifications]: https://developer.mozilla.org/en/Observer_Notifications
+applications, see the MDC page on
+[Observer Notifications](https://developer.mozilla.org/en/Observer_Notifications).
 
 ## Observer Callbacks ##
 

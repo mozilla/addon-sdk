@@ -1,14 +1,12 @@
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-Loader
-------
-
 Loader is base trait and it provides set of core properties and associated
 validations. Trait is useful for all the compositions providing high level
 APIs for creating JavaScript contexts that can access web content.
 
-Loader is composed from the [EventEmitter] trait, therefore instances
-of Loader and their descendants expose all the public properties
+Loader is composed from the
+[EventEmitter](packages/api-utils/docs/events.html) trait, therefore
+instances of Loader and their descendants expose all the public properties
 exposed by EventEmitter along with additional public properties:
 
 Value changes on all of the above mentioned properties emit `propertyChange`

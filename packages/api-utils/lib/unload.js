@@ -6,6 +6,8 @@ var observers = [];
 var unloaders = [];
 
 var when = exports.when = function when(observer) {
+  if (observers.indexOf(observer) != -1)
+    return;
   observers.unshift(observer);
 };
 
@@ -15,29 +17,32 @@ var send = exports.send = function send(reason) {
   });
 };
 
-var addMethod = exports.addMethod = function addMethod(obj, unloader) {
-  var called = false;
+var ensure = exports.ensure = function ensure(obj, destructorName) {
+  if (!destructorName)
+    destructorName = "unload";
+  if (!(destructorName in obj))
+    throw new Error("object has no '" + destructorName + "' property");
+
+  let called = false;
+  let originalDestructor = obj[destructorName];
 
   function unloadWrapper(reason) {
     if (!called) {
       called = true;
-      var index = unloaders.indexOf(unloadWrapper);
+      let index = unloaders.indexOf(unloadWrapper);
       if (index == -1)
         throw new Error("internal error: unloader not found");
       unloaders.splice(index, 1);
-      unloader.apply(obj, [reason]);
+      originalDestructor.call(obj, reason);
+      originalDestructor = null;
+      destructorName = null;
+      obj = null;
     }
   };
 
   unloaders.push(unloadWrapper);
-  obj.unload = unloadWrapper;
-};
 
-var ensure = exports.ensure = function ensure(obj) {
-  if (!("unload" in obj))
-    throw new Error("object has no 'unload' property");
-
-  addMethod(obj, obj.unload);
+  obj[destructorName] = unloadWrapper;
 };
 
 when(

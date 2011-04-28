@@ -112,6 +112,11 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['run', 'xpi'])),
+        (("", "--package-path",), dict(dest="packagepath", action="append",
+                                       help="extra directories for package search",
+                                       metavar=None,
+                                       default=[],
+                                       cmds=['run', 'xpi', 'test'])),
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
@@ -144,6 +149,15 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test', 'testex', 'testpkgs',
                                            'testall'])),
+        (("", "--no-run",), dict(dest="no_run",
+                                     help=("Instead of launching the "
+                                           "application, just show the command "
+                                           "for doing so.  Use this to launch "
+                                           "the application in a debugger like "
+                                           "gdb."),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
         (("", "--template",), dict(dest="template",
                                    help=("specify the template for the addon"
                                          "to be created"),
@@ -209,7 +223,7 @@ parser_groups = (
     )
 
 # Maximum time we'll wait for tests to finish, in seconds.
-TEST_RUN_TIMEOUT = 5 * 60
+TEST_RUN_TIMEOUT = 10 * 60
 
 def find_parent_package(cur_dir):
     tail = True
@@ -272,37 +286,52 @@ def parse_args(arguments, global_options, usage, parser_groups, defaults=None):
 
     return (options, args)
 
+# all tests emit progress messages to stderr, not stdout. (the mozrunner
+# console output goes to stderr and is hard to change, and
+# unittest.TextTestRunner prefers stderr, so we send everything else there
+# too, to keep all the messages in order)
+
 def test_all(env_root, defaults):
     fail = False
 
-    print "Testing cfx..."
+    print >>sys.stderr, "Testing cfx..."
+    sys.stderr.flush()
     result = test_cfx(env_root, defaults['verbose'])
     if result.failures or result.errors:
         fail = True
+
+    print >>sys.stderr, "Testing all examples..."
+    sys.stderr.flush()
 
     try:
         test_all_examples(env_root, defaults)
     except SystemExit, e:
         fail = (e.code != 0) or fail
 
+    print >>sys.stderr, "Testing all packages..."
+    sys.stderr.flush()
     try:
         test_all_packages(env_root, defaults)
     except SystemExit, e:
         fail = (e.code != 0) or fail
 
     if fail:
-        print "Some tests were unsuccessful."
+        print >>sys.stderr, "Some tests were unsuccessful."
         sys.exit(1)
-    print "All tests were successful. Ship it!"
+    print >>sys.stderr, "All tests were successful. Ship it!"
     sys.exit(0)
 
 def test_cfx(env_root, verbose):
     import cuddlefish.tests
 
+    # tests write to stderr. flush everything before and after to avoid
+    # confusion later.
+    sys.stdout.flush(); sys.stderr.flush()
     olddir = os.getcwd()
     os.chdir(env_root)
     retval = cuddlefish.tests.run(verbose)
     os.chdir(olddir)
+    sys.stdout.flush(); sys.stderr.flush()
     return retval
 
 def test_all_examples(env_root, defaults):
@@ -312,7 +341,8 @@ def test_all_examples(env_root, defaults):
     examples.sort()
     fail = False
     for dirname in examples:
-        print "Testing %s..." % dirname
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
         try:
             run(arguments=["test",
                            "--pkgdir",
@@ -332,7 +362,8 @@ def test_all_packages(env_root, defaults):
     for name in pkg_cfg.packages:
         if name != "testpkgs":
             deps.append(name)
-    print "Testing all available packages: %s." % (", ".join(deps))
+    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(deps))
+    sys.stderr.flush()
     run(arguments=["test", "--dependencies"],
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
@@ -392,8 +423,9 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     if len(args) > 1:
         print >>err, 'Too many arguments.'
         return 1
-    # if current dir isn't empty
-    if len(os.listdir(path)) > 0:
+    # avoid clobbering existing files, but we tolerate things like .git
+    existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
+    if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
 
@@ -540,7 +572,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             sys.exit(1)
 
     if not pkg_cfg:
-        pkg_cfg = packaging.build_config(env_root, target_cfg)
+        pkg_cfg = packaging.build_config(env_root, target_cfg, options.packagepath)
 
     target = target_cfg.name
 
@@ -675,27 +707,33 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
+    from cuddlefish.manifest import build_manifest
+    uri_prefix = "resource://%s" % unique_prefix
+    include_tests = False #bool(command=="test")
+    manifest = build_manifest(target_cfg, pkg_cfg, uri_prefix, include_tests)
+    harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
         from cuddlefish.rdf import gen_manifest, RDFUpdate
 
-        manifest = gen_manifest(template_root_dir=app_extension_dir,
-                                target_cfg=target_cfg,
-                                bundle_id=bundle_id,
-                                update_url=options.update_url,
-                                bootstrap=True)
+        manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
+                                    target_cfg=target_cfg,
+                                    bundle_id=bundle_id,
+                                    update_url=options.update_url,
+                                    bootstrap=True)
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
             print "Exporting update description to %s." % rdf_name
             update = RDFUpdate()
-            update.add(manifest, options.update_link)
+            update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
         xpi_name = XPI_FILENAME % target_cfg.name
         print "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
-                  manifest=manifest,
+                  manifest=manifest_rdf,
                   xpi_name=xpi_name,
                   harness_options=harness_options)
     else:
@@ -720,7 +758,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              verbose=options.verbose,
                              timeout=timeout,
                              logfile=options.logfile,
-                             addons=options.addons)
+                             addons=options.addons,
+                             norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()

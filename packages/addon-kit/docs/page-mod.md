@@ -49,18 +49,18 @@ loaded:
       contentScript: 'window.alert("Page matches ruleset");'
     });
 
-If you specify a value of "ready" for `contentScriptWhen` then the content
-script can interact with the DOM itself:
+If you specify a value of "ready" or "end" for `contentScriptWhen`,
+then the content script can interact with the DOM itself:
 
     var pageMod = require("page-mod");
     pageMod.PageMod({
       include: "*.org",
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
-### <a name="pagemod-content-scripts">Communicating With Content Scripts</a>###
+## Communicating With Content Scripts ##
 
 When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
@@ -90,7 +90,7 @@ This is demonstrated in the following example:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: "onMessage = function onMessage(message) {" +
                      "  window.alert(message);};",
       onAttach: function onAttach(worker) {
@@ -132,7 +132,7 @@ attached and registers a listener function that simply logs the message:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: ["postMessage('Content script 1 is attached to '+ " +
                       "document.URL);",
                       "postMessage('Content script 2 is attached to '+ " +
@@ -154,6 +154,57 @@ The console output of this add-on is:
   info: Content script 1 is attached to http://www.mozilla.com/en-US/
   info: Content script 2 is attached to http://www.mozilla.com/en-US/
 </pre>
+
+### Mapping workers to tabs ###
+
+The [`worker`](packages/api-utils/docs/content/worker.html) has a `tab`
+property which returns the tab associated with this worker. You can use this
+to access the [`tabs API`](packages/addon-kit/docs/tabs.html) for the tab
+associated with a specific page:
+
+    var pageMod = require("page-mod");
+    var tabs = require("tabs");
+
+    pageMod.PageMod({
+      include: ["*"],
+      onAttach: function onAttach(worker) {
+        console.log(worker.tab.title);
+      }
+    });
+
+### Attaching content scripts to tabs ###
+
+We've seen that the page mod API attaches content scripts to pages based on
+their URL. Sometimes, though, we don't care about the URL: we just want
+to execute a script on demand in the context of a particular tab.
+
+For example, we might want to run a script in the context of the currently
+active tab when the user clicks a widget: to block certain content, to
+change the font style, or to display the page's DOM structure.
+
+Using the `attach` method of the [`tab`](packages/addon-kit/docs/tabs.html)
+object, you can attach a set of content scripts to a particular tab. The
+scripts are executed immediately.
+
+The following add-on creates a widget which, when clicked, highlights all the
+`div` elements in the page loaded into the active tab:
+
+    const widgets = require("widget");
+    const tabs = require("tabs");
+
+    var widget = widgets.Widget({
+      label: "Show divs",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        tabs.activeTab.attach({
+          contentScript:
+            'var divs = document.getElementsByTagName("div");' +
+            'for (var i = 0; i < divs.length; ++i) {' +
+              'divs[i].setAttribute("style", "border: solid red 1px;");' +
+            '}'
+        });
+      }
+    });
 
 <api name="PageMod">
 @class
@@ -182,9 +233,11 @@ Creates a PageMod.
     Optional.
   @prop [contentScriptWhen] {string}
     When to load the content scripts.  Optional.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+    Possible values are "end" (default), which loads them once all page contents 
+    have been loaded, "ready", which loads them once DOM nodes are 
+    ready (i.e. like DOMContentLoaded event), and "start", which loads them once
+    the `window` object for the page has been created, but before any scripts 
+    specified by the page have been loaded.
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`

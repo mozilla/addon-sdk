@@ -6,7 +6,7 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(1); on('message', function() postMessage(2));",
+    contentScript: "postMessage(1); self.on('message', function() postMessage(2));",
     onMessage: function (message) {
       test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {
@@ -28,18 +28,20 @@ tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       panel.show();
     },
     onShow: function () {
       test.pass("The panel was shown.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, true, "panel.isShowing == true.");
       panel.hide();
     },
     onHide: function () {
       test.pass("The panel was hidden.");
       test.assertEqual(this, panel, "The 'this' object is the panel.");
+      test.assertEqual(this.isShowing, false, "panel.isShowing == false.");
       panel.destroy();
       test.done();
     }
@@ -70,7 +72,7 @@ tests.testResizePanel = function(test) {
 
     let panel = Panel({
       contentScript: "postMessage('')",
-      contentScriptWhen: "ready",
+      contentScriptWhen: "end",
       height: 10,
       width: 10,
       onMessage: function (message) {
@@ -137,6 +139,61 @@ tests.testSeveralShowHides = function(test) {
     test.fail('error was emitted:' + e.message + '\n' + e.stack);
   });
   panel.show();
+};
+
+tests.testAnchorAndArrow = function(test) {
+  test.waitUntilDone(20000);
+  let count = 0;
+  function newPanel(tab, anchor) {
+    let panel = panels.Panel({
+      contentURL: "data:text/html,<html><body style='padding: 0; margin: 0; " +
+                  "background: gray; text-align: center;'>Anchor: " +
+                  anchor.id + "</body></html>",
+      width: 200,
+      height: 100,
+      onShow: function () {
+        count++;
+        panel.destroy();
+        if (count==5) {
+          test.pass("All anchored panel test displayed");
+          tab.close(function () {
+            test.done();
+          });
+        }
+      }
+    });
+    panel.show(anchor);
+  }
+  
+  let tabs= require("tabs");
+  let url = 'data:text/html,' +
+    '<html><head><title>foo</title></head><body>' + 
+    '<style>div {background: gray; position: absolute; width: 300px; ' +
+           'border: 2px solid black;}</style>' +
+    '<div id="tl" style="top: 0px; left: 0px;">Top Left</div>' +
+    '<div id="tr" style="top: 0px; right: 0px;">Top Right</div>' +
+    '<div id="bl" style="bottom: 0px; left: 0px;">Bottom Left</div>' +
+    '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
+    '</body></html>';
+  
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+      let window = browserWindow.content;
+      newPanel(tab, window.document.getElementById('tl'));
+      newPanel(tab, window.document.getElementById('tr'));
+      newPanel(tab, window.document.getElementById('bl'));
+      newPanel(tab, window.document.getElementById('br'));
+      let anchor = browserWindow.document.getElementById("identity-box");
+      newPanel(tab, anchor);
+    }
+  });
+  
+  
+  
 };
 
 function makeEventOrderTest(options) {

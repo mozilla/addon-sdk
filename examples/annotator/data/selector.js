@@ -41,26 +41,16 @@ $('*').mouseenter(function() {
   $(matchedElement).bind('click.annotator', function(event) {
     event.stopPropagation();
     event.preventDefault();
-    postMessage({
-      kind: 'show',
-      anchor: [
+    self.port.emit('show',
+      [
         document.location.toString(),
         $(ancestor).attr("id"),
         $(matchedElement).text()
       ]
-   });
+   );
   });
 });
 
 $('*').mouseout(function() {
   resetMatchedElement();
 });
-
-/*
-Since there is no onDetach event for panels, we listen for the window's
-unload event and send the add-on a detach message.
-*/
-window.addEventListener('unload', function() {
-    postMessage({kind: 'detach'});
-  },
-  false);
