@@ -117,30 +117,52 @@ const widgetAttributes = {
   panel: valid.panel
 };
 
-// Only import data definition from loader, no more compose with it as `Model`
-// functions allow to recreate easily all Loader code.
+// Import data definitions from loader, but don't compose with it as Model
+// functions allow us to recreate easily all Loader code.
 let loaderAttributes = require("content/loader").validationAttributes;
-for(let i in loaderAttributes)
+for (let i in loaderAttributes)
   widgetAttributes[i] = loaderAttributes[i];
 
 widgetAttributes.contentURL.optional = true;
+
+// Widgets public events list, that are automatically binded in options object
+let widgetEvents = [
+  "click", "mouseover", "mouseout", 
+  "error",
+  "message",
+  "attach"
+];
 
 // `Model` utility functions that help creating these various Widgets objects
 const Model = {};
 
 // Validate one attribute using api-utils.js:validateOptions function
 Model._validate = function Model_validate(name, suspect, validation) {
-  let $1 = {}
-  $1[name] = suspect
-  let $2 = {}
-  $2[name] = validation
-  return validateOptions($1, $2)[name]
+  let $1 = {};
+  $1[name] = suspect;
+  let $2 = {};
+  $2[name] = validation;
+  return validateOptions($1, $2)[name];
 }
 
-// Validate and define, on a given object, a set of attribute
+/**
+ * This method has two purposes:
+ * 1/ Validate and define, on a given object, a set of attribute
+ * 2/ Emit a "change" event on this object when an attribute is changed
+ *
+ * @params {Object} object
+ *    Object that we can to bind attributes on and watch for their changes.
+ *    This object must have an EventEmitter interface, or, at least `_emit`
+ *    method
+ * @params {Object} attrs
+ *    Dictionary of attributes definition following api-utils:validateOptions 
+ *    scheme
+ * @params {Object} values
+ *    Dictionary of attributes default values
+ */
 Model.setAttributes = function Model_setAttributes(object, attrs, values) {
   let properties = {};
-  for(let name in attrs) {
+  for (let name in attrs) {
     let value = values[name];
     let req = attrs[name];
     
@@ -153,12 +175,16 @@ Model.setAttributes = function Model_setAttributes(object, attrs, values) {
       value = Model._validate(name, value, req);
     
     // In any case, define this property on `object`
-    let property = Model._setupProperty(name, value);
-    
-    // Delete setter of readonly properties
-    // Do not do delete property.set as it brokes Cortex
+    let property = null;
     if (req.readonly)
-      property.set = function () {};
+      property = {
+        value: value,
+        writable: false,
+        enumerable: true,
+        configurable: false
+      };
+    else
+      property = Model._createWritableProperty(name, value);
     
     properties[name] = property;
   }
@@ -166,7 +192,7 @@ Model.setAttributes = function Model_setAttributes(object, attrs, values) {
 }
 
 // Generate ES5 property definition for a given attribute
-Model._setupProperty = function (name, value) {
+Model._createWritableProperty = function Model__createWritableProperty(name, value) {
   return {
     get: function () {
       return value;
@@ -182,10 +208,20 @@ Model._setupProperty = function (name, value) {
   };
 }
 
-// Automagically register listerners in options dictionnary
-// by detecting listener attributes with name starting with `on`
-Model.setEvents = function (object, events, listeners) {
-  for(let i = 0, l = events.length; i < l; i++) {
+/**
+ * Automagically register listerners in options dictionnary
+ * by detecting listener attributes with name starting with `on`
+ *
+ * @params {Object} object
+ *    Target object that need to follow EventEmitter interface, or, at least, 
+ *    having `on` method.
+ * @params {Array} events
+ *    List of events name to automatically bind.
+ * @params {Object} listeners
+ *    Dictionary of event listener functions to register.
+ */
+Model.setEvents = function Model_setEvents(object, events, listeners) {
+  for (let i = 0, l = events.length; i < l; i++) {
     let name = events[i];
     let onName = "on" + name[0].toUpperCase() + name.substr(1);
     if (!listeners[onName])
@@ -216,19 +252,11 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     
     this._views = [];
     
+    // Set tooltip to label value if we don't have tooltip defined
     if (!this.tooltip)
       this.tooltip = this.label;
     
-    let events = [
-      "click", "mouseover", "mouseout", 
-      "error",
-      "message",
-      "attach"
-    ];
-    Model.setEvents(this, events, options);
-    
-    if (!options.onError)
-      this.on('error', this._defaultErrorHandler.bind(this));
+    Model.setEvents(this, widgetEvents, options);
     
     this.on('change', this._onChange.bind(this));
 
@@ -238,7 +266,10 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   _onChange: function Widget__onChange(name, value) {
+    // Set tooltip to label value if we don't have tooltip defined
     if (name == 'tooltip' && !value) {
+      // we need to change tooltip again in order to change the value of the 
+      // attribute itself
       this.tooltip = this.label;
       return;
     }
@@ -247,11 +278,6 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1) {
       this._views.forEach(function(v) v[name] = value);
     }
-  },
-  
-  _defaultErrorHandler: function Widget__defaultErrorHandler(e) {
-    if (1 == this._listeners('error').length)
-      console.exception(e)
   },
 
   _onEvent: function Widget__onEvent(type, eventData) {
@@ -272,7 +298,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   // a WidgetView instance is destroyed
-  _viewDestroyed: function (view) {
+  _onViewDestroyed: function Widget__onViewDestroyed(view) {
     let idx = this._views.indexOf(view);
     this._views.splice(idx, 1);
   },
@@ -296,7 +322,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     
     // Dispatch destroy calls to views
     // we need to go backward as we remove items from this array in 
-    // _viewDestroyed
+    // _onViewDestroyed
     for (let i = this._views.length-1; i>=0; i--)
       this._views[i].destroy();
     
@@ -309,7 +335,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
 // Widget constructor
 const Widget = function Widget(options) {
-  let w = WidgetTrait.create();
+  let w = WidgetTrait.create(Widget.prototype);
   w._initWidget(options);
   
   // Return a Cortex of widget in order to hide private attributes like _onEvent
@@ -322,7 +348,7 @@ exports.Widget = Widget;
 /**
  * WidgetView is an instance of a widget for a specific window.
  *
- * This is an external API that can be retrieve with Widget.getView or
+ * This is an external API that can be retrieved by calling Widget.getView or
  * by watching `attach` event on Widget.
  */
 const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
@@ -335,12 +361,10 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   // Widget.getView
   _public: null,
   
-  _initWidgetView: function WidgetView__initWidgetView(mainWidget) {
-    this._mainWidget = mainWidget;
+  _initWidgetView: function WidgetView__initWidgetView(baseWidget) {
+    this._baseWidget = baseWidget;
     
-    Model.setAttributes(this, widgetAttributes, mainWidget);
-    
-    this.on('error', this._defaultErrorHandler.bind(this));
+    Model.setAttributes(this, widgetAttributes, baseWidget);
     
     this.on('change', this._onChange.bind(this));
     
@@ -348,18 +372,15 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   _onChange: function WidgetView__onChange(name, value) {
-    if (name == 'tooltip' && !value)
+    if (name == 'tooltip' && !value) {
       this.tooltip = this.label;
+      return;
+    }
     
     // Forward attributes changes to WidgetChrome instance
     if (['width', 'tooltip', 'content', 'contentURL'].indexOf(name) != -1) {
-      this._chrome.update(this._mainWidget, name, value);
+      this._chrome.update(this._baseWidget, name, value);
     }
-  },
-  
-  _defaultErrorHandler: function WidgetView__defaultErrorHandler(e) {
-    if (1 == this._listeners('error').length)
-      console.exception(e)
   },
 
   _onEvent: function WidgetView__onEvent(type, eventData, domNode) {
@@ -368,9 +389,9 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     
     // And forward it to the main Widget object
     if ("click" == type || type.indexOf("mouse") == 0)
-      this._mainWidget._onEvent(type, this._public);
+      this._baseWidget._onEvent(type, this._public);
     else
-      this._mainWidget._onEvent(type, eventData);
+      this._baseWidget._onEvent(type, eventData);
 
     // Special case for click events: if the widget doesn't have a click
     // handler, but it does have a panel, display the panel.
@@ -385,20 +406,20 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   postMessage: function WidgetView_postMessage(message) {
-    this._chrome.update(this._mainWidget, "postMessage", message);
+    this._chrome.update(this._baseWidget, "postMessage", message);
   },
 
   destroy: function WidgetView_destroy() {
     this._chrome.destroy();
     this._emit("detach");
-    this._mainWidget._viewDestroyed(this);
+    this._baseWidget._onViewDestroyed(this);
   }
 
 }));
 
-const WidgetView = function WidgetView(mainWidget) {
-  let w = WidgetViewTrait.create();
-  w._initWidgetView(mainWidget);
+const WidgetView = function WidgetView(baseWidget) {
+  let w = WidgetViewTrait.create(WidgetView.prototype);
+  w._initWidgetView(baseWidget);
   return w;
 }
 
@@ -503,27 +524,27 @@ BrowserWindow.prototype = {
     items.forEach(this._addItemToWindow, this);
   },
   
-  _addItemToWindow: function BW__addItemToWindow(mainWidget) {
+  _addItemToWindow: function BW__addItemToWindow(baseWidget) {
     // Create a WidgetView instance
-    let widget = mainWidget._createView();
+    let widget = baseWidget._createView();
     
-    // Create a ChromeView instance
+    // Create a WidgetChrome instance
     let item = new WidgetChrome({
-        widget: widget,
-        doc: this.doc,
-        window: this.window
-      });
+      widget: widget,
+      doc: this.doc,
+      window: this.window
+    });
     
     widget._chrome = item;
       
     this._insertNodeInToolbar(item.node);
     
     // We need to insert Widget DOM Node before finishing widget view creation
-    // (because fill create an iframe and try to access its docShell)
+    // (because fill creates an iframe and tries to access its docShell)
     item.fill();
   },
   
-  _insertNodeInToolbar: function (node) {
+  _insertNodeInToolbar: function BW__insertNodeInToolbar(node) {
     // Add to the customization palette
     let toolbox = this.doc.getElementById("navigator-toolbox");
     let palette = toolbox.palette;
@@ -533,7 +554,7 @@ BrowserWindow.prototype = {
     let container = null;
     let toolbars = this.doc.getElementsByTagName("toolbar");
     let id = node.getAttribute("id");
-    for(let i = 0, l = toolbars.length; i < l; i++) {
+    for (let i = 0, l = toolbars.length; i < l; i++) {
       let toolbar = toolbars[i];
       if (toolbar.getAttribute("currentset").indexOf(id) == -1)
         continue;
@@ -560,7 +581,7 @@ BrowserWindow.prototype = {
     let ids = (currentSet == "__empty") ? [] : currentSet.split(",");
     let idx = ids.indexOf(id);
     if (idx != -1) {
-      for(let i = idx; i < ids.length; i++) {
+      for (let i = idx; i < ids.length; i++) {
         nextNode = this.doc.getElementById(ids[i]);
         if (nextNode)
           break;
@@ -592,7 +613,7 @@ function WidgetChrome(options) {
 }
 
 // Update a property of a widget.
-WidgetChrome.prototype.update = function CW_update(updatedItem, property, value) {
+WidgetChrome.prototype.update = function WC_update(updatedItem, property, value) {
   switch(property) {
     case "contentURL":
     case "content":
@@ -612,12 +633,12 @@ WidgetChrome.prototype.update = function CW_update(updatedItem, property, value)
 }
 
 // Add a widget to this window.
-WidgetChrome.prototype._createNode = function CW__createNode() {
+WidgetChrome.prototype._createNode = function WC__createNode() {
   // XUL element container for widget
   let node = this._doc.createElement("toolbaritem");
   let guid = require("xpcom").makeUuid().toString();
   
-  // Temporary fix around require("self") failing on unit-test execution ...
+  // Temporary work around require("self") failing on unit-test execution ...
   let jetpackID = "testID";
   try {
     jetpackID = require("self").id;
@@ -644,7 +665,7 @@ WidgetChrome.prototype._createNode = function CW__createNode() {
 }
 
 // Initial population of a widget's content.
-WidgetChrome.prototype.fill = function CW_fill() {
+WidgetChrome.prototype.fill = function WC_fill() {
   // Create element
   var iframe = this._doc.createElement("iframe");
   iframe.setAttribute("type", "content");
@@ -669,7 +690,7 @@ WidgetChrome.prototype.fill = function CW_fill() {
 }
 
 // Get widget content type.
-WidgetChrome.prototype.getContentType = function CW_getContentType() {
+WidgetChrome.prototype.getContentType = function WC_getContentType() {
   if (this._widget.content)
     return CONTENT_TYPE_HTML;
   return (this._widget.contentURL && /\.(jpg|gif|png|ico)$/.test(this._widget.contentURL))
@@ -677,7 +698,7 @@ WidgetChrome.prototype.getContentType = function CW_getContentType() {
 }
 
 // Set widget content.
-WidgetChrome.prototype.setContent = function CW_setContent() {
+WidgetChrome.prototype.setContent = function WC_setContent() {
   let type = this.getContentType();
   let contentURL = null;
 
@@ -715,16 +736,16 @@ WidgetChrome.prototype.setContent = function CW_setContent() {
   });
 }
 
-// Set up all supported events for a widget.
-WidgetChrome.prototype.addEventHandlers = function CW_addEventHandlers() {
-  let contentType = this.getContentType();
+// Detect if document consists of a single image.
+WidgetChrome._isImageDoc = function WC__isImageDoc(doc) {
+  return doc.body.childNodes.length == 1 &&
+         doc.body.firstElementChild &&
+         doc.body.firstElementChild.tagName == "IMG";
+}
 
-  // Detect if document consists of a single image.
-  function isImageDoc(doc) {
-    return doc.body.childNodes.length == 1 &&
-           doc.body.firstElementChild &&
-           doc.body.firstElementChild.tagName == "IMG";
-  }
+// Set up all supported events for a widget.
+WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
+  let contentType = this.getContentType();
 
   let self = this;
   let listener = function(e) {
@@ -768,7 +789,7 @@ WidgetChrome.prototype.addEventHandlers = function CW_addEventHandlers() {
       self.setContent();
     
     let doc = e.target;
-    if (contentType == CONTENT_TYPE_IMAGE || isImageDoc(doc)) {
+    if (contentType == CONTENT_TYPE_IMAGE || WidgetChrome._isImageDoc(doc)) {
       // Force image content to size.
       // Add-on authors must size their images correctly.
       doc.body.firstElementChild.style.width = self._widget.width + "px";
@@ -801,7 +822,7 @@ WidgetChrome.prototype.addEventHandlers = function CW_addEventHandlers() {
 }
 
 // Remove and unregister the widget from everything
-WidgetChrome.prototype.destroy = function CW_destroy(removedItems) {
+WidgetChrome.prototype.destroy = function WC_destroy(removedItems) {
   // remove event listeners
   for (let [type, listener] in Iterator(this.eventListeners))
     this.node.firstElementChild.removeEventListener(type, listener, true);
