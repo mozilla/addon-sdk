@@ -58,7 +58,6 @@ in the context of that page:
 
     pageMod.add(new pageMod.PageMod({
       include: ["*.co.uk"],
-      contentScriptWhen: 'end',
       contentScript: 'document.body.innerHTML = ' +
                      '"<h1>this page has been eaten</h1>";'
     }));
@@ -107,16 +106,25 @@ using contentScript. This enables you to load a JavaScript library like jQuery
 by URL, then pass in a simple script inline that can use jQuery.
 
 The `contentScriptWhen` option specifies when the content script(s) should be
-loaded. It can take two values:
+loaded. It takes one of three possible values:
 
 * "start" loads the scripts immediately after the document element for the
-page is inserted into the DOM.
+page is inserted into the DOM. At this point the DOM content hasn't been
+loaded yet, so the script won't be able to interact with it.
 
-* "ready" loads the scripts after the DOM for the page has been loaded. If
-your scripts need to access the DOM content you must specify "ready" here.
+* "ready" loads the scripts after the DOM for the page has been loaded: that
+is, at the point the
+[DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+event fires. At this point, content scripts are able to interact with the DOM
+content, but externally-referenced stylesheets and images may not have finished
+loading.
 
-* "end" loads the scripts after all content (DOM, JS, CSS, images) for the page 
-has been loaded. (default)
+* "end" loads the scripts after all content (DOM, JS, CSS, images) for the page
+has been loaded, at the time the
+[window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+fires.
+
+The default value is "end".
 
 ### Content script access ###
 
@@ -220,7 +228,6 @@ post messages back to the content script:
 
     require("page-mod").PageMod({
       include: ["*"],
-      contentScriptWhen: 'end',
       contentScriptFile:  data.url("pagemod.js"),
       onAttach: function onAttach(worker, mod) {
         // Register the handleMessage function as a listener
