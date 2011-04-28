@@ -653,6 +653,25 @@ exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
   
 };
 
+exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  
+  let widget = new widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "foo"
+  });
+  let view = widget.getView(require("windows").browserWindows.activeWindow);
+  widget.tooltip = null;
+  test.assertEqual(view.tooltip, "foo", 
+                   "view tooltip defaults to base widget label");
+  test.assertEqual(widget.tooltip, "foo", 
+                   "tooltip defaults to base widget label");
+  widget.destroy();
+  test.done();
+};
+
 exports.testWidgetMove = function testWidgetMove(test) {
   test.waitUntilDone();
   
