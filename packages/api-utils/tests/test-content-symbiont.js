@@ -94,12 +94,12 @@ exports["test:communication with worker global scope"] = function(test) {
       frame: frame,
       contentScript: 'new ' + function() {
         self.postMessage(1);
-        onMessage = function onMessage(message) {
+        self.on("message", function onMessage(message) {
           if (message === 2)
             self.postMessage(3);
           if (message === 4)
             self.postMessage(5);
-        };
+        });
       } + '()',
       contentScriptWhen: 'ready',
       onMessage: onMessage1

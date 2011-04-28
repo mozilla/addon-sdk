@@ -272,7 +272,7 @@ tests.testPingPong = function(test) {
   test.waitUntilDone();
   let page = Page({
     contentURL: 'data:text/html,ping-pong',
-    contentScript: 'onMessage = function(message) self.postMessage("pong");'
+    contentScript: 'self.on("message", function(message) self.postMessage("pong"));'
       + 'self.postMessage("ready");',
     onMessage: function(message) {
       if ('ready' == message) {

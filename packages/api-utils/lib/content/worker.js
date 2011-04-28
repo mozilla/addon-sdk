@@ -110,17 +110,17 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   /**
    * `onMessage` function defined in the global scope of the worker context.
    */
-  get onMessage() this._onMessage,
-  set onMessage(value) {
-    let listener = this._onMessage;
+  get _onMessage() this.__onMessage,
+  set _onMessage(value) {
+    let listener = this.__onMessage;
     if (listener && value !== listener) {
       this.removeListener('message', listener);
-      this._onMessage = undefined;
+      this.__onMessage = undefined;
     }
     if (value)
-      this.on('message', this._onMessage = value);
+      this.on('message', this.__onMessage = value);
   },
-  _onMessage: undefined,
+  __onMessage: undefined,
 
   /**
    * Function for sending data to the addon side.
@@ -213,10 +213,17 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         sandbox, key, Object.getOwnPropertyDescriptor(publicAPI, key)
       );
     }
+    let self = this;
     Object.defineProperties(sandbox, {
       onMessage: {
-        get: function() publicAPI.onMesssage,
-        set: function(value) publicAPI.onMessage = value,
+        get: function() self._onMessage,
+        set: function(value) {
+          console.warn("The global `onMessage` function in content scripts " +
+                       "is deprecated in favor of the `self.on()` function. " +
+                       "Replace `onMessage = function (data){}` definitions " +
+                       "with calls to `self.on('message', function (data){})`.");
+          self._onMessage = value;
+        },
         configurable: true
       },
       console: { value: console, configurable: true },
@@ -295,7 +302,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       delete sandbox[key];
     this._sandbox = null;
     this._addonWorker = null;
-    this._onMessage = undefined;
+    this.__onMessage = undefined;
   },
   
   /**

@@ -5,7 +5,7 @@ Bind a function to click events on the link that send a message back to
 the add-on code, so it can open the link in the main browser.
 */
 
-onMessage = function onMessage(storedAnnotations) {
+self.on("message", function onMessage(storedAnnotations) {
   var annotationList = $('#annotation-list');
   annotationList.empty();
   storedAnnotations.forEach(
@@ -24,4 +24,4 @@ onMessage = function onMessage(storedAnnotations) {
                     .text(storedAnnotation.annotationText);
       annotationList.append(annotationHtml);
     });
-};
+});

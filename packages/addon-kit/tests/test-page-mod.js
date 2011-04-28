@@ -78,9 +78,9 @@ exports.testPageModIncludes = function(test) {
     return {
       include: include,
       contentScript: 'new ' + function() {
-        onMessage = function(msg) {
+        self.on("message", function(msg) {
           window[msg] = true;
-        }
+        });
       },
       // The testPageMod callback with test assertions is called on 'end',
       // and we want this page mod to be attached before it gets called,
@@ -178,9 +178,9 @@ exports.testCommunication2 = function(test) {
         window.addEventListener('load', function listener() {
           self.postMessage('onload');
         }, false);
-        onMessage = function() {
+        self.on("message", function() {
           self.postMessage(window.test)
-        }
+        });
       },
       onAttach: function(worker) {
         worker.on('error', function(e) {

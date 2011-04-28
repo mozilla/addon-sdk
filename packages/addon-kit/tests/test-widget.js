@@ -587,7 +587,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "end",
-    contentScript: "onMessage = function(data) { self.postMessage(data); }; self.postMessage('ready');",
+    contentScript: "self.on('message', function(data) { self.postMessage(data); }); self.postMessage('ready');",
     onMessage: function(message) {
       if (message == "ready")
         widget.postMessage(origMessage);
@@ -618,7 +618,7 @@ exports.testWidgetMove = function testWidgetMove(test) {
     label: label,
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
-    contentScript: "onMessage = function(data) { self.postMessage(data); }; self.postMessage('ready');",
+    contentScript: "self.on('message', function(data) { self.postMessage(data); }); self.postMessage('ready');",
     onMessage: function(message) {
       if (message == "ready") {
         if (!gotFirstReady) {
