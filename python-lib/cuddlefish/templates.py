@@ -1,3 +1,7 @@
+"""
+Add-on templates for 'cfx init'
+"""
+
 #Template used by main.js
 MAIN_JS = '''\
 const widgets = require("widget");
@@ -77,3 +81,20 @@ PACKAGE_JSON = '''\
   "version": "0.1"
 }
 '''
+
+EMPTY_FOLDER = '''\
+  This is a special value indicating that the template item is an empty folder
+'''
+
+addon_templates = {
+  "default": {
+    "content": {
+      "lib/main.js": MAIN_JS,
+      "data/": EMPTY_FOLDER,
+      "doc/main.md": MAIN_JS_DOC,
+      "test/test-main.js": TEST_MAIN_JS,
+      "README.md": README_DOC,
+      "package.json": PACKAGE_JSON
+    }
+  }
+}

@@ -8,6 +8,7 @@ import simplejson as json
 from cuddlefish import packaging
 from cuddlefish.bunch import Bunch
 from cuddlefish.version import get_version
+from templates import addon_templates
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
 MOZRUNNER_BIN_NOT_FOUND_HELP = """
@@ -157,6 +158,14 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--template",), dict(dest="template",
+                                   help=("specify the template for the addon"
+                                         "to be created"),
+                                   metavar=None,
+                                   type="choice",
+                                   choices=addon_templates.keys(),
+                                   default="default",
+                                   cmds=['init']))
         ]
      ),
 
@@ -407,8 +416,7 @@ def get_config_args(name, env_root):
         sys.exit(1)
     return config
 
-def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
-    from templates import MAIN_JS, PACKAGE_JSON, README_DOC, MAIN_JS_DOC, TEST_MAIN_JS
+def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than one argument
@@ -420,19 +428,39 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','test','doc']:
-        os.mkdir(os.path.join(path,d))
-        print >>out, '*', d, 'directory created'
-    open('README.md','w').write(README_DOC % {'name':addon})
-    print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon})
-    print >>out, '* package.json written'
-    open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
-    print >>out, '* test/test-main.js written'
-    open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
-    print >>out, '* lib/main.js written'
-    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
-    print >>out, '* doc/main.md written'
+
+    def open_target_file(root_path, template_file_path):
+        """Given the root path in OS-specific format and the forward-slash
+        separated relative path to the file or directory (indicated by a
+        trailing slash), returns a file open for writing or None if a directory
+        was specified."""
+        path_components = template_file_path.split("/")
+        if len(path_components) > 1:
+            dir_rel_list = path_components[0:-1]
+            dir_abs = os.path.join(root_path, *dir_rel_list)
+            if not os.path.exists(dir_abs):
+                os.makedirs(dir_abs)
+                print >>out, '* %s directory created' % ("/".join(dir_rel_list))
+        else:
+            dir_abs = root_path
+
+        file_name = path_components[-1]
+        if len(file_name) > 0:
+            return open(os.path.join(dir_abs, file_name), 'w')
+        else:
+            return None
+
+    from templates import EMPTY_FOLDER
+    tmpl = addon_templates[template_name]
+
+    for template_file_path, template_content in tmpl["content"].items():
+        target_file = open_target_file(path, template_file_path)
+        if target_file is not None:
+            target_file.write(template_content % {'name':addon})
+            print >>out, '* %s written' % (template_file_path)
+        else:
+            assert template_content == EMPTY_FOLDER
+
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
@@ -457,7 +485,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     command = args[0]
 
     if command == "init":
-        initializer(env_root, args)
+        initializer(env_root, args, options.template)
         return
     if command == "develop":
         run_development_mode(env_root, defaults=options.__dict__)
