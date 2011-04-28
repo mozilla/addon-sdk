@@ -54,6 +54,11 @@ def validate_resource_hostname(name):
 
       >>> validate_resource_hostname('blarg')
 
+      >>> validate_resource_hostname('bl arg')
+      Traceback (most recent call last):
+      ...
+      ValueError: package names cannot contain spaces: bl arg
+
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
@@ -68,6 +73,10 @@ def validate_resource_hostname(name):
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
         raise ValueError('package names need to be lowercase: %s' % name)
+
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
+    if name.find(' ') >= 0:
+        raise ValueError('package names cannot contain spaces: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
         raise ValueError('invalid resource hostname: %s' % name)
