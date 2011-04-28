@@ -21,6 +21,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Henri Wiechers <hwiechers@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,6 +39,9 @@
 
 "use strict";
 
+const INVALID_HOTKEY = "Hotkey key combination must contain one or more " 
+                     + "modifiers and only one key"
+
 const { toJSON: jsonify, toString: stringify } = require("keyboard/utils");
 const { register, unregister } = require("keyboard/hotkeys");
 
@@ -47,6 +51,10 @@ const Hotkey = exports.Hotkey = function Hotkey(options) {
 
   // Parsing key combination string.
   let hotkey = jsonify(options.combo);
+  if (!hotkey.key || !hotkey.modifiers.length) {
+    throw new TypeError(INVALID_HOTKEY);
+  }
+
   this.onPress = options.onPress;
   this.toString = stringify.bind(null, hotkey);
   // Registering listener on keyboard combination enclosed by this hotkey.

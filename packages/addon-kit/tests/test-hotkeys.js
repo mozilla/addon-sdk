@@ -93,4 +93,14 @@ exports["test invalid combos"] = function(assert) {
   }, "throws if more then one key is present");
 };
 
+exports["test no exception on unmodified keypress"] = function(assert) {
+  var element = require("window-utils").activeWindow.document.documentElement;
+    Hotkey = Hotkey({
+      combo: "control-alt-!",
+      onPress: function() {}
+  });
+  keyPress(element, "a");
+  assert.pass();
+}
+
 require("test").run(exports);
