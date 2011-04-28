@@ -40,8 +40,7 @@
 // program.
 //
 // The main entry point, `NSGetModule()`, is data-driven, and obtains
-// a lot of its configuration information from either the
-// `HARNESS_OPTIONS` environment variable (if present) or a JSON file
+// a lot of its configuration information from a JSON file
 // called `harness-options.json` in the root directory of the extension
 // or application it's a part of.
 //
@@ -481,25 +480,23 @@ function getDefaults(rootFileSpec) {
                   .getService(Ci.nsIEnvironment);
 
     var jsonData;
-    if (environ.exists("HARNESS_OPTIONS"))
-      jsonData = environ.get("HARNESS_OPTIONS");
+    var optionsFile = rootFileSpec.clone();
+    optionsFile.append('harness-options.json');
+    if (optionsFile.exists()) {
+      var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
+                     .createInstance(Ci.nsIFileInputStream);
+      var siStream = Cc['@mozilla.org/scriptableinputstream;1']
+                     .createInstance(Ci.nsIScriptableInputStream);
+      fiStream.init(optionsFile, 1, 0, false);
+      siStream.init(fiStream);
+      var data = new String();
+      data += siStream.read(-1);
+      siStream.close();
+      fiStream.close();
+      jsonData = data;
+    }
     else {
-      var optionsFile = rootFileSpec.clone();
-      optionsFile.append('harness-options.json');
-      if (optionsFile.exists()) {
-        var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
-                       .createInstance(Ci.nsIFileInputStream);
-        var siStream = Cc['@mozilla.org/scriptableinputstream;1']
-                       .createInstance(Ci.nsIScriptableInputStream);
-        fiStream.init(optionsFile, 1, 0, false);
-        siStream.init(fiStream);
-        var data = new String();
-        data += siStream.read(-1);
-        siStream.close();
-        fiStream.close();
-        jsonData = data;
-      } else
-        throw new Error("HARNESS_OPTIONS env var must exist.");
+      throw new Error("harness-options.json file must exist.");
     }
 
     options = JSON.parse(jsonData);

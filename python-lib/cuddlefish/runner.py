@@ -248,13 +248,17 @@ def run_app(harness_root_dir, harness_options,
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
+    env['XPCOM_DEBUG_BREAK'] = 'warn'
     if norun:
         cmdargs.append("-no-remote")
-        optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
-        open(optionsFile, "w").write(str(json.dumps(harness_options)))
-    else:
-        env['HARNESS_OPTIONS'] = json.dumps(harness_options)
-    
+
+    # Write the harness options file to the SDK's extension template directory
+    # so mozrunner will copy it to the profile it creates.  We don't want
+    # to leave such files lying around the SDK's directory tree, so we delete it
+    # below after getting mozrunner to create the profile.
+    optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
+    open(optionsFile, "w").write(str(json.dumps(harness_options)))
+
     starttime = time.time()
 
     popen_kwargs = {}
@@ -263,6 +267,11 @@ def run_app(harness_root_dir, harness_options,
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
+
+    # Delete the harness options file we wrote to the SDK's extension template
+    # directory.
+    os.remove(optionsFile)
+
     runner = runner_class(profile=profile,
                           binary=binary,
                           env=env,
