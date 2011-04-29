@@ -34,7 +34,7 @@ exports.testConstructor = function(test) {
   w.destroy();
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
-
+  
   // Test nothing
   test.assertRaises(
     function() widgets.Widget({}),
@@ -598,6 +598,78 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
       }
     }
   });
+};
+
+exports.testWidgetViews = function testWidgetViews(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    onAttach: function(view) {
+      test.pass("WidgetView created");
+      view.on("message", function () {
+        test.pass("Got message in WidgetView");
+        widget.destroy();
+      });
+      view.on("detach", function () {
+        test.pass("WidgetView destroyed");
+        test.done();
+      });
+    }
+  });
+  
+};
+
+exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let view = null;
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onAttach: function(attachView) {
+      view = attachView;
+      test.pass("Got attach event");
+    },
+    onClick: function (eventView) {
+      test.assertEqual(view, eventView, 
+                         "event first argument is equal to the WidgetView");
+      let view2 = widget.getView(require("windows").browserWindows.activeWindow);
+      test.assertEqual(view, view2, 
+                         "widget.getView return the same WidgetView");
+      widget.destroy();
+      test.done();
+    }
+  });
+  
+};
+
+exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  
+  let widget = new widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "foo"
+  });
+  let view = widget.getView(require("windows").browserWindows.activeWindow);
+  widget.tooltip = null;
+  test.assertEqual(view.tooltip, "foo", 
+                   "view tooltip defaults to base widget label");
+  test.assertEqual(widget.tooltip, "foo", 
+                   "tooltip defaults to base widget label");
+  widget.destroy();
+  test.done();
 };
 
 exports.testWidgetMove = function testWidgetMove(test) {
