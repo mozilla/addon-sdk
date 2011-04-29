@@ -102,11 +102,7 @@ The SDK provides a framework to help test any modules you develop. To
 demonstrate this we will add some slightly unlikely tests for the translator
 module.
 
-<span class="aside">
-Until [bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed
-unit tests must be stored under `tests`, not `test`.
-</span>
-Navigate to the `tests` directory and delete the `test-main.js` file. In its
+Navigate to the `test` directory and delete the `test-main.js` file. In its
 place create a file called `test-translator.js` with the following contents:
 
     var translator = require("translator")
@@ -170,12 +166,12 @@ At this point your package ought to look like this:
   /translator
       package.json
       README.md
-      /docs
+      /doc
           main.md
       /lib
           main.js
           translator.js
-      /tests
+      /test
           test-translator.js
 </pre>
 
@@ -197,7 +193,7 @@ You should see something like this:
 
 What happens here is that `cfx test`:
 
-* looks in the `tests` directory of your
+* looks in the `test` directory of your
 package
 
 * loads any modules that start with the word `test`

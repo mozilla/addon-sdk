@@ -59,6 +59,27 @@ exports.testActiveTab_getter = function(test) {
   });
 };
 
+// test 'BrowserWindow' instance creation on tab 'activate' event
+// See bug 648244: there was a infinite loop.
+exports.testBrowserWindowCreationOnActivate = function(test) {
+  test.waitUntilDone();
+  
+  let windows = require("windows").browserWindows;
+  let tabs = require("tabs");
+  
+  let gotActivate = false;
+  
+  tabs.on('activate', function onActivate(eventTab) {
+    test.assert(windows.activeWindow, "Is able to fetch activeWindow");
+    gotActivate = true;
+  });
+  
+  openBrowserWindow(function(window, browser) {
+    test.assert(gotActivate, "Received activate event before openBrowserWindow's callback is called");
+    closeBrowserWindow(window, function () test.done());
+  });
+}
+
 // test tab.activeTab setter
 exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
@@ -559,7 +580,7 @@ exports.testAttachOnOpen = function (test) {
       url: "data:text/html,foobar",
       onOpen: function (tab) {
         let worker = tab.attach({
-          contentScript: 'postMessage(document.location.href); ',
+          contentScript: 'self.postMessage(document.location.href); ',
           onMessage: function (msg) {
             test.assertEqual(msg, "about:blank", 
               "Worker document url is about:blank on open");
@@ -592,7 +613,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
         if (onReadyCount == 1) {
           worker1 = tab.attach({
             contentScript: 'self.on("message", ' +
-                           '  function () postMessage(document.location.href)' +
+                           '  function () self.postMessage(document.location.href)' +
                            ');',
             onMessage: function (msg) {
               test.assertEqual(msg, firstLocation, 
@@ -616,7 +637,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
           
           worker2 = tab.attach({
             contentScript: 'self.on("message", ' +
-                           '  function () postMessage(document.location.href)' +
+                           '  function () self.postMessage(document.location.href)' +
                            ');',
             onMessage: function (msg) {
               test.assertEqual(msg, secondLocation, 
@@ -671,10 +692,10 @@ exports.testAttachWrappers = function (test) {
       onReady: function (tab) {
         let worker = tab.attach({
           contentScript: 'try {' +
-                         '  postMessage(globalJSVar);' +
-                         '  postMessage(window.globalJSVar);' +
+                         '  self.postMessage(globalJSVar);' +
+                         '  self.postMessage(window.globalJSVar);' +
                          '} catch(e) {' +
-                         '  postMessage(e.message);' +
+                         '  self.postMessage(e.message);' +
                          '}',
           onMessage: function (msg) {
             test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");

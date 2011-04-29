@@ -231,13 +231,24 @@ Creates a PageMod.
     The texts of content scripts to load.  Content scripts specified by this
     option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.  Optional.
-    Possible values are "end" (default), which loads them once all page contents 
-    have been loaded, "ready", which loads them once DOM nodes are 
-    ready (i.e. like DOMContentLoaded event), and "start", which loads them once
-    the `window` object for the page has been created, but before any scripts 
-    specified by the page have been loaded.
+  @prop [contentScriptWhen="end"] {string}
+    When to load the content scripts. This may take one of the following
+    values:
+
+    * "start": load content scripts immediately after the document
+    element for the page is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the page has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
+
+    This property is optional and defaults to "end".
+
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`

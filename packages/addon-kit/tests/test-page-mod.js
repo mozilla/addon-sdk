@@ -78,9 +78,9 @@ exports.testPageModIncludes = function(test) {
     return {
       include: include,
       contentScript: 'new ' + function() {
-        onMessage = function(msg) {
+        self.on("message", function(msg) {
           window[msg] = true;
-        }
+        });
       },
       // The testPageMod callback with test assertions is called on 'end',
       // and we want this page mod to be attached before it gets called,
@@ -131,7 +131,7 @@ exports.testCommunication1 = function(test) {
       contentScript: 'new ' + function WorkerScope() {
         self.on('message', function(msg) {
           document.body.setAttribute('JEP-107', 'worked');
-          postMessage(document.body.getAttribute('JEP-107'));
+          self.postMessage(document.body.getAttribute('JEP-107'));
         })
       },
       onAttach: function(worker) {
@@ -176,11 +176,11 @@ exports.testCommunication2 = function(test) {
       contentScript: 'new ' + function WorkerScope() {
         window.AUQLUE = function() { return 42; }
         window.addEventListener('load', function listener() {
-          postMessage('onload');
+          self.postMessage('onload');
         }, false);
-        onMessage = function() {
-          postMessage(window.test)
-        }
+        self.on("message", function() {
+          self.postMessage(window.test)
+        });
       },
       onAttach: function(worker) {
         worker.on('error', function(e) {

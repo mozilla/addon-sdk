@@ -7,7 +7,7 @@ tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
 
   let page = new Page({
-    contentScript: "postMessage(window.location.href)",
+    contentScript: "self.postMessage(window.location.href)",
     contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(message, "about:blank",
@@ -27,7 +27,7 @@ tests.testUnwrappedDOM = function(test) {
     allow: { script: true },
     contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
     contentScript: "window.addEventListener('load', function () " +
-                   "postMessage([typeof(document.getElementById), " +
+                   "self.postMessage([typeof(document.getElementById), " +
                    "typeof(window.scrollTo)]), true)",
     onMessage: function (message) {
       test.assertEqual(message[0],
@@ -66,12 +66,12 @@ tests.testConstructorAndDestructor = function(test) {
   let pagesReady = 0;
 
   let page1 = Pages.Page({
-    contentScript:      "postMessage('')",
+    contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
   });
   let page2 = Pages.Page({
-    contentScript:      "postMessage('')",
+    contentScript:      "self.postMessage('')",
     contentScriptWhen:  "end",
     onMessage:          pageReady
   });
@@ -100,7 +100,7 @@ tests.testAutoDestructor = function(test) {
   let Pages = loader.require("page-worker");
 
   let page = Pages.Page({
-    contentScript: "postMessage('')",
+    contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function() {
       loader.unload();
@@ -131,7 +131,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
   let content = "data:text/html,<script>window.scrollTo=3;</script>";
   let page = Page({
     contentURL: content,
-    contentScript: "postMessage(typeof window.scrollTo)",
+    contentScript: "self.postMessage(typeof window.scrollTo)",
     contentScriptWhen: "end",
     onMessage: step0
   });
@@ -194,7 +194,7 @@ tests.testOnMessageCallback = function(test) {
   test.waitUntilDone();
 
   Page({
-    contentScript: "postMessage('')",
+    contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function() {
       test.pass("onMessage callback called");
@@ -208,7 +208,7 @@ tests.testMultipleOnMessageCallbacks = function(test) {
 
   let count = 0;
   let page = Page({
-    contentScript: "postMessage('')",
+    contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
     onMessage: function() count += 1
   });
@@ -247,7 +247,7 @@ tests.testAllowScript = function(test) {
       test.done();
     },
     contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "postMessage('foo' in window)",
+    contentScript: "self.postMessage('foo' in window)",
     contentScriptWhen: "ready"
   });
 }
@@ -263,7 +263,7 @@ tests.testAllowScript = function(test) {
     },
     allow: { script: true },
     contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "postMessage(('foo' in window) && window.foo == 3)",
+    contentScript: "self.postMessage(('foo' in window) && window.foo == 3)",
     contentScriptWhen: "ready"
   });
 }
@@ -272,8 +272,8 @@ tests.testPingPong = function(test) {
   test.waitUntilDone();
   let page = Page({
     contentURL: 'data:text/html,ping-pong',
-    contentScript: 'onMessage = function(message) postMessage("pong");'
-      + 'postMessage("ready");',
+    contentScript: 'self.on("message", function(message) self.postMessage("pong"));'
+      + 'self.postMessage("ready");',
     onMessage: function(message) {
       if ('ready' == message) {
         return page.postMessage('ping');

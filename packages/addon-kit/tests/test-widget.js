@@ -34,7 +34,7 @@ exports.testConstructor = function(test) {
   w.destroy();
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
-
+  
   // Test nothing
   test.assertRaises(
     function() widgets.Widget({}),
@@ -171,7 +171,7 @@ exports.testConstructor = function(test) {
     id: "text",
     label: "text widget",
     content: "oh yeah",
-    contentScript: "postMessage(document.body.innerHTML);",
+    contentScript: "self.postMessage(document.body.innerHTML);",
     contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(this.content, message, "content matches");
@@ -185,7 +185,7 @@ exports.testConstructor = function(test) {
     id: "html",
     label: "html widget",
     content: "<div>oh yeah</div>",
-    contentScript: "postMessage(document.body.innerHTML);",
+    contentScript: "self.postMessage(document.body.innerHTML);",
     contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(this.content, message, "content matches");
@@ -199,7 +199,7 @@ exports.testConstructor = function(test) {
     id: "image",
     label: "image url widget",
     contentURL: require("self").data.url("test.html"),
-    contentScript: "postMessage({title: document.title, " +
+    contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
     contentScriptWhen: "end",
@@ -217,7 +217,7 @@ exports.testConstructor = function(test) {
     id: "web",
     label: "web uri widget",
     contentURL: require("self").data.url("test.html"),
-    contentScript: "postMessage({title: document.title, " +
+    contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " + 
                    "content: document.body.firstElementChild.innerHTML});",
     contentScriptWhen: "end",
@@ -343,7 +343,7 @@ exports.testConstructor = function(test) {
     id: "content",
     label: "content update test widget",
     content: "<div id='me'>foo</div>",
-    contentScript: "postMessage(1)",
+    contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       if (!this.flag) {
@@ -366,7 +366,7 @@ exports.testConstructor = function(test) {
     id: "content",
     label: "content update test widget",
     contentURL: url1,
-    contentScript: "postMessage(document.location.href);",
+    contentScript: "self.postMessage(document.location.href);",
     contentScriptWhen: "end",
     onMessage: function(message) {
       if (!this.flag) {
@@ -390,7 +390,7 @@ exports.testConstructor = function(test) {
     label: "text widget",
     content: "oh yeah",
     tooltip: "foo",
-    contentScript: "postMessage(1)",
+    contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.tooltip, "foo", "tooltip matches");
@@ -404,7 +404,7 @@ exports.testConstructor = function(test) {
     id: "fallback",
     label: "fallback",
     content: "oh yeah",
-    contentScript: "postMessage(1)",
+    contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.tooltip, this.label, "tooltip fallbacks to label");
@@ -420,7 +420,7 @@ exports.testConstructor = function(test) {
     label: "tooltip update test widget",
     tooltip: "foo",
     content: "<div id='me'>foo</div>",
-    contentScript: "postMessage(1)",
+    contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       this.tooltip = "bar";
@@ -464,7 +464,7 @@ exports.testConstructor = function(test) {
     label: "test widget.width",
     content: "test width",
     width: 200,
-    contentScript: "postMessage(1)",
+    contentScript: "self.postMessage(1)",
     contentScriptWhen: "ready",
     onMessage: function(message) {
       test.assertEqual(this.width, 200);
@@ -587,7 +587,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "end",
-    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    contentScript: "self.on('message', function(data) { self.postMessage(data); }); self.postMessage('ready');",
     onMessage: function(message) {
       if (message == "ready")
         widget.postMessage(origMessage);
@@ -598,6 +598,78 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
       }
     }
   });
+};
+
+exports.testWidgetViews = function testWidgetViews(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<bar>baz</bar>",
+    contentScriptWhen: "ready",
+    contentScript: "self.on('message', function(data) self.postMessage(data)); self.postMessage('ready')",
+    onAttach: function(view) {
+      test.pass("WidgetView created");
+      view.on("message", function () {
+        test.pass("Got message in WidgetView");
+        widget.destroy();
+      });
+      view.on("detach", function () {
+        test.pass("WidgetView destroyed");
+        test.done();
+      });
+    }
+  });
+  
+};
+
+exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let view = null;
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "ready",
+    onAttach: function(attachView) {
+      view = attachView;
+      test.pass("Got attach event");
+    },
+    onClick: function (eventView) {
+      test.assertEqual(view, eventView, 
+                         "event first argument is equal to the WidgetView");
+      let view2 = widget.getView(require("windows").browserWindows.activeWindow);
+      test.assertEqual(view, view2, 
+                         "widget.getView return the same WidgetView");
+      widget.destroy();
+      test.done();
+    }
+  });
+  
+};
+
+exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  
+  let widget = new widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "foo"
+  });
+  let view = widget.getView(require("windows").browserWindows.activeWindow);
+  widget.tooltip = null;
+  test.assertEqual(view.tooltip, "foo", 
+                   "view tooltip defaults to base widget label");
+  test.assertEqual(widget.tooltip, "foo", 
+                   "tooltip defaults to base widget label");
+  widget.destroy();
+  test.done();
 };
 
 exports.testWidgetMove = function testWidgetMove(test) {
@@ -618,7 +690,7 @@ exports.testWidgetMove = function testWidgetMove(test) {
     label: label,
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
-    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    contentScript: "self.on('message', function(data) { self.postMessage(data); }); self.postMessage('ready');",
     onMessage: function(message) {
       if (message == "ready") {
         if (!gotFirstReady) {

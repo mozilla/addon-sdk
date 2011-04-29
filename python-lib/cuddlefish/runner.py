@@ -4,6 +4,7 @@ import time
 import tempfile
 import atexit
 import shutil
+import shlex
 
 import simplejson as json
 import mozrunner
@@ -187,7 +188,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None, norun=None):
+            timeout=None, logfile=None, addons=None, args=None, norun=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -220,7 +221,10 @@ def run_app(harness_root_dir, harness_options,
             raise ValueError("Unknown app: %s" % app_type)
         if sys.platform == 'darwin':
             cmdargs.append('-foreground')
-
+    
+    if args:
+        cmdargs.extend(shlex.split(args))
+    
     resultfile = os.path.join(tempfile.gettempdir(), 'harness_result')
     if os.path.exists(resultfile):
         os.remove(resultfile)

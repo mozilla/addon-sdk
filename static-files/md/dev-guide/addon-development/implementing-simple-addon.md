@@ -25,13 +25,13 @@ something like this:
 <pre>
   * lib directory created
   * data directory created
-  * tests directory created
-  * docs directory created
+  * test directory created
+  * doc directory created
   * README.md written
   * package.json written
-  * tests/test-main.js written
+  * test/test-main.js written
   * lib/main.js written
-  * docs/main.md written
+  * doc/main.md written
 
   Your sample add-on is now ready for testing:
       try "cfx test" and then "cfx run". Have fun!"
@@ -43,17 +43,9 @@ First, `cfx init` creates the directory structure your add-on needs:
 content of the `data` subdirectory from within your add-on's code using the
 Add-on SDK's [`self`](packages/api-utils/docs/self.html) module.
 
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/docs`.*</span>
-
 * `/doc` contains any documentation for your add-on.
 
 * `/lib` contains the JavaScript modules implementing your add-on.
-
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/tests`.*</span>
 
 * `/test` contains unit test code.
 
@@ -72,8 +64,8 @@ something like this:
   }
 </pre>
 
-Finally, `cfx init` creates some example files under `docs`, `lib`, and
-`tests`: we will replace those.
+Finally, `cfx init` creates some example files under `doc`, `lib`, and
+`test`: we will replace those.
 
 ## Adding Your Code ##
 

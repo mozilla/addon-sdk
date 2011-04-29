@@ -96,6 +96,7 @@ const valid = {
     msg: 'The `contentScriptWhen` option must be either "start", "ready" or "end".'
   }
 };
+exports.validationAttributes = valid;
 
 /**
  * Shortcut function to validate property with validation.

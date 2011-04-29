@@ -61,11 +61,24 @@ constructor accepts and a few more:
   @prop [frame] {object}
     The host application frame in which the page is loaded.
     If frame is not provided hidden one will be created.
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.  Optional.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+  @prop [contentScriptWhen="end"] {string}
+    When to load the content scripts. This may take one of the following
+    values:
+
+    * "start": load content scripts immediately after the document
+    element for the page is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the page has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
+
+    This property is optional and defaults to "end".
+
   @prop [allow] {object}
     Permissions for the content, with the following keys:
       @prop [script] {boolean}
@@ -89,10 +102,21 @@ property are loaded *after* those specified by the `contentScriptFile` property.
 
 <api name="contentScriptWhen">
 @property {string}
-When to load the content scripts.
-Possible values are "start" (default), which loads them as soon as
-the window object for the page has been created, and "ready", which loads
-them once the DOM content of the page has been loaded.
+When to load the content scripts. This may have one of the following
+values:
+
+* "start": load content scripts immediately after the document
+element for the page is inserted into the DOM, but before the DOM content
+itself has been loaded
+* "ready": load content scripts once DOM content has been loaded,
+corresponding to the
+[DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+event
+* "end": load content scripts once all the content (DOM, JS, CSS,
+images) for the page has been loaded, at the time the
+[window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+fires
+
 </api>
 
 <api name="contentURL">

@@ -75,12 +75,12 @@ exports['test:emit'] = function(test) {
         });
         
         // Check for global pollution
-        if (typeof on != "undefined")
-          postMessage("`on` is in globals");
+        //if (typeof on != "undefined")
+        //  self.postMessage("`on` is in globals");
         if (typeof once != "undefined")
-          postMessage("`once` is in globals");
+          self.postMessage("`once` is in globals");
         if (typeof emit != "undefined")
-          postMessage("`emit` is in globals");
+          self.postMessage("`emit` is in globals");
         
       },
       onMessage: function(msg) {
