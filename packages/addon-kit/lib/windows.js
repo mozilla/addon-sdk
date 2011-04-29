@@ -83,6 +83,10 @@ const BrowserWindowTrait = Trait.compose(
      * @param {nsIWindow} window
      */
     constructor: function BrowserWindow(options) {
+      // Register this window ASAP, in order to avoid loop that would try
+      // to create this window instance over and over (see bug 648244)
+      windows.push(this);
+      
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
@@ -145,7 +149,6 @@ function BrowserWindow(options) {
       return window._public
   }
   let window = BrowserWindowTrait(options);
-  windows.push(window);
   return window._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.
