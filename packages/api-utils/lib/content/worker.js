@@ -390,13 +390,63 @@ const Worker = AsyncEventEmitter.compose({
    * Events from in the worker can be observed / emitted via 
    * worker.on / worker.emit.
    */
-  get port() this._port._public,
+  get port() {
+    // We generate dynamically this attribute as it needs to be accessible
+    // before Worker.constructor gets called. (For ex: Panel)
+    
+    // create an event emitter that receive and send events from/to the worker
+    let self = this;
+    this._port = EventEmitterTrait.create({
+      emit: function () self._emitEventToContent(arguments)
+    });
+    // create emit that executes in next turn of event loop.
+    this._port._asyncEmit = Enqueued(this._port._emit);
+    // expose wrapped port, that exposes only public properties:
+    // We need to destroy this getter in order to be able to set the
+    // final value. We need to update only public port attribute as we never 
+    // try to access port attribute from private API.
+    delete this._public.port;
+    this._public.port = Cortex(this._port);
+    
+    return this._port;
+  },
   
   /**
    * Same object than this.port but private API.
    * Allow access to _asyncEmit, in order to send event to port.
    */
   _port: null,
+  
+  /**
+   * Emit a custom event to the content script, 
+   * i.e. emit this event on `self.port`
+   */
+  _emitEventToContent: function _emitEventToContent(args) {
+    // We need to save events that are emitted before the worker is 
+    // initialized
+    if (!this._inited) {
+      this._earlyEvents.push(args);
+      return;
+    }
+    
+    // We throw exception when the worker has been destroyed
+    if (!this._contentWorker) {
+      throw new Error(ERR_DESTROYED);
+    }
+    
+    let scope = this._contentWorker._port;
+    scope._asyncEmit.apply(scope, args);
+  },
+  
+  // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
+  _inited: false,
+  
+  // List of custom events fired before worker is initialized
+  get _earlyEvents() {
+    delete this._earlyEvents;
+    this._earlyEvents = [];
+    return this._earlyEvents;
+  },
   
   constructor: function Worker(options) {
     options = options || {};
@@ -413,25 +463,15 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
-    
-    // create an event emitter that receive and send events from/to the worker
-    let addonWorker = this;
-    this._port = EventEmitterTrait.create({
-      emit: function () {
-        if (!addonWorker._contentWorker)
-          throw new Error(ERR_DESTROYED);
-        let scope = addonWorker._contentWorker._port;
-        scope._asyncEmit.apply(scope, arguments);
-      }
-    });
-    // create emit that executes in next turn of event loop.
-    this._port._asyncEmit = Enqueued(this._port._emit);
-    // expose wrapped port, that exposes only public properties. 
-    this._port._public = Cortex(this._port);
 
     // will set this._contentWorker pointing to the private API:
     WorkerGlobalScope(this);  
-
+    
+    this._inited = true;
+    
+    // Flush all events that has been fired before the worker is initialized.
+    this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
+                              bind(this));
     
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 

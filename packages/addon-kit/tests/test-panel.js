@@ -24,6 +24,40 @@ tests.testPanel = function(test) {
   });
 };
 
+tests.testPanelEmit = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.emit('loaded');" +
+                   "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("loaded", function () {
+    test.pass("The panel was loaded and sent a first event.");
+    panel.port.emit("addon-to-content");
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message and received a response.");
+    panel.destroy();
+    test.done();
+  });
+};
+
+tests.testPanelEmitEarly = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message early and received a response.");
+    panel.destroy();
+    test.done();
+  });
+  panel.port.emit("addon-to-content");
+};
+
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
