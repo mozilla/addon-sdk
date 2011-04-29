@@ -624,7 +624,7 @@ exports.testWidgetViews = function testWidgetViews(test) {
   
 };
 
-exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
+exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(test) {
   test.waitUntilDone();
   const widgets = require("widget");
   let view = null;
@@ -650,7 +650,30 @@ exports.testWidgetViewsEvents = function testWidgetViewsEvents(test) {
       test.done();
     }
   });
-  
+};
+
+exports.testWidgetViewsCustomEvents = function testWidgetViewsCustomEvents(test) {
+  test.waitUntilDone();
+  const widgets = require("widget");
+  let widget = widgets.Widget({
+    id: "foo",
+    label: "foo",
+    content: "<div id='me'>foo</div>",
+    contentScript: "self.port.emit('event', 'ok');",
+    contentScriptWhen: "ready",
+    onAttach: function(view) {
+      view.port.on("event", function (data) {
+        test.assertEqual(data, "ok", 
+                         "event argument is valid on WidgetView");
+      });
+    },
+  });
+  widget.port.on("event", function (data) {
+    test.assertEqual(data, "ok", 
+                     "event argument is valid on Widget");
+    widget.destroy();
+    test.done();
+  });
 };
 
 exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {

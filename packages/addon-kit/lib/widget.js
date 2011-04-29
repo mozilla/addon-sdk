@@ -265,7 +265,17 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     model.setEvents(this, WIDGET_EVENTS, options);
     
     this.on('change', this._onChange.bind(this));
-
+    
+    let self = this;
+    this._port = EventEmitterTrait.create({
+      emit: function () {
+        let args = arguments;
+        self._views.forEach(function(v) v.port.emit.apply(v.port, args));
+      }
+    });
+    // expose wrapped port, that exposes only public properties. 
+    this._port._public = Cortex(this._port);
+    
     // Register this widget to browser manager in order to create new widget on
     // all new windows
     browserManager.addItem(this);
@@ -317,6 +327,11 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     }
     return null;
   },
+  
+  get port() this._port._public,
+  set port(v) {}, // Work around Cortex failure with getter without setter
+                  // See bug 653464
+  _port: null,
   
   postMessage: function postMessage(message) {
     this._views.forEach(function(v) v.postMessage(message));
@@ -374,6 +389,15 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     
     this.on('change', this._onChange.bind(this));
     
+    let self = this;
+    this._port = EventEmitterTrait.create({
+      emit: function () {
+        self._chrome.update(self._baseWidget, "emit", arguments);
+      }
+    });
+    // expose wrapped port, that exposes only public properties. 
+    this._port._public = Cortex(this._port);
+    
     this._public = Cortex(this);
   },
   
@@ -410,6 +434,18 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
       window: this._chrome.window
     }) == window;
   },
+  
+  _onPortEvent: function WidgetView__onPortEvent(args) {
+    let port = this._port;
+    port._emit.apply(port, args);
+    let basePort = this._baseWidget._port;
+    basePort._emit.apply(basePort, args);
+  },
+  
+  get port() this._port._public,
+  set port(v) {}, // Work around Cortex failure with getter without setter
+                  // See bug 653464
+  _port: null,
   
   postMessage: function WidgetView_postMessage(message) {
     this._chrome.update(this._baseWidget, "postMessage", message);
@@ -635,6 +671,10 @@ WidgetChrome.prototype.update = function WC_update(updatedItem, property, value)
     case "postMessage":
       this._symbiont.postMessage(value);
       break;
+    case "emit":
+      let port = this._symbiont.port;
+      port.emit.apply(port, value);
+      break;
   }
 }
 
@@ -727,7 +767,14 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
   let iframe = this.node.firstElementChild;
 
   let self = this;
-  this._symbiont = Symbiont({
+  this._symbiont = Trait.compose(Symbiont.resolve({
+    _onContentScriptEvent: "_onContentScriptEvent-not-used"
+  }), {
+    _onContentScriptEvent: function () {
+      // Redirect events to WidgetView
+      self._widget._onPortEvent(arguments);
+    }
+  })({
     frame: iframe,
     contentURL: contentURL,
     contentScriptFile: this._widget.contentScriptFile,

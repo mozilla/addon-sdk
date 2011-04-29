@@ -171,10 +171,10 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let contentWorker = this;
     this._port = EventEmitterTrait.create({
       emit: function () {
-        if (!contentWorker._addonWorker)
+        let addonWorker = contentWorker._addonWorker;
+        if (!addonWorker)
           throw new Error(ERR_DESTROYED);
-        let scope = contentWorker._addonWorker._port;
-        scope._asyncEmit.apply(scope, arguments);
+        addonWorker._onContentScriptEvent.apply(addonWorker, arguments);
       }
     });
     // create emit that executes in next turn of event loop.
@@ -407,6 +407,9 @@ const Worker = AsyncEventEmitter.compose({
     // try to access port attribute from private API.
     delete this._public.port;
     this._public.port = Cortex(this._port);
+    // Replicate public port to the private object
+    delete this.port;
+    this.port = this._public.port;
     
     return this._port;
   },
@@ -463,15 +466,6 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
-
-    // will set this._contentWorker pointing to the private API:
-    WorkerGlobalScope(this);  
-    
-    this._inited = true;
-    
-    // Flush all events that has been fired before the worker is initialized.
-    this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
-                              bind(this));
     
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
@@ -485,6 +479,20 @@ const Worker = AsyncEventEmitter.compose({
                   this._documentUnload = this._documentUnload.bind(this));
     
     unload.ensure(this._public, "destroy");
+    
+    // Ensure that worker._port is initialized for contentWorker to be able
+    // to send use event during WorkerGlobalScope(this)
+    this.port;
+    
+    // will set this._contentWorker pointing to the private API:
+    WorkerGlobalScope(this);  
+    
+    // Mainly enable worker.port.emit to send event to the content worker
+    this._inited = true;
+    
+    // Flush all events that have been fired before the worker is initialized.
+    this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
+                              bind(this));
   },
   
   _documentUnload: function _documentUnload(subject, topic, data) {
@@ -526,7 +534,16 @@ const Worker = AsyncEventEmitter.compose({
     this._window = null;
     observers.remove("inner-window-destroyed", this._documentUnload);
     this._windowID = null;
+    this._earlyEvents.slice(0, this._earlyEvents.length);
     this._emit("detach");
+  },
+  
+  /**
+   * Receive an event from the content script that need to be sent to 
+   * worker.port. Provide a way for composed object to catch all events.
+   */
+  _onContentScriptEvent: function _onContentScriptEvent() {
+    this._port._asyncEmit.apply(this._port, arguments);
   },
   
   /**
