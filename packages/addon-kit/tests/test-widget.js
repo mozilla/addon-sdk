@@ -608,7 +608,7 @@ exports.testWidgetViews = function testWidgetViews(test) {
     label: "foo",
     content: "<bar>baz</bar>",
     contentScriptWhen: "ready",
-    contentScript: "onMessage = function(data) { postMessage(data); }; postMessage('ready');",
+    contentScript: "self.on('message', function(data) self.postMessage(data)); self.postMessage('ready')",
     onAttach: function(view) {
       test.pass("WidgetView created");
       view.on("message", function () {
