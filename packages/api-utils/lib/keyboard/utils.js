@@ -21,6 +21,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Henri Wiechers <hwiechers@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -46,7 +47,7 @@ const array = require("array");
 
 const SWP = "{{SEPARATOR}}";
 const SEPARATOR = "-"
-const INVALID_COMBINATION = "Hotkey string must contain one or more " +
+const INVALID_COMBINATION = "Hotkey key combination must contain one or more " +
                             "modifiers and only one key";
 
 // Key codes for non printable chars.
@@ -154,7 +155,7 @@ var toJSON = exports.toJSON = function toJSON(hotkey, separator) {
     }
   });
 
-  if (!value.key || !modifiers.length)
+  if (!value.key)
       throw new TypeError(INVALID_COMBINATION);
 
   value.modifiers = modifiers.sort();
