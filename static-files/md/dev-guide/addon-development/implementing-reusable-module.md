@@ -72,9 +72,9 @@ module:
         context: contextMenu.SelectionContext(),
         // When this item is clicked, post a message to the item with the
         // selected text and current URL.
-        contentScript: 'on("click", function () {' +
+        contentScript: 'self.on("click", function () {' +
                        '  var text = window.getSelection().toString();' +
-                       '  postMessage(text);' +
+                       '  self.postMessage(text);' +
                        '});',
 
         // When we receive the message, call the translator with the

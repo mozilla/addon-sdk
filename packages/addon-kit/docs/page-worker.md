@@ -104,6 +104,18 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     An optional "message" event listener.  See Events above.
 </api>
 
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
+</api>
+
 <api name="contentURL">
 @property {string}
 The URL of the content loaded.

@@ -100,19 +100,19 @@ is displayed on a right-click.
     label: 'Annotator',
     contentURL: data.url('widget/pencil-off.png'),
     contentScriptWhen: 'ready',
-    contentScriptFile: data.url('widget/widget.js'),
-    onMessage: function(message) {
-      if (message == 'left-click') {
-        console.log('activate/deactivate');
-        widget.contentURL = toggleActivation() ?
-                  data.url('widget/pencil-on.png') :
-                  data.url('widget/pencil-off.png');
-      }
-      else if (message == 'right-click') {
-        console.log('show annotation list');
-        annotationList.show();
-      }
-    }
+    contentScriptFile: data.url('widget/widget.js')
+  });
+
+  widget.port.on('left-click', function() {
+    console.log('activate/deactivate');
+    widget.contentURL = toggleActivation() ?
+              data.url('widget/pencil-on.png') :
+              data.url('widget/pencil-off.png');
+  });
+
+  widget.port.on('right-click', function() {
+      console.log('show annotation list');
+      annotationList.show();
   });
 
 /*

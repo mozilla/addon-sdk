@@ -361,6 +361,18 @@ Represents a widget object.
 
 </api>
 
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
+</api>
+
 <api name="attach">
 @event
 This event is emitted when a new `WidgetView` object is created using the
@@ -531,6 +543,18 @@ In this example `WidgetView` is used to display different content for
   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
   fires
 
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on`
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
 </api>
 
 <api name="detach">

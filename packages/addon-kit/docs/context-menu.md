@@ -143,7 +143,7 @@ on a page whose URL contains "mozilla" as a substring:
 
     var myItem = contextMenu.Item({
       label: "My Mozilla Item",
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(document.URL);' +
                      '});'
     });
@@ -162,7 +162,7 @@ This example takes advantage of that fact.  The listener can be assured that
     var myItem = contextMenu.Item({
       label: "My Mozilla Image Item",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
                      '});'
     });
@@ -184,7 +184,7 @@ item's content script like so:
 
     var myItem = contextMenu.Item({
       label: "My Item",
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("Item clicked!");' +
                      '});'
     });
@@ -197,7 +197,7 @@ comes in handy for `Menu`s with sub-items.  For example:
 
     var myMenu = contextMenu.Menu({
       label: "My Menu",
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("You clicked " + data);' +
                      '});',
       items: [
@@ -209,15 +209,16 @@ comes in handy for `Menu`s with sub-items.  For example:
 
 Often you will need to collect some kind of information in the click listener
 and perform an action unrelated to content.  To communicate to the menu item
-associated with the content script, the content script can call the global
-`postMessage` function, passing it some JSON-able data.  The menu item's
-`onMessage` function will be called with that data.
+associated with the content script, the content script can call the
+`postMessage` function attached to the global `self` object, passing it some
+JSON-able data.  The menu item's `onMessage` function will be called with that
+data.
 
     var myItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -249,8 +250,8 @@ part of the page:
 
     var pageSourceItem = contextMenu.Item({
       label: "Edit Page Source",
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(document.URL);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(document.URL);' +
                      '});',
       onMessage: function (pageURL) {
         editSource(pageURL);
@@ -262,8 +263,8 @@ Show an "Edit Image" item when the menu is invoked on an image:
     var editImageItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -279,8 +280,8 @@ mozilla.org or mozilla.com page:
         contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
         contextMenu.SelectorContext("img")
       ],
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -293,16 +294,16 @@ Show an "Edit Page Images" item when the page contains at least one image:
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
       context: contextMenu.PageContext(),
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
                      '});' +
-                     'on("click", function (node, data) {' +
+                     'self.on("click", function (node, data) {' +
                      '  var imgs = document.querySelectorAll("img");' +
                      '  var imgSrcs = [];' +
                      '  for (var i = 0 ; i < imgs.length; i++)' +
                      '    imgSrcs.push(imgs[i].src);' +
-                     '  postMessage(imgSrcs);' +
+                     '  self.postMessage(imgSrcs);' +
                      '});',
       onMessage: function (imgSrcs) {
         openImageEditor(imgSrcs);
@@ -323,7 +324,7 @@ Google or Wikipedia with the text contained in the anchor:
     var searchMenu = contextMenu.Menu({
       label: "Search With",
       context: contextMenu.SelectorContext("a[href]"),
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
                      '});',
@@ -335,7 +336,7 @@ Dynamically set an item's label based on the number of times it's been clicked:
     var numClicks = 0;
     contextMenu.Item({
       label: "Click Me: " + numClicks,
-      contentScript: 'self.on("click", postMessage);',
+      contentScript: 'self.on("click", self.postMessage);',
       onMessage: function () {
         this.label = "Click Me: " + (++numClicks);
       }
@@ -372,9 +373,9 @@ A labeled menu item that can perform an action when clicked.
     submenu.
   @prop [onMessage] {function}
     If the item is contained in the top-level context menu, this function will
-    be called when the content script calls `postMessage`.  It will be passed
-    the data that was passed to `postMessage`.  Ignored if the item is contained
-    in a submenu.
+    be called when the content script calls `self.postMessage`.  It will be
+    passed the data that was passed to `postMessage`.  Ignored if the item is
+    contained in a submenu.
 </api>
 <api name="label">
 @property {string}
@@ -441,9 +442,9 @@ A labeled menu item that expands into a submenu.
     submenu.
   @prop [onMessage] {function}
     If the menu is contained in the top-level context menu, this function will
-    be called when the content script calls `postMessage`.  It will be passed
-    the data that was passed to `postMessage`.  Ignored if the item is contained
-    in a submenu.
+    be called when the content script calls `self.postMessage`.  It will be
+    passed the data that was passed to `postMessage`.  Ignored if the item is
+    contained in a submenu.
 </api>
 <api name="label">
 @property {string}

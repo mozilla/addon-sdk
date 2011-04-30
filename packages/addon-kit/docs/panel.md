@@ -22,7 +22,7 @@ in preparation for the next time it is shown.
 Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
-those scripts via an asynchronous message passing API.  See
+those scripts via an asynchronous event emitter API.  See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
@@ -123,6 +123,18 @@ Creates a panel.
     An optional "show" event listener.  See Events above.
   @prop [onHide] {function}
     An optional "hide" event listener.  See Events above.
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
 </api>
 
 <api name="isShowing">

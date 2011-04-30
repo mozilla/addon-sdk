@@ -33,22 +33,15 @@ The complete content script is here:
       $('.annotated').css('border', 'solid 3px yellow');
 
       $('.annotated').bind('mouseenter', function(event) {
-        postMessage({
-          kind: 'show',
-          annotationText: $(this).attr('annotation')
-        });
+        self.port.emit('show', $(this).attr('annotation'));
         event.stopPropagation();
         event.preventDefault();
       });
 
       $('.annotated').bind('mouseleave', function() {
-        postMessage({kind: 'hide'});
+        self.port.emit('hide');
       });
     });
-
-    window.addEventListener('unload', function() {
-      postMessage({kind: 'detach'});
-    }, false);
 
     function createAnchor(annotation) {
       annotationAnchorAncestor = $('#' + annotation.ancestorId);
@@ -71,27 +64,23 @@ In the `main` function, add the code to create the matcher:
 
     var matcher = pageMod.PageMod({
       include: ['*'],
-      contentScriptWhen: 'end',
+      contentScriptWhen: 'ready',
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('matcher.js')],
       onAttach: function(worker) {
         if(simpleStorage.storage.annotations) {
           worker.postMessage(simpleStorage.storage.annotations);
         }
-        worker.on('message', function(message) {
-          switch(message.kind) {
-            case 'show':
-              annotation.content = message.annotationText;
-              annotation.show();
-              break;
-            case 'hide':
-              annotation.content = null;
-              annotation.hide();
-              break;
-            case 'detach':
-              detachWorker(this, matchers);
-              break;
-          }
+        worker.port.on('show', function(data) {
+          annotation.content = data;
+          annotation.show();
+        });
+        worker.port.on('hide', function() {
+          annotation.content = null;
+          annotation.hide();
+        });
+        worker.on('detach', function () {
+          detachWorker(this, matchers);
         });
         matchers.push(worker);
       }
