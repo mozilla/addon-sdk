@@ -325,16 +325,23 @@ class ManifestBuilder:
             mi = self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
             if mi: # caution, 0==None
                 return mi
-            # 3: MODPARENT/MODCHILD: search "library" packages for one that
-            # exports MODPARENT/MODCHILD
-            return self._get_module(None, lookfor_sections, reqname)
 
-        # no slash
-        # 4: PKG: find PKG, use its main.js entry point
-        mi = self._get_module(reqname, lookfor_sections, None)
+        # 3: They want something by absolute id form their own package.
+        lookfor_pkg = from_module.package.name
+        mi = self._get_module(lookfor_pkg, lookfor_sections, reqname)
         if mi:
+          return mi
+
+        # 4: PKG: find PKG, use its main.js entry point
+        # Their own package does not contains such module, so we check if there
+        # is a package with this name.
+        if "/" not in reqname:
+          mi = self._get_module(reqname, lookfor_sections, None)
+          if mi:
             return mi
+
         # 5: MOD: search "library" packages for one that exports MOD
+        # TODO: Search only packages listed in the dependencies.
         return self._get_module(None, lookfor_sections, reqname)
 
 
