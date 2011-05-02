@@ -655,9 +655,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
+    emit_elapsed_time = False
     if command == "test":
         # This should be contained in the test runner package.
         harness_options['main'] = 'run-tests'
+        emit_elapsed_time = True
     else:
         harness_options['main'] = target_cfg.get('main')
 
@@ -738,7 +740,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
-                             norun=options.no_run)
+                             norun=options.no_run,
+                             emit_elapsed_time=emit_elapsed_time)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
