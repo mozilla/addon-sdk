@@ -57,6 +57,12 @@ const ON_CONTENT = HAS_DOCUMENT_ELEMENT_INSERTED ? 'document-element-inserted' :
                    'content-document-global-created';
 const ERR_INCLUDE = 'The PageMod must have a string or array `include` option.';
 
+// Workaround bug 642145: document-element-inserted is fired multiple times.
+// This bug is fixed in Firefox 4.0.1, but we want to keep FF 4.0 compatibility
+// Tracking bug 641457. To be removed when 4.0 has disappeared from earth.
+const HAS_BUG_642145_FIXED =
+        xulApp.versionInRange(xulApp.platformVersion, "2.0.1", "*");
+
 // rules registry
 const RULES = {};
 
@@ -122,18 +128,29 @@ const PageMod = Loader.compose(EventEmitter, {
 
     this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
     pageModManager.add(this._public);
+    
+    this._loadingWindows = [];
   },
 
   destroy: function destroy() {
     for each (let rule in this.include)
       this.include.remove(rule);
     pageModManager.remove(this._public);
+    this._loadingWindows = [];
   },
-
+  
+  _loadingWindows: [],
+  
   _onContent: function _onContent(window) {
     // not registered yet
     if (!pageModManager.has(this))
       return;
+    
+    if (!HAS_BUG_642145_FIXED) {
+      if (this._loadingWindows.indexOf(window) != -1)
+        return;
+      this._loadingWindows.push(window);
+    }
     
     if ('start' == this.contentScriptWhen) {
       this._createWorker(window);
@@ -158,8 +175,15 @@ const PageMod = Loader.compose(EventEmitter, {
       onError: this._onUncaughtError
     });
     this._emit('attach', worker);
+    let self = this;
     worker.once('detach', function detach() {
       worker.destroy();
+      
+      if (!HAS_BUG_642145_FIXED) {
+        let idx = self._loadingWindows.indexOf(window);
+        if (idx != -1)
+          self._loadingWindows.splice(idx, 1);
+      }
     });
   },
   _onRuleAdd: function _onRuleAdd(url) {
