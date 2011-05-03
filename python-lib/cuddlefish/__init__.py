@@ -688,7 +688,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     from cuddlefish.manifest import build_manifest
     uri_prefix = "resource://%s" % unique_prefix
     include_tests = False #bool(command=="test")
-    manifest = build_manifest(target_cfg, pkg_cfg, uri_prefix, include_tests)
+    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, include_tests)
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
 
     if command == 'xpi':
