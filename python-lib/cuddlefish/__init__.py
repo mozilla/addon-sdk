@@ -182,11 +182,13 @@ parser_groups = (
                                           default="test-harness",
                                           cmds=['test', 'testex', 'testpkgs',
                                                 'testall'])),
+        # --keydir was removed in 1.0b5, but we keep it around in the options
+        # parser to make life easier for frontends like FlightDeck which
+        # might still pass it. It can go away once the frontends are updated.
         (("", "--keydir",), dict(dest="keydir",
-                                 help=("directory holding private keys;"
-                                       " default is ~/.jetpack/keys"),
+                                 help=("obsolete, ignored"),
                                  metavar=None,
-                                 default=os.path.expanduser("~/.jetpack/keys"),
+                                 default=None,
                                  cmds=['test', 'run', 'xpi', 'testex',
                                        'testpkgs', 'testall'])),
         (("", "--e10s",), dict(dest="enable_e10s",
@@ -571,12 +573,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command in ('xpi', 'run'):
         from cuddlefish.preflight import preflight_config
         if target_cfg_json:
-            config_was_ok, modified = preflight_config(
-                target_cfg,
-                target_cfg_json,
-                keydir=options.keydir,
-                err_if_privkey_not_found=False
-                )
+            config_was_ok, modified = preflight_config(target_cfg,
+                                                       target_cfg_json)
             if not config_was_ok:
                 if modified:
                     # we need to re-read package.json . The safest approach
@@ -608,7 +606,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         jid = harness_guid
 
     assert not jid.endswith("@jetpack")
-    if (jid.startswith("jid0-") or jid.startswith("anonid0-")):
+    if ( jid.startswith("jid0-")
+         or jid.startswith("jid1-")
+         or jid.startswith("anonid0-") ):
         bundle_id = jid + "@jetpack"
     # Don't append "@jetpack" to old-style IDs, as they should be exactly
     # as specified by the addon author so AMO and Firefox continue to treat
