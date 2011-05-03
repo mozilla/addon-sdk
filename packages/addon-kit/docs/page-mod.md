@@ -206,6 +206,49 @@ The following add-on creates a widget which, when clicked, highlights all the
       }
     });
 
+## Destroying Workers ##
+
+Workers generate a `detach` event when their associated page is closed: that
+is, when the tab is closed or the tab's location changes. If
+you are maintaining a list of workers belonging to a page mod, you can use
+this event to remove workers that are no longer valid.
+
+For example, if you maintain a list of workers attached to a page mod:
+
+    var workers = [];
+
+    var pageMod = require("page-mod").PageMod({
+      include: ['*'],
+      contentScriptWhen: 'ready',
+      contentScriptFile: data.url('pagemod.js'),
+      onAttach: function(worker) {
+        workers.push(worker);
+      }
+    });
+
+You can remove workers when they are no longer valid by listening to `detach`:
+
+    var workers = [];
+
+    function detachWorker(worker, workerArray) {
+      var index = workerArray.indexOf(worker);
+      if(index != -1) {
+        workerArray.splice(index, 1);
+      }
+    }
+
+    var pageMod = require("page-mod").PageMod({
+      include: ['*'],
+      contentScriptWhen: 'ready',
+      contentScriptFile: data.url('pagemod.js'),
+      onAttach: function(worker) {
+        workers.push(worker);
+        worker.on('detach', function () {
+          detachWorker(this, workers);
+        });
+      }
+    });
+
 <api name="PageMod">
 @class
 A PageMod object. Once activated a page mod will execute the supplied content

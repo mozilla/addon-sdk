@@ -32,6 +32,10 @@ scripts will asynchronously emit 'message' event on the worker.
 Event allows the content worker to react on an uncaught runtime script error
 that occurs in one of the content scripts.
 
+####"detach"####
+This event fires when the document associated with this worker is unloaded or
+the worker's `destroy()` method is called.
+
 **Example**
 
     const workers = require("content/worker");
@@ -85,6 +89,12 @@ Asynchronously emits `"message"` events in the enclosed worker, where content
 script was loaded.
 @param data {number,string,JSON}
 The data to send. Must be stringifiable to JSON.
+</api>
+
+<api name="destroy">
+@method
+Destroy the worker by removing the content script from the page and removing
+all registered listeners. A `detach` event is fired just before removal.
 </api>
 
 <api name="url">
