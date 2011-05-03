@@ -19,25 +19,12 @@ class Util(unittest.TestCase):
         os.makedirs(basedir)
         return basedir
 
-    def test_base32(self):
-        for l in range(1, 100):
-            text = "a" * l
-            encoded = preflight.my_b32encode(text)
-            decoded = preflight.my_b32decode(encoded)
-            self.assertEqual(text, decoded, (text, encoded, decoded))
-
     def test_base62(self):
         for i in range(1000):
             h = hashlib.sha1(str(i)).digest()
             s1 = base64.b64encode(h, "AB").strip("=")
             s2 = base64.b64encode(h).strip("=").replace("+","A").replace("/","B")
             self.failUnlessEqual(s1, s2)
-
-    def test_remove_prefix(self):
-        self.assertEqual(preflight.remove_prefix("jid0-stuff", "jid0-", "err"),
-                         "stuff")
-        self.assertRaises(ValueError, preflight.remove_prefix,
-                          "missing-prefix", "jid0-", "errmsg")
 
     def write(self, config):
         basedir = self.get_basedir()
@@ -70,7 +57,6 @@ class Util(unittest.TestCase):
     def test_preflight(self):
         basedir = self.make_basedir()
         fn = os.path.join(basedir, "package.json")
-        keydir = os.path.join(basedir, "keys")
 
         # empty config is not ok: need id (name is automatically supplied)
         config_orig = "{}"
@@ -78,8 +64,7 @@ class Util(unittest.TestCase):
         out = StringIO()
         cfg = self.get_cfg()
         config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir)
+                                                             stderr=out)
         self.failUnlessEqual(config_was_ok, False)
         self.failUnlessEqual(modified, True)
         backup_fn = os.path.join(basedir, "package.json.backup")
@@ -88,16 +73,9 @@ class Util(unittest.TestCase):
         config = json.loads(self.read())
         self.failIf("name" in config)
         self.failUnless("id" in config)
+        self.failUnless(config["id"].startswith("jid1-"), config["id"])
         self.failUnlessEqual(out.getvalue().strip(),
-                             "No 'id' in package.json: creating a new keypair for you.")
-        jid = str(config["id"])
-        keyfile = os.path.join(keydir, jid)
-        fields, fieldnames = self.parse(open(keyfile).read())
-        self.failUnlessEqual(fieldnames[0], "private-key")
-        privkey = fields["private-key"]
-        self.failUnless(privkey.startswith("private-jid0-"), privkey)
-        self.failUnlessEqual(fields["jid"], jid)
-        self.failUnlessEqual(fields["name"], "pretend name")
+                             "No 'id' in package.json: creating a new ID for you.")
         os.unlink(backup_fn)
 
         # just a name? we add the id
@@ -106,8 +84,7 @@ class Util(unittest.TestCase):
         out = StringIO()
         cfg = self.get_cfg()
         config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir)
+                                                             stderr=out)
         self.failUnlessEqual(config_was_ok, False)
         self.failUnlessEqual(modified, True)
         backup_fn = os.path.join(basedir, "package.json.backup")
@@ -116,15 +93,11 @@ class Util(unittest.TestCase):
         config = json.loads(self.read())
         self.failUnlessEqual(config["name"], "my-awesome-package")
         self.failUnless("id" in config)
-        self.failUnlessEqual(out.getvalue().strip(),
-                             "No 'id' in package.json: creating a new keypair for you.")
+        self.failUnless(config["id"].startswith("jid1-"), config["id"])
         jid = str(config["id"])
-        keyfile = os.path.join(keydir, jid)
-        fields, fieldnames = self.parse(open(keyfile).read())
-        privkey = fields["private-key"]
-        self.failUnless(privkey.startswith("private-jid0-"), privkey)
-        self.failUnlessEqual(fields["jid"], jid)
-        self.failUnlessEqual(fields["name"], "my-awesome-package")
+        self.failUnlessEqual(out.getvalue().strip(),
+                             "No 'id' in package.json: creating a new ID for you.")
+        os.unlink(backup_fn)
 
         # name and valid id? great! ship it!
         config2 = '{"name": "my-awesome-package", "id": "%s"}' % jid
@@ -132,30 +105,12 @@ class Util(unittest.TestCase):
         out = StringIO()
         cfg = self.get_cfg()
         config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir)
+                                                             stderr=out)
         self.failUnlessEqual(config_was_ok, True)
         self.failUnlessEqual(modified, False)
         config2a = self.read()
         self.failUnlessEqual(config2a, config2)
         self.failUnlessEqual(out.getvalue().strip(), "")
-
-        # name and invalid id? tell them to get a new one
-        os.unlink(keyfile)
-        self.write(config2)
-        out = StringIO()
-        cfg = self.get_cfg()
-        config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir)
-        self.failUnlessEqual(config_was_ok, False)
-        self.failUnlessEqual(modified, False)
-        out = out.getvalue().strip()
-        self.failUnless("Your package.json says our ID is" in out, out)
-        self.failUnless("But I don't have a corresponding private key in"
-                        in out, out)
-        self.failUnless("If you are the original developer" in out, out)
-        self.failUnless("Otherwise, if you are a new developer" in out, out)
 
         # name and anonymous ID? without asking to see its papers, ship it
         config3 = '{"name": "my-old-skool-package", "id": "anonid0-deadbeef"}'
@@ -163,9 +118,7 @@ class Util(unittest.TestCase):
         out = StringIO()
         cfg = self.get_cfg()
         config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir,
-                                                             err_if_privkey_not_found=False)
+                                                             stderr=out)
         self.failUnlessEqual(config_was_ok, True)
         self.failUnlessEqual(modified, False)
         config3a = self.read()
@@ -178,9 +131,7 @@ class Util(unittest.TestCase):
         out = StringIO()
         cfg = self.get_cfg()
         config_was_ok, modified = preflight.preflight_config(cfg, fn,
-                                                             stderr=out,
-                                                             keydir=keydir,
-                                                             err_if_privkey_not_found=False)
+                                                             stderr=out)
         self.failUnlessEqual(config_was_ok, True)
         self.failUnlessEqual(modified, False)
         config4a = self.read()
