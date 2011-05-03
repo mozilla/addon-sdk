@@ -1,102 +1,112 @@
 
 # Using the SDK with XUL extensions #
 
-<div class="warning">
-Note that the technique described here doesn't work in the current version of
-the SDK, but we're working on a replacement.
-<a href="http://groups.google.com/group/mozilla-labs-jetpack/browse_thread/thread/356a7fd464b1043c/ca4e885dfd19edab?lnk=gst&q=xul+extensions#ca4e885dfd19edab"> Check the mailing list</a>
-for more details.
-</div>
-
 With the Add-on SDK you can use modules in a regular XUL-based extension. This
 can be helpful if you want to use some of SDK APIs, if you like the way
 modules help separate your code into testable and re-usable pieces,
 or if you'd like to gradually migrate an existing extension over to the SDK.
 
-Running an SDK-based add-on in Firefox
+Quick start
 ------------------
-We assume you have already completed the
-[Getting Started](dev-guide/addon-development/getting-started.html) tutorial.
-You should have a package called `translator` (including a `package.json`
-manifest) and modules named `translator` and `main`.
+Creating a XUL-based extension with the SDK is very similar to creating a
+regular Add-on SDK extension. We assume you have already completed the
+[Getting Started](dev-guide/addon-development/getting-started.html) tutorial
+and will only focus on the steps specific to XUL extensions here.
 
-You have used `cfx run` to run the program, which creates a
-[key pair](/dev-guide/addon-development/program-id.html) for you.
-
-Getting your XUL extension to run with Add-on SDK
-------------------
-<span class="aside">
-There's only one interesting file in the template extension - the `harness.js`
-component that provides the CommonJS module loader (the `require()`
-implementation) and bootstraps the add-on (i.e. starts its `main` program or
-runs tests).
-</span>
-Copy the extension template the SDK uses to run add-ons from
-`addon-sdk/python-lib/cuddlefish/app-extension` to your own folder, for
-example `addon-sdk/packages/translator/extension`.
-
-Copy your other extension files to `addon-sdk/packages/my-extension/extension`
-(`components`, `chrome.manifest` and chrome files, etc).
-
-Now you can run Firefox with your XUL extension *and* our test module installed
-by executing the following command from the package folder,
-`addon-sdk/packages/my-extension`:
-
+To get started, [run activate](dev-guide/addon-development/installation.html),
+create an empty directory, navigate to it, and run:
 <pre>
-  cfx run -t extension
+  cfx init --template xul
 </pre>
 
-(The `-t` parameter is actually the path to the folder with the "template"
-extension to install when running the specified application).
+This creates all the necessary files, so you can run the extension, its tests,
+and build the XPI right away. The `cfx` syntax is exactly the same as for the
+regular SDK-based extensions:
+<pre>
+  cfx test
+  cfx run
+  cfx xpi
+</pre>
+
+You can create your own modules, tests, and use the modules provided by the SDK
+in a XUL extension, just like you can do in a regular SDK-based extension. The
+only two differences are:
+
+ * Restarting the application is required to install (uninstall, disable,
+   upgrade and so on) a XUL-based extension.
+ * XUL-based extensions can use the functionality unavailable to bootstrapped
+   (restartless) extensions, like using [chrome.manifest](https://developer.mozilla.org/en/Chrome_Registration)
+   to register overlays and to define user interface in XUL.
+
+The home for your XUL files
+------------------
+When you ran `cfx init`, it created a directory named `extension` in the
+current directory (alongside `lib`, `tests`, and others).
+
+The files and directories that are not managed by the SDK (XUL, locale, skins,
+default preferences, XPCOM components and modules, and others) should be placed
+in this directory.
+
+Note that there are already a few files and directories here. Some of them are
+necessary for the SDK-based functionality (`cfx test` and the module system,
+in particular) to work. We'll discuss their roles in a later section.
 
 Loading modules from extension's code
 ------------------
 To load modules we'll need to get the harness XPCOM service provided by the SDK.
-This service has contract ID
-`@mozilla.org/harness-service;1?id=<package id>`, where *&lt;package-id>*
-is the programs "JID", found in `package.json` as the `id` key.
+This service has contract ID `@mozilla.org/harness-service;1?id=<package id>`,
+where *&lt;package-id>* is specified as the `id` key in `package.json`:
 
-<span class="aside">
-The specified ID will also be used as `em:id` in `install.rdf` when building
-an XPI with `cfx xpi`, but with a `@jetpack` suffix to fulfill the rules of
-add-on identifiers.
-</span>
+    {
+      "id": "jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk",
+      // other properties here
+    }
 
-The first time you invoke `cfx xpi` or `cfx run`, the `cfx` tool will modify
-your `package.json` (if necessary) provide you with an `id` value. The result
-will look something like this:
 
-<pre>
-  {
-    "id": "jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk",
-    // other properties here
-  }
-</pre>
+To call the SDK modules from regular extension code use this code:
 
-Now we can use CommonJS modules from regular extension code using this code:
-
-    function loadSDKModule(module) {
+    function myExtension_loadSDKModule(module) {
       return Components.classes[
-        "@mozilla.org/harness-service;1?id="jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk"].
+        "@mozilla.org/harness-service;1?id=jid0-i6WjYzrJ0UFR0pPPM7Znl3BvYbk"].
         getService().wrappedJSObject.loader.require(module);
     }
-    loadSDKModule("translator").translate("Bonjour tout le monde", function(translation) {
-      alert(translation);
-    });
+    myExtension_loadSDKModule("notifications").notify({text: "Hello world!"});
 
-You can test this code by pasting it into the Error Console of the Firefox
-instance that appears when you use `cfx run -t extension`.
+You can test it by pasting into the Error Console of the Firefox
+instance that appears when you use `cfx run`.
 
-Packaging the extension into an XPI
+Pre-generated files in a XUL-based extension
 ------------------
-As with regular add-ons, you can use `cfx` to create an XPI from your package:
 
-<pre>
-  cfx xpi -t extension
-</pre>
+The extension created by `cfx init --template xul` has a few additional files
+and keys not present in a regular SDK extension. This section explains their
+purpose:
 
-**Note 1**: `cfx` attempts to update the `install.rdf` with the package metadata, so if
-you get RDF-related errors when using that, try using `install.rdf` from the
-default template (bug 556072).
+* `extension/components/harness.js` - is the heart of any SDK-based add-on. It
+  handles the startup and shutdown process of the module-based part of the
+  extension. Note that this file is copied from the SDK
+  (`python-lib/cuddlefish/app-extension/components/harness.js`) to your
+  extension, so you may need to update it manually when upgrading the SDK.
+* `extension/chrome.manifest` contains the instructions
+  [required to register `harness.js` in Firefox 4] [mdc-xpcom-registration].
+  Be careful not to overwrite the three instructions (`component`, `contract`,
+  and `category`) when adding your own stuff to chrome.manifest.
+* `extension/install.rdf` is the extension's [install manifest] [mdc-install]. It
+  will be updated with [information from package.json] [package-spec] when you
+  run `cfx xpi`, but for attributes that can not be specified in package.json,
+  you'll have to edit the manifest directly.
+* `extension/modules/module.jsm` is an example of using functionality
+   available only to XUL extensions and is used only in `tests/test-module.js`.
+   You can safely remove both files, along with the reference to it in
+   the `chrome.manifest`.
+* `package.json` has two attributes specific to XUL-based extensions:
+    * `templatedir` lets `cfx` know about the `extension` directory with your
+      XUL files.
+    * `harnessClassID` matches the classID of the harness component specified
+      in chrome.manifest. It's passed on to the `harness.js` component by
+      `cfx`, so that the generic code in harness.js knows what classID it's
+      supposed to respond to.
 
-**Note 2**: the tests for modules are not included in the created XPI.
+  [mdc-xpcom-registration]: https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Gecko_2.0#Component_registration
+  [mdc-install]: https://developer.mozilla.org/en/Install_manifests
+  [package-spec]: dev-guide/addon-development/package-spec.html

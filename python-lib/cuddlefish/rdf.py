@@ -109,7 +109,7 @@ class RDFManifest(RDF):
         return True;
 
 def gen_manifest(template_root_dir, target_cfg, bundle_id,
-                 update_url=None, bootstrap=True):
+                 update_url=None, bootstrap=None):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
     manifest = RDFManifest(install_rdf)
 
@@ -122,7 +122,8 @@ def gen_manifest(template_root_dir, target_cfg, bundle_id,
                  target_cfg.get("description", ""))
     manifest.set("em:creator",
                  target_cfg.get("author", ""))
-    manifest.set("em:bootstrap", str(bootstrap).lower())
+    if bootstrap is not None:
+        manifest.set("em:bootstrap", str(bootstrap).lower())
     manifest.set("em:unpack", "true")
     if update_url:
         manifest.set("em:updateURL", update_url)
