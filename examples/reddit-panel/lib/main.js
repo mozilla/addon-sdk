@@ -18,3 +18,10 @@ require("widget").Widget({
   contentURL: "http://www.reddit.com/static/favicon.ico",
   panel: reddit_panel
 });
+
+exports.main = function(options, callbacks) {
+  // If you run cfx with --static-args='{"quitWhenDone":true}' this program
+  // will automatically quit Firefox when it's done.
+  if (options.staticArgs.quitWhenDone)
+    callbacks.quit();
+};
