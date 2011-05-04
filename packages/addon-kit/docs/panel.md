@@ -19,14 +19,10 @@ and the content remains loaded when a panel is hidden, so it is possible
 to keep a panel around in the background, updating its content as appropriate
 in preparation for the next time it is shown.
 
-Panels can be anchored to a particular element in a DOM window, including both
-chrome elements, i.e. parts of the host application interface, and content
-elements, i.e. parts of a web page in an application tab.
-
 Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
-those scripts via an asynchronous message passing API.  See
+those scripts via an asynchronous event emitter API.  See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
@@ -103,17 +99,42 @@ Creates a panel.
     A string or an array of strings containing the texts of content scripts to
     load.  Content scripts specified by this property are loaded *after* those
     specified by the `contentScriptFile` property.
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.  Optional.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+  @prop [contentScriptWhen="end"] {string}
+    When to load the content scripts. This may take one of the following
+    values:
+
+    * "start": load content scripts immediately after the document
+    element for the panel is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the panel has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
+
+    This property is optional and defaults to "end".
+
   @prop [onMessage] {function}
     An optional "message" event listener.  See Events above.
   @prop [onShow] {function}
     An optional "show" event listener.  See Events above.
   @prop [onHide] {function}
     An optional "hide" event listener.  See Events above.
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
 </api>
 
 <api name="isShowing">
@@ -159,10 +180,21 @@ specified by the `contentScriptFile` property.
 
 <api name="contentScriptWhen">
 @property {string}
-When to load the content scripts.
-Possible values are "start" (default), which loads them as soon as
-the window object for the page has been created, and "ready", which loads
-them once the DOM content of the page has been loaded.
+When to load the content scripts. This may have one of the following
+values:
+
+* "start": load content scripts immediately after the document
+element for the panel is inserted into the DOM, but before the DOM content
+itself has been loaded
+* "ready": load content scripts once DOM content has been loaded,
+corresponding to the
+[DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+event
+* "end": load content scripts once all the content (DOM, JS, CSS,
+images) for the panel has been loaded, at the time the
+[window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+fires
+
 </api>
 
 <api name="destroy">
@@ -184,8 +216,9 @@ The message to send.  Must be stringifiable to JSON.
 Displays the panel.
 @param [anchor] {handle}
 A handle to a DOM node in a page to which the panel should appear to be
-connected.  If not given, the panel is centered inside the most recent browser
-window.
+anchored.  If not given, the panel is centered inside the most recent browser
+window. Note that it is not currently possible to anchor panels in this way
+using only the high level APIs.
 </api>
 
 <api name="hide">

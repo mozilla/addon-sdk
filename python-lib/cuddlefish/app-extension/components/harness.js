@@ -40,8 +40,7 @@
 // program.
 //
 // The main entry point, `NSGetModule()`, is data-driven, and obtains
-// a lot of its configuration information from either the
-// `HARNESS_OPTIONS` environment variable (if present) or a JSON file
+// a lot of its configuration information from a JSON file
 // called `harness-options.json` in the root directory of the extension
 // or application it's a part of.
 //
@@ -227,30 +226,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     bundleID: options.bundleID,
 
     getModuleInfo: function getModuleInfo(path) {
-      var i = this.__packages[path];
-      var info = { dependencies: i.requires,
-                   needsChrome: i.chrome,
-                   'e10s-adapter': i['e10s-adapter'],
-                   name: i.name,
-                   packageName: i.packageName,
-                   hash: i.hash
-                   };
-      if (info.packageName in options.packageData)
-        info.packageData = options.packageData[info.packageName];
-      return info;
-    },
-
-    // TODO: This has been superseded by require('self').getURL() and
-    // should be deprecated.
-    getURLForData: function getURLForData(path) {
-      var traceback = this.__loader.require("traceback");
-      var callerInfo = traceback.get().slice(-2)[0];
-      var info = this.getModuleInfo(callerInfo.filename);
-      if ('packageData' in info) {
-        var url = this.__loader.require("url");
-        return url.URL(path, info.packageData).toString();
-      } else
-        throw new Error("No data for package " + pkgName);
+      return this.__packages[path];
     },
 
     createLoader: function createLoader() {
@@ -504,25 +480,23 @@ function getDefaults(rootFileSpec) {
                   .getService(Ci.nsIEnvironment);
 
     var jsonData;
-    if (environ.exists("HARNESS_OPTIONS"))
-      jsonData = environ.get("HARNESS_OPTIONS");
+    var optionsFile = rootFileSpec.clone();
+    optionsFile.append('harness-options.json');
+    if (optionsFile.exists()) {
+      var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
+                     .createInstance(Ci.nsIFileInputStream);
+      var siStream = Cc['@mozilla.org/scriptableinputstream;1']
+                     .createInstance(Ci.nsIScriptableInputStream);
+      fiStream.init(optionsFile, 1, 0, false);
+      siStream.init(fiStream);
+      var data = new String();
+      data += siStream.read(-1);
+      siStream.close();
+      fiStream.close();
+      jsonData = data;
+    }
     else {
-      var optionsFile = rootFileSpec.clone();
-      optionsFile.append('harness-options.json');
-      if (optionsFile.exists()) {
-        var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
-                       .createInstance(Ci.nsIFileInputStream);
-        var siStream = Cc['@mozilla.org/scriptableinputstream;1']
-                       .createInstance(Ci.nsIScriptableInputStream);
-        fiStream.init(optionsFile, 1, 0, false);
-        siStream.init(fiStream);
-        var data = new String();
-        data += siStream.read(-1);
-        siStream.close();
-        fiStream.close();
-        jsonData = data;
-      } else
-        throw new Error("HARNESS_OPTIONS env var must exist.");
+      throw new Error("harness-options.json file must exist.");
     }
 
     options = JSON.parse(jsonData);

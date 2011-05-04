@@ -30,8 +30,6 @@ Minimally, a package must include a package descriptor file named
 `package.json`: this file contains information about the package such as a short
 description, the authors, and the other packages it depends on.
 
-<span class="aside">This isn't quite true until
-[bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed.</span>
 Packages must also follow a particular directory structure, which is the
 structure `cfx init` created for your add-on.
 

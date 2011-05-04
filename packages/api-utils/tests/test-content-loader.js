@@ -99,13 +99,13 @@ exports['test:contentURL'] = function(test) {
 exports['test:contentScriptWhen'] = function(test) {
   let loader = Loader();
   test.assertEqual(
-    'start',
+    'end',
     loader.contentScriptWhen,
-    '`contentScriptWhen` defaults to "start"'
+    '`contentScriptWhen` defaults to "end"'
   );
-  loader.contentScriptWhen = "ready";
+  loader.contentScriptWhen = "end";
   test.assertEqual(
-    "ready",
+    "end",
     loader.contentScriptWhen
   );
   try {
@@ -113,15 +113,20 @@ exports['test:contentScriptWhen'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptWhen` option must be either "start" or "ready".',
+      'The `contentScriptWhen` option must be either "start", "ready" or "end".',
       e.message
     );
   }
   loader.contentScriptWhen = null;
   test.assertEqual(
-    'start',
+    'end',
     loader.contentScriptWhen,
-    '`contentScriptWhen` defaults to "start"'
+    '`contentScriptWhen` defaults to "end"'
+  );
+  loader.contentScriptWhen = "ready";
+  test.assertEqual(
+    "ready",
+    loader.contentScriptWhen
   );
   loader.contentScriptWhen = "start";
   test.assertEqual(

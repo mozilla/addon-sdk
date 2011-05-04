@@ -93,14 +93,15 @@ exports["test:communication with worker global scope"] = function(test) {
     contentSymbiont = Symbiont({
       frame: frame,
       contentScript: 'new ' + function() {
-        postMessage(1);
-        onMessage = function onMessage(message) {
+        self.postMessage(1);
+        self.on("message", function onMessage(message) {
           if (message === 2)
-            postMessage(3);
+            self.postMessage(3);
           if (message === 4)
-            postMessage(5);
-        };
+            self.postMessage(5);
+        });
       } + '()',
+      contentScriptWhen: 'ready',
       onMessage: onMessage1
     });
     
@@ -116,7 +117,7 @@ exports['test:pageWorker'] = function(test) {
     contentScript: 'new ' + function WorkerScope() {
       self.on('message', function(data) {
         if (data.valid)
-          postMessage('bye!');
+          self.postMessage('bye!');
       })
       self.postMessage(window.location.toString());
     },
@@ -139,7 +140,7 @@ exports["test:document element present on 'start'"] = function(test) {
   let xulApp = require("xul-app");
   let worker = Symbiont({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(!!document.documentElement)",
+    contentScript: "self.postMessage(!!document.documentElement)",
     contentScriptWhen: "start",
     onMessage: function(message) {
       if (xulApp.versionInRange(xulApp.platformVersion, "2.0b6", "*"))

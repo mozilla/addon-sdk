@@ -55,10 +55,10 @@ alt="Mozilla widget icon">
 
 To simplify your code in the latter case, you can assign a panel object to
 your widget. Then when the user clicks the widget, the widget will display
-the panel anchored to the widget. The `reddit-panel` example demonstrates this:
+the panel anchored to the widget:
 
-<img class="image-center" src="media/screenshots/modules/reddit-panel-osx.png"
-alt="Reddit panel">
+<img class="image-center" src="media/screenshots/modules/widget-panel-osx.png"
+alt="Panel anchored to widget">
 <br>
 
 ### [context-menu](packages/addon-kit/docs/context-menu.html) ###

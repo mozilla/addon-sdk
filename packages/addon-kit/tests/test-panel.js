@@ -6,7 +6,7 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(1); on('message', function() postMessage(2));",
+    contentScript: "self.postMessage(1); self.on('message', function() self.postMessage(2));",
     onMessage: function (message) {
       test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {
@@ -24,11 +24,45 @@ tests.testPanel = function(test) {
   });
 };
 
+tests.testPanelEmit = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.emit('loaded');" +
+                   "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("loaded", function () {
+    test.pass("The panel was loaded and sent a first event.");
+    panel.port.emit("addon-to-content");
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message and received a response.");
+    panel.destroy();
+    test.done();
+  });
+};
+
+tests.testPanelEmitEarly = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message early and received a response.");
+    panel.destroy();
+    test.done();
+  });
+  panel.port.emit("addon-to-content");
+};
+
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       panel.show();
     },
@@ -71,8 +105,8 @@ tests.testResizePanel = function(test) {
     browserWindow.removeEventListener("focus", onFocus, true);
 
     let panel = Panel({
-      contentScript: "postMessage('')",
-      contentScriptWhen: "ready",
+      contentScript: "self.postMessage('')",
+      contentScriptWhen: "end",
       height: 10,
       width: 10,
       onMessage: function (message) {

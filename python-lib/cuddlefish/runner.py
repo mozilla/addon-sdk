@@ -4,6 +4,7 @@ import time
 import tempfile
 import atexit
 import shutil
+import shlex
 
 import simplejson as json
 import mozrunner
@@ -187,7 +188,8 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None):
+            timeout=None, logfile=None, addons=None, args=None, norun=None,
+            emit_elapsed_time=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -220,7 +222,10 @@ def run_app(harness_root_dir, harness_options,
             raise ValueError("Unknown app: %s" % app_type)
         if sys.platform == 'darwin':
             cmdargs.append('-foreground')
-
+    
+    if args:
+        cmdargs.extend(shlex.split(args))
+    
     resultfile = os.path.join(tempfile.gettempdir(), 'harness_result')
     if os.path.exists(resultfile):
         os.remove(resultfile)
@@ -248,7 +253,16 @@ def run_app(harness_root_dir, harness_options,
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
-    env['HARNESS_OPTIONS'] = json.dumps(harness_options)
+    env['XPCOM_DEBUG_BREAK'] = 'warn'
+    if norun:
+        cmdargs.append("-no-remote")
+
+    # Write the harness options file to the SDK's extension template directory
+    # so mozrunner will copy it to the profile it creates.  We don't want
+    # to leave such files lying around the SDK's directory tree, so we delete it
+    # below after getting mozrunner to create the profile.
+    optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
+    open(optionsFile, "w").write(str(json.dumps(harness_options)))
 
     starttime = time.time()
 
@@ -261,6 +275,11 @@ def run_app(harness_root_dir, harness_options,
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
+
+    # Delete the harness options file we wrote to the SDK's extension template
+    # directory.
+    os.remove(optionsFile)
+
     runner = runner_class(profile=profile,
                           binary=binary,
                           env=env,
@@ -271,7 +290,12 @@ def run_app(harness_root_dir, harness_options,
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
     sys.stderr.flush()
-
+    
+    if norun:
+        print "To launch the application, enter the following command:"
+        print " ".join(runner.command) + " " + (" ".join(runner.cmdargs))
+        return 0
+    
     runner.start()
 
     done = False
@@ -296,11 +320,12 @@ def run_app(harness_root_dir, harness_options,
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
-            elapsed = time.time() - starttime
-            if elapsed > next_chime:
-                sys.stderr.write("\n(elapsed time: %d seconds)\n" % elapsed)
-                sys.stderr.flush()
-                next_chime += chime_interval
+            if emit_elapsed_time:
+                elapsed = time.time() - starttime
+                if elapsed > next_chime:
+                    sys.stderr.write("\n(elapsed time: %d seconds)\n" % elapsed)
+                    sys.stderr.flush()
+                    next_chime += chime_interval
     except:
         runner.stop()
         raise

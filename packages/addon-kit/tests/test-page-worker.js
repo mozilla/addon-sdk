@@ -7,8 +7,8 @@ tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
 
   let page = new Page({
-    contentScript: "postMessage(window.location.href)",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage(window.location.href)",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(message, "about:blank",
                        "Page Worker should start with a blank page by default");
@@ -27,7 +27,7 @@ tests.testUnwrappedDOM = function(test) {
     allow: { script: true },
     contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
     contentScript: "window.addEventListener('load', function () " +
-                   "postMessage([typeof(document.getElementById), " +
+                   "self.postMessage([typeof(document.getElementById), " +
                    "typeof(window.scrollTo)]), true)",
     onMessage: function (message) {
       test.assertEqual(message[0],
@@ -66,13 +66,13 @@ tests.testConstructorAndDestructor = function(test) {
   let pagesReady = 0;
 
   let page1 = Pages.Page({
-    contentScript:      "postMessage('')",
-    contentScriptWhen:  "ready",
+    contentScript:      "self.postMessage('')",
+    contentScriptWhen:  "end",
     onMessage:          pageReady
   });
   let page2 = Pages.Page({
-    contentScript:      "postMessage('')",
-    contentScriptWhen:  "ready",
+    contentScript:      "self.postMessage('')",
+    contentScriptWhen:  "end",
     onMessage:          pageReady
   });
 
@@ -100,8 +100,8 @@ tests.testAutoDestructor = function(test) {
   let Pages = loader.require("page-worker");
 
   let page = Pages.Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() {
       loader.unload();
       test.assert(isDestroyed(page), "Page correctly unloaded.");
@@ -128,11 +128,11 @@ tests.testValidateOptions = function(test) {
 
 tests.testContentAndAllowGettersAndSetters = function(test) {
   test.waitUntilDone();
-  let content = "data:text/html,<script>window.scrollTo=3</script>";
+  let content = "data:text/html,<script>window.scrollTo=3;</script>";
   let page = Page({
     contentURL: content,
-    contentScript: "window.addEventListener('load', function () " +
-                   "postMessage(typeof window.scrollTo), true);",
+    contentScript: "self.postMessage(typeof window.scrollTo)",
+    contentScriptWhen: "end",
     onMessage: step0
   });
 
@@ -194,8 +194,8 @@ tests.testOnMessageCallback = function(test) {
   test.waitUntilDone();
 
   Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() {
       test.pass("onMessage callback called");
       test.done();
@@ -208,8 +208,8 @@ tests.testMultipleOnMessageCallbacks = function(test) {
 
   let count = 0;
   let page = Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() count += 1
   });
   page.on('message', function() count += 2);
@@ -231,7 +231,8 @@ tests.testLoadContentPage = function(test) {
       test[message.shift()].apply(test, message);
     },
     contentURL: require("self").data.url("test-page-worker.html"),
-    contentScriptFile: require("self").data.url("test-page-worker.js")
+    contentScriptFile: require("self").data.url("test-page-worker.js"),
+    contentScriptWhen: "ready"
   });
 
 }
@@ -246,8 +247,8 @@ tests.testAllowScript = function(test) {
       test.done();
     },
     contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "window.addEventListener('DOMContentLoaded', function () " +
-                   "postMessage('foo' in window), false)"
+    contentScript: "self.postMessage('foo' in window)",
+    contentScriptWhen: "ready"
   });
 }
 
@@ -262,9 +263,8 @@ tests.testAllowScript = function(test) {
     },
     allow: { script: true },
     contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "window.addEventListener('DOMContentLoaded', function () " +
-                   "postMessage(('foo' in window) && window.foo " +
-                   "== 3), false)"
+    contentScript: "self.postMessage(('foo' in window) && window.foo == 3)",
+    contentScriptWhen: "ready"
   });
 }
 
@@ -272,9 +272,8 @@ tests.testPingPong = function(test) {
   test.waitUntilDone();
   let page = Page({
     contentURL: 'data:text/html,ping-pong',
-    contentScript: 'onMessage = function(message) postMessage("pong");'
-      + 'postMessage("ready");'
-    ,
+    contentScript: 'self.on("message", function(message) self.postMessage("pong"));'
+      + 'self.postMessage("ready");',
     onMessage: function(message) {
       if ('ready' == message) {
         return page.postMessage('ping');

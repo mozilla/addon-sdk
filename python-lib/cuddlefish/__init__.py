@@ -111,6 +111,11 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['run', 'xpi'])),
+        (("", "--package-path",), dict(dest="packagepath", action="append",
+                                       help="extra directories for package search",
+                                       metavar=None,
+                                       default=[],
+                                       cmds=['run', 'xpi', 'test'])),
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
@@ -143,6 +148,15 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test', 'testex', 'testpkgs',
                                            'testall'])),
+        (("", "--no-run",), dict(dest="no_run",
+                                     help=("Instead of launching the "
+                                           "application, just show the command "
+                                           "for doing so.  Use this to launch "
+                                           "the application in a debugger like "
+                                           "gdb."),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
         ]
      ),
 
@@ -168,11 +182,13 @@ parser_groups = (
                                           default="test-harness",
                                           cmds=['test', 'testex', 'testpkgs',
                                                 'testall'])),
+        # --keydir was removed in 1.0b5, but we keep it around in the options
+        # parser to make life easier for frontends like FlightDeck which
+        # might still pass it. It can go away once the frontends are updated.
         (("", "--keydir",), dict(dest="keydir",
-                                 help=("directory holding private keys;"
-                                       " default is ~/.jetpack/keys"),
+                                 help=("obsolete, ignored"),
                                  metavar=None,
-                                 default=os.path.expanduser("~/.jetpack/keys"),
+                                 default=None,
                                  cmds=['test', 'run', 'xpi', 'testex',
                                        'testpkgs', 'testall'])),
         (("", "--e10s",), dict(dest="enable_e10s",
@@ -195,6 +211,12 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
+        (("", "--binary-args",), dict(dest="cmdargs",
+                                 help=("additional arguments passed to the "
+                                       "binary"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'test'])),
         ]
      ),
     )
@@ -406,7 +428,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','test','docs']:
+    for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
@@ -417,8 +439,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* test/test-main.js written'
     open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'docs','main.md'),'w').write(MAIN_JS_DOC)
-    print >>out, '* docs/main.md written'
+    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
+    print >>out, '* doc/main.md written'
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
@@ -530,7 +552,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             sys.exit(1)
 
     if not pkg_cfg:
-        pkg_cfg = packaging.build_config(env_root, target_cfg)
+        pkg_cfg = packaging.build_config(env_root, target_cfg, options.packagepath)
 
     target = target_cfg.name
 
@@ -551,12 +573,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command in ('xpi', 'run'):
         from cuddlefish.preflight import preflight_config
         if target_cfg_json:
-            config_was_ok, modified = preflight_config(
-                target_cfg,
-                target_cfg_json,
-                keydir=options.keydir,
-                err_if_privkey_not_found=False
-                )
+            config_was_ok, modified = preflight_config(target_cfg,
+                                                       target_cfg_json)
             if not config_was_ok:
                 if modified:
                     # we need to re-read package.json . The safest approach
@@ -588,7 +606,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         jid = harness_guid
 
     assert not jid.endswith("@jetpack")
-    if (jid.startswith("jid0-") or jid.startswith("anonid0-")):
+    if ( jid.startswith("jid0-")
+         or jid.startswith("jid1-")
+         or jid.startswith("anonid0-") ):
         bundle_id = jid + "@jetpack"
     # Don't append "@jetpack" to old-style IDs, as they should be exactly
     # as specified by the addon author so AMO and Firefox continue to treat
@@ -635,9 +655,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
+    emit_elapsed_time = False
     if command == "test":
         # This should be contained in the test runner package.
         harness_options['main'] = 'run-tests'
+        emit_elapsed_time = True
     else:
         harness_options['main'] = target_cfg.get('main')
 
@@ -665,27 +687,33 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
+    from cuddlefish.manifest import build_manifest
+    uri_prefix = "resource://%s" % unique_prefix
+    include_tests = False #bool(command=="test")
+    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, include_tests)
+    harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
         from cuddlefish.rdf import gen_manifest, RDFUpdate
 
-        manifest = gen_manifest(template_root_dir=app_extension_dir,
-                                target_cfg=target_cfg,
-                                bundle_id=bundle_id,
-                                update_url=options.update_url,
-                                bootstrap=True)
+        manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
+                                    target_cfg=target_cfg,
+                                    bundle_id=bundle_id,
+                                    update_url=options.update_url,
+                                    bootstrap=True)
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
             print "Exporting update description to %s." % rdf_name
             update = RDFUpdate()
-            update.add(manifest, options.update_link)
+            update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
         xpi_name = XPI_FILENAME % target_cfg.name
         print "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
-                  manifest=manifest,
+                  manifest=manifest_rdf,
                   xpi_name=xpi_name,
                   harness_options=harness_options)
     else:
@@ -710,7 +738,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              verbose=options.verbose,
                              timeout=timeout,
                              logfile=options.logfile,
-                             addons=options.addons)
+                             addons=options.addons,
+                             args=options.cmdargs,
+                             norun=options.no_run,
+                             emit_elapsed_time=emit_elapsed_time)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()

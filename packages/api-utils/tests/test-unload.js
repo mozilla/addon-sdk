@@ -93,6 +93,9 @@ exports.testEnsureWithTraits = function(test) {
   let composedCalled = 0;
   let composedTrait = Trait.compose({
       constructor: function () {
+        // We have to give "public interface" of this trait, as we want to
+        // call public `unload` method and ensure that we call it only once,
+        // either when we call this public function manually or on add-on unload
         ul.ensure(this._public);
       },
       unload: function unload() {
@@ -105,6 +108,7 @@ exports.testEnsureWithTraits = function(test) {
       unload : "_unload" 
     }), {
       constructor: function constructor() {
+        // Same thing applies here, we need to pass public interface
         ul.ensure(this._public);
         this._constructor();
       },
@@ -133,6 +137,36 @@ exports.testEnsureWithTraits = function(test) {
   test.assertEqual(composedCalled, 1,
                    "composed object unload() should be called only once, " +
                    "after addon unload");
+};
+
+exports.testEnsureWithTraitsPrivate = function(test) {
+
+  let { Trait } = require("traits");
+  let loader = test.makeSandboxedLoader();
+  let ul = loader.require("unload");
+
+  let called = 0;
+  let privateObj = null;
+  let obj = Trait.compose({
+      constructor: function constructor() {
+        // This time wa don't have to give public interface,
+        // as we want to call a private method:
+        ul.ensure(this, "_unload");
+        privateObj = this;
+      },
+      _unload: function unload() {
+        called++;
+        this._unload();
+      }
+    })();
+
+  loader.unload();
+  test.assertEqual(called, 1,
+                   "unload() should be called");
+
+  privateObj._unload();
+  test.assertEqual(called, 1,
+                   "_unload() should be called only once, after addon unload");
 };
 
 exports.testReason = function (test) {
