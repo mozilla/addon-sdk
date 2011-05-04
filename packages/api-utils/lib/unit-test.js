@@ -68,6 +68,7 @@ TestRunner.prototype = {
   toString: function toString() "[object TestRunner]",
 
   DEFAULT_PAUSE_TIMEOUT: 10000,
+  PAUSE_DELAY: 500,
 
   _logTestFailed: function _logTestFailed(why) {
     this.test.errors[why]++;
@@ -226,7 +227,101 @@ TestRunner.prototype = {
       }
     }
   },
-
+  
+  // Set of assertion functions to wait for an assertion to become true
+  // These functions take the same arguments as the TestRunner.assert* methods.
+  waitUntil: function waitUntil() {
+    return this._waitUntil(this.assert, arguments);
+  },
+  
+  waitUntilNotEqual: function waitUntilNotEqual() {
+    return this._waitUntil(this.assertNotEqual, arguments);
+  },
+  
+  waitUntilEqual: function waitUntilEqual() {
+    return this._waitUntil(this.assertEqual, arguments);
+  },
+  
+  waitUntilMatches: function waitUntilMatches() {
+    return this._waitUntil(this.assertMatches, arguments);
+  },
+  
+  /**
+   * Internal function that waits for an assertion to become true.
+   * @param {Function} assertionMethod
+   *    Reference to a TestRunner assertion method like test.assert, 
+   *    test.assertEqual, ...
+   * @param {Array} args
+   *    List of arguments to give to the previous assertion method. 
+   *    All functions in this list are going to be called to retrieve current
+   *    assertion values.
+   */
+  _waitUntil: function waitUntil(assertionMethod, args) {
+    let count = 0;
+    let maxCount = this.DEFAULT_PAUSE_TIMEOUT / this.PAUSE_DELAY;
+    
+    let callback = null;
+    let finished = false;
+    
+    let test = this;
+    function loop() {
+      // Build a mockup object to fake TestRunner API and intercept calls to
+      // pass and fail methods, in order to retrieve nice error messages
+      // and assertion result
+      let mock = {
+        pass: function (msg) {
+          test.pass(msg);
+          if (callback)
+            callback();
+          finished = true;
+        },
+        fail: function (msg) {
+          if (++count > maxCount) {
+            test.fail(msg);
+            if (callback)
+              callback();
+            finished = true;
+            return;
+          }
+          timer.setTimeout(loop, test.PAUSE_DELAY);
+        }
+      };
+      
+      // Automatically call args closures in order to build arguments for 
+      // assertion function
+      let appliedArgs = [];
+      for (let i = 0, l = args.length; i < l; i++) {
+        let a = args[i];
+        if (typeof a == "function") {
+          try {
+            a = a();
+          }
+          catch(e) {
+            mock.fail("Exception when calling asynchronous assertion: " + e);
+          }
+        }
+        appliedArgs.push(a);
+      }
+      
+      // Finally call assertion function with current assertion values
+      assertionMethod.apply(mock, appliedArgs);
+    }
+    loop();
+    
+    // Return an object with `then` method, to offer a way to execute 
+    // some code when the assertion passed or failed
+    return {
+      then: function (c) {
+        callback = c;
+        
+        // In case of immediate positive result, we need to execute callback
+        // immediately here:
+        if (finished)
+          callback();
+      }
+    };
+  },
+  
   waitUntilDone: function waitUntilDone(ms) {
     if (ms === undefined)
       ms = this.DEFAULT_PAUSE_TIMEOUT;

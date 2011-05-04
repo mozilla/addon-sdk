@@ -116,7 +116,7 @@ class Class_Doc(API_Renderer):
         return self.name
 
     def render_subcomponents(self):
-        return render_object_contents(self.json)
+        return render_object_contents(self.json, 'h5', 'h6')
 
 class Event_Doc(API_Renderer):
     def __init__(self, json, tag):
@@ -203,15 +203,15 @@ class Parameter_Doc(Property_Doc):
                        for property_json in self.properties_json])
         return text
 
-def render_object_contents(json):
+def render_object_contents(json, tag = 'div', comp_tag = 'div'):
     ctors = json.get('constructors', None)
-    text = render_comp_group(ctors, 'Constructors', Function_Doc)
+    text = render_comp_group(ctors, 'Constructors', Function_Doc, tag, comp_tag)
     methods = json.get('methods', None)
-    text += render_comp_group(methods, 'Methods', Function_Doc)
+    text += render_comp_group(methods, 'Methods', Function_Doc, tag, comp_tag)
     properties = json.get('properties', None)
-    text += render_comp_group(properties, 'Properties', Property_Doc)
+    text += render_comp_group(properties, 'Properties', Property_Doc, tag, comp_tag)
     events = json.get('events', None)
-    text += render_comp_group(events, 'Events', Event_Doc)
+    text += render_comp_group(events, 'Events', Event_Doc, tag, comp_tag)
     return text
 
 def render_comp(component):

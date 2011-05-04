@@ -44,7 +44,23 @@ exports.MatchPattern = MatchPattern;
 
 function MatchPattern(pattern) {
   if (typeof pattern.test == "function") {
-      this.regexp = pattern;
+
+    // For compatibility with -moz-document rules, we require the RegExp's
+    // global, ignoreCase, and multiline flags to be set to false.
+    if (pattern.global) {
+      throw new Error("A RegExp match pattern cannot be set to `global` " +
+                      "(i.e. //g).");
+    }
+    if (pattern.ignoreCase) {
+      throw new Error("A RegExp match pattern cannot be set to `ignoreCase` " +
+                      "(i.e. //i).");
+    }
+    if (pattern.multiline) {
+      throw new Error("A RegExp match pattern cannot be set to `multiline` " +
+                      "(i.e. //m).");
+    }
+
+    this.regexp = pattern;
   }
   else {
     let firstWildcardPosition = pattern.indexOf("*");
@@ -91,8 +107,19 @@ MatchPattern.prototype = {
       return false;
     }
 
-    if (this.regexp && this.regexp.test(urlStr))
+    // Test the URL against a RegExp pattern.  For compatibility with
+    // -moz-document rules, we require the RegExp to match the entire URL,
+    // so we not only test for a match, we also make sure the matched string
+    // is the entire URL string.
+    //
+    // Assuming most URLs don't match most match patterns, we call `test` for
+    // speed when determining whether or not the URL matches, then call `exec`
+    // for the small subset that match to make sure the entire URL matches.
+    //
+    if (this.regexp && this.regexp.test(urlStr) &&
+        this.regexp.exec(urlStr)[0] == urlStr)
       return true;
+
     if (this.anyWebPage && /^(https?|ftp)$/.test(url.scheme))
       return true;
     if (this.exactURL && this.exactURL == urlStr)

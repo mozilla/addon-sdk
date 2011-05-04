@@ -26,16 +26,13 @@ self.on('message', function onMessage(annotations) {
   $('.annotated').css('border', 'solid 3px yellow');
 
   $('.annotated').bind('mouseenter', function(event) {
-    postMessage({
-      kind: 'show',
-      annotationText: $(this).attr('annotation')
-    });
+    self.port.emit('show', $(this).attr('annotation'));
     event.stopPropagation();
     event.preventDefault();
   });
 
   $('.annotated').bind('mouseleave', function() {
-    postMessage({kind: 'hide'});
+    self.port.emit('hide');
   });
 });
 

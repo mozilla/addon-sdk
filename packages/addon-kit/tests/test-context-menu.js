@@ -43,6 +43,8 @@ let {Cc,Ci} = require("chrome");
 const ITEM_CLASS = "jetpack-context-menu-item";
 const SEPARATOR_ID = "jetpack-context-menu-separator";
 const OVERFLOW_THRESH_DEFAULT = 10;
+const OVERFLOW_THRESH_PREF =
+  "extensions.addon-sdk.context-menu.overflowThreshold";
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
@@ -316,7 +318,7 @@ exports.testURLContextRemove = function (test) {
   let item = loader.cm.Item({
     label: "item",
     context: context,
-    contentScript: 'postMessage("ok");',
+    contentScript: 'self.postMessage("ok");',
     onMessage: function (msg) {
       test.assert(shouldBeEvaled,
                   "content script should be evaluated when expected");
@@ -372,7 +374,7 @@ exports.testContentContextMatch = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function () true);'
+    contentScript: 'self.on("context", function () true);'
   });
 
   test.showMenu(null, function (popup) {
@@ -390,7 +392,7 @@ exports.testContentContextNoMatch = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function () false);'
+    contentScript: 'self.on("context", function () false);'
   });
 
   test.showMenu(null, function (popup) {
@@ -407,9 +409,9 @@ exports.testContentContextArgs = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function (node) {' +
+    contentScript: 'self.on("context", function (node) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  self.postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
                    '  return false;' +
                    '});',
     onMessage: function (isElt) {
@@ -431,7 +433,7 @@ exports.testMultipleContexts = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     context: [loader.cm.SelectorContext("a[href]"), loader.cm.PageContext()],
-    contentScript: 'on("context", function () postMessage());',
+    contentScript: 'self.on("context", function () self.postMessage());',
     onMessage: function () {
       test.fail("Context listener should not be called");
     }
@@ -819,9 +821,9 @@ exports.testItemClick = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item data",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
                    '    data: data' +
                    '  });' +
@@ -865,9 +867,9 @@ exports.testMenuClick = function (test) {
 
   let topMenu = new loader.cm.Menu({
     label: "top menu",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
                    '    data: data' +
                    '  });' +
@@ -1085,12 +1087,12 @@ exports.testContentCommunication = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'var potato;' +
-                   'on("context", function () {' +
+                   'self.on("context", function () {' +
                    '  potato = "potato";' +
                    '  return true;' +
                    '});' +
-                   'on("click", function () {' +
-                   '  postMessage(potato);' +
+                   'self.on("click", function () {' +
+                   '  self.postMessage(potato);' +
                    '});',
   });
 
@@ -1103,6 +1105,129 @@ exports.testContentCommunication = function (test) {
     test.checkMenu([item], [], []);
     let elt = test.getItemElt(popup, item);
     elt.click();
+  });
+};
+
+
+// When the context menu is invoked on a tab that was already open when the
+// module was loaded, it should contain the expected items and content workers
+// should function as expected.
+exports.testLoadWithOpenTab = function (test) {
+  test = new TestHelper(test);
+  test.withTestDoc(function (window, doc) {
+    let loader = test.newLoader();
+    let item = new loader.cm.Item({
+      label: "item",
+      contentScript: 'self.on("click", function () self.postMessage("click"));',
+      onMessage: function (msg) {
+        if (msg === "click")
+          test.done();
+      }
+    });
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.getItemElt(popup, item).click();
+    });
+  });
+};
+
+
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu.
+exports.testSetLabelBeforeShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu.
+exports.testSetLabelAfterShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelBeforeShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelAfterShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+      test.done();
+    });
   });
 };
 
@@ -1404,7 +1529,9 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader();
+    let loader = this.test.makeSandboxedLoader({
+      globals: { packaging: packaging }
+    });
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
@@ -1423,7 +1550,11 @@ TestHelper.prototype = {
 
   // Returns true if the number of presentItems crosses the overflow threshold.
   shouldOverflow: function (presentItems) {
-    return presentItems.length > OVERFLOW_THRESH_DEFAULT;
+    return presentItems.length >
+           (this.loaders.length ?
+            this.loaders[0].loader.require("preferences-service").
+              get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT) :
+            OVERFLOW_THRESH_DEFAULT);
   },
 
   // Opens the context menu on the current page.  If targetNode is null, the

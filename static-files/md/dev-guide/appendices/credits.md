@@ -6,6 +6,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Ehsan Akhgari
 * [Heather Arthur](https://github.com/harthur)
 * Dietrich Ayala
+* [Romain B](https://github.com/Niamor)
 * Will Bamberg
 * Zbigniew Braniecki
 * Daniel Buchner
@@ -28,6 +29,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Noelle Murata
 * Joe R. Nassimian ([placidrage](https://github.com/placidrage))
 * Nick Nguyen
+* [ongaeshi](https://github.com/ongaeshi)
 * Paul O’Shannessy
 * l.m.orchard
 * Alexandre Poirot
@@ -35,6 +37,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Aza Raskin
 * Justin Scott
 * Ayan Shah
+* [Mihai Sucan](https://github.com/mihaisucan)
 * Clint Talbert
 * Thomas
 * Dave Townsend
@@ -43,5 +46,6 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Erik Vold
 * Vladimir Vukicevic
 * Brian Warner
+* [Henri Wiechers](https://github.com/hwiechers)
 * Drew Willcoxon
 * Piotr Zalewa

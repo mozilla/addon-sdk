@@ -46,5 +46,18 @@ class PackagingTests(unittest.TestCase):
         self.assertTrue(packages.aardvark.main == 'main')
         self.assertTrue(packages.aardvark.version == "1.0")
 
+class PackagePath(unittest.TestCase):
+    def test_packagepath(self):
+        root_path = os.path.join(tests_path, 'static-files')
+        pkg_path = os.path.join(root_path, 'packages', 'minimal')
+        target_cfg = packaging.get_config_in_dir(pkg_path)
+        pkg_cfg = packaging.build_config(root_path, target_cfg)
+        base_packages = set(pkg_cfg.packages.keys())
+        ppath = [os.path.join(tests_path, 'bug-611495-files')]
+        pkg_cfg2 = packaging.build_config(root_path, target_cfg, packagepath=ppath)
+        all_packages = set(pkg_cfg2.packages.keys())
+        self.assertEqual(sorted(["jspath-one"]),
+                         sorted(all_packages - base_packages))
+
 if __name__ == "__main__":
     unittest.main()
