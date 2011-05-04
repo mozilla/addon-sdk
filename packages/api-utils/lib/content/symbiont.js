@@ -151,7 +151,9 @@ const Symbiont = Worker.resolve({
     if (typeof frame.docShell != "undefined")
         frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    if (frame.contentDocument.readyState == "complete" && 
+    // frame.contentDocument is undefined for this._contentURL such as 'data:text/html,<html>...'
+    if (typeof frame.contentDocument !== "undefined" &&
+        frame.contentDocument.readyState == "complete" && 
         frame.contentDocument.location == this._contentURL) {
       // In some cases src doesn't change and document is already ready
       // (for ex: when the user moves a widget while customizing toolbars.)

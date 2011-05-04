@@ -226,7 +226,7 @@
          if (!exports) {
            var path = self.fs.resolveModule(basePath, module);
            if (!path)
-             throw new Error('Module "' + module + '" not found');
+             throw new Error('Module "' + module + '" not found (basePath: "' + basePath + '")');
 
            // Track accesses to this module via its normalized path
            if (!self.pathAccessed[path]) {
