@@ -30,6 +30,34 @@ exports["test store requires `username` field"] = function(assert, done) {
   });
 };
 
+exports["test onComplete is optional"] = function(assert, done) {
+  store({
+    realm: "bla",
+    username: "bla",
+    password: "bla",
+    onError: function onError() {
+      assert.fail("onError was called");
+    }
+  });
+  assert.pass("exception is not thrown if `onComplete is missing")
+  done();
+};
+
+exports["test exceptions in onComplete are reported"] = function(assert, done) {
+  store({
+    realm: "throws",
+    username: "error",
+    password: "boom!",
+    onComplete: function onComplete(error) {
+      throw new Error("Boom!")
+    },
+    onError: function onError(error) {
+      assert.equal(error.message, "Boom!", "Error thrown is reported");
+      done();
+    }
+  });
+};
+
 exports["test store requires `realm` field"] = function(assert, done) {
   store({
     username: "foo",
