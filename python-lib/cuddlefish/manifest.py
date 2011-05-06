@@ -154,10 +154,12 @@ class ModuleInfo:
                                                    self.js, self.docs)
 
 class ManifestBuilder:
-    def __init__(self, target_cfg, pkg_cfg, uri_prefix, stderr=sys.stderr):
+    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix,
+                 stderr=sys.stderr):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
         self.pkg_cfg = pkg_cfg # all known packages
+        self.deps = deps # list of package names to search
         self.used_packagenames = set()
         self.stderr = stderr
         self.uri_prefix = uri_prefix
@@ -325,15 +327,19 @@ class ManifestBuilder:
             mi = self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
             if mi: # caution, 0==None
                 return mi
-            # 3: MODPARENT/MODCHILD: search "library" packages for one that
-            # exports MODPARENT/MODCHILD
-            return self._get_module(None, lookfor_sections, reqname)
 
-        # no slash
-        # 4: PKG: find PKG, use its main.js entry point
-        mi = self._get_module(reqname, lookfor_sections, None)
+        # 3: try finding MOD or MODPARENT/MODCHILD in their own package
+        from_pkg = from_module.package.name
+        mi = self._get_module(from_pkg, lookfor_sections, reqname)
         if mi:
             return mi
+
+        # 4: try finding PKG, if found, use its main.js entry point
+        if "/" not in reqname:
+            mi = self._get_module(reqname, lookfor_sections, None)
+            if mi:
+                return mi
+
         # 5: MOD: search "library" packages for one that exports MOD
         return self._get_module(None, lookfor_sections, reqname)
 
@@ -371,7 +377,7 @@ class ManifestBuilder:
                 return None
             return self._find_module_in_package(pkgname, sections, modname)
         # search library packages. For now, search all packages.
-        for pkgname in self.pkg_cfg.packages:
+        for pkgname in self.deps:
             mi = self._find_module_in_package(pkgname, sections, modname)
             if mi:
                 return mi
@@ -392,7 +398,7 @@ class ManifestBuilder:
                     return ModuleInfo(pkg, section, name, js, docs)
         return None
 
-def build_manifest(target_cfg, pkg_cfg, uri_prefix, scan_tests):
+def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -418,7 +424,7 @@ def build_manifest(target_cfg, pkg_cfg, uri_prefix, scan_tests):
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, uri_prefix)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix)
     mxt.build(scan_tests)
     return mxt
 
