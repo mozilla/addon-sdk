@@ -736,6 +736,56 @@ exports.testWidgetMove = function testWidgetMove(test) {
   });
 };
 
+exports.testWidgetWithPound = function testWidgetWithPound(test) {
+  test.waitUntilDone();
+  
+  function getWidgetContent(widget) {
+    let windowUtils = require("window-utils");
+    let browserWindow = windowUtils.activeBrowserWindow;
+    let doc = browserWindow.document;
+    let widgetNode = doc.querySelector('toolbaritem[label="' + widget.label + '"]');
+    //let widgetNode = doc.getElementById(widget.id);
+    test.assert(widgetNode, 'found widget node in the front-end');
+    return widgetNode.firstChild.contentDocument.body.innerHTML;
+  }
+
+  let widgets = require("widget");
+  
+  let widget = widgets.Widget({
+    id: "1",
+    label: "foo",
+    content: "1"
+  });
+
+  let stages = [
+    function() {
+      widget.content = "bar";
+      widget.content = "bar#";
+    },
+    function() {
+      widget.content = "bar";
+      widget.content = "bar#";
+    },
+    function() {
+      let content = getWidgetContent(widget);
+      console.log('content ', content);
+      test.assertEqual(content, "bar#", "content updated to pound?")
+      widget.destroy();
+    }
+  ];
+
+  let timerId = require("timer").setInterval(function() {
+    let stage = stages.shift();
+    if (stage) {
+      stage();
+    }
+    else {
+      require("timer").clearInterval(timerId);
+      test.done();
+    }
+  }, 1000);
+};
+
 /******************* helpers *********************/
 
 // Helper for calling code at window close
