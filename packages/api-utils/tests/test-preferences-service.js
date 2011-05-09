@@ -23,20 +23,43 @@ exports.testGetAndSet = function(test) {
   test.assertEqual(prefs.get("test_set_get_pref.integer"), 1,
                    "set/get integer preference should work");
 
+  prefs.set("test_set_get_number_pref", 42);
   test.assertRaises(
     function() { prefs.set("test_set_get_number_pref", 3.14159); },
     "cannot store non-integer number: 3.14159",
     "setting a float preference should raise an error"
   );
+  test.assertEqual(prefs.get("test_set_get_number_pref"), 42,
+                   "bad-type write attempt should not overwrite");
 
+  // 0x80000000 (no), 0x7fffffff (yes), -0x80000000 (yes), -0x80000001 (no)
   test.assertRaises(
     function() { prefs.set("test_set_get_number_pref", Math.pow(2, 31)); },
     ("you cannot set the test_set_get_number_pref pref to the number " +
      "2147483648, as number pref values must be in the signed 32-bit " +
-     "integer range -(2^31-1) to 2^31-1.  To store numbers outside that " +
+     "integer range -(2^31) to 2^31-1.  To store numbers outside that " +
      "range, store them as strings."),
-    "setting an int pref outside the range -(2^31-1) to 2^31-1 shouldn't work"
+    "setting an int pref outside the range -(2^31) to 2^31-1 shouldn't work"
   );
+  test.assertEqual(prefs.get("test_set_get_number_pref"), 42,
+                   "out-of-range write attempt should not overwrite 1");
+  prefs.set("test_set_get_number_pref", Math.pow(2, 31)-1);
+  test.assertEqual(prefs.get("test_set_get_number_pref"), 0x7fffffff,
+                   "in-range write attempt should work 1");
+  prefs.set("test_set_get_number_pref", -Math.pow(2, 31));
+  test.assertEqual(prefs.get("test_set_get_number_pref"), -0x80000000,
+                   "in-range write attempt should work 2");
+  test.assertRaises(
+    function() { prefs.set("test_set_get_number_pref", -0x80000001); },
+    ("you cannot set the test_set_get_number_pref pref to the number " +
+     "-2147483649, as number pref values must be in the signed 32-bit " +
+     "integer range -(2^31) to 2^31-1.  To store numbers outside that " +
+     "range, store them as strings."),
+    "setting an int pref outside the range -(2^31) to 2^31-1 shouldn't work"
+  );
+  test.assertEqual(prefs.get("test_set_get_number_pref"), -0x80000000,
+                   "out-of-range write attempt should not overwrite 2");
+
 
   prefs.set("test_set_get_pref.string", "foo");
   test.assertEqual(prefs.get("test_set_get_pref.string"), "foo",
