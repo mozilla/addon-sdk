@@ -33,9 +33,9 @@ exports.testGetAndSet = function(test) {
     function() { prefs.set("test_set_get_number_pref", Math.pow(2, 31)); },
     ("you cannot set the test_set_get_number_pref pref to the number " +
      "2147483648, as number pref values must be in the signed 32-bit " +
-     "integer range -(2^31-1) to 2^31-1.  To store numbers outside that " +
+     "integer range -(2^31) to 2^31-1.  To store numbers outside that " +
      "range, store them as strings."),
-    "setting an int pref outside the range -(2^31-1) to 2^31-1 shouldn't work"
+    "setting an int pref outside the range -(2^31) to 2^31-1 shouldn't work"
   );
 
   prefs.set("test_set_get_pref.string", "foo");
