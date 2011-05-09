@@ -736,6 +736,13 @@ exports.testWidgetMove = function testWidgetMove(test) {
   });
 };
 
+/*
+The bug is exhibited when a widget with HTML content has it's content
+changed to new HTML content with a pound in it. Because the src of HTML
+content is converted to a data URI, the underlying iframe doesn't 
+consider the content change a navigation change, so doesn't load
+the new content.
+*/
 exports.testWidgetWithPound = function testWidgetWithPound(test) {
   test.waitUntilDone();
   
@@ -744,46 +751,28 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
     let browserWindow = windowUtils.activeBrowserWindow;
     let doc = browserWindow.document;
     let widgetNode = doc.querySelector('toolbaritem[label="' + widget.label + '"]');
-    //let widgetNode = doc.getElementById(widget.id);
     test.assert(widgetNode, 'found widget node in the front-end');
     return widgetNode.firstChild.contentDocument.body.innerHTML;
   }
 
   let widgets = require("widget");
-  
+  let count = 0; 
   let widget = widgets.Widget({
     id: "1",
     label: "foo",
-    content: "1"
+    content: "foo",
+    contentScript: "window.addEventListener('load', self.postMessage, false);",
+    onMessage: function() {
+      count++;
+      if (count == 1) {
+        widget.content = "foo#";
+      }
+      else {
+        test.assertEqual(getWidgetContent(widget), "foo#", "content updated to pound?")
+        test.done();
+      }
+    }
   });
-
-  let stages = [
-    function() {
-      widget.content = "bar";
-      widget.content = "bar#";
-    },
-    function() {
-      widget.content = "bar";
-      widget.content = "bar#";
-    },
-    function() {
-      let content = getWidgetContent(widget);
-      console.log('content ', content);
-      test.assertEqual(content, "bar#", "content updated to pound?")
-      widget.destroy();
-    }
-  ];
-
-  let timerId = require("timer").setInterval(function() {
-    let stage = stages.shift();
-    if (stage) {
-      stage();
-    }
-    else {
-      require("timer").clearInterval(timerId);
-      test.done();
-    }
-  }, 1000);
 };
 
 /******************* helpers *********************/
