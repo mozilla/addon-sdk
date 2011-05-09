@@ -750,7 +750,7 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
 
   switch (type) {
     case CONTENT_TYPE_HTML:
-      contentURL = "data:text/html," + encodeURIComponent(this._widget.content);
+      contentURL = "data:text/html," + encodeURI(this._widget.content);
       break;
     case CONTENT_TYPE_URI:
       contentURL = this._widget.contentURL;

@@ -124,8 +124,7 @@ const Symbiont = Worker.resolve({
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    if (!frame._frameLoading &&
-        frame.contentDocument.readyState == "complete" && 
+    if (frame.contentDocument.readyState == "complete" && 
         frame.contentDocument.location == this._contentURL) {
       // In some cases src doesn't change and document is already ready
       // (for ex: when the user moves a widget while customizing toolbars.)
@@ -156,13 +155,11 @@ const Symbiont = Worker.resolve({
         
         if (event.target != frame.contentDocument)
           return;
-
         frame.removeEventListener(eventName, _onReady, true);
         self._onInit();
         
       }, true);
-
-    frame._frameLoading = true;
+    
   },
   
   /**
@@ -171,7 +168,6 @@ const Symbiont = Worker.resolve({
    */
   _onInit: function () {
     this._initWorker({ window: this._frame.contentWindow.wrappedJSObject });
-    this._frame._frameLoading = false;
   }
   
 });

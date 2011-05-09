@@ -736,45 +736,6 @@ exports.testWidgetMove = function testWidgetMove(test) {
   });
 };
 
-/*
-The bug is exhibited when a widget with HTML content has it's content
-changed to new HTML content with a pound in it. Because the src of HTML
-content is converted to a data URI, the underlying iframe doesn't 
-consider the content change a navigation change, so doesn't load
-the new content.
-*/
-exports.testWidgetWithPound = function testWidgetWithPound(test) {
-  test.waitUntilDone();
-  
-  function getWidgetContent(widget) {
-    let windowUtils = require("window-utils");
-    let browserWindow = windowUtils.activeBrowserWindow;
-    let doc = browserWindow.document;
-    let widgetNode = doc.querySelector('toolbaritem[label="' + widget.label + '"]');
-    test.assert(widgetNode, 'found widget node in the front-end');
-    return widgetNode.firstChild.contentDocument.body.innerHTML;
-  }
-
-  let widgets = require("widget");
-  let count = 0; 
-  let widget = widgets.Widget({
-    id: "1",
-    label: "foo",
-    content: "foo",
-    contentScript: "window.addEventListener('load', self.postMessage, false);",
-    onMessage: function() {
-      count++;
-      if (count == 1) {
-        widget.content = "foo#";
-      }
-      else {
-        test.assertEqual(getWidgetContent(widget), "foo#", "content updated to pound?")
-        test.done();
-      }
-    }
-  });
-};
-
 /******************* helpers *********************/
 
 // Helper for calling code at window close
