@@ -110,10 +110,29 @@ def get_metadata(pkg_cfg, deps):
                 metadata[pkg_name][prop] = cfg[prop]
     return metadata
 
-def apply_default_dir(base_json, base_path, dirname):
-    if (not base_json.get(dirname) and
-        os.path.isdir(os.path.join(base_path, dirname))):
-        base_json[dirname] = dirname
+def set_section_dir(base_json, name, base_path, dirnames, allow_root=False):
+    resolved = compute_section_dir(base_json, base_path, dirnames, allow_root)
+    if resolved:
+        base_json[name] = os.path.abspath(resolved)
+
+def compute_section_dir(base_json, base_path, dirnames, allow_root):
+    # PACKAGE_JSON.lib is highest priority
+    # then PACKAGE_JSON.directories.lib
+    # then lib/ (if it exists)
+    # then . (but only if allow_root=True)
+    for dirname in dirnames:
+        if base_json.get(dirname):
+            return os.path.join(base_path, base_json[dirname])
+    if "directories" in base_json:
+        for dirname in dirnames:
+            if dirname in base_json.directories:
+                return os.path.join(base_path, base_json.directories[dirname])
+    for dirname in dirnames:
+        if os.path.isdir(os.path.join(base_path, dirname)):
+            return os.path.join(base_path, dirname)
+    if allow_root:
+        return os.path.abspath(base_path)
+    return None
 
 def normalize_string_or_array(base_json, key):
     if base_json.get(key):
@@ -139,12 +158,25 @@ def get_config_in_dir(path):
     if 'name' not in base_json:
         base_json.name = os.path.basename(path)
 
+    # later processing steps will expect to see the following keys in the
+    # base_json that we return:
+    #
+    #  name: name of the package
+    #  lib: list of directories with .js files
+    #  test: list of directories with test-*.js files
+    #  doc: list of directories with documentation .md files
+    #  data: list of directories with bundled arbitrary data files
+    #  packages: ?
+
     if (not base_json.get('tests') and
         os.path.isdir(os.path.join(path, 'test'))):
         base_json['tests'] = 'test'
 
-    for dirname in ['lib', 'tests', 'data', 'packages']:
-        apply_default_dir(base_json, path, dirname)
+    set_section_dir(base_json, 'lib', path, ['lib'], True)
+    set_section_dir(base_json, 'tests', path, ['test', 'tests'], True)
+    set_section_dir(base_json, 'doc', path, ['doc', 'docs'])
+    set_section_dir(base_json, 'data', path, ['data'])
+    set_section_dir(base_json, 'packages', path, ['packages'])
 
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
@@ -155,6 +187,8 @@ def get_config_in_dir(path):
         base_json['icon64'] = DEFAULT_ICON64
 
     for key in ['lib', 'tests', 'dependencies', 'packages']:
+        # TODO: lib/tests can be an array?? consider interaction with
+        # compute_section_dir above
         normalize_string_or_array(base_json, key)
 
     if 'main' not in base_json and 'lib' in base_json:
