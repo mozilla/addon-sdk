@@ -190,6 +190,8 @@ def get_config_in_dir(path):
         # TODO: lib/tests can be an array?? consider interaction with
         # compute_section_dir above
         normalize_string_or_array(base_json, key)
+    if 'dependencies' not in base_json:
+        base_json['dependencies'] = []
 
     if 'main' not in base_json and 'lib' in base_json:
         for dirname in base_json['lib']:

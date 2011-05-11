@@ -34,6 +34,7 @@ class Basic(unittest.TestCase):
         deps = packaging.get_deps_for_targets(pkg_cfg,
                                               [target_cfg.name, "addon-kit"])
         self.failUnlessEqual(deps, ["addon-kit", "api-utils", "one"])
+        target_cfg.dependencies.extend(["addon-kit"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps,
                                     "P/", scan_tests=False)
         m = m.get_harness_options_manifest("P/")
