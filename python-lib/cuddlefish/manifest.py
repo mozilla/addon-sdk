@@ -303,7 +303,6 @@ class ManifestBuilder:
         if reqname.startswith("./") or reqname.startswith("../"):
             # 1: they want something relative to themselves, always from
             # their own package
-            lookfor_pkg = from_module.package.name
             them = modulename.split("/")[:-1]
             while bits[0] in (".", ".."):
                 if not bits:
@@ -314,8 +313,10 @@ class ManifestBuilder:
                     them.pop()
                 bits.pop(0)
             bits = them+bits
+            lookfor_pkg = from_module.package.name
             lookfor_mod = "/".join(bits)
-            return self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            return self._get_module_from_package(lookfor_pkg,
+                                                 lookfor_sections, lookfor_mod)
 
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
@@ -324,30 +325,25 @@ class ManifestBuilder:
             # 2: PKG/MOD: find PKG, look inside for MOD
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
-            mi = self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            mi = self._get_module_from_package(lookfor_pkg,
+                                               lookfor_sections, lookfor_mod)
             if mi: # caution, 0==None
                 return mi
-
-        # 3: try finding MOD or MODPARENT/MODCHILD in their own package
-        from_pkg = from_module.package.name
-        mi = self._get_module(from_pkg, lookfor_sections, reqname)
-        if mi:
-            return mi
-
-        # 4: try finding PKG, if found, use its main.js entry point
-        if "/" not in reqname:
-            mi = self._get_module(reqname, lookfor_sections, None)
+        else:
+            # 3: try finding PKG, if found, use its main.js entry point
+            lookfor_pkg = reqname
+            mi = self._get_entrypoint_from_package(lookfor_pkg)
             if mi:
                 return mi
 
-        # 5: MOD: search "library" packages for one that exports MOD
-        return self._get_module(None, lookfor_sections, reqname)
+        # 4: search pacakges for MOD or MODPARENT/MODCHILD. We always search
+        # their own package first, then the list of packages defined by their
+        # .dependencies list
+        from_pkg = from_module.package.name
+        return self._search_packages_for_module(from_pkg,
+                                                lookfor_sections, reqname)
 
-
-    def _get_module(self, pkgname, sections, modname):
-        # pkgname could be None, which means "search library packages"
-
-        mi = self._find_module(pkgname, sections, modname)
+    def _handle_module(self, mi):
         if not mi:
             return None
 
@@ -355,32 +351,40 @@ class ManifestBuilder:
         # populate the self.modules cache before recursing into
         # process_module() . We must also check the cache first, so recursion
         # can terminate.
-        pkgname = mi.package.name
         if mi in self.modules:
-            # we didn't know the packagename before
             return self.modules[mi]
 
         # this creates the entry
-        new_entry = self.get_manifest_entry(pkgname, mi.section, mi.name)
+        new_entry = self.get_manifest_entry(mi.package.name, mi.section, mi.name)
         # and populates the cache
         self.modules[mi] = new_entry
         self.process_module(mi)
         return new_entry
 
-    def _find_module(self, pkgname, sections, modname):
-        #print "   _find_module(%s %s %s)" % (pkgname, sections, modname)
-        if pkgname:
-            if pkgname not in self.pkg_cfg.packages:
-                return None
-            if not modname:
-                #print " cannot handle modname=None yet"
-                return None
-            return self._find_module_in_package(pkgname, sections, modname)
-        # search library packages. For now, search all packages.
-        for pkgname in self.deps:
-            mi = self._find_module_in_package(pkgname, sections, modname)
+    def _get_module_from_package(self, pkgname, sections, modname):
+        if pkgname not in self.pkg_cfg.packages:
+            return None
+        mi = self._find_module_in_package(pkgname, sections, modname)
+        return self._handle_module(mi)
+
+    def _get_entrypoint_from_package(self, pkgname):
+        return None # not handled yet
+
+    def _search_packages_for_module(self, from_pkg, sections, reqname):
+        searchpath = [] # list of package names
+        searchpath.append(from_pkg) # search self first
+        us = self.pkg_cfg.packages[from_pkg]
+        if 1:
+            # option 1: only look in dependencies
+            searchpath.extend(list(us.get('dependencies', [])))
+        else:
+            # option 2: look in all deps, sorted alphabetically, so addon-kit
+            # comes first
+            searchpath.extend(sorted(self.deps))
+        for pkgname in searchpath:
+            mi = self._find_module_in_package(pkgname, sections, reqname)
             if mi:
-                return mi
+                return self._handle_module(mi)
         return None
 
     def _find_module_in_package(self, pkgname, sections, name):
