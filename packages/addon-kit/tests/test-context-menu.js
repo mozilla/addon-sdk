@@ -1054,13 +1054,13 @@ exports.testInsertionPoint = function (test) {
   let insertionPoint = loader.globalScope.insertionPoint;
 
   let ip = insertionPoint("a", []);
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   ip = insertionPoint("a", mockElts(["b"]));
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
   ip = insertionPoint("c", mockElts(["b"]));
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   ip = insertionPoint("b", mockElts(["a", "c"]));
   test.assertEqual(ip.label, "c", "Insertion point should be 'c'");
@@ -1072,7 +1072,7 @@ exports.testInsertionPoint = function (test) {
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
   ip = insertionPoint("d", mockElts(["a", "b", "c"]));
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   test.done();
 };
