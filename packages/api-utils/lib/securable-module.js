@@ -298,7 +298,7 @@
            // search
            let path = self.fs.resolveModule(basePath, moduleName);
            if (!path)
-             throw new Error('Module "' + moduleName + '" not found');
+             throw new Error('Module "' + moduleName + '" not found (basePath: "' + basePath + '")');
            moduleData = {uri: path};
          }
 
