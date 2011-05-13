@@ -41,6 +41,7 @@ const { List } = require("list");
 const { Tab, Options } = require("tabs/tab");
 const { EventEmitter } = require("events");
 const { EVENTS } = require("tabs/events");
+const windowObserver = require("windows/observer");
 
 const TAB_BROWSER = "tabbrowser";
 
@@ -90,6 +91,10 @@ const WindowTabTracker = Trait.compose({
                                       this._onTabEvent.bind(this, type),
                                       false);
       }
+      windowObserver.on("activate", function onWindowActivate(window) {
+        if (this._window === window)
+          this._emitEvent(EVENTS.activate, this.tabs.activeTab);
+      }.bind(this));
     }
   },
   _destroyWindowTabTracker: function _destroyWindowTabTracker() {
