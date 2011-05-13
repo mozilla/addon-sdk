@@ -34,7 +34,8 @@ class Basic(unittest.TestCase):
         deps = packaging.get_deps_for_targets(pkg_cfg,
                                               [target_cfg.name, "addon-kit"])
         self.failUnlessEqual(deps, ["addon-kit", "api-utils", "one"])
-        target_cfg.dependencies.extend(["addon-kit"])
+        # target_cfg.dependencies is not provided, so we'll search through
+        # all known packages (everything in 'deps').
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps,
                                     "P/", scan_tests=False)
         m = m.get_harness_options_manifest("P/")
@@ -46,6 +47,12 @@ class Basic(unittest.TestCase):
         self.assertReqIs(m, "two", "main", "P/one-lib/main.js")
         self.assertReqIs(m, "subdir/three", "../main", "P/one-lib/main.js")
 
+        target_cfg.dependencies = []
+        # now, because .dependencies *is* provided, we won't search 'deps',
+        # so we'll get a link error
+        self.assertRaises(manifest.BadModuleIdentifier,
+                          manifest.build_manifest,
+                          target_cfg, pkg_cfg, deps, "P/", scan_tests=False)
+
 if __name__ == '__main__':
     unittest.main()
-    

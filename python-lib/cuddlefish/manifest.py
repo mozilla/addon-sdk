@@ -269,8 +269,8 @@ class ManifestBuilder:
                 # tolerate cycles in the reference graph.
                 them_me = self.find_req_for(mi, reqname)
                 if them_me is None:
-                    #raise BadModuleIdentifier("unable to satisfy require(%s) from %s" % (reqname, mi))
-                    print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
+                    raise BadModuleIdentifier("unable to satisfy require(%s) from %s" % (reqname, mi))
+                    #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
 
@@ -374,12 +374,16 @@ class ManifestBuilder:
         searchpath = [] # list of package names
         searchpath.append(from_pkg) # search self first
         us = self.pkg_cfg.packages[from_pkg]
-        if 1:
-            # option 1: only look in dependencies
-            searchpath.extend(list(us.get('dependencies', [])))
+        if 'dependencies' in us:
+            # only look in dependencies
+            searchpath.extend(us['dependencies'])
         else:
-            # option 2: look in all deps, sorted alphabetically, so addon-kit
-            # comes first
+            # they didn't declare any dependencies (or they declared an empty
+            # list, but we'll treat that as not declaring one, because it's
+            # easier), so look in all deps, sorted alphabetically, so
+            # addon-kit comes first. Note that self.deps includes all
+            # .dependencies declared by all packages, plus everything added
+            # by --extra-packages
             searchpath.extend(sorted(self.deps))
         for pkgname in searchpath:
             mi = self._find_module_in_package(pkgname, sections, reqname)

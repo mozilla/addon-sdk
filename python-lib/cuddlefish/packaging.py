@@ -190,8 +190,6 @@ def get_config_in_dir(path):
         # TODO: lib/tests can be an array?? consider interaction with
         # compute_section_dir above
         normalize_string_or_array(base_json, key)
-    if 'dependencies' not in base_json:
-        base_json['dependencies'] = []
 
     if 'main' not in base_json and 'lib' in base_json:
         for dirname in base_json['lib']:
@@ -262,6 +260,7 @@ def get_deps_for_targets(pkg_cfg, targets):
                 raise PackageNotFoundError(dep, required_reason)
             dep_cfg = pkg_cfg.packages[dep]
             deps_left.extend([[i, dep] for i in dep_cfg.get('dependencies', [])])
+            deps_left.extend([[i, dep] for i in dep_cfg.get('extra_dependencies', [])])
 
     return visited
 

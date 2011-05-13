@@ -628,7 +628,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if options.extra_packages:
         targets.extend(options.extra_packages.split(","))
-        target_cfg.dependencies.extend(options.extra_packages.split(","))
+        target_cfg.extra_dependencies = options.extra_packages.split(",")
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
     build = packaging.generate_build_for_target(
