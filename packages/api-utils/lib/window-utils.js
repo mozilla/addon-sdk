@@ -168,6 +168,21 @@ exports.__defineGetter__("activeBrowserWindow", function() {
          .getMostRecentWindow("navigator:browser");
 });
 
+/**
+ * Returns the ID of the window's current inner window.
+ */
+exports.getInnerId = function getInnerId(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+                getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+};
+
+/**
+ * Returns the ID of the window's outer window.
+ */
+exports.getOuterId = function getOuterId(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+                getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+};
 
 require("unload").when(
   function() {
