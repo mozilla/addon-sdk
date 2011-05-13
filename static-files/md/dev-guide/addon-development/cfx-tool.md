@@ -71,9 +71,10 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>-b BINARY, --binary=BINARY</code>
@@ -142,9 +143,10 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>-a APP, --app=APP</code>
@@ -157,6 +159,29 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     present only Firefox is supported.
   </td>
 </tr>
+
+<tr>
+  <td>
+    <code>--no-run</code>
+  </td>
+  <td>
+    <p>With this option <code>cfx</code> will not execute the command, but
+    will print out the command that it would have used to execute the
+    command.</p>
+    <p>For example, if you type:</p>
+    <pre>
+cfx run ---no-run</pre>
+    <p>you will see something like:</p>
+    <pre>
+To launch the application, enter the following command:
+ /path/to/firefox/firefox-bin -profile
+ /path/to/profile/tmpJDNlP6.mozrunner -foreground -no-remote</pre>
+    <p>This enables you to run the add-on without going through
+    <code>cfx</code>, which might be useful if you want to run it
+    inside a debugger like GDB.</p>
+  </td>
+</tr>
+
 <tr>
   <td>
     <code>--templatedir=TEMPLATEDIR</code>
@@ -170,15 +195,17 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     current directory.
   </td>
 </tr>
+
 </table>
 
 #### Internal Options ####
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>--addons=ADDONS</code>
@@ -188,6 +215,26 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     a full path or as a path relative to the current directory.
   </td>
 </tr>
+
+<tr>
+  <td>
+    <code>--binary-args=CMDARGS</code>
+  </td>
+  <td>
+    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
+    arguments</a> to the binary being executed (for example, Firefox).</p>
+    <p>For example, to pass the
+    <code>-jsconsole</code> argument to Firefox, which will launch the
+    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
+    Error Console</a>, try the following:</p<>
+    <pre>
+    cfx run --binary-args -jsconsole</pre>
+    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
+    <pre>
+    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    </td>
+</tr>
+
 <tr>
   <td>
     <code>--e10s</code>
@@ -198,6 +245,7 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     for details.
   </td>
 </tr>
+
 <tr>
   <td>
     <code>--keydir=KEYDIR</code>
@@ -209,6 +257,7 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     current directory.
   </td>
 </tr>
+
 </table>
 
 ### cfx test ###
@@ -233,9 +282,10 @@ times.
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>-b BINARY, --binary=BINARY</code>
@@ -311,9 +361,10 @@ times.
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>-a APP, --app=APP</code>
@@ -324,6 +375,28 @@ times.
     This option enables you to select a different host. You can specify
     "firefox", "xulrunner", "fennec", or "thunderbird". But note that at
     present only Firefox is supported.
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <code>--no-run</code>
+  </td>
+  <td>
+    <p>With this option <code>cfx</code> will not execute the command, but
+    will print out the command that it would have used to execute the
+    command.</p>
+    <p>For example, if you type:</p>
+    <pre>
+cfx run ---no-run</pre>
+    <p>you will see something like:</p>
+    <pre>
+To launch the application, enter the following command:
+ /path/to/firefox/firefox-bin -profile
+ /path/to/profile/tmpJDNlP6.mozrunner -foreground -no-remote</pre>
+    <p>This enables you to run the add-on without going through
+    <code>cfx</code>, which might be useful if you want to run it
+    inside a debugger like GDB.</p>
   </td>
 </tr>
 
@@ -342,9 +415,10 @@ times.
 
 <table>
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="30%">
+<col width="70%">
 </colgroup>
+
 <tr>
   <td>
     <code>--addons=ADDONS</code>
@@ -355,6 +429,26 @@ times.
     current directory.
   </td>
 </tr>
+
+<tr>
+  <td>
+    <code>--binary-args=CMDARGS</code>
+  </td>
+  <td>
+    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
+    arguments</a> to the binary being executed (for example, Firefox).</p>
+    <p>For example, to pass the
+    <code>-jsconsole</code> argument to Firefox, which will launch the
+    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
+    Error Console</a>, try the following:</p<>
+    <pre>
+    cfx run --binary-args -jsconsole</pre>
+    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
+    <pre>
+    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    </td>
+</tr>
+
 <tr>
   <td>
     <code>--e10s</code>
@@ -365,6 +459,7 @@ times.
     for details.
   </td>
 </tr>
+
 <tr>
   <td>
     <code>--keydir=KEYDIR</code>
@@ -376,6 +471,7 @@ times.
     current directory.
   </td>
 </tr>
+
 <tr>
   <td>
     <code>--logfile=LOGFILE</code>
@@ -386,6 +482,7 @@ times.
     current directory.
   </td>
 </tr>
+
 <tr>
   <td>
     <code>--profile-memory=PROFILEMEMORY</code>
@@ -396,6 +493,7 @@ times.
     when the tests finish.
   </td>
 </tr>
+
 <tr>
   <td>
     <code>--test-runner-pkg=TEST_RUNNER_PKG</code>
@@ -549,6 +647,7 @@ add-on whenever it is run.
 <col width="50%">
 <col width="50%">
 </colgroup>
+
 <tr>
   <td>
     <code>--templatedir=TEMPLATEDIR</code>
@@ -562,6 +661,7 @@ add-on whenever it is run.
     current directory.
   </td>
 </tr>
+
 </table>
 
 #### Internal Options ####
@@ -571,6 +671,7 @@ add-on whenever it is run.
 <col width="50%">
 <col width="50%">
 </colgroup>
+
 <tr>
   <td>
     <code>--keydir=KEYDIR</code>
@@ -582,6 +683,7 @@ add-on whenever it is run.
     current directory.
   </td>
 </tr>
+
 </table>
 
 ## Experimental Commands ##
@@ -627,6 +729,7 @@ required by `cfx docs`.
 <col width="50%">
 <col width="50%">
 </colgroup>
+
 <tr>
   <td>
     <code>--baseurl=BASEURL</code>
@@ -636,6 +739,7 @@ required by `cfx docs`.
     <code>http://example.com/sdk-docs/</code>.
   </td>
 </tr>
+
 </table>
 
 ### cfx testcfx ###

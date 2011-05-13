@@ -165,10 +165,10 @@ Represents a widget object.
     title bars, and error reporting.
 
   @prop id {string}
-    Mandatory string used to identify your widget in order to save it's 
-    location when user customizes it in the browser. 
-    This string has to be unique and must not be changed in time.
-  
+    Mandatory string used to identify your widget in order to save its
+    location when the user moves it in the browser.
+    This string has to be unique and must not be changed over time.
+
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
     It may contain HTML. Widgets must have either the `content` property or the

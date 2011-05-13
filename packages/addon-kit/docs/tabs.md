@@ -186,7 +186,7 @@ This property is read-only.
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
-This property can be set to change it's relative position.
+This property can be set to change its relative position.
 </api>
 
 <api name="isPinned">
