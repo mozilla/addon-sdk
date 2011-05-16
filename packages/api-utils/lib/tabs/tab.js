@@ -279,7 +279,7 @@ exports.getTabForWindow = function (win) {
     let w = topWindow.gBrowser.browsers[i].contentWindow;
     if (getWindowID(w) == topWindowId) {
       return Tab({
-        window: require("windows").BrowserWindow({window:topContentWindow}),
+        window: require("windows").BrowserWindow({ window: topWindow }),
         tab: topWindow.gBrowser.tabs[i]
       });
     }
