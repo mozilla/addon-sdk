@@ -102,6 +102,7 @@ const Symbiont = Worker.resolve({
   
   destroy: function destroy() {
     this._workerDestroy();
+    this._unregisterListener();
     this._frame = null;
     if (this._hiddenFrame) {
       hiddenFrames.remove(this._hiddenFrame);
@@ -121,10 +122,16 @@ const Symbiont = Worker.resolve({
    * Removes listener, sets right permissions to the frame and loads content.
    */
   _initFrame: function _initFrame(frame) {
+    if (this._loadListener)
+      this._unregisterListener();
+    
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    if (frame.contentDocument.readyState == "complete" && 
+    
+    if ((frame.contentDocument.readyState == "complete" ||
+        (frame.contentDocument.readyState == "interactive" &&
+         this.contentScriptWhen != 'end' )) &&
         frame.contentDocument.location == this._contentURL) {
       // In some cases src doesn't change and document is already ready
       // (for ex: when the user moves a widget while customizing toolbars.)
@@ -135,12 +142,13 @@ const Symbiont = Worker.resolve({
     let self = this;
     
     if ('start' == this.contentScriptWhen) {
+      this._loadEvent = 'start';
       observers.add('document-element-inserted', 
-        function onStart(doc) {
-        
+        this._loadListener = function onStart(doc) {
+          
           let window = doc.defaultView;
           if (window && window == frame.contentWindow) {
-            observers.remove('document-element-inserted', onStart);
+            self._unregisterListener();
             self._onInit();
           }
           
@@ -150,16 +158,35 @@ const Symbiont = Worker.resolve({
     
     let eventName = 'end' == this.contentScriptWhen ? 'load' : 'DOMContentLoaded';
     let self = this;
+    this._loadEvent = eventName;
     frame.addEventListener(eventName, 
-      function _onReady(event) {
-        
+      this._loadListener = function _onReady(event) {
+      
         if (event.target != frame.contentDocument)
           return;
-        frame.removeEventListener(eventName, _onReady, true);
+        self._unregisterListener();
+        
         self._onInit();
         
       }, true);
     
+  },
+  
+  /**
+   * Unregister listener that watchs for document being ready to be injected.
+   * This listener is registered in `Symbiont._initFrame`.
+   */
+  _unregisterListener: function _unregisterListener() {
+    if (!this._loadListener)
+      return;
+    if (this._loadEvent == "start") {
+      observers.remove('document-element-inserted', this._loadListener);
+    }
+    else {
+      this._frame.removeEventListener(this._loadEvent, this._loadListener,
+                                      true);
+    }
+    this._loadListener = null;
   },
   
   /**

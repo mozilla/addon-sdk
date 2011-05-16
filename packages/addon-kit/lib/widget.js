@@ -767,6 +767,10 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
   let iframe = this.node.firstElementChild;
 
   let self = this;
+  // Cleanup previously created symbiont (in case we are update content)
+  if (this._symbiont)
+    this._symbiont.destroy();
+  
   this._symbiont = Trait.compose(Symbiont.resolve({
     _onContentScriptEvent: "_onContentScriptEvent-not-used"
   }), {
