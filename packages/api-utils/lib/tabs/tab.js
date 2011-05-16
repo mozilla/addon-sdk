@@ -65,7 +65,6 @@ const TabTrait = Trait.compose(EventEmitter, {
   window: null,
   constructor: function Tab(options) {
     this._onReady = this._onReady.bind(this);
-    this.on('error', this._onError = this._onError.bind(this));
     this._tab = options.tab;
     let window = this.window = options.window;
     // Setting event listener if was passed.
@@ -87,10 +86,6 @@ const TabTrait = Trait.compose(EventEmitter, {
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
     return this;
-  },
-  _onError: function _onError(error) {
-    if (1 <= this._listeners('error').length)
-      console.exception(error);
   },
   destroy: function destroy() {
     for each (let type in EVENTS)
