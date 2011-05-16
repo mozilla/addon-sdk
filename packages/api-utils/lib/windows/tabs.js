@@ -180,9 +180,9 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     open: function open(options) {
       options = Options(options);
       this._window._tabOptions.push(options);
-      let tab = this._window._window.gBrowser.addTab(options.url);
+      let tab = openTab(this._window._window, options.url);
       if (!options.inBackground)
-        this._window._window.gBrowser.selectedTab = tab;
+        activateTab(tab);
     }
   // This is ugly, but necessary. Will be removed by #596248
   }).resolve({ toString: null })
