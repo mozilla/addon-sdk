@@ -42,6 +42,8 @@ const EVENTS = {
   ready: "DOMContentLoaded",
   open: "TabOpen",
   close: "TabClose",
+  activate: "TabSelect",
+  deactivate: null
 }
 exports.EVENTS = EVENTS;
 

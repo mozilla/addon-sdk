@@ -41,7 +41,7 @@ const { List } = require("list");
 const { Tab, Options } = require("tabs/tab");
 const { EventEmitter } = require("events");
 const { EVENTS } = require("tabs/events");
-const { getOwnerWindow, getActiveTab,
+const { getOwnerWindow, getActiveTab, getTabs,
         openTab, activateTab } = require("../tabs/utils");
 const tabsObserver = require("../tabs/observer");
 
@@ -61,83 +61,76 @@ const WindowTabTracker = Trait.compose({
   /**
    * Function used to emit events.
    */
-  _emit: Trait.required,
+  _emit: EventEmitter.required,
   _tabOptions: Trait.required,
   /**
    * Function to add event listeners.
    */
-  on: Trait.required,
-  /**
-   * Live array of the window tabContainers.
-   */
-  get _tabContainers()
-    Array.slice(this._window.document.getElementsByTagName(TAB_BROWSER))
-      .map(function(tabBrowser) tabBrowser.tabContainer),
+  on: EventEmitter.required,
+  removeListener: EventEmitter.required,
   /**
    * Initializes tab tracker for a browser window.
    */
   _initWindowTabTracker: function _initWindowTabTracker() {
+    // Ugly hack that we have to remove at some point. This is necessary to
+    // invoke lazy `tabs` getter on the windows object which creates a `TabList`
+    // instance.
     this.tabs;
-    // Some XULRunner apps may have more than one tab browser.
-    for each (let tabContainer in this._tabContainers) {
-      let tabs = Array.slice(tabContainer.children);
-      // Emulating 'open' events for all open tabs.
-      for each (let tab in tabs)
-        this._onTabEvent(EVENTS.open, { target: tab });
-      this._onTabActivate(getActiveTab(this._window))
-      // Setting event listeners to track tab events.
-      for each (let type in EVENTS) {
-        if (!type.dom) continue;
-        tabContainer.addEventListener(type.dom,
-                                      this._onTabEvent.bind(this, type),
-                                      false);
-      }
+    // Binding all methods used as event listeners to the instance.
+    this._onTabReady = this._emitEvent.bind(this, "ready");
+    this._onTabOpen = this._onTabEvent.bind(this, "open");
+    this._onTabClose = this._onTabEvent.bind(this, "close");
+    this._onTabActivate = this._onTabEvent.bind(this, "activate");
+    this._onTabDeactivate = this._onTabEvent.bind(this, "deactivate");
 
-      // setting up event listeners
-      tabsObserver.on("activate",
-                      this._onTabActivate = this._onTabActivate.bind(this));
-      tabsObserver.on("deactivate",
-                      this._onTabDeactivate = this._onTabDeactivate.bind(this));
+    for each (let tab in getTabs(this._window)) {
+      // We emulate "open" events for all open tabs since gecko does not emits
+      // them on the tabs that new windows are open with. Also this is
+      // necessary to synchronize tabs lists with an actual state.
+      this._onTabOpen(tab);
     }
+    // We also emulate "activate" event so that it's picked up by a tab list.
+    this._onTabActivate(getActiveTab(this._window));
+
+    // Setting up event listeners
+    tabsObserver.on("open", this._onTabOpen);
+    tabsObserver.on("close", this._onTabClose);
+    tabsObserver.on("activate", this._onTabActivate);
+    tabsObserver.on("deactivate", this._onTabDeactivate);
   },
   _destroyWindowTabTracker: function _destroyWindowTabTracker() {
+    // We emulate close events on all tabs, since gecko does not emits such
+    // events by itself.
+    for each (let tab in this.tabs)
+      this._emitEvent("close", tab);
+
+    this._tabs._clear();
+
+    tabsObserver.removeListener("open", this._onTabOpen);
+    tabsObserver.removeListener("close", this._onTabClose);
     tabsObserver.removeListener("activate", this._onTabActivate);
     tabsObserver.removeListener("deactivate", this._onTabDeactivate);
-    for each (let tab in this.tabs)
-      this._emitEvent(EVENTS.close, tab);
-    this._tabs._clear();
   },
-  _onTabActivate: function _onTabActivate(tab) {
-    if (this._window === getOwnerWindow(tab))
-      this._onTabEvent({ name: "activate" }, { target: tab });
-  },
-  _onTabDeactivate: function _onTabDeactivate(tab) {
-    if (this._window === getOwnerWindow(tab))
-      this._onTabEvent({ name: "deactivate" }, { target: tab });
-  },
-  /**
-   * Tab event router. Function is called on every tab related DOM event.
-   * For each event jetpack style event is emitted with a wrapped tab as
-   * an argument.
-   * @param {String} type
-   *  Event type.
-   * @param {Event} event
-   */
-  _onTabEvent: function _onTabEvent(type, event) {
-    let options = this._tabOptions.shift() || {};
-    options.tab = event.target;
-    options.window = this._public;
-    var tab = Tab(options);
-    // Piping 'ready' events from open tabs to the window listeners.
-    if (type == EVENTS.open)
-      tab.on(EVENTS.ready.name, this._emitEvent.bind(this, EVENTS.ready));
-    this._emitEvent(type, tab);
+  _onTabEvent: function _onTabEvent(type, tab) {
+    if (this._window === getOwnerWindow(tab)) {
+      let options = this._tabOptions.shift() || {};
+      options.tab = tab;
+      options.window = this._public;
+      // creating tab wrapper and adding listener to "ready" events.
+      let wrappedTab = Tab(options);
+
+      // Setting up an event listener for ready events.
+      if (type === "open")
+        wrappedTab.on("ready", this._onTabReady);
+
+      this._emitEvent(type, wrappedTab);
+    }
   },
   _emitEvent: function _emitEvent(type, tab) {
     // Notifies combined tab list that tab was added / removed.
-    tabs._emit(type.name, tab);
+    tabs._emit(type, tab);
     // Notifies contained tab list that window was added / removed.
-    this._tabs._emit(type.name, tab);
+    this._tabs._emit(type, tab);
   }
 });
 exports.WindowTabTracker = WindowTabTracker;
