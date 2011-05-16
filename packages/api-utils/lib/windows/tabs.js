@@ -146,7 +146,6 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     _emit: Trait.required,
     constructor: function TabList(options) {
       this._window = options.window;
-      this.on('error', this._onError = this._onError.bind(this));
       // Add new items to the list
       this.on(EVENTS.open.name, this._add.bind(this));
       // Remove closed items from the list
@@ -162,10 +161,6 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
     _onActivate: function _onActivate(value) {
       this._emit(EVENTS.deactivate.name, this._activeTab);
       this._activeTab = value;
-    },
-    _onError: function _onError(error) {
-      if (1 <= this._listeners('error').length)
-        console.exception(error);
     },
     get activeTab() this._activeTab,
     _activeTab: null,
