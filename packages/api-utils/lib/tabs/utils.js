@@ -65,3 +65,18 @@ function getActiveTab(window) {
   return window.gBrowser.selectedTab;
 }
 exports.getActiveTab = getActiveTab;
+
+function getOwnerWindow(tab) {
+  return tab.ownerDocument.defaultView;
+}
+exports.getOwnerWindow = getOwnerWindow;
+
+function openTab(window, url) {
+  return window.gBrowser.addTab(url);
+}
+exports.openTab = openTab;
+
+function activateTab(tab) {
+  getOwnerWindow(tab).gBrowser.selectedTab = tab;
+}
+exports.activateTab = activateTab;

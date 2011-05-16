@@ -41,7 +41,9 @@ const { List } = require("list");
 const { Tab, Options } = require("tabs/tab");
 const { EventEmitter } = require("events");
 const { EVENTS } = require("tabs/events");
-const windowObserver = require("windows/observer");
+const { getOwnerWindow, getActiveTab,
+        openTab, activateTab } = require("../tabs/utils");
+const tabsObserver = require("../tabs/observer");
 
 const TAB_BROWSER = "tabbrowser";
 
@@ -82,8 +84,7 @@ const WindowTabTracker = Trait.compose({
       // Emulating 'open' events for all open tabs.
       for each (let tab in tabs)
         this._onTabEvent(EVENTS.open, { target: tab });
-      this._onTabEvent(EVENTS.activate,
-                       { target: this._window.gBrowser.selectedTab });
+      this._onTabActivate(getActiveTab(this._window))
       // Setting event listeners to track tab events.
       for each (let type in EVENTS) {
         if (!type.dom) continue;
@@ -91,16 +92,28 @@ const WindowTabTracker = Trait.compose({
                                       this._onTabEvent.bind(this, type),
                                       false);
       }
-      windowObserver.on("activate", function onWindowActivate(window) {
-        if (this._window === window)
-          this._emitEvent(EVENTS.activate, this.tabs.activeTab);
-      }.bind(this));
+
+      // setting up event listeners
+      tabsObserver.on("activate",
+                      this._onTabActivate = this._onTabActivate.bind(this));
+      tabsObserver.on("deactivate",
+                      this._onTabDeactivate = this._onTabDeactivate.bind(this));
     }
   },
   _destroyWindowTabTracker: function _destroyWindowTabTracker() {
+    tabsObserver.removeListener("activate", this._onTabActivate);
+    tabsObserver.removeListener("deactivate", this._onTabDeactivate);
     for each (let tab in this.tabs)
       this._emitEvent(EVENTS.close, tab);
     this._tabs._clear();
+  },
+  _onTabActivate: function _onTabActivate(tab) {
+    if (this._window === getOwnerWindow(tab))
+      this._onTabEvent({ name: "activate" }, { target: tab });
+  },
+  _onTabDeactivate: function _onTabDeactivate(tab) {
+    if (this._window === getOwnerWindow(tab))
+      this._onTabEvent({ name: "deactivate" }, { target: tab });
   },
   /**
    * Tab event router. Function is called on every tab related DOM event.
@@ -150,17 +163,16 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       this.on(EVENTS.open.name, this._add.bind(this));
       // Remove closed items from the list
       this.on(EVENTS.close.name, this._remove.bind(this));
-      // Emit events for closed items
-      this.on(EVENTS.activate.name, this._onActivate.bind(this));
+
+      // Set value whenever new tab get's active
+      this.on("activate", function onTabActivate(tab) {
+        this._activeTab = tab;
+      }.bind(this));
       // Initialize list.
       this._init();
       // This list is not going to emit any events, object holding this list
       // will do it instead, to make that possible we return a private API.
       return this;
-    },
-    _onActivate: function _onActivate(value) {
-      this._emit(EVENTS.deactivate.name, this._activeTab);
-      this._activeTab = value;
     },
     get activeTab() this._activeTab,
     _activeTab: null,
