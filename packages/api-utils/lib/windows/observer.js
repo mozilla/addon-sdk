@@ -38,15 +38,10 @@
 
 "use strict";
 
-const { EventEmitterTrait: EventEmitter } = require("events");
-const { WindowTracker, windowIterator } = require("window-utils");
-const { DOMEventAssembler } = require("events/assembler");
-const { Trait } = require("light-traits");
-
-const EVENTS = {
-  "focus": "activate",
-  "blur": "deactivate"
-};
+const { EventEmitterTrait: EventEmitter } = require("../events");
+const { WindowTracker, windowIterator } = require("../window-utils");
+const { DOMEventAssembler } = require("../events/assembler");
+const { Trait } = require("../light-traits");
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
@@ -59,7 +54,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
   /**
    * Events that are supported and emitted by the module.
    */
-  supportedEventsTypes: Object.keys(EVENTS),
+  supportedEventsTypes: [ "activate", "deactivate" ],
   /**
    * Function handles all the supported events on all the windows that are
    * observed. Method is used to proxy events to the listeners registered on
@@ -68,7 +63,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
    *    Keyboard event being emitted.
    */
   handleEvent: function handleEvent(event) {
-    this._emit(EVENTS[event.type], event.target, event);
+    this._emit(event.type, event.target, event);
   }
 });
 
