@@ -42,7 +42,7 @@ const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
 const { getActiveTab, getTabs, getTabContainers } = require("./utils");
-const { windowIterator } = require("../window-utils");
+const { windowIterator, isBrowser } = require("../window-utils");
 const windowObserver = require("../windows/observer");
 
 const EVENTS = {
@@ -92,10 +92,10 @@ function onTabSelect(tab) {
 };
 observer.on("select", onTabSelect);
 
-
 // We also observe opening / closing windows in order to add / remove it's
 // containers to the observed list.
 function onWindowOpen(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
   getTabContainers(chromeWindow).forEach(function (container) {
     observer.observe(container);
   });
@@ -103,6 +103,7 @@ function onWindowOpen(chromeWindow) {
 windowObserver.on("open", onWindowOpen);
 
 function onWindowClose(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
   getTabContainers(chromeWindow).forEach(function (container) {
     observer.ignore(container);
   });
@@ -114,6 +115,7 @@ windowObserver.on("close", onWindowClose);
 // window gets activated. To work around this limitation we emulate "select"
 // event for this case.
 windowObserver.on("activate", function onWindowActivate(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
   observer._emit("select", getActiveTab(chromeWindow));
 });
 

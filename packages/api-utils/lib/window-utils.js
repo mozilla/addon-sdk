@@ -184,6 +184,11 @@ exports.getOuterId = function getOuterId(window) {
                 getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
 };
 
+exports.isBrowser = function isBrowser(window) {
+  return window.document.documentElement.getAttribute("windowtype") ===
+         "navigator:browser";
+};
+
 require("unload").when(
   function() {
     gDocsToClose.slice().forEach(
