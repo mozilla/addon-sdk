@@ -19,6 +19,8 @@ class BadModuleIdentifier(Exception):
     pass
 class BadSection(Exception):
     pass
+class UnreachablePrefixError(Exception):
+    pass
 
 class ManifestEntry:
     def __init__(self):
@@ -368,7 +370,56 @@ class ManifestBuilder:
         return self._handle_module(mi)
 
     def _get_entrypoint_from_package(self, pkgname):
-        return None # not handled yet
+        #print "ENTRYPONT", pkgname
+        if pkgname not in self.pkg_cfg.packages:
+            #print "no 1", self.pkg_cfg.packages.keys()
+            return None
+        pkg = self.pkg_cfg.packages[pkgname]
+        main = pkg.get("main", None)
+        if not main:
+            #print "no 2"
+            return None
+        # 'main' can be like one of the following:
+        #   a: ./lib/main.js  b: ./lib/main  c: lib/main
+        # we require it to be a path to the file, though, and ignore the
+        # .directories stuff. So just "main" is insufficient if you really
+        # want something in a "lib/" subdirectory.
+        if main.endswith(".js"):
+            main = main[:-len(".js")]
+        if main.startswith("./"):
+            main = main[len("./"):]
+        js = os.path.join(pkg.root_dir, main+".js")
+        if os.path.exists(js):
+            #print "yes 3"
+            docs = None
+            # AARGH, section and name! we need to reverse-engineer a
+            # ModuleInfo instance that will produce a URI (in the form
+            # PREFIX/PKGNAME-SECTION/JS) that will map to the existing file.
+            # Until we fix URI generation to get rid of "sections", this is
+            # limited to files in the same .directories.lib as the rest of
+            # the package uses. So if the package's main files are in lib/,
+            # but the main.js is in the package root, there is no URI we can
+            # construct that will point to it, and we must fail.
+            #
+            # This will become much easier (and the failure case removed)
+            # when we get rid of sections and change the URIs to look like
+            # (PREFIX/PKGNAME/PATH-TO-JS).
+
+            # AARGH 2, allowing .lib to be a list is really getting in the
+            # way. That needs to go away eventually too.
+            pkglib = pkg.lib[0]
+            libdir = os.path.join(pkg.root_dir, pkglib)
+            if not js.startswith(libdir):
+                raise UnreachablePrefixError("Sorry, but the main 'entrypoint' (%s) for package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
+                                             % (pkg.main, pkgname, pkglib))
+            #print " js", js
+            #print " libdir", libdir
+            section = "lib"
+            name = js[len(libdir):].lstrip("/")[:-len(".js")]
+            #print " name", name
+            mi = ModuleInfo(pkg, section, name, js, docs)
+            return self._handle_module(mi)
+        return None
 
     def _search_packages_for_module(self, from_pkg, sections, reqname):
         searchpath = [] # list of package names
