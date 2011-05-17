@@ -128,7 +128,7 @@ information.
       content: "I'm getting longer.",
       width: 50,
     });
-    require("timer").setInterval(function() {
+    require("timers").setInterval(function() {
       myWidget.width += 10;
     }, 1000);
 <br>
