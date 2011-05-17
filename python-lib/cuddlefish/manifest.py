@@ -15,6 +15,19 @@ def datafile_zipname(packagename, datapath):
 def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
 
+class ModuleNotFoundError(Exception):
+    def __init__(self, *args):
+        self.args = args
+        self.used_by = None # string, full path to module which did require()
+        self.requirement_name = None # string, what they require()d
+        self.looked_at = [] # list of full paths to potential .js files
+    def __str__(self):
+        return ("ModuleNotFoundError: unable to satisfy require(%s) from %s .\n"
+                "Looked for it in:\n"
+                " %s\n" %
+                (self.requirement_name, self.used_by,
+                 "\n ".join(self.looked_in)))
+
 class BadModuleIdentifier(Exception):
     pass
 class BadSection(Exception):
@@ -269,9 +282,14 @@ class ManifestBuilder:
                 # everything transitively required from here. It will also
                 # populate the self.modules[] cache. Note that we must
                 # tolerate cycles in the reference graph.
-                them_me = self.find_req_for(mi, reqname)
+                looked_in = [] # populated by subroutines
+                them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
-                    raise BadModuleIdentifier("unable to satisfy require(%s) from %s" % (reqname, mi))
+                    err = ModuleNotFoundError()
+                    err.used_by = mi.js
+                    err.requirement_name = reqname
+                    err.looked_in = looked_in
+                    raise err
                     #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
@@ -279,9 +297,10 @@ class ManifestBuilder:
         return me
         #print "LEAVING", pkg.name, mi.name
 
-    def find_req_for(self, from_module, reqname): #, pkg, modulename):
+    def find_req_for(self, from_module, reqname, looked_in):
         # handle a single require(reqname) statement from from_module .
         # Return a uri that exists in self.manifest
+        # Populate looked_in with places we looked.
         def BAD(msg):
             return BadModuleIdentifier(msg + " in require(%s) from %s" %
                                        (reqname, from_module))
@@ -318,7 +337,8 @@ class ManifestBuilder:
             lookfor_pkg = from_module.package.name
             lookfor_mod = "/".join(bits)
             return self._get_module_from_package(lookfor_pkg,
-                                                 lookfor_sections, lookfor_mod)
+                                                 lookfor_sections, lookfor_mod,
+                                                 looked_in)
 
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
@@ -328,22 +348,24 @@ class ManifestBuilder:
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
             mi = self._get_module_from_package(lookfor_pkg,
-                                               lookfor_sections, lookfor_mod)
+                                               lookfor_sections, lookfor_mod,
+                                               looked_in)
             if mi: # caution, 0==None
                 return mi
         else:
             # 3: try finding PKG, if found, use its main.js entry point
             lookfor_pkg = reqname
-            mi = self._get_entrypoint_from_package(lookfor_pkg)
+            mi = self._get_entrypoint_from_package(lookfor_pkg, looked_in)
             if mi:
                 return mi
 
-        # 4: search pacakges for MOD or MODPARENT/MODCHILD. We always search
+        # 4: search packages for MOD or MODPARENT/MODCHILD. We always search
         # their own package first, then the list of packages defined by their
         # .dependencies list
         from_pkg = from_module.package.name
         return self._search_packages_for_module(from_pkg,
-                                                lookfor_sections, reqname)
+                                                lookfor_sections, reqname,
+                                                looked_in)
 
     def _handle_module(self, mi):
         if not mi:
@@ -363,13 +385,14 @@ class ManifestBuilder:
         self.process_module(mi)
         return new_entry
 
-    def _get_module_from_package(self, pkgname, sections, modname):
+    def _get_module_from_package(self, pkgname, sections, modname, looked_in):
         if pkgname not in self.pkg_cfg.packages:
             return None
-        mi = self._find_module_in_package(pkgname, sections, modname)
+        mi = self._find_module_in_package(pkgname, sections, modname,
+                                          looked_in)
         return self._handle_module(mi)
 
-    def _get_entrypoint_from_package(self, pkgname):
+    def _get_entrypoint_from_package(self, pkgname, looked_in):
         if pkgname not in self.pkg_cfg.packages:
             return None
         pkg = self.pkg_cfg.packages[pkgname]
@@ -386,6 +409,7 @@ class ManifestBuilder:
         if main.startswith("./"):
             main = main[len("./"):]
         js = os.path.join(pkg.root_dir, main+".js")
+        looked_in.append(js)
         if os.path.exists(js):
             docs = None
             # AARGH, section and name! we need to reverse-engineer a
@@ -414,7 +438,8 @@ class ManifestBuilder:
             return self._handle_module(mi)
         return None
 
-    def _search_packages_for_module(self, from_pkg, sections, reqname):
+    def _search_packages_for_module(self, from_pkg, sections, reqname,
+                                    looked_in):
         searchpath = [] # list of package names
         searchpath.append(from_pkg) # search self first
         us = self.pkg_cfg.packages[from_pkg]
@@ -430,18 +455,20 @@ class ManifestBuilder:
             # by --extra-packages
             searchpath.extend(sorted(self.deps))
         for pkgname in searchpath:
-            mi = self._find_module_in_package(pkgname, sections, reqname)
+            mi = self._find_module_in_package(pkgname, sections, reqname,
+                                              looked_in)
             if mi:
                 return self._handle_module(mi)
         return None
 
-    def _find_module_in_package(self, pkgname, sections, name):
+    def _find_module_in_package(self, pkgname, sections, name, looked_in):
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
                 js = os.path.join(pkg.root_dir, sdir, name+".js")
+                looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
                     maybe_docs = os.path.join(pkg.root_dir, "docs", name+".md")
