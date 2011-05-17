@@ -370,14 +370,11 @@ class ManifestBuilder:
         return self._handle_module(mi)
 
     def _get_entrypoint_from_package(self, pkgname):
-        #print "ENTRYPONT", pkgname
         if pkgname not in self.pkg_cfg.packages:
-            #print "no 1", self.pkg_cfg.packages.keys()
             return None
         pkg = self.pkg_cfg.packages[pkgname]
         main = pkg.get("main", None)
         if not main:
-            #print "no 2"
             return None
         # 'main' can be like one of the following:
         #   a: ./lib/main.js  b: ./lib/main  c: lib/main
@@ -390,7 +387,6 @@ class ManifestBuilder:
             main = main[len("./"):]
         js = os.path.join(pkg.root_dir, main+".js")
         if os.path.exists(js):
-            #print "yes 3"
             docs = None
             # AARGH, section and name! we need to reverse-engineer a
             # ModuleInfo instance that will produce a URI (in the form
@@ -412,11 +408,8 @@ class ManifestBuilder:
             if not js.startswith(libdir):
                 raise UnreachablePrefixError("Sorry, but the main 'entrypoint' (%s) for package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
                                              % (pkg.main, pkgname, pkglib))
-            #print " js", js
-            #print " libdir", libdir
             section = "lib"
             name = js[len(libdir):].lstrip("/")[:-len(".js")]
-            #print " name", name
             mi = ModuleInfo(pkg, section, name, js, docs)
             return self._handle_module(mi)
         return None
