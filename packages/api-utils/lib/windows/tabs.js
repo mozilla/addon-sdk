@@ -157,7 +157,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       // Remove closed items from the list
       this.on(EVENTS.close.name, this._remove.bind(this));
 
-      // Set value whenever new tab get's active
+      // Set value whenever new tab becomes active.
       this.on("activate", function onTabActivate(tab) {
         this._activeTab = tab;
       }.bind(this));
