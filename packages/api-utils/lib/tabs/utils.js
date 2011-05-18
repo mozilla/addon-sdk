@@ -20,7 +20,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original author)
+ *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,52 +38,45 @@
 
 "use strict";
 
-const { EventEmitterTrait: EventEmitter } = require("../events");
-const { WindowTracker, windowIterator } = require("../window-utils");
-const { DOMEventAssembler } = require("../events/assembler");
-const { Trait } = require("../light-traits");
+function getTabContainer(tabBrowser) {
+  return tabBrowser.tabContainer;
+}
+exports.getTabContainer = getTabContainer;
 
-// Event emitter objects used to register listeners and emit events on them
-// when they occur.
-const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
-  /**
-   * Method is implemented by `EventEmitter` and is used just for emitting
-   * events on registered listeners.
-   */
-  _emit: Trait.required,
-  /**
-   * Events that are supported and emitted by the module.
-   */
-  supportedEventsTypes: [ "activate", "deactivate" ],
-  /**
-   * Function handles all the supported events on all the windows that are
-   * observed. Method is used to proxy events to the listeners registered on
-   * this event emitter.
-   * @param {Event} event
-   *    Keyboard event being emitted.
-   */
-  handleEvent: function handleEvent(event) {
-    this._emit(event.type, event.target, event);
-  }
-});
+function getTabBrowsers(window) {
+  return Array.slice(window.document.getElementsByTagName("tabbrowser"));
+}
+exports.getTabBrowsers = getTabBrowsers;
 
-// Using `WindowTracker` to track window events.
-new WindowTracker({
-  onTrack: function onTrack(chromeWindow) {
-    observer._emit("open", chromeWindow);
-    observer.observe(chromeWindow);
-  },
-  onUntrack: function onUntrack(chromeWindow) {
-    observer._emit("close", chromeWindow);
-    observer.ignore(chromeWindow);
-  }
-});
+function getTabContainers(window) {
+  return getTabBrowsers(window).map(getTabContainer);
+}
+exports.getTabContainers = getTabContainers;
 
-// Making observer aware of already opened windows.
-for each (let window in windowIterator())
-  observer.observe(window);
+function getTabs(window) {
+  return getTabContainers(window).reduce(function (tabs, container) {
+    tabs.push.apply(tabs, container.children);
+    return tabs;
+  }, []);
+}
+exports.getTabs = getTabs;
 
-// Getting rid of all listeners when add-on is unloaded.
-require("unload").when(function() { observer._events = {} });
+function getActiveTab(window) {
+  return window.gBrowser.selectedTab;
+}
+exports.getActiveTab = getActiveTab;
 
-module.exports = observer;
+function getOwnerWindow(tab) {
+  return tab.ownerDocument.defaultView;
+}
+exports.getOwnerWindow = getOwnerWindow;
+
+function openTab(window, url) {
+  return window.gBrowser.addTab(url);
+}
+exports.openTab = openTab;
+
+function activateTab(tab) {
+  getOwnerWindow(tab).gBrowser.selectedTab = tab;
+}
+exports.activateTab = activateTab;
