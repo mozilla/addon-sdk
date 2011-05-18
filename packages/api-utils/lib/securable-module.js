@@ -581,7 +581,7 @@
      // We sort file systems in alphabetical order of a package name.
      this.fses = options.fses.sort(function(a, b) a.root > b.root);
      this.prefix = "resource://" + options.jetpackID + "-";
-     this.packages = options.metadata;
+     this.packages = options.metadata || {};
    };
 
    function isRelative(path) path.charAt(0) === "."
@@ -605,11 +605,13 @@
 
      },
      resolveRelative: function resolveRelative(base, path) {
+        path = normalizePath(path);
         let uri = ios.newURI(path, null, ios.newURI(base, null, null));
-        let channel = ios.newChannelFromURI(uri);
+
         try {
+          let channel = ios.newChannelFromURI(uri);
           channel.open().close();
-        } catch (e if e.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
+        } catch (e) {
           return null;
         }
         return uri.spec;
