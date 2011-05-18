@@ -72,9 +72,9 @@ const WindowTabTracker = Trait.compose({
    * Initializes tab tracker for a browser window.
    */
   _initWindowTabTracker: function _initWindowTabTracker() {
-    // Ugly hack that we have to remove at some point. This is necessary to
-    // invoke lazy `tabs` getter on the windows object which creates a `TabList`
-    // instance.
+    // Ugly hack that we have to remove at some point (see Bug 658059). At this
+    // point it is necessary to invoke lazy `tabs` getter on the windows object
+    // which creates a `TabList` instance.
     this.tabs;
     // Binding all methods used as event listeners to the instance.
     this._onTabReady = this._emitEvent.bind(this, "ready");
@@ -157,7 +157,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       // Remove closed items from the list
       this.on(EVENTS.close.name, this._remove.bind(this));
 
-      // Set value whenever new tab get's active
+      // Set value whenever new tab becomes active.
       this.on("activate", function onTabActivate(tab) {
         this._activeTab = tab;
       }.bind(this));
