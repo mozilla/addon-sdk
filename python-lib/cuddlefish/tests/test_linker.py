@@ -56,7 +56,7 @@ class Basic(unittest.TestCase):
                           manifest.build_manifest,
                           target_cfg, pkg_cfg, deps, "P/", scan_tests=False)
 
-    def test_main(self):
+    def test_main_in_deps(self):
         target_cfg = self.get_pkg("three")
         package_path = [self.get_linker_files_dir("three-deps")]
         pkg_cfg = packaging.build_config(self.root, target_cfg,
@@ -74,7 +74,35 @@ class Basic(unittest.TestCase):
         assertReqIs("main", "three-b", "P/three-b-lib/main.js")
         assertReqIs("main", "three-c", "P/three-c-lib/main.js")
 
-    def test_unreachable(self):
+    def test_relative_main_in_top(self):
+        target_cfg = self.get_pkg("five")
+        package_path = []
+        pkg_cfg = packaging.build_config(self.root, target_cfg,
+                                         packagepath=package_path)
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-kit"])
+        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "five"])
+        # all we care about is that this next call doesn't raise an exception
+        m = manifest.build_manifest(target_cfg, pkg_cfg, deps,
+                                    "P/", scan_tests=False)
+        m = m.get_harness_options_manifest("P/")
+        reqs = m["P/five-lib/main.js"]["requirements"]
+        self.failUnlessEqual(reqs, {});
+
+    def test_unreachable_relative_main_in_top(self):
+        target_cfg = self.get_pkg("six")
+        package_path = []
+        pkg_cfg = packaging.build_config(self.root, target_cfg,
+                                         packagepath=package_path)
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-kit"])
+        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "six"])
+        self.assertRaises(manifest.UnreachablePrefixError,
+                          manifest.build_manifest,
+                          target_cfg, pkg_cfg, deps,
+                          "P/", scan_tests=False)
+
+    def test_unreachable_in_deps(self):
         target_cfg = self.get_pkg("four")
         package_path = [self.get_linker_files_dir("four-deps")]
         pkg_cfg = packaging.build_config(self.root, target_cfg,
