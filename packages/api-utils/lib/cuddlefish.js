@@ -132,6 +132,8 @@
        manifest = options.packaging.options.manifest;
      var loaderOptions = {rootPath: options.rootPath,
                           rootPaths: options.rootPaths,
+                          metadata: options.metadata,
+                          jetpackID: options.jetpackID,
                           fs: options.fs,
                           defaultPrincipal: "system",
                           globals: globals,
