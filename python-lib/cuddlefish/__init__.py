@@ -626,9 +626,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "test":
         targets.append(options.test_runner_pkg)
 
+    extra_packages = []
     if options.extra_packages:
-        targets.extend(options.extra_packages.split(","))
-        target_cfg.extra_dependencies = options.extra_packages.split(",")
+        extra_packages = options.extra_packages.split(",")
+    if extra_packages:
+        targets.extend(extra_packages)
+        target_cfg.extra_dependencies = extra_packages
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
@@ -642,6 +645,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # If we believe that, we won't set up URI mappings for anything, and
         # tests won't be able to run.
         used_deps = deps
+    for xp in extra_packages:
+        if xp not in used_deps:
+            used_deps.append(xp)
 
     build = packaging.generate_build_for_target(
         pkg_cfg, target, used_deps,
