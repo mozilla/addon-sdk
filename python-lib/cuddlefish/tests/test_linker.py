@@ -52,7 +52,7 @@ class Basic(unittest.TestCase):
         target_cfg.dependencies = []
         # now, because .dependencies *is* provided, we won't search 'deps',
         # so we'll get a link error
-        self.assertRaises(manifest.BadModuleIdentifier,
+        self.assertRaises(manifest.ModuleNotFoundError,
                           manifest.build_manifest,
                           target_cfg, pkg_cfg, deps, "P/", scan_tests=False)
 
