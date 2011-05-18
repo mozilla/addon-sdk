@@ -208,6 +208,13 @@ class ManifestBuilder:
     def get_data_entries(self):
         return frozenset(self.datamaps.values())
 
+    def get_used_packages(self):
+        used = set()
+        for index in self.manifest:
+            (package, section, module) = index
+            used.add(package)
+        return sorted(used)
+
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
         for me in self.get_module_entries():

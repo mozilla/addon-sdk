@@ -631,8 +631,16 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         target_cfg.extra_dependencies = options.extra_packages.split(",")
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
+
+    from cuddlefish.manifest import build_manifest
+    uri_prefix = "resource://%s" % unique_prefix
+    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False)
+    used_deps = manifest.get_used_packages()
+    print "DEPS", deps
+    print "USED_DEPS", used_deps
+
     build = packaging.generate_build_for_target(
-        pkg_cfg, target, deps,
+        pkg_cfg, target, used_deps,
         prefix=unique_prefix,  # used to create resource: URLs
         include_dep_tests=options.dep_tests
         )
@@ -667,12 +675,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
 
-    harness_options['metadata'] = packaging.get_metadata(pkg_cfg, deps)
+    harness_options['metadata'] = packaging.get_metadata(pkg_cfg, used_deps)
 
     sdk_version = get_version(env_root)
     harness_options['sdkVersion'] = sdk_version
 
-    packaging.call_plugins(pkg_cfg, deps)
+    packaging.call_plugins(pkg_cfg, used_deps)
 
     retval = 0
 
@@ -688,10 +696,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
-    from cuddlefish.manifest import build_manifest
-    uri_prefix = "resource://%s" % unique_prefix
-    include_tests = False #bool(command=="test")
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, include_tests)
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
 
     if command == 'xpi':
