@@ -636,8 +636,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     uri_prefix = "resource://%s" % unique_prefix
     manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False)
     used_deps = manifest.get_used_packages()
-    print "DEPS", deps
-    print "USED_DEPS", used_deps
+    if command == "test":
+        # The test runner doesn't appear to link against any actual packages,
+        # because it loads everything at runtime (invisible to the linker).
+        # If we believe that, we won't set up URI mappings for anything, and
+        # tests won't be able to run.
+        used_deps = deps
 
     build = packaging.generate_build_for_target(
         pkg_cfg, target, used_deps,
