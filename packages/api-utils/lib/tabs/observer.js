@@ -39,9 +39,21 @@
 "use strict";
 
 const { EventEmitterTrait: EventEmitter } = require("../events");
-const { WindowTracker, windowIterator } = require("../window-utils");
 const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
+const { getActiveTab, getTabs, getTabContainers } = require("./utils");
+const { windowIterator, isBrowser } = require("../window-utils");
+const windowObserver = require("../windows/observer");
+
+const EVENTS = {
+  "TabOpen": "open",
+  "TabClose": "close",
+  "TabSelect": "select",
+  "TabMove": "move",
+  "TabPinned": "pin",
+  "TabUnpinned": "unpin"
+};
+
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
@@ -54,7 +66,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
   /**
    * Events that are supported and emitted by the module.
    */
-  supportedEventsTypes: [ "activate", "deactivate" ],
+  supportedEventsTypes: Object.keys(EVENTS),
   /**
    * Function handles all the supported events on all the windows that are
    * observed. Method is used to proxy events to the listeners registered on
@@ -63,25 +75,53 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
    *    Keyboard event being emitted.
    */
   handleEvent: function handleEvent(event) {
-    this._emit(event.type, event.target, event);
+    this._emit(EVENTS[event.type], event.target, event);
   }
 });
 
-// Using `WindowTracker` to track window events.
-new WindowTracker({
-  onTrack: function onTrack(chromeWindow) {
-    observer._emit("open", chromeWindow);
-    observer.observe(chromeWindow);
-  },
-  onUntrack: function onUntrack(chromeWindow) {
-    observer._emit("close", chromeWindow);
-    observer.ignore(chromeWindow);
+// Currently gecko does not dispatches any event on the previously selected
+// tab before / after "TabSelect" is dispatched. In order to work around this
+// limitation we keep track of selected tab and emit "deactivate" event with
+// that before emitting "activate" on selected tab.
+var selectedTab = null;
+function onTabSelect(tab) {
+  if (selectedTab !== tab) {
+    if (selectedTab) observer._emit("deactivate", selectedTab);
+    if (tab) observer._emit("activate", selectedTab = tab);
   }
+};
+observer.on("select", onTabSelect);
+
+// We also observe opening / closing windows in order to add / remove it's
+// containers to the observed list.
+function onWindowOpen(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
+  getTabContainers(chromeWindow).forEach(function (container) {
+    observer.observe(container);
+  });
+}
+windowObserver.on("open", onWindowOpen);
+
+function onWindowClose(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
+  getTabContainers(chromeWindow).forEach(function (container) {
+    observer.ignore(container);
+  });
+}
+windowObserver.on("close", onWindowClose);
+
+
+// Currently gecko does not dispatches "TabSelect" events when different
+// window gets activated. To work around this limitation we emulate "select"
+// event for this case.
+windowObserver.on("activate", function onWindowActivate(chromeWindow) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
+  observer._emit("select", getActiveTab(chromeWindow));
 });
 
-// Making observer aware of already opened windows.
-for each (let window in windowIterator())
-  observer.observe(window);
+// We should synchronize state, since probably we already have at least one
+// window open.
+for each (let window in windowIterator()) onWindowOpen(window);
 
 // Getting rid of all listeners when add-on is unloaded.
 require("unload").when(function() { observer._events = {} });
