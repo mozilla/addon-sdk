@@ -180,7 +180,11 @@
            rootPaths = [rootPaths];
          var fses = [new exports.LocalFileSystem(path)
                      for each (path in rootPaths)];
-         options.fs = new exports.CompositeFileSystem(fses);
+         options.fs = new exports.CompositeFileSystem({
+           fses: fses,
+           metadata: options.metadata,
+           jetpackID: options.jetpackID
+         });
        } else
          options.fs = new exports.LocalFileSystem();
      }
@@ -220,7 +224,7 @@
         * particular it knows what the link-time module search algorithm has
         * found for each imported name (so if they require "panel", they'll
         * get the one from addon-kit, not from some other package).
-        * 
+        *
         * When some other module (e.g. panel.js) is loaded, they'll get a
         * different require/define pair, specialized for them.
         */
@@ -249,7 +253,7 @@
          /*
           * If we get here, we're allowed to import this module, we just have
           * to figure out how.
-          * 
+          *
           * 'moduleName' is the unmodified argument passed to require(),
           * so it might be "panel" or "pkg/foo" or even "./bar" for relative
           * imports. 'moduleData' is the manifest entry that tells us how
@@ -573,17 +577,60 @@
 
    // this is more of a resolver than a filesystem, but test-securable-module
    // wants to override the getFile() function to avoid using real URIs
-   exports.CompositeFileSystem = function CompositeFileSystem(fses) {
-     this.fses = fses;
+   exports.CompositeFileSystem = function CompositeFileSystem(options) {
+     // We sort file systems in alphabetical order of a package name.
+     this.fses = options.fses.sort(function(a, b) a.root > b.root);
+     this.prefix = "resource://" + options.jetpackID + "-";
+     this.packages = options.metadata || {};
    };
+
+   function isRelative(path) path.charAt(0) === "."
+   function isNested(path) ~path.indexOf("/")
+   function normalizePath(path) path.substr(-3) === ".js" ? path : path + ".js"
 
    exports.CompositeFileSystem.prototype = {
      resolveModule: function resolveModule(base, path) {
-       for (var i = 0; i < this.fses.length; i++) {
-         var fs = this.fses[i];
-         var absPath = fs.resolveModule(base, path);
-         if (absPath)
-           return absPath;
+       // If it is relative path we don't need to search anything
+       // as it should be module from the same package.
+       if (isRelative(path))
+         return this.resolveRelative(base, path);
+
+       // If path contains only one part then we treat if it as
+       // require(PCKG/{{(package.json).main}}
+       if (!isNested(path))
+         return this.resolveMain(path) || this.searchModule(path);
+
+       // If non of the options worked we fall back to the searching.
+       return this.searchModule(path);
+
+     },
+     resolveRelative: function resolveRelative(base, path) {
+        path = normalizePath(path);
+        let uri = ios.newURI(path, null, ios.newURI(base, null, null));
+
+        try {
+          let channel = ios.newChannelFromURI(uri);
+          channel.open().close();
+        } catch (e) {
+          return null;
+        }
+        return uri.spec;
+     },
+     searchModule: function seachModule(path) {
+       for each (let fs in this.fses) {
+         let id = fs.resolveModule(null, path);
+         if (id)
+           return id;
+       }
+       return null;
+     },
+     resolveMain: function resolvePackageModule(name) {
+       if (name in this.packages) {
+         let base = this.prefix + name + "-lib/";
+         let path = normalizePath(this.packages[name].main || "main");
+         // This will work only if directories.lib is "." or if main is not a
+         // relative path.
+         return this.resolveRelative(base, path);
        }
        return null;
      },
@@ -619,6 +666,7 @@
          baseURI = this._rootURI;
        else
          baseURI = ios.newURI(base, null, null);
+
        var newURI = ios.newURI(path, null, baseURI);
        if (newURI.spec.indexOf(this._rootURIDir) == 0) {
          var channel = ios.newChannelFromURI(newURI);
