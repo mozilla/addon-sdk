@@ -141,13 +141,13 @@ class Chrome(unittest.TestCase, Extra):
         # we specifically ignore the two loader files
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, problems, err = scan2(mod, "blah/cuddlefish.js")
-        self.failUnlessKeysAre(requires, [])
+        self.failUnlessKeysAre(requires, ["chrome"])
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, problems, err = scan2(mod, "securable-module.js")
-        self.failUnlessKeysAre(requires, [])
+        self.failUnlessKeysAre(requires, ["chrome"])
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
@@ -178,16 +178,32 @@ class Chrome(unittest.TestCase, Extra):
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
+    def test_not_chrome(self):
+        # from bug 596595
+        mod = r'soughtLines: new RegExp("^\\s*(\\[[0-9 .]*\\])?\\s*\\(\\((EE|WW)\\)|.* [Cc]hipsets?: \\)|\\s*Backtrace")'
+        requires, problems, err = scan2(mod)
+        self.failUnlessKeysAre(requires, [])
+        self.failUnlessEqual((problems,err), (False, []))
+
+    def test_not_chrome2(self):
+        # from bug 655788
+        mod = r"var foo = 'some stuff Cr';"
+        requires, problems, err = scan2(mod)
+        self.failUnlessKeysAre(requires, [])
+        self.failUnlessEqual((problems,err), (False, []))
+
 class BadChrome(unittest.TestCase, Extra):
     def test_bad_alias(self):
         # using Components.* gets you a warning. If it looks like you're
         # using it to build an alias, the warning suggests a better way.
-        mod = """let Cc = Components.classes;"""
+        mod = """let Cc = Components.classes;
+        let Cu = Components.utils;"""
         requires, problems, err = scan2(mod)
         self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(problems, True)
-        self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
-        self.failUnlessEqual(err[-1], '  const {Cc} = require("chrome");\n')
+        self.failUnlessEqual(err[1], "To use chrome authority, you need a line like this:\n") 
+        self.failUnlessEqual(err[2], '  const {Cc,Cu} = require("chrome");\n')
+        self.failUnlessEqual(err[3], "because things like 'Components.classes' will not be available\n")
 
     def test_bad_misc(self):
         # If it looks like you're using something that doesn't have an alias,
@@ -196,30 +212,8 @@ class BadChrome(unittest.TestCase, Extra):
         requires, problems, err = scan2(mod)
         self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(problems, True)
-        self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
-        self.failUnlessEqual(err[-1],
-                             '  const {components} = require("chrome");\n')
-
-        mod = """let CID = Components.ID""" # not one of the usual aliases
-        requires, problems, err = scan2(mod)
-        self.failUnlessKeysAre(requires, [])
-        self.failUnlessEqual(problems, True)
-        self.failUnlessEqual(err[1], "To use chrome authority, as in:\n") 
-        self.failUnlessEqual(err[-1],
-                             '  const {components} = require("chrome");\n')
-
-    def test_use_too_much(self):
-        # if you use more than you ask for, you also get a warning
-        mod = """let {Cc,Ci} = require('chrome');
-        Cu.something();"""
-        requires, problems, err = scan2(mod)
-        self.failUnlessKeysAre(requires, ["chrome"])
-        self.failUnlessEqual(problems, True)
-        err = "".join(err)
-        self.failUnless("To use chrome authority, as in:" in err, err)
-        self.failUnless("2> Cu.something()" in err, err)
-        self.failUnless("You must enable it with something like:" in err, err)
-        self.failUnless('const {Cc,Ci,Cu} = require("chrome");' in err, err)
+        self.failUnlessEqual(err[1], "To use chrome authority, you need a line like this:\n") 
+        self.failUnlessEqual(err[2], '  const {components} = require("chrome");\n')
 
 if __name__ == '__main__':
     unittest.main()
