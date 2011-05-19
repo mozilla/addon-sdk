@@ -1,6 +1,6 @@
 var self = require("self");
-var panels = require("panel");
-var widgets = require("widget");
+var panels = require("addon-kit/panel");
+var widgets = require("addon-kit/widget");
 
 function replaceMom(html) {
   return html.replace("World", "Mom");

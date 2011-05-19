@@ -15,9 +15,24 @@ def datafile_zipname(packagename, datapath):
 def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
 
+class ModuleNotFoundError(Exception):
+    def __init__(self, *args):
+        self.args = args
+        self.used_by = None # string, full path to module which did require()
+        self.requirement_name = None # string, what they require()d
+        self.looked_at = [] # list of full paths to potential .js files
+    def __str__(self):
+        return ("ModuleNotFoundError: unable to satisfy require(%s) from %s .\n"
+                "Looked for it in:\n"
+                " %s\n" %
+                (self.requirement_name, self.used_by,
+                 "\n ".join(self.looked_in)))
+
 class BadModuleIdentifier(Exception):
     pass
 class BadSection(Exception):
+    pass
+class UnreachablePrefixError(Exception):
     pass
 
 class ManifestEntry:
@@ -193,6 +208,13 @@ class ManifestBuilder:
     def get_data_entries(self):
         return frozenset(self.datamaps.values())
 
+    def get_used_packages(self):
+        used = set()
+        for index in self.manifest:
+            (package, section, module) = index
+            used.add(package)
+        return sorted(used)
+
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
         for me in self.get_module_entries():
@@ -210,20 +232,75 @@ class ManifestBuilder:
             self.used_packagenames.add(package)
         return self.manifest[index]
 
-    def find_top(self, target_cfg):
+    def uri_name_from_path(self, pkg, fn):
+        # given a filename like .../pkg1/lib/bar/foo.js, and a package
+        # specification (with a .root_dir like ".../pkg1" and a .lib list of
+        # paths where .lib[0] is like "lib"), return the appropriate NAME
+        # that can be put into a URI like resource://JID-pkg1-lib/NAME . This
+        # will throw an exception if the file is outside of the lib/
+        # directory, since that means we can't construct a URI that points to
+        # it.
+        #
+        # This should be a lot easier, and shouldn't fail when the file is in
+        # the root of the package. Both should become possible when the XPI
+        # is rearranged and our URI scheme is simplified.
+        fn = os.path.abspath(fn)
+        pkglib = pkg.lib[0]
+        libdir = os.path.abspath(os.path.join(pkg.root_dir, pkglib))
+        # AARGH, section and name! we need to reverse-engineer a
+        # ModuleInfo instance that will produce a URI (in the form
+        # PREFIX/PKGNAME-SECTION/JS) that will map to the existing file.
+        # Until we fix URI generation to get rid of "sections", this is
+        # limited to files in the same .directories.lib as the rest of
+        # the package uses. So if the package's main files are in lib/,
+        # but the main.js is in the package root, there is no URI we can
+        # construct that will point to it, and we must fail.
+        #
+        # This will become much easier (and the failure case removed)
+        # when we get rid of sections and change the URIs to look like
+        # (PREFIX/PKGNAME/PATH-TO-JS).
+
+        # AARGH 2, allowing .lib to be a list is really getting in the
+        # way. That needs to go away eventually too.
+        if not fn.startswith(libdir):
+            raise UnreachablePrefixError("Sorry, but the 'main' file (%s) in package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
+                                         % (fn, pkg.name, pkglib))
+        name = fn[len(libdir):].lstrip("/")[:-len(".js")]
+        return name
+
+
+    def parse_main(self, root_dir, main, check_lib_dir=None):
+        # 'main' can be like one of the following:
+        #   a: ./lib/main.js  b: ./lib/main  c: lib/main
+        # we require it to be a path to the file, though, and ignore the
+        # .directories stuff. So just "main" is insufficient if you really
+        # want something in a "lib/" subdirectory.
+        if main.endswith(".js"):
+            main = main[:-len(".js")]
+        if main.startswith("./"):
+            main = main[len("./"):]
+        paths = [os.path.join(root_dir, main+".js")]
+        if check_lib_dir is not None:
+            paths.append(os.path.join(root_dir, check_lib_dir, main+".js"))
+        return paths
+
+    def find_top_js(self, target_cfg):
         for libdir in target_cfg.lib:
-            n = os.path.join(target_cfg.root_dir, libdir, target_cfg.main+".js")
-            if os.path.exists(n):
-                top_js = n
-                break
-        else:
-            raise KeyError("unable to find main module '%s.js' in top-level package" % target_cfg.main)
+            for n in self.parse_main(target_cfg.root_dir, target_cfg.main,
+                                     libdir):
+                if os.path.exists(n):
+                    return n
+        raise KeyError("unable to find main module '%s.js' in top-level package" % target_cfg.main)
+
+    def find_top(self, target_cfg):
+        top_js = self.find_top_js(target_cfg)
         n = os.path.join(target_cfg.root_dir, "README.md")
         if os.path.exists(n):
             top_docs = n
         else:
             top_docs = None
-        return ModuleInfo(target_cfg, "lib", target_cfg.main, top_js, top_docs)
+        name = self.uri_name_from_path(target_cfg, top_js)
+        return ModuleInfo(target_cfg, "lib", name, top_js, top_docs)
 
     def process_module(self, mi):
         pkg = mi.package
@@ -267,19 +344,25 @@ class ManifestBuilder:
                 # everything transitively required from here. It will also
                 # populate the self.modules[] cache. Note that we must
                 # tolerate cycles in the reference graph.
-                them_me = self.find_req_for(mi, reqname)
+                looked_in = [] # populated by subroutines
+                them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
-                    #raise BadModuleIdentifier("unable to satisfy require(%s) from %s" % (reqname, mi))
-                    print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
+                    err = ModuleNotFoundError()
+                    err.used_by = mi.js
+                    err.requirement_name = reqname
+                    err.looked_in = looked_in
+                    raise err
+                    #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
 
         return me
         #print "LEAVING", pkg.name, mi.name
 
-    def find_req_for(self, from_module, reqname): #, pkg, modulename):
+    def find_req_for(self, from_module, reqname, looked_in):
         # handle a single require(reqname) statement from from_module .
         # Return a uri that exists in self.manifest
+        # Populate looked_in with places we looked.
         def BAD(msg):
             return BadModuleIdentifier(msg + " in require(%s) from %s" %
                                        (reqname, from_module))
@@ -303,7 +386,6 @@ class ManifestBuilder:
         if reqname.startswith("./") or reqname.startswith("../"):
             # 1: they want something relative to themselves, always from
             # their own package
-            lookfor_pkg = from_module.package.name
             them = modulename.split("/")[:-1]
             while bits[0] in (".", ".."):
                 if not bits:
@@ -314,8 +396,11 @@ class ManifestBuilder:
                     them.pop()
                 bits.pop(0)
             bits = them+bits
+            lookfor_pkg = from_module.package.name
             lookfor_mod = "/".join(bits)
-            return self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            return self._get_module_from_package(lookfor_pkg,
+                                                 lookfor_sections, lookfor_mod,
+                                                 looked_in)
 
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
@@ -324,30 +409,27 @@ class ManifestBuilder:
             # 2: PKG/MOD: find PKG, look inside for MOD
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
-            mi = self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            mi = self._get_module_from_package(lookfor_pkg,
+                                               lookfor_sections, lookfor_mod,
+                                               looked_in)
             if mi: # caution, 0==None
                 return mi
-
-        # 3: try finding MOD or MODPARENT/MODCHILD in their own package
-        from_pkg = from_module.package.name
-        mi = self._get_module(from_pkg, lookfor_sections, reqname)
-        if mi:
-            return mi
-
-        # 4: try finding PKG, if found, use its main.js entry point
-        if "/" not in reqname:
-            mi = self._get_module(reqname, lookfor_sections, None)
+        else:
+            # 3: try finding PKG, if found, use its main.js entry point
+            lookfor_pkg = reqname
+            mi = self._get_entrypoint_from_package(lookfor_pkg, looked_in)
             if mi:
                 return mi
 
-        # 5: MOD: search "library" packages for one that exports MOD
-        return self._get_module(None, lookfor_sections, reqname)
+        # 4: search packages for MOD or MODPARENT/MODCHILD. We always search
+        # their own package first, then the list of packages defined by their
+        # .dependencies list
+        from_pkg = from_module.package.name
+        return self._search_packages_for_module(from_pkg,
+                                                lookfor_sections, reqname,
+                                                looked_in)
 
-
-    def _get_module(self, pkgname, sections, modname):
-        # pkgname could be None, which means "search library packages"
-
-        mi = self._find_module(pkgname, sections, modname)
+    def _handle_module(self, mi):
         if not mi:
             return None
 
@@ -355,41 +437,72 @@ class ManifestBuilder:
         # populate the self.modules cache before recursing into
         # process_module() . We must also check the cache first, so recursion
         # can terminate.
-        pkgname = mi.package.name
         if mi in self.modules:
-            # we didn't know the packagename before
             return self.modules[mi]
 
         # this creates the entry
-        new_entry = self.get_manifest_entry(pkgname, mi.section, mi.name)
+        new_entry = self.get_manifest_entry(mi.package.name, mi.section, mi.name)
         # and populates the cache
         self.modules[mi] = new_entry
         self.process_module(mi)
         return new_entry
 
-    def _find_module(self, pkgname, sections, modname):
-        #print "   _find_module(%s %s %s)" % (pkgname, sections, modname)
-        if pkgname:
-            if pkgname not in self.pkg_cfg.packages:
-                return None
-            if not modname:
-                #print " cannot handle modname=None yet"
-                return None
-            return self._find_module_in_package(pkgname, sections, modname)
-        # search library packages. For now, search all packages.
-        for pkgname in self.deps:
-            mi = self._find_module_in_package(pkgname, sections, modname)
-            if mi:
-                return mi
+    def _get_module_from_package(self, pkgname, sections, modname, looked_in):
+        if pkgname not in self.pkg_cfg.packages:
+            return None
+        mi = self._find_module_in_package(pkgname, sections, modname,
+                                          looked_in)
+        return self._handle_module(mi)
+
+    def _get_entrypoint_from_package(self, pkgname, looked_in):
+        if pkgname not in self.pkg_cfg.packages:
+            return None
+        pkg = self.pkg_cfg.packages[pkgname]
+        main = pkg.get("main", None)
+        if not main:
+            return None
+        for js in self.parse_main(pkg.root_dir, main):
+            looked_in.append(js)
+            if os.path.exists(js):
+                section = "lib"
+                name = self.uri_name_from_path(pkg, js)
+                docs = None
+                mi = ModuleInfo(pkg, section, name, js, docs)
+                return self._handle_module(mi)
         return None
 
-    def _find_module_in_package(self, pkgname, sections, name):
+    def _search_packages_for_module(self, from_pkg, sections, reqname,
+                                    looked_in):
+        searchpath = [] # list of package names
+        searchpath.append(from_pkg) # search self first
+        us = self.pkg_cfg.packages[from_pkg]
+        if 'dependencies' in us:
+            # only look in dependencies
+            searchpath.extend(us['dependencies'])
+        else:
+            # they didn't declare any dependencies (or they declared an empty
+            # list, but we'll treat that as not declaring one, because it's
+            # easier), so look in all deps, sorted alphabetically, so
+            # addon-kit comes first. Note that self.deps includes all
+            # packages found by traversing the ".dependencies" lists in each
+            # package.json, starting from the main addon package, plus
+            # everything added by --extra-packages
+            searchpath.extend(sorted(self.deps))
+        for pkgname in searchpath:
+            mi = self._find_module_in_package(pkgname, sections, reqname,
+                                              looked_in)
+            if mi:
+                return self._handle_module(mi)
+        return None
+
+    def _find_module_in_package(self, pkgname, sections, name, looked_in):
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
                 js = os.path.join(pkg.root_dir, sdir, name+".js")
+                looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
                     maybe_docs = os.path.join(pkg.root_dir, "docs", name+".md")

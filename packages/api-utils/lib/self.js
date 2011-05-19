@@ -28,7 +28,6 @@ exports.makeSelfModule = function (reqdata) {
     
   var self = {
     id: jid,
-    name: name,
     uri: uri,
     data: {
       load: data_load,
