@@ -484,8 +484,9 @@ class ManifestBuilder:
             # list, but we'll treat that as not declaring one, because it's
             # easier), so look in all deps, sorted alphabetically, so
             # addon-kit comes first. Note that self.deps includes all
-            # .dependencies declared by all packages, plus everything added
-            # by --extra-packages
+            # packages found by traversing the ".dependencies" lists in each
+            # package.json, starting from the main addon package, plus
+            # everything added by --extra-packages
             searchpath.extend(sorted(self.deps))
         for pkgname in searchpath:
             mi = self._find_module_in_package(pkgname, sections, reqname,
