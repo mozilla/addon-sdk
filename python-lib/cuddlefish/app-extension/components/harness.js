@@ -187,6 +187,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
                                  packaging: packaging,
                                  metadata: options.metadata,
                                  jetpackID: options.jetpackID,
+                                 name: options.name,
                                  globals: { packaging: packaging }
                                 });
     packaging.__setLoader(loader);

@@ -16,7 +16,8 @@ DEFAULT_ICON = 'icon.png'
 DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
-                  'contributors', 'license', 'url', 'icon', 'icon64', 'main' ]
+                  'contributors', 'license', 'url', 'icon', 'icon64', 'main',
+                  'directories']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -287,9 +288,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
                 lib_base = os.path.basename(dirname)
-                if lib_base == '.': 
-                    lib_base = 'root'
-                name = "-".join([prefix + cfg.name, lib_base])
+                name = "-".join([prefix + cfg.name, section])
                 validate_resource_hostname(name)
                 if name in build.resources:
                     raise KeyError('resource already defined', name)

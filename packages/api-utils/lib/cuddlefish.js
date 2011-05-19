@@ -134,6 +134,7 @@
                           rootPaths: options.rootPaths,
                           metadata: options.metadata,
                           jetpackID: options.jetpackID,
+                          name: options.name,
                           fs: options.fs,
                           defaultPrincipal: "system",
                           globals: globals,

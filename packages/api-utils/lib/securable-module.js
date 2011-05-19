@@ -183,7 +183,8 @@
          options.fs = new exports.CompositeFileSystem({
            fses: fses,
            metadata: options.metadata,
-           jetpackID: options.jetpackID
+           jetpackID: options.jetpackID,
+           name: options.name
          });
        } else
          options.fs = new exports.LocalFileSystem();
@@ -580,28 +581,43 @@
    exports.CompositeFileSystem = function CompositeFileSystem(options) {
      // We sort file systems in alphabetical order of a package name.
      this.fses = options.fses.sort(function(a, b) a.root > b.root);
-     this.prefix = "resource://" + options.jetpackID + "-";
+     this.jetpackID = options.jetpackID;
+     this.name = options.name;
      this.packages = options.metadata || {};
    };
 
    function isRelative(path) path.charAt(0) === "."
    function isNested(path) ~path.indexOf("/")
    function normalizePath(path) path.substr(-3) === ".js" ? path : path + ".js"
+   function relatifyPath(path) isRelative(path) ? path : "./" + path
+   function getPackageName(path) path.substr(0, path.indexOf("/"))
+   function getInPackagePath(path) path.substr(path.indexOf("/") + 1)
+   function isRelativeTo(path, base) 0 === path.indexOf(base)
+   function resolveTo(path, base) "." + path.substr(base.length)
 
    exports.CompositeFileSystem.prototype = {
+     getPackageURI: function getPackageURI(name) {
+       let uri = "resource://" + this.jetpackID + "-" + name + "-lib/";
+       return ios.newURI(uri, null, null).spec;
+     },
      resolveModule: function resolveModule(base, path) {
        // If it is relative path we don't need to search anything
        // as it should be module from the same package.
-       if (isRelative(path))
+       if (isRelative(path)) {
+         // If base is not provided then it's a main module with a relative
+         // path to we use `packageURI` as a base to resolve.
+         base = base || this.getPackageURI(this.name);
          return this.resolveRelative(base, path);
+       }
 
        // If path contains only one part then we treat if it as
        // require(PCKG/{{(package.json).main}}
        if (!isNested(path))
          return this.resolveMain(path) || this.searchModule(path);
 
-       // If non of the options worked we fall back to the searching.
-       return this.searchModule(path);
+       // If path contains more then one part than we try to interpret that
+       // as `require(PCKG/module)` first and fall back to search.
+       return this.resolveModuleFromPackage(path) || this.searchModule(path);
 
      },
      resolveRelative: function resolveRelative(base, path) {
@@ -624,12 +640,28 @@
        }
        return null;
      },
-     resolveMain: function resolvePackageModule(name) {
+     resolveModuleFromPackage: function resolveModuleFromPackage(path) {
+       let name = getPackageName(path);
        if (name in this.packages) {
-         let base = this.prefix + name + "-lib/";
-         let path = normalizePath(this.packages[name].main || "main");
-         // This will work only if directories.lib is "." or if main is not a
-         // relative path.
+         let base = this.getPackageURI(name);
+         return this.resolveRelative(base, getInPackagePath(path));
+       }
+       return null;
+     },
+     resolveMain: function resolveMain(name) {
+       if (name in this.packages) {
+         let base = this.getPackageURI(name);
+         let path = relatifyPath(this.packages[name].main || "main");
+
+         // We need to make sure to strip out directory from the main if it
+         // contains "lib" part. Unfortunately if main out of the lib folder
+         // requiring main module will fail as it will be out of the mapped
+         // resource URI.
+         let dirs = this.packages[name].directories;
+         let lib = relatifyPath(dirs ? dirs.lib || "./lib" : "./lib");
+         if (isRelativeTo(path, lib))
+           path = resolveTo(path, lib);
+
          return this.resolveRelative(base, path);
        }
        return null;

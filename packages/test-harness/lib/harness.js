@@ -343,6 +343,9 @@ var runTests = exports.runTests = function runTests(options) {
 
     sandbox = new cuddlefish.Loader({console: console,
                                      globals: globals,
+                                     metadata: packaging.options.metadata,
+                                     jetpackID: packaging.options.jetpackID,
+                                     name: packaging.options.name,
                                      packaging: packaging,
                                      __proto__: options});
     nextIteration();
