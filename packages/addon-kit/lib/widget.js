@@ -633,7 +633,10 @@ BrowserWindow.prototype = {
     // Finally insert our widget in the right toolbar and in the right position
     container.insertItem(id, nextNode, null, false);
     
+    // Update DOM in order to save position if we remove/readd the widget
     container.setAttribute("currentset", container.currentSet);
+    // Save DOM attribute in order to save position on new window opened
+    this.window.document.persist(container.id, "currentset");
   }
 }
 
@@ -767,6 +770,10 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
   let iframe = this.node.firstElementChild;
 
   let self = this;
+  // Cleanup previously created symbiont (in case we are update content)
+  if (this._symbiont)
+    this._symbiont.destroy();
+  
   this._symbiont = Trait.compose(Symbiont.resolve({
     _onContentScriptEvent: "_onContentScriptEvent-not-used"
   }), {

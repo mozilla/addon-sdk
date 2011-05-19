@@ -26,7 +26,7 @@ transition into or out of private browsing mode. For all other applications,
 
 <api name="start">
 @event
-Emitted when the browser starts private browsing mode.
+Emitted immediately after the browser enters private browsing mode.
 
     var pb = require("private-browsing");
     pb.on("start", function() {
@@ -37,7 +37,7 @@ Emitted when the browser starts private browsing mode.
 
 <api name="stop">
 @event
-Emitted when the browser stops private browsing mode.
+Emitted immediately after the browser exits private browsing mode.
 
     var pb = require("private-browsing");
     pb.on("stop", function() {

@@ -709,6 +709,39 @@ exports.testAttachWrappers = function (test) {
   });
 }
 
+exports['test window focus changes active tab'] = function(test) {
+  test.waitUntilDone();
+  let win1 = openBrowserWindow(function() {
+    let win2 = openBrowserWindow(function() {
+      let tabs = require("tabs");
+      tabs.on("activate", function onActivate() {
+        tabs.removeListener("activate", onActivate);
+        test.pass("activate was called on windows focus change.");
+        closeBrowserWindow(win1, function() {
+          closeBrowserWindow(win2, function() { test.done(); });
+        });
+      });
+      win1.focus();
+    }, "data:text/html,test window focus changes active tab</br><h1>Window #2");
+  }, "data:text/html,test window focus changes active tab</br><h1>Window #1");
+};
+
+exports['test ready event on new window tab'] = function(test) {
+  test.waitUntilDone();
+  let uri = encodeURI("data:text/html,Waiting for ready event!");
+
+  require("tabs").on("ready", function onReady(tab) {
+    if (tab.url === uri) {
+      require("tabs").removeListener("ready", onReady);
+      test.pass("ready event was emitted");
+      closeBrowserWindow(window, function() {
+        test.done();
+      });
+    }
+  });
+
+  let window = openBrowserWindow(function(){}, uri);
+};
 /******************* helpers *********************/
 
 // Helper for getting the active window

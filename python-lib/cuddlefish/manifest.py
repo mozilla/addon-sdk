@@ -588,26 +588,18 @@ def scan_requirements_with_grep(fn, lines):
 
     return requires
 
-MUST_ASK_FOR_CHROME =  """\
-To use chrome authority, as in line %d in:
- %s
- > %s
-You must enable it with:
-  let {Cc,Ci,Cu,Cr,Cm} = require('chrome');
-"""
+CHROME_ALIASES = [
+    (re.compile(r"Components\.classes"), "Cc"),
+    (re.compile(r"Components\.interfaces"), "Ci"),
+    (re.compile(r"Components\.utils"), "Cu"),
+    (re.compile(r"Components\.results"), "Cr"),
+    (re.compile(r"Components\.manager"), "Cm"),
+    ]
+OTHER_CHROME = re.compile(r"Components\.[a-zA-Z]")
 
-CHROME_ALIASES = ["Cc", "Ci", "Cu", "Cr", "Cm"]
-
-def scan_chrome(fn, lines, stderr):
-    filename = os.path.basename(fn)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        return False, False # these are the loader
+def scan_for_bad_chrome(fn, lines, stderr):
     problems = False
-    asks_for_chrome = set() # Cc,Ci in: var {Cc,Ci} = require("chrome")
-    asks_for_all_chrome = False # e.g.: var c = require("chrome")
-    uses_chrome = set()
-    uses_components = False
-    uses_chrome_at = []
+    old_chrome = set() # i.e. "Cc" when we see "Components.classes"
     for lineno,line in enumerate(lines):
         # note: this scanner is not obligated to spot all possible forms of
         # chrome access. The scanner is detecting voluntary requests for
@@ -617,53 +609,35 @@ def scan_chrome(fn, lines, stderr):
         for commentprefix in COMMENT_PREFIXES:
             if line.startswith(commentprefix):
                 iscomment = True
+                break
         if iscomment:
             continue
-        mo = re.search(REQUIRE_RE, line)
-        if mo:
-            if mo.group(1) == "chrome":
-                for alias in CHROME_ALIASES:
-                    if alias in line:
-                        asks_for_chrome.add(alias)
-                if not asks_for_chrome:
-                    asks_for_all_chrome = True
-        alias_in_this_line = False
-        for wanted in CHROME_ALIASES:
-            if re.search(r'\b'+wanted+r'\b', line):
-                alias_in_this_line = True
-                uses_chrome.add(wanted)
-                uses_chrome_at.append( (wanted, lineno+1, line) )
-        
-        if not alias_in_this_line and "Components." in line:
-            uses_components = True
-            uses_chrome_at.append( (None, lineno+1, line) )
-            problems = True
-            break
-    if uses_components or (uses_chrome - asks_for_chrome):
-        problems = True
+        old_chrome_in_this_line = set()
+        for (regexp,alias) in CHROME_ALIASES:
+            if regexp.search(line):
+                old_chrome_in_this_line.add(alias)
+        if not old_chrome_in_this_line:
+            if OTHER_CHROME.search(line):
+                old_chrome_in_this_line.add("components")
+        old_chrome.update(old_chrome_in_this_line)
+                
+    if old_chrome:
         print >>stderr, ""
-        print >>stderr, "To use chrome authority, as in:"
-        print >>stderr, " %s" % fn
-        for (alias, lineno, line) in uses_chrome_at:
-            if alias not in asks_for_chrome:
-                print >>stderr, " %d> %s" % (lineno, line)
-        print >>stderr, "You must enable it with something like:"
-        uses = sorted(uses_chrome)
-        if uses_components:
-            uses.append("components")
-        needed = ",".join(uses)
-        print >>stderr, '  const {%s} = require("chrome");' % needed
-    wants_chrome = bool(asks_for_chrome) or asks_for_all_chrome
-    return wants_chrome, problems
+        print >>stderr, "To use chrome authority, you need a line like this:"
+        needs = ",".join(sorted(old_chrome))
+        print >>stderr, '  const {%s} = require("chrome");' % needs
+        print >>stderr, "because things like 'Components.classes' will not be available"
+        problems = True
+    return problems
 
 def scan_module(fn, lines, stderr=sys.stderr):
-    # barfs on /\s+/ in context-menu.js
-    #requires = scan_requirements_with_jsscan(fn)
+    filename = os.path.basename(fn)
     requires = scan_requirements_with_grep(fn, lines)
-    requires.pop("chrome", None)
-    chrome, problems = scan_chrome(fn, lines, stderr)
-    if chrome:
-        requires["chrome"] = {}
+    if filename == "cuddlefish.js" or filename == "securable-module.js":
+        # these are the loader: don't scan for chrome
+        problems = False
+    else:
+        problems = scan_for_bad_chrome(fn, lines, stderr)
     return requires, problems
 
 

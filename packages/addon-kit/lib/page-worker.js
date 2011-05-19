@@ -88,8 +88,12 @@ const Page = Trait.compose(
     },
     
     _onChange: function _onChange(e) {
-      if ('contentURL' in e && this._frame)
+      if ('contentURL' in e && this._frame) {
+        // Cleanup the worker before injecting the content script in the new
+        // document
+        this._workerCleanup();
         this._initFrame(this._frame);
+      }
     }
   }
 );
