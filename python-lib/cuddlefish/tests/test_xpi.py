@@ -27,7 +27,7 @@ class Bug588119Tests(unittest.TestCase):
     def tearDown(self):
         if self.xpi:
             self.xpi.close()
-        if self.xpiname:
+        if self.xpiname and os.path.exists(self.xpiname):
             os.remove(self.xpiname)
 
     def testPackageWithImplicitIcon(self):

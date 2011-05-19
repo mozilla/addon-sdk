@@ -32,8 +32,11 @@ class PackagingTests(unittest.TestCase):
     def test_bug_614712(self):
         configs = get_configs('commonjs-naming', 'bug-614712-files')
         packages = configs.pkg_cfg.packages
-        self.assertEqual(packages['original-naming'].tests, ['tests'])
-        self.assertEqual(packages['commonjs-naming'].tests, ['test'])
+        base = os.path.join(tests_path, 'bug-614712-files', 'packages')
+        self.assertEqual(packages['original-naming'].tests,
+                         [os.path.join(base, 'original-naming', 'tests')])
+        self.assertEqual(packages['commonjs-naming'].tests,
+                         [os.path.join(base, 'commonjs-naming', 'test')])
 
     def test_basic(self):
         configs = get_configs('aardvark')
@@ -58,6 +61,45 @@ class PackagePath(unittest.TestCase):
         all_packages = set(pkg_cfg2.packages.keys())
         self.assertEqual(sorted(["jspath-one"]),
                          sorted(all_packages - base_packages))
+
+class Directories(unittest.TestCase):
+    # for bug 652227
+    packages_path = os.path.join(tests_path, "bug-652227-files", "packages")
+    def get_config(self, pkg_name):
+        pkg_path = os.path.join(tests_path, "bug-652227-files", "packages",
+                                pkg_name)
+        return packaging.get_config_in_dir(pkg_path)
+
+    def test_explicit_lib(self):
+        # package.json provides .lib
+        p = self.get_config('explicit-lib')
+        self.assertEqual(os.path.abspath(p.lib[0]),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "explicit-lib",
+                                                      "alt2-lib")))
+
+    def test_directories_lib(self):
+        # package.json provides .directories.lib
+        p = self.get_config('explicit-dir-lib')
+        self.assertEqual(os.path.abspath(p.lib[0]),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "explicit-dir-lib",
+                                                      "alt-lib")))
+
+    def test_lib(self):
+        # package.json is empty, but lib/ exists
+        p = self.get_config("default-lib")
+        self.assertEqual(os.path.abspath(p.lib[0]),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "default-lib",
+                                                      "lib")))
+
+    def test_root(self):
+        # package.json is empty, no lib/, so files are in root
+        p = self.get_config('default-root')
+        self.assertEqual(os.path.abspath(p.lib[0]),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "default-root")))
 
 if __name__ == "__main__":
     unittest.main()

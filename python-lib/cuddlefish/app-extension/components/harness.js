@@ -185,6 +185,9 @@ function buildHarnessService(rootFileSpec, dump, logError,
     var loader = new jsm.Loader({rootPaths: options.rootPaths.slice(),
                                  print: dump,
                                  packaging: packaging,
+                                 metadata: options.metadata,
+                                 jetpackID: options.jetpackID,
+                                 name: options.name,
                                  globals: { packaging: packaging }
                                 });
     packaging.__setLoader(loader);
