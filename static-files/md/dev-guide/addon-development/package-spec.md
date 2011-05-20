@@ -9,8 +9,8 @@ called `package.json`. This file is also referred to as the
 `package.json` may contain the following keys:
 
 * `name` - the name of the package. The package system will only load
-  one package with a given name. This name cannot contain spaces. The
-  name defaults to the name of the parent directory. If the package is
+  one package with a given name. This name cannot contain spaces or periods.
+  The name defaults to the name of the parent directory. If the package is
   ever built as an XPI and the `fullName` key is not present, this is
   used as the extension's `em:name` element in its `install.rdf`.
 
