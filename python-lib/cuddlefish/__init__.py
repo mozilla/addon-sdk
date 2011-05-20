@@ -743,7 +743,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                     "url.js",
                     "api-utils.js",
                     "memory.js",
-                    "self.js",
+                    "self-maker.js",
                     "es5.js"
                     ]:
             fn = os.path.join(api_utils.root_dir, api_utils.lib[0], mod)

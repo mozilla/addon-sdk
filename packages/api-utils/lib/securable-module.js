@@ -294,10 +294,11 @@
              // moduleData also wants mapName and mapSHA256, but they're
              // currently unused
            }
-           let selfModuleData = {uri: self.fs.resolveModule(null, "self")};
-           if (!selfModuleData.uri)
-             throw new Error("Unable to find self, from "+basePath);
-           let selfMod = loadFromModuleData(selfModuleData, "self"); // not cached
+           let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
+           if (!makerModData.uri)
+             throw new Error("Unable to find self-maker, from "+basePath);
+           let selfMod = loadFromModuleData(makerModData, "self-maker");
+           // selfMod is not cached
            return selfMod.makeSelfModule(moduleData);
          }
 
