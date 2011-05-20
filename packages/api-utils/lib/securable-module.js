@@ -294,6 +294,8 @@
              // moduleData also wants mapName and mapSHA256, but they're
              // currently unused
            }
+           if (false) // force scanner to copy self-maker.js into the XPI
+             require("self-maker"); 
            let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
            if (!makerModData.uri)
              throw new Error("Unable to find self-maker, from "+basePath);

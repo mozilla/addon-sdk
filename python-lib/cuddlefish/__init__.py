@@ -642,7 +642,25 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     from cuddlefish.manifest import build_manifest
     uri_prefix = "resource://%s" % unique_prefix
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False)
+    # Figure out what loader files should be scanned. This is normally
+    # computed inside packaging.generate_build_for_target(), by the first
+    # dependent package that defines a "loader" property in its package.json.
+    # This property is interpreted as a filename relative to the top of that
+    # file, and stored as a URI in build.loader . generate_build_for_target()
+    # cannot be called yet (it needs the list of used_deps that
+    # build_manifest() computes, but build_manifest() needs the list of
+    # loader files that it computes). We could duplicate or factor out this
+    # build.loader logic, but that would be messy, so instead we hard-code
+    # the choice of loader for manifest-generation purposes. In practice,
+    # this means that alternative loaders probably won't work with
+    # --strip-xpi.
+    assert packaging.DEFAULT_LOADER == "api-utils"
+    assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
+    cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
+                                      "lib/cuddlefish.js")
+    loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
+    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
+                              loader_modules)
     used_deps = manifest.get_used_packages()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
@@ -730,24 +748,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
+        # ask the manifest what files were used, so we can construct an XPI
+        # without the rest. This will include the loader (and everything it
+        # uses) because of the "loader_modules" starting points we passed to
+        # build_manifest earlier
         used_files = set(manifest.get_used_files())
-        # add the loader, and everything it needs. This is a
-        # manually-generated transitive closure of all the require()
-        # statements reachable from cuddlefish.js
-        api_utils = pkg_cfg.packages["api-utils"]
-        for mod in ["cuddlefish.js",
-                    "securable-module.js",
-                    "unload.js",
-                    "plain-text-console.js",
-                    "traceback.js",
-                    "url.js",
-                    "api-utils.js",
-                    "memory.js",
-                    "self-maker.js",
-                    "es5.js"
-                    ]:
-            fn = os.path.join(api_utils.root_dir, api_utils.lib[0], mod)
-            used_files.add(os.path.abspath(fn))
+
         if not options.strip_xpi:
             used_files = None # disables the filter
 
