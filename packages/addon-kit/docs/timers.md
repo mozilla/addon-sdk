@@ -3,7 +3,7 @@
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com] -->
 
-The `timer` module provides access to web-like timing functionality.
+The `timers` module provides access to web-like timing functionality.
 
 <api name="setTimeout">
 @function
