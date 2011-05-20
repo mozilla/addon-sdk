@@ -78,7 +78,7 @@ def validate_resource_hostname(name):
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
     if RESOURCE_PACKAGE_NAME_RE.match(name):
-        raise ValueError('package names cannot contain spaces: %s' % name)
+        raise ValueError('package names cannot contain spaces or periods: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
         raise ValueError('invalid resource hostname: %s' % name)
