@@ -18,7 +18,7 @@ DEFAULT_ICON64 = 'icon64.png'
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'contributors', 'license', 'url', 'icon', 'icon64']
 
-RESOURCE_PACKAGE_NAME_RE = re.compile(r'[\s\.]+')
+RESOURCE_BAD_PACKAGE_NAME_RE = re.compile(r'[\s\.]')
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -59,7 +59,7 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('bl arg')
       Traceback (most recent call last):
       ...
-      ValueError: package names cannot contain spaces: bl arg
+      ValueError: package names cannot contain spaces or periods: bl arg
 
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
@@ -77,7 +77,7 @@ def validate_resource_hostname(name):
         raise ValueError('package names need to be lowercase: %s' % name)
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
-    if RESOURCE_PACKAGE_NAME_RE.match(name):
+    if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
         raise ValueError('package names cannot contain spaces or periods: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
