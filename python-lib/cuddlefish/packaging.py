@@ -18,6 +18,8 @@ DEFAULT_ICON64 = 'icon64.png'
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'contributors', 'license', 'url', 'icon', 'icon64']
 
+RESOURCE_PACKAGE_NAME_RE = re.compile(r'[\s\.]+')
+
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
 class Error(Exception):
@@ -75,7 +77,7 @@ def validate_resource_hostname(name):
         raise ValueError('package names need to be lowercase: %s' % name)
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
-    if name.find(' ') >= 0:
+    if RESOURCE_PACKAGE_NAME_RE.match(name):
         raise ValueError('package names cannot contain spaces: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
