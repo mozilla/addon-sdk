@@ -265,7 +265,7 @@ class ManifestBuilder:
         if not fn.startswith(libdir):
             raise UnreachablePrefixError("Sorry, but the 'main' file (%s) in package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
                                          % (fn, pkg.name, pkglib))
-        name = fn[len(libdir):].lstrip("/")[:-len(".js")]
+        name = fn[len(libdir):].lstrip(SEP)[:-len(".js")]
         return name
 
 
