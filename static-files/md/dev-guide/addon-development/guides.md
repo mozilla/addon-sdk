@@ -8,3 +8,7 @@ How to write code that interacts with web content using content scripts.
 
 ### [The Program ID](dev-guide/addon-development/program-id.html) ###
 What the program ID is and why it matters to your add-on.
+
+### [Module Search](dev-guide/addon-development/module-search.html) ###
+How the `require()` function finds the module you asked for.
+

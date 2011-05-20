@@ -66,7 +66,10 @@ The Add-on SDK's CommonJS loader uses a set of rules to get from the
   for. This list always starts with FROM-PACKAGE, then the list of
   `.dependencies` from FROM-PACKAGE's `package.json` is appended. For
   example, if package A has a `package.json` with a `.dependencies` key that
-  includes modules B and C, the search-path for A will contain [A, B, C].
+  includes modules B and C, the search-path for A will contain [A, B, C]. If
+  the package does not have a `.dependencies`, then any search will first
+  check FROM-PACKAGE, then will check all known packages (in alphabetical
+  order).
 
 Then the lookup logic works as follows:
 
@@ -92,13 +95,12 @@ Then the lookup logic works as follows:
    that use `lib/`, this will look for e.g. `packages/A/lib/misc/foo.js`. If
    the first component does not match a known package name, processing
    continues with the package-search below.
-3. <s>If the module-name does not contain a slash "`/`", the loader
+3. If the module-name does not contain a slash "`/`", the loader
    attempts to interpret it as a package name (intending to use that
    package's "entry point"). If there is a package with that name, the `main`
    property is consulted, interpreted as a filename relative to the
    `package.json` file, and the resulting module is loaded. If there is no
    package by that name, processing continues with the package-search below.
-   </s> TODO (entry-points are not yet implemented)
 4. The module-name (either a single component, or multiple components
    joined by slashes) is used as the subject of a package-search. Each package
    in the search list is checked to see if the named module is present, and
