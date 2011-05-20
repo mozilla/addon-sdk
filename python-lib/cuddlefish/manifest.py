@@ -215,6 +215,16 @@ class ManifestBuilder:
             used.add(package)
         return sorted(used)
 
+    def get_used_files(self):
+        # returns all .js files that we reference, plus data/ files. You will
+        # need to add the loader, off-manifest files that it needs, and
+        # generated metadata.
+        for me in self.get_module_entries():
+            yield me.js_filename
+            if me.datamap:
+                for (zipname, absname) in me.datamap.files_to_copy:
+                    yield absname
+
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
         for me in self.get_module_entries():

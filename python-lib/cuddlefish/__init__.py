@@ -61,6 +61,11 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['xpi'])),
+        (("", "--strip-xpi",), dict(dest="strip_xpi",
+                                    help="remove unused modules from XPI",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['xpi'])),
         (("-p", "--profiledir",), dict(dest="profiledir",
                                        help=("profile directory to pass to "
                                              "app"),
@@ -725,12 +730,34 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
+        used_files = set(manifest.get_used_files())
+        # add the loader, and everything it needs. This is a
+        # manually-generated transitive closure of all the require()
+        # statements reachable from cuddlefish.js
+        api_utils = pkg_cfg.packages["api-utils"]
+        for mod in ["cuddlefish.js",
+                    "securable-module.js",
+                    "unload.js",
+                    "plain-text-console.js",
+                    "traceback.js",
+                    "url.js",
+                    "api-utils.js",
+                    "memory.js",
+                    "self.js",
+                    "es5.js"
+                    ]:
+            fn = os.path.join(api_utils.root_dir, api_utils.lib[0], mod)
+            used_files.add(os.path.abspath(fn))
+        if not options.strip_xpi:
+            used_files = None # disables the filter
+
         xpi_name = XPI_FILENAME % target_cfg.name
         print "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_name=xpi_name,
-                  harness_options=harness_options)
+                  harness_options=harness_options,
+                  limit_to=used_files)
     else:
         if options.use_server:
             from cuddlefish.server import run_app

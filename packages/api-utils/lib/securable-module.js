@@ -295,7 +295,9 @@
              // currently unused
            }
            let selfModuleData = {uri: self.fs.resolveModule(null, "self")};
-           let selfMod = loadFromModuleData(selfModuleData); // not cached
+           if (!selfModuleData.uri)
+             throw new Error("Unable to find self, from "+basePath);
+           let selfMod = loadFromModuleData(selfModuleData, "self"); // not cached
            return selfMod.makeSelfModule(moduleData);
          }
 
@@ -323,12 +325,15 @@
            // already loaded: return from cache
            return self.modules[moduleData.uri];
          }
-         return loadFromModuleData(moduleData); // adds to cache
+         return loadFromModuleData(moduleData, moduleName); // adds to cache
        }
 
-       function loadFromModuleData(moduleData) {
+       function loadFromModuleData(moduleData, moduleName) {
+         // moduleName is passed solely for error messages: by this point,
+         // everything is controlled by moduleData
          if (!moduleData.uri) {
-           throw new Error("loadFromModuleData with null URI");
+           throw new Error("loadFromModuleData with null URI, from basePath "
+                           +basePath+" importing ("+moduleName+")");
          }
          // any manifest-based permission checks have already been done
          let path = moduleData.uri;
