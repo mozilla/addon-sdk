@@ -169,7 +169,7 @@ class ModuleInfo:
                                                    self.js, self.docs)
 
 class ManifestBuilder:
-    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix,
+    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix, extra_modules,
                  stderr=sys.stderr):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
@@ -178,6 +178,7 @@ class ManifestBuilder:
         self.used_packagenames = set()
         self.stderr = stderr
         self.uri_prefix = uri_prefix
+        self.extra_modules = extra_modules
         self.modules = {} # maps ModuleInfo to URI in self.manifest
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
@@ -202,6 +203,13 @@ class ManifestBuilder:
                             tmi = ModuleInfo(package, "tests", tname[:-3],
                                              os.path.join(d, tname), None)
                             self.process_module(tmi)
+        # include files used by the loader
+        for em in self.extra_modules:
+            (pkgname, section, modname, js) = em
+            mi = ModuleInfo(self.pkg_cfg.packages[pkgname], section, modname,
+                            js, None)
+            self.process_module(mi)
+        
 
     def get_module_entries(self):
         return frozenset(self.manifest.values())
@@ -214,6 +222,16 @@ class ManifestBuilder:
             (package, section, module) = index
             used.add(package)
         return sorted(used)
+
+    def get_used_files(self):
+        # returns all .js files that we reference, plus data/ files. You will
+        # need to add the loader, off-manifest files that it needs, and
+        # generated metadata.
+        for me in self.get_module_entries():
+            yield me.js_filename
+            if me.datamap:
+                for (zipname, absname) in me.datamap.files_to_copy:
+                    yield absname
 
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
@@ -511,7 +529,8 @@ class ManifestBuilder:
                     return ModuleInfo(pkg, section, name, js, docs)
         return None
 
-def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests):
+def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
+                   extra_modules=[]):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -537,7 +556,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests):
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix, extra_modules)
     mxt.build(scan_tests)
     return mxt
 

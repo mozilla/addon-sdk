@@ -47,7 +47,8 @@
    var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
 
    if (global.require) {
-     // We're being loaded in a SecurableModule.
+     // We're being loaded in a SecurableModule. This call also tells the
+     // manifest-scanner that it ought to scan securable-module.js
      securableModule = require("securable-module");
    } else {
      var ios = Cc['@mozilla.org/network/io-service;1']
@@ -75,6 +76,8 @@
      }
    }
 
+   if (false) // force the manifest-scanner to copy es5.js into the XPI
+     require("es5"); 
    var localFS = new securableModule.LocalFileSystem(myURI);
    var es5path = localFS.resolveModule(null, "es5");
    var es5code = exports.es5code = localFS.getFile(es5path);
