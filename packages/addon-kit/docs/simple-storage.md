@@ -119,3 +119,7 @@ its guidance on best practices and policies.
   quota.
 </api>
 
+<api name="OverQuota">
+@event
+The module emits this event when your add-on's storage goes over its quota.
+</api>

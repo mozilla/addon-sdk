@@ -21,21 +21,6 @@ of Worker and their descendants expose all the public properties
 exposed by [EventEmitter][] along with additional public properties that
 are listed below.
 
-Content workers may emit two types of events:
-
-####"message"#####
-Event allows the content worker to receive messages from the enclosed content
-content scripts. Calling `postMessage` function from the one of the content
-scripts will asynchronously emit 'message' event on the worker.
-
-####"error"####
-Event allows the content worker to react on an uncaught runtime script error
-that occurs in one of the content scripts.
-
-####"detach"####
-This event fires when the document associated with this worker is unloaded or
-the worker's `destroy()` method is called.
-
 **Example**
 
     const workers = require("content/worker");
@@ -106,7 +91,35 @@ The URL of the content.
 @property {object}
 If this worker is attached to a content document, returns the related 
 [tab](packages/addon-kit/docs/tabs.html).
+</api>
 
+<api name="message">
+@event
+This event allows the content worker to receive messages from its associated
+content scripts. Calling the `self.postMessage()` function from a content
+script will asynchronously emit the `message` event on the corresponding
+worker.
+
+@argument {value}
+The event listener is passed the message, which must be
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">serializable to JSON</a>.
+</api>
+
+<api name="error">
+@event
+This event allows the content worker to react to an uncaught runtime script
+error that occurs in one of the content scripts.
+
+@argument {Error}
+The event listener is passed a single argument which is an
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
+<api name="detach">
+@event
+This event is emitted when the document associated with this worker is unloaded
+or the worker's `destroy()` method is called.
 </api>
 
 </api>

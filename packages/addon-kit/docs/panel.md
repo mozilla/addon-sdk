@@ -19,31 +19,17 @@ and the content remains loaded when a panel is hidden, so it is possible
 to keep a panel around in the background, updating its content as appropriate
 in preparation for the next time it is shown.
 
+Your add-on can receive notifications when a panel is shown or hidden by
+listening to its `show` and `hide` events.
+
 Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
-those scripts via an asynchronous event emitter API.  See
+those scripts either using the `message` event or by using user-defined
+events. See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
-Events
-------
-
-Panels emit the following types of
-[events](dev-guide/addon-development/events.html).
-
-### message ###
-
-This event is emitted when the panel's content scripts post a message.
-Listeners are passed the message as their first and only argument.
-
-### show ###
-
-This event is emitted when the panel is shown.
-
-### hide ###
-
-This event is emitted when the panel is hidden.
 
 Examples
 --------
@@ -118,11 +104,11 @@ Creates a panel.
     This property is optional and defaults to "end".
 
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Include this to listen to the panel's `message` event.
   @prop [onShow] {function}
-    An optional "show" event listener.  See Events above.
+    Include this to listen to the panel's `show` event.
   @prop [onHide] {function}
-    An optional "hide" event listener.  See Events above.
+    Include this to listen to the panel's `hide` event.
 </api>
 
 <api name="port">
@@ -252,4 +238,39 @@ The new height of the panel in pixels.
 @param listener {function}
   The listener function that was registered.
 </api>
+
+<api name="show">
+@event
+This event is emitted when the panel is shown.
+</api>
+
+<api name="hide">
+@event
+This event is emitted when the panel is hidden.
+</api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this panel. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the panel's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in one of the
+panel's content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
 </api>

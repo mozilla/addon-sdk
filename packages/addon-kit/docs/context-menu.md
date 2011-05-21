@@ -377,16 +377,19 @@ A labeled menu item that can perform an action when clicked.
     passed the data that was passed to `postMessage`.  Ignored if the item is
     contained in a submenu.
 </api>
+
 <api name="label">
 @property {string}
   The menu item's label.  You can set this after creating the item to update its
   label later.
 </api>
+
 <api name="data">
 @property {string}
   An arbitrary value associated with the menu item during creation.  Currently
   this property is read-only.
 </api>
+
 <api name="context">
 @property {list}
   A list of declarative contexts for which the menu item will appear in the
@@ -394,28 +397,46 @@ A labeled menu item that can perform an action when clicked.
   called `context.remove()`.  This property is meaningful only for items
   contained in the top-level context menu.
 </api>
+
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
   item during creation.  This property is meaningful only for items contained in
   the top-level context menu.
 </api>
+
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
   item during creation.  This property is meaningful only for items contained in
   the top-level context menu.
 </api>
+
 <api name="destroy">
 @method
   Permanently removes the item from the top-level context menu.  If the item is
   not contained in the top-level context menu, this method does nothing.
 </api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this menu item. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the menu item's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
 </api>
 
 <api name="Menu">
 @class
 A labeled menu item that expands into a submenu.
+
 <api name="Menu">
 @constructor
   Creates a labeled menu item that expands into a submenu.
@@ -446,16 +467,19 @@ A labeled menu item that expands into a submenu.
     passed the data that was passed to `postMessage`.  Ignored if the item is
     contained in a submenu.
 </api>
+
 <api name="label">
 @property {string}
   The menu's label.  You can set this after creating the menu to update its
   label later.
 </api>
+
 <api name="items">
 @property {array}
   The menu items contained in the menu.  Currently the items in the menu cannot
   be changed by modifying this property.
 </api>
+
 <api name="context">
 @property {list}
   A list of declarative contexts for which the menu will appear in the context
@@ -463,23 +487,40 @@ A labeled menu item that expands into a submenu.
   `context.remove()`.  This property is meaningful only for menus contained in
   the top-level context menu.
 </api>
+
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
   during creation.  This property is meaningful only for menus contained in the
   top-level context menu.
 </api>
+
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
   during creation.  This property is meaningful only for menus contained in the
   top-level context menu.
 </api>
+
 <api name="destroy">
 @method
   Permanently removes the menu from the top-level context menu.  If the menu is
   not contained in the top-level context menu, this method does nothing.
 </api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this menu item. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the menu item's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
 </api>
 
 <api name="Separator">
