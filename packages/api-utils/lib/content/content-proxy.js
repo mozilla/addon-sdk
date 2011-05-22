@@ -78,8 +78,7 @@ function generateWrappedToNativeClosure(fun, originalObject, name) {
       return result;
       
     } catch(e) {
-      console.log("Exception calling native method '"+(name?name:'#closure#')+"'("+args.join(', ')+"):\n"+e);
-      console.log("__isWrappedProxy" in args[0]);
+      //console.log("Exception calling native method '"+(name?name:'#closure#')+"'("+args.join(', ')+"):\n"+e);
       throw e;
     }
   };
