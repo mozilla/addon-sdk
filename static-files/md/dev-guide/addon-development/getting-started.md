@@ -3,10 +3,6 @@
 This tutorial provides a practical step by step introduction to developing
 add-ons with the SDK.
 
-### [Installation](dev-guide/addon-development/installation.html) ###
-Explains the prerequisites for running the SDK and how to install
-it.
-
 ### [A Simple Add-on](dev-guide/addon-development/implementing-simple-addon.html) ###
 Takes you through the process of implementing, running, and packaging a simple
 add-on.

@@ -1,7 +1,8 @@
 # Tutorials #
 
 ### [Getting Started](dev-guide/addon-development/getting-started.html) ###
-Takes you through installing the SDK and creating a simple add-on.
+In this tutorial we'll implement a simple add-on and introduce the main
+concepts in the SDK.
 
 ### [Introducing the APIs](dev-guide/addon-development/api-intro.html) ###
 An introduction to the SDK APIs.
