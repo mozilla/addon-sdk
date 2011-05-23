@@ -237,7 +237,7 @@ exports.AddonProcess = function createAddonProcess(options) {
                      "sendMessage('core:exception', e); }");
 
   process.send("addInjectedSandboxScript",
-               require("cuddlefish").es5code);
+               require("cuddlefish").shimsCode);
 
   return process;
 };
