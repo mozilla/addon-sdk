@@ -179,7 +179,7 @@ API.
 
 This module provides your add-on with persistent storage.
 
-### [self](packages/api-utils/docs/self.html) ###
+### [self](packages/addon-kit/docs/self.html) ###
 
 Using this module you can access any files you have included in your add-on's
 `data` directory.
