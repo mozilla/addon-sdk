@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const es5code = require('cuddlefish').es5code;
+const { shims } = require('cuddlefish');
 const { Trait } = require('traits');
 const { EventEmitter, EventEmitterTrait } = require('events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -199,8 +199,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
     );
 
-    // Shimming natives in sandbox so that they support ES5 features
-    Cu.evalInSandbox(es5code.contents, sandbox, JS_VERSION, es5code.filename);
+    // Overriding / Injecting some natives into sandbox.
+    Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
 
     let window = worker._window;
     let publicAPI = this._public;
