@@ -301,7 +301,8 @@ exports['test tab worker on message'] = function(test) {
             if (this.tab.url === url1) {
               worker1 = this;
               tabs.open({ url: url2, inBackground: true });
-            } else if (this.tab.url === url2) {
+            }
+            else if (this.tab.url === url2) {
               mod.destroy();
               worker1.tab.close();
               worker1.destroy();
