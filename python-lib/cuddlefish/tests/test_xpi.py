@@ -99,6 +99,7 @@ class SmallXPI(unittest.TestCase):
                      ("three-deps", "three-a", "lib", "main.js"),
                      ("three-deps", "three-b", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "main.js"),
+                     ("three-deps", "three-c", "lib", "sub", "foo.js"),
                      ]]
         self.failUnlessEqual(sorted(used_files), sorted(expected))
         used_deps = m.get_used_packages()
@@ -133,6 +134,7 @@ class SmallXPI(unittest.TestCase):
                     "resources/p-three-b-lib/main.js",
                     "resources/p-three-c-lib/",
                     "resources/p-three-c-lib/main.js",
+                    "resources/p-three-c-lib/sub/foo.js",
                     # notably absent: p-three-a-lib/unused.js
                     ]
         # showing deltas makes failures easier to investigate

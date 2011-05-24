@@ -297,6 +297,9 @@ class ManifestBuilder:
             main = main[:-len(".js")]
         if main.startswith("./"):
             main = main[len("./"):]
+        # package.json must always use "/", but on windows we'll replace that
+        # with "\" before using it as an actual filename
+        main = os.sep.join(main.split("/"))
         paths = [os.path.join(root_dir, main+".js")]
         if check_lib_dir is not None:
             paths.append(os.path.join(root_dir, check_lib_dir, main+".js"))
@@ -514,16 +517,19 @@ class ManifestBuilder:
         return None
 
     def _find_module_in_package(self, pkgname, sections, name, looked_in):
+        # require("a/b/c") should look at ...\a\b\c.js on windows
+        filename = os.sep.join(name.split("/"))
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
-                js = os.path.join(pkg.root_dir, sdir, name+".js")
+                js = os.path.join(pkg.root_dir, sdir, filename+".js")
                 looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
-                    maybe_docs = os.path.join(pkg.root_dir, "docs", name+".md")
+                    maybe_docs = os.path.join(pkg.root_dir, "docs",
+                                              filename+".md")
                     if section == "lib" and os.path.exists(maybe_docs):
                         docs = maybe_docs
                     return ModuleInfo(pkg, section, name, js, docs)
