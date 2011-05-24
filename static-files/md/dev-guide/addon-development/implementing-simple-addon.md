@@ -41,7 +41,7 @@ First, `cfx init` creates the directory structure your add-on needs:
 
 * `/data` contains resources such as icons or strings. You can access the
 content of the `data` subdirectory from within your add-on's code using the
-Add-on SDK's [`self`](packages/api-utils/docs/self.html) module.
+Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
 
 * `/doc` contains any documentation for your add-on.
 
