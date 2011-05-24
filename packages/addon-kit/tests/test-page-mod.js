@@ -233,7 +233,7 @@ exports.testEventEmitter = function(test) {
             "worked",
             value,
             "EventEmitter API works!"
-          );          
+          );
           if (callbackDone)
             callbackDone();
           else
@@ -253,7 +253,7 @@ exports.testEventEmitter = function(test) {
 
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
-  
+
   let tabs = require("tabs");
   let tab;
   let pageMod = new require("page-mod").PageMod({
@@ -265,12 +265,56 @@ exports.testRelatedTab = function(test) {
       test.done();
     }
   });
-  
+
   tabs.open({
     url: "about:",
     onOpen: function onOpen(t) {
       tab = t;
     }
   });
-  
-}
+
+};
+
+exports['test tab worker on message'] = function(test) {
+  test.waitUntilDone();
+
+  let { browserWindows } = require("windows");
+  let tabs = require("tabs");
+  let { PageMod } = require("page-mod");
+
+  let url1 = "data:text/html,<title>#1</title><h1>worker#1.tab</h1>";
+  let url2 = "data:text/html,<title>#2</title><h1>worker#2.tab</h1>";
+  let worker1 = null;
+
+  let mod = PageMod({
+    include: "data:text/html,*",
+    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('#1');",
+    onAttach: function onAttach(worker) {
+      worker.on("message", function onMessage() {
+        this.tab.attach({
+          contentScriptWhen: "ready",
+          contentScript: "self.postMessage({ url: window.location.href, title: document.title });",
+          onMessage: function onMessage(data) {
+            test.assertEqual(this.tab.url, data.url, "location is correct");
+            test.assertEqual(this.tab.title, data.title, "title is correct");
+            if (this.tab.url === url1) {
+              worker1 = this;
+              tabs.open({ url: url2, inBackground: true });
+            }
+            else if (this.tab.url === url2) {
+              mod.destroy();
+              worker1.tab.close();
+              worker1.destroy();
+              worker.tab.close();
+              worker.destroy();
+              test.done();
+            }
+          }
+        });
+      });
+    }
+  });
+
+  tabs.open(url1);
+};
