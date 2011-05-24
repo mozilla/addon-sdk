@@ -199,6 +199,36 @@ TestRunner.prototype = {
     }
   },
 
+  assertNotStrictEqual: function assertNotStrictEqual(a, b, message) {
+    if (a !== b) {
+      if (!message)
+        message = "a !== b !== " + uneval(a);
+      this.pass(message);
+    } else {
+      var equality = uneval(a) + " === " + uneval(b);
+      if (!message)
+        message = equality;
+      else
+        message += " (" + equality + ")";
+      this.fail(message);
+    }
+  },
+
+  assertStrictEqual: function assertStrictEqual(a, b, message) {
+    if (a === b) {
+      if (!message)
+        message = "a === b === " + uneval(a);
+      this.pass(message);
+    } else {
+      var inequality = uneval(a) + " !== " + uneval(b);
+      if (!message)
+        message = inequality;
+      else
+        message += " (" + inequality + ")";
+      this.fail(message);
+    }
+  },
+
   done: function done() {
     if (!this.isDone) {
       this.isDone = true;
