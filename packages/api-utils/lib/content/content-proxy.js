@@ -348,7 +348,12 @@ function handlerMaker(obj) {
     has: function(name) {
       //console.log("has "+name+" ? ");
       if (name == "___proxy") return false;
-      return name in obj || name in expando || name in overload || name == "__isWrappedProxy";
+      if (isEventName(name)) {
+        // Xraywrappers throw exception when we try to access expando attributes
+        // even on "name in wrapper". So avoid doing it!
+        return name in expando;
+      }
+      return name in obj || name in overload || name == "__isWrappedProxy";
     },
     hasOwn: function(name) {
       console.log("hasOwn "+name+" ? ");
