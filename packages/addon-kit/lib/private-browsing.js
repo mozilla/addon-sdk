@@ -90,5 +90,6 @@ Object.defineProperty(exports, "isActive", {
 exports.activate = function activate() privateBrowsing.isActive = true;
 exports.deactivate = function deactivate() privateBrowsing.isActive = false;
 exports.on = privateBrowsing.on;
+exports.once = privateBrowsing.once;
 exports.removeListener = privateBrowsing.removeListener;
 
