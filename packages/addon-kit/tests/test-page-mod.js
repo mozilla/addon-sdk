@@ -282,8 +282,8 @@ exports['test tab worker on message'] = function(test) {
   let tabs = require("tabs");
   let { PageMod } = require("page-mod");
 
-  let url1 = "data:text/html,<title>#1</title><h1>worker#1.tab</h1>";
-  let url2 = "data:text/html,<title>#2</title><h1>worker#2.tab</h1>";
+  let url1 = "data:text/html,<title>tab1</title><h1>worker1.tab</h1>";
+  let url2 = "data:text/html,<title>tab2</title><h1>worker2.tab</h1>";
   let worker1 = null;
 
   let mod = PageMod({
