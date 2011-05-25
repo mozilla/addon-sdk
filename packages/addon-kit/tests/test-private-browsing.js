@@ -164,6 +164,39 @@ if (pbService) {
     pb.on("start", onStart2);
     pbService.privateBrowsingEnabled = true;
   };
+
+  exports["test activate private mode via handler"] = function(test) {
+    const tabs = require("tabs");
+
+    test.waitUntilDone();
+    function onReady(tab) {
+      if (tab.url == "about:robots")
+        tab.close(function() pb.activate());
+    }
+    function cleanup(tab) {
+      if (tab.url == "about:") {
+        tabs.removeListener("ready", cleanup);
+        tab.close(function onClose() {
+          test.done();
+        });
+      }
+    }
+
+    tabs.on("ready", onReady);
+    pb.once("start", function onStart() {
+      test.pass("private mode was activated");
+      pb.deactivate();
+    });
+    pb.once("stop", function onStop() {
+      test.pass("private mode was deactivated");
+      tabs.removeListener("ready", onReady);
+      tabs.on("ready", cleanup);
+    });
+    tabs.once("open", function onOpen() {
+      tabs.open("about:robots");
+    });
+    tabs.open("about:");
+  };
 }
 else {
   // tests for the case where private browsing doesn't exist
