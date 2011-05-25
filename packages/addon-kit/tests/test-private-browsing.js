@@ -59,16 +59,20 @@ if (pbService) {
                 "private-browsing.isActive is correct after modifying PB service");
   };
 
-
   // tests that activating does put the browser into private browsing mode
   exports.testActivateDeactivate = function (test) {
+    test.waitUntilDone();
+    pb.once("start", function onStart() {
+      test.assertEqual(pbService.privateBrowsingEnabled, true,
+                       "private browsing mode was activated");
+      pb.deactivate();
+    });
+    pb.once("stop", function onStop() {
+      test.assertEqual(pbService.privateBrowsingEnabled, false,
+                       "private browsing mode was deactivate");
+      test.done();
+    });
     pb.activate();
-    test.assertEqual(pbService.privateBrowsingEnabled, true,
-                     "private-browsing.activate() enables private browsing mode");
-
-    pb.deactivate();
-    test.assertEqual(pbService.privateBrowsingEnabled, false,
-                     "private-browsing.deactivate() disables private browsing mode");
   };
 
   exports.testStart = function(test) {
@@ -148,11 +152,12 @@ if (pbService) {
       pb.removeListener("stop", onStop);
 
       pb.deactivate();
+      pb.once("stop", function () {
+        test.assertEqual(pbService.privateBrowsingEnabled, false);
+        test.assertEqual(pb.isActive, false);
 
-      test.assertEqual(pbService.privateBrowsingEnabled, false);
-      test.assertEqual(pb.isActive, false);
-
-      test.done();
+        test.done();
+      });
     }
 
     pb.on("start", onStart);
