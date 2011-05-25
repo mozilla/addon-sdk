@@ -53,6 +53,8 @@ if (require("xul-app").is("Firefox")) {
               getService(Ci.nsIPrivateBrowsingService);
 }
 
+function toggleMode(value) pbService.privateBrowsingEnabled = !!value
+
 const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
     // Binding method to instance since it will be used with `setTimeout`.
@@ -79,7 +81,10 @@ const privateBrowsing = EventEmitter.compose({
   get isActive() this._isActive,
   set isActive(value) {
     if (pbService)
-      pbService.privateBrowsingEnabled = !!value;
+      // We do toggle private browsing mode asynchronously in order to
+      // workaround Bug 659629. Also it is not so bad since with switch is
+      // asynchronous anyway.
+      setTimeout(toggleMode, 0, value),
   },
   _isActive: false
 })()
