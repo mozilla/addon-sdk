@@ -84,7 +84,7 @@ const privateBrowsing = EventEmitter.compose({
       // We do toggle private browsing mode asynchronously in order to
       // workaround Bug 659629. Also it is not so bad since with switch is
       // asynchronous anyway.
-      setTimeout(toggleMode, 0, value),
+      setTimeout(toggleMode, 0, value)
   },
   _isActive: false
 })()
