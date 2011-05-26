@@ -99,10 +99,10 @@ contents with the following:
         // When we receive the message, call the Google Translate API with the
         // selected text and replace it with the translation.
         onMessage: function (text) {
-          if (text.length == 0) {
+          if (text.length === 0) {
             throw ("Text to translate must not be empty");
           }
-          console.log("input: " + text)
+          console.log("input: " + text);
           var req = request.Request({
             url: "http://ajax.googleapis.com/ajax/services/language/translate",
             content: {
@@ -112,7 +112,7 @@ contents with the following:
             },
             onComplete: function (response) {
               translated = response.json.responseData.translatedText;
-              console.log("output: " + translated)
+              console.log("output: " + translated);
               selection.text = translated;
             }
           });

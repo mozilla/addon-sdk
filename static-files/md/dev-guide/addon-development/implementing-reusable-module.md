@@ -25,7 +25,7 @@ In the `lib` directory under your translator's root, create a new file called
 
     // Define the 'translate' function using Request
     function translate(text, callback) {
-      if (text.length == 0) {
+      if (text.length === 0) {
         throw ("Text to translate must not be empty");
       }
       var req = request.Request({
