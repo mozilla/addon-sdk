@@ -230,6 +230,24 @@ tests.testAnchorAndArrow = function(test) {
   
 };
 
+tests.testPanelTextColor = function(test) {
+  test.waitUntilDone();
+  let html = "<html><head><style>body {color: yellow}</style></head>" +
+             "<body><p>Foo</p></body></html>";
+  let panel = Panel({
+    contentURL: "data:text/html," + encodeURI(html),
+    contentScript: "self.port.emit('color', " +
+                   "window.getComputedStyle(document.body.firstChild, null). " +
+                   "       getPropertyValue('color'));"
+  });
+  panel.port.on("color", function (color) {
+    test.assertEqual(color, "rgb(255, 255, 0)",
+      "The panel text color style is preserved when a style exists.");
+    panel.destroy();
+    test.done();
+  });
+};
+
 function makeEventOrderTest(options) {
   let expectedEvents = [];
 
