@@ -2,7 +2,7 @@
 
 ## require(what?) ##
 
-The Add-on SDK uses [CommonJS](devguide/addon-development/commonjs.html)
+The Add-on SDK uses [CommonJS](dev-guide/addon-development/commonjs.html)
 modules, in which all functionality is acquired by using the `require()`
 function. The first argument to `require()` is a "module name" which roughly
 indicates what kind of functionality is desired.
@@ -33,7 +33,7 @@ packages is a directory with a `package.json` file that contains metadata
 about the package.
 
 As described in the
-[Package Specification](devguide/addon-development/package-spec.html), code
+[Package Specification](dev-guide/addon-development/package-spec.html), code
 modules are usually placed in the `lib/` subdirectory of a package, but the
 `directories` key can be used to override this (e.g. to put the modules in
 the package's root directory instead of `lib/`). The `dependencies` key is
