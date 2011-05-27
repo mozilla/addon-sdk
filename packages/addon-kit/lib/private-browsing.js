@@ -81,10 +81,10 @@ const privateBrowsing = EventEmitter.compose({
   get isActive() this._isActive,
   set isActive(value) {
     if (pbService)
-      // We do toggle private browsing mode asynchronously in order to
-      // workaround Bug 659629. Also it is not so bad since with switch is
-      // asynchronous anyway.
-      setTimeout(toggleMode, 0, value)
+      // We toggle private browsing mode asynchronously in order to work around
+      // bug 659629.  Since private browsing transitions are asynchronous
+      // anyway, this doesn't significantly change the behavior of the API.
+      setTimeout(toggleMode, 0, value);
   },
   _isActive: false
 })()
