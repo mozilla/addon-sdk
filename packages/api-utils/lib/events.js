@@ -70,7 +70,7 @@ const eventEmitter =  {
     let listeners = this._listeners(type);
     if (0 > listeners.indexOf(listener))
       listeners.push(listener);
-    return this._public;
+    return this._public || this;
   },
 
   /**
@@ -102,7 +102,7 @@ const eventEmitter =  {
         index = listeners.indexOf(listener);
     if (0 <= index)
       listeners.splice(index, 1);
-    return this._public;
+    return this._public || this;
   },
 
   /**
@@ -143,7 +143,7 @@ const eventEmitter =  {
    */
   _emit: function _emit(type, event) {
     let args = Array.slice(arguments);
-    args.unshift(this._public);
+    args.unshift(this._public || this);
     return this._emitOnObject.apply(this, args);
   },
 
