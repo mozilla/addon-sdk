@@ -212,7 +212,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   close: function close(callback) {
     if (callback)
-      this.on(EVENTS.close.name, callback);
+      this.once(EVENTS.close.name, callback);
     this._window.gBrowser.removeTab(this._tab);
   }
 });
