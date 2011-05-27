@@ -70,7 +70,9 @@ const eventEmitter =  {
     let listeners = this._listeners(type);
     if (0 > listeners.indexOf(listener))
       listeners.push(listener);
-    return this._public;
+    // Use of `_public` is required by the legacy traits code that will go away
+    // once bug-637633 is fixed.
+    return this._public || this;
   },
 
   /**
@@ -102,7 +104,9 @@ const eventEmitter =  {
         index = listeners.indexOf(listener);
     if (0 <= index)
       listeners.splice(index, 1);
-    return this._public;
+    // Use of `_public` is required by the legacy traits code, that will go away
+    // once bug-637633 is fixed.
+    return this._public || this;
   },
 
   /**
@@ -143,7 +147,9 @@ const eventEmitter =  {
    */
   _emit: function _emit(type, event) {
     let args = Array.slice(arguments);
-    args.unshift(this._public);
+    // Use of `_public` is required by the legacy traits code that will go away
+    // once bug-637633 is fixed.
+    args.unshift(this._public || this);
     return this._emitOnObject.apply(this, args);
   },
 
