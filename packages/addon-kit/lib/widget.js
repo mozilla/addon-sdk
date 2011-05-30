@@ -78,6 +78,7 @@ const { Loader, Symbiont } = require("content");
 const timer = require("timer");
 const { Cortex } = require('cortex');
 const windowsAPI = require("windows");
+const unload = require("unload");
 
 // Data types definition
 const valid = {
@@ -360,7 +361,9 @@ const Widget = function Widget(options) {
   w._initWidget(options);
   
   // Return a Cortex of widget in order to hide private attributes like _onEvent
-  return Cortex(w);
+  let _public = Cortex(w);
+  unload.ensure(_public, "destroy");
+  return _public;
 }
 exports.Widget = Widget;
 
@@ -482,7 +485,7 @@ let browserManager = {
   // there are open windows.
   init: function () {
     let windowTracker = new (require("window-utils").WindowTracker)(this);
-    require("unload").ensure(windowTracker);
+    unload.ensure(windowTracker);
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.

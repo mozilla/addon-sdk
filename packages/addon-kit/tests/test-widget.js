@@ -35,6 +35,15 @@ exports.testConstructor = function(test) {
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
   
+  // Test automatic widget destroy on unload
+  let loader = test.makeSandboxedLoader();
+  let widgetsFromLoader = loader.require("widget");
+  let widgetStartCount = widgetCount();
+  let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
+  test.assertEqual(widgetCount(), widgetStartCount + 1, "widget has been correctly added");
+  loader.unload();
+  test.assertEqual(widgetCount(), widgetStartCount, "widget has been destroyed on module unload");
+  
   // Test nothing
   test.assertRaises(
     function() widgets.Widget({}),
