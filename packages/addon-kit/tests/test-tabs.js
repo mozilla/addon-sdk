@@ -680,7 +680,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
 
 
 exports.testAttachWrappers = function (test) {
-  // Check that content script has access to unwrapped values
+  // Check that content script has access to unwrapped values through unsafeWindow
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
@@ -692,15 +692,13 @@ exports.testAttachWrappers = function (test) {
       onReady: function (tab) {
         let worker = tab.attach({
           contentScript: 'try {' +
-                         '  self.postMessage(globalJSVar);' +
-                         '  self.postMessage(window.globalJSVar);' +
+                         '  self.postMessage(unsafeWindow.globalJSVar);' +
                          '} catch(e) {' +
                          '  self.postMessage(e.message);' +
                          '}',
           onMessage: function (msg) {
             test.assertEqual(msg, true, "Worker has access to javascript content globals ("+count+")");
-            if (count++==1)
-              closeBrowserWindow(window, function() test.done());
+            closeBrowserWindow(window, function() test.done());
           }
         });
       }

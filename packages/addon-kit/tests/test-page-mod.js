@@ -44,16 +44,16 @@ exports.testPageMod2 = function(test) {
       include: "about:*",
       contentScript: [
         'new ' + function contentScript() {
-          window.AUQLUE = function() { return 42; }
+          unsafeWindow.AUQLUE = function() { return 42; }
           try {
-            window.AUQLUE()
+            unsafeWindow.AUQLUE()
           }
           catch(e) {
             throw new Error("PageMod scripts executed in order");
           }
         },
         'new ' + function contentScript() {
-          window.test = true;
+          unsafeWindow.test = true;
         }
       ]
     }], function(win, done) {
@@ -79,7 +79,7 @@ exports.testPageModIncludes = function(test) {
       include: include,
       contentScript: 'new ' + function() {
         self.on("message", function(msg) {
-          window[msg] = true;
+          unsafeWindow[msg] = true;
         });
       },
       // The testPageMod callback with test assertions is called on 'end',
@@ -174,12 +174,12 @@ exports.testCommunication2 = function(test) {
       include: "about:*",
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
-        window.AUQLUE = function() { return 42; }
+        unsafeWindow.AUQLUE = function() { return 42; }
         window.addEventListener('load', function listener() {
           self.postMessage('onload');
         }, false);
         self.on("message", function() {
-          self.postMessage(window.test)
+          self.postMessage(unsafeWindow.test)
         });
       },
       onAttach: function(worker) {

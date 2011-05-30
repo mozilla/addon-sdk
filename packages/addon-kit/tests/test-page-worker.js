@@ -18,8 +18,7 @@ tests.testSimplePageCreation = function(test) {
   });
 }
 
-/* Tests that the window and document objects exposed to the content symbiont
-   are the unwrapped versions of their respective DOM objects. */
+/* Tests that we can have access to unwrapped objects through unsafeWindow */
 tests.testUnwrappedDOM = function(test) {
   test.waitUntilDone();
 
@@ -27,8 +26,8 @@ tests.testUnwrappedDOM = function(test) {
     allow: { script: true },
     contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
     contentScript: "window.addEventListener('load', function () " +
-                   "self.postMessage([typeof(document.getElementById), " +
-                   "typeof(window.scrollTo)]), true)",
+                   "self.postMessage([typeof(unsafeWindow.document.getElementById), " +
+                   "typeof(unsafeWindow.scrollTo)]), true)",
     onMessage: function (message) {
       test.assertEqual(message[0],
                        "number",
@@ -131,7 +130,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
   let content = "data:text/html,<script>window.scrollTo=3;</script>";
   let page = Page({
     contentURL: content,
-    contentScript: "self.postMessage(typeof window.scrollTo)",
+    contentScript: "self.postMessage(typeof unsafeWindow.scrollTo)",
     contentScriptWhen: "end",
     onMessage: step0
   });
@@ -243,27 +242,12 @@ tests.testAllowScript = function(test) {
 
   let page = Page({
     onMessage: function(message) {
-      test.assert(message, "Script is allowed to run by default.");
-      test.done();
-    },
-    contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "self.postMessage('foo' in window)",
-    contentScriptWhen: "ready"
-  });
-}
-
-tests.testAllowScript = function(test) {
-
-  test.waitUntilDone();
-
-  let page = Page({
-    onMessage: function(message) {
       test.assert(message, "Script runs when allowed to do so.");
       test.done();
     },
     allow: { script: true },
     contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "self.postMessage(('foo' in window) && window.foo == 3)",
+    contentScript: "self.postMessage(('foo' in unsafeWindow) && unsafeWindow.foo == 3)",
     contentScriptWhen: "ready"
   });
 }
