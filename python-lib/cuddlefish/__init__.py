@@ -657,7 +657,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     assert packaging.DEFAULT_LOADER == "api-utils"
     assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
     cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
-                                      "lib/cuddlefish.js")
+                                      "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
     manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
                               loader_modules)
