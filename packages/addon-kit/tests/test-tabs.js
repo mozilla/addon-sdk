@@ -680,6 +680,40 @@ exports.testAttachOnMultipleDocuments = function (test) {
 
 
 exports.testAttachWrappers = function (test) {
+  // Check that content script has access to wrapped values by default
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let document = "data:text/html,<script>var globalJSVar = true; " +
+                   "                       document.getElementById = 3;</script>";
+    let count = 0;
+    
+    tabs.open({
+      url: document,
+      onReady: function (tab) {
+        let worker = tab.attach({
+          contentScript: 'try {' +
+                         '  self.postMessage(!("globalJSVar" in window));' +
+                         '  self.postMessage(typeof window.globalJSVar == "undefined");' +
+                         '} catch(e) {' +
+                         '  self.postMessage(e.message);' +
+                         '}',
+          onMessage: function (msg) {
+            test.assertEqual(msg, true, "Worker has wrapped objects ("+count+")");
+            if (count++ == 1)
+              closeBrowserWindow(window, function() test.done());
+          }
+        });
+      }
+    });
+    
+  });
+}
+
+/*
+// We do not offer unwrapped access to DOM since bug 601295 landed
+// See 660780 to track progress of unwrap feature
+exports.testAttachUnwrapped = function (test) {
   // Check that content script has access to unwrapped values through unsafeWindow
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
@@ -706,6 +740,7 @@ exports.testAttachWrappers = function (test) {
     
   });
 }
+*/
 
 exports['test window focus changes active tab'] = function(test) {
   test.waitUntilDone();

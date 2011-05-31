@@ -22,31 +22,38 @@ exports.testProxy = function (test) {
         let document = wrapped.document;
         let body = document.body;
         
-        // Check mozMatchesSelector xraywrappers bug:
+        // Check mozMatchesSelector XrayWrappers bug:
         // mozMatchesSelector returns bad results when we are not calling it from the node itself
-        // SEE BUG 658909: mozMatchesSelector returns incorrect results with Xraywrappers
-        test.assert(document.createElement( "div" ).mozMatchesSelector("div"), "mozMatchesSelector works while being called from the node");
-        test.assert(document.documentElement.mozMatchesSelector.call( document.createElement( "div" ), "div" ), "mozMatchesSelector works while being called from a function reference to document.documentElement.mozMatchesSelector.call");
+        // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
+        test.assert(document.createElement( "div" ).mozMatchesSelector("div"), 
+                    "mozMatchesSelector works while being called from the node");
+        test.assert(document.documentElement.mozMatchesSelector.call(
+                      document.createElement( "div" ), 
+                      "div" 
+                    ), 
+                    "mozMatchesSelector works while being called from a " +
+                    "function reference to " +
+                    "document.documentElement.mozMatchesSelector.call");
         
-        // If we add a "____proxy" attribute on xraywrappers in order to store
+        // If we add a "____proxy" attribute on XrayWrappers in order to store
         // the related proxy to create an unique proxy for each wrapper;
         // we end up setting this attribute to prototype objects :x
         // And so, instances created with such prototype will be considered 
         // as equal to the prototype ...
-        //   // Internal method that return the proxy for a given xraywrapper
+        //   // Internal method that return the proxy for a given XrayWrapper
         //   function proxify(obj) {
         //     if (obj._proxy) return obj._proxy;
         //     return obj._proxy = Proxy.create(...);
         //   }
         //   
-        //   // Get a proxy of a xraywrapper prototype object
+        //   // Get a proxy of a XrayWrapper prototype object
         //   let proto = proxify(xpcProto);
         //   
         //   // Use this proxy as a prototype 
         //   function Constr() {}
         //   Constr.proto = proto;
         //   
-        //   // Try tro create an instance using this prototype
+        //   // Try to create an instance using this prototype
         //   let xpcInstance = new Constr();
         //   let wrapper = proxify(xpcInstance)
         //
@@ -58,12 +65,12 @@ exports.testProxy = function (test) {
         let event = document.createEvent('HTMLEvents');
         test.assertNotEqual(event, proto, "Event should not be equal to its prototype");
         event.initEvent('dataavailable', true, true);
-        test.assertEqual(event.type, 'dataavailable', "Event are working fine");
+        test.assertEqual(event.type, 'dataavailable', "Events are working fine");
         
-        // Xraywrappers has a bug when you set an attribute on it,
-        // in some cases, it creates an unecessarry wrappers that introduce
-        // a different object that refer to the same original object
-        // Check that our wrappers doesn't reproduce this bug
+        // XrayWrappers has a bug when you set an attribute on it,
+        // in some cases, it creates an unnecessary wrapper that introduces
+        // a different object that refers to the same original object
+        // Check that our wrappers don't reproduce this bug
         // SEE BUG 658560: Fix identity problem with CrossOriginWrappers
         let o = {sandboxObject:true};
         wrapped.nested = o;
@@ -85,9 +92,9 @@ exports.testProxy = function (test) {
         test.assert(wrapped.localStorage, "has access to localStorage");
         wrapped.localStorage.name = 1;
         test.assertEqual(wrapped.localStorage.name, 1, "localStorage appears to work");
-        test.assertEqual(win.localStorage.name, 1, "localStorage really work");
+        test.assertEqual(win.localStorage.name, 1, "localStorage really works");
         wrapped.localStorage.clear();
-        test.assertEqual(wrapped.localStorage.name, undefined, "localStorage really,really work");
+        test.assertEqual(wrapped.localStorage.name, undefined, "localStorage really, really works");
         
         // Check sessionStorage:
         /*
@@ -113,18 +120,18 @@ exports.testProxy = function (test) {
           return originalToString.apply(this.valueOf(proxy.UNWRAP_ACCESS_KEY));
         };
         */
-        // <object>, <embed> and others tag return typeof 'function'
+        // <object>, <embed> and other tags return typeof 'function'
         let flash = document.createElement("object");
-        test.assertEqual(typeof flash, "function", "<object> are typeof 'function'");
-        test.assertEqual(flash.toString(), "[object HTMLObjectElement]", "<object> are HTMLObjectElement");
-        test.assert("setAttribute" in flash, "<object> have a setAttribute method");
+        test.assertEqual(typeof flash, "function", "<object> is typeof 'function'");
+        test.assertEqual(flash.toString(), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
+        test.assert("setAttribute" in flash, "<object> has a setAttribute method");
         flash.setAttribute("classid", "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000");
         // This is how jquery call toString:
         test.assertEqual(win.Object.prototype.toString.call(""), "[object String]", "strings are strings");
         test.assertEqual(win.Object.prototype.toString.call({}), "[object Object]", "objects are objects");
         // We do not have any workaround this particular use of toString
         // applied on <object> elements. So disable this test until we found one!
-        //test.assertEqual(win.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> are HTMLObjectElement");
+        //test.assertEqual(win.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
         function f() {};
         test.assertEqual(Object.prototype.toString.call(f), "[object Function]", "functions are functions 1");
         test.assertEqual(win.Object.prototype.toString.call(f), "[object Function]", "functions are functions 2");
@@ -187,7 +194,7 @@ exports.testProxy = function (test) {
         
         // XMLHttpRequest doesn't support XMLHttpRequest.apply,
         // that may break our proxy code
-        test.assert(wrapped.XMLHttpRequest(), "we are able to intanciate XMLHttpRequest object");
+        test.assert(wrapped.XMLHttpRequest(), "we are able to instantiate XMLHttpRequest object");
         
         // Verify that inherited prototype function like initEvent 
         // are handled correctly. (e2.type will return an error if it's not the case)
@@ -215,15 +222,15 @@ exports.testProxy = function (test) {
         input.onclick = onclick;
         test.assertEqual(input.onclick, onclick, "on* attributes are equal to original function set");
         
-        let addEventListennerCalled = false;
+        let addEventListenerCalled = false;
         let expandoCalled = false;
         input.addEventListener("click", function onclick(event) {
           input.removeEventListener("click", onclick, true);
           
-          test.assert(!addEventListennerCalled, "closure given to addEventListener is called once");
-          if (addEventListennerCalled)
+          test.assert(!addEventListenerCalled, "closure given to addEventListener is called once");
+          if (addEventListenerCalled)
             return;
-          addEventListennerCalled = true;
+          addEventListenerCalled = true;
           
           test.assert(!event.target.ownerDocument.defaultView.documentGlobal, "event object is still wrapped and doesn't expose document globals");
           test.assert("__isWrappedProxy" in event.target, "event object is a proxy");

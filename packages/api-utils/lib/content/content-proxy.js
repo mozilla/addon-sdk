@@ -1,92 +1,101 @@
 const { Ci, Cc } = require("chrome");
 
 /*
- * Access key that allow to unwrap proxy wrappers though: 
- *   let xpcwrapper = proxywrapper.valueOf(UNWRAP_ACCESS_KEY);
+ * Access key that allows privileged code to unwrap proxy wrappers through 
+ * valueOf:
+ *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  */
 const UNWRAP_ACCESS_KEY = {};
 exports.UNWRAP_ACCESS_KEY = UNWRAP_ACCESS_KEY;
 
-/*
- * Returns a closure that wrap arguments before calling the given `fun` function.
- * Used to be given to native methods when they except a function, so
- * when this function is called, all arguments are wrapped.
+ /**
+ * Returns a closure that wraps arguments before calling the given function,
+ * which can be given to native functions that accept a function, such that when
+ * the closure is called, the given function is called with wrapped arguments.
+ *
+ * @param fun {Function}
+ *        the function for which to create a closure wrapping its arguments
+ * @param obj {Object}
+ *        target object from which `fun` comes from
+ *        (optional, for debugging purpose)
+ * @param name {String}
+ *        name of the attribute from which `fun` is binded on `obj`
+ *        (optional, for debugging purpose)
  *
  * Example:
  *   function contentScriptListener(event) {}
- *   let wrapper = generateNativeToWrappedClosure(contentScriptListener);
+ *   let wrapper = ContentScriptFunctionWrapper(contentScriptListener);
  *   xray.addEventListener("...", wrapper, false);
  * -> Allow to `event` to be wrapped
  */
-function generateNativeToWrappedClosure(fun, obj, name) {
+function ContentScriptFunctionWrapper(fun, obj, name) {
   if ("___proxy" in fun && typeof fun.___proxy == "function")
     return fun.___proxy;
+  
   let wrappedFun = function () {
-    try {
-      let args = [];
-      for(let i = 0, l = arguments.length; i < l; i++)
-        args.push(wrap(arguments[i]));
-      
-      //console.log("Called from native :"+obj+"."+name);
-      //console.log(">args "+arguments[0]?arguments[0].target:null);
-      //console.log(fun);
-      
-      return fun.apply(getProxyForObject(this), args);
-    } catch(e) {
-      //console.log("Exception when calling content script from native: "+e+"\n"+e.stack+"\n");
-      throw e;
-    }
+    let args = [];
+    for (let i = 0, l = arguments.length; i < l; i++)
+      args.push(wrap(arguments[i]));
+    
+    //console.log("Called from native :"+obj+"."+name);
+    //console.log(">args "+arguments[0]?arguments[0].target:null);
+    //console.log(fun);
+    
+    return fun.apply(getProxyForObject(this), args);
   };
   
   Object.defineProperty(fun, "___proxy", {value : wrappedFun,
-                             writable : false,
-                             enumerable : false,
-                             configurable : true});
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : true});
   
   return wrappedFun;
 }
 
-/*
- * Returns a closure that unwrap arguments before calling `fun` function.
- * Used to build wrapped content script function that call a native method.
- * (Native methods only works with non-wrapped nodes.)
+/**
+ * Returns a closure that unwraps arguments before calling the `fun` function,
+ * which can be used to build a wrapper for a native function that accepts
+ * wrapped arguments, since native function only accept unwrapped arguments.
+ *
+ * @param fun {Function}
+ *        the function to wrap
+ * @param originalObject {Object}
+ *        target object from which `fun` comes from
+ *        (optional, for debugging purpose)
+ * @param name {String}
+ *        name of the attribute from which `fun` is binded on `originalObject`
+ *        (optional, for debugging purpose)
  *
  * Example:
- *   wrapper.appendChild = generateWrappedToNativeClosure(xray.appendChild, xray);
+ *   wrapper.appendChild = NativeFunctionWrapper(xray.appendChild, xray);
  *   wrapper.appendChild(anotherWrapper);
  * -> Allow to call xray.appendChild with unwrapped version of anotherWrapper
  */
-function generateWrappedToNativeClosure(fun, originalObject, name) {
+function NativeFunctionWrapper(fun, originalObject, name) {
   return function () {
     let args = [];
-    try {
-      let obj = this.valueOf ? this.valueOf(UNWRAP_ACCESS_KEY) : this;
-      
-      for(let i = 0, l = arguments.length; i < l; i++)
-        args.push( unwrap(arguments[i], obj, name) );
-      
-      //if (name!="toString")
-      //console.log(">>calling native ["+(name?name:'#closure#')+"]: \n"+fun.apply+"\n"+obj+"\n("+args.join(', ')+")\nthis :"+obj+"from:"+originalObject+"\n");
-      
-      // Need to use Function.prototype.apply.apply because XMLHttpRequest 
-      // is a function (typeof return 'function') and fun.apply is null :/
-      let unwrapResult = Function.prototype.apply.apply(fun, [obj, args]);
-      let result = wrap( unwrapResult, obj, name);
-      
-      //console.log("<< "+rr+" -> "+r);
-      
-      return result;
-      
-    } catch(e) {
-      //console.log("Exception calling native method '"+(name?name:'#closure#')+"'("+args.join(', ')+"):\n"+e);
-      throw e;
-    }
+    let obj = this.valueOf ? this.valueOf(UNWRAP_ACCESS_KEY) : this;
+    
+    for (let i = 0, l = arguments.length; i < l; i++)
+      args.push( unwrap(arguments[i], obj, name) );
+    
+    //if (name != "toString")
+    //console.log(">>calling native ["+(name?name:'#closure#')+"]: \n"+fun.apply+"\n"+obj+"\n("+args.join(', ')+")\nthis :"+obj+"from:"+originalObject+"\n");
+    
+    // Need to use Function.prototype.apply.apply because XMLHttpRequest 
+    // is a function (typeof return 'function') and fun.apply is null :/
+    let unwrapResult = Function.prototype.apply.apply(fun, [obj, args]);
+    let result = wrap(unwrapResult, obj, name);
+    
+    //console.log("<< "+rr+" -> "+r);
+    
+    return result;
   };
 }
 
 /*
  * Unwrap a JS value that comes from the content script.
- * Mainly convert proxy wrapper to XPCNativeWrapper.
+ * Mainly converts proxy wrapper to XPCNativeWrapper.
  */
 function unwrap(value, obj, name) {
   //console.log("unwrap : "+value+" ("+name+")");
@@ -103,11 +112,11 @@ function unwrap(value, obj, name) {
     return value;
   }
   
-  // In case of functions we need to return a wrapper that convert native 
-  // arguments applied to this function into proxy.
+  // In case of functions we need to return a wrapper that converts native 
+  // arguments applied to this function into proxies.
   // Do this only for functions coming from content script.
   if (type == "function")
-    return generateNativeToWrappedClosure(value, obj, name);
+    return ContentScriptFunctionWrapper(value, obj, name);
   
   if (["string", "number", "boolean"].indexOf(type) !== -1)
     return value;
@@ -127,23 +136,25 @@ function wrap(value, obj, name, debug) {
     // (it should not happen)
     while("__isWrappedProxy" in value) {
       console.trace();
-      console.log("This object is already wrapped: "+value+" (accessed from attribute "+name+")");
+      console.warn("This object is already wrapped: " + value + 
+                   " (accessed from attribute " + name + ")");
       value = value.valueOf(UNWRAP_ACCESS_KEY);
     }
     if (XPCNativeWrapper.unwrap(value) !== value)
       return getProxyForObject(value);
     // In case of Event, HTMLCollection or NodeList or ???
     // XPCNativeWrapper.unwrap(value) === value
-    // but it's still a xraywrapper so let's build a proxy
+    // but it's still a XrayWrapper so let's build a proxy
     /*
     if (!toString.match(/Collection|Event|NodeList|Storage|NamedNodeMap/)) {
       console.trace();
-      console.log("This object seems not to come from document: "+value+" (ie not an xraywrapper) name:"+name);
+      console.warn("This object seems not to come from document: " + value + 
+                   " (ie not an XrayWrapper) name:" + name);
     }*/
     return getProxyForObject(value);
   }
   if (type == "function")
-    return getProxyFunctionFor(value, generateWrappedToNativeClosure(value, obj, name));
+    return getProxyForFunction(value, NativeFunctionWrapper(value, obj, name));
   if (type == "string")
     return value;
   if (type == "number")
@@ -159,36 +170,36 @@ function wrap(value, obj, name, debug) {
  */
 function getProxyForObject(obj) {
   if (typeof obj != "object") {
-    console.log("Try to proxify something else than an object : " + typeof obj);
-    throw "Try to proxify something else than an object : " + typeof obj;
+    let msg = "tried to proxify something other than an object: " + typeof obj;
+    console.warn(msg);
+    throw msg;
   }
   if ("__isWrappedProxy" in obj) {
-    //console.log("return proxy");
     return obj;
   }
   // Check if there is a proxy cached on this wrapper,
   // but take care of prototype ___proxy attribute inheritance!
   if (obj && obj.___proxy && obj.___proxy.valueOf(UNWRAP_ACCESS_KEY) === obj) {
-    //console.log("return cache");
     return obj.___proxy;
   }
   
   let proxy = Proxy.create(handlerMaker(obj));
   
   Object.defineProperty(obj, "___proxy", {value : proxy,
-                             writable : true,
-                             enumerable : false,
-                             configurable : true});
+                                          writable : true,
+                                          enumerable : false,
+                                          configurable : true});
   return proxy;
 }
 
 /* 
  * Wrap a function from the document to a proxy wrapper
  */
-function getProxyFunctionFor(fun, callTrap) {
+function getProxyForFunction(fun, callTrap) {
   if (typeof fun != "function") {
-    console.log("Try to proxify a function that is not one : " + typeof fun);
-    throw "Try to proxify a function that is not one : " + typeof fun;
+    let msg = "tried to proxify something other than a function: " + typeof fun;
+    console.warn(msg);
+    throw msg;
   }
   if ("__isWrappedProxy" in fun)
     return obj;
@@ -198,15 +209,15 @@ function getProxyFunctionFor(fun, callTrap) {
   let proxy = Proxy.createFunction(handlerMaker(fun), callTrap);
   
   Object.defineProperty(fun, "___proxy", {value : proxy,
-                             writable : false,
-                             enumerable : false,
-                             configurable : false});
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : false});
   
   return proxy;
 }
 
 /* 
- * Check if an DOM attribute name is an event name
+ * Check if an DOM attribute name is a event name
  */
 function isEventName(id) {
   if (id.indexOf("on") != 0 || id.length == 2) 
@@ -322,20 +333,17 @@ function isEventName(id) {
 function handlerMaker(obj) {
   // Overloaded attributes dictionary
   let overload = {};
-  // Expando attributes dictionary (ie onclick, onfocus, on* ...)
+  // Expando attributes dictionary (i.e. onclick, onfocus, on* ...)
   let expando = {};
   return {
     // Fundamental traps
     getPropertyDescriptor:  function(name) {
-      //console.log("### getPropertyDescriptor : "+name);
       return Object.getOwnPropertyDescriptor(obj, name);
     },
     defineProperty: function(name, desc) {
-      //console.log("### defineProperty : "+name);
       return Object.defineProperty(obj, name, desc);
     },
     getOwnPropertyNames: function () {
-      //console.log("### getOwnPropertyNames");
       return Object.getOwnPropertyNames(obj);
     },
     delete: function(name) {
@@ -346,21 +354,18 @@ function handlerMaker(obj) {
     
     // derived traps
     has: function(name) {
-      //console.log("has "+name+" ? ");
       if (name == "___proxy") return false;
       if (isEventName(name)) {
-        // Xraywrappers throw exception when we try to access expando attributes
+        // XrayWrappers throw exception when we try to access expando attributes
         // even on "name in wrapper". So avoid doing it!
         return name in expando;
       }
       return name in obj || name in overload || name == "__isWrappedProxy";
     },
     hasOwn: function(name) {
-      console.log("hasOwn "+name+" ? ");
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      //console.log("get : "+obj+"."+name);
       
       if (name == "___proxy")
         return undefined;
@@ -368,7 +373,9 @@ function handlerMaker(obj) {
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
       if (name == "toString")
-        return wrap(obj.wrappedJSObject?obj.wrappedJSObject.toString:obj.toString, obj, name);
+        return wrap(obj.wrappedJSObject ? obj.wrappedJSObject.toString
+                                        : obj.toString,
+                    obj, name);
       
       // Offer a way to retrieve XrayWrapper from a proxified node through `valueOf`
       if (name == "valueOf")
@@ -378,19 +385,16 @@ function handlerMaker(obj) {
           return this;
         };
       
-      // Return overloaded values if there is one.
+      // Return overloaded value if there is one.
       // It allows to overload native methods like addEventListener that
       // are not saved, even on the wrapper itself.
-      // (And avoid that some methods like toSource to be returned here! [__proto__ test])
+      // (And avoid some methods like toSource from being returned here! [__proto__ test])
       if (name in overload && overload[name] != overload.__proto__[name] && name != "__proto__") {
-        //console.log("overloaded : "+name);
         return overload[name];
       }
       
-      // Catch exceptions thrown by XrayWrappers when we try to acces on* 
+      // Catch exceptions thrown by XrayWrappers when we try to access on* 
       // attributes like onclick, onfocus, ...
-      // List of event name to support:
-      // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#7616
       if (isEventName(name)) {
         //console.log("expando:"+obj+" - "+obj.nodeType);
         return name in expando ? expando[name].original : undefined;
@@ -445,10 +449,10 @@ function handlerMaker(obj) {
         }
       }
       
-      // Fix mozMatchesSelector uses that is broken on XraysWrappers
+      // Fix mozMatchesSelector uses that is broken on XrayWrappers
       // when we use document.documentElement.mozMatchesSelector.call(node, expr)
       // It's only working if we call mozMatchesSelector on the node itself.
-      // SEE BUG 658909: mozMatchesSelector returns incorrect results with Xraywrappers
+      // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
       if (typeof o == "function" && name == "mozMatchesSelector") {
         return wrap(function mozMatchesSelector(selectors) {
           return this.mozMatchesSelector(selectors);
@@ -463,7 +467,7 @@ function handlerMaker(obj) {
     set: function(receiver, name, val) {
       
       if (isEventName(name)) {
-        //console.log("SET on* attribute : "+name+" / "+name.replace(/^on/,"")+" / "+val+"/"+obj);
+        //console.log("SET on* attribute : " + name + " / " + val + "/" + obj);
         let shortName = name.replace(/^on/,"");
         
         // Unregister previously set listener
@@ -478,7 +482,7 @@ function handlerMaker(obj) {
         
         // Register a new listener
         let original = val;
-        val = generateNativeToWrappedClosure(val);
+        val = ContentScriptFunctionWrapper(val);
         expando[name] = val;
         val.original = original;
         obj.addEventListener(name.replace(/^on/, ""), val, true);
@@ -496,7 +500,6 @@ function handlerMaker(obj) {
       // TODO: check that DOM can't be updated by the document itself and so overloaded value becomes wrong
       //       but I think such behavior is limited to primitive type
       if ((typeof val == "function" || typeof val == "object") && name) {
-        //console.log("Overload : " + name);
         overload[name] = val;
       }
       
@@ -508,7 +511,6 @@ function handlerMaker(obj) {
       for each (name in Object.keys(obj)) {
         result.push(name);
       };
-      //console.log("enum : "+Object.keys(obj)+" -- "+result.join(', '));
       return result;
     },
     

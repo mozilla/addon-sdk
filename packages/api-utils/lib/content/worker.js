@@ -187,15 +187,14 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let window = worker._window;
     
     // Create the sandbox and bind it to window in order for content scripts to
-    // have access to all standards globals (window, document, ...)
+    // have access to all standard globals (window, document, ...)
     let sandbox = this._sandbox = new Cu.Sandbox(window, {
-        sandboxPrototype: proxy.create(window),
-        wantXrays: false
-      });
+      sandboxPrototype: proxy.create(window),
+      wantXrays: false
+    });
     Object.defineProperties(sandbox, {
       window: { get: function() sandbox },
-      top: { get: function() sandbox },
-      unsafeWindow: { get: function() window }
+      top: { get: function() sandbox }
     });
 
     let publicAPI = this._public;

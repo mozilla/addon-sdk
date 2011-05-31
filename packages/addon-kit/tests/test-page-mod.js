@@ -44,22 +44,27 @@ exports.testPageMod2 = function(test) {
       include: "about:*",
       contentScript: [
         'new ' + function contentScript() {
-          unsafeWindow.AUQLUE = function() { return 42; }
+          window.AUQLUE = function() { return 42; }
           try {
-            unsafeWindow.AUQLUE()
+            window.AUQLUE()
           }
           catch(e) {
             throw new Error("PageMod scripts executed in order");
           }
+          document.documentElement.setAttribute("first", "true");
         },
         'new ' + function contentScript() {
-          unsafeWindow.test = true;
+          document.documentElement.setAttribute("second", "true");
         }
       ]
     }], function(win, done) {
-      test.assertEqual(win.AUQLUE(), 42, "PageMod test #2: first script has run");
-      test.assertEqual(win.test, true, "PageMod test #2: second script has run");
-      test.assertEqual("AUQLUE" in win, true,
+      test.assertEqual(win.document.documentElement.getAttribute("first"),
+                       "true",
+                       "PageMod test #2: first script has run");
+      test.assertEqual(win.document.documentElement.getAttribute("second"),
+                       "true",
+                       "PageMod test #2: second script has run");
+      test.assertEqual("AUQLUE" in win, false,
                        "PageMod test #2: scripts get a wrapped window");
       done();
     });
@@ -70,7 +75,7 @@ exports.testPageModIncludes = function(test) {
   function createPageModTest(include, expectedMatch) {
     // Create an 'onload' test function...
     asserts.push(function(test, win) {
-      var matches = include in win;
+      var matches = include in win.localStorage;
       test.assert(expectedMatch ? matches : !matches,
                   "'" + include + "' match test, expected: " + expectedMatch);
     });
@@ -79,7 +84,7 @@ exports.testPageModIncludes = function(test) {
       include: include,
       contentScript: 'new ' + function() {
         self.on("message", function(msg) {
-          unsafeWindow[msg] = true;
+          window.localStorage[msg] = true;
         });
       },
       // The testPageMod callback with test assertions is called on 'end',
@@ -100,7 +105,7 @@ exports.testPageModIncludes = function(test) {
       createPageModTest("about:buildconfig", true)
     ],
     function (win, done) {
-      test.waitUntil(function () win["about:buildconfig"],
+      test.waitUntil(function () win.localStorage["about:buildconfig"],
                      "about:buildconfig page-mod to be executed")
           .then(function () {
             asserts.forEach(function(fn) {
@@ -174,12 +179,12 @@ exports.testCommunication2 = function(test) {
       include: "about:*",
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
-        unsafeWindow.AUQLUE = function() { return 42; }
+        document.documentElement.setAttribute('AUQLUE', 42);
         window.addEventListener('load', function listener() {
           self.postMessage('onload');
         }, false);
         self.on("message", function() {
-          self.postMessage(unsafeWindow.test)
+          self.postMessage(document.documentElement.getAttribute("test"))
         });
       },
       onAttach: function(worker) {
@@ -189,11 +194,11 @@ exports.testCommunication2 = function(test) {
         worker.on('message', function(msg) {
           if ('onload' == msg) {
             test.assertEqual(
-              42,
-              window.AUQLUE(),
+              '42',
+              window.document.documentElement.getAttribute('AUQLUE'),
               'PageMod scripts executed in order'
             );
-            window.test = 'changes in window';
+            window.document.documentElement.setAttribute('test', 'changes in window');
             worker.postMessage('get window.test')
           } else {
             test.assertEqual(
