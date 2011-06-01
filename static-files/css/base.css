@@ -1,7 +1,3 @@
-/*
-The file contains generic style rules, that don't depend on any special structure
-*/
-
 * {
   background: transparent;
   border: 0;
@@ -11,10 +7,6 @@ The file contains generic style rules, that don't depend on any special structur
   vertical-align: baseline;
 }
 
-html, body {
-  height: 100%;
-}
-
 html {
   background-color: #fff;
   background-image: url(../media/bg-header.png);
@@ -22,55 +14,56 @@ html {
   background-repeat: repeat-x;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
+  color: #444;
   font-size: 13px;
   line-height: 1.538em;
-  font-family: "helvetica neue",arial,helvetica,sans-serif;
+  margin: 0 auto;
+  min-width: 780px;
+  position: relative;
+  font-family: "helvetica neue", arial, helvetica, sans-serif;
   font-style: normal;
 }
 
-strong {
-  font-weight: bold;
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-h1 {
-  font-size: 2.571em;
-  line-height: 1em;
-  margin-bottom: .5833em;
-  margin-top: .1667em;
-  font-family: georgia,serif;
-  font-weight: normal;
+table, td, tr {
+  border: 1px black solid;
 }
 
-h2 {
-  color: #011234;
-  font-size: 2.154em;
-  font-weight: normal;
-  line-height: 1em;
-  margin-bottom: .5em;
-  margin-top: .5em;
-  font-family: georgia,serif;
-  font-style: italic;
+td {
+  padding: 0.5em;
 }
 
-h3 {
-  color: #011234;
-  font-size: 1.385em;
-  font-weight: normal;
-  line-height: 1.111em;
-  margin-bottom: .778em;
-  margin-top: 1.556em;
-  font-family: georgia,serif;
-  font-style: italic;
+/* Rule to fix quirks-mode inheritance behavior */
+
+table, caption {
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  font-variant: inherit;
 }
 
-h4 {
-  color: #235;
-  font-size: 1em;
+table.meta-table, .meta-table td, .meta-table tr {
+  vertical-align: top;
+  border: none;
+  padding: 0;
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  padding-right: 5em;
 }
 
-h5, h6 {
-  font-size: 1em;
+table.meta-table {
+  margin-top: 0.5em;
+  border-top: 1px dotted gray;
+  border-bottom: 1px dotted gray;
 }
 
 a:link {
@@ -88,17 +81,52 @@ a:hover, a:focus, a:active {
   text-decoration: underline;
 }
 
-pre,code, kbd, tt, samp, tt {
-  font-family: "andale mono",monospace;
+pre, code, kbd, tt, samp, tt {
+  font-family: "andale mono", monospace;
+}
+
+h1 {
+  font-size: 2.571em;
+  line-height: 1em;
+  margin-bottom: .5833em;
+  margin-top: .1667em;
+  font-family: Georgia, serif;
+  font-weight: normal;
+}
+
+h2 {
+  color: #011234;
+  font-size: 2.154em;
+  font-weight: normal;
+  line-height: 1em;
+  margin-bottom: .5em;
+  margin-top: .5em;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+h3 {
+  color: #011234;
+  font-size: 1.385em;
+  font-weight: normal;
+  line-height: 1.111em;
+  margin-bottom: .778em;
+  margin-top: 1.556em;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+h4 {
+  color: #235;
+  font-size: 1em;
+}
+
+h5, h6 {
+  font-size: 1em;
 }
 
 li {
   margin-left: 2em;
-}
-
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
 }
 
 ol {
@@ -118,4 +146,15 @@ ul ul, ol ol, ol ul, ul ol {
 p, ul, ol, dl, address, table, pre, form, fieldset {
   font-size: 1em;
   margin-bottom: 1.5em;
+}
+
+th, td {
+  text-align: left;
+}
+
+@font-face {
+  font-family: 'MetaBlack';
+  font-style: normal;
+  font-weight: bold;
+  src: url('https://www.mozilla.com/img/fonts/MetaWebPro-Black.woff') format('woff');
 }

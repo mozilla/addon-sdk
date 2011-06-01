@@ -1,14 +1,35 @@
-body {
-  min-width: 530px;         /* 2 x sidebar fullwidth + main-content padding */
+html, body {
+  min-width: 570px;         /* 2 x sidebar fullwidth + main-content padding */
+  height: 100%;
 }
 
-#container {
-  padding-left: 235px;      /* sidebar fullwidth -5(?) */
+#columns {
+  padding-left: 250px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/
-  padding-top: 10px;
+  padding-top: 40px;
+  min-height: 100%;
+  margin-bottom: 170px;
+  position: relative;
 }
 
-#container .column {
+.funnel .menu {
+  padding-right: 50px;     /* main-content padding*/
+}
+
+#mozilla-tab {
+  padding-right: 50px;     /* main-content padding*/
+}
+
+#site-header h1 a span {
+  top: 25px;
+  left: 45px;
+}
+
+#site-header h1 a {
+  padding-left: 45px;
+}
+
+#columns .column {
   position: relative;
   float: left;
 }
@@ -24,15 +45,15 @@ body {
 
 #sidebar {
   width: 200px;        /* sidebar usable width (fullwidth - padding) */
-  right: 280px;        /* sidebar fullwidth + main-content padding */
-  padding-left: 10px;
+  right: 300px;        /* sidebar fullwidth + main-content padding */
+  padding-left: 30px;
   padding-right: 20px;
   margin-left: -100%;
 }
 
 .api_reference h3, .api_reference  h4,
 .api_reference  h5, .api_reference  h6 {
-  overflow:auto;
+  overflow: auto;
  }
 
 #toc {
@@ -40,9 +61,15 @@ body {
   float: right;
   font-size: 0.9em;
   overflow: hidden;
-  margin-top: 40px;         /* to line up with sidebar: title-height + title padding */
+  margin-top: 0;
   margin-left: 20px;
   margin-bottom: 1em;
+}
+
+#toc a {
+  font-family: Georgia, serif;
+  font-weight: normal;
+  font-style: italic;
 }
 
 .title {
@@ -58,21 +85,8 @@ body {
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
   border-radius: 5px;
-}
-
-.sidebar-section {
-  background-color: #d1e8fd;
+  background: #e0effd;
   margin-bottom: 1.0em;
-}
-
-#footer {
-  background: #33559b url(../media/bg-footer.png) 0 0 repeat-x;
-  clear: both;
-  color: white;
-  display: block;
-  font-family: Georgia,serif;
-  min-width: 978px;
-  padding: 400px 0 0 0;
 }
 
 .aside {
@@ -103,6 +117,7 @@ body {
 #toc a[class = H4] {
   margin-left: 1.5em;
   font-family: "andale mono", monospace;
+  font-style: normal;
 }
 
 #toc a[class = H5] {
@@ -113,6 +128,7 @@ body {
 #toc a[class = H6] {
   margin-left: 3em;
   font-family: "andale mono", monospace;
+  font-style: normal;
 }
 
 .warning {
@@ -124,23 +140,13 @@ body {
   padding: 1em;
   border: solid 2px black;
   width: 75%;
-  background-color: #C63717;
+  background-color: #c63717;
   color: white;
 }
 
 .logo {
   margin-left: 5px;
-  float:left;
-}
-
-.title-text {
-  font-family: MetaBlack,'Trebuchet MS',sans-serif;
-  font-size: 1.7em;
-  font-weight: bold;
-  line-height: 1.4em;
-  padding-left: 0.2em;
-  margin-bottom: .2em;
-  margin-top: -0.3em;
+  float: left;
 }
 
 .meta-header {
@@ -184,47 +190,6 @@ body {
   white-space: pre;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table, td, tr {
-  border: 1px black solid;
-}
-
-td {
-  padding: 0.5em;
-}
-
-/* Rule to fix quirks-mode inheritance behavior */
-
-table, caption {
-  font-size: inherit;
-  font-weight: inherit;
-  font-style: inherit;
-  font-variant: inherit;
-}
-
-table.meta-table, .meta-table td, .meta-table tr {
-  vertical-align: top;
-  border: none;
-  padding: 0;
-  padding-top: 0.25em;
-  padding-bottom: 0.25em;
-  padding-right: 5em;
-}
-
-table.meta-table {
-  margin-top: 0.5em;
-  border-top: 1px dotted gray;
-  border-bottom: 1px dotted gray;
-}
-
-#footer .full-name {
-  margin-left: 0.5em;
-}
-
 #main-content h1 {
   font-size: 2.2em;
 }
@@ -235,7 +200,10 @@ table.meta-table {
 
 .sidebar-subsection-contents {
   display: none;
-  background: #F0F8FF;
+}
+
+.sidebar-subsection {
+  margin: 1px;
 }
 
 .always-show {
@@ -256,26 +224,27 @@ table.meta-table {
   padding-left: 25px;
 }
 
-.sidebar-section h2, .sidebar-section h3, .sidebar-section h4 {
+.sidebar-section h2, .sidebar-section h4 {
   padding-left: 10px;
 }
 
+.sidebar-section h3 {
+  padding-left: 5px;
+}
+
 .sidebar-section h2, .sidebar-section h3 {
-  background: #d1e8fd;
   padding-top: 5px;
   padding-bottom: 5px;
   margin: 0px;
-  background: #d1e8fd;
-  font-weight: bold;
   font-style: normal;
   font-family: arial, helvetica, sans-serif;
-  border-bottom-style: solid;
-  border-color: #a0d0fb;
-  border-width: 1px;
 }
 
 .sidebar-section h2 {
-  font-size: 1.2em;
+  background-color: #3b69b1;
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.4em;
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
   -webkit-border-radius-topleft: 5px;
@@ -286,25 +255,41 @@ table.meta-table {
   border-radius-topright: 5px;
 }
 
+.sidebar-section h2 a {
+  color: white;
+}
+
+.sidebar-section h2.current-page a {
+  color: #3b69b1;
+}
+
 .sidebar-section h3 {
-  font-size: 1.0em;
-  border-top-style: solid;
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.2em;
+}
+
+.divider {
+  border-style: solid;
+  border-top-width: 1px;
+  border-color: #a0d0fb;
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .sidebar-section h4 {
   font-weight: normal;
+  font-family: Georgia, serif;
+
 }
 
 .sidebar-section li {
+  font-family: Georgia, serif;
   margin-left: 0;
 }
 
-.current-section, #toc {
-  background: #F0F8FF;
-}
-
 .sidebar-section .current-page {
-  background: white;
+  background-color: white;
 }
 
 .image-center {
