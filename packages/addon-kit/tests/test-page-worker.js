@@ -167,7 +167,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
   function step0(message) {
     test.assertEqual(message, "3",
-                     "Correct type expected for allowScript - 3");
+                     "Correct value expected for allowScript - 3");
     test.assertEqual(page.contentURL, content,
                      "Correct content expected");
     page.removeListener('message', step0);
@@ -179,7 +179,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
   function step1(message) {
     test.assertEqual(message, "3",
-                     "Correct type expected for allowScript - 3");
+                     "Correct value expected for allowScript - 3");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step1);
     page.on('message', step2);
@@ -190,7 +190,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
   function step2(message) {
     test.assertEqual(message, "g",
-                     "Correct type expected for allowScript - g");
+                     "Correct value expected for allowScript - g");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step2);
     page.on('message', step3);
@@ -201,7 +201,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
   function step3(message) {
     test.assertEqual(message, "g",
-                     "Correct type expected for allowScript - g");
+                     "Correct value expected for allowScript - g");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step3);
     page.on('message', step4);
@@ -212,7 +212,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
   function step4(message) {
     test.assertEqual(message, "4",
-                     "Correct type expected for allowScript - 4");
+                     "Correct value expected for allowScript - 4");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     test.done();
   }

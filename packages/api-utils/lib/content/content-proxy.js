@@ -145,12 +145,6 @@ function wrap(value, obj, name, debug) {
     // In case of Event, HTMLCollection or NodeList or ???
     // XPCNativeWrapper.unwrap(value) === value
     // but it's still a XrayWrapper so let's build a proxy
-    /*
-    if (!toString.match(/Collection|Event|NodeList|Storage|NamedNodeMap/)) {
-      console.trace();
-      console.warn("This object seems not to come from document: " + value + 
-                   " (ie not an XrayWrapper) name:" + name);
-    }*/
     return getProxyForObject(value);
   }
   if (type == "function")
@@ -217,7 +211,7 @@ function getProxyForFunction(fun, callTrap) {
 }
 
 /* 
- * Check if an DOM attribute name is a event name
+ * Check if a DOM attribute name is an event name.
  */
 function isEventName(id) {
   if (id.indexOf("on") != 0 || id.length == 2) 
