@@ -467,6 +467,63 @@ exports.testConstructor = function(test) {
     }});
   });
   
+  // test window closing
+  tests.push(function testWindowClosing() {
+    // 1/ Create a new widget
+    let w1Opts = {
+      id:"first", 
+      label: "first widget", 
+      content: "first content",
+      contentScript: "self.port.on('event', function () self.port.emit('event'))"
+    };
+    let widget = testSingleWidget(w1Opts);
+    let windows = require("windows").browserWindows;
+    
+    // 2/ Retrieve a WidgetView for the initial browser window
+    let acceptDetach = false;
+    let mainView = widget.getView(windows.activeWindow);
+    test.assert(mainView, "Got first widget view");    
+    mainView.on("detach", function () {
+      // 8/ End of our test. Accept detach event only when it occurs after
+      // widget.destroy()
+      if (acceptDetach)
+        doneTest();
+      else
+        test.fail("View on initial window should not be destroyed");
+    });
+    mainView.port.on("event", function () {
+      // 7/ Receive event sent during 6/ and cleanup our test
+      acceptDetach = true;
+      widget.destroy();
+    });
+    
+    // 3/ First: open a new browser window
+    windows.open({
+      url: "about:blank",
+      onOpen: function(window) {
+        // 4/ Retrieve a WidgetView for this new window
+        let view = widget.getView(window);
+        test.assert(view, "Got second widget view");
+        view.port.on("event", function () {
+          test.fail("We should not receive event on the detach view");
+        });
+        view.on("detach", function () {
+          // The related view is destroyed
+          // 6/ Send a custom event
+          test.assertRaises(function () {
+              view.port.emit("event");
+            },
+            /The widget has been destroyed and can no longer be used./,
+            "emit on a destroyed view should throw");
+          widget.port.emit("event");
+        });
+        
+        // 5/ Destroy this window
+        window.close();        
+      }
+    });
+  });
+  
   tests.push(function testAddonBarHide() {
     // Hide the addon-bar
     browserWindow.setToolbarVisibility(container(), false);
