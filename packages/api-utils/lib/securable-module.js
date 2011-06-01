@@ -589,7 +589,8 @@
    exports.CompositeFileSystem = function CompositeFileSystem(options) {
      // We sort file systems in alphabetical order of a package name.
      this.fses = options.fses.sort(function(a, b) a.root > b.root);
-     this.jetpackID = options.jetpackID;
+     this.jetpackID = options.jetpackID.
+                              replace(/\@/g, '-at-').replace(/\./, '-dot-');
      this.name = options.name;
      this.packages = options.metadata || {};
    };
