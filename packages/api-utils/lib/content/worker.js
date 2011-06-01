@@ -49,6 +49,7 @@ const unload = require('unload');
 const observers = require("observer-service");
 const { Cortex } = require('cortex');
 const { Enqueued } = require('utils/function');
+const proxy = require('content/content-proxy');
 
 const JS_VERSION = '1.8';
 
@@ -182,27 +183,23 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // expose wrapped port, that exposes only public properties. 
     this._port._public = Cortex(this._port);
     
-    // XXX I think the principal should be `this._port._frame.contentWindow`,
-    // but script doesn't work correctly when I set it to that value.
-    // Events don't get registered; even dump() fails.
-    //
-    // FIXME: figure out the problem and resolve it, so we can restrict
-    // the sandbox to the same set of privileges the page has (plus any others
-    // it gets to access through the object that created it).
-    //
-    // XXX when testing `this._port.frame.contentWindow`, I found that setting
-    // the principal to its `this._port.frame.contentWindow.wrappedJSObject`
-    // resolved some test leaks; that was before I started clearing the
-    // principal of the sandbox on unload, though, so perhaps it is no longer
-    // a problem.
-    let sandbox = this._sandbox = new Cu.Sandbox(
-      Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
-    );
-
+    // We receive an unwrapped window, with raw js access
+    let window = worker._window;
+    
+    // Create the sandbox and bind it to window in order for content scripts to
+    // have access to all standard globals (window, document, ...)
+    let sandbox = this._sandbox = new Cu.Sandbox(window, {
+      sandboxPrototype: proxy.create(window),
+      wantXrays: false
+    });
+    Object.defineProperties(sandbox, {
+      window: { get: function() sandbox },
+      top: { get: function() sandbox }
+    });
+    
     // Overriding / Injecting some natives into sandbox.
     Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
-
-    let window = worker._window;
+    
     let publicAPI = this._public;
     
     // List of content script globals:
@@ -251,28 +248,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         configurable: true
       }
     });
-    
-    // Chain the global object for the sandbox to the global object for
-    // the frame.  This supports JavaScript libraries like jQuery that depend
-    // on the presence of certain properties in the global object, like window,
-    // document, location, and navigator.
-    sandbox.__proto__ = window;
-    // Alternate approach:
-    // Define each individual global on which JavaScript libraries depend
-    // in the global object of the sandbox.  This is hard to get right,
-    // since it requires a priori knowledge of the libraries developers use,
-    // and exceptions in those libraries aren't always reported.  It's also
-    // brittle, prone to breaking when those libraries change.  But it might
-    // make it easier to avoid namespace conflicts.
-    // In my testing with jQuery, I found that the library needed window,
-    // document, location, and navigator to avoid throwing exceptions,
-    // although even with those globals defined, the library still doesn't
-    // work, so it also needs something else about which it unfortunately does
-    // not complain.
-    // sandbox.window = window;
-    // sandbox.document = window.document;
-    // sandbox.location = window.location;
-    // sandbox.navigator = window.navigator;
 
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
