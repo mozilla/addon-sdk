@@ -151,7 +151,7 @@ class Server(object):
                 path = os.path.join(self.root, *parts)
                 url = urllib.pathname2url(path)
                 mimetype = guess_mime_type(url)
-                response = open(path, 'r').read()
+                response = open(path, 'rb').read()
         except IOError, e:
             if e.errno==errno.ENOENT:
                 return self._error('404 Not Found')
