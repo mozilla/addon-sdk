@@ -16,8 +16,8 @@ DEFAULT_ICON = 'icon.png'
 DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
-                  'contributors', 'license', 'url', 'icon', 'icon64', 'main',
-                  'directories']
+                  'contributors', 'license', 'homepage', 'icon', 'icon64',
+                  'main', 'directories']
 
 RESOURCE_BAD_PACKAGE_NAME_RE = re.compile(r'[\s\.]')
 

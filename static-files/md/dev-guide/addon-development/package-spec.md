@@ -30,7 +30,7 @@ called `package.json`. This file is also referred to as the
 
 * `contributors` - may be an Array of additional author Strings.
 
-* `url` - the URL of the package's website.
+* `homepage` - the URL of the package's website.
 
 * `icon` - the relative path from the root of the package to a
   PNG file containing the icon for the package. By default, this
