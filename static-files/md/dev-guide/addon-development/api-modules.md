@@ -179,7 +179,7 @@ API.
 
 This module provides your add-on with persistent storage.
 
-### [self](packages/api-utils/docs/self.html) ###
+### [self](packages/addon-kit/docs/self.html) ###
 
 Using this module you can access any files you have included in your add-on's
 `data` directory.
@@ -193,6 +193,3 @@ your add-on includes an icon or some HTML content to display in a
 
 This module also gives your add-on access to its [Program
 ID](dev-guide/addon-development/program-id.html).
-
-Note that this module is in the
-[`api-utils`](packages/api-utils/api-utils.html) package.

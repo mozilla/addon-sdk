@@ -176,7 +176,7 @@ def get_config_in_dir(path):
         base_json['tests'] = 'test'
 
     set_section_dir(base_json, 'lib', path, ['lib'], True)
-    set_section_dir(base_json, 'tests', path, ['test', 'tests'], True)
+    set_section_dir(base_json, 'tests', path, ['test', 'tests'], False)
     set_section_dir(base_json, 'doc', path, ['doc', 'docs'])
     set_section_dir(base_json, 'data', path, ['data'])
     set_section_dir(base_json, 'packages', path, ['packages'])

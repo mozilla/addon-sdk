@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const es5code = require('cuddlefish').es5code;
+const { shims } = require('cuddlefish');
 const { Trait } = require('traits');
 const { EventEmitter, EventEmitterTrait } = require('events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -196,7 +196,10 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       window: { get: function() sandbox },
       top: { get: function() sandbox }
     });
-
+    
+    // Overriding / Injecting some natives into sandbox.
+    Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
+    
     let publicAPI = this._public;
     
     // List of content script globals:

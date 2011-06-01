@@ -52,7 +52,8 @@ const ERR_CONTENT = "No content or contentURL property found. Widgets must "
       ERR_LABEL = "The widget must have a non-empty label property.",
       ERR_ID = "You have to specify a unique value for the id property of " +
                "your widget in order for the application to remember its " +
-               "position.";
+               "position.",
+      ERR_DESTROYED = "The widget has been destroyed and can no longer be used.";
 
 // Supported events, mapping from DOM event names to our event names
 const EVENTS = {
@@ -78,6 +79,7 @@ const { Loader, Symbiont } = require("content");
 const timer = require("timer");
 const { Cortex } = require('cortex');
 const windowsAPI = require("windows");
+const unload = require("unload");
 
 // Data types definition
 const valid = {
@@ -319,11 +321,30 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._views.splice(idx, 1);
   },
   
+  /**
+   * Called on browser window closed, to destroy related WidgetViews
+   * @params {ChromeWindow} window
+   *         Window that has been closed
+   */
+  _onWindowClosed: function _onWindowClosed(window) {
+    for each (let view in this._views) {
+      if (view._isInChromeWindow(window)) {
+        view.destroy();
+        break;
+      }
+    }
+  },
+  
+  /**
+   * Get the WidgetView instance related to a BrowserWindow instance
+   * @params {BrowserWindow} window
+   *         BrowserWindow reference from "windows" module
+   */
   getView: function getView(window) {
-    for (let i = this._views.length - 1; i >= 0; i--) {
-      let view = this._views[i];
-      if (view._isInWindow(window))
+    for each (let view in this._views) {
+      if (view._isInWindow(window)) {
         return view._public;
+      }
     }
     return null;
   },
@@ -360,7 +381,9 @@ const Widget = function Widget(options) {
   w._initWidget(options);
   
   // Return a Cortex of widget in order to hide private attributes like _onEvent
-  return Cortex(w);
+  let _public = Cortex(w);
+  unload.ensure(_public, "destroy");
+  return _public;
 }
 exports.Widget = Widget;
 
@@ -392,6 +415,8 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     let self = this;
     this._port = EventEmitterTrait.create({
       emit: function () {
+        if (!self._chrome)
+          throw new Error(ERR_DESTROYED);
         self._chrome.update(self._baseWidget, "emit", arguments);
       }
     });
@@ -435,6 +460,10 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     }) == window;
   },
   
+  _isInChromeWindow: function WidgetView__isInChromeWindow(window) {
+    return this._chrome.window == window;
+  },
+  
   _onPortEvent: function WidgetView__onPortEvent(args) {
     let port = this._port;
     port._emit.apply(port, args);
@@ -448,13 +477,16 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   _port: null,
   
   postMessage: function WidgetView_postMessage(message) {
+    if (!this._chrome)
+      throw new Error(ERR_DESTROYED);
     this._chrome.update(this._baseWidget, "postMessage", message);
   },
 
   destroy: function WidgetView_destroy() {
     this._chrome.destroy();
-    this._emit("detach");
+    delete this._chrome;
     this._baseWidget._onViewDestroyed(this);
+    this._emit("detach");
   }
 
 }));
@@ -482,7 +514,7 @@ let browserManager = {
   // there are open windows.
   init: function () {
     let windowTracker = new (require("window-utils").WindowTracker)(this);
-    require("unload").ensure(windowTracker);
+    unload.ensure(windowTracker);
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.
@@ -502,12 +534,14 @@ let browserManager = {
   // currently opened windows.
   onUntrack: function browserManager_onUntrack(window) {
     if (this._isBrowserWindow(window)) {
+      this.items.forEach(function(i) i._onWindowClosed(window));
       for (let i = 0; i < this.windows.length; i++) {
         if (this.windows[i].window == window) {
           this.windows.splice(i, 1)[0];
           return;
         }
       }
+      
     }
   },
   
@@ -753,7 +787,7 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
 
   switch (type) {
     case CONTENT_TYPE_HTML:
-      contentURL = "data:text/html," + encodeURI(this._widget.content);
+      contentURL = "data:text/html," + encodeURIComponent(this._widget.content);
       break;
     case CONTENT_TYPE_URI:
       contentURL = this._widget.contentURL;

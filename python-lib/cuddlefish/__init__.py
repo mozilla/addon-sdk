@@ -61,11 +61,6 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['xpi'])),
-        (("", "--strip-xpi",), dict(dest="strip_xpi",
-                                    help="remove unused modules from XPI",
-                                    action="store_true",
-                                    default=False,
-                                    cmds=['xpi'])),
         (("-p", "--profiledir",), dict(dest="profiledir",
                                        help=("profile directory to pass to "
                                              "app"),
@@ -162,6 +157,11 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--strip-xpi",), dict(dest="strip_xpi",
+                                    help="remove unused modules from XPI",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['xpi'])),
         ]
      ),
 
@@ -451,7 +451,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     return 0
 
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
-        defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT')):
+        defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
+        stdout=sys.stdout):
     parser_kwargs = dict(arguments=arguments,
                          global_options=global_options,
                          parser_groups=parser_groups,
@@ -492,7 +493,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         import time
         import cuddlefish.server
 
-        print "One moment."
+        print >>stdout, "One moment."
         popen = subprocess.Popen([sys.executable,
                                   cuddlefish.server.__file__,
                                   'daemonic'])
@@ -507,7 +508,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # TODO: Allow user to change this filename via cmd line.
         filename = 'addon-sdk-docs.tgz'
         cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
-        print "Wrote %s." % filename
+        print >>stdout, "Wrote %s." % filename
         return
 
     target_cfg_json = None
@@ -657,7 +658,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     assert packaging.DEFAULT_LOADER == "api-utils"
     assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
     cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
-                                      "lib/cuddlefish.js")
+                                      "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
     manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
                               loader_modules)
@@ -697,11 +698,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
-    emit_elapsed_time = False
     if command == "test":
         # This should be contained in the test runner package.
         harness_options['main'] = 'run-tests'
-        emit_elapsed_time = True
     else:
         harness_options['main'] = target_cfg.get('main')
 
@@ -743,7 +742,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
-            print "Exporting update description to %s." % rdf_name
+            print >>stdout, "Exporting update description to %s." % rdf_name
             update = RDFUpdate()
             update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
@@ -758,7 +757,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             used_files = None # disables the filter
 
         xpi_name = XPI_FILENAME % target_cfg.name
-        print "Exporting extension to %s." % xpi_name
+        print >>stdout, "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_name=xpi_name,
@@ -788,8 +787,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
-                             norun=options.no_run,
-                             emit_elapsed_time=emit_elapsed_time)
+                             norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
