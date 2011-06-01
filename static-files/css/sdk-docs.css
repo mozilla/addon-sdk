@@ -18,6 +18,10 @@ body {
   padding-right: 50px;
 }
 
+.check, .cross {
+ text-align: center;
+}
+
 #sidebar {
   width: 200px;        /* sidebar usable width (fullwidth - padding) */
   right: 280px;        /* sidebar fullwidth + main-content padding */

@@ -39,7 +39,19 @@ something like this:
 
 First, `cfx init` creates the directory structure your add-on needs:
 
-* `/data` contains resources such as icons or strings. You can access the
+<span class="aside">
+When you create add-ons using the SDK, you might create two different sorts of
+scripts.
+All add-ons will create at least one script under `/lib`. Some add-ons
+will also create "content scripts" stored under `/data`.
+For more information
+on the difference between these two sorts of files, see
+[Two Types of Scripts](dev-guide/addon-development/two-types-of-scripts.html).
+</span>
+
+* `/data` contains resources such as icons or HTML files, as well as any
+[content scripts](dev-guide/addon-development/web-content.html) included
+with your add-on. You can access the
 content of the `data` subdirectory from within your add-on's code using the
 Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
 
@@ -203,8 +215,8 @@ launching Firefox from the command line using `cfx`, as you will be for
 development and debugging, then the messages are sent to the command shell
 from which you launched Firefox.
 
-For more information on the `console` object see the
-[Globals](dev-guide/addon-development/globals.html) reference section.
+For more information on the `console` object see its
+[documentation page](dev-guide/addon-development/console.html).
 
 ## Running It ##
 

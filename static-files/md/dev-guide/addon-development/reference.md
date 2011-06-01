@@ -4,9 +4,9 @@
 
 Documentation for the modules provided by the `addon-kit` package.
 
-### [Globals](dev-guide/addon-development/globals.html) ##
+### [console](dev-guide/addon-development/console.html) ##
 
-Documentation for the global objects available to add-on code.
+Documentation for the global `console` object.
 
 ### [cfx](dev-guide/addon-development/cfx-tool.html) ###
 
