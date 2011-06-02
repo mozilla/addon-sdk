@@ -132,24 +132,6 @@ const WindowTrackerTrait = Trait.compose({
 });
 exports.WindowTrackerTrait = WindowTrackerTrait;
 
-var gDocsToClose = [];
-
-function onDocUnload(event) {
-  var index = gDocsToClose.indexOf(event.target);
-  if (index == -1)
-    throw new Error("internal error: unloading document not found");
-  var document = gDocsToClose.splice(index, 1)[0];
-  // Just in case, let's remove the event listener too.
-  document.defaultView.removeEventListener("unload", onDocUnload, false);
-}
-
-onDocUnload = require("errors").catchAndLog(onDocUnload);
-
-exports.closeOnUnload = function closeOnUnload(window) {
-  window.addEventListener("unload", onDocUnload, false);
-  gDocsToClose.push(window.document);
-};
-
 exports.__defineGetter__("activeWindow", function() {
   return Cc["@mozilla.org/appshell/window-mediator;1"]
          .getService(Ci.nsIWindowMediator)
@@ -189,8 +171,3 @@ exports.isBrowser = function isBrowser(window) {
          "navigator:browser";
 };
 
-require("unload").when(
-  function() {
-    gDocsToClose.slice().forEach(
-      function(doc) { doc.defaultView.close(); });
-  });
