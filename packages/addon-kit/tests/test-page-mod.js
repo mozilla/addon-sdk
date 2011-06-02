@@ -19,7 +19,7 @@ exports.delay = function(test) {
 exports.testPageMod1 = function(test) {
   let pageMod;
   [pageMod] = testPageMod(test, "about:", [{
-      include: "about:*",
+      include: /about:/,
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         window.document.body.setAttribute("JEP-107", "worked");
@@ -121,7 +121,7 @@ exports.testPageModErrorHandling = function(test) {
   test.assertRaises(function() {
       new pageMod.PageMod();
     },
-    'The PageMod must have a string or array `include` option.',
+    'pattern is undefined',
     "PageMod() throws when 'include' option is not specified.");
 };
 
