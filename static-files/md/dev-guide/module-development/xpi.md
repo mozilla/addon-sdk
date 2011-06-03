@@ -67,4 +67,6 @@ referenced by the addon, even the modules that aren't used (such as the
 `notifications` module if the addon is only using `page-mod`). By running
 `cfx xpi --strip-xpi` instead, the SDK will produce a "stripped" XPI, that
 only includes the modules that are actually used, resulting in a smaller XPI
-file.
+file. (Note: `--strip-xpi` is currently experimental; when this feature is
+sufficiently mature, it will simply be made the default, and the `cfx` option
+will be removed.)

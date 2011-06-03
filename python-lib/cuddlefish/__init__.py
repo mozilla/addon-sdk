@@ -61,11 +61,6 @@ parser_groups = (
                                       metavar=None,
                                       default=None,
                                       cmds=['xpi'])),
-        (("", "--strip-xpi",), dict(dest="strip_xpi",
-                                    help="remove unused modules from XPI",
-                                    action="store_true",
-                                    default=False,
-                                    cmds=['xpi'])),
         (("-p", "--profiledir",), dict(dest="profiledir",
                                        help=("profile directory to pass to "
                                              "app"),
@@ -162,6 +157,11 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--strip-xpi",), dict(dest="strip_xpi",
+                                    help="remove unused modules from XPI",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['xpi'])),
         ]
      ),
 

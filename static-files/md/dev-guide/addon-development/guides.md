@@ -1,5 +1,9 @@
 # Programming Guides #
 
+### [Two Types of Scripts](dev-guide/addon-development/two-types-of-scripts.html) ###
+An introduction to the different sorts of scripts you can write, and
+a summary of which APIs are available to which scripts.
+
 ### [Working with Events](dev-guide/addon-development/events.html) ###
 Writing event-driven code using the SDK.
 
