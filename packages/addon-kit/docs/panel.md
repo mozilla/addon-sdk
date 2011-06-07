@@ -8,9 +8,6 @@ easier for users to ignore and dismiss than a modal dialog, since panels are
 hidden the moment users interact with parts of the application interface outside
 them.
 
-Introduction
-------------
-
 The module exports a single constructor function `Panel` which constructs a
 new panel.
 
@@ -30,6 +27,39 @@ events. See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
+The panel's default style is different for each operating system.
+For example, suppose a panel's content is specified with the following HTML:
+
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+<h1>Default Style</h1>
+
+This is what a panel with no custom styling looks like.
+]]>
+</script>
+
+On OS X it will look like this:
+
+<img class="image-center" src="media/screenshots/default-panel-osx.png"
+alt="OS X panel default style">
+<br>
+
+On Windows 7 it will look like this:
+
+<img class="image-center" src="media/screenshots/default-panel-windows.png"
+alt="Windows 7 panel default style">
+<br>
+
+On Ubuntu it will look like this:
+
+<img class="image-center" src="media/screenshots/default-panel-ubuntu.png"
+alt="Ubuntu panel default style">
+<br>
+
+This helps to ensure that the panel's style is consistent with the dialogs
+displayed by Firefox and other applications, but means you need to take care
+when applying your own styles. For example, if you set the panel's
+`background-color` property to `white` and do not set the `color` property,
+then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
 
 Examples
 --------
