@@ -229,7 +229,7 @@ To run your program, navigate to the `translator` directory and type:
 The first time you do this, you'll see a message like this:
 
 <pre>
-  No 'id' in package.json: creating a new keypair for you.
+  No 'id' in package.json: creating a new ID for you.
   package.json modified: please re-run 'cfx run'
 </pre>
 
