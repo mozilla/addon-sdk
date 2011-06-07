@@ -183,7 +183,7 @@
          options.fs = new exports.CompositeFileSystem({
            fses: fses,
            metadata: options.metadata,
-           jetpackID: options.jetpackID,
+           uriPrefix: options.uriPrefix,
            name: options.name
          });
        } else
@@ -589,7 +589,7 @@
    exports.CompositeFileSystem = function CompositeFileSystem(options) {
      // We sort file systems in alphabetical order of a package name.
      this.fses = options.fses.sort(function(a, b) a.root > b.root);
-     this.jetpackID = options.jetpackID;
+     this.uriPrefix = options.uriPrefix;
      this.name = options.name;
      this.packages = options.metadata || {};
    };
@@ -605,7 +605,7 @@
 
    exports.CompositeFileSystem.prototype = {
      getPackageURI: function getPackageURI(name) {
-       let uri = "resource://" + this.jetpackID + "-" + name + "-lib/";
+       let uri = this.uriPrefix + name + "-lib/";
        return ios.newURI(uri, null, null).spec;
      },
      resolveModule: function resolveModule(base, path) {

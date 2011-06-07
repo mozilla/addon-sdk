@@ -136,7 +136,7 @@
      var loaderOptions = {rootPath: options.rootPath,
                           rootPaths: options.rootPaths,
                           metadata: options.metadata,
-                          jetpackID: options.jetpackID,
+                          uriPrefix: options.uriPrefix,
                           name: options.name,
                           fs: options.fs,
                           defaultPrincipal: "system",

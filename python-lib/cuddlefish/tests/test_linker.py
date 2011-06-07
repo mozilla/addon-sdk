@@ -154,18 +154,18 @@ class Contents(unittest.TestCase):
             names = zf.namelist()
             # the first problem found in bug 664840 was that cuddlefish.js
             # (the loader) was stripped out on windows, due to a /-vs-\ bug
-            self.assertIn("resources/jid1-api-utils-lib/cuddlefish.js", names)
-            self.assertIn("resources/jid1-api-utils-lib/securable-module.js", names)
+            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/cuddlefish.js", names)
+            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/securable-module.js", names)
             # the second problem found in bug 664840 was that an addon
             # without an explicit tests/ directory would copy all files from
             # the package into a bogus JID-PKGNAME-tests/ directory, so check
             # for that
-            testfiles = [fn for fn in names if "jid1-seven-tests" in fn]
+            testfiles = [fn for fn in names if "jid1-at-jetpack-seven-tests" in fn]
             self.failUnlessEqual([], testfiles)
             # the third problem was that data files were being stripped from
             # the XPI. Note that data/ is only supposed to be included if a
             # module that actually gets used does a require("self") .
-            self.assertIn("resources/jid1-seven-data/text.data", names)
+            self.assertIn("resources/jid1-at-jetpack-seven-data/text.data", names)
                                  
             
         self.run_in_subdir("x", _test)

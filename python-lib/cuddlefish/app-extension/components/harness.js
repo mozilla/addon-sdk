@@ -186,7 +186,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
                                  print: dump,
                                  packaging: packaging,
                                  metadata: options.metadata,
-                                 jetpackID: options.jetpackID,
+                                 uriPrefix: options.uriPrefix,
                                  name: options.name,
                                  globals: { packaging: packaging }
                                 });
@@ -225,6 +225,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     enableE10s: options.enable_e10s,
 
     jetpackID: options.jetpackID,
+    uriPrefix: options.uriPrefix,
 
     bundleID: options.bundleID,
 
