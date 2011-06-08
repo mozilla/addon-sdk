@@ -90,7 +90,8 @@ FakeCompositeFileSystem.prototype = {
      function outPrint(msg) { output.push(msg); }
 
      var loader = new SecurableModule.Loader({fs: beetFs,
-                                              globals: {print: outPrint}});
+                                              globals: {print: outPrint},
+                                              uriPrefix: "resource://bogus-"});
      var extraOutput = {};
      loader.runScript({contents: 'print("beets is " + ' +
                        'require("beets").beets);'}, extraOutput);
@@ -118,7 +119,8 @@ FakeCompositeFileSystem.prototype = {
 
      loader = new SecurableModule.Loader(
        {fs: new FakeCompositeFileSystem([beetFs, neatFs]),
-        globals: {print: outPrint}
+        globals: {print: outPrint},
+        uriPrefix: "resource://bogus-"
        });
      output = [];
      loader.runScript({contents: 'print("neat is " + ' +
@@ -131,7 +133,8 @@ FakeCompositeFileSystem.prototype = {
                     'module from composite fs should export');
 
      // Ensure parenting of anonymous script filenames works.
-     loader = new SecurableModule.Loader({fs: {}});
+     loader = new SecurableModule.Loader({fs: {},
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript('throw new Error();');
        log("errors must be propogated from content sandboxes", "fail");
@@ -142,7 +145,8 @@ FakeCompositeFileSystem.prototype = {
      }
 
      loader = new SecurableModule.Loader({fs: {},
-                                          defaultPrincipal: "system"});
+                                          defaultPrincipal: "system",
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript('throw new Error();');
        log("errors must be propogated from chrome sandboxes", "fail");
@@ -159,7 +163,8 @@ FakeCompositeFileSystem.prototype = {
           getFile: function(path) {
             throw new Error('I should never get called.');
           }
-        }
+        },
+        uriPrefix: "resource://bogus-"
        });
      try {
        loader.runScript({contents: 'require("foo");'});
@@ -170,7 +175,8 @@ FakeCompositeFileSystem.prototype = {
                       'loading of nonexistent module should raise error');
      }
 
-     loader = new SecurableModule.Loader({fs: {}});
+     loader = new SecurableModule.Loader({fs: {},
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript({contents: COMPONENTS_DOT_CLASSES});
        log("modules shouldn't have chrome privileges by default.",
@@ -199,7 +205,8 @@ FakeCompositeFileSystem.prototype = {
 
      loader = new SecurableModule.Loader(
        {fs: {},
-        defaultPrincipal: "system"
+        defaultPrincipal: "system",
+        uriPrefix: "resource://bogus-"
        });
      loader.runScript({contents: COMPONENTS_DOT_CLASSES});
      log("modules should be able to have chrome privileges.", "pass");
@@ -258,7 +265,8 @@ FakeCompositeFileSystem.prototype = {
        loader = new SecurableModule.Loader(
          {rootPath: testDir,
           defaultPrincipal: "system",
-          globals: {sys: {print: log}}
+          globals: {sys: {print: log}},
+          uriPrefix: "resource://bogus-"
          });
        loader.require("program");
      }
@@ -272,7 +280,8 @@ FakeCompositeFileSystem.prototype = {
     loader = new SecurableModule.Loader(
          {rootPath: moduleDir,
           defaultPrincipal: "system",
-          globals: {sys: {print: log}}
+          globals: {sys: {print: log}},
+          uriPrefix: "resource://bogus-"
          });
 
     loader.require(["subtract"], function (subtract) {

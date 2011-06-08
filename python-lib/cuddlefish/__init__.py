@@ -598,7 +598,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if "id" in target_cfg:
         jid = target_cfg["id"]
-        assert not jid.endswith("@jetpack")
+        if not ("@" in jid or jid.startswith("{")):
+            jid = jid + "@jetpack"
         unique_prefix = '%s-' % jid # used for resource: URLs
     else:
         # The Jetpack ID is not required for cfx test, in which case we have to
@@ -611,17 +612,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         unique_prefix = '%s-' % target
         jid = harness_guid
 
-    assert not jid.endswith("@jetpack")
-    if ( jid.startswith("jid0-")
-         or jid.startswith("jid1-")
-         or jid.startswith("anonid0-") ):
-        bundle_id = jid + "@jetpack"
-    # Don't append "@jetpack" to old-style IDs, as they should be exactly
-    # as specified by the addon author so AMO and Firefox continue to treat
-    # their addon bundles as representing the same addon (and also because
-    # they may already have an @ sign in them, and there can be only one).
-    else:
-        bundle_id = jid
+    bundle_id = jid
 
     # the resource: URL's prefix is treated too much like a DNS hostname
     unique_prefix = unique_prefix.lower()
@@ -692,6 +683,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             },
         'jetpackID': jid,
         'bundleID': bundle_id,
+        'uriPrefix': uri_prefix,
         'staticArgs': options.static_args,
         'name': target,
         }

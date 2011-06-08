@@ -345,6 +345,7 @@ var runTests = exports.runTests = function runTests(options) {
                                      globals: globals,
                                      metadata: packaging.options.metadata,
                                      jetpackID: packaging.options.jetpackID,
+                                     uriPrefix: packaging.options.uriPrefix,
                                      name: packaging.options.name,
                                      packaging: packaging,
                                      __proto__: options});
