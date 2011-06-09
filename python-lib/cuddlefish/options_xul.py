@@ -20,6 +20,9 @@ def parse_options(options):
             button = doc.createElement("button")
             button.setAttribute("label", pref["label"])
             setting.appendChild(button)
+        elif (pref["type"] == "boolint"):
+            setting.setAttribute("on", pref["on"])
+            setting.setAttribute("off", pref["off"])
 
         root.appendChild(setting)
 
