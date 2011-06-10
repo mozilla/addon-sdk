@@ -269,6 +269,39 @@ exports.testUninstall = function (test) {
   loader.unload();
 };
 
+exports.testSetNoSetRead = function (test) {
+  test.waitUntilDone();
+
+  // Load the module, set a value.
+  let loader = newLoader(test);
+  let ss = loader.require("simple-storage");
+  manager(loader).jsonStore.onWrite = function (storage) {
+    test.assert(file.exists(storeFilename), "Store file should exist");
+
+    // Load the module again but don't access ss.storage.
+    loader = newLoader(test);
+    ss = loader.require("simple-storage");
+    manager(loader).jsonStore.onWrite = function (storage) {
+      test.fail("Nothing should be written since `storage` was not accessed.");
+    };
+    loader.unload();
+
+    // Load the module a third time and make sure the value stuck.
+    loader = newLoader(test);
+    ss = loader.require("simple-storage");
+    manager(loader).jsonStore.onWrite = function (storage) {
+      file.remove(storeFilename);
+      test.done();
+    };
+    test.assertEqual(ss.storage.foo, val, "Value should persist");
+    loader.unload();
+  };
+  let val = "foo";
+  ss.storage.foo = val;
+  test.assertEqual(ss.storage.foo, val, "Value read should be value set");
+  loader.unload();
+};
+
 function manager(loader) {
   return loader.findSandboxForModule("simple-storage").globalScope.manager;
 }

@@ -81,7 +81,7 @@ function JsonStore(options) {
 JsonStore.prototype = {
   // The store's root.
   get root() {
-    return this._root === undefined ? {} : this._root;
+    return this.isRootInited ? this._root : {};
   },
 
   // Performs some type checking.
@@ -93,6 +93,12 @@ JsonStore.prototype = {
     }
     this._root = val;
     return val;
+  },
+
+  // True if the root has ever been set (either via the root setter or by the
+  // backing file's having been read).
+  get isRootInited() {
+    return this._root !== undefined;
   },
 
   // Percentage of quota used, as a number [0, Inf).  > 1 implies over quota.
@@ -171,8 +177,9 @@ JsonStore.prototype = {
   // complete.  If the store is over quota or if it's empty and the store has
   // never been written, nothing is written and write observers aren't notified.
   _write: function JsonStore__write() {
-    // If the store is empty and the file doesn't yet exist, don't write.
-    if (this._isEmpty && !file.exists(this.filename))
+    // Don't write if the root is uninitialized or if the store is empty and the
+    // backing file doesn't yet exist.
+    if (!this.isRootInited || (this._isEmpty && !file.exists(this.filename)))
       return;
 
     // If the store is over quota, don't write.  The current under-quota state
@@ -222,17 +229,13 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
   },
 
   get root() {
-    if (!this.rootInited) {
+    if (!this.jsonStore.isRootInited)
       this.jsonStore.read();
-      this.rootInited = true;
-    }
     return this.jsonStore.root;
   },
 
   set root(val) {
-    let rv = this.jsonStore.root = val;
-    this.rootInited = true;
-    return rv;
+    return this.jsonStore.root = val;
   },
 
   unload: function manager_unload() {
