@@ -721,10 +721,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
-    
-    if target_cfg.get('optionsURL'):
-        harness_options['optionsURL'] = target_cfg.get('optionsURL')
-    
+
+    if target_cfg.get('preferences'):
+        harness_options['preferences'] = target_cfg.get('preferences')
+
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
 
     if command == 'xpi':

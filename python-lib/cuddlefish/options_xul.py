@@ -2,18 +2,20 @@ from xml.dom.minidom import Document
 import simplejson as json
 
 def parse_options(options, jetpack_id):
-    
+
     doc = Document()
     root = doc.createElement("vbox")
     root.setAttribute("xmlns", "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
     doc.appendChild(root)
 
+    # Only simple preferences for now
+    options = options["simple"]
     for pref_name in options:
         pref = options[pref_name]
         setting = doc.createElement("setting")
         setting.setAttribute("pref", "extensions."+jetpack_id+"."+pref_name)
         setting.setAttribute("type", pref["type"])
-        setting.setAttribute("title", pref["title"]) 
+        setting.setAttribute("title", pref["title"])
 
         if (pref["type"] == "button"):
             setting.setAttribute("type", "control")

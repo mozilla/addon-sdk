@@ -15,9 +15,9 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         zf.write(str(harness_options['icon']), 'icon.png')
         del harness_options['icon']
 
-    if 'optionsURL' in harness_options:
+    if 'preferences' in harness_options:
         from options_xul import parse_options
-        open('.options.xul','w').write(parse_options(harness_options["optionsURL"], harness_options["jetpackID"]))
+        open('.options.xul','w').write(parse_options(harness_options["preferences"], harness_options["jetpackID"]))
         zf.write('.options.xul','options.xul')
         os.remove('.options.xul')
 
