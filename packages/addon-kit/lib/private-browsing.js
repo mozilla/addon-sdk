@@ -53,6 +53,8 @@ if (require("xul-app").is("Firefox")) {
               getService(Ci.nsIPrivateBrowsingService);
 }
 
+function toggleMode(value) pbService.privateBrowsingEnabled = !!value
+
 const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
     // Binding method to instance since it will be used with `setTimeout`.
@@ -79,7 +81,10 @@ const privateBrowsing = EventEmitter.compose({
   get isActive() this._isActive,
   set isActive(value) {
     if (pbService)
-      pbService.privateBrowsingEnabled = !!value;
+      // We toggle private browsing mode asynchronously in order to work around
+      // bug 659629.  Since private browsing transitions are asynchronous
+      // anyway, this doesn't significantly change the behavior of the API.
+      setTimeout(toggleMode, 0, value);
   },
   _isActive: false
 })()
@@ -90,5 +95,6 @@ Object.defineProperty(exports, "isActive", {
 exports.activate = function activate() privateBrowsing.isActive = true;
 exports.deactivate = function deactivate() privateBrowsing.isActive = false;
 exports.on = privateBrowsing.on;
+exports.once = privateBrowsing.once;
 exports.removeListener = privateBrowsing.removeListener;
 

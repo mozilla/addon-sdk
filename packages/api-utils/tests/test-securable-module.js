@@ -13,6 +13,29 @@ var beetFs = {
   }
 };
 
+FakeCompositeFileSystem = function FakeCompositeFileSystem(fses) {
+  this.fses = fses;
+  this._pathMap = {};
+};
+
+FakeCompositeFileSystem.prototype = {
+  resolveModule: function resolveModule(base, path) {
+    for (var i = 0; i < this.fses.length; i++) {
+      var fs = this.fses[i];
+      var absPath = fs.resolveModule(base, path);
+      if (absPath) {
+        this._pathMap[absPath] = fs;
+        return absPath;
+      }
+    }
+    return null;
+  },
+  getFile: function getFile(path) {
+    return this._pathMap[path].getFile(path);
+  }
+};
+
+
 (function(global) {
    var exports = new Object();
 
@@ -67,7 +90,8 @@ var beetFs = {
      function outPrint(msg) { output.push(msg); }
 
      var loader = new SecurableModule.Loader({fs: beetFs,
-                                              globals: {print: outPrint}});
+                                              globals: {print: outPrint},
+                                              uriPrefix: "resource://bogus-"});
      var extraOutput = {};
      loader.runScript({contents: 'print("beets is " + ' +
                        'require("beets").beets);'}, extraOutput);
@@ -94,8 +118,9 @@ var beetFs = {
      };
 
      loader = new SecurableModule.Loader(
-       {fs: new SecurableModule.CompositeFileSystem([beetFs, neatFs]),
-        globals: {print: outPrint}
+       {fs: new FakeCompositeFileSystem([beetFs, neatFs]),
+        globals: {print: outPrint},
+        uriPrefix: "resource://bogus-"
        });
      output = [];
      loader.runScript({contents: 'print("neat is " + ' +
@@ -108,7 +133,8 @@ var beetFs = {
                     'module from composite fs should export');
 
      // Ensure parenting of anonymous script filenames works.
-     loader = new SecurableModule.Loader({fs: {}});
+     loader = new SecurableModule.Loader({fs: {},
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript('throw new Error();');
        log("errors must be propogated from content sandboxes", "fail");
@@ -119,7 +145,8 @@ var beetFs = {
      }
 
      loader = new SecurableModule.Loader({fs: {},
-                                          defaultPrincipal: "system"});
+                                          defaultPrincipal: "system",
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript('throw new Error();');
        log("errors must be propogated from chrome sandboxes", "fail");
@@ -136,7 +163,8 @@ var beetFs = {
           getFile: function(path) {
             throw new Error('I should never get called.');
           }
-        }
+        },
+        uriPrefix: "resource://bogus-"
        });
      try {
        loader.runScript({contents: 'require("foo");'});
@@ -147,7 +175,8 @@ var beetFs = {
                       'loading of nonexistent module should raise error');
      }
 
-     loader = new SecurableModule.Loader({fs: {}});
+     loader = new SecurableModule.Loader({fs: {},
+                                          uriPrefix: "resource://bogus-"});
      try {
        loader.runScript({contents: COMPONENTS_DOT_CLASSES});
        log("modules shouldn't have chrome privileges by default.",
@@ -176,7 +205,8 @@ var beetFs = {
 
      loader = new SecurableModule.Loader(
        {fs: {},
-        defaultPrincipal: "system"
+        defaultPrincipal: "system",
+        uriPrefix: "resource://bogus-"
        });
      loader.runScript({contents: COMPONENTS_DOT_CLASSES});
      log("modules should be able to have chrome privileges.", "pass");
@@ -235,7 +265,8 @@ var beetFs = {
        loader = new SecurableModule.Loader(
          {rootPath: testDir,
           defaultPrincipal: "system",
-          globals: {sys: {print: log}}
+          globals: {sys: {print: log}},
+          uriPrefix: "resource://bogus-"
          });
        loader.require("program");
      }
@@ -249,7 +280,8 @@ var beetFs = {
     loader = new SecurableModule.Loader(
          {rootPath: moduleDir,
           defaultPrincipal: "system",
-          globals: {sys: {print: log}}
+          globals: {sys: {print: log}},
+          uriPrefix: "resource://bogus-"
          });
 
     loader.require(["subtract"], function (subtract) {
@@ -347,74 +379,4 @@ exports.testModifyModuleSandbox = function (test) {
   test.assertEqual(out,
                    "print(\"hi from beets\"); exports.beets = 5;",
                    "testModifyModuleSandbox() mods override globals");
-};
-
-exports.testSecurityPolicy = function (test) {
-  var sm = require("securable-module");
-  var lines = [];
-  var expectedLines = [];
-  var allowImport = false;
-  var allowEval = false;
-
-  var secpol = {
-    allowImport: function(loader, basePath, module, module_info, exports) {
-      if (loader != this.expectLoader)
-        test.fail("loader != this.expectLoader");
-      if (module == "beets" && exports.beets != 5)
-        test.fail("exports passed to maybeBlockImport are not valid");
-      if (!allowImport)
-        return false;
-      lines.push('allowing import of ' + module + ' from ' +
-                 basePath);
-      return true;
-    },
-    allowEval: function(loader, basePath, module, module_info) {
-      if (loader != this.expectLoader)
-        test.fail("loader != this.expectLoader");
-      if (!allowEval)
-        return false;
-      lines.push('allowing eval of ' + module_info.contents.length +
-                 ' chars for module ' + module + ' from ' + basePath);
-      return true;
-    }
-  };
-
-  function myGetModuleExports(basePath, module) {
-    if (module == "foo")
-      return {bar: 1};
-    return null;
-  }
-
-  var loader = new sm.Loader({getModuleExports: myGetModuleExports,
-                              fs: beetFs,
-                              securityPolicy: secpol,
-                              globals: {print: function() {}}});
-  secpol.expectLoader = loader;
-
-  test.assertRaises(function() { loader.require('beets'); },
-                    /access denied to execute module: beets/);
-  test.assertRaises(function() { loader.require('foo'); },
-                    /access denied to import module: foo/);
-
-  allowEval = true;
-
-  test.assertEqual(lines.length, 0);
-  expectedLines = ["allowing eval of 42 chars for module beets from null"];
-  test.assertRaises(function() { loader.require('beets'); },
-                    /access denied to import module: beets/);
-  test.assertEqual(JSON.stringify(lines), JSON.stringify(expectedLines));
-
-  allowImport = true;
-
-  lines = [];
-  expectedLines = ["allowing import of beets from null"];
-  if (loader.require('beets').beets != 5)
-    test.fail("require() does not work as expected.");
-  test.assertEqual(JSON.stringify(lines), JSON.stringify(expectedLines));
-
-  lines = [];
-  expectedLines = ["allowing import of foo from null"];
-  if (loader.require('foo').bar != 1)
-    test.fail("require() does not work as expected.");
-  test.assertEqual(JSON.stringify(lines), JSON.stringify(expectedLines));
 };

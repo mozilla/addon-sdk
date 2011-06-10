@@ -1,16 +1,35 @@
 # Working with Events #
 
 The Add-on SDK supports event-driven programming through its
-[`EventEmitter`](#module/api-utils/events) framework. Objects emit events
-on state changes that might be of interest to add-on code, such as browser
-windows opening, pages loading, network requests completing, and mouse clicks.
-By registering a listener function to an event emitter an add-on can receive
-notifications of these events.
+[`EventEmitter`](packages/api-utils/docs/events.html) framework.
 
-The interface exposed by an event emitter consists of two functions:
+Objects emit events on state changes that might be of interest to add-on code,
+such as browser windows opening, pages loading, network requests completing,
+and mouse clicks. By registering a listener function to an event emitter an
+add-on can receive notifications of these events.
 
-* **`on(type, listener)`**: register a listener
-* **`removeListener(type, listener)`**: remove a listener
+<span class="aside">
+We talk about content
+scripts in more detail in the
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+guide.</span>
+Additionally, if you're using content scripts to interact with web content,
+you can define your own events and use them to communicate between the main
+add-on code and the content scripts. In this case one end of the conversation
+emits the events, and the other end listens to them.
+
+So there are two main ways you will interact with the EventEmitter
+framework:
+
+* **listening to built-in events** emitted by objects in the SDK, such as tabs
+opening, pages loading, mouse clicks
+
+* **sending and receiving user-defined events** between content scripts and
+add-on code
+
+This guide only covers the first of these; the second is explained in the
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+guide.
 
 ## Adding Listeners ##
 
@@ -29,9 +48,9 @@ whenever the event occurs. The arguments that will be passed to the listener
 are specific to an event type and are documented with the event emitter.
 
 For example, the following add-on registers two listeners with the
-[`private-browsing`](#module/addon-kit/private-browsing) module to listen
-for the `start` and `stop` events, and logs a string to the console reporting
-the change:
+[`private-browsing`](packages/addon-kit/docs/private-browsing.html) module to
+listen for the `start` and `stop` events, and logs a string to the console
+reporting the change:
 
     var pb = require("private-browsing");
 
@@ -60,8 +79,8 @@ with "on": for example, "onOpen", "onReady" and so on. Then in the constructor
 you can assign a listener function to this property as an alternative to
 calling the object's `on()` method.
 
-For example: the [`widget`](#module/addon-kit/widget) object emits an event
-when the widget is clicked.
+For example: the [`widget`](packages/addon-kit/docs/widget.html) object emits
+an event when the widget is clicked.
 
 The following add-on creates a widget and assigns a listener to the
 `onClick` property of the `options` object supplied to the widget's
@@ -71,6 +90,7 @@ constructor. The listener loads the Google home page:
     var tabs = require("tabs");
 
     widgets.Widget({
+      id: "google-link",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
       onClick: function() {
@@ -85,6 +105,7 @@ widget's `on()` method:
     var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "google-link-alternative",
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico"
     });
@@ -126,56 +147,3 @@ enter private browsing again.
 Removing listeners is optional since they will be removed in any case
 when the application or add-on is unloaded.
 
-## Message Events ##
-
-One particular type of event which is fundamental to the Add-on SDK is the
-`message` event. In the SDK add-ons which interact with web content are
-structured in two parts:
-
-* the main add-on code that runs in the add-on process
-* content scripts that interact with web content and run in the content process
-
-These two parts communicate using a message-passing mechanism in which the
-message recipient can emit `message` and `error` events. Thus an add-on can
-receive messages from a content script by supplying a `message` listener to the
-event emitter's `on()` method. Most, but not all, of the messaging APIs use
-the [`worker`](#module/api-utils/content/worker) module to implement
-message events.
-
-For example, the [`page-mod`](#module/addon-kit/page-mod) module provides a
-mechanism to execute scripts in the context of selected web pages. These
-scripts are content scripts.
-
-When a content script is attached to a page the page mod emits the
-`attach` event, which will supply a worker object to registered
-listeners. If you add a listener to this worker object, then you will receive
-messages from the associated content script.
-
-The following add-on creates a page mod object which will execute the script
-`postMessage(window.location.toString());` in the context of every page loaded.
-The add-on registers two event listeners:
-
-* The first listens to the `attach` event generated by the page mod and
-uses this event to get the worker object associated with the content script.
-
-* The second listens to the `message` event generated by the worker and just
-logs the message to the console.
-
-The effect is that all messages from the content script are logged to the
-console.
-
-    var pageMod = require("page-mod");
-
-    pageMod.PageMod({
-      include: ["*"],
-      contentScriptWhen: "ready",
-      contentScript: "postMessage(window.location.toString());",
-      onAttach: function onAttach(worker, mod) {
-        worker.on("message", function(data) {
-          console.log(data);
-        });
-      }
-    });
-
-The next section provides much more detail on [interacting with web
-content](#guide/addon-development/web-content) using content scripts.

@@ -1,6 +1,6 @@
 import sys, re, textwrap
 
-VERSION = 2
+VERSION = 4
 
 class ParseError(Exception):
     # args[1] is the line number that caused the problem
@@ -55,7 +55,7 @@ class APIParser:
         api["type"] = tag
 # if this API element is a property then datatype must be set
         if tag == 'property':
-            api['property_type'] = info['type']
+            api['datatype'] = info['datatype']
         # info is ignored
         currentAccumulator = Accumulator(api, firstline)
         lineno += 1
@@ -99,6 +99,13 @@ class APIParser:
                             props = []
                         working_set["params"].append(info)
                         currentPropHolder = info
+                    elif tag == "argument":
+                        # close off the @prop list
+                        if props and currentPropHolder:
+                            currentPropHolder["props"] = props
+                            props = []
+                        working_set["arguments"].append(info)
+                        currentPropHolder = info
                     else:
                         raise ParseError("unknown '@' section header %s in \
                                            '%s'" % (tag, line), lineno + 1)
@@ -128,6 +135,8 @@ class APIParser:
         working_set["methods"] = []
         working_set["properties"] = []
         working_set["params"] = []
+        working_set["events"] = []
+        working_set["arguments"] = []
         return working_set
 
     def _update_working_set(self, nested_api, working_set):
@@ -138,6 +147,8 @@ class APIParser:
             working_set["methods"].append(nested_api)
         if nested_api["type"] == "property":
             working_set["properties"].append(nested_api)
+        if nested_api["type"] == "event":
+            working_set["events"].append(nested_api)
 
     def _assemble_signature(self, api_element, params):
         signature = api_element["name"] + "("
@@ -163,10 +174,14 @@ class APIParser:
             api_element["constructors"] = working_set["constructors"]
         if len(working_set["methods"]) > 0:
             api_element["methods"] = working_set["methods"]
+        if len(working_set["events"]) > 0:
+            api_element["events"] = working_set["events"]
+        if len(working_set["arguments"]) > 0:
+            api_element["arguments"] = working_set["arguments"]
 
     def _validate_info(self, tag, info, line, lineno):
         if tag == 'property':
-            if not 'type' in info:
+            if not 'datatype' in info:
                 raise ParseError("No type found for @property.", lineno)
         elif tag == "param":
             if info.get("required", False) and "default" in info:
@@ -174,7 +189,7 @@ class APIParser:
                     "required parameters should not have defaults: '%s'"
                                      % line, lineno)
         elif tag == "prop":
-            if "type" not in info:
+            if "datatype" not in info:
                 raise ParseError("@prop lines must include {type}: '%s'" %
                                   line, lineno)
             if "name" not in info:
@@ -225,7 +240,7 @@ class APIParser:
                     skip += 1
 
             if len(pieces) > skip and pieces[skip].startswith("{"):
-                info["type"] = pieces[skip].strip("{ }")
+                info["datatype"] = pieces[skip].strip("{ }")
                 skip += 1
 
             # we've got the metadata, now extract the description

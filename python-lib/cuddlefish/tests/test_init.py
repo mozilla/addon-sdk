@@ -20,6 +20,10 @@ class TestInit(unittest.TestCase):
 
     def do_test_init(self,basedir):
         # Let's init the addon, no error admited
+        f = open(".ignoreme","w")
+        f.write("stuff")
+        f.close()
+
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
@@ -31,13 +35,14 @@ class TestInit(unittest.TestCase):
         self.assertTrue(len(os.listdir(basedir))>0)
         main_js = os.path.join(basedir,"lib","main.js")
         package_json = os.path.join(basedir,"package.json")
-        test_main_js = os.path.join(basedir,"tests","test-main.js")
+        test_main_js = os.path.join(basedir,"test","test-main.js")
         self.assertTrue(os.path.exists(main_js))
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),MAIN_JS)
         self.assertEqual(open(package_json,"r").read(),
-                         PACKAGE_JSON % {"name":"tmp_addon_sample"})
+                         PACKAGE_JSON % {"name":"tmp_addon_sample",
+                                         "fullName": "tmp_addon_SAMPLE" })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
@@ -48,7 +53,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
-        self.run_init_in_subdir("tmp_addon_sample",self.do_test_init)
+        self.run_init_in_subdir("tmp_addon_SAMPLE",self.do_test_init)
 
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail
@@ -60,6 +65,21 @@ class TestInit(unittest.TestCase):
 
     def test_args(self):
         self.run_init_in_subdir("tmp_addon_sample", self.do_test_args)
+
+    def _test_existing_files(self, basedir):
+        f = open("pay_attention_to_me","w")
+        f.write("stuff")
+        f.close()
+        out,err = StringIO(), StringIO()
+        rc = initializer(None, ["init"], out, err)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc, 1)
+        self.failUnless("This command must be run in an empty directory" in err,
+                        err)
+        self.failIf(os.path.exists("lib"))
+
+    def test_existing_files(self):
+        self.run_init_in_subdir("existing_files", self._test_existing_files)
 
 if __name__ == "__main__":
     unittest.main()

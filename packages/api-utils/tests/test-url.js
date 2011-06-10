@@ -129,10 +129,10 @@ exports.testURL = function(test) {
   test.assertEqual(b.toString(),
                    "h:foo",
                    "a URL can be initialized from another URL");
-  test.assert(a !== b,
-              "a URL initialized from another URL is not the same object");
+  test.assertNotStrictEqual(a, b,
+                            "a URL initialized from another URL is not the same object");
   test.assert(a == "h:foo",
               "toString is implicit when a URL is compared to a string via ==");
-  test.assert(a + "" === "h:foo",
-              "toString is implicit when a URL is concatenated to a string");
+  test.assertStrictEqual(a + "", "h:foo",
+                         "toString is implicit when a URL is concatenated to a string");
 };

@@ -82,8 +82,8 @@ While private browsing mode is active, you should not store any sensitive data.
 
 Because any kind of data can be placed into simple storage, support for private
 browsing is not built into the module.  Instead, use the
-[`private-browsing`](#module/addon-kit/private-browsing) module to check private
-browsing status and respond accordingly.
+[`private-browsing`](packages/addon-kit/docs/private-browsing.html) module to
+check private browsing status and respond accordingly.
 
 For example, the URLs your users visit should not be stored during private
 browsing.  If your add-on records the URL of the selected tab, here's how you
@@ -119,3 +119,7 @@ its guidance on best practices and policies.
   quota.
 </api>
 
+<api name="OverQuota">
+@event
+The module emits this event when your add-on's storage goes over its quota.
+</api>

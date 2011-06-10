@@ -1,36 +1,29 @@
 /* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ * Copyright (c) 2009-2010 the Mozilla Foundation
+ * All rights reserved.
  *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  * Neither the name of the Mozilla Foundation nor the names
+ *    of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ***** END LICENSE BLOCK ***** */
 
@@ -187,7 +180,12 @@
            rootPaths = [rootPaths];
          var fses = [new exports.LocalFileSystem(path)
                      for each (path in rootPaths)];
-         options.fs = new exports.CompositeFileSystem(fses);
+         options.fs = new exports.CompositeFileSystem({
+           fses: fses,
+           metadata: options.metadata,
+           uriPrefix: options.uriPrefix,
+           name: options.name
+         });
        } else
          options.fs = new exports.LocalFileSystem();
      }
@@ -210,106 +208,180 @@
      this.sandboxes = {};
      this.modules = {};
      this.pathAccessed = options.pathAccessed;
-     this.module_infos = {};
-     this.pathToModule = {};
      this.defineUsed = {};
      this.globals = options.globals;
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
-     this.securityPolicy = options.securityPolicy;
+     this.manifest = options.manifest || {};
    };
 
    exports.Loader.prototype = {
      _makeApi: function _makeApi(basePath) {
+       /*
+        * _makeApi() creates a pair of specialized require()/define()
+        * functions for use by the code that comes from 'basePath' (which is
+        * a resource: URI pointing to some module, e.g. main.js). This
+        * require/define pair knows what main.js is allowed to import, in
+        * particular it knows what the link-time module search algorithm has
+        * found for each imported name (so if they require "panel", they'll
+        * get the one from addon-kit, not from some other package).
+        *
+        * When some other module (e.g. panel.js) is loaded, they'll get a
+        * different require/define pair, specialized for them.
+        */
        var self = this;
+       let reqs;
+       if (basePath && (basePath in self.manifest))
+         reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
-         var exports;
+         if (reqs) {
+           // if we know about you, you must follow the manifest
+           if (module in reqs)
+             return loadMaybeMagicModule(module, reqs[module]);
+           // if you invoke chrome, you can go off-manifest and search
+           if ("chrome" in reqs)
+             return loadMaybeMagicModule(module, null);
+           throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
+         } else {
+           // if we don't know about you, you can do anything you want.
+           // You're going to have to search for your own modules, though.
+           return loadMaybeMagicModule(module, null);
+         }
+       }
 
-         if (self.getModuleExports)
-           exports = self.getModuleExports(basePath, module);
+       function loadMaybeMagicModule(moduleName, moduleData) {
+         /*
+          * If we get here, we're allowed to import this module, we just have
+          * to figure out how.
+          *
+          * 'moduleName' is the unmodified argument passed to require(),
+          * so it might be "panel" or "pkg/foo" or even "./bar" for relative
+          * imports. 'moduleData' is the manifest entry that tells us how
+          * we're supposed to import this module: usually it's an object with
+          * a .uri, but for certain "magic" modules it might be empty. If
+          * it's 'null' then we're supposed to search all known packages for
+          * it.
+          */
 
-         var module_info = null; /* null for require("chrome") */
-         if (!exports) {
-           var path = self.fs.resolveModule(basePath, module);
-           if (!path)
-             throw new Error('Module "' + module + '" not found');
-
-           // Track accesses to this module via its normalized path
-           if (!self.pathAccessed[path]) {
-             self.pathAccessed[path] = 0;
+         if (self.getModuleExports) {
+           /* this currently handles 'chrome' and 'parent-loader' */
+           let exports = self.getModuleExports(basePath, moduleName);
+           if (exports)
+             return exports;
+         }
+         if (moduleName == "self") {
+           /* The 'self' module is magic: when someone requires 'self', the
+            * module they get is supposed to be specialized for the *package*
+            * that they live in (so pkg1/foo.js will get 'self' for pkg1,
+            * while pkg2/bar.js will get a 'self' for pkg2). To accomplish
+            * this, we don't give them the real self.js module directly:
+            * instead, we load self.js and invoke its makeSelfModule()
+            * function, passing in the manifest's moduleData, which will
+            * include enough information to create the specialized module.
+            */
+           if (!moduleData) {
+             // we don't know where you live, so we must search for your data
+             // resource://api-utils-api-utils-tests/test-self.js
+             // make a prefix of resource://api-utils-api-utils-data/
+             let doubleslash = basePath.indexOf("//");
+             let prefix = basePath.slice(0, doubleslash+2);
+             let rest = basePath.slice(doubleslash+2);
+             let slash = rest.indexOf("/");
+             prefix = prefix + rest.slice(0, slash);
+             prefix = prefix.slice(0, prefix.lastIndexOf("-")) + "-data/";
+             moduleData = { "dataURIPrefix": prefix };
+             // moduleData also wants mapName and mapSHA256, but they're
+             // currently unused
            }
-           self.pathAccessed[path] += 1;
-
-           // Remember the name of the module as it maps to its path
-           self.pathToModule[path] = module;
-
-           if (path in self.modules) {
-             module_info = self.module_infos[path];
-           } else {
-             module_info = self.fs.getFile(path);
-             /* module_info.filename is read by sandbox.evaluate() to
-                generate tracebacks, so the property must be named
-                ".filename" even though ".url" might be more accurate */
-             if (module_info.filename === undefined)
-               module_info.filename = path;
-
-             if (self.securityPolicy &&
-                 !self.securityPolicy.allowEval(self, basePath, module,
-                                                module_info))
-               throw new Error("access denied to execute module: " +
-                               module);
-
-             var sandbox = self.sandboxFactory.createSandbox(module_info);
-             self.sandboxes[path] = sandbox;
-             for (name in self.globals)
-               sandbox.defineProperty(name, self.globals[name]);
-             var api = self._makeApi(path);
-             sandbox.defineProperty('require', api.require);
-             sandbox.defineProperty('define', api.define);
-             self.module_infos[path] = module_info;
-             if (self.modifyModuleSandbox)
-               self.modifyModuleSandbox(sandbox, module_info);
-             /* set up an environment in which module code can use CommonJS
-                patterns like:
-                  module.exports = newobj;
-                  module.setExports(newobj);
-                  if (module.id == "main") stuff();
-                  define("async", function() {return newobj});
-              */
-             sandbox.evaluate("var module = {exports: {}};");
-             sandbox.evaluate("module.setExports = function(obj) {module.exports = obj; return obj;};");
-             sandbox.evaluate("var exports = module.exports;");
-             sandbox.evaluate("module.id = '" + module + "';");
-             var preeval_exports = sandbox.getProperty("exports");
-             self.modules[path] = sandbox.getProperty("exports");
-             sandbox.evaluate(module_info);
-             var posteval_exports = sandbox.getProperty("module").exports;
-             if (posteval_exports !== preeval_exports) {
-               /* if they used module.exports= or module.setExports(), get
-                  the new value now. If they used define(), we must be
-                  careful to leave self.modules[path] alone, as it will have
-                  been modified in the asyncMain() callback-handling code,
-                  fired during sandbox.evaluate(). */
-               if (self.defineUsed[path]) {
-                   // you can do one or the other, not both
-                   throw new Error("define() was used, so module.exports= and "
-                                   + "module.setExports() may not be used: "
-                                   + path);
-               }
-               self.modules[path] = posteval_exports;
-             }
-           }
-           exports = self.modules[path];
+           if (false) // force scanner to copy self-maker.js into the XPI
+             require("self-maker"); 
+           let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
+           if (!makerModData.uri)
+             throw new Error("Unable to find self-maker, from "+basePath);
+           let selfMod = loadFromModuleData(makerModData, "self-maker");
+           // selfMod is not cached
+           return selfMod.makeSelfModule(moduleData);
          }
 
-         if (self.securityPolicy &&
-             !self.securityPolicy.allowImport(self, basePath, module,
-                                              module_info, exports))
-           throw new Error("access denied to import module: " + module);
+         if (!moduleData) {
+           // search
+           let path = self.fs.resolveModule(basePath, moduleName);
+           if (!path)
+             throw new Error('Module "' + moduleName + '" not found');
+           moduleData = {uri: path};
+         }
 
-         return exports;
-       };
+         // Track accesses to this module via its normalized path. This lets
+         // us detect cases where foo.js uses define() with a callback that
+         // wants to return a new value for the 'foo' module, but something
+         // inside that callback (probably in some sub-function) references
+         // 'foo' too early. If this happens, we throw an exception when the
+         // callback finishes. The code for that is in define() below: search
+         // for self.pathAccessed .
+         if (!self.pathAccessed[moduleData.uri]) {
+           self.pathAccessed[moduleData.uri] = 0;
+         }
+         self.pathAccessed[moduleData.uri] += 1;
+
+         if (moduleData.uri in self.modules) {
+           // already loaded: return from cache
+           return self.modules[moduleData.uri];
+         }
+         return loadFromModuleData(moduleData, moduleName); // adds to cache
+       }
+
+       function loadFromModuleData(moduleData, moduleName) {
+         // moduleName is passed solely for error messages: by this point,
+         // everything is controlled by moduleData
+         if (!moduleData.uri) {
+           throw new Error("loadFromModuleData with null URI, from basePath "
+                           +basePath+" importing ("+moduleName+")");
+         }
+         // any manifest-based permission checks have already been done
+         let path = moduleData.uri;
+
+         let moduleContents = self.fs.getFile(path);
+         var sandbox = self.sandboxFactory.createSandbox(moduleContents);
+         self.sandboxes[path] = sandbox;
+         for (name in self.globals)
+           sandbox.defineProperty(name, self.globals[name]);
+         var api = self._makeApi(path);
+         sandbox.defineProperty('require', api.require);
+         sandbox.defineProperty('define', api.define);
+         if (self.modifyModuleSandbox)
+           self.modifyModuleSandbox(sandbox, moduleContents);
+         /* set up an environment in which module code can use CommonJS
+            patterns like:
+              module.exports = newobj;
+              module.setExports(newobj);
+              if (module.id == "main") stuff();
+              define("async", function() {return newobj});
+          */
+         sandbox.evaluate("var module = {exports: {}};");
+         sandbox.evaluate("module.setExports = function(obj) {module.exports = obj; return obj;};");
+         sandbox.evaluate("var exports = module.exports;");
+         sandbox.evaluate("module.id = '" + path + "';");
+         var preeval_exports = sandbox.getProperty("exports");
+         self.modules[path] = sandbox.getProperty("exports");
+         sandbox.evaluate(moduleContents);
+         var posteval_exports = sandbox.getProperty("module").exports;
+         if (posteval_exports !== preeval_exports) {
+           /* if they used module.exports= or module.setExports(), get
+              the new value now. If they used define(), we must be
+              careful to leave self.modules[path] alone, as it will have
+              been modified in the asyncMain() callback-handling code,
+              fired during sandbox.evaluate(). */
+           if (self.defineUsed[path]) {
+             // you can do one or the other, not both
+             throw new Error("define() was used, so module.exports= and "
+                             + "module.setExports() may not be used: "
+                             + path);
+           }
+           self.modules[path] = posteval_exports;
+         }
+         return self.modules[path]; // these are the exports
+       }
 
        // START support Async module-style require and define calls.
        // If the only argument to require is a string, then the module that
@@ -359,19 +431,6 @@
          if (!Array.isArray(deps)) {
            callback = deps;
            deps = null;
-         }
-
-         // Set up the path if we have a name
-         if (name) {
-           // Make sure that the name matches the expected name, otherwise
-           // throw an error.
-           namePath = self.fs.resolveModule(basePath, name);
-           if (self.pathToModule[namePath] !== name) {
-             throw new Error("Mismatched define(). Named module " + name +
-                             " does not match expected name of " +
-                             self.pathToModule[basePath] +
-                             " in " + basePath);
-           }
          }
 
          // If the callback is not an actual function, it means it already
@@ -462,20 +521,7 @@
                usesExports = true;
                depModules.push(exports);
              } else {
-               var overridden;
-               if (self.getModuleExports)
-                 overridden = self.getModuleExports(basePath, dep);
-               if (overridden) {
-                 depModules.push(overridden);
-                 return;
-               }
-
-               var depPath = self.fs.resolveModule(basePath, dep);
-
-               if (!self.modules[depPath]) {
-                 syncRequire(dep);
-               }
-               depModules.push(self.modules[depPath]);
+               depModules.push(syncRequire(dep));
              }
          });
 
@@ -538,25 +584,98 @@
      }
    };
 
-   exports.CompositeFileSystem = function CompositeFileSystem(fses) {
-     this.fses = fses;
-     this._pathMap = {};
+   // this is more of a resolver than a filesystem, but test-securable-module
+   // wants to override the getFile() function to avoid using real URIs
+   exports.CompositeFileSystem = function CompositeFileSystem(options) {
+     // We sort file systems in alphabetical order of a package name.
+     this.fses = options.fses.sort(function(a, b) a.root > b.root);
+     this.uriPrefix = options.uriPrefix;
+     this.name = options.name;
+     this.packages = options.metadata || {};
    };
 
+   function isRelative(path) path.charAt(0) === "."
+   function isNested(path) ~path.indexOf("/")
+   function normalizePath(path) path.substr(-3) === ".js" ? path : path + ".js"
+   function relatifyPath(path) isRelative(path) ? path : "./" + path
+   function getPackageName(path) path.substr(0, path.indexOf("/"))
+   function getInPackagePath(path) path.substr(path.indexOf("/") + 1)
+   function isRelativeTo(path, base) 0 === path.indexOf(base)
+   function resolveTo(path, base) "." + path.substr(base.length)
+
    exports.CompositeFileSystem.prototype = {
+     getPackageURI: function getPackageURI(name) {
+       let uri = this.uriPrefix + name + "-lib/";
+       return ios.newURI(uri, null, null).spec;
+     },
      resolveModule: function resolveModule(base, path) {
-       for (var i = 0; i < this.fses.length; i++) {
-         var fs = this.fses[i];
-         var absPath = fs.resolveModule(base, path);
-         if (absPath) {
-           this._pathMap[absPath] = fs;
-           return absPath;
-         }
+       // If it is relative path we don't need to search anything
+       // as it should be module from the same package.
+       if (isRelative(path)) {
+         // If base is not provided then it's a main module with a relative
+         // path to we use `packageURI` as a base to resolve.
+         base = base || this.getPackageURI(this.name);
+         return this.resolveRelative(base, path);
+       }
+
+       // If path contains only one part then we treat if it as
+       // require(PCKG/{{(package.json).main}}
+       if (!isNested(path))
+         return this.resolveMain(path) || this.searchModule(path);
+
+       // If path contains more then one part than we try to interpret that
+       // as `require(PCKG/module)` first and fall back to search.
+       return this.resolveModuleFromPackage(path) || this.searchModule(path);
+
+     },
+     resolveRelative: function resolveRelative(base, path) {
+        path = normalizePath(path);
+        let uri = ios.newURI(path, null, ios.newURI(base, null, null));
+
+        try {
+          let channel = ios.newChannelFromURI(uri);
+          channel.open().close();
+        } catch (e) {
+          return null;
+        }
+        return uri.spec;
+     },
+     searchModule: function seachModule(path) {
+       for each (let fs in this.fses) {
+         let id = fs.resolveModule(null, path);
+         if (id)
+           return id;
+       }
+       return null;
+     },
+     resolveModuleFromPackage: function resolveModuleFromPackage(path) {
+       let name = getPackageName(path);
+       if (name in this.packages) {
+         let base = this.getPackageURI(name);
+         return this.resolveRelative(base, getInPackagePath(path));
+       }
+       return null;
+     },
+     resolveMain: function resolveMain(name) {
+       if (name in this.packages) {
+         let base = this.getPackageURI(name);
+         let path = relatifyPath(this.packages[name].main || "main");
+
+         // We need to make sure to strip out directory from the main if it
+         // contains "lib" part. Unfortunately if main out of the lib folder
+         // requiring main module will fail as it will be out of the mapped
+         // resource URI.
+         let dirs = this.packages[name].directories;
+         let lib = relatifyPath(dirs ? dirs.lib || "./lib" : "./lib");
+         if (isRelativeTo(path, lib))
+           path = resolveTo(path, lib);
+
+         return this.resolveRelative(base, path);
        }
        return null;
      },
      getFile: function getFile(path) {
-       return this._pathMap[path].getFile(path);
+       return loadFile(path);
      }
    };
 
@@ -587,6 +706,7 @@
          baseURI = this._rootURI;
        else
          baseURI = ios.newURI(base, null, null);
+
        var newURI = ios.newURI(path, null, baseURI);
        if (newURI.spec.indexOf(this._rootURIDir) == 0) {
          var channel = ios.newChannelFromURI(newURI);
@@ -600,21 +720,25 @@
        return null;
      },
      getFile: function getFile(path) {
-       var channel = ios.newChannel(path, null, null);
-       var iStream = channel.open();
-       var ciStream = Cc["@mozilla.org/intl/converter-input-stream;1"].
-                      createInstance(Ci.nsIConverterInputStream);
-       var bufLen = 0x8000;
-       ciStream.init(iStream, "UTF-8", bufLen,
-                     Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
-       var chunk = {};
-       var data = "";
-       while (ciStream.readString(bufLen, chunk) > 0)
-         data += chunk.value;
-       ciStream.close();
-       iStream.close();
-       return {contents: data};
+       return loadFile(path);
      }
+   };
+
+   function loadFile(path) {
+     var channel = ios.newChannel(path, null, null);
+     var iStream = channel.open();
+     var ciStream = Cc["@mozilla.org/intl/converter-input-stream;1"].
+       createInstance(Ci.nsIConverterInputStream);
+     var bufLen = 0x8000;
+     ciStream.init(iStream, "UTF-8", bufLen,
+                   Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER);
+     var chunk = {};
+     var data = "";
+     while (ciStream.readString(bufLen, chunk) > 0)
+       data += chunk.value;
+     ciStream.close();
+     iStream.close();
+     return {contents: data, filename: path};
    };
 
    if (global.window) {

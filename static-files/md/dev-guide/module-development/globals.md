@@ -6,7 +6,7 @@ to be of interest to SDK module developers, rather than add-on developers.
 ## Components ##
 
 To access the infamous and powerful `Components` object, see the
-[Chrome Authority](#guide/module-development/chrome) documentation.
+[Chrome Authority](dev-guide/module-development/chrome.html) documentation.
 
 ## \_\_url\_\_ ##
 
@@ -16,7 +16,7 @@ been retrieved.  If the code has no identifiable URL, this value may be `null`.
 ## packaging ##
 
 <span class="aside">
-For more information on packaging, see the [Package Specification] appendix.
+For more information on packaging, see the [Package Specification][] appendix.
 </span>
 
 The `packaging` global contains methods and metadata related to
@@ -32,10 +32,10 @@ code resides.
 
 Thus, for example, if a package contains a resource at
 `data/mydata.dat` and a module at `lib/foo.js`, the module at
-`lib/foo.js` may make the following call to retrieve an absolute url
+`lib/foo.js` may make the following call to retrieve an absolute URL
 to `data/mydata.dat`:
 
-    var mydata = packaging.getURLForData("/mydata.dat");
+    var myDataURL = packaging.getURLForData("/mydata.dat");
 
 If the calling package has no `data` directory, an exception is
 thrown.
@@ -95,4 +95,4 @@ Each element of the array is an object with the following keys:
 Returns an `Array` containing the names of all bins that aren't
 currently empty.
 
-  [Package Specification]: #guide/addon-development/package-spec
+  [Package Specification]: dev-guide/addon-development/package-spec.html

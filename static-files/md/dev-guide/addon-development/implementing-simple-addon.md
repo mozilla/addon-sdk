@@ -25,13 +25,13 @@ something like this:
 <pre>
   * lib directory created
   * data directory created
-  * tests directory created
-  * docs directory created
+  * test directory created
+  * doc directory created
   * README.md written
   * package.json written
-  * tests/test-main.js written
+  * test/test-main.js written
   * lib/main.js written
-  * docs/main.md written
+  * doc/main.md written
 
   Your sample add-on is now ready for testing:
       try "cfx test" and then "cfx run". Have fun!"
@@ -39,21 +39,25 @@ something like this:
 
 First, `cfx init` creates the directory structure your add-on needs:
 
-* `/data` contains resources such as icons or strings. You can access the
-content of the `data` subdirectory from within your add-on's code using the
-Add-on SDK's [`self`](#module/api-utils/self) module.
+<span class="aside">
+When you create add-ons using the SDK, you might create two different sorts of
+scripts.
+All add-ons will create at least one script under `/lib`. Some add-ons
+will also create "content scripts" stored under `/data`.
+For more information
+on the difference between these two sorts of files, see
+[Two Types of Scripts](dev-guide/addon-development/two-types-of-scripts.html).
+</span>
 
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/docs`.*</span>
+* `/data` contains resources such as icons or HTML files, as well as any
+[content scripts](dev-guide/addon-development/web-content.html) included
+with your add-on. You can access the
+content of the `data` subdirectory from within your add-on's code using the
+Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
 
 * `/doc` contains any documentation for your add-on.
 
 * `/lib` contains the JavaScript modules implementing your add-on.
-
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/tests`.*</span>
 
 * `/test` contains unit test code.
 
@@ -72,8 +76,8 @@ something like this:
   }
 </pre>
 
-Finally, `cfx init` creates some example files under `docs`, `lib`, and
-`tests`: we will replace those.
+Finally, `cfx init` creates some example files under `doc`, `lib`, and
+`test`: we will replace those.
 
 ## Adding Your Code ##
 
@@ -85,79 +89,134 @@ contents with the following:
     var request = require("request");
     var selection = require("selection");
 
-    // Create a new context menu item.
-    var menuItem = contextMenu.Item({
+    exports.main = function(options, callbacks) {
+      console.log(options.loadReason);
 
-      label: "Translate Selection",
+      // Create a new context menu item.
+      var menuItem = contextMenu.Item({
 
-      // Show this item when a selection exists.
-      context: contextMenu.SelectionContext(),
+        label: "Translate Selection",
 
-      // When this item is clicked, post a message to the item with the
-      // selected text and current URL.
-      contentScript: 'on("click", function () {' +
-                     '  var text = window.getSelection().toString();' +
-                     '  postMessage(text);' +
-                     '});',
+        // Show this item when a selection exists.
 
-      // When we receive the message, call the Google Translate API with the
-      // selected text and replace it with the translation.
-      onMessage: function (text) {
-        if (text.length == 0) {
-          throw ("Text to translate must not be empty");
-        }
-        console.log("input: " + text)
-        var req = request.Request({
-          url: "http://ajax.googleapis.com/ajax/services/language/translate",
-          content: {
-            v: "1.0",
-            q: text,
-            langpair: "|en"
-          },
-          onComplete: function (response) {
-            translated = response.json.responseData.translatedText;
-            console.log("output: " + translated)
-            selection.text = translated;
+        context: contextMenu.SelectionContext(),
+
+        // When this item is clicked, post a message to the item with the
+        // selected text and current URL.
+        contentScript: 'self.on("click", function () {' +
+                       '  var text = window.getSelection().toString();' +
+                       '  self.postMessage(text);' +
+                       '});',
+
+        // When we receive the message, call the Google Translate API with the
+        // selected text and replace it with the translation.
+        onMessage: function (text) {
+          if (text.length === 0) {
+            throw ("Text to translate must not be empty");
           }
-        });
-        req.get();
-      }
-    });
+          console.log("input: " + text);
+          var req = request.Request({
+            url: "http://ajax.googleapis.com/ajax/services/language/translate",
+            content: {
+              v: "1.0",
+              q: text,
+              langpair: "|en"
+            },
+            onComplete: function (response) {
+              translated = response.json.responseData.translatedText;
+              console.log("output: " + translated);
+              selection.text = translated;
+            }
+          });
+          req.get();
+        }
+      });
+    };
 
+    exports.onUnload = function (reason) {
+      console.log(reason);
+    };
+
+
+### Importing Modules ###
 
 The first three lines are used to import three SDK modules from the
 addon-kit package:
 
-* [`context-menu`](#module/addon-kit/context-menu) enables add-ons to
-add new items to the context menu
-
-* [`request`](#module/addon-kit/request) enables add-ons to make
+* [`context-menu`](packages/addon-kit/docs/context-menu.html) enables add-ons
+to add new items to the context menu
+* [`request`](packages/addon-kit/docs/request.html) enables add-ons to make
 network requests
+* [`selection`](packages/addon-kit/docs/selection.html) gives add-ons access
+to selected text in the active browser window
 
-* [`selection`](#module/addon-kit/selection) gives add-ons access to
-selected text in the active browser window
+### Creating a Context Menu Item ###
 
 Next, this code constructs a context menu item. It supplies:
 
 * the name of the item to display: "Translate Selection"
-
 * a context in which the item should be displayed: `SelectionContext()`,
 meaning: include this item in the context menu whenever some content on the
 page is selected
-
 * a script to execute when the item is clicked: this script sends the selected
 text to the function assigned to the `onMessage` property
-
 * a value for the `onMessage` property: this function will now be called with
 the selected text, whenever the user clicks the menu. It uses Google's
 AJAX-based translation service to translate the selection to English and sets
 the selection to the translated text.
 
-Finally, note the two calls to `console.log()` here. `console` is a global
-object accessible by any module and is very useful for debugging.
-`console.log(message)` writes `message` to the console. For more
-information on the globals available to your code see the
-[Globals](#guide/addon-development/globals) reference section.
+### Listening for Load and Unload ###
+
+The code which creates the context menu is wrapped in a function which we have
+assigned to the  `main` property of the global `exports` object.
+
+If your add-on exports a function called `main`, that function will be called
+when the add-on is loaded.
+
+    exports.main = function (options, callbacks) {};
+
+`options` is an object describing the parameters with which your add-on was
+loaded. In particular, `options.loadReason` is one of the following strings
+describing the reason your add-on was loaded: `install`, `enable`, `startup`,
+`upgrade`, or `downgrade`.
+
+Conversely, if your add-on exports a function called `onUnload`, that function
+will be called when the add-on is unloaded.
+
+    exports.onUnload = function (reason) {};
+
+<span class="aside">
+Note that if your add-on is unloaded with reason `disable`, it will not be
+notified about `uninstall` while it is disabled: see
+bug [571049](https://bugzilla.mozilla.org/show_bug.cgi?id=571049).
+</span>
+
+`reason` is one of the following strings describing the reason your add-on was
+unloaded: `uninstall`, `disable`, `shutdown`, `upgrade`, or `downgrade`.
+
+You don't have to use `exports.main` or `exports.onUnload`. You can just place
+your add-on's code at the top level instead of wrapping it in a function
+assigned to `exports.main`: it will be loaded in the same circumstances, but
+you won't get access to the `options` or `callbacks` arguments.
+
+This particular add-on doesn't need to use `exports.main` or `exports.onUnload`
+for anything, and only includes them to illustrate their use.
+
+### Logging ###
+
+Note the calls to `console.log()` here. `console` is a global object accessible
+by any module, which you can use to write error, warning, or informational
+messages.
+
+For an extension which has been packaged as an XPI file and installed into
+Firefox, the messages are sent to Firefox's
+[Error Console](https://developer.mozilla.org/en/Error_Console). If you are
+launching Firefox from the command line using `cfx`, as you will be for
+development and debugging, then the messages are sent to the command shell
+from which you launched Firefox.
+
+For more information on the `console` object see its
+[documentation page](dev-guide/addon-development/console.html).
 
 ## Running It ##
 
@@ -170,7 +229,7 @@ To run your program, navigate to the `translator` directory and type:
 The first time you do this, you'll see a message like this:
 
 <pre>
-  No 'id' in package.json: creating a new keypair for you.
+  No 'id' in package.json: creating a new ID for you.
   package.json modified: please re-run 'cfx run'
 </pre>
 
@@ -182,7 +241,7 @@ identifier for you add-on called the **Program ID** and it is important. It is
 used by various tools and services to distinguish this add-on from any other.
 
 To learn more about the Program ID refer to the
-[Program ID](#guide/addon-development/program-id) document.
+[Program ID](dev-guide/addon-development/program-id.html) document.
 
 Once `cfx run` has launched Firefox you can try out the new add-on. Load a
 page containing some text that is not in English, for example:
@@ -198,7 +257,7 @@ translation:
 
 ![translator context-menu](media/screenshots/translator/translated-osx.png)
 
-You will also see output like this appear in the console:
+You will also see output like this appear in your command shell:
 
 <pre>
   info: input: Le projet Mozilla est une communauté mondiale de personnes
@@ -214,11 +273,11 @@ You will also see output like this appear in the console:
   We are best known for creating the Mozilla Firefox Web browser.
 </pre>
 
-## Packaging It ##
+## Preparing Your Add-on for Deployment ##
 
-Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Add-on SDK simplifies the packaging
-process by generating this file for you.
+Once you have finished testing your add-on you can package it for deployment
+like any other Firefox add-on, as a XPI file. The Add-on SDK simplifies the
+packaging process by generating this file for you.
 
 To package your program as a XPI, navigate to the root of your package
 directory in your shell and run `cfx xpi`. You should see a message:
@@ -262,5 +321,5 @@ Eventually, this step may be automated via the SDK, streamlining the
 distribution process further.
 
 In the next section we'll introduce
-[CommonJS](#guide/addon-development/commonjs), which provides the infrastructure
-for the SDK.
+[CommonJS](dev-guide/addon-development/commonjs.html), which provides the
+infrastructure for the SDK.

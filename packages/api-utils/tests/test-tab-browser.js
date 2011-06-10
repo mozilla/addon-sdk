@@ -479,17 +479,19 @@ exports.testModuleListenersDontInteract = function(test) {
 
         tab.location = url;
 
-        require("timer").setTimeout(function() {
-          // if this never occurs, the test'll timeout and fail.
-          test.assertEqual(eventCount, 4, "Correct global number of events");
-          test.assertEqual(eventModule1, 2, "Correct number of events on module 1");
-          test.assertEqual(eventModule2, 2, "Correct number of events on module 2");
+        test.waitUntilEqual(function () eventCount, 4,
+                            "Correct global number of events")
+            .then(function () {
+              test.assertEqual(eventModule1, 2,
+                               "Correct number of events on module 1");
+              test.assertEqual(eventModule2, 2,
+                               "Correct number of events on module 2");
 
-          tm1.onReady.remove(listener1);
-          tab.onReady.remove(listener2);
-          tab.onReady.remove(listener3);
-          closeBrowserWindow(window, function() test.done());
-        }, 1000);
+              tm1.onReady.remove(listener1);
+              tab.onReady.remove(listener2);
+              tab.onReady.remove(listener3);
+              closeBrowserWindow(window, function() test.done());
+            });
       }
     });
   });

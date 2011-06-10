@@ -33,17 +33,17 @@ h3.api_header {
   margin-top: 20px;
   margin-bottom: 10px;
   padding: 3px;
-  border: solid 1px #E0EFFD;
-  background: #E0EFFD;
+  border: solid 1px #e0effd;
+  background: #e0effd;
   -moz-border-radius: 5px;
 }
 
 /* next-level heading: something like "Methods", "Object properties" */
 .api_reference > .api_component_group > .api_component > .api_component_group > .api_header {
   font-size: 125%;
-  margin-top:20px;
+  margin-top: 20px;
   margin-bottom: 5px;
-  border-bottom: solid 2px #E0EFFD;
+  border-bottom: solid 2px #e0effd;
 }
 
 /***
@@ -56,13 +56,13 @@ Name of some API component, like widget or postMessage()
   font-weight: bold;
 }
 
-/* top level api component: module-level classes,functions, properties */
+/* top level api component: module-level classes, functions, properties */
 h4.api_name {
   font-weight: normal;
   font-size: 150%;
   padding: 3px;
-  border: solid 1px #E0EFFD;
-  background: #E0EFFD;
+  border: solid 1px #e0effd;
+  background: #e0effd;
   -moz-border-radius: 5px;
   margin-bottom: 5px;
 }
@@ -104,7 +104,7 @@ All collections of API components
 Parameters and returns have a grey background
 */
 .parameter_set, .returns {
-  background-color: #F0F8FF;
+  background-color: #f0f8ff;
   -moz-border-radius: 5px;
 }
 

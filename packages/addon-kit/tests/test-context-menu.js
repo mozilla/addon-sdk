@@ -43,6 +43,8 @@ let {Cc,Ci} = require("chrome");
 const ITEM_CLASS = "jetpack-context-menu-item";
 const SEPARATOR_ID = "jetpack-context-menu-separator";
 const OVERFLOW_THRESH_DEFAULT = 10;
+const OVERFLOW_THRESH_PREF =
+  "extensions.addon-sdk.context-menu.overflowThreshold";
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
@@ -305,6 +307,65 @@ exports.testURLContextNoMatch = function (test) {
 };
 
 
+// Removing a non-matching URL context after its item is created and the page is
+// loaded should cause the item's content script to be evaluated.
+exports.testURLContextRemove = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let shouldBeEvaled = false;
+  let context = loader.cm.URLContext("*.bogus.com");
+  let item = loader.cm.Item({
+    label: "item",
+    context: context,
+    contentScript: 'self.postMessage("ok");',
+    onMessage: function (msg) {
+      test.assert(shouldBeEvaled,
+                  "content script should be evaluated when expected");
+      shouldBeEvaled = false;
+      test.done();
+    }
+  });
+
+  test.withTestDoc(function (window, doc) {
+    shouldBeEvaled = true;
+    item.context.remove(context);
+  });
+};
+
+
+// Adding a non-matching URL context after its item is created and the page is
+// loaded should cause the item's worker to be destroyed.
+exports.testURLContextAdd = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({ label: "item" });
+
+  test.withTestDoc(function (window, doc) {
+    let privatePropsKey = loader.globalScope.PRIVATE_PROPS_KEY;
+    let workerReg = item.valueOf(privatePropsKey).workerReg;
+
+    let found = false;
+    for each (let winWorker in workerReg.winWorkers) {
+      if (winWorker.win === window) {
+        found = true;
+        break;
+      }
+    }
+    this.test.assert(found, "window should be present in worker registry");
+
+    item.context.add(loader.cm.URLContext("*.bogus.com"));
+
+    for each (let winWorker in workerReg.winWorkers)
+      this.test.assertNotEqual(winWorker.win, window,
+        "window should not be present in worker registry");
+
+    test.done();
+  });
+};
+
+
 // Content contexts that return true should cause their items to be present
 // in the menu.
 exports.testContentContextMatch = function (test) {
@@ -313,7 +374,7 @@ exports.testContentContextMatch = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function () true);'
+    contentScript: 'self.on("context", function () true);'
   });
 
   test.showMenu(null, function (popup) {
@@ -331,7 +392,7 @@ exports.testContentContextNoMatch = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function () false);'
+    contentScript: 'self.on("context", function () false);'
   });
 
   test.showMenu(null, function (popup) {
@@ -348,9 +409,9 @@ exports.testContentContextArgs = function (test) {
 
   let item = new loader.cm.Item({
     label: "item",
-    contentScript: 'on("context", function (node) {' +
+    contentScript: 'self.on("context", function (node) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  self.postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
                    '  return false;' +
                    '});',
     onMessage: function (isElt) {
@@ -372,7 +433,7 @@ exports.testMultipleContexts = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     context: [loader.cm.SelectorContext("a[href]"), loader.cm.PageContext()],
-    contentScript: 'on("context", function () postMessage());',
+    contentScript: 'self.on("context", function () self.postMessage());',
     onMessage: function () {
       test.fail("Context listener should not be called");
     }
@@ -760,9 +821,9 @@ exports.testItemClick = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     data: "item data",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
                    '    data: data' +
                    '  });' +
@@ -806,9 +867,9 @@ exports.testMenuClick = function (test) {
 
   let topMenu = new loader.cm.Menu({
     label: "top menu",
-    contentScript: 'on("click", function (node, data) {' +
+    contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components.interfaces;' +
-                   '  postMessage({' +
+                   '  self.postMessage({' +
                    '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
                    '    data: data' +
                    '  });' +
@@ -993,13 +1054,13 @@ exports.testInsertionPoint = function (test) {
   let insertionPoint = loader.globalScope.insertionPoint;
 
   let ip = insertionPoint("a", []);
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   ip = insertionPoint("a", mockElts(["b"]));
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
   ip = insertionPoint("c", mockElts(["b"]));
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   ip = insertionPoint("b", mockElts(["a", "c"]));
   test.assertEqual(ip.label, "c", "Insertion point should be 'c'");
@@ -1011,7 +1072,7 @@ exports.testInsertionPoint = function (test) {
   test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
 
   ip = insertionPoint("d", mockElts(["a", "b", "c"]));
-  test.assert(ip === null, "Insertion point should be null");
+  test.assertStrictEqual(ip, null, "Insertion point should be null");
 
   test.done();
 };
@@ -1026,23 +1087,147 @@ exports.testContentCommunication = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'var potato;' +
-                   'on("context", function () {' +
+                   'self.on("context", function () {' +
                    '  potato = "potato";' +
                    '  return true;' +
                    '});' +
-                   'on("click", function () {' +
-                   '  postMessage(potato);' +
+                   'self.on("click", function () {' +
+                   '  self.postMessage(potato);' +
                    '});',
-    onMessage: function (data) {
-      test.assertEqual(data, "potato", "That's a lot of potatoes!");
-      test.done();
-    }
+  });
+
+  item.on("message", function (data) {
+    test.assertEqual(data, "potato", "That's a lot of potatoes!");
+    test.done();
   });
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [], []);
     let elt = test.getItemElt(popup, item);
     elt.click();
+  });
+};
+
+
+// When the context menu is invoked on a tab that was already open when the
+// module was loaded, it should contain the expected items and content workers
+// should function as expected.
+exports.testLoadWithOpenTab = function (test) {
+  test = new TestHelper(test);
+  test.withTestDoc(function (window, doc) {
+    let loader = test.newLoader();
+    let item = new loader.cm.Item({
+      label: "item",
+      contentScript: 'self.on("click", function () self.postMessage("click"));',
+      onMessage: function (msg) {
+        if (msg === "click")
+          test.done();
+      }
+    });
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.getItemElt(popup, item).click();
+    });
+  });
+};
+
+
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu.
+exports.testSetLabelBeforeShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu.
+exports.testSetLabelAfterShow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Setting an item's label before the menu is ever shown should correctly change
+// its label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelBeforeShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ]
+  items[0].label = "z";
+  test.assertEqual(items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([items[1], items[0]], [], []);
+    prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+    test.done();
+  });
+};
+
+
+// Setting an item's label after the menu is shown should correctly change its
+// label and, if necessary, its order within the menu if the item is in the
+// overflow submenu.
+exports.testSetLabelAfterShowOverflow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  let items = [
+    new loader.cm.Item({ label: "a" }),
+    new loader.cm.Item({ label: "b" })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, [], []);
+    popup.hidePopup();
+
+    items[0].label = "z";
+    test.assertEqual(items[0].label, "z");
+    test.showMenu(null, function (popup) {
+      test.checkMenu([items[1], items[0]], [], []);
+      prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
+      test.done();
+    });
   });
 };
 
@@ -1066,7 +1251,9 @@ if (!require("xul-app").is("Firefox")) {
 // WARNING: This looks up items in popups by comparing labels, so don't give two
 // items the same label.
 function TestHelper(test) {
-  test.waitUntilDone();
+  // default waitUntilDone timeout is 10s, which is too short on the win7
+  // buildslave
+  test.waitUntilDone(30*1000);
   this.test = test;
   this.loaders = [];
   this.browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
@@ -1275,8 +1462,28 @@ TestHelper.prototype = {
         this.tabBrowser.removeTab(this.tab);
         this.tabBrowser.selectedTab = this.oldSelectedTab;
       }
-      while (this.loaders.length)
+      while (this.loaders.length) {
+        let browserManager = this.loaders[0].globalScope.browserManager;
+        let items = browserManager.items.slice();
+        let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
         this.loaders[0].unload();
+
+        // Make sure the browser manager is cleaned up.
+        this.test.assertEqual(browserManager.windows.length, 0,
+                              "browserManager should have no windows left");
+        this.test.assertEqual(browserManager.items.length, 0,
+                              "browserManager should have no items left");
+
+        // Make sure the items' worker registries are cleaned up.
+        items.forEach(function (item) {
+          let workerReg = item.valueOf(privatePropsKey).workerReg;
+          this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
+                                "worker registry should be empty");
+          this.test.assertEqual(
+            Object.keys(workerReg.winsWithoutWorkers).length, 0,
+            "worker registry list of windows without workers should be empty");
+        }, this);
+      }
       this.test.done();
     }
 
@@ -1322,7 +1529,9 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader();
+    let loader = this.test.makeSandboxedLoader({
+      globals: { packaging: packaging }
+    });
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
@@ -1341,7 +1550,11 @@ TestHelper.prototype = {
 
   // Returns true if the number of presentItems crosses the overflow threshold.
   shouldOverflow: function (presentItems) {
-    return presentItems.length > OVERFLOW_THRESH_DEFAULT;
+    return presentItems.length >
+           (this.loaders.length ?
+            this.loaders[0].loader.require("preferences-service").
+              get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT) :
+            OVERFLOW_THRESH_DEFAULT);
   },
 
   // Opens the context menu on the current page.  If targetNode is null, the

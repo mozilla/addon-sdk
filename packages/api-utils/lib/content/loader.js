@@ -89,11 +89,14 @@ const valid = {
   },
   contentScriptWhen: {
     is: ['string'],
-    ok: function(value) ['start', 'ready'].indexOf(value) >= 0,
-    map: function(value) value || 'start',
-    msg: 'The `contentScriptWhen` option must be either "start" or "ready".'
+    ok: function(value) ['start', 'ready', 'end'].indexOf(value) >= 0,
+    map: function(value) { 
+      return value || 'end';
+    },
+    msg: 'The `contentScriptWhen` option must be either "start", "ready" or "end".'
   }
 };
+exports.validationAttributes = valid;
 
 /**
  * Shortcut function to validate property with validation.
@@ -144,12 +147,14 @@ const Loader = EventEmitter.compose({
   _contentURL: null,
   /**
    * When to load the content scripts.
-   * Possible values are "start" (default), which loads them as soon as
-   * the window object for the page has been created, and "ready", which
-   * loads them once the DOM content of the page has been loaded.
+   * Possible values are "end" (default), which loads them once all page 
+   * contents have been loaded, "ready", which loads them once DOM nodes are 
+   * ready (ie like DOMContentLoaded event), and "start", which loads them once 
+   * the `window` object for the page has been created, but before any scripts 
+   * specified by the page have been loaded.
    * Property change emits `propertyChange` event on instance with this key
    * and new value.
-   * @type {'start'|'ready'}
+   * @type {'start'|'ready'|'end'}
    */
   get contentScriptWhen() this._contentScriptWhen,
   set contentScriptWhen(value) {
@@ -160,7 +165,7 @@ const Loader = EventEmitter.compose({
       });
     }
   },
-  _contentScriptWhen: 'start',
+  _contentScriptWhen: 'end',
   /**
    * The URLs of content scripts.
    * Property change emits `propertyChange` event on instance with this key

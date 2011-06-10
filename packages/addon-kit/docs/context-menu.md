@@ -101,9 +101,9 @@ following types.  Each is a constructor exported by the `context-menu` module.
       match pattern strings.  When <code>matchPattern</code> is an array, the
       context occurs when the menu is invoked on a page whose URL matches any of
       the patterns.  These are the same match pattern strings that you use with
-      the <a href="#module/addon-kit/page-mod"><code>page-mod</code></a>
+      the <a href="packages/addon-kit/docs/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="#module/api-utils/match-pattern">Read more about patterns</a>.
+      <a href="packages/api-utils/docs/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -143,7 +143,7 @@ on a page whose URL contains "mozilla" as a substring:
 
     var myItem = contextMenu.Item({
       label: "My Mozilla Item",
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(document.URL);' +
                      '});'
     });
@@ -162,7 +162,7 @@ This example takes advantage of that fact.  The listener can be assured that
     var myItem = contextMenu.Item({
       label: "My Mozilla Image Item",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
                      '});'
     });
@@ -174,16 +174,17 @@ context listener returns true.
 Handling Menu Item Clicks
 -------------------------
 
-When the user clicks your menu item, an event named `"click"` is dispatched to
-the item's content script.  Content scripts let you interact with pages in the
-browser, and they also let you handle menu item clicks.
+In addition to using content scripts to listen for the `"context"` event as
+described above, you use content scripts to handle item clicks.  When the user
+clicks your menu item, an event named `"click"` is dispatched to the item's
+content script.
 
-Therefore, to handle a click, listen for `"click"` events in your content
-script like so:
+Therefore, to handle an item click, listen for the `"click"` event in that
+item's content script like so:
 
     var myItem = contextMenu.Item({
       label: "My Item",
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("Item clicked!");' +
                      '});'
     });
@@ -196,7 +197,7 @@ comes in handy for `Menu`s with sub-items.  For example:
 
     var myMenu = contextMenu.Menu({
       label: "My Menu",
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("You clicked " + data);' +
                      '});',
       items: [
@@ -208,15 +209,16 @@ comes in handy for `Menu`s with sub-items.  For example:
 
 Often you will need to collect some kind of information in the click listener
 and perform an action unrelated to content.  To communicate to the menu item
-associated with the content script, the content script can call the global
-`postMessage` function, passing it some JSON-able data.  The menu item's
-`onMessage` function will be called with that data.
+associated with the content script, the content script can call the
+`postMessage` function attached to the global `self` object, passing it some
+JSON-able data.  The menu item's `onMessage` function will be called with that
+data.
 
     var myItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -236,8 +238,8 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](#guide/addon-development/web-content) for more
-information.
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+for more information.
 
 First, don't forget to import the module:
 
@@ -248,8 +250,8 @@ part of the page:
 
     var pageSourceItem = contextMenu.Item({
       label: "Edit Page Source",
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(document.URL);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(document.URL);' +
                      '});',
       onMessage: function (pageURL) {
         editSource(pageURL);
@@ -261,8 +263,8 @@ Show an "Edit Image" item when the menu is invoked on an image:
     var editImageItem = contextMenu.Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -278,8 +280,8 @@ mozilla.org or mozilla.com page:
         contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
         contextMenu.SelectorContext("img")
       ],
-      contentScript: 'on("click", function (node, data) {' +
-                     '  postMessage(node.src);' +
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage(node.src);' +
                      '});',
       onMessage: function (imgSrc) {
         openImageEditor(imgSrc);
@@ -292,16 +294,16 @@ Show an "Edit Page Images" item when the page contains at least one image:
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
       context: contextMenu.PageContext(),
-      contentScript: 'on("context", function (node) {' +
+      contentScript: 'self.on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
                      '});' +
-                     'on("click", function (node, data) {' +
+                     'self.on("click", function (node, data) {' +
                      '  var imgs = document.querySelectorAll("img");' +
                      '  var imgSrcs = [];' +
                      '  for (var i = 0 ; i < imgs.length; i++)' +
                      '    imgSrcs.push(imgs[i].src);' +
-                     '  postMessage(imgSrcs);' +
+                     '  self.postMessage(imgSrcs);' +
                      '});',
       onMessage: function (imgSrcs) {
         openImageEditor(imgSrcs);
@@ -322,12 +324,24 @@ Google or Wikipedia with the text contained in the anchor:
     var searchMenu = contextMenu.Menu({
       label: "Search With",
       context: contextMenu.SelectorContext("a[href]"),
-      contentScript: 'on("click", function (node, data) {' +
+      contentScript: 'self.on("click", function (node, data) {' +
                      '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
                      '});',
       items: [googleItem, wikipediaItem]
     });
+
+Dynamically set an item's label based on the number of times it's been clicked:
+
+    var numClicks = 0;
+    contextMenu.Item({
+      label: "Click Me: " + numClicks,
+      contentScript: 'self.on("click", self.postMessage);',
+      onMessage: function () {
+        this.label = "Click Me: " + (++numClicks);
+      }
+    });
+
 
 <api name="Item">
 @class
@@ -359,20 +373,70 @@ A labeled menu item that can perform an action when clicked.
     submenu.
   @prop [onMessage] {function}
     If the item is contained in the top-level context menu, this function will
-    be called when the content script calls `postMessage`.  It will be passed
-    the data that was passed to `postMessage`.  Ignored if the item is contained
-    in a submenu.
+    be called when the content script calls `self.postMessage`.  It will be
+    passed the data that was passed to `postMessage`.  Ignored if the item is
+    contained in a submenu.
 </api>
+
+<api name="label">
+@property {string}
+  The menu item's label.  You can set this after creating the item to update its
+  label later.
+</api>
+
+<api name="data">
+@property {string}
+  An arbitrary value associated with the menu item during creation.  Currently
+  this property is read-only.
+</api>
+
+<api name="context">
+@property {list}
+  A list of declarative contexts for which the menu item will appear in the
+  context menu.  Contexts can be added by calling `context.add()` and removed by
+  called `context.remove()`.  This property is meaningful only for items
+  contained in the top-level context menu.
+</api>
+
+<api name="contentScript">
+@property {string,array}
+  The content script or the array of content scripts associated with the menu
+  item during creation.  This property is meaningful only for items contained in
+  the top-level context menu.
+</api>
+
+<api name="contentScriptFile">
+@property {string,array}
+  The URL of a content script or the array of such URLs associated with the menu
+  item during creation.  This property is meaningful only for items contained in
+  the top-level context menu.
+</api>
+
 <api name="destroy">
 @method
   Permanently removes the item from the top-level context menu.  If the item is
   not contained in the top-level context menu, this method does nothing.
 </api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this menu item. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the menu item's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
 </api>
 
 <api name="Menu">
 @class
 A labeled menu item that expands into a submenu.
+
 <api name="Menu">
 @constructor
   Creates a labeled menu item that expands into a submenu.
@@ -399,15 +463,64 @@ A labeled menu item that expands into a submenu.
     submenu.
   @prop [onMessage] {function}
     If the menu is contained in the top-level context menu, this function will
-    be called when the content script calls `postMessage`.  It will be passed
-    the data that was passed to `postMessage`.  Ignored if the item is contained
-    in a submenu.
+    be called when the content script calls `self.postMessage`.  It will be
+    passed the data that was passed to `postMessage`.  Ignored if the item is
+    contained in a submenu.
 </api>
+
+<api name="label">
+@property {string}
+  The menu's label.  You can set this after creating the menu to update its
+  label later.
+</api>
+
+<api name="items">
+@property {array}
+  The menu items contained in the menu.  Currently the items in the menu cannot
+  be changed by modifying this property.
+</api>
+
+<api name="context">
+@property {list}
+  A list of declarative contexts for which the menu will appear in the context
+  menu.  Contexts can be added by calling `context.add()` and removed by called
+  `context.remove()`.  This property is meaningful only for menus contained in
+  the top-level context menu.
+</api>
+
+<api name="contentScript">
+@property {string,array}
+  The content script or the array of content scripts associated with the menu
+  during creation.  This property is meaningful only for menus contained in the
+  top-level context menu.
+</api>
+
+<api name="contentScriptFile">
+@property {string,array}
+  The URL of a content script or the array of such URLs associated with the menu
+  during creation.  This property is meaningful only for menus contained in the
+  top-level context menu.
+</api>
+
 <api name="destroy">
 @method
   Permanently removes the menu from the top-level context menu.  If the menu is
   not contained in the top-level context menu, this method does nothing.
 </api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this menu item. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the menu item's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
 </api>
 
 <api name="Separator">
@@ -455,7 +568,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern] string or an array of match pattern strings.
-  [match pattern]: #module/api-utils/match-pattern
+  A [match pattern](packages/api-utils/docs/match-pattern.html) string or an array of
+  match pattern strings.
 </api>
 </api>

@@ -19,8 +19,10 @@ exports.testDupeSetExports = function(test) {
 }
 
 exports.testModule = function(test) {
-  // module.id is not cast in stone yet. For now, it's just the module name.
-  // In the future, it may include the package name too, or may possibly be a
-  // URL of some sort.
-  test.assertEqual(module.id, "test-set-exports");
+  // module.id is not cast in stone yet. In the future, it may include the
+  // package name, or may possibly be a/ URL of some sort. For now, it's a
+  // URL that starts with resource: and ends with this module name, but the
+  // part in between varies depending upon how the test is run.
+  var found = /test-set-exports\.js$/.test(module.id);
+  test.assertEqual(found, true, module.id+" ends with test-set-exports.js");
 }

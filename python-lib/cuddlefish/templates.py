@@ -4,6 +4,7 @@ const widgets = require("widget");
 const tabs = require("tabs");
 
 var widget = widgets.Widget({
+  id: "mozilla-link",
   label: "Mozilla website",
   contentURL: "http://www.mozilla.org/favicon.ico",
   onClick: function() {
@@ -69,7 +70,7 @@ This is the %(name)s add-on.  It contains:
 PACKAGE_JSON = '''\
 {
   "name": "%(name)s",
-  "fullName": "%(name)s",
+  "fullName": "%(fullName)s",
   "description": "a basic add-on",
   "author": "",
   "license": "MPL 1.1/GPL 2.0/LGPL 2.1",

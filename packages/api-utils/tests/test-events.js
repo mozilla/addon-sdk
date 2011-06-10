@@ -160,3 +160,23 @@ exports['test:emitOnObject'] = function(test) {
   let obj = {};
   e.emitOnObject(obj, "bar");
 };
+
+exports['test:once'] = function(test) {
+  let e = new EventEmitter();
+  let called = false;
+
+  e.once('foo', function(value) {
+    test.assert(!called, "listener called only once");
+    test.assertEqual(value, "bar", "correct argument was passed");
+  });
+
+  e.emit('foo', 'bar');
+  e.emit('foo', 'baz');
+};
+
+exports["test romeving once"] = function(test) {
+  let e = require("events").EventEmitterTrait.create();
+  e.once("foo", function() { test.pass("listener was called"); });
+  e.once("error", function() { test.fail("error event was emitted"); });
+  e._emit("foo", "bug-656684");
+};

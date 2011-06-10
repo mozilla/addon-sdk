@@ -40,8 +40,7 @@
 // program.
 //
 // The main entry point, `NSGetModule()`, is data-driven, and obtains
-// a lot of its configuration information from either the
-// `HARNESS_OPTIONS` environment variable (if present) or a JSON file
+// a lot of its configuration information from a JSON file
 // called `harness-options.json` in the root directory of the extension
 // or application it's a part of.
 //
@@ -98,6 +97,10 @@ const FENNEC_ID = "{a23983c0-fd0e-11dc-95ff-0800200c9a66}";
 
 function buildHarnessService(rootFileSpec, dump, logError,
                              onQuit, options) {
+  if (arguments.length == 1) {
+    ({dump, logError, onQuit, options}) = getDefaults(rootFileSpec);
+  }
+
   // The loader for securable modules, typically a Cuddlefish loader.
   var loader;
 
@@ -182,6 +185,9 @@ function buildHarnessService(rootFileSpec, dump, logError,
     var loader = new jsm.Loader({rootPaths: options.rootPaths.slice(),
                                  print: dump,
                                  packaging: packaging,
+                                 metadata: options.metadata,
+                                 uriPrefix: options.uriPrefix,
+                                 name: options.name,
                                  globals: { packaging: packaging }
                                 });
     packaging.__setLoader(loader);
@@ -219,34 +225,12 @@ function buildHarnessService(rootFileSpec, dump, logError,
     enableE10s: options.enable_e10s,
 
     jetpackID: options.jetpackID,
+    uriPrefix: options.uriPrefix,
 
     bundleID: options.bundleID,
 
     getModuleInfo: function getModuleInfo(path) {
-      var i = this.__packages[path];
-      var info = { dependencies: i.requires,
-                   needsChrome: i.chrome,
-                   'e10s-adapter': i['e10s-adapter'],
-                   name: i.name,
-                   packageName: i.packageName,
-                   hash: i.hash
-                   };
-      if (info.packageName in options.packageData)
-        info.packageData = options.packageData[info.packageName];
-      return info;
-    },
-
-    // TODO: This has been superseded by require('self').getURL() and
-    // should be deprecated.
-    getURLForData: function getURLForData(path) {
-      var traceback = this.__loader.require("traceback");
-      var callerInfo = traceback.get().slice(-2)[0];
-      var info = this.getModuleInfo(callerInfo.filename);
-      if ('packageData' in info) {
-        var url = this.__loader.require("url");
-        return url.URL(path, info.packageData).toString();
-      } else
-        throw new Error("No data for package " + pkgName);
+      return this.__packages[path];
     },
 
     createLoader: function createLoader() {
@@ -271,7 +255,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
 
     get classID() { return Components.ID(options.bootstrap.classID); },
 
-    _xpcom_categories: [{ category: "app-startup", service: true }],
+    _xpcom_categories: [{ category: "profile-after-change" }],
 
     _xpcom_factory: {
       get singleton() {
@@ -364,7 +348,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     observe: function Harness_observe(subject, topic, data) {
       try {
         switch (topic) {
-        case "app-startup":
+        case "profile-after-change":
           var appInfo = Cc["@mozilla.org/xre/app-info;1"]
                         .getService(Ci.nsIXULAppInfo);
           switch (appInfo.ID) {
@@ -500,25 +484,23 @@ function getDefaults(rootFileSpec) {
                   .getService(Ci.nsIEnvironment);
 
     var jsonData;
-    if (environ.exists("HARNESS_OPTIONS"))
-      jsonData = environ.get("HARNESS_OPTIONS");
+    var optionsFile = rootFileSpec.clone();
+    optionsFile.append('harness-options.json');
+    if (optionsFile.exists()) {
+      var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
+                     .createInstance(Ci.nsIFileInputStream);
+      var siStream = Cc['@mozilla.org/scriptableinputstream;1']
+                     .createInstance(Ci.nsIScriptableInputStream);
+      fiStream.init(optionsFile, 1, 0, false);
+      siStream.init(fiStream);
+      var data = new String();
+      data += siStream.read(-1);
+      siStream.close();
+      fiStream.close();
+      jsonData = data;
+    }
     else {
-      var optionsFile = rootFileSpec.clone();
-      optionsFile.append('harness-options.json');
-      if (optionsFile.exists()) {
-        var fiStream = Cc['@mozilla.org/network/file-input-stream;1']
-                       .createInstance(Ci.nsIFileInputStream);
-        var siStream = Cc['@mozilla.org/scriptableinputstream;1']
-                       .createInstance(Ci.nsIScriptableInputStream);
-        fiStream.init(optionsFile, 1, 0, false);
-        siStream.init(fiStream);
-        var data = new String();
-        data += siStream.read(-1);
-        siStream.close();
-        fiStream.close();
-        jsonData = data;
-      } else
-        throw new Error("HARNESS_OPTIONS env var must exist.");
+      throw new Error("harness-options.json file must exist.");
     }
 
     options = JSON.parse(jsonData);
@@ -567,16 +549,29 @@ function getDefaults(rootFileSpec) {
           logError: logError};
 }
 
+// Gecko 2, entry point for non-bootstrapped extensions (which register this
+// component via chrome.manifest.)
+// FIXME: no install/uninstall notifications on 2.0 for non-bootstrapped addons
+function NSGetFactory(cid) {
+  try {
+    if (!NSGetFactory.fn) {
+      var rootFileSpec = __LOCATION__.parent.parent;
+      var HarnessService = buildHarnessService(rootFileSpec);
+      NSGetFactory.fn = XPCOMUtils.generateNSGetFactory([HarnessService]);
+    }
+  } catch(e) {
+    Components.utils.reportError(e);
+    dump(e);
+    throw e;
+  }
+  return NSGetFactory.fn(cid);
+}
+
 // Everything below is only used on Gecko 1.9.2 or below.
 
 function NSGetModule(compMgr, fileSpec) {
   var rootFileSpec = fileSpec.parent.parent;
-  var defaults = getDefaults(rootFileSpec);
-  var HarnessService = buildHarnessService(rootFileSpec,
-                                           defaults.dump,
-                                           defaults.logError,
-                                           defaults.onQuit,
-                                           defaults.options);
+  var HarnessService = buildHarnessService(rootFileSpec);
   return XPCOMUtils.generateModule([HarnessService]);
 }
 
@@ -610,17 +605,27 @@ var lifeCycleObserver192 = {
   },
 
   // This must be called first to initialize the singleton.  It must be called
-  // before profile-after-change.
+  // on profile-after-change.
   init: function lifeCycleObserver192_init(bundleID, logError) {
-    // This component is present in 1.9.2 but not 1.9.3.
+    // This component is present in 1.9.2 but not 2.0.
     if ("@mozilla.org/extensions/manager;1" in Cc && !this._inited) {
-      // Need an event that's sent before the HarnessService is loaded but after
-      // the preferences service is available.  profile-after-change works.
-      obSvc.addObserver(this, "profile-after-change", true);
       obSvc.addObserver(this, "em-action-requested", true);
       this._bundleID = bundleID;
       this._logError = logError;
       this._inited = true;
+
+      try {
+        // This throws if the pref doesn't exist, which is the case when no
+        // new add-ons were installed.
+        var addonIdStr = Cc["@mozilla.org/preferences-service;1"].
+                         getService(Ci.nsIPrefBranch).
+                         getCharPref("extensions.newAddons");
+      }
+      catch (err) {}
+      if (addonIdStr) {
+        var addonIds = addonIdStr.split(",");
+        this._addonIsNew = addonIds.indexOf(this._bundleID) >= 0;
+      }
     }
   },
 
@@ -634,22 +639,7 @@ var lifeCycleObserver192 = {
 
   observe: function lifeCycleObserver192_observe(subj, topic, data) {
     try {
-      if (topic === "profile-after-change") {
-        obSvc.removeObserver(this, topic);
-        try {
-          // This throws if the pref doesn't exist, which is the case when no
-          // new add-ons were installed.
-          var addonIdStr = Cc["@mozilla.org/preferences-service;1"].
-                           getService(Ci.nsIPrefBranch).
-                           getCharPref("extensions.newAddons");
-        }
-        catch (err) {}
-        if (addonIdStr) {
-          var addonIds = addonIdStr.split(",");
-          this._addonIsNew = addonIds.indexOf(this._bundleID) >= 0;
-        }
-      }
-      else if (topic === "em-action-requested") {
+      if (topic === "em-action-requested") {
         if (subj instanceof Ci.nsIUpdateItem && subj.id === this._bundleID)
           this._emState = data;
       }

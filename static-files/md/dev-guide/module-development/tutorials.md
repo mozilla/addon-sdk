@@ -2,10 +2,10 @@
 <br>
 ## Programming Guides ##
 
-### [Low-Level Module Best Practices](#guide/module-development/best-practices) ###
+### [Low-Level Module Best Practices](dev-guide/module-development/best-practices.html) ###
 
-### [Chrome Authority](#guide/module-development/chrome) ###
+### [Chrome Authority](dev-guide/module-development/chrome.html) ###
 
-### [XPI Generation](#guide/module-development/xpi) ###
+### [XPI Generation](dev-guide/module-development/xpi.html) ###
 
-### [Out-of-Process Add-ons](#guide/module-development/e10s) ###
+### [Out-of-Process Add-ons](dev-guide/module-development/e10s.html) ###

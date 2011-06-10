@@ -1,10 +1,10 @@
 import os
 import sys
 import re
+import copy
 
 import simplejson as json
 from cuddlefish.bunch import Bunch
-from manifest import scan_package, update_manifest_with_fileinfo
 
 MANIFEST_NAME = 'package.json'
 
@@ -13,9 +13,13 @@ DEFAULT_LOADER = 'api-utils'
 DEFAULT_PROGRAM_MODULE = 'main'
 
 DEFAULT_ICON = 'icon.png'
+DEFAULT_ICON64 = 'icon64.png'
 
-METADATA_PROPS = ['name', 'description', 'keywords', 'author',
-                  'contributors', 'license', 'url', 'icon']
+METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
+                  'contributors', 'license', 'homepage', 'icon', 'icon64',
+                  'main', 'directories']
+
+RESOURCE_BAD_PACKAGE_NAME_RE = re.compile(r'[\s\.]')
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -53,16 +57,29 @@ def validate_resource_hostname(name):
 
       >>> validate_resource_hostname('blarg')
 
+      >>> validate_resource_hostname('bl arg')
+      Traceback (most recent call last):
+      ...
+      ValueError: package names cannot contain spaces or periods: bl arg
+
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      ValueError: invalid resource hostname: BLARG
+      ValueError: package names need to be lowercase: BLARG
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
       ...
       ValueError: invalid resource hostname: foo@bar
     """
+
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
+    if not name.islower():
+        raise ValueError('package names need to be lowercase: %s' % name)
+
+    # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
+    if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
+        raise ValueError('package names cannot contain spaces or periods: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
         raise ValueError('invalid resource hostname: %s' % name)
@@ -96,10 +113,29 @@ def get_metadata(pkg_cfg, deps):
                 metadata[pkg_name][prop] = cfg[prop]
     return metadata
 
-def apply_default_dir(base_json, base_path, dirname):
-    if (not base_json.get(dirname) and
-        os.path.isdir(os.path.join(base_path, dirname))):
-        base_json[dirname] = dirname
+def set_section_dir(base_json, name, base_path, dirnames, allow_root=False):
+    resolved = compute_section_dir(base_json, base_path, dirnames, allow_root)
+    if resolved:
+        base_json[name] = os.path.abspath(resolved)
+
+def compute_section_dir(base_json, base_path, dirnames, allow_root):
+    # PACKAGE_JSON.lib is highest priority
+    # then PACKAGE_JSON.directories.lib
+    # then lib/ (if it exists)
+    # then . (but only if allow_root=True)
+    for dirname in dirnames:
+        if base_json.get(dirname):
+            return os.path.join(base_path, base_json[dirname])
+    if "directories" in base_json:
+        for dirname in dirnames:
+            if dirname in base_json.directories:
+                return os.path.join(base_path, base_json.directories[dirname])
+    for dirname in dirnames:
+        if os.path.isdir(os.path.join(base_path, dirname)):
+            return os.path.join(base_path, dirname)
+    if allow_root:
+        return os.path.abspath(base_path)
+    return None
 
 def normalize_string_or_array(base_json, key):
     if base_json.get(key):
@@ -125,14 +161,37 @@ def get_config_in_dir(path):
     if 'name' not in base_json:
         base_json.name = os.path.basename(path)
 
-    for dirname in ['lib', 'tests', 'data', 'packages']:
-        apply_default_dir(base_json, path, dirname)
+    # later processing steps will expect to see the following keys in the
+    # base_json that we return:
+    #
+    #  name: name of the package
+    #  lib: list of directories with .js files
+    #  test: list of directories with test-*.js files
+    #  doc: list of directories with documentation .md files
+    #  data: list of directories with bundled arbitrary data files
+    #  packages: ?
+
+    if (not base_json.get('tests') and
+        os.path.isdir(os.path.join(path, 'test'))):
+        base_json['tests'] = 'test'
+
+    set_section_dir(base_json, 'lib', path, ['lib'], True)
+    set_section_dir(base_json, 'tests', path, ['test', 'tests'], False)
+    set_section_dir(base_json, 'doc', path, ['doc', 'docs'])
+    set_section_dir(base_json, 'data', path, ['data'])
+    set_section_dir(base_json, 'packages', path, ['packages'])
 
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
         base_json['icon'] = DEFAULT_ICON
 
+    if (not base_json.get('icon64') and
+        os.path.isfile(os.path.join(path, DEFAULT_ICON64))):
+        base_json['icon64'] = DEFAULT_ICON64
+
     for key in ['lib', 'tests', 'dependencies', 'packages']:
+        # TODO: lib/tests can be an array?? consider interaction with
+        # compute_section_dir above
         normalize_string_or_array(base_json, key)
 
     if 'main' not in base_json and 'lib' in base_json:
@@ -152,7 +211,7 @@ def _is_same_file(a, b):
         return os.path.samefile(a, b)
     return a == b
 
-def build_config(root_dir, target_cfg):
+def build_config(root_dir, target_cfg, packagepath=[]):
     dirs_to_scan = []
 
     def add_packages_from_config(pkgconfig):
@@ -165,6 +224,7 @@ def build_config(root_dir, target_cfg):
     packages_dir = os.path.join(root_dir, 'packages')
     if os.path.exists(packages_dir) and os.path.isdir(packages_dir):
         dirs_to_scan.append(packages_dir)
+    dirs_to_scan.extend(packagepath)
 
     packages = Bunch({target_cfg.name: target_cfg})
 
@@ -173,6 +233,8 @@ def build_config(root_dir, target_cfg):
         package_paths = [os.path.join(packages_dir, dirname)
                          for dirname in os.listdir(packages_dir)
                          if not dirname.startswith('.')]
+        package_paths = [dirname for dirname in package_paths
+                         if os.path.isdir(dirname)]
 
         for path in package_paths:
             pkgconfig = get_config_in_dir(path)
@@ -201,6 +263,7 @@ def get_deps_for_targets(pkg_cfg, targets):
                 raise PackageNotFoundError(dep, required_reason)
             dep_cfg = pkg_cfg.packages[dep]
             deps_left.extend([[i, dep] for i in dep_cfg.get('dependencies', [])])
+            deps_left.extend([[i, dep] for i in dep_cfg.get('extra_dependencies', [])])
 
     return visited
 
@@ -210,12 +273,10 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                               default_loader=DEFAULT_LOADER):
     validate_resource_hostname(prefix)
 
-    manifest = {}
     build = Bunch(resources=Bunch(),
                   resourcePackages=Bunch(),
                   packageData=Bunch(),
                   rootPaths=[],
-                  manifest=manifest,
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -228,8 +289,8 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # configuration dict.
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
-                name = "-".join([prefix + cfg.name,
-                                 os.path.basename(dirname)])
+                lib_base = os.path.basename(dirname)
+                name = "-".join([prefix + cfg.name, section])
                 validate_resource_hostname(name)
                 if name in build.resources:
                     raise KeyError('resource already defined', name)
@@ -239,14 +300,6 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
 
                 if is_code:
                     build.rootPaths.insert(0, resource_url)
-                    pkg_manifest, problems = scan_package(prefix, resource_url,
-                                                          cfg.name,
-                                                          section, dirname)
-                    if problems:
-                        # the relevant instructions have already been written
-                        # to stderr
-                        raise BadChromeMarkerError()
-                    manifest.update(pkg_manifest)
 
                 if is_data:
                     build.packageData[cfg.name] = resource_url
@@ -272,15 +325,48 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         add_dep_to_build(DEFAULT_LOADER)
 
     if 'icon' in target_cfg:
-        build['icon'] = os.path.join(target_cfg.root_dir,
-                                     target_cfg.icon)
+        build['icon'] = os.path.join(target_cfg.root_dir, target_cfg.icon)
         del target_cfg['icon']
 
-    # now go back through and find out where each module lives, to record the
-    # pathname in the manifest
-    update_manifest_with_fileinfo(deps, DEFAULT_LOADER, manifest)
+    if 'icon64' in target_cfg:
+        build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
+        del target_cfg['icon64']
 
     return build
+
+def _get_files_in_dir(path):
+    data = {}
+    files = os.listdir(path)
+    for filename in files:
+        fullpath = os.path.join(path, filename)
+        if os.path.isdir(fullpath):
+            data[filename] = _get_files_in_dir(fullpath)
+        else:
+            try:
+                info = os.stat(fullpath)
+                data[filename] = ("file", dict(size=info.st_size))
+            except OSError:
+                pass
+    return ("directory", data)
+
+def build_pkg_index(pkg_cfg):
+    pkg_cfg = copy.deepcopy(pkg_cfg)
+    for pkg in pkg_cfg.packages:
+        root_dir = pkg_cfg.packages[pkg].root_dir
+        files = _get_files_in_dir(root_dir)
+        pkg_cfg.packages[pkg].files = files
+        try:
+            readme = open(root_dir + '/README.md').read()
+            pkg_cfg.packages[pkg].readme = readme
+        except IOError:
+            pass
+        del pkg_cfg.packages[pkg].root_dir
+    return pkg_cfg.packages
+
+def build_pkg_cfg(root):
+    pkg_cfg = build_config(root, Bunch(name='dummy'))
+    del pkg_cfg.packages['dummy']
+    return pkg_cfg
 
 def call_plugins(pkg_cfg, deps):
     for dep in deps:

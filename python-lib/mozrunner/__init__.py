@@ -48,6 +48,7 @@ import optparse
 import killableprocess
 import subprocess
 import platform
+import shutil
 
 from distutils import dir_util
 from time import sleep
@@ -258,8 +259,11 @@ class Profile(object):
 
     def cleanup(self):
         """Cleanup operations on the profile."""
+        def oncleanup_error(function, path, excinfo):
+            #TODO: How should we handle this?
+            print "Error Cleaning up: " + str(excinfo[1])
         if self.create_new:
-            rmtree(self.profile)
+            shutil.rmtree(self.profile, False, oncleanup_error)
         else:
             self.clean_preferences()
             self.clean_addons()
@@ -287,7 +291,7 @@ class FirefoxProfile(Profile):
     @property
     def names(self):
         if sys.platform == 'darwin':
-            return ['firefox', 'minefield', 'shiretoko']
+            return ['firefox', 'nightly', 'shiretoko']
         if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
             return ['firefox', 'mozilla-firefox', 'iceweasel']
         if os.name == 'nt' or sys.platform == 'cygwin':
@@ -371,8 +375,8 @@ class Runner(object):
                 if binary is None:
                     for bin in [(program_files, 'Mozilla Firefox', 'firefox.exe'),
                                 (os.environ.get("ProgramFiles(x86)"),'Mozilla Firefox', 'firefox.exe'),
-                                (program_files,'Minefield', 'firefox.exe'),
-                                (os.environ.get("ProgramFiles(x86)"),'Minefield', 'firefox.exe')
+                                (program_files,'Nightly', 'firefox.exe'),
+                                (os.environ.get("ProgramFiles(x86)"),'Nightly', 'firefox.exe')
                                 ]:
                         path = os.path.join(*bin)
                         if os.path.isfile(path):
@@ -457,6 +461,10 @@ class Runner(object):
         else:
             try:
                 self.process_handler.kill(group=True)
+                # On windows, it sometimes behooves one to wait for dust to settle
+                # after killing processes.  Let's try that.
+                # TODO: Bug 640047 is invesitgating the correct way to handle this case
+                self.process_handler.wait(timeout=10)
             except Exception, e:
                 logger.error('Cannot kill process, '+type(e).__name__+' '+e.message)
 
@@ -472,7 +480,7 @@ class FirefoxRunner(Runner):
     @property
     def names(self):
         if sys.platform == 'darwin':
-            return ['firefox', 'minefield', 'shiretoko']
+            return ['firefox', 'nightly', 'shiretoko']
         if (sys.platform == 'linux2') or (sys.platform in ('sunos5', 'solaris')):
             return ['firefox', 'mozilla-firefox', 'iceweasel']
         if os.name == 'nt' or sys.platform == 'cygwin':
