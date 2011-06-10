@@ -17,7 +17,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
 
     if 'optionsURL' in harness_options:
         from options_xul import parse_options
-        open('.options.xul','w').write(parse_options(harness_options["optionsURL"]))
+        open('.options.xul','w').write(parse_options(harness_options["optionsURL"], harness_options["jetpackID"]))
         zf.write('.options.xul','options.xul')
         os.remove('.options.xul')
 

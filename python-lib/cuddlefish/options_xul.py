@@ -1,7 +1,7 @@
 from xml.dom.minidom import Document
 import simplejson as json
 
-def parse_options(options):
+def parse_options(options, jetpack_id):
     
     doc = Document()
     root = doc.createElement("vbox")
@@ -11,7 +11,7 @@ def parse_options(options):
     for pref_name in options:
         pref = options[pref_name]
         setting = doc.createElement("setting")
-        setting.setAttribute("pref", "extensions.dummyaddon."+pref_name)
+        setting.setAttribute("pref", "extensions."+jetpack_id+"."+pref_name)
         setting.setAttribute("type", pref["type"])
         setting.setAttribute("title", pref["title"]) 
 
@@ -19,6 +19,9 @@ def parse_options(options):
             setting.setAttribute("type", "control")
             button = doc.createElement("button")
             button.setAttribute("label", pref["label"])
+            button.setAttribute("oncommand","Services.obs.notifyObservers(null, '"+
+                                              jetpack_id+"-cmdPressed', '"+
+                                              pref_name+"');");
             setting.appendChild(button)
         elif (pref["type"] == "boolint"):
             setting.setAttribute("on", pref["on"])

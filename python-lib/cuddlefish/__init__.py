@@ -641,7 +641,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             app_extension_dir = os.path.join(mydir, "app-extension")
 
     if target_cfg.get('optionsURL'):
-      harness_options['optionsURL'] = target_cfg.get('optionsURL')
+        harness_options['optionsURL'] = target_cfg.get('optionsURL')
 
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
