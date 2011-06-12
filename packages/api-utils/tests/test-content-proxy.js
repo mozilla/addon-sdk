@@ -249,8 +249,8 @@ exports.testProxy = function (test) {
             require("timer").setTimeout(function () {
               input.click();
               
-              hiddenFrames.remove(hiddenFrame);
-              test.done();
+              // Next test:
+              checkRequestAnimation();
             }, 0);
             
           }
@@ -263,6 +263,21 @@ exports.testProxy = function (test) {
         
         input.click();
         
+        // Check ContentScriptFunction with function as "this" object
+        // For example, window.mozRequestAnimationFrame call its callback 
+        // argument with `this` being the callback itself.
+        function checkRequestAnimation() {
+          wrapped.mozRequestAnimationFrame(function callback() {
+            test.assertEqual(callback, this, "callback is equal to `this`");
+            
+            end();
+          });
+        }
+        
+        function end() {
+          hiddenFrames.remove(hiddenFrame);
+          test.done();
+        }
       }
       
       hiddenFrame.element.addEventListener("DOMContentLoaded", onDOMReady, false);

@@ -438,7 +438,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
     print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon})
+    open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
+                                                   'fullName':addon })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'

@@ -38,10 +38,15 @@ function ContentScriptFunctionWrapper(fun, obj, name) {
       args.push(wrap(arguments[i]));
     
     //console.log("Called from native :"+obj+"."+name);
-    //console.log(">args "+arguments[0]?arguments[0].target:null);
+    //console.log(">args "+arguments.length);
     //console.log(fun);
     
-    return fun.apply(getProxyForObject(this), args);
+    // Native code can execute this callback with `this` being the wrapped 
+    // function. For example, window.mozRequestAnimationFrame.
+    if (this == wrappedFun)
+      return fun.apply(fun, args);
+    
+    return fun.apply(wrap(this), args);
   };
   
   Object.defineProperty(fun, "___proxy", {value : wrappedFun,
@@ -147,8 +152,14 @@ function wrap(value, obj, name, debug) {
     // but it's still a XrayWrapper so let's build a proxy
     return getProxyForObject(value);
   }
-  if (type == "function")
-    return getProxyForFunction(value, NativeFunctionWrapper(value, obj, name));
+  if (type == "function") {
+    if (XPCNativeWrapper.unwrap(value) !== value
+        || (typeof value.toString === "function" && 
+            value.toString().match(/\[native code\]/))) {
+      return getProxyForFunction(value, NativeFunctionWrapper(value, obj, name));
+    }
+    return value;
+  }
   if (type == "string")
     return value;
   if (type == "number")
@@ -448,9 +459,12 @@ function handlerMaker(obj) {
       // It's only working if we call mozMatchesSelector on the node itself.
       // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
       if (typeof o == "function" && name == "mozMatchesSelector") {
-        return wrap(function mozMatchesSelector(selectors) {
+        // We can't use `wrap` function as `f` is not a native function,
+        // so wrap it manually:
+        let f = function mozMatchesSelector(selectors) {
           return this.mozMatchesSelector(selectors);
-        }, obj, name);
+        };
+        return getProxyForFunction(f, NativeFunctionWrapper(f));
       }
       
       // Generic case
