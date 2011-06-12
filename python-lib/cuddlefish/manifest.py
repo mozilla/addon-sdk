@@ -43,8 +43,11 @@ class ManifestEntry:
         self.datamap = None
 
     def get_uri(self, prefix):
-        return "%s%s-%s/%s.js" % \
+        uri = "%s%s-%s/%s" % \
                (prefix, self.packageName, self.sectionName, self.moduleName)
+        if not uri.endswith(".js"):
+          uri += ".js"
+        return uri
 
     def get_entry_for_manifest(self, prefix):
         entry = { "packageName": self.packageName,
@@ -209,7 +212,7 @@ class ManifestBuilder:
             mi = ModuleInfo(self.pkg_cfg.packages[pkgname], section, modname,
                             js, None)
             self.process_module(mi)
-        
+
 
     def get_module_entries(self):
         return frozenset(self.manifest.values())
@@ -519,12 +522,17 @@ class ManifestBuilder:
     def _find_module_in_package(self, pkgname, sections, name, looked_in):
         # require("a/b/c") should look at ...\a\b\c.js on windows
         filename = os.sep.join(name.split("/"))
+        # normalize filename, make sure that we do not add .js if it already has
+        # it.
+        if not filename.endswith(".js"):
+          filename += ".js"
+
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
-                js = os.path.join(pkg.root_dir, sdir, filename+".js")
+                js = os.path.join(pkg.root_dir, sdir, filename)
                 looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
@@ -645,7 +653,7 @@ def scan_for_bad_chrome(fn, lines, stderr):
             if OTHER_CHROME.search(line):
                 old_chrome_in_this_line.add("components")
         old_chrome.update(old_chrome_in_this_line)
-                
+
     if old_chrome:
         print >>stderr, ""
         print >>stderr, "To use chrome authority, you need a line like this:"
