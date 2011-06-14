@@ -99,6 +99,7 @@ function run(jQuery) {
 
   function sendIdlePing() {
     jQuery.ajax({url:"/api/idle",
+               cache: false,
                error: function(req) {
                  if (req.status == 501 || req.status == 404) {
                    // The server either isn't implementing idle, or
