@@ -1,5 +1,5 @@
 function run(jQuery) {
-  const IDLE_PING_DELAY = 5000;
+  var IDLE_PING_DELAY = 5000;
 
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
