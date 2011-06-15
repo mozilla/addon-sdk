@@ -157,6 +157,11 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--strip-xpi",), dict(dest="strip_xpi",
+                                    help="remove unused modules from XPI",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['xpi'])),
         ]
      ),
 
@@ -433,7 +438,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>out, '*', d, 'directory created'
     open('README.md','w').write(README_DOC % {'name':addon})
     print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon})
+    open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
+                                                   'fullName':addon })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
@@ -446,7 +452,8 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     return 0
 
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
-        defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT')):
+        defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
+        stdout=sys.stdout):
     parser_kwargs = dict(arguments=arguments,
                          global_options=global_options,
                          parser_groups=parser_groups,
@@ -487,7 +494,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         import time
         import cuddlefish.server
 
-        print "One moment."
+        print >>stdout, "One moment."
         popen = subprocess.Popen([sys.executable,
                                   cuddlefish.server.__file__,
                                   'daemonic'])
@@ -502,7 +509,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # TODO: Allow user to change this filename via cmd line.
         filename = 'addon-sdk-docs.tgz'
         cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
-        print "Wrote %s." % filename
+        print >>stdout, "Wrote %s." % filename
         return
 
     target_cfg_json = None
@@ -592,7 +599,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if "id" in target_cfg:
         jid = target_cfg["id"]
-        assert not jid.endswith("@jetpack")
+        if not ("@" in jid or jid.startswith("{")):
+            jid = jid + "@jetpack"
         unique_prefix = '%s-' % jid # used for resource: URLs
     else:
         # The Jetpack ID is not required for cfx test, in which case we have to
@@ -605,17 +613,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         unique_prefix = '%s-' % target
         jid = harness_guid
 
-    assert not jid.endswith("@jetpack")
-    if ( jid.startswith("jid0-")
-         or jid.startswith("jid1-")
-         or jid.startswith("anonid0-") ):
-        bundle_id = jid + "@jetpack"
-    # Don't append "@jetpack" to old-style IDs, as they should be exactly
-    # as specified by the addon author so AMO and Firefox continue to treat
-    # their addon bundles as representing the same addon (and also because
-    # they may already have an @ sign in them, and there can be only one).
-    else:
-        bundle_id = jid
+    bundle_id = jid
 
     # the resource: URL's prefix is treated too much like a DNS hostname
     unique_prefix = unique_prefix.lower()
@@ -626,12 +624,49 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "test":
         targets.append(options.test_runner_pkg)
 
+    extra_packages = []
     if options.extra_packages:
-        targets.extend(options.extra_packages.split(","))
+        extra_packages = options.extra_packages.split(",")
+    if extra_packages:
+        targets.extend(extra_packages)
+        target_cfg.extra_dependencies = extra_packages
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
+
+    from cuddlefish.manifest import build_manifest
+    uri_prefix = "resource://%s" % unique_prefix
+    # Figure out what loader files should be scanned. This is normally
+    # computed inside packaging.generate_build_for_target(), by the first
+    # dependent package that defines a "loader" property in its package.json.
+    # This property is interpreted as a filename relative to the top of that
+    # file, and stored as a URI in build.loader . generate_build_for_target()
+    # cannot be called yet (it needs the list of used_deps that
+    # build_manifest() computes, but build_manifest() needs the list of
+    # loader files that it computes). We could duplicate or factor out this
+    # build.loader logic, but that would be messy, so instead we hard-code
+    # the choice of loader for manifest-generation purposes. In practice,
+    # this means that alternative loaders probably won't work with
+    # --strip-xpi.
+    assert packaging.DEFAULT_LOADER == "api-utils"
+    assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
+    cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
+                                      "lib", "cuddlefish.js")
+    loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
+    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
+                              loader_modules)
+    used_deps = manifest.get_used_packages()
+    if command == "test":
+        # The test runner doesn't appear to link against any actual packages,
+        # because it loads everything at runtime (invisible to the linker).
+        # If we believe that, we won't set up URI mappings for anything, and
+        # tests won't be able to run.
+        used_deps = deps
+    for xp in extra_packages:
+        if xp not in used_deps:
+            used_deps.append(xp)
+
     build = packaging.generate_build_for_target(
-        pkg_cfg, target, deps,
+        pkg_cfg, target, used_deps,
         prefix=unique_prefix,  # used to create resource: URLs
         include_dep_tests=options.dep_tests
         )
@@ -649,29 +684,28 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             },
         'jetpackID': jid,
         'bundleID': bundle_id,
+        'uriPrefix': uri_prefix,
         'staticArgs': options.static_args,
         'name': target,
         }
 
     harness_options.update(build)
 
-    emit_elapsed_time = False
     if command == "test":
         # This should be contained in the test runner package.
         harness_options['main'] = 'run-tests'
-        emit_elapsed_time = True
     else:
         harness_options['main'] = target_cfg.get('main')
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
 
-    harness_options['metadata'] = packaging.get_metadata(pkg_cfg, deps)
+    harness_options['metadata'] = packaging.get_metadata(pkg_cfg, used_deps)
 
     sdk_version = get_version(env_root)
     harness_options['sdkVersion'] = sdk_version
 
-    packaging.call_plugins(pkg_cfg, deps)
+    packaging.call_plugins(pkg_cfg, used_deps)
 
     retval = 0
 
@@ -687,10 +721,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         else:
             app_extension_dir = os.path.join(mydir, "app-extension")
 
-    from cuddlefish.manifest import build_manifest
-    uri_prefix = "resource://%s" % unique_prefix
-    include_tests = False #bool(command=="test")
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, include_tests)
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
 
     if command == 'xpi':
@@ -705,17 +735,27 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
-            print "Exporting update description to %s." % rdf_name
+            print >>stdout, "Exporting update description to %s." % rdf_name
             update = RDFUpdate()
             update.add(manifest_rdf, options.update_link)
             open(rdf_name, "w").write(str(update))
 
+        # ask the manifest what files were used, so we can construct an XPI
+        # without the rest. This will include the loader (and everything it
+        # uses) because of the "loader_modules" starting points we passed to
+        # build_manifest earlier
+        used_files = set(manifest.get_used_files())
+
+        if not options.strip_xpi:
+            used_files = None # disables the filter
+
         xpi_name = XPI_FILENAME % target_cfg.name
-        print "Exporting extension to %s." % xpi_name
+        print >>stdout, "Exporting extension to %s." % xpi_name
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_name=xpi_name,
-                  harness_options=harness_options)
+                  harness_options=harness_options,
+                  limit_to=used_files)
     else:
         if options.use_server:
             from cuddlefish.server import run_app
@@ -740,8 +780,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
-                             norun=options.no_run,
-                             emit_elapsed_time=emit_elapsed_time)
+                             norun=options.no_run)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()

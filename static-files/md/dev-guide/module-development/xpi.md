@@ -61,3 +61,12 @@ examples is a unique identifier that the SDK prepends to all
 collide with anything else, including other extensions built by the
 SDK and containing the same packages. This GUID is built from the
 [Program ID](dev-guide/addon-development/program-id.html).
+
+By default, the generated XPI contains every module from each package that is
+referenced by the addon, even the modules that aren't used (such as the
+`notifications` module if the addon is only using `page-mod`). By running
+`cfx xpi --strip-xpi` instead, the SDK will produce a "stripped" XPI, that
+only includes the modules that are actually used, resulting in a smaller XPI
+file. (Note: `--strip-xpi` is currently experimental; when this feature is
+sufficiently mature, it will simply be made the default, and the `cfx` option
+will be removed.)

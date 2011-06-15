@@ -41,7 +41,8 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),MAIN_JS)
         self.assertEqual(open(package_json,"r").read(),
-                         PACKAGE_JSON % {"name":"tmp_addon_sample"})
+                         PACKAGE_JSON % {"name":"tmp_addon_sample",
+                                         "fullName": "tmp_addon_SAMPLE" })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
@@ -52,7 +53,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
-        self.run_init_in_subdir("tmp_addon_sample",self.do_test_init)
+        self.run_init_in_subdir("tmp_addon_SAMPLE",self.do_test_init)
 
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail

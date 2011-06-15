@@ -128,7 +128,7 @@ information.
       content: "I'm getting longer.",
       width: 50,
     });
-    require("timer").setInterval(function() {
+    require("timers").setInterval(function() {
       myWidget.width += 10;
     }, 1000);
 <br>
@@ -165,10 +165,10 @@ Represents a widget object.
     title bars, and error reporting.
 
   @prop id {string}
-    Mandatory string used to identify your widget in order to save it's 
-    location when user customizes it in the browser. 
-    This string has to be unique and must not be changed in time.
-  
+    Mandatory string used to identify your widget in order to save its
+    location when the user moves it in the browser.
+    This string has to be unique and must not be changed over time.
+
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
     It may contain HTML. Widgets must have either the `content` property or the
@@ -191,19 +191,19 @@ Represents a widget object.
     used.
 
   @prop [onClick] {function}
-    An optional "click" event listener.  See Events above.
+    Include this to listen to the widget's `click` event.
 
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Include this to listen to the widget's `message` event.
 
   @prop [onMouseover] {function}
-    An optional "mouseover" event listener.  See Events above.
+    Include this to listen to the widget's `mouseover` event.
 
   @prop [onMouseout] {function}
-    An optional "mouseout" event listener.  See Events above.
+    Include this to listen to the widget's `mouseout` event.
 
   @prop [onAttach] {function}
-    An optional "attach" event listener.  See Events above.
+    Include this to listen to the widget's `attach` event.
 
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
@@ -253,7 +253,9 @@ Represents a widget object.
 @method
   Sends a message to the widget's content scripts.
 @param data {value}
-  The message to send.  Must be JSON-able.
+  The message to send.
+  The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -386,8 +388,15 @@ This event is emitted when the widget is clicked.
 
 <api name="message">
 @event
-This event is emitted when the widget's content scripts post a message.
-Listeners are passed the message as their first argument.
+If you listen to this event you can receive message events from content
+scripts associated with this widget. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the widget's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -441,19 +450,20 @@ In this example `WidgetView` is used to display different content for
 
 <api name="destroy">
 @method
-  Removes the widget from the add-on bar.
+  Removes the widget view from the add-on bar.
 </api>
 
 <api name="postMessage">
 @method
-  Sends a message to the widget's content scripts.
+  Sends a message to the widget view's content scripts.
 @param data {value}
-  The message to send.  Must be JSON-able.
+  The message to send. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
 @method
-  Registers an event listener with the widget.
+  Registers an event listener with the widget view.
 @param type {string}
   The type of event to listen for.
 @param listener {function}
@@ -462,7 +472,7 @@ In this example `WidgetView` is used to display different content for
 
 <api name="removeListener">
 @method
-  Unregisters an event listener from the widget.
+  Unregisters an event listener from the widget view.
 @param type {string}
   The type of event for which `listener` was registered.
 @param listener {function}
@@ -471,41 +481,42 @@ In this example `WidgetView` is used to display different content for
 
 <api name="label">
 @property {string}
-  The widget's label.  Read-only.
+  The widget view's label.  Read-only.
 </api>
 
 <api name="content">
 @property {string}
-  A string containing the widget's content.  It can contain HTML.  Setting it
-  updates the widget's appearance immediately.  However, if the widget was
-  created using `contentURL`, then this property is meaningless, and setting it
-  has no effect.
+  A string containing the widget view's content.  It can contain HTML.
+  Setting it updates the widget view's appearance immediately. However,
+  if the widget view was created using `contentURL`, then this property
+  is meaningless, and setting it has no effect.
 </api>
 
 <api name="contentURL">
 @property {string}
-  The URL of content to load into the widget.  This can be
+  The URL of content to load into the widget view.  This can be
   [local content](dev-guide/addon-development/web-content.html) or remote
-  content, an image or web content.  Setting it updates the widget's appearance
-  immediately.  However, if the widget was created using `content`, then this
-  property is meaningless, and setting it has no effect.
+  content, an image or web content.  Setting it updates the widget view's
+  appearance immediately.  However, if the widget view was created using
+  `content`, then this property is meaningless, and setting it has no effect.
 </api>
 
 <api name="panel">
 @property {Panel}
   A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
-  the widget.
+  the widget view.
 </api>
 
 <api name="width">
 @property {number}
-  The widget's width in pixels.  Setting it updates the widget's appearance
-  immediately.
+  The widget view's width in pixels.  Setting it updates the widget view's
+  appearance immediately.
 </api>
 
 <api name="tooltip">
 @property {string}
-  The text of the tooltip that appears when the user hovers over the widget.
+  The text of the tooltip that appears when the user hovers over the widget
+  view.
 </api>
 
 <api name="allow">
@@ -532,14 +543,14 @@ In this example `WidgetView` is used to display different content for
   values:
 
   * "start": load content scripts immediately after the document
-  element for the widget is inserted into the DOM, but before the DOM content
-  itself has been loaded
+  element for the widget view is inserted into the DOM, but before the DOM
+  content itself has been loaded
   * "ready": load content scripts once DOM content has been loaded,
   corresponding to the
   [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
   event
   * "end": load content scripts once all the content (DOM, JS, CSS,
-  images) for the widget has been loaded, at the time the
+  images) for the widget view has been loaded, at the time the
   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
   fires
 
@@ -559,30 +570,38 @@ Communicating with Content Scripts</a> for details.
 
 <api name="detach">
 @event
-The `detach` event is fired when the widget is removed from its related
+The `detach` event is fired when the widget view is removed from its related
 window.
-This can occur if the window is closed, Firefox exits, or the add-on is disabled.
+This can occur if the window is closed, Firefox exits, or the add-on is
+disabled.
 </api>
 
 <api name="click">
 @event
-This event is emitted when the widget is clicked.
+This event is emitted when the widget view is clicked.
 </api>
 
 <api name="message">
 @event
-This event is emitted when the widget's content scripts post a message.
-Listeners are passed the message as their first argument.
+If you listen to this event you can receive message events from content
+scripts associated with this widget view. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the widget view's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
 @event
-This event is emitted when the user moves the mouse over the widget.
+This event is emitted when the user moves the mouse over the widget view.
 </api>
 
 <api name="mouseout">
 @event
-This event is emitted when the user moves the mouse away from the widget.
+This event is emitted when the user moves the mouse away from the widget view.
 </api>
 
 </api>

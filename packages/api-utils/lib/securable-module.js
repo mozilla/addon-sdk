@@ -180,7 +180,12 @@
            rootPaths = [rootPaths];
          var fses = [new exports.LocalFileSystem(path)
                      for each (path in rootPaths)];
-         options.fs = new exports.CompositeFileSystem(fses);
+         options.fs = new exports.CompositeFileSystem({
+           fses: fses,
+           metadata: options.metadata,
+           uriPrefix: options.uriPrefix,
+           name: options.name
+         });
        } else
          options.fs = new exports.LocalFileSystem();
      }
@@ -220,7 +225,7 @@
         * particular it knows what the link-time module search algorithm has
         * found for each imported name (so if they require "panel", they'll
         * get the one from addon-kit, not from some other package).
-        * 
+        *
         * When some other module (e.g. panel.js) is loaded, they'll get a
         * different require/define pair, specialized for them.
         */
@@ -249,7 +254,7 @@
          /*
           * If we get here, we're allowed to import this module, we just have
           * to figure out how.
-          * 
+          *
           * 'moduleName' is the unmodified argument passed to require(),
           * so it might be "panel" or "pkg/foo" or even "./bar" for relative
           * imports. 'moduleData' is the manifest entry that tells us how
@@ -289,8 +294,13 @@
              // moduleData also wants mapName and mapSHA256, but they're
              // currently unused
            }
-           let selfModuleData = {uri: self.fs.resolveModule(null, "self")};
-           let selfMod = loadFromModuleData(selfModuleData); // not cached
+           if (false) // force scanner to copy self-maker.js into the XPI
+             require("self-maker"); 
+           let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
+           if (!makerModData.uri)
+             throw new Error("Unable to find self-maker, from "+basePath);
+           let selfMod = loadFromModuleData(makerModData, "self-maker");
+           // selfMod is not cached
            return selfMod.makeSelfModule(moduleData);
          }
 
@@ -318,12 +328,15 @@
            // already loaded: return from cache
            return self.modules[moduleData.uri];
          }
-         return loadFromModuleData(moduleData); // adds to cache
+         return loadFromModuleData(moduleData, moduleName); // adds to cache
        }
 
-       function loadFromModuleData(moduleData) {
+       function loadFromModuleData(moduleData, moduleName) {
+         // moduleName is passed solely for error messages: by this point,
+         // everything is controlled by moduleData
          if (!moduleData.uri) {
-           throw new Error("loadFromModuleData with null URI");
+           throw new Error("loadFromModuleData with null URI, from basePath "
+                           +basePath+" importing ("+moduleName+")");
          }
          // any manifest-based permission checks have already been done
          let path = moduleData.uri;
@@ -573,17 +586,91 @@
 
    // this is more of a resolver than a filesystem, but test-securable-module
    // wants to override the getFile() function to avoid using real URIs
-   exports.CompositeFileSystem = function CompositeFileSystem(fses) {
-     this.fses = fses;
+   exports.CompositeFileSystem = function CompositeFileSystem(options) {
+     // We sort file systems in alphabetical order of a package name.
+     this.fses = options.fses.sort(function(a, b) a.root > b.root);
+     this.uriPrefix = options.uriPrefix;
+     this.name = options.name;
+     this.packages = options.metadata || {};
    };
 
+   function isRelative(path) path.charAt(0) === "."
+   function isNested(path) ~path.indexOf("/")
+   function normalizePath(path) path.substr(-3) === ".js" ? path : path + ".js"
+   function relatifyPath(path) isRelative(path) ? path : "./" + path
+   function getPackageName(path) path.substr(0, path.indexOf("/"))
+   function getInPackagePath(path) path.substr(path.indexOf("/") + 1)
+   function isRelativeTo(path, base) 0 === path.indexOf(base)
+   function resolveTo(path, base) "." + path.substr(base.length)
+
    exports.CompositeFileSystem.prototype = {
+     getPackageURI: function getPackageURI(name) {
+       let uri = this.uriPrefix + name + "-lib/";
+       return ios.newURI(uri, null, null).spec;
+     },
      resolveModule: function resolveModule(base, path) {
-       for (var i = 0; i < this.fses.length; i++) {
-         var fs = this.fses[i];
-         var absPath = fs.resolveModule(base, path);
-         if (absPath)
-           return absPath;
+       // If it is relative path we don't need to search anything
+       // as it should be module from the same package.
+       if (isRelative(path)) {
+         // If base is not provided then it's a main module with a relative
+         // path to we use `packageURI` as a base to resolve.
+         base = base || this.getPackageURI(this.name);
+         return this.resolveRelative(base, path);
+       }
+
+       // If path contains only one part then we treat if it as
+       // require(PCKG/{{(package.json).main}}
+       if (!isNested(path))
+         return this.resolveMain(path) || this.searchModule(path);
+
+       // If path contains more then one part than we try to interpret that
+       // as `require(PCKG/module)` first and fall back to search.
+       return this.resolveModuleFromPackage(path) || this.searchModule(path);
+
+     },
+     resolveRelative: function resolveRelative(base, path) {
+        path = normalizePath(path);
+        let uri = ios.newURI(path, null, ios.newURI(base, null, null));
+
+        try {
+          let channel = ios.newChannelFromURI(uri);
+          channel.open().close();
+        } catch (e) {
+          return null;
+        }
+        return uri.spec;
+     },
+     searchModule: function seachModule(path) {
+       for each (let fs in this.fses) {
+         let id = fs.resolveModule(null, path);
+         if (id)
+           return id;
+       }
+       return null;
+     },
+     resolveModuleFromPackage: function resolveModuleFromPackage(path) {
+       let name = getPackageName(path);
+       if (name in this.packages) {
+         let base = this.getPackageURI(name);
+         return this.resolveRelative(base, getInPackagePath(path));
+       }
+       return null;
+     },
+     resolveMain: function resolveMain(name) {
+       if (name in this.packages) {
+         let base = this.getPackageURI(name);
+         let path = relatifyPath(this.packages[name].main || "main");
+
+         // We need to make sure to strip out directory from the main if it
+         // contains "lib" part. Unfortunately if main out of the lib folder
+         // requiring main module will fail as it will be out of the mapped
+         // resource URI.
+         let dirs = this.packages[name].directories;
+         let lib = relatifyPath(dirs ? dirs.lib || "./lib" : "./lib");
+         if (isRelativeTo(path, lib))
+           path = resolveTo(path, lib);
+
+         return this.resolveRelative(base, path);
        }
        return null;
      },
@@ -619,6 +706,7 @@
          baseURI = this._rootURI;
        else
          baseURI = ios.newURI(base, null, null);
+
        var newURI = ios.newURI(path, null, baseURI);
        if (newURI.spec.indexOf(this._rootURIDir) == 0) {
          var channel = ios.newChannelFromURI(newURI);

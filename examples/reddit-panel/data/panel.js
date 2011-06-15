@@ -24,3 +24,8 @@ $(window).click(function (event) {
   event.preventDefault();
   self.port.emit('click', t.toString());
 });
+
+// Panels have an OS-specific background color by default, and the Mac OS X
+// background color is dark grey, but Reddit expects its background to be white
+// and looks odd when it isn't, so set it to white.
+$("body").css("background", "white");

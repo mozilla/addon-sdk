@@ -188,8 +188,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None, args=None, norun=None,
-            emit_elapsed_time=False):
+            timeout=None, logfile=None, addons=None, args=None, norun=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -225,10 +224,16 @@ def run_app(harness_root_dir, harness_options,
     
     if args:
         cmdargs.extend(shlex.split(args))
-    
-    resultfile = os.path.join(tempfile.gettempdir(), 'harness_result')
-    if os.path.exists(resultfile):
-        os.remove(resultfile)
+
+    # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
+    # run"/"cfx test" on the same host. On unix it points at /tmp (which is
+    # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
+    # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
+    # gives us a unique filename that fixes both problems. We leave the
+    # (0-byte) file in place until the browser-side code starts writing to
+    # it, otherwise the symlink attack becomes possible again.
+    fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
+    os.close(fileno)
     harness_options['resultFile'] = resultfile
 
     def maybe_remove_logfile():
@@ -241,7 +246,8 @@ def run_app(harness_root_dir, harness_options,
         if not logfile:
             # If we're on Windows, we need to keep a logfile simply
             # to print console output to stdout.
-            logfile = os.path.join(tempfile.gettempdir(), 'harness_log')
+            fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
+            os.close(fileno)
         logfile_tail = follow_file(logfile)
         atexit.register(maybe_remove_logfile)
 
@@ -300,8 +306,6 @@ def run_app(harness_root_dir, harness_options,
 
     done = False
     output = None
-    chime_interval = 5
-    next_chime = 0 + chime_interval
     try:
         while not done:
             time.sleep(0.05)
@@ -312,20 +316,15 @@ def run_app(harness_root_dir, harness_options,
                     sys.stderr.flush()
             if os.path.exists(resultfile):
                 output = open(resultfile).read()
-                if output in ['OK', 'FAIL']:
-                    done = True
-                else:
-                    sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
-                    sys.stderr.write("'"+output+"'\n")
+                if output:
+                    if output in ['OK', 'FAIL']:
+                        done = True
+                    else:
+                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
+                        sys.stderr.write("'"+output+"'\n")
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
-            if emit_elapsed_time:
-                elapsed = time.time() - starttime
-                if elapsed > next_chime:
-                    sys.stderr.write("\n(elapsed time: %d seconds)\n" % elapsed)
-                    sys.stderr.flush()
-                    next_chime += chime_interval
     except:
         runner.stop()
         raise

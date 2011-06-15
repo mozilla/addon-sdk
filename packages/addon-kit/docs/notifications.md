@@ -28,7 +28,7 @@ the console.
     });
 
 This one displays an icon that's stored in the add-on's `data` directory.  (See
-the [`self`](packages/api-utils/docs/self.html) module documentation for more information.)
+the [`self`](packages/addon-kit/docs/self.html) module documentation for more information.)
 
     var notifications = require("notifications");
     var self = require("self");
@@ -50,7 +50,7 @@ the [`self`](packages/api-utils/docs/self.html) module documentation for more in
     A string to display as the body of the message.
   @prop [iconURL] {string}
     The URL of an icon to display inside the message.  It may be a remote URL,
-    a data URI, or a URL returned by the [`self`](packages/api-utils/docs/self.html)
+    a data URI, or a URL returned by the [`self`](packages/addon-kit/docs/self.html)
     module.
   @prop [onClick] {function}
     A function to be called when the user clicks the message.  It will be passed

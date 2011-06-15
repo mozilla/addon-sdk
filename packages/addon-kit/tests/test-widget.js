@@ -35,6 +35,15 @@ exports.testConstructor = function(test) {
   test.pass("Multiple destroys do not cause an error");
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
   
+  // Test automatic widget destroy on unload
+  let loader = test.makeSandboxedLoader();
+  let widgetsFromLoader = loader.require("widget");
+  let widgetStartCount = widgetCount();
+  let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
+  test.assertEqual(widgetCount(), widgetStartCount + 1, "widget has been correctly added");
+  loader.unload();
+  test.assertEqual(widgetCount(), widgetStartCount, "widget has been destroyed on module unload");
+  
   // Test nothing
   test.assertRaises(
     function() widgets.Widget({}),
@@ -457,6 +466,93 @@ exports.testConstructor = function(test) {
       });
     }});
   });
+  
+  // test window closing
+  tests.push(function testWindowClosing() {
+    // 1/ Create a new widget
+    let w1Opts = {
+      id:"first", 
+      label: "first widget", 
+      content: "first content",
+      contentScript: "self.port.on('event', function () self.port.emit('event'))"
+    };
+    let widget = testSingleWidget(w1Opts);
+    let windows = require("windows").browserWindows;
+    
+    // 2/ Retrieve a WidgetView for the initial browser window
+    let acceptDetach = false;
+    let mainView = widget.getView(windows.activeWindow);
+    test.assert(mainView, "Got first widget view");    
+    mainView.on("detach", function () {
+      // 8/ End of our test. Accept detach event only when it occurs after
+      // widget.destroy()
+      if (acceptDetach)
+        doneTest();
+      else
+        test.fail("View on initial window should not be destroyed");
+    });
+    mainView.port.on("event", function () {
+      // 7/ Receive event sent during 6/ and cleanup our test
+      acceptDetach = true;
+      widget.destroy();
+    });
+    
+    // 3/ First: open a new browser window
+    windows.open({
+      url: "about:blank",
+      onOpen: function(window) {
+        // 4/ Retrieve a WidgetView for this new window
+        let view = widget.getView(window);
+        test.assert(view, "Got second widget view");
+        view.port.on("event", function () {
+          test.fail("We should not receive event on the detach view");
+        });
+        view.on("detach", function () {
+          // The related view is destroyed
+          // 6/ Send a custom event
+          test.assertRaises(function () {
+              view.port.emit("event");
+            },
+            /The widget has been destroyed and can no longer be used./,
+            "emit on a destroyed view should throw");
+          widget.port.emit("event");
+        });
+        
+        // 5/ Destroy this window
+        window.close();        
+      }
+    });
+  });
+  
+  tests.push(function testAddonBarHide() {
+    // Hide the addon-bar
+    browserWindow.setToolbarVisibility(container(), false);
+    
+    // Then open a browser window and verify that the addon-bar remains hidden
+    tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+      let browserWindow = e.target.defaultView;
+      let doc = browserWindow.document;
+      function container2() doc.getElementById("addon-bar");
+      function widgetCount2() container2() ? container2().childNodes.length : 0;
+      let widgetStartCount2 = widgetCount2();
+      
+      let w1Opts = {id:"first", label: "first widget", content: "first content"};
+      let w1 = testSingleWidget(w1Opts);
+      test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after widget creation");
+
+      w1.destroy();
+      test.assertEqual(widgetCount2(), widgetStartCount2, "2nd window has correct number of child elements after widget destroy");
+      
+      test.assert(container().collapsed, "1st window has an hidden addon-bar");
+      test.assert(container2().collapsed, "2nd window has an hidden addon-bar");
+      
+      browserWindow.setToolbarVisibility(container(), true);
+      
+      closeBrowserWindow(browserWindow, function() {
+        doneTest();
+      });
+    }});
+  });
 
   // test widget.width
   tests.push(function testWidgetWidth() testSingleWidget({
@@ -729,6 +825,46 @@ exports.testWidgetMove = function testWidgetMove(test) {
       }
       else {
         test.assertEqual(origMessage, message, "Got message after node move");
+        widget.destroy();
+        test.done();
+      }
+    }
+  });
+};
+
+/*
+The bug is exhibited when a widget with HTML content has it's content
+changed to new HTML content with a pound in it. Because the src of HTML
+content is converted to a data URI, the underlying iframe doesn't
+consider the content change a navigation change, so doesn't load
+the new content.
+*/
+exports.testWidgetWithPound = function testWidgetWithPound(test) {
+  test.waitUntilDone();
+
+  function getWidgetContent(widget) {
+    let windowUtils = require("window-utils");
+    let browserWindow = windowUtils.activeBrowserWindow;
+    let doc = browserWindow.document;
+    let widgetNode = doc.querySelector('toolbaritem[label="' + widget.label + '"]');
+    test.assert(widgetNode, 'found widget node in the front-end');
+    return widgetNode.firstChild.contentDocument.body.innerHTML;
+  }
+
+  let widgets = require("widget");
+  let count = 0;
+  let widget = widgets.Widget({
+    id: "1",
+    label: "foo",
+    content: "foo",
+    contentScript: "window.addEventListener('load', self.postMessage, false);",
+    onMessage: function() {
+      count++;
+      if (count == 1) {
+        widget.content = "foo#";
+      }
+      else {
+        test.assertEqual(getWidgetContent(widget), "foo#", "content updated to pound?");
         widget.destroy();
         test.done();
       }

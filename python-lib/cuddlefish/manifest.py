@@ -15,9 +15,24 @@ def datafile_zipname(packagename, datapath):
 def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
 
+class ModuleNotFoundError(Exception):
+    def __init__(self, *args):
+        self.args = args
+        self.used_by = None # string, full path to module which did require()
+        self.requirement_name = None # string, what they require()d
+        self.looked_at = [] # list of full paths to potential .js files
+    def __str__(self):
+        return ("ModuleNotFoundError: unable to satisfy require(%s) from %s .\n"
+                "Looked for it in:\n"
+                " %s\n" %
+                (self.requirement_name, self.used_by,
+                 "\n ".join(self.looked_in)))
+
 class BadModuleIdentifier(Exception):
     pass
 class BadSection(Exception):
+    pass
+class UnreachablePrefixError(Exception):
     pass
 
 class ManifestEntry:
@@ -154,7 +169,7 @@ class ModuleInfo:
                                                    self.js, self.docs)
 
 class ManifestBuilder:
-    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix,
+    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix, extra_modules,
                  stderr=sys.stderr):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
@@ -163,6 +178,7 @@ class ManifestBuilder:
         self.used_packagenames = set()
         self.stderr = stderr
         self.uri_prefix = uri_prefix
+        self.extra_modules = extra_modules
         self.modules = {} # maps ModuleInfo to URI in self.manifest
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
@@ -187,11 +203,35 @@ class ManifestBuilder:
                             tmi = ModuleInfo(package, "tests", tname[:-3],
                                              os.path.join(d, tname), None)
                             self.process_module(tmi)
+        # include files used by the loader
+        for em in self.extra_modules:
+            (pkgname, section, modname, js) = em
+            mi = ModuleInfo(self.pkg_cfg.packages[pkgname], section, modname,
+                            js, None)
+            self.process_module(mi)
+        
 
     def get_module_entries(self):
         return frozenset(self.manifest.values())
     def get_data_entries(self):
         return frozenset(self.datamaps.values())
+
+    def get_used_packages(self):
+        used = set()
+        for index in self.manifest:
+            (package, section, module) = index
+            used.add(package)
+        return sorted(used)
+
+    def get_used_files(self):
+        # returns all .js files that we reference, plus data/ files. You will
+        # need to add the loader, off-manifest files that it needs, and
+        # generated metadata.
+        for me in self.get_module_entries():
+            yield me.js_filename
+            if me.datamap:
+                for (zipname, absname) in me.datamap.files_to_copy:
+                    yield absname
 
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
@@ -210,20 +250,78 @@ class ManifestBuilder:
             self.used_packagenames.add(package)
         return self.manifest[index]
 
-    def find_top(self, target_cfg):
+    def uri_name_from_path(self, pkg, fn):
+        # given a filename like .../pkg1/lib/bar/foo.js, and a package
+        # specification (with a .root_dir like ".../pkg1" and a .lib list of
+        # paths where .lib[0] is like "lib"), return the appropriate NAME
+        # that can be put into a URI like resource://JID-pkg1-lib/NAME . This
+        # will throw an exception if the file is outside of the lib/
+        # directory, since that means we can't construct a URI that points to
+        # it.
+        #
+        # This should be a lot easier, and shouldn't fail when the file is in
+        # the root of the package. Both should become possible when the XPI
+        # is rearranged and our URI scheme is simplified.
+        fn = os.path.abspath(fn)
+        pkglib = pkg.lib[0]
+        libdir = os.path.abspath(os.path.join(pkg.root_dir, pkglib))
+        # AARGH, section and name! we need to reverse-engineer a
+        # ModuleInfo instance that will produce a URI (in the form
+        # PREFIX/PKGNAME-SECTION/JS) that will map to the existing file.
+        # Until we fix URI generation to get rid of "sections", this is
+        # limited to files in the same .directories.lib as the rest of
+        # the package uses. So if the package's main files are in lib/,
+        # but the main.js is in the package root, there is no URI we can
+        # construct that will point to it, and we must fail.
+        #
+        # This will become much easier (and the failure case removed)
+        # when we get rid of sections and change the URIs to look like
+        # (PREFIX/PKGNAME/PATH-TO-JS).
+
+        # AARGH 2, allowing .lib to be a list is really getting in the
+        # way. That needs to go away eventually too.
+        if not fn.startswith(libdir):
+            raise UnreachablePrefixError("Sorry, but the 'main' file (%s) in package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
+                                         % (fn, pkg.name, pkglib))
+        name = fn[len(libdir):].lstrip(SEP)[:-len(".js")]
+        return name
+
+
+    def parse_main(self, root_dir, main, check_lib_dir=None):
+        # 'main' can be like one of the following:
+        #   a: ./lib/main.js  b: ./lib/main  c: lib/main
+        # we require it to be a path to the file, though, and ignore the
+        # .directories stuff. So just "main" is insufficient if you really
+        # want something in a "lib/" subdirectory.
+        if main.endswith(".js"):
+            main = main[:-len(".js")]
+        if main.startswith("./"):
+            main = main[len("./"):]
+        # package.json must always use "/", but on windows we'll replace that
+        # with "\" before using it as an actual filename
+        main = os.sep.join(main.split("/"))
+        paths = [os.path.join(root_dir, main+".js")]
+        if check_lib_dir is not None:
+            paths.append(os.path.join(root_dir, check_lib_dir, main+".js"))
+        return paths
+
+    def find_top_js(self, target_cfg):
         for libdir in target_cfg.lib:
-            n = os.path.join(target_cfg.root_dir, libdir, target_cfg.main+".js")
-            if os.path.exists(n):
-                top_js = n
-                break
-        else:
-            raise KeyError("unable to find main module '%s.js' in top-level package" % target_cfg.main)
+            for n in self.parse_main(target_cfg.root_dir, target_cfg.main,
+                                     libdir):
+                if os.path.exists(n):
+                    return n
+        raise KeyError("unable to find main module '%s.js' in top-level package" % target_cfg.main)
+
+    def find_top(self, target_cfg):
+        top_js = self.find_top_js(target_cfg)
         n = os.path.join(target_cfg.root_dir, "README.md")
         if os.path.exists(n):
             top_docs = n
         else:
             top_docs = None
-        return ModuleInfo(target_cfg, "lib", target_cfg.main, top_js, top_docs)
+        name = self.uri_name_from_path(target_cfg, top_js)
+        return ModuleInfo(target_cfg, "lib", name, top_js, top_docs)
 
     def process_module(self, mi):
         pkg = mi.package
@@ -267,19 +365,25 @@ class ManifestBuilder:
                 # everything transitively required from here. It will also
                 # populate the self.modules[] cache. Note that we must
                 # tolerate cycles in the reference graph.
-                them_me = self.find_req_for(mi, reqname)
+                looked_in = [] # populated by subroutines
+                them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
-                    #raise BadModuleIdentifier("unable to satisfy require(%s) from %s" % (reqname, mi))
-                    print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
+                    err = ModuleNotFoundError()
+                    err.used_by = mi.js
+                    err.requirement_name = reqname
+                    err.looked_in = looked_in
+                    raise err
+                    #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
 
         return me
         #print "LEAVING", pkg.name, mi.name
 
-    def find_req_for(self, from_module, reqname): #, pkg, modulename):
+    def find_req_for(self, from_module, reqname, looked_in):
         # handle a single require(reqname) statement from from_module .
         # Return a uri that exists in self.manifest
+        # Populate looked_in with places we looked.
         def BAD(msg):
             return BadModuleIdentifier(msg + " in require(%s) from %s" %
                                        (reqname, from_module))
@@ -303,7 +407,6 @@ class ManifestBuilder:
         if reqname.startswith("./") or reqname.startswith("../"):
             # 1: they want something relative to themselves, always from
             # their own package
-            lookfor_pkg = from_module.package.name
             them = modulename.split("/")[:-1]
             while bits[0] in (".", ".."):
                 if not bits:
@@ -314,8 +417,11 @@ class ManifestBuilder:
                     them.pop()
                 bits.pop(0)
             bits = them+bits
+            lookfor_pkg = from_module.package.name
             lookfor_mod = "/".join(bits)
-            return self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            return self._get_module_from_package(lookfor_pkg,
+                                                 lookfor_sections, lookfor_mod,
+                                                 looked_in)
 
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
@@ -324,30 +430,27 @@ class ManifestBuilder:
             # 2: PKG/MOD: find PKG, look inside for MOD
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
-            mi = self._get_module(lookfor_pkg, lookfor_sections, lookfor_mod)
+            mi = self._get_module_from_package(lookfor_pkg,
+                                               lookfor_sections, lookfor_mod,
+                                               looked_in)
             if mi: # caution, 0==None
                 return mi
-
-        # 3: try finding MOD or MODPARENT/MODCHILD in their own package
-        from_pkg = from_module.package.name
-        mi = self._get_module(from_pkg, lookfor_sections, reqname)
-        if mi:
-            return mi
-
-        # 4: try finding PKG, if found, use its main.js entry point
-        if "/" not in reqname:
-            mi = self._get_module(reqname, lookfor_sections, None)
+        else:
+            # 3: try finding PKG, if found, use its main.js entry point
+            lookfor_pkg = reqname
+            mi = self._get_entrypoint_from_package(lookfor_pkg, looked_in)
             if mi:
                 return mi
 
-        # 5: MOD: search "library" packages for one that exports MOD
-        return self._get_module(None, lookfor_sections, reqname)
+        # 4: search packages for MOD or MODPARENT/MODCHILD. We always search
+        # their own package first, then the list of packages defined by their
+        # .dependencies list
+        from_pkg = from_module.package.name
+        return self._search_packages_for_module(from_pkg,
+                                                lookfor_sections, reqname,
+                                                looked_in)
 
-
-    def _get_module(self, pkgname, sections, modname):
-        # pkgname could be None, which means "search library packages"
-
-        mi = self._find_module(pkgname, sections, modname)
+    def _handle_module(self, mi):
         if not mi:
             return None
 
@@ -355,50 +458,85 @@ class ManifestBuilder:
         # populate the self.modules cache before recursing into
         # process_module() . We must also check the cache first, so recursion
         # can terminate.
-        pkgname = mi.package.name
         if mi in self.modules:
-            # we didn't know the packagename before
             return self.modules[mi]
 
         # this creates the entry
-        new_entry = self.get_manifest_entry(pkgname, mi.section, mi.name)
+        new_entry = self.get_manifest_entry(mi.package.name, mi.section, mi.name)
         # and populates the cache
         self.modules[mi] = new_entry
         self.process_module(mi)
         return new_entry
 
-    def _find_module(self, pkgname, sections, modname):
-        #print "   _find_module(%s %s %s)" % (pkgname, sections, modname)
-        if pkgname:
-            if pkgname not in self.pkg_cfg.packages:
-                return None
-            if not modname:
-                #print " cannot handle modname=None yet"
-                return None
-            return self._find_module_in_package(pkgname, sections, modname)
-        # search library packages. For now, search all packages.
-        for pkgname in self.deps:
-            mi = self._find_module_in_package(pkgname, sections, modname)
-            if mi:
-                return mi
+    def _get_module_from_package(self, pkgname, sections, modname, looked_in):
+        if pkgname not in self.pkg_cfg.packages:
+            return None
+        mi = self._find_module_in_package(pkgname, sections, modname,
+                                          looked_in)
+        return self._handle_module(mi)
+
+    def _get_entrypoint_from_package(self, pkgname, looked_in):
+        if pkgname not in self.pkg_cfg.packages:
+            return None
+        pkg = self.pkg_cfg.packages[pkgname]
+        main = pkg.get("main", None)
+        if not main:
+            return None
+        for js in self.parse_main(pkg.root_dir, main):
+            looked_in.append(js)
+            if os.path.exists(js):
+                section = "lib"
+                name = self.uri_name_from_path(pkg, js)
+                docs = None
+                mi = ModuleInfo(pkg, section, name, js, docs)
+                return self._handle_module(mi)
         return None
 
-    def _find_module_in_package(self, pkgname, sections, name):
+    def _search_packages_for_module(self, from_pkg, sections, reqname,
+                                    looked_in):
+        searchpath = [] # list of package names
+        searchpath.append(from_pkg) # search self first
+        us = self.pkg_cfg.packages[from_pkg]
+        if 'dependencies' in us:
+            # only look in dependencies
+            searchpath.extend(us['dependencies'])
+        else:
+            # they didn't declare any dependencies (or they declared an empty
+            # list, but we'll treat that as not declaring one, because it's
+            # easier), so look in all deps, sorted alphabetically, so
+            # addon-kit comes first. Note that self.deps includes all
+            # packages found by traversing the ".dependencies" lists in each
+            # package.json, starting from the main addon package, plus
+            # everything added by --extra-packages
+            searchpath.extend(sorted(self.deps))
+        for pkgname in searchpath:
+            mi = self._find_module_in_package(pkgname, sections, reqname,
+                                              looked_in)
+            if mi:
+                return self._handle_module(mi)
+        return None
+
+    def _find_module_in_package(self, pkgname, sections, name, looked_in):
+        # require("a/b/c") should look at ...\a\b\c.js on windows
+        filename = os.sep.join(name.split("/"))
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
-                js = os.path.join(pkg.root_dir, sdir, name+".js")
+                js = os.path.join(pkg.root_dir, sdir, filename+".js")
+                looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
-                    maybe_docs = os.path.join(pkg.root_dir, "docs", name+".md")
+                    maybe_docs = os.path.join(pkg.root_dir, "docs",
+                                              filename+".md")
                     if section == "lib" and os.path.exists(maybe_docs):
                         docs = maybe_docs
                     return ModuleInfo(pkg, section, name, js, docs)
         return None
 
-def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests):
+def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
+                   extra_modules=[]):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -424,7 +562,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests):
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix, extra_modules)
     mxt.build(scan_tests)
     return mxt
 
@@ -475,26 +613,18 @@ def scan_requirements_with_grep(fn, lines):
 
     return requires
 
-MUST_ASK_FOR_CHROME =  """\
-To use chrome authority, as in line %d in:
- %s
- > %s
-You must enable it with:
-  let {Cc,Ci,Cu,Cr,Cm} = require('chrome');
-"""
+CHROME_ALIASES = [
+    (re.compile(r"Components\.classes"), "Cc"),
+    (re.compile(r"Components\.interfaces"), "Ci"),
+    (re.compile(r"Components\.utils"), "Cu"),
+    (re.compile(r"Components\.results"), "Cr"),
+    (re.compile(r"Components\.manager"), "Cm"),
+    ]
+OTHER_CHROME = re.compile(r"Components\.[a-zA-Z]")
 
-CHROME_ALIASES = ["Cc", "Ci", "Cu", "Cr", "Cm"]
-
-def scan_chrome(fn, lines, stderr):
-    filename = os.path.basename(fn)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        return False, False # these are the loader
+def scan_for_bad_chrome(fn, lines, stderr):
     problems = False
-    asks_for_chrome = set() # Cc,Ci in: var {Cc,Ci} = require("chrome")
-    asks_for_all_chrome = False # e.g.: var c = require("chrome")
-    uses_chrome = set()
-    uses_components = False
-    uses_chrome_at = []
+    old_chrome = set() # i.e. "Cc" when we see "Components.classes"
     for lineno,line in enumerate(lines):
         # note: this scanner is not obligated to spot all possible forms of
         # chrome access. The scanner is detecting voluntary requests for
@@ -504,53 +634,35 @@ def scan_chrome(fn, lines, stderr):
         for commentprefix in COMMENT_PREFIXES:
             if line.startswith(commentprefix):
                 iscomment = True
+                break
         if iscomment:
             continue
-        mo = re.search(REQUIRE_RE, line)
-        if mo:
-            if mo.group(1) == "chrome":
-                for alias in CHROME_ALIASES:
-                    if alias in line:
-                        asks_for_chrome.add(alias)
-                if not asks_for_chrome:
-                    asks_for_all_chrome = True
-        alias_in_this_line = False
-        for wanted in CHROME_ALIASES:
-            if re.search(r'\b'+wanted+r'\b', line):
-                alias_in_this_line = True
-                uses_chrome.add(wanted)
-                uses_chrome_at.append( (wanted, lineno+1, line) )
-        
-        if not alias_in_this_line and "Components." in line:
-            uses_components = True
-            uses_chrome_at.append( (None, lineno+1, line) )
-            problems = True
-            break
-    if uses_components or (uses_chrome - asks_for_chrome):
-        problems = True
+        old_chrome_in_this_line = set()
+        for (regexp,alias) in CHROME_ALIASES:
+            if regexp.search(line):
+                old_chrome_in_this_line.add(alias)
+        if not old_chrome_in_this_line:
+            if OTHER_CHROME.search(line):
+                old_chrome_in_this_line.add("components")
+        old_chrome.update(old_chrome_in_this_line)
+                
+    if old_chrome:
         print >>stderr, ""
-        print >>stderr, "To use chrome authority, as in:"
-        print >>stderr, " %s" % fn
-        for (alias, lineno, line) in uses_chrome_at:
-            if alias not in asks_for_chrome:
-                print >>stderr, " %d> %s" % (lineno, line)
-        print >>stderr, "You must enable it with something like:"
-        uses = sorted(uses_chrome)
-        if uses_components:
-            uses.append("components")
-        needed = ",".join(uses)
-        print >>stderr, '  const {%s} = require("chrome");' % needed
-    wants_chrome = bool(asks_for_chrome) or asks_for_all_chrome
-    return wants_chrome, problems
+        print >>stderr, "To use chrome authority, you need a line like this:"
+        needs = ",".join(sorted(old_chrome))
+        print >>stderr, '  const {%s} = require("chrome");' % needs
+        print >>stderr, "because things like 'Components.classes' will not be available"
+        problems = True
+    return problems
 
 def scan_module(fn, lines, stderr=sys.stderr):
-    # barfs on /\s+/ in context-menu.js
-    #requires = scan_requirements_with_jsscan(fn)
+    filename = os.path.basename(fn)
     requires = scan_requirements_with_grep(fn, lines)
-    requires.pop("chrome", None)
-    chrome, problems = scan_chrome(fn, lines, stderr)
-    if chrome:
-        requires["chrome"] = {}
+    if filename == "cuddlefish.js" or filename == "securable-module.js":
+        # these are the loader: don't scan for chrome
+        problems = False
+    else:
+        problems = scan_for_bad_chrome(fn, lines, stderr)
     return requires, problems
 
 

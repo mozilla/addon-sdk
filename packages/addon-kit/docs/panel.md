@@ -8,9 +8,6 @@ easier for users to ignore and dismiss than a modal dialog, since panels are
 hidden the moment users interact with parts of the application interface outside
 them.
 
-Introduction
-------------
-
 The module exports a single constructor function `Panel` which constructs a
 new panel.
 
@@ -19,31 +16,50 @@ and the content remains loaded when a panel is hidden, so it is possible
 to keep a panel around in the background, updating its content as appropriate
 in preparation for the next time it is shown.
 
+Your add-on can receive notifications when a panel is shown or hidden by
+listening to its `show` and `hide` events.
+
 Panels have associated content scripts, which are JavaScript scripts that have
 access to the content loaded into the panels.  An add-on can specify one or
 more content scripts to load for a panel, and the add-on can communicate with
-those scripts via an asynchronous event emitter API.  See
+those scripts either using the `message` event or by using user-defined
+events. See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
-Events
-------
+The panel's default style is different for each operating system.
+For example, suppose a panel's content is specified with the following HTML:
 
-Panels emit the following types of
-[events](dev-guide/addon-development/events.html).
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+<h1>Default Style</h1>
 
-### message ###
+This is what a panel with no custom styling looks like.
+]]>
+</script>
 
-This event is emitted when the panel's content scripts post a message.
-Listeners are passed the message as their first and only argument.
+On OS X it will look like this:
 
-### show ###
+<img class="image-center" src="media/screenshots/default-panel-osx.png"
+alt="OS X panel default style">
+<br>
 
-This event is emitted when the panel is shown.
+On Windows 7 it will look like this:
 
-### hide ###
+<img class="image-center" src="media/screenshots/default-panel-windows.png"
+alt="Windows 7 panel default style">
+<br>
 
-This event is emitted when the panel is hidden.
+On Ubuntu it will look like this:
+
+<img class="image-center" src="media/screenshots/default-panel-ubuntu.png"
+alt="Ubuntu panel default style">
+<br>
+
+This helps to ensure that the panel's style is consistent with the dialogs
+displayed by Firefox and other applications, but means you need to take care
+when applying your own styles. For example, if you set the panel's
+`background-color` property to `white` and do not set the `color` property,
+then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
 
 Examples
 --------
@@ -118,11 +134,11 @@ Creates a panel.
     This property is optional and defaults to "end".
 
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Include this to listen to the panel's `message` event.
   @prop [onShow] {function}
-    An optional "show" event listener.  See Events above.
+    Include this to listen to the panel's `show` event.
   @prop [onHide] {function}
-    An optional "hide" event listener.  See Events above.
+    Include this to listen to the panel's `hide` event.
 </api>
 
 <api name="port">
@@ -252,4 +268,39 @@ The new height of the panel in pixels.
 @param listener {function}
   The listener function that was registered.
 </api>
+
+<api name="show">
+@event
+This event is emitted when the panel is shown.
+</api>
+
+<api name="hide">
+@event
+This event is emitted when the panel is hidden.
+</api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this panel. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the panel's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in one of the
+panel's content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
 </api>

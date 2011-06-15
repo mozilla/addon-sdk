@@ -101,7 +101,7 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     This property is optional and defaults to "end".
 
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Use this to add a listener to the page worker's `message` event.
 </api>
 
 <api name="port">
@@ -193,18 +193,21 @@ The listener function that was registered.
 
 <api name="message">
 @event
-This event is emitted when the page worker receives a message from its
-content scripts.
+If you listen to this event you can receive message events from content
+scripts associated with this page worker. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the page worker's `message` event.
 
-@argument {JSON}
-Listeners are passed a single argument, the message posted
-from the content script. The message must be stringifiable to JSON.
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">
 @event
-This event is emitted when an uncaught runtime error occurs in the page worker's
-content scripts.
+This event is emitted when an uncaught runtime error occurs in one of the
+page worker's content scripts.
 
 @argument {Error}
 Listeners are passed a single argument, the

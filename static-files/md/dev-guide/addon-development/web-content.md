@@ -161,10 +161,9 @@ functions:
 
 **`emit()`** is used to emit an event. It may be called with any number of
 parameters, but is most likely to be called with a name for the event and
-an optional payload. The payload can be any value that is serializable to
-JSON. For example: a string, number, boolean, array of JSON-serializable
-values or an object whose property values are JSON-serializable. It is used
-to emit an event:
+an optional payload. The payload can be any value that is
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">serializable to JSON</a>.
+It is used to emit an event:
 
     port.emit("myEvent", myEventPayload);
 
@@ -280,6 +279,39 @@ In the add-on above there are two user-defined events:
 element in the page
 * `warning` sends a silly string back to the page-mod
 
+### <a name="json_serializable">JSON-Serializable Values</a> ###
+
+The payload for an event can be any JSON-serializable value. When events are
+sent their payloads are automatically serialized, and when events are received
+their payloads are automatically deserialized, so you don't need to worry
+about serialization.
+
+However, you _do_ have to ensure that the payload can be serialized to JSON.
+This means that it needs to be a string, number, boolean, null, array of
+JSON-serializable values, or an object whose property values are themselves
+JSON-serializable. This means you can't send functions, and if the object
+contains methods they won't be encoded.
+
+For example, to include an array of strings in the payload:
+
+    var pageModScript = "self.port.emit('loaded'," +
+                        "  [" +
+                        "  document.location.toString()," +
+                        "  document.title" +
+                        "  ]" +
+                        ");"
+
+    var pageMod = require('page-mod').PageMod({
+      include: ['*'],
+      contentScript: pageModScript,
+      onAttach: function(worker) {
+        worker.port.on('loaded', function(pageInfo) {
+          console.log(pageInfo[0]);
+          console.log(pageInfo[1]);
+        });
+      }
+    });
+
 ### Examples ###
 
 #### Reddit Example ####
@@ -366,7 +398,7 @@ the global `self` object:
     self.postMessage(contentScriptMessage);
 
 This takes a single parameter, the message payload, which may be any
-JSON-serializable value.
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 
 To receive a message from the add-on script, use `self`'s `on` function:
 

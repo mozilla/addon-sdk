@@ -1,70 +1,220 @@
-The `match-pattern` module can be used to test URLs against simple patterns.
+The `match-pattern` module can be used to test strings containing URLs
+against simple patterns.
 
+## Specifying Patterns ##
 
-Patterns
---------
+There are three ways you can specify patterns:
 
-There are four kinds of patterns.  The first three use an asterisk as a
-glob-style wildcard.  Note that these are not regular expressions.
+* as an exact match string
+* using a wildcard in a string
+* using a regular expression
 
-1.   **A single asterisk** matches any URL with an `http`, `https`, or `ftp`
-     scheme. Note that it won't match URLs containing any other schemes, such
-     as `file` URLs: to match these you need to specify the scheme explicitly
-     (see item 5.)
+### Exact Matches ###
 
-     *Example:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;**`*`**
+**A URL** matches only that URL. The URL must start with a scheme, end with a
+slash, and contain no wildcards.
 
-     *Example matching URLs:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`https://example.com/`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`ftp://example.com/`
+<table>
 
-2.   **A domain name prefixed with an asterisk and dot** matches any URL of that
-     domain or a subdomain.
+  <colgroup>
+    <col width="30%">
+    <col width="35%">
+    <col width="35%">
+  </colgroup>
 
-     *Example:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;**`*.example.com`**
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+    <th>Example non-matching URLs</th>
+  </tr>
 
-     *Example matching URLs:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://foo.example.com/`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://bar.foo.example.com/`
+  <tr>
+    <td><code>"http://example.com/"</code></td>
+    <td><code>http://example.com/</code></td>
+    <td><code>http://example.com</code><br>
+        <code>http://example.com/foo</code><br>
+        <code>https://example.com/</code><br>
+        <code>http://foo.example.com/</code></td>
+  </tr>
 
-3.   **A URL suffixed with an asterisk** matches that URL and any URL prefixed
-     with the pattern.
+</table>
 
-     *Example:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/*`**
+### Wildcards ###
 
-     *Example matching URLs:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/foo/bar`
+**A single asterisk** matches any URL with an `http`, `https`, or `ftp`
+scheme. For other schemes like `file`, use a scheme followed by an
+asterisk, as below.
 
-4.   **A URL** matches only that URL.
+<table>
 
-     *Example:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;**`http://example.com/`**
+  <colgroup>
+    <col width="30%">
+    <col width="35%">
+    <col width="35%">
+  </colgroup>
 
-     *Example matching URLs:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`http://example.com/`
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+    <th>Example non-matching URLs</th>
+  </tr>
 
-5.  **A scheme followed by an asterisk** matches all documents accessed using
-     that scheme.<br>
-     To match local files, use `file://*`.<br>
-     To match files stored in your add-on's `data` directory, use
-     `resource://*`.
-    
-    *Example:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;**`file://*`**
+  <tr>
+    <td><code>"*"</code></td>
+    <td><code>http://example.com/</code><br>
+        <code>https://example.com/</code><br>
+        <code>ftp://example.com/</code><br>
+        <code>http://bar.com/foo.js</code><br>
+        <code>http://foo.com/</code></td>
+    <td><code>file://example.js</code></td>
+  </tr>
 
-     *Example matching URLs:*<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`file://C:/Users/User/Desktop/test-file.html`<br>
-     &nbsp;&nbsp;&nbsp;&nbsp;`file:///home/user/test-file.png`<br>
-     
-Examples
---------
+</table>
+
+**A domain name prefixed with an asterisk and dot** matches any URL of that
+domain or a subdomain, using any of `http`, `https`, `ftp`.
+
+<table>
+
+  <colgroup>
+    <col width="30%">
+    <col width="35%">
+    <col width="35%">
+  </colgroup>
+
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+    <th>Example non-matching URLs</th>
+  </tr>
+
+  <tr>
+    <td><code>"*.example.com"</code></td>
+    <td><code>http://example.com/</code><br>
+        <code>http://foo.example.com/</code><br>
+        <code>https://example.com/</code><br>
+        <code>http://example.com/foo</code><br>
+        <code>ftp://foo.example.com/</code></td>
+    <td><code>ldap://example.com</code><br>
+        <code>http://example.foo.com/</code></td>
+  </tr>
+
+</table>
+
+**A URL followed by an asterisk** matches that URL and any URL prefixed with
+the pattern.
+
+<table>
+
+  <colgroup>
+    <col width="30%">
+    <col width="35%">
+    <col width="35%">
+  </colgroup>
+
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+    <th>Example non-matching URLs</th>
+  </tr>
+
+  <tr>
+    <td><code>"https://foo.com/*"</code></td>
+    <td><code>https://foo.com/</code><br>
+        <code>https://foo.com/bar</code></td>
+    <td><code>http://foo.com/</code><br>
+        <code>https://foo.com</code><br>
+        <code>https://bar.foo.com/</code></td>
+  </tr>
+
+</table>
+
+**A scheme followed by an asterisk** matches all URLs with that scheme. To
+match local files, use `file://*`.
+
+<table>
+
+  <colgroup>
+    <col width="30%">
+    <col width="70%">
+  </colgroup>
+
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+  </tr>
+
+  <tr>
+    <td><code>"file://*"</code></td>
+    <td><code>file://C:/file.html</code><br>
+        <code>file:///home/file.png</code></td>
+  </tr>
+
+</table>
+
+### Regular Expressions ###
+
+You can specify patterns using a
+[regular expression](https://developer.mozilla.org/en/JavaScript/Guide/Regular_Expressions):
+
+    var { MatchPattern } = require("match-pattern");
+    var pattern = new MatchPattern(/.*example.*/);
+
+The regular expression is subject to restrictions based on those applied to the
+[HTML5 pattern attribute](http://dev.w3.org/html5/spec/common-input-element-attributes.html#attr-input-pattern). In particular:
+
+* The pattern must match the entire value, not just any subset. For example, the
+pattern `/moz.*/` will not match the URL `http://mozilla.org`.
+
+* The expression is compiled with the `global`, `ignoreCase`, and `multiline` flags
+  disabled. The `MatchPattern` constructor will throw an exception
+  if you try to set any of these flags.
+
+<table>
+
+  <colgroup>
+    <col width="30%">
+    <col width="35%">
+    <col width="35%">
+  </colgroup>
+
+  <tr>
+    <th>Example pattern</th>
+    <th>Example matching URLs</th>
+    <th>Example non-matching URLs</th>
+  </tr>
+
+  <tr>
+    <td><code>/.*moz.*/</code></td>
+    <td><code>http://foo.mozilla.org/</code><br>
+        <code>http://mozilla.org</code><br>
+        <code>https://mozilla.org</code><br>
+        <code>http://foo.com/mozilla</code><br>
+        <code>http://hemozoon.org</code><br>
+        <code>mozscheme://foo.org</code><br></td>
+    <td><code>http://foo.org</code><br>
+  </tr>
+
+  <tr>
+    <td><code>/http:\/\/moz.*/</code></td>
+    <td><code>http://mozilla.org</code><br>
+        <code>http://mozzarella.com</code></td>
+    <td><code>https://mozilla.org</code><br>
+        <code>http://foo.mozilla.org/</code><br>
+        <code>http://foo.com/moz</code></td>
+  </tr>
+
+  <tr>
+    <td><code>/http.*moz.*/</code><br></td>
+    <td><code>http://foo.mozilla.org/</code><br>
+        <code>http://mozilla.org</code><br>
+        <code>http://hemozoon.org/</code></td>
+        <td><code>ftp://http/mozilla.org</code></td>
+  </tr>
+
+</table>
+
+## Examples ##
 
     var { MatchPattern } = require("match-pattern");
     var pattern = new MatchPattern("http://example.com/*");

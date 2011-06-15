@@ -38,23 +38,52 @@
 
 "use strict";
 
-const { EventEmitterTrait: EventEmitter } = require("events");
-const { WindowTracker } = require("window-utils");
+const { EventEmitterTrait: EventEmitter } = require("../events");
+const { WindowTracker, windowIterator } = require("../window-utils");
+const { DOMEventAssembler } = require("../events/assembler");
+const { Trait } = require("../light-traits");
 
-// Creating an event emitter object that will spread use window events to it's
-// listeners when they occur.
-const observer = EventEmitter.create({
-  onTrack: function onTrack(chromeWindow) {
-    this._emit("open", chromeWindow);
-  },
-  onUntrack: function onUntrack(chromeWindow) {
-    this._emit("close", chromeWindow);
+// Event emitter objects used to register listeners and emit events on them
+// when they occur.
+const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
+  /**
+   * Method is implemented by `EventEmitter` and is used just for emitting
+   * events on registered listeners.
+   */
+  _emit: Trait.required,
+  /**
+   * Events that are supported and emitted by the module.
+   */
+  supportedEventsTypes: [ "activate", "deactivate" ],
+  /**
+   * Function handles all the supported events on all the windows that are
+   * observed. Method is used to proxy events to the listeners registered on
+   * this event emitter.
+   * @param {Event} event
+   *    Keyboard event being emitted.
+   */
+  handleEvent: function handleEvent(event) {
+    this._emit(event.type, event.target, event);
   }
 });
-module.exports = observer;
 
 // Using `WindowTracker` to track window events.
-new WindowTracker(observer);
+new WindowTracker({
+  onTrack: function onTrack(chromeWindow) {
+    observer._emit("open", chromeWindow);
+    observer.observe(chromeWindow);
+  },
+  onUntrack: function onUntrack(chromeWindow) {
+    observer._emit("close", chromeWindow);
+    observer.ignore(chromeWindow);
+  }
+});
+
+// Making observer aware of already opened windows.
+for each (let window in windowIterator())
+  observer.observe(window);
 
 // Getting rid of all listeners when add-on is unloaded.
 require("unload").when(function() { observer._events = {} });
+
+module.exports = observer;

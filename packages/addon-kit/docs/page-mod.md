@@ -317,4 +317,25 @@ mod can no longer be used.  Note that modifications already made to open pages
 will not be undone.
 </api>
 
+<api name="attach">
+@event
+This event is emitted this event when the page-mod's content scripts are
+attached to a page whose URL matches the page-mod's `include` filter.
+
+@argument {Worker}
+The listener function is passed a `Worker` object that can be used to communicate
+with any content scripts attached to this page.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in one of the page
+mod's content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
 </api>
