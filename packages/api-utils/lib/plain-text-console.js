@@ -50,7 +50,7 @@ function stringifyArgs(args) {
 }
 
 function message(print, level, args) {
-  print(level + ": " + stringifyArgs(args) + "\n");
+  print(level + ": " + stringifyArgs(args) + "\n", level);
 }
 
 var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
