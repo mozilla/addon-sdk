@@ -56,6 +56,18 @@ const JS_VERSION = '1.8';
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
 
+
+function ensureArgumentsAreJSON(args) {
+  // First convert to real array
+  let array = Array.prototype.slice.call(args);
+  // JSON.stringify is buggy with cross-sandbox values,
+  // it may return "{}" on functions. Use a replacer to match them correctly.
+  function replacer(k, v) {
+    return typeof v === "function" ? undefined : v;
+  }
+  return JSON.parse(JSON.stringify(array, replacer));
+}
+
 /**
  * Extended `EventEmitter` allowing us to emit events asynchronously.
  */
@@ -419,7 +431,8 @@ const Worker = AsyncEventEmitter.compose({
     }
     
     let scope = this._contentWorker._port;
-    scope._asyncEmit.apply(scope, args);
+    // Ensure that we pass only JSON values
+    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(args));
   },
   
   // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
@@ -524,7 +537,8 @@ const Worker = AsyncEventEmitter.compose({
    * worker.port. Provide a way for composed object to catch all events.
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
-    this._port._asyncEmit.apply(this._port, arguments);
+    // Ensure that we pass only JSON values
+    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(arguments));
   },
   
   /**
