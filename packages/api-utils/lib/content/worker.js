@@ -194,7 +194,13 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     });
     Object.defineProperties(sandbox, {
       window: { get: function() sandbox },
-      top: { get: function() sandbox }
+      top: { get: function() sandbox },
+      // Use the Greasemonkey naming convention to provide access to the
+      // unwrapped window object so the content script can access document
+      // JavaScript values.
+      // NOTE: this functionality is experimental and may change or go away
+      // at any time!
+      unsafeWindow: { get: function () window }
     });
     
     // Overriding / Injecting some natives into sandbox.
