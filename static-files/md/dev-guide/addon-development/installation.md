@@ -8,7 +8,7 @@ To develop with the Add-on SDK, you'll need:
 * A version of Firefox that uses Gecko 2.0.0.7 or later
   (for example, Firefox 4.0).
 
-At the moment, the latest stable version of the Add-on SDK is 1.0b5.
+At the moment, the latest stable version of the Add-on SDK is 1.0.
 You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
@@ -19,21 +19,21 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  ~/mozilla > tar -xf addon-sdk-1.0b5.tar.gz
-  ~/mozilla > cd addon-sdk-1.0b5
-  ~/mozilla/addon-sdk-1.0b5 >
+  ~/mozilla > tar -xf addon-sdk-1.0.tar.gz
+  ~/mozilla > cd addon-sdk-1.0
+  ~/mozilla/addon-sdk-1.0 >
 </pre>
 
 Then, if you're on Linux, OS X, or another Unix-based system, run:
 
 <pre>
-  ~/mozilla/addon-sdk-1.0b5 > source bin/activate
+  ~/mozilla/addon-sdk-1.0 > source bin/activate
 </pre>
 
 Otherwise, if you're on Windows, run:
 
 <pre>
-  C:\Users\Mozilla\addon-sdk-1.0b5> bin\activate
+  C:\Users\Mozilla\addon-sdk-1.0> bin\activate
 </pre>
 
 Now the beginning of your command prompt should contain the text
@@ -58,7 +58,7 @@ prompts at the same time.
 Run this at your shell prompt:
 
 <pre>
-  ~/mozilla/addon-sdk-1.0b5 > cfx
+  ~/mozilla/addon-sdk-1.0 > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by
