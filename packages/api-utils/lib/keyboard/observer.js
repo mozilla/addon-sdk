@@ -83,6 +83,4 @@ windowObserver.on("close", function onClose(window) {
 for each (let window in browserWindowIterator())
   observer.observe(window);
 
-require("unload").when(function() { observer._events = null; });
-
 module.exports = observer;
