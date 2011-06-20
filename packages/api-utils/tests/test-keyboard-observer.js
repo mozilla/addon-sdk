@@ -2,30 +2,28 @@
 
 const { keyPress } = require("api-utils/dom/events/keys");
 
-exports["test hotkey: automatic destroy"] = function(assert, done) {
+exports["test unload keyboard observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
   let loader = assert._log.makeSandboxedLoader();
-  
-  var element = loader.require("api-utils/window-utils").activeBrowserWindow.
+  let element = loader.require("api-utils/window-utils").activeBrowserWindow.
                 document.documentElement;
-  var observer = loader.require("api-utils/keyboard/observer")
-  var called = 0;
+  let observer = loader.require("api-utils/keyboard/observer");
+  let called = 0;
 
-  observer.once("keypress", function () { called++; });
+  observer.on("keypress", function () { called++; });
+
+  // dispatching "keypress" event to trigger observer listeners.
   keyPress(element, "accel-%");
 
-  assert.equal(1, called, "listener was called");
-  // Unload the module so that previous hotkey is automatically destroyed
+  // Unload the module.
   loader.unload();
 
-  observer.once("keypress", function () { called++; });
-
-  // Ensure that the hotkey is really destroyed
+  // dispatching "keypress" even once again.
   keyPress(element, "accel-%");
-  console.log(called)
 
+  // Enqueuing asserts to make sure that assertion is not performed early.
   require("timer").setTimeout(function () {
-    assert.equal(called, 1, "observer was not called.");
+    assert.equal(called, 1, "observer was called before unload only.");
     done();
   }, 0);
 };
