@@ -84,6 +84,6 @@ for each (let window in windowIterator())
   observer.observe(window);
 
 // Getting rid of all listeners when add-on is unloaded.
-require("unload").when(function() { observer._events = {} });
+require("unload").when(function() { observer._events = null; });
 
 module.exports = observer;

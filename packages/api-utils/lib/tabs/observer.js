@@ -124,6 +124,6 @@ windowObserver.on("activate", function onWindowActivate(chromeWindow) {
 for each (let window in windowIterator()) onWindowOpen(window);
 
 // Getting rid of all listeners when add-on is unloaded.
-require("unload").when(function() { observer._events = {} });
+require("unload").when(function() { observer._events = null; });
 
 module.exports = observer;
