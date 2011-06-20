@@ -76,7 +76,7 @@ windowObserver.on("open", function onOpen(window) {
 // Removing each closed window form the list of observed windows.
 windowObserver.on("close", function onClose(window) {
   if (isBrowser(window))
-    observer.ignore(observer);
+    observer.ignore(window);
 });
 
 // Making observer aware of already opened windows.
