@@ -4,7 +4,7 @@ const { Hotkey } = require("hotkeys");
 const { keyPress } = require("dom/events/keys");
 
 exports["test hotkey: accel alt shift"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "accel-shift-p",
     onPress: function() {
@@ -27,7 +27,7 @@ exports["test hotkey: accel alt shift"] = function(assert, done) {
 };
 
 exports["test hotkey meta & control"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "meta-3",
     onPress: function() {
@@ -50,7 +50,7 @@ exports["test hotkey meta & control"] = function(assert, done) {
 };
 
 exports["test hotkey: control alt ! -"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "control-!",
     onPress: function() {
@@ -94,7 +94,7 @@ exports["test invalid combos"] = function(assert) {
 };
 
 exports["test no exception on unmodified keypress"] = function(assert) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
 	var someHotkey = Hotkey({
 		combo: "control-alt-!",
 		onPress: function() {
