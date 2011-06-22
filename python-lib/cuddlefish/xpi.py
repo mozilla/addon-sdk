@@ -19,7 +19,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         zf.write(str(harness_options['icon64']), 'icon64.png')
         del harness_options['icon64']
 
-    IGNORED_FILES = [".hgignore", "install.rdf", 
+    IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
                      "application.ini", xpi_name]
     IGNORED_FILE_SUFFIXES = ["~"]
     IGNORED_DIRS = [".svn", ".hg", ".git"]
