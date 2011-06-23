@@ -526,6 +526,7 @@ class ManifestBuilder:
         # it.
         if not filename.endswith(".js"):
           filename += ".js"
+        basename = filename[:-3]
 
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
@@ -537,7 +538,7 @@ class ManifestBuilder:
                 if os.path.exists(js):
                     docs = None
                     maybe_docs = os.path.join(pkg.root_dir, "docs",
-                                              filename+".md")
+                                              basename+".md")
                     if section == "lib" and os.path.exists(maybe_docs):
                         docs = maybe_docs
                     return ModuleInfo(pkg, section, name, js, docs)
