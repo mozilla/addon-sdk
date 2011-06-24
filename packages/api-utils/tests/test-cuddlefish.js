@@ -20,7 +20,7 @@ exports.testLoader = function(test) {
   var unloadsCalled = '';
 
   loader.require("unload").when(function() { unloadsCalled += 'a'; });
-  loader.require("unload").when(function() { unloadsCalled += 'b'; });
+  loader.require("unload.js").when(function() { unloadsCalled += 'b'; });
 
   loader.unload();
 
