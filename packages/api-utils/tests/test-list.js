@@ -145,7 +145,7 @@ exports['test:removing adding elements'] = function(test) {
 };
 
 exports['test: remove does not leave invalid numerical properties'] = function(test) {
-    let fixture = List.compose({
+  let fixture = List.compose({
     remove: function() this._remove.apply(this, arguments),
   }).apply(null, [1, 2, 3]);
 
