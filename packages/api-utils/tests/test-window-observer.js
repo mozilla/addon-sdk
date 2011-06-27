@@ -5,7 +5,7 @@ exports["test unload window observer"] = function(assert, done) {
   let loader = assert._log.makeSandboxedLoader();
 
   let utils = loader.require("api-utils/window-utils");
-  let { isBrowser, activeBrowserWindow: window } = utils;
+  let { isBrowser, activeBrowserWindow: activeWindow } = utils;
   let observer = loader.require("api-utils/windows/observer")
   let opened = 0;
   let closed = 0;
@@ -16,18 +16,20 @@ exports["test unload window observer"] = function(assert, done) {
       opened++;
   });
   observer.on("close", function onClose(window) {
-    if (isBrowser(window))
+    // Ignore non-browser windows & already opened `activeWindow` (unload will
+    // emit close on it even though it is not actually closed).
+    if (isBrowser(window) && window !== activeWindow)
       closed++;
   });
 
   // Open window and close it to trigger observers.
-  window.open().close();
+  activeWindow.open().close();
 
   // Unload the module so that all listeners set by observer are removed.
   loader.unload();
 
   // Open and close window once again.
-  window.open().close();
+  activeWindow.open().close();
 
   // Enqueuing asserts to make sure that assertion is not performed early.
   require("timer").setTimeout(function () {
