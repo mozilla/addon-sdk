@@ -37,6 +37,11 @@ exports.testParseHttp = function(test) {
   test.assertEqual(info.path, "/bar");
 };
 
+exports.testParseHttpWithPort = function(test) {
+  var info = url.URL("http://foo.com:5/bar");
+  test.assertEqual(info.port, 5);
+};
+
 exports.testParseChrome = function(test) {
   var info = url.URL("chrome://global/content/blah");
   test.assertEqual(info.scheme, "chrome");
