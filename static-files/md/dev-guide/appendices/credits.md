@@ -18,6 +18,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
+* Mark Hammond
 * Lloyd Hilaiel
 * Bobby Holley
 * Eric H. Jung
