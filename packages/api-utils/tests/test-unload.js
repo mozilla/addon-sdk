@@ -44,7 +44,10 @@ exports.testUnloading = function(test) {
   var loader = test.makeSandboxedLoader();
   var ul = loader.require("unload");
   var unloadCalled = 0;
-  function unload() { unloadCalled++; }
+  function unload() {
+    unloadCalled++;
+    throw "error";
+  }
   ul.when(unload);
 
   // This should be ignored, as we already registered it
