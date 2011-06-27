@@ -1,4 +1,5 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
+<!-- edited by Erik Vold [erikvvold@gmail.com] -->
 
 The `window-utils` module provides helpers for accessing and tracking
 application windows.  These windows implement the [`nsIDOMWindow`][nsIDOMWindow]
