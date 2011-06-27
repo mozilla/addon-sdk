@@ -44,7 +44,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Dave Townsend
 * Peter Van der Beken
 * Atul Varma
-* Erik Vold
+* [Erik Vold](https://github.com/erikvold)
 * Vladimir Vukicevic
 * Brian Warner
 * [Henri Wiechers](https://github.com/hwiechers)
