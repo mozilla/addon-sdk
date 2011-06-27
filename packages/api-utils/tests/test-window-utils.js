@@ -101,6 +101,35 @@ exports.testWindowWatcher = function(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testWindowWatcherWithoutUntracker = function(test) {
+  var myWindow;
+  var finished = false;
+
+  var delegate = {
+    onTrack: function(window) {
+      if (window == myWindow) {
+        test.pass("onTrack() called with our test window");
+        timer.setTimeout(function() {
+          myWindow.close();
+
+          if (!finished) {
+              finished = true;
+              myWindow = null;
+              wt.unload();
+              test.done();
+            } else {
+              test.fail("onTrack() called multiple times.");
+            }
+        }, 1);
+      }
+    }
+  };
+
+  var wt = new windowUtils.WindowTracker(delegate);
+  myWindow = makeEmptyWindow();
+  test.waitUntilDone(5000);
+};
+
 exports.testActiveWindow = function(test) {
   test.waitUntilDone(5000);
 
