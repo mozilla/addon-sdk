@@ -699,7 +699,7 @@
 
    exports.LocalFileSystem.prototype = {
      resolveModule: function resolveModule(base, path) {
-       path = path + ".js";
+       path = normalizePath(path);
 
        var baseURI;
        if (!base || path.charAt(0) != '.')

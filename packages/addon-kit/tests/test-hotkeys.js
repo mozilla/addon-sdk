@@ -6,7 +6,7 @@ const { keyPress } = require("dom/events/keys");
 exports["test hotkey: accel alt shift"] = function(assert, done) {
   var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
-    combo: "accel-shift-p",
+    combo: "accel-shift-x",
     onPress: function() {
       assert.pass("first callback is called");
       keyPress(element, "accel-alt-shift-p");
@@ -23,7 +23,7 @@ exports["test hotkey: accel alt shift"] = function(assert, done) {
     }
   });
 
-  keyPress(element, "accel-shift-p");
+  keyPress(element, "accel-shift-x");
 };
 
 exports["test hotkey meta & control"] = function(assert, done) {
@@ -103,5 +103,30 @@ exports["test no exception on unmodified keypress"] = function(assert) {
 	keyPress(element, "a");
   assert.pass("No exception throw, unmodified keypress passed");
 }
+
+exports["test hotkey: automatic destroy"] = function(assert, done) {
+  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
+  let loader = assert._log.makeSandboxedLoader();
+  
+  var called = false;
+  var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;
+  var hotkey = loader.require("hotkeys").Hotkey({
+    combo: "accel-shift-x",
+    onPress: function() {
+      called = true;
+    }
+  });
+  
+  // Unload the module so that previous hotkey is automatically destroyed
+  loader.unload();
+  
+  // Ensure that the hotkey is really destroyed
+  keyPress(element, "accel-shift-x");
+  
+  require("timer").setTimeout(function () {
+    assert.ok(!called, "Hotkey is destroyed and not called.");
+    done();
+  }, 0);
+};
 
 require("test").run(exports);
