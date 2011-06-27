@@ -42,7 +42,7 @@ const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
 const { getActiveTab, getTabs, getTabContainers } = require("./utils");
-const { windowIterator, isBrowser } = require("../window-utils");
+const { browserWindowIterator, isBrowser } = require("../window-utils");
 const windowObserver = require("../windows/observer");
 
 const EVENTS = {
@@ -121,9 +121,6 @@ windowObserver.on("activate", function onWindowActivate(chromeWindow) {
 
 // We should synchronize state, since probably we already have at least one
 // window open.
-for each (let window in windowIterator()) onWindowOpen(window);
-
-// Getting rid of all listeners when add-on is unloaded.
-require("unload").when(function() { observer._events = {} });
+for each (let window in browserWindowIterator()) onWindowOpen(window);
 
 module.exports = observer;
