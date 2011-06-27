@@ -9,7 +9,7 @@ exports["test unload tab observer"] = function(assert, done) {
 
   let window = loader.require("api-utils/window-utils").activeBrowserWindow;
   let observer = loader.require("api-utils/tabs/observer");
-   let opened = 0;
+  let opened = 0;
   let closed = 0;
 
   observer.on("open", function onOpen(window) { opened++; });
