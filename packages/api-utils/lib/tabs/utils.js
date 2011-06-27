@@ -76,6 +76,11 @@ function openTab(window, url) {
 }
 exports.openTab = openTab;
 
+function closeTab(tab) {
+  return getOwnerWindow(tab).gBrowser.removeTab(tab);
+}
+exports.closeTab = closeTab;
+
 function activateTab(tab) {
   getOwnerWindow(tab).gBrowser.selectedTab = tab;
 }
