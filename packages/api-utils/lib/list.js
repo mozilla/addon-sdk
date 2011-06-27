@@ -116,7 +116,7 @@ const List = Trait.resolve({ toString: null }).compose({
     let list = this._keyValueMap,
         index = list.indexOf(element);
     if (0 <= index) {
-      delete this._public[list.length];
+      delete this._public[list.length - 1];
       list.splice(index, 1);
       for (let length = list.length; index < length; index++)
         this._public[index] = list[index];
