@@ -55,6 +55,20 @@ exports.testParseAbout = function(test) {
   test.assertEqual(info.path, "boop");
 };
 
+exports.testParseFTP = function(test) {
+  var info = url.URL("ftp://1.2.3.4/foo");
+  test.assertEqual(info.scheme, "ftp");
+  test.assertEqual(info.host, "1.2.3.4");
+  test.assertEqual(info.port, null);
+  test.assertEqual(info.userPass, null);
+  test.assertEqual(info.path, "/foo");
+};
+
+exports.testParseFTPWithUserPass = function(test) {
+  var info = url.URL("ftp://user:pass@1.2.3.4/foo");
+  test.assertEqual(info.userPass, "user:pass");
+};
+
 exports.testToFilename = function(test) {
   test.assertRaises(
     function() { url.toFilename("resource://nonexistent"); },
