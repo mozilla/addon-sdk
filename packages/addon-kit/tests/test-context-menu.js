@@ -402,6 +402,26 @@ exports.testContentContextNoMatch = function (test) {
 };
 
 
+// Content contexts that return a string should cause their items to be present
+// in the menu and the items' labels to be updated.
+exports.testContentContextMatchString = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "first label",
+    contentScript: 'self.on("context", function () "second label");'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.assertEqual(item.label, "second label",
+                     "item's label should be updated");
+    test.done();
+  });
+};
+
+
 // The args passed to context listeners should be correct.
 exports.testContentContextArgs = function (test) {
   test = new TestHelper(test);
@@ -1118,7 +1138,8 @@ exports.testLoadWithOpenTab = function (test) {
     let loader = test.newLoader();
     let item = new loader.cm.Item({
       label: "item",
-      contentScript: 'self.on("click", function () self.postMessage("click"));',
+      contentScript:
+        'self.on("click", function () self.postMessage("click"));',
       onMessage: function (msg) {
         if (msg === "click")
           test.done();
