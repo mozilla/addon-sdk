@@ -71,3 +71,17 @@ exports.testWaitUntilMatches = function(test) {
     succeed = true;
   }, 200);
 }
+
+exports.testExpectFail = function(test) {
+    test.expectFail(function() {
+        test.fail('expectFail masking .fail');
+    });
+
+    test.expectFail(function() {
+        test.assert(false, 'expectFail masking .assert');
+    });
+
+    test.assert(true, 'assert should pass with no expectFail');
+}
+
+

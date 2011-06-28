@@ -62,6 +62,7 @@ var TestRunner = exports.TestRunner = function TestRunner(options) {
   this.passed = 0;
   this.failed = 0;
   this.testRunSummary = [];
+  this.expectFailNesting = 0;
 };
 
 TestRunner.prototype = {
@@ -105,17 +106,35 @@ TestRunner.prototype = {
   },
 
   pass: function pass(message) {
-    console.info("pass:", message);
-    this.passed++;
-    this.test.passed++;
+    if(!this.expectFailure) {
+      console.info("pass:", message);
+      this.passed++;
+      this.test.passed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.fail('Failure Expected: ' + message);
+    }
   },
 
   fail: function fail(message) {
-    this._logTestFailed("failure");
-    console.error("fail:", message);
-    console.trace();
-    this.failed++;
-    this.test.failed++;
+    if(!this.expectFailure) {
+      this._logTestFailed("failure");
+      console.error("fail:", message);
+      console.trace();
+      this.failed++;
+      this.test.failed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.pass(message);
+    }
+  },
+
+  expectFail: function(callback) {
+    this.expectFailure = true;
+    callback();
+    this.expectFailure = false;
   },
 
   exception: function exception(e) {
