@@ -545,5 +545,13 @@ function handlerMaker(obj) {
  */
 exports.create = function create(object) {
   let xpcWrapper = XPCNativeWrapper(object);
+  // If we can't build an XPCNativeWrapper, it doesn't make sense to build
+  // a proxy. All proxy code is based on having such wrapper that store
+  // different JS attributes set.
+  // (we can't build XPCNativeWrapper when object is from the same
+  // principal/domain)
+  if (object === xpcWrapper) {
+    return object;
+  }
   return getProxyForObject(xpcWrapper);
 }
