@@ -82,6 +82,75 @@ exports.testExpectFail = function(test) {
     });
 
     test.assert(true, 'assert should pass with no expectFail');
-}
+/*
+    test.expectFail(function() {
+        test.expectFail(function() {
+            test.fail('this should blow up');
+        });
+    });
+*/
+};
 
+
+exports.testAssertFunction = function(test) {
+    test.assertFunction(function() {}, 'assertFunction with function');
+    test.expectFail(function() {
+        test.assertFunction(null, 'assertFunction with non-function');
+    });    
+};
+
+exports.testAssertNotDefined = function(test) {
+    test.expectFail(function() {
+        test.assertNotUndefined(undefined, 'assertNotUndefined with undefined');
+    });    
+    test.assertNotUndefined(null, 'assertNotUndefined with null');
+    test.assertNotUndefined(false, 'assertNotUndefined with false');
+    test.assertNotUndefined(0, 'assertNotUndefined with 0');
+};
+
+exports.testAssertNull = function(test) {
+    test.assertNull(null, 'assertNull with null');
+    test.expectFail(function() {
+        test.assertNull(undefined, 'assertNull with undefined');
+    });    
+    test.expectFail(function() {
+        test.assertNull(false, 'assertNull with false');
+    });
+    test.expectFail(function() {
+        test.assertNull(0, 'assertNull with 0');
+    });
+};
+
+exports.testAssertNotNull = function(test) {
+    test.assertNotNull(undefined, 'assertNotNull with undefined');
+    test.assertNotNull(false, 'assertNotNull with false');
+    test.assertNotNull(0, 'assertNotNull with 0');
+
+    test.expectFail(function() {
+        test.assertNotNull(null, 'testAssertNotNull with null');
+    });    
+};
+
+exports.testAssertObject = function(test) {
+    test.assertObject({}, 'assertObject with {}' );
+    test.assertObject(new Object(), 'assertObject with new Object');
+    test.expectFail(function() {
+        test.assertObject('fail', 'assertObject with string');
+    });
+};
+
+exports.testAssertString = function(test) {
+    test.assertString('', 'assertString with ""');
+    test.assertString(new String(), 'assertString with new String');
+};
+
+exports.testAssertArray = function(test) {
+    test.assertArray([], 'assertArray with []');
+    test.assertArray(new Array(), 'assertArray with new Array');
+};
+
+exports.testNumber = function(test) {
+    test.assertNumber(1, 'assertNumber with 1');
+    test.assertNumber(new Number('2'), 'assertNumber with new Number("2")' );
+};
 

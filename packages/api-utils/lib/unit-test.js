@@ -248,6 +248,42 @@ TestRunner.prototype = {
     }
   },
 
+  assertFunction: function assertFunction(a, message) {
+    this.assertStrictEqual('function', typeof a, message);
+  },
+
+  assertUndefined: function(a, message) {
+    this.assertStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNotUndefined: function(a, message) {
+    this.assertNotStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNull: function(a, message) {
+    this.assertStrictEqual(null, a, message);
+  },
+
+  assertNotNull: function(a, message) {
+    this.assertNotStrictEqual(null, a, message);
+  },
+
+  assertObject: function(a, message) {
+    this.assertStrictEqual('[object Object]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertString: function(a, message) {
+    this.assertStrictEqual('[object String]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertArray: function(a, message) {
+    this.assertStrictEqual('[object Array]', Object.prototype.toString.apply(a), message);
+  },
+  
+  assertNumber: function(a, message) {
+    this.assertStrictEqual('[object Number]', Object.prototype.toString.apply(a), message);                
+  },
+
   done: function done() {
     if (!this.isDone) {
       this.isDone = true;
