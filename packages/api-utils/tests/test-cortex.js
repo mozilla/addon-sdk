@@ -13,6 +13,12 @@ exports["test property changes propagate"] = function (assert) {
     set foo(value) {
       this._foo = value;
     },
+    get getOnly() {
+      return this._foo;
+    },
+    set setOnly(value) {
+      this._setOnly = value;
+    },
     bar: "public",
     method: function method(a, b) {
       return this._foo + a + b
@@ -39,6 +45,10 @@ exports["test property changes propagate"] = function (assert) {
   assert.equal(fixture.method.apply({ _foo: "test" }, [" a,", "b"]),
                "new secret a,b",
                "`this` pseudo-variable can not be passed through apply.");
+  assert.equal(fixture.getOnly, source._foo,
+               "getter returned property of wrapped object");
+  fixture.setOnly = 'bar'
+  assert.equal(source._setOnly, 'bar', "setter modifed wrapped object")
 };
 
 
