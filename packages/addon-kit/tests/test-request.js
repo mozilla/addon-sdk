@@ -57,6 +57,18 @@ exports.testOptionsValidator = function(test) {
   test.assertEqual(req.url, "http://playground.zpao.com/jetpack/request/text.php");
 }
 
+exports.testContentValidator = function(test) {
+  test.waitUntilDone();
+  Request({
+    url: "data:text/html,response",
+    content: { 'key1' : null, 'key2' : 'some value' },
+    onComplete: function(response) {
+      test.assertEqual(response.text, "response?key1=null&key2=some+value");
+      test.done();
+    }
+  }).get();
+};
+
 // All tests below here require a network connection. They will be commented out
 // when checked in. If you'd like to run them, simply uncomment them.
 //
