@@ -292,6 +292,10 @@ function optionsRules() {
       ok: function (v) !!v,
       msg: "The item must have a non-empty string label."
     },
+    image: {
+      map: function (v) v.toString(),
+      is: ["string", "undefined"]
+    },
     contentScript: {
       is: ["string", "array", "undefined"],
       ok: function (v) {
@@ -914,6 +918,8 @@ Popup.prototype = {
     let menuElt = this.doc.createElement("menu");
     menuElt.className = ITEM_CLASS + (className ? " " + className : "");
     menuElt.setAttribute("label", menu.label);
+    if (menu.image)
+      menuElt.setAttribute("image", menu.image);
     let popupElt = this.doc.createElement("menupopup");
     menuElt.appendChild(popupElt);
 
@@ -932,6 +938,8 @@ Popup.prototype = {
     elt.setAttribute("label", item.label);
     if (item.data)
       elt.setAttribute("value", item.data);
+    if (item.image)
+      elt.setAttribute("image", item.image);
     return elt;
   },
 

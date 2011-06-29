@@ -1232,6 +1232,32 @@ exports.testSetLabelAfterShowOverflow = function (test) {
 };
 
 
+// Test image
+exports.testItemImage = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  // Create an item.
+  let imageURL = require("self").data.url("moz_favicon.ico");
+  let item = new loader.cm.Item({ label: "item", image: imageURL });
+
+  test.showMenu(null, function (popup) {
+
+    // It should be present when the menu is shown.
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+
+    // Destroy the item.
+    item.destroy();
+    test.showMenu(null, function (popup) {
+      // It should be removed from the menu.
+      test.checkMenu([], [], [item]);
+      test.done();
+    });
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1314,6 +1340,11 @@ TestHelper.prototype = {
     if (item.data) {
       this.test.assertEqual(elt.getAttribute("value"), item.data,
                             "Item should have correct data");
+    }
+
+    if (item.image) {
+      this.test.assertEqual(elt.getAttribute("image"), item.image,
+                            "Item should have correct image");
     }
   },
 
