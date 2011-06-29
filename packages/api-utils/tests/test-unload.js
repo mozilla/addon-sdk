@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com> (Original Author)
  *   Drew Willcoxon <adw@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -44,7 +45,10 @@ exports.testUnloading = function(test) {
   var loader = test.makeSandboxedLoader();
   var ul = loader.require("unload");
   var unloadCalled = 0;
-  function unload() { unloadCalled++; }
+  function unload() {
+    unloadCalled++;
+    throw "error";
+  }
   ul.when(unload);
 
   // This should be ignored, as we already registered it
