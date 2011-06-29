@@ -1,5 +1,28 @@
 const timer = require("timer");
 
+var setupCalled = false, teardownCalled = false;
+
+exports.setup = function() {
+    setupCalled = true;    
+};
+
+exports.teardown = function() {
+    teardownCalled = true;
+    setupCalled = false;
+};
+
+exports["setup function called before this"] = function(test) {
+    test.assertEqual(true, setupCalled, 'setup function was called before this');
+    test.assertEqual(false, teardownCalled, 'teardown function was not called before this');
+};
+
+exports["teardown function called after test"] = function(test) {
+    test.assertEqual(true, setupCalled, 'setup was re-called before this');
+    test.assertEqual(true, teardownCalled, 'teardown was called after first function');
+};
+
+
+
 exports.testModuleOverrides = function(test) {
   var options = {
     moduleOverrides: {

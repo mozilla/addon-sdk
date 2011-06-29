@@ -81,12 +81,21 @@ TestFinder.prototype = {
         suites.forEach(
           function(suite) {
             var module = require(suite);
-            if (self.testInProcess)
-              for (name in module)
-                  tests.push({
-                    testFunction: self._makeTest(suite, name, module[name]),
-                    name: suite + "." + name
-                  });
+            if (self.testInProcess) {
+              var not_tests = ['setup', 'teardown'];
+              var setup = module.setup;
+              var teardown = module.teardown;
+              for (name in module) {
+                  if(not_tests.indexOf(name) === -1) {
+                      tests.push({
+                        setup: setup,
+                        teardown: teardown,
+                        testFunction: self._makeTest(suite, name, module[name]),
+                        name: suite + "." + name
+                      });
+                  }
+              }
+            }
           });
       });
 

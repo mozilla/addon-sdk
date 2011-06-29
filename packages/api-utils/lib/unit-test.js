@@ -446,7 +446,13 @@ TestRunner.prototype = {
     this.testFailureLogged = false;
 
     try {
+      if(this.test.setup) {
+        this.test.setup(this);
+      }
       this.test.testFunction(this);
+      if(this.test.teardown) {
+        this.test.teardown(this);
+      }
     } catch (e) {
       this.exception(e);
     }
