@@ -467,6 +467,17 @@ function handlerMaker(obj) {
         return getProxyForFunction(f, NativeFunctionWrapper(f));
       }
       
+      // Fix XPathResult's constants being undefined on XrayWrappers
+      // these constants are defined here:
+      // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
+      // and are only numbers.
+      // See bug 665279 for platform fix progress
+      if (!o && typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
+        let value = Ci.nsIDOMXPathResult[name];
+        if (typeof value == "number" && value === obj.wrappedJSObject[name])
+          return value;
+      }
+
       // Generic case
       return wrap(o, obj, name);
       
@@ -534,5 +545,13 @@ function handlerMaker(obj) {
  */
 exports.create = function create(object) {
   let xpcWrapper = XPCNativeWrapper(object);
+  // If we can't build an XPCNativeWrapper, it doesn't make sense to build
+  // a proxy. All proxy code is based on having such wrapper that store
+  // different JS attributes set.
+  // (we can't build XPCNativeWrapper when object is from the same
+  // principal/domain)
+  if (object === xpcWrapper) {
+    return object;
+  }
   return getProxyForObject(xpcWrapper);
 }

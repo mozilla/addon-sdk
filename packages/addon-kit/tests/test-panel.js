@@ -269,6 +269,23 @@ function makeEventOrderTest(options) {
   }
 }
 
+tests.testAutomaticDestroy = function(test) {
+  let loader = test.makeSandboxedLoader();
+  let panel = loader.require("panel").Panel({
+    contentURL: "about:buildconfig",
+    contentScript: 
+      "self.port.on('event', function() self.port.emit('event-back'));"
+  });
+  
+  loader.unload();
+  
+  panel.port.on("event-back", function () {
+    test.fail("Panel should have been destroyed on module unload");
+  });
+  panel.port.emit("event");
+  test.pass("check automatic destroy");
+};
+
 tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
   test: function(test, expect, panel) {
     expect('inited', function() { panel.show(); }).

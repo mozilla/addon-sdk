@@ -56,6 +56,20 @@ var windowIterator = exports.windowIterator = function windowIterator() {
     yield winEnum.getNext().QueryInterface(Ci.nsIDOMWindow);
 };
 
+/**
+ * An iterator for browser windows currently open in the application.
+ * @returns {Function}
+ *    A generator that yields browser windows exposing the `nsIDOMWindow`
+ *    interface.
+ */
+function browserWindowIterator() {
+  for each (let window in windowIterator()) {
+    if (isBrowser(window))
+      yield window;
+  }
+}
+exports.browserWindowIterator = browserWindowIterator;
+
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   this.delegate = delegate;
   this._loadingWindows = [];
@@ -89,6 +103,9 @@ WindowTracker.prototype = {
   },
 
   _unregWindow: function _unregWindow(window) {
+    if (!this.delegate.onUntrack)
+      return;
+
     if (window.document.readyState == "complete")
       this.delegate.onUntrack(window);
     else
@@ -184,10 +201,11 @@ exports.getOuterId = function getOuterId(window) {
                 getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
 };
 
-exports.isBrowser = function isBrowser(window) {
+function isBrowser(window) {
   return window.document.documentElement.getAttribute("windowtype") ===
          "navigator:browser";
 };
+exports.isBrowser = isBrowser;
 
 require("unload").when(
   function() {

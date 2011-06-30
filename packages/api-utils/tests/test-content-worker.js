@@ -1,12 +1,14 @@
 "use stirct";
 
 const { Cc, Ci } = require('chrome');
-function makeWindow() {
+function makeWindow(contentURL) {
   let content =
     '<?xml version="1.0"?>' +
     '<window ' +
     'xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">' +
-    '<iframe id="content" type="content"/>' +
+    '<iframe id="content" type="content" src="' +
+      encodeURIComponent(contentURL) + '"/>' +
+    '<script>var documentValue=true;</script>' +
     '</window>';
   var url = "data:application/vnd.mozilla.xul+xml," +
             encodeURIComponent(content);
@@ -216,4 +218,53 @@ exports['test:emit-json-values-only'] = function(test) {
     dom: window.document.documentElement
   };
   worker.port.emit('addon-to-content', function () {}, worker, obj);
+}
+
+exports['test:content is wrapped'] = function(test) {
+  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let window = makeWindow(contentURL);
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let worker =  Worker({
+      window: window.document.getElementById("content").contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage(!window.documentValue);
+      },
+      contentScriptWhen: 'ready',
+      onMessage: function(msg) {
+        test.assert(msg,
+          "content script has a wrapped access to content document");
+        test.done();
+      }
+    });
+
+  }, true);
+
+}
+
+exports['test:chrome is unwrapped'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage(window.documentValue);
+      },
+      contentScriptWhen: 'ready',
+      onMessage: function(msg) {
+        test.assert(msg,
+          "content script has an unwrapped access to chrome document");
+        test.done();
+      }
+    });
+
+  }, true);
+
 }

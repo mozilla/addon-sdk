@@ -323,3 +323,31 @@ exports['test tab worker on message'] = function(test) {
 
   tabs.open(url1);
 };
+
+exports.testAutomaticDestroy = function(test) {
+  test.waitUntilDone();
+  let loader = test.makeSandboxedLoader();
+  
+  let pageMod = loader.require("page-mod").PageMod({
+    include: "about:*",
+    contentScriptWhen: "start",
+    onAttach: function(w) {
+      test.fail("Page-mod should have been detroyed during module unload");
+    }
+  });
+  
+  // Unload the page-mod module so that our page mod is destroyed
+  loader.unload();
+ 
+  // Then create a second tab to ensure that it is correctly destroyed
+  let tabs = require("tabs");
+  tabs.open({
+    url: "about:",
+    onReady: function onReady(tab) {
+      test.pass("check automatic destroy");
+      tab.close();
+      test.done();
+    }
+  });
+  
+}
