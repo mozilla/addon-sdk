@@ -130,6 +130,10 @@ function Item(options) {
     map: function (v) v.toString(),
     is: ["string", "undefined"]
   };
+  rules.image = {
+    map: function (v) v.toString(),
+    is: ["string", "undefined"]
+  };
   options = apiUtils.validateOptions(options, rules);
 
   defineItemProps(this, options);
@@ -150,6 +154,10 @@ function Menu(options) {
   let rules = optionsRules();
   rules.items = {
     is: ["array"]
+  };
+  rules.image = {
+    map: function (v) v.toString(),
+    is: ["string", "undefined"]
   };
   options = apiUtils.validateOptions(options, rules);
 
@@ -292,10 +300,6 @@ function optionsRules() {
       ok: function (v) !!v,
       msg: "The item must have a non-empty string label."
     },
-    image: {
-      map: function (v) v.toString(),
-      is: ["string", "undefined"]
-    },
     contentScript: {
       is: ["string", "array", "undefined"],
       ok: function (v) {
@@ -335,6 +339,13 @@ function defineItemProps(item, options) {
     let { label } = apiUtils.validateOptions({ label: val }, optionsRules());
     options.label = label;
     browserManager.setItemLabel(item, label);
+  });
+
+  item.__defineGetter__("image", function () options.image);
+  item.__defineSetter__("image", function setItemImage(val) {
+    let { image } = apiUtils.validateOptions({ image: val }, optionsRules());
+    options.image = image;
+    browserManager.setItemImage(item, image);
   });
 
   // Stupid ternaries to avoid Spidermonkey strict warnings.
@@ -458,6 +469,12 @@ let browserManager = {
   // ContextMenuPopup.setItemLabel.
   setItemLabel: function browserManager_setItemLabel(item, label) {
     this.windows.forEach(function (w) w.setItemLabel(item, label));
+  },
+
+  // Sets the given item's image in all the browser windows.  See
+  // ContextMenuPopup.setItemImage.
+  setItemImage: function browserManager_setItemImage(item, image) {
+    this.windows.forEach(function (w) w.setItemImage(item, image));
   },
 
   // Registers the manager to listen for window openings and closings.  Note
@@ -722,6 +739,12 @@ BrowserWindow.prototype = {
     this.contextMenuPopup.setItemLabel(item, label);
   },
 
+  // Sets the given item's image in the browser window's context menu.  See
+  // ContextMenuPopup.setItemImage.
+  setItemImage: function BW_setItemImage(item, image) {
+    this.contextMenuPopup.setItemImage(item, image);
+  },
+
   // The context specified for a top-level item may not match exactly the real
   // context that triggers it.  For example, if the user context-clicks a span
   // inside an anchor, we want items that specify an anchor context to be
@@ -918,8 +941,10 @@ Popup.prototype = {
     let menuElt = this.doc.createElement("menu");
     menuElt.className = ITEM_CLASS + (className ? " " + className : "");
     menuElt.setAttribute("label", menu.label);
-    if (menu.image)
+    if (menu.image) {
       menuElt.setAttribute("image", menu.image);
+      menuElt.className += " menu-iconic";
+    }
     let popupElt = this.doc.createElement("menupopup");
     menuElt.appendChild(popupElt);
 
@@ -938,8 +963,10 @@ Popup.prototype = {
     elt.setAttribute("label", item.label);
     if (item.data)
       elt.setAttribute("value", item.data);
-    if (item.image)
+    if (item.image) {
       elt.setAttribute("image", item.image);
+      elt.className += " menuitem-iconic";
+    }
     return elt;
   },
 
@@ -1007,6 +1034,18 @@ function ContextMenuPopup(popupElt, window) {
     domElt.setAttribute("label", label);
     overflowDOMElt.setAttribute("label", label);
     insertItemInSortedOrder(item);
+  };
+
+  // Sets the given item's image if the item has a DOM element.
+  // If the item has no DOM element yet, does nothing.
+  this.setItemImage = function CMP_setItemImage(item, image) {
+    let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+    if (!(itemID in self.items))
+      return;
+
+    let { domElt, overflowDOMElt } = self.items[itemID];
+    domElt.setAttribute("image", image);
+    overflowDOMElt.setAttribute("image", image);
   };
 
   // Undoes all modifications to the popup.  The popup should not be used

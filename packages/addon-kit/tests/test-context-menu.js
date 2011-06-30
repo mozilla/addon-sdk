@@ -1232,7 +1232,7 @@ exports.testSetLabelAfterShowOverflow = function (test) {
 };
 
 
-// Test image
+// Test image support
 exports.testItemImage = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -1240,18 +1240,20 @@ exports.testItemImage = function (test) {
   // Create an item.
   let imageURL = require("self").data.url("moz_favicon.ico");
   let item = new loader.cm.Item({ label: "item", image: imageURL });
+  let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [] });
 
   test.showMenu(null, function (popup) {
 
-    // It should be present when the menu is shown.
-    test.checkMenu([item], [], []);
+    // Check presence
+    test.checkMenu([item, menu], [], []);
     popup.hidePopup();
 
-    // Destroy the item.
+    // Destroy
     item.destroy();
+    menu.destroy();
     test.showMenu(null, function (popup) {
-      // It should be removed from the menu.
-      test.checkMenu([], [], [item]);
+      // Check absence
+      test.checkMenu([], [], [item, menu]);
       test.done();
     });
   });
