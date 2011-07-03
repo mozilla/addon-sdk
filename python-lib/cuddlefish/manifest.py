@@ -594,7 +594,7 @@ DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 def normalize_modname(modname):
   modname = modname.replace(':', urllib.quote(':'))
   modname = modname.replace('?', urllib.quote('?'))
-  return os.path.normpath(modname)
+  return modname.replace('//', '/')
 
 def scan_requirements_with_grep(fn, lines):
     requires = {}
