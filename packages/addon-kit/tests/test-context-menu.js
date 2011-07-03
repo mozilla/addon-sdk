@@ -1267,16 +1267,20 @@ exports.testItemImage = function (test) {
 
     // Check presence
     test.checkMenu([item, menu], [], []);
-    popup.hidePopup();
 
-    // Destroy
-    item.destroy();
-    menu.destroy();
-    test.showMenu(null, function (popup) {
-      // Check absence
-      test.checkMenu([], [], [item, menu]);
-      test.done();
-    });
+    // Check the setter
+    let imageURL2 = require("self").data.url("dummy.ico");
+    item.image = imageURL2;
+    menu.image = imageURL2;
+    test.checkMenu([item, menu], [], []);
+
+    // Check removing image
+    item.image = null;
+    menu.image = null;
+    test.checkMenu([item, menu], [], []);
+
+    test.done();
+
   });
 };
 

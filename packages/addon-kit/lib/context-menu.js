@@ -130,10 +130,6 @@ function Item(options) {
     map: function (v) v.toString(),
     is: ["string", "undefined"]
   };
-  rules.image = {
-    map: function (v) v.toString(),
-    is: ["string", "undefined"]
-  };
   options = apiUtils.validateOptions(options, rules);
 
   defineItemProps(this, options);
@@ -154,10 +150,6 @@ function Menu(options) {
   let rules = optionsRules();
   rules.items = {
     is: ["array"]
-  };
-  rules.image = {
-    map: function (v) v.toString(),
-    is: ["string", "undefined"]
   };
   options = apiUtils.validateOptions(options, rules);
 
@@ -326,6 +318,10 @@ function optionsRules() {
     },
     onMessage: {
       is: ["function", "undefined"]
+    },
+    image: {
+      map: function (v) v.toString(),
+      is: ["string", "undefined", "null"]
     }
   };
 }
@@ -343,7 +339,8 @@ function defineItemProps(item, options) {
 
   item.__defineGetter__("image", function () options.image);
   item.__defineSetter__("image", function setItemImage(val) {
-    let { image } = apiUtils.validateOptions({ image: val }, optionsRules());
+    let { image } = apiUtils.validateOptions({ image: val },
+                                             { image: optionsRules().image });
     options.image = image;
     browserManager.setItemImage(item, image);
   });
@@ -946,7 +943,7 @@ Popup.prototype = {
     menuElt.setAttribute("label", menu.label);
     if (menu.image) {
       menuElt.setAttribute("image", menu.image);
-      menuElt.className += " menu-iconic";
+      menuElt.classList.add("menu-iconic");
     }
     let popupElt = this.doc.createElement("menupopup");
     menuElt.appendChild(popupElt);
@@ -968,7 +965,7 @@ Popup.prototype = {
       elt.setAttribute("value", item.data);
     if (item.image) {
       elt.setAttribute("image", item.image);
-      elt.className += " menuitem-iconic";
+      elt.classList.add("menuitem-iconic");
     }
     return elt;
   },
@@ -1047,8 +1044,18 @@ function ContextMenuPopup(popupElt, window) {
       return;
 
     let { domElt, overflowDOMElt } = self.items[itemID];
-    domElt.setAttribute("image", image);
-    overflowDOMElt.setAttribute("image", image);
+    if (image === null) {
+      domElt.removeAttribute("image");
+      domElt.classList.remove("menu-iconic");
+      overflowDOMElt.removeAttribute("image");
+      overflowDOMElt.classList.remove("menu-iconic");
+    }
+    else {
+      domElt.setAttribute("image", image);
+      domElt.classList.add("menu-iconic");
+      overflowDOMElt.setAttribute("image", image);
+      overflowDOMElt.classList.add("menu-iconic");
+    }
   };
 
   // Undoes all modifications to the popup.  The popup should not be used
