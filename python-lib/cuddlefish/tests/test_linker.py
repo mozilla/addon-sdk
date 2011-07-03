@@ -118,6 +118,50 @@ class Basic(unittest.TestCase):
                           target_cfg, pkg_cfg, deps,
                           "P/", scan_tests=False)
 
+class URLS(unittest.TestCase):
+    def get_pkg(self, name):
+        d = get_linker_files_dir(name)
+        return packaging.get_config_in_dir(d)
+
+    def test_deps(self):
+        target_cfg = self.get_pkg("urls")
+        pkg_cfg = packaging.build_config(ROOT, target_cfg)
+        deps = packaging.get_deps_for_targets(pkg_cfg, ["urls"])
+        self.failUnlessEqual(deps, ["urls"])
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-kit"])
+        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "urls"])
+
+    def test_manifest(self):
+        target_cfg = self.get_pkg("urls")
+        pkg_cfg = packaging.build_config(ROOT, target_cfg)
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-kit"])
+        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "urls"])
+        # target_cfg.dependencies is not provided, so we'll search through
+        # all known packages (everything in 'deps').
+        m = manifest.build_manifest(target_cfg, pkg_cfg, deps,
+                                    "P/", scan_tests=False)
+        m = m.get_harness_options_manifest("P/")
+
+        def assertReqIs(modname, reqname, uri):
+            reqs = m["P/urls-lib/%s.js" % modname]["requirements"]
+            self.failUnlessEqual(reqs[reqname]["uri"], uri)
+
+        assertReqIs("index", "http%3A/foo.org/a",
+                    "P/urls-lib/http%3A/foo.org/a.js")
+        assertReqIs("http%3A/foo.org/a", "./nested/b",
+                    "P/urls-lib/http%3A/foo.org/nested/b.js")
+        assertReqIs("http%3A/foo.org/nested/b", "http%3A/bar.org/c.js",
+                    "P/urls-lib/http%3A/bar.org/c.js")
+
+        target_cfg.dependencies = []
+        # now, because .dependencies *is* provided, we won't search 'deps',
+        # so we'll get a link error
+        self.assertRaises(manifest.ModuleNotFoundError,
+                          manifest.build_manifest,
+                          target_cfg, pkg_cfg, deps, "P/", scan_tests=False)
+
 class Contents(unittest.TestCase):
 
     def run_in_subdir(self, dirname, f, *args, **kwargs):
