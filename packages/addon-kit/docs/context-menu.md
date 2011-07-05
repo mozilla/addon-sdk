@@ -13,20 +13,19 @@ submenus, and menu separators.
 
 Instead of manually adding items when particular contexts occur and then
 removing them when those contexts go away, you *bind* items to contexts, and the
-adding and removing is automatically handled for you.
-
-Items are bound to contexts in much the same way that event listeners are bound
-to events.  When the user invokes the context menu, all of the items bound to
-the current context are automatically added to the menu.  If no items are bound,
-none are added.  Likewise, any items that were previously in the menu but are
-not bound to the current context are automatically removed from the menu.  You
-never need to manually remove your items from the menu unless you want them to
-never appear again.
+adding and removing is automatically handled for you.  Items are bound to
+contexts in much the same way that event listeners are bound to events.  When
+the user invokes the context menu, all of the items bound to the current context
+are automatically added to the menu.  If no items are bound, none are added.
+Likewise, any items that were previously in the menu but are not bound to the
+current context are automatically removed from the menu.  You never need to
+manually remove your items from the menu unless you want them to never appear
+again.
 
 For example, if your extension needs to add a context menu item whenever the
 user visits a certain page, don't create the item when that page loads, and
-don't remove it when the page unloads.  Rather, create your item only once, when
-your program starts, and supply a context that matches the target URL.
+don't remove it when the page unloads.  Rather, create your item only once and
+supply a context that matches the target URL.
 
 
 Specifying Contexts
@@ -44,12 +43,13 @@ or the node the user clicked to open the menu.
 ### The Page Context
 
 First of all, you may not need to specify a context at all.  When an item does
-not specify a context, the *page context* applies.  The page context occurs
-when the user invokes the context menu on a non-interactive portion of the page.
+not specify a context, the page context applies.
 
-Try right-clicking a blank spot in a page, or on text.  Make sure that no text
-is selected.  The menu that appears should contain the items "Back", "Forward",
-"Reload", "Stop", and so on.  This is the page context.
+The *page context* occurs when the user invokes the context menu on a
+non-interactive portion of the page.  Try right-clicking a blank spot in this
+page, or on text.  Make sure that no text is selected.  The menu that appears
+should contain the items "Back", "Forward", "Reload", "Stop", and so on.  This
+is the page context.
 
 The page context is appropriate when your item acts on the page as a whole.  It
 does not occur when the user invokes the context menu on a link, image, or other
@@ -57,12 +57,24 @@ non-text node, or while a selection exists.
 
 ### Declarative Contexts
 
-You can specify some simple, declarative contexts when you construct a menu
-item by setting the `context` property of the options object passed to its
-constructor.  Such contexts may be specified with instances of any of the
-following types.  Each is a constructor exported by the `context-menu` module.
+You can specify some simple, declarative contexts when you create a menu item by
+setting the `context` property of the options object passed to its constructor,
+like this:
+
+    var cm = require("context-menu");
+    cm.Item({
+      label: "My Menu Item",
+      context: cm.URLContext("*.mozilla.org")
+    });
+
+These contexts may be specified by calling the following constructors.  Each is
+exported by the `context-menu` module.
 
 <table>
+  <tr>
+    <th>Constructor</th>
+    <th>Description</th>
+  </tr>
   <tr>
     <td><code>
       PageContext()
@@ -76,8 +88,8 @@ following types.  Each is a constructor exported by the `context-menu` module.
       SelectionContext()
     </code></td>
     <td>
-      This context occurs when the menu is invoked on a page that contains a
-      selection.
+      This context occurs when the menu is invoked on a page in which the user
+      has made a selection.
     </td>
   </tr>
   <tr>
@@ -120,7 +132,7 @@ following types.  Each is a constructor exported by the `context-menu` module.
 Menu items also have a `context` property that can be used to add and remove
 declarative contexts after construction.  For example:
 
-    var context = contextMenu.SelectorContext("img");
+    var context = require("context-menu").SelectorContext("img");
     myMenuItem.context.add(context);
     myMenuItem.context.remove(context);
 
@@ -129,22 +141,29 @@ all of those contexts occur.
 
 ### In Content Scripts
 
-To interact with pages in the browser, you create content scripts and pass them
-when constructing menu items.  Only items in the top-level context menu can have
-content scripts.
+The declarative contexts are handy but not very powerful.  For instance, you
+might want your menu item to appear for any page that has at least one image,
+but declarative contexts won't help you there.
 
-One of the things you can do in a content script is listen for an event named
-`"context"`.  This event is fired whenever the context menu is about to be
-shown.  If your listener returns true, the menu item associated with the content
-script is shown in the menu.
+When you need more control control over the context in which your menu items are
+shown, you can use content scripts.  Like other APIs in the SDK, the
+`context-menu` API uses
+[content scripts](dev-guide/addon-development/web-content.html) to let your
+add-on interact with pages in the browser.  Each menu item you create in the
+top-level context menu can have a content script.
 
-For example, this is an item that appears whenever the context menu is invoked
-on a page whose URL contains "mozilla" as a substring:
+A special event named `"context"` is emitted in your content scripts whenever
+the context menu is about to be shown.  If you register a listener function for
+this event and it returns true, the menu item associated with the listener's
+content script is shown in the menu.
 
-    var myItem = contextMenu.Item({
-      label: "My Mozilla Item",
+For example, this item appears whenever the context menu is invoked on a page
+that contains at least one image:
+
+    require("context-menu").Item({
+      label: "This Page Has Images",
       contentScript: 'self.on("context", function (node) {' +
-                     '  return /mozilla/.test(document.URL);' +
+                     '  return !!document.querySelector("img");' +
                      '});'
     });
 
@@ -159,8 +178,8 @@ are not current, then your context listener is never called.
 This example takes advantage of that fact.  The listener can be assured that
 `node` will always be an image:
 
-    var myItem = contextMenu.Item({
-      label: "My Mozilla Image Item",
+    require("context-menu").Item({
+      label: "A Mozilla Image",
       context: contextMenu.SelectorContext("img"),
       contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
@@ -175,14 +194,14 @@ Handling Menu Item Clicks
 -------------------------
 
 In addition to using content scripts to listen for the `"context"` event as
-described above, you use content scripts to handle item clicks.  When the user
-clicks your menu item, an event named `"click"` is dispatched to the item's
+described above, you can use content scripts to handle item clicks.  When the
+user clicks your menu item, an event named `"click"` is emitted in the item's
 content script.
 
 Therefore, to handle an item click, listen for the `"click"` event in that
 item's content script like so:
 
-    var myItem = contextMenu.Item({
+    require("context-menu").Item({
       label: "My Item",
       contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("Item clicked!");' +
@@ -193,17 +212,18 @@ Note that the listener function has parameters called `node` and `data`.  `node`
 is the node that the user context-clicked to invoke the menu.  You can use it
 when performing some action.  `data` is the `data` property of the menu item
 that was clicked.  Since only top-level menu items have content scripts, this
-comes in handy for `Menu`s with sub-items.  For example:
+comes in handy for determining which item in a `Menu` was clicked:
 
-    var myMenu = contextMenu.Menu({
+    var cm = require("context-menu");
+    cm.Menu({
       label: "My Menu",
       contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("You clicked " + data);' +
                      '});',
       items: [
-        contextMenu.Item({ label: "Item 1", data: "item1" }),
-        contextMenu.Item({ label: "Item 2", data: "item2" }),
-        contextMenu.Item({ label: "Item 3", data: "item3" })
+        cm.Item({ label: "Item 1", data: "item1" }),
+        cm.Item({ label: "Item 2", data: "item2" }),
+        cm.Item({ label: "Item 3", data: "item3" })
       ]
     });
 
@@ -211,10 +231,10 @@ Often you will need to collect some kind of information in the click listener
 and perform an action unrelated to content.  To communicate to the menu item
 associated with the content script, the content script can call the
 `postMessage` function attached to the global `self` object, passing it some
-JSON-able data.  The menu item's `onMessage` function will be called with that
-data.
+JSON-able data.  The menu item's `"message"` event listener will be called with
+that data.
 
-    var myItem = contextMenu.Item({
+    require("context-menu").Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
@@ -226,29 +246,69 @@ data.
     });
 
 
+Updating a Menu Item's Label
+----------------------------
 
-Examples
---------
+Each menu item must be created with a label, but you can change its label later
+using a couple of methods.
 
-Each of these examples can be added to the top-level scope of your program; you
-only need to create an item once.  See the Introduction above for further
-discussion.
+The simplest method is to set the menu item's `label` property.  This example
+updates the item's label based on the number of times it's been clicked:
+
+    var numClicks = 0;
+    var myItem = require("context-menu").Item({
+      label: "Click Me: " + numClicks,
+      contentScript: 'self.on("click", self.postMessage);',
+      onMessage: function () {
+        numClicks++;
+        this.label = "Click Me: " + numClicks;
+        // Setting myItem.label is equivalent.
+      }
+    });
+
+Sometimes you might want to update the label based on the context.  For
+instance, if your item performs a search with the user's selected text, it would
+be nice to display the text in the item to provide feedback to the user.  In
+these cases you can use the second method.  Recall that your content scripts can
+listen for the `"context"` event and if your listeners return true, the items
+associated with the content scripts are shown in the menu.  In addition to
+returning true, your `"context"` listeners can also return strings.  When a
+`"context"` listener returns a string, it becomes the item's new label.
+
+This item implements the aforementioned search example:
+
+    var cm = require("context-menu");
+    cm.Item({
+      label: "Search Google",
+      context: cm.SelectionContext(),
+      contentScript: 'self.on("context", function () {' +
+                     '  var text = window.getSelection().toString();' +
+                     '  if (text.length > 20)' +
+                     '    text = text.substr(0, 20) + "...";' +
+                     '  return "Search Google for " + text;' +
+                     '});'
+    });
+
+The `"context"` listener gets the window's current selection, truncating it if
+it's too long, and includes it in the returned string.  When the item is shown,
+its label will be "Search Google for `text`", where `text` is the truncated
+selection.
+
+
+More Examples
+-------------
 
 For conciseness, these examples create their content scripts as strings and use
-the `contentScript` property.  In your own add-ons, you will probably want to
+the `contentScript` property.  In your own add-on, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
 
-First, don't forget to import the module:
-
-    var contextMenu = require("context-menu");
-
 Show an "Edit Page Source" item when the user right-clicks a non-interactive
 part of the page:
 
-    var pageSourceItem = contextMenu.Item({
+    require("context-menu").Item({
       label: "Edit Page Source",
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(document.URL);' +
@@ -260,7 +320,7 @@ part of the page:
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    var editImageItem = contextMenu.Item({
+    require("context-menu").Item({
       label: "Edit Image",
       context: contextMenu.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
@@ -274,11 +334,12 @@ Show an "Edit Image" item when the menu is invoked on an image:
 Show an "Edit Mozilla Image" item when the menu is invoked on an image in a
 mozilla.org or mozilla.com page:
 
-    var editMozImageItem = contextMenu.Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Mozilla Image",
       context: [
-        contextMenu.URLContext(["*.mozilla.org", "*.mozilla.com"]),
-        contextMenu.SelectorContext("img")
+        cm.URLContext(["*.mozilla.org", "*.mozilla.com"]),
+        cm.SelectorContext("img")
       ],
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(node.src);' +
@@ -290,7 +351,7 @@ mozilla.org or mozilla.com page:
 
 Show an "Edit Page Images" item when the page contains at least one image:
 
-    var editImagesItem = contextMenu.Item({
+    require("context-menu").Item({
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
       context: contextMenu.PageContext(),
@@ -313,15 +374,16 @@ Show an "Edit Page Images" item when the page contains at least one image:
 Show a "Search With" menu when the user right-clicks an anchor that searches
 Google or Wikipedia with the text contained in the anchor:
 
-    var googleItem = contextMenu.Item({
+    var cm = require("context-menu");
+    var googleItem = cm.Item({
       label: "Google",
       data: "http://www.google.com/search?q="
     });
-    var wikipediaItem = contextMenu.Item({
+    var wikipediaItem = cm.Item({
       label: "Wikipedia",
       data: "http://en.wikipedia.org/wiki/Special:Search?search="
     });
-    var searchMenu = contextMenu.Menu({
+    var searchMenu = cm.Menu({
       label: "Search With",
       context: contextMenu.SelectorContext("a[href]"),
       contentScript: 'self.on("click", function (node, data) {' +
@@ -329,17 +391,6 @@ Google or Wikipedia with the text contained in the anchor:
                      '  window.location.href = searchURL;' +
                      '});',
       items: [googleItem, wikipediaItem]
-    });
-
-Dynamically set an item's label based on the number of times it's been clicked:
-
-    var numClicks = 0;
-    contextMenu.Item({
-      label: "Click Me: " + numClicks,
-      contentScript: 'self.on("click", self.postMessage);',
-      onMessage: function () {
-        this.label = "Click Me: " + (++numClicks);
-      }
     });
 
 

@@ -69,7 +69,7 @@ exports.testBrowserWindowCreationOnActivate = function(test) {
   
   let gotActivate = false;
   
-  tabs.on('activate', function onActivate(eventTab) {
+  tabs.once('activate', function onActivate(eventTab) {
     test.assert(windows.activeWindow, "Is able to fetch activeWindow");
     gotActivate = true;
   });
@@ -106,6 +106,36 @@ exports.testActiveTab_setter = function(test) {
       url: url,
       inBackground: true
     });
+  });
+};
+
+exports.testAutomaticDestroy = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    
+    // Create a second tab instance that we will destroy
+    let called = false;
+    
+    let loader = test.makeSandboxedLoader();
+    let tabs2 = loader.require("tabs");
+    tabs2.on('open', function onOpen(tab) {
+      called = true;
+    });
+    
+    loader.unload();
+    
+    // Fire a tab event an ensure that this destroyed tab is inactive
+    tabs.once('open', function () {
+      require("timer").setTimeout(function () {
+        test.assert(!called, "Unloaded tab module is destroyed and inactive");
+        closeBrowserWindow(window, function() test.done());
+      }, 0);
+    });
+    
+    tabs.open("data:text/html,foo");
+    
   });
 };
 

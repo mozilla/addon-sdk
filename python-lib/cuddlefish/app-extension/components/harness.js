@@ -520,15 +520,10 @@ function getDefaults(rootFileSpec) {
   }
 
   var onQuit = function() {};
-  var doDump = dump;
+  var doDump = buildForsakenConsoleDump(dump);
 
   if ('resultFile' in options)
     onQuit = buildDevQuit(options, print);
-  else
-    // If we're not being run by cfx or some other kind of tool that is
-    // ensuring dump() calls are visible, we'll have to log to the
-    // forsaken Error Console.
-    doDump = buildForsakenConsoleDump(doDump);
 
   var logFile;
   var logStream;

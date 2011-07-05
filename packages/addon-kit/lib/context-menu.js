@@ -535,14 +535,17 @@ const ContextMenuWorker = Worker.compose({
     return this._contentWorker._listeners("context").length > 0;
   },
 
-  // Returns true if any of the context listeners in the worker's port return
-  // true.  popupNode is the node that was context-clicked.
+  // Returns the first string or truthy value returned by a context listener in
+  // the worker's port.  If none return a string or truthy value or if there are
+  // no context listeners, returns false.  popupNode is the node that was
+  // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
     let listeners = this._contentWorker._listeners("context");
     for (let i = 0; i < listeners.length; i++) {
       try {
-        if (listeners[i].call(this._contentWorker._sandbox, popupNode))
-          return true;
+        let val = listeners[i].call(this._contentWorker._sandbox, popupNode);
+        if (typeof(val) === "string" || val)
+          return val;
       }
       catch (err) {
         console.exception(err);
@@ -1033,9 +1036,8 @@ function ContextMenuPopup(popupElt, window) {
   // window's current context and hide items that don't.  Each module instance
   // is responsible for showing and hiding the items it owns.
   this.handleEvent = function CMP_handleEvent(event) {
-    if (event.type === "command") {
+    if (event.type === "command")
       self.__proto__.handleEvent.call(self, event);
-    }
     else if (event.type === "popupshowing" && event.target === popupElt) {
       try {
         // popupElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
@@ -1046,11 +1048,18 @@ function ContextMenuPopup(popupElt, window) {
         // Show and hide items.  Set a "jetpackContextCurrent" property on the
         // DOM elements to signal which of our items match the current context.
         for each (let { item, domElt, overflowDOMElt } in self.items) {
-          let contextCurr = window.areAllContextsCurrent(item, popupNode);
-          domElt.jetpackContextCurrent = contextCurr;
-          domElt.hidden = !contextCurr;
-          overflowDOMElt.jetpackContextCurrent = contextCurr;
-          overflowDOMElt.hidden = !contextCurr;
+          let areContextsCurr = window.areAllContextsCurrent(item, popupNode);
+
+          // Change the item's label if the return value was a string.
+          if (typeof(areContextsCurr) === "string") {
+            item.label = areContextsCurr;
+            areContextsCurr = true;
+          }
+
+          domElt.jetpackContextCurrent = areContextsCurr;
+          domElt.hidden = !areContextsCurr;
+          overflowDOMElt.jetpackContextCurrent = areContextsCurr;
+          overflowDOMElt.hidden = !areContextsCurr;
         }
 
         // Get the total number of items that match the current context.  It's a

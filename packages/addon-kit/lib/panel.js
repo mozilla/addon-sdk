@@ -328,6 +328,12 @@ const Panel = Symbiont.resolve({
    */
   _onInit: function _onInit() {
     this._inited = true;
+
+    // Avoid panel document from resizing the browser window
+    // New platform capability added through bug 635673
+    if ("allowWindowControl" in this._frame.docShell)
+      this._frame.docShell.allowWindowControl = false;
+
     // perform all deferred tasks like initSymbiont, show, hide ...
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.

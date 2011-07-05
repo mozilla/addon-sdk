@@ -196,6 +196,25 @@ exports.testProxy = function (test) {
         // that may break our proxy code
         test.assert(wrapped.XMLHttpRequest(), "we are able to instantiate XMLHttpRequest object");
         
+        // Check XPathResult bug with constants being undefined on 
+        // XPCNativeWrapper
+        let value = 
+          win.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+        let xpcXPathResult = XPCNativeWrapper(win).XPathResult;
+        test.assertEqual(xpcXPathResult.wrappedJSObject.
+                           UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         value, 
+                         "XPathResult's constants are valid on unwrapped node");
+        // The following test will fail if platform is fixed,
+        // so we will be able to know when to remove the work around.
+        test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         undefined, 
+                         "XPathResult's constants are undefined on " + 
+                         "XPCNativeWrapper (platform bug #)");
+        // Check that our work around is working:
+        test.assertEqual(wrapped.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         value, "XPathResult works correctly on Proxies");
+
         // Verify that inherited prototype function like initEvent 
         // are handled correctly. (e2.type will return an error if it's not the case)
         let event1 = document.createEvent( 'MouseEvents' );
