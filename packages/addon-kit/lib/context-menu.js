@@ -318,6 +318,10 @@ function optionsRules() {
     },
     onMessage: {
       is: ["function", "undefined"]
+    },
+    image: {
+      map: function (v) v.toString(),
+      is: ["string", "undefined", "null"]
     }
   };
 }
@@ -331,6 +335,14 @@ function defineItemProps(item, options) {
     let { label } = apiUtils.validateOptions({ label: val }, optionsRules());
     options.label = label;
     browserManager.setItemLabel(item, label);
+  });
+
+  item.__defineGetter__("image", function () options.image);
+  item.__defineSetter__("image", function setItemImage(val) {
+    let { image } = apiUtils.validateOptions({ image: val },
+                                             { image: optionsRules().image });
+    options.image = image;
+    browserManager.setItemImage(item, image);
   });
 
   // Stupid ternaries to avoid Spidermonkey strict warnings.
@@ -454,6 +466,12 @@ let browserManager = {
   // ContextMenuPopup.setItemLabel.
   setItemLabel: function browserManager_setItemLabel(item, label) {
     this.windows.forEach(function (w) w.setItemLabel(item, label));
+  },
+
+  // Sets the given item's image in all the browser windows.  See
+  // ContextMenuPopup.setItemImage.
+  setItemImage: function browserManager_setItemImage(item, image) {
+    this.windows.forEach(function (w) w.setItemImage(item, image));
   },
 
   // Registers the manager to listen for window openings and closings.  Note
@@ -721,6 +739,12 @@ BrowserWindow.prototype = {
     this.contextMenuPopup.setItemLabel(item, label);
   },
 
+  // Sets the given item's image in the browser window's context menu.  See
+  // ContextMenuPopup.setItemImage.
+  setItemImage: function BW_setItemImage(item, image) {
+    this.contextMenuPopup.setItemImage(item, image);
+  },
+
   // The context specified for a top-level item may not match exactly the real
   // context that triggers it.  For example, if the user context-clicks a span
   // inside an anchor, we want items that specify an anchor context to be
@@ -917,6 +941,10 @@ Popup.prototype = {
     let menuElt = this.doc.createElement("menu");
     menuElt.className = ITEM_CLASS + (className ? " " + className : "");
     menuElt.setAttribute("label", menu.label);
+    if (menu.image) {
+      menuElt.setAttribute("image", menu.image);
+      menuElt.classList.add("menu-iconic");
+    }
     let popupElt = this.doc.createElement("menupopup");
     menuElt.appendChild(popupElt);
 
@@ -935,6 +963,10 @@ Popup.prototype = {
     elt.setAttribute("label", item.label);
     if (item.data)
       elt.setAttribute("value", item.data);
+    if (item.image) {
+      elt.setAttribute("image", item.image);
+      elt.classList.add("menuitem-iconic");
+    }
     return elt;
   },
 
@@ -1002,6 +1034,28 @@ function ContextMenuPopup(popupElt, window) {
     domElt.setAttribute("label", label);
     overflowDOMElt.setAttribute("label", label);
     insertItemInSortedOrder(item);
+  };
+
+  // Sets the given item's image if the item has a DOM element.
+  // If the item has no DOM element yet, does nothing.
+  this.setItemImage = function CMP_setItemImage(item, image) {
+    let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+    if (!(itemID in self.items))
+      return;
+
+    let { domElt, overflowDOMElt } = self.items[itemID];
+    if (image === null) {
+      domElt.removeAttribute("image");
+      domElt.classList.remove("menu-iconic");
+      overflowDOMElt.removeAttribute("image");
+      overflowDOMElt.classList.remove("menu-iconic");
+    }
+    else {
+      domElt.setAttribute("image", image);
+      domElt.classList.add("menu-iconic");
+      overflowDOMElt.setAttribute("image", image);
+      overflowDOMElt.classList.add("menu-iconic");
+    }
   };
 
   // Undoes all modifications to the popup.  The popup should not be used
