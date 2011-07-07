@@ -66,8 +66,8 @@ function openBrowserWindow(callback, url) {
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
   require("timer").setTimeout(function() {
-    window.addEventListener("unload", function() {
-      window.removeEventListener("unload", arguments.callee, false);
+    window.addEventListener("unload", function onUnload() {
+      window.removeEventListener("unload", onUnload, false);
       callback();
     }, false);
     window.close();
@@ -122,8 +122,8 @@ exports.testAddTab = function(test) {
             test.assertEqual(cache.length, startWindowCount + 1, "a new window was opened");
             let win2 = cache[startWindowCount];
             let gBrowser = win2.gBrowser;
-            gBrowser.addEventListener("DOMContentLoaded", function(e) {
-              gBrowser.removeEventListener("DOMContentLoaded", arguments.callee, false);
+            gBrowser.addEventListener("DOMContentLoaded", function onLoad(e) {
+              gBrowser.removeEventListener("DOMContentLoaded", onLoad, false);
               test.assertEqual(win2.content.location, secondUrl, "URL of new tab in the new window matches");
 
               closeBrowserWindow(win2, function() {
@@ -372,8 +372,8 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
     });
     tm1.open("data:text/html,<title>window1,tab2</title>");
 
-    tm1.onActivate = function() {
-      tm1.onActivate.remove(arguments.callee);
+    tm1.onActivate = function onActivate() {
+      tm1.onActivate.remove(onActivate);
       require("timer").setTimeout(function() {
         test.assertEqual(tm1.activeTab.title, "window1,tab1", "activeTab setter works");
         closeTwoWindows(window1, window2, function() test.done());
