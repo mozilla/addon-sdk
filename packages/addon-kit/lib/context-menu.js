@@ -656,7 +656,8 @@ WorkerRegistry.prototype = {
       contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
-    let (item = this.item) worker.on("message", function workerOnMessage(msg) {
+    let item = this.item;
+    worker.on("message", function workerOnMessage(msg) {
       try {
         let eventEmitter = item.valueOf(PRIVATE_PROPS_KEY).eventEmitter;
         eventEmitter._emitOnObject(item, "message", msg);
