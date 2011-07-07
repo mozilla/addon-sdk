@@ -37,6 +37,17 @@
 var timer = require("timer");
 var {Cc,Ci} = require("chrome");
 
+function onBrowserLoad(callback, event) {
+  if (event.target && event.target.defaultView == this) {
+    this.removeEventListener("load", onBrowserLoad, true);
+    let browsers = this.document.getElementsByTagName("tabbrowser");
+    try {
+      require("timer").setTimeout(function () {
+        callback(this, browsers[0]);
+      }, 10);
+    } catch (e) { console.exception(e); }
+  }
+}
 // Utility function to open a new browser window.
 function openBrowserWindow(callback, url) {
   let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -46,21 +57,8 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
-  if (callback) {
-    function onLoad(event) {
-      if (event.target && event.target.defaultView == window) {
-        window.removeEventListener("load", onLoad, true);
-        let browsers = window.document.getElementsByTagName("tabbrowser");
-        try {
-          require("timer").setTimeout(function () {
-            callback(window, browsers[0]);
-          }, 10);
-        } catch (e) { console.exception(e); }
-      }
-    }
-
-    window.addEventListener("load", onLoad, true);
-  }
+  if (callback)
+    window.addEventListener("load", onBrowserLoad.bind(window, callback), true);
 
   return window;
 }
