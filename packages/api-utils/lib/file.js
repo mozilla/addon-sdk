@@ -43,12 +43,12 @@ const textStreams = require("text-streams");
 
 // Flags passed when opening a file.  See nsprpub/pr/include/prio.h.
 const OPEN_FLAGS = {
-  RDONLY: 0x01,
-  WRONLY: 0x02,
-  CREATE_FILE: 0x08,
-  APPEND: 0x10,
-  TRUNCATE: 0x20,
-  EXCL: 0x80
+  RDONLY: parseInt("0x01"),
+  WRONLY: parseInt("0x02"),
+  CREATE_FILE: parseInt("0x08"),
+  APPEND: parseInt("0x10"),
+  TRUNCATE: parseInt("0x20"),
+  EXCL: parseInt("0x80")
 };
 
 var dirsvc = Cc["@mozilla.org/file/directory_service;1"]
@@ -171,7 +171,7 @@ exports.open = function open(filename, mode) {
     var openFlags = OPEN_FLAGS.WRONLY |
                     OPEN_FLAGS.CREATE_FILE |
                     OPEN_FLAGS.TRUNCATE;
-    var permFlags = 0644; // u+rw go+r
+    var permFlags = parseInt("0644"); // u+rw go+r
     try {
       stream.init(file, openFlags, permFlags, 0);
     }
@@ -207,7 +207,7 @@ exports.remove = function remove(path) {
 exports.mkpath = function mkpath(path) {
   var file = MozFile(path);
   if (!file.exists())
-    file.create(Ci.nsIFile.DIRECTORY_TYPE, 0755); // u+rwx go+rx
+    file.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755")); // u+rwx go+rx
   else if (!file.isDirectory())
     throw new Error("The path already exists and is not a directory: " + path);
 };
