@@ -42,9 +42,9 @@ function onBrowserLoad(callback, event) {
     this.removeEventListener("load", onBrowserLoad, true);
     let browsers = this.document.getElementsByTagName("tabbrowser");
     try {
-      require("timer").setTimeout(function () {
-        callback(this, browsers[0]);
-      }, 10);
+      require("timer").setTimeout(function (window) {
+        callback(window, browsers[0]);
+      }, 10, this);
     } catch (e) { console.exception(e); }
   }
 }
