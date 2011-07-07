@@ -40,6 +40,8 @@
 // iterator method can return [key, value] pairs just like default
 // iterators called via the default Iterator function.
 
+"use strict";
+
 Iterator = (function(DefaultIterator) {
   return function Iterator(obj, keysOnly) {
     if ("__iterator__" in obj && !keysOnly)
