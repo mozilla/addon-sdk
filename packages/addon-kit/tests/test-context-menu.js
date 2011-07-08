@@ -918,6 +918,7 @@ exports.testMenuClick = function (test) {
   });
 };
 
+
 // Adding a separator to a submenu should work OK.
 exports.testSeparator = function (test) {
   test = new TestHelper(test);
@@ -1485,19 +1486,43 @@ TestHelper.prototype = {
       }
       while (this.loaders.length) {
         let browserManager = this.loaders[0].globalScope.browserManager;
-        let items = browserManager.items.slice();
+        let topLevelItems = browserManager.topLevelItems.slice();
         let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
+
+        //XXX
+        let workerRegs = topLevelItems.map(function (item) {
+          return item.valueOf(privatePropsKey).workerReg;
+        });
+
         this.loaders[0].unload();
 
         // Make sure the browser manager is cleaned up.
-        this.test.assertEqual(browserManager.windows.length, 0,
+        this.test.assertEqual(browserManager.browserWins.length, 0,
                               "browserManager should have no windows left");
-        this.test.assertEqual(browserManager.items.length, 0,
+        //XXX
+        this.test.assertEqual(browserManager.topLevelItems.length, 0,
                               "browserManager should have no items left");
 
+//         // Make sure the items' worker registries are cleaned up.
+//         topLevelItems.forEach(function (item) {
+//           let workerReg = item.valueOf(privatePropsKey).workerReg;
+//           this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
+//                                 "worker registry should be empty");
+//           this.test.assertEqual(
+//             Object.keys(workerReg.winsWithoutWorkers).length, 0,
+//             "worker registry list of windows without workers should be empty");
+//         }, this);
+
         // Make sure the items' worker registries are cleaned up.
-        items.forEach(function (item) {
-          let workerReg = item.valueOf(privatePropsKey).workerReg;
+        topLevelItems.forEach(function (item) {
+//           let workerReg = item.valueOf(privatePropsKey).workerReg;
+//           this.test.assertEqual(item.valueOf(privatePropsKey).workerReg,
+//                                 undefined,
+//                                 "worker registry should be removed");
+          this.test.assert(!("workerReg" in item.valueOf(privatePropsKey)),
+                           "worker registry should be removed");
+        }, this);
+        workerRegs.forEach(function (workerReg) {
           this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
                                 "worker registry should be empty");
           this.test.assertEqual(

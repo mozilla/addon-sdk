@@ -56,6 +56,7 @@ const { MatchPattern } = require("match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("events");
 const observerServ = require("observer-service");
 const jpSelf = require("self");
+const winUtils = require("window-utils");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -143,8 +144,6 @@ function Item(options) {
     return '[object Item "' + options.label + '"]';
   };
 
-//   browserManager.addItem(this);
-
   browserManager.registerItem(this);
   browserManager.addTopLevelItem(this);
 }
@@ -158,10 +157,8 @@ function Menu(options) {
 
   defineItemProps(this, options);
 
-  // TODO: Add setter for this?
-  //XXX probably not.  make `items` a read-only view.
-//   let items = options.items.slice(0);
-//   this.__defineGetter__("items", function () items);
+  const self = this;
+
   let items = [];
   this.__defineGetter__("items", function () items);
 
@@ -169,16 +166,14 @@ function Menu(options) {
     return '[object Menu "' + options.label + '"]';
   };
 
-  const self = this;
-
   this.addItem = function Menu_addItem(item) {
-    // First, remove the item from its current parent menu.
+    // First, remove the item from its current parent.
     //XXX maybe parentMenu should be part of the api.
     let privates = item.valueOf(PRIVATE_PROPS_KEY);
     if (privates.parentMenu)
       privates.parentMenu.removeItem(item);
-    else
-      // item is in the top-level context menu.
+//     else
+    else if (!(item instanceof Separator))
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
@@ -196,21 +191,8 @@ function Menu(options) {
     browserManager.removeItemFromMenu(item, self);
   };
 
-  //XXX
-//   options.items.forEach(function (i) browserManager.removeItem(i));
-//   items.forEach(function (item) {
-//     let { parentMenu } = item.valueOf(PRIVATE_PROPS_KEY);
-//     if (parentMenu)
-//       parentMenu.removeItem(item);
-//     else
-//       // item is in the top-level context menu.
-//       browserManager.removeItem(item);
-//   });
-
-  //XXX and then unregisterItem() on destroy().
   browserManager.registerItem(this);
   browserManager.addTopLevelItem(this);
-//   items.forEach(function (i) browserManager.addItem(i, this), this);
   options.items.forEach(function (i) this.addItem(i), this);
 }
 
@@ -218,6 +200,9 @@ function Separator() {
   this.toString = function Separator_toString() {
     return "[object Separator]";
   };
+
+  //XXX
+  browserManager.registerItem(this);
 }
 
 
@@ -374,8 +359,6 @@ function optionsRules() {
 // item is the Item or Menu object on which to define the properties, and
 // options is a validated options object.
 function defineItemProps(item, options) {
-//   dump("** create " + options.label.toSource() + "\n");
-
   item.__defineGetter__("label", function () options.label);
   item.__defineSetter__("label", function setItemLabel(val) {
     let { label } = apiUtils.validateOptions({ label: val }, optionsRules());
@@ -392,35 +375,34 @@ function defineItemProps(item, options) {
            undefined;
   });
 
-  //XXX
+  let wasDestroyed = false;
   item.destroy = function Item_destroy() {
-//     browserManager.removeItem(item);
-    let { parentMenu } = item.valueOf(PRIVATE_PROPS_KEY);
+    if (wasDestroyed)
+      return;
+    let { parentMenu } = itemPrivates(item);
     if (parentMenu)
       parentMenu.removeItem(item);
-    else
+    else if (!(item instanceof Separator))
       browserManager.removeTopLevelItem(item);
     browserManager.unregisterItem(item);
+    wasDestroyed = true;
   };
 
-  // Create a private properties object for the item.
+  // Create a private properties object for the item.  It's accessible to the
+  // code in this file but not publicly.
   let privateProps = {
-    eventEmitter: EventEmitter.create(item),
-//     workerReg: new WorkerRegistry(item),
     id: nextItemID++,
-    parentMenu: null, //XXX null, not undefined, to avoid `in` testing everywhere
+    eventEmitter: EventEmitter.create(item),
+    parentMenu: null,
     set isTopLevel(val) {
-      if (val) {
-//         this.eventEmitter = EventEmitter.create(item);
+      if (val)
         this.workerReg = new WorkerRegistry(item);
-      }
       else {
-//         delete this.eventEmitter;
         this.workerReg.destroy();
         delete this.workerReg;
       }
     },
-    get progenitor() {
+    get topLevelItem() {
       let topLevelItem = item;
       let parentMenu = privateProps.parentMenu;
       while (parentMenu) {
@@ -467,7 +449,8 @@ function defineItemProps(item, options) {
   item.context.add = function itemContextAdd() {
     let args = Array.slice(arguments);
     add.apply(item.context, args);
-    if (args.some(function (a) a instanceof URLContext))
+    if (privateProps.workerReg &&
+        args.some(function (a) a instanceof URLContext))
       privateProps.workerReg.destroyUnneededWorkers();
   };
 
@@ -475,7 +458,8 @@ function defineItemProps(item, options) {
   item.context.remove = function itemContextRemove() {
     let args = Array.slice(arguments);
     remove.apply(item.context, args);
-    if (args.some(function (a) a instanceof URLContext))
+    if (privateProps.workerReg &&
+        args.some(function (a) a instanceof URLContext))
       privateProps.workerReg.createNeededWorkers();
   };
 }
@@ -500,14 +484,9 @@ function insertionPoint(targetLabel, elts) {
   return elts[from] || null;
 }
 
-// Builds an ID suitable for a DOM element from the given item ID.  The optional
-// suffix will be appended to the returned ID.
-// function domEltIDFromItemID(itemID, suffix) {
-//   suffix = suffix || "";
-//   if (!/^[-a-z]*$/.test(suffix))
-//     throw new Error("Internal error: suffix must match the regexp [-a-z]*");
-//   return jpSelf.id + "-context-menu-item-" + itemID + suffix;
-// }
+// Builds an ID suitable for a DOM element from the given item ID.
+// isInOverflowSubtree should be true if the returned element will be inserted
+// into the DOM subtree rooted at the overflow menu.
 function domEltIDFromItemID(itemID, isInOverflowSubtree) {
   let suffix = isInOverflowSubtree ? "-overflow" : "";
   return jpSelf.id + "-context-menu-item-" + itemID + suffix;
@@ -518,7 +497,6 @@ function itemIDFromDOMEltID(domEltID) {
   return Number(/([0-9]+)[-a-z]*$/.exec(domEltID)[1]);
 }
 
-//XXX
 function itemPrivates(item) {
   return item.valueOf(PRIVATE_PROPS_KEY);
 }
@@ -528,21 +506,15 @@ let browserManager = {
   topLevelItems: [],
   browserWins: [],
 
+  // Call this when a new item is created.
   registerItem: function BM_registerItem(item) {
     this.browserWins.forEach(function (w) w.registerItem(item));
   },
 
+  // Call this when an item is destroyed and won't be used again.
   unregisterItem: function BM_unregisterItem(item) {
     this.browserWins.forEach(function (w) w.unregisterItem(item));
   },
-
-  // Registers an item with the manager.  It's added to the context menus of
-  // all currently registered windows, and when new windows are registered it
-  // will be added to them, too.
-//   addItem: function BM_addItem(item) {
-//     this.items.push(item);
-//     this.browserWins.forEach(function (w) w.addItems([item]));
-//   },
 
   addTopLevelItem: function BM_addTopLevelItem(item) {
     this.topLevelItems.push(item);
@@ -551,7 +523,10 @@ let browserManager = {
   },
 
   removeTopLevelItem: function BM_removeTopLevelItem(item) {
-    this.topLevelItems.splice(this.topLevelItems.indexOf(item));
+    let idx = this.topLevelItems.indexOf(item);
+    if (idx < 0)
+      throw new Error("Internal error: item not in top-level menu: " + item);
+    this.topLevelItems.splice(idx, 1);
     this.browserWins.forEach(function (w) w.removeTopLevelItem(item));
     itemPrivates(item).isTopLevel = false;
   },
@@ -565,15 +540,12 @@ let browserManager = {
                                                                parentMenu));
   },
 
-  // Sets the given item's label in all the browser windows.  See
-  // ContextMenuPopup.setItemLabel.
   setItemLabel: function BM_setItemLabel(item, label) {
     this.browserWins.forEach(function (w) w.setItemLabel(item, label));
   },
 
-  // Registers the manager to listen for window openings and closings.  Note
-  // that calling this method can cause onTrack to be called immediately if
-  // there are open windows.
+  // Note that calling this method will cause onTrack to be called immediately
+  // for each open window.
   init: function BM_init() {
     require("unload").ensure(this);
     let windowTracker = new (require("window-utils").WindowTracker)(this);
@@ -582,22 +554,38 @@ let browserManager = {
     // window from all items' worker registries.
     observerServ.add("inner-window-destroyed", function observe(subj) {
       let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
-      this.items.forEach(function (item) {
+      this.topLevelItems.forEach(function (item) {
         let workerReg = item.valueOf(PRIVATE_PROPS_KEY).workerReg;
         workerReg.unregisterContentWin(innerWinID);
       });
     }, this);
   },
 
-  // When the window tracker is unloaded, it'll call our onUntrack for every
-  // open browser window, so there's no need to do that here.  The only other
-  // things to clean up are items and their worker registries.
+  // When the window tracker is unloaded, it'll call onUntrack for each open
+  // browser window, so there's no need to do that here.  The only other things
+  // to clean up are items and their worker registries.
   unload: function BM_unload() {
 //     this.items.forEach(function (item) {
 //       item.valueOf(PRIVATE_PROPS_KEY).workerReg.destroy();
 //     });
 //     this.items.splice(0, this.items.length);
     //XXX ??
+
+
+    while (this.topLevelItems.length) {
+      let item = this.topLevelItems[0];
+      this.removeTopLevelItem(item);
+      this.unregisterItem(item);
+    }
+
+//     //XXX what about workerRegs?  [handled by the removeTopLevelItem call.]
+//     this.topLevelItems.forEach(function (item) {
+// //       itemPrivates(item).workerReg.destroy();
+//       this.unregisterItem(item);
+//     }, this);
+//     //XXX this races onUntrack...
+// //     this.topLevelItems.splice(0, this.topLevelItems.length);
+
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.
@@ -623,26 +611,12 @@ let browserManager = {
     this.topLevelItems.forEach(function (item) addItemTree(item, null));
   },
 
-
-//   // Unregisters a window from the manager.  It's told to undo all menu
-//   // modifications.  This is a WindowTracker callback.
-//   onUntrack: function BM_onUntrack(window) {
-//     if (this._isBrowserWindow(window)) {
-//       for (let i = 0; i < this.browserWins.length; i++) {
-//         if (this.browserWins[i].window == window) {
-//           let win = this.browserWins.splice(i, 1)[0];
-//           win.destroy();
-//           return;
-//         }
-//       }
-//     }
-//   },
-
-  // Unregisters a window from the manager.  It's told to undo all menu
-  // modifications.  This is a WindowTracker callback.
+  // Unregisters a window from the manager.  This is a WindowTracker callback.
   onUntrack: function BM_onUntrack(window) {
     if (!this._isBrowserWindow(window))
       return;
+
+//     dump("\n*** onUntrack " + this.topLevelItems.length + "\n");
 
     let idx = 0;
     for (; idx < this.browserWins.length; idx++)
@@ -654,18 +628,6 @@ let browserManager = {
     this.topLevelItems.forEach(function (i) browserWin.removeTopLevelItem(i));
     browserWin.destroy();
   },
-
-//   // Unregisters an item from the manager.  It's removed from the context menus
-//   // of all windows that are currently registered.  If the item is not
-//   // registered, this is a no-op.
-//   removeItem: function BM_removeItem(item) {
-//     let idx = this.items.indexOf(item);
-//     if (idx >= 0) {
-//       this.items.splice(idx, 1);
-//       this.browserWins.forEach(function (w) w.removeItems([item]));
-//       item.valueOf(PRIVATE_PROPS_KEY).workerReg.destroy();
-//     }
-//   },
 
   _isBrowserWindow: function BM__isBrowserWindow(win) {
     let winType = win.document.documentElement.getAttribute("windowtype");
@@ -729,7 +691,7 @@ WorkerRegistry.prototype = {
 
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let innerWinID = this._innerWinID(win);
+    let innerWinID = winUtils.getInnerId(win);
     if (this._doesURLNeedWorker(win.document.URL))
       this.winWorkers[innerWinID] = { win: win, worker: this._makeWorker(win) };
     else
@@ -774,7 +736,7 @@ WorkerRegistry.prototype = {
 
   // Returns the worker for the item-window pair or null if none exists.
   find: function WR_find(contentWin) {
-    let innerWinID = this._innerWinID(contentWin);
+    let innerWinID = winUtils.getInnerId(contentWin);
     return (innerWinID in this.winWorkers) ?
            this.winWorkers[innerWinID].worker :
            null;
@@ -814,13 +776,6 @@ WorkerRegistry.prototype = {
       }
     });
     return worker;
-  },
-
-  _innerWinID: function WR__innerWinID(win) {
-    return win.
-           QueryInterface(Ci.nsIInterfaceRequestor).
-           getInterface(Ci.nsIDOMWindowUtils).
-           currentInnerWindowID;
   }
 };
 
@@ -836,12 +791,12 @@ function BrowserWindow(window) {
   this.window = window;
   this.doc = window.document;
 
-  let popupElt = this.doc.getElementById("contentAreaContextMenu");
-  if (!popupElt)
+  let popupDOMElt = this.doc.getElementById("contentAreaContextMenu");
+  if (!popupDOMElt)
     throw new Error("Internal error: Context menu popup not found.");
-  this.contextMenuPopup = new ContextMenuPopup(popupElt, this);
+  this.contextMenuPopup = new ContextMenuPopup(popupDOMElt, this);
 
-  // item ID => { item, popup, overflowPopup, domElt, overflowDOMElt }
+  // item ID => { item, domElt, overflowDOMElt }
   this.items = {};
 
   // Listen for page loads on the tabbrowser so we can create workers.
@@ -862,42 +817,6 @@ BrowserWindow.prototype = {
   unregisterItem: function BW_unregisterItem(item) {
     delete this.items[itemPrivates(item).id];
   },
-
-//   // Adds an array of items to the window's context menu.
-//   addItems: function BW_addItems(items) {
-//     items.forEach(function (item) {
-//       let { id: itemID, workerReg } = item.valueOf(PRIVATE_PROPS_KEY);
-
-//       //XXX create dom elts here?
-// //       this.items[itemID] = {
-//       this.items[itemID] = this.items[itemID] || {
-//         item: item,
-//         domElt: this._makeDOMElt(item, false),
-//         overflowDOMElt: this._makeDOMElt(item, true)
-//       };
-
-//       // Register all open and loaded content windows in this browser window
-//       // with each item's worker registry.
-//       this.window.gBrowser.browsers.forEach(function (browser) {
-//         if (browser.contentDocument.readyState === "complete")
-//           workerReg.registerContentWin(browser.contentWindow);
-//       }, this);
-//     }, this);
-
-//     this.contextMenuPopup.addItems(items);
-//   },
-
-//   addItems: function BW_addItems(items, parentMenu) {
-//     items.forEach(function (item) {
-//       let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-//       if (itemID in this.items) {
-//         let props = this.items[itemID];
-        
-//       }
-
-//       let { id: itemID, workerReg } = item.valueOf(PRIVATE_PROPS_KEY);
-//     }, this);
-//   },
 
   addTopLevelItem: function BW_addTopLevelItem(item) {
     // Register all open and loaded content windows in this browser window
@@ -925,11 +844,6 @@ BrowserWindow.prototype = {
   },
 
   addItemToMenu: function BW_addItemToMenu(item, parentMenu) {
-    //XXX i'm changing the meaning of `popup` and `overflowPopup`.  these two
-    // props are only defined for Menus, and they refer to the popups created
-    // for the Menu to contain its items.  if i still need what i used to call
-    // `popup` and `overflowPopup`, rename them to parentPopup and
-    // parentOverflowPopup.
     let { popup, overflowPopup } = this.items[itemPrivates(parentMenu).id];
     popup.addItem(item);
     overflowPopup.addItem(item);
@@ -941,19 +855,16 @@ BrowserWindow.prototype = {
     overflowPopup.removeItem(item);
   },
 
-  // Sets the given item's label in the browser window's context menu.  See
-  // ContextMenuPopup.setItemLabel.
   setItemLabel: function BW_setItemLabel(item, label) {
-//     this.contextMenuPopup.setItemLabel(item, label);
-    let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-    if (!(itemID in this.items))
-      return;
+    let { id, parentMenu } = itemPrivates(item);
+//     if (!(itemID in this.items))
+//       return;
 
-    let { domElt, overflowDOMElt, popup, overflowPopup } = this.items[itemID];
+    let { domElt, overflowDOMElt } = this.items[id];
     domElt.setAttribute("label", label);
     overflowDOMElt.setAttribute("label", label);
-    popup.itemLabelWasChanged(item);
-    overflowPopup.itemLabelWasChanged(item);
+    if (!parentMenu)
+      this.contextMenuPopup.itemLabelDidChange(item);
   },
 
   // The context specified for a top-level item may not match exactly the real
@@ -979,7 +890,7 @@ BrowserWindow.prototype = {
   // Returns true if all of item's contexts are current in the window.
   areAllContextsCurrent: function BW_areAllContextsCurrent(item, popupNode) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = item.valueOf(PRIVATE_PROPS_KEY).workerReg.find(win);
+    let worker = itemPrivates(item).workerReg.find(win);
 
     // If the worker for the item-window pair doesn't exist (e.g., because the
     // page hasn't loaded yet), we can't really make a good decision since the
@@ -1037,23 +948,6 @@ BrowserWindow.prototype = {
       worker.fireClick(popupNode, clickedItemData);
   },
 
-//   // Removes an array of items from the window's context menu.
-//   removeItems: function BW_removeItems(items) {
-//     this.contextMenuPopup.removeItems(items);
-//   },
-
-  removeItems: function BW_removeItems(items) {
-    items.forEach(function (item) {
-      let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-      if (!(itemID in this.items))
-        return;
-      let props = this.items[itemID];
-      props.popup.removeItems([item]);
-      if (props.overflowPopup)
-        props.overflowPopup.removeItems([item]);
-    }, this);
-  },
-
   // Handles content window loads.
   handleEvent: function BW_handleEvent(event) {
     try {
@@ -1091,40 +985,15 @@ BrowserWindow.prototype = {
   _makeMenu: function BW__makeMenu(menu, isInOverflowSubtree) {
     let menuElt = this.doc.createElement("menu");
     menuElt.setAttribute("label", menu.label);
-    let popupElt = this.doc.createElement("menupopup");
-    menuElt.appendChild(popupElt);
+    let popupDOMElt = this.doc.createElement("menupopup");
+    menuElt.appendChild(popupDOMElt);
 
-    let popup = new Popup(menu, popupElt, this, isInOverflowSubtree);
+    let popup = new Popup(popupDOMElt, this, isInOverflowSubtree);
     let props = this.items[itemPrivates(menu).id];
     if (isInOverflowSubtree)
       props.overflowPopup = popup;
     else
       props.popup = popup;
-
-
-//     menu.items.forEach(function (item) {
-//       let props = this.items[item.valueOf(PRIVATE_PROPS_KEY).id];
-//       props.parentPopup.removeItems([item]);
-//       //XXX Popup.addItems() should do this.
-// //       props.parentPopup = popup;
-//     }, this);
-
-    // Once items are added, this value can be thrown away.  The popup handles
-    // popupshowing on its own.  It won't be garbage collected since it adds
-    // itself as an event listener.
-//     let popup = new Popup(menu, popupElt, this, isInOverflowSubtree);
-//     popup.addItems(menu.items);
-
-//     dump("after popup.addItems " + popupElt.childNodes.length + " " + popupElt.parentNode + " " + popupElt.parentNode.parentNode + "\n");
-//     for (let i = 0; i < popupElt.childNodes.length; i++)
-//       dump("  " + popupElt.childNodes[i].getAttribute("label") + "\n");
-
-//     //XXX the popup could do this, either its ctor or addItems()
-//     menu.items.forEach(function (item) {
-//       let props = this.items[item.valueOf(PRIVATE_PROPS_KEY).id];
-//       let elt = isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
-//       popup.addItems();
-//     }, this);
 
     return menuElt;
   },
@@ -1144,8 +1013,8 @@ BrowserWindow.prototype = {
   },
 
   _registerContentWin: function BW__registerContentWin(win) {
-    browserManager.items.forEach(function (item) {
-      item.valueOf(PRIVATE_PROPS_KEY).workerReg.registerContentWin(win);
+    browserManager.topLevelItems.forEach(function (item) {
+      itemPrivates(item).workerReg.registerContentWin(win);
     });
   }
 };
@@ -1162,175 +1031,39 @@ BrowserWindow.prototype = {
 //   this.window = window;
 //   this.doc = popupElt.ownerDocument;
 //XXX popupDOMElt?
-function Popup(parentMenu, popupElt, browserWin, isInOverflowSubtree) {
-  this.parentMenu = parentMenu;
-  this.popupElt = popupElt;
+function Popup(popupDOMElt, browserWin, isInOverflowSubtree) {
+  this.popupDOMElt = popupDOMElt;
   this.browserWin = browserWin;
   this.isInOverflowSubtree = isInOverflowSubtree;
-  this.doc = popupElt.ownerDocument;
-
-  // item ID => { item, domElt }
-  //XXX
-  // item ID => item?  and then store domElt (and overflowDOMElt) in item's
-  // private props?  no, won't work, since the same Item has dom elts for each
-  // browser window.
-//   this.items = {};
-
-//   popupElt.addEventListener("command", this, false);
 }
 
 Popup.prototype = {
 
-  // Adds an array of items to the popup.
-//   addItems: function Popup_addItems(items) {
-//     items.forEach(function (item) {
-//       let domElt = this._makeItemElt(item);
-//       this.items[item.valueOf(PRIVATE_PROPS_KEY).id] = {
-//         item: item,
-//         domElt: domElt
-//       };
-//       this.popupElt.appendChild(domElt);
-//     }, this);
-//   },
-
-
-//   addItems: function Popup_addItems(items) {
-//     items.forEach(function (item) {
-//       //XXX be careful, the order i do things in matters if item is already
-//       // in this menu.  maybe just return early if itemID in this.items.
-//       let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-//       this.items[itemID] = item;
-//       let props = this.browserWin.items[itemID];
-//       let popup = this.isInOverflowSubtree ? props.overflowPopup : props.popup;
-//       popup.removeItems([item]);
-//       if (this.isInOverflowSubtree)
-//         props.overflowPopup = this;
-//       else
-//         props.popup = this;
-//       let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
-//       this.popupElt.appendChild(elt);
-// //       dump("*** addItems " + this.isInOverflowSubtree + " " + this.popupElt.childNodes.length + " " + this.popupElt.localName + " " + (props.overflowDOMElt == props.domElt) + " " + this.popupElt.parentNode.getAttribute("label").toSource() + " " + this.popupElt.parentNode.parentNode + "\n");
-// //       for (let i = 0; i < this.popupElt.childNodes.length; i++)
-// //         dump("  " + this.popupElt.childNodes[i].getAttribute("label") + "\n");
-//     }, this);
-//   },
-
-
   addItem: function Popup_addItem(item) {
-    let itemID = itemPrivates(item).id;
-//     this.items[itemID] = item;
-    let props = this.browserWin.items[itemID];
+    let props = this.browserWin.items[itemPrivates(item).id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
-    this.popupElt.appendChild(elt);
+    this.popupDOMElt.appendChild(elt);
   },
 
   removeItem: function Popup_removeItem(item) {
-    let itemID = itemPrivates(item).id;
-//     delete this.items[itemID];
-    let props = this.browserWin.items[itemID];
+    let props = this.browserWin.items[itemPrivates(item).id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
-    this.popupElt.removeChild(elt);
-  },
-
-
-
-//   //XXX
-//   removeItems: function Popup_removeItems(items) {
-//     items.forEach(function (item) {
-//       let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-//       if (!(itemID in this.items))
-//         return;
-//       let props = this.browserWin.items[itemID];
-//       let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
-//       //XXX this causes Menu items to not appear.  i've screwed up somewhere.
-//       //XXX dipshit, it's because i have a single parentPopup in the item props.
-//       // like domElt and overflowDOMElt, i need popup and overflowPopup.
-//       dump("*** removeItems " + this.isInOverflowSubtree + " " + this.parentMenu + " " + elt.localName + " " + elt.parentNode.localName + "\n");
-//       require("traceback").get().forEach(function (s) dump(s.toSource() + "\n"));
-// //       elt.parentNode.removeChild(elt);
-//       this.popupElt.removeChild(elt);
-//       delete this.items[itemID];
-//     }, this);
-//   },
-
-
-//   // Undoes all modifications to the popup.  The popup should not be used
-//   // afterward.
-//   destroy: function Popup_destroy() {
-//     this.popupElt.removeEventListener("command", this, false);
-//   },
-
-//   // The popup is responsible for two command events: those originating at items
-//   // in the popup and those bubbling to the popup's parent menu.  In the first
-//   // case the popup dispatches a click to the item, and in the second the popup
-//   // dispatches a click to its parent menu -- in that order.
-//   handleEvent: function Popup_handleEvent(event) {
-//     try {
-//       let elt = event.target;
-//       if (elt.className.split(/\s+/).indexOf(ITEM_CLASS) >= 0) {
-//         // If the event originated at an item in the popup, dispatch a click.
-//         // Also set Popup.clickedItem and popupNode so ancestor popups know
-//         // which item was clicked and under what context.
-//         let itemID = itemIDFromDOMEltID(elt.id);
-//         if (itemID in this.items) {
-//           let clickedItem = this.items[itemID];
-// //           let topLevelItem = this._topLevelItem(clickedItem);
-//           let topLevelItem = itemPrivates(clickedItem).progenitor;
-//           let popupNode =
-//             this.browserWin.adjustPopupNode(this.browserWin.popupNode,
-//                                             topLevelItem);
-//           Popup.clickedItem = clickedItem;
-//           Popup.popupNode = popupNode;
-//           this.browserWin.fireClick(clickedItem, popupNode, clickedItem.data);
-//         }
-
-//         // Dispatch a click to this popup's parent menu.
-//         if (this.parentMenu) {
-//           this.browserWin.fireClick(this.parentMenu, Popup.popupNode,
-//                                     Popup.clickedItem.data);
-//         }
-//       }
-//     }
-//     catch (err) {
-//       console.exception(err);
-//     }
-//   },
-
-  // Returns the top-level menu that contains item or item if it is top-level.
-//   _topLevelItem: function Popup__topLevelItem(item) {
-//     let popup = this;
-//     let topLevelItem = item;
-//     while (popup.parentPopup) {
-//       topLevelItem = popup.parentMenu;
-//       popup = popup.parentPopup;
-//     }
-//     return topLevelItem;
-//   }
-
-//   _topLevelItem: function Popup__topLevelItem(item) {
-//     let topLevelItem = null;
-//     let parentItem = item;
-//     while (parentMenu) {
-//       topLevelItem = parentMenu;
-//       parentMenu = itemPrivates(parentMenu).parentMenu;
-//     }
-
-//     return topLevelItem;
-//   }
+    this.popupDOMElt.removeChild(elt);
+  }
 };
 
 
 // A subclass of Popup, this represents a window's context menu popup.  It's
 // responsible for hiding and showing items according to the window's current
 // context.
-function ContextMenuPopup(popupElt, browserWin) {
+function ContextMenuPopup(popupDOMElt, browserWin) {
   const self = this;
-//   Popup.call(this, null, null, popupElt, browserWin);
-  Popup.call(this, null, popupElt, browserWin, false);
-  this.items = {};
-  this.popupElt.addEventListener("popupshowing", this, false);
-  this.popupElt.addEventListener("command", this, false);
-
+//   Popup.call(this, null, null, popupDOMElt, browserWin);
+  Popup.call(this, popupDOMElt, browserWin, false);
+  let items = {};
+  let doc = this.popupDOMElt.ownerDocument;
+  popupDOMElt.addEventListener("popupshowing", this, false);
+  popupDOMElt.addEventListener("command", this, false);
 
 //   // Adds an array of items to the popup.
 //   this.addItems = function CMP_addItems(items) {
@@ -1371,7 +1104,7 @@ function ContextMenuPopup(popupElt, browserWin) {
     ensureStaticEltsExist();
 //     ensureListeningForPopups();
     let itemID = itemPrivates(item).id;
-    self.items[itemID] = item;
+    items[itemID] = item;
     let props = self.browserWin.items[itemID];
     props.domElt.classList.add(TOPLEVEL_ITEM_CLASS);
     props.overflowDOMElt.classList.add(OVERFLOW_ITEM_CLASS);
@@ -1380,31 +1113,24 @@ function ContextMenuPopup(popupElt, browserWin) {
 
   this.removeItem = function CMP_removeItem(item) {
     let itemID = itemPrivates(item).id;
-    delete self.items[itemID];
+    delete items[itemID];
     let { domElt, overflowDOMElt } = self.browserWin.items[itemID];
     domElt.classList.remove(TOPLEVEL_ITEM_CLASS);
     overflowDOMElt.classList.remove(OVERFLOW_ITEM_CLASS);
-    self.popupElt.removeChild(domElt);
+    popupDOMElt.removeChild(domElt);
     overflowPopup().removeChild(overflowDOMElt);
+//     dump("\n*** CMP_removeItem\n");
   };
 
-
-
-//   // Sets the given item's label if the item has a DOM element.  The item is
-//   // re-inserted into the popup so that it remains in sorted order.  If the item
-//   // has no DOM element yet, does nothing.
-//   this.setItemLabel = function CMP_setItemLabel(item, label) {
-//     let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-//     if (!(itemID in self.items))
-//       return;
-
-//     let { domElt, overflowDOMElt } = self.items[itemID];
-//     domElt.parentNode.removeChild(domElt);
-//     overflowDOMElt.parentNode.removeChild(overflowDOMElt);
-//     domElt.setAttribute("label", label);
-//     overflowDOMElt.setAttribute("label", label);
-//     insertItemInSortedOrder(item);
-//   };
+  // Call this after the item's label changes.  This re-inserts the item into
+  // the popup so that it remains in sorted order.
+  this.itemLabelDidChange = function CMP_itemLabelDidChange(item) {
+    let itemID = itemPrivates(item).id;
+    let { domElt, overflowDOMElt } = self.browserWin.items[itemID];
+    popupDOMElt.removeChild(domElt);
+    overflowPopup().removeChild(overflowDOMElt);
+    insertItemInSortedOrder(item);
+  };
 
   // Undoes all modifications to the popup.  The popup should not be used
   // afterward.
@@ -1418,123 +1144,57 @@ function ContextMenuPopup(popupElt, browserWin) {
     if (!elts.length) {
       let submenu = overflowMenu();
       if (submenu)
-        self.popupElt.removeChild(submenu);
+        popupDOMElt.removeChild(submenu);
 
       let sep = separator();
       if (sep)
-        self.popupElt.removeChild(sep);
+        popupDOMElt.removeChild(sep);
     }
 
 //     // Remove event listeners.
 //     if (self._listeningForPopups) {
-      self.popupElt.removeEventListener("popupshowing", self, false);
-      self.popupElt.removeEventListener("command", self, false);
+      popupDOMElt.removeEventListener("popupshowing", self, false);
+      popupDOMElt.removeEventListener("command", self, false);
 //       delete self._listeningForPopups;
 //     }
 //     self.__proto__.destroy.call(self);
   };
 
-  // The context menu popup needs to handle popupshowing in addition to command
-  // events.  popupshowing is used to show top-level items that match the
-  // window's current context and hide items that don't.  Each module instance
-  // is responsible for showing and hiding the items it owns.
-//   this.handleEvent = function CMP_handleEvent(event) {
-//     if (event.type === "command")
-//       self.__proto__.handleEvent.call(self, event);
-//     else if (event.type === "popupshowing" && event.target === popupElt) {
-//       try {
-//         // popupElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
-//         // to avoid a Spidermonkey strict warning on earlier versions.
-//         let triggerNode = popupElt.triggerNode || undefined;
-//         let popupNode = browserWin.capturePopupNode(triggerNode);
-
-//         // Show and hide items.  Set a "jetpackContextCurrent" property on the
-//         // DOM elements to signal which of our items match the current context.
-//         for each (let { item, domElt, overflowDOMElt } in self.items) {
-//           let areContextsCurr = browserWin.areAllContextsCurrent(item, popupNode);
-
-//           // Change the item's label if the return value was a string.
-//           if (typeof(areContextsCurr) === "string") {
-//             item.label = areContextsCurr;
-//             areContextsCurr = true;
-//           }
-
-//           domElt.jetpackContextCurrent = areContextsCurr;
-//           domElt.hidden = !areContextsCurr;
-//           overflowDOMElt.jetpackContextCurrent = areContextsCurr;
-//           overflowDOMElt.hidden = !areContextsCurr;
-//         }
-
-//         // Get the total number of items that match the current context.  It's a
-//         // little tricky:  There may be other instances of this module loaded,
-//         // each hiding and showing their items.  So we can't base this number on
-//         // only our items, or on the hidden state of items.  That's why we set
-//         // the jetpackContextCurrent property above.  The last instance to run
-//         // will leave the menupopup in the correct state.
-//         let elts = topLevelElts();
-//         let numShown = Array.reduce(elts, function (total, elt) {
-//           return total + (elt.jetpackContextCurrent ? 1 : 0);
-//         }, 0);
-
-//         // If too many items are shown, show the submenu and hide the top-level
-//         // items.  Otherwise, hide the submenu and show the top-level items.
-//         let overflow = numShown > overflowThreshold();
-//         if (overflow)
-//           Array.forEach(elts, function (e) e.hidden = true);
-
-//         let submenu = overflowMenu();
-//         if (submenu)
-//           submenu.hidden = !overflow;
-
-//         // If no items are shown, hide the menu separator.
-//         let sep = separator();
-//         if (sep)
-//           sep.hidden = numShown === 0;
-//       }
-//       catch (err) {
-//         console.exception(err);
-//       }
-//     }
-//   };
-
   this.handleEvent = function CMP_handleEvent(event) {
     try {
       if (event.type === "command")
-//         self.__proto__.handleEvent.call(self, event);
         handleClick(event.target);
-      else if (event.type === "popupshowing" && event.target === popupElt)
+      else if (event.type === "popupshowing" && event.target === popupDOMElt)
         handlePopupShowing();
     }
     catch (err) {
       console.exception(err);
     }
-//     else if (event.type === "popupshowing") {
-//       let popupElt = event.target;
-//       dump("*** popupshowing " + popupElt.localName + " " + popupElt.childNodes.length + "\n");
-//       for (let i = 0; i < popupElt.childNodes.length; i++)
-//         dump("  " + popupElt.childNodes[i].getAttribute("label") + "\n");
-//     }
   };
 
+  // command events bubble to the top-level xul:menupopup and are caught here.
   function handleClick(domElt) {
     if (!domElt.classList.contains(ITEM_CLASS))
       return;
     let clickedItem = self.browserWin.items[itemIDFromDOMEltID(domElt.id)].item;
-    let topLevelItem = itemPrivates(clickedItem).progenitor;
+    let topLevelItem = itemPrivates(clickedItem).topLevelItem;
     let popupNode = self.browserWin.adjustPopupNode(self.browserWin.popupNode,
                                                     topLevelItem);
     self.browserWin.fireClick(topLevelItem, popupNode, clickedItem.data);
   }
 
+  // popupshowing is used to show top-level items that match the browser
+  // window's current context and hide items that don't.  Each module instance
+  // is responsible for showing and hiding the items it owns.
   function handlePopupShowing() {
-    // popupElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
+    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
     // to avoid a Spidermonkey strict warning on earlier versions.
-    let triggerNode = popupElt.triggerNode || undefined;
+    let triggerNode = popupDOMElt.triggerNode || undefined;
     let popupNode = browserWin.capturePopupNode(triggerNode);
 
     // Show and hide items.  Set a "jetpackContextCurrent" property on the
     // DOM elements to signal which of our items match the current context.
-    for (let [itemID, item] in Iterator(self.items)) {
+    for (let [itemID, item] in Iterator(items)) {
       let areContextsCurr = browserWin.areAllContextsCurrent(item, popupNode);
 
       // Change the item's label if the return value was a string.
@@ -1588,21 +1248,21 @@ function ContextMenuPopup(popupElt, browserWin) {
 //     }, self);
 //   };
 
-  //XXX context menu removes two items with one removeItems() call, here, but
-  // removeItems() is called twice, one for domElt and one for overflowDOMElt.
-  this.removeItems = function CMP_removeItems(items) {
-    items.forEach(function (item) {
-      let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
-      if (!(itemID in self.items))
-        return;
-      let { domElt, overflowDOMElt } = self.browserWin.items[itemID];
-//       overflowDOMElt.parentNode.removeChild(overflowDOMElt);
-      overflowPopup().removeChild(overflowDOMElt);
-      domElt.classList.remove(TOPLEVEL_ITEM_CLASS);
-      overflowDOMElt.classList.remove(OVERFLOW_ITEM_CLASS);
-    });
-    self.__proto__.removeItems.call(self, items);
-  };
+//   //XXX context menu removes two items with one removeItems() call, here, but
+//   // removeItems() is called twice, one for domElt and one for overflowDOMElt.
+//   this.removeItems = function CMP_removeItems(items) {
+//     items.forEach(function (item) {
+//       let itemID = item.valueOf(PRIVATE_PROPS_KEY).id;
+//       if (!(itemID in self.items))
+//         return;
+//       let { domElt, overflowDOMElt } = self.browserWin.items[itemID];
+// //       overflowDOMElt.parentNode.removeChild(overflowDOMElt);
+//       overflowPopup().removeChild(overflowDOMElt);
+//       domElt.classList.remove(TOPLEVEL_ITEM_CLASS);
+//       overflowDOMElt.classList.remove(OVERFLOW_ITEM_CLASS);
+//     });
+//     self.__proto__.removeItems.call(self, items);
+//   };
 
 //   // Adds the popupshowing listener if it hasn't been added already.
 //   function ensureListeningForPopups() {
@@ -1617,21 +1277,21 @@ function ContextMenuPopup(popupElt, browserWin) {
     let sep = separator();
     if (!sep) {
       sep = makeSeparator();
-      self.popupElt.appendChild(sep);
+      popupDOMElt.appendChild(sep);
     }
 
     let submenu = overflowMenu();
     if (!submenu) {
       submenu = makeOverflowMenu();
-      self.popupElt.insertBefore(submenu, sep.nextSibling);
+      popupDOMElt.insertBefore(submenu, sep.nextSibling);
     }
   }
 
   // Inserts the given item's DOM element into the popup in sorted order.
   function insertItemInSortedOrder(item) {
     let props = self.browserWin.items[itemPrivates(item).id];
-    self.popupElt.insertBefore(props.domElt,
-                               insertionPoint(item.label, topLevelElts()));
+    popupDOMElt.insertBefore(props.domElt,
+                             insertionPoint(item.label, topLevelElts()));
     overflowPopup().insertBefore(props.overflowDOMElt,
                                  insertionPoint(item.label, overflowElts()));
   }
@@ -1639,10 +1299,10 @@ function ContextMenuPopup(popupElt, browserWin) {
   // Creates and returns the xul:menu that's shown when too many items are added
   // to the popup.
   function makeOverflowMenu() {
-    let submenu = self.doc.createElement("menu");
+    let submenu = doc.createElement("menu");
     submenu.id = OVERFLOW_MENU_ID;
     submenu.setAttribute("label", OVERFLOW_MENU_LABEL);
-    let popup = self.doc.createElement("menupopup");
+    let popup = doc.createElement("menupopup");
     popup.id = OVERFLOW_POPUP_ID;
     submenu.appendChild(popup);
     return submenu;
@@ -1651,7 +1311,7 @@ function ContextMenuPopup(popupElt, browserWin) {
   // Creates and returns the xul:menuseparator that separates the standard
   // context menu items from our items.
   function makeSeparator() {
-    let elt = self.doc.createElement("menuseparator");
+    let elt = doc.createElement("menuseparator");
     elt.id = SEPARATOR_ID;
     return elt;
   }
@@ -1663,12 +1323,12 @@ function ContextMenuPopup(popupElt, browserWin) {
 
   // Returns the overflow xul:menu.
   function overflowMenu() {
-    return self.doc.getElementById(OVERFLOW_MENU_ID);
+    return doc.getElementById(OVERFLOW_MENU_ID);
   }
 
   // Returns the overflow xul:menupopup.
   function overflowPopup() {
-    return self.doc.getElementById(OVERFLOW_POPUP_ID);
+    return doc.getElementById(OVERFLOW_POPUP_ID);
   }
 
   // Returns the OVERFLOW_THRESH_PREF pref value if it exists or
@@ -1680,12 +1340,12 @@ function ContextMenuPopup(popupElt, browserWin) {
 
   // Returns the xul:menuseparator.
   function separator() {
-    return self.doc.getElementById(SEPARATOR_ID);
+    return doc.getElementById(SEPARATOR_ID);
   }
 
   // Returns the item elements contained in the top-level menu, a NodeList.
   function topLevelElts() {
-    return self.popupElt.getElementsByClassName(TOPLEVEL_ITEM_CLASS);
+    return popupDOMElt.getElementsByClassName(TOPLEVEL_ITEM_CLASS);
   }
 };
 
