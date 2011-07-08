@@ -84,8 +84,8 @@
 
    shims.filename = shimsPath;
 
-   function unloadLoader(reason) {
-     this.require("unload").send(reason);
+   function unloadLoader(reason, onError) {
+     this.require("unload").send(reason, onError);
    }
 
    function makeGetModuleExports(delegate) {
