@@ -600,7 +600,8 @@ WorkerRegistry.prototype = {
            null;
   },
 
-  // Unregisters all content windows in the registry, destroying all workers.
+  // Unregisters all content windows from the registry, which destroys all
+  // workers.
   destroy: function WR_destroy() {
     for (let innerWinID in this.winWorkers)
       this.unregisterContentWin(innerWinID);
@@ -766,8 +767,9 @@ let browserManager = {
 // current context and determining whether an item matches the current context.
 //
 // TODO: If other apps besides Firefox want to support the context menu in
-// whatever way is appropriate for them, plugging in a substitute for this class
-// should be the way to do it.  Make it easy for them.  See bug 560716.
+// whatever way is appropriate for them, plugging in a substitute for or an
+// adapter to this class should be the way to do it.  Make it easy for them.
+// See bug 560716.
 function BrowserWindow(window) {
   this.window = window;
   this.doc = window.document;
@@ -820,16 +822,11 @@ BrowserWindow.prototype = {
   },
 
   removeTopLevelItem: function BW_removeTopLevelItem(item) {
-    //XXX ??? don't think this is needed, since the worker reg is destroyed
-    //   when item is no longer top-level... but addTopLevelItem registers
-    //   content windows, so to be symmetrical this should unregister them.
-    // Unregister all open and loaded content windows in this browser window
-    // with the item's worker registry.
-    let { workerReg } = itemPrivates(item);
-    this.window.gBrowser.browsers.forEach(function (browser) {
-      if (browser.contentDocument.readyState === "complete")
-        workerReg.unregisterContentWin(browser.contentWindow);
-    }, this);
+    // Although addTopLevelItem registers this browser's content windows with
+    // the item's worker registry, there's no need to unregister content windows
+    // here:  When a top-level item is removed, browserManager destroys its
+    // worker registry, which unregisters all registered content windows.
+
     this.contextMenuPopup.removeItem(item);
   },
 
