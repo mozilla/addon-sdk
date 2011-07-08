@@ -1254,6 +1254,9 @@ exports.testSetLabelAfterShowOverflow = function (test) {
 };
 
 
+//XXX need to test Menu.removeItem, addItem.
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
