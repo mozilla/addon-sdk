@@ -1,6 +1,6 @@
 const { Ci, Cc } = require("chrome");
 
-/*
+/**
  * Access key that allows privileged code to unwrap proxy wrappers through 
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
@@ -119,14 +119,98 @@ function unwrap(value, obj, name) {
   
   // In case of functions we need to return a wrapper that converts native 
   // arguments applied to this function into proxies.
-  // Do this only for functions coming from content script.
   if (type == "function")
     return ContentScriptFunctionWrapper(value, obj, name);
   
+  // We must proxify objects coming from content script too, as they may have
+  // a function that will be called by a native method.
+  // For example:
+  //   addEventListener(..., { handleEvent: function(event) {} }, ...);
+  if (type == "object")
+    return ContentScriptObjectWrapper(value);
+
   if (["string", "number", "boolean"].indexOf(type) !== -1)
     return value;
   //console.log("return non-wrapped to native : "+typeof value+" -- "+value);
   return value;
+}
+
+/**
+ * Returns a proxy object that allow to wrap any of its function though
+ * `ContentScriptFunctionWrapper`.
+ *
+ * @param obj {Object}
+ *        object coming from content script context that we are wrapping
+ *
+ * Example:
+ *   let myListener = { handleEvent: function (event) {} };
+ *   node.addEventListener("click", myListener, false);
+ *   `event` has to be wrapped, so handleEvent has to be wrapped using
+ *   `ContentScriptFunctionWrapper` function.
+ *   In order to do so, we build this new kind of proxies.
+ */
+function ContentScriptObjectWrapper(obj) {
+  if ("___proxy" in obj && typeof obj.___proxy == "object")
+    return obj.___proxy;
+
+  let proxy = Proxy.create({
+    // Fundamental traps
+    getPropertyDescriptor:  function(name) {
+      return Object.getOwnPropertyDescriptor(obj, name);
+    },
+    defineProperty: function(name, desc) {
+      return Object.defineProperty(obj, name, desc);
+    },
+    getOwnPropertyNames: function () {
+      return Object.getOwnPropertyNames(obj);
+    },
+    delete: function(name) {
+      return delete obj[name];
+    },
+    // derived traps
+    has: function(name) {
+      return name == "___proxy" || name === "__isXrayWrapperProxy" ||
+             name in obj;
+    },
+    hasOwn: function(name) {
+      return Object.prototype.hasOwnProperty.call(obj, name);
+    },
+    get: function(receiver, name) {
+      console.log("get : "+name);
+      if (name == "valueOf")
+        return function (key) {
+          if (key === UNWRAP_ACCESS_KEY)
+            return obj;
+          return this;
+        };
+      let value = obj[name];
+      if (!value)
+        return value;
+
+      return unwrap(value);
+    },
+    set: function(receiver, name, val) {
+      obj[name] = val;
+      return true;
+    },
+    enumerate: function() {
+      var result = [];
+      for each (name in obj) {
+        result.push(name);
+      };
+      return result;
+    },
+    keys: function() {
+      return Object.keys(obj);
+    }
+  });
+
+  Object.defineProperty(obj, "___proxy", {value : proxy,
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : true});
+
+  return proxy;
 }
 
 /*
@@ -137,14 +221,23 @@ function wrap(value, obj, name, debug) {
     return value;
   let type = typeof value;
   if (type == "object") {
-    // In case of: unwrap object before wrapping it
-    // (it should not happen)
+    // For example:
+    //   let myListener = { handleEvent: function () {} };
+    //   node.addEventListener("click", myListener, false);
+    // When native code want to call handleEvent,
+    // we go though ContentScriptFunctionWrapper that calls `wrap(this)`
+    // `this` will be the CS proxy of myListener.
+    // We return this object without building a CS proxy as it is already
+    // a value coming from the CS.
+    if ("__isXrayWrapperProxy" in value)
+      return value.valueOf(UNWRAP_ACCESS_KEY);
+
+    // Unwrap object before wrapping it.
+    // It should not happen.
     while("__isWrappedProxy" in value) {
-      console.trace();
-      console.warn("This object is already wrapped: " + value + 
-                   " (accessed from attribute " + name + ")");
       value = value.valueOf(UNWRAP_ACCESS_KEY);
     }
+
     if (XPCNativeWrapper.unwrap(value) !== value)
       return getProxyForObject(value);
     // In case of Event, HTMLCollection or NodeList or ???
