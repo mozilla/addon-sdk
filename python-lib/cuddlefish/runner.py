@@ -286,6 +286,7 @@ def run_app(harness_root_dir, harness_options,
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'warn'
+    env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
     if norun:
         cmdargs.append("-no-remote")
 
