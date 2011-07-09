@@ -345,7 +345,7 @@ exports.testURLContextAdd = function (test) {
 
   test.withTestDoc(function (window, doc) {
     let privatePropsKey = loader.globalScope.PRIVATE_PROPS_KEY;
-    let workerReg = item.valueOf(privatePropsKey).workerReg;
+    let workerReg = item.valueOf(privatePropsKey)._workerReg;
 
     let found = false;
     for each (let winWorker in workerReg.winWorkers) {
@@ -1687,7 +1687,7 @@ TestHelper.prototype = {
         let topLevelItems = browserManager.topLevelItems.slice();
         let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
         let workerRegs = topLevelItems.map(function (item) {
-          return item.valueOf(privatePropsKey).workerReg;
+          return item.valueOf(privatePropsKey)._workerReg;
         });
 
         this.loaders[0].unload();
@@ -1700,7 +1700,7 @@ TestHelper.prototype = {
 
         // Make sure the items' worker registries are cleaned up.
         topLevelItems.forEach(function (item) {
-          this.test.assert(!("workerReg" in item.valueOf(privatePropsKey)),
+          this.test.assert(!("_workerReg" in item.valueOf(privatePropsKey)),
                            "item's worker registry should be removed");
         }, this);
         workerRegs.forEach(function (workerReg) {

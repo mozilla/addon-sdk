@@ -57,6 +57,8 @@ const { EventEmitterTrait: EventEmitter } = require("events");
 const observerServ = require("observer-service");
 const jpSelf = require("self");
 const winUtils = require("window-utils");
+const { Trait } = require("light-traits");
+const { Cortex } = require("cortex");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -129,8 +131,6 @@ function validateOpt(opt, rule) {
   return opt;
 }
 
-const Trait = require("light-traits").Trait;
-
 const ItemBaseTrait = Trait({
 
   initBase: function IBT_initBase(opts, optRules) {
@@ -169,30 +169,54 @@ const ItemBaseTrait = Trait({
       }
     };
 
+    this._private = self;
+    this._id = nextItemID++;
+    this._parentMenu = null;
+
     // This makes the private properties accessible to anyone with access to
     // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access
     // to it, so only this file has access to the private properties.
     this.valueOf = function IBT_valueOf(key) {
-      return key === PRIVATE_PROPS_KEY ? privateProps : self._public;
+//       return key === PRIVATE_PROPS_KEY ? privateProps : self._public;
+      return key === PRIVATE_PROPS_KEY ? self : self._public;
     };
   },
 
   destroy: function IBT_destroy() {
     if (this._wasDestroyed)
       return;
-    let { parentMenu } = itemPrivates(this._public);
-    if (parentMenu)
-      parentMenu.removeItem(this._public);
+//     let { parentMenu } = itemPrivates(this._public)._parentMenu;
+    if (this._parentMenu)
+      this._parentMenu.removeItem(this._public);
     else if (!(this instanceof Separator))
       browserManager.removeTopLevelItem(this._public);
     browserManager.unregisterItem(this._public);
     this._wasDestroyed = true;
+  },
+
+  set _isTopLevel(val) {
+    if (val)
+      this._workerReg = new WorkerRegistry(this._public);
+    else {
+      this._workerReg.destroy();
+      delete this._workerReg;
+    }
+  },
+
+  get _topLevelItem() {
+    let topLevelItem = this._public;
+    let parentMenu = this._parentMenu;
+    while (parentMenu) {
+      topLevelItem = parentMenu;
+      parentMenu = itemPrivates(parentMenu)._parentMenu;
+    }
+    return topLevelItem;
   }
 });
 
-const NonSeparatorItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
+const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 
-  initNonSeparatorItem: function NSIT_initNonSeparatorItem(opts, optRules) {
+  initActiveItem: function AIT_initActiveItem(opts, optRules) {
     this.initBase(opts, optRules);
 
     // Register a message listener if one was passed to the constructor.
@@ -218,8 +242,9 @@ const NonSeparatorItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
       let args = Array.slice(arguments);
       add.apply(self.context, args);
       let privates = itemPrivates(self._public);
-      if (privates.workerReg && args.some(function (a) a instanceof URLContext))
-        privates.workerReg.destroyUnneededWorkers();
+      if (privates._workerReg &&
+          args.some(function (a) a instanceof URLContext))
+        privates._workerReg.destroyUnneededWorkers();
     };
 
     let remove = this.context.remove;
@@ -227,8 +252,9 @@ const NonSeparatorItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
       let args = Array.slice(arguments);
       remove.apply(self.context, args);
       let privates = itemPrivates(self._public);
-      if (privates.workerReg && args.some(function (a) a instanceof URLContext))
-        privates.workerReg.createNeededWorkers();
+      if (privates._workerReg &&
+          args.some(function (a) a instanceof URLContext))
+        privates._workerReg.createNeededWorkers();
     };
   },
 
@@ -263,11 +289,11 @@ const NonSeparatorItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
   }
 }));
 
-const ItemTrait = Trait.compose(NonSeparatorItemTrait, Trait({
+const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
 
   //XXX probably can just resolve instead of making a new method.
   initItem: function IT_initItem(opts, optRules) {
-    this.initNonSeparatorItem(opts, optRules);
+    this.initActiveItem(opts, optRules);
   },
 
   get data() {
@@ -297,7 +323,7 @@ function Item(options) {
 //   browserManager.registerItem(item);
 //   browserManager.addTopLevelItem(item);
 
-  item._public = require("cortex").Cortex(item);
+  item._public = Cortex(item);
   //XXX instead of passing around _public, "unwrap" items passed into the api
   // from callers -- i.e., fetch their private versions.
   browserManager.registerItem(item._public);
@@ -377,11 +403,11 @@ function Item(options) {
 // }
 
 
-const MenuTrait = Trait.compose(NonSeparatorItemTrait, Trait({
+const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
   //XXX probably can just resolve instead of making a new method.
   initMenu: function MT_initMenu(opts, optRules) {
-    this.initNonSeparatorItem(opts, optRules);
+    this.initActiveItem(opts, optRules);
     this._items = []; //XXX think i can just define this on the obj passed to Trait()
   },
 
@@ -397,14 +423,14 @@ const MenuTrait = Trait.compose(NonSeparatorItemTrait, Trait({
     // First, remove the item from its current parent.
     //XXX maybe parentMenu should be part of the api.
     let privates = itemPrivates(item);
-    if (privates.parentMenu)
-      privates.parentMenu.removeItem(item);
+    if (privates._parentMenu)
+      privates._parentMenu.removeItem(item);
     else if (!(item instanceof Separator))
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
     this._items.push(item);
-    privates.parentMenu = this._public;
+    privates._parentMenu = this._public;
     browserManager.addItemToMenu(item, this._public);
   },
 
@@ -413,7 +439,7 @@ const MenuTrait = Trait.compose(NonSeparatorItemTrait, Trait({
     if (idx < 0)
       return;
     this._items.splice(idx, 1);
-    itemPrivates(item).parentMenu = null;
+    itemPrivates(item)._parentMenu = null;
     browserManager.removeItemFromMenu(item, this._public);
   },
 
@@ -431,7 +457,7 @@ function Menu(options) {
   let menu = MenuTrait.create(Menu.prototype);
   menu.initMenu(options, optRules);
 
-  menu._public = require("cortex").Cortex(menu);
+  menu._public = Cortex(menu);
   //XXX instead of passing around _public, "unwrap" items passed into the api
   // from callers -- i.e., fetch their private versions?
   browserManager.registerItem(menu._public);
@@ -453,7 +479,7 @@ function Separator() {
   let sep = ItemBaseTrait.create(Separator.prototype);
   sep.initBase({}, {});
 
-  sep._public = require("cortex").Cortex(sep);
+  sep._public = Cortex(sep);
   //XXX instead of passing around _public, "unwrap" items passed into the api
   // from callers -- i.e., fetch their private versions?
   browserManager.registerItem(sep._public);
@@ -895,7 +921,8 @@ WorkerRegistry.prototype = {
 
         //XXX
 //         let e = ("_emitOnObject" in item) ? item : itemPrivates(item).eventEmitter;
-        let e = itemPrivates(item).private || itemPrivates(item).eventEmitter;
+//         let e = itemPrivates(item).private || itemPrivates(item).eventEmitter;
+        let e = itemPrivates(item);
         e._emitOnObject(item._public || item, "message", msg);
       }
       catch (err) {
@@ -925,7 +952,8 @@ let browserManager = {
 
   addTopLevelItem: function BM_addTopLevelItem(item) {
     this.topLevelItems.push(item);
-    itemPrivates(item).isTopLevel = true;
+//     itemPrivates(item).isTopLevel = true;
+    itemPrivates(item)._isTopLevel = true;
     this.browserWins.forEach(function (w) w.addTopLevelItem(item));
   },
 
@@ -935,7 +963,8 @@ let browserManager = {
       throw new Error("Internal error: item not in top-level menu: " + item);
     this.topLevelItems.splice(idx, 1);
     this.browserWins.forEach(function (w) w.removeTopLevelItem(item));
-    itemPrivates(item).isTopLevel = false;
+//     itemPrivates(item).isTopLevel = false;
+    itemPrivates(item)._isTopLevel = false;
   },
 
   addItemToMenu: function BM_addItemToMenu(item, parentMenu) {
@@ -962,7 +991,7 @@ let browserManager = {
     observerServ.add("inner-window-destroyed", function observe(subj) {
       let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
       this.topLevelItems.forEach(function (item) {
-        let workerReg = itemPrivates(item).workerReg;
+        let workerReg = itemPrivates(item)._workerReg;
         workerReg.unregisterContentWin(innerWinID);
       });
     }, this);
@@ -1068,20 +1097,20 @@ BrowserWindow.prototype = {
     // this.items[id] is referenced by _makeMenu, so it needs to be defined
     // before _makeDOMElt is called.
     let props = { item: item };
-    this.items[itemPrivates(item).id] = props;
+    this.items[itemPrivates(item)._id] = props;
     props.domElt = this._makeDOMElt(item, false);
     props.overflowDOMElt = this._makeDOMElt(item, true);
   },
 
   // Removes the given item's DOM elements from the store.
   unregisterItem: function BW_unregisterItem(item) {
-    delete this.items[itemPrivates(item).id];
+    delete this.items[itemPrivates(item)._id];
   },
 
   addTopLevelItem: function BW_addTopLevelItem(item) {
     // Register all open and loaded content windows in this browser window
     // with the item's worker registry.
-    let { workerReg } = itemPrivates(item);
+    let workerReg = itemPrivates(item)._workerReg;
     this.window.gBrowser.browsers.forEach(function (browser) {
       if (browser.contentDocument.readyState === "complete")
         workerReg.registerContentWin(browser.contentWindow);
@@ -1099,20 +1128,20 @@ BrowserWindow.prototype = {
   },
 
   addItemToMenu: function BW_addItemToMenu(item, parentMenu) {
-    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu).id];
+    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu)._id];
     popup.addItem(item);
     overflowPopup.addItem(item);
   },
 
   removeItemFromMenu: function BW_removeItemFromMenu(item, parentMenu) {
-    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu).id];
+    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu)._id];
     popup.removeItem(item);
     overflowPopup.removeItem(item);
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let { id, parentMenu } = itemPrivates(item);
-    let { domElt, overflowDOMElt } = this.items[id];
+    let { _id: itemID, _parentMenu: parentMenu } = itemPrivates(item);
+    let { domElt, overflowDOMElt } = this.items[itemID];
     domElt.setAttribute("label", label);
     overflowDOMElt.setAttribute("label", label);
     if (!parentMenu)
@@ -1142,7 +1171,7 @@ BrowserWindow.prototype = {
   // Returns true if all of item's contexts are current in the window.
   areAllContextsCurrent: function BW_areAllContextsCurrent(item, popupNode) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = itemPrivates(item).workerReg.find(win);
+    let worker = itemPrivates(item)._workerReg.find(win);
 
     // If the worker for the item-window pair doesn't exist (e.g., because the
     // page hasn't loaded yet), we can't really make a good decision since the
@@ -1191,7 +1220,7 @@ BrowserWindow.prototype = {
   // popupNode and clickedItemData.
   fireClick: function BW_fireClick(topLevelItem, popupNode, clickedItemData) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = itemPrivates(topLevelItem).workerReg.find(win);
+    let worker = itemPrivates(topLevelItem)._workerReg.find(win);
     if (worker)
       worker.fireClick(popupNode, clickedItemData);
   },
@@ -1219,7 +1248,7 @@ BrowserWindow.prototype = {
     if (!elt)
       throw new Error("Internal error: can't make element, unknown item type");
 
-    elt.id = domEltIDFromItemID(itemPrivates(item).id, isInOverflowSubtree);
+    elt.id = domEltIDFromItemID(itemPrivates(item)._id, isInOverflowSubtree);
     elt.className = ITEM_CLASS;
     return elt;
   },
@@ -1232,7 +1261,7 @@ BrowserWindow.prototype = {
     menuElt.appendChild(popupDOMElt);
 
     let popup = new Popup(popupDOMElt, this, isInOverflowSubtree);
-    let props = this.items[itemPrivates(menu).id];
+    let props = this.items[itemPrivates(menu)._id];
     if (isInOverflowSubtree)
       props.overflowPopup = popup;
     else
@@ -1257,7 +1286,7 @@ BrowserWindow.prototype = {
 
   _registerContentWin: function BW__registerContentWin(win) {
     browserManager.topLevelItems.forEach(function (item) {
-      itemPrivates(item).workerReg.registerContentWin(win);
+      itemPrivates(item)._workerReg.registerContentWin(win);
     });
   }
 };
@@ -1273,13 +1302,13 @@ function Popup(popupDOMElt, browserWin, isInOverflowSubtree) {
 Popup.prototype = {
 
   addItem: function Popup_addItem(item) {
-    let props = this.browserWin.items[itemPrivates(item).id];
+    let props = this.browserWin.items[itemPrivates(item)._id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
     this.popupDOMElt.appendChild(elt);
   },
 
   removeItem: function Popup_removeItem(item) {
-    let props = this.browserWin.items[itemPrivates(item).id];
+    let props = this.browserWin.items[itemPrivates(item)._id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
     this.popupDOMElt.removeChild(elt);
   }
@@ -1309,7 +1338,7 @@ ContextMenuPopup.prototype = {
 
   addItem: function CMP_addItem(item) {
     this._ensureStaticEltsExist();
-    let itemID = itemPrivates(item).id;
+    let itemID = itemPrivates(item)._id;
     this.topLevelItems[itemID] = item;
     let props = this.browserWin.items[itemID];
     props.domElt.classList.add(TOPLEVEL_ITEM_CLASS);
@@ -1318,7 +1347,7 @@ ContextMenuPopup.prototype = {
   },
 
   removeItem: function CMP_removeItem(item) {
-    let itemID = itemPrivates(item).id;
+    let itemID = itemPrivates(item)._id;
     delete this.topLevelItems[itemID];
     let { domElt, overflowDOMElt } = this.browserWin.items[itemID];
     domElt.classList.remove(TOPLEVEL_ITEM_CLASS);
@@ -1330,7 +1359,7 @@ ContextMenuPopup.prototype = {
   // Call this after the item's label changes.  This re-inserts the item into
   // the popup so that it remains in sorted order.
   itemLabelDidChange: function CMP_itemLabelDidChange(item) {
-    let itemID = itemPrivates(item).id;
+    let itemID = itemPrivates(item)._id;
     let { domElt, overflowDOMElt } = this.browserWin.items[itemID];
     this.popupDOMElt.removeChild(domElt);
     this._overflowPopup.removeChild(overflowDOMElt);
@@ -1374,7 +1403,8 @@ ContextMenuPopup.prototype = {
     if (!domElt.classList.contains(ITEM_CLASS))
       return;
     let clickedItem = this.browserWin.items[itemIDFromDOMEltID(domElt.id)].item;
-    let topLevelItem = itemPrivates(clickedItem).topLevelItem;
+//     let topLevelItem = itemPrivates(clickedItem).topLevelItem;
+    let topLevelItem = itemPrivates(clickedItem)._topLevelItem;
     let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
                                                     topLevelItem);
     this.browserWin.fireClick(topLevelItem, popupNode, clickedItem.data);
@@ -1452,7 +1482,7 @@ ContextMenuPopup.prototype = {
 
   // Inserts the given item's DOM element into the popup in sorted order.
   _insertItemInSortedOrder: function CMP__insertItemInSortedOrder(item) {
-    let props = this.browserWin.items[itemPrivates(item).id];
+    let props = this.browserWin.items[itemPrivates(item)._id];
     this.popupDOMElt.insertBefore(
       props.domElt, insertionPoint(item.label, this._topLevelElts));
     this._overflowPopup.insertBefore(
