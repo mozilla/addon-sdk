@@ -119,65 +119,45 @@ const PRIVATE_PROPS_KEY = Math.random().toString();
 // elements.
 let nextItemID = 0;
 
-// exports.Item = apiUtils.publicConstructor(Item);
 exports.Item = Item;
-// exports.Menu = apiUtils.publicConstructor(Menu);
 exports.Menu = Menu;
-// exports.Separator = apiUtils.publicConstructor(Separator);
 exports.Separator = Separator;
 
-function validateOpt(opt, rule) {
-  let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
-  return opt;
-}
 
+// A word about traits and privates.  `this` inside of traits methods is an
+// object private to the implementation.  It should never be publicly leaked.
+// We use Cortex in the exported menu item constructors to create public
+// reflections of the private objects that hide private properties -- those
+// prefixed with an underscore.  Public reflections are attached to the private
+// objects via the `_public` property.
+//
+// All item objects passed into the implementation by the client will be public
+// reflections, not private objects.  Likewise, all item objects passed out of
+// the implementation to the client must be public, not private.  Mixing up
+// public and private is bad and easy to do, so not only are private objects
+// restricted to the implementation, but as much as possible we try to restrict
+// them to the Item, Menu, and Separator traits and constructors.  Everybody
+// else in the implementation should expect to be passed public reflections, and
+// they must specifically request private objects via privateItem().
+
+// Item, Menu, and Separator are composed of this trait.
 const ItemBaseTrait = Trait({
 
-  initBase: function IBT_initBase(opts, optRules) {
+  initBase: function IBT_initBase(opts, optRules, optsToNotSet) {
     this._optRules = optRules;
     for (let optName in optRules)
-      //XXX hack... maybe i should just let Menu.items be set.  it would remove
-      // all current items and add the new ones.
-      if (["onMessage", "context", "items"].indexOf(optName) < 0)
+      if (optsToNotSet.indexOf(optName) < 0)
         this[optName] = opts[optName];
     this._isInited = true;
 
-    const self = this;
-
-    //XXX i can make itemPrivates(item) simply return `this`, and i can attach
-    // all these private props to `this`.
-    let privateProps = {
-      private: self,
-      id: nextItemID++,
-      parentMenu: null,
-      set isTopLevel(val) {
-        if (val)
-          this.workerReg = new WorkerRegistry(self._public);
-        else {
-          this.workerReg.destroy();
-          delete this.workerReg;
-        }
-      },
-      get topLevelItem() {
-        let topLevelItem = self._public;
-        let parentMenu = privateProps.parentMenu;
-        while (parentMenu) {
-          topLevelItem = parentMenu;
-          parentMenu = itemPrivates(parentMenu).parentMenu;
-        }
-        return topLevelItem;
-      }
-    };
-
-    this._private = self;
     this._id = nextItemID++;
     this._parentMenu = null;
 
     // This makes the private properties accessible to anyone with access to
     // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access
     // to it, so only this file has access to the private properties.
+    const self = this;
     this.valueOf = function IBT_valueOf(key) {
-//       return key === PRIVATE_PROPS_KEY ? privateProps : self._public;
       return key === PRIVATE_PROPS_KEY ? self : self._public;
     };
   },
@@ -185,13 +165,21 @@ const ItemBaseTrait = Trait({
   destroy: function IBT_destroy() {
     if (this._wasDestroyed)
       return;
-//     let { parentMenu } = itemPrivates(this._public)._parentMenu;
-    if (this._parentMenu)
-      this._parentMenu.removeItem(this._public);
+    if (this.parentMenu)
+      this.parentMenu.removeItem(this._public);
     else if (!(this instanceof Separator))
       browserManager.removeTopLevelItem(this._public);
     browserManager.unregisterItem(this._public);
     this._wasDestroyed = true;
+  },
+
+  get parentMenu() {
+    return this._parentMenu;
+  },
+
+  set parentMenu(val) {
+    throw new Error("The 'parentMenu' property is not intended to be set.  " +
+                    "Use menu.addItem(item) instead.");
   },
 
   set _isTopLevel(val) {
@@ -205,27 +193,28 @@ const ItemBaseTrait = Trait({
 
   get _topLevelItem() {
     let topLevelItem = this._public;
-    let parentMenu = this._parentMenu;
+    let parentMenu = this.parentMenu;
     while (parentMenu) {
       topLevelItem = parentMenu;
-      parentMenu = itemPrivates(parentMenu)._parentMenu;
+      parentMenu = parentMenu.parentMenu;
     }
     return topLevelItem;
   }
 });
 
+// Item and Menu are composed of this trait.
 const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 
-  initActiveItem: function AIT_initActiveItem(opts, optRules) {
-    this.initBase(opts, optRules);
+  initActiveItem: function AIT_initActiveItem(opts, optRules, optsToNotSet) {
+    this.initBase(opts, optRules,
+                  optsToNotSet.concat(["onMessage", "context"]));
 
-    // Register a message listener if one was passed to the constructor.
     if ("onMessage" in opts)
       this.on("message", opts.onMessage);
 
-    // When a URL context is removed (by calling item.context.remove(urlContext)),
-    // we may need to create workers for windows containing pages that the item
-    // now matches.  Likewise, when a URL context is added, we need to destroy
+    // When a URL context is removed (by calling context.remove(urlContext)), we
+    // may need to create workers for windows containing pages that the item now
+    // matches.  Likewise, when a URL context is added, we need to destroy
     // workers for windows containing pages that the item now does not match.
     //
     // collection doesn't provide a way to listen for removals.  utils/registry
@@ -241,7 +230,7 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
     this.context.add = function itemContextAdd() {
       let args = Array.slice(arguments);
       add.apply(self.context, args);
-      let privates = itemPrivates(self._public);
+      let privates = privateItem(self._public);
       if (privates._workerReg &&
           args.some(function (a) a instanceof URLContext))
         privates._workerReg.destroyUnneededWorkers();
@@ -251,7 +240,7 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
     this.context.remove = function itemContextRemove() {
       let args = Array.slice(arguments);
       remove.apply(self.context, args);
-      let privates = itemPrivates(self._public);
+      let privates = privateItem(self._public);
       if (privates._workerReg &&
           args.some(function (a) a instanceof URLContext))
         privates._workerReg.createNeededWorkers();
@@ -289,11 +278,11 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
   }
 }));
 
+// Item is composed of this trait.
 const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  //XXX probably can just resolve instead of making a new method.
   initItem: function IT_initItem(opts, optRules) {
-    this.initActiveItem(opts, optRules);
+    this.initActiveItem(opts, optRules, []);
   },
 
   get data() {
@@ -302,6 +291,8 @@ const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
 
   set data(val) {
     this._data = validateOpt(val, this._optRules.data);
+    if (this._isInited)
+      browserManager.setItemData(this, this._data);
     return this._data;
   },
 
@@ -310,6 +301,7 @@ const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
   }
 }));
 
+// The exported Item constructor.
 function Item(options) {
   let optRules = optionsRules();
   optRules.data = {
@@ -320,95 +312,19 @@ function Item(options) {
   let item = ItemTrait.create(Item.prototype);
   item.initItem(options, optRules);
 
-//   browserManager.registerItem(item);
-//   browserManager.addTopLevelItem(item);
-
   item._public = Cortex(item);
-  //XXX instead of passing around _public, "unwrap" items passed into the api
-  // from callers -- i.e., fetch their private versions.
   browserManager.registerItem(item._public);
   browserManager.addTopLevelItem(item._public);
+
   return item._public;
 }
 
-// function Item(options) {
-//   let rules = optionsRules();
-//   rules.data = {
-//     map: function (v) v.toString(),
-//     is: ["string", "undefined"]
-//   };
-//   options = apiUtils.validateOptions(options, rules);
-
-//   defineItemProps(this, options);
-
-//   // TODO: Add setter for this?
-//   this.__defineGetter__("data", function () {
-//     return "data" in options ? options.data : undefined;
-//   });
-
-//   this.toString = function Item_toString() {
-//     return '[object Item "' + options.label + '"]';
-//   };
-
-//   browserManager.registerItem(this);
-//   browserManager.addTopLevelItem(this);
-// }
-
-
-// function Menu(options) {
-//   let rules = optionsRules();
-//   rules.items = {
-//     is: ["array"]
-//   };
-//   options = apiUtils.validateOptions(options, rules);
-
-//   defineItemProps(this, options);
-
-//   const self = this;
-
-//   let items = [];
-//   this.__defineGetter__("items", function () items);
-
-//   this.toString = function Menu_toString() {
-//     return '[object Menu "' + options.label + '"]';
-//   };
-
-//   this.addItem = function Menu_addItem(item) {
-//     // First, remove the item from its current parent.
-//     //XXX maybe parentMenu should be part of the api.
-//     let privates = itemPrivates(item);
-//     if (privates.parentMenu)
-//       privates.parentMenu.removeItem(item);
-//     else if (!(item instanceof Separator))
-//       browserManager.removeTopLevelItem(item);
-
-//     // Now add the item to this menu.
-//     items.push(item);
-//     privates.parentMenu = self;
-//     browserManager.addItemToMenu(item, self);
-//   };
-
-//   this.removeItem = function Menu_removeItem(item) {
-//     let idx = items.indexOf(item);
-//     if (idx < 0)
-//       return;
-//     items.splice(idx, 1);
-//     itemPrivates(item).parentMenu = null;
-//     browserManager.removeItemFromMenu(item, self);
-//   };
-
-//   browserManager.registerItem(this);
-//   browserManager.addTopLevelItem(this);
-//   options.items.forEach(function (i) this.addItem(i), this);
-// }
-
-
+// Menu is composed of this trait.
 const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  //XXX probably can just resolve instead of making a new method.
-  initMenu: function MT_initMenu(opts, optRules) {
-    this.initActiveItem(opts, optRules);
-    this._items = []; //XXX think i can just define this on the obj passed to Trait()
+  initMenu: function MT_initMenu(opts, optRules, optsToNotSet) {
+    this._items = [];
+    this.initActiveItem(opts, optRules, optsToNotSet);
   },
 
   get items() {
@@ -416,21 +332,23 @@ const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
   },
 
   set items(val) {
-    throw new Error("The 'items' property is not intended to be set.");
+    let newItems = validateOpt(val, this._optRules.items);
+    while (this._items.length)
+      this.removeItem(this._items[0]);
+    newItems.forEach(function (i) this.addItem(i), this);
+    return newItems;
   },
 
   addItem: function MT_addItem(item) {
     // First, remove the item from its current parent.
-    //XXX maybe parentMenu should be part of the api.
-    let privates = itemPrivates(item);
-    if (privates._parentMenu)
-      privates._parentMenu.removeItem(item);
+    if (item.parentMenu)
+      item.parentMenu.removeItem(item);
     else if (!(item instanceof Separator))
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
     this._items.push(item);
-    privates._parentMenu = this._public;
+    privateItem(item)._parentMenu = this._public;
     browserManager.addItemToMenu(item, this._public);
   },
 
@@ -439,7 +357,7 @@ const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
     if (idx < 0)
       return;
     this._items.splice(idx, 1);
-    itemPrivates(item)._parentMenu = null;
+    privateItem(item)._parentMenu = null;
     browserManager.removeItemFromMenu(item, this._public);
   },
 
@@ -448,45 +366,47 @@ const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
   }
 }));
 
+// The exported Menu constructor.
 function Menu(options) {
   let optRules = optionsRules();
   optRules.items = {
-    is: ["array"]
+    is: ["array"],
+    ok: function (v) {
+      return v.every(function (item) {
+        return (item instanceof Item) ||
+               (item instanceof Menu) ||
+               (item instanceof Separator);
+      });
+    },
+    msg: "items must be an array, and each element in the array must be an " +
+         "Item, Menu, or Separator."
   };
 
+  // We can't rely on initBase to set the `items` property, because the menu
+  // needs to be registered with and added to the browserManager before any
+  // child items are added to it.  But we shouldn't wait until we set `items`
+  // below to validate options.items.
+  validateOpt(options.items, optRules.items);
   let menu = MenuTrait.create(Menu.prototype);
-  menu.initMenu(options, optRules);
+  menu.initMenu(options, optRules, ["items"]);
 
   menu._public = Cortex(menu);
-  //XXX instead of passing around _public, "unwrap" items passed into the api
-  // from callers -- i.e., fetch their private versions?
   browserManager.registerItem(menu._public);
   browserManager.addTopLevelItem(menu._public);
-  options.items.forEach(function (i) menu.addItem(i));
+  menu.items = options.items;
+
   return menu._public;
 }
 
-
-// function Separator() {
-//   this.toString = function Separator_toString() {
-//     return "[object Separator]";
-//   };
-//   browserManager.registerItem(this);
-// }
-
+// The exported Separator constructor.
 function Separator() {
-
   let sep = ItemBaseTrait.create(Separator.prototype);
-  sep.initBase({}, {});
+  sep.initBase({}, {}, []);
 
   sep._public = Cortex(sep);
-  //XXX instead of passing around _public, "unwrap" items passed into the api
-  // from callers -- i.e., fetch their private versions?
   browserManager.registerItem(sep._public);
   return sep._public;
 }
-
-
 
 
 function Context() {}
@@ -588,6 +508,12 @@ exports.SelectionContext = apiUtils.publicConstructor(SelectionContext);
 exports.URLContext = apiUtils.publicConstructor(URLContext);
 
 
+// Returns a version of opt validated against the given rule.
+function validateOpt(opt, rule) {
+  let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
+  return opt;
+}
+
 // Returns rules for apiUtils.validateOptions() common to Item and Menu.
 function optionsRules() {
   return {
@@ -638,113 +564,6 @@ function optionsRules() {
   };
 }
 
-// Defines some getters and other properties that are common to Item and Menu.
-// item is the Item or Menu object on which to define the properties, and
-// options is a validated options object.
-function defineItemProps(item, options) {
-  item.__defineGetter__("label", function () options.label);
-  item.__defineSetter__("label", function setItemLabel(val) {
-    let { label } = apiUtils.validateOptions({ label: val }, optionsRules());
-    options.label = label;
-    browserManager.setItemLabel(item, label);
-  });
-
-  // Stupid ternaries to avoid Spidermonkey strict warnings.
-  item.__defineGetter__("contentScript", function () {
-    return "contentScript" in options ? options.contentScript : undefined;
-  });
-  item.__defineGetter__("contentScriptFile", function () {
-    return "contentScriptFile" in options ? options.contentScriptFile :
-           undefined;
-  });
-
-  let wasDestroyed = false;
-  item.destroy = function Item_destroy() {
-    if (wasDestroyed)
-      return;
-    let { parentMenu } = itemPrivates(item);
-    if (parentMenu)
-      parentMenu.removeItem(item);
-    else if (!(item instanceof Separator))
-      browserManager.removeTopLevelItem(item);
-    browserManager.unregisterItem(item);
-    wasDestroyed = true;
-  };
-
-  let privateProps = {
-    id: nextItemID++,
-    eventEmitter: EventEmitter.create(item),
-    parentMenu: null,
-    set isTopLevel(val) {
-      if (val)
-        this.workerReg = new WorkerRegistry(item);
-      else {
-        this.workerReg.destroy();
-        delete this.workerReg;
-      }
-    },
-    get topLevelItem() {
-      let topLevelItem = item;
-      let parentMenu = privateProps.parentMenu;
-      while (parentMenu) {
-        topLevelItem = parentMenu;
-        parentMenu = itemPrivates(parentMenu).parentMenu;
-      }
-      return topLevelItem;
-    }
-  };
-
-  // This makes the private properties accessible to anyone with access to
-  // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access to
-  // it, so only this file has access to the private properties.
-  item.valueOf = function Item_valueOf(key) {
-    return key === PRIVATE_PROPS_KEY ? privateProps : item;
-  };
-
-  // Add all of privateProps.eventEmitter's own public methods to the item,
-  // binding them to eventEmitter.  This will allow clients to treat the item as
-  // an event emitter.
-  Object.keys(privateProps.eventEmitter).forEach(function (key) {
-    if (key[0] !== "_")
-      item[key] =
-        privateProps.eventEmitter[key].bind(privateProps.eventEmitter);
-  });
-
-  // Register a message listener if one was passed to the constructor.
-  if ("onMessage" in options)
-    privateProps.eventEmitter.on("message", options.onMessage);
-
-  // When a URL context is removed (by calling item.context.remove(urlContext)),
-  // we may need to create workers for windows containing pages that the item
-  // now matches.  Likewise, when a URL context is added, we need to destroy
-  // workers for windows containing pages that the item now does not match.
-  //
-  // collection doesn't provide a way to listen for removals.  utils/registry
-  // does, but it doesn't allow its elements to be enumerated.  So as a hack,
-  // use a collection for item.context and replace its add and remove methods.
-  collection.addCollectionProperty(item, "context");
-  if (options.context)
-    item.context.add(options.context);
-
-  let add = item.context.add;
-  item.context.add = function itemContextAdd() {
-    let args = Array.slice(arguments);
-    add.apply(item.context, args);
-    if (privateProps.workerReg &&
-        args.some(function (a) a instanceof URLContext))
-      privateProps.workerReg.destroyUnneededWorkers();
-  };
-
-  let remove = item.context.remove;
-  item.context.remove = function itemContextRemove() {
-    let args = Array.slice(arguments);
-    remove.apply(item.context, args);
-    if (privateProps.workerReg &&
-        args.some(function (a) a instanceof URLContext))
-      privateProps.workerReg.createNeededWorkers();
-  };
-}
-
 // Does a binary search on elts, a NodeList, and returns the DOM element
 // before which an item with targetLabel should be inserted.  null is returned
 // if the new item should be inserted at the end.
@@ -778,8 +597,9 @@ function itemIDFromDOMEltID(domEltID) {
   return Number(/([0-9]+)[-a-z]*$/.exec(domEltID)[1]);
 }
 
-function itemPrivates(item) {
-  return item.valueOf(PRIVATE_PROPS_KEY);
+// Returns the private version of the given public reflection.
+function privateItem(publicItem) {
+  return publicItem.valueOf(PRIVATE_PROPS_KEY);
 }
 
 
@@ -916,14 +736,7 @@ WorkerRegistry.prototype = {
     });
     let (item = this.item) worker.on("message", function workerOnMessage(msg) {
       try {
-//         let eventEmitter = itemPrivates(item).eventEmitter;
-//         eventEmitter._emitOnObject(item, "message", msg);
-
-        //XXX
-//         let e = ("_emitOnObject" in item) ? item : itemPrivates(item).eventEmitter;
-//         let e = itemPrivates(item).private || itemPrivates(item).eventEmitter;
-        let e = itemPrivates(item);
-        e._emitOnObject(item._public || item, "message", msg);
+        privateItem(item)._emitOnObject(item, "message", msg);
       }
       catch (err) {
         console.exception(err);
@@ -952,8 +765,7 @@ let browserManager = {
 
   addTopLevelItem: function BM_addTopLevelItem(item) {
     this.topLevelItems.push(item);
-//     itemPrivates(item).isTopLevel = true;
-    itemPrivates(item)._isTopLevel = true;
+    privateItem(item)._isTopLevel = true;
     this.browserWins.forEach(function (w) w.addTopLevelItem(item));
   },
 
@@ -963,8 +775,7 @@ let browserManager = {
       throw new Error("Internal error: item not in top-level menu: " + item);
     this.topLevelItems.splice(idx, 1);
     this.browserWins.forEach(function (w) w.removeTopLevelItem(item));
-//     itemPrivates(item).isTopLevel = false;
-    itemPrivates(item)._isTopLevel = false;
+    privateItem(item)._isTopLevel = false;
   },
 
   addItemToMenu: function BM_addItemToMenu(item, parentMenu) {
@@ -980,6 +791,10 @@ let browserManager = {
     this.browserWins.forEach(function (w) w.setItemLabel(item, label));
   },
 
+  setItemData: function BM_setItemData(item, data) {
+    this.browserWins.forEach(function (w) w.setItemData(item, data));
+  },
+
   // Note that calling this method will cause onTrack to be called immediately
   // for each currently open browser window.
   init: function BM_init() {
@@ -991,7 +806,7 @@ let browserManager = {
     observerServ.add("inner-window-destroyed", function observe(subj) {
       let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
       this.topLevelItems.forEach(function (item) {
-        let workerReg = itemPrivates(item)._workerReg;
+        let workerReg = privateItem(item)._workerReg;
         workerReg.unregisterContentWin(innerWinID);
       });
     }, this);
@@ -1097,20 +912,20 @@ BrowserWindow.prototype = {
     // this.items[id] is referenced by _makeMenu, so it needs to be defined
     // before _makeDOMElt is called.
     let props = { item: item };
-    this.items[itemPrivates(item)._id] = props;
+    this.items[privateItem(item)._id] = props;
     props.domElt = this._makeDOMElt(item, false);
     props.overflowDOMElt = this._makeDOMElt(item, true);
   },
 
   // Removes the given item's DOM elements from the store.
   unregisterItem: function BW_unregisterItem(item) {
-    delete this.items[itemPrivates(item)._id];
+    delete this.items[privateItem(item)._id];
   },
 
   addTopLevelItem: function BW_addTopLevelItem(item) {
     // Register all open and loaded content windows in this browser window
     // with the item's worker registry.
-    let workerReg = itemPrivates(item)._workerReg;
+    let workerReg = privateItem(item)._workerReg;
     this.window.gBrowser.browsers.forEach(function (browser) {
       if (browser.contentDocument.readyState === "complete")
         workerReg.registerContentWin(browser.contentWindow);
@@ -1128,24 +943,31 @@ BrowserWindow.prototype = {
   },
 
   addItemToMenu: function BW_addItemToMenu(item, parentMenu) {
-    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu)._id];
+    let { popup, overflowPopup } = this.items[privateItem(parentMenu)._id];
     popup.addItem(item);
     overflowPopup.addItem(item);
   },
 
   removeItemFromMenu: function BW_removeItemFromMenu(item, parentMenu) {
-    let { popup, overflowPopup } = this.items[itemPrivates(parentMenu)._id];
+    let { popup, overflowPopup } = this.items[privateItem(parentMenu)._id];
     popup.removeItem(item);
     overflowPopup.removeItem(item);
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let { _id: itemID, _parentMenu: parentMenu } = itemPrivates(item);
+    let itemID = privateItem(item)._id;
     let { domElt, overflowDOMElt } = this.items[itemID];
     domElt.setAttribute("label", label);
     overflowDOMElt.setAttribute("label", label);
-    if (!parentMenu)
+    if (!item.parentMenu)
       this.contextMenuPopup.itemLabelDidChange(item);
+  },
+
+  setItemData: function BW_setItemData(item, data) {
+    let itemID = privateItem(item)._id;
+    let { domElt, overflowDOMElt } = this.items[itemID];
+    domElt.setAttribute("value", data);
+    overflowDOMElt.setAttribute("value", data);
   },
 
   // The context specified for a top-level item may not match exactly the real
@@ -1171,7 +993,7 @@ BrowserWindow.prototype = {
   // Returns true if all of item's contexts are current in the window.
   areAllContextsCurrent: function BW_areAllContextsCurrent(item, popupNode) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = itemPrivates(item)._workerReg.find(win);
+    let worker = privateItem(item)._workerReg.find(win);
 
     // If the worker for the item-window pair doesn't exist (e.g., because the
     // page hasn't loaded yet), we can't really make a good decision since the
@@ -1220,7 +1042,7 @@ BrowserWindow.prototype = {
   // popupNode and clickedItemData.
   fireClick: function BW_fireClick(topLevelItem, popupNode, clickedItemData) {
     let win = popupNode.ownerDocument.defaultView;
-    let worker = itemPrivates(topLevelItem)._workerReg.find(win);
+    let worker = privateItem(topLevelItem)._workerReg.find(win);
     if (worker)
       worker.fireClick(popupNode, clickedItemData);
   },
@@ -1248,7 +1070,7 @@ BrowserWindow.prototype = {
     if (!elt)
       throw new Error("Internal error: can't make element, unknown item type");
 
-    elt.id = domEltIDFromItemID(itemPrivates(item)._id, isInOverflowSubtree);
+    elt.id = domEltIDFromItemID(privateItem(item)._id, isInOverflowSubtree);
     elt.className = ITEM_CLASS;
     return elt;
   },
@@ -1261,7 +1083,7 @@ BrowserWindow.prototype = {
     menuElt.appendChild(popupDOMElt);
 
     let popup = new Popup(popupDOMElt, this, isInOverflowSubtree);
-    let props = this.items[itemPrivates(menu)._id];
+    let props = this.items[privateItem(menu)._id];
     if (isInOverflowSubtree)
       props.overflowPopup = popup;
     else
@@ -1286,7 +1108,7 @@ BrowserWindow.prototype = {
 
   _registerContentWin: function BW__registerContentWin(win) {
     browserManager.topLevelItems.forEach(function (item) {
-      itemPrivates(item)._workerReg.registerContentWin(win);
+      privateItem(item)._workerReg.registerContentWin(win);
     });
   }
 };
@@ -1302,13 +1124,13 @@ function Popup(popupDOMElt, browserWin, isInOverflowSubtree) {
 Popup.prototype = {
 
   addItem: function Popup_addItem(item) {
-    let props = this.browserWin.items[itemPrivates(item)._id];
+    let props = this.browserWin.items[privateItem(item)._id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
     this.popupDOMElt.appendChild(elt);
   },
 
   removeItem: function Popup_removeItem(item) {
-    let props = this.browserWin.items[itemPrivates(item)._id];
+    let props = this.browserWin.items[privateItem(item)._id];
     let elt = this.isInOverflowSubtree ? props.overflowDOMElt : props.domElt;
     this.popupDOMElt.removeChild(elt);
   }
@@ -1338,7 +1160,7 @@ ContextMenuPopup.prototype = {
 
   addItem: function CMP_addItem(item) {
     this._ensureStaticEltsExist();
-    let itemID = itemPrivates(item)._id;
+    let itemID = privateItem(item)._id;
     this.topLevelItems[itemID] = item;
     let props = this.browserWin.items[itemID];
     props.domElt.classList.add(TOPLEVEL_ITEM_CLASS);
@@ -1347,7 +1169,7 @@ ContextMenuPopup.prototype = {
   },
 
   removeItem: function CMP_removeItem(item) {
-    let itemID = itemPrivates(item)._id;
+    let itemID = privateItem(item)._id;
     delete this.topLevelItems[itemID];
     let { domElt, overflowDOMElt } = this.browserWin.items[itemID];
     domElt.classList.remove(TOPLEVEL_ITEM_CLASS);
@@ -1359,7 +1181,7 @@ ContextMenuPopup.prototype = {
   // Call this after the item's label changes.  This re-inserts the item into
   // the popup so that it remains in sorted order.
   itemLabelDidChange: function CMP_itemLabelDidChange(item) {
-    let itemID = itemPrivates(item)._id;
+    let itemID = privateItem(item)._id;
     let { domElt, overflowDOMElt } = this.browserWin.items[itemID];
     this.popupDOMElt.removeChild(domElt);
     this._overflowPopup.removeChild(overflowDOMElt);
@@ -1403,8 +1225,7 @@ ContextMenuPopup.prototype = {
     if (!domElt.classList.contains(ITEM_CLASS))
       return;
     let clickedItem = this.browserWin.items[itemIDFromDOMEltID(domElt.id)].item;
-//     let topLevelItem = itemPrivates(clickedItem).topLevelItem;
-    let topLevelItem = itemPrivates(clickedItem)._topLevelItem;
+    let topLevelItem = privateItem(clickedItem)._topLevelItem;
     let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
                                                     topLevelItem);
     this.browserWin.fireClick(topLevelItem, popupNode, clickedItem.data);
@@ -1482,7 +1303,7 @@ ContextMenuPopup.prototype = {
 
   // Inserts the given item's DOM element into the popup in sorted order.
   _insertItemInSortedOrder: function CMP__insertItemInSortedOrder(item) {
-    let props = this.browserWin.items[itemPrivates(item)._id];
+    let props = this.browserWin.items[privateItem(item)._id];
     this.popupDOMElt.insertBefore(
       props.domElt, insertionPoint(item.label, this._topLevelElts));
     this._overflowPopup.insertBefore(

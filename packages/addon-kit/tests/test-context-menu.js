@@ -59,6 +59,7 @@ exports.testConstructDestroy = function (test) {
 
   // Create an item.
   let item = new loader.cm.Item({ label: "item" });
+  test.assertEqual(item.parentMenu, null, "item's parent menu should be null");
 
   test.showMenu(null, function (popup) {
 
@@ -932,18 +933,6 @@ exports.testSeparator = function (test) {
 
   test.showMenu(null, function (popup) {
     test.checkMenu([menu], [], []);
-
-//     // Get the menu element, makes sure it's OK.
-//     let menuElt = test.getItemElt(popup, menu);
-//     test.assert(menuElt, "Menu element should exist");
-
-//     // Get the separator element inside the menu's popup, makes sure it's OK.
-//     menuElt.open = true;
-//     let sepElt = menuElt.firstChild.firstChild;
-//     test.assert(sepElt, "Separator element should exist");
-//     test.assert(!sepElt.hidden, "Separator element should not be hidden");
-//     test.assertEqual(sepElt.localName, "menuseparator",
-//                      "Separator should be of expected type");
     test.done();
   });
 };
@@ -1294,6 +1283,8 @@ exports.testMenuAddItem = function (test) {
   for (let i = 0; i < 3; i++) {
     test.assertEqual(menu.items[i].label, "item " + i,
                      "item label should be correct");
+    test.assertEqual(menu.items[i].parentMenu, menu,
+                     "item's parent menu should be correct");
   }
 
   test.showMenu(null, function (popup) {
@@ -1350,6 +1341,9 @@ exports.testMenuRemoveItem = function (test) {
   menu.removeItem(subitem);
   menu.removeItem(subitem);
 
+  test.assertEqual(subitem.parentMenu, null,
+                   "item's parent menu should be correct");
+
   test.assertEqual(menu.items.length, 2,
                    "menu should have correct number of items");
   test.assertEqual(menu.items[0].label, "item 0",
@@ -1388,6 +1382,9 @@ exports.testMenuItemSwap = function (test) {
   test.assertEqual(menu1.items[0].label, "item",
                    "item label should be correct");
 
+  test.assertEqual(subitem.parentMenu, menu1,
+                   "item's parent menu should be correct");
+
   test.showMenu(null, function (popup) {
     test.checkMenu([menu0, menu1], [], []);
     test.done();
@@ -1409,9 +1406,62 @@ exports.testMenuItemDestroy = function (test) {
 
   test.assertEqual(menu.items.length, 0,
                    "menu should have correct number of items");
+  test.assertEqual(subitem.parentMenu, null,
+                   "item's parent menu should be correct");
 
   test.showMenu(null, function (popup) {
     test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Setting Menu.items should work.
+exports.testMenuItemsSetter = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "old item 0" }),
+      loader.cm.Item({ label: "old item 1" })
+    ]
+  });
+  menu.items = [
+    loader.cm.Item({ label: "new item 0" }),
+    loader.cm.Item({ label: "new item 1" }),
+    loader.cm.Item({ label: "new item 2" })
+  ];
+
+  test.assertEqual(menu.items.length, 3,
+                   "menu should have correct number of items");
+  for (let i = 0; i < 3; i++) {
+    test.assertEqual(menu.items[i].label, "new item " + i,
+                     "item label should be correct");
+    test.assertEqual(menu.items[i].parentMenu, menu,
+                     "item's parent menu should be correct");
+  }
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Setting Item.data should work.
+exports.testItemDataSetter = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({ label: "old item 0", data: "old" });
+  item.data = "new";
+
+  test.assertEqual(item.data, "new", "item should have correct data");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
     test.done();
   });
 };
@@ -1500,6 +1550,10 @@ TestHelper.prototype = {
     case "Item":
       this.test.assertEqual(elt.localName, "menuitem",
                             "Item DOM element should be a xul:menuitem");
+      if (typeof(item.data) === "string") {
+        this.test.assertEqual(elt.getAttribute("value"), item.data,
+                              "Item should have correct data");
+      }
       break
     case "Menu":
       this.test.assertEqual(elt.localName, "menu",
@@ -1518,10 +1572,6 @@ TestHelper.prototype = {
     if (itemType === "Item" || itemType === "Menu") {
       this.test.assertEqual(elt.getAttribute("label"), item.label,
                             "Item should have correct title");
-    }
-    if (itemType === "Item" && typeof(item.data) === "string") {
-      this.test.assertEqual(elt.getAttribute("value"), item.data,
-                            "Item should have correct data");
     }
   },
 
