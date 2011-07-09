@@ -117,33 +117,207 @@ const PRIVATE_PROPS_KEY = Math.random().toString();
 // elements.
 let nextItemID = 0;
 
-exports.Item = apiUtils.publicConstructor(Item);
+// exports.Item = apiUtils.publicConstructor(Item);
+exports.Item = Item;
 exports.Menu = apiUtils.publicConstructor(Menu);
 exports.Separator = apiUtils.publicConstructor(Separator);
 
+function validateOpt(opt, rule) {
+  let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
+  return opt;
+}
+
+const Trait = require("light-traits").Trait;
+
+const ItemBaseTrait = Trait({
+
+  destroy: function IBT_destroy() {
+    if (this._wasDestroyed)
+      return;
+    let { parentMenu } = itemPrivates(this);
+    if (parentMenu)
+      parentMenu.removeItem(this._public);
+    else if (!(this instanceof Separator))
+      browserManager.removeTopLevelItem(this._public);
+    browserManager.unregisterItem(this._public);
+    this._wasDestroyed = true;
+  }
+});
+
+const NonSeparatorItemTrait = Trait({
+
+  get label() {
+    return this._label;
+  },
+
+  set label(val) {
+    this._label = validateOpt(val, this._optRules.label);
+    if (this._isInited)
+      browserManager.setItemLabel(this, this._label);
+    return this._label;
+  },
+
+  get contentScript() {
+    return this._contentScript;
+  },
+
+  set contentScript(val) {
+    this._contentScript = validateOpt(val, this._optRules.contentScript);
+    return this._contentScript;
+  },
+
+  get contentScriptFile() {
+    return this._contentScriptFile;
+  },
+
+  set contentScriptFile(val) {
+    this._contentScriptFile =
+      validateOpt(val, this._optRules.contentScriptFile);
+    return this._contentScriptFile;
+  }
+});
+
+const ItemTrait = Trait.compose(ItemBaseTrait, NonSeparatorItemTrait, EventEmitter, Trait({
+
+  get data() {
+    return this._data;
+  },
+
+  set data(val) {
+    this._data = validateOpt(val, this._optRules.data);
+    return this._data;
+  },
+
+  toString: function ItemTrait_toString() {
+    return '[object Item "' + this.label + '"]';
+  }
+}));
 
 function Item(options) {
-  let rules = optionsRules();
-  rules.data = {
+  let optRules = optionsRules();
+  optRules.data = {
     map: function (v) v.toString(),
     is: ["string", "undefined"]
   };
-  options = apiUtils.validateOptions(options, rules);
 
-  defineItemProps(this, options);
+  let item = ItemTrait.create(Item.prototype);
+  item._optRules = optRules;
+  item.label = options.label;
+  item.data = options.data;
+  item.contentScript = options.contentScript;
+  item.contentScriptFile = options.contentScriptFile;
+  item._isInited = true;
 
-  // TODO: Add setter for this?
-  this.__defineGetter__("data", function () {
-    return "data" in options ? options.data : undefined;
-  });
 
-  this.toString = function Item_toString() {
-    return '[object Item "' + options.label + '"]';
+  let privateProps = {
+    id: nextItemID++,
+//     eventEmitter: EventEmitter.create(item),
+    parentMenu: null,
+    set isTopLevel(val) {
+      if (val)
+        this.workerReg = new WorkerRegistry(item);
+      else {
+        this.workerReg.destroy();
+        delete this.workerReg;
+      }
+    },
+    get topLevelItem() {
+      let topLevelItem = item;
+      let parentMenu = privateProps.parentMenu;
+      while (parentMenu) {
+        topLevelItem = parentMenu;
+        parentMenu = itemPrivates(parentMenu).parentMenu;
+      }
+      return topLevelItem;
+    }
   };
 
-  browserManager.registerItem(this);
-  browserManager.addTopLevelItem(this);
+  // This makes the private properties accessible to anyone with access to
+  // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access to
+  // it, so only this file has access to the private properties.
+  item.valueOf = function Item_valueOf(key) {
+    return key === PRIVATE_PROPS_KEY ? privateProps : item;
+  };
+
+//   // Add all of privateProps.eventEmitter's own public methods to the item,
+//   // binding them to eventEmitter.  This will allow clients to treat the item as
+//   // an event emitter.
+//   Object.keys(privateProps.eventEmitter).forEach(function (key) {
+//     if (key[0] !== "_")
+//       item[key] =
+//         privateProps.eventEmitter[key].bind(privateProps.eventEmitter);
+//   });
+
+//   // Register a message listener if one was passed to the constructor.
+//   if ("onMessage" in options)
+//     privateProps.eventEmitter.on("message", options.onMessage);
+
+  // Register a message listener if one was passed to the constructor.
+  if ("onMessage" in options)
+    item.on("message", options.onMessage);
+
+  // When a URL context is removed (by calling item.context.remove(urlContext)),
+  // we may need to create workers for windows containing pages that the item
+  // now matches.  Likewise, when a URL context is added, we need to destroy
+  // workers for windows containing pages that the item now does not match.
+  //
+  // collection doesn't provide a way to listen for removals.  utils/registry
+  // does, but it doesn't allow its elements to be enumerated.  So as a hack,
+  // use a collection for item.context and replace its add and remove methods.
+  collection.addCollectionProperty(item, "context");
+  if (options.context)
+    item.context.add(options.context);
+
+  let add = item.context.add;
+  item.context.add = function itemContextAdd() {
+    let args = Array.slice(arguments);
+    add.apply(item.context, args);
+    if (privateProps.workerReg &&
+        args.some(function (a) a instanceof URLContext))
+      privateProps.workerReg.destroyUnneededWorkers();
+  };
+
+  let remove = item.context.remove;
+  item.context.remove = function itemContextRemove() {
+    let args = Array.slice(arguments);
+    remove.apply(item.context, args);
+    if (privateProps.workerReg &&
+        args.some(function (a) a instanceof URLContext))
+      privateProps.workerReg.createNeededWorkers();
+  };
+
+
+//   browserManager.registerItem(item);
+//   browserManager.addTopLevelItem(item);
+
+  item._public = require("cortex").Cortex(item);
+  browserManager.registerItem(item._public);
+  browserManager.addTopLevelItem(item._public);
+  return item._public;
 }
+
+// function Item(options) {
+//   let rules = optionsRules();
+//   rules.data = {
+//     map: function (v) v.toString(),
+//     is: ["string", "undefined"]
+//   };
+//   options = apiUtils.validateOptions(options, rules);
+
+//   defineItemProps(this, options);
+
+//   // TODO: Add setter for this?
+//   this.__defineGetter__("data", function () {
+//     return "data" in options ? options.data : undefined;
+//   });
+
+//   this.toString = function Item_toString() {
+//     return '[object Item "' + options.label + '"]';
+//   };
+
+//   browserManager.registerItem(this);
+//   browserManager.addTopLevelItem(this);
+// }
 
 function Menu(options) {
   let rules = optionsRules();
@@ -627,8 +801,12 @@ WorkerRegistry.prototype = {
     });
     let (item = this.item) worker.on("message", function workerOnMessage(msg) {
       try {
-        let eventEmitter = itemPrivates(item).eventEmitter;
-        eventEmitter._emitOnObject(item, "message", msg);
+//         let eventEmitter = itemPrivates(item).eventEmitter;
+//         eventEmitter._emitOnObject(item, "message", msg);
+
+        //XXX
+        let e = ("_emitOnObject" in item) ? item : itemPrivates(item).eventEmitter;
+        e._emitOnObject(item._public || item, "message", msg);
       }
       catch (err) {
         console.exception(err);
