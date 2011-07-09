@@ -119,8 +119,10 @@ let nextItemID = 0;
 
 // exports.Item = apiUtils.publicConstructor(Item);
 exports.Item = Item;
-exports.Menu = apiUtils.publicConstructor(Menu);
-exports.Separator = apiUtils.publicConstructor(Separator);
+// exports.Menu = apiUtils.publicConstructor(Menu);
+exports.Menu = Menu;
+// exports.Separator = apiUtils.publicConstructor(Separator);
+exports.Separator = Separator;
 
 function validateOpt(opt, rule) {
   let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
@@ -131,10 +133,54 @@ const Trait = require("light-traits").Trait;
 
 const ItemBaseTrait = Trait({
 
+  initBase: function IBT_initBase(opts, optRules) {
+    this._optRules = optRules;
+    for (let optName in optRules)
+      //XXX hack... maybe i should just let Menu.items be set.  it would remove
+      // all current items and add the new ones.
+      if (["onMessage", "context", "items"].indexOf(optName) < 0)
+        this[optName] = opts[optName];
+    this._isInited = true;
+
+    const self = this;
+
+    //XXX i can make itemPrivates(item) simply return `this`, and i can attach
+    // all these private props to `this`.
+    let privateProps = {
+      private: self,
+      id: nextItemID++,
+      parentMenu: null,
+      set isTopLevel(val) {
+        if (val)
+          this.workerReg = new WorkerRegistry(self._public);
+        else {
+          this.workerReg.destroy();
+          delete this.workerReg;
+        }
+      },
+      get topLevelItem() {
+        let topLevelItem = self._public;
+        let parentMenu = privateProps.parentMenu;
+        while (parentMenu) {
+          topLevelItem = parentMenu;
+          parentMenu = itemPrivates(parentMenu).parentMenu;
+        }
+        return topLevelItem;
+      }
+    };
+
+    // This makes the private properties accessible to anyone with access to
+    // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access
+    // to it, so only this file has access to the private properties.
+    this.valueOf = function IBT_valueOf(key) {
+      return key === PRIVATE_PROPS_KEY ? privateProps : self._public;
+    };
+  },
+
   destroy: function IBT_destroy() {
     if (this._wasDestroyed)
       return;
-    let { parentMenu } = itemPrivates(this);
+    let { parentMenu } = itemPrivates(this._public);
     if (parentMenu)
       parentMenu.removeItem(this._public);
     else if (!(this instanceof Separator))
@@ -144,7 +190,47 @@ const ItemBaseTrait = Trait({
   }
 });
 
-const NonSeparatorItemTrait = Trait({
+const NonSeparatorItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
+
+  initNonSeparatorItem: function NSIT_initNonSeparatorItem(opts, optRules) {
+    this.initBase(opts, optRules);
+
+    // Register a message listener if one was passed to the constructor.
+    if ("onMessage" in opts)
+      this.on("message", opts.onMessage);
+
+    // When a URL context is removed (by calling item.context.remove(urlContext)),
+    // we may need to create workers for windows containing pages that the item
+    // now matches.  Likewise, when a URL context is added, we need to destroy
+    // workers for windows containing pages that the item now does not match.
+    //
+    // collection doesn't provide a way to listen for removals.  utils/registry
+    // does, but it doesn't allow its elements to be enumerated.  So as a hack,
+    // use a collection for item.context and replace its add and remove methods.
+    collection.addCollectionProperty(this, "context");
+    if (opts.context)
+      this.context.add(opts.context);
+
+    const self = this;
+
+    let add = this.context.add;
+    this.context.add = function itemContextAdd() {
+      let args = Array.slice(arguments);
+      add.apply(self.context, args);
+      let privates = itemPrivates(self._public);
+      if (privates.workerReg && args.some(function (a) a instanceof URLContext))
+        privates.workerReg.destroyUnneededWorkers();
+    };
+
+    let remove = this.context.remove;
+    this.context.remove = function itemContextRemove() {
+      let args = Array.slice(arguments);
+      remove.apply(self.context, args);
+      let privates = itemPrivates(self._public);
+      if (privates.workerReg && args.some(function (a) a instanceof URLContext))
+        privates.workerReg.createNeededWorkers();
+    };
+  },
 
   get label() {
     return this._label;
@@ -175,9 +261,14 @@ const NonSeparatorItemTrait = Trait({
       validateOpt(val, this._optRules.contentScriptFile);
     return this._contentScriptFile;
   }
-});
+}));
 
-const ItemTrait = Trait.compose(ItemBaseTrait, NonSeparatorItemTrait, EventEmitter, Trait({
+const ItemTrait = Trait.compose(NonSeparatorItemTrait, Trait({
+
+  //XXX probably can just resolve instead of making a new method.
+  initItem: function IT_initItem(opts, optRules) {
+    this.initNonSeparatorItem(opts, optRules);
+  },
 
   get data() {
     return this._data;
@@ -188,7 +279,7 @@ const ItemTrait = Trait.compose(ItemBaseTrait, NonSeparatorItemTrait, EventEmitt
     return this._data;
   },
 
-  toString: function ItemTrait_toString() {
+  toString: function IT_toString() {
     return '[object Item "' + this.label + '"]';
   }
 }));
@@ -201,96 +292,14 @@ function Item(options) {
   };
 
   let item = ItemTrait.create(Item.prototype);
-  item._optRules = optRules;
-  item.label = options.label;
-  item.data = options.data;
-  item.contentScript = options.contentScript;
-  item.contentScriptFile = options.contentScriptFile;
-  item._isInited = true;
-
-
-  let privateProps = {
-    id: nextItemID++,
-//     eventEmitter: EventEmitter.create(item),
-    parentMenu: null,
-    set isTopLevel(val) {
-      if (val)
-        this.workerReg = new WorkerRegistry(item);
-      else {
-        this.workerReg.destroy();
-        delete this.workerReg;
-      }
-    },
-    get topLevelItem() {
-      let topLevelItem = item;
-      let parentMenu = privateProps.parentMenu;
-      while (parentMenu) {
-        topLevelItem = parentMenu;
-        parentMenu = itemPrivates(parentMenu).parentMenu;
-      }
-      return topLevelItem;
-    }
-  };
-
-  // This makes the private properties accessible to anyone with access to
-  // PRIVATE_PROPS_KEY.  Barring loader tricks, only this file has has access to
-  // it, so only this file has access to the private properties.
-  item.valueOf = function Item_valueOf(key) {
-    return key === PRIVATE_PROPS_KEY ? privateProps : item;
-  };
-
-//   // Add all of privateProps.eventEmitter's own public methods to the item,
-//   // binding them to eventEmitter.  This will allow clients to treat the item as
-//   // an event emitter.
-//   Object.keys(privateProps.eventEmitter).forEach(function (key) {
-//     if (key[0] !== "_")
-//       item[key] =
-//         privateProps.eventEmitter[key].bind(privateProps.eventEmitter);
-//   });
-
-//   // Register a message listener if one was passed to the constructor.
-//   if ("onMessage" in options)
-//     privateProps.eventEmitter.on("message", options.onMessage);
-
-  // Register a message listener if one was passed to the constructor.
-  if ("onMessage" in options)
-    item.on("message", options.onMessage);
-
-  // When a URL context is removed (by calling item.context.remove(urlContext)),
-  // we may need to create workers for windows containing pages that the item
-  // now matches.  Likewise, when a URL context is added, we need to destroy
-  // workers for windows containing pages that the item now does not match.
-  //
-  // collection doesn't provide a way to listen for removals.  utils/registry
-  // does, but it doesn't allow its elements to be enumerated.  So as a hack,
-  // use a collection for item.context and replace its add and remove methods.
-  collection.addCollectionProperty(item, "context");
-  if (options.context)
-    item.context.add(options.context);
-
-  let add = item.context.add;
-  item.context.add = function itemContextAdd() {
-    let args = Array.slice(arguments);
-    add.apply(item.context, args);
-    if (privateProps.workerReg &&
-        args.some(function (a) a instanceof URLContext))
-      privateProps.workerReg.destroyUnneededWorkers();
-  };
-
-  let remove = item.context.remove;
-  item.context.remove = function itemContextRemove() {
-    let args = Array.slice(arguments);
-    remove.apply(item.context, args);
-    if (privateProps.workerReg &&
-        args.some(function (a) a instanceof URLContext))
-      privateProps.workerReg.createNeededWorkers();
-  };
-
+  item.initItem(options, optRules);
 
 //   browserManager.registerItem(item);
 //   browserManager.addTopLevelItem(item);
 
   item._public = require("cortex").Cortex(item);
+  //XXX instead of passing around _public, "unwrap" items passed into the api
+  // from callers -- i.e., fetch their private versions.
   browserManager.registerItem(item._public);
   browserManager.addTopLevelItem(item._public);
   return item._public;
@@ -319,25 +328,72 @@ function Item(options) {
 //   browserManager.addTopLevelItem(this);
 // }
 
-function Menu(options) {
-  let rules = optionsRules();
-  rules.items = {
-    is: ["array"]
-  };
-  options = apiUtils.validateOptions(options, rules);
 
-  defineItemProps(this, options);
+// function Menu(options) {
+//   let rules = optionsRules();
+//   rules.items = {
+//     is: ["array"]
+//   };
+//   options = apiUtils.validateOptions(options, rules);
 
-  const self = this;
+//   defineItemProps(this, options);
 
-  let items = [];
-  this.__defineGetter__("items", function () items);
+//   const self = this;
 
-  this.toString = function Menu_toString() {
-    return '[object Menu "' + options.label + '"]';
-  };
+//   let items = [];
+//   this.__defineGetter__("items", function () items);
 
-  this.addItem = function Menu_addItem(item) {
+//   this.toString = function Menu_toString() {
+//     return '[object Menu "' + options.label + '"]';
+//   };
+
+//   this.addItem = function Menu_addItem(item) {
+//     // First, remove the item from its current parent.
+//     //XXX maybe parentMenu should be part of the api.
+//     let privates = itemPrivates(item);
+//     if (privates.parentMenu)
+//       privates.parentMenu.removeItem(item);
+//     else if (!(item instanceof Separator))
+//       browserManager.removeTopLevelItem(item);
+
+//     // Now add the item to this menu.
+//     items.push(item);
+//     privates.parentMenu = self;
+//     browserManager.addItemToMenu(item, self);
+//   };
+
+//   this.removeItem = function Menu_removeItem(item) {
+//     let idx = items.indexOf(item);
+//     if (idx < 0)
+//       return;
+//     items.splice(idx, 1);
+//     itemPrivates(item).parentMenu = null;
+//     browserManager.removeItemFromMenu(item, self);
+//   };
+
+//   browserManager.registerItem(this);
+//   browserManager.addTopLevelItem(this);
+//   options.items.forEach(function (i) this.addItem(i), this);
+// }
+
+
+const MenuTrait = Trait.compose(NonSeparatorItemTrait, Trait({
+
+  //XXX probably can just resolve instead of making a new method.
+  initMenu: function MT_initMenu(opts, optRules) {
+    this.initNonSeparatorItem(opts, optRules);
+    this._items = []; //XXX think i can just define this on the obj passed to Trait()
+  },
+
+  get items() {
+    return this._items;
+  },
+
+  set items(val) {
+    throw new Error("The 'items' property is not intended to be set.");
+  },
+
+  addItem: function MT_addItem(item) {
     // First, remove the item from its current parent.
     //XXX maybe parentMenu should be part of the api.
     let privates = itemPrivates(item);
@@ -347,31 +403,64 @@ function Menu(options) {
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
-    items.push(item);
-    privates.parentMenu = self;
-    browserManager.addItemToMenu(item, self);
-  };
+    this._items.push(item);
+    privates.parentMenu = this._public;
+    browserManager.addItemToMenu(item, this._public);
+  },
 
-  this.removeItem = function Menu_removeItem(item) {
-    let idx = items.indexOf(item);
+  removeItem: function MT_removeItem(item) {
+    let idx = this._items.indexOf(item);
     if (idx < 0)
       return;
-    items.splice(idx, 1);
+    this._items.splice(idx, 1);
     itemPrivates(item).parentMenu = null;
-    browserManager.removeItemFromMenu(item, self);
+    browserManager.removeItemFromMenu(item, this._public);
+  },
+
+  toString: function MT_toString() {
+    return '[object Menu "' + this.label + '"]';
+  }
+}));
+
+function Menu(options) {
+  let optRules = optionsRules();
+  optRules.items = {
+    is: ["array"]
   };
 
-  browserManager.registerItem(this);
-  browserManager.addTopLevelItem(this);
-  options.items.forEach(function (i) this.addItem(i), this);
+  let menu = MenuTrait.create(Menu.prototype);
+  menu.initMenu(options, optRules);
+
+  menu._public = require("cortex").Cortex(menu);
+  //XXX instead of passing around _public, "unwrap" items passed into the api
+  // from callers -- i.e., fetch their private versions?
+  browserManager.registerItem(menu._public);
+  browserManager.addTopLevelItem(menu._public);
+  options.items.forEach(function (i) menu.addItem(i));
+  return menu._public;
 }
+
+
+// function Separator() {
+//   this.toString = function Separator_toString() {
+//     return "[object Separator]";
+//   };
+//   browserManager.registerItem(this);
+// }
 
 function Separator() {
-  this.toString = function Separator_toString() {
-    return "[object Separator]";
-  };
-  browserManager.registerItem(this);
+
+  let sep = ItemBaseTrait.create(Separator.prototype);
+  sep.initBase({}, {});
+
+  sep._public = require("cortex").Cortex(sep);
+  //XXX instead of passing around _public, "unwrap" items passed into the api
+  // from callers -- i.e., fetch their private versions?
+  browserManager.registerItem(sep._public);
+  return sep._public;
 }
+
+
 
 
 function Context() {}
@@ -805,7 +894,8 @@ WorkerRegistry.prototype = {
 //         eventEmitter._emitOnObject(item, "message", msg);
 
         //XXX
-        let e = ("_emitOnObject" in item) ? item : itemPrivates(item).eventEmitter;
+//         let e = ("_emitOnObject" in item) ? item : itemPrivates(item).eventEmitter;
+        let e = itemPrivates(item).private || itemPrivates(item).eventEmitter;
         e._emitOnObject(item._public || item, "message", msg);
       }
       catch (err) {
