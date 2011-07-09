@@ -48,7 +48,7 @@ exports["test property changes propagate"] = function (assert) {
   assert.equal(fixture.getOnly, source._foo,
                "getter returned property of wrapped object");
   fixture.setOnly = 'bar'
-  assert.equal(source._setOnly, 'bar', "setter modifed wrapped object")
+  assert.equal(source._setOnly, 'bar', "setter modified wrapped object")
 };
 
 
