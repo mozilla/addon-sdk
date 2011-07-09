@@ -465,8 +465,10 @@ A labeled menu item that can perform an action when clicked.
 
 <api name="destroy">
 @method
-  Permanently removes the item from the top-level context menu.  If the item is
-  not contained in the top-level context menu, this method does nothing.
+  Permanently removes the item from its parent menu and frees its resources.
+  The item must not be used afterward.  If you need to remove the item from its
+  parent menu but use it afterward, call `removeItem()` on the parent menu
+  instead.
 </api>
 
 <api name="message">
@@ -553,10 +555,29 @@ A labeled menu item that expands into a submenu.
   top-level context menu.
 </api>
 
+<api name="addItem">
+@method
+  Appends a menu item to the end of the menu.  If the item is already contained
+  in another menu or in the top-level context menu, it's automatically removed
+  first.
+@param item {Item,Menu,Separator}
+  The `Item`, `Menu`, or `Separator` to add to the menu.
+</api>
+
 <api name="destroy">
 @method
-  Permanently removes the menu from the top-level context menu.  If the menu is
-  not contained in the top-level context menu, this method does nothing.
+  Permanently removes the menu from its parent menu and frees its resources.
+  The menu must not be used afterward.  If you need to remove the menu from its
+  parent menu but use it afterward, call `removeItem()` on the parent menu
+  instead.
+</api>
+
+<api name="removeItem">
+@method
+  Removes the given menu item from the menu.  If the menu does not contain the
+  item, this method does nothing.
+@param item {Item,Menu,Separator}
+  The menu item to remove from the menu.
 </api>
 
 <api name="message">
