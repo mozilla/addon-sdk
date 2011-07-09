@@ -148,6 +148,7 @@ const ItemBaseTrait = Trait({
     for (let optName in optRules)
       if (optsToNotSet.indexOf(optName) < 0)
         this[optName] = opts[optName];
+    optsToNotSet.forEach(function (opt) validateOpt(opts[opt], optRules[opt]));
     this._isInited = true;
 
     this._id = nextItemID++;
@@ -382,12 +383,11 @@ function Menu(options) {
          "Item, Menu, or Separator."
   };
 
+  let menu = MenuTrait.create(Menu.prototype);
+
   // We can't rely on initBase to set the `items` property, because the menu
   // needs to be registered with and added to the browserManager before any
-  // child items are added to it.  But we shouldn't wait until we set `items`
-  // below to validate options.items.
-  validateOpt(options.items, optRules.items);
-  let menu = MenuTrait.create(Menu.prototype);
+  // child items are added to it.
   menu.initMenu(options, optRules, ["items"]);
 
   menu._public = Cortex(menu);
