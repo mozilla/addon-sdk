@@ -45,9 +45,9 @@ class Basic(unittest.TestCase):
             reqs = m["P/one-lib/%s.js" % modname]["requirements"]
             self.failUnlessEqual(reqs[reqname]["uri"], uri)
         assertReqIs("main", "panel", "P/addon-kit-lib/panel.js")
-        assertReqIs("main", "two", "P/one-lib/two.js")
+        assertReqIs("main", "two.js", "P/one-lib/two.js")
         assertReqIs("main", "./two", "P/one-lib/two.js")
-        assertReqIs("main", "addon-kit/tabs", "P/addon-kit-lib/tabs.js")
+        assertReqIs("main", "addon-kit/tabs.js", "P/addon-kit-lib/tabs.js")
         assertReqIs("main", "./subdir/three", "P/one-lib/subdir/three.js")
         assertReqIs("two", "main", "P/one-lib/main.js")
         assertReqIs("subdir/three", "../main", "P/one-lib/main.js")

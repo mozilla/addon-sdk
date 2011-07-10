@@ -13,7 +13,11 @@ var when = exports.when = function when(observer) {
 
 var send = exports.send = function send(reason) {
   observers.forEach(function (observer) {
-    observer(reason);
+    try {
+      observer(reason);
+    } catch (e) {
+      console.exception(e);
+    }
   });
 };
 

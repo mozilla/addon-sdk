@@ -280,8 +280,9 @@ var POINTLESS_ERRORS = [
 var consoleListener = {
   errorsLogged: 0,
   observe: function(object) {
-    if (object instanceof Ci.nsIScriptError)
-      this.errorsLogged++;
+    if (!(object instanceof Ci.nsIScriptError))
+      return;
+    this.errorsLogged++;
     var message = object.QueryInterface(Ci.nsIConsoleMessage).message;
     var pointless = [err for each (err in POINTLESS_ERRORS)
                          if (message.indexOf(err) == 0)];
