@@ -35,16 +35,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci} = require("chrome");
+const font = require("./ansi-font");
+const serialize = require("./serialize").serialize;
 
-function stringify(arg) {
-  try {
-    return String(arg);
-  }
-  catch(ex) {
-    return "<toString() error>";
-  }
-}
-
+function stringify(value) serialize(value)
 function stringifyArgs(args) {
   return Array.map(args, stringify).join(" ");
 }
@@ -78,29 +72,29 @@ var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
 
 Console.prototype = {
   log: function log() {
-    message(this.print, "info", arguments);
+    message(this.print, font.bggreen("info"), arguments);
   },
 
   info: function info() {
-    message(this.print, "info", arguments);
+    message(this.print, font.bgblue("info"), arguments);
   },
 
   warn: function warn() {
-    message(this.print, "warning", arguments);
+    message(this.print, font.bgyellow("warning"), arguments);
   },
 
   error: function error() {
-    message(this.print, "error", arguments);
+    message(this.print, font.bgred("error"), arguments);
   },
 
   debug: function debug() {
-    message(this.print, "debug", arguments);
+    message(this.print, font.bgcyan("debug"), arguments);
   },
 
   exception: function exception(e) {
     var fullString = ("An exception occurred.\n" +
                       require("traceback").format(e) + "\n" + e);
-    this.error(fullString);
+    this.error(font.red(fullString));
   },
 
   trace: function trace() {
