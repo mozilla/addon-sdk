@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -229,9 +230,24 @@ SelectorContext.prototype = new Context();
 function SelectionContext() {
   this.isCurrent = function SelectionContext_isCurrent(popupNode) {
     let win = popupNode.ownerDocument.defaultView;
+
     if (!win)
       return false;
-    return !win.getSelection().isCollapsed;
+
+    let hasSelection = !win.getSelection().isCollapsed;
+
+    if (!hasSelection) {
+
+      // `window.getSelection` method doesn't return a selection for text selected
+      // in a form field (see bug 85686), so before returns `false` we want check
+      // if the `popupNode` supports the APIs for the text field selections
+      let { selectionStart, selectionEnd } = popupNode;
+
+      hasSelection = !(isNaN(selectionStart) || isNaN(selectionEnd))
+                      && selectionStart !== selectionEnd;
+    }
+
+    return hasSelection;
   };
 }
 

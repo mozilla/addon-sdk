@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -238,6 +239,48 @@ exports.testSelectionContextMatch = function (test) {
   });
 };
 
+
+// Selection contexts should cause items to appear when a selection exists in
+// a text field.
+exports.testSelectionContextMatchInTextField = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    let textfield = doc.getElementById("textfield");
+    
+    textfield.setSelectionRange(0, textfield.value.length);
+    
+    test.showMenu(textfield, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+// Selection contexts should not cause items to appear when a selection does
+// not exist in a text field.
+exports.testSelectionContextNoMatchInTextField = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("textfield"), function (popup) {
+      test.checkMenu([], [item], []);
+      test.done();
+    });
+  });
+};
 
 // Selection contexts should not cause items to appear when a selection does
 // not exist.
