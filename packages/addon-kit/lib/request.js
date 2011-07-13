@@ -183,7 +183,7 @@ function makeQueryString(content) {
   }
 
   function make(key, val) {
-    if (typeof(val) == "object") {
+    if (typeof(val) === "object" && val !== null) {
       for ([k, v] in Iterator(val)) {
         make(key + "[" + k + "]", v);
       }
