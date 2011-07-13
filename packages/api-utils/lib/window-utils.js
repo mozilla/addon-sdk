@@ -103,10 +103,12 @@ WindowTracker.prototype = {
   },
 
   _unregWindow: function _unregWindow(window) {
-    if (window.document.readyState == "complete")
-      this.delegate.onUntrack(window);
-    else
+    if (window.document.readyState == "complete") {
+      if (this.delegate.onUntrack)
+        this.delegate.onUntrack(window);
+    } else {
       this._unregLoadingWindow(window);
+    }
   },
 
   unload: function unload() {

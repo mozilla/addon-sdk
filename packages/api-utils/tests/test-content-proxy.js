@@ -123,18 +123,18 @@ exports.testProxy = function (test) {
         // <object>, <embed> and other tags return typeof 'function'
         let flash = document.createElement("object");
         test.assertEqual(typeof flash, "function", "<object> is typeof 'function'");
-        test.assertEqual(flash.toString(), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
+        test.assertMatches(flash.toString(), /\[object HTMLObjectElement.*\]/, "<object> is HTMLObjectElement");
         test.assert("setAttribute" in flash, "<object> has a setAttribute method");
         flash.setAttribute("classid", "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000");
         // This is how jquery call toString:
-        test.assertEqual(win.Object.prototype.toString.call(""), "[object String]", "strings are strings");
-        test.assertEqual(win.Object.prototype.toString.call({}), "[object Object]", "objects are objects");
+        test.assertMatches(win.Object.prototype.toString.call(""), /\[object String.*\]/, "strings are strings");
+        test.assertMatches(win.Object.prototype.toString.call({}), /\[object Object.*\]/, "objects are objects");
         // We do not have any workaround this particular use of toString
         // applied on <object> elements. So disable this test until we found one!
         //test.assertEqual(win.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
         function f() {};
-        test.assertEqual(Object.prototype.toString.call(f), "[object Function]", "functions are functions 1");
-        test.assertEqual(win.Object.prototype.toString.call(f), "[object Function]", "functions are functions 2");
+        test.assertMatches(Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 1");
+        test.assertMatches(win.Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 2");
         
         // Verify isolated JS values
         test.assert(!wrapped.documentGlobal, "proxy doesn't expose document variable");
@@ -188,14 +188,33 @@ exports.testProxy = function (test) {
         test.assertEqual(count, 4, "body.childNodes is iterable");
         
         // Check internal use of valueOf()
-        test.assertEqual(wrapped.valueOf().toString(), "[object Window]", "proxy.valueOf() returns the wrapped version");
-        test.assertEqual(wrapped.valueOf({}).toString(), "[object Window]", "proxy.valueOf({}) returns the wrapped version");
-        test.assertEqual(wrapped.valueOf(proxy.UNWRAP_ACCESS_KEY).toString(), "[object XrayWrapper [object Window]]", "proxy.valueOf(UNWRAP_ACCESS_KEY) returns the unwrapped version");
+        test.assertMatches(wrapped.valueOf().toString(), /\[object Window.*\]/, "proxy.valueOf() returns the wrapped version");
+        test.assertMatches(wrapped.valueOf({}).toString(), /\[object Window.*\]/, "proxy.valueOf({}) returns the wrapped version");
+        test.assertMatches(wrapped.valueOf(proxy.UNWRAP_ACCESS_KEY).toString(), /\[object XrayWrapper \[object Window.*\].*\]/, "proxy.valueOf(UNWRAP_ACCESS_KEY) returns the unwrapped version");
         
         // XMLHttpRequest doesn't support XMLHttpRequest.apply,
         // that may break our proxy code
         test.assert(wrapped.XMLHttpRequest(), "we are able to instantiate XMLHttpRequest object");
         
+        // Check XPathResult bug with constants being undefined on 
+        // XPCNativeWrapper
+        let value = 
+          win.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+        let xpcXPathResult = XPCNativeWrapper(win).XPathResult;
+        test.assertEqual(xpcXPathResult.wrappedJSObject.
+                           UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         value, 
+                         "XPathResult's constants are valid on unwrapped node");
+        // The following test will fail if platform is fixed,
+        // so we will be able to know when to remove the work around.
+        test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         undefined, 
+                         "XPathResult's constants are undefined on " + 
+                         "XPCNativeWrapper (platform bug #)");
+        // Check that our work around is working:
+        test.assertEqual(wrapped.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                         value, "XPathResult works correctly on Proxies");
+
         // Verify that inherited prototype function like initEvent 
         // are handled correctly. (e2.type will return an error if it's not the case)
         let event1 = document.createEvent( 'MouseEvents' );

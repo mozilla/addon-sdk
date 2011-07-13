@@ -96,29 +96,45 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   // emit `error` event on a symbiont if exception is thrown in
   // the Worker global scope.
   // @see http://www.w3.org/TR/workers/#workerutils
+
+  // List of all living timeouts/intervals
+  _timers: null,
+
   setTimeout: function setTimeout(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timer.setTimeout(function(worker) {
+    let id = timer.setTimeout(function(self) {
       try {
+        delete self._timers[id];
         callback.apply(null, params);
       } catch(e) {
-        worker._asyncEmit('error', e);
+        self._addonWorker._asyncEmit('error', e);
       }
-    }, delay, this._addonWorker);
+    }, delay, this);
+    this._timers[id] = true;
+    return id;
   },
-  clearTimeout: timer.clearTimeout,
+  clearTimeout: function clearTimeout(id){
+    delete this._timers[id];
+    return timer.clearTimeout(id);
+  },
 
   setInterval: function setInterval(callback, delay) {
     let params = Array.slice(arguments, 2);
-    return timer.setInterval(function(worker) {
+    let id = timer.setInterval(function(self) {
       try {
+        delete self._timers[id];
         callback.apply(null, params); 
       } catch(e) {
-        worker._asyncEmit('error', e);
+        self._addonWorker._asyncEmit('error', e);
       }
-    }, delay, this._addonWorker);
+    }, delay, this);
+    this._timers[id] = true;
+    return id;
   },
-  clearInterval: timer.clearInterval,
+  clearInterval: function clearInterval(id) {
+    delete this._timers[id];
+    return timer.clearInterval(id);
+  },
 
   /**
    * `onMessage` function defined in the global scope of the worker context.
@@ -218,6 +234,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // Overriding / Injecting some natives into sandbox.
     Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
     
+    // Initialize timer lists
+    this._timers = {};
+
     let publicAPI = this._public;
     
     // List of content script globals:
@@ -288,6 +307,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   },
   _destructor: function _destructor() {
     this._removeAllListeners();
+    // Unregister all setTimeout/setInterval
+    // We can use `clearTimeout` for both setTimeout/setInterval
+    // as internal implementation of timer module use same method for both.
+    for (let id in this._timers)
+      timer.clearTimeout(id);
     let publicAPI = this._public,
         sandbox = this._sandbox;
     delete sandbox.__proto__;
