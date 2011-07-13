@@ -921,6 +921,36 @@ exports.testMenuClick = function (test) {
 };
 
 
+// Click listeners should work when multiple modules are loaded.
+exports.testItemClickMultipleModules = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let item0 = loader0.cm.Item({
+    label: "loader 0 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.fail("loader 0 item should not emit click event");
+    }
+  });
+  let item1 = loader1.cm.Item({
+    label: "loader 1 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.pass("loader 1 item clicked as expected");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item0, item1], [], []);
+    let item1Elt = test.getItemElt(popup, item1);
+    item1Elt.click();
+  });
+};
+
+
 // Adding a separator to a submenu should work OK.
 exports.testSeparator = function (test) {
   test = new TestHelper(test);

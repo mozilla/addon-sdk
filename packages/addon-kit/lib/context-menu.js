@@ -116,7 +116,9 @@ const NON_PAGE_CONTEXT_ELTS = [
 const PRIVATE_PROPS_KEY = Math.random().toString();
 
 // Used as an internal ID for items and as part of a public ID for item DOM
-// elements.
+// elements.  Careful: This number is not necessarily unique to any one instance
+// of the module.  For each module instance, when the first item is created this
+// number will be 0, when the second is created it will be 1, and so on.
 let nextItemID = 0;
 
 exports.Item = Item;
@@ -588,9 +590,12 @@ function domEltIDFromItemID(itemID, isInOverflowSubtree) {
   return jpSelf.id + "-context-menu-item-" + itemID + suffix;
 }
 
-// Parses the item ID out of the given DOM element ID and returns it.
+// Parses the item ID out of the given DOM element ID and returns it.  If the
+// element's ID is malformed or it indicates that the element was not created by
+// the instance of the module calling this function, returns -1.
 function itemIDFromDOMEltID(domEltID) {
-  return Number(/([0-9]+)[-a-z]*$/.exec(domEltID)[1]);
+  let match = /^(.+?)-context-menu-item-([0-9]+)[-a-z]*$/.exec(domEltID);
+  return !match || match[1] !== jpSelf.id ? -1 : match[2];
 }
 
 // Returns the private version of the given public reflection.
@@ -1216,14 +1221,24 @@ ContextMenuPopup.prototype = {
 
   // command events bubble to the context menu's top-level xul:menupopup and are
   // caught here.
-  _handleClick: function CMP__handleClick(domElt) {
-    if (!domElt.classList.contains(ITEM_CLASS))
+  _handleClick: function CMP__handleClick(clickedDOMElt) {
+    if (!clickedDOMElt.classList.contains(ITEM_CLASS))
       return;
-    let clickedItem = this.browserWin.items[itemIDFromDOMEltID(domElt.id)].item;
-    let topLevelItem = privateItem(clickedItem)._topLevelItem;
+    let itemID = itemIDFromDOMEltID(clickedDOMElt.id);
+    if (itemID < 0)
+      return;
+    let { item, domElt, overflowDOMElt } = this.browserWin.items[itemID];
+
+    // Bail if the DOM element was not created by this module instance.  In
+    // real-world add-ons, the itemID < 0 check above is sufficient, but for the
+    // unit test the JID never changes, making this necessary.
+    if (clickedDOMElt != domElt && clickedDOMElt != overflowDOMElt)
+      return;
+
+    let topLevelItem = privateItem(item)._topLevelItem;
     let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
                                                     topLevelItem);
-    this.browserWin.fireClick(topLevelItem, popupNode, clickedItem.data);
+    this.browserWin.fireClick(topLevelItem, popupNode, item.data);
   },
 
   // popupshowing is used to show top-level items that match the browser
