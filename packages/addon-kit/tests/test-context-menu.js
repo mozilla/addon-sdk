@@ -59,6 +59,7 @@ exports.testConstructDestroy = function (test) {
 
   // Create an item.
   let item = new loader.cm.Item({ label: "item" });
+  test.assertEqual(item.parentMenu, null, "item's parent menu should be null");
 
   test.showMenu(null, function (popup) {
 
@@ -66,7 +67,8 @@ exports.testConstructDestroy = function (test) {
     test.checkMenu([item], [], []);
     popup.hidePopup();
 
-    // Destroy the item.
+    // Destroy the item.  Multiple destroys should be harmless.
+    item.destroy();
     item.destroy();
     test.showMenu(null, function (popup) {
 
@@ -344,7 +346,7 @@ exports.testURLContextAdd = function (test) {
 
   test.withTestDoc(function (window, doc) {
     let privatePropsKey = loader.globalScope.PRIVATE_PROPS_KEY;
-    let workerReg = item.valueOf(privatePropsKey).workerReg;
+    let workerReg = item.valueOf(privatePropsKey)._workerReg;
 
     let found = false;
     for each (let winWorker in workerReg.winWorkers) {
@@ -918,6 +920,37 @@ exports.testMenuClick = function (test) {
   });
 };
 
+
+// Click listeners should work when multiple modules are loaded.
+exports.testItemClickMultipleModules = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let item0 = loader0.cm.Item({
+    label: "loader 0 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.fail("loader 0 item should not emit click event");
+    }
+  });
+  let item1 = loader1.cm.Item({
+    label: "loader 1 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.pass("loader 1 item clicked as expected");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item0, item1], [], []);
+    let item1Elt = test.getItemElt(popup, item1);
+    item1Elt.click();
+  });
+};
+
+
 // Adding a separator to a submenu should work OK.
 exports.testSeparator = function (test) {
   test = new TestHelper(test);
@@ -930,18 +963,6 @@ exports.testSeparator = function (test) {
 
   test.showMenu(null, function (popup) {
     test.checkMenu([menu], [], []);
-
-    // Get the menu element, makes sure it's OK.
-    let menuElt = test.getItemElt(popup, menu);
-    test.assert(menuElt, "Menu element should exist");
-
-    // Get the separator element inside the menu's popup, makes sure it's OK.
-    menuElt.open = true;
-    let sepElt = menuElt.firstChild.firstChild;
-    test.assert(sepElt, "Separator element should exist");
-    test.assert(!sepElt.hidden, "Separator element should not be hidden");
-    test.assertEqual(sepElt.localName, "menuseparator",
-                     "Separator should be of expected type");
     test.done();
   });
 };
@@ -1253,6 +1274,229 @@ exports.testSetLabelAfterShowOverflow = function (test) {
 };
 
 
+// Setting the label of an item in a Menu should work.
+exports.testSetLabelMenuItem = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [loader.cm.Item({ label: "a" })]
+  });
+  menu.items[0].label = "z";
+
+  test.assertEqual(menu.items[0].label, "z");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Menu.addItem() should work.
+exports.testMenuAddItem = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "item 0" })
+    ]
+  });
+  menu.addItem(loader.cm.Item({ label: "item 1" }));
+  menu.addItem(loader.cm.Item({ label: "item 2" }));
+
+  test.assertEqual(menu.items.length, 3,
+                   "menu should have correct number of items");
+  for (let i = 0; i < 3; i++) {
+    test.assertEqual(menu.items[i].label, "item " + i,
+                     "item label should be correct");
+    test.assertEqual(menu.items[i].parentMenu, menu,
+                     "item's parent menu should be correct");
+  }
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Adding the same item twice to a menu should work as expected.
+exports.testMenuAddItemTwice = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: []
+  });
+  let subitem = loader.cm.Item({ label: "item 1" })
+  menu.addItem(subitem);
+  menu.addItem(loader.cm.Item({ label: "item 0" }));
+  menu.addItem(subitem);
+
+  test.assertEqual(menu.items.length, 2,
+                   "menu should have correct number of items");
+  for (let i = 0; i < 2; i++) {
+    test.assertEqual(menu.items[i].label, "item " + i,
+                     "item label should be correct");
+  }
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Menu.removeItem() should work.
+exports.testMenuRemoveItem = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let subitem = loader.cm.Item({ label: "item 1" });
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "item 0" }),
+      subitem,
+      loader.cm.Item({ label: "item 2" })
+    ]
+  });
+
+  // Removing twice should be harmless.
+  menu.removeItem(subitem);
+  menu.removeItem(subitem);
+
+  test.assertEqual(subitem.parentMenu, null,
+                   "item's parent menu should be correct");
+
+  test.assertEqual(menu.items.length, 2,
+                   "menu should have correct number of items");
+  test.assertEqual(menu.items[0].label, "item 0",
+                   "item label should be correct");
+  test.assertEqual(menu.items[1].label, "item 2",
+                   "item label should be correct");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Adding an item currently contained in one menu to another menu should work.
+exports.testMenuItemSwap = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let subitem = loader.cm.Item({ label: "item" });
+  let menu0 = loader.cm.Menu({
+    label: "menu 0",
+    items: [subitem]
+  });
+  let menu1 = loader.cm.Menu({
+    label: "menu 1",
+    items: []
+  });
+  menu1.addItem(subitem);
+
+  test.assertEqual(menu0.items.length, 0,
+                   "menu should have correct number of items");
+
+  test.assertEqual(menu1.items.length, 1,
+                   "menu should have correct number of items");
+  test.assertEqual(menu1.items[0].label, "item",
+                   "item label should be correct");
+
+  test.assertEqual(subitem.parentMenu, menu1,
+                   "item's parent menu should be correct");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu0, menu1], [], []);
+    test.done();
+  });
+};
+
+
+// Destroying an item should remove it from its parent menu.
+exports.testMenuItemDestroy = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let subitem = loader.cm.Item({ label: "item" });
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [subitem]
+  });
+  subitem.destroy();
+
+  test.assertEqual(menu.items.length, 0,
+                   "menu should have correct number of items");
+  test.assertEqual(subitem.parentMenu, null,
+                   "item's parent menu should be correct");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Setting Menu.items should work.
+exports.testMenuItemsSetter = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "old item 0" }),
+      loader.cm.Item({ label: "old item 1" })
+    ]
+  });
+  menu.items = [
+    loader.cm.Item({ label: "new item 0" }),
+    loader.cm.Item({ label: "new item 1" }),
+    loader.cm.Item({ label: "new item 2" })
+  ];
+
+  test.assertEqual(menu.items.length, 3,
+                   "menu should have correct number of items");
+  for (let i = 0; i < 3; i++) {
+    test.assertEqual(menu.items[i].label, "new item " + i,
+                     "item label should be correct");
+    test.assertEqual(menu.items[i].parentMenu, menu,
+                     "item's parent menu should be correct");
+  }
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
+
+// Setting Item.data should work.
+exports.testItemDataSetter = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({ label: "old item 0", data: "old" });
+  item.data = "new";
+
+  test.assertEqual(item.data, "new", "item should have correct data");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.done();
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1330,11 +1574,34 @@ TestHelper.prototype = {
 
   // Asserts that elt, a DOM element representing item, looks OK.
   checkItemElt: function (elt, item) {
-    this.test.assertEqual(elt.getAttribute("label"), item.label,
-                          "Item should have correct title");
-    if (item.data) {
-      this.test.assertEqual(elt.getAttribute("value"), item.data,
-                            "Item should have correct data");
+    let itemType = this.getItemType(item);
+
+    switch (itemType) {
+    case "Item":
+      this.test.assertEqual(elt.localName, "menuitem",
+                            "Item DOM element should be a xul:menuitem");
+      if (typeof(item.data) === "string") {
+        this.test.assertEqual(elt.getAttribute("value"), item.data,
+                              "Item should have correct data");
+      }
+      break
+    case "Menu":
+      this.test.assertEqual(elt.localName, "menu",
+                            "Menu DOM element should be a xul:menu");
+      let subPopup = elt.firstChild;
+      this.test.assert(subPopup, "xul:menu should have a child");
+      this.test.assertEqual(subPopup.localName, "menupopup",
+                            "xul:menu's first child should be a menupopup");
+      break;
+    case "Separator":
+      this.test.assertEqual(elt.localName, "menuseparator",
+                         "Separator DOM element should be a xul:menuseparator");
+      break;
+    }
+
+    if (itemType === "Item" || itemType === "Menu") {
+      this.test.assertEqual(elt.getAttribute("label"), item.label,
+                            "Item should have correct title");
     }
   },
 
@@ -1375,28 +1642,40 @@ TestHelper.prototype = {
   // Asserts that the items that are present in the menu because they match the
   // current context look OK.
   checkPresentItems: function (presentItems) {
-    for (let i = 0; i < presentItems.length; i++) {
-      let item = presentItems[i];
-      let elt = this.getItemElt(this.contextMenuPopup, item);
+    function recurse(popup, items, isTopLevel) {
+      items.forEach(function (item) {
+        let elt = this.getItemElt(popup, item);
 
-      if (this.shouldOverflow(presentItems)) {
-        this.test.assert(!elt || elt.hidden,
-                         "Item should not be present in top-level menu");
+        if (isTopLevel) {
+          if (this.shouldOverflow(items)) {
+            this.test.assert(!elt || elt.hidden,
+                             "Item should not be present in top-level menu");
 
-        let overflowPopup = this.overflowPopup;
-        this.test.assert(overflowPopup, "Overflow submenu should be present");
+            let overflowPopup = this.overflowPopup;
+            this.test.assert(overflowPopup,
+                             "Overflow submenu should be present");
 
-        elt = this.getItemElt(overflowPopup, item);
-        this.test.assert(elt && !elt.hidden,
-                         "Item should be present in overflow submenu");
-      }
-      else {
-        this.test.assert(elt && !elt.hidden,
-                         "Item should be present in top-level menu");
-      }
+            elt = this.getItemElt(overflowPopup, item);
+            this.test.assert(elt && !elt.hidden,
+                             "Item should be present in overflow submenu");
+          }
+          else {
+            this.test.assert(elt && !elt.hidden,
+                             "Item should be present in top-level menu");
+          }
+        }
+        else {
+          this.test.assert(elt && !elt.hidden,
+                           "Item should be present in menu");
+        }
 
-      this.checkItemElt(elt, item);
+        this.checkItemElt(elt, item);
+        if (this.getItemType(item) === "Menu")
+          recurse.call(this, elt.firstChild, item.items, false);
+      }, this);
     }
+
+    recurse.call(this, this.contextMenuPopup, presentItems, true);
   },
 
   // Asserts that items that have been removed from the menu are really removed.
@@ -1485,19 +1764,26 @@ TestHelper.prototype = {
       }
       while (this.loaders.length) {
         let browserManager = this.loaders[0].globalScope.browserManager;
-        let items = browserManager.items.slice();
+        let topLevelItems = browserManager.topLevelItems.slice();
         let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
+        let workerRegs = topLevelItems.map(function (item) {
+          return item.valueOf(privatePropsKey)._workerReg;
+        });
+
         this.loaders[0].unload();
 
         // Make sure the browser manager is cleaned up.
-        this.test.assertEqual(browserManager.windows.length, 0,
+        this.test.assertEqual(browserManager.browserWins.length, 0,
                               "browserManager should have no windows left");
-        this.test.assertEqual(browserManager.items.length, 0,
+        this.test.assertEqual(browserManager.topLevelItems.length, 0,
                               "browserManager should have no items left");
 
         // Make sure the items' worker registries are cleaned up.
-        items.forEach(function (item) {
-          let workerReg = item.valueOf(privatePropsKey).workerReg;
+        topLevelItems.forEach(function (item) {
+          this.test.assert(!("_workerReg" in item.valueOf(privatePropsKey)),
+                           "item's worker registry should be removed");
+        }, this);
+        workerRegs.forEach(function (workerReg) {
           this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
                                 "worker registry should be empty");
           this.test.assertEqual(
@@ -1538,10 +1824,27 @@ TestHelper.prototype = {
   getItemElt: function (popup, item) {
     let nodes = popup.childNodes;
     for (let i = nodes.length - 1; i >= 0; i--) {
-      if (nodes[i].getAttribute("label") === item.label)
+      if (this.getItemType(item) === "Separator") {
+        if (nodes[i].localName === "menuseparator")
+          return nodes[i];
+      }
+      else if (nodes[i].getAttribute("label") === item.label)
         return nodes[i];
     }
     return null;
+  },
+
+  // Returns "Item", "Menu", or "Separator".
+  getItemType: function (item) {
+    // Could use instanceof here, but that would require accessing the loader
+    // that created the item, and I don't want to A) somehow search through the
+    // this.loaders list to find it, and B) assume there are any live loaders at
+    // all.
+    if (!/^\[object (Item|Menu|Separator)/.exec(item.toString())) {
+      dump("\n**** " + item.toString() + "\n");
+      dump("\n**** " + item.toSource() + "\n");
+    }
+    return /^\[object (Item|Menu|Separator)/.exec(item.toString())[1];
   },
 
   // Returns a wrapper around a new loader: { loader, cm, unload, globalScope }.
