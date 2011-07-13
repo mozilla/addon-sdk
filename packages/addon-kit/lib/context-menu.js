@@ -231,20 +231,16 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
     this.context.add = function itemContextAdd() {
       let args = Array.slice(arguments);
       add.apply(self.context, args);
-      let privates = privateItem(self._public);
-      if (privates._workerReg &&
-          args.some(function (a) a instanceof URLContext))
-        privates._workerReg.destroyUnneededWorkers();
+      if (self._workerReg && args.some(function (a) a instanceof URLContext))
+        self._workerReg.destroyUnneededWorkers();
     };
 
     let remove = this.context.remove;
     this.context.remove = function itemContextRemove() {
       let args = Array.slice(arguments);
       remove.apply(self.context, args);
-      let privates = privateItem(self._public);
-      if (privates._workerReg &&
-          args.some(function (a) a instanceof URLContext))
-        privates._workerReg.createNeededWorkers();
+      if (self._workerReg && args.some(function (a) a instanceof URLContext))
+        self._workerReg.createNeededWorkers();
     };
   },
 
@@ -806,8 +802,7 @@ let browserManager = {
     observerServ.add("inner-window-destroyed", function observe(subj) {
       let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
       this.topLevelItems.forEach(function (item) {
-        let workerReg = privateItem(item)._workerReg;
-        workerReg.unregisterContentWin(innerWinID);
+        privateItem(item)._workerReg.unregisterContentWin(innerWinID);
       });
     }, this);
   },

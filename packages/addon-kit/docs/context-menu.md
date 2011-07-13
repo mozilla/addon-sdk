@@ -538,9 +538,10 @@ A labeled menu item that expands into a submenu.
 
 <api name="items">
 @property {array}
-  The menu items contained in the menu.  Setting this property to a new array
-  removes all the items currently in the menu and adds all the items in the
-  array.
+  An array containing the items in the menu.  The array is read-only, meaning
+  that modifications to it will not affect the menu.  However, setting this
+  property to a new array will replace all the items currently in the menu with
+  the items in the new array.
 </api>
 
 <api name="context">
