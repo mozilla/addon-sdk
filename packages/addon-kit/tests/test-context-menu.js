@@ -1840,10 +1840,6 @@ TestHelper.prototype = {
     // that created the item, and I don't want to A) somehow search through the
     // this.loaders list to find it, and B) assume there are any live loaders at
     // all.
-    if (!/^\[object (Item|Menu|Separator)/.exec(item.toString())) {
-      dump("\n**** " + item.toString() + "\n");
-      dump("\n**** " + item.toSource() + "\n");
-    }
     return /^\[object (Item|Menu|Separator)/.exec(item.toString())[1];
   },
 
