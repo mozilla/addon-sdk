@@ -76,6 +76,24 @@ function getModuleURI(base, id) {
   return getAddonPrefix(base) + '-' + packageName + '-lib/' + paths.join('/');
 }
 
+// TODO: Make this independent of `packaging` global.
+// Following two hacks are used to emulate desired integration with linker.
+// Since at the moment Loader is used as a module it has access to the global
+// `packaging`. It would be way better if something like:
+// `require('module://package/manifest.js')` would have returned a manifest
+// for the `package`. Since that requires changes both on the linker and
+// a bootstrap code we workaround it.
+function getModuleManifest(id) {
+  return packaging.options.manifest[id]
+}
+// This is yet another hack that ideally should be removed in favor of
+// `manifest[id]`, but since manifest contains 'resource://' type URLs we use
+// this hack to convert such URIs to 'module://' type.
+function resolveRequirement(manifest, id) {
+  let requirement = manifest[id]
+  return requirement ? requirement.replace('resounce://', 'module://')
+                     : requirement
+}
 
 function normalize(id) id.substr(-3) === '.js' ? id : id + '.js'
 function isRelative(id) id.indexOf('.') === 0
@@ -169,6 +187,13 @@ const Loader = {
 
 
   // Module loader:
+  modules: {
+    'chrome.js': {
+      exports: { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                 components: Components },
+      id: 'chrome'
+    }
+  },
   makeModuleAdapter: function makeModuleAdapter(id, uri) {
     return [
       'const EXPORTED_SYMBOLS = [ "module" ];',
@@ -181,19 +206,32 @@ const Loader = {
     ].join('')
   },
   require: function require(base, id) {
+    let manifest, module
+
     id = normalize(id) // Ensure that id has file extension.
+
+    // If we have a base module and it's in manifest, then all it's
+    // dependencies must be in the manifest.
+    if (base && (manifest = getModuleManifest(base))) {
+      let requirement = resolveRequirement(manifest, id)
+      // If module has 'sudo' privileges, it can go off-manifest.
+      if (requirement || 'chrome' in manifest)
+        requirement = id
+
+      id = requirement
+    }
 
     // If it's relative id, then we just resolve it to a base one.
     if (isRelative(id))
       id = URI(id, null, URI(base, null, null)).spec;
 
     // If it's not a relative id, and we have a base, we assemble module ID.
-    else if (base)
+    else if (!(id in Loader.modules) && base)
       id = URI(getModuleURI(base, id), null, null).spec;
 
     console.log(id)
     // Importing a module.
-    let module = Cu.import(id, null);
+    let module = Loader.modules[id] || Cu.import(id, null);
     // Return frozen module exports.
     return Object.freeze(module.exports);
   },
@@ -205,5 +243,5 @@ const Loader = {
 // Usage:
 // require('api-utils/loader'); // Register new loader
 // let loader = Components.classes['@mozilla.org/network/protocol;1?name=module'].createInstance(Components.interfaces.nsISupports).wrappedJSObject;
-// let foo = loader.main('module://jep4repl-at-jetpack-api-utils-lib/array.js');
+// loader.main('module://jep4repl-at-jetpack-api-utils-lib/array.js');
 
