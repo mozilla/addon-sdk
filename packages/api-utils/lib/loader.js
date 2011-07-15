@@ -47,25 +47,45 @@ const { registerFactory, unregisterFactory } =
 const { generateUUID } = CC('@mozilla.org/uuid-generator;1',
                             'nsIUUIDGenerator')();
 const ioService = CC('@mozilla.org/network/io-service;1', 'nsIIOService')();
-const resolveURI = ioService.getProtocolHandler('resource').
-                   QueryInterface(Ci.nsIResProtocolHandler).resolveURI;
+const resourceHandler = ioService.getProtocolHandler('resource').
+                        QueryInterface(Ci.nsIResProtocolHandler);
 const StandardURL = CC('@mozilla.org/network/standard-url;1',
                        'nsIStandardURL', 'init');
-const Pipe = CC('@mozilla.org/pipe;1', 'nsIPipe', 'init')
+const Pipe = CC('@mozilla.org/pipe;1', 'nsIPipe', 'init');
 const Channel = CC('@mozilla.org/network/input-stream-channel;1',
-                   'nsIInputStreamChannel')
+                   'nsIInputStreamChannel');
 
-const URI = ioService.newURI.bind(ioService)
-const URIChannel = ioService.newChannelFromURI.bind(ioService)
+const URI = ioService.newURI.bind(ioService);
+const URIChannel = ioService.newChannelFromURI.bind(ioService);
+const resolveURI = resourceHandler.resolveURI.bind(resourceHandler);
 
 
+// TODO: Fix on linker side!
+// Following utility function are hopefully a temporary hacks, used to get an
+// add-on root from a module URI of a given add-on. This way if `uri` is:
+// `resource://jep4repl-at-jetpack-api-utils-lib/unload.js`
+// this function will return: `resource://jep4repl-at-jetpack-api`
+function getAddonPrefix(uri) {
+    return uri.substr(0, uri.indexOf('-at-jetpack')) + '-at-jetpack'
+}
+// This another hack, it takes base URI and absolute id to compose a URI of
+// the given id.
+function getModuleURI(base, id) {
+  let paths = id.split('/');
+  let packageName = paths.shift();
+  return getAddonPrefix(base) + '-' + packageName + '-lib/' + paths.join('/');
+}
+
+
+function normalize(id) id.substr(-3) === '.js' ? id : id + '.js'
+function isRelative(id) id.indexOf('.') === 0
 function equals(value) this.equals(value)
 
 const Loader = {
-  // XPCOM
+  // XPCOM Boilerplate:
   classID: generateUUID(),
   classDescription: 'Jetpack module loader service',
-  contractID: '@mozilla.org/network/protocol;1?name=jpm',
+  get contractID() '@mozilla.org/network/protocol;1?name=' + this.scheme,
   interfaces: [
     Ci.nsISupports,
     Ci.nsISupportsWeakReference,
@@ -97,9 +117,9 @@ const Loader = {
     return this;
   },
 
-  // nsIProtocolHandler
+  // Implementation of `nsIProtocolHandler` interface.
 
-  scheme: 'jpm',
+  scheme: 'module',
   defaultPort: -1,
   // For more information on what these flags mean,
   // see caps/src/nsScriptSecurityManager.cpp.
@@ -126,14 +146,13 @@ const Loader = {
     // Opening a input stream for the resource.
     resourceStream = resourceChannel.open();
 
-    adapter = this.makeModuleAdapter(uri.spec);
+    adapter = this.makeModuleAdapter(uri.spec, resourceURI.spec);
 
 
     pipe = Pipe(true, true, 0, 0, null);
 
     channel = Channel();
     channel.setURI(URI(resolveURI(resourceURI), null, null));
-    console.log(URI(resolveURI(resourceURI), null, null).spec)
     channel.contentStream = pipe.inputStream;
     channel.QueryInterface(Ci.nsIChannel);
 
@@ -148,10 +167,12 @@ const Loader = {
     }
   },
 
-  makeModuleAdapter: function makeModuleAdapter(id) {
+
+  // Module loader:
+  makeModuleAdapter: function makeModuleAdapter(id, uri) {
     return [
       'const EXPORTED_SYMBOLS = [ "module" ];',
-      'const module = { exports: {}, id: "' + id + '", uri: "' + id + '" };',
+      'const module = { exports: {}, id: "' + id + '", uri: "' + uri + '" };',
       'const exports = module.exports;',
       'let require = Components.classes["' + this.contractID + '"]',
                      '.createInstance(Components.interfaces.nsISupports)',
@@ -159,11 +180,21 @@ const Loader = {
                      '.require.bind(null, "' + id + '");'
     ].join('')
   },
+  require: function require(base, id) {
+    id = normalize(id) // Ensure that id has file extension.
 
-  require: function require(baseURI, id) {
-    baseURI = baseURI ? URI(baseURI, null, null) : null;
-    id = ioService.newURI(id, null, baseURI).spec;
+    // If it's relative id, then we just resolve it to a base one.
+    if (isRelative(id))
+      id = URI(id, null, URI(base, null, null)).spec;
+
+    // If it's not a relative id, and we have a base, we assemble module ID.
+    else if (base)
+      id = URI(getModuleURI(base, id), null, null).spec;
+
+    console.log(id)
+    // Importing a module.
     let module = Cu.import(id, null);
+    // Return frozen module exports.
     return Object.freeze(module.exports);
   },
   main: function main(id) {
@@ -173,7 +204,6 @@ const Loader = {
 
 // Usage:
 // require('api-utils/loader'); // Register new loader
-// // get a loader.
-// let loader = Components.classes['@mozilla.org/network/protocol;1?name=jpm'].
-//              createInstance(Components.interfaces.nsISupports).wrappedJSObject;
-// let foo = loader.main('jpm://jep4repl-at-jetpack-api-utils-lib/module.js');
+// let loader = Components.classes['@mozilla.org/network/protocol;1?name=module'].createInstance(Components.interfaces.nsISupports).wrappedJSObject;
+// let foo = loader.main('module://jep4repl-at-jetpack-api-utils-lib/array.js');
+
