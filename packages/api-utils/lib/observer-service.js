@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci} = require("chrome");
-var xpcom = require("xpcom");
+var xpcom = require("./xpcom");
 
 /**
  * A service for adding, removing and notifying observers of notifications.
@@ -198,7 +198,7 @@ Subject.prototype = {
   getInterfaces: function() {}
 };
 
-require("unload").when(
+require("./unload").when(
   function removeAllObservers() {
     // Make a copy of cache first, since cache will be changing as we
     // iterate through it.

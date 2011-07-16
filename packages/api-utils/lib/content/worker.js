@@ -38,18 +38,18 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { shims } = require('cuddlefish');
-const { Trait } = require('traits');
-const { EventEmitter, EventEmitterTrait } = require('events');
+const { shims } = require('../cuddlefish');
+const { Trait } = require('../traits');
+const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
-const timer = require('timer');
-const { toFilename } = require('url');
-const file = require('file');
-const unload = require('unload');
-const observers = require("observer-service");
-const { Cortex } = require('cortex');
-const { Enqueued } = require('utils/function');
-const proxy = require('content/content-proxy');
+const timer = require('../timer');
+const { toFilename } = require('../url');
+const file = require('../file');
+const unload = require('../unload');
+const observers = require('../observer-service');
+const { Cortex } = require('../cortex');
+const { Enqueued } = require('../utils/function');
+const proxy = require('./content-proxy');
 
 const JS_VERSION = '1.8';
 

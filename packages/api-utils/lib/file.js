@@ -38,8 +38,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci,Cr} = require("chrome");
-const byteStreams = require("byte-streams");
-const textStreams = require("text-streams");
+const byteStreams = require("./byte-streams");
+const textStreams = require("./text-streams");
 
 // Flags passed when opening a file.  See nsprpub/pr/include/prio.h.
 const OPEN_FLAGS = {

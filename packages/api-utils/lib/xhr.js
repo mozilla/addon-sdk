@@ -173,7 +173,7 @@ DELEGATED_METHODS.forEach(
     };
   });
 
-require("unload").when(
+require("./unload").when(
   function() {
     requests.slice().forEach(function(request) { request._unload(); });
   });

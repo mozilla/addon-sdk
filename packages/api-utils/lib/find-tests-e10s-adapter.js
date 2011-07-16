@@ -35,8 +35,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 if (this.chrome) {
-  var timer = require("timer");
-  var ut = require("unit-test");
+  var timer = require("./timer");
+  var ut = require("./unit-test");
 
   chrome.on(
     "runTest",
