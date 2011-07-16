@@ -155,17 +155,11 @@ const Loader = {
     return uri;
   },
   newChannel: function newChannel(uri) {
-    try {
-    let channel, pipe, resourceURI, resourceChannel, resourceStream, adapter;
+    let channel, pipe, resourceURI, resourceStream, header, footer
     // Getting resource URI of the given URI.
     resourceURI = URI(uri.spec.replace(uri.scheme, 'resource'), null, null);
-    // Creating a channel for the resource.
-    resourceChannel = URIChannel(resourceURI)
-    // Opening a input stream for the resource.
-    resourceStream = resourceChannel.open();
-
-    adapter = this.makeModuleAdapter(uri.spec, resourceURI.spec);
-
+    // Creating a channel for the resource and open an input stream.
+    resourceStream = URIChannel(resourceURI).open();
 
     pipe = Pipe(true, true, 0, 0, null);
 
@@ -174,15 +168,13 @@ const Loader = {
     channel.contentStream = pipe.inputStream;
     channel.QueryInterface(Ci.nsIChannel);
 
-    pipe.outputStream.write(adapter, adapter.length);
+    header = this.Header(uri.spec, resourceURI.spec);
+    pipe.outputStream.write(header, header.length);
     pipe.outputStream.writeFrom(resourceStream, resourceStream.available());
+    pipe.outputStream.write(this.footer, this.footer.length);
     pipe.outputStream.close();
 
     return channel;
-    } catch (error) {
-      console.exception(error);
-      throw error;
-    }
   },
 
 
@@ -194,7 +186,7 @@ const Loader = {
       id: 'chrome'
     }
   },
-  makeModuleAdapter: function makeModuleAdapter(id, uri) {
+  Header: function Header(id, uri) {
     return [
       'const EXPORTED_SYMBOLS = [ "module" ];',
       'const module = { exports: {}, id: "' + id + '", uri: "' + uri + '" };',
@@ -202,23 +194,25 @@ const Loader = {
       'let require = Components.classes["' + this.contractID + '"]',
                      '.createInstance(Components.interfaces.nsISupports)',
                      '.wrappedJSObject',
-                     '.require.bind(null, "' + id + '");'
+                     '.require.bind(null, "' + id + '");',
+      'try { (function (Components) { '
     ].join('')
   },
+  footer: '\n/**/})() } catch (error) { module.error = error; }',
   require: function require(base, id) {
-    let manifest, module
+    let manifest, imported;
 
-    id = normalize(id) // Ensure that id has file extension.
+    id = normalize(id); // Ensure that id has file extension.
 
     // If we have a base module and it's in manifest, then all it's
     // dependencies must be in the manifest.
     if (base && (manifest = getModuleManifest(base))) {
-      let requirement = resolveRequirement(manifest, id)
+      let requirement = resolveRequirement(manifest, id);
       // If module has 'sudo' privileges, it can go off-manifest.
       if (requirement || 'chrome' in manifest)
-        requirement = id
+        requirement = id;
 
-      id = requirement
+      id = requirement;
     }
 
     // If it's relative id, then we just resolve it to a base one.
@@ -231,9 +225,15 @@ const Loader = {
 
     console.log(id)
     // Importing a module.
-    let module = Loader.modules[id] || Cu.import(id, null);
-    // Return frozen module exports.
-    return Object.freeze(module.exports);
+    if (id in Loader.modules)
+      return Loader.modules[id].exports;
+
+    Cu.import(id, imported = {});
+
+    if ('error' in imported.module)     // Throw error
+      throw imported.module.error;
+    else                                // Return frozen module exports.
+      return Object.freeze(imported.module.exports);
   },
   main: function main(id) {
     return this.require(null, id);
