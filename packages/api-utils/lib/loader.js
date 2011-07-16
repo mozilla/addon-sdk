@@ -184,6 +184,14 @@ const Loader = {
       exports: { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
                  components: Components },
       id: 'chrome'
+    },
+    // TODO: Remove this temporary hack and use real solution instead.
+    '@globals.js': {
+      exports: {
+        console: console,
+        memory: memory
+      },
+      id: '@globals'
     }
   },
   Header: function Header(id, uri) {
@@ -195,6 +203,8 @@ const Loader = {
                      '.createInstance(Components.interfaces.nsISupports)',
                      '.wrappedJSObject',
                      '.require.bind(null, "' + id + '");',
+      'let global = require("@globals");',
+      'for (let key in global) this[key] = global[key];',
       'try { (function (Components) { '
     ].join('')
   },
