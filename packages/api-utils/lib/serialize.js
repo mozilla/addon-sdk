@@ -60,7 +60,10 @@ exports.serialize = function serialize(value, indent, limit, offset, visited) {
 
       names = Object.keys(value);
 
-      result += font.cyan("{") + font.color(101, " // " + value + "\n");
+      result += font.cyan("{")
+      try { // This may throw Illegal operation on WrappedNative
+        result += font.color(101, " // " + String(value) + "\n");
+      } catch (e) {}
       result += (isCompact ? names.slice(0, limit) : names).map(function(name) {
         var _limit = isCompact ? limit - 1 : limit;
         var descriptor = Object.getOwnPropertyDescriptor(value, name);
