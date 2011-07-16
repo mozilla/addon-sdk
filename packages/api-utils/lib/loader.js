@@ -214,10 +214,16 @@ const Loader = {
     ].join('')
   },
   footer: '\n/**/})() } catch (error) { module.error = error; }',
-  require: function require(base, id) {
+  require: function (base, id) {
     let manifest, imported;
 
     id = normalize(id); // Ensure that id has file extension.
+
+    // TODO: removed this ugly hack. Since cuddlefish is a jsm module itself
+    // it can not be loaded with this loader, but it's not an issues since it
+    // hos to go away regardless.
+    if (~String(id).indexOf('cuddlefish.js'))
+      return require('api-utils/cuddlefish')
 
     // If we have a base module and it's in manifest, then all it's
     // dependencies must be in the manifest.
