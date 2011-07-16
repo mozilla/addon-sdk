@@ -524,7 +524,7 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   get tab() {
-    let tab = require("tabs/tab");
+    let tab = require("../tabs/tab");
     return tab.getTabForWindow(this._window);
   },
   

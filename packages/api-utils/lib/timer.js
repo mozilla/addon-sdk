@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci} = require("chrome");
-var xpcom = require("xpcom");
+var xpcom = require("./xpcom");
 
 var timerClass = Cc["@mozilla.org/timer;1"];
 var nextID = 1;
@@ -131,7 +131,7 @@ function cancelTimer(timerID) {
   }
 }
 
-require("unload").when(
+require("./unload").when(
   function cancelAllPendingTimers() {
     var timerIDs = [timerID for (timerID in timers)];
     timerIDs.forEach(function(timerID) { cancelTimer(timerID); });

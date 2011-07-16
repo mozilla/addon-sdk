@@ -59,7 +59,7 @@ if (this.chrome) {
   });
 } else {
   exports.register = function(addon) {
-    var timer = require("timer");
+    var timer = require("./timer");
     addon.registerCall("setTimeout", function(name, ms) {
       var id = timer.setTimeout(function() {
         addon.send("onTimeout", id);

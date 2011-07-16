@@ -38,7 +38,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { URL } = require("url");
+const { URL } = require("./url");
 
 exports.MatchPattern = MatchPattern;
 

@@ -245,7 +245,7 @@ function StreamManager(stream, rawStream) {
     self.unload();
   };
 
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 
 StreamManager.prototype = {

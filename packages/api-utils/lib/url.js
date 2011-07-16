@@ -118,4 +118,4 @@ function URL(url, base) {
   this.__defineGetter__("path", function() uri.path);
   this.toString = function URL_toString() uri.spec;
 };
-exports.URL = require("api-utils").publicConstructor(URL);
+exports.URL = require("./api-utils").publicConstructor(URL);

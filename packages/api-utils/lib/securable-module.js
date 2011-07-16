@@ -295,7 +295,7 @@
              // currently unused
            }
            if (false) // force scanner to copy self-maker.js into the XPI
-             require("self-maker"); 
+             require("./self-maker"); 
            let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
            if (!makerModData.uri)
              throw new Error("Unable to find self-maker, from "+basePath);

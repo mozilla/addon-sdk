@@ -38,11 +38,11 @@
 
 "use strict";
 
-const { Trait } = require("light-traits");
-const { EventEmitterTrait: EventEmitter } = require("events");
-const { DOMEventAssembler } = require("events/assembler");
-const { browserWindowIterator, isBrowser } = require('window-utils');
-const windowObserver = require("windows/observer");
+const { Trait } = require("../light-traits");
+const { EventEmitterTrait: EventEmitter } = require("../events");
+const { DOMEventAssembler } = require("../events/assembler");
+const { browserWindowIterator, isBrowser } = require('../window-utils');
+const windowObserver = require("../windows/observer");
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
