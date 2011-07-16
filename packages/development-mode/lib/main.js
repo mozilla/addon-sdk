@@ -38,7 +38,7 @@
 var print;
 
 var {Cc,Ci} = require("chrome");
-var xhr = require("xhr");
+var xhr = require("api-utils/xhr");
 
 // TODO: Eventually we should be able to e.g. require("os").environ
 // rather than access this XPCOM service directly.
@@ -46,7 +46,7 @@ var environ = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
 
 function runTask(options) {
-  require("bootstrap").run(options, packaging.root.path, print);
+  require("./bootstrap").run(options, packaging.root.path, print);
   processNextTask();
 }
 
@@ -63,7 +63,7 @@ function processNextTask() {
         } else
           processNextTask();
       } else {
-        require("timer").setTimeout(processNextTask, 1000);
+        require("api-utils/timer").setTimeout(processNextTask, 1000);
       }
     }
   };

@@ -236,7 +236,7 @@ function cleanup() {
     console.exception(e);
   };
 
-  require("timer").setTimeout(showResults, 1);
+  require("api-utils/timer").setTimeout(showResults, 1);
 }
 
 function nextIteration(tests) {
@@ -260,7 +260,7 @@ function nextIteration(tests) {
     iterationsLeft--;
   }
   if (iterationsLeft)
-    sandbox.require("unit-test").findAndRunTests({
+    sandbox.require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: packaging.enableE10s,
       testInProcess: true,
       fs: sandbox.fs,
@@ -269,7 +269,7 @@ function nextIteration(tests) {
       onDone: nextIteration
     });
   else
-    require("timer").setTimeout(cleanup, 0);
+    require("api-utils/timer").setTimeout(cleanup, 0);
 }
 
 var POINTLESS_ERRORS = [
@@ -323,9 +323,9 @@ var runTests = exports.runTests = function runTests(options) {
   try {
     cService.registerListener(consoleListener);
 
-    var cuddlefish = require("cuddlefish");
-    var ptc = require("plain-text-console");
-    var url = require("url");
+    var cuddlefish = require("api-utils/cuddlefish");
+    var ptc = require("api-utils/plain-text-console");
+    var url = require("api-utils/url");
 
     dirs = [url.toFilename(path)
             for each (path in options.rootPaths)];
@@ -333,7 +333,7 @@ var runTests = exports.runTests = function runTests(options) {
                                         options);
     var globals = {packaging: packaging};
 
-    var xulApp = require("xul-app");
+    var xulApp = require("api-utils/xul-app");
     var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
                      .getService(Ci.nsIXULRuntime);
 
@@ -352,12 +352,12 @@ var runTests = exports.runTests = function runTests(options) {
                                      __proto__: options});
     nextIteration();
   } catch (e) {
-    print(require("traceback").format(e) + "\n" + e + "\n");
+    print(require("api-utils/traceback").format(e) + "\n" + e + "\n");
     onDone({passed: 0, failed: 1});
   }
 };
 
-require("unload").when(
+require("api-utils/unload").when(
   function() {
     cService.unregisterListener(consoleListener);
   });
