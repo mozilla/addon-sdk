@@ -192,6 +192,11 @@ const Loader = {
         memory: memory
       },
       id: '@globals'
+    },
+    // TODO: Remove this temporary hack and use proper solution instead.
+    'self.js': {
+      exports: require('self'),
+      id: 'self'
     }
   },
   Header: function Header(id, uri) {
