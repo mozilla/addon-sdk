@@ -39,8 +39,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc,Ci} = require("chrome");
-const errors = require("errors");
-const apiUtils = require("api-utils");
+const errors = require("api-utils/errors");
+const apiUtils = require("api-utils/api-utils");
  
 /*
 While these data flavors resemble Internet media types, they do

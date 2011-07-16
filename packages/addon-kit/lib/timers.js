@@ -35,4 +35,4 @@
  * ***** END LICENSE BLOCK ***** */
 
 // This module just proxies to the low level equivalent "timer" in "api-utils".
-module.exports = require("timer");
+module.exports = require("api-utils/timer");

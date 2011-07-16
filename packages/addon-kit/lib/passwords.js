@@ -36,9 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { Trait } = require("light-traits");
-const utils = require("passwords/utils");
-const defer = require("utils/function").Enqueued;
+const { Trait } = require("api-utils/light-traits");
+const utils = require("api-utils/passwords/utils");
+const defer = require("api-utils/utils/function").Enqueued;
 
 /**
  * Utility function that returns `onComplete` and `onError` callbacks form the

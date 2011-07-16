@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The tabs module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -45,8 +45,8 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { browserWindows } = require("windows");
-const { tabs } = require("windows/tabs");
+const { browserWindows } = require("./windows");
+const { tabs } = require("api-utils/windows/tabs");
 
 Object.defineProperties(tabs, {
   open: { value: function open(options) {
