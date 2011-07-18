@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (!require("xul-app").is("Firefox")) {
   throw new Error([
     "The panel module currently supports only Firefox.  In the future ",

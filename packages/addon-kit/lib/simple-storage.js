@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 const file = require("file");
 const prefs = require("preferences-service");
