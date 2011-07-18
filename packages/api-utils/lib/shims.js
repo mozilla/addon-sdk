@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 // Override the default Iterator function with one that passes
 // a second argument to custom iterator methods that identifies
 // the call as originating from an Iterator function so the custom

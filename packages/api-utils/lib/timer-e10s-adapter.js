@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (this.chrome) {
   var callbacks = {};
   exports.setTimeout = function setTimeout(cb, ms) {

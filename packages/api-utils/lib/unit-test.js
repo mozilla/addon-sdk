@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 var timer = require("timer");
 
 exports.findAndRunTests = function findAndRunTests(options) {

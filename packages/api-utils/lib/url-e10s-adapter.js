@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (this.chrome) {
   exports.toFilename   = function(spec) chrome.call("url:toFilename", spec);
   exports.fromFilename = function(spec) chrome.call("url:fromFilename", spec);
