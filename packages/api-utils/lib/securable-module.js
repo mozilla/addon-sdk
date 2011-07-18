@@ -380,7 +380,8 @@
            }
            self.modules[path] = posteval_exports;
          }
-         return self.modules[path]; // these are the exports
+         let exports = self.modules[path];
+         return typeof exports === 'object' ? Object.freeze(exports) : exports;
        }
 
        // START support Async module-style require and define calls.
