@@ -45,9 +45,10 @@ exports.testUnloading = function(test) {
   var loader = test.makeSandboxedLoader();
   var ul = loader.require("unload");
   var unloadCalled = 0;
+  var errorsReported = 0;
   function unload() {
     unloadCalled++;
-    throw "error";
+    throw new Error("error");
   }
   ul.when(unload);
 
@@ -56,9 +57,11 @@ exports.testUnloading = function(test) {
 
   function unload2() { unloadCalled++; }
   ul.when(unload2);
-  loader.unload();
+  loader.unload(undefined, function onError() { errorsReported++; });
   test.assertEqual(unloadCalled, 2,
                    "Unloader functions are called on unload.");
+  test.assertEqual(errorsReported, 1,
+                   "One unload handler threw exception");
 };
 
 exports.testEnsure = function(test) {
