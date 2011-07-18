@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 var {Cc,Ci} = require("chrome");
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
