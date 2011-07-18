@@ -136,11 +136,11 @@ function unwrap(value, obj, name) {
 }
 
 /**
- * Returns a proxy object that allow to wrap any of its function though
- * `ContentScriptFunctionWrapper`.
+ * Returns a XrayWrapper proxy object that allow to wrap any of its function
+ * though `ContentScriptFunctionWrapper`.
  *
  * @param obj {Object}
- *        object coming from content script context that we are wrapping
+ *        object coming from content script context to wrap
  *
  * Example:
  *   let myListener = { handleEvent: function (event) {} };
@@ -169,14 +169,13 @@ function ContentScriptObjectWrapper(obj) {
     },
     // derived traps
     has: function(name) {
-      return name == "___proxy" || name === "__isXrayWrapperProxy" ||
+      return name === "__isXrayWrapperProxy" ||
              name in obj;
     },
     hasOwn: function(name) {
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      console.log("get : "+name);
       if (name == "valueOf")
         return function (key) {
           if (key === UNWRAP_ACCESS_KEY)
@@ -221,19 +220,20 @@ function wrap(value, obj, name, debug) {
     return value;
   let type = typeof value;
   if (type == "object") {
+    // We may have a XrayWrapper proxy.
     // For example:
     //   let myListener = { handleEvent: function () {} };
     //   node.addEventListener("click", myListener, false);
     // When native code want to call handleEvent,
     // we go though ContentScriptFunctionWrapper that calls `wrap(this)`
-    // `this` will be the CS proxy of myListener.
+    // `this` is the XrayWrapper proxy of myListener.
     // We return this object without building a CS proxy as it is already
     // a value coming from the CS.
     if ("__isXrayWrapperProxy" in value)
       return value.valueOf(UNWRAP_ACCESS_KEY);
 
     // Unwrap object before wrapping it.
-    // It should not happen.
+    // It should not happen with CS proxy objects.
     while("__isWrappedProxy" in value) {
       value = value.valueOf(UNWRAP_ACCESS_KEY);
     }
