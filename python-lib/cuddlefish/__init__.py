@@ -496,6 +496,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     from templates import EMPTY_FOLDER
     tmpl = addon_templates[template_name]
 
+    target_cfg = findTargetCfg(path, require_id=True, err=err)
     for template_file_path, template_content in tmpl["content"].items():
         target_file = open_target_file(path, template_file_path)
         if target_file is not None:

@@ -2,7 +2,8 @@ import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish import run_in_temp_subdir
-from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
+from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS
+from cuddlefish import packaging
 
 class TestInit(unittest.TestCase):
 
@@ -19,7 +20,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue("* lib directory created" in out)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
-        self.assertEqual(err,"")
+        self.assertEqual(err,"No 'id' in package.json: creating a new ID for you.\n")
         self.assertTrue(len(os.listdir(basedir))>0)
         main_js = os.path.join(basedir,"lib","main.js")
         package_json = os.path.join(basedir,"package.json")
@@ -28,9 +29,12 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),MAIN_JS)
-        self.assertEqual(open(package_json,"r").read(),
-                         PACKAGE_JSON % {"name":"tmp_addon_sample",
-                                         "fullName": "tmp_addon_SAMPLE" })
+
+        package_cfg = packaging.load_json_file(package_json)
+        self.assertTrue("id" in package_cfg)
+        self.assertEqual(package_cfg["name"], "tmp_addon_sample")
+        self.assertEqual(package_cfg["fullName"], "tmp_addon_SAMPLE")
+
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
