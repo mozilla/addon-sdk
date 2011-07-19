@@ -509,6 +509,32 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
+def findTargetCfg(pkgdir, require_id=False, err=sys.stderr):
+    """Returns the package configuration based (see packaging.
+       get_config_in_dir) on <pkgdir>/package.json,
+       optionally updating package.json with an 'id' property if
+       require_id=True."""
+    target_cfg_json = os.path.join(pkgdir, 'package.json')
+    target_cfg = packaging.get_config_in_dir(pkgdir)
+
+    if require_id:
+        from cuddlefish.preflight import preflight_config
+        config_was_ok, modified = preflight_config(
+            target_cfg,
+            target_cfg_json,
+            stderr=err
+            )
+        if not config_was_ok:
+            if modified:
+                target_cfg = findTargetCfg(pkgdir, err=err)
+            else:
+                print >>err, ("package.json needs modification:"
+                              " please update it and then re-run"
+                              " cfx")
+                sys.exit(1)
+        assert "id" in target_cfg
+    return target_cfg
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -570,7 +596,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print >>stdout, "Wrote %s." % filename
         return
 
-    target_cfg_json = None
     if not target_cfg:
         if not options.pkgdir:
             options.pkgdir = find_parent_package(os.getcwd())
@@ -585,8 +610,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                  " %s." % options.pkgdir)
             sys.exit(1)
 
-        target_cfg_json = os.path.join(options.pkgdir, 'package.json')
-        target_cfg = packaging.get_config_in_dir(options.pkgdir)
+        target_cfg = findTargetCfg(options.pkgdir,
+                                   require_id=command in ('xpi', 'run'))
+    else:
+        # targetCfg is only specified when run() is called from
+        # test_all_packages, so we won't need target_cfg["id"]
+        assert command == "test"
 
     # At this point, we're either building an XPI or running Jetpack code in
     # a Mozilla application (which includes running tests).
@@ -635,32 +664,13 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
-    if command in ('xpi', 'run'):
-        from cuddlefish.preflight import preflight_config
-        if target_cfg_json:
-            config_was_ok, modified = preflight_config(target_cfg,
-                                                       target_cfg_json)
-            if not config_was_ok:
-                if modified:
-                    # we need to re-read package.json . The safest approach
-                    # is to re-run the "cfx xpi"/"cfx run" command.
-                    print >>sys.stderr, ("package.json modified: please re-run"
-                                         " 'cfx %s'" % command)
-                else:
-                    print >>sys.stderr, ("package.json needs modification:"
-                                         " please update it and then re-run"
-                                         " 'cfx %s'" % command)
-                sys.exit(1)
-        # if we make it this far, we have a JID
-    else:
-        assert command == "test"
-
     if "id" in target_cfg:
         jid = target_cfg["id"]
         if not ("@" in jid or jid.startswith("{")):
             jid = jid + "@jetpack"
         unique_prefix = '%s-' % jid # used for resource: URLs
     else:
+        assert command == "test"
         # The Jetpack ID is not required for cfx test, in which case we have to
         # make one up based on the GUID.
         if options.use_server:
