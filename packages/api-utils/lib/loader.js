@@ -155,24 +155,26 @@ const Loader = {
     return uri;
   },
   newChannel: function newChannel(uri) {
-    let channel, pipe, resourceURI, resourceStream, header, footer
+    let channel, resourceURI, resourceStream, header, footer
     // Getting resource URI of the given URI.
     resourceURI = URI(uri.spec.replace(uri.scheme, 'resource'), null, null);
     // Creating a channel for the resource and open an input stream.
     resourceStream = URIChannel(resourceURI).open();
 
-    pipe = Pipe(true, true, 0, 0, null);
+    let { inputStream, outputStream } = Pipe(true, true, 0, 0, null);
 
     channel = Channel();
     channel.setURI(URI(resolveURI(resourceURI), null, null));
-    channel.contentStream = pipe.inputStream;
+    channel.contentStream = inputStream
     channel.QueryInterface(Ci.nsIChannel);
 
     header = this.Header(uri.spec, resourceURI.spec);
-    pipe.outputStream.write(header, header.length);
-    pipe.outputStream.writeFrom(resourceStream, resourceStream.available());
-    pipe.outputStream.write(this.footer, this.footer.length);
-    pipe.outputStream.close();
+    footer = this.footer
+    outputStream.write(header, header.length);
+    outputStream.writeFrom(resourceStream, resourceStream.available());
+    resourceStream.close();
+    outputStream.write(footer, footer.length);
+    outputStream.close();
 
     return channel;
   },
