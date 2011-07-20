@@ -72,6 +72,25 @@ called `package.json`. This file is also referred to as the
   located in one of the top-level module directories specified by
   `lib`. Defaults to `"main"`.
 
+
+* `templatedir` - the relative path from the root of the package to the
+  directory with the extension or the application template, which is used when
+  running the package using `cfx run` or `cfx test` and when building an
+  XPI with `cfx xpi`. The specified directory must contain either an
+  [`install.rdf` file][install.rdf] (if the package represents an extension) or
+  an [`application.ini` file] [application.ini] (if the package is a XULRunner
+  application) and the Addon SDK code responsible for initializing the
+  extension. See
+  [Structure of an installable bundle](https://developer.mozilla.org/en/Bundles)
+  on MDC for the list of other files and directories that can appear in this
+  directory.<br/>
+  This property is useful for building a [non-bootstrapped XUL extension] [xul]
+  with the SDK. A default template extension (installable without a restart)
+  is used when this property is not specified.
+
+  [install.rdf]: https://developer.mozilla.org/en/Install_manifests
+  [application.ini]: https://developer.mozilla.org/en/XUL_application_packaging
+
 * `harnessClassID` - a String in the GUID format:
   `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, where `x` represents a single
   hexadecimal digit. It is used as a `classID` (CID) of the "harness service"
