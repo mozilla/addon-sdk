@@ -472,7 +472,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
         print >>err, 'This command must be run in an empty directory.'
         return 1
 
-    def open_target_file(root_path, template_file_path):
+    def open_for_writing(root_path, template_file_path):
         """Given the root path in OS-specific format and the forward-slash
         separated relative path to the file or directory (indicated by a
         trailing slash), returns a file open for writing or None if a directory
@@ -496,7 +496,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     from templates import EMPTY_FOLDER
     tmpl = addon_templates[template_name]
 
-    package_json_file = open_target_file(path, "package.json")
+    package_json_file = open_for_writing(path, "package.json")
     package_json_obj = tmpl["get_package_json_obj"](addon);
     package_json_file.write(json.dumps(package_json_obj, indent=4)+"\n")
     package_json_file.close()
@@ -505,7 +505,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
 
     for template_file_path, template_content in tmpl["content"].items():
         assert template_file_path != "package.json"
-        target_file = open_target_file(path, template_file_path)
+        target_file = open_for_writing(path, template_file_path)
         if target_file is not None:
             if type(template_content) == str:
                 target_file.write(template_content % {'name':addon})
