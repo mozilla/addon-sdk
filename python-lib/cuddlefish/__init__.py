@@ -496,12 +496,21 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     from templates import EMPTY_FOLDER
     tmpl = addon_templates[template_name]
 
+    package_json_file = open_target_file(path, "package.json")
+    package_json_obj = tmpl["get_package_json_obj"](addon);
+    package_json_file.write(json.dumps(package_json_obj, indent=4)+"\n")
+    package_json_file.close()
+    
     target_cfg = findTargetCfg(path, require_id=True, err=err)
+
     for template_file_path, template_content in tmpl["content"].items():
+        assert template_file_path != "package.json"
         target_file = open_target_file(path, template_file_path)
         if target_file is not None:
-            target_file.write(template_content % {'name':addon.lower(),
-                                                  'fullName':addon })
+            if type(template_content) == str:
+                target_file.write(template_content % {'name':addon})
+            else:
+                target_file.write(template_content(target_cfg, env_root))
             print >>out, '* %s written' % (template_file_path)
         else:
             assert template_content == EMPTY_FOLDER
