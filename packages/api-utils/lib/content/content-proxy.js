@@ -52,7 +52,7 @@ function ContentScriptFunctionWrapper(fun, obj, name) {
   Object.defineProperty(fun, "___proxy", {value : wrappedFun,
                                           writable : false,
                                           enumerable : false,
-                                          configurable : true});
+                                          configurable : false});
   
   return wrappedFun;
 }
@@ -122,7 +122,7 @@ function unwrap(value, obj, name) {
   if (type == "function")
     return ContentScriptFunctionWrapper(value, obj, name);
   
-  // We must proxify objects coming from content script too, as they may have
+  // We must wrap objects coming from content script too, as they may have
   // a function that will be called by a native method.
   // For example:
   //   addEventListener(..., { handleEvent: function(event) {} }, ...);
@@ -153,6 +153,12 @@ function ContentScriptObjectWrapper(obj) {
   if ("___proxy" in obj && typeof obj.___proxy == "object")
     return obj.___proxy;
 
+  function valueOf(key) {
+    if (key === UNWRAP_ACCESS_KEY)
+      return obj;
+    return this;
+  }
+
   let proxy = Proxy.create({
     // Fundamental traps
     getPropertyDescriptor:  function(name) {
@@ -177,11 +183,7 @@ function ContentScriptObjectWrapper(obj) {
     },
     get: function(receiver, name) {
       if (name == "valueOf")
-        return function (key) {
-          if (key === UNWRAP_ACCESS_KEY)
-            return obj;
-          return this;
-        };
+        return valueOf;
       let value = obj[name];
       if (!value)
         return value;
@@ -194,7 +196,7 @@ function ContentScriptObjectWrapper(obj) {
     },
     enumerate: function() {
       var result = [];
-      for each (name in obj) {
+      for each (let name in obj) {
         result.push(name);
       };
       return result;
@@ -207,7 +209,7 @@ function ContentScriptObjectWrapper(obj) {
   Object.defineProperty(obj, "___proxy", {value : proxy,
                                           writable : false,
                                           enumerable : false,
-                                          configurable : true});
+                                          configurable : false});
 
   return proxy;
 }
@@ -284,9 +286,9 @@ function getProxyForObject(obj) {
   let proxy = Proxy.create(handlerMaker(obj));
   
   Object.defineProperty(obj, "___proxy", {value : proxy,
-                                          writable : true,
+                                          writable : false,
                                           enumerable : false,
-                                          configurable : true});
+                                          configurable : false});
   return proxy;
 }
 

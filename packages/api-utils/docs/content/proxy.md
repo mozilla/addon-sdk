@@ -27,17 +27,16 @@ These proxies aims to wrap all document JS objects in order to:
   2. Prevent leaking any JS object to the document:<br/>
     Proxy object hold a different set of attributes in order to avoid
     leaking any JS value to the document.
-  3. Having exactly same feature set than regular web object:<br/>
+  3. Having exactly same feature set as regular web page object:<br/>
     XrayWrapper fullfill the two first items and these are the only
     differences we want from raw/unwrapped document objects.
-    But XrayWrappers have some limitations and some bugs that forced us
-    to implement these proxies.
-    For example, we want:
-      * to be able to overload native method from the CS,
-      * expando atttribute like `onclick` to be working,
-      * window[framename], document[formname] to be defined.
-    We just want CS objects to be working exactly like objects in a regular
-    web context.
+    Platform provides XrayWrapper to address first two points,
+    but their limitations and bugs break most of popular JS frameworks.
+    This forced us into implementing similar wrappers using Proxies
+    which allowed us to:
+      * override native methods from the content script,
+      * provide expando atttribute like `onclick`,
+      * provide window[framename], document[formname] properties.
 
 
 ## Concrete security threat examples ##
@@ -50,14 +49,14 @@ These proxies aims to wrap all document JS objects in order to:
       str.__proto__.__proto__.toString = function () {return "evil";};
     };
     
-    // Now, in a content script, you just want to retrieve an element though:
+    // After following line content script, will be compromised:
     var node = document.getElementById("element");
     // Then your CS is totally out of control.
-    // This is why `document` is a CS proxy that ensure `getElementById` being
-    // the native DOM method you are expecting.
+    // In order to avoid such malicious `getElementById`,
+    // `document` handed to the content script is wrapped via proxy.
     
-    // Second proxy feature is to hold different attribute sets, so that,
-    // the following `myCustomAttribute` is not visible from the web page.
+    // In addition proxy base wrappers protect property leaking to the content, 
+    // so that, the following `myCustomAttribute` is not visible from the web page.
     // Nor `myCustomAttribute` would be visible from the CS if this line
     // was executed from the document.
     node.myCustomAttribute = "something";
@@ -65,13 +64,13 @@ These proxies aims to wrap all document JS objects in order to:
 
 ## The big picture: ##
 
-  In order to implement them, we need two kind of proxies:
+  Implementation defines two different kinds of proxy wrappers:
   
-  1. CS proxies that wrap a document object and will be given to
-     CS context. These proxies are the one described above.
-  2. XrayWrapper proxies that wrap an object coming from CS context and will
-     be given to XrayWrapper functions. These proxies are only internal,
-     so nor document, nor CS have access to them.
+  1. Content script proxies, that wrap document object are exposed to
+     content scripts as described above.
+  2. XrayWrapper proxies, they wrap objects from content scripts before handing
+     them over to XrayWrapper functions. These proxies are internal,
+     they are not exposed to content scripts or document content.
 
 <pre>
   /--------------------\                           /------------------------\
