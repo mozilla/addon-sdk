@@ -37,6 +37,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 exports.ByteReader = ByteReader;
 exports.ByteWriter = ByteWriter;
 

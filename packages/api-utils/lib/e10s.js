@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 let {Cc, Ci, Cr} = require('chrome');
 
 let url = require("url");
