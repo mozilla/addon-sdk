@@ -84,7 +84,7 @@ TestFinder.prototype = {
           function(suite) {
             var module = require(suite);
             if (self.testInProcess)
-              for (name in module)
+              for (let name in module)
                   tests.push({
                     testFunction: self._makeTest(suite, name, module[name]),
                     name: suite + "." + name

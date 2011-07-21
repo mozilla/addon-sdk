@@ -346,7 +346,7 @@
          let moduleContents = self.fs.getFile(path);
          var sandbox = self.sandboxFactory.createSandbox(moduleContents);
          self.sandboxes[path] = sandbox;
-         for (name in self.globals)
+         for (let name in self.globals)
            sandbox.defineProperty(name, self.globals[name]);
          var api = self._makeApi(path);
          sandbox.defineProperty('require', api.require);
@@ -577,7 +577,7 @@
        var sandbox = this.sandboxFactory.createSandbox(options);
        if (extraOutput)
          extraOutput.sandbox = sandbox;
-       for (name in this.globals)
+       for (let name in this.globals)
          sandbox.defineProperty(name, this.globals[name]);
        var api = this._makeApi(null);
        sandbox.defineProperty('require', api.require);
@@ -749,13 +749,13 @@
      global.SecurableModule = exports;
    } else if (global.exports) {
      // We're being loaded in a SecurableModule.
-     for (name in exports) {
+     for (let name in exports) {
        global.exports[name] = exports[name];
      }
    } else {
      // We're being loaded in a JS module.
      global.EXPORTED_SYMBOLS = [];
-     for (name in exports) {
+     for (let name in exports) {
        global.EXPORTED_SYMBOLS.push(name);
        global[name] = exports[name];
      }
