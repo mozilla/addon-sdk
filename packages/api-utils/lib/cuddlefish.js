@@ -37,7 +37,6 @@
 "use strict";
 
 (function(global) {
-  "use strict";
 
    const Cc = Components.classes;
    const Ci = Components.interfaces;
