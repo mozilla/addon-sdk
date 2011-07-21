@@ -39,8 +39,8 @@
 
 "use strict";
 
-const keyboardObserver = require("keyboard/observer");
-const { getKeyForCode, normalize } = require("keyboard/utils");
+const keyboardObserver = require("./observer");
+const { getKeyForCode, normalize } = require("./utils");
 
 /**
  * Register a global `hotkey` that executes `listener` when the key combination

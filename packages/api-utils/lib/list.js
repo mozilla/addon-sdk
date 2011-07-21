@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { Trait } = require('traits');
+const { Trait } = require('./traits');
 
 /**
  * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/list

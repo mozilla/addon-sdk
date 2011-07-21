@@ -37,7 +37,7 @@
 
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The selection module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -46,8 +46,8 @@ if (!require("xul-app").is("Firefox")) {
 }
 
 let { Ci } = require("chrome"),
-    { setTimeout } = require("timer"),
-    { EventEmitter } = require('events');
+    { setTimeout } = require("api-utils/timer"),
+    { EventEmitter } = require("api-utils/events");
 
 // The selection type HTML
 const HTML = 0x01;
@@ -95,7 +95,7 @@ function Selection(rangeNumber) {
   });
 }
 
-require("xpcom").utils.defineLazyServiceGetter(this, "windowMediator",
+require("api-utils/xpcom").utils.defineLazyServiceGetter(this, "windowMediator",
   "@mozilla.org/appshell/window-mediator;1", "nsIWindowMediator");
 
 /**
@@ -227,7 +227,8 @@ function onUnload(event) {
 }
 
 let SelectionListenerManager = {
-  QueryInterface: require("xpcom").utils.generateQI([Ci.nsISelectionListener]),
+  QueryInterface: require("api-utils/xpcom").utils.
+                  generateQI([Ci.nsISelectionListener]),
 
   // The collection of listeners wanting to be notified of selection changes
   listeners: EventEmitter.compose({
@@ -283,7 +284,7 @@ let SelectionListenerManager = {
     let self = this;
     function wrap(count, func) {
       if (count-- > 0)
-        require("timer").setTimeout(wrap, 0);
+        require("api-utils/timer").setTimeout(wrap, 0);
       else
         self.addSelectionListener(window);
     }
@@ -337,7 +338,7 @@ SelectionListenerManager.listeners.on('error', console.error);
  * Install |SelectionListenerManager| as tab tracker in order to watch
  * tab opening/closing
  */
-require("tab-browser").Tracker(SelectionListenerManager);
+require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
 /**
  * Exports an iterator so that discontiguous selections can be iterated.

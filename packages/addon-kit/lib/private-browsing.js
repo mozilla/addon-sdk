@@ -39,10 +39,10 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const observers = require("observer-service");
-const { EventEmitter } = require("events");
-const { setTimeout } = require("timer");
-const unload = require("unload");
+const observers = require("api-utils/observer-service");
+const { EventEmitter } = require("api-utils/events");
+const { setTimeout } = require("api-utils/timer");
+const unload = require("api-utils/unload");
 
 const ON_START = "start";
 const ON_STOP = "stop";
@@ -50,7 +50,7 @@ const ON_TRANSITION = "private-browsing-transition-complete";
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
-if (require("xul-app").is("Firefox")) {
+if (require("api-utils/xul-app").is("Firefox")) {
   pbService = Cc["@mozilla.org/privatebrowsing;1"].
               getService(Ci.nsIPrivateBrowsingService);
 }

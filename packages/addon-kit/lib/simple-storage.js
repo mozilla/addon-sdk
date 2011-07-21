@@ -41,13 +41,13 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const file = require("file");
-const prefs = require("preferences-service");
+const file = require("api-utils/file");
+const prefs = require("api-utils/preferences-service");
 const jpSelf = require("self");
-const timer = require("timer");
-const unload = require("unload");
-const { EventEmitter } = require("events");
-const { Trait } = require("traits");
+const timer = require("api-utils/timer");
+const unload = require("api-utils/unload");
+const { EventEmitter } = require("api-utils/events");
+const { Trait } = require("api-utils/traits");
 
 const WRITE_PERIOD_PREF = "extensions.addon-sdk.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
