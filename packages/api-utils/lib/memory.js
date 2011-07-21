@@ -43,7 +43,7 @@ var Compacter = {
   INTERVAL: 5000,
   notify: function(timer) {
     var newTrackedObjects = {};
-    for (name in trackedObjects) {
+    for (let name in trackedObjects) {
       var oldBin = trackedObjects[name];
       var newBin = [];
       var strongRefs = [];
@@ -93,7 +93,7 @@ var track = exports.track = function track(object, bin, stackFrameNumber) {
 
 var getBins = exports.getBins = function getBins() {
   var names = [];
-  for (name in trackedObjects)
+  for (let name in trackedObjects)
     names.push(name);
   return names;
 };
@@ -112,7 +112,7 @@ var getObjects = exports.getObjects = function getObjects(bin) {
     if (bin in trackedObjects)
       getLiveObjectsInBin(trackedObjects[bin], results);
   } else
-    for (name in trackedObjects)
+    for (let name in trackedObjects)
       getLiveObjectsInBin(trackedObjects[name], results);
   return results;
 };

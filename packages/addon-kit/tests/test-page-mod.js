@@ -17,8 +17,7 @@ exports.delay = function(test) {
 /* Tests for the PageMod APIs */
 
 exports.testPageMod1 = function(test) {
-  let pageMod;
-  [pageMod] = testPageMod(test, "about:", [{
+  let [pageMod] = testPageMod(test, "about:", [{
       include: /about:/,
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
