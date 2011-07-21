@@ -75,7 +75,7 @@ exports.browserWindowIterator = browserWindowIterator;
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   this.delegate = delegate;
   this._loadingWindows = [];
-  for (window in windowIterator())
+  for (let window in windowIterator())
     this._regWindow(window);
   gWindowWatcher.registerNotification(this);
   require("./unload").ensure(this);
@@ -115,7 +115,7 @@ WindowTracker.prototype = {
 
   unload: function unload() {
     gWindowWatcher.unregisterNotification(this);
-    for (window in windowIterator())
+    for (let window in windowIterator())
       this._unregWindow(window);
   },
 

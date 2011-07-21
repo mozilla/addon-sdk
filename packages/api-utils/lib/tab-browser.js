@@ -180,17 +180,17 @@ Tracker.prototype = {
     if (this._window && window != this._window)
       return;
 
-    for (browser in tabBrowserIterator(window))
+    for (let browser in tabBrowserIterator(window))
       this._browsers.push(browser);
     if (this._delegate)
-      for (browser in tabBrowserIterator(window))
+      for (let browser in tabBrowserIterator(window))
         this._delegate.onTrack(browser);
   },
   onUntrack: function onUntrack(window) {
     if (this._window && window != this._window)
       return;
 
-    for (browser in tabBrowserIterator(window)) {
+    for (let browser in tabBrowserIterator(window)) {
       let index = this._browsers.indexOf(browser);
       if (index != -1)
         this._browsers.splice(index, 1);
@@ -198,7 +198,7 @@ Tracker.prototype = {
         console.error("internal error: browser tab not found");
     }
     if (this._delegate)
-      for (browser in tabBrowserIterator(window))
+      for (let browser in tabBrowserIterator(window))
         this._delegate.onUntrack(browser);
   },
   get length() {
@@ -253,7 +253,7 @@ TabTracker.prototype = {
     }
   },
   onTrack: function onTrack(tabbrowser) {
-    for (tab in tabIterator(tabbrowser))
+    for (let tab in tabIterator(tabbrowser))
       this._safeTrackTab(tab);
     var self = this;
     this._TAB_EVENTS.forEach(
@@ -262,7 +262,7 @@ TabTracker.prototype = {
       });
   },
   onUntrack: function onUntrack(tabbrowser) {
-    for (tab in tabIterator(tabbrowser))
+    for (let tab in tabIterator(tabbrowser))
       this._safeUntrackTab(tab);
     var self = this;
     this._TAB_EVENTS.forEach(
@@ -709,7 +709,7 @@ ModuleTabTracker.prototype = {
     }
   },
   onTrack: function onTrack(tabbrowser) {
-    for (tab in tabIterator(tabbrowser))
+    for (let tab in tabIterator(tabbrowser))
       this._safeTrackTab(tab);
     tabbrowser.tabContainer.addEventListener("TabOpen", this, false);
     tabbrowser.tabContainer.addEventListener("TabClose", this, false);
@@ -717,7 +717,7 @@ ModuleTabTracker.prototype = {
     tabbrowser.ownerDocument.defaultView.gBrowser.addEventListener("DOMContentLoaded", this, false);
   },
   onUntrack: function onUntrack(tabbrowser) {
-    for (tab in tabIterator(tabbrowser))
+    for (let tab in tabIterator(tabbrowser))
       this._safeUntrackTab(tab);
     tabbrowser.tabContainer.removeEventListener("TabOpen", this, false);
     tabbrowser.tabContainer.removeEventListener("TabClose", this, false);

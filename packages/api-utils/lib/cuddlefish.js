@@ -37,7 +37,6 @@
 "use strict";
 
 (function(global) {
-  "use strict";
 
    const Cc = Components.classes;
    const Ci = Components.interfaces;
@@ -121,7 +120,7 @@
      var globals = {};
 
      if (options.globals)
-       for (var name in options.globals)
+       for (let name in options.globals)
          globals[name] = options.globals[name];
 
      if (options.console)
@@ -171,13 +170,13 @@
      global.Cuddlefish = exports;
    } else if (global.exports) {
      // We're being loaded in a SecurableModule.
-     for (name in exports) {
+     for (let name in exports) {
        global.exports[name] = exports[name];
      }
    } else {
      // We're being loaded in a JS module.
      global.EXPORTED_SYMBOLS = [];
-     for (name in exports) {
+     for (let name in exports) {
        global.EXPORTED_SYMBOLS.push(name);
        global[name] = exports[name];
      }
