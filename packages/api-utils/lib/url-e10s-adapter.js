@@ -64,7 +64,7 @@ if (this.chrome) {
   }
 }
 else {
-  const { URL, toFilename, fromFilename } = require("url");
+  const { URL, toFilename, fromFilename } = require("./url");
 
   exports.register = function register(addon) {
     addon.registerCall("url:toFilename", function(name, spec) toFilename(spec));

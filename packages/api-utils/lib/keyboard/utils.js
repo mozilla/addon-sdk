@@ -40,9 +40,9 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const runtime = require("runtime");
-const { isString } = require("type");
-const array = require("array");
+const runtime = require("../runtime");
+const { isString } = require("../type");
+const array = require("../array");
 
 
 const SWP = "{{SEPARATOR}}";

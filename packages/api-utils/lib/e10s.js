@@ -38,9 +38,9 @@
 
 let {Cc, Ci, Cr} = require('chrome');
 
-let url = require("url");
-let file = require("file");
-let errors = require("errors");
+let url = require("./url");
+let file = require("./file");
+let errors = require("./errors");
 
 let jetpackService = Cc["@mozilla.org/jetpack/service;1"]
                      .getService(Ci.nsIJetpackService);
@@ -106,7 +106,7 @@ exports.AddonProcess = function createAddonProcess(options) {
   // Whenever our add-on is disabled or uninstalled, we want to
   // destroy the remote process.
 
-  require("unload").when(function() {
+  require("./unload").when(function() {
                            process.destroy();
                            process = null;
                          });
@@ -135,7 +135,7 @@ exports.AddonProcess = function createAddonProcess(options) {
   });
 
   process.on("console:trace", function(name, exception) {
-    var traceback = require("traceback");
+    var traceback = require("./traceback");
     var stack = traceback.fromException(remoteException(exception));
     console.log(traceback.format(stack.slice(0, -2)));
   });
@@ -239,7 +239,7 @@ exports.AddonProcess = function createAddonProcess(options) {
                      "sendMessage('core:exception', e); }");
 
   process.send("addInjectedSandboxScript",
-               require("cuddlefish").shimsCode);
+               require("./cuddlefish").shimsCode);
 
   return process;
 };

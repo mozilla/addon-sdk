@@ -64,7 +64,7 @@ const EVENTS = {
   "mouseout": "mouseout",
 };
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The widget module currently supports only Firefox.  In the future ",
     "it will support other applications. Please see ",
@@ -72,16 +72,16 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { validateOptions } = require("api-utils");
-const panels = require("panel");
-const { EventEmitter, EventEmitterTrait } = require("events");
-const { Trait } = require("traits");
-const LightTrait = require('light-traits').Trait;
-const { Loader, Symbiont } = require("content");
-const timer = require("timer");
-const { Cortex } = require('cortex');
-const windowsAPI = require("windows");
-const unload = require("unload");
+const { validateOptions } = require("api-utils/api-utils");
+const panels = require("./panel");
+const { EventEmitter, EventEmitterTrait } = require("api-utils/events");
+const { Trait } = require("api-utils/traits");
+const LightTrait = require('api-utils/light-traits').Trait;
+const { Loader, Symbiont } = require("api-utils/content");
+const timer = require("api-utils/timer");
+const { Cortex } = require('api-utils/cortex');
+const windowsAPI = require("./windows");
+const unload = require("api-utils/unload");
 
 // Data types definition
 const valid = {
@@ -124,7 +124,7 @@ let widgetAttributes = {
 
 // Import data definitions from loader, but don't compose with it as Model
 // functions allow us to recreate easily all Loader code.
-let loaderAttributes = require("content/loader").validationAttributes;
+let loaderAttributes = require("api-utils/content/loader").validationAttributes;
 for (let i in loaderAttributes)
   widgetAttributes[i] = loaderAttributes[i];
 
@@ -515,7 +515,7 @@ let browserManager = {
   // that calling this method can cause onTrack to be called immediately if
   // there are open windows.
   init: function () {
-    let windowTracker = new (require("window-utils").WindowTracker)(this);
+    let windowTracker = new (require("api-utils/window-utils").WindowTracker)(this);
     unload.ensure(windowTracker);
   },
 
@@ -721,7 +721,7 @@ WidgetChrome.prototype.update = function WC_update(updatedItem, property, value)
 WidgetChrome.prototype._createNode = function WC__createNode() {
   // XUL element container for widget
   let node = this._doc.createElement("toolbaritem");
-  let guid = require("xpcom").makeUuid().toString();
+  let guid = require("api-utils/xpcom").makeUuid().toString();
   
   // Temporary work around require("self") failing on unit-test execution ...
   let jetpackID = "testID";

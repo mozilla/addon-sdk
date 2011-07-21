@@ -37,8 +37,8 @@
 
 "use strict";
 
-let file = require("file");
-let url = require("url");
+let file = require("./file");
+let url = require("./url");
 
 let jid = packaging.jetpackID;
 let name = packaging.options.name;

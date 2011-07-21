@@ -38,13 +38,13 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const observers = require("observer-service");
-const { Worker, Loader } = require('content');
-const { EventEmitter } = require('events');
-const { List } = require('list');
-const { Registry } = require('utils/registry');
-const xulApp = require("xul-app");
-const { MatchPattern } = require('match-pattern');
+const observers = require("api-utils/observer-service");
+const { Worker, Loader } = require('api-utils/content');
+const { EventEmitter } = require('api-utils/events');
+const { List } = require('api-utils/list');
+const { Registry } = require('api-utils/utils/registry');
+const xulApp = require("api-utils/xul-app");
+const { MatchPattern } = require('api-utils/match-pattern');
 
 // Whether or not the host application dispatches a document-element-inserted
 // notification when the document element is inserted into the DOM of a page.

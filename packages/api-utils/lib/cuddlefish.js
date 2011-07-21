@@ -53,7 +53,7 @@
    if (global.require) {
      // We're being loaded in a SecurableModule. This call also tells the
      // manifest-scanner that it ought to scan securable-module.js
-     securableModule = require("securable-module");
+     securableModule = require("api-utils/securable-module");
    } else {
      var ios = Cc['@mozilla.org/network/io-service;1']
                .getService(Ci.nsIIOService);
@@ -81,7 +81,7 @@
    }
 
    if (false) // force the manifest-scanner to copy shims.js into the XPI
-     require("shims");
+     require("api-utils/shims");
    var localFS = new securableModule.LocalFileSystem(myURI);
    var shimsPath = localFS.resolveModule(null, "shims");
    var shims = exports.shims = localFS.getFile(shimsPath);
@@ -89,7 +89,7 @@
    shims.filename = shimsPath;
 
    function unloadLoader(reason, onError) {
-     this.require("unload").send(reason, onError);
+     this.require("api-utils/unload").send(reason, onError);
    }
 
    function makeGetModuleExports(delegate) {
@@ -152,11 +152,11 @@
      var loader = new securableModule.Loader(loaderOptions);
 
      if (!globals.console) {
-       var console = loader.require("plain-text-console");
+       var console = loader.require("api-utils/plain-text-console");
        globals.console = new console.PlainTextConsole(options.print);
      }
      if (!globals.memory)
-       globals.memory = loader.require("memory");
+       globals.memory = loader.require("api-utils/memory");
 
      loader.console = globals.console;
      loader.memory = globals.memory;
