@@ -36,14 +36,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
 const {Cc,Ci,Cu} = require("chrome");
 var NetUtil = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
 NetUtil = NetUtil.NetUtil;
-const errors = require("errors");
-const windowUtils = require("window-utils");
-const apiUtils = require("api-utils");
-const collection = require("collection");
+const errors = require("./errors");
+const windowUtils = require("./window-utils");
+const apiUtils = require("./api-utils");
+const collection = require("./collection");
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the
@@ -51,12 +52,23 @@ const collection = require("collection");
 // runtime, perhaps by inspecting supported packages (e.g. via
 // dynamically-named modules or package-defined extension points).
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("./xul-app").is("Firefox")) {
   throw new Error([
     "The tab-browser module currently supports only Firefox.  In the future ",
     "it will support other applications. Please see ",
     "https://bugzilla.mozilla.org/show_bug.cgi?id=560716 for more information."
   ].join(""));
+}
+
+function onBrowserLoad(callback, event) {
+  if (event.target && event.target.defaultView == this) {
+    this.removeEventListener("load", onBrowserLoad, true);
+    try {
+      require("timer").setTimeout(function () {
+        callback(event);
+      }, 10);
+    } catch (e) { console.exception(e); }
+  }
 }
 
 // Utility function to open a new browser window.
@@ -68,20 +80,8 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
-  if (callback) {
-    function onLoad(event) {
-      if (event.target && event.target.defaultView == window) {
-        window.removeEventListener("load", onLoad, true);
-        try {
-          require("timer").setTimeout(function () {
-            callback(event);
-          }, 10);
-        } catch (e) { console.exception(e); }
-      }
-    }
-
-    window.addEventListener("load", onLoad, true);
-  }
+  if (callback)
+    window.addEventListener("load", onBrowserLoad.bind(window, callback), true);
 
   return window;
 }
@@ -123,7 +123,7 @@ exports.addTab = function addTab(url, options) {
         let mainWindow = e.target.defaultView;
         mainWindow.gBrowser.pinTab(mainWindow.gBrowser.selectedTab);
       }
-      require("errors").catchAndLog(function(e) options.onLoad(e))(e);
+      require("./errors").catchAndLog(function(e) options.onLoad(e))(e);
     }, options.url);
   } else {
     let tab = win.gBrowser.addTab(options.url);
@@ -131,13 +131,13 @@ exports.addTab = function addTab(url, options) {
       win.gBrowser.selectedTab = tab;
     if (options.onLoad) {
       let tabBrowser = win.gBrowser.getBrowserForTab(tab);
-      tabBrowser.addEventListener("load", function(e) {
+      tabBrowser.addEventListener("load", function onLoad(e) {
         if (e.target.defaultView.content.location == "about:blank")
           return;
         // remove event handler from addTab - don't want notified
         // for subsequent loads in same tab.
-        tabBrowser.removeEventListener("load", arguments.callee, true);
-        require("errors").catchAndLog(function(e) options.onLoad(e))(e);
+        tabBrowser.removeEventListener("load", onLoad, true);
+        require("./errors").catchAndLog(function(e) options.onLoad(e))(e);
       }, true);
     }
   }
@@ -166,7 +166,7 @@ function Tracker(delegate, window) {
   this._window = window;
   this._windowTracker = new windowUtils.WindowTracker(this);
 
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 Tracker.prototype = {
   __iterator__: function __iterator__() {
@@ -216,7 +216,7 @@ function TabTracker(delegate, window) {
   this._delegate = delegate;
   this._tabs = [];
   this._tracker = new Tracker(this, window);
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 TabTracker.prototype = {
   _TAB_EVENTS: ["TabOpen", "TabClose"],
@@ -277,7 +277,7 @@ TabTracker.prototype = {
 exports.TabTracker = apiUtils.publicConstructor(TabTracker);
 
 exports.whenContentLoaded = function whenContentLoaded(callback) {
-  var cb = require("errors").catchAndLog(function eventHandler(event) {
+  var cb = require("./errors").catchAndLog(function eventHandler(event) {
     if (event.target && event.target.defaultView)
       callback(event.target.defaultView);
   });
@@ -426,7 +426,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
     },
     pushTabEvent: function TETT_pushTabEvent(event, tab) {
       for (let callback in self[event]) {
-        require("errors").catchAndLog(function(tab) {
+        require("./errors").catchAndLog(function(tab) {
           callback(new tabConstructor(tab));
         })(tab);
       }
@@ -437,7 +437,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
             let [tabEl,] = getElementAndWindowForTab(tabObj, window);
             if (tabEl == tab) {
               for (let callback in tabObj[event])
-                require("errors").catchAndLog(function() callback())();
+                require("./errors").catchAndLog(function() callback())();
             }
           }
           // if being closed, remove the tab object from the cache
@@ -452,7 +452,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
       this.tabs.splice(0);
     }
   };
-  require("unload").ensure(eventsTabDelegate);
+  require("./unload").ensure(eventsTabDelegate);
 
   let eventsTabTracker = new ModuleTabTracker({
     onTrack: function TETT_onTrack(tab) {
@@ -479,7 +479,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
       eventsTabDelegate.pushTabEvent("onPaint", tab);
     }
   }, window);
-  require("unload").ensure(eventsTabTracker);
+  require("./unload").ensure(eventsTabTracker);
 
   // Iterator for all tabs
   this.__iterator__ = function tabsIterator() {
@@ -494,7 +494,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
     // Unregister tabs event listeners
     events.forEach(function(e) self[e] = []);
   }
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 
 } // End of TabModule constructor
 
@@ -526,7 +526,7 @@ function open(options, tabConstructor, window) {
   if (window)
     options.inNewWindow = false;
 
-  let win = window || require("window-utils").activeBrowserWindow;
+  let win = window || require("./window-utils").activeBrowserWindow;
 
   if (!win || options.inNewWindow)
     openURLInNewWindow(options, tabConstructor);
@@ -543,10 +543,10 @@ function openURLInNewWindow(options, tabConstructor) {
       let win = e.target.defaultView;
       let tabEl = win.gBrowser.tabContainer.childNodes[0];
       let tabBrowser = win.gBrowser.getBrowserForTab(tabEl);
-      tabBrowser.addEventListener("load", function(e) {
-        tabBrowser.removeEventListener("load", arguments.callee, true);
+      tabBrowser.addEventListener("load", function onLoad(e) {
+        tabBrowser.removeEventListener("load", onLoad, true);
         let tab = tabConstructor(tabEl);
-        require("errors").catchAndLog(function(e) options.onOpen(e))(tab);
+        require("./errors").catchAndLog(function(e) options.onOpen(e))(tab);
       }, true);
     };
   }
@@ -565,13 +565,13 @@ function openURLInNewTab(options, window, tabConstructor) {
     window.gBrowser.pinTab(tabEl);
   if (options.onOpen) {
     let tabBrowser = window.gBrowser.getBrowserForTab(tabEl);
-    tabBrowser.addEventListener("load", function(e) {
+    tabBrowser.addEventListener("load", function onLoad(e) {
       // remove event handler from addTab - don't want to be notified
       // for subsequent loads in same tab.
-      tabBrowser.removeEventListener("load", arguments.callee, true);
+      tabBrowser.removeEventListener("load", onLoad, true);
       let tab = tabConstructor(tabEl);
-      require("timer").setTimeout(function() {
-        require("errors").catchAndLog(function(tab) options.onOpen(tab))(tab);
+      require("./timer").setTimeout(function() {
+        require("./errors").catchAndLog(function(tab) options.onOpen(tab))(tab);
       }, 10);
     }, true);
   }
@@ -580,7 +580,7 @@ function openURLInNewTab(options, window, tabConstructor) {
 function getElementAndWindowForTab(tabObj, window) {
   // iterate over open windows, or use single window if provided
   let windowIterator = window ? function() { yield window; }
-                              : require("window-utils").windowIterator;
+                              : require("./window-utils").windowIterator;
   for (let win in windowIterator()) {
     if (win.gBrowser) {
       // find the tab element at tab.index
@@ -599,7 +599,7 @@ function ModuleTabTracker(delegate, window) {
   this._delegate = delegate;
   this._tabs = [];
   this._tracker = new Tracker(this, window);
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 ModuleTabTracker.prototype = {
   _TAB_EVENTS: ["TabOpen", "TabClose", "TabSelect", "DOMContentLoaded",

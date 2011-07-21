@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cm,Cr,Cu} = require("chrome");
 
 var jsm = {};
@@ -142,7 +144,7 @@ var getClass = exports.getClass = function getClass(contractID, iid) {
   return Cm.getClassObjectByContractID(contractID, iid);
 };
 
-require("unload").when(
+require("./unload").when(
   function() {
     var copy = factories.slice();
     copy.reverse();

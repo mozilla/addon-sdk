@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cu,components} = require("chrome");
 var trackedObjects = {};
 
@@ -134,7 +136,7 @@ var gc = exports.gc = function gc() {
   test_utils.garbageCollect();
 };
 
-require("unload").when(
+require("./unload").when(
   function() {
     trackedObjects = {};
     if (timer) {

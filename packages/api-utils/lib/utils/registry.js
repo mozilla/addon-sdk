@@ -38,8 +38,8 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { EventEmitter } = require('events');
-const unload = require("unload");
+const { EventEmitter } = require('../events');
+const unload = require('../unload');
 
 const Registry = EventEmitter.compose({
   _registry: null,

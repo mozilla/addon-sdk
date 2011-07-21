@@ -38,9 +38,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Ci} = require("chrome");
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The context-menu module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -48,17 +50,17 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const apiUtils = require("api-utils");
-const collection = require("collection");
-const { Worker } = require("content");
-const url = require("url");
-const { MatchPattern } = require("match-pattern");
-const { EventEmitterTrait: EventEmitter } = require("events");
-const observerServ = require("observer-service");
+const apiUtils = require("api-utils/api-utils");
+const collection = require("api-utils/collection");
+const { Worker } = require("api-utils/content");
+const url = require("api-utils/url");
+const { MatchPattern } = require("api-utils/match-pattern");
+const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
+const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
-const winUtils = require("window-utils");
-const { Trait } = require("light-traits");
-const { Cortex } = require("cortex");
+const winUtils = require("api-utils/window-utils");
+const { Trait } = require("api-utils/light-traits");
+const { Cortex } = require("api-utils/cortex");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -735,7 +737,8 @@ WorkerRegistry.prototype = {
       contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
-    let (item = this.item) worker.on("message", function workerOnMessage(msg) {
+    let item = this.item;
+    worker.on("message", function workerOnMessage(msg) {
       try {
         privateItem(item)._emitOnObject(item, "message", msg);
       }
@@ -799,8 +802,8 @@ let browserManager = {
   // Note that calling this method will cause onTrack to be called immediately
   // for each currently open browser window.
   init: function BM_init() {
-    require("unload").ensure(this);
-    let windowTracker = new (require("window-utils").WindowTracker)(this);
+    require("api-utils/unload").ensure(this);
+    let windowTracker = new (require("api-utils/window-utils").WindowTracker)(this);
 
     // On inner-window-destroyed, remove the destroyed inner window's outer
     // window from all items' worker registries.
@@ -1358,7 +1361,7 @@ ContextMenuPopup.prototype = {
   // Returns the OVERFLOW_THRESH_PREF pref value if it exists or
   // OVERFLOW_THRESH_DEFAULT if it doesn't.
   get _overflowThreshold() {
-    let prefs = require("preferences-service");
+    let prefs = require("api-utils/preferences-service");
     return prefs.get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
   },
 
