@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 var {Cc,Cm,Ci,components} = require("chrome");
 var file = require("api-utils/file");
 

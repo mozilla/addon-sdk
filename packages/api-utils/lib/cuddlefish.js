@@ -34,7 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 (function(global) {
+  "use strict";
+
    const Cc = Components.classes;
    const Ci = Components.interfaces;
    const Cu = Components.utils;
@@ -84,8 +88,8 @@
 
    shims.filename = shimsPath;
 
-   function unloadLoader(reason) {
-     this.require("api-utils/unload").send(reason);
+   function unloadLoader(reason, onError) {
+     this.require("api-utils/unload").send(reason, onError);
    }
 
    function makeGetModuleExports(delegate) {

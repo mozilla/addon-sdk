@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The selection module currently supports only Firefox.  In the future ",

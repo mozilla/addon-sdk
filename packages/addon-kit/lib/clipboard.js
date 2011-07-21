@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");

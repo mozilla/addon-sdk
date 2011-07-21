@@ -36,6 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
 var timer = require("./timer");
 
 exports.findAndRunTests = function findAndRunTests(options) {
@@ -93,12 +94,11 @@ TestRunner.prototype = {
     if ("moduleOverrides" in options) {
       var moduleOverrides = options.moduleOverrides;
       delete options.moduleOverrides;
-      function getModuleExports(basePath, module) {
+      options.getModuleExports = function getModuleExports(basePath, module) {
         if (module in moduleOverrides)
           return moduleOverrides[module];
         return null;
       }
-      options.getModuleExports = getModuleExports;
     }
 
     return new Cuddlefish.Loader(options);

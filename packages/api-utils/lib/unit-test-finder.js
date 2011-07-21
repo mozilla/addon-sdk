@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 // We don't actually use chrome directly, but we do access the 
 // filesystem and scan it to dynamically import modules, so
 // we put this here to tell the module loader to give us

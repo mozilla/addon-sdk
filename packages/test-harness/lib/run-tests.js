@@ -34,6 +34,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
 var obsvc = require("api-utils/observer-service");
 var {Cc,Ci} = require("chrome");
 

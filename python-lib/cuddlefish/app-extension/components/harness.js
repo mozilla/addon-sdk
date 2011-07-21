@@ -63,6 +63,8 @@
 // to be installed and uninstalled without needing to reboot the
 // application being extended.
 
+"use strict";
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;

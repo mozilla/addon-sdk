@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 var print;
 
 var {Cc,Ci} = require("chrome");

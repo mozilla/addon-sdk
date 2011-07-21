@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The panel module currently supports only Firefox.  In the future ",
@@ -79,7 +81,6 @@ const Panel = Symbiont.resolve({
   _asyncEmit: Symbiont.required,
   on: Symbiont.required,
   removeListener: Symbiont.required,
-  _destructor: Symbiont.required,
 
   _inited: false,
 

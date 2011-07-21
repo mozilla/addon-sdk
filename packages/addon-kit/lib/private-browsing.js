@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 const observers = require("api-utils/observer-service");
 const { EventEmitter } = require("api-utils/events");

@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,components} = require("chrome");
 
 // Undo the auto-parentification of URLs done in bug 418356.

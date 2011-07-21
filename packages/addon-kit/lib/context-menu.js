@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Ci} = require("chrome");
 
 if (!require("api-utils/xul-app").is("Firefox")) {
@@ -735,7 +737,8 @@ WorkerRegistry.prototype = {
       contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
-    let (item = this.item) worker.on("message", function workerOnMessage(msg) {
+    let item = this.item;
+    worker.on("message", function workerOnMessage(msg) {
       try {
         privateItem(item)._emitOnObject(item, "message", msg);
       }
