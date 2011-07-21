@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const xpcom = require("xpcom");
 const xhr = require("xhr");
 const errors = require("errors");

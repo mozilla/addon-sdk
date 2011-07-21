@@ -40,6 +40,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc, Ci} = require("chrome");
 
 // Widget content types

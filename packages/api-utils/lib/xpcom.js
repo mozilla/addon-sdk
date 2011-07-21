@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cm,Cr,Cu} = require("chrome");
 
 var jsm = {};

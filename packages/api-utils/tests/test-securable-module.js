@@ -13,7 +13,7 @@ var beetFs = {
   }
 };
 
-FakeCompositeFileSystem = function FakeCompositeFileSystem(fses) {
+function FakeCompositeFileSystem(fses) {
   this.fses = fses;
   this._pathMap = {};
 };

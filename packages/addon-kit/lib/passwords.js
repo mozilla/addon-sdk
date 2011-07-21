@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const { Trait } = require("light-traits");
 const utils = require("passwords/utils");
 const defer = require("utils/function").Enqueued;

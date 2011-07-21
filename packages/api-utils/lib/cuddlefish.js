@@ -34,7 +34,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 (function(global) {
+  "use strict";
+
    const Cc = Components.classes;
    const Ci = Components.interfaces;
    const Cu = Components.utils;
