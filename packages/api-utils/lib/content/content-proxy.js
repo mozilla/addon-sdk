@@ -137,7 +137,12 @@ function unwrap(value, obj, name) {
 
 /**
  * Returns a XrayWrapper proxy object that allow to wrap any of its function
- * though `ContentScriptFunctionWrapper`.
+ * though `ContentScriptFunctionWrapper`. These proxies are given to
+ * XrayWrappers in order to automatically wrap values when they call a method
+ * of these proxies. So that they are only used internaly and content script,
+ * nor web page have ever access to them. As a conclusion, we can consider
+ * this code as being safe regarding web pages overload.
+ *
  *
  * @param obj {Object}
  *        object coming from content script context to wrap
