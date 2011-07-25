@@ -823,8 +823,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
                                     target_cfg=target_cfg,
                                     bundle_id=bundle_id,
-                                    update_url=options.update_url,
-                                    bootstrap=True)
+                                    update_url=options.update_url)
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
