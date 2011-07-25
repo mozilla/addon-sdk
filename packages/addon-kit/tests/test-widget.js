@@ -877,8 +877,8 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
   require("timer").setTimeout(function() {
-    window.addEventListener("unload", function() {
-      window.removeEventListener("unload", arguments.callee, false);
+    window.addEventListener("unload", function onUnload() {
+      window.removeEventListener("unload", onUnload, false);
       callback();
     }, false);
     window.close();

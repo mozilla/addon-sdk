@@ -36,7 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (!require("xul-app").is("Firefox")) {
+"use strict";
+
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The panel module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -46,12 +48,12 @@ if (!require("xul-app").is("Firefox")) {
 }
 
 const { Ci } = require("chrome");
-const { validateOptions: valid } = require("api-utils");
-const { Symbiont } = require("content");
-const { EventEmitter } = require('events');
-const timer = require("timer");
+const { validateOptions: valid } = require("api-utils/api-utils");
+const { Symbiont } = require("api-utils/content");
+const { EventEmitter } = require('api-utils/events');
+const timer = require("api-utils/timer");
 
-require("xpcom").utils.defineLazyServiceGetter(
+require("api-utils/xpcom").utils.defineLazyServiceGetter(
   this,
   "windowMediator",
   "@mozilla.org/appshell/window-mediator;1",
@@ -79,7 +81,6 @@ const Panel = Symbiont.resolve({
   _asyncEmit: Symbiont.required,
   on: Symbiont.required,
   removeListener: Symbiont.required,
-  _destructor: Symbiont.required,
 
   _inited: false,
 

@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (this.chrome) {
   exports.id = chrome.call("self:id");
   exports.data = {
@@ -51,9 +53,9 @@ if (this.chrome) {
 } else {
   // Here we basically have to reimplement the self module.
 
-  let file = require("file");
-  let url = require("url");
-  let traceback = require("traceback");
+  let file = require("./file");
+  let url = require("./url");
+  let traceback = require("./traceback");
 
   let packageData = packaging.options.packageData;
   let resourcePackages = packaging.options.resourcePackages;
