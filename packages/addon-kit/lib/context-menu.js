@@ -469,12 +469,13 @@ function SelectionContext() {
 
     let hasSelection = !win.getSelection().isCollapsed;
     if (!hasSelection) {
-      // window.getSelection method doesn't return a selection for text
-      // selected in a form field (see bug 85686), so before returning false
-      // we want to check if the popupNode is a text field.
+      // window.getSelection doesn't return a selection for text selected in a
+      // form field (see bug 85686), so before returning false we want to check
+      // if the popupNode is a text field.
       let { selectionStart, selectionEnd } = popupNode;
-      hasSelection = !(isNaN(selectionStart) || isNaN(selectionEnd))
-                      && selectionStart !== selectionEnd;
+      hasSelection = !isNaN(selectionStart) &&
+                     !isNaN(selectionEnd) &&
+                     selectionStart !== selectionEnd;
     }
     return hasSelection;
   };

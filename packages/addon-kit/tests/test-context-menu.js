@@ -255,9 +255,7 @@ exports.testSelectionContextMatchInTextField = function (test) {
 
   test.withTestDoc(function (window, doc) {
     let textfield = doc.getElementById("textfield");
-    
     textfield.setSelectionRange(0, textfield.value.length);
-    
     test.showMenu(textfield, function (popup) {
       test.checkMenu([item], [], []);
       test.done();
@@ -278,7 +276,9 @@ exports.testSelectionContextNoMatchInTextField = function (test) {
   });
 
   test.withTestDoc(function (window, doc) {
-    test.showMenu(doc.getElementById("textfield"), function (popup) {
+    let textfield = doc.getElementById("textfield");
+    textfield.setSelectionRange(0, 0);
+    test.showMenu(textfield, function (popup) {
       test.checkMenu([], [item], []);
       test.done();
     });
