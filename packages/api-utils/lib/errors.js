@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 function logToConsole(e) {
   console.exception(e);
 }

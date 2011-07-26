@@ -41,8 +41,9 @@
 
 const INVALID_HOTKEY = "Hotkey must have at least one modifier.";
 
-const { toJSON: jsonify, toString: stringify } = require("keyboard/utils");
-const { register, unregister } = require("keyboard/hotkeys");
+const { toJSON: jsonify,
+        toString: stringify } = require("api-utils/keyboard/utils");
+const { register, unregister } = require("api-utils/keyboard/hotkeys");
 
 const Hotkey = exports.Hotkey = function Hotkey(options) {
   if (!(this instanceof Hotkey))

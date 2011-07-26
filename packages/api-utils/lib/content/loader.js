@@ -39,10 +39,10 @@
 
 "use strict";
 
-const { EventEmitter } = require('events');
-const { validateOptions, getTypeOf } = require('api-utils');
-const { URL, toFilename } = require('url');
-const file = require("file");
+const { EventEmitter } = require('../events');
+const { validateOptions, getTypeOf } = require('../api-utils');
+const { URL, toFilename } = require('../url');
+const file = require('../file');
 
 // map of property validations
 const valid = {
