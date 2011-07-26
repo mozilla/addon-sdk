@@ -90,7 +90,7 @@ function analyzeRawProfilingData(data) {
   var modules = 0;
   var moduleIds = [];
   var moduleObjs = {UNKNOWN: 0};
-  for (name in data.namedObjects) {
+  for (let name in data.namedObjects) {
     moduleObjs[name] = 0;
     moduleIds[data.namedObjects[name]] = name;
     modules++;
@@ -124,9 +124,9 @@ function analyzeRawProfilingData(data) {
                                    data.totalObjectClasses)
     };
 
-    for (name in diff.moduleObjs)
+    for (let name in diff.moduleObjs)
       print("  " + diff.moduleObjs[name] + " in " + name + "\n");
-    for (name in diff.totalObjectClasses)
+    for (let name in diff.totalObjectClasses)
       print("  " + diff.totalObjectClasses[name] + " instances of " +
             name + "\n");
   }
@@ -139,12 +139,12 @@ function analyzeRawProfilingData(data) {
 function dictDiff(last, curr) {
   var diff = {};
 
-  for (name in last) {
+  for (let name in last) {
     var result = (curr[name] || 0) - last[name];
     if (result)
       diff[name] = (result > 0 ? "+" : "") + result;
   }
-  for (name in curr) {
+  for (let name in curr) {
     var result = curr[name] - (last[name] || 0);
     if (result)
       diff[name] = (result > 0 ? "+" : "") + result;
@@ -203,7 +203,7 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (name in sandbox.sandboxes)
+    for (let name in sandbox.sandboxes)
       sandbox.memory.track(sandbox.sandboxes[name].globalScope,
                            "module global scope: " + name);
     sandbox.memory.track(sandbox, "Cuddlefish Loader");

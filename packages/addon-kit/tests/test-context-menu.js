@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -235,6 +236,50 @@ exports.testSelectionContextMatch = function (test) {
     window.getSelection().selectAllChildren(doc.body);
     test.showMenu(null, function (popup) {
       test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Selection contexts should cause items to appear when a selection exists in
+// a text field.
+exports.testSelectionContextMatchInTextField = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    let textfield = doc.getElementById("textfield");
+    textfield.setSelectionRange(0, textfield.value.length);
+    test.showMenu(textfield, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// Selection contexts should not cause items to appear when a selection does
+// not exist in a text field.
+exports.testSelectionContextNoMatchInTextField = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    let textfield = doc.getElementById("textfield");
+    textfield.setSelectionRange(0, 0);
+    test.showMenu(textfield, function (popup) {
+      test.checkMenu([], [item], []);
       test.done();
     });
   });
@@ -1497,6 +1542,23 @@ exports.testItemDataSetter = function (test) {
 };
 
 
+// Open the test doc, load the module, make sure items appear when context-
+// clicking the iframe.
+exports.testAlreadyOpenIframe = function (test) {
+  test = new TestHelper(test);
+  test.withTestDoc(function (window, doc) {
+    let loader = test.newLoader();
+    let item = new loader.cm.Item({
+      label: "item"
+    });
+    test.showMenu(doc.getElementById("iframe"), function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1777,6 +1839,8 @@ TestHelper.prototype = {
                               "browserManager should have no windows left");
         this.test.assertEqual(browserManager.topLevelItems.length, 0,
                               "browserManager should have no items left");
+        this.test.assert(!("contentWins" in browserManager),
+                         "browserManager should have no content windows left");
 
         // Make sure the items' worker registries are cleaned up.
         topLevelItems.forEach(function (item) {
@@ -1890,12 +1954,15 @@ TestHelper.prototype = {
 
       let rect = targetNode ?
                  targetNode.getBoundingClientRect() :
-                 { left: 0, top: 0 };
+                 { left: 0, top: 0, width: 0, height: 0 };
       let contentWin = this.browserWindow.content;
       contentWin.
         QueryInterface(Ci.nsIInterfaceRequestor).
         getInterface(Ci.nsIDOMWindowUtils).
-        sendMouseEvent("contextmenu", rect.left, rect.top, 2, 1, 0);
+        sendMouseEvent("contextmenu",
+                       rect.left + (rect.width / 2),
+                       rect.top + (rect.height / 2),
+                       2, 1, 0);
     }
 
     // If a new tab or window has not yet been opened, open a new tab now.  For

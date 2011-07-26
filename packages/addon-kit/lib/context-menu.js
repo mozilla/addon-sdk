@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -467,7 +468,18 @@ function SelectionContext() {
     let win = popupNode.ownerDocument.defaultView;
     if (!win)
       return false;
-    return !win.getSelection().isCollapsed;
+
+    let hasSelection = !win.getSelection().isCollapsed;
+    if (!hasSelection) {
+      // window.getSelection doesn't return a selection for text selected in a
+      // form field (see bug 85686), so before returning false we want to check
+      // if the popupNode is a text field.
+      let { selectionStart, selectionEnd } = popupNode;
+      hasSelection = !isNaN(selectionStart) &&
+                     !isNaN(selectionEnd) &&
+                     selectionStart !== selectionEnd;
+    }
+    return hasSelection;
   };
 }
 
@@ -662,6 +674,9 @@ WorkerRegistry.prototype = {
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
     let innerWinID = winUtils.getInnerId(win);
+    if ((innerWinID in this.winWorkers) ||
+        (innerWinID in this.winsWithoutWorkers))
+      return;
     if (this._doesURLNeedWorker(win.document.URL))
       this.winWorkers[innerWinID] = { win: win, worker: this._makeWorker(win) };
     else
@@ -670,11 +685,6 @@ WorkerRegistry.prototype = {
 
   // Unregisters a content window, destroying its related worker if it has one.
   unregisterContentWin: function WR_unregisterContentWin(innerWinID) {
-    // Sometimes inner-window-destroyed is sent for a window that's not
-    // registered, which implies that DOMContentLoaded is not dispatched to any
-    // tabbrowser for that inner window's outer window...  So rather than
-    // erroneously throwing an error if the window is not registered, don't
-    // assume that the window is registered in the first place.
     if (innerWinID in this.winWorkers) {
       let winWorker = this.winWorkers[innerWinID];
       winWorker.worker.destroy();
@@ -751,10 +761,14 @@ WorkerRegistry.prototype = {
 };
 
 
-// Mirrors state across all browser windows.
+// Mirrors state across all browser windows.  Also responsible for detecting
+// all content window loads and unloads.
 let browserManager = {
   topLevelItems: [],
   browserWins: [],
+
+  // inner window ID => content window
+  contentWins: {},
 
   // Call this when a new item is created, top-level or not.
   registerItem: function BM_registerItem(item) {
@@ -769,8 +783,14 @@ let browserManager = {
 
   addTopLevelItem: function BM_addTopLevelItem(item) {
     this.topLevelItems.push(item);
-    privateItem(item)._isTopLevel = true;
     this.browserWins.forEach(function (w) w.addTopLevelItem(item));
+
+    // Create the item's worker registry and register all currently loaded
+    // content windows with it.
+    let privates = privateItem(item);
+    privates._isTopLevel = true;
+    for each (let win in this.contentWins)
+      privates._workerReg.registerContentWin(win);
   },
 
   removeTopLevelItem: function BM_removeTopLevelItem(item) {
@@ -803,16 +823,61 @@ let browserManager = {
   // for each currently open browser window.
   init: function BM_init() {
     require("api-utils/unload").ensure(this);
-    let windowTracker = new (require("api-utils/window-utils").WindowTracker)(this);
+    let windowTracker = new winUtils.WindowTracker(this);
 
-    // On inner-window-destroyed, remove the destroyed inner window's outer
-    // window from all items' worker registries.
-    observerServ.add("inner-window-destroyed", function observe(subj) {
-      let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
-      this.topLevelItems.forEach(function (item) {
-        privateItem(item)._workerReg.unregisterContentWin(innerWinID);
-      });
-    }, this);
+    // Register content windows on content-document-global-created and
+    // unregister them on inner-window-destroyed.  For rationale, see bug 667957
+    // for the former and bug 642004 for the latter.
+    observerServ.add("content-document-global-created",
+                     this._onDocGlobalCreated, this);
+    observerServ.add("inner-window-destroyed",
+                     this._onInnerWinDestroyed, this);
+  },
+
+  _onDocGlobalCreated: function BM__onDocGlobalCreated(contentWin) {
+    let doc = contentWin.document;
+    if (doc.readyState == "loading") {
+      const self = this;
+      doc.addEventListener("readystatechange", function onReadyStateChange(e) {
+        if (e.target != doc)
+          return;
+        doc.removeEventListener("readystatechange", onReadyStateChange, false);
+        self._registerContentWin(contentWin);
+      }, false);
+    }
+    else
+      this._registerContentWin(contentWin);
+  },
+
+  _onInnerWinDestroyed: function BM__onInnerWinDestroyed(subj) {
+    this._unregisterContentWin(
+      subj.QueryInterface(Ci.nsISupportsPRUint64).data);
+  },
+
+  // Stores the given content window with the manager and registers it with each
+  // top-level item's worker registry.
+  _registerContentWin: function BM__registerContentWin(win) {
+    let innerID = winUtils.getInnerId(win);
+
+    // It's an error to call this method for the same window more than once, but
+    // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See
+    // the comment in onTrack.)  Make sure the window is registered only once.
+    if (innerID in this.contentWins)
+      return;
+
+    this.contentWins[innerID] = win;
+    this.topLevelItems.forEach(function (item) {
+      privateItem(item)._workerReg.registerContentWin(win);
+    });
+  },
+
+  // Removes the given content window from the manager and unregisters it from
+  // each top-level item's worker registry.
+  _unregisterContentWin: function BM__unregisterContentWin(innerID) {
+    delete this.contentWins[innerID];
+    this.topLevelItems.forEach(function (item) {
+      privateItem(item)._workerReg.unregisterContentWin(innerID);
+    });
   },
 
   unload: function BM_unload() {
@@ -825,16 +890,35 @@ let browserManager = {
       this.removeTopLevelItem(item);
       this.unregisterItem(item);
     }
+    delete this.contentWins;
   },
 
   // Registers a browser window with the manager.  This is a WindowTracker
-  // callback.
+  // callback.  Note that this is called in two cases:  for each newly opened
+  // chrome window, and for each chrome window that is open when the loader
+  // loads this module.
   onTrack: function BM_onTrack(window) {
     if (!this._isBrowserWindow(window))
       return;
 
     let browserWin = new BrowserWindow(window);
     this.browserWins.push(browserWin);
+
+    // Register all loaded content windows in the browser window.  Be sure to
+    // include frames and iframes.  If onTrack is called as a result of a new
+    // browser window being opened, as opposed to the module being loaded, then
+    // this will race the content-document-global-created notification.  That's
+    // OK, since _registerContentWin will not register the same content window
+    // more than once.
+    window.gBrowser.browsers.forEach(function (browser) {
+      let topContentWin = browser.contentWindow;
+      let allContentWins = Array.slice(topContentWin.frames);
+      allContentWins.push(topContentWin);
+      allContentWins.forEach(function (contentWin) {
+        if (contentWin.document.readyState != "loading")
+          this._registerContentWin(contentWin);
+      }, this);
+    }, this);
 
     // Add all top-level items and, recursively, their child items to the new
     // browser window.
@@ -851,7 +935,9 @@ let browserManager = {
   },
 
   // Unregisters a browser window from the manager.  This is a WindowTracker
-  // callback.
+  // callback.  Note that this is called in two cases:  for each newly closed
+  // chrome window, and for each chrome window that is open when this module is
+  // unloaded.
   onUntrack: function BM_onUntrack(window) {
     if (!this._isBrowserWindow(window))
       return;
@@ -903,9 +989,6 @@ function BrowserWindow(window) {
   // with the aforementioned distinction between top-level and overflow
   // subtrees.
   this.items = {};
-
-  // Listen for page loads on the tabbrowser so we can create workers.
-  window.gBrowser.addEventListener("DOMContentLoaded", this, false);
 }
 
 BrowserWindow.prototype = {
@@ -926,22 +1009,10 @@ BrowserWindow.prototype = {
   },
 
   addTopLevelItem: function BW_addTopLevelItem(item) {
-    // Register all open and loaded content windows in this browser window
-    // with the item's worker registry.
-    let workerReg = privateItem(item)._workerReg;
-    this.window.gBrowser.browsers.forEach(function (browser) {
-      if (browser.contentDocument.readyState === "complete")
-        workerReg.registerContentWin(browser.contentWindow);
-    }, this);
     this.contextMenuPopup.addItem(item);
   },
 
   removeTopLevelItem: function BW_removeTopLevelItem(item) {
-    // Although addTopLevelItem registers this browser's content windows with
-    // the item's worker registry, there's no need to unregister content windows
-    // here:  When a top-level item is removed, browserManager destroys its
-    // worker registry, which unregisters all registered content windows.
-
     this.contextMenuPopup.removeItem(item);
   },
 
@@ -1034,7 +1105,6 @@ BrowserWindow.prototype = {
 
   destroy: function BW_destroy() {
     this.contextMenuPopup.destroy();
-    this.window.gBrowser.removeEventListener("DOMContentLoaded", this, false);
     delete this.window;
     delete this.doc;
     delete this.items;
@@ -1048,21 +1118,6 @@ BrowserWindow.prototype = {
     let worker = privateItem(topLevelItem)._workerReg.find(win);
     if (worker)
       worker.fireClick(popupNode, clickedItemData);
-  },
-
-  // Handles content window loads.
-  handleEvent: function BW_handleEvent(event) {
-    try {
-      switch (event.type) {
-      case "DOMContentLoaded":
-        if (event.target.defaultView)
-          this._registerContentWin(event.target.defaultView);
-        break;
-      }
-    }
-    catch (err) {
-      console.exception(err);
-    }
   },
 
   _makeDOMElt: function BW__makeDOMElt(item, isInOverflowSubtree) {
@@ -1107,12 +1162,6 @@ BrowserWindow.prototype = {
   // Returns a new xul:menuseparator.
   _makeSeparator: function BW__makeSeparator() {
     return this.doc.createElement("menuseparator");
-  },
-
-  _registerContentWin: function BW__registerContentWin(win) {
-    browserManager.topLevelItems.forEach(function (item) {
-      privateItem(item)._workerReg.registerContentWin(win);
-    });
   }
 };
 

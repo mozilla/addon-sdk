@@ -52,7 +52,7 @@ const Registry = EventEmitter.compose({
   },
   _destructor: function _destructor() {
     let _registry = this._registry.slice(0);
-    for each (instance in _registry)
+    for each (let instance in _registry)
       this._emit('remove', instance);
     this._registry.splice(0);
   },
