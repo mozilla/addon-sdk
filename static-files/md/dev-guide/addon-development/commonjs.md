@@ -13,7 +13,9 @@ objects which are thus made available to dependent code. To facilitate this
 CommonJS defines:
 
 * an object called `exports` which contains all the objects which a CommonJS
-module wants to make available to other modules
+module wants to make available to other modules. Please note that `exports`
+are made immutable after module code execution, so it can not be modified from
+other modules or in a deferred manner.
 
 * a function called `require` which a module can use to import the `exports`
 object of another module. Your translator add-on uses `require` to import the
