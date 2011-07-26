@@ -89,5 +89,7 @@ else {
 
 $Env:Path="$Env:VIRTUAL_ENV\bin;$Env:Path"
 
+[System.Console]::WriteLine("Note: this PowerShell SDK activation script is experimental.")
+
 python -c "from jetpack_sdk_env import welcome; welcome()"
 
