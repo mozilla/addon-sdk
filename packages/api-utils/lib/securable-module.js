@@ -367,6 +367,8 @@
          var preeval_exports = sandbox.getProperty("exports");
          self.modules[path] = sandbox.getProperty("exports");
          sandbox.evaluate(moduleContents);
+         sandbox.evaluate("if (typeof module.exports === 'object')\n" +
+                          "Object.freeze(module.exports);");
          var posteval_exports = sandbox.getProperty("module").exports;
          if (posteval_exports !== preeval_exports) {
            /* if they used module.exports= or module.setExports(), get
@@ -382,7 +384,7 @@
            }
            self.modules[path] = posteval_exports;
          }
-         return self.modules[path]; // these are the exports
+         return self.modules[path];
        }
 
        // START support Async module-style require and define calls.
