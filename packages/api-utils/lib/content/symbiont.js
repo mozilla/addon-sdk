@@ -41,9 +41,9 @@
 
 const { Worker } = require('./worker');
 const { Loader } = require('./loader');
-const hiddenFrames = require("hidden-frame");
-const observers = require('observer-service');
-const unload = require("unload");
+const hiddenFrames = require('../hidden-frame');
+const observers = require('../observer-service');
+const unload = require('../unload');
 
 /**
  * This trait is layered on top of `Worker` and in contrast to symbiont

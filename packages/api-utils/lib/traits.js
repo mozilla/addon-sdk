@@ -43,7 +43,7 @@ const {
   trait: _trait,
   //create: _create,
   required,
-} = require('traits/core');
+} = require('./traits/core');
 
 const defineProperties = Object.defineProperties,
       freeze = Object.freeze,

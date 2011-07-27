@@ -104,4 +104,29 @@ exports["test no exception on unmodified keypress"] = function(assert) {
   assert.pass("No exception throw, unmodified keypress passed");
 };
 
+exports["test hotkey: automatic destroy"] = function(assert, done) {
+  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
+  let loader = assert._log.makeSandboxedLoader();
+  
+  var called = false;
+  var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;
+  var hotkey = loader.require("hotkeys").Hotkey({
+    combo: "accel-shift-x",
+    onPress: function() {
+      called = true;
+    }
+  });
+  
+  // Unload the module so that previous hotkey is automatically destroyed
+  loader.unload();
+  
+  // Ensure that the hotkey is really destroyed
+  keyDown(element, "accel-shift-x");
+  
+  require("timer").setTimeout(function () {
+    assert.ok(!called, "Hotkey is destroyed and not called.");
+    done();
+  }, 0);
+};
+
 require("test").run(exports);

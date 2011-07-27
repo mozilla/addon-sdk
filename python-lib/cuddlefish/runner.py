@@ -5,6 +5,8 @@ import tempfile
 import atexit
 import shutil
 import shlex
+import subprocess
+import re
 
 import simplejson as json
 import mozrunner
@@ -49,6 +51,30 @@ def follow_file(filename):
                 last_pos = f.tell()
                 f.close()
         yield newstuff
+
+# subprocess.check_output only appeared in python2.7, so this code is taken
+# from python source code for compatibility with py2.5/2.6
+class CalledProcessError(Exception):
+    def __init__(self, returncode, cmd, output=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        self.output = output
+    def __str__(self):
+        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+def check_output(*popenargs, **kwargs):
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise CalledProcessError(retcode, cmd, output=output)
+    return output
+
 
 class FennecProfile(mozrunner.Profile):
     preferences = {}
@@ -260,6 +286,7 @@ def run_app(harness_root_dir, harness_options,
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'warn'
+    env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
     if norun:
         cmdargs.append("-no-remote")
 
@@ -291,6 +318,29 @@ def run_app(harness_root_dir, harness_options,
 
     sys.stdout.flush(); sys.stderr.flush()
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
+
+    # ensure running Firefox 4.0+
+    version_output = check_output(runner.command + ["-v"])
+    mo = re.search(r"Mozilla (Firefox|Iceweasel) (\d+)\.[\d\.]+",
+                   version_output)
+    if not mo:
+        # we may use cfx with thunderbird, seamonkey or an exotic firefox
+        # version
+        print """
+  WARNING: Cannot guarantee firefox version, please ensure you are running
+  a mozilla application equivalent to Firefox 4.0 or higher.
+  """
+    else:
+      version = mo.group(2)
+      if int(version) < 4:
+          print """
+  cfx requires Firefox 4 or greater and is unable to find a compatible
+  binary. Please install a newer version of Firefox or provide the path to
+  your existing compatible version with the --binary flag:
+
+    cfx --binary=PATH_TO_FIREFOX_BINARY"""
+          return
+
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
     sys.stderr.flush()
     

@@ -34,7 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var obsvc = require("observer-service");
+"use strict";
+var obsvc = require("api-utils/observer-service");
 var {Cc,Ci} = require("chrome");
 
 function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, print) {
@@ -44,35 +45,21 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, p
   var window = ww.openWindow(null, "data:text/plain,Running tests...",
                              "harness", "centerscreen", null);
 
-  var harness = require("harness");
-
-  var startTime = new Date();
-  const MIN_RUN_TIME = 12321;
+  var harness = require("./harness");
 
   function onDone(tests) {
-    function finish() {
-      window.close();
-      if (tests.passed > 0 && tests.failed == 0) {
-        quit("OK");
+    window.close();
+    if (tests.passed > 0 && tests.failed == 0) {
+      quit("OK");
+    } else {
+      if (tests.passed == 0) {
+        print("No tests were run\n");
       } else {
-        if (tests.passed == 0) {
-          print("No tests were run\n");
-        } else {
-          printFailedTests(tests, verbose, print);
-        }
-        quit("FAIL");
+        printFailedTests(tests, verbose, print);
       }
+      quit("FAIL");
     }
-
-    // Make sure the host application stays open for a minimum amount of time
-    // to reduce our chances of running into platform bug 468736.
-    // FIXME: remove this workaround once platform bug 468736 is fixed.
-    var elapsedTime = new Date() - startTime;
-    if (elapsedTime < MIN_RUN_TIME)
-      require("timer").setTimeout(finish, MIN_RUN_TIME - elapsedTime);
-    else
-      finish();
-  }
+  };
 
   harness.runTests({iterations: iterations,
                     filter: filter,

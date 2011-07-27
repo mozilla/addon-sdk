@@ -3,12 +3,21 @@
 
 The `tabs` module provides easy access to tabs and tab-related events.
 
-All tabs across all windows can be enumerated by using the `tabs` module itself
-like so:
+The module itself can be used like a basic list of all opened
+tabs across all windows. In particular, you can enumerate it:
 
-    var tabs = require("tabs");
+    var tabs = require('tabs');
     for each (var tab in tabs)
       console.log(tab.title);
+
+You can also access individual tabs by index:
+
+    var tabs = require('tabs');
+
+    tabs.on('ready', function () {
+      console.log('first: ' + tabs[0].title);
+      console.log('last: ' + tabs[tabs.length-1].title);
+    });
 
 You can open a new tab, specifying various properties including location:
 
@@ -220,19 +229,16 @@ Makes this tab active, which will bring this tab to the foreground.
 <api name="attach">
 @method
   Create a page mod and attach it to the document in the tab.
-  
+
 **Example**
 
     var tabs = require("tabs");
-    
-    var worker = tabs.activeTab.attach({
-      contentScript: 
-        'document.body.style.border = "5px solid black";' +
-        'postMessage(document.getElementById("#my-watched-element").textContent);',
-      onMessage: function (data) {
-        // data is equal to the text of my DOM element with ID "#my-watched-element"
-        
-      }
+
+    tabs.on('ready', function(tab) {
+      tab.attach({
+          contentScript:
+            'document.body.style.border = "5px solid red";'
+      });
     });
 
 @param options {object}
@@ -247,8 +253,8 @@ Makes this tab active, which will bring this tab to the foreground.
     option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
 @prop [onMessage] {function}
-    A function called when the page mod receives a message from content scripts. 
-    Listeners are passed a single argument, the message posted from the 
+    A function called when the page mod receives a message from content scripts.
+    Listeners are passed a single argument, the message posted from the
     content script.
 
 @returns {Worker}

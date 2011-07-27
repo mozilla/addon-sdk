@@ -63,6 +63,8 @@
 // to be installed and uninstalled without needing to reboot the
 // application being extended.
 
+"use strict";
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -165,7 +167,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     var compMgr = Components.manager;
     compMgr = compMgr.QueryInterface(Ci.nsIComponentRegistrar);
 
-    for (name in options.resources) {
+    for (let name in options.resources) {
       var path = options.resources[name];
       var dir;
       if (typeof(path) == "string")
@@ -341,7 +343,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
         loader = null;
       }
 
-      for (name in options.resources)
+      for (let name in options.resources)
         resProt.setSubstitution(name, null);
     },
 
@@ -520,15 +522,10 @@ function getDefaults(rootFileSpec) {
   }
 
   var onQuit = function() {};
-  var doDump = dump;
+  var doDump = buildForsakenConsoleDump(dump);
 
   if ('resultFile' in options)
     onQuit = buildDevQuit(options, print);
-  else
-    // If we're not being run by cfx or some other kind of tool that is
-    // ensuring dump() calls are visible, we'll have to log to the
-    // forsaken Error Console.
-    doDump = buildForsakenConsoleDump(doDump);
 
   var logFile;
   var logStream;
