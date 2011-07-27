@@ -38,10 +38,10 @@
 
 "use strict";
 
-const { emit } = require("dom/events");
-const { getCodeForKey, toJSON } = require("keyboard/utils");
-const { has } = require("array");
-const { isString } = require("type");
+const { emit } = require("../events");
+const { getCodeForKey, toJSON } = require("../../keyboard/utils");
+const { has } = require("../../array");
+const { isString } = require("../../type");
 
 const INITIALIZER = "initKeyEvent";
 const CATEGORY = "KeyboardEvent";

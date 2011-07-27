@@ -35,6 +35,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (this.chrome) {
   exports.toFilename   = function(spec) chrome.call("url:toFilename", spec);
   exports.fromFilename = function(spec) chrome.call("url:fromFilename", spec);
@@ -62,7 +64,7 @@ if (this.chrome) {
   }
 }
 else {
-  const { URL, toFilename, fromFilename } = require("url");
+  const { URL, toFilename, fromFilename } = require("./url");
 
   exports.register = function register(addon) {
     addon.registerCall("url:toFilename", function(name, spec) toFilename(spec));

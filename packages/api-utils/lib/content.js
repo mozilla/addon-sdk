@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-exports.Loader = require('content/loader').Loader;
-exports.Symbiont = require('content/symbiont').Symbiont;
-exports.Worker = require('content/worker').Worker;
+exports.Loader = require('./content/loader').Loader;
+exports.Symbiont = require('./content/symbiont').Symbiont;
+exports.Worker = require('./content/worker').Worker;
 

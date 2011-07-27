@@ -49,7 +49,7 @@ if "%PYTHONINSTALL%" NEQ "" (
 )
 
 if defined _OLD_PYTHONPATH (
-    set PYTHONPATH=%_OLD_PYTHONPATH%
+    set "PYTHONPATH=%_OLD_PYTHONPATH%"
 )
 if not defined PYTHONPATH (
     set PYTHONPATH=;
@@ -62,14 +62,14 @@ if not defined PROMPT (
 )
 
 if defined _OLD_VIRTUAL_PROMPT (
-    set PROMPT=%_OLD_VIRTUAL_PROMPT%
+    set "PROMPT=%_OLD_VIRTUAL_PROMPT%"
 )
 
 set _OLD_VIRTUAL_PROMPT=%PROMPT%
 set PROMPT=(%VIRTUAL_ENV%) %PROMPT%
 
 if defined _OLD_VIRTUAL_PATH (
-    set PATH=%_OLD_VIRTUAL_PATH%
+    set "PATH=%_OLD_VIRTUAL_PATH%"
     goto SKIPPATH
 )
 set _OLD_VIRTUAL_PATH=%PATH%

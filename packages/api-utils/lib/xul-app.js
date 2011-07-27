@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc, Ci} = require("chrome");
 
 var appInfo = Cc["@mozilla.org/xre/app-info;1"]

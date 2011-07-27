@@ -1,4 +1,5 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
+<!-- edited by Erik Vold [erikvvold@gmail.com] -->
 
 The `window-utils` module provides helpers for accessing and tracking
 application windows.  These windows implement the [`nsIDOMWindow`][nsIDOMWindow]
@@ -54,6 +55,12 @@ uninstalled, whichever comes first.)
   windows.
 @param delegate {object}
   An object that implements `onTrack()` and `onUntrack()` methods.
+@prop onTrack {function}
+  A function to be called when a window is open or loads, with the window as the
+  first and only argument.
+@prop [onUntrack] {function}
+  A function to be called when a window unloads, with the window as the first
+  and only argument.
 </api>
 </api>
 

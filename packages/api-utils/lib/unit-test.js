@@ -36,10 +36,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var timer = require("timer");
+"use strict";
+var timer = require("./timer");
 
 exports.findAndRunTests = function findAndRunTests(options) {
-  var TestFinder = require("unit-test-finder").TestFinder;
+  var TestFinder = require("./unit-test-finder").TestFinder;
   var finder = new TestFinder({
     dirs: options.dirs,
     filter: options.filter,
@@ -88,17 +89,16 @@ TestRunner.prototype = {
       options = {console: console};
     options.fs = this.fs;
 
-    var Cuddlefish = require("cuddlefish");
+    var Cuddlefish = require("./cuddlefish");
 
     if ("moduleOverrides" in options) {
       var moduleOverrides = options.moduleOverrides;
       delete options.moduleOverrides;
-      function getModuleExports(basePath, module) {
+      options.getModuleExports = function getModuleExports(basePath, module) {
         if (module in moduleOverrides)
           return moduleOverrides[module];
         return null;
       }
-      options.getModuleExports = getModuleExports;
     }
 
     return new Cuddlefish.Loader(options);

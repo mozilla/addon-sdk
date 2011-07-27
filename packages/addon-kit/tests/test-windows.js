@@ -66,6 +66,37 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
+exports.testAutomaticDestroy = function(test) {
+    
+  test.waitUntilDone();
+  let windows = require("windows").browserWindows;
+
+  // Create a second windows instance that we will unload
+  let called = false;
+  let loader = test.makeSandboxedLoader();
+  let windows2 = loader.require("windows").browserWindows;
+  windows2.on("open", function() {
+    called = true;
+  });
+  
+  loader.unload();
+  
+  // Fire a windows event and check that this unloaded instance is inactive
+  windows.open({
+    url: "data:text/html,foo",
+    onOpen: function(window) {
+      require("timer").setTimeout(function () {
+        test.assert(!called, 
+          "Unloaded windows instance is destroyed and inactive");
+        window.close(function () {
+          test.done();
+        });
+      });
+    }
+  });
+  
+};
+
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
   let windows = require("windows").browserWindows;

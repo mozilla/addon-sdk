@@ -69,9 +69,9 @@ function createAliasProperty(object, name) {
   // corresponding getter/setter in the alias descriptor to the original
   // object, so the `this` object in the getter/setter is the original object
   // rather than the alias.
-  if ("get" in property)
+  if ("get" in property && property.get)
     descriptor.get = property.get.bind(object);
-  if ("set" in property)
+  if ("set" in property && property.set)
     descriptor.set = property.set.bind(object);
   
   // If original property was a value property.
