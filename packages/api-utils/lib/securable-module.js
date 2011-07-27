@@ -237,6 +237,9 @@
          reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
+         // Normalize module name in case it happened to be a URL.
+         module = module.replace(/:|\?/, encodeURIComponent).
+                         replace(/\/\//, '/')
          if (reqs) {
            // if we know about you, you must follow the manifest
            if (module in reqs)
@@ -711,7 +714,7 @@
 
        var newURI = ios.newURI(path, null, baseURI);
        if (newURI.spec.indexOf(this._rootURIDir) == 0) {
-         var channel = ios.newChannelFromURI(newURI);
+         var channel = ios.newChannel(encodeURI(newURI.spec), null, null);
          try {
            channel.open().close();
          } catch (e if e.result == Cr.NS_ERROR_FILE_NOT_FOUND) {
@@ -727,7 +730,7 @@
    };
 
    function loadFile(path) {
-     var channel = ios.newChannel(path, null, null);
+     var channel = ios.newChannel(encodeURI(path), null, null);
      var iStream = channel.open();
      var ciStream = Cc["@mozilla.org/intl/converter-input-stream;1"].
        createInstance(Ci.nsIConverterInputStream);

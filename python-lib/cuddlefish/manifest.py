@@ -1,5 +1,5 @@
 
-import os, sys, re, hashlib
+import os, sys, re, hashlib, urllib
 import simplejson as json
 SEP = os.path.sep
 
@@ -589,6 +589,13 @@ DEF_RE = re.compile(r"(require|define)\s*\(\s*([\'\"][^\'\"]+[\'\"]\s*,)?\s*\[([
 # Out of the async dependencies, do not allow quotes in them.
 DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 
+# Modules may be required by URLs. Such module names are normalized to
+# a valid OS paths.
+def normalize_modname(modname):
+  modname = modname.replace(':', urllib.quote(':'))
+  modname = modname.replace('?', urllib.quote('?'))
+  return modname.replace('//', '/')
+
 def scan_requirements_with_grep(fn, lines):
     requires = {}
     for line in lines:
@@ -602,7 +609,7 @@ def scan_requirements_with_grep(fn, lines):
                 continue
             mo = re.search(REQUIRE_RE, clause)
             if mo:
-                modname = mo.group(1)
+                modname = normalize_modname(mo.group(1))
                 requires[modname] = {}
 
     # define() can happen across multiple lines, so join everyone up.
