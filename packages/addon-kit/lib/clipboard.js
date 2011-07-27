@@ -127,14 +127,23 @@ exports.set = function(aData, aDataType) {
 
   switch (flavor) {
     case "text/html":
+      // add text/html flavor
       var len = options.data.length * 2;
       var str = Cc["@mozilla.org/supports-string;1"].
                 createInstance(Ci.nsISupportsString);
       str.data = options.data;
       xferable.addDataFlavor(flavor);
       xferable.setTransferData(flavor, str, len);
-      // add a text/unicode flavor for HTML text that returns a plaintextified
-      // representation of the HTML.
+
+      // add a text/unicode flavor (html converted to plain text)
+      var str = Cc["@mozilla.org/supports-string;1"].
+                createInstance(Ci.nsISupportsString);
+      var converter = Cc["@mozilla.org/feed-textconstruct;1"].
+                      createInstance(Ci.nsIFeedTextConstruct);
+      converter.type = "html";
+      converter.text = options.data;
+      str.data = converter.plainText();
+      len = str.data.length * 2;
       xferable.addDataFlavor("text/unicode");
       xferable.setTransferData("text/unicode", str, len);
       break;
