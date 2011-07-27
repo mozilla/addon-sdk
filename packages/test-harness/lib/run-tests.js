@@ -34,7 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-var obsvc = require("observer-service");
+"use strict";
+var obsvc = require("api-utils/observer-service");
 var {Cc,Ci} = require("chrome");
 
 function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, print) {
@@ -44,7 +45,7 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, p
   var window = ww.openWindow(null, "data:text/plain,Running tests...",
                              "harness", "centerscreen", null);
 
-  var harness = require("harness");
+  var harness = require("./harness");
 
   function onDone(tests) {
     window.close();

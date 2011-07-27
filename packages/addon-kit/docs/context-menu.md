@@ -437,8 +437,10 @@ A labeled menu item that can perform an action when clicked.
 
 <api name="data">
 @property {string}
-  An arbitrary value associated with the menu item during creation.  Currently
-  this property is read-only.
+  An optional arbitrary value to associate with the item.  It must be either a
+  string or an object that implements `toString()`.  It will be passed to
+  click listeners.  You can set this after creating the item to update its data
+  later.
 </api>
 
 <api name="context">
@@ -447,6 +449,13 @@ A labeled menu item that can perform an action when clicked.
   context menu.  Contexts can be added by calling `context.add()` and removed by
   called `context.remove()`.  This property is meaningful only for items
   contained in the top-level context menu.
+</api>
+
+<api name="parentMenu">
+@property {Menu}
+  The item's parent `Menu`, or `null` if the item is contained in the top-level
+  context menu.  This property is read-only.  To add the item to a new menu,
+  call that menu's `addItem()` method.
 </api>
 
 <api name="contentScript">
@@ -465,8 +474,10 @@ A labeled menu item that can perform an action when clicked.
 
 <api name="destroy">
 @method
-  Permanently removes the item from the top-level context menu.  If the item is
-  not contained in the top-level context menu, this method does nothing.
+  Permanently removes the item from its parent menu and frees its resources.
+  The item must not be used afterward.  If you need to remove the item from its
+  parent menu but use it afterward, call `removeItem()` on the parent menu
+  instead.
 </api>
 
 <api name="message">
@@ -527,8 +538,10 @@ A labeled menu item that expands into a submenu.
 
 <api name="items">
 @property {array}
-  The menu items contained in the menu.  Currently the items in the menu cannot
-  be changed by modifying this property.
+  An array containing the items in the menu.  The array is read-only, meaning
+  that modifications to it will not affect the menu.  However, setting this
+  property to a new array will replace all the items currently in the menu with
+  the items in the new array.
 </api>
 
 <api name="context">
@@ -537,6 +550,13 @@ A labeled menu item that expands into a submenu.
   menu.  Contexts can be added by calling `context.add()` and removed by called
   `context.remove()`.  This property is meaningful only for menus contained in
   the top-level context menu.
+</api>
+
+<api name="parentMenu">
+@property {Menu}
+  The menu's parent `Menu`, or `null` if the menu is contained in the top-level
+  context menu.  This property is read-only.  To add the menu to a new menu,
+  call that menu's `addItem()` method.
 </api>
 
 <api name="contentScript">
@@ -553,10 +573,29 @@ A labeled menu item that expands into a submenu.
   top-level context menu.
 </api>
 
+<api name="addItem">
+@method
+  Appends a menu item to the end of the menu.  If the item is already contained
+  in another menu or in the top-level context menu, it's automatically removed
+  first.
+@param item {Item,Menu,Separator}
+  The `Item`, `Menu`, or `Separator` to add to the menu.
+</api>
+
+<api name="removeItem">
+@method
+  Removes the given menu item from the menu.  If the menu does not contain the
+  item, this method does nothing.
+@param item {Item,Menu,Separator}
+  The menu item to remove from the menu.
+</api>
+
 <api name="destroy">
 @method
-  Permanently removes the menu from the top-level context menu.  If the menu is
-  not contained in the top-level context menu, this method does nothing.
+  Permanently removes the menu from its parent menu and frees its resources.
+  The menu must not be used afterward.  If you need to remove the menu from its
+  parent menu but use it afterward, call `removeItem()` on the parent menu
+  instead.
 </api>
 
 <api name="message">
@@ -578,10 +617,26 @@ from the content script. The message can be any
 @class
 A menu separator.  Separators can be contained only in `Menu`s, not in the
 top-level context menu.
+
 <api name="Separator">
 @constructor
   Creates a menu separator.
 </api>
+
+<api name="parentMenu">
+@property {Menu}
+  The separator's parent `Menu`.  This property is read-only.  To add the
+  separator to a new menu, call that menu's `addItem()` method.
+</api>
+
+<api name="destroy">
+@method
+  Permanently removes the separator from its parent menu and frees its
+  resources.  The separator must not be used afterward.  If you need to remove
+  the separator from its parent menu but use it afterward, call `removeItem()`
+  on the parent menu instead.
+</api>
+
 </api>
 
 <api name="PageContext">

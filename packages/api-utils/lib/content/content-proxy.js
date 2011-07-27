@@ -425,13 +425,19 @@ function handlerMaker(obj) {
           return wrap(XPCNativeWrapper(node));
       }
       
-      // Trap access to window["frame name"]
-      // that refer to an (i)frame node
+      // Trap access to window["frame name"] and window.frames[i]
+      // that refer to an (i)frame internal window object
       // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#6824
       if (!o && typeof obj == "object" && "document" in obj) {
         try {
           obj.QueryInterface(Ci.nsIDOMWindow);
-          let win = obj.wrappedJSObject[name];
+          let win = obj[i];
+          // Integer case:
+          if (i >= 0 && win) {
+            return wrap(XPCNativeWrapper(win));
+          }
+          // String name case:
+          win = obj.wrappedJSObject[name];
           let nodes = obj.document.getElementsByName(name);
           for (let i = 0, l = nodes.length; i < l; i++) {
             let node = nodes[i];

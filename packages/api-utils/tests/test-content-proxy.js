@@ -158,10 +158,13 @@ exports.testProxy = function (test) {
         test.assertEqual(document.test, img, "document[imgName] is valid");
         body.removeChild(img);
         
-        // Check window[frameName]
+        // Check window[frameName] and window.frames[i]
         let iframe = document.createElement("iframe");
         iframe.setAttribute("name", "test");
+        test.assertEqual(wrapped.frames.length, 0, "No frames reported before adding the iframe");
         body.appendChild(iframe);
+        test.assertEqual(wrapped.frames.length, 1, "Iframe is reported in window.frames check1");
+        test.assertEqual(wrapped.frames[0], iframe.contentWindow, "Iframe is reported in window.frames check2");
         test.assertEqual(wrapped.test, iframe.contentWindow, "window[frameName] is valid");
         body.removeChild(iframe);
         

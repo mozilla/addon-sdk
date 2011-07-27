@@ -37,6 +37,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cu,components} = require("chrome");
 var NetUtil = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
@@ -245,7 +247,7 @@ function StreamManager(stream, rawStream) {
     self.unload();
   };
 
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 
 StreamManager.prototype = {

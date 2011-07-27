@@ -1,53 +1,92 @@
 # Installation #
 
+## Prerequisites
+
 To develop with the Add-on SDK, you'll need:
 
 * [Python](http://www.python.org/) 2.5 or 2.6. Note that versions 3.0 and 3.1
   of Python are not supported. Make sure that Python is in your path.
 
-* A version of Firefox that uses Gecko 2.0.0.7 or later
-  (for example, Firefox 4.0).
+* Firefox version 4.0 or later.
 
-At the moment, the latest stable version of the Add-on SDK is 1.0b5.
+At the moment, the latest stable version of the Add-on SDK is 1.0.
 You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
 Alternatively, you can get the latest development version of the
 Add-on SDK from its [GitHub repository](https://github.com/mozilla/addon-sdk).
 
+## Installation on Mac OS X / Linux ##
+
 Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  ~/mozilla > tar -xf addon-sdk-1.0b5.tar.gz
-  ~/mozilla > cd addon-sdk-1.0b5
-  ~/mozilla/addon-sdk-1.0b5 >
+  ~/mozilla > tar -xf addon-sdk-1.0.tar.gz
+  ~/mozilla > cd addon-sdk-1.0
+  ~/mozilla/addon-sdk-1.0 >
 </pre>
 
-Then, if you're on Linux, OS X, or another Unix-based system, run:
+Then run:
 
 <pre>
-  ~/mozilla/addon-sdk-1.0b5 > source bin/activate
+  ~/mozilla/addon-sdk-1.0 > source bin/activate
 </pre>
 
-Otherwise, if you're on Windows, run:
+Your command prompt should now have a new prefix containing the name of the
+SDK's root directory:
 
 <pre>
-  C:\Users\Mozilla\addon-sdk-1.0b5> bin\activate
+  (addon-sdk-1.0)~/mozilla/addon-sdk-1.0 >
 </pre>
 
-Now the beginning of your command prompt should contain the text
-`(addon-sdk)`, which means that your shell has entered a special
-virtual environment that gives you access to the Add-on SDK's
-command-line tools.
+## Installation on Windows ##
 
-At any time, you can leave a virtual environment by running
-`deactivate`.
+Extract the file contents wherever you choose, and navigate to the root
+directory of the SDK with a shell/command prompt. For example:
+
+<pre>
+  C:\Users\mozilla\sdk>7z.exe x addon-sdk-1.0.zip
+  C:\Users\mozilla\sdk>cd addon-sdk-1.0
+  C:\Users\mozilla\sdk\addon-sdk-1.0>
+</pre>
+
+Then run:
+
+<pre>
+  C:\Users\mozilla\sdk\addon-sdk-1.0>bin\activate
+</pre>
+
+You might see an error like this:
+
+<pre>
+  ERROR: The system was unable to find the specified registry key or value.
+</pre>
+
+This is a known issue, being tracked as
+[bug 574563](https://bugzilla.mozilla.org/show_bug.cgi?id=574563), and should
+not affect the proper functioning of the SDK at all.
+
+Your command prompt should now have a new prefix containing the full path to
+the SDK's root directory:
+
+<pre>
+  (C:\Users\mozilla\sdk\addon-sdk-1.0) C:\Users\Work\sdk\addon-sdk-1.0>
+</pre>
+
+## SDK Virtual Environment ##
+
+The new prefix to your command prompt indicates that your shell has entered
+a virtual environment that gives you access to the Add-on SDK's command-line
+tools.
+
+At any time, you can leave a virtual environment by running `deactivate`.
 
 The virtual environment is specific to this particular command prompt. If you
 close this command prompt, it is deactivated and you need to type
-`source bin/activate` in a new command prompt to reactivate it. If
-you open a new command prompt, the SDK will not be active in the new prompt.
+`source bin/activate` or `bin\activate` in a new command prompt to reactivate
+it. If you open a new command prompt, the SDK will not be active in the new
+prompt.
 
 You can have multiple copies of the SDK in different locations on disk and
 switch between them, or even have them both activated in different command
@@ -58,7 +97,7 @@ prompts at the same time.
 Run this at your shell prompt:
 
 <pre>
-  ~/mozilla/addon-sdk-1.0b5 > cfx
+  ~/mozilla/addon-sdk-1.0 > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by

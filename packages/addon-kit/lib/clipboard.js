@@ -38,9 +38,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
-const errors = require("errors");
-const apiUtils = require("api-utils");
+const errors = require("api-utils/errors");
+const apiUtils = require("api-utils/api-utils");
  
 /*
 While these data flavors resemble Internet media types, they do
@@ -231,7 +233,7 @@ exports.__defineGetter__("currentFlavors", function() {
 // SUPPORT FUNCTIONS ////////////////////////////////////////////////////////
 
 function toJetpackFlavor(aFlavor) {
-  for each (flavorMap in kFlavorMap)
+  for each (let flavorMap in kFlavorMap)
     if (flavorMap.long == aFlavor)
       return flavorMap.short;
   // Return null in the case where we don't match
@@ -240,7 +242,7 @@ function toJetpackFlavor(aFlavor) {
 
 function fromJetpackFlavor(aJetpackFlavor) {
   // TODO: Handle proper flavors better
-  for each (flavorMap in kFlavorMap)
+  for each (let flavorMap in kFlavorMap)
     if (flavorMap.short == aJetpackFlavor || flavorMap.long == aJetpackFlavor)
       return flavorMap.long;
   // Return null in the case where we don't match.

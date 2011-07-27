@@ -320,7 +320,7 @@ def run_app(harness_root_dir, harness_options,
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
 
     # ensure running Firefox 4.0+
-    version_output = check_output([runner.binary, "-v"])
+    version_output = check_output(runner.command + ["-v"])
     mo = re.search(r"Mozilla (Firefox|Iceweasel) (\d+)\.[\d\.]+",
                    version_output)
     if not mo:
