@@ -268,3 +268,67 @@ exports['test:chrome is unwrapped'] = function(test) {
   }, true);
 
 }
+
+exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
+  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let window = makeWindow(contentURL);
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let worker =  Worker({
+      window: window.document.getElementById("content").contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        let id = setTimeout(function () {
+          self.postMessage("timeout");
+        }, 100);
+        unsafeWindow.eval("clearTimeout("+id+");");
+      },
+      contentScriptWhen: 'ready',
+      onMessage: function(msg) {
+        test.assert(msg,
+          "content didn't managed to cancel our setTimeout");
+        test.done();
+      }
+    });
+
+  }, true);
+
+}
+
+exports['test:setTimeout are unregistered on content unload'] = function(test) {
+  let contentURL = 'data:text/html,foo';
+  let window = makeWindow(contentURL);
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let iframe = window.document.getElementById("content");
+    let originalDocument = iframe.contentDocument;
+    let worker =  Worker({
+      window: iframe.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        document.title = "ok";
+        let id = setInterval(function () {
+          document.title = "not-cancelled";
+        }, 100);
+      },
+      contentScriptWhen: 'ready'
+    });
+
+    // Change location so that content script is destroyed,
+    // and all setTimeout/setInterval should be unregistered.
+    iframe.setAttribute("src", "data:text/html,<title>final</title>");
+
+    require("timer").setTimeout(function () {
+      test.assertEqual(iframe.contentDocument.title, "final",
+        "New document has not been modified");
+      test.assertEqual(originalDocument.title, "ok",
+        "Nor previous one");
+      test.done();
+    }, 500);
+  }, true);
+
+}

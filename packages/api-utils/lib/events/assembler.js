@@ -38,8 +38,8 @@
 
 "use strict";
 
-const { Trait } = require("light-traits");
-const { removeListener, on } = require("dom/events");
+const { Trait } = require("../light-traits");
+const { removeListener, on } = require("../dom/events");
 
 /**
  * Trait may be used for building objects / composing traits that wish to handle

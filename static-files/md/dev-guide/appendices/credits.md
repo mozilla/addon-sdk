@@ -4,6 +4,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 
 * Adamantium
 * Ehsan Akhgari
+* arky
 * [Heather Arthur](https://github.com/harthur)
 * Dietrich Ayala
 * [Romain B](https://github.com/Niamor)

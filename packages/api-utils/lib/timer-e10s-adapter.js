@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 if (this.chrome) {
   var callbacks = {};
   exports.setTimeout = function setTimeout(cb, ms) {
@@ -59,7 +61,7 @@ if (this.chrome) {
   });
 } else {
   exports.register = function(addon) {
-    var timer = require("timer");
+    var timer = require("./timer");
     addon.registerCall("setTimeout", function(name, ms) {
       var id = timer.setTimeout(function() {
         addon.send("onTimeout", id);

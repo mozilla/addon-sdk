@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com> (Original Author)
  *   Drew Willcoxon <adw@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -44,7 +45,11 @@ exports.testUnloading = function(test) {
   var loader = test.makeSandboxedLoader();
   var ul = loader.require("unload");
   var unloadCalled = 0;
-  function unload() { unloadCalled++; }
+  var errorsReported = 0;
+  function unload() {
+    unloadCalled++;
+    throw new Error("error");
+  }
   ul.when(unload);
 
   // This should be ignored, as we already registered it
@@ -52,9 +57,11 @@ exports.testUnloading = function(test) {
 
   function unload2() { unloadCalled++; }
   ul.when(unload2);
-  loader.unload();
+  loader.unload(undefined, function onError() { errorsReported++; });
   test.assertEqual(unloadCalled, 2,
                    "Unloader functions are called on unload.");
+  test.assertEqual(errorsReported, 1,
+                   "One unload handler threw exception");
 };
 
 exports.testEnsure = function(test) {

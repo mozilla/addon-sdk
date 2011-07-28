@@ -41,10 +41,10 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { Symbiont } = require("content");
-const { Trait } = require("traits");
+const { Symbiont } = require("api-utils/content");
+const { Trait } = require("api-utils/traits");
 
-if (!require("xul-app").isOneOf(["Firefox", "Thunderbird"])) {
+if (!require("api-utils/xul-app").isOneOf(["Firefox", "Thunderbird"])) {
   throw new Error([
     "The page-worker module currently supports only Firefox and Thunderbird. ",
     "In the future, we would like it to support other applications, however. ",
