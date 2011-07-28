@@ -1,14 +1,62 @@
 <!-- contributed by Alexandre Poirot [apoirot@mozilla.com]  -->
 
-#### Glossary ####
+Content scripts need access to the DOM of the pages they are attached to.
+However, those pages should be considered to be hostile environments: we
+have no control over any other scripts loaded by the web page that may be
+executing in the same context. If the content scripts and scripts loaded
+by the web page were to access the same DOM objects, there are two possible
+security problems:
 
-* CS: Content script
-* XrayWrapper, XPCNativeWrapper: They are identical. 
-  Wrappers that ensure having access only to native methods. 
-* [Proxy](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy):
-  New non-standard API for meta-programming.
+First, a malicious page might redefine functions and properties of DOM
+objects so they don't do what the add-on expects. For example, if a
+content script calls `document.getElementById()` to retrieve a DOM
+element, then a malicious page could redefine its behavior to return
+something unexpected:
 
-## Why such proxy? ##
+<pre><code>
+// If the web document contains the following script:
+document.getElementById = function (str) {
+  // Overload indexOf method of all string instances
+  str.__proto__.indexOf = function () {return -1;};
+  // Overload toString method of all object instances
+  str.__proto__.__proto__.toString = function () {return "evil";};
+};
+// After the following line, the content script will be compromised:
+var node = document.getElementById("element");
+// Then your content script is totally out of control.
+</code></pre>
+
+Second, changes the content script made to the DOM objects would be visible
+to the page, leaking information to it.
+
+The general approach to fixing these problems is to wrap DOM objects in
+[`XrayWrappers`](https://developer.mozilla.org/en/XPCNativeWrapper)
+(also know as `XPCNativeWrapper`). This guarantees that:
+
+* when the content script accesses DOM properties and functions it gets the
+original native version of them, ignoring any modifications made by the web
+page
+* changes to the DOM made by the content script are not visible to scripts
+running in the page.
+
+However, `XrayWrapper` has some limitations and bugs, which break many
+popular web frameworks. In particular, you can't:
+
+* define attributes like `onclick`: you have to use `addEventListener` syntax
+* overload native methods on DOM objects, like this:
+<pre><code>
+proxy.addEventListener = function () {};
+</code></pre>
+* access named elements using properties like `window[framename]` or
+`document[formname]`
+* use some other features that have bugs in the `XrayWrapper`
+implementation, like `mozMatchesSelector`
+
+The `proxy` module uses `XrayWrapper` in combination with the
+experimental
+[Proxy API](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy)
+to address both the security vulnerabilities of content scripts and the
+limitations of `XrayWrapper`.
 
 <pre>
   /--------------------\                           /------------------------\
@@ -19,58 +67,16 @@
   \--------------------/                           \------------------------/
 </pre>
 
-These proxies aims to wrap all document JS objects in order to:
 
-  1. Ensure calling only native methods:<br/>
-    The document can't overload `addEventListener` to trick the CS,
-    nor overload some attributes like `document`.
-  2. Prevent leaking any JS object to the document:<br/>
-    Proxy object hold a different set of attributes in order to avoid
-    leaking any JS value to the document.
-  3. Having exactly same feature set as regular web page object:<br/>
-    XrayWrapper fullfill the two first items and these are the only
-    differences we want from raw/unwrapped document objects.
-    Platform provides XrayWrapper to address first two points,
-    but their limitations and bugs break most of popular JS frameworks.
-    This forced us into implementing similar wrappers using Proxies
-    which allowed us to:
-      * override native methods from the content script,
-      * provide expando atttribute like `onclick`,
-      * provide window[framename], document[formname] properties.
+## The Big Picture ##
 
-
-## Concrete security threat examples ##
-
-    // If the web document contains the folowing script:
-    document.getElementById = function (str) {
-      // Overload indexOf method of all string instances
-      str.__proto__.indexOf = function () {return -1;};
-      // Overload toString method of all object instances
-      str.__proto__.__proto__.toString = function () {return "evil";};
-    };
-    
-    // After following line content script, will be compromised:
-    var node = document.getElementById("element");
-    // Then your CS is totally out of control.
-    // In order to avoid such malicious `getElementById`,
-    // `document` handed to the content script is wrapped via proxy.
-    
-    // In addition proxy base wrappers protect property leaking to the content, 
-    // so that, the following `myCustomAttribute` is not visible from the web page.
-    // Nor `myCustomAttribute` would be visible from the CS if this line
-    // was executed from the document.
-    node.myCustomAttribute = "something";
-
-
-## The big picture: ##
-
-  Implementation defines two different kinds of proxy wrappers:
+The implementation defines two different kinds of proxy:
   
-  1. Content script proxies, that wrap document object are exposed to
+  1. Content script proxies that wrap DOM objects that are exposed to
      content scripts as described above.
-  2. XrayWrapper proxies, they wrap objects from content scripts before handing
-     them over to XrayWrapper functions. These proxies are internal,
-     they are not exposed to content scripts or document content.
+  2. XrayWrapper proxies that wrap objects from content scripts before handing
+     them over to XrayWrapper functions. These proxies are internal
+     and are not exposed to content scripts or document content.
 
 <pre>
   /--------------------\                           /------------------------\
@@ -86,13 +92,14 @@ These proxies aims to wrap all document JS objects in order to:
   \--------------------/  \-------------/  \----------/
 </pre>
 
-Everything begins with an unique call to `create` function from content-proxy module:
-  
+Everything begins with a single call to the `create` function exported by the
+content-proxy module:
+
     // Retrieve the unwrapped reference to the current web page window object
     var win = gBrowser.contentDocument.defaultView.wrappedJSObject;
     // Or in addon sdk style
     var win = require("tab-browser").activeTab.linkedBrowser.contentWindow.wrappedJSObject;
-    // Now create a CS proxy for the window object
+    // Now create a content script proxy for the window object
     var windowProxy = require("api-utils/content/content-proxy").create(win);
     
     // We finally use this window object as sandbox prototype,
@@ -101,82 +108,92 @@ Everything begins with an unique call to `create` function from content-proxy mo
       sandboxPrototype: windowProxy
     });
 
-Then all necessary proxies are created from this first one.
+Then all other proxies are created from this one. Attempts to access DOM
+attributes of this proxy are trapped, and the proxy constructs and returns
+content script proxies for those attributes:
 
     // For example, if you simply do this:
     var document = window.document;
-    // accessing the `document` attribute will be trapped by the `window` CS
-    // Proxy that creates another CS Proxy for `document`
+    // accessing the `document` attribute will be trapped by the `window` content script
+    // proxy, and that proxy will that create another content script proxy for `document`
 
-So that the main issue of CS Proxy implementation is to ensure that we always
-return CS Proxies to the content script.
+So the main responsibility of the content script proxy implementation is to
+ensure that we always return content script proxies to the content script.
 
+## Internal Implementation ##
 
-## Internal implementation ##
+Each content script proxy keeps a reference to the `XrayWrapper` that enables
+it to be sure of calling native DOM methods.
 
-Each CS Proxy keep a reference to the XrayWrapper that allow to ensure calling
-native DOM methods and having a different attributes set.
+There are two internal functions to convert between content script proxy
+values and `XrayWrapper` values.
 
-Then, there is two key functions to convert values from/to each environnement:
-
-1. __wrap__ takes an XrayWrapper value and wrap it into a CS proxy if needed.
+1. __`wrap`__ takes an XrayWrapper value and wraps it in a content script
+proxy if needed.
   This method is called when:
-    * we access to an attribute of a CS proxy.
-    * XrayWrapper code call a function coming from the CS.
-    So that arguments passed by XrayWrapper are converted into CS proxies 
-    (For example, an `addEventListener` callback)
-
-2. __unwrap__ takes a value coming from the CS context and:
-    * unwrap CS proxy back to an XrayWrapper reference, if this value was a CS proxy,
-    * or wrap it into a XrayWrapper proxy.
+    * a content script accesses an attribute of a content script proxy.
+    * XrayWrapper code calls a callback function defined in the content
+script, so that arguments passed into the function by the XrayWrapper are
+converted into content script proxies. For example, if a content script
+calls `addEventListener`, then the listener function will expect any arguments
+to be content script proxies.
 <br/><br/>
-So that we can call a XrayWrapper method either with:
+2. __`unwrap`__ takes an object coming from the content script context and:
+    * if the object is a content script proxy, unwraps it back to an
+XrayWrapper reference
+    * if the object is not a content script proxy, wraps it in an XrayWrapper
+proxy.
+<br/><br/>
+This means we can call a XrayWrapper method either with:
 
         * a raw XrayWrapper object.
     
-                // The following line doesn't work if child is a CS proxy,
+                // The following line doesn't work if child is a content script proxy,
                 // it has to be a raw XrayWrapper reference
                 xrayWrapper.appendChild(child)
       
-        * or an XrayWrapper proxy when you pass a custom object from the CS context.
+        * an XrayWrapper proxy when you pass a custom object from the content
+script context.
 
                 var myListener = {
                   handleEvent: function(event) {
-                    // `event` should be a CS proxy
+                    // `event` should be a content script proxy
                   }
                 };
                 // `myListener` has to be another kind of Proxy: XrayWrapper proxy,
                 // that aims to catch the call to `handleEvent` in order to wrap its
-                // arguments into CS proxy.
+                // arguments in a content script proxy.
                 xrayWrapper.addEventListener("click", myListener, false);
 
 
-## Stacktraces ##
+## Stack Traces ##
 
-    // Following code:
+The following code:
+
     function listener(event) {
       
     }
     csProxy.addEventListener("message", listener, false);
     
-    // Generate following internal calls:
+generates the following internal calls:
+
     -> CS Proxy:: get("addEventListener")
       -> wrap(xrayWrapper.addEventListener)
         -> NativeFunctionWrapper(xrayWrapper.addEventListener)
-           Generate following function:
-           function ("message", listener, false) {
-              return xraywrapper.addEventListener("message", unwrap(listener), false);
-           }
-           -> unwrap(listener)
-             -> ContentScriptFunctionWrapper(listener)
-             Generate following function:
-               function (event) {
-                 return listener(wrap(event));
-               }
+          // NativeFunctionWrapper generates:
+          function ("message", listener, false) {
+            return xraywrapper.addEventListener("message", unwrap(listener), false);
+          }
+          -> unwrap(listener)
+            -> ContentScriptFunctionWrapper(listener)
+            // ContentScriptFunctionWrapper generates:
+            function (event) {
+              return listener(wrap(event));
+            }
 
 <br>
 
-    // First, create an object from CS context
+    // First, create an object from content script context
     var myListener = {
       handleEvent: function (event) {
         
@@ -185,22 +202,22 @@ So that we can call a XrayWrapper method either with:
     // Then, pass this object as an argument to a CS proxy method
     window.addEventListener("message", myListener, false);
     
-    // Generate following internal calls:
+    // Generates the following internal calls:
     -> CS Proxy:: get("addEventListener")
       -> wrap(xrayWrapper.addEventListener)
         -> NativeFunctionWrapper(xrayWrapper.addEventListener)
-           Generate following function:
+           // Generate the following function:
            function ("message", myListener, false) {
               return xraywrapper.addEventListener("message", unwrap(myListener), false);
            }
            -> unwrap(myListener)
              -> ContentScriptObjectWrapper(myListener)
-                Generate an XrayWrapper proxy and give it to xrayWrapper method.
-                Then when native code fires an event, the proxy will catch it:
+                // Generate an XrayWrapper proxy and give it to xrayWrapper method.
+                // Then when native code fires an event, the proxy will catch it:
                 -> XrayWrapper Proxy:: get("handleEvent")
                   -> unwrap(myListener.handleEvent)
                     -> ContentScriptFunctionWrapper(myListener.handleEvent)
-                       Generate following function:
+                       // Generate following function:
                        function (event) {
                          return myListener.handleEvent(wrap(event));
                        }
@@ -209,12 +226,12 @@ So that we can call a XrayWrapper method either with:
 <api name="create">
 @function
   Create a content script proxy. <br/>
-  Doesn't create create a proxy if we are not able to create a XrayWrapper for
-  this object. (for ex: if the object comes from system principal.)
+  Doesn't create a proxy if we are not able to create a XrayWrapper for
+  this object: for example, if the object comes from system principal.
 
 @param object {Object}
     The object to proxify.
 
 @returns {Object}
-    A content script proxy that wrap `object`.
+    A content script proxy that wraps `object`.
 </api>
