@@ -121,10 +121,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertFunction">
 @method
-  Ensures that a is a function
+  Ensures that `a` is a function.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -135,10 +135,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertUndefined">
 @method
-  Ensures that a is undefined.  null, 0, and false will all fail.
+  Ensures that `a` is `undefined`.  `null`, `0`, and `false` will all fail.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -149,10 +149,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertNotUndefined">
 @method
-  Ensures that a is not undefined.  null, 0, and false will all pass.
+  Ensures that `a` is not `undefined`.  `null`, `0`, and `false` will all pass.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -163,10 +163,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertNull">
 @method
-  Ensures that a is null.  undefined, 0, and false will all fail.
+  Ensures that `a` is `null`.  `undefined`, `0`, and `false` will all fail.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -177,10 +177,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertNotNull">
 @method
-  Ensures that a is not null.  undefined, 0, false, NaN will all pass.
+  Ensures that `a` is not `null`.  `undefined`, `0`, and `false` will all pass.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -191,10 +191,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertObject">
 @method
-  Ensures that a is an object.  A function, string, or number will fail.
+  Ensures that `a` is an object.  A function, string, or number will fail.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -205,10 +205,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertString">
 @method
-  Ensures that a is a string.
+  Ensures that `a` is a string.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -219,10 +219,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertArray">
 @method
-  Ensures that a is an array.
+  Ensures that `a` is an array.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
@@ -233,10 +233,10 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertNumber">
 @method
-  Ensures that a is a number.
+  Ensures that `a` is a number.
 
 @param a {value}
-  A value
+  A value.
 
 @param [message] {string}
   The test is marked as passing or failing depending on the result, logging
