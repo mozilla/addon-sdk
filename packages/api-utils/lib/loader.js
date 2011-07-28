@@ -300,6 +300,8 @@ const Loader = Component.extend({
     // one sandbox will be used for all modules.
     if (options.sandboxes <= 1)
       this.sandbox = Sandbox.new();
+    else
+      this.sandboxes = {};
 
     Object.defineProperty(this, 'modules', {
       value: Object.create(this.modules)
@@ -344,7 +346,7 @@ const Loader = Component.extend({
     } catch(error) {
       throw new Error('Module: ' + id + ' was not fonud: ' + uri)
     }
-    let sandbox = this.sandbox || Sandbox.new(this.globals);
+    let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
     let factory;
     try {
       factory = sandbox.evaluate('(function(require, exports, module) { \n' + source + ' })', uri);
@@ -407,7 +409,7 @@ exports.shutdown = function shutdown(data, reason) {
 
 })(typeof(exports) === 'undefined' ? this : exports);
 
-// Use today:
+// Use in other environment.
 //
 //let { Cc, Ci } = require('chrome');
 //let Loader = require('api-utils/loader').Loader;
