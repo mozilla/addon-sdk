@@ -49,6 +49,10 @@ const { registerFactory, unregisterFactory } =
         Cm.QueryInterface(Ci.nsIComponentRegistrar);
 const { generateUUID } = CC('@mozilla.org/uuid-generator;1',
                             'nsIUUIDGenerator')();
+const ioService = CC('@mozilla.org/network/io-service;1',
+                       'nsIIOService')();
+const resourceHandler = ioService.getProtocolHandler('resource')
+                        .QueryInterface(Ci.nsIResProtocolHandler);
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
@@ -184,12 +188,28 @@ function resolve(id, base) {
   if (base[base.length - 1].substr(-1) === '.') base.push('')
   return base.join('/')
 }
+
+// TODO: Remove this temporary hack! Module `id` should map to corresponding
+// resource `uri` in more trivial way. I think changing cuddlefish so that
+// addons are layout in a simple structure like http://cl.ly/8r99 is the right
+// way to go about this.
 function resolveURI(root, id) {
   let paths = normalize(id).split('/')
   return paths.length <= 1 ? id :
          [root + paths.shift() + '-lib'].concat(paths).join('/');
-
 }
+
+// TODO: Remove this temporary hack! I think manifest should contain module `id`
+// along with or instead of `uri` properties. This function creates parses out
+// id out of the `uri`.
+function resolveID(root, uri) {
+  let paths = uri.replace(root, '').split('/');
+  return [ paths.shift().replace(/\-lib$/, '') ].concat(paths).join('/');
+}
+
+
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
 function readURI(uri) {
   let request = XMLHttpRequest();
   request.open('GET', uri, false);
@@ -199,25 +219,30 @@ function readURI(uri) {
 
 function Require(loader, manifest, base) {
   function require(id) {
-    // If we have a base module and it's in manifest, then all it's
-    // dependencies must be in the manifest.
+    // TODO: Remove debug log!
+    dump(base + ' ? ' + id + '\n')
+    // If we have a manifest for requirer, then all it's requirements have been
+    // registered by linker.
     if (base && manifest) {
+      // If required module is in manifest we use take resolved requirement
+      // `id` from manifest.
       let requirement = manifest.requirements[id];
-      // If module has 'sudo' privileges, it can go off-manifest.
-      if (requirement || 'chrome' in manifest.requirements)
-        requirement = id;
-      else
-        throw new Error("Module: " + base + " has no athority to load: " + id);
+      if (requirement)
+        id = requirement.uri ? resolveID(loader.root, requirement.uri) : id;
 
-      id = requirement
+      // If module is known to have "sudo" privileges, we allow it to go
+      // off-manifest. Otherwise we throw an error.
+      else if (!('chrome' in manifest.requirements))
+        throw new Error("Module: " + base + " has no athority to load: " + id);
     }
 
-    console.log(id)
+    // Resolving requirement `id` to it's requirer `id`.
+    id = resolve(id, base);
 
-    id = resolve(id, base)
+    // TODO: Remove debug log!
+    dump('require: ' + id + '\n');
 
-    // Importing a module.
-    console.log(id)
+    // Loading required module and return it's exports.
     return loader.load(id);
   }
   require.main = loader.main;
@@ -225,15 +250,15 @@ function Require(loader, manifest, base) {
 }
 
 const Sandbox = Base.extend({
-  initialize: function Sandbox() {
+  initialize: function Sandbox(prototype) {
     this.sandbox = Cu.Sandbox(this.principal, {
-      sandboxPrototype: this.prototype,
+      sandboxPrototype: prototype || this.prototype,
       wantXrays: this.wantXrays
     });
   },
   evaluate: function evaluate(source, uri, lineNumber) {
     return Cu.evalInSandbox(
-      '(' + source + ')',
+      source,
       this.sandbox,
       this.version,
       uri,
@@ -249,6 +274,7 @@ const Sandbox = Base.extend({
 
 function Main(loader) {
   return function main(id) {
+    // Overriding main so that all modules point to it.
     loader.main = loader.modules[resolveURI(loader.root, id)] = {};
     return Require(loader, null)(id);
   }
@@ -292,15 +318,13 @@ const Loader = Component.extend({
     },
     // TODO: Remove this temporary hack and use proper solution instead.
     'self.js': {
-      exports: require('self'),
+      exports: {}, //require('self'),
       id: 'self'
     }
   },
   load: function load(id) {
     let uri = resolveURI(this.root, normalize(id));
     let module = this.modules[uri] || (this.modules[uri] = {});
-
-    console.log(uri)
 
     if (module.exports)
       return module.exports;
@@ -313,38 +337,75 @@ const Loader = Component.extend({
     let manifest = this.manifest[uri];
     let exports = module.exports;
 
-    let source = readURI(uri);
-    let sandbox = this.sandbox || Sandbox.new();
-    if (sandbox !== this.sandbox)
-      console.log('creating new compartment');
-
-    sandbox.evaluate(Function('require', 'exports', 'module', source), uri).
-            call(exports, Require(this, manifest, id), exports, module);
+    dump('load: ' + uri + '\n');
+    let source;
+    try {
+      source = readURI(uri);
+    } catch(error) {
+      throw new Error('Module: ' + id + ' was not fonud: ' + uri)
+    }
+    let sandbox = this.sandbox || Sandbox.new(this.globals);
+    let factory;
+    try {
+      factory = sandbox.evaluate('(function(require, exports, module) { \n' + source + ' })', uri);
+      factory.call(exports, Require(this, manifest, id), exports, module);
+    } catch(error) {
+      dump(error.fileName + '#' + error.lineNumber + '\n')
+      dump(error.message + '\n')
+      dump(error.stack + '\n')
+      throw error
+    }
 
     return Object.freeze(Object.freeze(module).exports);
   }
 });
 exports.Loader = Loader;
 
+// Shim function to get `resourceURI` in pre Gecko 7.0.
+// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
+function resourceURI(file) {
+  // First creating "file:" URI.
+  let uri = ioService.newFileURI(file);
+  if (uri.spec.substr(-4) === '.xpi') // `unpack` is `false`
+    uri = ioService.newURI('jar:' + uri.spec + '!/', null, null);
+
+  return uri;
+}
+
+function mapResources(root, resources) {
+  Object.keys(resources).forEach(function(id) {
+    let path = resources[id];
+    let uri = Array.isArray(path) ? resolve(path.join('/'), root)
+                                  : 'file://' + path;
+    uri = ioService.newURI(uri + '/', null, null);
+    resourceHandler.setSubstitution(id, uri);
+    // TODO: Remove debug log!
+    dump(id + ' -> ' + uri.spec + '\n');
+  });
+}
+
+exports.install = function install(data, reason) {
+}
+exports.uninstall = function uninstall(data, reason) {
+}
+exports.startup = function startup(data, reason) {
+  let uri = (data.resolveURI || resourceURI(data.installPath)).spec;
+  let options = JSON.parse(readURI(resolve('./harness-options.json', uri)));
+  let mainID = resolve('./' + options.main, options.name);
+  if (!(Loader.contractID in Cc))
+    Loader.register()
+  let loader = Cc[Loader.contractID].createInstance(Ci.nsISupports).
+                                     wrappedJSObject.new(options);
+  mapResources(uri, options.resources);
+  loader.globals = Object.create(loader.load('api-utils/@globals'), {
+    packaging: { value: { options: options } }
+  });
+  loader.main(mainID);
+}
+exports.shutdown = function shutdown(data, reason) {
+}
+
 })(typeof(exports) === 'undefined' ? this : exports);
-
-// Once it will move to bootstrap.js
-//
-// // Register a module loader if not registered already.
-// if (!(Loader.contractID in Cc))
-//  Loader.register()
-
-//let loader = Cc[Loader.contractID].createInstance(Ci.nsISupports).
-//              wrappedJSObject.new(packaging.options);
-//
-// // Set up add-on hooks
-// install = loader.install
-// startup = loader.startup
-// shutdown = loader.shutdown
-// uninstall = loader.uninstall
-//
-// // Argument should point to the URI of the main module instead.
-// loader.main(mainID);
 
 // Use today:
 //
@@ -361,3 +422,4 @@ exports.Loader = Loader;
 //              // });
 //let self = loader.main('api-utils/@self');
 //let { Panel } = self.require('addon-kit/panel');
+
