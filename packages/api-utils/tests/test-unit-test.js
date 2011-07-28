@@ -122,7 +122,20 @@ exports.testAssertFunction = function(test) {
     });    
 };
 
-exports.testAssertNotDefined = function(test) {
+exports.testAssertUndefined = function(test) {
+    test.assertUndefined(undefined, 'assertUndefined with undefined');
+    test.expectFail(function() {
+        test.assertUndefined(null, 'assertUndefined with null');
+    });    
+    test.expectFail(function() {
+        test.assertUndefined(false, 'assertUndefined with false');
+    });    
+    test.expectFail(function() {
+        test.assertUndefined(0, 'assertUndefined with 0');
+    });    
+};
+
+exports.testAssertNotUndefined = function(test) {
     test.expectFail(function() {
         test.assertNotUndefined(undefined, 'assertNotUndefined with undefined');
     });    
