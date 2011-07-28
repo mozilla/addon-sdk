@@ -43,7 +43,7 @@ const { EventEmitter } = require("../events");
 const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,
         openTab, activateTab } = require("../tabs/utils");
-const tabsObserver = require("../tabs/observer");
+const { observer: tabsObserver } = require("../tabs/observer");
 
 const TAB_BROWSER = "tabbrowser";
 

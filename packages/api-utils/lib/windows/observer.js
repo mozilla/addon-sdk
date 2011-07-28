@@ -83,4 +83,4 @@ new WindowTracker({
 for each (let window in windowIterator())
   observer.observe(window);
 
-module.exports = observer;
+exports.observer = observer;
