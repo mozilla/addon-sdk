@@ -249,7 +249,7 @@ const Sandbox = Base.extend({
 
 function Main(loader) {
   return function main(id) {
-    loader.main = loader.modules[id] = {};
+    loader.main = loader.modules[resolveURI(loader.root, id)] = {};
     return Require(loader, null)(id);
   }
 }
