@@ -49,12 +49,8 @@ const { registerFactory, unregisterFactory } =
         Cm.QueryInterface(Ci.nsIComponentRegistrar);
 const { generateUUID } = CC('@mozilla.org/uuid-generator;1',
                             'nsIUUIDGenerator')();
-const ioService = CC('@mozilla.org/network/io-service;1', 'nsIIOService')();
-
-const URI = ioService.newURI.bind(ioService);
-const Channel = ioService.newChannel.bind(ioService);
-const ScriptableInputStream = CC('@mozilla.org/scriptableinputstream;1',
-                                 'nsIScriptableInputStream', 'init');
+const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
+                          'nsIXMLHttpRequest');
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 
 
@@ -194,6 +190,12 @@ function resolveURI(root, id) {
          [root + paths.shift() + '-lib'].concat(paths).join('/');
 
 }
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.send();
+  return request.responseText;
+}
 
 function Require(loader, manifest, base) {
   function require(id) {
@@ -310,8 +312,8 @@ const Loader = Component.extend({
 
     let manifest = this.manifest[uri];
     let exports = module.exports;
-    let inputStream = ScriptableInputStream(Channel(uri, null, null).open());
-    let source = inputStream.readBytes(inputStream.available());
+
+    let source = readURI(uri);
     let sandbox = this.sandbox || Sandbox.new();
     if (sandbox !== this.sandbox)
       console.log('creating new compartment');
