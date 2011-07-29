@@ -155,11 +155,6 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
-        (("", "--strip-xpi",), dict(dest="strip_xpi",
-                                    help="(ignored, deprecated, will be removed)",
-                                    action="store_true",
-                                    default=False,
-                                    cmds=['xpi'])),
         (("", "--no-strip-xpi",), dict(dest="no_strip_xpi",
                                     help="retain unused modules in XPI",
                                     action="store_true",
@@ -707,8 +702,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "xpi":
       used_files = set(manifest.get_used_files())
 
-    if options.strip_xpi:
-        print >>stdout, "--strip-xpi is now the default: argument ignored"
     if options.no_strip_xpi:
         used_files = None # disables the filter, includes all files
 
