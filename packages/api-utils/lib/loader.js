@@ -233,17 +233,17 @@ function Require(loader, manifest, base) {
       // If module is known to have "sudo" privileges, we allow it to go
       // off-manifest. Otherwise we throw an error.
       else if (!('chrome' in manifest.requirements))
-        throw new Error("Module: " + base + " has no athority to load: " + id);
+        throw new Error("Module: " + base.id + " has no athority to load: " + id);
     }
 
     // Resolving requirement `id` to it's requirer `id`.
-    id = resolve(id, base);
+    id = resolve(id, base && base.id);
 
     // TODO: Remove debug log!
     dump('require: ' + id + '\n');
 
     // Loading required module and return it's exports.
-    return loader.load(id, manifest);
+    return Object.freeze(loader.load(id, base));
   }
   require.main = loader.main;
   return require;
@@ -307,14 +307,14 @@ const Loader = Component.extend({
 
     this.main = Main(this);
   },
-  load: function load(id, requirer) {
+  load: function load(id, base) {
     let uri = resolveURI(this.root, normalize(id));
     let module = this.modules[uri] || (this.modules[uri] = {});
 
     // TODO: Find a better way to implement `self`.
     // Maybe something like require('self!path/to/data')
     if (typeof(module) === 'function')
-      module = module(this, requirer);
+      module = module(this, base);
 
     if (module.exports)
       return module.exports;
@@ -337,7 +337,7 @@ const Loader = Component.extend({
     let factory;
     try {
       factory = sandbox.evaluate('(function(require, exports, module) { \n' + source + ' })', uri);
-      factory.call(exports, Require(this, manifest, id), exports, module);
+      factory.call(exports, Require(this, manifest, module), exports, module);
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
       dump(error.message + '\n')
@@ -345,7 +345,7 @@ const Loader = Component.extend({
       throw error
     }
 
-    return Object.freeze(Object.freeze(module).exports);
+    return Object.freeze(module).exports;
   }
 });
 exports.Loader = Loader;
@@ -404,15 +404,24 @@ exports.startup = function startup(data, reason) {
       id: 'packaging'
     },
     // TODO: Remove this temporary hack and use proper solution instead.
-    'self.js': function(loader, manifest) {
-      let moduleData = manifest.requirements['self'];
+    'self.js': function(loader, requirer) {
+      let base = requirer.uri;
+      let manifest = loader.manifest[base];
+      let moduleData = manifest && manifest.requirements['self'];
+
       if (!moduleData) {
-        // we don't know where you live, so we must search for your data
-        moduleData = {
-          dataURIPrefix: loader.root + manifest.packageName + '-data/'
-        };
-        // moduleData also wants mapName and mapSHA256, but they're
-        // currently unused
+         // we don't know where you live, so we must search for your data
+         // resource://api-utils-api-utils-tests/test-self.js
+         // make a prefix of resource://api-utils-api-utils-data/
+         let doubleslash = base.indexOf("//");
+         let prefix = base.slice(0, doubleslash+2);
+         let rest = base.slice(doubleslash+2);
+         let slash = rest.indexOf("/");
+         prefix = prefix + rest.slice(0, slash);
+         prefix = prefix.slice(0, prefix.lastIndexOf("-")) + "-data/";
+         moduleData = { dataURIPrefix: prefix };
+         // moduleData also wants mapName and mapSHA256, but they're
+         // currently unused
       }
 
       return {
