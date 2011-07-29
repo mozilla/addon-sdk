@@ -213,6 +213,7 @@ function resolveID(root, uri) {
 function readURI(uri) {
   let request = XMLHttpRequest();
   request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
   request.send();
   return request.responseText;
 }
@@ -336,7 +337,7 @@ const Loader = Component.extend({
     let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
     let factory;
     try {
-      factory = sandbox.evaluate('(function(require, exports, module) { \n' + source + ' })', uri);
+      factory = sandbox.evaluate('function(require, exports, module) {' + source + ' }', uri);
       factory.call(exports, Require(this, manifest, module), exports, module);
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
