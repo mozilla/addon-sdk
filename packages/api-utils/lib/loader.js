@@ -220,7 +220,7 @@ function readURI(uri) {
 function Require(loader, manifest, base) {
   function require(id) {
     // TODO: Remove debug log!
-    dump(base + ' ? ' + id + '\n')
+    dump('>>>> ' + base + ' ? ' + id + '\n')
     // If we have a manifest for requirer, then all it's requirements have been
     // registered by linker.
     if (base && manifest) {
@@ -243,7 +243,7 @@ function Require(loader, manifest, base) {
     dump('require: ' + id + '\n');
 
     // Loading required module and return it's exports.
-    return loader.load(id);
+    return loader.load(id, manifest);
   }
   require.main = loader.main;
   return require;
@@ -303,30 +303,18 @@ const Loader = Component.extend({
     else
       this.sandboxes = {};
 
-    Object.defineProperty(this, 'modules', {
-      value: Object.create(this.modules)
-    });
-
-    // TODO: Load module globals from module.
-    // this.modules['@globals'] = this.load('@globals.js')
+    this.modules = options.modules || {};
 
     this.main = Main(this);
   },
-  modules: {
-    'chrome.js': {
-      exports: { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
-                 components: Components },
-      id: 'chrome'
-    },
-    // TODO: Remove this temporary hack and use proper solution instead.
-    'self.js': {
-      exports: {}, //require('self'),
-      id: 'self'
-    }
-  },
-  load: function load(id) {
+  load: function load(id, requirer) {
     let uri = resolveURI(this.root, normalize(id));
     let module = this.modules[uri] || (this.modules[uri] = {});
+
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(this, requirer);
 
     if (module.exports)
       return module.exports;
@@ -339,7 +327,6 @@ const Loader = Component.extend({
     let manifest = this.manifest[uri];
     let exports = module.exports;
 
-    dump('load: ' + uri + '\n');
     let source;
     try {
       source = readURI(uri);
@@ -399,9 +386,47 @@ exports.startup = function startup(data, reason) {
   let loader = Cc[Loader.contractID].createInstance(Ci.nsISupports).
                                      wrappedJSObject.new(options);
   mapResources(uri, options.resources);
+
+  // Define build-in modules.
+  loader.modules = {
+    'chrome.js': {
+      exports: { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                 components: Components },
+      id: 'chrome'
+    },
+    'parent-loader.js': {
+      exports: loader,
+      id: 'parent-loader'
+    },
+    'packaging.js': {
+      // Make deep clone to avoid manifest changes at runtime.
+      exports: JSON.parse(JSON.stringify(options)),
+      id: 'packaging'
+    },
+    // TODO: Remove this temporary hack and use proper solution instead.
+    'self.js': function(loader, manifest) {
+      let moduleData = manifest.requirements['self'];
+      if (!moduleData) {
+        // we don't know where you live, so we must search for your data
+        moduleData = {
+          dataURIPrefix: loader.root + manifest.packageName + '-data/'
+        };
+        // moduleData also wants mapName and mapSHA256, but they're
+        // currently unused
+      }
+
+      return {
+        id: 'self',
+        exports: loader.load('api-utils/self-maker').makeSelfModule(moduleData)
+      };
+    }
+  };
+  // Define globals.
   loader.globals = Object.create(loader.load('api-utils/@globals'), {
-    packaging: { value: { options: options } }
+    packaging: { value: { jetpackID: options.jetpackID, options: options } }
   });
+
+  // Load a main module.
   loader.main(mainID);
 }
 exports.shutdown = function shutdown(data, reason) {
@@ -409,7 +434,7 @@ exports.shutdown = function shutdown(data, reason) {
 
 })(typeof(exports) === 'undefined' ? this : exports);
 
-// Use in other environment.
+// Use today:
 //
 //let { Cc, Ci } = require('chrome');
 //let Loader = require('api-utils/loader').Loader;
