@@ -84,7 +84,7 @@ const WindowLoader = Trait.compose({
         params.push(FEATURES);
     params.push(this._tabOptions.map(function(options) options.url).join("|"))
     let browser =  WM.getMostRecentWindow(BROWSER);
-    this._window = browser.openDialog.apply(browser, params);
+    this._window = (browser)?browser.openDialog.apply(browser, params):null;
   },
   /**
    * Private window who's load event is being tracked. Once window is loaded

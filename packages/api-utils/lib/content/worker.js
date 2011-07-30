@@ -194,7 +194,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     });
     Object.defineProperties(sandbox, {
       window: { get: function() sandbox },
-      top: { get: function() sandbox }
+      top: { get: function() sandbox },
+      unsafeWindow: { get: function () window }
     });
     
     // Overriding / Injecting some natives into sandbox.

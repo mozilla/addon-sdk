@@ -145,6 +145,7 @@ const BrowserWindowTrait = Trait.compose(
       return this._window.document;
     },    
     focus: function focus() {
+      if (!this._window) return false;
       return this._window.focus();
     }
   })
