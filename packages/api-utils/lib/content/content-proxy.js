@@ -544,7 +544,8 @@ function handlerMaker(obj) {
       
       // Trap access to form["node name"]
       // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
-      if (!o && typeof obj == "object" && obj.tagName == "FORM") {
+      if (!o && typeof obj == "object" && "tagName" in obj &&
+          obj.tagName == "FORM") {
         let match = obj.wrappedJSObject[name];
         let nodes = obj.ownerDocument.getElementsByName(name);
         for (let i = 0, l = nodes.length; i < l; i++) {
