@@ -1,6 +1,6 @@
 const { Cc, Ci, Cu } = require("chrome");
 
-function Sandboxed(principal) {
+function Sandbox(principal) {
   let sandbox = Cu.Sandbox(principal || "http://www.mozilla.com/");
   return Cu.evalInSandbox("({" +
   " create: function create(prototype, descriptor) {" +
@@ -28,30 +28,31 @@ function Sandboxed(principal) {
 };
 
 exports.Assert = require("./asserts").create(Object);
-exports["test inheritence"] = function (assert) {
+
+exports["test inheritance"] = function (assert) {
   function Type() {}
   let prototype = Type.prototype;
-  let sandbox = Sandboxed();
+  let sandbox = Sandbox();
   let properties = { a: { value: "a" }, b: { get: function() "b" } };
 
   let f1 = Object.create(Type.prototype, properties);
-  let f2 = Object.create(Type.prototype, properties);
+  let f2 = sandbox.create(Type.prototype, properties);
 
-  assert.equal(Type.prototype, prototype, "prototype did not changed");
-  assert.equal(f1.constructor, Type, "consturctor is a Type function");
-  assert.equal(f2.constructor, Type, "sandbox: consturctor is a Type function");
+  assert.equal(Type.prototype, prototype,
+               "prototype did not change (bug 608959)");
+  assert.equal(f1.constructor, Type, "constructor is a Type function");
+  assert.equal(f2.constructor, f1.constructor,
+               "sandbox: constructor is a Type function");
   assert.equal(Object.getPrototypeOf(f1), Type.prototype,
                "prototype is `Type.prototype`");
-  assert.equal(sandbox.getPrototypeOf(f1), Type.prototype,
-               "`getPrototypeOf` in sandbox returs `Type.prototype`");
-  assert.equal(Object.getPrototypeOf(f2), Type.prototype,
-               "sandbox: prototype is `Type.prototype`");
-  assert.equal(sandbox.getPrototypeOf(f2), Type.prototype,
-               "getPrototypeOf in sandbox returns `Type.prototype`");
+  assert.equal(Object.getPrototypeOf(f1), sandbox.getPrototypeOf(f1),
+               "getPrototypeOf is consistant for local objects");
+  assert.equal(Object.getPrototypeOf(f2), sandboxe.getPrototypeOf(f2),
+               "getPrototypeOf is consistant for sandboxed objects");
 };
 
 exports["test writable / non-writable properties"] = function (assert) {
-  let sandbox = Sandboxed();
+  let sandbox = Sandbox();
   let prototype = Object.create(Object.prototype, {
     a: { value: "a", writable: false },
     b: { value: "b", writable: true },
@@ -75,13 +76,13 @@ exports["test writable / non-writable properties"] = function (assert) {
 
   assert.equal(Object.getOwnPropertyDescriptor(f1, "a"),
                Object.getOwnPropertyDescriptor(f2, "a"),
-               "proprety `a` descriptors are undefined");
+               "property `a` descriptors are undefined");
   assert.equal(Object.getOwnPropertyDescriptor(f1, "b"),
                Object.getOwnPropertyDescriptor(f2, "b"),
-               "proprety `c` descriptors are undefined");
+               "property `b` descriptors are undefined");
   assert.equal(Object.getOwnPropertyDescriptor(f1, "c"),
                Object.getOwnPropertyDescriptor(f2, "c"),
-               "proprety `c` descriptors are undefined");
+               "property `c` descriptors are undefined");
 
 
   assert.equalDescriptors(Object.getOwnPropertyDescriptor(f1, "d"),
@@ -97,9 +98,9 @@ exports["test writable / non-writable properties"] = function (assert) {
   assert.nonWritable(f1, "a", "property `a` is non-writable");
   assert.nonWritable(f2, "a", "sandbox: property `a` is non-writable");
   assert.nonWritable(f1, "c", "property `c` is non-writable");
-  assert.nonWritable(f2, "c", "sandbox: property `d` is non-writable");
-  assert.nonWritable(f1, "d", "property `i` is non-writable");
-  assert.nonWritable(f2, "d", "sandbox: property `a` is non-writable");
+  assert.nonWritable(f2, "c", "sandbox: property `c` is non-writable");
+  assert.nonWritable(f1, "d", "property `d` is non-writable");
+  assert.nonWritable(f2, "d", "sandbox: property `d` is non-writable");
   assert.nonWritable(f1, "f", "property `f` is non-writable");
   assert.nonWritable(f2, "f", "sandbox: property `f` is non-writable");
 
@@ -107,11 +108,11 @@ exports["test writable / non-writable properties"] = function (assert) {
 
   assert.equal(f1.b, f2.b, "property `b` values are the same after set");
   assert.equal(f1.e, f2.e, "property `e` values are the same after set");
-  assert.equal(f1.b, f2.e, "all writable propeperties changed");
+  assert.equal(f1.b, f2.e, "all writable properties changed");
 };
 
 exports["test configurable / non-configurable properties"] = function (assert) {
-  let sandbox = Sandboxed();
+  let sandbox = Sandbox();
   let properties = {
     a: { value: "a", configurable: false },
     b: { value: "b", configurable: true },
@@ -158,7 +159,7 @@ exports["test configurable / non-configurable properties"] = function (assert) {
   assert.nonConfigurable(f1, "c",
                          "property `c` defaults to non-configurable");
   assert.nonConfigurable(f2, "c",
-                         "sandbox: property `d` defaults to non-configurable");
+                         "sandbox: property `c` defaults to non-configurable");
   assert.nonConfigurable(f1, "d", "property `d` is non-configurable");
   assert.nonConfigurable(f2, "d",
                          "sandbox: property `d` is non-configurable");
@@ -172,8 +173,8 @@ exports["test configurable / non-configurable properties"] = function (assert) {
   Object.defineProperty(f2, "e", override);
 
   assert.equal(f1.b, f2.b, "property `b` values are the same after redefine");
-  assert.equal(f1.e, f2.e, "property `e` values are the same after redifine");
-  assert.equal(f1.b, f2.e, "all propeperties redefined to same");
+  assert.equal(f1.e, f2.e, "property `e` values are the same after redefine");
+  assert.equal(f1.b, f2.e, "all properties redefined to same");
 
   delete f1.b;
   delete f2.b;
@@ -188,7 +189,7 @@ exports["test configurable / non-configurable properties"] = function (assert) {
 
 
 exports["test enumerable / non-enumerable properties"] = function (assert) {
-  let sandbox = Sandboxed();
+  let sandbox = Sandbox();
   let properties = {
     a: { value: "a", enumerable: false },
     b: { value: "b", enumerable: true },
@@ -233,7 +234,7 @@ exports["test enumerable / non-enumerable properties"] = function (assert) {
   assert.nonEnumerable(f1, "c",
                        "property `c` defaults to non-enumerable");
   assert.nonEnumerable(f2, "c",
-                       "sandbox: property `d` defaults to non-enumerable");
+                       "sandbox: property `c` defaults to non-enumerable");
   assert.nonEnumerable(f1, "d", "property `d` is non-enumerable");
   assert.nonEnumerable(f2, "d",
                        "sandbox: property `d` is non-enumerable");
@@ -242,8 +243,8 @@ exports["test enumerable / non-enumerable properties"] = function (assert) {
                        "sandbox: property `f` defaults to non-enumerable");
 };
 
-exports["property names / keys"] = function (assert) {
-  let sandbox = Sandboxed();
+exports["test property names / keys"] = function (assert) {
+  let sandbox = Sandbox();
   let properties = {
     a: { value: "a", enumerable: false },
     b: { value: "b", enumerable: true },
@@ -264,14 +265,14 @@ exports["property names / keys"] = function (assert) {
   assert.equal(sandbox.keys(f2).length, 6,
                "`getOwnPropertyNames` from sandbox reports 6 own properties");
 
-  assert.equal(Object.keys(f1).length, 4, "4 own enumerable properties");
+  assert.equal(Object.keys(f1).length, 4,
+               "local keys returns 4 properties on local object");
   assert.equal(Object.keys(f2).length, 4,
-               "sandbox: 6 own enumerable properties");
+               "local keys returns 4 properties on sandboxed object");
   assert.equal(sandbox.keys(f1).length, 4,
-               "`keys` from sandbox reports 4 own properties");
+               "sandboxed keys returns 4 properties on local object");
   assert.equal(sandbox.keys(f2).length, 4,
-               "`keys` from sandbox reports 4 own properties");
-
+               "sandboxed keys returns 4 properties on sandboxed object");
 };
 
 if (module == require.main)
