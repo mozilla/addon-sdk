@@ -138,6 +138,9 @@ const BrowserWindowTrait = Trait.compose(
     get name() {
       return this._name;
     },
+    get unsafeWindow() {
+      return this._window;
+    },
     get window() {
       return this._window;
     },
