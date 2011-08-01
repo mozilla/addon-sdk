@@ -1,5 +1,5 @@
 "use strict";
 
-module.exports = require("./sandbox/all");
+module.exports = Object.create(require("./sandbox/all"));
 
 require("test").run(module.exports);
