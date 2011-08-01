@@ -29,6 +29,7 @@ function Sandbox(principal) {
 
 exports.Assert = require("./asserts").create(Object);
 
+
 exports["test inheritance"] = function (assert) {
   function Type() {}
   let prototype = Type.prototype;
@@ -47,7 +48,7 @@ exports["test inheritance"] = function (assert) {
                "prototype is `Type.prototype`");
   assert.equal(Object.getPrototypeOf(f1), sandbox.getPrototypeOf(f1),
                "getPrototypeOf is consistant for local objects");
-  assert.equal(Object.getPrototypeOf(f2), sandboxe.getPrototypeOf(f2),
+  assert.equal(Object.getPrototypeOf(f2), sandbox.getPrototypeOf(f2),
                "getPrototypeOf is consistant for sandboxed objects");
 };
 
@@ -63,6 +64,11 @@ exports["test writable / non-writable properties"] = function (assert) {
     e: { value: "e", writable: true },
     f: { value: "f" }
   };
+
+  let inheritedNonWritable = [ "a", "c" ];
+  let inheritedWritable = [ "b" ];
+  let ownNonWritable = [ "d", "f" ];
+  let ownWritable = [ "e" ];
 
   let f1 = Object.create(prototype, properties);
   let f2 = sandbox.create(prototype, properties);
@@ -95,24 +101,63 @@ exports["test writable / non-writable properties"] = function (assert) {
                           Object.getOwnPropertyDescriptor(f2, "f"),
                           "property `f` descriptors match");
 
-  assert.nonWritable(f1, "a", "property `a` is non-writable");
-  assert.nonWritable(f2, "a", "sandbox: property `a` is non-writable");
-  assert.nonWritable(f1, "c", "property `c` is non-writable");
-  assert.nonWritable(f2, "c", "sandbox: property `c` is non-writable");
-  assert.nonWritable(f1, "d", "property `d` is non-writable");
-  assert.nonWritable(f2, "d", "sandbox: property `d` is non-writable");
-  assert.nonWritable(f1, "f", "property `f` is non-writable");
-  assert.nonWritable(f2, "f", "sandbox: property `f` is non-writable");
+  inheritedNonWritable.forEach(function(name) {
+    assert.nonWritable(f1, name, "inherited property `" + name +
+                       "` is non-writable");
+    assert.nonWritable(f1, name, "sandbox: inherited property `" + name +
+                       "` is non-writable");
 
-  f1.b = f2.b = f1.e = f2.e = "<value>";
+    assert.writeFails(f1, name, "inherited property `" + name +
+                      "` can not be set");
+    assert.writeFails(f2, name, "sandbox: inherited property `" + name +
+                      "` can not be set");
+  });
 
-  assert.equal(f1.b, f2.b, "property `b` values are the same after set");
-  assert.equal(f1.e, f2.e, "property `e` values are the same after set");
-  assert.equal(f1.b, f2.e, "all writable properties changed");
+  inheritedWritable.forEach(function(name) {
+    assert.writable(f1, name, "inherited property `" + name + "` is writable");
+    assert.writable(f2, name, "sandbox: inherited property `" + name +
+                    "` is writable");
+
+    assert.writeSucceeds(f1, name, "inherited writable property `" + name +
+                      "` can be set");
+    assert.writeSucceeds(f2, name, "sandbox: inherited writable property `" +
+                         name + "` can not be set");
+  });
+
+  ownNonWritable.forEach(function(name) {
+    assert.nonWritable(f1, name, "own property `" + name +
+                       "` is non-writable");
+    assert.nonWritable(f1, name, "sandbox: own property `" + name +
+                       "` is non-writable");
+
+    assert.writeFails(f1, name, "own property `" + name +
+                      "` can not be set");
+    assert.writeFails(f2, name, "sandbox: own property `" + name +
+                      "` can not be set");
+  });
+
+  ownWritable.forEach(function(name) {
+    assert.writable(f1, name, "own property `" + name + "` is writable");
+    assert.writable(f2, name, "sandbox: own property `" + name +
+                              "` is writable");
+
+    assert.writeSucceeds(f1, name, "own writable property `" + name +
+                      "` can be set");
+    assert.writeSucceeds(f2, name, "sandbox: own writable property `" +
+                         name + "` can not be set");
+  });
 };
 
 exports["test configurable / non-configurable properties"] = function (assert) {
   let sandbox = Sandbox();
+  let prototype = Object.create(Object.prototype, {
+    aa: { value: "aa", configurable: false },
+    bb: { value: "bb", configurable: true },
+    cc: { value: "cc" },
+    dd: { get: function() "dd", configurable: false },
+    ee: { get: function() "ee", configurable: true },
+    ff: { get: function() "ff" }
+  });
   let properties = {
     a: { value: "a", configurable: false },
     b: { value: "b", configurable: true },
@@ -122,10 +167,19 @@ exports["test configurable / non-configurable properties"] = function (assert) {
     f: { get: function() "f" }
   };
 
-  let override = { value: "<override>" };
+  let inheritedNonConfigurable = [ "aa", "cc" ];
+  let inheritedNonConfigurableAccessors = [ "dd", "ff" ];
+  let inheritedConfigurable = [ "bb" ];
+  let inheritedConfigurableAccessors = [ "ee" ];
 
-  let f1 = Object.create(Object.prototype, properties);
-  let f2 = sandbox.create(Object.prototype, properties);
+  let ownNonConfigurable = [ "a", "c" ];
+  let ownNonConfigurableAccessors = [ "d", "f" ];
+  let ownConfigurable = [ "b" ];
+  let ownConfigurableAccessor = [ "e" ]
+
+
+  let f1 = Object.create(prototype, properties);
+  let f2 = sandbox.create(prototype, properties);
 
   assert.equal(f1.a, f2.a, "property `a` values match");
   assert.equal(f1.b, f2.b, "property `b` values match");
@@ -153,40 +207,137 @@ exports["test configurable / non-configurable properties"] = function (assert) {
                           Object.getOwnPropertyDescriptor(f2, "f"),
                           "property `f` descriptors match");
 
-  assert.nonConfigurable(f1, "a", "property `a` is non-configurable");
-  assert.nonConfigurable(f2, "a",
-                         "sandbox: property `a` is non-configurable");
-  assert.nonConfigurable(f1, "c",
-                         "property `c` defaults to non-configurable");
-  assert.nonConfigurable(f2, "c",
-                         "sandbox: property `c` defaults to non-configurable");
-  assert.nonConfigurable(f1, "d", "property `d` is non-configurable");
-  assert.nonConfigurable(f2, "d",
-                         "sandbox: property `d` is non-configurable");
-  assert.nonConfigurable(f1, "f", "property `f` defaults to non-configurable");
-  assert.nonConfigurable(f2, "f",
-                         "sandbox: property `f` defaults to non-configurable");
 
-  Object.defineProperty(f1, "b", override);
-  Object.defineProperty(f2, "b", override);
-  Object.defineProperty(f1, "e", override);
-  Object.defineProperty(f2, "e", override);
+  inheritedNonConfigurable.forEach(function(name) {
+    assert.nonConfigurable(f1, name, "inherited property `" + name +
+                           "` is non-configurable");
+    assert.nonConfigurable(f1, name, "sandbox: inherited property `" + name +
+                           "` is non-configurable");
 
-  assert.equal(f1.b, f2.b, "property `b` values are the same after redefine");
-  assert.equal(f1.e, f2.e, "property `e` values are the same after redefine");
-  assert.equal(f1.b, f2.e, "all properties redefined to same");
+    assert.deleteSucceeds(f1, name, "inherited property `" + name +
+                          "` can be deleted");
+    assert.deleteSucceeds(f2, name, "sandbox: inherited property `" + name +
+                          "` can not be deleted");
 
-  delete f1.b;
-  delete f2.b;
-  delete f1.e;
-  delete f2.e;
+    assert.defineDoesNotThrows(f1, name, "inherited property `" + name +
+                               "` can not be redefined");
+    assert.defineDoesNotThrows(f2, name, "sandbox: inherited property `"
+                               + name + "` can not be redefined");
+  });
 
-  assert.ok(!('b' in f1), "property `b` was deleted");
-  assert.ok(!('b' in f2), "sandbox: property `b` was deleted");
-  assert.ok(!('e' in f1), "property `e` was deleted");
-  assert.ok(!('e' in f2), "sandbox: property `e` was deleted");
+  inheritedNonConfigurableAccessors.forEach(function(name) {
+    assert.nonConfigurable(f1, name, "inherited accessor `" + name +
+                           "` is non-configurable");
+    assert.nonConfigurable(f1, name, "sandbox: inherited accessor `" + name +
+                           "` is non-configurable");
+
+    assert.deleteFails(f1, name, "inherited accessor `" + name +
+                          "` can not be deleted");
+    /* Fails because of platform bug!
+    assert.deleteFails(f2, name, "sandbox: inherited accessor `" + name +
+                          "` can not be deleted");
+    */
+
+    assert.defineDoesNotThrows(f1, name, "inherited accessor `" + name +
+                               "` can not be redefined");
+
+    assert.defineDoesNotThrows(f2, name, "sandbox: inherited accessor `"
+                               + name + "` can not be redefined");
+  });
+
+  inheritedConfigurable.forEach(function(name) {
+    assert.configurable(f1, name, "inherited property `" + name +
+                        "` is configurable");
+    assert.configurable(f2, name, "sandbox: inherited property `" + name +
+                        "` is configurable");
+
+    assert.deleteSucceeds(f1, name, "inherited property `" + name +
+                          "` can be deleted");
+    assert.deleteSucceeds(f2, name, "sandbox: inherited property `" + name +
+                          "` can be deleted");
+
+    assert.defineDoesNotThrows(f1, name, "inherited property `" + name +
+                               "` can be redefined");
+    assert.defineDoesNotThrows(f2, name, "sandbox: inherited property `"
+                               + name + "` can be redefined");
+  });
+
+  inheritedConfigurableAccessors.forEach(function(name) {
+    assert.configurable(f1, name, "inherited property `" + name +
+                        "` is configurable");
+    assert.configurable(f2, name, "sandbox: inherited property `" + name +
+                        "` is configurable");
+
+    assert.deleteSucceeds(f1, name, "inherited property `" + name +
+                          "` can be deleted");
+    assert.deleteSucceeds(f2, name, "sandbox: inherited property `" + name +
+                          "` can be deleted");
+
+    assert.defineDoesNotThrows(f1, name, "inherited property `" + name +
+                               "` can be redefined");
+    assert.defineDoesNotThrows(f2, name, "sandbox: inherited property `"
+                               + name + "` can be redefined");
+  });
+
+
+  ownNonConfigurable.forEach(function(name) {
+    assert.nonConfigurable(f1, name, "own property `" + name +
+                           "` is non-configurable");
+    assert.nonConfigurable(f1, name, "sandbox: own property `" + name +
+                           "` is non-configurable");
+
+    assert.deleteFails(f1, name, "own property `" + name +
+                       "` can not be deleted");
+    assert.deleteFails(f2, name, "sandbox: own property `" + name +
+                       "` can not be deleted");
+
+    assert.defineThrows(f1, name, "own property `" + name +
+                        "` can not be redefined");
+
+    /* Fails because of platform bug!
+    assert.defineThrows(f2, name, "sandbox: inherited property `" + name +
+                        "` can not be redefined");
+    */
+  });
+
+  ownNonConfigurableAccessors.forEach(function(name) {
+    assert.nonConfigurable(f1, name, "own accessor `" + name +
+                           "` is non-configurable");
+    assert.nonConfigurable(f1, name, "sandbox: own accessor `" + name +
+                           "` is non-configurable");
+
+    assert.deleteFails(f1, name, "own accessor `" + name +
+                       "` can not be deleted");
+    assert.deleteFails(f2, name, "sandbox: own accessor `" + name +
+                       "` can not be deleted");
+
+    assert.defineThrows(f1, name, "own accessor `" + name +
+                        "` can not be redefined");
+
+    assert.defineThrows(f2, name, "sandbox: accessor property `" + name +
+                        "` can not be redefined");
+  });
+
+  ownConfigurableAccessor.forEach(function(name) {
+    assert.configurable(f1, name,
+                        "own accessor `" + name + "` is configurable");
+    assert.configurable(f2, name,
+                        "sandbox: own accessor `" + name + "` is configurable");
+
+    assert.deleteSucceeds(f1, name, "own accessor `" + name +
+                          "` can be deleted");
+    assert.deleteSucceeds(f2, name, "sandbox: own accessor `" + name +
+                          "` can be deleted");
+
+    assert.defineDoesNotThrows(f1, name, "own accessor `" + name +
+                               "` can be redefined");
+
+    /* Fails because of platform bug!
+    assert.defineDoesNotThrows(f2, name, "sandbox: own accessor `" + name +
+                               "` can be redefined");
+    */
+  });
 };
-
 
 exports["test enumerable / non-enumerable properties"] = function (assert) {
   let sandbox = Sandbox();
@@ -199,6 +350,9 @@ exports["test enumerable / non-enumerable properties"] = function (assert) {
     f: { get: function() "f" }
   };
 
+  let enumerable = [ "b", "e" ];
+  let nonEnumerable = [ "a", "c", "d", "f" ];
+
   let f1 = Object.create(Object.prototype, properties);
   let f2 = sandbox.create(Object.prototype, properties);
 
@@ -228,19 +382,21 @@ exports["test enumerable / non-enumerable properties"] = function (assert) {
                           Object.getOwnPropertyDescriptor(f2, "f"),
                           "property `f` descriptors match");
 
-  assert.nonEnumerable(f1, "a", "property `a` is non-enumerable");
-  assert.nonEnumerable(f2, "a",
-                       "sandbox: property `a` is non-enumerable");
-  assert.nonEnumerable(f1, "c",
-                       "property `c` defaults to non-enumerable");
-  assert.nonEnumerable(f2, "c",
-                       "sandbox: property `c` defaults to non-enumerable");
-  assert.nonEnumerable(f1, "d", "property `d` is non-enumerable");
-  assert.nonEnumerable(f2, "d",
-                       "sandbox: property `d` is non-enumerable");
-  assert.nonEnumerable(f1, "f", "property `f` defaults to non-enumerable");
-  assert.nonEnumerable(f2, "f",
-                       "sandbox: property `f` defaults to non-enumerable");
+  enumerable.forEach(function (name) {
+    assert.enumerable(f1, name, "`" + name + "` is enumerable");
+    assert.enumerable(f2, name, "sandbox: `" + name + "` is enumerable");
+
+    assert.isEnumerated(f1, name, "`" + name + "` is enumerated");
+    assert.isEnumerated(f2, name, "sandbox: `" + name + "` is enumerated");
+  });
+
+  nonEnumerable.forEach(function (name) {
+    assert.nonEnumerable(f1, name, "`" + name + "` is non-enumerable");
+    assert.nonEnumerable(f2, name, "sandbox: `" + name + "` is non-enumerable");
+
+    assert.isNotEnumerated(f1, name, "`" + name + "` is not enumerated");
+    assert.isNotEnumerated(f2, name, "sandbox: `" + name + "` is not enumerated");
+  });
 };
 
 exports["test property names / keys"] = function (assert) {
@@ -257,23 +413,22 @@ exports["test property names / keys"] = function (assert) {
   let f1 = Object.create(Object.prototype, properties);
   let f2 = sandbox.create(Object.prototype, properties);
 
-  assert.equal(Object.keys(f1).length, 6, "6 own properties");
-  assert.equal(Object.keys(f2).length, 6,
+  assert.equal(Object.getOwnPropertyNames(f1).length, 6, "2 own properties");
+  assert.equal(Object.getOwnPropertyNames(f2).length, 6,
                "sandbox: 6 own properties");
-  assert.equal(sandbox.keys(f1).length, 6,
+  assert.equal(sandbox.getOwnPropertyNames(f1).length, 6,
                "`getOwnPropertyNames` from sandbox reports 6 own properties");
-  assert.equal(sandbox.keys(f2).length, 6,
+  assert.equal(sandbox.getOwnPropertyNames(f2).length, 6,
                "`getOwnPropertyNames` from sandbox reports 6 own properties");
 
-  assert.equal(Object.keys(f1).length, 4,
+  assert.equal(Object.keys(f1).length, 2,
                "local keys returns 4 properties on local object");
-  assert.equal(Object.keys(f2).length, 4,
+  assert.equal(Object.keys(f2).length, 2,
                "local keys returns 4 properties on sandboxed object");
-  assert.equal(sandbox.keys(f1).length, 4,
+  assert.equal(sandbox.keys(f1).length, 2,
                "sandboxed keys returns 4 properties on local object");
-  assert.equal(sandbox.keys(f2).length, 4,
+  assert.equal(sandbox.keys(f2).length, 2,
                "sandboxed keys returns 4 properties on sandboxed object");
 };
 
-if (module == require.main)
-  require("test").run(exports);
+require("test").run(exports);
