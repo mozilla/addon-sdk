@@ -39,7 +39,7 @@
 
 "use strict";
 
-const keyboardObserver = require("./observer");
+const { observer: keyboardObserver } = require("./observer");
 const { getKeyForCode, normalize } = require("./utils");
 
 /**

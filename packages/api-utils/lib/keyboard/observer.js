@@ -42,7 +42,7 @@ const { Trait } = require("../light-traits");
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
 const { browserWindowIterator, isBrowser } = require('../window-utils');
-const windowObserver = require("../windows/observer");
+const { observer: windowObserver } = require("../windows/observer");
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
@@ -83,4 +83,4 @@ windowObserver.on("close", function onClose(window) {
 for each (let window in browserWindowIterator())
   observer.observe(window);
 
-module.exports = observer;
+exports.observer = observer;
