@@ -128,12 +128,11 @@ exports.set = function(aData, aDataType) {
   switch (flavor) {
     case "text/html":
       // add text/html flavor
-      var len = options.data.length * 2;
       var str = Cc["@mozilla.org/supports-string;1"].
                 createInstance(Ci.nsISupportsString);
       str.data = options.data;
       xferable.addDataFlavor(flavor);
-      xferable.setTransferData(flavor, str, len);
+      xferable.setTransferData(flavor, str, str.data.length * 2);
 
       // add a text/unicode flavor (html converted to plain text)
       var str = Cc["@mozilla.org/supports-string;1"].
@@ -143,9 +142,8 @@ exports.set = function(aData, aDataType) {
       converter.type = "html";
       converter.text = options.data;
       str.data = converter.plainText();
-      len = str.data.length * 2;
       xferable.addDataFlavor("text/unicode");
-      xferable.setTransferData("text/unicode", str, len);
+      xferable.setTransferData("text/unicode", str, str.data.length * 2);
       break;
     // TODO: images!
     default:
