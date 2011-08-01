@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
  *   Dietrich Ayala <dietrich@mozilla.com>
+ *   Myk Melez <myk@mozilla.org>
  *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
