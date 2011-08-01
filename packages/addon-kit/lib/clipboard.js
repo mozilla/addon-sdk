@@ -128,22 +128,26 @@ exports.set = function(aData, aDataType) {
   switch (flavor) {
     case "text/html":
       // add text/html flavor
-      var str = Cc["@mozilla.org/supports-string;1"].
-                createInstance(Ci.nsISupportsString);
-      str.data = options.data;
-      xferable.addDataFlavor(flavor);
-      xferable.setTransferData(flavor, str, str.data.length * 2);
+      let (str = Cc["@mozilla.org/supports-string;1"].
+                createInstance(Ci.nsISupportsString))
+      {
+        str.data = options.data;
+        xferable.addDataFlavor(flavor);
+        xferable.setTransferData(flavor, str, str.data.length * 2);
+      }
 
       // add a text/unicode flavor (html converted to plain text)
-      var str = Cc["@mozilla.org/supports-string;1"].
-                createInstance(Ci.nsISupportsString);
-      var converter = Cc["@mozilla.org/feed-textconstruct;1"].
-                      createInstance(Ci.nsIFeedTextConstruct);
-      converter.type = "html";
-      converter.text = options.data;
-      str.data = converter.plainText();
-      xferable.addDataFlavor("text/unicode");
-      xferable.setTransferData("text/unicode", str, str.data.length * 2);
+      let (str = Cc["@mozilla.org/supports-string;1"].
+                createInstance(Ci.nsISupportsString),
+          converter = Cc["@mozilla.org/feed-textconstruct;1"].
+                      createInstance(Ci.nsIFeedTextConstruct))
+      {
+        converter.type = "html";
+        converter.text = options.data;
+        str.data = converter.plainText();
+        xferable.addDataFlavor("text/unicode");
+        xferable.setTransferData("text/unicode", str, str.data.length * 2);
+      }
       break;
     // TODO: images!
     default:
