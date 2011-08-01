@@ -1,4 +1,5 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
+<!-- edited by Erik Vold [erikvvold@gmail.com] -->
 
 The `window-utils` module provides helpers for accessing and tracking
 application windows.  These windows implement the [`nsIDOMWindow`][nsIDOMWindow]
@@ -37,11 +38,11 @@ uninstalled, whichever comes first.)
 
     var delegate = {
       onTrack: function (window) {
-        console.log("Tracking a window: " + window.document.URL);
+        console.log("Tracking a window: " + window.location);
         // Modify the window!
       },
       onUntrack: function (window) {
-        console.log("Untracking a window: " + window.document.URL);
+        console.log("Untracking a window: " + window.location);
         // Undo your modifications!
       }
     };
@@ -54,6 +55,12 @@ uninstalled, whichever comes first.)
   windows.
 @param delegate {object}
   An object that implements `onTrack()` and `onUntrack()` methods.
+@prop onTrack {function}
+  A function to be called when a window is open or loads, with the window as the
+  first and only argument.
+@prop [onUntrack] {function}
+  A function to be called when a window unloads, with the window as the first
+  and only argument.
 </api>
 </api>
 
@@ -65,7 +72,7 @@ uninstalled, whichever comes first.)
 
     var winUtils = require("window-utils");
     for (window in winUtils.windowIterator())
-      console.log("An open window! " + window.document.URL);
+      console.log("An open window! " + window.location);
 
 </api>
 

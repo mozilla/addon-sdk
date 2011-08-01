@@ -36,7 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-if (!require("xul-app").is("Firefox")) {
+"use strict";
+
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The panel module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -46,12 +48,12 @@ if (!require("xul-app").is("Firefox")) {
 }
 
 const { Ci } = require("chrome");
-const { validateOptions: valid } = require("api-utils");
-const { Symbiont } = require("content");
-const { EventEmitter } = require('events');
-const timer = require("timer");
+const { validateOptions: valid } = require("api-utils/api-utils");
+const { Symbiont } = require("api-utils/content");
+const { EventEmitter } = require('api-utils/events');
+const timer = require("api-utils/timer");
 
-require("xpcom").utils.defineLazyServiceGetter(
+require("api-utils/xpcom").utils.defineLazyServiceGetter(
   this,
   "windowMediator",
   "@mozilla.org/appshell/window-mediator;1",
@@ -79,7 +81,6 @@ const Panel = Symbiont.resolve({
   _asyncEmit: Symbiont.required,
   on: Symbiont.required,
   removeListener: Symbiont.required,
-  _destructor: Symbiont.required,
 
   _inited: false,
 
@@ -300,6 +301,24 @@ const Panel = Symbiont.resolve({
       if (!this._inited) // defer if not initialized yet
         return this.on('inited', this._onShow.bind(this));
       this._frameLoadersSwapped = true;
+
+      // Retrieve computed text color style in order to apply to the iframe
+      // document. As MacOS background is dark gray, we need to use skin's text
+      // color.
+      let win = this._xulPanel.ownerDocument.defaultView;
+      let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
+                 "class", "panel-inner-arrowcontent");
+      let textColor = win.getComputedStyle(node).getPropertyValue("color");
+      let doc = this._xulPanel.firstChild.contentDocument;
+      let style = doc.createElement("style");
+      style.textContent = "body { color: " + textColor + "; }";
+      let container = doc.head ? doc.head : doc.documentElement;
+      if (container.firstChild)
+        container.insertBefore(style, container.firstChild);
+      else
+        container.appendChild(style);
+
+
       this._emit('show');
     } catch(e) {
       this._emit('error', e);
@@ -310,6 +329,12 @@ const Panel = Symbiont.resolve({
    */
   _onInit: function _onInit() {
     this._inited = true;
+
+    // Avoid panel document from resizing the browser window
+    // New platform capability added through bug 635673
+    if ("allowWindowControl" in this._frame.docShell)
+      this._frame.docShell.allowWindowControl = false;
+
     // perform all deferred tasks like initSymbiont, show, hide ...
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.

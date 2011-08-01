@@ -54,27 +54,6 @@ handled by [content scripts](dev-guide/addon-development/web-content.html).
 So, for example, to be notified when your widget's content has loaded, you can
 make a small script that calls back to the widget when it finishes loading.
 
-## Events ##
-
-Widgets emit the following types of [events](dev-guide/addon-development/events.html).
-
-### click ###
-
-This event is emitted when the widget is clicked.
-
-### message ###
-
-This event is emitted when the widget's content scripts post a message.
-Listeners are passed the message as their first argument.
-
-### mouseover ###
-
-This event is emitted when the user moves the mouse over the widget.
-
-### mouseout ###
-
-This event is emitted when the user moves the mouse away from the widget.
-
 ## Examples ##
 
 For conciseness, these examples create their content scripts as strings and use
@@ -95,6 +74,7 @@ information.
         require("tabs").activeTab.url = "http://www.google.com/";
       }
     });
+<br>
 
     // A widget that changes display on mouseover.
     widgets.Widget({
@@ -108,6 +88,7 @@ information.
         this.contentURL = "http://www.yahoo.com/favicon.ico";
       }
     });
+<br>
 
     // A widget that updates content on a timer.
     widgets.Widget({
@@ -119,6 +100,7 @@ information.
                      '}, 2000)',
       contentScriptWhen: "ready"
     });
+<br>
 
     // A widget that loads a random Flickr photo every 5 minutes.
     widgets.Widget({
@@ -137,6 +119,7 @@ information.
         require("tabs").activeTab.url = this.contentURL;
       }
     });
+<br>
 
     // A widget created with a specified width, that grows.
     let myWidget = widgets.Widget({
@@ -145,9 +128,10 @@ information.
       content: "I'm getting longer.",
       width: 50,
     });
-    require("timer").setInterval(function() {
+    require("timers").setInterval(function() {
       myWidget.width += 10;
     }, 1000);
+<br>
 
     // A widget communicating bi-directionally with a content script.
     let widget = widgets.Widget({
@@ -181,10 +165,10 @@ Represents a widget object.
     title bars, and error reporting.
 
   @prop id {string}
-    Mandatory string used to identify your widget in order to save it's 
-    location when user customizes it in the browser. 
-    This string has to be unique and must not be changed in time.
-  
+    Mandatory string used to identify your widget in order to save its
+    location when the user moves it in the browser.
+    This string has to be unique and must not be changed over time.
+
   @prop [content] {string}
     An optional string value containing the displayed content of the widget.
     It may contain HTML. Widgets must have either the `content` property or the
@@ -207,16 +191,19 @@ Represents a widget object.
     used.
 
   @prop [onClick] {function}
-    An optional "click" event listener.  See Events above.
+    Include this to listen to the widget's `click` event.
 
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Include this to listen to the widget's `message` event.
 
   @prop [onMouseover] {function}
-    An optional "mouseover" event listener.  See Events above.
+    Include this to listen to the widget's `mouseover` event.
 
   @prop [onMouseout] {function}
-    An optional "mouseout" event listener.  See Events above.
+    Include this to listen to the widget's `mouseout` event.
+
+  @prop [onAttach] {function}
+    Include this to listen to the widget's `attach` event.
 
   @prop [tooltip] {string}
     Optional text to show when the user's mouse hovers over the widget.  If not
@@ -237,11 +224,24 @@ Represents a widget object.
     load.  Content scripts specified by this property are loaded *after* those
     specified by the `contentScriptFile` property.
 
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+  @prop [contentScriptWhen="end"] {string}
+  When to load the content scripts. This may take one of the following
+  values:
+
+  * "start": load content scripts immediately after the document
+  element for the widget is inserted into the DOM, but before the DOM content
+  itself has been loaded
+  * "ready": load content scripts once DOM content has been loaded,
+  corresponding to the
+  [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+  event
+  * "end": load content scripts once all the content (DOM, JS, CSS,
+  images) for the widget has been loaded, at the time the
+  [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+  fires
+
+  This property is optional and defaults to "end".
+
 </api>
 
 <api name="destroy">
@@ -253,7 +253,9 @@ Represents a widget object.
 @method
   Sends a message to the widget's content scripts.
 @param data {value}
-  The message to send.  Must be JSON-able.
+  The message to send.
+  The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -272,6 +274,17 @@ Represents a widget object.
   The type of event for which `listener` was registered.
 @param listener {function}
   The listener function that was registered.
+</api>
+
+<api name="getView">
+@method
+  Retrieve a `WidgetView` instance of this widget relative to a browser window.
+@param window {BrowserWindow}
+  The [BrowserWindow](packages/addon-kit/docs/windows.html) instance to match.
+@returns {WidgetView}
+  A `WidgetView` instance associated with the browser window. Any changes
+  subsequently applied to this object will only be applied to the widget
+  attached to that window.
 </api>
 
 <api name="label">
@@ -333,10 +346,262 @@ Represents a widget object.
 
 <api name="contentScriptWhen">
 @property {string}
-  A string indicating when to load the content scripts.  Possible values are
-  "start" (default), which loads them as soon as the window object for the page
-  has been created, and "ready", which loads them once the DOM content of the
-  page has been loaded.
+  When to load the content scripts. This may have one of the following
+  values:
+
+  * "start": load content scripts immediately after the document
+  element for the widget is inserted into the DOM, but before the DOM content
+  itself has been loaded
+  * "ready": load content scripts once DOM content has been loaded,
+  corresponding to the
+  [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+  event
+  * "end": load content scripts once all the content (DOM, JS, CSS,
+  images) for the widget has been loaded, at the time the
+  [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+  fires
+
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
+</api>
+
+<api name="attach">
+@event
+This event is emitted when a new `WidgetView` object is created using the
+`getView()` function.
+</api>
+
+<api name="click">
+@event
+This event is emitted when the widget is clicked.
+</api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this widget. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the widget's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="mouseover">
+@event
+This event is emitted when the user moves the mouse over the widget.
+</api>
+
+<api name="mouseout">
+@event
+This event is emitted when the user moves the mouse away from the widget.
+</api>
+
+</api>
+
+
+<api-name="WidgetView">
+@class
+Represents a widget instance specific to one browser window.
+
+Anything you do to an instance of this object will only be applied to the
+instance attached to its browser window: widget instances attached to other
+browser windows will be unaffected.
+
+By contrast, any changes you make to an instance of the normal `Widget` class
+will be applied across all browser windows.
+
+This class has all the same methods, attributes and events as the `Widget`
+class except for the `getView` method and the `attach` event.
+
+In this example `WidgetView` is used to display different content for
+`http` and `https` schemes:
+
+    // A widget that update its content specifically to each window.
+    let tabs = require("tabs");
+    let windows = require("windows").browserWindows;
+    let widget = widgets.Widget({
+      id: "window-specific-test",
+      label: "Widget with content specific to each window",
+      content: " ",
+      width: 50
+    });
+    // Observe tab switch or document changes in each existing tab:
+    function updateWidgetState(tab) {
+      let view = widget.getView(tab.window);
+      if (!view) return;
+      // Update widget displayed text:
+      view.content = tab.url.match(/^https/) ? "Secured" : "Unsafe";
+    }
+    tabs.on('ready', updateWidgetState);
+    tabs.on('activate', updateWidgetState);
+
+<api name="destroy">
+@method
+  Removes the widget view from the add-on bar.
+</api>
+
+<api name="postMessage">
+@method
+  Sends a message to the widget view's content scripts.
+@param data {value}
+  The message to send. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="on">
+@method
+  Registers an event listener with the widget view.
+@param type {string}
+  The type of event to listen for.
+@param listener {function}
+  The listener function that handles the event.
+</api>
+
+<api name="removeListener">
+@method
+  Unregisters an event listener from the widget view.
+@param type {string}
+  The type of event for which `listener` was registered.
+@param listener {function}
+  The listener function that was registered.
+</api>
+
+<api name="label">
+@property {string}
+  The widget view's label.  Read-only.
+</api>
+
+<api name="content">
+@property {string}
+  A string containing the widget view's content.  It can contain HTML.
+  Setting it updates the widget view's appearance immediately. However,
+  if the widget view was created using `contentURL`, then this property
+  is meaningless, and setting it has no effect.
+</api>
+
+<api name="contentURL">
+@property {string}
+  The URL of content to load into the widget view.  This can be
+  [local content](dev-guide/addon-development/web-content.html) or remote
+  content, an image or web content.  Setting it updates the widget view's
+  appearance immediately.  However, if the widget view was created using
+  `content`, then this property is meaningless, and setting it has no effect.
+</api>
+
+<api name="panel">
+@property {Panel}
+  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  the widget view.
+</api>
+
+<api name="width">
+@property {number}
+  The widget view's width in pixels.  Setting it updates the widget view's
+  appearance immediately.
+</api>
+
+<api name="tooltip">
+@property {string}
+  The text of the tooltip that appears when the user hovers over the widget
+  view.
+</api>
+
+<api name="allow">
+@property {object}
+  A object describing permissions for the content.  It contains a single key
+  named `script` whose value is a boolean that indicates whether or not to
+  execute script in the content.
+</api>
+
+<api name="contentScriptFile">
+@property {string,array}
+  A local file URL or an array of local file URLs of content scripts to load.
+</api>
+
+<api name="contentScript">
+@property {string,array}
+  A string or an array of strings containing the texts of content scripts to
+  load.
+</api>
+
+<api name="contentScriptWhen">
+@property {string}
+  When to load the content scripts. This may have one of the following
+  values:
+
+  * "start": load content scripts immediately after the document
+  element for the widget view is inserted into the DOM, but before the DOM
+  content itself has been loaded
+  * "ready": load content scripts once DOM content has been loaded,
+  corresponding to the
+  [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+  event
+  * "end": load content scripts once all the content (DOM, JS, CSS,
+  images) for the widget view has been loaded, at the time the
+  [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+  fires
+
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on`
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
+</api>
+
+<api name="detach">
+@event
+The `detach` event is fired when the widget view is removed from its related
+window.
+This can occur if the window is closed, Firefox exits, or the add-on is
+disabled.
+</api>
+
+<api name="click">
+@event
+This event is emitted when the widget view is clicked.
+</api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this widget view. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the widget view's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="mouseover">
+@event
+This event is emitted when the user moves the mouse over the widget view.
+</api>
+
+<api name="mouseout">
+@event
+This event is emitted when the user moves the mouse away from the widget view.
 </api>
 
 </api>

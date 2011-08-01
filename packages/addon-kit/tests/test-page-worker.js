@@ -7,8 +7,8 @@ tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
 
   let page = new Page({
-    contentScript: "postMessage(window.location.href)",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage(window.location.href)",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       test.assertEqual(message, "about:blank",
                        "Page Worker should start with a blank page by default");
@@ -18,8 +18,36 @@ tests.testSimplePageCreation = function(test) {
   });
 }
 
-/* Tests that the window and document objects exposed to the content symbiont
-   are the unwrapped versions of their respective DOM objects. */
+/* 
+ * Tests that we can't be tricked by document overloads as we have access 
+ * to wrapped nodes 
+ */
+tests.testWrappedDOM = function(test) {
+  test.waitUntilDone();
+
+  let page = Page({
+    allow: { script: true },
+    contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
+    contentScript: "window.addEventListener('load', function () " +
+                   "self.postMessage([typeof(document.getElementById), " +
+                   "typeof(window.scrollTo)]), true)",
+    onMessage: function (message) {
+      test.assertEqual(message[0],
+                       "function",
+                       "getElementById from content script is the native one");
+
+      test.assertEqual(message[1],
+                       "function",
+                       "scrollTo from content script is the native one");
+
+      test.done();
+    }
+  });
+}
+
+/*
+// We do not offer unwrapped access to DOM since bug 601295 landed
+// See 660780 to track progress of unwrap feature
 tests.testUnwrappedDOM = function(test) {
   test.waitUntilDone();
 
@@ -27,8 +55,8 @@ tests.testUnwrappedDOM = function(test) {
     allow: { script: true },
     contentURL: "data:text/html,<script>document.getElementById=3;window.scrollTo=3;</script>",
     contentScript: "window.addEventListener('load', function () " +
-                   "postMessage([typeof(document.getElementById), " +
-                   "typeof(window.scrollTo)]), true)",
+                   "self.postMessage([typeof(unsafeWindow.document.getElementById), " +
+                   "typeof(unsafeWindow.scrollTo)]), true)",
     onMessage: function (message) {
       test.assertEqual(message[0],
                        "number",
@@ -42,6 +70,7 @@ tests.testUnwrappedDOM = function(test) {
     }
   });
 }
+*/
 
 tests.testPageProperties = function(test) {
   let page = new Page();
@@ -66,13 +95,13 @@ tests.testConstructorAndDestructor = function(test) {
   let pagesReady = 0;
 
   let page1 = Pages.Page({
-    contentScript:      "postMessage('')",
-    contentScriptWhen:  "ready",
+    contentScript:      "self.postMessage('')",
+    contentScriptWhen:  "end",
     onMessage:          pageReady
   });
   let page2 = Pages.Page({
-    contentScript:      "postMessage('')",
-    contentScriptWhen:  "ready",
+    contentScript:      "self.postMessage('')",
+    contentScriptWhen:  "end",
     onMessage:          pageReady
   });
 
@@ -100,8 +129,8 @@ tests.testAutoDestructor = function(test) {
   let Pages = loader.require("page-worker");
 
   let page = Pages.Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() {
       loader.unload();
       test.assert(isDestroyed(page), "Page correctly unloaded.");
@@ -128,62 +157,62 @@ tests.testValidateOptions = function(test) {
 
 tests.testContentAndAllowGettersAndSetters = function(test) {
   test.waitUntilDone();
-  let content = "data:text/html,<script>window.scrollTo=3</script>";
+  let content = "data:text/html,<script>window.localStorage.allowScript=3;</script>";
   let page = Page({
     contentURL: content,
-    contentScript: "window.addEventListener('load', function () " +
-                   "postMessage(typeof window.scrollTo), true);",
+    contentScript: "self.postMessage(window.localStorage.allowScript)",
+    contentScriptWhen: "end",
     onMessage: step0
   });
 
   function step0(message) {
-    test.assertEqual(message, "number",
-                     "Correct type expected for scrollTo - number");
+    test.assertEqual(message, "3",
+                     "Correct value expected for allowScript - 3");
     test.assertEqual(page.contentURL, content,
                      "Correct content expected");
     page.removeListener('message', step0);
     page.on('message', step1);
     page.allow = { script: false };
     page.contentURL = content = 
-      "data:text/html,<script>window.scrollTo='f'</script>";
+      "data:text/html,<script>window.localStorage.allowScript='f'</script>";
   }
 
   function step1(message) {
-    test.assertEqual(message, "function",
-                     "Correct type expected for scrollTo - function");
+    test.assertEqual(message, "3",
+                     "Correct value expected for allowScript - 3");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step1);
     page.on('message', step2);
     page.allow = { script: true };
     page.contentURL = content =
-      "data:text/html,<script>window.scrollTo='g'</script>";
+      "data:text/html,<script>window.localStorage.allowScript='g'</script>";
   }
 
   function step2(message) {
-    test.assertEqual(message, "string",
-                     "Correct type expected for scrollTo - string");
+    test.assertEqual(message, "g",
+                     "Correct value expected for allowScript - g");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step2);
     page.on('message', step3);
     page.allow.script = false;
     page.contentURL = content = 
-      "data:text/html,<script>window.scrollTo=3</script>";
+      "data:text/html,<script>window.localStorage.allowScript=3</script>";
   }
 
   function step3(message) {
-    test.assertEqual(message, "function",
-                     "Correct type expected for scrollTo - function");
+    test.assertEqual(message, "g",
+                     "Correct value expected for allowScript - g");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     page.removeListener('message', step3);
     page.on('message', step4);
     page.allow.script = true;
     page.contentURL = content = 
-      "data:text/html,<script>window.scrollTo=4</script>";
+      "data:text/html,<script>window.localStorage.allowScript=4</script>";
   }
 
   function step4(message) {
-    test.assertEqual(message, "number",
-                     "Correct type expected for scrollTo - number");
+    test.assertEqual(message, "4",
+                     "Correct value expected for allowScript - 4");
     test.assertEqual(page.contentURL, content, "Correct content expected");
     test.done();
   }
@@ -194,8 +223,8 @@ tests.testOnMessageCallback = function(test) {
   test.waitUntilDone();
 
   Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() {
       test.pass("onMessage callback called");
       test.done();
@@ -208,8 +237,8 @@ tests.testMultipleOnMessageCallbacks = function(test) {
 
   let count = 0;
   let page = Page({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function() count += 1
   });
   page.on('message', function() count += 2);
@@ -231,12 +260,13 @@ tests.testLoadContentPage = function(test) {
       test[message.shift()].apply(test, message);
     },
     contentURL: require("self").data.url("test-page-worker.html"),
-    contentScriptFile: require("self").data.url("test-page-worker.js")
+    contentScriptFile: require("self").data.url("test-page-worker.js"),
+    contentScriptWhen: "ready"
   });
 
 }
 
-tests.testAllowScript = function(test) {
+tests.testAllowScriptDefault = function(test) {
 
   test.waitUntilDone();
 
@@ -245,9 +275,9 @@ tests.testAllowScript = function(test) {
       test.assert(message, "Script is allowed to run by default.");
       test.done();
     },
-    contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "window.addEventListener('DOMContentLoaded', function () " +
-                   "postMessage('foo' in window), false)"
+    contentURL: "data:text/html,<script>document.documentElement.setAttribute('foo', 3);</script>",
+    contentScript: "self.postMessage(document.documentElement.getAttribute('foo'))",
+    contentScriptWhen: "ready"
   });
 }
 
@@ -261,10 +291,10 @@ tests.testAllowScript = function(test) {
       test.done();
     },
     allow: { script: true },
-    contentURL: "data:text/html,<script>window.foo=3;</script>",
-    contentScript: "window.addEventListener('DOMContentLoaded', function () " +
-                   "postMessage(('foo' in window) && window.foo " +
-                   "== 3), false)"
+    contentURL: "data:text/html,<script>document.documentElement.setAttribute('foo', 3);</script>",
+    contentScript: "self.postMessage(document.documentElement.hasAttribute('foo') && " +
+                   "                 document.documentElement.getAttribute('foo') == 3)",
+    contentScriptWhen: "ready"
   });
 }
 
@@ -272,9 +302,8 @@ tests.testPingPong = function(test) {
   test.waitUntilDone();
   let page = Page({
     contentURL: 'data:text/html,ping-pong',
-    contentScript: 'onMessage = function(message) postMessage("pong");'
-      + 'postMessage("ready");'
-    ,
+    contentScript: 'self.on("message", function(message) self.postMessage("pong"));'
+      + 'self.postMessage("ready");',
     onMessage: function(message) {
       if ('ready' == message) {
         return page.postMessage('ping');

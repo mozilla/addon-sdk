@@ -37,19 +37,20 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cr} = require("chrome");
-const byteStreams = require("byte-streams");
-const textStreams = require("text-streams");
-const xpcom = require("xpcom");
+const byteStreams = require("./byte-streams");
+const textStreams = require("./text-streams");
 
 // Flags passed when opening a file.  See nsprpub/pr/include/prio.h.
 const OPEN_FLAGS = {
-  RDONLY: 0x01,
-  WRONLY: 0x02,
-  CREATE_FILE: 0x08,
-  APPEND: 0x10,
-  TRUNCATE: 0x20,
-  EXCL: 0x80
+  RDONLY: parseInt("0x01"),
+  WRONLY: parseInt("0x02"),
+  CREATE_FILE: parseInt("0x08"),
+  APPEND: parseInt("0x10"),
+  TRUNCATE: parseInt("0x20"),
+  EXCL: parseInt("0x80")
 };
 
 var dirsvc = Cc["@mozilla.org/file/directory_service;1"]
@@ -80,11 +81,18 @@ function ensureFile(file) {
 }
 
 function ensureExists(file) {
-  if (!file.exists()) {
-    throw xpcom.friendlyError(Cr.NS_ERROR_FILE_NOT_FOUND, {
-      filename: file.path
-    });
+  if (!file.exists())
+    throw friendlyError(Cr.NS_ERROR_FILE_NOT_FOUND, file.path);
+}
+
+function friendlyError(errOrResult, filename) {
+  var isResult = typeof(errOrResult) === "number";
+  var result = isResult ? errOrResult : errOrResult.result;
+  switch (result) {
+  case Cr.NS_ERROR_FILE_NOT_FOUND:
+    return new Error("path does not exist: " + filename);
   }
+  return isResult ? new Error("XPCOM error code: " + errOrResult) : errOrResult;
 }
 
 exports.exists = function exists(filename) {
@@ -95,8 +103,14 @@ exports.isFile = function isFile(filename) {
   return MozFile(filename).isFile();
 };
 
-exports.read = function read(filename) {
-  var stream = exports.open(filename);
+exports.read = function read(filename, mode) {
+  if (typeof(mode) !== "string")
+    mode = "";
+
+  // Ensure mode is read-only.
+  mode = /b/.test(mode) ? "b" : "";
+
+  var stream = exports.open(filename, mode);
   try {
     var str = stream.read();
   }
@@ -159,12 +173,12 @@ exports.open = function open(filename, mode) {
     var openFlags = OPEN_FLAGS.WRONLY |
                     OPEN_FLAGS.CREATE_FILE |
                     OPEN_FLAGS.TRUNCATE;
-    var permFlags = 0644; // u+rw go+r
+    var permFlags = parseInt("0644"); // u+rw go+r
     try {
       stream.init(file, openFlags, permFlags, 0);
     }
     catch (err) {
-      throw xpcom.friendlyError(err, { filename: filename });
+      throw friendlyError(err, filename);
     }
     return /b/.test(mode) ?
            new byteStreams.ByteWriter(stream) :
@@ -179,7 +193,7 @@ exports.open = function open(filename, mode) {
     stream.init(file, OPEN_FLAGS.RDONLY, 0, 0);
   }
   catch (err) {
-    throw xpcom.friendlyError(err, { filename: filename });
+    throw friendlyError(err, filename);
   }
   return /b/.test(mode) ?
          new byteStreams.ByteReader(stream) :
@@ -195,7 +209,7 @@ exports.remove = function remove(path) {
 exports.mkpath = function mkpath(path) {
   var file = MozFile(path);
   if (!file.exists())
-    file.create(Ci.nsIFile.DIRECTORY_TYPE, 0755); // u+rwx go+rx
+    file.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755")); // u+rwx go+rx
   else if (!file.isDirectory())
     throw new Error("The path already exists and is not a directory: " + path);
 };

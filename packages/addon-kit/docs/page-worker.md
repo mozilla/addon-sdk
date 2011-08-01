@@ -16,25 +16,6 @@ load for a page worker, and you communicate with those scripts over an
 asynchronous JSON pipe.  For more information on content scripts, see
 [Working with Content Scripts](dev-guide/addon-development/web-content.html).
 
-Events
-------
-
-Page workers emit the following types of
-[events](dev-guide/addon-development/events.html):
-
-### message ###
-
-This event is emitted when the page worker receives a message from its
-content scripts.  Listeners are passed a single argument, the message posted
-from the content script.
-
-### error ###
-
-This event is emitted when an uncaught runtime error occurs in the page worker's
-content scripts.  Listeners are passed a single argument, the
-[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
-object.
-
 Examples
 --------
 
@@ -101,13 +82,38 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     A string or an array of strings containing the texts of content scripts to
     load.  Content scripts specified by this option are loaded *after* those
     specified by the `contentScriptFile` option.
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.
-    Possible values are "start" (default), which loads them as soon as
-    the document element for the page worker has been created, and "ready",
-    which loads them once the DOM content of the page worker has been loaded.
+  @prop [contentScriptWhen="end"] {string}
+    When to load the content scripts. This may take one of the following
+    values:
+
+    * "start": load content scripts immediately after the document
+    element for the page is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the page has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
+
+    This property is optional and defaults to "end".
+
   @prop [onMessage] {function}
-    An optional "message" event listener.  See Events above.
+    Use this to add a listener to the page worker's `message` event.
+</api>
+
+<api name="port">
+@property {EventEmitter}
+[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+
+* send events to the content script using the `port.emit` function
+* receive events from the content script using the `port.on` function
+
+See
+<a href="dev-guide/addon-development/web-content.html#content_script_events">
+Communicating with Content Scripts</a> for details.
 </api>
 
 <api name="contentURL">
@@ -135,10 +141,21 @@ load.
 
 <api name="contentScriptWhen">
 @property {string}
-When to load the content scripts.
-Possible values are "start" (default), which loads them as soon as the document
-element for the page worker has been created, and "ready", which loads them once
-the DOM content of the page worker has been loaded.
+  When to load the content scripts. This may have one of the following
+  values:
+
+  * "start": load content scripts immediately after the document
+  element for the page is inserted into the DOM, but before the DOM content
+  itself has been loaded
+  * "ready": load content scripts once DOM content has been loaded,
+  corresponding to the
+  [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+  event
+  * "end": load content scripts once all the content (DOM, JS, CSS,
+  images) for the page has been loaded, at the time the
+  [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+  fires
+
 </api>
 
 <api name="destroy">
@@ -173,4 +190,29 @@ The type of event for which `listener` was registered.
 @param listener {function}
 The listener function that was registered.
 </api>
+
+<api name="message">
+@event
+If you listen to this event you can receive message events from content
+scripts associated with this page worker. When a content script posts a
+message using `self.postMessage()`, the message is delivered to the add-on
+code in the page worker's `message` event.
+
+@argument {value}
+Listeners are passed a single argument which is the message posted
+from the content script. The message can be any
+<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in one of the
+page worker's content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
+</api>
+
 </api>

@@ -55,10 +55,10 @@ alt="Mozilla widget icon">
 
 To simplify your code in the latter case, you can assign a panel object to
 your widget. Then when the user clicks the widget, the widget will display
-the panel anchored to the widget. The `reddit-panel` example demonstrates this:
+the panel anchored to the widget:
 
-<img class="image-center" src="media/screenshots/modules/reddit-panel-osx.png"
-alt="Reddit panel">
+<img class="image-center" src="media/screenshots/modules/widget-panel-osx.png"
+alt="Panel anchored to widget">
 <br>
 
 ### [context-menu](packages/addon-kit/docs/context-menu.html) ###
@@ -179,7 +179,7 @@ API.
 
 This module provides your add-on with persistent storage.
 
-### [self](packages/api-utils/docs/self.html) ###
+### [self](packages/addon-kit/docs/self.html) ###
 
 Using this module you can access any files you have included in your add-on's
 `data` directory.
@@ -193,6 +193,3 @@ your add-on includes an icon or some HTML content to display in a
 
 This module also gives your add-on access to its [Program
 ID](dev-guide/addon-development/program-id.html).
-
-Note that this module is in the
-[`api-utils`](packages/api-utils/api-utils.html) package.

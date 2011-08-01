@@ -37,7 +37,7 @@
 
 'use strict';
 
-const { Trait } = require('traits');
+const { Trait } = require('../traits');
 
 const WindowDom = Trait.compose({
   _window: Trait.required,

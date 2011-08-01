@@ -36,11 +36,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
-const observers = require("observer-service");
-const { EventEmitter } = require("events");
-const { setTimeout } = require("timer");
-const unload = require("unload");
+const observers = require("api-utils/observer-service");
+const { EventEmitter } = require("api-utils/events");
+const { setTimeout } = require("api-utils/timer");
+const unload = require("api-utils/unload");
 
 const ON_START = "start";
 const ON_STOP = "stop";
@@ -48,10 +50,12 @@ const ON_TRANSITION = "private-browsing-transition-complete";
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
-if (require("xul-app").is("Firefox")) {
+if (require("api-utils/xul-app").is("Firefox")) {
   pbService = Cc["@mozilla.org/privatebrowsing;1"].
               getService(Ci.nsIPrivateBrowsingService);
 }
+
+function toggleMode(value) pbService.privateBrowsingEnabled = !!value
 
 const privateBrowsing = EventEmitter.compose({
   constructor: function PrivateBrowsing() {
@@ -79,7 +83,10 @@ const privateBrowsing = EventEmitter.compose({
   get isActive() this._isActive,
   set isActive(value) {
     if (pbService)
-      pbService.privateBrowsingEnabled = !!value;
+      // We toggle private browsing mode asynchronously in order to work around
+      // bug 659629.  Since private browsing transitions are asynchronous
+      // anyway, this doesn't significantly change the behavior of the API.
+      setTimeout(toggleMode, 0, value);
   },
   _isActive: false
 })()
@@ -90,5 +97,6 @@ Object.defineProperty(exports, "isActive", {
 exports.activate = function activate() privateBrowsing.isActive = true;
 exports.deactivate = function deactivate() privateBrowsing.isActive = false;
 exports.on = privateBrowsing.on;
+exports.once = privateBrowsing.once;
 exports.removeListener = privateBrowsing.removeListener;
 

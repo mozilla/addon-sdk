@@ -4,6 +4,9 @@ import time
 import tempfile
 import atexit
 import shutil
+import shlex
+import subprocess
+import re
 
 import simplejson as json
 import mozrunner
@@ -48,6 +51,30 @@ def follow_file(filename):
                 last_pos = f.tell()
                 f.close()
         yield newstuff
+
+# subprocess.check_output only appeared in python2.7, so this code is taken
+# from python source code for compatibility with py2.5/2.6
+class CalledProcessError(Exception):
+    def __init__(self, returncode, cmd, output=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        self.output = output
+    def __str__(self):
+        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+def check_output(*popenargs, **kwargs):
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise CalledProcessError(retcode, cmd, output=output)
+    return output
+
 
 class FennecProfile(mozrunner.Profile):
     preferences = {}
@@ -187,7 +214,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None):
+            timeout=None, logfile=None, addons=None, args=None, norun=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -220,10 +247,19 @@ def run_app(harness_root_dir, harness_options,
             raise ValueError("Unknown app: %s" % app_type)
         if sys.platform == 'darwin':
             cmdargs.append('-foreground')
+    
+    if args:
+        cmdargs.extend(shlex.split(args))
 
-    resultfile = os.path.join(tempfile.gettempdir(), 'harness_result')
-    if os.path.exists(resultfile):
-        os.remove(resultfile)
+    # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
+    # run"/"cfx test" on the same host. On unix it points at /tmp (which is
+    # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
+    # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
+    # gives us a unique filename that fixes both problems. We leave the
+    # (0-byte) file in place until the browser-side code starts writing to
+    # it, otherwise the symlink attack becomes possible again.
+    fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
+    os.close(fileno)
     harness_options['resultFile'] = resultfile
 
     def maybe_remove_logfile():
@@ -236,7 +272,8 @@ def run_app(harness_root_dir, harness_options,
         if not logfile:
             # If we're on Windows, we need to keep a logfile simply
             # to print console output to stdout.
-            logfile = os.path.join(tempfile.gettempdir(), 'harness_log')
+            fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
+            os.close(fileno)
         logfile_tail = follow_file(logfile)
         atexit.register(maybe_remove_logfile)
 
@@ -248,7 +285,17 @@ def run_app(harness_root_dir, harness_options,
     env = {}
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
-    env['HARNESS_OPTIONS'] = json.dumps(harness_options)
+    env['XPCOM_DEBUG_BREAK'] = 'warn'
+    env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
+    if norun:
+        cmdargs.append("-no-remote")
+
+    # Write the harness options file to the SDK's extension template directory
+    # so mozrunner will copy it to the profile it creates.  We don't want
+    # to leave such files lying around the SDK's directory tree, so we delete it
+    # below after getting mozrunner to create the profile.
+    optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
+    open(optionsFile, "w").write(str(json.dumps(harness_options)))
 
     starttime = time.time()
 
@@ -258,15 +305,50 @@ def run_app(harness_root_dir, harness_options,
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
+
+    # Delete the harness options file we wrote to the SDK's extension template
+    # directory.
+    os.remove(optionsFile)
+
     runner = runner_class(profile=profile,
                           binary=binary,
                           env=env,
                           cmdargs=cmdargs,
                           kp_kwargs=popen_kwargs)
 
-    print "Using binary at '%s'." % runner.binary
-    print "Using profile at '%s'." % profile.profile
+    sys.stdout.flush(); sys.stderr.flush()
+    print >>sys.stderr, "Using binary at '%s'." % runner.binary
 
+    # ensure running Firefox 4.0+
+    version_output = check_output(runner.command + ["-v"])
+    mo = re.search(r"Mozilla (Firefox|Iceweasel) (\d+)\.[\d\.]+",
+                   version_output)
+    if not mo:
+        # we may use cfx with thunderbird, seamonkey or an exotic firefox
+        # version
+        print """
+  WARNING: Cannot guarantee firefox version, please ensure you are running
+  a mozilla application equivalent to Firefox 4.0 or higher.
+  """
+    else:
+      version = mo.group(2)
+      if int(version) < 4:
+          print """
+  cfx requires Firefox 4 or greater and is unable to find a compatible
+  binary. Please install a newer version of Firefox or provide the path to
+  your existing compatible version with the --binary flag:
+
+    cfx --binary=PATH_TO_FIREFOX_BINARY"""
+          return
+
+    print >>sys.stderr, "Using profile at '%s'." % profile.profile
+    sys.stderr.flush()
+    
+    if norun:
+        print "To launch the application, enter the following command:"
+        print " ".join(runner.command) + " " + (" ".join(runner.cmdargs))
+        return 0
+    
     runner.start()
 
     done = False
@@ -277,12 +359,16 @@ def run_app(harness_root_dir, harness_options,
             if logfile_tail:
                 new_chars = logfile_tail.next()
                 if new_chars:
-                    sys.stdout.write(new_chars)
-                    sys.stdout.flush()
+                    sys.stderr.write(new_chars)
+                    sys.stderr.flush()
             if os.path.exists(resultfile):
                 output = open(resultfile).read()
-                if output in ['OK', 'FAIL']:
-                    done = True
+                if output:
+                    if output in ['OK', 'FAIL']:
+                        done = True
+                    else:
+                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
+                        sys.stderr.write("'"+output+"'\n")
             if timeout and (time.time() - starttime > timeout):
                 raise Exception("Wait timeout exceeded (%ds)" %
                                 timeout)
@@ -295,11 +381,11 @@ def run_app(harness_root_dir, harness_options,
         if profile:
             profile.cleanup()
 
-    print "Total time: %f seconds" % (time.time() - starttime)
+    print >>sys.stderr, "Total time: %f seconds" % (time.time() - starttime)
 
     if output == 'OK':
-        print "Program terminated successfully."
+        print >>sys.stderr, "Program terminated successfully."
         return 0
     else:
-        print "Program terminated unsuccessfully."
+        print >>sys.stderr, "Program terminated unsuccessfully."
         return -1

@@ -81,10 +81,10 @@
         <h4 class="api_name">only-one-ctor</h4>
         <p>This class contains only one constructor.</p>
         <div class="api_component_group">
-          <div class="api_header">Constructors</div>
+          <h5 class="api_header">Constructors</h5>
           
           <div class="api_component">
-            <div class="api_name">one-constructor(options)</div>
+            <h6 class="api_name">one-constructor(options)</h6>
             
             <div class="parameter_set">
               <div class="api_component">
@@ -104,10 +104,10 @@
         <h4 class="api_name">two-ctors</h4>
         <p>This class contains two constructors.</p>
         <div class="api_component_group">
-          <div class="api_header">Constructors</div>
+          <h5 class="api_header">Constructors</h5>
           
           <div class="api_component">
-            <div class="api_name">one-constructor(options)</div>
+            <h6 class="api_name">one-constructor(options)</h6>
             <p>The first constructor.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -120,7 +120,7 @@
           </div>
           
           <div class="api_component">
-            <div class="api_name">another-constructor(options)</div>
+            <h6 class="api_name">another-constructor(options)</h6>
             <p>The second constructor.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -140,10 +140,10 @@
         <h4 class="api_name">ctor-and-method</h4>
         <p>This class contains one constructor and one method.</p>
         <div class="api_component_group">
-          <div class="api_header">Constructors</div>
+          <h5 class="api_header">Constructors</h5>
           
           <div class="api_component">
-            <div class="api_name">one-constructor(options)</div>
+            <h6 class="api_name">one-constructor(options)</h6>
             <p>The first constructor.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -158,10 +158,10 @@
         </div>
         
         <div class="api_component_group">
-          <div class="api_header">Methods</div>
+          <h5 class="api_header">Methods</h5>
           
           <div class="api_component">
-            <div class="api_name">a-method(options)</div>
+            <h6 class="api_name">a-method(options)</h6>
             <p>Does things.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -178,13 +178,13 @@
       </div>
       
       <div class="api_component">
-        <h4 class="api_name">ctor-and-method-and-prop</h4>
-        <p>This class contains one constructor, one method, and one property.</p>
+        <h4 class="api_name">ctor-method-prop-event</h4>
+        <p>This class contains one constructor, one method, one property and an event.</p>
         <div class="api_component_group">
-          <div class="api_header">Constructors</div>
+          <h5 class="api_header">Constructors</h5>
           
           <div class="api_component">
-            <div class="api_name">one-constructor(options)</div>
+            <h6 class="api_name">one-constructor(options)</h6>
             <p>The first constructor.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -199,10 +199,10 @@
         </div>
         
         <div class="api_component_group">
-          <div class="api_header">Methods</div>
+          <h5 class="api_header">Methods</h5>
           
           <div class="api_component">
-            <div class="api_name">a-method(options)</div>
+            <h6 class="api_name">a-method(options)</h6>
             <p>Does things.</p>
             <div class="parameter_set">
               <div class="api_component">
@@ -217,11 +217,29 @@
         </div>
         
         <div class="api_component_group">
-          <div class="api_header">Properties</div>
+          <h5 class="api_header">Properties</h5>
           
           <div class="api_component">
-            <div class="api_name">a-property : <span class="datatype">bool</span></div>
+            <h6 class="api_name">a-property : <span class="datatype">bool</span></h6>
             <p>Represents stuff.</p>
+          </div>
+          
+        </div>
+        
+        <div class="api_component_group">
+          <h5 class="api_header">Events</h5>
+          
+          <div class="api_component">
+            <h6 class="api_name">message</h6>
+            <p>Event emitted when the content script sends a message to the add-on.</p>
+            <div class="parameter_set">
+              <div class="api_component">
+                <div class="api_name"><span class="datatype">JSON</span></div>
+                <p>The message itself as a JSON-serialized object.</p>
+              </div>
+              
+            </div>
+            
           </div>
           
         </div>
@@ -298,7 +316,7 @@
             <div class="api_component">
               <div class="api_name">[ html : <span class="datatype">string/xml</span> ]</div>
               <p>The content of the feature, either as an HTML string,
-              or an E4X document fragment (e.g., &lt;&gt;<h1>Hi!</h1></>)</p>
+              or an E4X document fragment.</p>
             </div>
             
             <div class="api_component">
@@ -411,6 +429,24 @@
         <h4 class="api_name">random()</h4>
         <p>A function that returns a random integer between 0 and 10.</p>
         <div class="returns">Returns: <span class="datatype">int</span><p>The random number.</p>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+    <div class="api_component_group">
+      <h3 class="api_header">Events</h3>
+      
+      <div class="api_component">
+        <h4 class="api_name">open</h4>
+        <p>A module-level event called open.</p>
+        <div class="parameter_set">
+          <div class="api_component">
+            <div class="api_name"><span class="datatype">bool</span></div>
+            <p>Yes, it's open.</p>
+          </div>
+          
         </div>
         
       </div>

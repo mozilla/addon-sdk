@@ -15,17 +15,17 @@ In this example we'll start with the [translator
 add-on](dev-guide/addon-development/implementing-simple-addon.html), and create
 a separate module containing the code that performs the translation.
 
-## Implementing "translator.js" ##
+## Implementing "translate.js" ##
 
 In the `lib` directory under your translator's root, create a new file called
-`translator.js` with the following contents:
+`translate.js` with the following contents:
 
     // Import the APIs we need.
     var request = require("request");
 
     // Define the 'translate' function using Request
     function translate(text, callback) {
-      if (text.length == 0) {
+      if (text.length === 0) {
         throw ("Text to translate must not be empty");
       }
       var req = request.Request({
@@ -60,7 +60,7 @@ module:
     // Import the APIs we need.
     var contextMenu = require("context-menu");
     var selection = require("selection");
-    var translator = require("translator");
+    var translate = require("translate");
 
     exports.main = function(options, callbacks) {
       console.log(options.loadReason);
@@ -72,15 +72,15 @@ module:
         context: contextMenu.SelectionContext(),
         // When this item is clicked, post a message to the item with the
         // selected text and current URL.
-        contentScript: 'on("click", function () {' +
+        contentScript: 'self.on("click", function () {' +
                        '  var text = window.getSelection().toString();' +
-                       '  postMessage(text);' +
+                       '  self.postMessage(text);' +
                        '});',
 
         // When we receive the message, call the translator with the
         // selected text and replace it with the translation.
         onMessage: function (text) {
-          translator.translate(text, function(translation) {
+          translate.translate(text, function(translation) {
                                         selection.text = translation; })
         }
       });
@@ -93,7 +93,7 @@ module:
 
 Next, execute `cfx run` again, and try out the add-on. It should work in
 exactly the same way as the previous version, except that now the core
-translator function has been made available to other parts of your add-on or
+translate function has been made available to other parts of your add-on or
 to *any other program* that imports it.
 
 ## Testing Your Module ##
@@ -102,14 +102,10 @@ The SDK provides a framework to help test any modules you develop. To
 demonstrate this we will add some slightly unlikely tests for the translator
 module.
 
-<span class="aside">
-Until [bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed
-unit tests must be stored under `tests`, not `test`.
-</span>
-Navigate to the `tests` directory and delete the `test-main.js` file. In its
-place create a file called `test-translator.js` with the following contents:
+Navigate to the `test` directory and delete the `test-main.js` file. In its
+place create a file called `test-translate.js` with the following contents:
 
-    var translator = require("translator")
+    var translate = require("translator/translate")
     var testRunner;
     var remainingTests;
 
@@ -121,7 +117,7 @@ place create a file called `test-translator.js` with the following contents:
     function test_languages(test, text) {
       testRunner= test;
       testRunner.waitUntilDone(2000);
-      translator.translate(text, check_translation);
+      translate.translate(text, check_translation);
     }
 
     exports.test_german = function(test) {
@@ -138,15 +134,21 @@ place create a file called `test-translator.js` with the following contents:
 
     exports.test_error = function(test) {
       test.assertRaises(function() {
-        translator.translate("", check_translation);
+        translate.translate("", check_translation);
       },
       "Text to translate must not be empty");
     };
 
-This file exports four functions, each of which expects to receive
-a single argument which is a `test` object. `test` is supplied by the
+This file exports four functions, each of which expects to receive a single
+argument which is a `test` object. `test` is supplied by the
 [`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
-functions to simplify unit testing.
+functions to simplify unit testing. The file imports one module, the
+`translate` module that lives in our `translator` package. The
+`PACKAGE/MODULE` syntax lets you identify a specific module in a specific
+package, rather than searching all available packages (using, for example,
+`require("request")`). The
+[module-search](dev-guide/addon-development/module-search.html) documentation
+has more detail.
 
 <span class="aside">
 `waitUntilDone()` and `done()` are needed here because the translator is
@@ -170,34 +172,35 @@ At this point your package ought to look like this:
   /translator
       package.json
       README.md
-      /docs
+      /doc
           main.md
       /lib
           main.js
-          translator.js
-      /tests
-          test-translator.js
+          translate.js
+      /test
+          test-translate.js
 </pre>
 
 Now execute `cfx --verbose test` from under the package root directory.
 You should see something like this:
 
 <pre>
-  Running tests on Firefox 4.0b7/Gecko 2.0b7 ...
-  info: executing 'test-translator.test_languages'
+  Running tests on Firefox 4.0.1/Gecko 2.0.1 ...
+  info: executing 'test-translate.test_german'
   info: pass: a == b == "Lizard"
+  info: executing 'test-translate.test_italian'
   info: pass: a == b == "Lizard"
+  info: executing 'test-translate.test_finnish'
   info: pass: a == b == "Lizard"
-  info: executing 'test-translator.test_error'
+  info: executing 'test-translate.test_error'
   info: pass: a == b == "Text to translate must not be empty"
-
   4 of 4 tests passed.
   OK
 </pre>
 
 What happens here is that `cfx test`:
 
-* looks in the `tests` directory of your
+* looks in the `test` directory of your
 package
 
 * loads any modules that start with the word `test`

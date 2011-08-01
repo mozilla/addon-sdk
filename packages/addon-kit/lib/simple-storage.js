@@ -38,14 +38,16 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
-const file = require("file");
-const prefs = require("preferences-service");
+const file = require("api-utils/file");
+const prefs = require("api-utils/preferences-service");
 const jpSelf = require("self");
-const timer = require("timer");
-const unload = require("unload");
-const { EventEmitter } = require("events");
-const { Trait } = require("traits");
+const timer = require("api-utils/timer");
+const unload = require("api-utils/unload");
+const { EventEmitter } = require("api-utils/events");
+const { Trait } = require("api-utils/traits");
 
 const WRITE_PERIOD_PREF = "extensions.addon-sdk.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
@@ -81,7 +83,7 @@ function JsonStore(options) {
 JsonStore.prototype = {
   // The store's root.
   get root() {
-    return this._root === undefined ? {} : this._root;
+    return this.isRootInited ? this._root : {};
   },
 
   // Performs some type checking.
@@ -93,6 +95,12 @@ JsonStore.prototype = {
     }
     this._root = val;
     return val;
+  },
+
+  // True if the root has ever been set (either via the root setter or by the
+  // backing file's having been read).
+  get isRootInited() {
+    return this._root !== undefined;
   },
 
   // Percentage of quota used, as a number [0, Inf).  > 1 implies over quota.
@@ -171,8 +179,9 @@ JsonStore.prototype = {
   // complete.  If the store is over quota or if it's empty and the store has
   // never been written, nothing is written and write observers aren't notified.
   _write: function JsonStore__write() {
-    // If the store is empty and the file doesn't yet exist, don't write.
-    if (this._isEmpty && !file.exists(this.filename))
+    // Don't write if the root is uninitialized or if the store is empty and the
+    // backing file doesn't yet exist.
+    if (!this.isRootInited || (this._isEmpty && !file.exists(this.filename)))
       return;
 
     // If the store is over quota, don't write.  The current under-quota state
@@ -222,17 +231,13 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
   },
 
   get root() {
-    if (!this.rootInited) {
+    if (!this.jsonStore.isRootInited)
       this.jsonStore.read();
-      this.rootInited = true;
-    }
     return this.jsonStore.root;
   },
 
   set root(val) {
-    let rv = this.jsonStore.root = val;
-    this.rootInited = true;
-    return rv;
+    return this.jsonStore.root = val;
   },
 
   unload: function manager_unload() {

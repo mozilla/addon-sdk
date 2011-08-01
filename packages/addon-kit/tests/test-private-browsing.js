@@ -59,16 +59,20 @@ if (pbService) {
                 "private-browsing.isActive is correct after modifying PB service");
   };
 
-
   // tests that activating does put the browser into private browsing mode
   exports.testActivateDeactivate = function (test) {
+    test.waitUntilDone();
+    pb.once("start", function onStart() {
+      test.assertEqual(pbService.privateBrowsingEnabled, true,
+                       "private browsing mode was activated");
+      pb.deactivate();
+    });
+    pb.once("stop", function onStop() {
+      test.assertEqual(pbService.privateBrowsingEnabled, false,
+                       "private browsing mode was deactivate");
+      test.done();
+    });
     pb.activate();
-    test.assertEqual(pbService.privateBrowsingEnabled, true,
-                     "private-browsing.activate() enables private browsing mode");
-
-    pb.deactivate();
-    test.assertEqual(pbService.privateBrowsingEnabled, false,
-                     "private-browsing.deactivate() disables private browsing mode");
   };
 
   exports.testStart = function(test) {
@@ -98,6 +102,30 @@ if (pbService) {
     });
     pb.activate();
     pb.deactivate();
+  };
+  
+  exports.testAutomaticUnload = function(test) {
+    test.waitUntilDone();
+    // Create another private browsing instance and unload it
+    let loader = test.makeSandboxedLoader();
+    let pb2 = loader.require("private-browsing");
+    let called = false;
+    pb2.on("start", function onStart() {
+      called = true;
+      test.fail("should not be called:x");
+    });
+    loader.unload();
+    
+    // Then switch to private mode in order to check that the previous instance
+    // is correctly destroyed
+    pb.activate();
+    pb.once("start", function onStart() {
+      require("timer").setTimeout(function () {
+        test.assert(!called, 
+          "First private browsing instance is destroyed and inactive");
+        test.done();
+      }, 0);
+    });
   };
 
   exports.testBothListeners = function(test) {
@@ -148,16 +176,50 @@ if (pbService) {
       pb.removeListener("stop", onStop);
 
       pb.deactivate();
+      pb.once("stop", function () {
+        test.assertEqual(pbService.privateBrowsingEnabled, false);
+        test.assertEqual(pb.isActive, false);
 
-      test.assertEqual(pbService.privateBrowsingEnabled, false);
-      test.assertEqual(pb.isActive, false);
-
-      test.done();
+        test.done();
+      });
     }
 
     pb.on("start", onStart);
     pb.on("start", onStart2);
     pbService.privateBrowsingEnabled = true;
+  };
+
+  exports["test activate private mode via handler"] = function(test) {
+    const tabs = require("tabs");
+
+    test.waitUntilDone();
+    function onReady(tab) {
+      if (tab.url == "about:robots")
+        tab.close(function() pb.activate());
+    }
+    function cleanup(tab) {
+      if (tab.url == "about:") {
+        tabs.removeListener("ready", cleanup);
+        tab.close(function onClose() {
+          test.done();
+        });
+      }
+    }
+
+    tabs.on("ready", onReady);
+    pb.once("start", function onStart() {
+      test.pass("private mode was activated");
+      pb.deactivate();
+    });
+    pb.once("stop", function onStop() {
+      test.pass("private mode was deactivated");
+      tabs.removeListener("ready", onReady);
+      tabs.on("ready", cleanup);
+    });
+    tabs.once("open", function onOpen() {
+      tabs.open("about:robots");
+    });
+    tabs.open("about:");
   };
 }
 else {

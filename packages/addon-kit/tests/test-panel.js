@@ -6,7 +6,7 @@ tests.testPanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
     contentURL: "about:buildconfig",
-    contentScript: "postMessage(1); on('message', function() postMessage(2));",
+    contentScript: "self.postMessage(1); self.on('message', function() self.postMessage(2));",
     onMessage: function (message) {
       test.assertEqual(this, panel, "The 'this' object is the panel.");
       switch(message) {
@@ -24,11 +24,45 @@ tests.testPanel = function(test) {
   });
 };
 
+tests.testPanelEmit = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.emit('loaded');" +
+                   "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("loaded", function () {
+    test.pass("The panel was loaded and sent a first event.");
+    panel.port.emit("addon-to-content");
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message and received a response.");
+    panel.destroy();
+    test.done();
+  });
+};
+
+tests.testPanelEmitEarly = function(test) {
+  test.waitUntilDone();
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    contentScript: "self.port.on('addon-to-content', " +
+                   "             function() self.port.emit('received'));",
+  });
+  panel.port.on("received", function () {
+    test.pass("The panel posted a message early and received a response.");
+    panel.destroy();
+    test.done();
+  });
+  panel.port.emit("addon-to-content");
+};
+
 tests.testShowHidePanel = function(test) {
   test.waitUntilDone();
   let panel = Panel({
-    contentScript: "postMessage('')",
-    contentScriptWhen: "ready",
+    contentScript: "self.postMessage('')",
+    contentScriptWhen: "end",
     onMessage: function (message) {
       panel.show();
     },
@@ -47,6 +81,54 @@ tests.testShowHidePanel = function(test) {
     }
   });
 };
+
+tests.testParentResizeHack = function(test) {
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+  let docShell = browserWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIWebNavigation)
+                  .QueryInterface(Ci.nsIDocShell);
+  if (!("allowWindowControl" in docShell)) {
+    // bug 635673 is not fixed in this firefox build
+    test.pass("allowWindowControl attribute that allow to fix browser window " +
+              "resize is not available on this build.");
+    return;
+  }
+
+  test.waitUntilDone(30000);
+
+  let previousWidth = browserWindow.outerWidth, previousHeight = browserWindow.outerHeight;
+
+  let content = "<script>" +
+                "function contentResize() {" +
+                "  resizeTo(200,200);" +
+                "  resizeBy(200,200);" +
+                "}" +
+                "</script>" +
+                "Try to resize browser window";
+  let panel = Panel({
+    contentURL: "data:text/html," + encodeURIComponent(content),
+    contentScript: "self.on('message', function(message){" +
+                   "  if (message=='resize') " +
+                   "    unsafeWindow.contentResize();" +
+                   "});",
+    contentScriptWhen: "ready",
+    onMessage: function (message) {
+
+    },
+    onShow: function () {
+      panel.postMessage('resize');
+      require("timer").setTimeout(function () {
+        test.assertEqual(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
+        test.assertEqual(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
+        panel.destroy();
+        test.done();
+      },0);
+    }
+  });
+  panel.show();
+}
 
 tests.testResizePanel = function(test) {
   test.waitUntilDone();
@@ -71,8 +153,8 @@ tests.testResizePanel = function(test) {
     browserWindow.removeEventListener("focus", onFocus, true);
 
     let panel = Panel({
-      contentScript: "postMessage('')",
-      contentScriptWhen: "ready",
+      contentScript: "self.postMessage('')",
+      contentScriptWhen: "end",
       height: 10,
       width: 10,
       onMessage: function (message) {
@@ -144,7 +226,7 @@ tests.testSeveralShowHides = function(test) {
 tests.testAnchorAndArrow = function(test) {
   test.waitUntilDone(20000);
   let count = 0;
-  function newPanel(anchor) {
+  function newPanel(tab, anchor) {
     let panel = panels.Panel({
       contentURL: "data:text/html,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
@@ -156,7 +238,9 @@ tests.testAnchorAndArrow = function(test) {
         panel.destroy();
         if (count==5) {
           test.pass("All anchored panel test displayed");
-          test.done();
+          tab.close(function () {
+            test.done();
+          });
         }
       }
     });
@@ -181,17 +265,35 @@ tests.testAnchorAndArrow = function(test) {
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
       let window = browserWindow.content;
-      newPanel(window.document.getElementById('tl'));
-      newPanel(window.document.getElementById('tr'));
-      newPanel(window.document.getElementById('bl'));
-      newPanel(window.document.getElementById('br'));
+      newPanel(tab, window.document.getElementById('tl'));
+      newPanel(tab, window.document.getElementById('tr'));
+      newPanel(tab, window.document.getElementById('bl'));
+      newPanel(tab, window.document.getElementById('br'));
       let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(anchor);
+      newPanel(tab, anchor);
     }
   });
   
   
   
+};
+
+tests.testPanelTextColor = function(test) {
+  test.waitUntilDone();
+  let html = "<html><head><style>body {color: yellow}</style></head>" +
+             "<body><p>Foo</p></body></html>";
+  let panel = Panel({
+    contentURL: "data:text/html," + encodeURI(html),
+    contentScript: "self.port.emit('color', " +
+                   "window.getComputedStyle(document.body.firstChild, null). " +
+                   "       getPropertyValue('color'));"
+  });
+  panel.port.on("color", function (color) {
+    test.assertEqual(color, "rgb(255, 255, 0)",
+      "The panel text color style is preserved when a style exists.");
+    panel.destroy();
+    test.done();
+  });
 };
 
 function makeEventOrderTest(options) {
@@ -214,6 +316,23 @@ function makeEventOrderTest(options) {
     options.test(test, expect, panel);
   }
 }
+
+tests.testAutomaticDestroy = function(test) {
+  let loader = test.makeSandboxedLoader();
+  let panel = loader.require("panel").Panel({
+    contentURL: "about:buildconfig",
+    contentScript: 
+      "self.port.on('event', function() self.port.emit('event-back'));"
+  });
+  
+  loader.unload();
+  
+  panel.port.on("event-back", function () {
+    test.fail("Panel should have been destroyed on module unload");
+  });
+  panel.port.emit("event");
+  test.pass("check automatic destroy");
+};
 
 tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
   test: function(test, expect, panel) {

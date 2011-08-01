@@ -34,13 +34,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 // We don't actually use chrome directly, but we do access the 
 // filesystem and scan it to dynamically import modules, so
 // we put this here to tell the module loader to give us
 // permission to require() whatever we want.
 require("chrome");
 
-var file = require("file");
+var file = require("./file");
 
 var TestFinder = exports.TestFinder = function TestFinder(options) {
   memory.track(this);
@@ -62,7 +64,6 @@ TestFinder.prototype = {
   findTests: function findTests(cb) {
     var self = this;
     var tests = [];
-    var remoteSuites = [];
     var filter;
 
     if (typeof(this.filter) == "string") {
@@ -81,32 +82,16 @@ TestFinder.prototype = {
 
         suites.forEach(
           function(suite) {
-            var loader = require("parent-loader");
-            var url = loader.fs.resolveModule(null, suite);
-            var moduleInfo = packaging.getModuleInfo(url);
             var module = require(suite);
             if (self.testInProcess)
-              for (name in module)
+              for (let name in module)
                   tests.push({
                     testFunction: self._makeTest(suite, name, module[name]),
                     name: suite + "." + name
                   });
-            if (!moduleInfo.needsChrome)
-              remoteSuites.push(suite);
           });
       });
 
-    if (this.testOutOfProcess && remoteSuites.length > 0) {
-      var process = require("e10s").AddonProcess();
-      var finderHandle = process.createHandle();
-      finderHandle.onTestsFound = function(testsFound) {
-        cb(tests.concat(testsFound));
-      };
-      process.send("startMain", "find-tests", {
-        suites: remoteSuites,
-        finderHandle: finderHandle
-      });
-    } else
-      cb(tests);
+    cb(tests);
   }
 };

@@ -49,13 +49,13 @@ loaded:
       contentScript: 'window.alert("Page matches ruleset");'
     });
 
-If you specify a value of "ready" for `contentScriptWhen` then the content
-script can interact with the DOM itself:
+If you specify a value of "ready" or "end" for `contentScriptWhen`,
+then the content script can interact with the DOM itself:
 
     var pageMod = require("page-mod");
     pageMod.PageMod({
       include: "*.org",
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
@@ -90,7 +90,7 @@ This is demonstrated in the following example:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: "onMessage = function onMessage(message) {" +
                      "  window.alert(message);};",
       onAttach: function onAttach(worker) {
@@ -132,7 +132,7 @@ attached and registers a listener function that simply logs the message:
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
-      contentScriptWhen: 'ready',
+      contentScriptWhen: 'end',
       contentScript: ["postMessage('Content script 1 is attached to '+ " +
                       "document.URL);",
                       "postMessage('Content script 2 is attached to '+ " +
@@ -206,6 +206,49 @@ The following add-on creates a widget which, when clicked, highlights all the
       }
     });
 
+## Destroying Workers ##
+
+Workers generate a `detach` event when their associated page is closed: that
+is, when the tab is closed or the tab's location changes. If
+you are maintaining a list of workers belonging to a page mod, you can use
+this event to remove workers that are no longer valid.
+
+For example, if you maintain a list of workers attached to a page mod:
+
+    var workers = [];
+
+    var pageMod = require("page-mod").PageMod({
+      include: ['*'],
+      contentScriptWhen: 'ready',
+      contentScriptFile: data.url('pagemod.js'),
+      onAttach: function(worker) {
+        workers.push(worker);
+      }
+    });
+
+You can remove workers when they are no longer valid by listening to `detach`:
+
+    var workers = [];
+
+    function detachWorker(worker, workerArray) {
+      var index = workerArray.indexOf(worker);
+      if(index != -1) {
+        workerArray.splice(index, 1);
+      }
+    }
+
+    var pageMod = require("page-mod").PageMod({
+      include: ['*'],
+      contentScriptWhen: 'ready',
+      contentScriptFile: data.url('pagemod.js'),
+      onAttach: function(worker) {
+        workers.push(worker);
+        worker.on('detach', function () {
+          detachWorker(this, workers);
+        });
+      }
+    });
+
 <api name="PageMod">
 @class
 A PageMod object. Once activated a page mod will execute the supplied content
@@ -231,11 +274,24 @@ Creates a PageMod.
     The texts of content scripts to load.  Content scripts specified by this
     option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
-  @prop [contentScriptWhen] {string}
-    When to load the content scripts.  Optional.
-    Possible values are "start" (default), which loads them as soon as
-    the window object for the page has been created, and "ready", which loads
-    them once the DOM content of the page has been loaded.
+  @prop [contentScriptWhen="end"] {string}
+    When to load the content scripts. This may take one of the following
+    values:
+
+    * "start": load content scripts immediately after the document
+    element for the page is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the page has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
+
+    This property is optional and defaults to "end".
+
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`
@@ -259,6 +315,27 @@ description of match patterns. Rules can be added to the list by calling its
 Stops the page mod from making any more modifications.  Once destroyed the page
 mod can no longer be used.  Note that modifications already made to open pages
 will not be undone.
+</api>
+
+<api name="attach">
+@event
+This event is emitted this event when the page-mod's content scripts are
+attached to a page whose URL matches the page-mod's `include` filter.
+
+@argument {Worker}
+The listener function is passed a `Worker` object that can be used to communicate
+with any content scripts attached to this page.
+</api>
+
+<api name="error">
+@event
+This event is emitted when an uncaught runtime error occurs in one of the page
+mod's content scripts.
+
+@argument {Error}
+Listeners are passed a single argument, the
+[Error](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Error)
+object.
 </api>
 
 </api>

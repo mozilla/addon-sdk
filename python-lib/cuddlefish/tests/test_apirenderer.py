@@ -20,7 +20,9 @@ class ParserTests(unittest.TestCase):
         test_lines = test.splitlines(True)
         reference_lines = reference.splitlines(True)
         for x in range(len(test_lines)):
-            self.assertEqual(test_lines[x], reference_lines[x])
+            self.assertEqual(test_lines[x], reference_lines[x],
+                             "line %d: expected '%s', got '%s'"
+                             % (x+1, reference_lines[x], test_lines[x]))
 
 if __name__ == "__main__":
     unittest.main()

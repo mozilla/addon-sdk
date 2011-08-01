@@ -151,7 +151,7 @@ class Server(object):
                 path = os.path.join(self.root, *parts)
                 url = urllib.pathname2url(path)
                 mimetype = guess_mime_type(url)
-                response = open(path, 'r').read()
+                response = open(path, 'rb').read()
         except IOError, e:
             if e.errno==errno.ENOENT:
                 return self._error('404 Not Found')
@@ -212,7 +212,8 @@ class Server(object):
                 return self._error('501 Not Implemented')
             if not _idle_event.isSet():
                 _idle_event.set()
-            return
+            self.start_response('200 OK', [('Content-type', 'text/plain')])
+            return ['']
         else:
             return self._error('404 Not Found')
 
@@ -357,8 +358,11 @@ def generate_static_docs(env_root, tgz_filename, base_url = ''):
         open(os.path.join(dest_dir, pkg_name + ".html"), "w")\
             .write(package_doc_html)
 
-        docs_src_dir = os.path.join(src_dir, "docs")
-        docs_dest_dir = os.path.join(dest_dir, "docs")
+        docs_src_dir = os.path.join(src_dir, "doc")
+        docs_dest_dir = os.path.join(dest_dir, "doc")
+        if os.path.isdir(os.path.join(src_dir, "docs")):
+            docs_src_dir = os.path.join(src_dir, "docs")
+            docs_dest_dir = os.path.join(dest_dir, "docs")
         if not os.path.exists(docs_dest_dir):
             os.mkdir(docs_dest_dir)
         for (dirpath, dirnames, filenames) in os.walk(docs_src_dir):
@@ -421,7 +425,7 @@ def generate_static_docs(env_root, tgz_filename, base_url = ''):
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None,
+            timeout=None, logfile=None, addons=None, args=None, norun=None,
             host=DEFAULT_HOST,
             port=DEV_SERVER_PORT):
     payload = json.dumps(harness_options)

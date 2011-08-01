@@ -63,6 +63,9 @@ exports.testMatchPatternTestTrue = function(test) {
 
   ok("http://example.com", "http://example.com");
   ok("http://example.com/ice-cream", "http://example.com/ice-cream");
+
+  ok(/.*zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/https:.*zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
 };
 
 exports.testMatchPatternTestFalse = function(test) {
@@ -83,6 +86,7 @@ exports.testMatchPatternTestFalse = function(test) {
   ok("*.example.com", "http://example.net");
   ok("*.example.com", "http://foo.com");
   ok("*.example.com", "http://example.com.foo");
+  ok("*.example2.com", "http://example.com");
 
   ok("http://example.com/*", null);
   ok("http://example.com/*", "");
@@ -94,6 +98,10 @@ exports.testMatchPatternTestFalse = function(test) {
   ok("http://example.com", "");
   ok("http://example.com", "bogus");
   ok("http://example.com", "http://example.com/");
+
+  ok(/zilla.*/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/.*zilla/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
+  ok(/https:.*zilla/, "https://bugzilla.redhat.com/show_bug.cgi?id=569753");
 };
 
 exports.testMatchPatternErrors = function(test) {
@@ -114,6 +122,24 @@ exports.testMatchPatternErrors = function(test) {
     function() new MatchPattern("http://google*.com"),
     /expected to be the first or the last/,
     "MatchPattern throws when a '*' is in the middle of the wildcard"
+  );
+
+  test.assertRaises(
+    function() new MatchPattern(/ /g),
+    /^A RegExp match pattern cannot be set to `global` \(i\.e\. \/\/g\)\.$/,
+    "MatchPattern throws on a RegExp set to `global` (i.e. //g)."
+  );
+
+  test.assertRaises(
+    function() new MatchPattern(/ /i),
+    /^A RegExp match pattern cannot be set to `ignoreCase` \(i\.e\. \/\/i\)\.$/,
+    "MatchPattern throws on a RegExp set to `ignoreCase` (i.e. //i)."
+  );
+
+  test.assertRaises(
+    function() new MatchPattern( / /m ),
+    /^A RegExp match pattern cannot be set to `multiline` \(i\.e\. \/\/m\)\.$/,
+    "MatchPattern throws on a RegExp set to `multiline` (i.e. //m)."
   );
 };
 

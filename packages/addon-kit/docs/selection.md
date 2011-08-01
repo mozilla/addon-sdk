@@ -83,3 +83,8 @@ Surround HTML selections with delimiters:
   (Discontiguous selections can be created by the user with
   Ctrl+click-and-drag.)
 </api>
+
+<api name="select">
+@event
+  This event is emitted whenever the user makes a new selection in a page.
+</api>

@@ -9,7 +9,6 @@ require("chrome");
 
 const E10S_COMPATIBLE_TEST_SUITES = [
   'test-api-utils.js',
-  'test-es5.js',
   'test-traits-core.js',
   'test-traits.js',
   'test-list.js',

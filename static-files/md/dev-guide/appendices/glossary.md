@@ -1,7 +1,6 @@
 # Glossary #
 
-Terminology is important.  Here's a glossary of terms used for the SDK
-so all developers speak the same language.
+This glossary contains a list of terms used in the Add-on SDK.
 
 __Add-on__: A software package that adds functionality to a Mozilla application,
 which can be built with either Mozilla's traditional add-on platform or the SDK.
@@ -41,7 +40,7 @@ entirely possible for Loaders to create new Loaders.
 
 <span class="aside">
 For more information on Low-Level Modules, see the
-[Low-Level Module Best Practices] appendix.
+[Low-Level Module Best Practices][] appendix.
 </span>
 
 __Low-Level Module__: A module with the following properties:

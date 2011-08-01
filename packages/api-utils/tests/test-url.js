@@ -37,6 +37,11 @@ exports.testParseHttp = function(test) {
   test.assertEqual(info.path, "/bar");
 };
 
+exports.testParseHttpWithPort = function(test) {
+  var info = url.URL("http://foo.com:5/bar");
+  test.assertEqual(info.port, 5);
+};
+
 exports.testParseChrome = function(test) {
   var info = url.URL("chrome://global/content/blah");
   test.assertEqual(info.scheme, "chrome");
@@ -53,6 +58,20 @@ exports.testParseAbout = function(test) {
   test.assertEqual(info.port, null);
   test.assertEqual(info.userPass, null);
   test.assertEqual(info.path, "boop");
+};
+
+exports.testParseFTP = function(test) {
+  var info = url.URL("ftp://1.2.3.4/foo");
+  test.assertEqual(info.scheme, "ftp");
+  test.assertEqual(info.host, "1.2.3.4");
+  test.assertEqual(info.port, null);
+  test.assertEqual(info.userPass, null);
+  test.assertEqual(info.path, "/foo");
+};
+
+exports.testParseFTPWithUserPass = function(test) {
+  var info = url.URL("ftp://user:pass@1.2.3.4/foo");
+  test.assertEqual(info.userPass, "user:pass");
 };
 
 exports.testToFilename = function(test) {
@@ -129,10 +148,10 @@ exports.testURL = function(test) {
   test.assertEqual(b.toString(),
                    "h:foo",
                    "a URL can be initialized from another URL");
-  test.assert(a !== b,
-              "a URL initialized from another URL is not the same object");
+  test.assertNotStrictEqual(a, b,
+                            "a URL initialized from another URL is not the same object");
   test.assert(a == "h:foo",
               "toString is implicit when a URL is compared to a string via ==");
-  test.assert(a + "" === "h:foo",
-              "toString is implicit when a URL is concatenated to a string");
+  test.assertStrictEqual(a + "", "h:foo",
+                         "toString is implicit when a URL is concatenated to a string");
 };

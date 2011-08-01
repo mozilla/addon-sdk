@@ -114,6 +114,16 @@ Make a `GET` request.
 Make a `POST` request.
 @returns {Request}
 </api>
+
+<api name="complete">
+@event
+The `Request` object emits this event when the request has completed and a
+response has been received.
+
+@argument {Response}
+Listener functions are passed the response to the request as a `Response` object.
+</api>
+
 </api>
 
 

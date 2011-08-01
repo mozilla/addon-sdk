@@ -16,7 +16,7 @@ been retrieved.  If the code has no identifiable URL, this value may be `null`.
 ## packaging ##
 
 <span class="aside">
-For more information on packaging, see the [Package Specification] appendix.
+For more information on packaging, see the [Package Specification][] appendix.
 </span>
 
 The `packaging` global contains methods and metadata related to
@@ -32,10 +32,10 @@ code resides.
 
 Thus, for example, if a package contains a resource at
 `data/mydata.dat` and a module at `lib/foo.js`, the module at
-`lib/foo.js` may make the following call to retrieve an absolute url
+`lib/foo.js` may make the following call to retrieve an absolute URL
 to `data/mydata.dat`:
 
-    var mydata = packaging.getURLForData("/mydata.dat");
+    var myDataURL = packaging.getURLForData("/mydata.dat");
 
 If the calling package has no `data` directory, an exception is
 thrown.

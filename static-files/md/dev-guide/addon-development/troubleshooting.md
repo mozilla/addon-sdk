@@ -1,4 +1,4 @@
-# Troubleshoooting #
+# Troubleshooting #
 
 If you're having trouble getting the Add-on SDK up and running, don't panic!
 This page lists some starting points that might help you track down your
@@ -27,7 +27,7 @@ Check Your Firefox or XULRunner
 `cfx` searches well known locations on your system for Firefox or XULRunner.
 `cfx` may not have found an installation, or if you have multiple installations,
 `cfx` may have found the wrong one.  In those cases you need to use `cfx`'s
-`--binary` option.  See the [cfx Tool] guide for more information.
+`--binary` option.  See the [cfx Tool][] guide for more information.
 
 When you run `cfx` to test your add-on or run unit tests, it prints out the
 location of the Firefox or XULRunner binary that it found, so you can check its
@@ -70,8 +70,9 @@ Contact the Project Team and User Group
 ---------------------------------------
 
 SDK users and project team members discuss problems and proposals on the
-[project mailing list].  Someone else may have had the same problem you do, so
-try searching the list.  You're welcome to post a question, too.
+[project mailing list][jetpack-list].  Someone else may have had the same
+problem you do, so try searching the list.
+You're welcome to post a question, too.
 
 You can also chat with other SDK users in [#jetpack][#jetpack] on
 [Mozilla's IRC network][IRC].

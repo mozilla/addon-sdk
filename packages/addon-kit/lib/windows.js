@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The windows module currently supports only Firefox. In the future",
     " we would like it to support other applications, however.  Please see ",
@@ -45,18 +45,17 @@ if (!require("xul-app").is("Firefox")) {
 }
 
 const { Cc, Ci } = require('chrome'),
-      { Trait } = require('traits'),
-      { List } = require('list'),
-      { EventEmitter } = require('events'),
-      { WindowTabs, WindowTabTracker } = require('windows/tabs'),
-      { WindowDom } = require('windows/dom'),
-      { WindowLoader } = require('windows/loader'),
-      { WindowTrackerTrait } = require('window-utils'),
-      { Options } = require('tabs/tab'),
-      // { Sidebars } = require('window/sidebars');
-      { utils } = require('xpcom'),
-      apiUtils = require('api-utils'),
-      unload = require('unload'),
+      { Trait } = require('api-utils/traits'),
+      { List } = require('api-utils/list'),
+      { EventEmitter } = require('api-utils/events'),
+      { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs'),
+      { WindowDom } = require('api-utils/windows/dom'),
+      { WindowLoader } = require('api-utils/windows/loader'),
+      { WindowTrackerTrait } = require('api-utils/window-utils'),
+      { Options } = require('api-utils/tabs/tab'),
+      { utils } = require('api-utils/xpcom'),
+      apiUtils = require('api-utils/api-utils'),
+      unload = require('api-utils/unload'),
 
       WM = Cc['@mozilla.org/appshell/window-mediator;1'].
         getService(Ci.nsIWindowMediator),
@@ -83,6 +82,10 @@ const BrowserWindowTrait = Trait.compose(
      * @param {nsIWindow} window
      */
     constructor: function BrowserWindow(options) {
+      // Register this window ASAP, in order to avoid loop that would try
+      // to create this window instance over and over (see bug 648244)
+      windows.push(this);
+      
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
@@ -145,7 +148,6 @@ function BrowserWindow(options) {
       return window._public
   }
   let window = BrowserWindowTrait(options);
-  windows.push(window);
   return window._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.
@@ -177,7 +179,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       this._trackedWindows = [];
       this._initList();
       this._initTracker();
-      unload.when(this._destructor.bind(this));
+      unload.ensure(this, "_destructor");
     },
     _destructor: function _destructor() {
       this._removeAllListeners('open');

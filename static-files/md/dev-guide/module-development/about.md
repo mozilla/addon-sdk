@@ -5,8 +5,7 @@ by the SDK.
 
 The modules described here fall roughly into three categories:
 
-* fundamental utilities such as [`self`](packages/api-utils/docs/self.html),
-[`timer`](packages/api-utils/docs/timer.html),
+* fundamental utilities such as
 [`collection`](packages/api-utils/docs/collection.html) and
 [`url`](packages/api-utils/docs/url.html). Many
 add-ons are likely to want to use modules from this category.

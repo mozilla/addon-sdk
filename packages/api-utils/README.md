@@ -5,7 +5,7 @@ the basis for the Add-on SDK.
 To address issues present in traditional Extension development,
 API Utils provides mechanisms for:
 
-* writing and executing test cases, inspired by Python's [nose]
+* writing and executing test cases, inspired by Python's [nose][]
   package,
 * tracking JS objects of interest to aid in memory profiling and leak
   detection,

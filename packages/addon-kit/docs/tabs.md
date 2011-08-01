@@ -1,16 +1,31 @@
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-
 The `tabs` module provides easy access to tabs and tab-related events.
 
-Events
-------
+The module itself can be used like a basic list of all opened
+tabs across all windows. In particular, you can enumerate it:
 
-Events represent common actions and state changes for tabs and their content.
-Event listeners are passed the `Tab` object that triggered the event.
+    var tabs = require('tabs');
+    for each (var tab in tabs)
+      console.log(tab.title);
 
-For example:
+You can also access individual tabs by index:
+
+    var tabs = require('tabs');
+
+    tabs.on('ready', function () {
+      console.log('first: ' + tabs[0].title);
+      console.log('last: ' + tabs[tabs.length-1].title);
+    });
+
+You can open a new tab, specifying various properties including location:
+
+    var tabs = require("tabs");
+    tabs.open("http://www.example.com");
+
+You can register event listeners to be notified when tabs open, close, finish
+loading DOM content, or are made active or inactive:
 
     var tabs = require("tabs");
 
@@ -24,45 +39,30 @@ For example:
       console.log('tab is loaded', tab.title, tab.url)
     });
 
-All `Tab` objects and the `tabs` module itself emit the following events:
-
-### open ###
-Event emitted when a new tab is open.
-This does not mean that the content has loaded, only that the browser tab
-itself is fully visible to the user.
-
-Tab content related properties (title, thumbnail, favicon, url) will not
-be correct at this point. Use `ready` event listener to be notified when the
-page has loaded.
-
-### close ###
-Event emitted when a tab is closed. In addition, when a window is closed,
-this event will be emitted for each of the open tabs in that window.
-
-### ready ###
-Event emitted when a tab's content's DOM is ready.
-
-This is equivalent to the `DOMContentLoaded` event for the given content page.
-This event will be emitted multiple times for the same tab, if different content
-is loaded into it.
-
-At this point all the tab content related properties can be used.
-
-### activate ###
-Event emitted when an inactive tab is made active.
-
-### deactivate ###
-Event emitted when the active tab is made inactive.
-
-Tab Enumeration
----------------
-
-All tabs across all windows can be enumerated by using the `tabs` module itself
-like so:
+You can get and set various properties of tabs (but note that properties
+ relating to the tab's content, such as the URL, will not contain valid
+values until after the tab's `ready` event fires). By setting the `url`
+property you can load a new page in the tab:
 
     var tabs = require("tabs");
-    for each (var tab in tabs)
-      console.log(tab.title);
+    tabs.on('activate', function(tab) {
+      tab.url = "http://www.example.com";
+    });
+
+You can attach a [content script](dev-guide/addon-development/web-content.html)
+to the page hosted in a tab, and use that to access and manipulate the page's
+content:
+
+    var tabs = require("tabs");
+
+    tabs.on('activate', function(tab) {
+      tab.attach({
+        contentScript: 'self.postMessage(document.body.innerHTML);',
+        onMessage: function (message) {
+          console.log(message);
+        }
+      });
+    });
 
 <api name="activeTab">
 @property {Tab}
@@ -136,8 +136,8 @@ If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
 @prop [isPinned] {boolean}
-If present and true, then the new tab will be pinned as an app tab.
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+If present and true, then the new tab will be pinned as an
+[app tab](http://support.mozilla.com/en-US/kb/what-are-app-tabs).
 
 @prop [onOpen] {function}
 A callback function that will be registered for 'open' event.
@@ -186,14 +186,14 @@ This property is read-only.
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
-This property can be set to change it's relative position.
+This property can be set to change its relative position.
 </api>
 
 <api name="isPinned">
 @property {boolean}
-Whether or not tab is pinned as an [app tab].
+Whether or not tab is pinned as an [app tab][].
 This property is read-only.
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+[app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
 </api>
 
 <api name="getThumbnail">
@@ -203,8 +203,8 @@ Returns thumbnail data URI of the page currently loaded in this tab.
 
 <api name="pin">
 @method
-Pins this tab as an [app tab].
-[app tab]:http://blog.mozilla.com/faaborg/2010/07/28/app-tabs-in-firefox-4-beta-2/
+Pins this tab as an [app tab][].
+[app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
 </api>
 
 <api name="unpin">
@@ -229,19 +229,16 @@ Makes this tab active, which will bring this tab to the foreground.
 <api name="attach">
 @method
   Create a page mod and attach it to the document in the tab.
-  
+
 **Example**
 
     var tabs = require("tabs");
-    
-    var worker = tabs.activeTab.attach({
-      contentScript: 
-        'document.body.style.border = "5px solid black";' +
-        'postMessage(document.getElementById("#my-watched-element").textContent);',
-      onMessage: function (data) {
-        // data is equal to the text of my DOM element with ID "#my-watched-element"
-        
-      }
+
+    tabs.on('ready', function(tab) {
+      tab.attach({
+          contentScript:
+            'document.body.style.border = "5px solid red";'
+      });
     });
 
 @param options {object}
@@ -256,8 +253,8 @@ Makes this tab active, which will bring this tab to the foreground.
     option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
 @prop [onMessage] {function}
-    A function called when the page mod receives a message from content scripts. 
-    Listeners are passed a single argument, the message posted from the 
+    A function called when the page mod receives a message from content scripts.
+    Listeners are passed a single argument, the message posted from the
     content script.
 
 @returns {Worker}
@@ -266,4 +263,114 @@ Makes this tab active, which will bring this tab to the foreground.
 
 </api>
 
+<api name="close">
+@event
+
+This event is emitted when the tab is closed.  It's also emitted when the
+tab's window is closed.
+
+@argument {Tab}
+Listeners are passed the tab object.
+</api>
+
+<api name="ready">
+@event
+
+This event is emitted when the DOM for the tab's content is ready. It is
+equivalent to the `DOMContentLoaded` event for the given content page.
+
+A single tab will emit this event every time the DOM is loaded: so it will be
+emitted again if the tab's location changes or the content is reloaded.
+
+After this event has been emitted, all properties relating to the tab's
+content can be used.
+
+@argument {Tab}
+Listeners are passed the tab object.
+</api>
+
+<api name="activate">
+@event
+
+This event is emitted when the tab is made active.
+
+@argument {Tab}
+Listeners are passed the tab object.
+</api>
+
+<api name="deactivate">
+@event
+
+This event is emitted when the tab is made inactive.
+
+@argument {Tab}
+Listeners are passed the tab object.
+</api>
+
+</api>
+
+<api name="open">
+@event
+
+This event is emitted when a new tab is opened. This does not mean that
+the content has loaded, only that the browser tab itself is fully visible
+to the user.
+
+Properties relating to the tab's content (for example: `title`, `favicon`,
+and `url`) will not be correct at this point. If you need to access these
+properties, listen for the `ready` event:
+
+    var tabs = require("tabs");
+    tabs.on('open', function(tab){
+      tab.on('ready', function(tab){
+        console.log(tab.url);
+      });
+    });
+
+@argument {Tab}
+Listeners are passed the tab object that just opened.
+</api>
+
+<api name="close">
+@event
+
+This event is emitted when a tab is closed. When a window is closed
+this event will be emitted for each of the open tabs in that window.
+
+@argument {Tab}
+Listeners are passed the tab object that has closed.
+</api>
+
+<api name="ready">
+@event
+
+This event is emitted when the DOM for a tab's content is ready.
+It is equivalent to the `DOMContentLoaded` event for the given content page.
+
+A single tab will emit this event every time the DOM is loaded: so it will be
+emitted again if the tab's location changes or the content is reloaded.
+
+After this event has been emitted, all properties relating to the tab's
+content can be used.
+
+@argument {Tab}
+Listeners are passed the tab object that has loaded.
+</api>
+
+<api name="activate">
+@event
+
+This event is emitted when an inactive tab is made active.
+
+@argument {Tab}
+Listeners are passed the tab object that has become active.
+</api>
+
+<api name="deactivate">
+@event
+
+This event is emitted when the active tab is made inactive.
+
+@argument {Tab}
+Listeners are passed the tab object that has become inactive.
 </api>

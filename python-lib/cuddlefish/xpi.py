@@ -4,7 +4,7 @@ import zipfile
 import simplejson as json
 
 def build_xpi(template_root_dir, manifest, xpi_name,
-              harness_options):
+              harness_options, limit_to=None):
     zf = zipfile.ZipFile(xpi_name, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
@@ -19,7 +19,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         zf.write(str(harness_options['icon64']), 'icon64.png')
         del harness_options['icon64']
 
-    IGNORED_FILES = [".hgignore", "install.rdf", 
+    IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
                      "application.ini", xpi_name]
     IGNORED_FILE_SUFFIXES = ["~"]
     IGNORED_DIRS = [".svn", ".hg", ".git"]
@@ -56,6 +56,8 @@ def build_xpi(template_root_dir, manifest, xpi_name,
             goodfiles = list(filter_filenames(filenames))
             for filename in goodfiles:
                 abspath = os.path.join(dirpath, filename)
+                if limit_to is not None and abspath not in limit_to:
+                    continue
                 arcpath = abspath[len(abs_dirname)+1:]
                 arcpath = os.path.join(base_arcpath, arcpath)
                 zf.write(str(abspath), str(arcpath))

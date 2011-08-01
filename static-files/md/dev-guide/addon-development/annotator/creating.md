@@ -63,14 +63,13 @@ for the page, the ID attribute value, and the text content of the page element.
       $(matchedElement).bind('click.annotator', function(event) {
         event.stopPropagation();
         event.preventDefault();
-        postMessage({
-          kind: 'show',
-          anchor: [
+        self.port.emit('show',
+          [
             document.location.toString(),
             $(ancestor).attr("id"),
             $(matchedElement).text()
           ]
-       });
+       );
       });
     });
 
@@ -80,19 +79,6 @@ Conversely, the add-on resets the matched element on
     $('*').mouseout(function() {
       resetMatchedElement();
     });
-
-<span class="aside"> Eventually,
-`page-mod` should have its own `unload` event, but this is the workaround for
-now.</span>
-
-Finally, the selector listens for the window's `unload` event and sends the
-main add-on code a message called `detach` when unload occurs. This is so the
-main add-on can remove the worker associated with this page.
-
-    window.addEventListener('unload', function() {
-        postMessage({kind: 'detach'});
-      },
-      false);
 
 Save this code in a new file called `selector.js` in your add-on's `data`
 directory.
@@ -112,19 +98,13 @@ function:
       contentScriptFile: [data.url('jquery-1.4.2.min.js'),
                           data.url('selector.js')],
       onAttach: function(worker) {
-        console.log('attach');
         worker.postMessage(annotatorIsOn);
         selectors.push(worker);
-        worker.on('message', function(message) {
-        switch(message.kind) {
-          case 'show':
-            console.log(message.kind);
-            console.log(message.anchor);
-            break;
-          case 'detach':
-            detachWorker(this, selectors);
-            break;
-          }
+        worker.port.on('show', function(data) {
+          console.log(data);
+        });
+        worker.on('detach', function () {
+          detachWorker(this, selectors);
         });
       }
     });
@@ -266,9 +246,10 @@ text area to the add-on.
 Here's the code:
 
     var textArea = document.getElementById('annotation-box');
+
     textArea.onkeyup = function(event) {
       if (event.keyCode == 13) {
-        postMessage(textArea.value);
+        self.postMessage(textArea.value);
         textArea.value = '';
       }
     };
@@ -278,6 +259,7 @@ Here's the code:
       textArea.value = '';
       textArea.focus();
     });
+
 
 Save this inside `data/editor` as `annotation-editor.js`.
 
@@ -296,7 +278,6 @@ Then add the following code to the `main` function:
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
-      contentScriptWhen: 'ready',
       onMessage: function(annotationText) {
         if (annotationText) {
           console.log(this.annotationAnchor);
@@ -327,16 +308,12 @@ assign the content of the message to the panel using a new property
       onAttach: function(worker) {
         worker.postMessage(annotatorIsOn);
         selectors.push(worker);
-        worker.on('message', function(message) {
-          switch(message.kind) {
-            case 'show':
-              annotationEditor.annotationAnchor = message.anchor;
-              annotationEditor.show();
-              break;
-            case 'detach':
-              detachWorker(this, selectors);
-              break;
-          }
+        worker.port.on('show', function(data) {
+          annotationEditor.annotationAnchor = data;
+          annotationEditor.show();
+        });
+        worker.on('detach', function () {
+          detachWorker(this, selectors);
         });
       }
     });

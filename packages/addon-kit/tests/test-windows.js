@@ -66,6 +66,37 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
+exports.testAutomaticDestroy = function(test) {
+    
+  test.waitUntilDone();
+  let windows = require("windows").browserWindows;
+
+  // Create a second windows instance that we will unload
+  let called = false;
+  let loader = test.makeSandboxedLoader();
+  let windows2 = loader.require("windows").browserWindows;
+  windows2.on("open", function() {
+    called = true;
+  });
+  
+  loader.unload();
+  
+  // Fire a windows event and check that this unloaded instance is inactive
+  windows.open({
+    url: "data:text/html,foo",
+    onOpen: function(window) {
+      require("timer").setTimeout(function () {
+        test.assert(!called, 
+          "Unloaded windows instance is destroyed and inactive");
+        window.close(function () {
+          test.done();
+        });
+      });
+    }
+  });
+  
+};
+
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
   let windows = require("windows").browserWindows;
@@ -213,12 +244,19 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(nonBrowserWindow);
     },
     function() {
+      /**
+       * Bug 614079: This test fails intermittently on some specific linux 
+       *             environnements, without being able to reproduce it in same
+       *             distribution with same window manager.
+       *             Disable it until being able to reproduce it easily.
+      
       // On linux, focus is not consistent, so we can't be sure
       // what window will be on top.
       // Here when we focus "non-browser" window, 
       // Any Browser window may be selected as "active". 
       test.assert(windows.activeWindow == window2 || windows.activeWindow == window3, 
         "Non-browser windows aren't handled by this module");
+      */
       window2.activate();
       continueAfterFocus(rawWindow2);
     },

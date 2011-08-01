@@ -50,7 +50,7 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertEqual">
 @method
-  Simply ensures that `a == b` without recursing into `a` or `b`.
+  Ensures that `a == b` without recursing into `a` or `b`.
 
 @param a {value}
   A value.
@@ -65,7 +65,7 @@ Each function which represents a test case is passed a single argument
 
 <api name="assertNotEqual">
 @method
-  Simply ensures that `a != b` without recursing into `a` or `b`.
+  Ensures that `a != b` without recursing into `a` or `b`.
 
 @param a {value}
   A value.
@@ -139,6 +139,70 @@ Each function which represents a test case is passed a single argument
 </api>
 
 </api>
+
+
+<api name="waitUntil">
+@method
+  Ensures that `a` returns a truthy value within a reasonable amount of time.
+
+@param a {function}
+  Function that returns the value to verify.
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
+
+
+<api name="waitUntilEqual">
+@method
+  Ensures that `a == b` returned values or values without without recursing
+  into `a` or `b`.
+
+@param a {Function}
+  A value, or a function that returns a value.
+
+@param b {value}
+  Another value, or a function that returns value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
+
+<api name="waitUntilNotEqual">
+@method
+  Ensures that `a != b` without recursing into `a` or `b`.
+
+@param a {Function}
+  A value, or a function that returns a value.
+
+@param b {value}
+  Another value, or a function that returns another value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
+
+
+<api name="waitUntilMatches">
+@method
+  Ensures that the given string matches the given regular expression.
+  If it does, marks the test as passing, otherwise marks the test as
+  failing.
+
+@param string {Function}
+  A function that returns the string to test.
+
+@param regexp {regexp}
+  The string should match this regular expression.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
+
+
 
 <api name="findAndRunTests">
 @function

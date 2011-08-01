@@ -36,13 +36,13 @@
 "use strict";
 
 const { Ci } = require('chrome');
-const { Trait } = require("traits");
-const { EventEmitter } = require("events");
-const { validateOptions } = require("api-utils");
-const { Enqueued } = require("utils/function");
-const { EVENTS } = require("tabs/events");
-const { getThumbnailURIForWindow } = require("utils/thumbnail");
-const { getFaviconURIForLocation } = require("utils/data");
+const { Trait } = require("../traits");
+const { EventEmitter } = require("../events");
+const { validateOptions } = require("../api-utils");
+const { Enqueued } = require("../utils/function");
+const { EVENTS } = require("./events");
+const { getThumbnailURIForWindow } = require("../utils/thumbnail");
+const { getFaviconURIForLocation } = require("../utils/data");
 
 
 
@@ -65,7 +65,6 @@ const TabTrait = Trait.compose(EventEmitter, {
   window: null,
   constructor: function Tab(options) {
     this._onReady = this._onReady.bind(this);
-    this.on('error', this._onError = this._onError.bind(this));
     this._tab = options.tab;
     let window = this.window = options.window;
     // Setting event listener if was passed.
@@ -87,10 +86,6 @@ const TabTrait = Trait.compose(EventEmitter, {
     // is used as constructor that collects all the instances and makes sure
     // that they more then one wrapper is not created per tab.
     return this;
-  },
-  _onError: function _onError(error) {
-    if (1 <= this._listeners('error').length)
-      console.exception(error);
   },
   destroy: function destroy() {
     for each (let type in EVENTS)
@@ -193,9 +188,13 @@ const TabTrait = Trait.compose(EventEmitter, {
    * @type {Worker}
    */
   attach: function attach(options) {
-    let { Worker } = require("content/worker");
+    let { Worker } = require("../content/worker");
     options.window = this._contentWindow.wrappedJSObject;
-    return Worker(options);
+    let worker = Worker(options);
+    worker.once("detach", function detach() {
+      worker.destroy();
+    });
+    return worker;
   },
   
   /**
@@ -213,7 +212,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   close: function close(callback) {
     if (callback)
-      this.on(EVENTS.close.name, callback);
+      this.once(EVENTS.close.name, callback);
     this._window.gBrowser.removeTab(this._tab);
   }
 });
@@ -262,12 +261,7 @@ exports.getTabForWindow = function (win) {
   // Get top window object, in case we are in a content iframe
   let topContentWindow;
   try {
-    topContentWindow= win.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIWebNavigation)
-                            .QueryInterface(Ci.nsIDocShellTreeItem)
-                            .treeOwner
-                            .QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDOMWindow);
+    topContentWindow = win.top;
   } catch(e) {
     // It may throw if win is not a valid content window
     return null;
@@ -285,7 +279,8 @@ exports.getTabForWindow = function (win) {
     let w = topWindow.gBrowser.browsers[i].contentWindow;
     if (getWindowID(w) == topWindowId) {
       return Tab({
-        window: require("windows").BrowserWindow({window:topContentWindow}),
+        // TODO: api-utils should not depend on addon-kit!
+        window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
         tab: topWindow.gBrowser.tabs[i]
       });
     }

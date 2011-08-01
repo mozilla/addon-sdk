@@ -48,7 +48,6 @@ presses the return key in the editor, we create and store the new annotation:
       height: 220,
       contentURL: data.url('editor/annotation-editor.html'),
       contentScriptFile: data.url('editor/annotation-editor.js'),
-      contentScriptWhen: 'ready',
       onMessage: function(annotationText) {
         if (annotationText)
           handleNewAnnotation(annotationText, this.annotationAnchor);
@@ -77,7 +76,7 @@ These three files can all go in a new subdirectory of `data` which we will call 
 
 Here's the annotation list's content script:
 
-    onMessage = function onMessage(storedAnnotations) {
+    self.on("message", function onMessage(storedAnnotations) {
       var annotationList = $('#annotation-list');
       annotationList.empty();
       storedAnnotations.forEach(
@@ -88,7 +87,7 @@ Here's the annotation list's content script:
           annotationHtml.find('.url').bind('click', function(event) {
             event.stopPropagation();
             event.preventDefault();
-            postMessage(storedAnnotation.url);
+            self.postMessage(storedAnnotation.url);
           });
           annotationHtml.find('.selection-text')
                         .text(storedAnnotation.anchorText);
@@ -96,7 +95,7 @@ Here's the annotation list's content script:
                         .text(storedAnnotation.annotationText);
           annotationList.append(annotationHtml);
         });
-    };
+    });
 
 It builds the DOM for the panel from the array of annotations it is given.
 
@@ -210,22 +209,23 @@ panel sends us a URL we use the `tabs` module to open it in a new tab.
 Finally we need to connect this to the widget's `right-click` message:
 
     var widget = widgets.Widget({
+      id: 'toggle-switch',
       label: 'Annotator',
       contentURL: data.url('widget/pencil-off.png'),
       contentScriptWhen: 'ready',
-      contentScriptFile: data.url('widget/widget.js'),
-      onMessage: function(message) {
-        if (message == 'left-click') {
-          console.log('activate/deactivate');
-          widget.contentURL = toggleActivation() ?
-                    data.url('widget/pencil-on.png') :
-                    data.url('widget/pencil-off.png');
-        }
-        else if (message == 'right-click') {
-          console.log('show annotation list');
-          annotationList.show();
-        }
-      }
+      contentScriptFile: data.url('widget/widget.js')
+    });
+
+    widget.port.on('left-click', function() {
+      console.log('activate/deactivate');
+      widget.contentURL = toggleActivation() ?
+                data.url('widget/pencil-on.png') :
+                data.url('widget/pencil-off.png');
+    });
+
+    widget.port.on('right-click', function() {
+        console.log('show annotation list');
+        annotationList.show();
     });
 
 This time execute `cfx xpi` to build the XPI for the add-on, and install it in
@@ -319,16 +319,12 @@ function instead:
       onAttach: function(worker) {
         worker.postMessage(canEnterAnnotations());
         selectors.push(worker);
-        worker.on('message', function(message) {
-          switch(message.kind) {
-            case 'show':
-              annotationEditor.annotationAnchor = message.anchor;
-              annotationEditor.show();
-              break;
-            case 'detach':
-              detachWorker(this, selectors);
-              break;
-          }
+        worker.port.on('show', function(data) {
+          annotationEditor.annotationAnchor = data;
+          annotationEditor.show();
+        });
+        worker.on('detach', function () {
+          detachWorker(this, selectors);
         });
       }
     });

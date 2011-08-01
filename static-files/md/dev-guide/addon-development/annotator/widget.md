@@ -33,10 +33,10 @@ posts the corresponding message to the add-on code:
 
     this.addEventListener('click', function(event) {
       if(event.button == 0 && event.shiftKey == false)
-        postMessage('left-click');
+        self.port.emit('left-click');
 
       if(event.button == 2 || (event.button == 0 && event.shiftKey == true))
-        postMessage('right-click');
+        self.port.emit('right-click');
         event.preventDefault();
     }, true);
 
@@ -68,21 +68,22 @@ Now in the `lib` directory open `main.js` and replace its contents with this:
     exports.main = function() {
 
       var widget = widgets.Widget({
+        id: 'toggle-switch',
         label: 'Annotator',
         contentURL: data.url('widget/pencil-off.png'),
         contentScriptWhen: 'ready',
-        contentScriptFile: data.url('widget/widget.js'),
-        onMessage: function(message) {
-          if (message == 'left-click') {
-            console.log('activate/deactivate');
-            widget.contentURL = toggleActivation() ?
-                      data.url('widget/pencil-on.png') :
-                      data.url('widget/pencil-off.png');
-            }
-          else if (message == 'right-click') {
-            console.log('show annotation list');
-          }
-        }
+        contentScriptFile: data.url('widget/widget.js')
+      });
+
+      widget.port.on('left-click', function() {
+        console.log('activate/deactivate');
+        widget.contentURL = toggleActivation() ?
+                  data.url('widget/pencil-on.png') :
+                  data.url('widget/pencil-off.png');
+      });
+
+      widget.port.on('right-click', function() {
+          console.log('show annotation list');
       });
     }
 

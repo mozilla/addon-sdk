@@ -8,7 +8,8 @@
         "Myk Melez (http://melez.com/) <myk@mozilla.org>",
         "Daniel Aquino <mr.danielaquino@gmail.com>"
     ],
-    "version": "1.0b4pre",
+    "version": "1.0b6pre",
     "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+    "dependencies": ["addon-kit"],
     "loader": "lib/cuddlefish.js"
 }

@@ -21,6 +21,19 @@ SDK modules it uses.
 
 ![CommonJS modules](media/commonjs-modules.jpg)
 
+The SDK
+[freezes](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/freeze)
+the `exports` object returned by `require`. So a if you import a module using
+`require`, you can't change the properties of the object returned:
+
+    self = require("self");
+    // Attempting to define a new property
+    // will fail, or throw an exception in strict mode
+    self.foo = 1;
+    // Attempting to modify an existing property
+    // will fail, or throw an exception in strict mode
+    self.data = "foo";
+
 ## CommonJS Packages ##
 
 A CommonJS **package** is a structure which can wrap a collection of related
@@ -30,8 +43,6 @@ Minimally, a package must include a package descriptor file named
 `package.json`: this file contains information about the package such as a short
 description, the authors, and the other packages it depends on.
 
-<span class="aside">This isn't quite true until
-[bug 614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed.</span>
 Packages must also follow a particular directory structure, which is the
 structure `cfx init` created for your add-on.
 

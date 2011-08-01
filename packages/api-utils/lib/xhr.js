@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 
 // ## Implementation Notes ##
@@ -173,7 +175,7 @@ DELEGATED_METHODS.forEach(
     };
   });
 
-require("unload").when(
+require("./unload").when(
   function() {
     requests.slice().forEach(function(request) { request._unload(); });
   });

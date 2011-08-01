@@ -25,13 +25,13 @@ something like this:
 <pre>
   * lib directory created
   * data directory created
-  * tests directory created
-  * docs directory created
+  * test directory created
+  * doc directory created
   * README.md written
   * package.json written
-  * tests/test-main.js written
+  * test/test-main.js written
   * lib/main.js written
-  * docs/main.md written
+  * doc/main.md written
 
   Your sample add-on is now ready for testing:
       try "cfx test" and then "cfx run". Have fun!"
@@ -39,21 +39,25 @@ something like this:
 
 First, `cfx init` creates the directory structure your add-on needs:
 
-* `/data` contains resources such as icons or strings. You can access the
-content of the `data` subdirectory from within your add-on's code using the
-Add-on SDK's [`self`](packages/api-utils/docs/self.html) module.
+<span class="aside">
+When you create add-ons using the SDK, you might create two different sorts of
+scripts.
+All add-ons will create at least one script under `/lib`. Some add-ons
+will also create "content scripts" stored under `/data`.
+For more information
+on the difference between these two sorts of files, see
+[Two Types of Scripts](dev-guide/addon-development/two-types-of-scripts.html).
+</span>
 
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/docs`.*</span>
+* `/data` contains resources such as icons or HTML files, as well as any
+[content scripts](dev-guide/addon-development/web-content.html) included
+with your add-on. You can access the
+content of the `data` subdirectory from within your add-on's code using the
+Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
 
 * `/doc` contains any documentation for your add-on.
 
 * `/lib` contains the JavaScript modules implementing your add-on.
-
-<span class="aside">*Note that until bug
-[614712](https://bugzilla.mozilla.org/show_bug.cgi?id=614712) is fixed, cfx
-expects this to be `/tests`.*</span>
 
 * `/test` contains unit test code.
 
@@ -72,8 +76,8 @@ something like this:
   }
 </pre>
 
-Finally, `cfx init` creates some example files under `docs`, `lib`, and
-`tests`: we will replace those.
+Finally, `cfx init` creates some example files under `doc`, `lib`, and
+`test`: we will replace those.
 
 ## Adding Your Code ##
 
@@ -99,18 +103,18 @@ contents with the following:
 
         // When this item is clicked, post a message to the item with the
         // selected text and current URL.
-        contentScript: 'on("click", function () {' +
+        contentScript: 'self.on("click", function () {' +
                        '  var text = window.getSelection().toString();' +
-                       '  postMessage(text);' +
+                       '  self.postMessage(text);' +
                        '});',
 
         // When we receive the message, call the Google Translate API with the
         // selected text and replace it with the translation.
         onMessage: function (text) {
-          if (text.length == 0) {
+          if (text.length === 0) {
             throw ("Text to translate must not be empty");
           }
-          console.log("input: " + text)
+          console.log("input: " + text);
           var req = request.Request({
             url: "http://ajax.googleapis.com/ajax/services/language/translate",
             content: {
@@ -120,7 +124,7 @@ contents with the following:
             },
             onComplete: function (response) {
               translated = response.json.responseData.translatedText;
-              console.log("output: " + translated)
+              console.log("output: " + translated);
               selection.text = translated;
             }
           });
@@ -201,10 +205,18 @@ for anything, and only includes them to illustrate their use.
 ### Logging ###
 
 Note the calls to `console.log()` here. `console` is a global object accessible
-by any module and is very useful for debugging. `console.log(message)` writes
-`message` to the console. For more information on the globals available to your
-code see the [Globals](dev-guide/addon-development/globals.html) reference
-section.
+by any module, which you can use to write error, warning, or informational
+messages.
+
+For an extension which has been packaged as an XPI file and installed into
+Firefox, the messages are sent to Firefox's
+[Error Console](https://developer.mozilla.org/en/Error_Console). If you are
+launching Firefox from the command line using `cfx`, as you will be for
+development and debugging, then the messages are sent to the command shell
+from which you launched Firefox.
+
+For more information on the `console` object see its
+[documentation page](dev-guide/addon-development/console.html).
 
 ## Running It ##
 
@@ -217,7 +229,7 @@ To run your program, navigate to the `translator` directory and type:
 The first time you do this, you'll see a message like this:
 
 <pre>
-  No 'id' in package.json: creating a new keypair for you.
+  No 'id' in package.json: creating a new ID for you.
   package.json modified: please re-run 'cfx run'
 </pre>
 
@@ -245,7 +257,7 @@ translation:
 
 ![translator context-menu](media/screenshots/translator/translated-osx.png)
 
-You will also see output like this appear in the console:
+You will also see output like this appear in your command shell:
 
 <pre>
   info: input: Le projet Mozilla est une communauté mondiale de personnes
@@ -261,11 +273,11 @@ You will also see output like this appear in the console:
   We are best known for creating the Mozilla Firefox Web browser.
 </pre>
 
-## Packaging It ##
+## Preparing Your Add-on for Deployment ##
 
-Your program is packaged like any other extension for a Mozilla-based
-application, as a XPI file. The Add-on SDK simplifies the packaging
-process by generating this file for you.
+Once you have finished testing your add-on you can package it for deployment
+like any other Firefox add-on, as a XPI file. The Add-on SDK simplifies the
+packaging process by generating this file for you.
 
 To package your program as a XPI, navigate to the root of your package
 directory in your shell and run `cfx xpi`. You should see a message:
