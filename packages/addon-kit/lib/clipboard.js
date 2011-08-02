@@ -130,7 +130,7 @@ exports.set = function(aData, aDataType) {
     case "text/html":
       // add text/html flavor
       let (str = Cc["@mozilla.org/supports-string;1"].
-                createInstance(Ci.nsISupportsString))
+                 createInstance(Ci.nsISupportsString))
       {
         str.data = options.data;
         xferable.addDataFlavor(flavor);
@@ -139,9 +139,9 @@ exports.set = function(aData, aDataType) {
 
       // add a text/unicode flavor (html converted to plain text)
       let (str = Cc["@mozilla.org/supports-string;1"].
-                createInstance(Ci.nsISupportsString),
-          converter = Cc["@mozilla.org/feed-textconstruct;1"].
-                      createInstance(Ci.nsIFeedTextConstruct))
+                 createInstance(Ci.nsISupportsString),
+           converter = Cc["@mozilla.org/feed-textconstruct;1"].
+                       createInstance(Ci.nsIFeedTextConstruct))
       {
         converter.type = "html";
         converter.text = options.data;
