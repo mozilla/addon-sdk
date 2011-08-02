@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
  *   Dietrich Ayala <dietrich@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -126,15 +127,18 @@ exports.set = function(aData, aDataType) {
 
   switch (flavor) {
     case "text/html":
+      var len = options.data.length * 2;
       var str = Cc["@mozilla.org/supports-string;1"].
                 createInstance(Ci.nsISupportsString);
       str.data = options.data;
       xferable.addDataFlavor(flavor);
-      xferable.setTransferData(flavor, str, options.data.length * 2);
+      xferable.setTransferData(flavor, str, len);
+      // add a text/unicode flavor for HTML text that returns a plaintextified
+      // representation of the HTML.
+      xferable.addDataFlavor("text/unicode");
+      xferable.setTransferData("text/unicode", str, len);
       break;
     // TODO: images!
-    // TODO: add a text/unicode flavor for HTML text that
-    // returns a plaintextified representation of the HTML.
     default:
       throw new Error("Unable to handle the flavor " + flavor + ".");
   }
