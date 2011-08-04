@@ -21,6 +21,19 @@ SDK modules it uses.
 
 ![CommonJS modules](media/commonjs-modules.jpg)
 
+The SDK
+[freezes](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/freeze)
+the `exports` object returned by `require`. So a if you import a module using
+`require`, you can't change the properties of the object returned:
+
+    self = require("self");
+    // Attempting to define a new property
+    // will fail, or throw an exception in strict mode
+    self.foo = 1;
+    // Attempting to modify an existing property
+    // will fail, or throw an exception in strict mode
+    self.data = "foo";
+
 ## CommonJS Packages ##
 
 A CommonJS **package** is a structure which can wrap a collection of related

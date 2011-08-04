@@ -6,7 +6,7 @@ exports["test unload window observer"] = function(assert, done) {
 
   let utils = loader.require("api-utils/window-utils");
   let { isBrowser, activeBrowserWindow: activeWindow } = utils;
-  let observer = loader.require("api-utils/windows/observer")
+  let observer = loader.require("api-utils/windows/observer").observer;
   let opened = 0;
   let closed = 0;
 

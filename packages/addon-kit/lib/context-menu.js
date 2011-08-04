@@ -105,7 +105,6 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLEmbedElement,
   Ci.nsIDOMHTMLImageElement,
   Ci.nsIDOMHTMLInputElement,
-  Ci.nsIDOMHTMLIsIndexElement,
   Ci.nsIDOMHTMLMapElement,
   Ci.nsIDOMHTMLMediaElement,
   Ci.nsIDOMHTMLMenuElement,
@@ -116,7 +115,9 @@ const NON_PAGE_CONTEXT_ELTS = [
 ];
 
 // This is used to access private properties of Item and Menu instances.
-const PRIVATE_PROPS_KEY = Math.random().toString();
+const PRIVATE_PROPS_KEY = {
+  valueOf: function valueOf() "private properties key"
+};
 
 // Used as an internal ID for items and as part of a public ID for item DOM
 // elements.  Careful: This number is not necessarily unique to any one instance
@@ -148,7 +149,7 @@ exports.Separator = Separator;
 // Item, Menu, and Separator are composed of this trait.
 const ItemBaseTrait = Trait({
 
-  initBase: function IBT_initBase(opts, optRules, optsToNotSet) {
+  _initBase: function IBT__initBase(opts, optRules, optsToNotSet) {
     this._optRules = optRules;
     for (let optName in optRules)
       if (optsToNotSet.indexOf(optName) < 0)
@@ -211,9 +212,9 @@ const ItemBaseTrait = Trait({
 // Item and Menu are composed of this trait.
 const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 
-  initActiveItem: function AIT_initActiveItem(opts, optRules, optsToNotSet) {
-    this.initBase(opts, optRules,
-                  optsToNotSet.concat(["onMessage", "context"]));
+  _initActiveItem: function AIT__initActiveItem(opts, optRules, optsToNotSet) {
+    this._initBase(opts, optRules,
+                   optsToNotSet.concat(["onMessage", "context"]));
 
     if ("onMessage" in opts)
       this.on("message", opts.onMessage);
@@ -260,6 +261,17 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
     return this._label;
   },
 
+  get image() {
+    return this._image;
+  },
+
+  set image(val) {
+    this._image = validateOpt(val, this._optRules.image);
+    if (this._isInited)
+      browserManager.setItemImage(this, this._image);
+    return this._image;
+  },
+
   get contentScript() {
     return this._contentScript;
   },
@@ -283,8 +295,8 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 // Item is composed of this trait.
 const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  initItem: function IT_initItem(opts, optRules) {
-    this.initActiveItem(opts, optRules, []);
+  _initItem: function IT__initItem(opts, optRules) {
+    this._initActiveItem(opts, optRules, []);
   },
 
   get data() {
@@ -312,7 +324,7 @@ function Item(options) {
   };
 
   let item = ItemTrait.create(Item.prototype);
-  item.initItem(options, optRules);
+  item._initItem(options, optRules);
 
   item._public = Cortex(item);
   browserManager.registerItem(item._public);
@@ -324,9 +336,9 @@ function Item(options) {
 // Menu is composed of this trait.
 const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  initMenu: function MT_initMenu(opts, optRules, optsToNotSet) {
+  _initMenu: function MT__initMenu(opts, optRules, optsToNotSet) {
     this._items = [];
-    this.initActiveItem(opts, optRules, optsToNotSet);
+    this._initActiveItem(opts, optRules, optsToNotSet);
   },
 
   get items() {
@@ -386,10 +398,10 @@ function Menu(options) {
 
   let menu = MenuTrait.create(Menu.prototype);
 
-  // We can't rely on initBase to set the `items` property, because the menu
+  // We can't rely on _initBase to set the `items` property, because the menu
   // needs to be registered with and added to the browserManager before any
   // child items are added to it.
-  menu.initMenu(options, optRules, ["items"]);
+  menu._initMenu(options, optRules, ["items"]);
 
   menu._public = Cortex(menu);
   browserManager.registerItem(menu._public);
@@ -402,7 +414,7 @@ function Menu(options) {
 // The exported Separator constructor.
 function Separator() {
   let sep = ItemBaseTrait.create(Separator.prototype);
-  sep.initBase({}, {}, []);
+  sep._initBase({}, {}, []);
 
   sep._public = Cortex(sep);
   browserManager.registerItem(sep._public);
@@ -545,6 +557,10 @@ function optionsRules() {
       is: ["string"],
       ok: function (v) !!v,
       msg: "The item must have a non-empty string label."
+    },
+    image: {
+      map: function (v) v.toString(),
+      is: ["string", "undefined", "null"]
     },
     contentScript: {
       is: ["string", "array", "undefined"],
@@ -815,6 +831,10 @@ let browserManager = {
     this.browserWins.forEach(function (w) w.setItemLabel(item, label));
   },
 
+  setItemImage: function BM_setItemImage(item, imageURL) {
+    this.browserWins.forEach(function (w) w.setItemImage(item, imageURL));
+  },
+
   setItemData: function BM_setItemData(item, data) {
     this.browserWins.forEach(function (w) w.setItemData(item, data));
   },
@@ -1029,19 +1049,44 @@ BrowserWindow.prototype = {
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let itemID = privateItem(item)._id;
-    let { domElt, overflowDOMElt } = this.items[itemID];
-    domElt.setAttribute("label", label);
-    overflowDOMElt.setAttribute("label", label);
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    this._setDOMEltLabel(domElt, label);
+    this._setDOMEltLabel(overflowDOMElt, label);
     if (!item.parentMenu)
       this.contextMenuPopup.itemLabelDidChange(item);
   },
 
+  _setDOMEltLabel: function BW__setDOMEltLabel(domElt, label) {
+    domElt.setAttribute("label", label);
+  },
+
+  setItemImage: function BW_setItemImage(item, imageURL) {
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    let isMenu = item instanceof Menu;
+    this._setDOMEltImage(domElt, imageURL, isMenu);
+    this._setDOMEltImage(overflowDOMElt, imageURL, isMenu);
+  },
+
+  _setDOMEltImage: function BW__setDOMEltImage(domElt, imageURL, isMenu) {
+    if (!imageURL) {
+      domElt.removeAttribute("image");
+      domElt.classList.remove("menu-iconic");
+      domElt.classList.remove("menuitem-iconic");
+    }
+    else {
+      domElt.setAttribute("image", imageURL);
+      domElt.classList.add(isMenu ? "menu-iconic" : "menuitem-iconic");
+    }
+  },
+
   setItemData: function BW_setItemData(item, data) {
-    let itemID = privateItem(item)._id;
-    let { domElt, overflowDOMElt } = this.items[itemID];
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    this._setDOMEltData(domElt, data);
+    this._setDOMEltData(overflowDOMElt, data);
+  },
+
+  _setDOMEltData: function BW__setDOMEltData(domElt, data) {
     domElt.setAttribute("value", data);
-    overflowDOMElt.setAttribute("value", data);
   },
 
   // The context specified for a top-level item may not match exactly the real
@@ -1129,18 +1174,20 @@ BrowserWindow.prototype = {
       throw new Error("Internal error: can't make element, unknown item type");
 
     elt.id = domEltIDFromItemID(privateItem(item)._id, isInOverflowSubtree);
-    elt.className = ITEM_CLASS;
+    elt.classList.add(ITEM_CLASS);
     return elt;
   },
 
   // Returns a new xul:menu representing the menu.
   _makeMenu: function BW__makeMenu(menu, isInOverflowSubtree) {
     let menuElt = this.doc.createElement("menu");
-    menuElt.setAttribute("label", menu.label);
-    let popupDOMElt = this.doc.createElement("menupopup");
-    menuElt.appendChild(popupDOMElt);
+    this._setDOMEltLabel(menuElt, menu.label);
+    if (menu.image)
+      this._setDOMEltImage(menuElt, menu.image, true);
+    let popupElt = this.doc.createElement("menupopup");
+    menuElt.appendChild(popupElt);
 
-    let popup = new Popup(popupDOMElt, this, isInOverflowSubtree);
+    let popup = new Popup(popupElt, this, isInOverflowSubtree);
     let props = this.items[privateItem(menu)._id];
     if (isInOverflowSubtree)
       props.overflowPopup = popup;
@@ -1153,9 +1200,11 @@ BrowserWindow.prototype = {
   // Returns a new xul:menuitem representing the item.
   _makeMenuitem: function BW__makeMenuitem(item) {
     let elt = this.doc.createElement("menuitem");
-    elt.setAttribute("label", item.label);
+    this._setDOMEltLabel(elt, item.label);
+    if (item.image)
+      this._setDOMEltImage(elt, item.image, false);
     if (item.data)
-      elt.setAttribute("value", item.data);
+      this._setDOMEltData(elt, item.data);
     return elt;
   },
 

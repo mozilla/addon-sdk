@@ -634,6 +634,7 @@ OTHER_CHROME = re.compile(r"Components\.[a-zA-Z]")
 def scan_for_bad_chrome(fn, lines, stderr):
     problems = False
     old_chrome = set() # i.e. "Cc" when we see "Components.classes"
+    old_chrome_lines = [] # list of (lineno, line.strip()) tuples
     for lineno,line in enumerate(lines):
         # note: this scanner is not obligated to spot all possible forms of
         # chrome access. The scanner is detecting voluntary requests for
@@ -654,13 +655,32 @@ def scan_for_bad_chrome(fn, lines, stderr):
             if OTHER_CHROME.search(line):
                 old_chrome_in_this_line.add("components")
         old_chrome.update(old_chrome_in_this_line)
+        if old_chrome_in_this_line:
+            old_chrome_lines.append( (lineno+1, line) )
 
     if old_chrome:
-        print >>stderr, ""
-        print >>stderr, "To use chrome authority, you need a line like this:"
-        needs = ",".join(sorted(old_chrome))
-        print >>stderr, '  const {%s} = require("chrome");' % needs
-        print >>stderr, "because things like 'Components.classes' will not be available"
+        print >>stderr, """
+The following lines from file %(fn)s:
+%(lines)s
+use 'Components' to access chrome authority. To do so, you need to add a
+line somewhat like the following:
+
+  const {%(needs)s} = require("chrome");
+
+Then you can use 'Components' as well as any shortcuts to its properties
+that you import from the 'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and
+'Cu' for the 'classes', 'interfaces', 'manager', 'results', and 'utils'
+properties, respectively).
+
+(Note: once bug 636145 is fixed, to access 'Components' directly you'll
+need to retrieve it from the 'chrome' module by adding it to the list of
+symbols you import from the module. To avoid having to make this change
+in the future, replace all occurrences of 'Components' in your code with
+the equivalent shortcuts now.)
+""" % { "fn": fn, "needs": ",".join(sorted(old_chrome)),
+        "lines": "\n".join([" %3d: %s" % (lineno,line)
+                            for (lineno, line) in old_chrome_lines]),
+        }
         problems = True
     return problems
 
@@ -669,6 +689,10 @@ def scan_module(fn, lines, stderr=sys.stderr):
     requires = scan_requirements_with_grep(fn, lines)
     if filename == "cuddlefish.js" or filename == "securable-module.js":
         # these are the loader: don't scan for chrome
+        problems = False
+    elif "chrome" in requires:
+        # if they declare require("chrome"), we tolerate the use of
+        # Components (see bug 663541 for rationale)
         problems = False
     else:
         problems = scan_for_bad_chrome(fn, lines, stderr)

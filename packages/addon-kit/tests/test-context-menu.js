@@ -1559,6 +1559,32 @@ exports.testAlreadyOpenIframe = function (test) {
 };
 
 
+// Test image support.
+exports.testItemImage = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let imageURL = require("self").data.url("moz_favicon.ico");
+  let item = new loader.cm.Item({ label: "item", image: imageURL });
+  let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [] });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item, menu], [], []);
+
+    let imageURL2 = require("self").data.url("dummy.ico");
+    item.image = imageURL2;
+    menu.image = imageURL2;
+    test.checkMenu([item, menu], [], []);
+
+    item.image = null;
+    menu.image = null;
+    test.checkMenu([item, menu], [], []);
+
+    test.done();
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1664,6 +1690,12 @@ TestHelper.prototype = {
     if (itemType === "Item" || itemType === "Menu") {
       this.test.assertEqual(elt.getAttribute("label"), item.label,
                             "Item should have correct title");
+      if (typeof(item.image) === "string")
+        this.test.assertEqual(elt.getAttribute("image"), item.image,
+                              "Item should have correct image");
+      else
+        this.test.assert(!elt.hasAttribute("image"),
+                         "Item should not have image");
     }
   },
 
