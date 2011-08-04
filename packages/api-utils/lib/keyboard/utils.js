@@ -68,7 +68,7 @@ const MODIFIERS = exports.MODIFIERS = {
 const CODES = exports.CODES = new function Codes() {
   let nsIDOMKeyEvent = Ci.nsIDOMKeyEvent;
   // Names that will be substituted with a shorter analogs.
-  let alises = {
+  let aliases = {
     'subtract':     '-',
     'add':          '+',
     'equals':       '=',
@@ -86,14 +86,14 @@ const CODES = exports.CODES = new function Codes() {
   // Normalizing keys and copying values to `this` object.
   Object.keys(nsIDOMKeyEvent).filter(function(key) {
     // Filter out only key codes.
-    return 0 === key.indexOf('DOM_VK');
+    return key.indexOf('DOM_VK') === 0;
   }).map(function(key) {
     // Map to key:values
     return [ key, nsIDOMKeyEvent[key] ];
   }).map(function([key, value]) {
     return [ key.replace('DOM_VK_', '').replace('_', '').toLowerCase(), value ];
   }).forEach(function ([ key, value ]) {
-    this[alises[key] || key] = value;
+    this[aliases[key] || key] = value;
   }, this);
 };
 

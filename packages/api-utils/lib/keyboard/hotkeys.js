@@ -119,7 +119,7 @@ keyboardObserver.on("keydown", function onKeypress(event, window) {
 
   // If only key or only modifiers are pressed we don't have a valid
   // combination so we return immediately (Also, sometimes `keyCode` may be
-  // one for the modifier in which means we do not have a modifier).
+  // one for the modifier which means we do not have a modifier).
   if (!key || !modifiers.length || key in MODIFIERS)
     return;
 
