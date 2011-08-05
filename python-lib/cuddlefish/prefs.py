@@ -9,7 +9,7 @@ DEFAULT_COMMON_PREFS = {
 
 # When launching a temporary new Firefox profile, use these preferences.
 DEFAULT_FIREFOX_PREFS = {
-    'extensions.checkCompatibility.4.0b': False,
+    'extensions.checkCompatibility.nightly' : False,
     'browser.startup.homepage' : 'about:blank',
     'startup.homepage_welcome_url' : 'about:blank',
     'devtools.errorconsole.enabled' : True

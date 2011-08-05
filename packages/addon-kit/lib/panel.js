@@ -257,7 +257,13 @@ const Panel = Symbiont.resolve({
   resize: function resize(width, height) {
     this.width = width;
     this.height = height;
-    this._xulPanel.sizeTo(width, height);
+    // Resize the iframe instead of using panel.sizeTo
+    // because sizeTo doesn't work with arrow panels
+    let xulPanel = this._xulPanel;
+    if (xulPanel) {
+      xulPanel.firstChild.style.width = width + "px";
+      xulPanel.firstChild.style.height = height + "px";
+    }
   },
 
   // While the panel is visible, this is the XUL <panel> we use to display it.

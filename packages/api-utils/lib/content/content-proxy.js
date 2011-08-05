@@ -1,6 +1,6 @@
 const { Ci, Cc } = require("chrome");
 
-/*
+/**
  * Access key that allows privileged code to unwrap proxy wrappers through 
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
@@ -52,7 +52,7 @@ function ContentScriptFunctionWrapper(fun, obj, name) {
   Object.defineProperty(fun, "___proxy", {value : wrappedFun,
                                           writable : false,
                                           enumerable : false,
-                                          configurable : true});
+                                          configurable : false});
   
   return wrappedFun;
 }
@@ -119,14 +119,104 @@ function unwrap(value, obj, name) {
   
   // In case of functions we need to return a wrapper that converts native 
   // arguments applied to this function into proxies.
-  // Do this only for functions coming from content script.
   if (type == "function")
     return ContentScriptFunctionWrapper(value, obj, name);
   
+  // We must wrap objects coming from content script too, as they may have
+  // a function that will be called by a native method.
+  // For example:
+  //   addEventListener(..., { handleEvent: function(event) {} }, ...);
+  if (type == "object")
+    return ContentScriptObjectWrapper(value);
+
   if (["string", "number", "boolean"].indexOf(type) !== -1)
     return value;
   //console.log("return non-wrapped to native : "+typeof value+" -- "+value);
   return value;
+}
+
+/**
+ * Returns a XrayWrapper proxy object that allow to wrap any of its function
+ * though `ContentScriptFunctionWrapper`. These proxies are given to
+ * XrayWrappers in order to automatically wrap values when they call a method
+ * of these proxies. So that they are only used internaly and content script,
+ * nor web page have ever access to them. As a conclusion, we can consider
+ * this code as being safe regarding web pages overload.
+ *
+ *
+ * @param obj {Object}
+ *        object coming from content script context to wrap
+ *
+ * Example:
+ *   let myListener = { handleEvent: function (event) {} };
+ *   node.addEventListener("click", myListener, false);
+ *   `event` has to be wrapped, so handleEvent has to be wrapped using
+ *   `ContentScriptFunctionWrapper` function.
+ *   In order to do so, we build this new kind of proxies.
+ */
+function ContentScriptObjectWrapper(obj) {
+  if ("___proxy" in obj && typeof obj.___proxy == "object")
+    return obj.___proxy;
+
+  function valueOf(key) {
+    if (key === UNWRAP_ACCESS_KEY)
+      return obj;
+    return this;
+  }
+
+  let proxy = Proxy.create({
+    // Fundamental traps
+    getPropertyDescriptor:  function(name) {
+      return Object.getOwnPropertyDescriptor(obj, name);
+    },
+    defineProperty: function(name, desc) {
+      return Object.defineProperty(obj, name, desc);
+    },
+    getOwnPropertyNames: function () {
+      return Object.getOwnPropertyNames(obj);
+    },
+    delete: function(name) {
+      return delete obj[name];
+    },
+    // derived traps
+    has: function(name) {
+      return name === "__isXrayWrapperProxy" ||
+             name in obj;
+    },
+    hasOwn: function(name) {
+      return Object.prototype.hasOwnProperty.call(obj, name);
+    },
+    get: function(receiver, name) {
+      if (name == "valueOf")
+        return valueOf;
+      let value = obj[name];
+      if (!value)
+        return value;
+
+      return unwrap(value);
+    },
+    set: function(receiver, name, val) {
+      obj[name] = val;
+      return true;
+    },
+    enumerate: function() {
+      var result = [];
+      for each (let name in obj) {
+        result.push(name);
+      };
+      return result;
+    },
+    keys: function() {
+      return Object.keys(obj);
+    }
+  });
+
+  Object.defineProperty(obj, "___proxy", {value : proxy,
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : false});
+
+  return proxy;
 }
 
 /*
@@ -137,14 +227,24 @@ function wrap(value, obj, name, debug) {
     return value;
   let type = typeof value;
   if (type == "object") {
-    // In case of: unwrap object before wrapping it
-    // (it should not happen)
+    // We may have a XrayWrapper proxy.
+    // For example:
+    //   let myListener = { handleEvent: function () {} };
+    //   node.addEventListener("click", myListener, false);
+    // When native code want to call handleEvent,
+    // we go though ContentScriptFunctionWrapper that calls `wrap(this)`
+    // `this` is the XrayWrapper proxy of myListener.
+    // We return this object without building a CS proxy as it is already
+    // a value coming from the CS.
+    if ("__isXrayWrapperProxy" in value)
+      return value.valueOf(UNWRAP_ACCESS_KEY);
+
+    // Unwrap object before wrapping it.
+    // It should not happen with CS proxy objects.
     while("__isWrappedProxy" in value) {
-      console.trace();
-      console.warn("This object is already wrapped: " + value + 
-                   " (accessed from attribute " + name + ")");
       value = value.valueOf(UNWRAP_ACCESS_KEY);
     }
+
     if (XPCNativeWrapper.unwrap(value) !== value)
       return getProxyForObject(value);
     // In case of Event, HTMLCollection or NodeList or ???
@@ -191,9 +291,9 @@ function getProxyForObject(obj) {
   let proxy = Proxy.create(handlerMaker(obj));
   
   Object.defineProperty(obj, "___proxy", {value : proxy,
-                                          writable : true,
+                                          writable : false,
                                           enumerable : false,
-                                          configurable : true});
+                                          configurable : false});
   return proxy;
 }
 
@@ -450,7 +550,8 @@ function handlerMaker(obj) {
       
       // Trap access to form["node name"]
       // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
-      if (!o && typeof obj == "object" && obj.tagName == "FORM") {
+      if (!o && typeof obj == "object" && "tagName" in obj &&
+          obj.tagName == "FORM") {
         let match = obj.wrappedJSObject[name];
         let nodes = obj.ownerDocument.getElementsByName(name);
         for (let i = 0, l = nodes.length; i < l; i++) {

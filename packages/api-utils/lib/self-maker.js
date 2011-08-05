@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *   Brian Warner <warner@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -55,6 +56,7 @@ exports.makeSelfModule = function (reqdata) {
   // and we want resource://jid0-abc123/reading-data-data/
 
   var data_url = function(name) {
+    name = name || "";
     // dataURIPrefix ends with a slash
     var x = reqdata.dataURIPrefix + name;
     return x;
@@ -63,7 +65,7 @@ exports.makeSelfModule = function (reqdata) {
     let fn = url.toFilename(data_url(name));
     return file.read(fn);
   };
-    
+
   var self = {
     id: jid,
     uri: uri,

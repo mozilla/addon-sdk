@@ -22,6 +22,71 @@ exports.testProxy = function (test) {
         let document = wrapped.document;
         let body = document.body;
         
+        let input = document.getElementById("input2");
+        let myClickListener = {
+          called: false,
+          handleEvent: function(event) {
+            test.assertEqual(this, myClickListener, "`this` is the original object");
+            test.assert(!this.called, "called only once");
+            this.called = true;
+            test.assertNotEqual(event.valueOf(), event.valueOf(proxy.UNWRAP_ACCESS_KEY), "event is wrapped");
+            test.assertEqual(event.target, input, "event.target is the wrapped window");
+          }
+        };
+
+        wrapped.addEventListener("click", myClickListener, true);
+        input.click();
+        wrapped.removeEventListener("click", myClickListener, true);
+
+        // Verify object as DOM event listener
+        let myMessageListener = {
+          called: false,
+          handleEvent: function(event) {
+            test.assertEqual(this, myMessageListener, "`this` is the original object");
+            test.assert(!this.called, "called only once");
+            this.called = true;
+            test.assertNotEqual(event.valueOf(), event.valueOf(proxy.UNWRAP_ACCESS_KEY), "event is wrapped");
+            test.assertEqual(event.target, wrapped, "event.target is the wrapped window");
+          }
+        };
+
+        wrapped.addEventListener("message", myMessageListener, true);
+        win.eval("postMessage(true, '*')");
+        require("timer").setTimeout(function () {
+          wrapped.removeEventListener("message", myMessageListener, true);
+        }, 0);
+
+
+        // RightJS is hacking around String.prototype, and do similar thing:
+        // Pass `this` from a String prototype method.
+        // It is funny because typeof this == "object"!
+        // So that when we pass `this` to a native method,
+        // our proxy code can fail on another even more crazy thing.
+        // See following test to see what fails around proxies.
+        String.prototype.update = function () {
+          test.assertEqual(typeof this, "object");
+          test.assertEqual(this.toString(), "input");
+          return document.querySelectorAll(this);
+        };
+        test.assertEqual("input".update().length, 3, "String.prototype overload works");
+
+        // Proxy - toString error
+        let originalString = "string";
+        let p = Proxy.create({
+          get: function(receiver, name) {
+            if (name == "binded")
+              return originalString.toString.bind(originalString);
+            return originalString[name];
+          }
+        });
+        test.assertRaises(function () {
+          p.toString();
+        },
+        /String.prototype.toString called on incompatible Proxy/,
+        "toString can't be called with this being the proxy");
+        test.assertEqual(p.binded(), "string", "but it works if we bind this to the original string");
+
+
         // Check mozMatchesSelector XrayWrappers bug:
         // mozMatchesSelector returns bad results when we are not calling it from the node itself
         // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
