@@ -21,7 +21,19 @@ exports["teardown function called after test"] = function(test) {
     test.assertEqual(true, teardownCalled, 'teardown was called after first function');
 };
 
+exports["teardown called in done for async test"] = function(test) {
+    teardownCalled = false;
 
+    timer.setTimeout(function() {
+        test.assertEqual(false, teardownCalled, "teardown not called until done");
+        test.done();
+    }, 200);
+    test.waitUntilDone();
+};
+
+exports["teardown called on last async test"] = function(test) {
+    test.assertEqual(true, teardownCalled, "teardown called after done");
+};
 
 exports.testModuleOverrides = function(test) {
   var options = {
@@ -113,7 +125,6 @@ exports.testExpectFail = function(test) {
     });
 */
 };
-
 
 exports.testAssertFunction = function(test) {
     test.assertFunction(function() {}, 'assertFunction with function');

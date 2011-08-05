@@ -287,6 +287,9 @@ TestRunner.prototype = {
   done: function done() {
     if (!this.isDone) {
       this.isDone = true;
+      if(this.test.teardown) {
+        this.test.teardown(this);
+      }
       if (this.waitTimeout !== null) {
         timer.clearTimeout(this.waitTimeout);
         this.waitTimeout = null;
@@ -450,9 +453,6 @@ TestRunner.prototype = {
         this.test.setup(this);
       }
       this.test.testFunction(this);
-      if(this.test.teardown) {
-        this.test.teardown(this);
-      }
     } catch (e) {
       this.exception(e);
     }
