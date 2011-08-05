@@ -86,18 +86,18 @@ function Selection(rangeNumber) {
   this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
 
   this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM, rangeNumber);
-    // It isn't enough to check that rangeCount is zero. If one or more ranges
-    // are selected and then unselected, rangeCount is set to one, not zero.
-    // Therefore, if rangeCount is one, we also check if the selection is
-    // collapsed.
-    if (sel.rangeCount == 0)
-      return null;
-    if (sel.rangeCount == 1) {
-      let range = safeGetRange(sel, 0);
-      return range && range.collapsed ? null : true;
+    let sel = getSelection(DOM);
+
+    // If there are multiple ranges, the selection is definitely discontiguous.
+    // It returns `false` also if there are no selection; and `true` if there is
+    // a single non empty range, or a selection in a text field - contiguous or
+    // not (text field selection APIs doesn't support multiple selections).
+
+    if (sel.rangeCount > 1) {
+      return false;
+    } else {
+      return !!(safeGetRange(sel, 0) || getElementWithSelection())
     }
-    return false;
   });
 }
 
