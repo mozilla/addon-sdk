@@ -62,7 +62,11 @@ const validator = new OptionsValidator({
   },
   contentType: {
     map: function (v) v || "application/x-www-form-urlencoded",
-    is:  ["string"]
+    is:  ["string"],
+  },
+  overrideMimeType: {
+    map: function(v) v || null,
+    is: ["string", "null"],
   }
 });
 
@@ -107,6 +111,11 @@ function Request(options) {
     // set other headers
     for (let k in options.headers) {
       request.setRequestHeader(k, options.headers[k]);
+    }
+
+    // set overrideMimeType
+    if (options.overrideMimeType) {
+      request.overrideMimeType(options.overrideMimeType);
     }
 
     // handle the readystate, create the response, and call the callback
