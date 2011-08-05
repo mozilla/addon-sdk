@@ -26,6 +26,13 @@ Each function which represents a test case is passed a single argument
   Optional failure message.
 </api>
 
+<api name="expectFail">
+@method
+  *experimental* Expect the test enclosed within `func` to fail. 
+
+@param func {function}
+  A function that should contain a test that is expected to fail.
+</api>
 
 <api name="exception">
 @method
