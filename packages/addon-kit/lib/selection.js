@@ -198,14 +198,14 @@ function safeGetRange(selection, rangeNumber) {
  *   we need this method because window.getSelection doesn't return a selection
  *   for text selected in a form field (see bug 85686)
  *
- * @param {nsIWindow} window
- *    A reference to the window
+ * @param {nsIWindow} [window]
+ *    A reference to a window
  */
 function getElementWithSelection(window) {
   let element;
 
   try {
-    element = window.document.activeElement;
+    element = (window || context()).document.activeElement;
   } catch(e) {
     element = null;
   }
@@ -408,9 +408,16 @@ require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
 /**
  * Exports an iterator so that discontiguous selections can be iterated.
+ *
+ * If discontiguous selections are in a text field, only the first one
+ * is returned because the text field selection APIs doesn't support
+ * multiple selections.
  */
 exports.__iterator__ = function __iterator__() {
-  for (let i = 0, sel = getSelection(DOM); i < sel.rangeCount; i++)
+  let sel = getSelection(DOM);
+  let rangeCount = sel.rangeCount || (getElementWithSelection() ? 1 : 0);
+
+  for (let i = 0; i < rangeCount; i++)
     yield new Selection(i);
 };
 
