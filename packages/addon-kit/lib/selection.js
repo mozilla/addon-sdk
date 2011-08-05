@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Eric H. Jung <eric.jung@yahoo.com>
  *   Irakli Gozalishivili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -57,6 +58,11 @@ const TEXT = 0x02;
 
 // The selection type DOM (internal use only)
 const DOM  = 0x03;
+
+// A more developer-friendly message than the caught exception when is not
+// possible change a selection.
+const ERR_CANNOT_CHANGE_SELECTION =
+  "It isn't possible to change the selection, as there isn't currently a selection";
 
 /**
  * Creates an object from which a selection can be set, get, etc. Each
@@ -135,7 +141,16 @@ function getSelection(type, rangeNumber) {
     return selection;
   else if (type == TEXT) {
     let range = safeGetRange(selection, rangeNumber);
-    return range ? range.toString() : null;
+
+    if (range)
+      return range.toString();
+
+    let node = getElementWithSelection(window);
+
+    if (!node)
+      return null;
+
+    return node.value.substring(node.selectionStart, node.selectionEnd);
   }
   else if (type == HTML) {
     let range = safeGetRange(selection, rangeNumber);
@@ -176,6 +191,38 @@ function safeGetRange(selection, rangeNumber) {
 }
 
 /**
+ * Returns a reference of the DOM's active element for the window given, if it
+ * supports the text field selection API and has a text selected.
+ *
+ * Note:
+ *   we need this method because window.getSelection doesn't return a selection
+ *   for text selected in a form field (see bug 85686)
+ *
+ * @param {nsIWindow} window
+ *    A reference to the window
+ */
+function getElementWithSelection(window) {
+  let element;
+
+  try {
+    element = window.document.activeElement;
+  } catch(e) {
+    element = null;
+  }
+
+  if (!element)
+    return null;
+
+  let { value, selectionStart, selectionEnd } = element;
+
+  let hasSelection = "string" === typeof value
+                      && !isNaN(selectionStart)
+                      && !isNaN(selectionEnd)
+                      && selectionStart !== selectionEnd;
+
+  return hasSelection ? element : null;
+}
+/**
  * Sets the current selection of the most recent content document by changing
  * the existing selected text/HTML range to the specified value.
  *
@@ -189,33 +236,52 @@ function safeGetRange(selection, rangeNumber) {
 function setSelection(val, rangeNumber) {
     // Make sure we have a window context & that there is a current selection.
     // Selection cannot be set unless there is an existing selection.
-    let window, range;
+    let window, selection;
+
     try {
       window = context();
-      range = window.getSelection().getRangeAt(rangeNumber);
+      selection = window.getSelection();
     }
     catch (e) {
-      // Rethrow with a more developer-friendly message than the caught
-      // exception.
-      throw new Error("It isn't possible to change the selection, as there isn't currently a selection");
+      throw new Error(ERR_CANNOT_CHANGE_SELECTION);
     }
-    // Get rid of the current selection and insert our own
-    range.deleteContents();
-    let node = window.document.createElement("span");
-    range.surroundContents(node);
 
-    // Some relevant JEP-111 requirements:
+    let range = safeGetRange(selection, rangeNumber);
 
-    // Setting the text property replaces the selection with the value to
-    // which the property is set and sets the html property to the same value
-    // to which the text property is being set.
+    if (range) {
+      // Get rid of the current selection and insert our own
+      range.deleteContents();
+      let node = window.document.createElement("span");
+      range.surroundContents(node);
 
-    // Setting the html property replaces the selection with the value to
-    // which the property is set and sets the text property to the text version
-    // of the HTML value.
+      // Some relevant JEP-111 requirements:
 
-    // This sets both the HTML and text properties.
-    node.innerHTML = val;
+      // Setting the text property replaces the selection with the value to
+      // which the property is set and sets the html property to the same value
+      // to which the text property is being set.
+
+      // Setting the html property replaces the selection with the value to
+      // which the property is set and sets the text property to the text version
+      // of the HTML value.
+
+      // This sets both the HTML and text properties.
+      node.innerHTML = val;
+    } else {
+      let node = getElementWithSelection(window);
+
+      if (!node)
+        throw new Error(ERR_CANNOT_CHANGE_SELECTION);
+
+      let { value, selectionStart, selectionEnd } = node;
+
+      let newSelectionEnd = selectionStart + val.length;
+
+      node.value = value.substring(0, selectionStart)
+                    + val
+                    + value.substring(selectionEnd, value.length);
+
+      node.setSelectionRange(newSelectionEnd, newSelectionEnd);
+    }
 }
 
 function onLoad(event) {
