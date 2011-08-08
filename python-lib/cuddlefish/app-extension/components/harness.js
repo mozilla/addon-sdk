@@ -358,9 +358,6 @@ function buildHarnessService(rootFileSpec, dump, logError,
           case FENNEC_ID:
             obSvc.addObserver(this, "xul-window-visible", true);
             break;
-          case FIREFOX_ID:
-            obSvc.addObserver(this, "sessionstore-windows-restored", true);
-            break;
           default:
             obSvc.addObserver(this, "final-ui-startup", true);
             break;
