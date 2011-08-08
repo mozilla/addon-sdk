@@ -366,10 +366,13 @@ const xRayWrappersMissFixes = [
   // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#6824
   function (obj, name) {
     if (typeof obj == "object" && "document" in obj) {
+      // Ensure that we are on a window object
       try {
         obj.QueryInterface(Ci.nsIDOMWindow);
       }
-      catch(e) {}
+      catch(e) {
+        return null;
+      }
       // Integer case:
       let i = parseInt(name);
       if (i >= 0 && i in obj) {
@@ -430,7 +433,7 @@ const xRayWrappersMethodsFixes = {
   // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsGlobalWindow.cpp#5893
   // nsCOMPtr<nsPIDOMWindow> win = do_QueryWrappedNative(wrapper);
   //   win is null
-  "postMessage": function (obj) {
+  postMessage: function (obj) {
     // Ensure that we are on a window object
     try {
       obj.QueryInterface(Ci.nsIDOMWindow);
@@ -453,7 +456,7 @@ const xRayWrappersMethodsFixes = {
   // when we use document.documentElement.mozMatchesSelector.call(node, expr)
   // It's only working if we call mozMatchesSelector on the node itself.
   // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
-  "mozMatchesSelector": function (obj) {
+  mozMatchesSelector: function (obj) {
     // Ensure that we are on an object to expose this buggy method
     try {
       obj.QueryInterface(Ci.nsIDOMNSElement);
@@ -466,6 +469,7 @@ const xRayWrappersMethodsFixes = {
     let f = function mozMatchesSelector(selectors) {
       return this.mozMatchesSelector(selectors);
     };
+
     return getProxyForFunction(f, NativeFunctionWrapper(f));
   }
 };
@@ -534,7 +538,9 @@ function handlerMaker(obj) {
       // It allows to overload native methods like addEventListener that
       // are not saved, even on the wrapper itself.
       // (And avoid some methods like toSource from being returned here! [__proto__ test])
-      if (name in overload && overload[name] != overload.__proto__[name] && name != "__proto__") {
+      if (name in overload &&
+          overload[name] != Object.getPrototypeOf(overload)[name] &&
+          name != "__proto__") {
         return overload[name];
       }
       
@@ -547,7 +553,7 @@ function handlerMaker(obj) {
       
       // Overload some XrayWrappers method in order to fix its bugs
       if (name in methodFixes && 
-          methodFixes[name] != methodFixes.__proto__[name] && 
+          methodFixes[name] != Object.getPrototypeOf(methodFixes)[name] &&
           name != "__proto__")
         return methodFixes[name];
       if (Object.keys(xRayWrappersMethodsFixes).indexOf(name) !== -1) {

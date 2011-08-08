@@ -48,6 +48,9 @@ exports.testProxy = function (test) {
         }, false);
         wrapped.postMessage("ok", "*");
 
+        test.assertEqual(wrapped.postMessage, wrapped.postMessage,
+          "verify that we doesn't generate multiple functions for the same method");
+
         // Check mozMatchesSelector XrayWrappers bug:
         // mozMatchesSelector returns bad results when we are not calling it from the node itself
         // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
