@@ -35,8 +35,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 var {Cc,Cm,Ci,components} = require("chrome");
-var file = require("file");
+var file = require("api-utils/file");
 
 // A global registry of all Jetpack Programs that we're responsible
 // for loading and unloading. Keys are XPCOM contract IDs of 

@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Drew Willcoxon <adw@mozilla.com> (Original Author)
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,9 +39,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Ci} = require("chrome");
 
-if (!require("xul-app").is("Firefox")) {
+if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The context-menu module currently supports only Firefox.  In the future ",
     "we would like it to support other applications, however.  Please see ",
@@ -48,17 +51,17 @@ if (!require("xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const apiUtils = require("api-utils");
-const collection = require("collection");
-const { Worker } = require("content");
-const url = require("url");
-const { MatchPattern } = require("match-pattern");
-const { EventEmitterTrait: EventEmitter } = require("events");
-const observerServ = require("observer-service");
+const apiUtils = require("api-utils/api-utils");
+const collection = require("api-utils/collection");
+const { Worker } = require("api-utils/content");
+const url = require("api-utils/url");
+const { MatchPattern } = require("api-utils/match-pattern");
+const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
+const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
-const winUtils = require("window-utils");
-const { Trait } = require("light-traits");
-const { Cortex } = require("cortex");
+const winUtils = require("api-utils/window-utils");
+const { Trait } = require("api-utils/light-traits");
+const { Cortex } = require("api-utils/cortex");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -102,7 +105,6 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLEmbedElement,
   Ci.nsIDOMHTMLImageElement,
   Ci.nsIDOMHTMLInputElement,
-  Ci.nsIDOMHTMLIsIndexElement,
   Ci.nsIDOMHTMLMapElement,
   Ci.nsIDOMHTMLMediaElement,
   Ci.nsIDOMHTMLMenuElement,
@@ -113,7 +115,9 @@ const NON_PAGE_CONTEXT_ELTS = [
 ];
 
 // This is used to access private properties of Item and Menu instances.
-const PRIVATE_PROPS_KEY = Math.random().toString();
+const PRIVATE_PROPS_KEY = {
+  valueOf: function valueOf() "private properties key"
+};
 
 // Used as an internal ID for items and as part of a public ID for item DOM
 // elements.  Careful: This number is not necessarily unique to any one instance
@@ -145,7 +149,7 @@ exports.Separator = Separator;
 // Item, Menu, and Separator are composed of this trait.
 const ItemBaseTrait = Trait({
 
-  initBase: function IBT_initBase(opts, optRules, optsToNotSet) {
+  _initBase: function IBT__initBase(opts, optRules, optsToNotSet) {
     this._optRules = optRules;
     for (let optName in optRules)
       if (optsToNotSet.indexOf(optName) < 0)
@@ -208,9 +212,9 @@ const ItemBaseTrait = Trait({
 // Item and Menu are composed of this trait.
 const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 
-  initActiveItem: function AIT_initActiveItem(opts, optRules, optsToNotSet) {
-    this.initBase(opts, optRules,
-                  optsToNotSet.concat(["onMessage", "context"]));
+  _initActiveItem: function AIT__initActiveItem(opts, optRules, optsToNotSet) {
+    this._initBase(opts, optRules,
+                   optsToNotSet.concat(["onMessage", "context"]));
 
     if ("onMessage" in opts)
       this.on("message", opts.onMessage);
@@ -257,6 +261,17 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
     return this._label;
   },
 
+  get image() {
+    return this._image;
+  },
+
+  set image(val) {
+    this._image = validateOpt(val, this._optRules.image);
+    if (this._isInited)
+      browserManager.setItemImage(this, this._image);
+    return this._image;
+  },
+
   get contentScript() {
     return this._contentScript;
   },
@@ -280,8 +295,8 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
 // Item is composed of this trait.
 const ItemTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  initItem: function IT_initItem(opts, optRules) {
-    this.initActiveItem(opts, optRules, []);
+  _initItem: function IT__initItem(opts, optRules) {
+    this._initActiveItem(opts, optRules, []);
   },
 
   get data() {
@@ -309,7 +324,7 @@ function Item(options) {
   };
 
   let item = ItemTrait.create(Item.prototype);
-  item.initItem(options, optRules);
+  item._initItem(options, optRules);
 
   item._public = Cortex(item);
   browserManager.registerItem(item._public);
@@ -321,9 +336,9 @@ function Item(options) {
 // Menu is composed of this trait.
 const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
-  initMenu: function MT_initMenu(opts, optRules, optsToNotSet) {
+  _initMenu: function MT__initMenu(opts, optRules, optsToNotSet) {
     this._items = [];
-    this.initActiveItem(opts, optRules, optsToNotSet);
+    this._initActiveItem(opts, optRules, optsToNotSet);
   },
 
   get items() {
@@ -383,10 +398,10 @@ function Menu(options) {
 
   let menu = MenuTrait.create(Menu.prototype);
 
-  // We can't rely on initBase to set the `items` property, because the menu
+  // We can't rely on _initBase to set the `items` property, because the menu
   // needs to be registered with and added to the browserManager before any
   // child items are added to it.
-  menu.initMenu(options, optRules, ["items"]);
+  menu._initMenu(options, optRules, ["items"]);
 
   menu._public = Cortex(menu);
   browserManager.registerItem(menu._public);
@@ -399,7 +414,7 @@ function Menu(options) {
 // The exported Separator constructor.
 function Separator() {
   let sep = ItemBaseTrait.create(Separator.prototype);
-  sep.initBase({}, {}, []);
+  sep._initBase({}, {}, []);
 
   sep._public = Cortex(sep);
   browserManager.registerItem(sep._public);
@@ -465,7 +480,18 @@ function SelectionContext() {
     let win = popupNode.ownerDocument.defaultView;
     if (!win)
       return false;
-    return !win.getSelection().isCollapsed;
+
+    let hasSelection = !win.getSelection().isCollapsed;
+    if (!hasSelection) {
+      // window.getSelection doesn't return a selection for text selected in a
+      // form field (see bug 85686), so before returning false we want to check
+      // if the popupNode is a text field.
+      let { selectionStart, selectionEnd } = popupNode;
+      hasSelection = !isNaN(selectionStart) &&
+                     !isNaN(selectionEnd) &&
+                     selectionStart !== selectionEnd;
+    }
+    return hasSelection;
   };
 }
 
@@ -531,6 +557,10 @@ function optionsRules() {
       is: ["string"],
       ok: function (v) !!v,
       msg: "The item must have a non-empty string label."
+    },
+    image: {
+      map: function (v) v.toString(),
+      is: ["string", "undefined", "null"]
     },
     contentScript: {
       is: ["string", "array", "undefined"],
@@ -660,6 +690,9 @@ WorkerRegistry.prototype = {
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
     let innerWinID = winUtils.getInnerId(win);
+    if ((innerWinID in this.winWorkers) ||
+        (innerWinID in this.winsWithoutWorkers))
+      return;
     if (this._doesURLNeedWorker(win.document.URL))
       this.winWorkers[innerWinID] = { win: win, worker: this._makeWorker(win) };
     else
@@ -668,11 +701,6 @@ WorkerRegistry.prototype = {
 
   // Unregisters a content window, destroying its related worker if it has one.
   unregisterContentWin: function WR_unregisterContentWin(innerWinID) {
-    // Sometimes inner-window-destroyed is sent for a window that's not
-    // registered, which implies that DOMContentLoaded is not dispatched to any
-    // tabbrowser for that inner window's outer window...  So rather than
-    // erroneously throwing an error if the window is not registered, don't
-    // assume that the window is registered in the first place.
     if (innerWinID in this.winWorkers) {
       let winWorker = this.winWorkers[innerWinID];
       winWorker.worker.destroy();
@@ -735,7 +763,8 @@ WorkerRegistry.prototype = {
       contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)
     });
-    let (item = this.item) worker.on("message", function workerOnMessage(msg) {
+    let item = this.item;
+    worker.on("message", function workerOnMessage(msg) {
       try {
         privateItem(item)._emitOnObject(item, "message", msg);
       }
@@ -748,10 +777,14 @@ WorkerRegistry.prototype = {
 };
 
 
-// Mirrors state across all browser windows.
+// Mirrors state across all browser windows.  Also responsible for detecting
+// all content window loads and unloads.
 let browserManager = {
   topLevelItems: [],
   browserWins: [],
+
+  // inner window ID => content window
+  contentWins: {},
 
   // Call this when a new item is created, top-level or not.
   registerItem: function BM_registerItem(item) {
@@ -766,8 +799,14 @@ let browserManager = {
 
   addTopLevelItem: function BM_addTopLevelItem(item) {
     this.topLevelItems.push(item);
-    privateItem(item)._isTopLevel = true;
     this.browserWins.forEach(function (w) w.addTopLevelItem(item));
+
+    // Create the item's worker registry and register all currently loaded
+    // content windows with it.
+    let privates = privateItem(item);
+    privates._isTopLevel = true;
+    for each (let win in this.contentWins)
+      privates._workerReg.registerContentWin(win);
   },
 
   removeTopLevelItem: function BM_removeTopLevelItem(item) {
@@ -792,6 +831,10 @@ let browserManager = {
     this.browserWins.forEach(function (w) w.setItemLabel(item, label));
   },
 
+  setItemImage: function BM_setItemImage(item, imageURL) {
+    this.browserWins.forEach(function (w) w.setItemImage(item, imageURL));
+  },
+
   setItemData: function BM_setItemData(item, data) {
     this.browserWins.forEach(function (w) w.setItemData(item, data));
   },
@@ -799,17 +842,62 @@ let browserManager = {
   // Note that calling this method will cause onTrack to be called immediately
   // for each currently open browser window.
   init: function BM_init() {
-    require("unload").ensure(this);
-    let windowTracker = new (require("window-utils").WindowTracker)(this);
+    require("api-utils/unload").ensure(this);
+    let windowTracker = new winUtils.WindowTracker(this);
 
-    // On inner-window-destroyed, remove the destroyed inner window's outer
-    // window from all items' worker registries.
-    observerServ.add("inner-window-destroyed", function observe(subj) {
-      let innerWinID = subj.QueryInterface(Ci.nsISupportsPRUint64).data;
-      this.topLevelItems.forEach(function (item) {
-        privateItem(item)._workerReg.unregisterContentWin(innerWinID);
-      });
-    }, this);
+    // Register content windows on content-document-global-created and
+    // unregister them on inner-window-destroyed.  For rationale, see bug 667957
+    // for the former and bug 642004 for the latter.
+    observerServ.add("content-document-global-created",
+                     this._onDocGlobalCreated, this);
+    observerServ.add("inner-window-destroyed",
+                     this._onInnerWinDestroyed, this);
+  },
+
+  _onDocGlobalCreated: function BM__onDocGlobalCreated(contentWin) {
+    let doc = contentWin.document;
+    if (doc.readyState == "loading") {
+      const self = this;
+      doc.addEventListener("readystatechange", function onReadyStateChange(e) {
+        if (e.target != doc)
+          return;
+        doc.removeEventListener("readystatechange", onReadyStateChange, false);
+        self._registerContentWin(contentWin);
+      }, false);
+    }
+    else
+      this._registerContentWin(contentWin);
+  },
+
+  _onInnerWinDestroyed: function BM__onInnerWinDestroyed(subj) {
+    this._unregisterContentWin(
+      subj.QueryInterface(Ci.nsISupportsPRUint64).data);
+  },
+
+  // Stores the given content window with the manager and registers it with each
+  // top-level item's worker registry.
+  _registerContentWin: function BM__registerContentWin(win) {
+    let innerID = winUtils.getInnerId(win);
+
+    // It's an error to call this method for the same window more than once, but
+    // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See
+    // the comment in onTrack.)  Make sure the window is registered only once.
+    if (innerID in this.contentWins)
+      return;
+
+    this.contentWins[innerID] = win;
+    this.topLevelItems.forEach(function (item) {
+      privateItem(item)._workerReg.registerContentWin(win);
+    });
+  },
+
+  // Removes the given content window from the manager and unregisters it from
+  // each top-level item's worker registry.
+  _unregisterContentWin: function BM__unregisterContentWin(innerID) {
+    delete this.contentWins[innerID];
+    this.topLevelItems.forEach(function (item) {
+      privateItem(item)._workerReg.unregisterContentWin(innerID);
+    });
   },
 
   unload: function BM_unload() {
@@ -822,16 +910,35 @@ let browserManager = {
       this.removeTopLevelItem(item);
       this.unregisterItem(item);
     }
+    delete this.contentWins;
   },
 
   // Registers a browser window with the manager.  This is a WindowTracker
-  // callback.
+  // callback.  Note that this is called in two cases:  for each newly opened
+  // chrome window, and for each chrome window that is open when the loader
+  // loads this module.
   onTrack: function BM_onTrack(window) {
     if (!this._isBrowserWindow(window))
       return;
 
     let browserWin = new BrowserWindow(window);
     this.browserWins.push(browserWin);
+
+    // Register all loaded content windows in the browser window.  Be sure to
+    // include frames and iframes.  If onTrack is called as a result of a new
+    // browser window being opened, as opposed to the module being loaded, then
+    // this will race the content-document-global-created notification.  That's
+    // OK, since _registerContentWin will not register the same content window
+    // more than once.
+    window.gBrowser.browsers.forEach(function (browser) {
+      let topContentWin = browser.contentWindow;
+      let allContentWins = Array.slice(topContentWin.frames);
+      allContentWins.push(topContentWin);
+      allContentWins.forEach(function (contentWin) {
+        if (contentWin.document.readyState != "loading")
+          this._registerContentWin(contentWin);
+      }, this);
+    }, this);
 
     // Add all top-level items and, recursively, their child items to the new
     // browser window.
@@ -848,7 +955,9 @@ let browserManager = {
   },
 
   // Unregisters a browser window from the manager.  This is a WindowTracker
-  // callback.
+  // callback.  Note that this is called in two cases:  for each newly closed
+  // chrome window, and for each chrome window that is open when this module is
+  // unloaded.
   onUntrack: function BM_onUntrack(window) {
     if (!this._isBrowserWindow(window))
       return;
@@ -900,9 +1009,6 @@ function BrowserWindow(window) {
   // with the aforementioned distinction between top-level and overflow
   // subtrees.
   this.items = {};
-
-  // Listen for page loads on the tabbrowser so we can create workers.
-  window.gBrowser.addEventListener("DOMContentLoaded", this, false);
 }
 
 BrowserWindow.prototype = {
@@ -923,22 +1029,10 @@ BrowserWindow.prototype = {
   },
 
   addTopLevelItem: function BW_addTopLevelItem(item) {
-    // Register all open and loaded content windows in this browser window
-    // with the item's worker registry.
-    let workerReg = privateItem(item)._workerReg;
-    this.window.gBrowser.browsers.forEach(function (browser) {
-      if (browser.contentDocument.readyState === "complete")
-        workerReg.registerContentWin(browser.contentWindow);
-    }, this);
     this.contextMenuPopup.addItem(item);
   },
 
   removeTopLevelItem: function BW_removeTopLevelItem(item) {
-    // Although addTopLevelItem registers this browser's content windows with
-    // the item's worker registry, there's no need to unregister content windows
-    // here:  When a top-level item is removed, browserManager destroys its
-    // worker registry, which unregisters all registered content windows.
-
     this.contextMenuPopup.removeItem(item);
   },
 
@@ -955,19 +1049,44 @@ BrowserWindow.prototype = {
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let itemID = privateItem(item)._id;
-    let { domElt, overflowDOMElt } = this.items[itemID];
-    domElt.setAttribute("label", label);
-    overflowDOMElt.setAttribute("label", label);
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    this._setDOMEltLabel(domElt, label);
+    this._setDOMEltLabel(overflowDOMElt, label);
     if (!item.parentMenu)
       this.contextMenuPopup.itemLabelDidChange(item);
   },
 
+  _setDOMEltLabel: function BW__setDOMEltLabel(domElt, label) {
+    domElt.setAttribute("label", label);
+  },
+
+  setItemImage: function BW_setItemImage(item, imageURL) {
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    let isMenu = item instanceof Menu;
+    this._setDOMEltImage(domElt, imageURL, isMenu);
+    this._setDOMEltImage(overflowDOMElt, imageURL, isMenu);
+  },
+
+  _setDOMEltImage: function BW__setDOMEltImage(domElt, imageURL, isMenu) {
+    if (!imageURL) {
+      domElt.removeAttribute("image");
+      domElt.classList.remove("menu-iconic");
+      domElt.classList.remove("menuitem-iconic");
+    }
+    else {
+      domElt.setAttribute("image", imageURL);
+      domElt.classList.add(isMenu ? "menu-iconic" : "menuitem-iconic");
+    }
+  },
+
   setItemData: function BW_setItemData(item, data) {
-    let itemID = privateItem(item)._id;
-    let { domElt, overflowDOMElt } = this.items[itemID];
+    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    this._setDOMEltData(domElt, data);
+    this._setDOMEltData(overflowDOMElt, data);
+  },
+
+  _setDOMEltData: function BW__setDOMEltData(domElt, data) {
     domElt.setAttribute("value", data);
-    overflowDOMElt.setAttribute("value", data);
   },
 
   // The context specified for a top-level item may not match exactly the real
@@ -1031,7 +1150,6 @@ BrowserWindow.prototype = {
 
   destroy: function BW_destroy() {
     this.contextMenuPopup.destroy();
-    this.window.gBrowser.removeEventListener("DOMContentLoaded", this, false);
     delete this.window;
     delete this.doc;
     delete this.items;
@@ -1047,21 +1165,6 @@ BrowserWindow.prototype = {
       worker.fireClick(popupNode, clickedItemData);
   },
 
-  // Handles content window loads.
-  handleEvent: function BW_handleEvent(event) {
-    try {
-      switch (event.type) {
-      case "DOMContentLoaded":
-        if (event.target.defaultView)
-          this._registerContentWin(event.target.defaultView);
-        break;
-      }
-    }
-    catch (err) {
-      console.exception(err);
-    }
-  },
-
   _makeDOMElt: function BW__makeDOMElt(item, isInOverflowSubtree) {
     let elt = item instanceof Item ? this._makeMenuitem(item) :
               item instanceof Menu ? this._makeMenu(item, isInOverflowSubtree) :
@@ -1071,18 +1174,20 @@ BrowserWindow.prototype = {
       throw new Error("Internal error: can't make element, unknown item type");
 
     elt.id = domEltIDFromItemID(privateItem(item)._id, isInOverflowSubtree);
-    elt.className = ITEM_CLASS;
+    elt.classList.add(ITEM_CLASS);
     return elt;
   },
 
   // Returns a new xul:menu representing the menu.
   _makeMenu: function BW__makeMenu(menu, isInOverflowSubtree) {
     let menuElt = this.doc.createElement("menu");
-    menuElt.setAttribute("label", menu.label);
-    let popupDOMElt = this.doc.createElement("menupopup");
-    menuElt.appendChild(popupDOMElt);
+    this._setDOMEltLabel(menuElt, menu.label);
+    if (menu.image)
+      this._setDOMEltImage(menuElt, menu.image, true);
+    let popupElt = this.doc.createElement("menupopup");
+    menuElt.appendChild(popupElt);
 
-    let popup = new Popup(popupDOMElt, this, isInOverflowSubtree);
+    let popup = new Popup(popupElt, this, isInOverflowSubtree);
     let props = this.items[privateItem(menu)._id];
     if (isInOverflowSubtree)
       props.overflowPopup = popup;
@@ -1095,21 +1200,17 @@ BrowserWindow.prototype = {
   // Returns a new xul:menuitem representing the item.
   _makeMenuitem: function BW__makeMenuitem(item) {
     let elt = this.doc.createElement("menuitem");
-    elt.setAttribute("label", item.label);
+    this._setDOMEltLabel(elt, item.label);
+    if (item.image)
+      this._setDOMEltImage(elt, item.image, false);
     if (item.data)
-      elt.setAttribute("value", item.data);
+      this._setDOMEltData(elt, item.data);
     return elt;
   },
 
   // Returns a new xul:menuseparator.
   _makeSeparator: function BW__makeSeparator() {
     return this.doc.createElement("menuseparator");
-  },
-
-  _registerContentWin: function BW__registerContentWin(win) {
-    browserManager.topLevelItems.forEach(function (item) {
-      privateItem(item)._workerReg.registerContentWin(win);
-    });
   }
 };
 
@@ -1358,7 +1459,7 @@ ContextMenuPopup.prototype = {
   // Returns the OVERFLOW_THRESH_PREF pref value if it exists or
   // OVERFLOW_THRESH_DEFAULT if it doesn't.
   get _overflowThreshold() {
-    let prefs = require("preferences-service");
+    let prefs = require("api-utils/preferences-service");
     return prefs.get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
   },
 

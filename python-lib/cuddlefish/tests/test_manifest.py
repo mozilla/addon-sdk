@@ -1,5 +1,4 @@
 
-import os, re
 import unittest
 from StringIO import StringIO
 from cuddlefish.manifest import scan_module
@@ -178,6 +177,18 @@ class Chrome(unittest.TestCase, Extra):
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
+    def test_chrome_components(self):
+        # Bug 663541: tolerate "Components" if you're marked with
+        # require("chrome"), to avoid requiring module authors to rewrite a
+        # lot of code. Once bug 636145 is fixed, such code will break. To fix
+        # it, add {Components}=require("chrome"), but that won't work until
+        # after 636145 is fixed.
+        mod = """require("chrome");
+        var ios = Components.classes['@mozilla.org/network/io-service;1'];"""
+        requires, problems, err = scan2(mod)
+        self.failUnlessKeysAre(requires, ["chrome"])
+        self.failUnlessEqual((problems, err), (False, []))
+
     def test_not_chrome(self):
         # from bug 596595
         mod = r'soughtLines: new RegExp("^\\s*(\\[[0-9 .]*\\])?\\s*\\(\\((EE|WW)\\)|.* [Cc]hipsets?: \\)|\\s*Backtrace")'
@@ -194,26 +205,36 @@ class Chrome(unittest.TestCase, Extra):
 
 class BadChrome(unittest.TestCase, Extra):
     def test_bad_alias(self):
-        # using Components.* gets you a warning. If it looks like you're
-        # using it to build an alias, the warning suggests a better way.
+        # using Components.* gets you an error, with a message that teaches
+        # you the correct approach.
         mod = """let Cc = Components.classes;
-        let Cu = Components.utils;"""
+        let Cu = Components.utils;
+        """
         requires, problems, err = scan2(mod)
         self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(problems, True)
-        self.failUnlessEqual(err[1], "To use chrome authority, you need a line like this:\n") 
-        self.failUnlessEqual(err[2], '  const {Cc,Cu} = require("chrome");\n')
-        self.failUnlessEqual(err[3], "because things like 'Components.classes' will not be available\n")
+        self.failUnlessEqual(err[1], "The following lines from file fake.js:\n")
+        self.failUnlessEqual(err[2], "   1: let Cc = Components.classes;\n")
+        self.failUnlessEqual(err[3], "   2: let Cu = Components.utils;\n")
+        self.failUnlessEqual(err[4], "use 'Components' to access chrome authority. To do so, you need to add a\n")
+        self.failUnlessEqual(err[5], "line somewhat like the following:\n")
+        self.failUnlessEqual(err[7], '  const {Cc,Cu} = require("chrome");\n')
+        self.failUnlessEqual(err[9], "Then you can use 'Components' as well as any shortcuts to its properties\n")
 
     def test_bad_misc(self):
         # If it looks like you're using something that doesn't have an alias,
         # the warning also suggests a better way.
-        mod = """if (Components.isSuccessCode(foo))"""
+        mod = """if (Components.isSuccessCode(foo))
+        """
         requires, problems, err = scan2(mod)
         self.failUnlessKeysAre(requires, [])
         self.failUnlessEqual(problems, True)
-        self.failUnlessEqual(err[1], "To use chrome authority, you need a line like this:\n") 
-        self.failUnlessEqual(err[2], '  const {components} = require("chrome");\n')
+        self.failUnlessEqual(err[1], "The following lines from file fake.js:\n")
+        self.failUnlessEqual(err[2], "   1: if (Components.isSuccessCode(foo))\n")
+        self.failUnlessEqual(err[3], "use 'Components' to access chrome authority. To do so, you need to add a\n")
+        self.failUnlessEqual(err[4], "line somewhat like the following:\n")
+        self.failUnlessEqual(err[6], '  const {components} = require("chrome");\n')
+        self.failUnlessEqual(err[8], "Then you can use 'Components' as well as any shortcuts to its properties\n")
 
 if __name__ == '__main__':
     unittest.main()

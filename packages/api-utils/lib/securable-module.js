@@ -27,6 +27,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 (function(global) {
    const Cc = Components.classes;
    const Ci = Components.interfaces;
@@ -295,7 +297,7 @@
              // currently unused
            }
            if (false) // force scanner to copy self-maker.js into the XPI
-             require("self-maker"); 
+             require("./self-maker"); 
            let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
            if (!makerModData.uri)
              throw new Error("Unable to find self-maker, from "+basePath);
@@ -344,7 +346,7 @@
          let moduleContents = self.fs.getFile(path);
          var sandbox = self.sandboxFactory.createSandbox(moduleContents);
          self.sandboxes[path] = sandbox;
-         for (name in self.globals)
+         for (let name in self.globals)
            sandbox.defineProperty(name, self.globals[name]);
          var api = self._makeApi(path);
          sandbox.defineProperty('require', api.require);
@@ -365,6 +367,8 @@
          var preeval_exports = sandbox.getProperty("exports");
          self.modules[path] = sandbox.getProperty("exports");
          sandbox.evaluate(moduleContents);
+         sandbox.evaluate("if (typeof module.exports === 'object')\n" +
+                          "Object.freeze(module.exports);");
          var posteval_exports = sandbox.getProperty("module").exports;
          if (posteval_exports !== preeval_exports) {
            /* if they used module.exports= or module.setExports(), get
@@ -380,7 +384,7 @@
            }
            self.modules[path] = posteval_exports;
          }
-         return self.modules[path]; // these are the exports
+         return self.modules[path];
        }
 
        // START support Async module-style require and define calls.
@@ -575,7 +579,7 @@
        var sandbox = this.sandboxFactory.createSandbox(options);
        if (extraOutput)
          extraOutput.sandbox = sandbox;
-       for (name in this.globals)
+       for (let name in this.globals)
          sandbox.defineProperty(name, this.globals[name]);
        var api = this._makeApi(null);
        sandbox.defineProperty('require', api.require);
@@ -747,13 +751,13 @@
      global.SecurableModule = exports;
    } else if (global.exports) {
      // We're being loaded in a SecurableModule.
-     for (name in exports) {
+     for (let name in exports) {
        global.exports[name] = exports[name];
      }
    } else {
      // We're being loaded in a JS module.
      global.EXPORTED_SYMBOLS = [];
-     for (name in exports) {
+     for (let name in exports) {
        global.EXPORTED_SYMBOLS.push(name);
        global[name] = exports[name];
      }

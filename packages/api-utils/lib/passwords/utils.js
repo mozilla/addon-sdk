@@ -42,7 +42,7 @@ const { Cc, Ci, components: { Constructor: CConstructor } } = require("chrome");
 const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
-const { URL: parseURL } = require("url");
+const { URL: parseURL } = require("../url");
 const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
                                "nsILoginInfo", "init");
 

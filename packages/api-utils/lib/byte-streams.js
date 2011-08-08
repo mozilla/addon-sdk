@@ -37,6 +37,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 exports.ByteReader = ByteReader;
 exports.ByteWriter = ByteWriter;
 
@@ -118,7 +120,7 @@ function StreamManager(stream, rawStream) {
     self.unload();
   };
 
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 }
 
 StreamManager.prototype = {
