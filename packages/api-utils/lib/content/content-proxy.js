@@ -431,6 +431,148 @@ function isEventName(id) {
   return false;
 }
 
+// XrayWrappers miss some attributes.
+// Here is a list of functions that return a value when it detects a miss:
+const NODES_INDEXED_BY_NAME = ["IMG", "FORM", "APPLET", "EMBED", "OBJECT"];
+const xRayWrappersMissFixes = [
+  
+  // Fix bug with XPCNativeWrapper on HTMLCollection
+  // We can only access array item once, then it's undefined :o
+  function (obj, name) {
+    let i = parseInt(name);
+    if (obj.toString().match(/HTMLCollection|NodeList/) && 
+        i >= 0 && i < obj.length) {
+      return wrap(XPCNativeWrapper(obj.wrappedJSObject[name]), obj, name);
+    }
+    return null;
+  },
+  
+  // Trap access to document["form name"] 
+  // that may refer to an existing form node
+  // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9285
+  function (obj, name) {
+    if ("nodeType" in obj && obj.nodeType == 9) {
+      let node = obj.wrappedJSObject[name];
+      // List of supported tag:
+      // http://mxr.mozilla.org/mozilla-central/source/content/html/content/src/nsGenericHTMLElement.cpp#1267
+      if (node && NODES_INDEXED_BY_NAME.indexOf(node.tagName) != -1)
+        return wrap(XPCNativeWrapper(node));
+    }
+    return null;
+  },
+  
+  // Trap access to window["frame name"] and window.frames[i]
+  // that refer to an (i)frame internal window object
+  // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#6824
+  function (obj, name) {
+    if (typeof obj == "object" && "document" in obj) {
+      // Ensure that we are on a window object
+      try {
+        obj.QueryInterface(Ci.nsIDOMWindow);
+      }
+      catch(e) {
+        return null;
+      }
+      // Integer case:
+      let i = parseInt(name);
+      if (i >= 0 && i in obj) {
+        return wrap(XPCNativeWrapper(obj[i]));
+      }
+      // String name case:
+      if (name in obj.wrappedJSObject) {
+        let win = obj.wrappedJSObject[name];
+        let nodes = obj.document.getElementsByName(name);
+        for (let i = 0, l = nodes.length; i < l; i++) {
+          let node = nodes[i];
+          if ("contentWindow" in node && 
+              node.contentWindow.wrappedJSObject == win)
+            return wrap(node.contentWindow);
+        }
+      }
+    }
+    return null;
+  },
+  
+  // Trap access to form["node name"]
+  // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
+  function (obj, name) {
+    if (typeof obj == "object" && obj.tagName == "FORM") {
+      let match = obj.wrappedJSObject[name];
+      let nodes = obj.ownerDocument.getElementsByName(name);
+      for (let i = 0, l = nodes.length; i < l; i++) {
+        let node = nodes[i];
+        if (node.wrappedJSObject == match)
+          return wrap(node);
+      }
+    }
+  },
+  
+  // Fix XPathResult's constants being undefined on XrayWrappers
+  // these constants are defined here:
+  // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
+  // and are only numbers.
+  // See bug 665279 for platform fix progress
+  function (obj, name) {
+    if (typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
+      let value = Ci.nsIDOMXPathResult[name];
+      if (typeof value == "number" && value === obj.wrappedJSObject[name])
+        return value;
+    }
+  }
+  
+];
+
+// XrayWrappers have some buggy methods.
+// Here is the list of them with functions returning some replacement 
+// for a given object `obj`:
+const xRayWrappersMethodsFixes = {
+  // postMessage method is checking the Javascript global
+  // and it expects it to be a window object.
+  // But in our case, the global object is our sandbox global object.
+  // See nsGlobalWindow::CallerInnerWindow():
+  // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsGlobalWindow.cpp#5893
+  // nsCOMPtr<nsPIDOMWindow> win = do_QueryWrappedNative(wrapper);
+  //   win is null
+  postMessage: function (obj) {
+    // Ensure that we are on a window object
+    try {
+      obj.QueryInterface(Ci.nsIDOMWindow);
+    }
+    catch(e) {
+      return null;
+    }
+    // Create a wrapper that is going to call `postMessage` through `eval`
+    let f = function postMessage(message, targetOrigin) {
+      message = message.toString().replace(/'/g,"\\'");
+      targetOrigin = targetOrigin.toString().replace(/'/g,"\\'");
+      let jscode = "this.postMessage('" + message + "', '" +
+                                targetOrigin + "')";
+      return this.wrappedJSObject.eval(jscode);
+    };
+    return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+  
+  // Fix mozMatchesSelector uses that is broken on XrayWrappers
+  // when we use document.documentElement.mozMatchesSelector.call(node, expr)
+  // It's only working if we call mozMatchesSelector on the node itself.
+  // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
+  mozMatchesSelector: function (obj) {
+    // Ensure that we are on an object to expose this buggy method
+    try {
+      obj.QueryInterface(Ci.nsIDOMNSElement);
+    }
+    catch(e) {
+      return null;
+    }
+    // We can't use `wrap` function as `f` is not a native function,
+    // so wrap it manually:
+    let f = function mozMatchesSelector(selectors) {
+      return this.mozMatchesSelector(selectors);
+    };
+
+    return getProxyForFunction(f, NativeFunctionWrapper(f));
+  }
+};
 
 /* 
  * Generate handler for proxy wrapper
@@ -440,6 +582,8 @@ function handlerMaker(obj) {
   let overload = {};
   // Expando attributes dictionary (i.e. onclick, onfocus, on* ...)
   let expando = {};
+  // Cache of methods overloaded to fix XrayWrapper bug
+  let methodFixes = {};
   return {
     // Fundamental traps
     getPropertyDescriptor:  function(name) {
@@ -494,7 +638,9 @@ function handlerMaker(obj) {
       // It allows to overload native methods like addEventListener that
       // are not saved, even on the wrapper itself.
       // (And avoid some methods like toSource from being returned here! [__proto__ test])
-      if (name in overload && overload[name] != overload.__proto__[name] && name != "__proto__") {
+      if (name in overload &&
+          overload[name] != Object.getPrototypeOf(overload)[name] &&
+          name != "__proto__") {
         return overload[name];
       }
       
@@ -505,84 +651,26 @@ function handlerMaker(obj) {
         return name in expando ? expando[name].original : undefined;
       }
       
+      // Overload some XrayWrappers method in order to fix its bugs
+      if (name in methodFixes && 
+          methodFixes[name] != Object.getPrototypeOf(methodFixes)[name] &&
+          name != "__proto__")
+        return methodFixes[name];
+      if (Object.keys(xRayWrappersMethodsFixes).indexOf(name) !== -1) {
+        let fix = xRayWrappersMethodsFixes[name](obj);
+        if (fix)
+          return methodFixes[name] = fix;
+      }
+      
       let o = obj[name];
       
-      // Fix bug with XPCNativeWrapper on HTMLCollection
-      // We can only access array item once, then it's undefined :o
-      let i = parseInt(name)
-      if (!o && obj.toString().match(/HTMLCollection|NodeList/) && i >= 0 && i < obj.length) {
-        o = XPCNativeWrapper(obj.wrappedJSObject[name]);
-      }
-      
-      // Trap access to document["form name"] 
-      // that may refer to an existing form node
-      // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9285
-      if (!o && "nodeType" in obj && obj.nodeType == 9) {
-        let node = obj.wrappedJSObject[name];
-        // List of supported tag:
-        // http://mxr.mozilla.org/mozilla-central/source/content/html/content/src/nsGenericHTMLElement.cpp#1267
-        if (node && ["IMG", "FORM", "APPLET", "EMBED", "OBJECT"].indexOf(node.tagName) != -1)
-          return wrap(XPCNativeWrapper(node));
-      }
-      
-      // Trap access to window["frame name"] and window.frames[i]
-      // that refer to an (i)frame internal window object
-      // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#6824
-      if (!o && typeof obj == "object" && "document" in obj) {
-        try {
-          obj.QueryInterface(Ci.nsIDOMWindow);
-          let win = obj[i];
-          // Integer case:
-          if (i >= 0 && win) {
-            return wrap(XPCNativeWrapper(win));
-          }
-          // String name case:
-          win = obj.wrappedJSObject[name];
-          let nodes = obj.document.getElementsByName(name);
-          for (let i = 0, l = nodes.length; i < l; i++) {
-            let node = nodes[i];
-            if ("contentWindow" in node && node.contentWindow.wrappedJSObject == win)
-              return wrap(node.contentWindow);
-          }
+      // XrayWrapper miss some attributes, try to catch these and return a value
+      if (!o) {
+        for each(let atttributeFixer in xRayWrappersMissFixes) {
+          let fix = atttributeFixer(obj, name);
+          if (fix)
+            return fix;
         }
-        catch(e) {}
-      }
-      
-      // Trap access to form["node name"]
-      // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
-      if (!o && typeof obj == "object" && "tagName" in obj &&
-          obj.tagName == "FORM") {
-        let match = obj.wrappedJSObject[name];
-        let nodes = obj.ownerDocument.getElementsByName(name);
-        for (let i = 0, l = nodes.length; i < l; i++) {
-          let node = nodes[i];
-          if (node.wrappedJSObject == match)
-            return wrap(node);
-        }
-      }
-      
-      // Fix mozMatchesSelector uses that is broken on XrayWrappers
-      // when we use document.documentElement.mozMatchesSelector.call(node, expr)
-      // It's only working if we call mozMatchesSelector on the node itself.
-      // SEE BUG 658909: mozMatchesSelector returns incorrect results with XrayWrappers
-      if (typeof o == "function" && name == "mozMatchesSelector") {
-        // We can't use `wrap` function as `f` is not a native function,
-        // so wrap it manually:
-        let f = function mozMatchesSelector(selectors) {
-          return this.mozMatchesSelector(selectors);
-        };
-        return getProxyForFunction(f, NativeFunctionWrapper(f));
-      }
-      
-      // Fix XPathResult's constants being undefined on XrayWrappers
-      // these constants are defined here:
-      // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
-      // and are only numbers.
-      // See bug 665279 for platform fix progress
-      if (!o && typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
-        let value = Ci.nsIDOMXPathResult[name];
-        if (typeof value == "number" && value === obj.wrappedJSObject[name])
-          return value;
       }
 
       // Generic case
