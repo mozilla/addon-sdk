@@ -292,6 +292,10 @@ function onUnload(event) {
   SelectionListenerManager.onUnload(event);
 }
 
+function onSelect() {
+  SelectionListenerManager.onSelect();
+}
+
 let SelectionListenerManager = {
   QueryInterface: require("api-utils/xpcom").utils.
                   generateQI([Ci.nsISelectionListener]),
@@ -319,7 +323,12 @@ let SelectionListenerManager = {
     if (!["SELECTALL", "KEYPRESS", "MOUSEUP"].some(function(type) reason &
       Ci.nsISelectionListener[type + "_REASON"]) || selection.toString() == "")
         return;
-    setTimeout(this.listeners.emit, 0, 'select')
+
+    this.onSelect();
+  },
+
+  onSelect : function onSelect() {
+    setTimeout(this.listeners.emit, 0, "select");
   },
 
   /**
@@ -363,6 +372,13 @@ let SelectionListenerManager = {
     let selection = window.getSelection();
     if (selection instanceof Ci.nsISelectionPrivate)
       selection.addSelectionListener(this);
+
+    // nsISelectionListener implementation seems not fire a notification if
+    // a selection is in a text field, therefore we need to add a listener to
+    // window.onselect, that is fired only for text fields.
+    // https://developer.mozilla.org/en/DOM/window.onselect
+    window.addEventListener("select", onSelect, true);
+
     window.jetpack_core_selection_listener = true;
   },
 
@@ -382,6 +398,9 @@ let SelectionListenerManager = {
     let selection = window.getSelection();
     if (selection instanceof Ci.nsISelectionPrivate)
       selection.removeSelectionListener(this);
+
+    window.removeEventListener("select", onSelect);
+
     window.jetpack_core_selection_listener = false;
   },
 
