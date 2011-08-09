@@ -253,6 +253,14 @@ function Require(loader, manifest, base) {
   return require;
 }
 
+function Main(loader) {
+  return function main(id) {
+    // Overriding main so that all modules point to it.
+    loader.main = loader.modules[resolveURI(loader.root, id)] = {};
+    return Require(loader, null)(id);
+  }
+}
+
 const Sandbox = Base.extend({
   initialize: function Sandbox(prototype) {
     this.sandbox = Cu.Sandbox(this.principal, {
@@ -275,14 +283,6 @@ const Sandbox = Base.extend({
   wantXrays: false,
   prototype: {}
 });
-
-function Main(loader) {
-  return function main(id) {
-    // Overriding main so that all modules point to it.
-    loader.main = loader.modules[resolveURI(loader.root, id)] = {};
-    return Require(loader, null)(id);
-  }
-}
 
 const Loader = Component.extend({
   classDescription: 'Jetpack module loader service',
