@@ -365,6 +365,11 @@ function resourceURI(file) {
   return uri;
 }
 
+/**
+ * Maps each path - value from `resources` hash in the resources protocol
+ * handler with an associated key. Each path is resolved relative to the given
+ * `root` path.
+ */
 function mapResources(root, resources) {
   Object.keys(resources).forEach(function(id) {
     let path = resources[id];
