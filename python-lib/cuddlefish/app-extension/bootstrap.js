@@ -58,6 +58,60 @@ const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 
 
+// TODO: Remove this temporary hack! Module `id` should map to corresponding
+// resource `uri` in more trivial way. I think changing cuddlefish so that
+// addons are layout in a simple structure like http://cl.ly/8r99 is the right
+// way to go about this.
+function resolveURI(root, id) {
+  let paths = normalize(id).split('/')
+  return paths.length <= 1 ? id :
+         [root + paths.shift() + '-lib'].concat(paths).join('/');
+}
+
+// TODO: Remove this temporary hack! I think manifest should contain module `id`
+// along with or instead of `uri` properties. This function creates parses out
+// id out of the `uri`.
+function resolveID(root, uri) {
+  let paths = uri.replace(root, '').split('/');
+  return [ paths.shift().replace(/\-lib$/, '') ].concat(paths).join('/');
+}
+
+// Normalizes `uri`, so that it contains `.js` file extension.
+function normalize(uri) uri.substr(-3) === '.js' ? uri : uri + '.js'
+
+// Returns `true` if given `id` is relative.
+function isRelative(id) id.indexOf('.') === 0
+
+// Resolves given `id` to the `base` one, if it's a relative.
+function resolve(id, base) {
+  var path, paths, last
+  if (!isRelative(id)) return id
+  paths = id.split('/')
+  base = base ? base.split('/') : [ '.' ]
+  if (base.length > 1) base.pop()
+  while ((path = paths.shift())) {
+    if (path === '..') {
+      if (base.length && base[base.length - 1] !== '..') {
+        if (base.pop() === '.') base.push(path)
+      } else base.push(path)
+    } else if (path !== '.') {
+      base.push(path)
+    }
+  }
+  if (base[base.length - 1].substr(-1) === '.') base.push('')
+  return base.join('/')
+}
+
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
+}
+
 /**
  * Base construct for defining reusable components.
  */
@@ -109,7 +163,6 @@ const Base = Object.freeze(Object.create(Object.prototype, {
     return Object.freeze(Object.create(this, descriptor));
   }}
 }));
-
 
 /**
  * Prototype object containing XPCOM creation and registration boilerplate.
@@ -167,56 +220,6 @@ const Component = Base.extend({
     return this;
   }
 });
-
-function normalize(id) id.substr(-3) === '.js' ? id : id + '.js'
-function isRelative(id) id.indexOf('.') === 0
-function resolve(id, base) {
-  var path, paths, last
-  if (!isRelative(id)) return id
-  paths = id.split('/')
-  base = base ? base.split('/') : [ '.' ]
-  if (base.length > 1) base.pop()
-  while ((path = paths.shift())) {
-    if (path === '..') {
-      if (base.length && base[base.length - 1] !== '..') {
-        if (base.pop() === '.') base.push(path)
-      } else base.push(path)
-    } else if (path !== '.') {
-      base.push(path)
-    }
-  }
-  if (base[base.length - 1].substr(-1) === '.') base.push('')
-  return base.join('/')
-}
-
-// TODO: Remove this temporary hack! Module `id` should map to corresponding
-// resource `uri` in more trivial way. I think changing cuddlefish so that
-// addons are layout in a simple structure like http://cl.ly/8r99 is the right
-// way to go about this.
-function resolveURI(root, id) {
-  let paths = normalize(id).split('/')
-  return paths.length <= 1 ? id :
-         [root + paths.shift() + '-lib'].concat(paths).join('/');
-}
-
-// TODO: Remove this temporary hack! I think manifest should contain module `id`
-// along with or instead of `uri` properties. This function creates parses out
-// id out of the `uri`.
-function resolveID(root, uri) {
-  let paths = uri.replace(root, '').split('/');
-  return [ paths.shift().replace(/\-lib$/, '') ].concat(paths).join('/');
-}
-
-
-// Utility function that synchronously reads local resource from the given
-// `uri` and returns content string.
-function readURI(uri) {
-  let request = XMLHttpRequest();
-  request.open('GET', uri, false);
-  request.overrideMimeType('text/plain');
-  request.send();
-  return request.responseText;
-}
 
 function Require(loader, manifest, base) {
   function require(id) {
