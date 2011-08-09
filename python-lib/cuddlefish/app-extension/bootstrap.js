@@ -39,7 +39,7 @@
 
 var EXPORTED_SYMBOLS = [ 'Loader' ];
 
-(function(exports) {
+!function(exports) {
 
 "use strict";
 
@@ -442,7 +442,7 @@ exports.startup = function startup(data, reason) {
 exports.shutdown = function shutdown(data, reason) {
 }
 
-})(typeof(exports) === 'undefined' ? this : exports);
+}(typeof(exports) === 'undefined' ? this : exports);
 
 // Use today:
 //
