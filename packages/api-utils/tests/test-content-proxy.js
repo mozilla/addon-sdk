@@ -224,7 +224,10 @@ exports.testProxy = function (test) {
         //test.assertEqual(win.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
         function f() {};
         test.assertMatches(Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 1");
-        test.assertMatches(win.Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 2");
+        // Make sure to pass a function from the same compartments
+        // or toString will return [object Object] on FF8+
+        let f2 = win.eval("(function () {})");
+        test.assertMatches(win.Object.prototype.toString.call(f2), /\[object Function.*\]/, "functions are functions 2");
         
         // Verify isolated JS values
         test.assert(!wrapped.documentGlobal, "proxy doesn't expose document variable");
