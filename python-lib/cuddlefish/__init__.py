@@ -158,7 +158,12 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test'])),
         (("", "--strip-xpi",), dict(dest="strip_xpi",
-                                    help="remove unused modules from XPI",
+                                    help="(ignored, deprecated, will be removed)",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['xpi'])),
+        (("", "--no-strip-xpi",), dict(dest="no_strip_xpi",
+                                    help="retain unused modules in XPI",
                                     action="store_true",
                                     default=False,
                                     cmds=['xpi'])),
@@ -746,8 +751,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # build_manifest earlier
         used_files = set(manifest.get_used_files())
 
-        if not options.strip_xpi:
-            used_files = None # disables the filter
+        if options.strip_xpi:
+            print >>stdout, "--strip-xpi is now the default: argument ignored"
+        if options.no_strip_xpi:
+            used_files = None # disables the filter, includes all files
 
         xpi_name = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_name
