@@ -34,27 +34,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { Cc, Ci } = require("chrome");
-const { createRemoteBrowser } = require("api-utils/window-utils");
-const packaging = require('@packaging');
-const { channel } = require("./channel");
+// TODO: Create a bug report and remove this workaround once it's fixed.
+// Only function needs defined in the context of the message manager window
+// can be registered via `addMessageListener`.
+function listener(callee) {
+  return function listener() { return callee.apply(this, arguments); };
+}
+function messageListener(scope, callee) {
+  return scope.eval('(' + listener + ')')(callee);
+}
 
-function process(scope, messageManager) {
-  messageManager.loadFrameScript(packaging.uri + 'bootstrap.js', false)
+exports.channel = function channel(scope, messageManager, address) {
   return {
-    channel: channel.bind(null, scope, messageManager),
-    stop: function stop() {
-      messageManager.close()
+    input: function input(next, stop) {
+      let listener = messageListener(scope, function onMessage(message) {
+        if (false === next(message.json))
+          messageManager.removeMessageListener(address, listener);
+      });
+      messageManager.addMessageListener(address, listener);
+    },
+    output: function output(data) {
+      messageManager.sendAsyncMessage(address, data);
+    },
+    sync: function sync(element) {
+      messageManager.sendSyncMessage(address, data);
     }
   };
 }
-
-exports.spawn = function spawn(id) {
-  var browser = createRemoteBrowser();
-  let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
-                       frameLoader.messageManager;
-
-  let spawned = process(browser.ownerDocument.defaultView, messageManager);
-  spawned.channel('bootstrap').output({ options: packaging, id: id });
-  return spawned;
-};
