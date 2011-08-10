@@ -40,13 +40,23 @@
 // TODO: Tweak linker and loader to use following instead:
 // require('env!api-utils/chrome/notifications')
 const channel = require('api-utils/env!')('api-utils/chrome/notifications');
-const { distribute } = require('../stream-utils');
+const { distributed } = require('../stream-utils');
 const { compose } = require("../functional");
+const guards = require("../guards");
 
 const listen = distributed(channel.input);
 const False = Boolean.bind(null, false);
 
-exports.notify = function notify({ data, iconURL, text, title, onClick }) {
+const notification = guards.Schema({
+  data: guards.String(""),
+  iconURL: guards.String(""),
+  text: guards.String(""),
+  title: guards.String(""),
+  onClick: guards.AnyOf([ guards.Function(), guards.Undefined() ])
+});
+
+exports.notify = function notify(options) {
+  let { data, iconURL, text, title, onClick } = notification(options);
   let id = onClick ? listen(compose(False, onClick.bind(null, data))) : null;
   channel.output({
     id: id,
