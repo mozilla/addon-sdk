@@ -4,7 +4,8 @@ const hiddenFrames = require("hidden-frame");
 exports.testProxy = function (test) {
   let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' + 
              '<input id="input2" type="checkbox" />' + 
-             '<script>var documentGlobal = true</script>';
+             '<script>var documentGlobal = true</script>' +
+             '<iframe id="iframe" name="test" src="data:text/html," />';
   let url = 'data:text/html,' + encodeURI(html);
   test.waitUntilDone();
   
@@ -21,7 +22,29 @@ exports.testProxy = function (test) {
         let wrapped = proxy.create(win);
         let document = wrapped.document;
         let body = document.body;
-        
+
+
+        // Ensure that postMessage is working correctly.
+        // 1/ Check across documents with an iframe
+        let ifWindow = win.document.getElementById("iframe").contentWindow;
+        // Listen without proxies, to check that it will work in regular case
+        // simulate listening from a web document.
+        ifWindow.addEventListener("message", function listener(event) {
+          ifWindow.removeEventListener("message", listener, false);
+          // As we are in system principal, event is an XrayWrapper
+          test.assertEqual(event.source.wrappedJSObject, ifWindow,
+                           "event.source is the iframe window");
+          test.assertEqual(event.origin, "null", "origin is null");
+          test.assertEqual(event.data, "ok", "message data is correct");
+        }, false);
+        // Dispatch a message from the content script proxy
+        document.getElementById("iframe").contentWindow.postMessage("ok", "*");
+
+        test.assertEqual(wrapped.postMessage, wrapped.postMessage,
+          "verify that we doesn't generate multiple functions for the same method");
+
+
+        // Test objects being given as event listener
         let input = document.getElementById("input2");
         let myClickListener = {
           called: false,
@@ -42,19 +65,21 @@ exports.testProxy = function (test) {
         let myMessageListener = {
           called: false,
           handleEvent: function(event) {
+            wrapped.removeEventListener("message", myMessageListener, true);
+
             test.assertEqual(this, myMessageListener, "`this` is the original object");
             test.assert(!this.called, "called only once");
             this.called = true;
             test.assertNotEqual(event.valueOf(), event.valueOf(proxy.UNWRAP_ACCESS_KEY), "event is wrapped");
             test.assertEqual(event.target, wrapped, "event.target is the wrapped window");
+            test.assertEqual(event.source, wrapped, "event.source is the wrapped window");
+            test.assertEqual(event.origin, "null", "origin is null");
+            test.assertEqual(event.data, "ok", "message data is correct");
           }
         };
 
         wrapped.addEventListener("message", myMessageListener, true);
-        win.eval("postMessage(true, '*')");
-        require("timer").setTimeout(function () {
-          wrapped.removeEventListener("message", myMessageListener, true);
-        }, 0);
+        wrapped.postMessage("ok", '*');
 
 
         // RightJS is hacking around String.prototype, and do similar thing:
@@ -199,7 +224,10 @@ exports.testProxy = function (test) {
         //test.assertEqual(win.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
         function f() {};
         test.assertMatches(Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 1");
-        test.assertMatches(win.Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 2");
+        // Make sure to pass a function from the same compartments
+        // or toString will return [object Object] on FF8+
+        let f2 = win.eval("(function () {})");
+        test.assertMatches(win.Object.prototype.toString.call(f2), /\[object Function.*\]/, "functions are functions 2");
         
         // Verify isolated JS values
         test.assert(!wrapped.documentGlobal, "proxy doesn't expose document variable");
@@ -224,14 +252,10 @@ exports.testProxy = function (test) {
         body.removeChild(img);
         
         // Check window[frameName] and window.frames[i]
-        let iframe = document.createElement("iframe");
-        iframe.setAttribute("name", "test");
-        test.assertEqual(wrapped.frames.length, 0, "No frames reported before adding the iframe");
-        body.appendChild(iframe);
-        test.assertEqual(wrapped.frames.length, 1, "Iframe is reported in window.frames check1");
-        test.assertEqual(wrapped.frames[0], iframe.contentWindow, "Iframe is reported in window.frames check2");
+        let iframe = document.getElementById("iframe");
+        test.assertEqual(wrapped.frames.length, 1, "The iframe is reported in window.frames check1");
+        test.assertEqual(wrapped.frames[0], iframe.contentWindow, "The iframe is reported in window.frames check2");
         test.assertEqual(wrapped.test, iframe.contentWindow, "window[frameName] is valid");
-        body.removeChild(iframe);
         
         // Highlight XPCNativeWrapper bug with HTMLCollection
         // tds[0] is only defined on first access :o
@@ -244,7 +268,7 @@ exports.testProxy = function (test) {
         
         // Verify that NodeList/HTMLCollection are working fine
         let inputs = body.getElementsByTagName("input");
-        test.assertEqual(body.childNodes.length, 4, "body.childNodes length is correct");
+        test.assertEqual(body.childNodes.length, 5, "body.childNodes length is correct");
         test.assertEqual(inputs.length, 3, "inputs.length is correct");
         test.assertEqual(body.childNodes[0], inputs[0], "body.childNodes[0] is correct");
         test.assertEqual(body.childNodes[1], inputs[1], "body.childNodes[1] is correct");
@@ -253,7 +277,7 @@ exports.testProxy = function (test) {
         for(let i in body.childNodes) {
           count++;
         }
-        test.assertEqual(count, 4, "body.childNodes is iterable");
+        test.assertEqual(count, 5, "body.childNodes is iterable");
         
         // Check internal use of valueOf()
         test.assertMatches(wrapped.valueOf().toString(), /\[object Window.*\]/, "proxy.valueOf() returns the wrapped version");
