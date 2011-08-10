@@ -224,7 +224,7 @@ const Component = Base.extend({
 function Require(loader, manifest, base) {
   function require(id) {
     // TODO: Remove debug log!
-    dump('>>>> ' + base + ' ? ' + id + '\n')
+    // dump('>>>> ' + base + ' ? ' + id + '\n')
     // If we have a manifest for requirer, then all it's requirements have been
     // registered by linker.
     if (base && manifest) {
@@ -244,7 +244,7 @@ function Require(loader, manifest, base) {
     id = resolve(id, base && base.id);
 
     // TODO: Remove debug log!
-    dump('require: ' + id + '\n');
+    // dump('require: ' + id + '\n');
 
     // Loading required module and return it's exports.
     // TODO: Find out which exports fail to freeze and fix those!
@@ -512,8 +512,21 @@ exports.startup = function startup(data, reason) {
     let addon = process.spawn(mainID);
     // Listen to `require!` channel's input messages from the add-on process
     // and load modules being required.
-    addon.channel('require!').input(function(element) {
-      loader.globals.console.log(element)
+    addon.channel('require!').input(function(id) {
+      try {
+        loader.load(id).initialize(addon.channel(id));
+      } catch (error) {
+        /*
+        return {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          fileName: error.fileName,
+          lineNumber: error.lineNumber
+        }
+        */
+        loader.globals.console.exception(error)
+      }
     });
   });
 };
