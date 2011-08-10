@@ -278,7 +278,8 @@ function Modules(loader, options) {
         Cu: Cu,
         Cr: Cr,
         Cm: Cm,
-        components: Components
+        components: Components,
+        env: exports
       }),
       id: 'chrome'
     }),
