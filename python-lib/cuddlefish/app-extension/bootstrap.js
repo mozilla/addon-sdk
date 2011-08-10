@@ -495,12 +495,26 @@ exports.startup = function startup(data, reason) {
   // to match behavior of the legacy module loader.
   let observres = loader.load('api-utils/observer-service');
   observres.add('sessionstore-windows-restored', function onReady() {
+
+    /* Disable loading main module, instead we load spawn up a process, into
+       which main module will be loaded instead!
+
     // Load a main module.
     let main = loader.main(mainID);
     // Jetpack calls main function of the main module. Is this legacy or
     // intentional.
     if (main.main)
       main.main();
+    */
+
+    let process = loader.main('api-utils/process');
+    // Spawning an add-on process for the main module.
+    let addon = process.spawn(mainID);
+    // Listen to `require!` channel's input messages from the add-on process
+    // and load modules being required.
+    addon.channel('require!').input(function(element) {
+      loader.globals.console.log(element)
+    });
   });
 };
 
