@@ -1,4 +1,3 @@
-/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -19,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,24 +34,46 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-"use strict";
+/**
+ * Takes a stream whose elements will be distributed across the elements of
+ * the returned stream. Elements are distributed by the unique ID, which
+ * optionally may be specified as a second argument, otherwise it defaults
+ * to `'id'`.
+ */
+exports.distributed = function distributed(source, attribute) {
+  let id = 0;
+  let nexts = {};
+  let stops = [];
+  attribute = attribute || 'id';
 
-// TODO: Tweak linker and loader to use following instead:
-// require('env!api-utils/chrome/notifications')
-const channel = require('api-utils/env!')('api-utils/chrome/notifications');
-const { distribute } = require('../stream-utils');
-const { compose } = require("../functional");
-
-const listen = distributed(channel.input);
-const False = Boolean.bind(null, false);
-
-exports.notify = function notify({ data, iconURL, text, title, onClick }) {
-  let id = onClick ? listen(compose(False, onClick.bind(null, data))) : null;
-  channel.output({
-    id: id,
-    title: title,
-    text: text,
-    iconURL: iconURL,
-    data: data
+  source(function onElement(element) {
+    // For each element of the stream we find an associated element from the
+    // listeners stream by looking at the `attribute` property.
+    let address = element[attribute];
+    let next = nexts[address];
+    // If associated listeners is in registry we invoke it. If it no longer
+    // wishes to be called (returns `false`), we remove it from the registry.
+    if (next && false === next(element)) {
+      delete nexts[address];
+      delete stops[address];
+    }
+  }, function onStop(reason) {
+    // If source stream is stopped we notify all registered handlers and clean
+    // up registry.
+    Object.keys(stops).forEach(function(address) {
+      stops[address](reason);
+    });
+    stops.splice(0);
+    nexts = {};
   });
+
+  // Return stream that can be used to register listeners on the distributed
+  // stream.
+  return function stream(next, stop) {
+    let address = ++id;
+    nexts[address] = next;
+    if (stop)
+      stops[address] = stop;
+    return address;
+  };
 };

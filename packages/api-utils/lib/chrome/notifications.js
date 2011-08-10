@@ -41,10 +41,13 @@ const { Cc, Ci, Cr, CC } = require("chrome");
 const notify = CC('@mozilla.org/alerts-service;1', 'nsIAlertsService')().
                showAlertNotification;
 
+function observer(output, id, subject, topic) {
+  if (topic === 'alertclickcallback' && id)
+    output({ id: id });
+}
+
 exports.initialize = function({ input, output }) {
-  input(function({ id, title, text, iconURL, data }) {
-    notify(iconURL, title, text, !id, data, function onClick(subject, topic) {
-      if (topic === 'alertclickcallback') output(id);
-    });
+  input(function({ id, title, text, iconURL }) {
+    notify(iconURL, title, text, !id, null, observer.bind(null, output, id));
   });
 };
