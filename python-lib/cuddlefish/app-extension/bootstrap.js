@@ -287,6 +287,10 @@ function Modules(loader, options) {
       exports: loader,
       id: 'parent-loader'
     }),
+    '@base.js': Object.freeze({
+      exports: { Base: Base },
+      id: '@base'
+    }),
     '@loader.js': Object.freeze({
       exports: Object.freeze({ Loader: Loader }),
       id: '@loader'
