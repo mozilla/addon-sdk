@@ -507,4 +507,18 @@ exports.startup = function startup(data, reason) {
 exports.shutdown = function shutdown(data, reason) {
 };
 
+// If module is executed in a different process, then there is a
+// `addMessageListener` which we use to register event listen to the `main`
+// message on which loader will get bootstrapped and main module executed.
+if ('addMessageListener' in exports) {
+  exports.addMessageListener('bootstrap', function onMain({ json: { options, id } }) {
+    exports.removeMessageListener('bootstrap', onMain);
+    try {
+      Loader.new(options).main(id);
+    } catch (error) {
+      dump('Failed to bootstrap process: ' + error.stack + '\n');
+    }
+  });
+}
+
 }(typeof(exports) === 'undefined' ? this : exports);
