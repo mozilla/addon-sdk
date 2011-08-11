@@ -7,7 +7,7 @@
     <em:version>1.0</em:version>
     <em:type>2</em:type>
     <em:bootstrap>true</em:bootstrap>
-    <em:unpack>false</em:unpack>
+    <em:unpack>true</em:unpack>
 
     <!-- Firefox -->
     <em:targetApplication>
