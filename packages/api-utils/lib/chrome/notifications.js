@@ -41,13 +41,22 @@ const { Cc, Ci, Cr, CC } = require("chrome");
 const notify = CC('@mozilla.org/alerts-service;1', 'nsIAlertsService')().
                showAlertNotification;
 
+// Utility function used as click handler for each notification.
 function observer(output, id, subject, topic) {
+  // If user clicked notification and the given notification had a non `null`
+  // `id`, then add-on process is notified that notification with a given `id`
+  // was clicked by writing that to the output.
   if (topic === 'alertclickcallback' && id)
     output({ id: id });
 }
 
 exports.initialize = function({ input, output }) {
+  // Read each element from the input stream. Each element represents verified
+  // notification details that are written by and add-on process.
   input(function({ id, title, text, iconURL }) {
+    // Display each notification and set click handler that will write to
+    // the output, notifying add-on process that user clicked notification
+    // with a given `id`.
     notify(iconURL, title, text, !id, null, observer.bind(null, output, id));
   });
 };

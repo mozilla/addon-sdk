@@ -44,9 +44,20 @@ const { distributed } = require('../stream-utils');
 const { compose } = require("../functional");
 const guards = require("../guards");
 
-const listen = distributed(channel.input);
+// wrap `input` stream of the associated modules `channel` into `distributed`
+// stream, which is used for registering `notification` click event listeners.
+// Each listener on registration is assigned unique `id`, that is returned and
+// is used as a notification identifier. We limit registry to `50`, this way
+// oldest listener in the registry will be removed once registry exceeds the
+// limit. This is not an issue since we unregistered listener as soon as it's
+// clicked so `50` is a limit of notification that may be opened and not
+// clicked.
+const listen = distributed(channel.input, 50);
+// Utility function that always returns false.
 const False = Boolean.bind(null, false);
 
+// notification guard that takes care of verification and normalization of
+// all supported options that can be passed to `notify` function.
 const notification = guards.Schema({
   data: guards.String(""),
   iconURL: guards.String(""),
@@ -56,13 +67,16 @@ const notification = guards.Schema({
 });
 
 exports.notify = function notify(options) {
+  // Verify and normalize each supported property.
   let { data, iconURL, text, title, onClick } = notification(options);
+  // Register notification `click` listener for the given notification.
+  // Listener is composed out of given `onClick` handler and `False`
+  // utility function, this way listener will be unregistered as soon
+  // as it's clicked. If there is no `onClick` handler we just use `null`
+  // `id` so that clicks on such notifications don't get observed.
   let id = onClick ? listen(compose(False, onClick.bind(null, data))) : null;
-  channel.output({
-    id: id,
-    title: title,
-    text: text,
-    iconURL: iconURL,
-    data: data
-  });
+
+  // We write element with all the notification details to the output so
+  // that listener on the other side can display notification.
+  channel.output({ id: id, title: title, text: text, iconURL: iconURL });
 };

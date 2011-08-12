@@ -35,15 +35,20 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * Takes a stream whose elements will be distributed across the elements of
- * the returned stream. Elements are distributed by the unique ID, which
- * optionally may be specified as a second argument, otherwise it defaults
- * to `'id'`.
+ * Takes `source` stream and distributes it's elements across the readers of
+ * the returned stream. Each reader is assigned unique `id` that is returned
+ * on registration. Given `attribute` is a key of `source` stream's element
+ * that holds `id` associated at most with one registered listener to which
+ * given element is passed. If optional `attribute` is not passed it defaults
+ * to `id`. Optional `limit` argument is used to limit amount of readers in
+ * the registry. By default size of registry is infinite.
  */
-exports.distributed = function distributed(source, attribute) {
+exports.distributed = function distributed(source, limit, attribute) {
   let id = 0;
   let nexts = {};
-  let stops = [];
+  let stops = {};
+  let addresses = [];
+  let limit = limit || Infinity;
   attribute = attribute || 'id';
 
   source(function onElement(element) {
@@ -56,6 +61,7 @@ exports.distributed = function distributed(source, attribute) {
     if (next && false === next(element)) {
       delete nexts[address];
       delete stops[address];
+      addresses.splice(addresses.indexOf(address), 1)
     }
   }, function onStop(reason) {
     // If source stream is stopped we notify all registered handlers and clean
@@ -74,6 +80,15 @@ exports.distributed = function distributed(source, attribute) {
     nexts[address] = next;
     if (stop)
       stops[address] = stop;
+
+    addresses.push(address);
+
+    if (addresses.length > limit) {
+      let address = addresses.pop();
+      delete nexts[address];
+      delete stops[address];
+    }
+
     return address;
   };
 };
