@@ -54,6 +54,85 @@ handled by [content scripts](dev-guide/addon-development/web-content.html).
 So, for example, to be notified when your widget's content has loaded, you can
 make a small script that calls back to the widget when it finishes loading.
 
+## Attaching Panels to Widgets ##
+
+You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
+constructor: if you do this, the panel is automatically displayed when the
+user clicks the widget.
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png"),
+      panel: clockPanel
+    });
+
+<!-- The icon the widget displays, shown in the screenshot, is taken from the
+Nuvola icon set, http://www.icon-king.com/projects/nuvola/ which is made
+available under the LGPL 2.1:
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html -->
+
+<img class="image-center" src="media/screenshots/widget-panel-clock.png"
+alt="Panel attached to a widget">
+<br>
+
+Note that this is, at the moment, the only way you can attach a panel to a widget.
+
+You must supply the panel in the widget's constructor for it to work. If you
+assign the panel to the widget after construction, the panel can still be shown
+but will not be anchored to the widget:
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    widget = require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png")
+    });
+
+    widget.panel = clockPanel;
+
+    // Will not be anchored
+    widget.panel.show();
+
+Also, if you try to call `panel.show()` inside your widget's `click` event
+listener, the panel will not be anchored:
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png"),
+      panel: clockPanel,
+      onClick: function() {
+        // Will not be anchored
+        this.panel.show();
+      }
+    });
+
+See [bug 638142](https://bugzilla.mozilla.org/show_bug.cgi?id=638142).
+
 ## Examples ##
 
 For conciseness, these examples create their content scripts as strings and use
