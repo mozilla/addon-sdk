@@ -12,7 +12,36 @@ DEFAULT_FIREFOX_PREFS = {
     'extensions.checkCompatibility.nightly' : False,
     'browser.startup.homepage' : 'about:blank',
     'startup.homepage_welcome_url' : 'about:blank',
-    'devtools.errorconsole.enabled' : True
+    'devtools.errorconsole.enabled' : True,
+
+    # Disable extension updates and notifications.
+    'extensions.update.enabled' : False,
+    'extensions.update.notifyUser' : False,
+
+    # From:
+    # http://hg.mozilla.org/mozilla-central/file/1dd81c324ac7/build/automation.py.in#l372
+    # Only load extensions from the application and user profile.
+    # AddonManager.SCOPE_PROFILE + AddonManager.SCOPE_APPLICATION
+    'extensions.enabledScopes' : 5,
+    # Disable metadata caching for installed add-ons by default
+    'extensions.getAddons.cache.enabled' : False,
+    # Disable intalling any distribution add-ons
+    'extensions.installDistroAddons' : False,
+    'extensions.testpilot.runStudies' : False,
+
+    # From:
+    # http://hg.mozilla.org/mozilla-central/file/1dd81c324ac7/build/automation.py.in#l388
+    # Make url-classifier updates so rare that they won't affect tests.
+    'urlclassifier.updateinterval' : 172800,
+    # Point the url-classifier to a nonexistent local URL for fast failures.
+    'browser.safebrowsing.provider.0.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
+    'browser.safebrowsing.provider.0.keyURL' : 'http://localhost/safebrowsing-dummy/newkey',
+    'browser.safebrowsing.provider.0.updateURL' : 'http://localhost/safebrowsing-dummy/update',
+    # Point update checks to a nonexistent local URL for fast failures.
+    'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
+    'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
+    # Make sure opening about:addons won't hit the network.
+    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
     }
 
 # When launching a temporary new Thunderbird profile, use these preferences.
