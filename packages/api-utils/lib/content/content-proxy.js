@@ -571,6 +571,41 @@ const xRayWrappersMethodsFixes = {
     };
 
     return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+
+  // Bug 679054: History API doesn't work with Proxy objects.
+  // We have to pass regular JS objects on `pushState` and replaceState methods.
+  pushState: function (obj) {
+    // Ensure that we are on an object that expose History API
+    try {
+      obj.QueryInterface(Ci.nsIDOMHistory);
+    }
+    catch(e) {
+      return null;
+    }
+    let f = function fix() {
+      // Call native method with JSON objects
+      // (need to convert `arguments` to an array via `slice`)
+      return this.pushState.apply(this, JSON.parse(JSON.stringify(Array.slice(arguments))));
+    };
+
+    return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+  replaceState: function (obj) {
+    // Ensure that we are on an object that expose History API
+    try {
+      obj.QueryInterface(Ci.nsIDOMHistory);
+    }
+    catch(e) {
+      return null;
+    }
+    let f = function fix() {
+      // Call native method with JSON objects
+      // (need to convert `arguments` to an array via `slice`)
+      return this.replaceState.apply(this, JSON.parse(JSON.stringify(Array.slice(arguments))));
+    };
+
+    return getProxyForFunction(f, NativeFunctionWrapper(f));
   }
 };
 
