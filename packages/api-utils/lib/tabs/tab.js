@@ -250,7 +250,7 @@ exports.Options = Options;
 
 exports.getTabForWindow = function (win) {
   // Get browser window
-  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
+  let topWindow = XPCNativeWrapper(win).QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIWebNavigation)
                      .QueryInterface(Ci.nsIDocShellTreeItem)
                      .rootTreeItem
