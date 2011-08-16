@@ -758,7 +758,7 @@ WorkerRegistry.prototype = {
 
   _makeWorker: function WR__makeWorker(win) {
     let worker = ContextMenuWorker({
-      window: win.wrappedJSObject,
+      window: win,
       contentScript: this.item.contentScript,
       contentScriptFile: this.item.contentScriptFile,
       onError: function (err) console.exception(err)

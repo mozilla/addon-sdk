@@ -189,7 +189,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   attach: function attach(options) {
     let { Worker } = require("../content/worker");
-    options.window = this._contentWindow.wrappedJSObject;
+    options.window = this._contentWindow;
     let worker = Worker(options);
     worker.once("detach", function detach() {
       worker.destroy();
@@ -250,7 +250,7 @@ exports.Options = Options;
 
 exports.getTabForWindow = function (win) {
   // Get browser window
-  let topWindow = XPCNativeWrapper(win).QueryInterface(Ci.nsIInterfaceRequestor)
+  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIWebNavigation)
                      .QueryInterface(Ci.nsIDocShellTreeItem)
                      .rootTreeItem

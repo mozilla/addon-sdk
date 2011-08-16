@@ -228,7 +228,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       // JavaScript values.
       // NOTE: this functionality is experimental and may change or go away
       // at any time!
-      unsafeWindow: { get: function () window }
+      unsafeWindow: { get: function () window.wrappedJSObject }
     });
     
     // Overriding / Injecting some natives into sandbox.
