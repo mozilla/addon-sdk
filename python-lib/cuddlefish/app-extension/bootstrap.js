@@ -299,7 +299,7 @@ function Modules(loader, options) {
       let base = requirer.uri;
       let manifest = loader.manifest[base];
       let moduleData = manifest && manifest.requirements['self'];
-      let makeSelf = loader.loader('api-utils/self-maker').makeSelfModule;
+      let makeSelf = loader.load('api-utils/self-maker').makeSelfModule;
 
       if (!moduleData) {
          // we don't know where you live, so we must search for your data
