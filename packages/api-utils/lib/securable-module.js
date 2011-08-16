@@ -367,8 +367,16 @@
          var preeval_exports = sandbox.getProperty("exports");
          self.modules[path] = sandbox.getProperty("exports");
          sandbox.evaluate(moduleContents);
-         sandbox.evaluate("if (typeof module.exports === 'object')\n" +
-                          "Object.freeze(module.exports);");
+
+         // We need to duplicate `exports` as Object.freeze throws an exception
+         // on objects coming from another sandbox. Bug 677768.
+         sandbox.evaluate(
+           "if (typeof module.exports === 'object')\n" +
+           "  module.exports = " +
+           "    Object.prototype.isPrototypeOf(module.exports) ? " +
+           "    Object.freeze(module.exports) : " +
+           "    Object.freeze(Object.create(module.exports));");
+
          var posteval_exports = sandbox.getProperty("module").exports;
          if (posteval_exports !== preeval_exports) {
            /* if they used module.exports= or module.setExports(), get
