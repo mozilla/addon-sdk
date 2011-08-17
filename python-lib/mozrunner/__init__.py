@@ -49,7 +49,6 @@ import killableprocess
 import subprocess
 import platform
 import shutil
-import threading
 
 from distutils import dir_util
 from time import sleep
@@ -81,16 +80,8 @@ def findInPath(fileName, path=os.environ['PATH']):
                 return os.path.join(dir, fileName + ".exe")
     return None
 
-# See bug 665250 - on Windows we must use a pipe between our
-# process and the child then use a thread to collect and print
-# the output - without that, anything written to the child process
-# stdout/stderr (eg, dump()) is lost.
-if sys.platform == "win32":
-    stdout = subprocess.PIPE
-    stderr = subprocess.STDOUT
-else:
-    stdout = sys.stdout
-    stderr = sys.stderr
+stdout = sys.stdout
+stderr = sys.stderr
 stdin = sys.stdin
 
 def run_command(cmd, env=None, **kwargs):
@@ -351,7 +342,6 @@ class Runner(object):
         else:
             self.env = env
         self.kp_kwargs = kp_kwargs or {}
-        self.output_echo_thread = None
 
     def find_binary(self):
         """Finds the binary for self.names if one was not provided."""
@@ -449,17 +439,6 @@ class Runner(object):
         if self.profile is None:
             self.profile = self.profile_class()
         self.process_handler = run_command(self.command+self.cmdargs, self.env, **self.kp_kwargs)
-        if self.process_handler.stdout is not None:
-            self.output_echo_thread = threading.Thread(target=self.output_echoer)
-            self.output_echo_thread.start()
-
-    def output_echoer(self):
-        while True:
-            data = self.process_handler.stdout.read(1)
-            if not data:
-                break
-            sys.stdout.write(data)
-            sys.stdout.flush()
 
     def wait(self, timeout=None):
         """Wait for the browser to exit."""
@@ -470,9 +449,6 @@ class Runner(object):
                 for pid in get_pids(name, self.process_handler.pid):
                     self.process_handler.pid = pid
                     self.process_handler.wait(timeout=timeout)
-        if self.output_echo_thread is not None:
-            self.output_echo_thread.join()
-            self.output_echo_thread = None
 
     def kill(self, kill_signal=signal.SIGTERM):
         """Kill the browser"""
@@ -489,9 +465,6 @@ class Runner(object):
                 # after killing processes.  Let's try that.
                 # TODO: Bug 640047 is invesitgating the correct way to handle this case
                 self.process_handler.wait(timeout=10)
-                if self.output_echo_thread is not None:
-                    self.output_echo_thread.join()
-                    self.output_echo_thread = None
             except Exception, e:
                 logger.error('Cannot kill process, '+type(e).__name__+' '+e.message)
 
