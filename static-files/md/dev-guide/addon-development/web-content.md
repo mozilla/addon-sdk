@@ -184,6 +184,9 @@ the recipient but just emits the event and continues processing.
 
 ### Accessing `port` in the Content Script ###
 
+<span class="aside">Note that the global `self` object is completely different from the
+[`self` module](packages/addon-kit/docs/self.html), which provides an API for an add-on to
+access its data files and ID.</span>
 In the content script the `port` object is available as a property of the
 global `self` object. Thus, to emit an event from a content script:
 
