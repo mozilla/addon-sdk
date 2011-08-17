@@ -57,8 +57,7 @@ CommonJS modules, and a complete add-on is a CommonJS package.
 According to the CommonJS specification, if a module called `main` exists in a
 CommonJS package, that module will be evaluated as soon as your program is
 loaded. For an add-on, that means that the `main` module will be evaluated as
-soon as the host application (such as Firefox) has enabled your program as an
-extension.
+soon as Firefox has enabled the add-on.
 
 So in terms of CommonJS objects the translator consists of a package that
 contains a single module called `main`, and which imports three SDK modules:
