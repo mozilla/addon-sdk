@@ -349,7 +349,7 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "parent-loader", "loader", "manifest"):
+            if reqname in ("chrome", "loader", "manifest"):
                 me.add_requirement(reqname, None)
             elif reqname == "self":
                 # this might reference bundled data, so:
