@@ -255,6 +255,34 @@ exports.testEventEmitter = function(test) {
   );
 };
 
+exports.testHistory = function(test) {
+  // We need a valid url in order to have a working History API.
+  // (i.e do not work on data: or about: pages)
+  // Test bug 679054.
+  let url = require("self").data.url("test-page-mod.html");
+  let callbackDone = null;
+  testPageMod(test, url, [{
+      include: url,
+      contentScriptWhen: 'end',
+      contentScript: 'new ' + function WorkerScope() {
+        history.pushState({}, "", "#");
+        history.replaceState({foo: "bar"}, "", "#");
+        self.postMessage(history.state);
+      },
+      onAttach: function(worker) {
+        worker.on('message', function (data) {
+          test.assertEqual(JSON.stringify(data), JSON.stringify({foo: "bar"}),
+                           "History API works!");
+          callbackDone();
+        });
+      }
+    }],
+    function(win, done) {
+      callbackDone = done;
+    }
+  );
+};
+
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
