@@ -213,12 +213,13 @@ function isBrowser(window) {
 exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
-exports.createRemoteBrowser = function createRemoteBrowser() {
+exports.createRemoteBrowser = function createRemoteBrowser(remote) {
   let document = exports.hiddenWindow.document;
   let browser = document.createElement("browser");
   // Remote="true" enable everything here:
   // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
-  browser.setAttribute("remote","true");
+  if (remote !== false)
+    browser.setAttribute("remote","true");
   // Type="content" is mandatory to enable stuff here:
   // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
   browser.setAttribute("type","content");

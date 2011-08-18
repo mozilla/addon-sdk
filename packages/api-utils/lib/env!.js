@@ -35,11 +35,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const { env } = require("chrome");
+const { messageManager } = require("chrome");
 const { channel } = require("./channel");
 
 module.exports = function load(id) {
   // Load required module on the chrome process.
-  env.sendSyncMessage('require!', id);
-  return channel(env, env, id);
+  channel(messageManager, messageManager, 'require!').sync(id);
+  return channel(messageManager, messageManager, id);
 };

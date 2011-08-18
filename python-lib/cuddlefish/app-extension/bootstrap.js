@@ -247,12 +247,15 @@ function Require(loader, manifest, base) {
     // dump('require: ' + id + '\n');
 
     // Loading required module and return it's exports.
-    // TODO: Find out which exports fail to freeze and fix those!
     let exports = loader.load(id, base);
-    try {
-      exports = Object.freeze(exports);
-    } catch (error) {
-      dump("Failed to freeze exports for module:" + id + "\n");
+
+    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
+    // so we create decedent and freeze it instead.
+    // TODO: Find out why can't we freeze parent-loader.
+    if (typeof(exports) === 'object' && id !== 'parent-loader') {
+      exports = Object.prototype.isPrototypeOf(exports) ?
+                Object.freeze(exports) :
+                Object.freeze(Object.create(exports));
     }
     return exports;
   }
@@ -279,7 +282,7 @@ function Modules(loader, options) {
         Cr: Cr,
         Cm: Cm,
         components: Components,
-        env: exports
+        messageManager: 'addMessageListener' in exports ? exports : null
       }),
       id: 'chrome'
     }),
@@ -358,6 +361,7 @@ const Loader = Component.extend({
   classID: Component.classID,
   interfaces: Component.interfaces.concat([Ci.nsISupportsWeakReference]),
   new: function (options) {
+
     // Register Loader via XPCOM.
     if (!(Loader.contractID in Cc))
       Loader.register();
@@ -487,6 +491,15 @@ exports.install = function install(data, reason) {
 exports.uninstall = function uninstall(data, reason) {
 };
 
+exports.main = function main(options, id) {
+  let loader = Loader.new(options)
+  loader.modules = Modules(loader, options)
+
+  let main = loader.main(id);
+  if (main.main)
+    main.main();
+};
+
 exports.startup = function startup(data, reason) {
   let uri = (data.resolveURI || resourceURI(data.installPath)).spec;
   let options = JSON.parse(readURI(resolve('./harness-options.json', uri)));
@@ -499,18 +512,6 @@ exports.startup = function startup(data, reason) {
   // to match behavior of the legacy module loader.
   let observres = loader.load('api-utils/observer-service');
   observres.add('sessionstore-windows-restored', function onReady() {
-
-    /* Disable loading main module, instead we load spawn up a process, into
-       which main module will be loaded instead!
-
-    // Load a main module.
-    let main = loader.main(mainID);
-    // Jetpack calls main function of the main module. Is this legacy or
-    // intentional.
-    if (main.main)
-      main.main();
-    */
-
     let process = loader.main('api-utils/process');
     // Spawning an add-on process for the main module.
     let addon = process.spawn(mainID);
@@ -520,15 +521,6 @@ exports.startup = function startup(data, reason) {
       try {
         loader.load(id).initialize(addon.channel(id));
       } catch (error) {
-        /*
-        return {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-          fileName: error.fileName,
-          lineNumber: error.lineNumber
-        }
-        */
         loader.globals.console.exception(error)
       }
     });
@@ -537,19 +529,5 @@ exports.startup = function startup(data, reason) {
 
 exports.shutdown = function shutdown(data, reason) {
 };
-
-// If module is executed in a different process, then there is a
-// `addMessageListener` which we use to register event listen to the `main`
-// message on which loader will get bootstrapped and main module executed.
-if ('addMessageListener' in exports) {
-  exports.addMessageListener('bootstrap', function onMain({ json: { options, id } }) {
-    exports.removeMessageListener('bootstrap', onMain);
-    try {
-      Loader.new(options).main(id);
-    } catch (error) {
-      dump('Failed to bootstrap process: ' + error.stack + '\n');
-    }
-  });
-}
 
 }(typeof(exports) === 'undefined' ? this : exports);
