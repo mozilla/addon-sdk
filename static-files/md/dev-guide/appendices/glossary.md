@@ -9,7 +9,7 @@ __Add-on SDK__: A toolchain and associated applications for developing add-ons.
 
 __API Utils__: A small, self-contained set of low-level modules that forms
 the base functionality for the SDK. The library can be "bootstrapped" into
-any Mozilla application or extension.
+any Mozilla application or add-on.
 
 __CFX__: A command-line build, testing, and packaging tool for SDK-based code.
 
@@ -61,7 +61,7 @@ or an Unprivileged Module.
 __Package__: A directory structure containing modules,
 documentation, tests, and related metadata. If a package contains
 a program and includes proper metadata, it can be built into
-a Mozilla application or extension.
+a Mozilla application or add-on.
 
 __Program__: A module named `main` that optionally exports
 a `main()` function.  This module is intended either to start an application for
