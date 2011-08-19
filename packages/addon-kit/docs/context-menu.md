@@ -22,7 +22,7 @@ current context are automatically removed from the menu.  You never need to
 manually remove your items from the menu unless you want them to never appear
 again.
 
-For example, if your extension needs to add a context menu item whenever the
+For example, if your add-on needs to add a context menu item whenever the
 user visits a certain page, don't create the item when that page loads, and
 don't remove it when the page unloads.  Rather, create your item only once and
 supply a context that matches the target URL.
