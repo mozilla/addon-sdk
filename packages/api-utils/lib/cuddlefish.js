@@ -102,8 +102,6 @@
                         Cm: Components.manager,
                         components: Components };
          return chrome;
-       case "parent-loader":
-         return this;
        default:
          return (delegate ? delegate.call(this, basePath, module) : null);
        }

@@ -267,7 +267,7 @@
           */
 
          if (self.getModuleExports) {
-           /* this currently handles 'chrome' and 'parent-loader' */
+           /* this currently handles 'chrome' */
            let exports = self.getModuleExports(basePath, moduleName);
            if (exports)
              return exports;
