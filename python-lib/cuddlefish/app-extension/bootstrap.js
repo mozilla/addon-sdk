@@ -45,10 +45,6 @@ var EXPORTED_SYMBOLS = [ 'Loader' ];
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
-const { registerFactory, unregisterFactory } =
-        Cm.QueryInterface(Ci.nsIComponentRegistrar);
-const { generateUUID } = CC('@mozilla.org/uuid-generator;1',
-                            'nsIUUIDGenerator')();
 const ioService = CC('@mozilla.org/network/io-service;1',
                        'nsIIOService')();
 const resourceHandler = ioService.getProtocolHandler('resource')
@@ -112,115 +108,6 @@ function readURI(uri) {
   return request.responseText;
 }
 
-/**
- * Base construct for defining reusable components.
- */
-const Base = Object.freeze(Object.create(Object.prototype, {
-  /**
-   * Creates an object that inherits from `this` object (Analog of
-   * `new Object()`).
-   * @examples
-   *
-   *    var Dog = Base.extend({
-   *      bark: function bark() {
-   *        return 'Ruff! Ruff!'
-   *      }
-   *    });
-   *    var dog = Dog.new();
-   */
-  new: { value: function Base() {
-    var object = Object.create(this);
-    object.initialize.apply(object, arguments);
-    return object;
-  }},
-  /**
-   * Method that is called on every `new` instance created, with an arguments
-   * that were passed to `new`.
-   */
-  initialize: { value: function initialize() {
-  }},
-  /**
-   * Takes any number of argument objects and returns frozen, composite object
-   * that inherits from `this` object and combines all of the own properties of
-   * the argument objects. (Objects returned by this function are frozen as
-   * they are intended to be used as types).
-   *
-   * If two or more argument objects have own properties with the same name,
-   * the property is overridden, with precedence from right to left, implying,
-   * that properties of the object on the left are overridden by a same named
-   * property of the object on the right.
-   * @examples
-   */
-  extend: { value: function extend() {
-    // Defining an ES5 property descriptor map, where own property
-    // descriptors of all given objects are copied.
-    var descriptor = {};
-    Array.prototype.forEach.call(arguments, function (properties) {
-      Object.getOwnPropertyNames(properties).forEach(function(name) {
-        descriptor[name] = Object.getOwnPropertyDescriptor(properties, name);
-      });
-    });
-    return Object.freeze(Object.create(this, descriptor));
-  }}
-}));
-
-/**
- * Prototype object containing XPCOM creation and registration boilerplate.
- */
-const Component = Base.extend({
-  classDescription: 'Jetpack generated class',
-  contractID: '@mozilla.org/jetpack/component;1',
-  get classID() generateUUID(),
-  interfaces: [ Ci.nsISupports, Ci.nsIFactory ],
-  /**
-   * The `QueryInterface` method provides runtime type discovery.
-   */
-  QueryInterface: function QueryInterface(iid) {
-    if (!this.interfaces.some(iid.equals, iid))
-      throw Cr.NS_ERROR_NO_INTERFACE;
-
-    return this;
-  },
-  /**
-   * Creates an instance of the class associated with this factory.
-   */
-  createInstance: function createInstance(outer, iid) {
-    try {
-      if (outer)
-        throw Cr.NS_ERROR_NO_AGGREGATION;
-      return this.QueryInterface(iid);
-    }
-    catch (error) {
-      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
-    }
-  },
-  // Part of `nsIFactory`
-  lockFactory: function(lock) undefined,
-  /**
-   * XPConnect lets you bypass its wrappers and access the underlying JS object
-   * directly using the `wrappedJSObject` property if the wrapped object allows
-   * this.
-   */
-  get wrappedJSObject() this,
-  /**
-   * Registers `this` object to be used to instantiate a particular class
-   * identified by `this.classID`, and creates an association of class name
-   * and `this.contractID` with the class.
-   */
-  register: function register() {
-    registerFactory(this.classID, this.classDescription, this.contractID, this);
-    return this;
-  },
-  /**
-   * Unregister a factory associated with a particular class identified by
-   * `this.classID`.
-   */
-  unregister: function unregister() {
-    unregisterFactory(this.classID, this);
-    return this;
-  }
-});
-
 function Require(loader, manifest, base) {
   function require(id) {
     // TODO: Remove debug log!
@@ -251,8 +138,7 @@ function Require(loader, manifest, base) {
 
     // Workaround for bug 674195. Freezing objects from other sandboxes fail,
     // so we create decedent and freeze it instead.
-    // TODO: Find out why can't we freeze parent-loader.
-    if (typeof(exports) === 'object' && id !== 'parent-loader') {
+    if (typeof(exports) === 'object') {
       exports = Object.prototype.isPrototypeOf(exports) ?
                 Object.freeze(exports) :
                 Object.freeze(Object.create(exports));
@@ -263,81 +149,16 @@ function Require(loader, manifest, base) {
   return require;
 }
 
-function Main(loader) {
-  return function main(id) {
-    // Overriding main so that all modules point to it.
-    loader.main = loader.modules[resolveURI(loader.root, id)] = {};
-    return Require(loader, null)(id);
-  }
-}
-
-function Modules(loader, options) {
-  return {
-    'chrome.js': Object.freeze({
-      exports: Object.freeze({
-        Cc: Cc,
-        CC: CC,
-        Ci: Ci,
-        Cu: Cu,
-        Cr: Cr,
-        Cm: Cm,
-        components: Components,
-        messageManager: 'addMessageListener' in exports ? exports : null
-      }),
-      id: 'chrome'
-    }),
-    'parent-loader.js': Object.freeze({
-      exports: loader,
-      id: 'parent-loader'
-    }),
-    '@base.js': Object.freeze({
-      exports: { Base: Base },
-      id: '@base'
-    }),
-    '@loader.js': Object.freeze({
-      exports: Object.freeze({ Loader: Loader }),
-      id: '@loader'
-    }),
-    '@packaging.js': Object.freeze({
-      // Make deep clone to avoid manifest changes at runtime.
-      exports: JSON.parse(JSON.stringify(options)),
-      id: '@packaging'
-    }),
-    'self.js': function(loader, requirer) {
-      let base = requirer.uri;
-      let manifest = loader.manifest[base];
-      let moduleData = manifest && manifest.requirements['self'];
-      let makeSelf = loader.load('api-utils/self-maker').makeSelfModule;
-
-      if (!moduleData) {
-         // we don't know where you live, so we must search for your data
-         // resource://api-utils-api-utils-tests/test-self.js
-         // make a prefix of resource://api-utils-api-utils-data/
-         let doubleslash = base.indexOf("//");
-         let prefix = base.slice(0, doubleslash+2);
-         let rest = base.slice(doubleslash+2);
-         let slash = rest.indexOf("/");
-         prefix = prefix + rest.slice(0, slash);
-         prefix = prefix.slice(0, prefix.lastIndexOf("-")) + "-data/";
-         moduleData = { dataURIPrefix: prefix };
-         // moduleData also wants mapName and mapSHA256, but they're
-         // currently unused
+const Sandbox = {
+  new: function (prototype, principal) {
+    return Object.create(Sandbox, {
+      sandbox: {
+        value: Cu.Sandbox(principal || Sandbox.principal, {
+          sandboxPrototype: prototype || Sandbox.prototype,
+          wantXrays: Sandbox.wantXrays
+        })
       }
-
-      return Object.freeze({
-        id: 'self',
-        exports: Object.freeze(makeSelf(moduleData))
-      })
-    }
-  }
-}
-
-const Sandbox = Base.extend({
-  initialize: function Sandbox(prototype) {
-    this.sandbox = Cu.Sandbox(this.principal, {
-      sandboxPrototype: prototype || this.prototype,
-      wantXrays: this.wantXrays
-    });
+    })
   },
   evaluate: function evaluate(source, uri, lineNumber) {
     return Cu.evalInSandbox(
@@ -353,66 +174,78 @@ const Sandbox = Base.extend({
   lineNumber: 1,
   wantXrays: false,
   prototype: {}
-});
+};
 
-const Loader = Component.extend({
-  classDescription: 'Jetpack module loader service',
-  contractID: '@mozilla.org/jetpack/module-loader;1',
-  classID: Component.classID,
-  interfaces: Component.interfaces.concat([Ci.nsISupportsWeakReference]),
+const Loader = {
   new: function (options) {
+    // TODO: Also adding legacy global that some code depends on, which should
+    // migrate to require("packaging") or similar instead.
+    let globals = {
+      packaging: { jetpackID: options.jetpackID, options: options }
+    };
 
-    // Register Loader via XPCOM.
-    if (!(Loader.contractID in Cc))
-      Loader.register();
+    let loader = Object.create(Loader, {
+      globals: { value: globals },
 
-    let loader = Object.create(Cc[Loader.contractID].
-                               createInstance(Ci.nsISupports).wrappedJSObject);
-    loader.initialize(options);
+      // Metadata from package.json.
+      // Maybe this is obsolete.
+      metadata: { value: options.metadata || {} },
 
-    return loader;
-  },
-  initialize: function initialize(options) {
+      // Manifest generated by a linker, containing map of module url's mapped
+      // to it's requirements.
+      manifest: { value: options.manifest || {} },
+
+      // TODO: Hack to allow module URI resolution from ID.
+      // Hopefully we'll modify linker in a way that id's will map one on one
+      // URIs.
+      root: { value: options.uriPrefix },
+
+      modules: { value: options.modules || Loader.modules },
+
+      // If `true` sandboxes will be created per module, otherwise
+      // one sandbox will be used for all modules.
+      sandboxes: { value: options.sandboxes <= 1 ? Sandbox.new(globals) : {} }
+    });
+
+    loader.modules['@packaging.js'] = Object.freeze({
+      id: '@packaging',
+      exports: JSON.parse(JSON.stringify(options))
+    });
+    loader.modules['@loader.js'] = Object.freeze({
+      exports: Object.freeze({ Loader: Loader }),
+      id: '@loader'
+    });
+
     // TODO: This is unnecessary overhead add-on already has resource URI which
     // we should use, it's just packages should be aligned so that they can map
     // easily to the module IDs.
     mapResources(options.uri, options.resources);
 
-    // Metadata from package.json.
-    // Maybe this is obsolete.
-    this.metadata = options.metadata;
-
-    // Manifest generated by a linker, containing map of module url's mapped
-    // to it's requirements.
-    this.manifest = options.manifest;
-
-    // TODO: Hack to allow module URI resolution from ID.
-    // Hopefully we'll modify linker in a way that id's will map one on one
-    // URIs.
-    this.root = options.uriPrefix;
-
-    // If `true` sandboxes will be created per module, otherwise
-    // one sandbox will be used for all modules.
-    if (options.sandboxes <= 1)
-      this.sandbox = Sandbox.new(this.globals);
-    else
-      this.sandboxes = {};
-
-    // Use modules if they were provided or create default one.
-    this.modules = options.modules || Modules(this, options);
-
-    // TODO: Also adding legacy global that some code depends on, which should
-    // migrate to require("packaging") or similar instead.
-    this.globals = {
-      packaging: { jetpackID: options.jetpackID, options: options }
-    };
     // Loading globals for special module and put them into loader globals.
-    let globals = this.load('api-utils/@globals');
+    globals = loader.load('api-utils/globals!');
     Object.keys(globals).forEach(function(name) {
-      this.globals[name] = globals[name];
-    }, this);
+      loader.globals[name] = globals[name];
+    });
 
-    this.main = Main(this);
+    return loader
+  },
+  modules: {
+    'chrome.js': Object.freeze({
+      exports: Object.freeze({
+        Cc: Cc,
+        CC: CC,
+        Ci: Ci,
+        Cu: Cu,
+        Cr: Cr,
+        Cm: Cm,
+        components: Components,
+        messageManager: 'addMessageListener' in exports ? exports : null
+      }),
+      id: 'chrome'
+    }),
+    'self.js': function self(loader, requirer) {
+      return loader.load('api-utils/self!').create(requirer.uri);
+    },
   },
   load: function load(id, base) {
     let uri = resolveURI(this.root, normalize(id));
@@ -453,8 +286,13 @@ const Loader = Component.extend({
     }
 
     return Object.freeze(module).exports;
+  },
+  main: function main(id) {
+    // Overriding main so that all modules point to it.
+    this.main = this.modules[resolveURI(this.root, id)] = {};
+    return Require(this, null)(id);
   }
-});
+};
 exports.Loader = Loader;
 
 // Shim function to get `resourceURI` in pre Gecko 7.0.
@@ -493,8 +331,6 @@ exports.uninstall = function uninstall(data, reason) {
 
 exports.main = function main(options, id) {
   let loader = Loader.new(options)
-  loader.modules = Modules(loader, options)
-
   let main = loader.main(id);
   if (main.main)
     main.main();
