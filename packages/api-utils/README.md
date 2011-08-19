@@ -1,8 +1,8 @@
 API Utils provides a basic CommonJS infrastructure for
-developing traditional XULRunner Extensions and applications. It is
+developing traditional XULRunner add-ons and applications. It is
 the basis for the Add-on SDK.
 
-To address issues present in traditional Extension development,
+To address issues present in traditional add-on development,
 API Utils provides mechanisms for:
 
 * writing and executing test cases, inspired by Python's [nose][]
@@ -22,7 +22,7 @@ API Utils also has the following characteristics:
   out why something they're doing isn't working.
 
 API Utils is intended to be very small and only contain the bare
-minimum of functionality that all extensions need.
+minimum of functionality that all add-ons need.
 
 Note that the API Utils package has not fully stabilized yet, meaning that
 we do still expect to make incompatible changes to its APIs in future releases

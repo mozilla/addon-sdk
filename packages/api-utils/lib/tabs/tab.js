@@ -189,7 +189,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   attach: function attach(options) {
     let { Worker } = require("../content/worker");
-    options.window = this._contentWindow.wrappedJSObject;
+    options.window = this._contentWindow;
     let worker = Worker(options);
     worker.once("detach", function detach() {
       worker.destroy();
