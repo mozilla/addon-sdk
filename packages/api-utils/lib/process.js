@@ -36,25 +36,21 @@
 
 const { Cc, Ci } = require("chrome");
 const { createRemoteBrowser } = require("api-utils/window-utils");
-const packaging = require('@packaging');
 const { channel } = require("./channel");
-
-function process(scope, messageManager) {
-  messageManager.loadFrameScript(packaging.uri + 'bootstrap.js', false)
-  return {
-    channel: channel.bind(null, scope, messageManager),
-    stop: function stop() {
-      messageManager.close()
-    }
-  };
-}
+const { setTimout } = require('./timer');
+const packaging = require('@packaging');
 
 exports.spawn = function spawn(id) {
-  var browser = createRemoteBrowser();
+  var browser = createRemoteBrowser(packaging.enable_e10s);
   let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
                        frameLoader.messageManager;
 
-  let spawned = process(browser.ownerDocument.defaultView, messageManager);
-  spawned.channel('bootstrap').output({ options: packaging, id: id });
-  return spawned;
+  messageManager.loadFrameScript(packaging.uri + 'bootstrap.js', false)
+  messageManager.loadFrameScript('data:,main(' + JSON.stringify(packaging) +
+                                 ', "' + id + '");', false);
+
+  return {
+    channel: channel.bind(null, browser.ownerDocument.defaultView,
+                                messageManager)
+  }
 };

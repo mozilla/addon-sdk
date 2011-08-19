@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -43,12 +44,15 @@ var errors = require("./errors");
 var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
                      .getService(Ci.nsIWindowWatcher);
 
+const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
+                        getService(Ci.nsIAppShellService);
+
 const { EventEmitter } = require('./events'),
       { Trait } = require('./traits');
 
 /**
  * An iterator for XUL windows currently in the application.
- * 
+ *
  * @return A generator that yields XUL windows exposing the
  *         nsIDOMWindow interface.
  */
@@ -207,6 +211,28 @@ function isBrowser(window) {
          "navigator:browser";
 };
 exports.isBrowser = isBrowser;
+
+exports.hiddenWindow = appShellService.hiddenDOMWindow;
+exports.createRemoteBrowser = function createRemoteBrowser(remote) {
+  let document = exports.hiddenWindow.document;
+  let browser = document.createElement("browser");
+  // Remote="true" enable everything here:
+  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
+  if (remote !== false)
+    browser.setAttribute("remote","true");
+  // Type="content" is mandatory to enable stuff here:
+  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
+  browser.setAttribute("type","content");
+  // We remove XBL binding to avoid execution of code that is not going to work
+  // because browser has no docShell attribute in remote mode (for example)
+  browser.setAttribute("style","-moz-binding: none;");
+  // Flex it in order to be visible (optional, for debug purpose)
+  browser.setAttribute("flex", "1");
+  document.documentElement.appendChild(browser);
+
+  // Return browser
+  return browser;
+}
 
 require("./unload").when(
   function() {

@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const { jetpackID } = require('@packaging');
+
 // TODO: Create a bug report and remove this workaround once it's fixed.
 // Only function needs defined in the context of the message manager window
 // can be registered via `addMessageListener`.
@@ -44,11 +46,12 @@ function messageListener(scope, callee) {
   return scope.eval('(' + listener + ')')(callee);
 }
 
-exports.channel = function channel(scope, messageManager, address) {
+exports.channel = function channel(scope, messageManager, address, raw) {
+  address = jetpackID + ':' + address
   return {
     input: function input(next, stop) {
       let listener = messageListener(scope, function onMessage(message) {
-        if (false === next(message.json))
+        if (false === next(raw ? message : message.json))
           messageManager.removeMessageListener(address, listener);
       });
       messageManager.addMessageListener(address, listener);
@@ -56,8 +59,9 @@ exports.channel = function channel(scope, messageManager, address) {
     output: function output(data) {
       messageManager.sendAsyncMessage(address, data);
     },
-    sync: function sync(element) {
+    sync: !messageManager.sendSyncMessage ? null : function sync(data) {
       messageManager.sendSyncMessage(address, data);
     }
   };
-}
+};
+
