@@ -141,13 +141,13 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property will loads page under under the specified location.
    * @type {String}
    */
-  get url() String(this._contentDocument.location),
+  get url() String(this._browser.currentURI.spec),
   set url(value) this._changeLocation(String(value)),
   // "TabOpen" event is fired when it's still "about:blank" is loaded in the
   // changing `location` property of the `contentDocument` has no effect since
   // seems to be either ignored or overridden by internal listener, there for
   // location change is enqueued for the next turn of event loop.
-  _changeLocation: Enqueued(function(url) this._contentDocument.location = url),
+  _changeLocation: Enqueued(function(url) this._browser.loadURI(url)),
   /**
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
