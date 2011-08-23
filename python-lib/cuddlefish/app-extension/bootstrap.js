@@ -271,7 +271,7 @@ const Loader = {
     try {
       source = readURI(uri);
     } catch(error) {
-      throw new Error('Module: ' + id + ' was not fonud: ' + uri)
+      throw new Error('Module: ' + id + ' was not found: ' + uri)
     }
     let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
     let factory;
