@@ -255,6 +255,37 @@ exports.testEventEmitter = function(test) {
   );
 };
 
+// Execute two distinct page mods on same document to ensure that their
+// JS context are differents
+exports.testMixedContext = function(test) {
+  let doneCallback = null;
+  let messages = 0;
+  let modObject = {
+    include: "data:text/html,",
+    contentScript: 'new ' + function WorkerScope() {
+      self.postMessage("foo" in document);
+      document.foo = true;
+    },
+    onAttach: function(w) {
+      w.on("message", function (data) {
+        if (data) {
+          test.fail("Page mod contexts are mixed.");
+          doneCallback();
+        }
+        else if (++messages == 2) {
+          test.pass("Page mod contexts are different.");
+          doneCallback();
+        }
+      });
+    }
+  };
+  let mods = testPageMod(test, "data:text/html,", [modObject, modObject],
+    function(win, done) {
+      doneCallback = done;
+    }
+  );
+};
+
 exports.testHistory = function(test) {
   // We need a valid url in order to have a working History API.
   // (i.e do not work on data: or about: pages)

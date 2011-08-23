@@ -49,7 +49,11 @@ const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { Enqueued } = require('../utils/function');
-const proxy = require('./content-proxy');
+const self = require("self");
+const scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
+                   getService(Ci.mozIJSSubScriptLoader);
+
+const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
 
 const JS_VERSION = '1.8';
 
@@ -214,13 +218,31 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // We receive an unwrapped window, with raw js access
     let window = worker._window;
     
+    let proto = window;
+    // Build content proxies only if the document has a non-system principal
+    if (window.wrappedJSObject) {
+      // Instanciate the proxy code in another Sandbox in order to avoid
+      // content script to pollute globals used by proxy code
+      let proxySandbox = Cu.Sandbox(window, {
+        wantXrays: true
+      });
+      proxySandbox.console = console;
+      // Pass a window reference to proxy code
+      proxySandbox.windowObjectToProxify = window;
+      // Execute the proxy code
+      scriptLoader.loadSubScript(CONTENT_PROXY_URL, proxySandbox);
+      // Get back a reference to the window's proxy
+      proto = proxySandbox.proxy;
+    }
+
     // Create the sandbox and bind it to window in order for content scripts to
     // have access to all standard globals (window, document, ...)
     let sandbox = this._sandbox = new Cu.Sandbox(window, {
-      sandboxPrototype: proxy.create(window),
-      wantXrays: false
+      sandboxPrototype: proto,
+      wantXrays: true
     });
     Object.defineProperties(sandbox, {
+      // We need "this === window === top" to be true in toplevel scope:
       window: { get: function() sandbox },
       top: { get: function() sandbox },
       // Use the Greasemonkey naming convention to provide access to the
@@ -292,6 +314,16 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       }
     });
 
+    // Temporary fix for test-widget, that pass self.postMessage to proxy code
+    // that first try to access to `___proxy` and then call it through `apply`.
+    // We need to move function given to content script to a sandbox
+    // with same principal than the content script.
+    // In the meantime, we need to allow such access explicitely:
+    sandbox.self.postMessage.__exposedProps__ = {
+      ___proxy: 'rw',
+      apply: 'rw'
+    }
+
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
@@ -318,11 +350,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // as internal implementation of timer module use same method for both.
     for (let id in this._timers)
       timer.clearTimeout(id);
-    let publicAPI = this._public,
-        sandbox = this._sandbox;
-    delete sandbox.__proto__;
-    for (let key in publicAPI)
-      delete sandbox[key];
     this._sandbox = null;
     this._addonWorker = null;
     this.__onMessage = undefined;

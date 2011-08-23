@@ -1,4 +1,6 @@
-const { Ci, Cc } = require("chrome");
+(function (sandboxGlobal) {
+
+let Ci = Components.interfaces;
 
 /**
  * Access key that allows privileged code to unwrap proxy wrappers through 
@@ -6,7 +8,6 @@ const { Ci, Cc } = require("chrome");
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  */
 const UNWRAP_ACCESS_KEY = {};
-exports.UNWRAP_ACCESS_KEY = UNWRAP_ACCESS_KEY;
 
  /**
  * Returns a closure that wraps arguments before calling the given function,
@@ -473,19 +474,20 @@ const xRayWrappersMissFixes = [
       catch(e) {
         return null;
       }
+
       // Integer case:
       let i = parseInt(name);
       if (i >= 0 && i in obj) {
         return wrap(XPCNativeWrapper(obj[i]));
       }
+
       // String name case:
       if (name in obj.wrappedJSObject) {
         let win = obj.wrappedJSObject[name];
         let nodes = obj.document.getElementsByName(name);
         for (let i = 0, l = nodes.length; i < l; i++) {
           let node = nodes[i];
-          if ("contentWindow" in node && 
-              node.contentWindow.wrappedJSObject == win)
+          if ("contentWindow" in node && node.contentWindow == win)
             return wrap(node.contentWindow);
         }
       }
@@ -501,10 +503,11 @@ const xRayWrappersMissFixes = [
       let nodes = obj.ownerDocument.getElementsByName(name);
       for (let i = 0, l = nodes.length; i < l; i++) {
         let node = nodes[i];
-        if (node.wrappedJSObject == match)
+        if (node == match)
           return wrap(node);
       }
     }
+    return null;
   },
   
   // Fix XPathResult's constants being undefined on XrayWrappers
@@ -518,6 +521,7 @@ const xRayWrappersMissFixes = [
       if (typeof value == "number" && value === obj.wrappedJSObject[name])
         return value;
     }
+    return null;
   }
   
 ];
@@ -573,8 +577,9 @@ const xRayWrappersMethodsFixes = {
     return getProxyForFunction(f, NativeFunctionWrapper(f));
   },
 
-  // Bug 679054: History API doesn't work with Proxy objects.
-  // We have to pass regular JS objects on `pushState` and replaceState methods.
+  // Bug 679054: History API doesn't work with Proxy objects. We have to pass
+  // regular JS objects on `pushState` and `replaceState` methods.
+  // In addition, the first argument have to come from the same compartment.
   pushState: function (obj) {
     // Ensure that we are on an object that expose History API
     try {
@@ -644,13 +649,13 @@ function handlerMaker(obj) {
         // even on "name in wrapper". So avoid doing it!
         return name in expando;
       }
-      return name in obj || name in overload || name == "__isWrappedProxy";
+      return name in obj || name in overload || name == "__isWrappedProxy" ||
+             [null, undefined].indexOf(this.get(null, name)) === -1;
     },
     hasOwn: function(name) {
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      
       if (name == "___proxy")
         return undefined;
       
@@ -714,7 +719,7 @@ function handlerMaker(obj) {
     },
     
     set: function(receiver, name, val) {
-      
+
       if (isEventName(name)) {
         //console.log("SET on* attribute : " + name + " / " + val + "/" + obj);
         let shortName = name.replace(/^on/,"");
@@ -757,7 +762,7 @@ function handlerMaker(obj) {
     
     enumerate: function() {
       var result = [];
-      for each (name in Object.keys(obj)) {
+      for each (let name in Object.keys(obj)) {
         result.push(name);
       };
       return result;
@@ -773,13 +778,10 @@ function handlerMaker(obj) {
 /* 
  * Wrap an object from the document to a proxy wrapper.
  */
-exports.create = function create(object) {
-  // We accept either a XrayWrapper or an unwrapped reference
-  if ("wrappedJSObject" in object)
+function create(object) {
+  if (object.wrappedJSObject)
     object = object.wrappedJSObject;
-
   let xpcWrapper = XPCNativeWrapper(object);
-
   // If we can't build an XPCNativeWrapper, it doesn't make sense to build
   // a proxy. All proxy code is based on having such wrapper that store
   // different JS attributes set.
@@ -790,3 +792,16 @@ exports.create = function create(object) {
   }
   return getProxyForObject(xpcWrapper);
 }
+
+
+// Create our global object proxy and set it to be the sandbox one
+let proxy = sandboxGlobal.proxy = create(sandboxGlobal.windowObjectToProxify);
+
+// Offer a way to retrieve the key needed to unwrap
+// (for unit tests)
+if (sandboxGlobal.windowObjectToProxify.document.
+    getUserData("___include_UNWRAP_ACCESS_KEY")) {
+  proxy.UNWRAP_ACCESS_KEY = UNWRAP_ACCESS_KEY;
+}
+
+})(this);

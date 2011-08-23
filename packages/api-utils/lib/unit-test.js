@@ -89,6 +89,11 @@ TestRunner.prototype = {
       options = {console: console};
     options.fs = this.fs;
 
+    if (!("globals" in options))
+      options.globals = {};
+    if (!("packaging" in options.globals))
+      options.globals.packaging = packaging;
+
     var Cuddlefish = require("./cuddlefish");
 
     if ("moduleOverrides" in options) {
