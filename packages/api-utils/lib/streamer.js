@@ -3,9 +3,11 @@
          forin: false latedef: false */
 /*global define: true */
 
-!(typeof define !== "function" ? function($){ $(require, exports, module); } : define)(function(require, exports, module, undefined) {
+!(typeof(define) !== "function" ? function($){ $(typeof(require) !== 'function' ? (function() { throw Error('require unsupported'); }) : require, typeof(exports) === 'undefined' ? this : exports); } : define)(function(require, exports) {
 
 'use strict';
+
+var nil // Shortcut for undefined.
 
 /**
  * Internal utility function that takes a `source` function and optional
@@ -16,7 +18,19 @@
 function limit(source, number) {
   number = number || 1
   return function limited() {
-    return number-- > 0 && source ? source.apply(this, arguments) : undefined
+    return number-- > 0 && source ? source.apply(this, arguments) : nil
+  }
+}
+
+function normalize(source) {
+  return function stream(next, stop) {
+    var stopped = false, reading = true
+    source(function onElement(element) {
+      if (!stopped && false !== reading)
+        return (reading = next(element))
+    }, function onStop(reason) {
+      return stopped ? nil : (stopped = true, stop(reason))
+    })
   }
 }
 
@@ -52,34 +66,34 @@ exports.list = list
 /*
  * Creates empty stream. This is equivalent of `list()`.
  */
-exports.empty = function empty() {
+function empty() {
   return function stream(next, stop) { return stop && stop() }
 }
-
+exports.empty = empty
 
 /**
  * Returns stream of mapped values.
+ * @param {Function} lambda
+ *    function that maps each value
  * @param {Function} input
  *    source stream to be mapped
- * @param {Function} map
- *    function that maps each value
  * @examples
  *    var stream = list({ name: 'foo' },  { name: 'bar' })
- *    var names = map(stream, function(value) { return value.name })
+ *    var names = map(function(value) { return value.name }, stream)
  *    names(console.log)
  *    // 'foo'
  *    // 'bar'
  *    var numbers = list(1, 2, 3)
- *    var mapped = map(numbers, function onEach(number) { return number * 2 })
+ *    var mapped = map(function onEach(number) { return number * 2 }, numbers)
  *    mapped(console.log)
  *    // 2
  *    // 4
  *    // 6
  */
-function map(source, mapper) {
+function map(lambda, source) {
   return function stream(next, stop) {
     source(function onElement(element) {
-      return next(mapper(element))
+      return next(lambda(element))
     }, stop)
   }
 }
@@ -87,22 +101,23 @@ exports.map = map
 
 /**
  * Returns stream of filtered values.
+ * @param {Function} lambda
+ *    function that filters values
  * @param {Function} source
  *    source stream to be filtered
- * @param {Function} filter
  * @examples
  *    var numbers = list(10, 23, 2, 7, 17)
- *    var digits = filter(numbers, function(value) {
+ *    var digits = filter(function(value) {
  *      return value >= 0 && value <= 9
- *    })
+ *    }, numbers)
  *    digits(console.log)
  *    // 2
  *    // 7
  */
-function filter(source, filterer) {
+function filter(lambda, source) {
   return function stream(next, stop) {
     source(function onElement(element) {
-      return filterer(element) ? next(element) : true
+      return lambda(element) ? next(element) : true
     }, stop)
   }
 }
@@ -118,13 +133,13 @@ exports.filter = filter
  *    initial value
  * @examples
  *    var numbers = list(2, 3, 8)
- *    var sum = reduce(numbers, function onElement(previous, current) {
+ *    var sum = reduce(function onElement(previous, current) {
  *      return (previous || 0) + current
- *    })
+ *    }, numbers)
  *    sum(console.log)
  *    // 13
  */
-function reduce(source, reducer, initial) {
+function reduce(reducer, source, initial) {
   return function stream(next, stop) {
     var value = initial
     source(function onElement(element) {
@@ -154,7 +169,7 @@ exports.reduce = reduce
  *    // [ 'b', 2, '@' ]
  *    // [ 'c', 3, '#' ]
  */
-var zip = exports.zip = (function Zip() {
+var zip = (function Zip() {
   // Returns weather array is empty or not.
   function isEmpty(array) { return !array.length }
   // Utility function that check if each array in given array of arrays
@@ -219,7 +234,33 @@ var zip = exports.zip = (function Zip() {
     }
   }
 })()
+exports.zip = zip
 
+/**
+ * Returns stream containing first `n` elements of given `source`, on which
+ * given lambda returns `true`.
+ *
+ * @param {Function} lambda
+ *    function that takes elements.
+ * @param {Function} source
+ *    source stream to take elements from.
+ * @examples
+ *    var numbers = list(10, 23, 2, 7, 17)
+ *    var digits = take(function(value) {
+ *      return value >= 10
+ *    }, numbers)
+ *    digits(console.log)
+ *    // 10
+ *    // 23
+ */
+function take(lambda, source) {
+  return function stream(next, stop) {
+    source(function onElement(element) {
+      return lambda(element) ? next(element) : stop() && false
+    }, stop = limit(stop))
+  }
+}
+exports.take = take
 
 /**
  * Returns a stream consisting of the given `source` stream elements starting
@@ -232,14 +273,11 @@ function slice(source, start, end) {
   // Zero-based index at which to end extraction
   end = end || Infinity
   return function stream(next, stop) {
-    var index = -1, interrupt
-    source(function onElement(element) {
-      // Skip elements until we reach start of the extraction range.
-      if (++index < start) return true
-      // If index is in range we want to extract from then yield.
-      if (index < end) interrupt = next(element)
-      // If this is last element we stop stream and interrupt reading
-      return index + 1 >= end ? stop() | false : interrupt
+    var index = 0
+    filter(function(element) {
+      return start <= index ++
+    }, source)(function onElement(element) {
+      return next(element), index >= end ? (stop(), false) : true
     }, stop = limit(stop))
   }
 }
@@ -325,7 +363,7 @@ exports.append = append
  *    // 3
  *    // 'async'
  */
-exports.merge = function merge(source) {
+function merge(source) {
   return function stream(next, stop) {
     var open = 1, alive
     function onStop(error) {
@@ -343,6 +381,7 @@ exports.merge = function merge(source) {
     }, onStop)
   }
 }
+exports.merge = merge
 
 /**
  * Utility function to print streams.
@@ -351,13 +390,14 @@ exports.merge = function merge(source) {
  * @examples
  *    print(list('Hello', 'world'))
  */
-exports.print = function print(stream) {
+function print(stream) {
   console.log('>>')
   stream(console.log.bind(console), function onStop(error) {
     if (error) console.error(error)
     else console.log('<<')
   })
 }
+exports.print = print
 
 /**
  * Returns a stream equivalent to a given `source`, with difference that
@@ -479,5 +519,105 @@ function cache(source) {
   }));
 }
 exports.cache = cache
+
+/**
+ * Returns stream equivalent to a given `source` with a difference that it has
+ * a state, meaning that if reader stops reading on n-th element next reader
+ * will continue reading from n-th element. Purpose is to wrap any other type
+ * of stream, such that each element of `source` can be read only once. This
+ * allow element distribution across different consumers with a help of `head`,
+ * `tail` and similars.
+ * @param {Function} source
+ *    source stream to create stack stream from.
+ * @returns {Function}
+ *    stack equivalent of source that can be read only once.
+ */
+function stack(source) {
+  var readers = [], buffer = [], isStopped = false, isStarted = false, reason,
+      updating = false
+
+  function update() {
+    if (updating || !buffer.length || !readers.length) return nil
+    updating = true
+    var resume = readers[0][0](buffer.shift())
+    if (false === resume) readers.shift()
+    update(updating = false)
+  }
+
+  function onNext(element) {
+    update(buffer.push(element))
+  }
+
+  function onStop(error) {
+    isStopped = true
+    reason  = error
+    var reader = readers.shift()
+    return reader ? onStop(error, reader[1] && reader[1](error)) : nil
+  }
+
+  return function stream(next, stop) {
+    // If stream is already stopped, we notify a listener.
+    if (isStopped && !buffer.length) return stop && stop(reason)
+
+    readers.push([ next, stop ])
+    update()
+
+    // If `source` stream is not yet being read, start reading it.
+    if (isStarted) return nil
+    isStarted = true
+    source(onNext, onStop)
+  }
+}
+exports.stack = stack
+
+/**
+ * Returns a stream that contains all elements of each stream of the given
+ * source stream. `source` is stream of streams whose elements will be contained
+ * by the resulting stream. Any error from any stream will propagate to the
+ * resulting stream. Stream is stopped when all streams from `source` and source
+ * itself are ended. Elements of the stream are position in order, all elements
+ * of first stream, all elements of second stream etc.
+ * @param {Function} source
+ *    Stream of streams whose elements will be contained by resulting stream
+ * @examples
+ *    function async(next, stop) {
+ *      setTimeout(function() {
+ *        next('async')
+ *        stop()
+ *      }, 10)
+ *    }
+ *    var stream = join(list(async, list(1, 2, 3)))
+ *    stream(console.log)
+ *    // 'async'
+ *    // 1
+ *    // 2
+ *    // 3
+ */
+function join(source) {
+  return function stream(next, stop) {
+    var streams = stack(source), open = 2, alive = true, stopped = false
+
+    function onStop(error) {
+      open --
+      if (error && !stopped) open = false, stopped = true, stop(error)
+      else if (!open && !stopped) stopped = true, stop()
+    }
+    !function recur(error) {
+      onStop(error)
+      head(streams)(function onStream(stream) {
+        // Increment number of open steams (twice since we decrement twice
+        // once on stream close and second on slice close).
+        open += 2
+        stream(function onElement(element) {
+          // If steam is still open and read is not interrupted we pipe all
+          // elements to the reader. Otherwise we interrupt reading.
+          return !stopped && open && false !== alive ?
+                 alive = next(element) : false
+        }, recur)
+      }, onStop)
+    }()
+  }
+}
+exports.join = join
 
 });

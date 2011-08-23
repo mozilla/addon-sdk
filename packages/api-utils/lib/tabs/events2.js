@@ -77,9 +77,9 @@ function eventStream(type, target) {
 // We map stream of `opened` windows to a stream of streams of tab events
 // and flatten it down to a single tab events stream for all windows using
 // merge function.
-exports.open = merge(map(opened, eventStream.bind(null, 'TabOpen')));
-exports.close = merge(map(opened, eventStream.bind(null, 'TabClose')));
-exports.select = merge(map(opened, eventStream.bind(null, 'TabSelect')));
-exports.pin = merge(map(opened, eventStream.bind(null, 'TabPinned')));
-exports.unpin = merge(map(opened, eventStream.bind(null, 'TabUnpinned')));
-exports.move = merge(map(opened, eventStream.bind(null, 'TabMove')));
+exports.open = merge(map(eventStream.bind(null, 'TabOpen'), opened));
+exports.close = merge(map(eventStream.bind(null, 'TabClose'), opened));
+exports.select = merge(map(eventStream.bind(null, 'TabSelect'), opened));
+exports.pin = merge(map(eventStream.bind(null, 'TabPinned'), opened));
+exports.unpin = merge(map(eventStream.bind(null, 'TabUnpinned'), opened));
+exports.move = merge(map(eventStream.bind(null, 'TabMove'), opened));
