@@ -45,11 +45,12 @@ const guards = require('../guards');
 exports.Tab = Record.extend({
   sync: require("api-utils/env!")("api-utils/tabs/events2").channel,
   fields: {
+    id: guards.String(),
     title: guards.String(''),
     url: guards.String(''),
     favicon: guards.String(''),
     index: guards.Number(),
-    activate: guards.Boolean(false),
+    active: guards.Boolean(false),
     pinned: guards.Boolean(false)
   },
 
