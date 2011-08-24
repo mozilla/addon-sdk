@@ -54,9 +54,12 @@ exports.id = function id(tab) {
   return value ? value : tab.setAttribute(ID, value = uuid().number), value
 };
 
-exports.url = function url(tab) tab.linkedBrowser.lastURI
+exports.url = function url({ linkedBrowser: { lastURI: $ } }) $ ? $.spec : ''
 exports.title = function title(tab) tab.label
-exports.favicon = function favicon(tab) getFaviconURIForLocation(exports.url(tab))
+exports.favicon = function favicon(tab) {
+  let uri = exports.url(tab)
+  return uri ? getFaviconURIForLocation(uri) : ''
+}
 exports.index = function index(tab) tab._tPos
 exports.pinned = function pinned(tab) tab.pinned
 exports.active = function active(tab) tab.selected
