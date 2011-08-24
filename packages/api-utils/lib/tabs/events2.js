@@ -38,48 +38,44 @@
 
 "use strict";
 
-const { open } = require('../windows/events');
+const { Cc, Ci } = require('chrome');
+const { ready } = require('../windows/events');
 const { browsers } = require('../windows/utils');
+const { events: progress } = require('../progress/events');
 const { map, merge, append } = require('../streamer');
+const { events } = require('../events/stream');
+const { curry, identity } = require('../functional');
 
-// Stream of all open windows + windows that will be opened, from the
-// point of it's being read.
-const opened = append(browsers, open);
-
-// Utility function that creates stream of tab events, for the given target
-// window. It also takes care of unregistering all registered listeners once
-// window is closed.
-function eventStream(type, target) {
-  return function stream(next, stop) {
-    // utility function to unload registered listeners.
-    function unload() {
-      target.document.removeEventListener(type, onTabEvent, false);
-      target.removeEventListener('unload', onUnload, false);
-    }
-    // Listener for tab events.
-    function onTabEvent(event) {
-      if (false === next(event))
-        unload()
-    }
-    // Listener for browser window unload event that unregisters all listeners.
-    function onUnload(event) {
-      if (events.target === target) {
-        unload()
-        stop()
-      }
-    }
-
-    target.document.addEventListener(type, onTabEvent, false);
-    target.addEventListener(type, onUnload, false);
-  };
-}
+// Composing stream of all open windows + windows that will be opened (Actually
+// when open windows become ready).
+const windows = append(browsers, ready);
 
 // We map stream of `opened` windows to a stream of streams of tab events
 // and flatten it down to a single tab events stream for all windows using
 // merge function.
-exports.open = merge(map(eventStream.bind(null, 'TabOpen'), opened));
-exports.close = merge(map(eventStream.bind(null, 'TabClose'), opened));
-exports.select = merge(map(eventStream.bind(null, 'TabSelect'), opened));
-exports.pin = merge(map(eventStream.bind(null, 'TabPinned'), opened));
-exports.unpin = merge(map(eventStream.bind(null, 'TabUnpinned'), opened));
-exports.move = merge(map(eventStream.bind(null, 'TabMove'), opened));
+exports.open = merge(map(curry(events)('TabOpen'), windows));
+exports.close = merge(map(curry(events)('TabClose'), windows));
+exports.select = merge(map(curry(events)('TabSelect'), windows));
+exports.pin = merge(map(curry(events)('TabPinned'), windows));
+exports.unpin = merge(map(curry(events)('TabUnpinned'), windows));
+exports.move = merge(map(curry(events)('TabMove'), windows));
+
+// For details see:
+// http://mxr.mozilla.org/mozilla-central/source/mobile/chrome/content/bindings/browser.js#403
+
+exports.title = merge(map(function({ originalTarget: tab }) {
+  return map(curry(identity, 2)(tab),
+             events('DOMTitleChanged', tab.linkedBrowser))
+}, exports.open));
+
+exports.ready = merge(map(function({ originalTarget: tab }) {
+  return map(curry(identity, 2)(tab),
+             events('DOMContentLoaded', tab.linkedBrowser))
+}, exports.open));
+
+exports.location = merge(map(function({ originalTarget: tab }) {
+  return map(curry(identity, 2)(tab),
+             progress(tab.linkedBrowser.docShell.
+                      QueryInterface(Ci.nsIInterfaceRequestor).
+                      getInterface(Ci.nsIWebProgress), 'location'));
+}, exports.open));
