@@ -31,21 +31,19 @@
  *    console.log(sum(2, 4, 5)(-3)(1)()) // 9
  */
 exports.curry = function curry(target, length) {
-  length = length || target.length || Infinity
-  return function curried() {
-    var self = this, args = [];
-    return (function currier() {
-      // If no argument is being curried (`currier` is called with 0
-      // arguments) and infinite number of arguments is expected we stop
-      // currying. Else if number of expected arguments is already collected
-      // we stop currying. One we stop currying we apply collected arguments
-      // to the target `funciton` and return result. If currying is not
-      // stopped we return `currier` to continue currying.
-      return ((args.length === args.push.apply(args, arguments)
-               && Infinity === length) || args.length >= length) ?
-             target.apply(self, args) : currier
-    }).apply(self, arguments);
-  }
+  return (function currier(target, length, args) {
+    return function curried() {
+      var rest = args.concat(Array.prototype.slice.call(arguments))
+      // If all expected arguments are collected,
+      return (rest.length >= length ||
+      // or infinite number of arguments is expected and function was called
+      // without arguments,
+              (Infinity === length && arguments.length === 0)) ?
+      // carried function is invoked with all the arguments collected. Otherwise
+      // new curried function is returned to continue collecting arguments.
+              target.apply(this, rest) : currier(target, length, rest);
+    }
+  })(target, length || target.length, []);
 };
 
 /**
@@ -71,5 +69,20 @@ exports.compose = (function Compose(slice) {
     };
   };
 })(Array.prototype.slice);
+
+/**
+ * Function that returns it's argument
+ */
+exports.identity = function identity(value) {
+  return value;
+};
+
+
+/**
+ * Returns the value of `key` named property of the `target` object.
+ */
+exports.get = function get(key, target) {
+  return target[key];
+};
 
 });
