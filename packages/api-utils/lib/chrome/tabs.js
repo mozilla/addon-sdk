@@ -38,50 +38,58 @@
 "use strict";
 
 const extract = require('../tabs/extractors');
-const { map } = require('../streamer');
-const { open, close, select, pin, unpin, move } = require('../tabs/events2');
+const { map, merge, list } = require('../streamer');
+const events = require('../tabs/events2');
 
-exports.open = map(function onOpen(tab) {
+function event(type) function(value) ({ type: type, value: value })
+
+exports.open = map(event('create'), map(function onOpen(tab) {
   return {
     id: extract.id(tab),
     index: extract.index(tab),
     url: extract.url(tab),
     title: extract.title(tab),
-    //favicon: extract.favicon(tab),
+    favicon: extract.favicon(tab),
     pinned: extract.pinned(tab),
     active: extract.active(tab)
   };
-}, map(extract.tab, open));
+}, map(extract.tab, events.open)));
 
-exports.close = map(function onClose(tab) {
-  return { id: extract.id(tab) };
-}, map(extract.tab, close));
+exports.close = map(event('delete'), map(function onClose(tab) {
+  return { id: extract.id(tab) }
+}, map(extract.tab, events.close)));
 
-exports.select = map(function onSelect(tab) {
+exports.select = map(event('update'), map(function onSelect(tab) {
   return { id: extract.id(tab), active: extract.active(tab) };
-}, map(extract.tab, select));
+}, map(extract.tab, events.select)));
 
-exports.pin = map(function onSelect(tab) {
+exports.pin = map(event('update'), map(function onPin(tab) {
   return { id: extract.id(tab), pinned: extract.pinned(tab) };
-}, map(extract.tab, pin));
+}, map(extract.tab, events.pin)));
 
-exports.unpin = map(function onSelect(tab) {
+exports.unpin = map(event('update'), map(function onUnpin(tab) {
   return { id: extract.id(tab), pinned: extract.pinned(tab) };
-}, map(extract.tab, unpin));
+}, map(extract.tab, events.unpin)));
 
-exports.move = map(function onSelect(tab) {
+exports.move = map(event('update'), map(function onMove(tab) {
   return { id: extract.id(tab), index: extract.index(tab) };
-}, map(extract.tab, move));
+}, map(extract.tab, events.move)));
 
-/*
+exports.title = map(event('update'), map(function onTitleChange(tab) {
+  return { id: extract.id(tab), title: extract.title(tab) };
+}, events.title));
+
+exports.location = map(event('update'), map(function onLocationChange(tab) {
+  return {
+    id: extract.id(tab),
+    title: extract.title(tab),
+    favicon: extract.favicon(tab),
+    url: extract.url(tab),
+  }
+}, events.ready));
+
 exports.initialize = function({ input, output }) {
-  // Read each element from the input stream. Each element represents verified
-  // notification details that are written by and add-on process.
-  input(function({ id, title, text, iconURL }) {
-    // Display each notification and set click handler that will write to
-    // the output, notifying add-on process that user clicked notification
-    // with a given `id`.
-    notify(iconURL, title, text, !id, null, observer.bind(null, output, id));
-  });
+  // Forwarding all events tab related events to the add-on process.
+  merge(list(exports.open, exports.close, exports.select, exports.pin,
+         exports.unpin, exports.move, exports.title, exports.location))(output);
 };
-*/
