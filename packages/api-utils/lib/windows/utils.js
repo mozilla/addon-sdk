@@ -78,3 +78,17 @@ exports.recentBrowser = function activeBrowser() {
   return exports.recentWindow(BROWSER_TYPE);
 };
 
+function windowUtils(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+                getInterface(Ci.nsIDOMWindowUtils)
+};
+exports.windowUtils = windowUtils
+
+function outerId(window) windowUtils(window).outerWindowID
+exports.outerId = outerId
+
+function innerId(window) windowUtils(window).currentInnerWindowID
+exports.innerId = innerId
+
+function outer(window) windowUtils(window).getOuterWindowWithId(outerId(window))
+exports.outer = outer
