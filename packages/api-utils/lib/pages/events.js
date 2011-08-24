@@ -39,6 +39,12 @@
 "use strict";
 
 const { events } = require('../global/events');
+const { notifications } = require('../system-notifications');
+const { map } = require('../streamer');
+
+exports.start = map(function({ subject }) {
+  return subject
+}, notifications('document-element-inserted'));
 
 /**
  * @examples
@@ -50,3 +56,5 @@ const { events } = require('../global/events');
  */
 exports.navigate = events('Content:LocationChange');
 exports.ready = events('DOMContentLoaded');
+
+
