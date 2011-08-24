@@ -39,32 +39,75 @@
 "use strict";
 
 const { Cc, Ci } = require('chrome');
+const { events } = require('../events/stream');
+const { filter, map, merge, head } = require('../streamer');
+const { get, curry, compose } = require('../functional');
 
 const mediator = Cc['@mozilla.org/appshell/window-mediator;1'].
                  getService(Ci.nsIWindowMediator);
 
-function ignore() {}
+// Utility function to create handlers with specific event type.
+function handler(type) {
+  return function onEvent(event) {
+    if (false === this.delegate({ type: type, event: event }))
+      mediator.removeListener(this);
+  }
+}
+
+// Object that can be used to create objects that implement
+// `nsIWindowMediatorListener`.
 const Listener = {
-  new: function (options) {
-    let listener = Object.create(this);
-    Object.keys(options).forEach(function(key) {
-      listener[key] = options[key];
-    })
-    return listener;
+  new: function (delegate) {
+    return Object.create(this, { delegate: { value: delegate } });
   },
-  onWindowTitleChange: ignore,
-  onOpenWindow: ignore,
-  onCloseWindow: ignore
+  onWindowTitleChange: handler('title'),
+  onOpenWindow: handler('open'),
+  onCloseWindow: handler('close'),
 };
 
-exports.open = function open(next, stop) {
-  mediator.addListener(Listener.new({ onOpenWindow: next }));
-};
+// Utility function that extracts `nsIDOMWindow` from the event objects that
+// emitted by `Listener` objects.
+function window({ event: { docShell: $ } })
+  $.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow)
 
-exports.close = function close(next, stop) {
-  mediator.addListener(Listener.new({ onCloseWindow: next }));
-};
+// Utility function that creates filter function for filtering out events
+// with the given type.
+function type(value) function(event) event.type === value
 
-exports.titleChange = function titleChange(next, stop) {
-  mediator.addListener(Listener.new({ onWindowTitleChange: next }));
-};
+// Stream of 'open', 'close', 'title' events of all `nsIXULWindow`. Event
+// objects have form of `{ type: 'open', event: window }` where window
+// implements `nsIXULWindow` interface.
+exports.events = function stream(next, stop) {
+  mediator.addListener(Listener.new(next))
+}
+
+// Stream of all `nsIXULWindow` `'open'` events. Event objects represent
+// `nsIDOMWindow` which was opened.
+exports.open = map(window, filter(type('open'), exports.events));
+
+// Stream of all `nsIXULWindow` `'close'` events. Event objects represent
+// `nsIDOMWindow` which was opened.
+exports.close = map(window, filter(type('close'), exports.events));
+
+// Stream of all `nsIXULWindow` title change events. Event objects represent
+// `nsIDOMWindow` who's  title was changed.
+exports.title = map(window, filter(type('title'), exports.events));
+
+// Stream of all `nsIXULWindow` DOMContentLoaded events.
+//
+// XULWindow `open` window events are mapped to the streams of
+// DOMContentLoaded' events of the associated windows and then stream of streams
+// is flattened down to single form stream.
+exports.ready = map(
+  // Each `DOMContentLoaded` event is mapped back to it's associated
+  // `nsIDOMWindow`. To do this we compose this utility function that takes
+  // `event` object as an argument and returns `event.target.defaultView`.
+  compose(curry(get)('defaultView'), curry(get)('target')),
+
+  // We map each open window to it's 'DOMContentLoaded' event stream. Since,
+  // we care only about first event per window, we use `head` utility function
+  // that returns subset of stream containing only first event (This way all
+  // DOM event listeners also get removed immediately). Finally we flatten down
+  // stream of 'DOMContentLoaded' event streams to a single form event stream.
+  merge(map(compose(head, curry(events)('DOMContentLoaded')), exports.open))
+);
