@@ -1,4 +1,4 @@
-/* vim:set ts=2 sw=2 sts=2 et: */
+/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -14,13 +14,12 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
+ * The Initial Developer of the Original Code is Mozilla.
  * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,32 +37,43 @@
 
 "use strict";
 
+// TODO: Tweak linker and loader to use following instead:
+// require('env!api-utils/chrome/notifications')
+const { input, output } = require('api-utils/env!')('api-utils/chrome/tabs');
+const { map, filter } = require('../streamer');
+const Tab = require('../tabs/model').Tab.extend({ sync: output });
+exports.Tab = Tab;
 
-const { Record } = require('../mvc/records');
-const guards = require('../guards');
+const tabs = [];
+exports.tabs = tabs;
 
-exports.Tab = Record.extend({
-  fields: {
-    id: guards.String(),
-    title: guards.String(''),
-    url: guards.String(''),
-    favicon: guards.String(''),
-    index: guards.Number(),
-    active: guards.Boolean(false),
-    pinned: guards.Boolean(false)
-  },
+function tab(id) tabs.filter(function(tab) tab.id === id)[0]
+function type(value) function(event) event.type === value
+const create = filter(type('create'), input);
+const update = filter(type('update'), input);
+const destroy = filter(type('delete'), input);
 
-  get title() this.attributes.title,
-  set title(value) this.set({ title: value }),
-  get url() this.attributes.url,
-  set url(value) this.set({ url: value }),
-  get favicon() this.attributes.favicon,
-  get index() this.attributes.index,
-  set index(value) this.set({ index: value }),
-  get isPinned() this.attributes.pinned,
-  pin: function pin() this.set({ pinned: true }),
-  unpin: function unpin() this.set({ pinned: false }),
-  activate: function activate() this.set({ active: true }),
-  getThumbnail: function getThumbnail() {
+create(function({ value }) {
+  try {
+    console.log('new', JSON.stringify(value, '', '  '))
+    tabs.push(Tab.new(value))
+  } catch (error) {
+    console.exception(error)
   }
+});
+
+update(function({ value }) {
+  try {
+  console.log('update', JSON.stringify(value, '', '  '))
+  tab(value.id).set(value)
+  } catch(error) {
+    console.exception(error)
+  }
+});
+
+destroy(function({ value }) {
+  console.log('delete')
+  let $ = tab(value.id);
+  exports.tabs.splice(exports.tabs.indexOf($), 1);
+  $.destroy();
 });
