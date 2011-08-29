@@ -94,7 +94,7 @@ Each function which represents a test case is passed a single argument
 </api>
 
 
-<api name="assertNotEqual">
+<api name="assertNotStrictEqual">
 @method
   Ensures that `a !== b` without recursing into `a` or `b`.
 
