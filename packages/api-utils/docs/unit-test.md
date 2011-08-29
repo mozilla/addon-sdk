@@ -78,6 +78,36 @@ Each function which represents a test case is passed a single argument
   *message* with it.
 </api>
 
+<api name="assertStrictEqual">
+@method
+  Ensures that `a === b` without recursing into `a` or `b`.
+
+@param a {value}
+  A value.
+
+@param b {value}
+  Another value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
+
+
+<api name="assertNotEqual">
+@method
+  Ensures that `a !== b` without recursing into `a` or `b`.
+
+@param a {value}
+  A value.
+
+@param b {value}
+  Another value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+</api>
 
 <api name="assertMatches">
 @method
