@@ -55,6 +55,16 @@ function selectAllDivs(window) {
   }
 }
 
+function selectTextarea(window, from, to) {
+  let textarea = window.document.getElementsByTagName("textarea")[0];
+
+  from = from || 0;
+  to = to || textarea.value.length;
+
+  textarea.setSelectionRange(from, to);
+  textarea.focus();
+}
+
 function primeTestCase(html, test, callback) {
   let tabBrowser = require("tab-browser");
   let dataURL = "data:text/html," + encodeURI(html);
@@ -86,7 +96,7 @@ exports.testContiguousMultiple = function testContiguousMultiple(test) {
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, false,
-      "selection.contiguous multiple works.");
+      "selection.isContiguous multiple works.");
   });
 
   test.waitUntilDone(5000);
@@ -97,20 +107,21 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, true,
-      "selection.contiguous single works.");
+      "selection.isContiguous single works.");
   });
 
   test.waitUntilDone(5000);
 };
 
-exports.testContiguousNull = function testContiguousNull(test) {
-  let selection = require("selection");
-  primeTestCase(HTML_SINGLE, test, function(window, test) {
-    test.assertEqual(selection.isContiguous, null,
-      "selection.contiguous null works.");
-  });
+exports.testContiguousWithoutSelection =
+  function testContiguousWithoutSelection(test) {
+    let selection = require("selection");
+    primeTestCase(HTML_SINGLE, test, function(window, test) {
+      test.assertEqual(selection.isContiguous, false,
+        "selection.isContiguous without selection works.");
+    });
 
-  test.waitUntilDone(5000);
+    test.waitUntilDone(5000);
 };
 
 /**
@@ -189,6 +200,19 @@ exports.testGetHTMLWeird = function testGetHTMLWeird(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testGetHTMLNullInTextareaSelection =
+  function testGetHTMLNullInTextareaSelection(test) {
+      let selection = require("selection");
+
+      primeTestCase(TEXT_FIELD, test, function(window, test) {
+        selectTextarea(window);
+
+        test.assertEqual(selection.html, null, "get html null in textarea works")
+      });
+
+      test.waitUntilDone(5000);
+};
+
 const REPLACEMENT_HTML = "<b>Lorem ipsum dolor sit amet</b>";
 
 exports.testSetHTMLSelection = function testSetHTMLSelection(test) {
@@ -223,8 +247,28 @@ const TEXT2 = "noodles";
 const TEXT_MULTIPLE = "<html><body><div>" + TEXT1 + "</div><div>" + TEXT2 +
   "</div></body></html>";
 const TEXT_SINGLE = "<html><body><div>" + TEXT1 + "</div></body></html>";
+const TEXT_FIELD = "<html><body><textarea>" + TEXT1 + "</textarea></body></html>";
 
 // Text tests
+
+exports.testSetHTMLinTextareaSelection =
+  function testSetHTMLinTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      // HTML string is set as plain text in textareas, that's because
+      // `selection.html` and `selection.text` are basically aliases when a
+      // value is set. See bug 677269
+      selection.html = REPLACEMENT_HTML;
+
+      test.assertEqual(selection.text, REPLACEMENT_HTML,
+        "set selection html in textarea works");
+    });
+
+    test.waitUntilDone(5000);
+};
 
 exports.testGetTextSingleSelection =
   function testGetTextSingleSelection(test) {
@@ -276,6 +320,30 @@ exports.testGetTextWeird = function testGetTextWeird(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testGetTextNullInTextareaSelection =
+  function testGetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      test.assertEqual(selection.text, null, "get text null in textarea works")
+    });
+
+    test.waitUntilDone(5000);
+};
+
+exports.testGetTextInTextareaSelection =
+  function testGetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      test.assertEqual(selection.text, TEXT1, "get text null in textarea works")
+    });
+
+    test.waitUntilDone(5000);
+};
+
 const REPLACEMENT_TEXT = "Lorem ipsum dolor sit amet";
 
 exports.testSetTextSelection = function testSetTextSelection(test) {
@@ -304,6 +372,22 @@ exports.testSetHTMLException = function testSetHTMLException(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testSetTextInTextareaSelection =
+  function testSetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      selection.text = REPLACEMENT_TEXT;
+
+      test.assertEqual(selection.text, REPLACEMENT_TEXT,
+        "set selection text in textarea works");
+    });
+
+    test.waitUntilDone(5000);
+};
+
 // Iterator tests
 
 exports.testIterator = function testIterator(test) {
@@ -317,6 +401,23 @@ exports.testIterator = function testIterator(test) {
   });
 
   test.waitUntilDone(5000);
+};
+
+exports.testIteratorWithTextareaSelection =
+  function testIteratorWithTextareaSelection(test) {
+    let selection = require("selection");
+    let selectionCount = 0;
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      for each (let i in selection)
+        selectionCount++;
+
+      test.assertEqual(1, selectionCount, "iterator works in textarea.")
+    });
+
+    test.waitUntilDone(5000);
 };
 
 /* onSelect tests */
