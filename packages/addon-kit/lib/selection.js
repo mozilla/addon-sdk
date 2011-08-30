@@ -280,7 +280,7 @@ function setSelection(val, rangeNumber) {
                     + val
                     + value.substring(selectionEnd, value.length);
 
-      node.setSelectionRange(newSelectionEnd, newSelectionEnd);
+      node.setSelectionRange(selectionStart, newSelectionEnd);
     }
 }
 
