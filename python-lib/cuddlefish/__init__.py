@@ -366,7 +366,7 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps)
+    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
     pkg_cfg = packaging.build_config(env_root, target_cfg)
     for name in pkg_cfg.packages:
         if name != "testpkgs":

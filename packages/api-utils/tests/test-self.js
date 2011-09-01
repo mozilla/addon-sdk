@@ -18,7 +18,17 @@ exports.testSelf = function(test) {
   test.assertEqual(/\/bootstrap-remote-process\.js$/.test(url), true);
 
   // Make sure 'undefined' is not in url when no string is provided.
-  var url = self.data.url();
+  url = self.data.url();
   test.assertEqual(typeof(url), "string", "self.data.url() returns string");
   test.assertEqual(/\/undefined$/.test(url), false);
+
+  // When tests are run on just the api-utils package, self.name is
+  // api-utils and the version is whatever packages/api-utils/package.json
+  // contains (usually the same as the overall SDK version, but let's not
+  // enforce that). When they're run as 'cfx testall', self.name is testpkgs,
+  // and the version is "fake" because python-lib/cuddlefish/__init__.py
+  // makes a fake package.json Bunch in test_all_packages().
+  test.assert((self.name == "api-utils") || (self.name == "testpkgs"),
+              "self.name is api-utils or testpkgs");
+  test.assertEqual(typeof(self.version), "string", "self.version exists");
 };
