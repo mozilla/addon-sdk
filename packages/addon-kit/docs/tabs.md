@@ -221,6 +221,11 @@ A function to be called when the tab finishes its closing process.
 This is an optional argument.
 </api>
 
+<api name="reload">
+@method
+Reloads this tab.
+</api>
+
 <api name="activate">
 @method
 Makes this tab active, which will bring this tab to the foreground.

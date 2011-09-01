@@ -230,6 +230,39 @@ exports.testTabClose = function(test) {
   });
 };
 
+// test tab.reload()
+exports.testTabReload = function(test) {
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let url = "data:text/html,<!doctype%20html><title></title>";
+
+    tabs.open({ url: url, onReady: function onReady(tab) {
+      tab.removeListener("ready", onReady);
+
+      browser.addEventListener(
+        "load",
+        function onLoad() {
+          browser.removeEventListener("load", onLoad, true);
+
+          browser.addEventListener(
+            "load",
+            function onReload() {
+              browser.removeEventListener("load", onReload, true);
+              test.pass("the tab was loaded again");
+              test.assertEqual(tab.url, url, "the tab has the same URL");
+              closeBrowserWindow(window, function() test.done());
+            },
+            true
+          );
+          tab.reload();
+        },
+        true
+      );
+    }});
+  });
+};
+
 // test tab.move()
 exports.testTabMove = function(test) {
   test.waitUntilDone();

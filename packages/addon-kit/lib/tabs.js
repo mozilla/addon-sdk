@@ -57,6 +57,6 @@ Object.defineProperties(tabs, {
     return browserWindows.activeWindow.tabs.open(options);
   }}
 });
-// It's a hack but we will be able to remove it once will implemnet CommonJS
+// It's a hack but we will be able to remove it once will implement CommonJS
 // feature that would allow us to override exports.
 exports.__proto__ = tabs;
