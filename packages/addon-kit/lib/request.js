@@ -105,6 +105,8 @@ function Request(options) {
     // open the request
     request.open(mode, url);
 
+    request.forceAllowThirdPartyCookie();
+
     // request header must be set after open, but before send
     request.setRequestHeader("Content-Type", options.contentType);
 
