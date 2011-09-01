@@ -347,7 +347,7 @@ This event is emitted this event when the page-mod's content scripts are
 attached to a page whose URL matches the page-mod's `include` filter.
 
 @argument {Worker}
-The listener function is passed a `Worker` object that can be used to communicate
+The listener function is passed a [`Worker`](packages/api-utils/docs/content/worker.html) object that can be used to communicate
 with any content scripts attached to this page.
 </api>
 
