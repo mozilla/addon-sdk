@@ -577,7 +577,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
 
 
 
-COMMENT_PREFIXES = ["//", "/*", "*", "\'", "\"", "dump("]
+COMMENT_PREFIXES = ["//", "/*", "*", "dump("]
 
 REQUIRE_RE = r"(?<![\'\"])require\s*\(\s*[\'\"]([^\'\"]+?)[\'\"]\s*\)"
 
