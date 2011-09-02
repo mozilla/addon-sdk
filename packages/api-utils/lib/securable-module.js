@@ -136,7 +136,7 @@
                                         this._defaultPrincipal);
 
        return {
-         _sandbox: new Cu.Sandbox(principal),
+         _sandbox: new Cu.Sandbox(principal, { sandboxName: options.filename }),
          _principal: principal,
          get globalScope() {
            return this._sandbox;
