@@ -158,7 +158,7 @@ exports.AddonProcess = function createAddonProcess(options) {
   process.registerCall(
     "require",
     function(name, base, path) {
-      var loader = options.loader || require("parent-loader");
+      var loader = options.loader;
       var parentFS = loader.fs;
       var moduleURL = parentFS.resolveModule(base, path);
 

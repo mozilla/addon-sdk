@@ -136,7 +136,11 @@
                                         this._defaultPrincipal);
 
        return {
-         _sandbox: new Cu.Sandbox(principal),
+         _sandbox: new Cu.Sandbox(principal,
+                                  options.filename ?
+                                    { sandboxName: options.filename } :
+                                    { }
+                                 ),
          _principal: principal,
          get globalScope() {
            return this._sandbox;
@@ -267,7 +271,7 @@
           */
 
          if (self.getModuleExports) {
-           /* this currently handles 'chrome' and 'parent-loader' */
+           /* this currently handles 'chrome' */
            let exports = self.getModuleExports(basePath, moduleName);
            if (exports)
              return exports;

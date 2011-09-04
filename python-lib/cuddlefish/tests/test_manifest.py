@@ -51,11 +51,11 @@ class Require(unittest.TestCase, Extra):
 
         mod = """ ' var foo = require('one');"""
         requires = self.scan(mod)
-        self.failUnlessKeysAre(requires, [])
+        self.failUnlessKeysAre(requires, ["one"])
 
         mod = """ \" var foo = require('one');"""
         requires = self.scan(mod)
-        self.failUnlessKeysAre(requires, [])
+        self.failUnlessKeysAre(requires, ["one"])
 
         # multiple requires
 

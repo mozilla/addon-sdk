@@ -18,6 +18,18 @@ Eventually, this ID will be unspoofable (see
 [JEP 118](https://wiki.mozilla.org/Labs/Jetpack/Reboot/JEP/118) for details).
 </api>
 
+<api name="name">
+@property {string}
+This property contains the add-on's short name. It comes from the `name`
+property in the main package's `package.json` file.
+</api>
+
+<api name="version">
+@property {string}
+This property contains the add-on's version string. It comes from the
+`version` property set in the `package.json` file in the main package.
+</api>
+
 <api name="data">
 @property {object}
 The `data` object is used to access data that was bundled with the add-on.

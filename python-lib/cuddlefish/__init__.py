@@ -74,6 +74,12 @@ parser_groups = (
                                    default=None,
                                    cmds=['test', 'run', 'testex', 'testpkgs',
                                          'testall'])),
+        (("", "--binary-args",), dict(dest="cmdargs",
+                                 help=("additional arguments passed to the "
+                                       "binary"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'test'])),
         (("-a", "--app",), dict(dest="app",
                                 help=("app to run: firefox (default), "
                                       "xulrunner, fennec, or thunderbird"),
@@ -221,12 +227,6 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
-        (("", "--binary-args",), dict(dest="cmdargs",
-                                 help=("additional arguments passed to the "
-                                       "binary"),
-                                 metavar=None,
-                                 default=None,
-                                 cmds=['run', 'test'])),
         ]
      ),
     )
@@ -366,7 +366,7 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps)
+    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
     pkg_cfg = packaging.build_config(env_root, target_cfg)
     for name in pkg_cfg.packages:
         if name != "testpkgs":

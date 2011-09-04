@@ -110,7 +110,7 @@ This is demonstrated in the following example:
     var pageMod = require("page-mod");
     var tabs = require("tabs");
 
-    var workers = new Array();
+    var workers = [];
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
