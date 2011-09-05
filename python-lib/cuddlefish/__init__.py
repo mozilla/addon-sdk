@@ -698,7 +698,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
-        harness_options['main'] = 'run-tests'
+        harness_options['main'] = 'test-harness/run-tests'
     else:
         harness_options['main'] = target_cfg.get('main')
 
