@@ -339,7 +339,16 @@ exports.main = function main(options, id) {
 exports.startup = function startup(data, reason) {
   let uri = (data.resolveURI || resourceURI(data.installPath)).spec;
   let options = JSON.parse(readURI(resolve('./harness-options.json', uri)));
-  let mainID = resolve('./' + options.main, options.name);
+  // TODO: At the moment there are different ways 'main' can be specified:
+  // 1. main            Guess.
+  // 2. ./lib/main      Relative.
+  // 3. package/module  Absolute.
+  // It's tricky to guess which case is used here without runtime search. Would
+  // be nice if we could just decide to support relative main as nodejs does or
+  // make cfx do the search so that harness-options.json will contain relative
+  // path. So far we assume that if `/` is present it's absolute.
+  let mainID = ~options.main.indexOf('/') ?
+               options.main : resolve('./' + options.main, options.name);
   options.uri = uri;
 
   let loader = Loader.new(options);
