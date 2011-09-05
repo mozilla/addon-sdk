@@ -108,6 +108,11 @@ exports.main = function main(options, callbacks) {
     }
   }
 
+  // TODO: Figure out if we still need runImmediately option and enable it.
+  // So far disabling it as it's not set and APPLICATION_READY is not triggered
+  // cause it's already ready.
+  return doRunTests()
+
   // TODO: This is optional code that might be put in by
   // something running this code to force it to just
   // run tests immediately, rather than wait. We need
