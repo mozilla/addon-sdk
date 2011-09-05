@@ -331,9 +331,37 @@ exports.uninstall = function uninstall(data, reason) {
 
 exports.main = function main(options, id) {
   let loader = Loader.new(options)
-  let main = loader.main(id);
-  if (main.main)
-    main.main();
+
+  function quit(status) {
+    if (status === undefined)
+      status = "OK";
+    if (status != "OK" && status != "FAIL") {
+      dump("Warning: quit() expected 'OK' or 'FAIL' as an " +
+           "argument, but got '" + status + "' instead.");
+      status = "FAIL";
+    }
+
+    dump('QUIT!!')
+    /*
+    if (isQuitting)
+      return;
+
+    isQuitting = true;
+
+    if (harnessService)
+      harnessService.unload();
+
+    onQuit(status);
+    */
+  }
+
+  try {
+    let main = loader.main(id);
+    if (main.main)
+      main.main(options, { quit: quit, print: dump });
+  } catch (error) {
+    dump(error + '\n' + error.stack + '\n')
+  }
 };
 
 exports.startup = function startup(data, reason) {
