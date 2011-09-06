@@ -330,37 +330,14 @@ exports.uninstall = function uninstall(data, reason) {
 };
 
 exports.main = function main(options, id) {
-  let loader = Loader.new(options)
-
-  function quit(status) {
-    if (status === undefined)
-      status = "OK";
-    if (status != "OK" && status != "FAIL") {
-      dump("Warning: quit() expected 'OK' or 'FAIL' as an " +
-           "argument, but got '" + status + "' instead.");
-      status = "FAIL";
-    }
-
-    dump('QUIT!!')
-    /*
-    if (isQuitting)
-      return;
-
-    isQuitting = true;
-
-    if (harnessService)
-      harnessService.unload();
-
-    onQuit(status);
-    */
-  }
+  let loader = Loader.new(options);
 
   try {
     let main = loader.main(id);
     if (main.main)
-      main.main(options, { quit: quit, print: dump });
+      main.main();
   } catch (error) {
-    dump(error + '\n' + error.stack + '\n')
+    loader.globals.console.exception(error);
   }
 };
 
@@ -394,7 +371,7 @@ exports.startup = function startup(data, reason) {
       try {
         loader.load(id).initialize(addon.channel(id));
       } catch (error) {
-        loader.globals.console.exception(error)
+        loader.globals.console.exception(error);
       }
     });
   });
