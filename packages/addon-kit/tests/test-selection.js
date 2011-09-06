@@ -414,7 +414,7 @@ exports.testIteratorWithTextareaSelection =
       for each (let i in selection)
         selectionCount++;
 
-      test.assertEqual(1, selectionCount, "iterator works in textarea.")
+      test.assertEqual(1, selectionCount, "iterator works in textarea.");
     });
 
     test.waitUntilDone(5000);

@@ -93,11 +93,10 @@ function Selection(rangeNumber) {
     // a single non empty range, or a selection in a text field - contiguous or
     // not (text field selection APIs doesn't support multiple selections).
 
-    if (sel.rangeCount > 1) {
+    if (sel.rangeCount > 1)
       return false;
-    } else {
-      return !!(safeGetRange(sel, 0) || getElementWithSelection())
-    }
+
+    return !!(safeGetRange(sel, 0) || getElementWithSelection());
   });
 }
 
@@ -206,7 +205,8 @@ function getElementWithSelection(window) {
 
   try {
     element = (window || context()).document.activeElement;
-  } catch(e) {
+  }
+  catch (e) {
     element = null;
   }
 
@@ -215,10 +215,10 @@ function getElementWithSelection(window) {
 
   let { value, selectionStart, selectionEnd } = element;
 
-  let hasSelection = "string" === typeof value
-                      && !isNaN(selectionStart)
-                      && !isNaN(selectionEnd)
-                      && selectionStart !== selectionEnd;
+  let hasSelection = typeof value === "string" &&
+                      !isNaN(selectionStart) &&
+                      !isNaN(selectionEnd) &&
+                      selectionStart !== selectionEnd;
 
   return hasSelection ? element : null;
 }
@@ -276,9 +276,9 @@ function setSelection(val, rangeNumber) {
 
       let newSelectionEnd = selectionStart + val.length;
 
-      node.value = value.substring(0, selectionStart)
-                    + val
-                    + value.substring(selectionEnd, value.length);
+      node.value = value.substring(0, selectionStart) +
+                    val +
+                    value.substring(selectionEnd, value.length);
 
       node.setSelectionRange(selectionStart, newSelectionEnd);
     }
