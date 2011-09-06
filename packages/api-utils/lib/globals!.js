@@ -37,7 +37,32 @@
 
 "use strict";
 
+let { Cc, Ci } = require('chrome');
 let memory = require('./memory');
-let console = new (require('./plain-text-console').PlainTextConsole)(dump);
+let options = require('@packaging');
+
+// On windows dump does not writes into stdout so cfx can't read thous dumps.
+// To workaround this issue we write to a special file from which cfx will
+// read and print to the console.
+let print = (function define() {
+  let print = dump
+  if ('logFile' in options) {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    file.initWithPath(options.logFile);
+    let stream = Cc["@mozilla.org/network/file-output-stream;1"]
+                .createInstance(Ci.nsIFileOutputStream);
+    stream.init(file, -1, -1, 0);
+
+    print = function print(message) {
+      message = String(message);
+      stream.write(message, message.length);
+      stream.flush();
+    };
+  }
+  return print;
+})()
+
+let console = new (require('./plain-text-console').PlainTextConsole)(print);
+exports.dump = print;
 exports.memory = memory;
 exports.console = console;
