@@ -181,7 +181,8 @@ const Loader = {
     // TODO: Also adding legacy global that some code depends on, which should
     // migrate to require("packaging") or similar instead.
     let globals = {
-      packaging: { jetpackID: options.jetpackID, options: options }
+      packaging: { jetpackID: options.jetpackID, options: options },
+      dump: dump
     };
 
     let loader = Object.create(Loader, {
@@ -250,6 +251,9 @@ const Loader = {
   load: function load(id, base) {
     let uri = resolveURI(this.root, normalize(id));
     let module = this.modules[uri] || (this.modules[uri] = {});
+    // HACK: `dump` is overridden on windows for details see:
+    // packages/api-utils/globals!.js
+    let { dump } = this.globals;
 
     // TODO: Find a better way to implement `self`.
     // Maybe something like require('self!path/to/data')
@@ -276,8 +280,8 @@ const Loader = {
     let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
     let factory;
     try {
-      factory = sandbox.evaluate('(function(require, exports, module) {' + source + ' })', uri);
-      factory.call(exports, Require(this, manifest, module), exports, module);
+      factory = sandbox.evaluate('(function(require, exports, module, dump) {' + source + ' })', uri);
+      factory.call(exports, Require(this, manifest, module), exports, module, dump);
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
       dump(error.message + '\n')
