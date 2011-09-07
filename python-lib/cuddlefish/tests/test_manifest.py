@@ -10,9 +10,15 @@ class Extra:
 class Require(unittest.TestCase, Extra):
     def scan(self, text):
         lines = StringIO(text).readlines()
-        requires, problems = scan_module("fake.js", lines)
+        requires, problems, locations = scan_module("fake.js", lines)
         self.failUnlessEqual(problems, False)
         return requires
+
+    def scan_locations(self, text):
+        lines = StringIO(text).readlines()
+        requires, problems, locations = scan_module("fake.js", lines)
+        self.failUnlessEqual(problems, False)
+        return requires, locations
 
     def test_modules(self):
         mod = """var foo = require('one');"""
@@ -32,8 +38,9 @@ class Require(unittest.TestCase, Extra):
         self.failUnlessKeysAre(requires, [])
 
         mod = """require('one').immediately.do().stuff();"""
-        requires = self.scan(mod)
+        requires, locations = self.scan_locations(mod)
         self.failUnlessKeysAre(requires, ["one"])
+        self.failUnlessEqual(locations, {"one": 1})
 
         # these forms are commented out, and thus ignored
 
@@ -61,8 +68,17 @@ class Require(unittest.TestCase, Extra):
 
         mod = """const foo = require('one');
         const foo = require('two');"""
-        requires = self.scan(mod)
+        requires, locations = self.scan_locations(mod)
         self.failUnlessKeysAre(requires, ["one", "two"])
+        self.failUnlessEqual(locations["one"], 1)
+        self.failUnlessEqual(locations["two"], 2)
+
+        mod = """const foo = require('repeated');
+        const bar = require('repeated');
+        const baz = require('repeated');"""
+        requires, locations = self.scan_locations(mod)
+        self.failUnlessKeysAre(requires, ["repeated"])
+        self.failUnlessEqual(locations["repeated"], 1) # first occurrence
 
         mod = """const foo = require('one'); const foo = require('two');"""
         requires = self.scan(mod)
@@ -130,7 +146,7 @@ class Require(unittest.TestCase, Extra):
 def scan2(text, fn="fake.js"):
     stderr = StringIO()
     lines = StringIO(text).readlines()
-    requires, problems = scan_module(fn, lines, stderr)
+    requires, problems, locations = scan_module(fn, lines, stderr)
     stderr.seek(0)
     return requires, problems, stderr.readlines()
 

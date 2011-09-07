@@ -16,17 +16,22 @@ def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
 
 class ModuleNotFoundError(Exception):
-    def __init__(self, *args):
-        self.args = args
-        self.used_by = None # string, full path to module which did require()
-        self.requirement_name = None # string, what they require()d
-        self.looked_at = [] # list of full paths to potential .js files
+    def __init__(self, requirement_type, requirement_name,
+                 used_by, line_number, looked_in):
+        Exception.__init__(self)
+        self.requirement_type = requirement_type # "require" or "define"
+        self.requirement_name = requirement_name # string, what they require()d
+        self.used_by = used_by # string, full path to module which did require()
+        self.line_number = line_number # int, 1-indexed line number of first require()
+        self.looked_in = looked_in # list of full paths to potential .js files
     def __str__(self):
-        return ("ModuleNotFoundError: unable to satisfy require(%s) from %s .\n"
-                "Looked for it in:\n"
-                " %s\n" %
-                (self.requirement_name, self.used_by,
-                 "\n ".join(self.looked_in)))
+        what = "%s(%s)" % (self.requirement_type, self.requirement_name)
+        where = self.used_by
+        if self.line_number is not None:
+            where = "%s:%d" % (self.used_by, self.line_number)
+        searched = "Looked for it in:\n  %s\n" % "\n  ".join(self.looked_in)
+        return ("ModuleNotFoundError: unable to satisfy: %s from\n"
+                "  %s:\n" % (what, where)) + searched
 
 class BadModuleIdentifier(Exception):
     pass
@@ -340,7 +345,7 @@ class ManifestBuilder:
             me.add_docs(mi.docs)
 
         js_lines = open(mi.js,"r").readlines()
-        requires, problems = scan_module(mi.js, js_lines, self.stderr)
+        requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -371,12 +376,14 @@ class ManifestBuilder:
                 looked_in = [] # populated by subroutines
                 them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
-                    err = ModuleNotFoundError()
-                    err.used_by = mi.js
-                    err.requirement_name = reqname
-                    err.looked_in = looked_in
+                    lineno = locations.get(reqname) # None means define()
+                    if lineno is None:
+                        reqtype = "define"
+                    else:
+                        reqtype = "require"
+                    err = ModuleNotFoundError(reqtype, reqname,
+                                              mi.js, lineno, looked_in)
                     raise err
-                    #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
 
@@ -591,7 +598,8 @@ DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 
 def scan_requirements_with_grep(fn, lines):
     requires = {}
-    for line in lines:
+    first_location = {}
+    for (lineno0, line) in enumerate(lines):
         for clause in line.split(";"):
             clause = clause.strip()
             iscomment = False
@@ -604,6 +612,8 @@ def scan_requirements_with_grep(fn, lines):
             if mo:
                 modname = mo.group(1)
                 requires[modname] = {}
+                if modname not in first_location:
+                    first_location[modname] = lineno0+1
 
     # define() can happen across multiple lines, so join everyone up.
     wholeshebang = "\n".join(lines)
@@ -619,8 +629,10 @@ def scan_requirements_with_grep(fn, lines):
                 modname = strbit[1:-1]
                 if modname not in ["exports"]:
                     requires[modname] = {}
+                    # joining all the lines means we lose line numbers, so we
+                    # can't fill first_location[]
 
-    return requires
+    return requires, first_location
 
 CHROME_ALIASES = [
     (re.compile(r"Components\.classes"), "Cc"),
@@ -686,7 +698,7 @@ the equivalent shortcuts now.)
 
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
-    requires = scan_requirements_with_grep(fn, lines)
+    requires, locations = scan_requirements_with_grep(fn, lines)
     if filename == "cuddlefish.js" or filename == "securable-module.js":
         # these are the loader: don't scan for chrome
         problems = False
@@ -696,17 +708,18 @@ def scan_module(fn, lines, stderr=sys.stderr):
         problems = False
     else:
         problems = scan_for_bad_chrome(fn, lines, stderr)
-    return requires, problems
+    return requires, problems, locations
 
 
 
 if __name__ == '__main__':
     for fn in sys.argv[1:]:
-        requires,problems = scan_module(fn, open(fn).readlines())
+        requires, problems, locations = scan_module(fn, open(fn).readlines())
         print
         print "---", fn
         if problems:
             print "PROBLEMS"
             sys.exit(1)
-        print "requires: %s" % (",".join(requires))
+        print "requires: %s" % (",".join(sorted(requires.keys())))
+        print "locations: %s" % locations
 

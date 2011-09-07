@@ -638,7 +638,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
-    from cuddlefish.manifest import build_manifest
+    from cuddlefish.manifest import build_manifest, ModuleNotFoundError
     uri_prefix = "resource://%s" % unique_prefix
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
@@ -657,8 +657,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
                                       "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
-                              loader_modules)
+    try:
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
+                                  loader_modules)
+    except ModuleNotFoundError, e:
+        print str(e)
+        sys.exit(1)
     used_deps = manifest.get_used_packages()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
