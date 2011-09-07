@@ -334,7 +334,7 @@ Represents a widget object.
 @param data {value}
   The message to send.
   The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -449,9 +449,9 @@ Represents a widget object.
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
 
-See
-<a href="dev-guide/addon-development/web-content.html#content_script_events">
-Communicating with Content Scripts</a> for details.
+See the guide to
+<a href="dev-guide/addon-development/content-scripts/using-port.html">
+communicating using <code>port</code></a> for details.
 </api>
 
 <api name="attach">
@@ -475,7 +475,7 @@ code in the widget's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -537,7 +537,7 @@ In this example `WidgetView` is used to display different content for
   Sends a message to the widget view's content scripts.
 @param data {value}
   The message to send. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -642,9 +642,9 @@ In this example `WidgetView` is used to display different content for
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on`
 
-See
-<a href="dev-guide/addon-development/web-content.html#content_script_events">
-Communicating with Content Scripts</a> for details.
+See the guide to
+<a href="dev-guide/addon-development/content-scripts/using-port.html">
+communicating using <code>port</code></a> for details.
 </api>
 
 <api name="detach">
@@ -670,7 +670,7 @@ code in the widget view's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">

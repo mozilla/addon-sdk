@@ -196,4 +196,4 @@ ID](dev-guide/addon-development/program-id.html).
 
 Note that the `self` module is completely different from the global `self`
 object accessible to content scripts, which is used by a content script to
-[communicate with the add-on code](dev-guide/addon-development/web-content#content_script_events).
+[communicate with the add-on code](dev-guide/addon-development/content-scripts/using-port.html).
