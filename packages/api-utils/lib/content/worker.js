@@ -227,12 +227,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         wantXrays: true
       });
       proxySandbox.console = console;
-      // Pass a window reference to proxy code
-      proxySandbox.windowObjectToProxify = window;
+      proxySandbox.UNWRAP_ACCESS_KEY = exports.UNWRAP_ACCESS_KEY;
       // Execute the proxy code
       scriptLoader.loadSubScript(CONTENT_PROXY_URL, proxySandbox);
-      // Get back a reference to the window's proxy
-      proto = proxySandbox.proxy;
+      // Get a reference of the window's proxy
+      proto = proxySandbox.create(window);
     }
 
     // Create the sandbox and bind it to window in order for content scripts to
@@ -318,7 +317,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // that first try to access to `___proxy` and then call it through `apply`.
     // We need to move function given to content script to a sandbox
     // with same principal than the content script.
-    // In the meantime, we need to allow such access explicitely:
+    // In the meantime, we need to allow such access explicitely
+    // by using `__exposedProps__` property, documented here:
+    // https://developer.mozilla.org/en/XPConnect_wrappers
     sandbox.self.postMessage.__exposedProps__ = {
       ___proxy: 'rw',
       apply: 'rw'
@@ -613,3 +614,10 @@ const Worker = AsyncEventEmitter.compose({
 });
 exports.Worker = Worker;
 
+/**
+ * Access key that allows privileged code to unwrap proxy wrappers through
+ * valueOf:
+ *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
+ * It can't be a simple {} as it needs to be given to content script context.
+ */
+exports.UNWRAP_ACCESS_KEY = String(Math.round(new Date().getTime()*Math.random()));

@@ -42,9 +42,11 @@ function createWorker(test, contentScript) {
   // Tell content-proxy.js that we `UNWRAP_ACCESS_KEY` in content script globals
   global.xrayWindow.document.setUserData("___include_UNWRAP_ACCESS_KEY", "true", null);
 
+  let key = require("api-utils/content/worker").UNWRAP_ACCESS_KEY;
   let worker = Worker({
     window: global.xrayWindow,
     contentScript: [
+      'UNWRAP_ACCESS_KEY = "' + key + '";' +
       'new ' + function () {
         assert = function assert(v, msg) {
           self.port.emit("assert", {assertion:v, msg:msg});

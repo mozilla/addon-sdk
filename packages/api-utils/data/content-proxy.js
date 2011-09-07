@@ -1,4 +1,4 @@
-(function (sandboxGlobal) {
+"use strict";
 
 let Ci = Components.interfaces;
 
@@ -7,7 +7,8 @@ let Ci = Components.interfaces;
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  */
-const UNWRAP_ACCESS_KEY = {};
+// const UNWRAP_ACCESS_KEY = {};
+// Set by worker.js, in order to be able to share it for internal tests
 
  /**
  * Returns a closure that wraps arguments before calling the given function,
@@ -80,8 +81,9 @@ function ContentScriptFunctionWrapper(fun, obj, name) {
 function NativeFunctionWrapper(fun, originalObject, name) {
   return function () {
     let args = [];
-    let obj = this.valueOf ? this.valueOf(UNWRAP_ACCESS_KEY) : this;
-    
+    let obj = this && typeof this.valueOf == "function" ?
+              this.valueOf(UNWRAP_ACCESS_KEY) : this;
+
     for (let i = 0, l = arguments.length; i < l; i++)
       args.push( unwrap(arguments[i], obj, name) );
     
@@ -650,7 +652,7 @@ function handlerMaker(obj) {
         return name in expando;
       }
       return name in obj || name in overload || name == "__isWrappedProxy" ||
-             [null, undefined].indexOf(this.get(null, name)) === -1;
+             undefined !== this.get(null, name);
     },
     hasOwn: function(name) {
       return Object.prototype.hasOwnProperty.call(obj, name);
@@ -779,7 +781,7 @@ function handlerMaker(obj) {
  * Wrap an object from the document to a proxy wrapper.
  */
 function create(object) {
-  if (object.wrappedJSObject)
+  if ("wrappedJSObject" in object)
     object = object.wrappedJSObject;
   let xpcWrapper = XPCNativeWrapper(object);
   // If we can't build an XPCNativeWrapper, it doesn't make sense to build
@@ -792,16 +794,3 @@ function create(object) {
   }
   return getProxyForObject(xpcWrapper);
 }
-
-
-// Create our global object proxy and set it to be the sandbox one
-let proxy = sandboxGlobal.proxy = create(sandboxGlobal.windowObjectToProxify);
-
-// Offer a way to retrieve the key needed to unwrap
-// (for unit tests)
-if (sandboxGlobal.windowObjectToProxify.document.
-    getUserData("___include_UNWRAP_ACCESS_KEY")) {
-  proxy.UNWRAP_ACCESS_KEY = UNWRAP_ACCESS_KEY;
-}
-
-})(this);
