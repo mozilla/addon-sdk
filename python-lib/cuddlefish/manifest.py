@@ -2,6 +2,7 @@
 import os, sys, re, hashlib
 import simplejson as json
 SEP = os.path.sep
+from cuddlefish.util import filter_filenames, filter_dirnames
 
 def js_zipname(packagename, modulename):
     return "%s-lib/%s.js" % (packagename, modulename)
@@ -103,27 +104,12 @@ class ManifestEntry:
 def hash_file(fn):
     return hashlib.sha256(open(fn,"rb").read()).hexdigest()
 
-# things to ignore in data/ directories
-IGNORED_FILES = [".hgignore"]
-IGNORED_FILE_SUFFIXES = ["~"]
-IGNORED_DIRS = [".svn", ".hg", "defaults"]
-
-def filter_filenames(filenames):
-    for filename in filenames:
-        if filename in IGNORED_FILES:
-            continue
-        if any([filename.endswith(suffix)
-                for suffix in IGNORED_FILE_SUFFIXES]):
-            continue
-        yield filename
-
 def get_datafiles(datadir):
     # yields pathnames relative to DATADIR, ignoring some files
     for dirpath, dirnames, filenames in os.walk(datadir):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
-        dirnames[:] = [dirname for dirname in dirnames
-                       if dirname not in IGNORED_DIRS]
+        dirnames[:] = filter_dirnames(dirnames)
         for filename in filenames:
             fullname = os.path.join(dirpath, filename)
             assert fullname.startswith(datadir+SEP), "%s%s not in %s" % (datadir, SEP, fullname)
