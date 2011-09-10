@@ -165,8 +165,8 @@ parser_groups = (
                                      default=False,
                                      cmds=['run', 'test'])),
         (("", "--template",), dict(dest="template",
-                                   help=("specify the template for the addon"
-                                         "to be created"),
+                                   help=("the template for the add-on to be "
+                                         "created"),
                                    metavar=None,
                                    type="choice",
                                    choices=addon_templates.keys(),
