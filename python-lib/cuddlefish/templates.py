@@ -90,35 +90,35 @@ This is the %(name)s add-on.  It contains:
 '''
 
 def get_simple_package_json(addon_name):
-  return {
-    "name": addon_name.lower(),
-    "fullName": addon_name,
-    "description": "a basic add-on",
-    "author": "",
-    "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
-    "version": "0.1"
-  }
+    return {
+        "name": addon_name.lower(),
+        "fullName": addon_name,
+        "description": "a basic add-on",
+        "author": "",
+        "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+        "version": "0.1"
+    }
 
 def get_xul_package_json(addon_name):
-  obj = get_simple_package_json(addon_name)
+    obj = get_simple_package_json(addon_name)
 
-  import uuid
-  obj["templatedir"] = "extension"
-  obj["harnessClassID"] = str(uuid.uuid4())
-  return obj
+    import uuid
+    obj["templatedir"] = "extension"
+    obj["harnessClassID"] = str(uuid.uuid4())
+    return obj
 
 def app_extension_path(env_root):
-  return os.path.join(env_root, "python-lib", "cuddlefish", "app-extension")
+    return os.path.join(env_root, "python-lib", "cuddlefish", "app-extension")
 
 def copy_from_template(path_in_template):
-  def write_copy(target_cfg, env_root):
-    src_path = os.path.join(app_extension_path(env_root),
-                            *path_in_template.split("/"))
-    return open(src_path).read()
-  return write_copy
+    def write_copy(target_cfg, env_root):
+        src_path = os.path.join(app_extension_path(env_root),
+                                *path_in_template.split("/"))
+        return open(src_path).read()
+    return write_copy
 
 def write_xul_chrome_manifest(target_cfg, env_root):
-  return """\
+    return """\
 # This registers the 'harness' component, which is the entry point
 # for the Addon SDK-based part of the extension.
 component {%(harness_guid)s} components/harness.js
@@ -133,44 +133,44 @@ resource %(name)s-res modules/
        "name": target_cfg["name"]}
 
 def write_xul_install_rdf(target_cfg, env_root):
-  from rdf import gen_manifest
-  manifest = gen_manifest(template_root_dir=app_extension_path(env_root),
-                          target_cfg=target_cfg,
-                          # mirroring the code in cuddlefish.run()
-                          bundle_id=target_cfg["id"] + "@jetpack",
-                          update_url=None,
-                          bootstrap=False)
-  return str(manifest)
+    from rdf import gen_manifest
+    manifest = gen_manifest(template_root_dir=app_extension_path(env_root),
+                            target_cfg=target_cfg,
+                            # mirroring the code in cuddlefish.run()
+                            bundle_id=target_cfg["id"] + "@jetpack",
+                            update_url=None,
+                            bootstrap=False)
+    return str(manifest)
 
 EMPTY_FOLDER = '''\
-  This is a special value indicating that the template item is an empty folder
+    This is a special value indicating that the template item is an empty folder
 '''
 
 addon_templates = {
-  "default": {
-    "get_package_json_obj": get_simple_package_json,
-    "content": {
-      "lib/main.js": MAIN_JS,
-      "data/": EMPTY_FOLDER,
-      "doc/main.md": MAIN_JS_DOC,
-      "test/test-main.js": TEST_MAIN_JS,
-      "README.md": README_DOC
+    "default": {
+        "get_package_json_obj": get_simple_package_json,
+        "content": {
+            "lib/main.js": MAIN_JS,
+            "data/": EMPTY_FOLDER,
+            "doc/main.md": MAIN_JS_DOC,
+            "test/test-main.js": TEST_MAIN_JS,
+            "README.md": README_DOC
+        }
+    },
+    "xul": {
+        "get_package_json_obj": get_xul_package_json,
+        "content": {
+            "lib/main.js": MAIN_JS,
+            "data/": EMPTY_FOLDER,
+            "doc/main.md": MAIN_JS_DOC,
+            "test/test-main.js": TEST_MAIN_JS,
+            "test/test-module.js": TEST_XUL_MODULE,
+            "README.md": README_DOC,
+            "extension/chrome.manifest": write_xul_chrome_manifest,
+            "extension/install.rdf": write_xul_install_rdf,
+            "extension/components/harness.js":
+              copy_from_template("components/harness.js"),
+            "extension/modules/module.jsm": XUL_MODULE
+        }
     }
-  },
-  "xul": {
-    "get_package_json_obj": get_xul_package_json,
-    "content": {
-      "lib/main.js": MAIN_JS,
-      "data/": EMPTY_FOLDER,
-      "doc/main.md": MAIN_JS_DOC,
-      "test/test-main.js": TEST_MAIN_JS,
-      "test/test-module.js": TEST_XUL_MODULE,
-      "README.md": README_DOC,
-      "extension/chrome.manifest": write_xul_chrome_manifest,
-      "extension/install.rdf": write_xul_install_rdf,
-      "extension/components/harness.js":
-        copy_from_template("components/harness.js"),
-      "extension/modules/module.jsm": XUL_MODULE
-    }
-  }
 }

@@ -506,7 +506,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     package_json_file.write(json.dumps(package_json_obj, indent=4)+"\n")
     package_json_file.close()
     
-    target_cfg = findTargetCfg(path, require_id=True, err=err)
+    target_cfg = find_target_cfg(path, require_id=True, err=err)
 
     for template_file_path, template_content in tmpl["content"].items():
         assert template_file_path != "package.json"
@@ -524,7 +524,7 @@ def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
-def findTargetCfg(pkgdir, require_id=False, err=sys.stderr):
+def find_target_cfg(pkgdir, require_id=False, err=sys.stderr):
     """Returns the package configuration based (see packaging.
        get_config_in_dir) on <pkgdir>/package.json,
        optionally updating package.json with an 'id' property if
@@ -541,7 +541,7 @@ def findTargetCfg(pkgdir, require_id=False, err=sys.stderr):
             )
         if not config_was_ok:
             if modified:
-                target_cfg = findTargetCfg(pkgdir, err=err)
+                target_cfg = find_target_cfg(pkgdir, err=err)
             else:
                 print >>err, ("package.json needs modification:"
                               " please update it and then re-run"
@@ -625,7 +625,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                  " %s." % options.pkgdir)
             sys.exit(1)
 
-        target_cfg = findTargetCfg(options.pkgdir,
+        target_cfg = find_target_cfg(options.pkgdir,
                                    require_id=command in ('xpi', 'run'))
     else:
         # targetCfg is only specified when run() is called from
