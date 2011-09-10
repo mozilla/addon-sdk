@@ -39,7 +39,7 @@ A template different than the default can be specified via the
 The Generated XPI
 -----------------
 
-When we run `cfx xpi` to build the `aardvark` package into an extension,
+When we run `cfx xpi` to build the `aardvark` package into an add-on,
 `aardvark`'s dependencies are calculated, and a XPI file is generated that
 combines all required packages, the XPI template, and a few other
 auto-generated files:
@@ -58,7 +58,7 @@ mapped to `resource://guid-api-utils-lib/` and
 In an actual XPI built by the SDK, the string `"guid"` in these
 examples is a unique identifier that the SDK prepends to all
 `resource:` URIs to namespace the XPI's resources so they don't
-collide with anything else, including other extensions built by the
+collide with anything else, including other add-ons built by the
 SDK and containing the same packages. This GUID is built from the
 [Program ID](dev-guide/addon-development/program-id.html).
 

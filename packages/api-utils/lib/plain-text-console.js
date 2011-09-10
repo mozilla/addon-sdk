@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 
 function stringify(arg) {
@@ -99,12 +101,12 @@ Console.prototype = {
 
   exception: function exception(e) {
     var fullString = ("An exception occurred.\n" +
-                      require("traceback").format(e) + "\n" + e);
+                      require("./traceback").format(e) + "\n" + e);
     this.error(fullString);
   },
 
   trace: function trace() {
-    var traceback = require("traceback");
+    var traceback = require("./traceback");
     var stack = traceback.get();
     stack.splice(-1, 1);
     message(this.print, "info", [traceback.format(stack)]);

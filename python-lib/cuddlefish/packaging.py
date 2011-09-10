@@ -230,11 +230,14 @@ def build_config(root_dir, target_cfg, packagepath=[]):
 
     while dirs_to_scan:
         packages_dir = dirs_to_scan.pop()
-        package_paths = [os.path.join(packages_dir, dirname)
-                         for dirname in os.listdir(packages_dir)
-                         if not dirname.startswith('.')]
-        package_paths = [dirname for dirname in package_paths
-                         if os.path.isdir(dirname)]
+        if os.path.exists(os.path.join(packages_dir, "package.json")):
+            package_paths = [packages_dir]
+        else:
+            package_paths = [os.path.join(packages_dir, dirname)
+                             for dirname in os.listdir(packages_dir)
+                             if not dirname.startswith('.')]
+            package_paths = [dirname for dirname in package_paths
+                             if os.path.isdir(dirname)]
 
         for path in package_paths:
             pkgconfig = get_config_in_dir(path)

@@ -43,7 +43,7 @@ const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
 const { getActiveTab, getTabs, getTabContainers } = require("./utils");
 const { browserWindowIterator, isBrowser } = require("../window-utils");
-const windowObserver = require("../windows/observer");
+const { observer: windowObserver } = require("../windows/observer");
 
 const EVENTS = {
   "TabOpen": "open",
@@ -123,4 +123,4 @@ windowObserver.on("activate", function onWindowActivate(chromeWindow) {
 // window open.
 for each (let window in browserWindowIterator()) onWindowOpen(window);
 
-module.exports = observer;
+exports.observer = observer;

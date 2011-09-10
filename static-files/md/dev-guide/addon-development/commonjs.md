@@ -21,6 +21,19 @@ SDK modules it uses.
 
 ![CommonJS modules](media/commonjs-modules.jpg)
 
+The SDK
+[freezes](https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/freeze)
+the `exports` object returned by `require`. So a if you import a module using
+`require`, you can't change the properties of the object returned:
+
+    self = require("self");
+    // Attempting to define a new property
+    // will fail, or throw an exception in strict mode
+    self.foo = 1;
+    // Attempting to modify an existing property
+    // will fail, or throw an exception in strict mode
+    self.data = "foo";
+
 ## CommonJS Packages ##
 
 A CommonJS **package** is a structure which can wrap a collection of related
@@ -44,8 +57,7 @@ CommonJS modules, and a complete add-on is a CommonJS package.
 According to the CommonJS specification, if a module called `main` exists in a
 CommonJS package, that module will be evaluated as soon as your program is
 loaded. For an add-on, that means that the `main` module will be evaluated as
-soon as the host application (such as Firefox) has enabled your program as an
-extension.
+soon as Firefox has enabled the add-on.
 
 So in terms of CommonJS objects the translator consists of a package that
 contains a single module called `main`, and which imports three SDK modules:

@@ -36,6 +36,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 // For more information on the context in which this script is executed, see:
 // https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions
 
