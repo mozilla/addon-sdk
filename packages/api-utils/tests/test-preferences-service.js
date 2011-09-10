@@ -80,7 +80,7 @@ exports.testGetAndSet = function(test) {
       test.assertRaises(
         function() { prefs.set("test_set_pref", value); },
         ("can't set pref test_set_pref to value '" + value + "'; " +
-         "it isn't a String, Number, or Boolean"),
+         "it isn't a string, integer, or boolean"),
         "Setting a pref to " + uneval(value) + " should raise error"
       );
     });
