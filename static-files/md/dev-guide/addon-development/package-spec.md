@@ -40,7 +40,7 @@ called `package.json`. This file is also referred to as the
 * `icon64` - the relative path from the root of the package to a
   PNG file containing the icon64 for the package. By default, this
   is `icon64.png`. If the package is built as an XPI, this is used
-  as the add-on's icon to display in the Addon Manager's add-on details view.
+  as the add-on's icon to display in the Add-ons Manager's add-on details view.
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
@@ -73,13 +73,14 @@ called `package.json`. This file is also referred to as the
   `lib`. Defaults to `"main"`.
 
 
-* `templatedir` - the relative path from the root of the package to the
+* `templatedir` - (experimental, may change or disappear from a future SDK
+  release) the relative path from the root of the package to the
   directory with the extension or the application template, which is used when
   running the package using `cfx run` or `cfx test` and when building an
   XPI with `cfx xpi`. The specified directory must contain either an
   [`install.rdf` file][install.rdf] (if the package represents an extension) or
   an [`application.ini` file] [application.ini] (if the package is a XULRunner
-  application) and the Addon SDK code responsible for initializing the
+  application) and the Add-on SDK code responsible for initializing the
   extension. See
   [Structure of an installable bundle](https://developer.mozilla.org/en/Bundles)
   on MDC for the list of other files and directories that can appear in this
@@ -91,7 +92,8 @@ called `package.json`. This file is also referred to as the
   [install.rdf]: https://developer.mozilla.org/en/Install_manifests
   [application.ini]: https://developer.mozilla.org/en/XUL_application_packaging
 
-* `harnessClassID` - a String in the GUID format:
+* `harnessClassID` - (experimental, may change or disappear from a future SDK
+  release) a String in the GUID format:
   `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, where `x` represents a single
   hexadecimal digit. It is used as a `classID` (CID) of the "harness service"
   XPCOM component. This should not be useful to you unless you're using the
