@@ -12,20 +12,20 @@ called `package.json`. This file is also referred to as the
   one package with a given name. This name cannot contain spaces or periods.
   The name defaults to the name of the parent directory. If the package is
   ever built as an XPI and the `fullName` key is not present, this is
-  used as the extension's `em:name` element in its `install.rdf`.
+  used as the add-on's `em:name` element in its `install.rdf`.
 
 * `fullName` - the full name of the package. It can contain spaces. If
-  the package is ever built as an XPI, this is used as the extension's
+  the package is ever built as an XPI, this is used as the add-on's
   `em:name` element in its `install.rdf`.
 
 * `description` - a String describing the package. If the package is
-  ever built as an XPI, this is used as the extension's
+  ever built as an XPI, this is used as the add-on's
   `em:description` element in its `install.rdf`.
 
 * `author` - the original author of the package. The author may be a
   String including an optional URL in parentheses and optional email
   address in angle brackets. If the package is ever built as an XPI,
-  this is used as the extension's `em:creator` element in its
+  this is used as the add-on's `em:creator` element in its
   `install.rdf`.
 
 * `contributors` - may be an Array of additional author Strings.
@@ -35,12 +35,12 @@ called `package.json`. This file is also referred to as the
 * `icon` - the relative path from the root of the package to a
   PNG file containing the icon for the package. By default, this
   is `icon.png`. If the package is built as an XPI, this is used
-  as the extension's icon to display in the Add-on Manager's add-ons list.
+  as the add-on's icon to display in the Add-on Manager's add-ons list.
 
 * `icon64` - the relative path from the root of the package to a
   PNG file containing the icon64 for the package. By default, this
   is `icon64.png`. If the package is built as an XPI, this is used
-  as the extension's icon to display in the Addon Manager's add-on details view.
+  as the add-on's icon to display in the Addon Manager's add-on details view.
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
@@ -48,11 +48,11 @@ called `package.json`. This file is also referred to as the
 * `id` - a globally unique identifier for the package, a String
   derived from the public half of a private/public keypair, generated
   the first time you run `cfx xpi`. When the package is built as an
-  XPI, this is used as the extension's `em:id` element in its
+  XPI, this is used as the add-on's `em:id` element in its
   `install.rdf`.
 
 * `version` - a String representing the version of the package. If the
-  package is ever built as an XPI, this is used as the extension's
+  package is ever built as an XPI, this is used as the add-on's
   `em:version` element in its `install.rdf`.
 
 * `dependencies` - a String or Array of Strings representing package

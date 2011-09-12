@@ -63,6 +63,8 @@
 // to be installed and uninstalled without needing to reboot the
 // application being extended.
 
+"use strict";
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
@@ -165,7 +167,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
     var compMgr = Components.manager;
     compMgr = compMgr.QueryInterface(Ci.nsIComponentRegistrar);
 
-    for (name in options.resources) {
+    for (let name in options.resources) {
       var path = options.resources[name];
       var dir;
       if (typeof(path) == "string")
@@ -341,7 +343,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
         loader = null;
       }
 
-      for (name in options.resources)
+      for (let name in options.resources)
         resProt.setSubstitution(name, null);
     },
 
@@ -397,9 +399,10 @@ function defaultLogError(e, print) {
   if (!print)
     print = dump;
 
-  print(e + " (" + e.fileName + ":" + e.lineNumber + ")\n");
+  var level = "error";
+  print(e + " (" + e.fileName + ":" + e.lineNumber + ")\n", level);
   if (e.stack)
-    print("stack:\n" + e.stack + "\n");
+    print("stack:\n" + e.stack + "\n", level);
 }
 
 // Builds an onQuit() function that writes a result file if necessary
@@ -460,14 +463,23 @@ function buildForsakenConsoleDump(dump) {
     }
   }
 
-  return function forsakenConsoleDump(msg) {
+  return function forsakenConsoleDump(msg, level) {
     // No harm in calling dump() just in case the
     // end-user *can* see the console...
     dump(msg);
 
     msg = stringify(msg);
     if (msg.indexOf('\n') >= 0) {
-      cService.logStringMessage(buffer + msg);
+      var str = buffer + msg;
+      if (level === "error") {
+        var err = Cc["@mozilla.org/scripterror;1"]
+                  .createInstance(Ci.nsIScriptError);
+        str = str.replace(/^error: /, "");
+        err.init(str, null, null, 0, 0, 0, "Add-on SDK");
+        cService.logMessage(err);
+      }
+      else
+        cService.logStringMessage(str);
       buffer = "";
     } else {
       buffer += msg;
@@ -510,15 +522,10 @@ function getDefaults(rootFileSpec) {
   }
 
   var onQuit = function() {};
-  var doDump = dump;
+  var doDump = buildForsakenConsoleDump(dump);
 
   if ('resultFile' in options)
     onQuit = buildDevQuit(options, print);
-  else
-    // If we're not being run by cfx or some other kind of tool that is
-    // ensuring dump() calls are visible, we'll have to log to the
-    // forsaken Error Console.
-    doDump = buildForsakenConsoleDump(doDump);
 
   var logFile;
   var logStream;
@@ -533,8 +540,8 @@ function getDefaults(rootFileSpec) {
     logStream.init(logFile, -1, -1, 0);
   }
 
-  function print(msg) {
-    doDump(msg);
+  function print(msg, level) {
+    doDump(msg, level);
     if (logStream && typeof(msg) == "string") {
       logStream.write(msg, msg.length);
       logStream.flush();

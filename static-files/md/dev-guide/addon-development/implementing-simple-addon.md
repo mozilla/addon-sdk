@@ -208,7 +208,7 @@ Note the calls to `console.log()` here. `console` is a global object accessible
 by any module, which you can use to write error, warning, or informational
 messages.
 
-For an extension which has been packaged as an XPI file and installed into
+For an add-on which has been packaged as an XPI file and installed into
 Firefox, the messages are sent to Firefox's
 [Error Console](https://developer.mozilla.org/en/Error_Console). If you are
 launching Firefox from the command line using `cfx`, as you will be for

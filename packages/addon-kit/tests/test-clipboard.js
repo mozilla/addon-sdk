@@ -20,15 +20,20 @@ exports.testWithNoFlavor = function(test) {
 // Test the slightly less common case where we specify the flavor
 exports.testWithFlavor = function(test) {
   var contents = "<b>hello there</b>";
+  var contentsText = "hello there";
   var flavor = "html";
   var fullFlavor = "text/html";
+  var unicodeFlavor = "text";
+  var unicodeFullFlavor = "text/unicode";
   var clip = require("clipboard");
   test.assert(clip.set(contents, flavor));
-  test.assertEqual(clip.currentFlavors[0], flavor);
-  // Confirm default flavor returns null
-  test.assertEqual(clip.get(), null);
+  test.assertEqual(clip.currentFlavors[0], unicodeFlavor);
+  test.assertEqual(clip.currentFlavors[1], flavor);
+  test.assertEqual(clip.get(), contentsText);
   test.assertEqual(clip.get(flavor), contents);
   test.assertEqual(clip.get(fullFlavor), contents);
+  test.assertEqual(clip.get(unicodeFlavor), contentsText);
+  test.assertEqual(clip.get(unicodeFullFlavor), contentsText);
 };
 
 // Test that the typical case still works when we specify the flavor to set

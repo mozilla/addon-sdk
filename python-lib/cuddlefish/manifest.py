@@ -2,6 +2,7 @@
 import os, sys, re, hashlib
 import simplejson as json
 SEP = os.path.sep
+from cuddlefish.util import filter_filenames, filter_dirnames
 
 def js_zipname(packagename, modulename):
     return "%s-lib/%s.js" % (packagename, modulename)
@@ -16,17 +17,22 @@ def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
 
 class ModuleNotFoundError(Exception):
-    def __init__(self, *args):
-        self.args = args
-        self.used_by = None # string, full path to module which did require()
-        self.requirement_name = None # string, what they require()d
-        self.looked_at = [] # list of full paths to potential .js files
+    def __init__(self, requirement_type, requirement_name,
+                 used_by, line_number, looked_in):
+        Exception.__init__(self)
+        self.requirement_type = requirement_type # "require" or "define"
+        self.requirement_name = requirement_name # string, what they require()d
+        self.used_by = used_by # string, full path to module which did require()
+        self.line_number = line_number # int, 1-indexed line number of first require()
+        self.looked_in = looked_in # list of full paths to potential .js files
     def __str__(self):
-        return ("ModuleNotFoundError: unable to satisfy require(%s) from %s .\n"
-                "Looked for it in:\n"
-                " %s\n" %
-                (self.requirement_name, self.used_by,
-                 "\n ".join(self.looked_in)))
+        what = "%s(%s)" % (self.requirement_type, self.requirement_name)
+        where = self.used_by
+        if self.line_number is not None:
+            where = "%s:%d" % (self.used_by, self.line_number)
+        searched = "Looked for it in:\n  %s\n" % "\n  ".join(self.looked_in)
+        return ("ModuleNotFoundError: unable to satisfy: %s from\n"
+                "  %s:\n" % (what, where)) + searched
 
 class BadModuleIdentifier(Exception):
     pass
@@ -43,8 +49,11 @@ class ManifestEntry:
         self.datamap = None
 
     def get_uri(self, prefix):
-        return "%s%s-%s/%s.js" % \
+        uri = "%s%s-%s/%s" % \
                (prefix, self.packageName, self.sectionName, self.moduleName)
+        if not uri.endswith(".js"):
+          uri += ".js"
+        return uri
 
     def get_entry_for_manifest(self, prefix):
         entry = { "packageName": self.packageName,
@@ -95,27 +104,12 @@ class ManifestEntry:
 def hash_file(fn):
     return hashlib.sha256(open(fn,"rb").read()).hexdigest()
 
-# things to ignore in data/ directories
-IGNORED_FILES = [".hgignore"]
-IGNORED_FILE_SUFFIXES = ["~"]
-IGNORED_DIRS = [".svn", ".hg", "defaults"]
-
-def filter_filenames(filenames):
-    for filename in filenames:
-        if filename in IGNORED_FILES:
-            continue
-        if any([filename.endswith(suffix)
-                for suffix in IGNORED_FILE_SUFFIXES]):
-            continue
-        yield filename
-
 def get_datafiles(datadir):
     # yields pathnames relative to DATADIR, ignoring some files
     for dirpath, dirnames, filenames in os.walk(datadir):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
-        dirnames[:] = [dirname for dirname in dirnames
-                       if dirname not in IGNORED_DIRS]
+        dirnames[:] = filter_dirnames(dirnames)
         for filename in filenames:
             fullname = os.path.join(dirpath, filename)
             assert fullname.startswith(datadir+SEP), "%s%s not in %s" % (datadir, SEP, fullname)
@@ -209,7 +203,7 @@ class ManifestBuilder:
             mi = ModuleInfo(self.pkg_cfg.packages[pkgname], section, modname,
                             js, None)
             self.process_module(mi)
-        
+
 
     def get_module_entries(self):
         return frozenset(self.manifest.values())
@@ -337,7 +331,7 @@ class ManifestBuilder:
             me.add_docs(mi.docs)
 
         js_lines = open(mi.js,"r").readlines()
-        requires, problems = scan_module(mi.js, js_lines, self.stderr)
+        requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -346,7 +340,7 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "parent-loader", "loader", "manifest"):
+            if reqname in ("chrome", "loader", "manifest"):
                 me.add_requirement(reqname, None)
             elif reqname == "self":
                 # this might reference bundled data, so:
@@ -368,12 +362,14 @@ class ManifestBuilder:
                 looked_in = [] # populated by subroutines
                 them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
-                    err = ModuleNotFoundError()
-                    err.used_by = mi.js
-                    err.requirement_name = reqname
-                    err.looked_in = looked_in
+                    lineno = locations.get(reqname) # None means define()
+                    if lineno is None:
+                        reqtype = "define"
+                    else:
+                        reqtype = "require"
+                    err = ModuleNotFoundError(reqtype, reqname,
+                                              mi.js, lineno, looked_in)
                     raise err
-                    #print "Warning: unable to satisfy require(%s) from %s" % (reqname, mi)
                 else:
                     me.add_requirement(reqname, them_me)
 
@@ -519,17 +515,23 @@ class ManifestBuilder:
     def _find_module_in_package(self, pkgname, sections, name, looked_in):
         # require("a/b/c") should look at ...\a\b\c.js on windows
         filename = os.sep.join(name.split("/"))
+        # normalize filename, make sure that we do not add .js if it already has
+        # it.
+        if not filename.endswith(".js"):
+          filename += ".js"
+        basename = filename[:-3]
+
         pkg = self.pkg_cfg.packages[pkgname]
         if isinstance(sections, basestring):
             sections = [sections]
         for section in sections:
             for sdir in pkg.get(section, []):
-                js = os.path.join(pkg.root_dir, sdir, filename+".js")
+                js = os.path.join(pkg.root_dir, sdir, filename)
                 looked_in.append(js)
                 if os.path.exists(js):
                     docs = None
                     maybe_docs = os.path.join(pkg.root_dir, "docs",
-                                              filename+".md")
+                                              basename+".md")
                     if section == "lib" and os.path.exists(maybe_docs):
                         docs = maybe_docs
                     return ModuleInfo(pkg, section, name, js, docs)
@@ -568,7 +570,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
 
 
 
-COMMENT_PREFIXES = ["//", "/*", "*", "\'", "\"", "dump("]
+COMMENT_PREFIXES = ["//", "/*", "*", "dump("]
 
 REQUIRE_RE = r"(?<![\'\"])require\s*\(\s*[\'\"]([^\'\"]+?)[\'\"]\s*\)"
 
@@ -582,7 +584,8 @@ DEF_RE_ALLOWED = re.compile(r"^[\'\"][^\'\"]+[\'\"]$")
 
 def scan_requirements_with_grep(fn, lines):
     requires = {}
-    for line in lines:
+    first_location = {}
+    for (lineno0, line) in enumerate(lines):
         for clause in line.split(";"):
             clause = clause.strip()
             iscomment = False
@@ -595,6 +598,8 @@ def scan_requirements_with_grep(fn, lines):
             if mo:
                 modname = mo.group(1)
                 requires[modname] = {}
+                if modname not in first_location:
+                    first_location[modname] = lineno0+1
 
     # define() can happen across multiple lines, so join everyone up.
     wholeshebang = "\n".join(lines)
@@ -610,8 +615,10 @@ def scan_requirements_with_grep(fn, lines):
                 modname = strbit[1:-1]
                 if modname not in ["exports"]:
                     requires[modname] = {}
+                    # joining all the lines means we lose line numbers, so we
+                    # can't fill first_location[]
 
-    return requires
+    return requires, first_location
 
 CHROME_ALIASES = [
     (re.compile(r"Components\.classes"), "Cc"),
@@ -625,6 +632,7 @@ OTHER_CHROME = re.compile(r"Components\.[a-zA-Z]")
 def scan_for_bad_chrome(fn, lines, stderr):
     problems = False
     old_chrome = set() # i.e. "Cc" when we see "Components.classes"
+    old_chrome_lines = [] # list of (lineno, line.strip()) tuples
     for lineno,line in enumerate(lines):
         # note: this scanner is not obligated to spot all possible forms of
         # chrome access. The scanner is detecting voluntary requests for
@@ -645,35 +653,59 @@ def scan_for_bad_chrome(fn, lines, stderr):
             if OTHER_CHROME.search(line):
                 old_chrome_in_this_line.add("components")
         old_chrome.update(old_chrome_in_this_line)
-                
+        if old_chrome_in_this_line:
+            old_chrome_lines.append( (lineno+1, line) )
+
     if old_chrome:
-        print >>stderr, ""
-        print >>stderr, "To use chrome authority, you need a line like this:"
-        needs = ",".join(sorted(old_chrome))
-        print >>stderr, '  const {%s} = require("chrome");' % needs
-        print >>stderr, "because things like 'Components.classes' will not be available"
+        print >>stderr, """
+The following lines from file %(fn)s:
+%(lines)s
+use 'Components' to access chrome authority. To do so, you need to add a
+line somewhat like the following:
+
+  const {%(needs)s} = require("chrome");
+
+Then you can use 'Components' as well as any shortcuts to its properties
+that you import from the 'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and
+'Cu' for the 'classes', 'interfaces', 'manager', 'results', and 'utils'
+properties, respectively).
+
+(Note: once bug 636145 is fixed, to access 'Components' directly you'll
+need to retrieve it from the 'chrome' module by adding it to the list of
+symbols you import from the module. To avoid having to make this change
+in the future, replace all occurrences of 'Components' in your code with
+the equivalent shortcuts now.)
+""" % { "fn": fn, "needs": ",".join(sorted(old_chrome)),
+        "lines": "\n".join([" %3d: %s" % (lineno,line)
+                            for (lineno, line) in old_chrome_lines]),
+        }
         problems = True
     return problems
 
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
-    requires = scan_requirements_with_grep(fn, lines)
+    requires, locations = scan_requirements_with_grep(fn, lines)
     if filename == "cuddlefish.js" or filename == "securable-module.js":
         # these are the loader: don't scan for chrome
         problems = False
+    elif "chrome" in requires:
+        # if they declare require("chrome"), we tolerate the use of
+        # Components (see bug 663541 for rationale)
+        problems = False
     else:
         problems = scan_for_bad_chrome(fn, lines, stderr)
-    return requires, problems
+    return requires, problems, locations
 
 
 
 if __name__ == '__main__':
     for fn in sys.argv[1:]:
-        requires,problems = scan_module(fn, open(fn).readlines())
+        requires, problems, locations = scan_module(fn, open(fn).readlines())
         print
         print "---", fn
         if problems:
             print "PROBLEMS"
             sys.exit(1)
-        print "requires: %s" % (",".join(requires))
+        print "requires: %s" % (",".join(sorted(requires.keys())))
+        print "locations: %s" % locations
 

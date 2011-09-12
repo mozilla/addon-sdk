@@ -36,21 +36,21 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { Trait } = require("traits");
-const { List } = require("list");
-const { Tab, Options } = require("tabs/tab");
-const { EventEmitter } = require("events");
-const { EVENTS } = require("tabs/events");
+const { Trait } = require("../traits");
+const { List } = require("../list");
+const { Tab, Options } = require("../tabs/tab");
+const { EventEmitter } = require("../events");
+const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,
         openTab, activateTab } = require("../tabs/utils");
-const tabsObserver = require("../tabs/observer");
+const { observer: tabsObserver } = require("../tabs/observer");
 
 const TAB_BROWSER = "tabbrowser";
 
 /**
  * This is a trait that is used in composition of window wrapper. Trait tracks
- * tab related events of the wrapped window in order to keep truck of open
- * tabs and maintain their wrappers. Every new tab is gets wrapped and jetpack
+ * tab related events of the wrapped window in order to keep track of open
+ * tabs and maintain their wrappers. Every new tab gets wrapped and jetpack
  * type event is emitted.
  */
 const WindowTabTracker = Trait.compose({

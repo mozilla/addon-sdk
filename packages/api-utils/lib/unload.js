@@ -11,9 +11,14 @@ var when = exports.when = function when(observer) {
   observers.unshift(observer);
 };
 
-var send = exports.send = function send(reason) {
+var send = exports.send = function send(reason, onError) {
+  onError = onError || console.exception;
   observers.forEach(function (observer) {
-    observer(reason);
+    try {
+      observer(reason);
+    } catch (e) {
+      onError(e);
+    }
   });
 };
 

@@ -5,6 +5,8 @@ import tempfile
 import atexit
 import shutil
 import shlex
+import subprocess
+import re
 
 import simplejson as json
 import mozrunner
@@ -49,6 +51,30 @@ def follow_file(filename):
                 last_pos = f.tell()
                 f.close()
         yield newstuff
+
+# subprocess.check_output only appeared in python2.7, so this code is taken
+# from python source code for compatibility with py2.5/2.6
+class CalledProcessError(Exception):
+    def __init__(self, returncode, cmd, output=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        self.output = output
+    def __str__(self):
+        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+def check_output(*popenargs, **kwargs):
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise CalledProcessError(retcode, cmd, output=output)
+    return output
+
 
 class FennecProfile(mozrunner.Profile):
     preferences = {}
@@ -260,6 +286,7 @@ def run_app(harness_root_dir, harness_options,
     env.update(os.environ)
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'warn'
+    env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
     if norun:
         cmdargs.append("-no-remote")
 
@@ -291,6 +318,54 @@ def run_app(harness_root_dir, harness_options,
 
     sys.stdout.flush(); sys.stderr.flush()
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
+
+    # Ensure cfx is being used with Firefox 4.0+.
+    # TODO: instead of dying when Firefox is < 4, warn when Firefox is outside
+    # the minVersion/maxVersion boundaries.
+    version_output = check_output(runner.command + ["-v"])
+    # Note: this regex doesn't handle all valid versions in the Toolkit Version
+    # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
+    # common subset that we expect Mozilla apps to use.
+    mo = re.search(r"Mozilla (Firefox|Iceweasel) ((\d+)\.\S*)",
+                   version_output)
+    if not mo:
+        # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
+        # version.
+        print """
+  WARNING: cannot determine Firefox version; please ensure you are running
+  a Mozilla application equivalent to Firefox 4.0 or greater.
+  """
+    else:
+        version = mo.group(3)
+        if int(version) < 4:
+            print """
+  cfx requires Firefox 4 or greater and is unable to find a compatible
+  binary. Please install a newer version of Firefox or provide the path to
+  your existing compatible version with the --binary flag:
+
+    cfx --binary=PATH_TO_FIREFOX_BINARY"""
+            return
+
+        # Set the appropriate extensions.checkCompatibility preference to false,
+        # so the tests run even if the SDK is not marked as compatible with the
+        # version of Firefox on which they are running, and we don't have to
+        # ensure we update the maxVersion before the version of Firefox changes
+        # every six weeks.
+        #
+        # The regex we use here is effectively the same as BRANCH_REGEX from
+        # /toolkit/mozapps/extensions/content/extensions.js, which toolkit apps
+        # use to determine whether or not to load an incompatible addon.
+        #
+        br = re.search(r"^([^\.]+\.[0-9]+[a-z]*).*", mo.group(2), re.I)
+        if br:
+            prefname = 'extensions.checkCompatibility.' + br.group(1)
+            profile.preferences[prefname] = False
+            # Calling profile.set_preferences here duplicates the list of prefs
+            # in prefs.js, since the profile calls self.set_preferences in its
+            # constructor, but that is ok, because it doesn't change the set of
+            # preferences that are ultimately registered in Firefox.
+            profile.set_preferences(profile.preferences)
+
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
     sys.stderr.flush()
     

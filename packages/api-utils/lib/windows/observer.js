@@ -83,7 +83,4 @@ new WindowTracker({
 for each (let window in windowIterator())
   observer.observe(window);
 
-// Getting rid of all listeners when add-on is unloaded.
-require("unload").when(function() { observer._events = {} });
-
-module.exports = observer;
+exports.observer = observer;

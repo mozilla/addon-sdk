@@ -87,6 +87,25 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
 
 <tr>
   <td>
+    <code>--binary-args=CMDARGS</code>
+  </td>
+  <td>
+    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
+    arguments</a> to the binary being executed (for example, Firefox).</p>
+    <p>For example, to pass the
+    <code>-jsconsole</code> argument to Firefox, which will launch the
+    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
+    Error Console</a>, try the following:</p<>
+    <pre>
+    cfx run --binary-args -jsconsole</pre>
+    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
+    <pre>
+    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    </td>
+</tr>
+
+<tr>
+  <td>
     <code>--extra-packages=EXTRA_PACKAGES</code>
   </td>
   <td>
@@ -218,25 +237,6 @@ To launch the application, enter the following command:
 
 <tr>
   <td>
-    <code>--binary-args=CMDARGS</code>
-  </td>
-  <td>
-    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
-    arguments</a> to the binary being executed (for example, Firefox).</p>
-    <p>For example, to pass the
-    <code>-jsconsole</code> argument to Firefox, which will launch the
-    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
-    Error Console</a>, try the following:</p<>
-    <pre>
-    cfx run --binary-args -jsconsole</pre>
-    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
-    <pre>
-    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
-    </td>
-</tr>
-
-<tr>
-  <td>
     <code>--e10s</code>
   </td>
   <td>
@@ -294,6 +294,25 @@ times.
     Use the host application binary specified in BINARY. BINARY may be specified as
     a full path or as a path relative to the current directory.
   </td>
+</tr>
+
+<tr>
+  <td>
+    <code>--binary-args=CMDARGS</code>
+  </td>
+  <td>
+    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
+    arguments</a> to the binary being executed (for example, Firefox).</p>
+    <p>For example, to pass the
+    <code>-jsconsole</code> argument to Firefox, which will launch the
+    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
+    Error Console</a>, try the following:</p<>
+    <pre>
+    cfx run --binary-args -jsconsole</pre>
+    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
+    <pre>
+    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    </td>
 </tr>
 
 <tr>
@@ -428,25 +447,6 @@ To launch the application, enter the following command:
     ADDONS may be specified as full paths or relative to the
     current directory.
   </td>
-</tr>
-
-<tr>
-  <td>
-    <code>--binary-args=CMDARGS</code>
-  </td>
-  <td>
-    <p>Pass <a href="http://kb.mozillazine.org/Command_line_arguments">extra
-    arguments</a> to the binary being executed (for example, Firefox).</p>
-    <p>For example, to pass the
-    <code>-jsconsole</code> argument to Firefox, which will launch the
-    <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
-    Error Console</a>, try the following:</p<>
-    <pre>
-    cfx run --binary-args -jsconsole</pre>
-    <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
-    <pre>
-    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
-    </td>
 </tr>
 
 <tr>

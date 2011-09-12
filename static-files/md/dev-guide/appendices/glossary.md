@@ -1,7 +1,6 @@
 # Glossary #
 
-Terminology is important.  Here's a glossary of terms used for the SDK
-so all developers speak the same language.
+This glossary contains a list of terms used in the Add-on SDK.
 
 __Add-on__: A software package that adds functionality to a Mozilla application,
 which can be built with either Mozilla's traditional add-on platform or the SDK.
@@ -10,7 +9,7 @@ __Add-on SDK__: A toolchain and associated applications for developing add-ons.
 
 __API Utils__: A small, self-contained set of low-level modules that forms
 the base functionality for the SDK. The library can be "bootstrapped" into
-any Mozilla application or extension.
+any Mozilla application or add-on.
 
 __CFX__: A command-line build, testing, and packaging tool for SDK-based code.
 
@@ -62,7 +61,7 @@ or an Unprivileged Module.
 __Package__: A directory structure containing modules,
 documentation, tests, and related metadata. If a package contains
 a program and includes proper metadata, it can be built into
-a Mozilla application or extension.
+a Mozilla application or add-on.
 
 __Program__: A module named `main` that optionally exports
 a `main()` function.  This module is intended either to start an application for

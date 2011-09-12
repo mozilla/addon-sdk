@@ -1,21 +1,21 @@
 "use strict";
 
 const { Hotkey } = require("hotkeys");
-const { keyPress } = require("dom/events/keys");
+const { keyDown } = require("dom/events/keys");
 
 exports["test hotkey: accel alt shift"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
-    combo: "accel-shift-p",
+    combo: "accel-shift-6",
     onPress: function() {
       assert.pass("first callback is called");
-      keyPress(element, "accel-alt-shift-p");
+      keyDown(element, "accel-alt-shift-6");
       showHotKey.destroy();
     }
   });
 
   var hideHotKey = Hotkey({
-    combo: "accel-alt-shift-p",
+    combo: "accel-alt-shift-6",
     onPress: function() {
       assert.pass("second callback is called");
       hideHotKey.destroy();
@@ -23,16 +23,16 @@ exports["test hotkey: accel alt shift"] = function(assert, done) {
     }
   });
 
-  keyPress(element, "accel-shift-p");
+  keyDown(element, "accel-shift-6");
 };
 
 exports["test hotkey meta & control"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "meta-3",
     onPress: function() {
       assert.pass("first callback is called");
-      keyPress(element, "alt-control-shift-b");
+      keyDown(element, "alt-control-shift-b");
       showHotKey.destroy();
     }
   });
@@ -46,16 +46,16 @@ exports["test hotkey meta & control"] = function(assert, done) {
     }
   });
 
-  keyPress(element, "meta-3");
+  keyDown(element, "meta-3");
 };
 
-exports["test hotkey: control alt ! -"] = function(assert, done) {
-  var element = require("window-utils").activeWindow.document.documentElement;
+exports["test hotkey: control-1 / meta--"] = function(assert, done) {
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
-    combo: "control-!",
+    combo: "control-1",
     onPress: function() {
       assert.pass("first callback is called");
-      keyPress(element, "meta--");
+      keyDown(element, "meta--");
       showHotKey.destroy();
     }
   });
@@ -69,7 +69,7 @@ exports["test hotkey: control alt ! -"] = function(assert, done) {
     }
   });
 
-  keyPress(element, "control-!");
+  keyDown(element, "control-1");
 };
 
 exports["test invalid combos"] = function(assert) {
@@ -94,14 +94,39 @@ exports["test invalid combos"] = function(assert) {
 };
 
 exports["test no exception on unmodified keypress"] = function(assert) {
-  var element = require("window-utils").activeWindow.document.documentElement;
-	var someHotkey = Hotkey({
-		combo: "control-alt-!",
-		onPress: function() {
-		}
-	});
-	keyPress(element, "a");
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var someHotkey = Hotkey({
+    combo: "control-alt-1",
+    onPress: function() {
+    }
+  });
+  keyDown(element, "a");
   assert.pass("No exception throw, unmodified keypress passed");
-}
+};
+
+exports["test hotkey: automatic destroy"] = function(assert, done) {
+  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
+  let loader = assert._log.makeSandboxedLoader();
+  
+  var called = false;
+  var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;
+  var hotkey = loader.require("hotkeys").Hotkey({
+    combo: "accel-shift-x",
+    onPress: function() {
+      called = true;
+    }
+  });
+  
+  // Unload the module so that previous hotkey is automatically destroyed
+  loader.unload();
+  
+  // Ensure that the hotkey is really destroyed
+  keyDown(element, "accel-shift-x");
+  
+  require("timer").setTimeout(function () {
+    assert.ok(!called, "Hotkey is destroyed and not called.");
+    done();
+  }, 0);
+};
 
 require("test").run(exports);

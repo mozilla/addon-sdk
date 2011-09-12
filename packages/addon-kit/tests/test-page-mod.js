@@ -17,15 +17,14 @@ exports.delay = function(test) {
 /* Tests for the PageMod APIs */
 
 exports.testPageMod1 = function(test) {
-  let pageMod;
-  [pageMod] = testPageMod(test, "about:", [{
+  let mods = testPageMod(test, "about:", [{
       include: /about:/,
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         window.document.body.setAttribute("JEP-107", "worked");
       },
       onAttach: function() {
-        test.assertEqual(this, pageMod, "The 'this' object is the page mod.");
+        test.assertEqual(this, mods[0], "The 'this' object is the page mod.");
       }
     }],
     function(win, done) {
@@ -256,6 +255,34 @@ exports.testEventEmitter = function(test) {
   );
 };
 
+exports.testHistory = function(test) {
+  // We need a valid url in order to have a working History API.
+  // (i.e do not work on data: or about: pages)
+  // Test bug 679054.
+  let url = require("self").data.url("test-page-mod.html");
+  let callbackDone = null;
+  testPageMod(test, url, [{
+      include: url,
+      contentScriptWhen: 'end',
+      contentScript: 'new ' + function WorkerScope() {
+        history.pushState({}, "", "#");
+        history.replaceState({foo: "bar"}, "", "#");
+        self.postMessage(history.state);
+      },
+      onAttach: function(worker) {
+        worker.on('message', function (data) {
+          test.assertEqual(JSON.stringify(data), JSON.stringify({foo: "bar"}),
+                           "History API works!");
+          callbackDone();
+        });
+      }
+    }],
+    function(win, done) {
+      callbackDone = done;
+    }
+  );
+};
+
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
@@ -323,3 +350,31 @@ exports['test tab worker on message'] = function(test) {
 
   tabs.open(url1);
 };
+
+exports.testAutomaticDestroy = function(test) {
+  test.waitUntilDone();
+  let loader = test.makeSandboxedLoader();
+  
+  let pageMod = loader.require("page-mod").PageMod({
+    include: "about:*",
+    contentScriptWhen: "start",
+    onAttach: function(w) {
+      test.fail("Page-mod should have been detroyed during module unload");
+    }
+  });
+  
+  // Unload the page-mod module so that our page mod is destroyed
+  loader.unload();
+ 
+  // Then create a second tab to ensure that it is correctly destroyed
+  let tabs = require("tabs");
+  tabs.open({
+    url: "about:",
+    onReady: function onReady(tab) {
+      test.pass("check automatic destroy");
+      tab.close();
+      test.done();
+    }
+  });
+  
+}

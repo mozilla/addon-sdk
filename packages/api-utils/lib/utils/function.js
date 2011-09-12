@@ -35,7 +35,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-var { setTimeout } = require("timer");
+var { setTimeout } = require("../timer");
 
 /**
  * Takes a function and returns a wrapped one instead, calling which will call

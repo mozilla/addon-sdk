@@ -23,6 +23,8 @@
  * Contributor(s):
  *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
  *   Dietrich Ayala <dietrich@mozilla.com>
+ *   Myk Melez <myk@mozilla.org>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,9 +40,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
-const errors = require("errors");
-const apiUtils = require("api-utils");
+const errors = require("api-utils/errors");
+const apiUtils = require("api-utils/api-utils");
  
 /*
 While these data flavors resemble Internet media types, they do
@@ -124,15 +128,29 @@ exports.set = function(aData, aDataType) {
 
   switch (flavor) {
     case "text/html":
-      var str = Cc["@mozilla.org/supports-string;1"].
-                createInstance(Ci.nsISupportsString);
-      str.data = options.data;
-      xferable.addDataFlavor(flavor);
-      xferable.setTransferData(flavor, str, options.data.length * 2);
+      // add text/html flavor
+      let (str = Cc["@mozilla.org/supports-string;1"].
+                 createInstance(Ci.nsISupportsString))
+      {
+        str.data = options.data;
+        xferable.addDataFlavor(flavor);
+        xferable.setTransferData(flavor, str, str.data.length * 2);
+      }
+
+      // add a text/unicode flavor (html converted to plain text)
+      let (str = Cc["@mozilla.org/supports-string;1"].
+                 createInstance(Ci.nsISupportsString),
+           converter = Cc["@mozilla.org/feed-textconstruct;1"].
+                       createInstance(Ci.nsIFeedTextConstruct))
+      {
+        converter.type = "html";
+        converter.text = options.data;
+        str.data = converter.plainText();
+        xferable.addDataFlavor("text/unicode");
+        xferable.setTransferData("text/unicode", str, str.data.length * 2);
+      }
       break;
     // TODO: images!
-    // TODO: add a text/unicode flavor for HTML text that
-    // returns a plaintextified representation of the HTML.
     default:
       throw new Error("Unable to handle the flavor " + flavor + ".");
   }
@@ -231,7 +249,7 @@ exports.__defineGetter__("currentFlavors", function() {
 // SUPPORT FUNCTIONS ////////////////////////////////////////////////////////
 
 function toJetpackFlavor(aFlavor) {
-  for each (flavorMap in kFlavorMap)
+  for each (let flavorMap in kFlavorMap)
     if (flavorMap.long == aFlavor)
       return flavorMap.short;
   // Return null in the case where we don't match
@@ -240,7 +258,7 @@ function toJetpackFlavor(aFlavor) {
 
 function fromJetpackFlavor(aJetpackFlavor) {
   // TODO: Handle proper flavors better
-  for each (flavorMap in kFlavorMap)
+  for each (let flavorMap in kFlavorMap)
     if (flavorMap.short == aJetpackFlavor || flavorMap.long == aJetpackFlavor)
       return flavorMap.long;
   // Return null in the case where we don't match.

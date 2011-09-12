@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,Cr} = require("chrome");
 
 var ios = Cc['@mozilla.org/network/io-service;1']
@@ -118,4 +120,4 @@ function URL(url, base) {
   this.__defineGetter__("path", function() uri.path);
   this.toString = function URL_toString() uri.spec;
 };
-exports.URL = require("api-utils").publicConstructor(URL);
+exports.URL = require("./api-utils").publicConstructor(URL);

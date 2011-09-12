@@ -34,15 +34,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 
-var errors = require("errors");
+var errors = require("./errors");
 
 var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
                      .getService(Ci.nsIWindowWatcher);
 
-const { EventEmitter } = require('events'),
-      { Trait } = require('traits');
+const { EventEmitter } = require('./events'),
+      { Trait } = require('./traits');
 
 /**
  * An iterator for XUL windows currently in the application.
@@ -56,13 +58,27 @@ var windowIterator = exports.windowIterator = function windowIterator() {
     yield winEnum.getNext().QueryInterface(Ci.nsIDOMWindow);
 };
 
+/**
+ * An iterator for browser windows currently open in the application.
+ * @returns {Function}
+ *    A generator that yields browser windows exposing the `nsIDOMWindow`
+ *    interface.
+ */
+function browserWindowIterator() {
+  for each (let window in windowIterator()) {
+    if (isBrowser(window))
+      yield window;
+  }
+}
+exports.browserWindowIterator = browserWindowIterator;
+
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   this.delegate = delegate;
   this._loadingWindows = [];
-  for (window in windowIterator())
+  for (let window in windowIterator())
     this._regWindow(window);
   gWindowWatcher.registerNotification(this);
-  require("unload").ensure(this);
+  require("./unload").ensure(this);
 };
 
 WindowTracker.prototype = {
@@ -89,15 +105,17 @@ WindowTracker.prototype = {
   },
 
   _unregWindow: function _unregWindow(window) {
-    if (window.document.readyState == "complete")
-      this.delegate.onUntrack(window);
-    else
+    if (window.document.readyState == "complete") {
+      if (this.delegate.onUntrack)
+        this.delegate.onUntrack(window);
+    } else {
       this._unregLoadingWindow(window);
+    }
   },
 
   unload: function unload() {
     gWindowWatcher.unregisterNotification(this);
-    for (window in windowIterator())
+    for (let window in windowIterator())
       this._unregWindow(window);
   },
 
@@ -143,7 +161,7 @@ function onDocUnload(event) {
   document.defaultView.removeEventListener("unload", onDocUnload, false);
 }
 
-onDocUnload = require("errors").catchAndLog(onDocUnload);
+onDocUnload = require("./errors").catchAndLog(onDocUnload);
 
 exports.closeOnUnload = function closeOnUnload(window) {
   window.addEventListener("unload", onDocUnload, false);
@@ -184,12 +202,13 @@ exports.getOuterId = function getOuterId(window) {
                 getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
 };
 
-exports.isBrowser = function isBrowser(window) {
+function isBrowser(window) {
   return window.document.documentElement.getAttribute("windowtype") ===
          "navigator:browser";
 };
+exports.isBrowser = isBrowser;
 
-require("unload").when(
+require("./unload").when(
   function() {
     gDocsToClose.slice().forEach(
       function(doc) { doc.defaultView.close(); });

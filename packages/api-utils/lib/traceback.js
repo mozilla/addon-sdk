@@ -34,6 +34,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci,components} = require("chrome");
 
 // Undo the auto-parentification of URLs done in bug 418356.
@@ -60,7 +62,7 @@ function getLocalFile(path) {
 
 function safeGetFileLine(path, line) {
   try {
-    var scheme = require("url").URL(path).scheme;
+    var scheme = require("./url").URL(path).scheme;
     // TODO: There should be an easier, more accurate way to figure out
     // what's the case here.
     if (!(scheme == "http" || scheme == "https"))

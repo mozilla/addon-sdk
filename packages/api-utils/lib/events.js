@@ -198,5 +198,5 @@ const eventEmitter =  {
     return this;
   }
 };
-exports.EventEmitter = require("traits").Trait.compose(eventEmitter);
-exports.EventEmitterTrait = require('light-traits').Trait(eventEmitter);
+exports.EventEmitter = require("./traits").Trait.compose(eventEmitter);
+exports.EventEmitterTrait = require('./light-traits').Trait(eventEmitter);
