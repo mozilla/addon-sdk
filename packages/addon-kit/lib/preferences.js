@@ -41,18 +41,17 @@ const { EventEmitter } = require("events");
 const unload = require("unload");
 const prefService = require("preferences-service");
 
-const ADDON_BRANCH = "extensions."+packaging.jetpackID+".";
+const ADDON_BRANCH = "extensions." + packaging.jetpackID + ".";
 const BUTTON_PRESSED = packaging.jetpackID+"-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
-if (!require("xul-app").is("Firefox")) {
+if (!require("xul-app").is("Firefox"))
   throw Error("This API is only supported in Firefox");
-}
 
-let branch = Cc["@mozilla.org/preferences-service;1"]
-                    .getService(Ci.nsIPrefService)
-                    .getBranch(ADDON_BRANCH);
-branch.QueryInterface(Ci.nsIPrefBranch2);
+let branch = Cc["@mozilla.org/preferences-service;1"].
+             getService(Ci.nsIPrefService).
+             getBranch(ADDON_BRANCH).
+             QueryInterface(Ci.nsIPrefBranch2);
 
 const events = EventEmitter.compose({
   constructor: function Prefs() {
@@ -62,7 +61,6 @@ const events = EventEmitter.compose({
     // Make sure we remove all the listeners
     unload.ensure(this);
 
-    // XXX is this necessary?
     this._prefObserver = this._prefObserver.bind(this);
     this._buttonObserver = this._buttonObserver.bind(this);
 
@@ -83,9 +81,9 @@ const events = EventEmitter.compose({
                 },
   unload: function manager_unload() {
     this._removeAllListeners("error");
-    branch.removeObserver("",this._prefObserver);
+    branch.removeObserver("", this._prefObserver);
  },
-})()
+})();
 
 const simple = Proxy.create({
   get: function(rcvr, pref){
@@ -96,7 +94,7 @@ const simple = Proxy.create({
       prefService.set(ADDON_BRANCH+pref,val);
     } catch(e) {
       throw new Error("can't set pref " + pref + " to value '" + val +
-                      "'; it isn't a String, Number, or Boolean");
+                      "'; it isn't a String, Integer, or Boolean");
     }
   },
   delete: function(pref){

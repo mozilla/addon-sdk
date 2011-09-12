@@ -8,8 +8,6 @@ def parse_options(options, jetpack_id):
     root.setAttribute("xmlns", "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
     doc.appendChild(root)
 
-    # Only simple preferences for now
-    options = options["simple"]
     for pref_name in options:
         pref = options[pref_name]
         setting = doc.createElement("setting")
