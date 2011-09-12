@@ -8,6 +8,7 @@ import simplejson as json
 from cuddlefish import packaging
 from cuddlefish.bunch import Bunch
 from cuddlefish.version import get_version
+from templates import addon_templates
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
 MOZRUNNER_BIN_NOT_FOUND_HELP = """
@@ -163,6 +164,14 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--template",), dict(dest="template",
+                                   help=("the template for the add-on to be "
+                                         "created"),
+                                   metavar=None,
+                                   type="choice",
+                                   choices=addon_templates.keys(),
+                                   default="default",
+                                   cmds=['init'])),
         (("", "--strip-xpi",), dict(dest="strip_xpi",
                                     help="(ignored, deprecated, will be removed)",
                                     action="store_true",
@@ -348,18 +357,34 @@ def test_all_examples(env_root, defaults):
     examples = [dirname for dirname in os.listdir(examples_dir)
                 if os.path.isdir(os.path.join(examples_dir, dirname))]
     examples.sort()
+
+    def run_test(pkgdir):
+        try:
+            run(arguments=["test", "--pkgdir", pkgdir],
+                defaults=defaults,
+                env_root=env_root)
+            assert False, "run() always exit()s"
+        except SystemExit, e:
+            return e.code
+
     fail = False
     for dirname in examples:
         print >>sys.stderr, "Testing %s..." % dirname
         sys.stderr.flush()
-        try:
-            run(arguments=["test",
-                           "--pkgdir",
-                           os.path.join(examples_dir, dirname)],
-                defaults=defaults,
-                env_root=env_root)
-        except SystemExit, e:
-            fail = (e.code != 0) or fail
+        exit_code = run_test(os.path.join(examples_dir, dirname))
+        fail = (exit_code != 0) or fail
+
+    def test_addon_templates(basedir, tmpl):
+        initializer(env_root, ["init"], tmpl)
+        return run_test(basedir)
+
+    for tmpl in addon_templates.keys():
+        print >>sys.stderr, "Testing 'cfx init --template %s'..." % tmpl
+        sys.stderr.flush()
+        exit_code = run_in_temp_subdir("test-example-%s" % tmpl,
+                                       test_addon_templates,
+                                       tmpl)
+        fail = (exit_code != 0) or fail
 
     if fail:
         sys.exit(-1)
@@ -425,8 +450,21 @@ def get_config_args(name, env_root):
         sys.exit(1)
     return config
 
-def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
-    from templates import MAIN_JS, PACKAGE_JSON, README_DOC, MAIN_JS_DOC, TEST_MAIN_JS
+def run_in_temp_subdir(dirname, f, *args, **kwargs):
+    import shutil
+    top = os.path.abspath(os.getcwd())
+    basedir = os.path.abspath(os.path.join(".test_tmp", dirname))
+    if os.path.isdir(basedir):
+        assert basedir.startswith(top)
+        shutil.rmtree(basedir)
+    os.makedirs(basedir)
+    try:
+        os.chdir(basedir)
+        return f(basedir, *args, **kwargs)
+    finally:
+        os.chdir(top)
+
+def initializer(env_root, args, template_name, out=sys.stdout, err=sys.stderr):
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than one argument
@@ -438,23 +476,79 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     if existing:
         print >>err, 'This command must be run in an empty directory.'
         return 1
-    for d in ['lib','data','test','doc']:
-        os.mkdir(os.path.join(path,d))
-        print >>out, '*', d, 'directory created'
-    open('README.md','w').write(README_DOC % {'name':addon})
-    print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon })
-    print >>out, '* package.json written'
-    open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
-    print >>out, '* test/test-main.js written'
-    open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
-    print >>out, '* lib/main.js written'
-    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
-    print >>out, '* doc/main.md written'
+
+    def open_for_writing(root_path, template_file_path):
+        """Given the root path in OS-specific format and the forward-slash
+        separated relative path to the file or directory (indicated by a
+        trailing slash), returns a file open for writing or None if a directory
+        was specified."""
+        path_components = template_file_path.split("/")
+        if len(path_components) > 1:
+            dir_rel_list = path_components[0:-1]
+            dir_abs = os.path.join(root_path, *dir_rel_list)
+            if not os.path.exists(dir_abs):
+                os.makedirs(dir_abs)
+                print >>out, '* %s directory created' % ("/".join(dir_rel_list))
+        else:
+            dir_abs = root_path
+
+        file_name = path_components[-1]
+        if len(file_name) > 0:
+            return open(os.path.join(dir_abs, file_name), 'w')
+        else:
+            return None
+
+    from templates import EMPTY_FOLDER
+    tmpl = addon_templates[template_name]
+
+    package_json_file = open_for_writing(path, "package.json")
+    package_json_obj = tmpl["get_package_json_obj"](addon);
+    package_json_file.write(json.dumps(package_json_obj, indent=4)+"\n")
+    package_json_file.close()
+    
+    target_cfg = find_target_cfg(path, require_id=True, err=err)
+
+    for template_file_path, template_content in tmpl["content"].items():
+        assert template_file_path != "package.json"
+        target_file = open_for_writing(path, template_file_path)
+        if target_file is not None:
+            if type(template_content) == str:
+                target_file.write(template_content % {'name':addon})
+            else:
+                target_file.write(template_content(target_cfg, env_root))
+            print >>out, '* %s written' % (template_file_path)
+        else:
+            assert template_content == EMPTY_FOLDER
+
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
+
+def find_target_cfg(pkgdir, require_id=False, err=sys.stderr):
+    """Returns the package configuration based (see packaging.
+       get_config_in_dir) on <pkgdir>/package.json,
+       optionally updating package.json with an 'id' property if
+       require_id=True."""
+    target_cfg_json = os.path.join(pkgdir, 'package.json')
+    target_cfg = packaging.get_config_in_dir(pkgdir)
+
+    if require_id:
+        from cuddlefish.preflight import preflight_config
+        config_was_ok, modified = preflight_config(
+            target_cfg,
+            target_cfg_json,
+            stderr=err
+            )
+        if not config_was_ok:
+            if modified:
+                target_cfg = find_target_cfg(pkgdir, err=err)
+            else:
+                print >>err, ("package.json needs modification:"
+                              " please update it and then re-run"
+                              " cfx")
+                sys.exit(1)
+        assert "id" in target_cfg
+    return target_cfg
 
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
@@ -477,7 +571,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     command = args[0]
 
     if command == "init":
-        initializer(env_root, args)
+        initializer(env_root, args, options.template)
         return
     if command == "develop":
         run_development_mode(env_root, defaults=options.__dict__)
@@ -517,7 +611,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print >>stdout, "Wrote %s." % filename
         return
 
-    target_cfg_json = None
     if not target_cfg:
         if not options.pkgdir:
             options.pkgdir = find_parent_package(os.getcwd())
@@ -532,8 +625,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                  " %s." % options.pkgdir)
             sys.exit(1)
 
-        target_cfg_json = os.path.join(options.pkgdir, 'package.json')
-        target_cfg = packaging.get_config_in_dir(options.pkgdir)
+        target_cfg = find_target_cfg(options.pkgdir,
+                                   require_id=command in ('xpi', 'run'))
+    else:
+        # targetCfg is only specified when run() is called from
+        # test_all_packages, so we won't need target_cfg["id"]
+        assert command == "test"
 
     # At this point, we're either building an XPI or running Jetpack code in
     # a Mozilla application (which includes running tests).
@@ -555,6 +652,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print >>sys.stderr, "Unknown command: %s" % command
         print >>sys.stderr, "Try using '--help' for assistance."
         sys.exit(1)
+
+    if "templatedir" in target_cfg:
+        if options.templatedir:
+            print >>sys.stderr, "The --templatedir option can not be used " \
+                                "when package.json specifies 'templatedir'."
+            sys.exit(1)
+        options.templatedir = os.path.join(target_cfg["root_dir"],
+                                           target_cfg["templatedir"])
 
     if use_main and 'main' not in target_cfg:
         # If the user supplies a template dir, then the main
@@ -582,32 +687,20 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
-    if command in ('xpi', 'run'):
-        from cuddlefish.preflight import preflight_config
-        if target_cfg_json:
-            config_was_ok, modified = preflight_config(target_cfg,
-                                                       target_cfg_json)
-            if not config_was_ok:
-                if modified:
-                    # we need to re-read package.json . The safest approach
-                    # is to re-run the "cfx xpi"/"cfx run" command.
-                    print >>sys.stderr, ("package.json modified: please re-run"
-                                         " 'cfx %s'" % command)
-                else:
-                    print >>sys.stderr, ("package.json needs modification:"
-                                         " please update it and then re-run"
-                                         " 'cfx %s'" % command)
-                sys.exit(1)
-        # if we make it this far, we have a JID
-    else:
-        assert command == "test"
-
     if "id" in target_cfg:
         jid = target_cfg["id"]
         if not ("@" in jid or jid.startswith("{")):
             jid = jid + "@jetpack"
         unique_prefix = '%s-' % jid # used for resource: URLs
+        # The old-style IDs (see below) may use the {UUID} form, which is not
+        # suitable for the unique_prefix, as it's used to form the 'resource:'
+        # URLs. In this case we'll strip the braces.
+        if jid[0] == "{" and jid[-1] == "}":
+            unique_prefix = '%s-' % jid[1:-1]
+        else:
+            unique_prefix = '%s-' % jid
     else:
+        assert command == "test"
         # The Jetpack ID is not required for cfx test, in which case we have to
         # make one up based on the GUID.
         if options.use_server:
@@ -739,8 +832,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
                                     target_cfg=target_cfg,
                                     bundle_id=bundle_id,
-                                    update_url=options.update_url,
-                                    bootstrap=True)
+                                    update_url=options.update_url)
 
         if options.update_link:
             rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
