@@ -4,10 +4,10 @@ import simplejson as json
 
 from cuddlefish import packaging
 from cuddlefish import Bunch
-from cuddlefish import apiparser
-from cuddlefish import apirenderer
+from cuddlefish.docs import apiparser
+from cuddlefish.docs import apirenderer
 
-INDEX_PAGE = '/static-files/base.html'
+INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
 LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'

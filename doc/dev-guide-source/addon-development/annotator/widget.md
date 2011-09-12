@@ -46,8 +46,8 @@ Save this in your `data/widget` directory as `widget.js`.
 
 You can copy the widget's icons from here:
 
-<img style="margin-left:40px; margin-right:20px;" src="media/annotator/pencil-on.png" alt="Active Annotator">
-<img style="margin-left:20px; margin-right:20px;" src="media/annotator/pencil-off.png" alt="Inactive Annotator">
+<img style="margin-left:40px; margin-right:20px;" src="static-files/media/annotator/pencil-on.png" alt="Active Annotator">
+<img style="margin-left:20px; margin-right:20px;" src="static-files/media/annotator/pencil-off.png" alt="Inactive Annotator">
 
 (Or make your own if you're feeling creative.) Save them in your `data/widget` directory.
 
@@ -100,7 +100,7 @@ Now from the `annotator` directory type `cfx run`. You should see the widget
 in the add-on bar:
 
 <div align="center">
-<img src="media/annotator/widget-icon.png" alt="Widget Icon">
+<img src="static-files/media/annotator/widget-icon.png" alt="Widget Icon">
 </div>
 <br>
 

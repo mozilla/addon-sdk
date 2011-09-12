@@ -49,7 +49,7 @@ to the event-handling interfaces described in the
 The diagram below shows an overview of the main components and their
 relationships. The gray fill represents code written by the add-on developer.
 
-<img class="image-center" src="media/content-scripting-overview.png"
+<img class="image-center" src="static-files/media/content-scripting-overview.png"
 alt="Content script events">
 
 This might sound complicated but it doesn't need to be. The following add-on

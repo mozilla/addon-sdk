@@ -233,7 +233,7 @@ Firefox. Activate the add-on, add an annotation, and then right-click the
 widget. You should see something like this:
 
 <img class="image-center"
-src="media/annotator/annotation-list.png" alt="Annotation List">
+src="static-files/media/annotator/annotation-list.png" alt="Annotation List">
 <br>
 
 <span class="aside">

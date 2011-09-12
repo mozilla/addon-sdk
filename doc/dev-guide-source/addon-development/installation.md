@@ -114,7 +114,7 @@ add-on for distribution, view documentation, and run unit tests.
 ## cfx docs ##
 
 If you're reading these documents online, try running `cfx docs`. This will
-run a self-hosted documentation server and open it in your web browser.
+build the documentation for the SDK and display it in a browser.
 
 ## Problems? ##
 

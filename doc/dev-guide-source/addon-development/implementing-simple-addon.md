@@ -250,12 +250,12 @@ page containing some text that is not in English, for example:
 Select some text on that page and right-click to activate the context menu.
 You should see a new item labeled "Translate Selection":
 
-![translator context-menu](media/screenshots/translator/context-menu-osx.png)
+![translator context-menu](static-files/media/screenshots/translator/context-menu-osx.png)
 
 Select that item and the text you selected should be replaced with its English
 translation:
 
-![translator context-menu](media/screenshots/translator/translated-osx.png)
+![translator context-menu](static-files/media/screenshots/translator/translated-osx.png)
 
 You will also see output like this appear in your command shell:
 

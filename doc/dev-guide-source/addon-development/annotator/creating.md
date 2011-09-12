@@ -170,7 +170,7 @@ overview-amo-review-process/](http://blog.mozilla.com/addons/2011/02/04/overview
 You should see the highlight appearing when you move the mouse over certain elements:
 
 <img class="image-center"
-src="media/annotator/highlight.png" alt="Annotator Highlighting">
+src="static-files/media/annotator/highlight.png" alt="Annotator Highlighting">
 
 Click on the highlight and you should see something like this in the console
 output:
@@ -323,7 +323,7 @@ element and click the element when it is highlighted. You should see a panel
 with a text area for a note:
 
 <img class="image-center"
-src="media/annotator/editor-panel.png" alt="Annotator Editor Panel">
+src="static-files/media/annotator/editor-panel.png" alt="Annotator Editor Panel">
 <br>
 
 Enter the note and press the return key: you should see console output like

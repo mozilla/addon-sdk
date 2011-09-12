@@ -23,8 +23,24 @@ applicable to a subset of the commands.
 
 ### cfx docs ###
 
-This command launches an HTTP server on the localhost to view web-based
-documentation in a new Firefox window.
+This command displays the documentation for the SDK. The documentation is
+shipped with the SDK in [Markdown](http://daringfireball.net/projects/markdown/)
+format. The first time this command is executed, and any time after the
+Markdown files on disk have changed, `cfx docs` will generate a set of HTML
+pages from them and launch a web browser to display them. If the Markdown files
+haven't changed, `cfx docs` just launches a browser initialized to the set of
+generated pages.
+
+To regenerate the documentation associated with a single file, you can
+specify the file as an argument. For example:
+
+<pre>
+  cfx docs doc/dev-guide-source/addon-development/cfx-tool.md 
+</pre>
+
+This command will regenerate only the HTML page you're reading.
+This is useful if you're iteratively editing a single file, and don't want to wait for cfx to
+regenerate the complete documentation tree.
 
 ### cfx init ####
 Create a new directory, change into it, and run `cfx init`.

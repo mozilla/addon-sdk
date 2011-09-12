@@ -2,6 +2,7 @@ import sys
 import os
 import optparse
 import glob
+import webbrowser
 
 from copy import copy
 import simplejson as json
@@ -495,25 +496,18 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_cfx(env_root, options.verbose)
         return
     elif command == "docs":
-        import subprocess
-        import time
-        import cuddlefish.server
-
-        print >>stdout, "One moment."
-        popen = subprocess.Popen([sys.executable,
-                                  cuddlefish.server.__file__,
-                                  'daemonic'])
-        # TODO: See if there's actually a way to block on
-        # a particular event occurring, rather than this
-        # relatively arbitrary/generous amount.
-        time.sleep(cuddlefish.server.IDLE_WEBPAGE_TIMEOUT * 2)
+        from cuddlefish.docs import generate
+        if len(args) > 1:
+            docs_home = generate.generate_docs(env_root, filename=args[1])
+        else:
+            docs_home = generate.generate_docs(env_root)
+        webbrowser.open(docs_home)
         return
     elif command == "sdocs":
-        import cuddlefish.server
+        from cuddlefish.docs import generate
 
         # TODO: Allow user to change this filename via cmd line.
-        filename = 'addon-sdk-docs.tgz'
-        cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
+        filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
         print >>stdout, "Wrote %s." % filename
         return
 

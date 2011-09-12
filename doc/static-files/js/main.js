@@ -1,5 +1,4 @@
 function run(jQuery) {
-  var IDLE_PING_DELAY = 5000;
 
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
@@ -95,29 +94,6 @@ function run(jQuery) {
     }
   }
 
-  var serverNeedsKeepalive = true;
-
-  function sendIdlePing() {
-    jQuery.ajax({url:"/api/idle",
-               cache: false,
-               error: function(req) {
-                 if (req.status == 501 || req.status == 404) {
-                   // The server either isn't implementing idle, or
-                   // we're being served from static files; just bail
-                   // and stop pinging this API endpoint.
-                   serverNeedsKeepalive = false;
-                 }
-               }});
-    scheduleNextIdlePing();
-  }
-
-  function scheduleNextIdlePing() {
-    if (serverNeedsKeepalive)
-      window.setTimeout(sendIdlePing, IDLE_PING_DELAY);
-  }
-
-  if (window.location.protocol != "file:")
-    scheduleNextIdlePing();
   highlightCurrentPage();
   highlightCode();
   $(".syntaxhighlighter").width("auto");

@@ -103,7 +103,7 @@ is loaded into its own execution context with its own copy of the content
 scripts. In this case `onAttach` is called once for each loaded page, and the
 add-on code will have a separate worker for each page:
 
-![Multiple workers](media/multiple-workers.jpg)
+![Multiple workers](static-files/media/multiple-workers.jpg)
 
 This is demonstrated in the following example:
 

@@ -17,9 +17,10 @@ import errno
 
 from cuddlefish import packaging
 from cuddlefish import Bunch
-from cuddlefish import apiparser
-from cuddlefish import apirenderer
-from cuddlefish import webdocs
+from cuddlefish.docs import apiparser
+from cuddlefish.docs import apirenderer
+from cuddlefish.docs import webdocs
+from cuddlefish.docs import generate
 import simplejson as json
 
 try:
@@ -310,118 +311,6 @@ def start(env_root=None, host=DEFAULT_HOST, port=DEFAULT_PORT,
         httpd.serve_forever()
     except KeyboardInterrupt:
         print "Ctrl-C received, exiting."
-
-def generate_static_docs(env_root, tgz_filename, base_url = ''):
-    web_docs = webdocs.WebDocs(env_root, base_url)
-    server = Server(env_root, web_docs,
-                    task_queue=None,
-                    expose_privileged_api=False)
-    staging_dir = os.path.join(env_root, "addon-sdk-docs")
-    if os.path.exists(staging_dir):
-        shutil.rmtree(staging_dir)
-
-    # first, copy static-files
-    shutil.copytree(server.root, staging_dir)
-    # py2.5 doesn't have ignore=, so we delete tempfiles afterwards. If we
-    # required >=py2.6, we could use ignore=shutil.ignore_patterns("*~")
-    for (dirpath, dirnames, filenames) in os.walk(staging_dir):
-        for n in filenames:
-            if n.endswith("~"):
-                os.unlink(os.path.join(dirpath, n))
-
-    # then copy docs from each package
-    os.mkdir(os.path.join(staging_dir, "packages"))
-
-    pkg_cfg = packaging.build_pkg_cfg(server.env_root)
-
-    # starting with the (generated) index file
-    index = json.dumps(packaging.build_pkg_index(pkg_cfg))
-    index_path = os.path.join(staging_dir, "packages", 'index.json')
-    open(index_path, 'w').write(index)
-
-    # and every doc-like thing in the package
-    for pkg_name, pkg in pkg_cfg['packages'].items():
-        src_dir = pkg.root_dir
-        dest_dir = os.path.join(staging_dir, "packages", pkg_name)
-        if not os.path.exists(dest_dir):
-            os.mkdir(dest_dir)
-
-        # TODO: This is a DRY violation from main.js. We should
-        # really move the common logic/names to cuddlefish.packaging.
-        src_readme = os.path.join(src_dir, "README.md")
-        if os.path.exists(src_readme):
-            shutil.copyfile(src_readme,
-                            os.path.join(dest_dir, "README.md"))
-
-        # create the package page
-        package_doc_html = web_docs.create_package_page(src_dir)
-        open(os.path.join(dest_dir, pkg_name + ".html"), "w")\
-            .write(package_doc_html)
-
-        docs_src_dir = os.path.join(src_dir, "doc")
-        docs_dest_dir = os.path.join(dest_dir, "doc")
-        if os.path.isdir(os.path.join(src_dir, "docs")):
-            docs_src_dir = os.path.join(src_dir, "docs")
-            docs_dest_dir = os.path.join(dest_dir, "docs")
-        if not os.path.exists(docs_dest_dir):
-            os.mkdir(docs_dest_dir)
-        for (dirpath, dirnames, filenames) in os.walk(docs_src_dir):
-            assert dirpath.startswith(docs_src_dir)
-            relpath = dirpath[len(docs_src_dir)+1:]
-            for dirname in dirnames:
-                dest_path = os.path.join(docs_dest_dir, relpath, dirname)
-                if not os.path.exists(dest_path):
-                    os.mkdir(dest_path)
-            for filename in filenames:
-                if filename.endswith("~"):
-                    continue
-                src_path = os.path.join(dirpath, filename)
-                dest_path = os.path.join(docs_dest_dir, relpath, filename)
-                shutil.copyfile(src_path, dest_path)
-                if filename.endswith(".md"):
-                    # parse and JSONify the API docs
-                    docs_md = open(src_path, 'r').read()
-                    docs_parsed = list(apiparser.parse_hunks(docs_md))
-                    docs_json = json.dumps(docs_parsed)
-                    open(dest_path + ".json", "w").write(docs_json)
-                    # write the HTML div files
-                    docs_div = apirenderer.json_to_div(docs_parsed, src_path)
-                    open(dest_path + ".div", "w").write(docs_div)
-                    # write the standalone HTML files
-                    docs_html = web_docs.create_module_page(src_path)
-                    open(dest_path[:-3] + ".html", "w").write(docs_html)
-
-    dev_guide_src = os.path.join(server.root, 'md', 'dev-guide')
-    dev_guide_dest = os.path.join(staging_dir, 'dev-guide')
-    if not os.path.exists(dev_guide_dest):
-        os.mkdir(dev_guide_dest)
-    for (dirpath, dirnames, filenames) in os.walk(dev_guide_src):
-        assert dirpath.startswith(dev_guide_src)
-        relpath = dirpath[len(dev_guide_src)+1:]
-        for dirname in dirnames:
-            dest_path = os.path.join(dev_guide_dest, relpath, dirname)
-            if not os.path.exists(dest_path):
-                os.mkdir(dest_path)
-        for filename in filenames:
-            if filename.endswith("~"):
-                continue
-            src_path = os.path.join(dirpath, filename)
-            dest_path = os.path.join(dev_guide_dest, relpath, filename)
-            if filename.endswith(".md"):
-                # write the standalone HTML files
-                docs_html = web_docs.create_guide_page(src_path)
-                open(dest_path[:-3] + ".html", "w").write(docs_html)
-
-    # make /md/dev-guide/welcome.html the top level index file
-    shutil.copy(os.path.join(dev_guide_dest, 'welcome.html'), \
-                os.path.join(staging_dir, 'index.html'))
-
-
-    # finally, build a tarfile out of everything
-    tgz = tarfile.open(tgz_filename, 'w:gz')
-    tgz.add('addon-sdk-docs', 'addon-sdk-docs')
-    tgz.close()
-    shutil.rmtree(staging_dir)
 
 def run_app(harness_root_dir, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,

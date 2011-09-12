@@ -191,13 +191,13 @@ Execute `cfx run` one last time. Activate the annotator and enter an
 annotation. You should see a yellow border around the item you annotated:
 
 <img class="image-center"
-src="media/annotator/matcher.png" alt="Annotator Matcher">
+src="static-files/media/annotator/matcher.png" alt="Annotator Matcher">
 <br>
 
 When you move your mouse over the item, the annotation should appear:
 
 <img class="image-center"
-src="media/annotator/annotation-panel.png" alt="Annotation Panel">
+src="static-files/media/annotator/annotation-panel.png" alt="Annotation Panel">
 <br>
 
 Obviously this add-on isn't complete yet. It could do with more beautiful

@@ -10,7 +10,7 @@ We could represent the basic interactions between the `main` module and the
 various content scripts like this:
 
 <img class="image-center"
-src="media/annotator/annotator-design.png" alt="Annotator Design">
+src="static-files/media/annotator/annotator-design.png" alt="Annotator Design">
 
 ## User Interface ##
 
