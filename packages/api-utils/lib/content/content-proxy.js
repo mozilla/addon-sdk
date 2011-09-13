@@ -774,7 +774,12 @@ function handlerMaker(obj) {
  * Wrap an object from the document to a proxy wrapper.
  */
 exports.create = function create(object) {
+  // We accept either a XrayWrapper or an unwrapped reference
+  if ("wrappedJSObject" in object)
+    object = object.wrappedJSObject;
+
   let xpcWrapper = XPCNativeWrapper(object);
+
   // If we can't build an XPCNativeWrapper, it doesn't make sense to build
   // a proxy. All proxy code is based on having such wrapper that store
   // different JS attributes set.

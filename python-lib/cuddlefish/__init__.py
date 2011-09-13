@@ -1,7 +1,7 @@
 import sys
 import os
 import optparse
-import glob
+import webbrowser
 
 from copy import copy
 import simplejson as json
@@ -27,9 +27,6 @@ Supported Commands:
   test       - run tests
   run        - run program
   xpi        - generate an xpi
-
-Experimental Commands:
-  develop    - run development server
 
 Internal Commands:
   sdocs      - export static documentation
@@ -74,6 +71,12 @@ parser_groups = (
                                    default=None,
                                    cmds=['test', 'run', 'testex', 'testpkgs',
                                          'testall'])),
+        (("", "--binary-args",), dict(dest="cmdargs",
+                                 help=("additional arguments passed to the "
+                                       "binary"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'test'])),
         (("-a", "--app",), dict(dest="app",
                                 help=("app to run: firefox (default), "
                                       "xulrunner, fennec, or thunderbird"),
@@ -142,12 +145,6 @@ parser_groups = (
      ),
 
     ("Experimental Command-Specific Options", [
-        (("", "--use-server",), dict(dest="use_server",
-                                     help="use development server",
-                                     action="store_true",
-                                     default=False,
-                                     cmds=['run', 'test', 'testex', 'testpkgs',
-                                           'testall'])),
         (("", "--no-run",), dict(dest="no_run",
                                      help=("Instead of launching the "
                                            "application, just show the command "
@@ -221,12 +218,6 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
-        (("", "--binary-args",), dict(dest="cmdargs",
-                                 help=("additional arguments passed to the "
-                                       "binary"),
-                                 metavar=None,
-                                 default=None,
-                                 cmds=['run', 'test'])),
         ]
      ),
     )
@@ -366,7 +357,7 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps)
+    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
     pkg_cfg = packaging.build_config(env_root, target_cfg)
     for name in pkg_cfg.packages:
         if name != "testpkgs":
@@ -377,28 +368,6 @@ def test_all_packages(env_root, defaults):
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
         defaults=defaults)
-
-def run_development_mode(env_root, defaults):
-    pkgdir = os.path.join(env_root, 'packages', 'development-mode')
-    app = defaults['app']
-
-    from cuddlefish import server
-    port = server.DEV_SERVER_PORT
-    httpd = server.make_httpd(env_root, port=port)
-    thread = server.threading.Thread(target=httpd.serve_forever)
-    thread.setDaemon(True)
-    thread.start()
-
-    print "I am starting an instance of %s in development mode." % app
-    print "From a separate shell, you can now run cfx commands with"
-    print "'--use-server' as an option to send the cfx command to this"
-    print "instance. All logging messages will appear below."
-
-    os.environ['JETPACK_DEV_SERVER_PORT'] = str(port)
-    options = {}
-    options.update(defaults)
-    run(["run", "--pkgdir", pkgdir],
-        defaults=options, env_root=env_root)
 
 def get_config_args(name, env_root):
     local_json = os.path.join(env_root, "local.json")
@@ -479,9 +448,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "init":
         initializer(env_root, args)
         return
-    if command == "develop":
-        run_development_mode(env_root, defaults=options.__dict__)
-        return
     if command == "testpkgs":
         test_all_packages(env_root, defaults=options.__dict__)
         return
@@ -495,25 +461,18 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_cfx(env_root, options.verbose)
         return
     elif command == "docs":
-        import subprocess
-        import time
-        import cuddlefish.server
-
-        print >>stdout, "One moment."
-        popen = subprocess.Popen([sys.executable,
-                                  cuddlefish.server.__file__,
-                                  'daemonic'])
-        # TODO: See if there's actually a way to block on
-        # a particular event occurring, rather than this
-        # relatively arbitrary/generous amount.
-        time.sleep(cuddlefish.server.IDLE_WEBPAGE_TIMEOUT * 2)
+        from cuddlefish.docs import generate
+        if len(args) > 1:
+            docs_home = generate.generate_docs(env_root, filename=args[1])
+        else:
+            docs_home = generate.generate_docs(env_root)
+        webbrowser.open(docs_home)
         return
     elif command == "sdocs":
-        import cuddlefish.server
+        from cuddlefish.docs import generate
 
         # TODO: Allow user to change this filename via cmd line.
-        filename = 'addon-sdk-docs.tgz'
-        cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
+        filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
         print >>stdout, "Wrote %s." % filename
         return
 
@@ -610,11 +569,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         # The Jetpack ID is not required for cfx test, in which case we have to
         # make one up based on the GUID.
-        if options.use_server:
-            # The harness' contractID (hence also the jid and the harness_guid)
-            # need to be static in the "development mode", so that bootstrap.js
-            # can unload the previous version of the package being developed.
-            harness_guid = '2974c5b5-b671-46f8-a4bb-63c6eca6261b'
         unique_prefix = '%s-' % target
         jid = harness_guid
 
@@ -638,7 +592,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
-    from cuddlefish.manifest import build_manifest
+    from cuddlefish.manifest import build_manifest, ModuleNotFoundError
     uri_prefix = "resource://%s" % unique_prefix
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
@@ -657,8 +611,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
                                       "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
-                              loader_modules)
+    try:
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
+                                  loader_modules)
+    except ModuleNotFoundError, e:
+        print str(e)
+        sys.exit(1)
     used_deps = manifest.get_used_packages()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
@@ -764,10 +722,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                   harness_options=harness_options,
                   limit_to=used_files)
     else:
-        if options.use_server:
-            from cuddlefish.server import run_app
-        else:
-            from cuddlefish.runner import run_app
+        from cuddlefish.runner import run_app
 
         if options.profiledir:
             options.profiledir = os.path.expanduser(options.profiledir)

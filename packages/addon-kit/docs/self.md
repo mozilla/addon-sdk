@@ -5,7 +5,7 @@ unique for each add-on.
 
 Note that the `self` module is completely different from the global `self`
 object accessible to content scripts, which is used by a content script to
-[communicate with the add-on code](dev-guide/addon-development/web-content#content_script_events).
+[communicate with the add-on code](dev-guide/addon-development/content-scripts/using-port.html).
 
 <api name="id">
 @property {string}
@@ -16,6 +16,18 @@ add-on code directly, it can be used by internal API code to index local
 storage and other resources that are associated with a particular add-on.
 Eventually, this ID will be unspoofable (see
 [JEP 118](https://wiki.mozilla.org/Labs/Jetpack/Reboot/JEP/118) for details).
+</api>
+
+<api name="name">
+@property {string}
+This property contains the add-on's short name. It comes from the `name`
+property in the main package's `package.json` file.
+</api>
+
+<api name="version">
+@property {string}
+This property contains the add-on's version string. It comes from the
+`version` property set in the `package.json` file in the main package.
 </api>
 
 <api name="data">
