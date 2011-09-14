@@ -29,7 +29,7 @@ class Generate_Docs_Tests(unittest.TestCase):
     def test_generate_docs_does_not_smoke(self):
         test_root = os.path.join(env_root, "python-lib", "cuddlefish", "tests", "static-files")
         docs_root = os.path.join(test_root, "doc")
-        self.clean_generated_docs(docs_root)
+        generate.clean_generated_docs(docs_root)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET)
         # touching an MD file under packages **does** cause a regenerate
         os.utime(os.path.join(test_root, "packages", "aardvark", "doc", "main.md"), None)
@@ -50,18 +50,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         os.remove(os.path.join(docs_root, "dev-guide-source", "extra.md"))
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET, new_digest)
         # remove the files
-        self.clean_generated_docs(docs_root)
-
-    def clean_generated_docs(self, docs_dir):
-        index_file = os.path.join(docs_dir, "index.html")
-        if os.path.exists(index_file):
-            os.remove(index_file)
-        dev_guide_dir = os.path.join(docs_dir, "dev-guide")
-        if os.path.exists(dev_guide_dir):
-            shutil.rmtree(dev_guide_dir)
-        api_doc_dir = os.path.join(docs_dir, "packages")
-        if os.path.exists(api_doc_dir):
-            shutil.rmtree(api_doc_dir)
+        generate.clean_generated_docs(docs_root)
 
     def check_generate_is_skipped(self, test_root, files_to_expect, initial_digest):
         generate.generate_docs(test_root, stdout=StringIO.StringIO())
