@@ -17,6 +17,9 @@ DIGEST = "status.md5"
 TGZ_FILENAME = "addon-sdk-docs.tgz"
 
 def clean_generated_docs(docs_dir):
+    status_file = os.path.join(docs_dir, "status.md5")
+    if os.path.exists(status_file):
+        os.remove(status_file)
     index_file = os.path.join(docs_dir, "index.html")
     if os.path.exists(index_file):
         os.remove(index_file)
@@ -43,7 +46,7 @@ def generate_docs(env_root, base_url=None, filename=None, stdout=sys.stdout):
     # and return its URL
     if filename:
         return generate_named_file(env_root, base_url, filename)
-    # if the static docs dir doesn't exist, generate everything
+    # if the generated docs don't exist, generate everything
     if not os.path.exists(os.path.join(docs_dir, "index.html")):
         print >>stdout, "Generating documentation..."
         generate_docs_from_scratch(env_root, base_url, docs_dir)
@@ -58,7 +61,6 @@ def generate_docs(env_root, base_url=None, filename=None, stdout=sys.stdout):
         # if the docs are not up to date, generate everything
         if not docs_are_up_to_date:
             print >>stdout, "Regenerating documentation..."
-            clean_generated_docs(docs_dir)
             generate_docs_from_scratch(env_root, base_url, docs_dir)
             open(os.path.join(env_root, DOCS_DIR, DIGEST), "w").write(current_status)
     return base_url + "index.html"
