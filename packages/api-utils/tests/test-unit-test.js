@@ -11,17 +11,22 @@ exports.teardown = function() {
     setupCalled = false;
 };
 
-exports["setup function called before this"] = function(test) {
+// Important note - unit tests are run in alphabetical order.  The following 
+// unit tests for setup/teardown are order dependent, sometimes the result of 
+// one test is checked in the next test (testing for teardown does this).  When 
+// tests are cohesively a single unit, they are named <test_name> - partN where 
+// N is their order in the sequence.
+exports["setup/teardown for synchronous tests - part1"] = function(test) {
     test.assertEqual(true, setupCalled, 'setup function was called before this');
     test.assertEqual(false, teardownCalled, 'teardown function was not called before this');
 };
 
-exports["teardown function called after test"] = function(test) {
+exports["setup/teardown for synchronous tests - part2"] = function(test) {
     test.assertEqual(true, setupCalled, 'setup was re-called before this');
     test.assertEqual(true, teardownCalled, 'teardown was called after first function');
 };
 
-exports["teardown called in done for async test"] = function(test) {
+exports["teardown called in done for async test - part1"] = function(test) {
     teardownCalled = false;
 
     timer.setTimeout(function() {
@@ -31,7 +36,7 @@ exports["teardown called in done for async test"] = function(test) {
     test.waitUntilDone();
 };
 
-exports["teardown called on last async test"] = function(test) {
+exports["teardown called in done for async test - part2"] = function(test) {
     test.assertEqual(true, teardownCalled, "teardown called after done");
 };
 
