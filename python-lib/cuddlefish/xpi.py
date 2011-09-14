@@ -1,7 +1,7 @@
 import os
 import zipfile
-
 import simplejson as json
+from cuddlefish.util import filter_filenames, filter_dirnames
 
 def build_xpi(template_root_dir, manifest, xpi_name,
               harness_options, limit_to=None):
@@ -21,22 +21,10 @@ def build_xpi(template_root_dir, manifest, xpi_name,
 
     IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
                      "application.ini", xpi_name]
-    IGNORED_FILE_SUFFIXES = ["~"]
-    IGNORED_DIRS = [".svn", ".hg", ".git"]
-
-    def filter_filenames(filenames):
-        for filename in filenames:
-            if filename in IGNORED_FILES:
-                continue
-            if any([filename.endswith(suffix)
-                    for suffix in IGNORED_FILE_SUFFIXES]):
-                continue
-            yield filename
 
     for dirpath, dirnames, filenames in os.walk(template_root_dir):
-        filenames = list(filter_filenames(filenames))
-        dirnames[:] = [dirname for dirname in dirnames
-                       if dirname not in IGNORED_DIRS]
+        filenames = list(filter_filenames(filenames, IGNORED_FILES))
+        dirnames[:] = filter_dirnames(dirnames)
         for filename in filenames:
             abspath = os.path.join(dirpath, filename)
             arcpath = abspath[len(template_root_dir)+1:]
@@ -53,7 +41,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         dirinfo.external_attr = 0755 << 16L
         zf.writestr(dirinfo, "")
         for dirpath, dirnames, filenames in os.walk(abs_dirname):
-            goodfiles = list(filter_filenames(filenames))
+            goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
             for filename in goodfiles:
                 abspath = os.path.join(dirpath, filename)
                 if limit_to is not None and abspath not in limit_to:
@@ -61,8 +49,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
                 arcpath = abspath[len(abs_dirname)+1:]
                 arcpath = os.path.join(base_arcpath, arcpath)
                 zf.write(str(abspath), str(arcpath))
-            dirnames[:] = [dirname for dirname in dirnames
-                           if dirname not in IGNORED_DIRS]
+            dirnames[:] = filter_dirnames(dirnames)
     harness_options['resources'] = new_resources
 
     open('.options.json', 'w').write(json.dumps(harness_options, indent=1,

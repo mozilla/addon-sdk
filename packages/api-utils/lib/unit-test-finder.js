@@ -78,24 +78,23 @@ TestFinder.prototype = {
     this.dirs.forEach(
       function(dir) {
         var suites = [name.slice(0, -3)
-                      for each (name in file.list(dir))
+                      for each (name in file.list(dir).sort())
                       if (/^test-.*\.js$/.test(name) && filter(name))];
 
         suites.forEach(
           function(suite) {
             var module = require(suite);
-            if (self.testInProcess) {
-              for (let name in module) {
-                  if(NOT_TESTS.indexOf(name) === -1) {
-                      tests.push({
-                        setup: module.setup,
-                        teardown: module.teardown,
-                        testFunction: self._makeTest(suite, name, module[name]),
-                        name: suite + "." + name
-                      });
-                  }
+            if (self.testInProcess)
+              for each (let name in Object.keys(module).sort()) {
+                if(NOT_TESTS.indexOf(name) === -1) {
+                  tests.push({
+                    setup: module.setup,
+                    teardown: module.teardown,
+                    testFunction: self._makeTest(suite, name, module[name]),
+                    name: suite + "." + name
+                  });
+                }
               }
-            }
           });
       });
 

@@ -69,6 +69,8 @@ exports.makeSelfModule = function (reqdata) {
   var self = {
     id: jid,
     uri: uri,
+    name: name,
+    version: packaging.options.metadata[name].version,
     data: {
       load: data_load,
       url: data_url
