@@ -43,6 +43,7 @@
 require("chrome");
 
 var file = require("./file");
+const NOT_TESTS = ['setup', 'teardown'];
 
 var TestFinder = exports.TestFinder = function TestFinder(options) {
   memory.track(this);
@@ -84,11 +85,16 @@ TestFinder.prototype = {
           function(suite) {
             var module = require(suite);
             if (self.testInProcess)
-              for each (let name in Object.keys(module).sort())
+              for each (let name in Object.keys(module).sort()) {
+                if(NOT_TESTS.indexOf(name) === -1) {
                   tests.push({
+                    setup: module.setup,
+                    teardown: module.teardown,
                     testFunction: self._makeTest(suite, name, module[name]),
                     name: suite + "." + name
                   });
+                }
+              }
           });
       });
 

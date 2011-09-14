@@ -63,6 +63,7 @@ var TestRunner = exports.TestRunner = function TestRunner(options) {
   this.passed = 0;
   this.failed = 0;
   this.testRunSummary = [];
+  this.expectFailNesting = 0;
 };
 
 TestRunner.prototype = {
@@ -105,17 +106,35 @@ TestRunner.prototype = {
   },
 
   pass: function pass(message) {
-    console.info("pass:", message);
-    this.passed++;
-    this.test.passed++;
+    if(!this.expectFailure) {
+      console.info("pass:", message);
+      this.passed++;
+      this.test.passed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.fail('Failure Expected: ' + message);
+    }
   },
 
   fail: function fail(message) {
-    this._logTestFailed("failure");
-    console.error("fail:", message);
-    console.trace();
-    this.failed++;
-    this.test.failed++;
+    if(!this.expectFailure) {
+      this._logTestFailed("failure");
+      console.error("fail:", message);
+      console.trace();
+      this.failed++;
+      this.test.failed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.pass(message);
+    }
+  },
+
+  expectFail: function(callback) {
+    this.expectFailure = true;
+    callback();
+    this.expectFailure = false;
   },
 
   exception: function exception(e) {
@@ -229,9 +248,48 @@ TestRunner.prototype = {
     }
   },
 
+  assertFunction: function assertFunction(a, message) {
+    this.assertStrictEqual('function', typeof a, message);
+  },
+
+  assertUndefined: function(a, message) {
+    this.assertStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNotUndefined: function(a, message) {
+    this.assertNotStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNull: function(a, message) {
+    this.assertStrictEqual(null, a, message);
+  },
+
+  assertNotNull: function(a, message) {
+    this.assertNotStrictEqual(null, a, message);
+  },
+
+  assertObject: function(a, message) {
+    this.assertStrictEqual('[object Object]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertString: function(a, message) {
+    this.assertStrictEqual('[object String]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertArray: function(a, message) {
+    this.assertStrictEqual('[object Array]', Object.prototype.toString.apply(a), message);
+  },
+  
+  assertNumber: function(a, message) {
+    this.assertStrictEqual('[object Number]', Object.prototype.toString.apply(a), message);                
+  },
+
   done: function done() {
     if (!this.isDone) {
       this.isDone = true;
+      if(this.test.teardown) {
+        this.test.teardown(this);
+      }
       if (this.waitTimeout !== null) {
         timer.clearTimeout(this.waitTimeout);
         this.waitTimeout = null;
@@ -391,6 +449,9 @@ TestRunner.prototype = {
     this.testFailureLogged = false;
 
     try {
+      if(this.test.setup) {
+        this.test.setup(this);
+      }
       this.test.testFunction(this);
     } catch (e) {
       this.exception(e);
