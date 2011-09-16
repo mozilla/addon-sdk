@@ -98,8 +98,9 @@ parser_groups = (
                                       'testall'])),
         (("-f", "--filter",), dict(dest="filter",
                                    help=("only run tests whose filenames "
-                                         "match FILTER, a regexp"),
-                                   metavar=None,
+                                         "match FILENAME and optionally "
+                                         "match TESTNAME, both regexps"),
+                                   metavar="FILENAME[:TESTNAME]",
                                    default=None,
                                    cmds=['test', 'testex', 'testpkgs',
                                          'testall'])),
