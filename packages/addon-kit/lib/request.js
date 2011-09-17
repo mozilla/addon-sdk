@@ -67,6 +67,10 @@ const validator = new OptionsValidator({
   overrideMimeType: {
     map: function(v) v || null,
     is: ["string", "null"],
+  },
+  forceAllowThirdPartyCookie: {
+    map: function(v) v || null,
+    is: ["boolean", "null"],
   }
 });
 
@@ -105,14 +109,17 @@ function Request(options) {
     // open the request
     request.open(mode, url);
 
-    request.forceAllowThirdPartyCookie();
-
     // request header must be set after open, but before send
     request.setRequestHeader("Content-Type", options.contentType);
 
     // set other headers
     for (let k in options.headers) {
       request.setRequestHeader(k, options.headers[k]);
+    }
+
+    // set forceAllowThirdPartyCookie
+    if(options.forceAllowThirdPartyCookie) {
+      request.forceAllowThirdPartyCookie();
     }
 
     // set overrideMimeType
