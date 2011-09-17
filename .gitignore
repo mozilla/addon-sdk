@@ -3,7 +3,11 @@ python-lib/cuddlefish/app-extension/components/jetpack.xpt
 testdocs.tgz
 jetpack-sdk-docs.tgz
 .test_tmp/
-jetpack-sdk-docs/
+doc/dev-guide/
+doc/index.html
+doc/packages/
+doc/status.md5
+
 
 # If you want to add other files here, like *.pyc and *.DS_Store,
 # please add them to a global git ignore file.
