@@ -109,7 +109,7 @@ class RDFManifest(RDF):
         return True;
 
 def gen_manifest(template_root_dir, target_cfg, bundle_id,
-                 update_url=None, bootstrap=True):
+                 update_url=None, bootstrap=True, enable_mobile=False):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
     manifest = RDFManifest(install_rdf)
 
@@ -128,6 +128,26 @@ def gen_manifest(template_root_dir, target_cfg, bundle_id,
         manifest.set("em:updateURL", update_url)
     else:
         manifest.remove("em:updateURL")
+
+    if enable_mobile:
+        dom = manifest.dom
+        target_app = dom.createElement("em:targetApplication")
+        dom.documentElement.getElementsByTagName("Description")[0].appendChild(target_app)
+
+        ta_desc = dom.createElement("Description")
+        target_app.appendChild(ta_desc)
+
+        elem = dom.createElement("em:id")
+        elem.appendChild(dom.createTextNode("{a23983c0-fd0e-11dc-95ff-0800200c9a66}"))
+        ta_desc.appendChild(elem)
+
+        elem = dom.createElement("em:minVersion")
+        elem.appendChild(dom.createTextNode("4.0b7"))
+        ta_desc.appendChild(elem)
+
+        elem = dom.createElement("em:maxVersion")
+        elem.appendChild(dom.createTextNode("9.0a1"))
+        ta_desc.appendChild(elem)
 
     if target_cfg.get("homepage"):
         manifest.set("em:homepageURL", target_cfg.get("homepage"))
