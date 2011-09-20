@@ -4,7 +4,7 @@ var {Cm,Ci} = require("chrome");
 
 exports.testPackaging = function(test) {
   test.assertEqual(packaging.options.main,
-                   'run-tests',
+                   'test-harness/run-tests',
                    "main program should be the test harness");
 
   var factory = Cm.getClassObjectByContractID(

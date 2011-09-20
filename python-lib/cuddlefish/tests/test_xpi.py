@@ -114,7 +114,7 @@ class SmallXPI(unittest.TestCase):
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
                       manifest=fake_manifest,
-                      xpi_name=xpi_name,
+                      xpi_path=xpi_name,
                       harness_options=options,
                       limit_to=used_files)
         x = zipfile.ZipFile(xpi_name, "r")
@@ -201,7 +201,7 @@ def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files'):
     options.update(configs.build)
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,
-                  xpi_name=xpiname,
+                  xpi_path=xpiname,
                   harness_options=options)
 
 if __name__ == '__main__':
