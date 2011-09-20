@@ -3,9 +3,9 @@ import zipfile
 import simplejson as json
 from cuddlefish.util import filter_filenames, filter_dirnames
 
-def build_xpi(template_root_dir, manifest, xpi_name,
+def build_xpi(template_root_dir, manifest, xpi_path,
               harness_options, limit_to=None):
-    zf = zipfile.ZipFile(xpi_name, "w", zipfile.ZIP_DEFLATED)
+    zf = zipfile.ZipFile(xpi_path, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
     zf.write('.install.rdf', 'install.rdf')
@@ -20,7 +20,7 @@ def build_xpi(template_root_dir, manifest, xpi_name,
         del harness_options['icon64']
 
     IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
-                     "application.ini", xpi_name]
+                     "application.ini", xpi_path]
 
     for dirpath, dirnames, filenames in os.walk(template_root_dir):
         filenames = list(filter_filenames(filenames, IGNORED_FILES))
