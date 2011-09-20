@@ -13,6 +13,7 @@ import mozrunner
 from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
+from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
 def follow_file(filename):
     """
@@ -215,7 +216,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
             timeout=None, logfile=None, addons=None, args=None, norun=None,
-            used_files=None):
+            used_files=None, enable_mobile=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -242,6 +243,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             runner_class = mozrunner.ThunderbirdRunner
         elif app_type == "fennec":
             profile_class = FennecProfile
+            preferences.update(DEFAULT_FENNEC_PREFS)
             runner_class = FennecRunner
         else:
             raise ValueError("Unknown app: %s" % app_type)
@@ -330,7 +332,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel) ((\d+)\.\S*)",
+    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
@@ -339,6 +341,15 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
   WARNING: cannot determine Firefox version; please ensure you are running
   a Mozilla application equivalent to Firefox 4.0 or greater.
   """
+    elif mo.group(1) == "Fennec":
+        # For now, only allow running on Mobile with --force-mobile argument
+        if not enable_mobile:
+            print """
+  WARNING: Firefox Mobile support is still experimental.
+  If you would like to run an addon on this platform, use --force-mobile flag:
+
+    cfx --force-mobile"""
+            return
     else:
         version = mo.group(3)
         if int(version) < 4:

@@ -165,6 +165,11 @@ parser_groups = (
                                     action="store_true",
                                     default=False,
                                     cmds=['xpi'])),
+        (("", "--force-mobile",), dict(dest="enable_mobile",
+                                    help="Force compatibility with Firefox Mobile",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['run', 'test', 'xpi', 'testall'])),
         ]
      ),
 
@@ -690,7 +695,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                 target_cfg=target_cfg,
                                 bundle_id=bundle_id,
                                 update_url=options.update_url,
-                                bootstrap=True)
+                                bootstrap=True,
+                                enable_mobile=options.enable_mobile)
 
     if command == "xpi" and options.update_link:
         rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
@@ -744,7 +750,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              addons=options.addons,
                              args=options.cmdargs,
                              norun=options.no_run,
-                             used_files=used_files)
+                             used_files=used_files,
+                             enable_mobile=options.enable_mobile)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
