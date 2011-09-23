@@ -203,7 +203,7 @@ class RemoteFennecRunner(mozrunner.Runner):
 
         # Create a clean empty profile on the sd card
         subprocess.call([self._adb_path, "shell", "rm -r " + self._REMOTE_PATH])
-        subprocess.call([self._adb_path, "shell", "mkdir -p " + self._REMOTE_PATH])
+        subprocess.call([self._adb_path, "shell", "mkdir " + self._REMOTE_PATH])
 
         # Push the profile folder created by mozrunner to the device
         # (we can't simply use `adb push` as it doesn't copy empty folders)
@@ -226,7 +226,7 @@ class RemoteFennecRunner(mozrunner.Runner):
                     targetDir = targetDir + relRoot + "/"
                 targetDir = targetDir + dir
                 targetDir = targetDir.replace("\\", "/")
-                subprocess.call([self._adb_path, "shell", "mkdir -p " + targetDir])
+                subprocess.call([self._adb_path, "shell", "mkdir " + targetDir])
 
     @property
     def command(self):
