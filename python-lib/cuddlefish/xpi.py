@@ -25,6 +25,12 @@ def build_xpi(template_root_dir, manifest, xpi_path,
     for dirpath, dirnames, filenames in os.walk(template_root_dir):
         filenames = list(filter_filenames(filenames, IGNORED_FILES))
         dirnames[:] = filter_dirnames(dirnames)
+        for dirname in dirnames:
+            abspath = os.path.join(dirpath, dirname)
+            arcpath = abspath[len(template_root_dir)+1:]
+            dirinfo = zipfile.ZipInfo(arcpath + "/")
+            dirinfo.external_attr = int("040755",8) << 16L
+            zf.writestr(dirinfo, "")
         for filename in filenames:
             abspath = os.path.join(dirpath, filename)
             arcpath = abspath[len(template_root_dir)+1:]
@@ -38,7 +44,7 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         # Always write the directory, even if it contains no files,
         # since the harness will try to access it.
         dirinfo = zipfile.ZipInfo(base_arcpath + "/")
-        dirinfo.external_attr = 0755 << 16L
+        dirinfo.external_attr = int("040755",8) << 16L
         zf.writestr(dirinfo, "")
         for dirpath, dirnames, filenames in os.walk(abs_dirname):
             goodfiles = list(filter_filenames(filenames, IGNORED_FILES))

@@ -119,7 +119,8 @@ class SmallXPI(unittest.TestCase):
                       limit_to=used_files)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        expected = ["components/harness.js",
+        expected = ["components/",
+                    "components/harness.js",
                     # the real template also has 'bootstrap.js', but the fake
                     # one in tests/static-files/xpi-template doesn't
                     "harness-options.json",
