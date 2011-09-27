@@ -116,42 +116,17 @@ class RemoteFennecRunner(mozrunner.Runner):
 
     _adb_path = None
 
-    def getProcessPID(self, processName):
-        p = subprocess.Popen([self._adb_path, "shell", "ps"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        line = p.stdout.readline()
-        while line:
-            columns = line.split()
-            pid = columns[1]
-            name = columns[len(columns)-1]
-            line = p.stdout.readline()
-            if processName in name:
-                return pid
-        return None
-
-    def getIntentNames(self):
-        p = subprocess.Popen([self._adb_path, "shell", "pm list packages"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        line = p.stdout.readline()
-        names = []
-        while line:
-            line = re.sub("(^package:)|\s", "", line)
-            if self._INTENT_PREFIX in line:
-              names.append(line.replace(self._INTENT_PREFIX, ""))
-            line = p.stdout.readline()
-        return names
-
     def __init__(self, binary=None, **kwargs):
         # Check that we have a binary set
         if not binary:
-            raise Exception("You have to define `--binary` option set to the "
+            raise ValueError("You have to define `--binary` option set to the "
                             "path to your ADB executable.")
         # Ensure that binary refer to a valid ADB executable
         output = subprocess.Popen([binary], stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE).communicate()
         output = "".join(output)
         if not ("Android Debug Bridge" in output):
-            raise Exception("`--binary` option should be the path to your "
+            raise ValueError("`--binary` option should be the path to your "
                             "ADB executable.")
         self.binary = binary
 
@@ -169,23 +144,23 @@ class RemoteFennecRunner(mozrunner.Runner):
         # Automatically detect already installed firefox by using `pm` program
         # or use name given as cfx `--mobile-app` argument.
         intents = self.getIntentNames()
-        if len(intents) == 0:
-            raise Exception("Unable to found any Firefox "
+        if not intents:
+            raise ValueError("Unable to found any Firefox "
                             "application on your device.")
         elif mobile_app_name:
             if not mobile_app_name in intents:
-                raise Exception("Unable to found Firefox application "
+                raise ValueError("Unable to found Firefox application "
                                 "with intent name '%s'", mobile_app_name)
             self._intent_name = self._INTENT_PREFIX + mobile_app_name
         else:
-          if "firefox" in intents:
-              self._intent_name = self._INTENT_PREFIX + "firefox"
-          elif "firefox_beta" in intents:
-              self._intent_name = self._INTENT_PREFIX + "firefox_beta"
-          elif "firefox_nightly" in intents:
-              self._intent_name = self._INTENT_PREFIX + "firefox_nightly"
-          else:
-              self._intent_name = self._INTENT_PREFIX + intents[0]
+            if "firefox" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox"
+            elif "firefox_beta" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox_beta"
+            elif "firefox_nightly" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox_nightly"
+            else:
+                self._intent_name = self._INTENT_PREFIX + intents[0]
 
         print "Launching mobile application with intent name " + self._intent_name
 
@@ -211,21 +186,25 @@ class RemoteFennecRunner(mozrunner.Runner):
         remoteDir = self._REMOTE_PATH
         for root, dirs, files in os.walk(localDir, followlinks='true'):
             relRoot = os.path.relpath(root, localDir)
+            # Note about os.path usage below:
+            # Local files may be using Windows `\` separators but
+            # remote are always `/`, so we need to convert local ones to `/`
             for file in files:
                 localFile = os.path.join(root, file)
-                remoteFile = remoteDir + "/"
+                remoteFile = remoteDir.replace("/", os.sep)
                 if relRoot != ".":
-                    remoteFile = remoteFile + relRoot + "/"
-                remoteFile = remoteFile + file
-                remoteFile = remoteFile.replace("\\", "/")
+                    remoteFile = os.path.join(remoteFile, relRoot)
+                remoteFile = os.path.join(remoteFile, file)
+                remoteFile = "/".join(remoteFile.split(os.sep))
                 subprocess.Popen([self._adb_path, "push", localFile, remoteFile], 
                                  stderr=subprocess.PIPE).wait()
             for dir in dirs:
-                targetDir = remoteDir + "/"
+                targetDir = remoteDir.replace("/", os.sep)
                 if relRoot != ".":
-                    targetDir = targetDir + relRoot + "/"
-                targetDir = targetDir + dir
-                targetDir = targetDir.replace("\\", "/")
+                    targetDir = os.path.join(targetDir, relRoot)
+                targetDir = os.path.join(targetDir, dir)
+                targetDir = "/".join(targetDir.split(os.sep))
+                # `-p` option is not supported on all devices!
                 subprocess.call([self._adb_path, "shell", "mkdir " + targetDir])
 
     @property
@@ -238,6 +217,29 @@ class RemoteFennecRunner(mozrunner.Runner):
                 "-n " + self._intent_name + "/" + self._intent_name + ".App " +
                 "--es args \"-profile " + self._REMOTE_PATH + "\""
         ]
+
+    def getProcessPID(self, processName):
+        p = subprocess.Popen([self._adb_path, "shell", "ps"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        line = p.stdout.readline()
+        while line:
+            columns = line.split()
+            pid = columns[1]
+            name = columns[-1]
+            line = p.stdout.readline()
+            if processName in name:
+                return pid
+        return None
+
+    def getIntentNames(self):
+        p = subprocess.Popen([self._adb_path, "shell", "pm list packages"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        names = []
+        for line in p.stdout.readlines():
+            line = re.sub("(^package:)|\s", "", line)
+            if self._INTENT_PREFIX in line:
+                names.append(line.replace(self._INTENT_PREFIX, ""))
+        return names
 
 
 class XulrunnerAppProfile(mozrunner.Profile):
@@ -388,7 +390,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         runner_class = mozrunner.ThunderbirdRunner
     else:
         raise ValueError("Unknown app: %s" % app_type)
-    if sys.platform == 'darwin':
+    if sys.platform == 'darwin' and app_type != 'xulrunner':
         cmdargs.append('-foreground')
     
     if args:
@@ -479,7 +481,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
       runner.start()
       profile.cleanup()
       time.sleep(1)
-      print >>sys.stderr, "Program terminated successfully."
+      print >>sys.stderr, "Remote application launched successfully."
       return 0
 
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
