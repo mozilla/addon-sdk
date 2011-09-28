@@ -38,7 +38,6 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const observers = require("api-utils/observer-service");
 const { Worker, Loader } = require('api-utils/content');
 const { EventEmitter } = require('api-utils/events');
 const { List } = require('api-utils/list');
@@ -59,7 +58,7 @@ const ON_CONTENT = HAS_DOCUMENT_ELEMENT_INSERTED ? 'document-element-inserted' :
 // Workaround bug 642145: document-element-inserted is fired multiple times.
 // This bug is fixed in Firefox 4.0.1, but we want to keep FF 4.0 compatibility
 // Tracking bug 641457. To be removed when 4.0 has disappeared from earth.
-const HAS_BUG_642145_FIXED =
+const HAS_BUG_642145_FIXED = require("api-utils/xul-app").is("Fennec") ||
         xulApp.versionInRange(xulApp.platformVersion, "2.0.1", "*");
 
 // rules registry
@@ -139,6 +138,10 @@ const PageMod = Loader.compose(EventEmitter, {
     if (!pageModManager.has(this))
       return;
 
+    if (require("api-utils/xul-app").is("Fennec")) {
+      this._createWorker(window);
+      return;
+    }
     if (!HAS_BUG_642145_FIXED) {
       if (this._loadingWindows.indexOf(window) != -1)
         return;
@@ -165,6 +168,7 @@ const PageMod = Loader.compose(EventEmitter, {
       window: window,
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
+      contentScriptWhen: this.contentScriptWhen,
       onError: this._onUncaughtError
     });
     this._emit('attach', worker);
@@ -193,37 +197,86 @@ const PageMod = Loader.compose(EventEmitter, {
 exports.PageMod = function(options) PageMod(options)
 exports.PageMod.prototype = PageMod.prototype;
 
-const PageModManager = Registry.resolve({
-  constructor: '_init',
-  _destructor: '_registryDestructor'
-}).compose({
-  constructor: function PageModRegistry(constructor) {
-    this._init(PageMod);
-    observers.add(
-      ON_CONTENT, this._onContentWindow = this._onContentWindow.bind(this)
-    );
-  },
-  _destructor: function _destructor() {
-    observers.remove(ON_CONTENT, this._onContentWindow);
-    for (let rule in RULES) {
-      this._removeAllListeners(rule);
-      delete RULES[rule];
+let PageModManager = null;
+if (require("api-utils/xul-app").is("Firefox")) {
+  const observers = require("api-utils/observer-service");
+
+  PageModManager = Registry.resolve({
+    constructor: '_init',
+    _destructor: '_registryDestructor'
+  }).compose({
+    constructor: function PageModRegistry(constructor) {
+      this._init(PageMod);
+      observers.add(
+        ON_CONTENT, this._onContentWindow = this._onContentWindow.bind(this)
+      );
+    },
+    _destructor: function _destructor() {
+      observers.remove(ON_CONTENT, this._onContentWindow);
+      for (let rule in RULES) {
+        this._removeAllListeners(rule);
+        delete RULES[rule];
+      }
+      this._registryDestructor();
+    },
+    _onContentWindow: function _onContentWindow(domObj) {
+      let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
+      // XML documents don't have windows, and we don't yet support them.
+      if (!window)
+        return;
+      for (let rule in RULES)
+        if (RULES[rule].test(window.document.URL))
+          this._emit(rule, window);
+    },
+    off: function off(topic, listener) {
+      this.removeListener(topic, listener);
+      if (!this._listeners(topic).length)
+        delete RULES[topic];
     }
-    this._registryDestructor();
-  },
-  _onContentWindow: function _onContentWindow(domObj) {
-    let window = HAS_DOCUMENT_ELEMENT_INSERTED ? domObj.defaultView : domObj;
-    // XML documents don't have windows, and we don't yet support them.
-    if (!window)
-      return;
-    for (let rule in RULES)
-      if (RULES[rule].test(window.document.URL))
-        this._emit(rule, window);
-  },
-  off: function off(topic, listener) {
-    this.removeListener(topic, listener);
-    if (!this._listeners(topic).length)
-      delete RULES[topic];
-  }
-});
+  });
+
+}
+else if (require("api-utils/xul-app").is("Fennec")) {
+  const { Cc, Ci } = require("chrome");
+
+  const globalMM = Cc["@mozilla.org/globalmessagemanager;1"].getService(
+                   Ci.nsIChromeFrameMessageManager);
+
+  PageModManager = Registry.resolve({
+    constructor: '_init',
+    _destructor: '_registryDestructor'
+  }).compose({
+    constructor: function PageModRegistry(constructor) {
+      this._init(PageMod);
+      globalMM.addMessageListener("Content:LocationChange", this);
+    },
+    _destructor: function _destructor() {
+      globalMM.removeMessageListener("Content:LocationChange", this);
+      for (let rule in RULES) {
+        this._removeAllListeners(rule);
+        delete RULES[rule];
+      }
+      this._registryDestructor();
+    },
+    receiveMessage: function receiveMessage(msg) {
+      let browser = msg.target;
+      let json = msg.json;
+      let location = json.location;
+      for (let rule in RULES)
+        if (RULES[rule].test(location))
+          this._emit(rule, browser);
+    },
+    off: function off(topic, listener) {
+      this.removeListener(topic, listener);
+      if (!this._listeners(topic).length)
+        delete RULES[topic];
+    }
+  });
+}
+else {
+  throw new Error(
+    "The page-mod module is currently only compatible with Firefox and Fennec"
+  );
+}
+
 const pageModManager = PageModManager();
