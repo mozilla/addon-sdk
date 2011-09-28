@@ -88,6 +88,11 @@ TestRunner.prototype = {
 
     if (!options)
       options = {console: console};
+    if (!options.globals)
+      options.globals = {};
+    if (!options.globals.packaging)
+      options.globals.packaging = packaging;
+
     options.fs = this.fs;
 
     var Cuddlefish = require("./cuddlefish");

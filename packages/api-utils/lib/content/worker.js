@@ -401,6 +401,14 @@ const Worker = AsyncEventEmitter.compose({
    * @param {Number|String|JSON} data
    */
   postMessage: function postMessage(data) {
+    if (!this._inited) {
+      this._earlyMessages.push(data);
+      return;
+    }
+    if (require("api-utils/xul-app").is("Fennec")) {
+      this._pipe.emit("message", JSON.parse(JSON.stringify(data)));
+      return;
+    }
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
     this._contentWorker._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
@@ -454,6 +462,10 @@ const Worker = AsyncEventEmitter.compose({
       return;
     }
     
+    if (require("api-utils/xul-app").is("Fennec")) {
+      this._pipe.emit("emit", ensureArgumentsAreJSON(args));
+      return;
+    }
     // We throw exception when the worker has been destroyed
     if (!this._contentWorker) {
       throw new Error(ERR_DESTROYED);
@@ -474,6 +486,12 @@ const Worker = AsyncEventEmitter.compose({
     return this._earlyEvents;
   },
   
+  get _earlyMessages() {
+    delete this._earlyMessages;
+    this._earlyMessages = [];
+    return this._earlyMessages;
+  },
+
   constructor: function Worker(options) {
     options = options || {};
 
@@ -490,6 +508,31 @@ const Worker = AsyncEventEmitter.compose({
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
     
+    this.port;
+
+    if (require("api-utils/xul-app").is("Fennec")) {
+      this._pipe = require("remote-unique-pipe").loadRemoteScript(
+        this._window,
+        require("self").data.url("worker.js")
+      );
+      var self = this;
+      this._pipe.on("emit", function (args) {
+        self._onContentScriptEvent.apply(self, args);
+      });
+      this._pipe.on("evaluated", function () {
+        self._ready();
+        self._emit("evaluated");
+      });
+      this._pipe.on("dump", function (msg) {
+        console.log("DUMP : "+msg);
+      });
+      this._pipe.emit("create-worker", {
+        contentScriptFile: this.contentScriptFile,
+        contentScript: this.contentScript,
+        contentScriptWhen: options.contentScriptWhen
+      });
+      return;
+    }
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
     // prevents bfcache from working: 
@@ -510,11 +553,17 @@ const Worker = AsyncEventEmitter.compose({
     // will set this._contentWorker pointing to the private API:
     WorkerGlobalScope(this);  
     
+    this._ready();
+  },
+
+  _ready: function () {
     // Mainly enable worker.port.emit to send event to the content worker
     this._inited = true;
     
     // Flush all events that have been fired before the worker is initialized.
     this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
+                              bind(this));
+    this._earlyMessages.forEach((function (data) this.postMessage(data)).
                               bind(this));
   },
   
