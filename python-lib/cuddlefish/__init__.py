@@ -77,13 +77,6 @@ parser_groups = (
                                  metavar=None,
                                  default=None,
                                  cmds=['run', 'test'])),
-        (("-a", "--app",), dict(dest="app",
-                                help=("app to run: firefox (default), "
-                                      "xulrunner, fennec, or thunderbird"),
-                                metavar=None,
-                                default="firefox",
-                                cmds=['test', 'run', 'testex', 'testpkgs',
-                                      'testall'])),
         (("", "--dependencies",), dict(dest="dep_tests",
                                        help="include tests for all deps",
                                        action="store_true",
@@ -146,6 +139,13 @@ parser_groups = (
      ),
 
     ("Experimental Command-Specific Options", [
+        (("-a", "--app",), dict(dest="app",
+                                help=("app to run: firefox (default), "
+                                      "xulrunner, fennec, or thunderbird"),
+                                metavar=None,
+                                default="firefox",
+                                cmds=['test', 'run', 'testex', 'testpkgs',
+                                      'testall'])),
         (("", "--no-run",), dict(dest="no_run",
                                      help=("Instead of launching the "
                                            "application, just show the command "
