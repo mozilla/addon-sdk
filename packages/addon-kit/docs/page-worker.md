@@ -111,9 +111,9 @@ loaded until its `destroy` method is called or the add-on is unloaded.
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
 
-See
-<a href="dev-guide/addon-development/web-content.html#content_script_events">
-Communicating with Content Scripts</a> for details.
+See the guide to
+<a href="dev-guide/addon-development/content-scripts/using-port.html">
+communicating using <code>port</code></a> for details.
 </api>
 
 <api name="contentURL">
@@ -201,7 +201,7 @@ code in the page worker's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>
 </api>
 
 <api name="error">

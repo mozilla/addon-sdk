@@ -45,8 +45,8 @@ var EXPORTED_SYMBOLS = [ 'Loader' ];
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
-const ioService = CC('@mozilla.org/network/io-service;1',
-                       'nsIIOService')();
+const ioService = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
 const resourceHandler = ioService.getProtocolHandler('resource')
                         .QueryInterface(Ci.nsIResProtocolHandler);
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
@@ -318,7 +318,7 @@ function resourceURI(file) {
 function mapResources(root, resources) {
   Object.keys(resources).forEach(function(id) {
     let path = resources[id];
-    let uri = Array.isArray(path) ? resolve(path.join('/'), root)
+    let uri = Array.isArray(path) ? resolve('./' + path.join('/'), root)
                                   : 'file://' + path;
     uri = ioService.newURI(uri + '/', null, null);
     resourceHandler.setSubstitution(id, uri);

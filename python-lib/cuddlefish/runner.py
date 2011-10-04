@@ -13,6 +13,7 @@ import mozrunner
 from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
+from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
 def follow_file(filename):
     """
@@ -212,9 +213,10 @@ class XulrunnerAppRunner(mozrunner.Runner):
                 self.names = runner.names
         return self.__real_binary
 
-def run_app(harness_root_dir, harness_options,
+def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None, args=None, norun=None):
+            timeout=None, logfile=None, addons=None, args=None, norun=None,
+            used_files=None, enable_mobile=False):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -231,7 +233,6 @@ def run_app(harness_root_dir, harness_options,
         runner_class = XulrunnerAppRunner
         cmdargs.append(os.path.join(harness_root_dir, 'application.ini'))
     else:
-        addons.append(harness_root_dir)
         if app_type == "firefox":
             profile_class = mozrunner.FirefoxProfile
             preferences.update(DEFAULT_FIREFOX_PREFS)
@@ -242,6 +243,7 @@ def run_app(harness_root_dir, harness_options,
             runner_class = mozrunner.ThunderbirdRunner
         elif app_type == "fennec":
             profile_class = FennecProfile
+            preferences.update(DEFAULT_FENNEC_PREFS)
             runner_class = FennecRunner
         else:
             raise ValueError("Unknown app: %s" % app_type)
@@ -290,25 +292,29 @@ def run_app(harness_root_dir, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
-    # Write the harness options file to the SDK's extension template directory
-    # so mozrunner will copy it to the profile it creates.  We don't want
-    # to leave such files lying around the SDK's directory tree, so we delete it
-    # below after getting mozrunner to create the profile.
-    optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
-    open(optionsFile, "w").write(str(json.dumps(harness_options)))
+    # Create the addon XPI so mozrunner will copy it to the profile it creates.
+    # We delete it below after getting mozrunner to create the profile.
+    from cuddlefish.xpi import build_xpi
+    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
+    build_xpi(template_root_dir=harness_root_dir,
+              manifest=manifest_rdf,
+              xpi_path=xpi_path,
+              harness_options=harness_options,
+              limit_to=used_files)
+    addons.append(xpi_path)
 
     starttime = time.time()
 
     popen_kwargs = {}
     profile = None
 
+    # the XPI file is copied into the profile here
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
 
-    # Delete the harness options file we wrote to the SDK's extension template
-    # directory.
-    os.remove(optionsFile)
+    # Delete the temporary xpi file
+    os.remove(xpi_path)
 
     runner = runner_class(profile=profile,
                           binary=binary,
@@ -326,7 +332,7 @@ def run_app(harness_root_dir, harness_options,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel) ((\d+)\.\S*)",
+    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
@@ -335,6 +341,15 @@ def run_app(harness_root_dir, harness_options,
   WARNING: cannot determine Firefox version; please ensure you are running
   a Mozilla application equivalent to Firefox 4.0 or greater.
   """
+    elif mo.group(1) == "Fennec":
+        # For now, only allow running on Mobile with --force-mobile argument
+        if not enable_mobile:
+            print """
+  WARNING: Firefox Mobile support is still experimental.
+  If you would like to run an addon on this platform, use --force-mobile flag:
+
+    cfx --force-mobile"""
+            return
     else:
         version = mo.group(3)
         if int(version) < 4:
