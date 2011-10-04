@@ -53,6 +53,7 @@ const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
+const runtime = require("api-utils/runtime");
 
 const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
                        getService(Ci.nsIWindowMediator);
@@ -170,6 +171,10 @@ const Panel = Symbiont.resolve({
       frame.setAttribute('type', 'content');
       frame.setAttribute('flex', '1');
       frame.setAttribute('transparent', 'transparent');
+      if (runtime.OS === "Darwin") {
+        frame.style.borderRadius = "6px";
+        frame.style.padding = "1px";
+      }
       
       // Load an empty document in order to have an immediatly loaded iframe, 
       // so swapFrameLoaders is going to work without having to wait for load.
