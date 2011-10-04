@@ -293,6 +293,8 @@ const Loader = {
   },
   main: function main(id) {
     // Overriding main so that all modules point to it.
+    if (isRelative(id))
+      id = resolve(id, this.load('@packaging').name)
     this.main = this.modules[resolveURI(this.root, id)] = {};
     return Require(this, null)(id);
   }
