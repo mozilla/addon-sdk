@@ -325,18 +325,21 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     // and all setTimeout/setInterval should be unregistered.
     // Wait some cycles in order to execute some intervals.
     timer.setTimeout(function () {
-      // Location change with data: URI are synchonous, so that unload is
-      // synchronous too and intervals should be removed immediatly
+      // Bug 689621: Wait for the new document load so that we are sure that
+      // previous document cancelled its intervals
+      iframe.addEventListener("load", function onload() {
+        iframe.removeEventListener("load", onload, true);
+        let titleAfterLoad = originalDocument.title;
+        // Wait additional cycles to verify that intervals are really cancelled
+        timer.setTimeout(function () {
+          test.assertEqual(iframe.contentDocument.title, "final",
+                           "New document has not been modified");
+          test.assertEqual(originalDocument.title, titleAfterLoad,
+                           "Nor previous one");
+          test.done();
+        }, 100);
+      }, true);
       iframe.setAttribute("src", "data:text/html,<title>final</title>");
-      let titleAfterLoad = originalDocument.title;
-      // Wait additional cycles to verify that intervals are really cancelled
-      timer.setTimeout(function () {
-        test.assertEqual(iframe.contentDocument.title, "final",
-          "New document has not been modified");
-        test.assertEqual(originalDocument.title, titleAfterLoad,
-          "Nor previous one");
-        test.done();
-      }, 100);
     }, 100);
 
   }, true);
