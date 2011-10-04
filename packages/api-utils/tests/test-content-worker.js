@@ -1,6 +1,8 @@
 "use stirct";
 
 const { Cc, Ci } = require('chrome');
+const timer = require('timer');
+
 function makeWindow(contentURL) {
   let content =
     '<?xml version="1.0"?>' +
@@ -311,24 +313,32 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
       window: iframe.contentWindow,
       contentScript: 'new ' + function WorkerScope() {
         document.title = "ok";
-        let id = setInterval(function () {
-          document.title = "not-cancelled";
-        }, 100);
+        let i = 0;
+        setInterval(function () {
+          document.title = i++;
+        }, 10);
       },
       contentScriptWhen: 'ready'
     });
 
     // Change location so that content script is destroyed,
     // and all setTimeout/setInterval should be unregistered.
-    iframe.setAttribute("src", "data:text/html,<title>final</title>");
+    // Wait some cycles in order to execute some intervals.
+    timer.setTimeout(function () {
+      // Location change with data: URI are synchonous, so that unload is
+      // synchronous too and intervals should be removed immediatly
+      iframe.setAttribute("src", "data:text/html,<title>final</title>");
+      let titleAfterLoad = originalDocument.title;
+      // Wait additional cycles to verify that intervals are really cancelled
+      timer.setTimeout(function () {
+        test.assertEqual(iframe.contentDocument.title, "final",
+          "New document has not been modified");
+        test.assertEqual(originalDocument.title, titleAfterLoad,
+          "Nor previous one");
+        test.done();
+      }, 100);
+    }, 100);
 
-    require("timer").setTimeout(function () {
-      test.assertEqual(iframe.contentDocument.title, "final",
-        "New document has not been modified");
-      test.assertEqual(originalDocument.title, "ok",
-        "Nor previous one");
-      test.done();
-    }, 500);
   }, true);
 
 }
