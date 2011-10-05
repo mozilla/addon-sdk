@@ -7,8 +7,8 @@ let Ci = Components.interfaces;
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  */
-// const UNWRAP_ACCESS_KEY = {};
-// Set by worker.js, in order to be able to share it for internal tests
+ const UNWRAP_ACCESS_KEY = {};
+
 
  /**
  * Returns a closure that wraps arguments before calling the given function,

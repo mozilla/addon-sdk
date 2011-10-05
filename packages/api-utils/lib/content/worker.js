@@ -60,6 +60,13 @@ const JS_VERSION = '1.8';
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
 
+/**
+ * Access key that allows test-content-proxy to unwrap proxy with valueOf:
+ *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
+ * The following `PRIVATE_KEY` is used in addon modules scope in order to tell
+ * Worker api to expose UNWRAP_ACCESS_KEY in content script.
+ */
+const PRIVATE_KEY = {};
 
 function ensureArgumentsAreJSON(args) {
   // First convert to real array
@@ -219,15 +226,15 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let window = worker._window;
     
     let proto = window;
+    let proxySandbox = null;
     // Build content proxies only if the document has a non-system principal
     if (window.wrappedJSObject) {
       // Instanciate the proxy code in another Sandbox in order to avoid
       // content script to pollute globals used by proxy code
-      let proxySandbox = Cu.Sandbox(window, {
+      proxySandbox = Cu.Sandbox(window, {
         wantXrays: true
       });
       proxySandbox.console = console;
-      proxySandbox.UNWRAP_ACCESS_KEY = exports.UNWRAP_ACCESS_KEY;
       // Execute the proxy code
       scriptLoader.loadSubScript(CONTENT_PROXY_URL, proxySandbox);
       // Get a reference of the window's proxy
@@ -252,6 +259,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       unsafeWindow: { get: function () window.wrappedJSObject }
     });
     
+    // We inject unlock key into content script scope, only when Worker
+    // constructor receive `exposeUnlockKey` attribute set to `PRIVATE_KEY`
+    if (proxySandbox && worker._expose_key)
+      sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY
+
     // Overriding / Injecting some natives into sandbox.
     Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
     
@@ -518,7 +530,9 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
-    
+    if ('exposeUnlockKey' in options && options.exposeUnlockKey === PRIVATE_KEY)
+      this._expose_key = true;
+
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
     // prevents bfcache from working: 
@@ -613,11 +627,3 @@ const Worker = AsyncEventEmitter.compose({
   _window: null,
 });
 exports.Worker = Worker;
-
-/**
- * Access key that allows privileged code to unwrap proxy wrappers through
- * valueOf:
- *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
- * It can't be a simple {} as it needs to be given to content script context.
- */
-exports.UNWRAP_ACCESS_KEY = String(Math.round(new Date().getTime()*Math.random()));

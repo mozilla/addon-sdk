@@ -1,5 +1,4 @@
 const hiddenFrames = require("hidden-frame");
-const Worker = require("content").Worker;
 
 let global = {
   xrayWindow: null,
@@ -39,14 +38,17 @@ exports.testCreateTestDocument = function (test) {
 }
 
 function createWorker(test, contentScript) {
-  // Tell content-proxy.js that we `UNWRAP_ACCESS_KEY` in content script globals
-  global.xrayWindow.document.setUserData("___include_UNWRAP_ACCESS_KEY", "true", null);
 
-  let key = require("api-utils/content/worker").UNWRAP_ACCESS_KEY;
+  // We have to use Sandboxed loader in order to get access to the private
+  // unlock key `PRIVATE_KEY`
+  let loader = test.makeSandboxedLoader();
+  let workerReq = "api-utils/content/worker";
+  let Worker = loader.require(workerReq).Worker;
+  let key = loader.findSandboxForModule(workerReq).globalScope.PRIVATE_KEY;
   let worker = Worker({
+    exposeUnlockKey : key,
     window: global.xrayWindow,
     contentScript: [
-      'UNWRAP_ACCESS_KEY = "' + key + '";' +
       'new ' + function () {
         assert = function assert(v, msg) {
           self.port.emit("assert", {assertion:v, msg:msg});
