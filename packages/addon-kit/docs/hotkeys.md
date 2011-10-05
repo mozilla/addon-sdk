@@ -58,13 +58,13 @@ destroyed it can no longer be used.
     const { Hotkey } = require("hotkeys");
 
     var showHotKey = Hotkey({
-      combo: "accel-shift-p",
+      combo: "accel-shift-o",
       onPress: function() {
         showMyPanel();
       }
     });
     var hideHotKey = Hotkey({
-      combo: "accel-alt-shift-p",
+      combo: "accel-alt-shift-o",
       onPress: function() {
         hideMyPanel();
       }
