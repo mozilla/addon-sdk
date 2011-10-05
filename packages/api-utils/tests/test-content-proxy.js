@@ -5,7 +5,8 @@ let global = {
   rawWindow: null
 };
 
-exports.testCreateTestDocument = function (test) {
+// Need to be runned first
+exports.testAAACreateTestDocument = function (test) {
   test.waitUntilDone();
   let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' + 
              '<input id="input2" type="checkbox" />' + 
@@ -637,7 +638,8 @@ exports.testGlobalScope = function (test) {
   );
 }
 
-exports.removeTestDocument = function (test) {
+// Need to be runned last
+exports.testZzzRemoveTestDocument = function (test) {
   hiddenFrames.remove(global.hiddenFrame);
   test.pass("ok");
   test.done();
