@@ -519,6 +519,9 @@ const Worker = AsyncEventEmitter.compose({
       this._pipe.on("emit", function (args) {
         self._onContentScriptEvent.apply(self, args);
       });
+      this._pipe.on("postMessage", function (args) {
+        self._asyncEmit('message',  args);
+      });
       this._pipe.on("evaluated", function () {
         self._ready();
         self._emit("evaluated");

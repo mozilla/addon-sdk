@@ -131,7 +131,7 @@ exports.testPageModIncludes = function(test) {
     2
     );
 };
-/*
+
 exports.testPageModErrorHandling = function(test) {
   test.assertRaises(function() {
       new pageMod.PageMod();
@@ -143,10 +143,11 @@ exports.testPageModErrorHandling = function(test) {
 
 exports.testCommunication1 = function(test) {
   let workerDone = false,
-      callbackDone = null;
+      callbackDone = null,
+      called = false;
 
   testPageMod(test, "about:", [{
-      include: "about:*",
+      include: "about:",
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         self.on('message', function(msg) {
@@ -159,6 +160,11 @@ exports.testCommunication1 = function(test) {
           test.fail('Errors where reported');
         });
         worker.on('message', function(value) {
+          test.assert(
+            !called,
+            "We should receive only one message"
+          );
+          called = true;
           test.assertEqual(
             "worked",
             value,
@@ -171,21 +177,24 @@ exports.testCommunication1 = function(test) {
         worker.postMessage('do it!')
       }
     }],
-    function(win, done) {
+    function (evaluate, done) {
       (callbackDone = function() {
         if (workerDone) {
-          test.assertEqual(
-            'worked',
-            win.document.body.getAttribute('JEP-107'),
-            'attribute should be modified'
-          );
-          done();
+          evaluate("content.document.body.getAttribute('JEP-107')", 
+                   function (attr) {
+                     test.assertEqual(
+                       'worked',
+                       attr,
+                       'attribute should be modified'
+                     );
+                     done();
+                   });
         }
       })();
     }
   );
 };
-
+/*
 exports.testCommunication2 = function(test) {
   let callbackDone = null,
       window;
