@@ -297,6 +297,9 @@ const Loader = {
       id = resolve(id, this.load('@packaging').name)
     this.main = this.modules[resolveURI(this.root, id)] = {};
     return Require(this, null)(id);
+  },
+  unload: function unload(reason, callback) {
+    this.load('api-utils/unload').send(reason, callback);
   }
 };
 exports.Loader = Loader;
@@ -324,8 +327,6 @@ function mapResources(root, resources) {
                                   : 'file://' + path;
     uri = ioService.newURI(uri + '/', null, null);
     resourceHandler.setSubstitution(id, uri);
-    // TODO: Remove debug log!
-    dump(id + ' -> ' + uri.spec + '\n');
   });
 }
 
@@ -362,7 +363,7 @@ exports.startup = function startup(data, reason) {
                options.main : resolve('./' + options.main, options.name);
   options.uri = uri;
 
-  let loader = Loader.new(options);
+  let loader = exports.loader = Loader.new(options);
 
   // TODO: Also does not feels right to defer loading an add-on, but doing so
   // to match behavior of the legacy module loader.
@@ -384,6 +385,7 @@ exports.startup = function startup(data, reason) {
 };
 
 exports.shutdown = function shutdown(data, reason) {
+  if (exports.loader) exports.loader.unload(reason)
 };
 
 }(typeof(exports) === 'undefined' ? this : exports);
