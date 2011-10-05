@@ -56,8 +56,6 @@ function createWorker(test, contentScript) {
         done = function done() {
           self.port.emit("done");
         }
-        if (!("UNWRAP_ACCESS_KEY" in window))
-          assert(false, "doesn't have access to `UNWRAP_ACCESS_KEY`");
       },
       contentScript
     ]
@@ -69,6 +67,17 @@ function createWorker(test, contentScript) {
   });
 
   return worker;
+}
+
+exports.testKeyAccess = function (test) {
+  test.waitUntilDone();
+
+  createWorker(test,
+    'new ' + function ContentScriptScope() {
+      assert("UNWRAP_ACCESS_KEY" in window, "have access to `UNWRAP_ACCESS_KEY`");
+      done();
+    }
+  );
 }
 
 exports.testPostMessage = function (test) {
