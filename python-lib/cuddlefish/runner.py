@@ -130,9 +130,8 @@ class RemoteFennecRunner(mozrunner.Runner):
                             "ADB executable.")
         self.binary = binary
 
-        mozrunner.Runner.__init__(self, **kwargs)
-        mobile_app_name = self.cmdargs[0]
-        self.cmdargs = []
+        mobile_app_name = kwargs['cmdargs'][0]
+        self.profile = kwargs['profile']
         self._adb_path = binary
 
         # This pref has to be set to `false` otherwise, we do not receive
@@ -217,6 +216,9 @@ class RemoteFennecRunner(mozrunner.Runner):
                 "-n " + self._intent_name + "/" + self._intent_name + ".App " +
                 "--es args \"-profile " + self._REMOTE_PATH + "\""
         ]
+
+    def start(self):
+        subprocess.call(self.command)
 
     def getProcessPID(self, processName):
         p = subprocess.Popen([self._adb_path, "shell", "ps"],
