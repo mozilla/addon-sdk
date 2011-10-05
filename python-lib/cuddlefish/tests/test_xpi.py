@@ -97,11 +97,16 @@ class SmallXPI(unittest.TestCase):
         expected = [absify(*parts) for parts in
                     [("three", "lib", "main.js"),
                      ("three-deps", "three-a", "lib", "main.js"),
+                     ("three-deps", "three-a", "lib", "subdir", "subfile.js"),
+                     ("three-deps", "three-a", "data", "msg.txt"),
+                     ("three-deps", "three-a", "data", "subdir", "submsg.txt"),
                      ("three-deps", "three-b", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "sub", "foo.js"),
                      ]]
-        self.failUnlessEqual(sorted(used_files), sorted(expected))
+        missing = set(expected) - set(used_files)
+        extra = set(used_files) - set(expected)
+        self.failUnlessEqual((list(missing), list(extra)), ([], []))
         used_deps = m.get_used_packages()
 
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
@@ -119,29 +124,37 @@ class SmallXPI(unittest.TestCase):
                       limit_to=used_files)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        expected = ["components/harness.js",
+        expected = ["components/",
+                    "components/harness.js",
                     # the real template also has 'bootstrap.js', but the fake
                     # one in tests/static-files/xpi-template doesn't
                     "harness-options.json",
                     "install.rdf",
+                    "resources/",
                     "resources/p-api-utils-data/",
                     "resources/p-api-utils-lib/",
                     "resources/p-three-lib/",
                     "resources/p-three-lib/main.js",
+                    "resources/p-three-a-data/",
+                    "resources/p-three-a-data/msg.txt",
+                    "resources/p-three-a-data/subdir/",
+                    "resources/p-three-a-data/subdir/submsg.txt",
                     "resources/p-three-a-lib/",
                     "resources/p-three-a-lib/main.js",
+                    "resources/p-three-a-lib/subdir/",
+                    "resources/p-three-a-lib/subdir/subfile.js",
                     "resources/p-three-b-lib/",
                     "resources/p-three-b-lib/main.js",
                     "resources/p-three-c-lib/",
                     "resources/p-three-c-lib/main.js",
+                    "resources/p-three-c-lib/sub/",
                     "resources/p-three-c-lib/sub/foo.js",
                     # notably absent: p-three-a-lib/unused.js
                     ]
         # showing deltas makes failures easier to investigate
         missing = set(expected) - set(names)
-        self.failUnlessEqual(list(missing), [])
         extra = set(names) - set(expected)
-        self.failUnlessEqual(list(extra), [])
+        self.failUnlessEqual((list(missing), list(extra)), ([], []))
         self.failUnlessEqual(sorted(names), sorted(expected))
 
 

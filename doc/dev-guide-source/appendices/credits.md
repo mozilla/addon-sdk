@@ -12,6 +12,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Zbigniew Braniecki
 * Daniel Buchner
 * James Burke
+* [Shane Caraveo](https://github.com/mixedpuppy)
 * [Matěj Cepl](https://github.com/mcepl)
 * Hernán Rodriguez Colmeiro
 * fuzzykiller

@@ -5,8 +5,7 @@ DEFAULT_COMMON_PREFS = {
     'browser.dom.window.dump.enabled': True,
     # warn about possibly incorrect code
     'javascript.options.strict': True,
-    'javascript.options.showInConsole': True,
-    'extensions.logging.enabled': True
+    'javascript.options.showInConsole': True
 }
 
 DEFAULT_FENNEC_PREFS = {

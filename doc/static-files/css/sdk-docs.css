@@ -3,6 +3,12 @@ html, body {
   height: 100%;
 }
 
+pre {
+  color: black;
+  background-color: #e0effd;
+  padding: 10px;
+}
+
 #columns {
   padding-left: 250px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/

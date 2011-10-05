@@ -385,7 +385,9 @@ TestRunner.prototype = {
             a = a();
           }
           catch(e) {
-            mock.fail("Exception when calling asynchronous assertion: " + e);
+            test.fail("Exception when calling asynchronous assertion: " + e);
+            finished = true;
+            return;
           }
         }
         appliedArgs.push(a);
