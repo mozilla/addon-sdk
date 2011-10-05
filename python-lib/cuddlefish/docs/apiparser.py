@@ -110,7 +110,8 @@ class APIParser:
                         raise ParseError("unknown '@' section header %s in \
                                            '%s'" % (tag, line), lineno + 1)
             lineno += 1
-        raise ParseError("closing </api> tag not found", lineno + 1)
+        raise ParseError("closing </api> tag not found for <api name=\"" +
+                         api["name"] + "\">", lineno + 1)
 
     def _parse_title_line(self, title_line, lineno):
         if "name" not in title_line:
