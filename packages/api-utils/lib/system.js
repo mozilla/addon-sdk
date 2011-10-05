@@ -48,16 +48,19 @@ const appInfo = Cc["@mozilla.org/xre/app-info;1"].
 const runtime = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULRuntime);
 
+const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
+
 /**
  * Ends the process with the specified `code`. If omitted, exit uses the
  * 'success' code 0. To exit with failure use `1`.
+ * TODO: Improve platform to actually quit with an exit code.
  */
 exports.exit = function exit(code) {
   // This is used by 'cfx' to find out exit code.
-  if ('logFile' in options)
-    file.open(options.logFile).writeAsync(code ? 'FAIL' : 'OK');
+  if ('resultFile' in options)
+    file.open(options.resultFile, 'w').writeAsync(code ? 'FAIL' : 'OK');
 
-  appStartup.quit(Ci.nsIAppStartup.eAttemptQuit);
+  appStartup.quit(code ? E_ATTEMPT : E_FORCE);
 };
 
 /**
