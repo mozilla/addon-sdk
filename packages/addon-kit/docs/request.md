@@ -28,7 +28,7 @@ each can throw if given an invalid value.
 
 The example below shows how to use Request to get the most recent public tweet.
 
-    var Request = require('request').Request;
+    var Request = require("request").Request;
     var latestTweetRequest = Request({
       url: "http://api.twitter.com/1/statuses/public_timeline.json",
       onComplete: function (response) {
@@ -81,6 +81,29 @@ set several properties on the resulting `Request`.
     @prop [contentType] {string}
     The type of content to send to the server. This explicitly sets the
     `Content-Type` header. The default value is `application/x-www-form-urlencoded`.
+
+    @prop [overrideMimeType] {string}
+    Use this string to override the MIME type returned by the server in the
+    response's Content-Type header. You can use this to treat the content as a
+    different MIME type, or to force text to be interpreted using a specific
+    character.
+
+    For example, if you're retrieving text content which was encoded as
+    ISO-8859-1 (Latin 1), it will be given a content type of "utf-8" and
+    certain characters will not display correctly. To force the response to
+    be interpreted as Latin-1, use `overrideMimeType`:
+
+        var Request = require("request").Request;
+        var quijote = Request({
+          url: "http://www.latin1files.org/quijote.txt",
+          overrideMimeType: "text/plain; charset=latin1",
+          onComplete: function (response) {
+            console.log(response.text);
+          }
+        });
+        
+        quijote.get();
+
 </api>
 
 <api name="url">
@@ -158,5 +181,12 @@ The HTTP response status line (e.g. *OK*).
 <api name="headers">
 @property {object}
 The HTTP response headers represented as key/value pairs.
+
+To print all the headers you can do something like this:
+
+    for (var headerName in response.headers) {
+      console.log(headerName + " : " + response.headers[headerName]);
+    }
+
 </api>
 </api>

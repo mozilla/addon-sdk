@@ -49,8 +49,8 @@ const TAB_BROWSER = "tabbrowser";
 
 /**
  * This is a trait that is used in composition of window wrapper. Trait tracks
- * tab related events of the wrapped window in order to keep truck of open
- * tabs and maintain their wrappers. Every new tab is gets wrapped and jetpack
+ * tab related events of the wrapped window in order to keep track of open
+ * tabs and maintain their wrappers. Every new tab gets wrapped and jetpack
  * type event is emitted.
  */
 const WindowTabTracker = Trait.compose({
