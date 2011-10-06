@@ -93,7 +93,6 @@ TestRunner.prototype = {
       options.globals = {};
     options.globals.packaging = packaging;
     options.packaging = packaging; // grab from global, populate manifest
-    dump("makeSandboxedLoader, packaging is "+packaging+"\n");
     if (typeof(basePath) != "string")
       throw new Error("basePath must be a string, not {options}");
     options.basePath = basePath;
