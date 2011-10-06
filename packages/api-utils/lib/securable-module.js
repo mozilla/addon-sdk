@@ -178,11 +178,6 @@
    };
 
    exports.Loader = function Loader(options) {
-     dump("New Loader being created\n");
-     dump(" our new manifest is "+options.manifest+" with "+
-          Object.keys(options.manifest).length+" entries\n");
-     dump(" basePath is "+options.basePath+"\n");
-     dump("\n");
      options = {__proto__: options};
      if (options.fs === undefined) {
        var rootPaths = options.rootPath || options.rootPaths;
@@ -250,29 +245,19 @@
          reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
-         if (module == "../dom/events") {
-           dump("YESYES "+basePath+"\n");
-           dump(" manifest "+self.manifest+"\n");
-           //dump(" manifest: "+Object.keys(self.manifest).join(" ")+"\n");
-           for (var i in self.manifest)
-             dump(" m: "+i+"\n");
-         }
          if (reqs) {
            // if we know about you, you must follow the manifest
            if (module in reqs) {
-             //dump("PATH1\n");
              return loadMaybeMagicModule(module, reqs[module]);
            }
            // if you invoke chrome, you can go off-manifest and search
            if ("chrome" in reqs) {
-             //dump("PATH2\n");
              return loadMaybeMagicModule(module, null);
            }
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
          } else {
            // if we don't know about you, you can do anything you want.
            // You're going to have to search for your own modules, though.
-           //dump("PATH3\n");
            return loadMaybeMagicModule(module, null);
          }
        }
