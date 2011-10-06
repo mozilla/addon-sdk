@@ -139,6 +139,7 @@
                           defaultPrincipal: "system",
                           globals: globals,
                           modifyModuleSandbox: modifyModuleSandbox,
+                          basePath: options.basePath,
                           manifest: manifest,
                           getModuleExports: getModuleExports};
 

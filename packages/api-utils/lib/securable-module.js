@@ -219,6 +219,7 @@
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
      this.manifest = options.manifest || {};
+     this.basePath = options.basePath; // used for off-manifest loader.require
    };
 
    exports.Loader.prototype = {
@@ -310,6 +311,18 @@
            return selfMod.makeSelfModule(moduleData);
          }
 
+         if (moduleName == "packaging") {
+           /* this is also magic, and provides access to the list of all
+            * test modules stored in harness-options.json, as well as
+            * makeSandboxedLoader
+            */
+           // the 'packaging' module is not cached
+           return {
+             //allTestModules: packaging.options.allTestModules,
+             myURI: moduleData.basePath
+           };
+         }
+
          if (!moduleData) {
            // search
            let path = self.fs.resolveModule(basePath, moduleName);
@@ -330,6 +343,10 @@
          }
          self.pathAccessed[moduleData.uri] += 1;
 
+         return loadFromCacheOrModuleData(moduleData, moduleName);
+       }
+
+       function loadFromCacheOrModuleData(moduleData, moduleName) {
          if (moduleData.uri in self.modules) {
            // already loaded: return from cache
            return self.modules[moduleData.uri];
@@ -565,7 +582,8 @@
 
        return {
          require: asyncRequire,
-         define: define
+         define: define,
+         loadFromCacheOrModuleData: loadFromCacheOrModuleData
        };
        // END support for Async module-style
      },
@@ -586,7 +604,14 @@
      },
 
      require: function require(module, callback) {
-       return (this._makeApi(null).require)(module, callback);
+       if (!this.basePath)
+         throw new Error("loader.require() must always have a basePath");
+       return (this._makeApi(this.basePath).require)(module, callback);
+     },
+
+     requireURI: function requireURI(uri, modulename) {
+       var api = this._makeApi(uri);
+       return api.loadFromCacheOrModuleData({uri: uri}, modulename);
      },
 
      runScript: function runScript(options, extraOutput) {

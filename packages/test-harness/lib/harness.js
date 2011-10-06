@@ -350,6 +350,7 @@ var runTests = exports.runTests = function runTests(options) {
                                      jetpackID: packaging.options.jetpackID,
                                      uriPrefix: packaging.options.uriPrefix,
                                      name: packaging.options.name,
+                                     basePath: require("packaging").myURI,
                                      packaging: packaging,
                                      __proto__: options});
     nextIteration();
