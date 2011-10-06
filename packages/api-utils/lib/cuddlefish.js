@@ -147,20 +147,13 @@
 
      // we need to supply the new loader with several helper modules
      function load_helper_module(name) {
-       dump("load_helper_module("+name+")\n");
-       dump(" manifest is "+manifest+" with "+
-            Object.keys(manifest).length+" entries\n");
        // loaderURI always points at this file, cuddlefish.js . It comes from
        // harness-options.json
        if (!"packaging" in options) {
-         dump("HEY, no packaging in options\n");
          throw new Error("no packaging in options, can't get loaderURI");
        }
        const loaderURI = options.packaging.options.loader;
-       dump(" loaderURI is "+loaderURI+"\n");
        const reqs = Object.keys(manifest[loaderURI].requirements);
-       dump(" manifest[loaderURI] has "+reqs.length+" requirements\n");
-       reqs.forEach(function(v){dump("  "+v+"\n");});
 
        // all helper module imports "come from" cuddlefish.js, even if the
        // Loader we just built is for someone else's benefit (and thus their
@@ -169,7 +162,6 @@
        // manifest, then use the new Loader's explicit requireURI() method to
        // obtain the code.
        const helperURI = manifest[loaderURI].requirements[name].uri;
-       dump(" helperURI is "+helperURI+"\n");
        return loader.requireURI(helperURI);
      }
 
@@ -180,11 +172,9 @@
        globals.console = new console.PlainTextConsole(options.print);
      }
      if (!globals.memory) {
-       dump("HERE1\n");
        globals.memory = load_helper_module("api-utils/memory");
        if (false) // force the manifest-scanner to copy this into the XPI
          require("api-utils/memory");
-       dump("HERE2\n");
      }
 
      loader.console = globals.console;
