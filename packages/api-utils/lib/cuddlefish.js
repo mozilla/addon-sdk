@@ -87,10 +87,6 @@
 
    shims.filename = shimsPath;
 
-   function unloadLoader(reason, onError) {
-     this.require("api-utils/unload").send(reason, onError);
-   }
-
    function makeGetModuleExports(delegate) {
      return function getModuleExports(basePath, module) {
        switch (module) {
@@ -157,8 +153,10 @@
 
      loader.console = globals.console;
      loader.memory = globals.memory;
-     loader.unload = unloadLoader;
-
+     var unloader = loader.require("api-utils/unload");
+     loader.unload = function(reason, onError) {
+             unloader.send(reason, onError);
+     };
      return loader;
    };
 
