@@ -179,9 +179,10 @@
 
    exports.Loader = function Loader(options) {
      dump("New Loader being created\n");
-     dump("our new manifest is "+options.manifest+" with "+
+     dump(" our new manifest is "+options.manifest+" with "+
           Object.keys(options.manifest).length+" entries\n");
-     dump("basePath is "+options.basePath+"\n");
+     dump(" basePath is "+options.basePath+"\n");
+     dump("\n");
      options = {__proto__: options};
      if (options.fs === undefined) {
        var rootPaths = options.rootPath || options.rootPaths;
