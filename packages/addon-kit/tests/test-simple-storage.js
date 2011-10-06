@@ -307,7 +307,7 @@ function manager(loader) {
 }
 
 function newLoader(test) {
-  return test.makeSandboxedLoader({ globals: { packaging: packaging } });
+  return test.makeSandboxedLoader(require("packaging").myURI);
 }
 
 function setGetRoot(test, val, compare) {

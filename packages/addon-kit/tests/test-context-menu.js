@@ -1945,9 +1945,7 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader({
-      globals: { packaging: packaging }
-    });
+    let loader = this.test.makeSandboxedLoader(require("packaging").myURI);
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),

@@ -353,7 +353,7 @@ exports['test tab worker on message'] = function(test) {
 
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   
   let pageMod = loader.require("page-mod").PageMod({
     include: "about:*",
