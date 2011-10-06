@@ -344,6 +344,7 @@ var runTests = exports.runTests = function runTests(options) {
           xulApp.ID + ") under " +
           xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
 
+    dump("test-harness/lib/harness creating loader, packaging is "+packaging+"\n");
     sandbox = new cuddlefish.Loader({console: console,
                                      globals: globals,
                                      metadata: packaging.options.metadata,
