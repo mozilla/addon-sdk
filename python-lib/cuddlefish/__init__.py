@@ -616,6 +616,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print str(e)
         sys.exit(1)
     used_deps = manifest.get_used_packages()
+    print "TESTS", manifest.get_all_test_modules()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
         # because it loads everything at runtime (invisible to the linker).
@@ -654,9 +655,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
+        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
+        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri(uri_prefix)
     else:
         harness_options['main'] = target_cfg.get('main')
+        harness_options['mainURI'] = manifest.top_uri
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
@@ -677,6 +681,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.join(mydir, "app-extension")
 
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+    harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
