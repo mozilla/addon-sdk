@@ -626,7 +626,8 @@
 
      require: function require(module, callback) {
        if (!this.basePath)
-         throw new Error("loader.require() must always have a basePath");
+         //throw new Error("loader.require() must always have a basePath");
+         dump("warning, loader.require() called, but Loader has no basePath: "+module+"\n");
        return (this._makeApi(this.basePath).require)(module, callback);
      },
 
