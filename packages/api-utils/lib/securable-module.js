@@ -178,6 +178,10 @@
    };
 
    exports.Loader = function Loader(options) {
+     dump("New Loader being created\n");
+     dump("our new manifest is "+options.manifest+" with "+
+          Object.keys(options.manifest).length+" entries\n");
+     dump("basePath is "+options.basePath+"\n");
      options = {__proto__: options};
      if (options.fs === undefined) {
        var rootPaths = options.rootPath || options.rootPaths;
@@ -238,21 +242,36 @@
         */
        var self = this;
        let reqs;
+       if (!basePath)
+         //throw new Error("_makeApi must always be given a basePath");
+         dump("warning, _makeApi called without basePath\n");
        if (basePath && (basePath in self.manifest))
          reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
+         if (module == "../dom/events") {
+           dump("YESYES "+basePath+"\n");
+           dump(" manifest "+self.manifest+"\n");
+           //dump(" manifest: "+Object.keys(self.manifest).join(" ")+"\n");
+           for (var i in self.manifest)
+             dump(" m: "+i+"\n");
+         }
          if (reqs) {
            // if we know about you, you must follow the manifest
-           if (module in reqs)
+           if (module in reqs) {
+             dump("PATH1\n");
              return loadMaybeMagicModule(module, reqs[module]);
+           }
            // if you invoke chrome, you can go off-manifest and search
-           if ("chrome" in reqs)
+           if ("chrome" in reqs) {
+             dump("PATH2\n");
              return loadMaybeMagicModule(module, null);
+           }
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
          } else {
            // if we don't know about you, you can do anything you want.
            // You're going to have to search for your own modules, though.
+           dump("PATH3\n");
            return loadMaybeMagicModule(module, null);
          }
        }
@@ -289,6 +308,7 @@
             */
            if (!moduleData) {
              // we don't know where you live, so we must search for your data
+             dump("\nSEARCH for self, from "+basePath+"\n");
              // resource://api-utils-api-utils-tests/test-self.js
              // make a prefix of resource://api-utils-api-utils-data/
              let doubleslash = basePath.indexOf("//");
@@ -325,6 +345,7 @@
 
          if (!moduleData) {
            // search
+           dump("\nSEARCH for "+moduleName+", from "+basePath+"\n");
            let path = self.fs.resolveModule(basePath, moduleName);
            if (!path)
              throw new Error('Module "' + moduleName + '" not found');
