@@ -5,7 +5,7 @@ from pprint import pprint
 
 zf = zipfile.ZipFile(sys.argv[1], "r")
 manifest = json.load(zf.open("harness-options.json", "r"))["manifest"]
-pprint(manifest)
+#pprint(manifest)
 # when X says require(Y), give it Z
 for X in sorted(manifest):
     modinfo = manifest[X]
