@@ -110,6 +110,7 @@ function readURI(uri) {
 
 function Require(loader, manifest, base) {
   function require(id) {
+    var uri
     // TODO: Remove debug log!
     // dump('>>>> ' + base + ' ? ' + id + '\n')
     // If we have a manifest for requirer, then all it's requirements have been
@@ -119,22 +120,23 @@ function Require(loader, manifest, base) {
       // `id` from manifest.
       let requirement = manifest.requirements[id];
       if (requirement)
-        id = requirement.uri ? resolveID(loader.root, requirement.uri) : id;
+        uri = requirement.uri ? requirement.uri : normalize(id);
 
       // If module is known to have "sudo" privileges, we allow it to go
       // off-manifest. Otherwise we throw an error.
       else if (!('chrome' in manifest.requirements))
         throw new Error("Module: " + base.id + " has no athority to load: " + id);
+    } else {
+      id = resolve(id, base && base.id);
+      uri = normalize(resolveURI(loader.root, id));
     }
-
-    // Resolving requirement `id` to it's requirer `id`.
-    id = resolve(id, base && base.id);
 
     // TODO: Remove debug log!
     // dump('require: ' + id + '\n');
 
+
     // Loading required module and return it's exports.
-    let exports = loader.load(id, base);
+    let exports = loader.load(uri, id, base);
 
     // Workaround for bug 674195. Freezing objects from other sandboxes fail,
     // so we create decedent and freeze it instead.
@@ -222,8 +224,10 @@ const Loader = {
     // easily to the module IDs.
     mapResources(options.uri, options.resources);
 
+    loader.require = Require(loader)
+
     // Loading globals for special module and put them into loader globals.
-    globals = loader.load('api-utils/globals!');
+    globals = loader.require('api-utils/globals!');
     Object.keys(globals).forEach(function(name) {
       loader.globals[name] = globals[name];
     });
@@ -245,11 +249,10 @@ const Loader = {
       id: 'chrome'
     }),
     'self.js': function self(loader, requirer) {
-      return loader.load('api-utils/self!').create(requirer.uri);
+      return loader.require('api-utils/self!').create(requirer.uri);
     },
   },
-  load: function load(id, base) {
-    let uri = resolveURI(this.root, normalize(id));
+  load: function load(uri, id, base) {
     let module = this.modules[uri] || (this.modules[uri] = {});
     // HACK: `dump` is overridden on windows for details see:
     // packages/api-utils/globals!.js
@@ -294,12 +297,12 @@ const Loader = {
   main: function main(id) {
     // Overriding main so that all modules point to it.
     if (isRelative(id))
-      id = resolve(id, this.load('@packaging').name)
+      id = resolve(id, this.require('@packaging').name)
     this.main = this.modules[resolveURI(this.root, id)] = {};
-    return Require(this, null)(id);
+    return this.require(id)
   },
   unload: function unload(reason, callback) {
-    this.load('api-utils/unload').send(reason, callback);
+    this.require('api-utils/unload').send(reason, callback);
   }
 };
 exports.Loader = Loader;
@@ -367,7 +370,7 @@ exports.startup = function startup(data, reason) {
 
   // TODO: Also does not feels right to defer loading an add-on, but doing so
   // to match behavior of the legacy module loader.
-  let observres = loader.load('api-utils/observer-service');
+  let observres = loader.require('api-utils/observer-service');
   observres.add('sessionstore-windows-restored', function onReady() {
     let process = loader.main('api-utils/process');
     // Spawning an add-on process for the main module.
@@ -376,7 +379,7 @@ exports.startup = function startup(data, reason) {
     // and load modules being required.
     addon.channel('require!').input(function(id) {
       try {
-        loader.load(id).initialize(addon.channel(id));
+        loader.require(id).initialize(addon.channel(id));
       } catch (error) {
         loader.globals.console.exception(error);
       }
