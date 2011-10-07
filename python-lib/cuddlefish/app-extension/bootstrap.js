@@ -134,9 +134,22 @@ function Require(loader, manifest, base) {
     // TODO: Remove debug log!
     // dump('require: ' + id + '\n');
 
+    let module = loader.modules[uri] || (loader.modules[uri] = {});
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(loader, base);
+
+    if (module.exports)
+      return module.exports;
+
+    module.id = id;
+    module.uri = uri;
+    module.main = loader.main;
+    module.exports = {};
 
     // Loading required module and return it's exports.
-    let exports = loader.load(uri, id, base);
+    let exports = loader.load(uri, module);
 
     // Workaround for bug 674195. Freezing objects from other sandboxes fail,
     // so we create decedent and freeze it instead.
@@ -252,24 +265,11 @@ const Loader = {
       return loader.require('api-utils/self!').create(requirer.uri);
     },
   },
-  load: function load(uri, id, base) {
-    let module = this.modules[uri] || (this.modules[uri] = {});
+  load: function load(uri, module) {
     // HACK: `dump` is overridden on windows for details see:
     // packages/api-utils/globals!.js
     let { dump } = this.globals;
 
-    // TODO: Find a better way to implement `self`.
-    // Maybe something like require('self!path/to/data')
-    if (typeof(module) === 'function')
-      module = module(this, base);
-
-    if (module.exports)
-      return module.exports;
-
-    module.id = id;
-    module.uri = uri;
-    module.main = this.main;
-    module.exports = {};
 
     let manifest = this.manifest[uri];
     let exports = module.exports;
@@ -280,10 +280,10 @@ const Loader = {
     } catch(error) {
       throw new Error('Module: ' + id + ' was not found: ' + uri)
     }
+
     let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
-    let factory;
     try {
-      factory = sandbox.evaluate('(function(require, exports, module, dump) {' + source + ' })', uri);
+      let factory = sandbox.evaluate('(function(require, exports, module, dump) {' + source + ' })', uri);
       factory.call(exports, Require(this, manifest, module), exports, module, dump);
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
@@ -292,7 +292,7 @@ const Loader = {
       throw error
     }
 
-    return Object.freeze(module).exports;
+    return module.exports;
   },
   main: function main(id) {
     // Overriding main so that all modules point to it.
