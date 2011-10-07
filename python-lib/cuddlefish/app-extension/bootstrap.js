@@ -112,7 +112,7 @@ function Require(loader, manifest, base) {
   function require(id) {
     var uri
     // TODO: Remove debug log!
-    // dump('>>>> ' + base + ' ? ' + id + '\n')
+    // dump('>>>> ' + (base && base.id) + ' ? ' + id + '\n')
     // If we have a manifest for requirer, then all it's requirements have been
     // registered by linker.
     if (base && manifest) {
@@ -269,7 +269,6 @@ const Loader = {
     // HACK: `dump` is overridden on windows for details see:
     // packages/api-utils/globals!.js
     let { dump } = this.globals;
-
 
     let manifest = this.manifest[uri];
     let exports = module.exports;
