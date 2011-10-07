@@ -106,6 +106,12 @@ exports.name = appInfo.name;
 exports.version = appInfo.version;
 
 /**
+ * XULRunner version.
+ */
+exports.platformVersion = runtime.platformVersion;
+
+
+/**
  * The name of the application vendor, for example "Mozilla".
  */
 exports.vendor = appInfo.vendor;
