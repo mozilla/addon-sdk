@@ -141,6 +141,7 @@
                           modifyModuleSandbox: modifyModuleSandbox,
                           basePath: options.basePath,
                           manifest: manifest,
+                          harnessOptions: options.packaging.options,
                           getModuleExports: getModuleExports};
 
      var loader = new securableModule.Loader(loaderOptions);

@@ -219,6 +219,7 @@
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
      this.manifest = options.manifest || {};
+     this.harnessOptions = options.harnessOptions;
      this.basePath = options.basePath; // used for off-manifest loader.require
    };
 
@@ -325,7 +326,8 @@
            // the 'packaging' module is not cached
            return {
              //allTestModules: packaging.options.allTestModules,
-             myURI: moduleData.basePath
+             myURI: moduleData.basePath,
+             harnessOptions: self.harnessOptions
            };
          }
 
