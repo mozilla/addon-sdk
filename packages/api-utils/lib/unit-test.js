@@ -80,7 +80,7 @@ TestRunner.prototype = {
     }
   },
 
-  makeSandboxedLoader: function makeSandboxedLoader(options) {
+  makeSandboxedLoader: function makeSandboxedLoader(basePath, options) {
     if (!this.fs)
       console.error("Hey, either you didn't pass .fs when building the" +
                     " TestRunner, or you used 'new' when calling" +
@@ -89,6 +89,13 @@ TestRunner.prototype = {
     if (!options)
       options = {console: console};
     options.fs = this.fs;
+    if (!("globals" in options))
+      options.globals = {};
+    options.globals.packaging = packaging;
+    options.packaging = packaging; // grab from global, populate manifest
+    if (typeof(basePath) != "string")
+      throw new Error("basePath must be a string, not {options}");
+    options.basePath = basePath;
 
     var Cuddlefish = require("./cuddlefish");
 

@@ -83,7 +83,7 @@ exports.testMakeUuid = function(test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader(require("packaging").myURI);
   var sbxpcom = loader.require("xpcom");
 
   function Component() {}

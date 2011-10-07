@@ -106,7 +106,7 @@ exports["test no exception on unmodified keypress"] = function(assert) {
 
 exports["test hotkey: automatic destroy"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader();
+  let loader = assert._log.makeSandboxedLoader(require("packaging").myURI);
   
   var called = false;
   var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;

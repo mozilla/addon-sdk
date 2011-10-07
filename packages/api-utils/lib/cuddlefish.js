@@ -87,10 +87,6 @@
 
    shims.filename = shimsPath;
 
-   function unloadLoader(reason, onError) {
-     this.require("api-utils/unload").send(reason, onError);
-   }
-
    function makeGetModuleExports(delegate) {
      return function getModuleExports(basePath, module) {
        switch (module) {
@@ -143,22 +139,52 @@
                           defaultPrincipal: "system",
                           globals: globals,
                           modifyModuleSandbox: modifyModuleSandbox,
+                          basePath: options.basePath,
                           manifest: manifest,
                           getModuleExports: getModuleExports};
 
      var loader = new securableModule.Loader(loaderOptions);
 
+     // we need to supply the new loader with several helper modules
+     function load_helper_module(name) {
+       // loaderURI always points at this file, cuddlefish.js . It comes from
+       // harness-options.json
+       if (!"packaging" in options) {
+         throw new Error("no packaging in options, can't get loaderURI");
+       }
+       const loaderURI = options.packaging.options.loader;
+       const reqs = Object.keys(manifest[loaderURI].requirements);
+
+       // all helper module imports "come from" cuddlefish.js, even if the
+       // Loader we just built is for someone else's benefit (and thus their
+       // require() calls perform manifest checks relative to their own URI).
+       // So we manually look up the desired helper-module URI first in the
+       // manifest, then use the new Loader's explicit requireURI() method to
+       // obtain the code.
+       const helperURI = manifest[loaderURI].requirements[name].uri;
+       return loader.requireURI(helperURI);
+     }
+
      if (!globals.console) {
-       var console = loader.require("api-utils/plain-text-console");
+       if (false) // force the manifest-scanner to copy this into the XPI
+         require("api-utils/plain-text-console");
+       var console = load_helper_module("api-utils/plain-text-console");
        globals.console = new console.PlainTextConsole(options.print);
      }
-     if (!globals.memory)
-       globals.memory = loader.require("api-utils/memory");
+     if (!globals.memory) {
+       globals.memory = load_helper_module("api-utils/memory");
+       if (false) // force the manifest-scanner to copy this into the XPI
+         require("api-utils/memory");
+     }
 
      loader.console = globals.console;
      loader.memory = globals.memory;
-     loader.unload = unloadLoader;
-
+     var unloader = load_helper_module("api-utils/unload");
+       if (false) // force the manifest-scanner to copy this into the XPI
+         require("api-utils/unload");
+     loader.unload = function(reason, onError) {
+             unloader.send(reason, onError);
+     };
      return loader;
    };
 

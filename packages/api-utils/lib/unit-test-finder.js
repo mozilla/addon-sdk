@@ -42,6 +42,9 @@
 // permission to require() whatever we want.
 require("chrome");
 
+//var alltests = require("packaging").allTestModules;
+//dump("finder got tests "+alltests+"\n");
+
 var file = require("./file");
 const NOT_TESTS = ['setup', 'teardown'];
 

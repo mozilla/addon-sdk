@@ -190,6 +190,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
                                  metadata: options.metadata,
                                  uriPrefix: options.uriPrefix,
                                  name: options.name,
+                                 basePath: options.loader,
                                  globals: { packaging: packaging }
                                 });
     packaging.__setLoader(loader);
@@ -297,7 +298,7 @@ function buildHarnessService(rootFileSpec, dump, logError,
 
           if (reason)
             options.loadReason = reason;
-          program = this.loader.require(options.main);
+          program = this.loader.requireURI(options.mainURI, options.main);
           if ('main' in program)
             program.main(options, {quit: quit, print: dump});
 

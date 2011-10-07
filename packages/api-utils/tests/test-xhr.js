@@ -30,7 +30,7 @@ exports.testLocalXhr = function(test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader(require("packaging").myURI);
   var sbxhr = loader.require("xhr");
   var req = new sbxhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");

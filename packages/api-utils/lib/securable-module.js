@@ -219,6 +219,7 @@
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
      this.manifest = options.manifest || {};
+     this.basePath = options.basePath; // used for off-manifest loader.require
    };
 
    exports.Loader.prototype = {
@@ -237,17 +238,22 @@
         */
        var self = this;
        let reqs;
+       if (!basePath)
+         //throw new Error("_makeApi must always be given a basePath");
+         dump("warning, _makeApi called without basePath\n");
        if (basePath && (basePath in self.manifest))
          reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
          if (reqs) {
            // if we know about you, you must follow the manifest
-           if (module in reqs)
+           if (module in reqs) {
              return loadMaybeMagicModule(module, reqs[module]);
+           }
            // if you invoke chrome, you can go off-manifest and search
-           if ("chrome" in reqs)
+           if ("chrome" in reqs) {
              return loadMaybeMagicModule(module, null);
+           }
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
          } else {
            // if we don't know about you, you can do anything you want.
@@ -288,6 +294,7 @@
             */
            if (!moduleData) {
              // we don't know where you live, so we must search for your data
+             dump("\nSEARCH for self, from "+basePath+"\n");
              // resource://api-utils-api-utils-tests/test-self.js
              // make a prefix of resource://api-utils-api-utils-data/
              let doubleslash = basePath.indexOf("//");
@@ -310,8 +317,21 @@
            return selfMod.makeSelfModule(moduleData);
          }
 
+         if (moduleName == "packaging") {
+           /* this is also magic, and provides access to the list of all
+            * test modules stored in harness-options.json, as well as
+            * makeSandboxedLoader
+            */
+           // the 'packaging' module is not cached
+           return {
+             //allTestModules: packaging.options.allTestModules,
+             myURI: moduleData.basePath
+           };
+         }
+
          if (!moduleData) {
            // search
+           dump("\nSEARCH for "+moduleName+", from "+basePath+"\n");
            let path = self.fs.resolveModule(basePath, moduleName);
            if (!path)
              throw new Error('Module "' + moduleName + '" not found');
@@ -330,6 +350,10 @@
          }
          self.pathAccessed[moduleData.uri] += 1;
 
+         return loadFromCacheOrModuleData(moduleData, moduleName);
+       }
+
+       function loadFromCacheOrModuleData(moduleData, moduleName) {
          if (moduleData.uri in self.modules) {
            // already loaded: return from cache
            return self.modules[moduleData.uri];
@@ -565,7 +589,8 @@
 
        return {
          require: asyncRequire,
-         define: define
+         define: define,
+         loadFromCacheOrModuleData: loadFromCacheOrModuleData
        };
        // END support for Async module-style
      },
@@ -586,7 +611,15 @@
      },
 
      require: function require(module, callback) {
-       return (this._makeApi(null).require)(module, callback);
+       if (!this.basePath)
+         //throw new Error("loader.require() must always have a basePath");
+         dump("warning, loader.require() called, but Loader has no basePath: "+module+"\n");
+       return (this._makeApi(this.basePath).require)(module, callback);
+     },
+
+     requireURI: function requireURI(uri, modulename) {
+       var api = this._makeApi(uri);
+       return api.loadFromCacheOrModuleData({uri: uri}, modulename);
      },
 
      runScript: function runScript(options, extraOutput) {

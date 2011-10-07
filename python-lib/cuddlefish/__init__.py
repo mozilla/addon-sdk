@@ -357,18 +357,26 @@ def test_all_examples(env_root, defaults):
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
-    deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
-    pkg_cfg = packaging.build_config(env_root, target_cfg)
-    for name in pkg_cfg.packages:
-        if name != "testpkgs":
-            deps.append(name)
-    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(deps))
+    packages_dir = os.path.join(env_root, "packages")
+    packages = [dirname for dirname in os.listdir(packages_dir)
+                if os.path.isdir(os.path.join(packages_dir, dirname))]
+    packages.sort()
+    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))
     sys.stderr.flush()
-    run(arguments=["test", "--dependencies"],
-        target_cfg=target_cfg,
-        pkg_cfg=pkg_cfg,
-        defaults=defaults)
+    fail = False
+    for dirname in packages:
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
+        try:
+            run(arguments=["test",
+                           "--pkgdir",
+                           os.path.join(packages_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+    if fail:
+        sys.exit(-1)
 
 def get_config_args(name, env_root):
     local_json = os.path.join(env_root, "local.json")
@@ -616,6 +624,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print str(e)
         sys.exit(1)
     used_deps = manifest.get_used_packages()
+    print "TESTS", manifest.get_all_test_modules()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
         # because it loads everything at runtime (invisible to the linker).
@@ -654,9 +663,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
+        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
+        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri(uri_prefix)
     else:
         harness_options['main'] = target_cfg.get('main')
+        harness_options['mainURI'] = manifest.top_uri
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
@@ -677,6 +689,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.join(mydir, "app-extension")
 
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+    harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
