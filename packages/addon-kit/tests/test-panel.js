@@ -82,6 +82,32 @@ tests.testShowHidePanel = function(test) {
   });
 };
 
+tests.testDocumentReload = function(test) {
+  test.waitUntilDone();
+  let content =
+    "<script>" +
+    "setTimeout(function () {" +
+    "  window.location = 'about:blank';" +
+    "}, 250);" +
+    "</script>";
+  let messageCount = 0;
+  let panel = Panel({
+    contentURL: "data:text/html," + encodeURIComponent(content),
+    contentScript: "self.postMessage(window.location.href)",
+    onMessage: function (message) {
+      messageCount++;
+      if (messageCount == 1) {
+        test.assertMatches(message, /data:text\/html,/, "First document had a content script");
+      }
+      else if (messageCount == 2) {
+        test.assertEqual(message, "about:blank", "Second document too");
+        panel.destroy();
+        test.done();
+      }
+    }
+  });
+};
+
 tests.testParentResizeHack = function(test) {
   let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
