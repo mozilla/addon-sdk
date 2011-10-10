@@ -113,6 +113,15 @@ exports.testWaitUntilMatches = function(test) {
   }, 200);
 }
 
+exports.testWaitUntilErrorInCallback = function(test) {
+  test.waitUntilDone();
+
+  test.expectFail(function() {
+    test.waitUntil(function () {throw "oops"}, "waitUntil pass")
+        .then(function () test.done());
+  });
+}
+
 exports.testExpectFail = function(test) {
     test.expectFail(function() {
         test.fail('expectFail masking .fail');

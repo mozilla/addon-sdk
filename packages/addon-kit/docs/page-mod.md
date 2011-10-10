@@ -217,6 +217,7 @@ The following add-on creates a widget which, when clicked, highlights all the
     var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "div-show",
       label: "Show divs",
       contentURL: "http://www.mozilla.org/favicon.ico",
       onClick: function() {
