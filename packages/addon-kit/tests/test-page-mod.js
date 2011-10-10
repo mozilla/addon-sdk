@@ -194,10 +194,10 @@ exports.testCommunication1 = function(test) {
     }
   );
 };
-/*
+
 exports.testCommunication2 = function(test) {
   let callbackDone = null,
-      window;
+      evaluate;
 
   testPageMod(test, "about:", [{
       include: "about:*",
@@ -217,13 +217,21 @@ exports.testCommunication2 = function(test) {
         });
         worker.on('message', function(msg) {
           if ('onload' == msg) {
-            test.assertEqual(
-              '42',
-              window.document.documentElement.getAttribute('AUQLUE'),
-              'PageMod scripts executed in order'
-            );
-            window.document.documentElement.setAttribute('test', 'changes in window');
-            worker.postMessage('get window.test')
+            let get = "content.document.documentElement.getAttribute('AUQLUE')";
+            let set = "content.document.documentElement.setAttribute('test', " +
+                      "'changes in window')";
+            evaluate(get,
+                     function (attr) {
+                       test.assertEqual(
+                         '42',
+                         attr,
+                         'PageMod scripts executed in order'
+                       );
+                       evaluate(set,
+                                function () {
+                                  worker.postMessage('get window.test')
+                                });
+                     });
           } else {
             test.assertEqual(
               'changes in window',
@@ -235,11 +243,12 @@ exports.testCommunication2 = function(test) {
         });
       }
     }],
-    function(win, done) {
-      window = win;
+    function (aEvaluate, done) {
+      evaluate = aEvaluate;
       callbackDone = done;
     }
   );
+
 };
 
 exports.testEventEmitter = function(test) {
@@ -271,7 +280,7 @@ exports.testEventEmitter = function(test) {
         worker.port.emit('addon-to-content', 'worked');
       }
     }],
-    function(win, done) {
+    function(evaluate, done) {
       if (workerDone)
         done();
       else
@@ -285,7 +294,7 @@ exports.testHistory = function(test) {
   // (i.e do not work on data: or about: pages)
   // Test bug 679054.
   let url = require("self").data.url("test-page-mod.html");
-  let callbackDone = null;
+  let callbackDone = null, alreadyDone = false;
   testPageMod(test, url, [{
       include: url,
       contentScriptWhen: 'end',
@@ -298,16 +307,22 @@ exports.testHistory = function(test) {
         worker.on('message', function (data) {
           test.assertEqual(JSON.stringify(data), JSON.stringify({foo: "bar"}),
                            "History API works!");
-          callbackDone();
+          if (callbackDone)
+            callbackDone();
+          else
+            alreadyDone = true;
         });
       }
     }],
-    function(win, done) {
-      callbackDone = done;
+    function(evaluate, done) {
+      if (alreadyDone)
+        done();
+      else
+        callbackDone = done;
     }
   );
 };
-
+/*
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 

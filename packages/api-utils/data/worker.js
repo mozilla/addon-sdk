@@ -23,7 +23,7 @@ function CreateWorker(worker) {
   // create an event emitter that receive and send events from/to the addon
   let _emitListeners = {};
   let _port = {
-    emit: function () {
+    emit: function (name) {
       Pipe.emit("emit", Array.slice(arguments));
     },
     on: function (name, callback) {
@@ -32,13 +32,12 @@ function CreateWorker(worker) {
       _emitListeners[name].push(callback);
     }
   };
-  Pipe.on("emit", function (msg) {
-    let args = arguments;
-    let name = args.splice(1);
+  Pipe.on("emit", function (args) {
+    let name = args.splice(0, 1);
     if (!(name in _emitListeners))
       return;
     let callbacks = _emitListeners[name];
-    for(let callback in callbacks) {
+    for each(let callback in callbacks) {
       callback.apply(null, args);
     }
   });
@@ -245,7 +244,6 @@ function CreateWorker(worker) {
     let urls = Array.slice(arguments, 0);
     for each (let contentScriptFile in urls) {
       try {
-        console.log("Evaluate : "+contentScriptFile);
 	      subScriptLoader.loadSubScript(contentScriptFile, sandbox);
       }
       catch(e) {
@@ -287,12 +285,21 @@ Pipe.on("create-worker", function (worker) {
   try {
     let when = worker.contentScriptWhen;
     if (when == "end") {
+      if (content.document.readyState == "complete") {
+        CreateWorker(worker);
+        return;
+      }
       content.addEventListener("load", function listener() {
         content.removeEventListener("load", listener, false);
         CreateWorker(worker);
       }, false);
     }
     else if (when == "ready") {
+      if (content.document.readyState == "complete" ||
+          content.document.readyState == "interactive") {
+        CreateWorker(worker);
+        return;
+      }
       content.addEventListener("DOMContentLoaded", function listener() {
         content.removeEventListener("DOMContentLoaded", listener, false);
         CreateWorker(worker);
@@ -301,7 +308,6 @@ Pipe.on("create-worker", function (worker) {
     else {
       CreateWorker(worker);
     }
-    
   } catch(e) {
     console.exception(e);
   }
