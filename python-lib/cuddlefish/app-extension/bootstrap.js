@@ -108,62 +108,6 @@ function readURI(uri) {
   return request.responseText;
 }
 
-function Require(loader, manifest, base) {
-  function require(id) {
-    var uri
-    // TODO: Remove debug log!
-    // dump('>>>> ' + (base && base.id) + ' ? ' + id + '\n')
-    // If we have a manifest for requirer, then all it's requirements have been
-    // registered by linker.
-    if (base && manifest) {
-      // If required module is in manifest we use take resolved requirement
-      // `id` from manifest.
-      let requirement = manifest.requirements[id];
-      if (requirement)
-        uri = requirement.uri ? requirement.uri : normalize(id);
-
-      // If module is known to have "sudo" privileges, we allow it to go
-      // off-manifest. Otherwise we throw an error.
-      else if (!('chrome' in manifest.requirements))
-        throw new Error("Module: " + base.id + " has no athority to load: " + id);
-    } else {
-      id = resolve(id, base && base.id);
-      uri = normalize(resolveURI(loader.root, id));
-    }
-
-    // TODO: Remove debug log!
-    // dump('require: ' + id + '\n');
-
-    let module = loader.modules[uri] || (loader.modules[uri] = {});
-    // TODO: Find a better way to implement `self`.
-    // Maybe something like require('self!path/to/data')
-    if (typeof(module) === 'function')
-      module = module(loader, base);
-
-    if (module.exports)
-      return module.exports;
-
-    module.id = id;
-    module.uri = uri;
-    module.main = loader.main;
-    module.exports = {};
-
-    // Loading required module and return it's exports.
-    let exports = loader.load(uri, module);
-
-    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
-    // so we create decedent and freeze it instead.
-    if (typeof(exports) === 'object') {
-      exports = Object.prototype.isPrototypeOf(exports) ?
-                Object.freeze(exports) :
-                Object.freeze(Object.create(exports));
-    }
-    return exports;
-  }
-  require.main = loader.main;
-  return require;
-}
-
 const Sandbox = {
   new: function (prototype, principal) {
     return Object.create(Sandbox, {
@@ -237,10 +181,8 @@ const Loader = {
     // easily to the module IDs.
     mapResources(options.uri, options.resources);
 
-    loader.require = Require(loader)
-
     // Loading globals for special module and put them into loader globals.
-    globals = loader.require('api-utils/globals!');
+    globals = loader.require(null, 'api-utils/globals!');
     Object.keys(globals).forEach(function(name) {
       loader.globals[name] = globals[name];
     });
@@ -262,7 +204,7 @@ const Loader = {
       id: 'chrome'
     }),
     'self.js': function self(loader, requirer) {
-      return loader.require('api-utils/self!').create(requirer.uri);
+      return loader.require(null, 'api-utils/self!').create(requirer.uri);
     },
   },
   load: function load(uri, module) {
@@ -270,20 +212,20 @@ const Loader = {
     // packages/api-utils/globals!.js
     let { dump } = this.globals;
 
-    let manifest = this.manifest[uri];
-    let exports = module.exports;
-
     let source;
     try {
       source = readURI(uri);
     } catch(error) {
-      throw new Error('Module: ' + id + ' was not found: ' + uri)
+      throw new Error('Module: ' + module.id + ' was not found: ' + uri)
     }
 
     let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
+    let exports = module.exports;
+    let require = this.require.bind(this, uri);
+    require.main = this.main;
     try {
       let factory = sandbox.evaluate('(function(require, exports, module, dump) {' + source + ' })', uri);
-      factory.call(exports, Require(this, manifest, module), exports, module, dump);
+      factory.call(exports, require, exports, module, dump);
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
       dump(error.message + '\n')
@@ -293,15 +235,72 @@ const Loader = {
 
     return module.exports;
   },
+  require: function require(base, id) {
+    var uri, manifest = this.manifest[base], requirer = this.modules[base];
+    // TODO: Remove debug log!
+    // dump('>>>> ' + (requirer && requirer.id) + ' ? ' + id + '\n')
+    // If we have a manifest for requirer, then all it's requirements have been
+    // registered by linker.
+    if (manifest) {
+      // If required module is in manifest we use take resolved requirement
+      // `id` from manifest.
+      let requirement = manifest.requirements[id];
+      if (requirement)
+        uri = requirement.uri ? requirement.uri : normalize(id);
+
+      // If module is known to have "sudo" privileges, we allow it to go
+      // off-manifest. Otherwise we throw an error.
+      else if (!('chrome' in manifest.requirements))
+        throw new Error("Module: " + base && base.id +
+                        " has no athority to load: " + id);
+    } else {
+      id = resolve(id, requirer && requirer.id);
+      uri = normalize(resolveURI(this.root, id));
+    }
+
+    // TODO: Remove debug log!
+    // dump('require: ' + id + '\n');
+
+    let module = this.modules[uri] || (this.modules[uri] = {});
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(this, requirer);
+
+    if (module.exports)
+      return module.exports;
+
+    module.id = id;
+    module.uri = uri;
+    module.main = this.main;
+    module.exports = {};
+    // TODO: I'd like to remove this, it's not used adds complexity and does
+    // not has much adoption in commonjs either.
+    module.setExports = function setExports(exports) {
+      module.exports = exports;
+    };
+
+    // Loading required module and return it's exports.
+    let exports = this.load(uri, module);
+
+    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
+    // so we create decedent and freeze it instead.
+    if (typeof(exports) === 'object') {
+      exports = Object.prototype.isPrototypeOf(exports) ?
+                Object.freeze(exports) :
+                Object.freeze(Object.create(exports));
+    }
+    return exports;
+  },
   main: function main(id) {
     // Overriding main so that all modules point to it.
     if (isRelative(id))
-      id = resolve(id, this.require('@packaging').name)
+      id = resolve(id, this.require(null, '@packaging').name)
     this.main = this.modules[resolveURI(this.root, id)] = {};
-    return this.require(id)
+    return this.require(null, id)
   },
   unload: function unload(reason, callback) {
-    this.require('api-utils/unload').send(reason, callback);
+    this.require(null, 'api-utils/unload').send(reason, callback);
   }
 };
 exports.Loader = Loader;
@@ -369,7 +368,7 @@ exports.startup = function startup(data, reason) {
 
   // TODO: Also does not feels right to defer loading an add-on, but doing so
   // to match behavior of the legacy module loader.
-  let observres = loader.require('api-utils/observer-service');
+  let observres = loader.require(null, 'api-utils/observer-service');
   observres.add('sessionstore-windows-restored', function onReady() {
     let process = loader.main('api-utils/process');
     // Spawning an add-on process for the main module.
@@ -378,7 +377,7 @@ exports.startup = function startup(data, reason) {
     // and load modules being required.
     addon.channel('require!').input(function(id) {
       try {
-        loader.require(id).initialize(addon.channel(id));
+        loader.require(null, id).initialize(addon.channel(id));
       } catch (error) {
         loader.globals.console.exception(error);
       }
