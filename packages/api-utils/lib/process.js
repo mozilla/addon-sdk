@@ -34,23 +34,42 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const { Cc, Ci } = require("chrome");
 const { createRemoteBrowser } = require("api-utils/window-utils");
 const { channel } = require("./channel");
 const { setTimout } = require('./timer');
 const packaging = require('@packaging');
 
+const addonService = '@mozilla.org/addon/service;1' in Cc ?
+  Cc['@mozilla.org/addon/service;1'].getService(Ci.nsIAddonService) : null
+
+const ENABLE_E10S = packaging.enable_e10s;
+
+function loadScript(target, uri, sync) {
+  return 'loadScript' in target ? target.loadScript(uri, sync)
+                                : target.loadFrameScript(uri, sync)
+}
+
 exports.spawn = function spawn(id) {
-  var browser = createRemoteBrowser(packaging.enable_e10s);
-  let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
-                       frameLoader.messageManager;
+  let scope, target
 
-  messageManager.loadFrameScript(packaging.uri + 'bootstrap.js', false)
-  messageManager.loadFrameScript('data:,main(' + JSON.stringify(packaging) +
-                                 ', "' + id + '");', false);
-
-  return {
-    channel: channel.bind(null, browser.ownerDocument.defaultView,
-                                messageManager)
+  // If `nsIAddonService` is available we use it to create an add-on process,
+  // otherwise we fallback to the remote browser's message manager.
+  if (ENABLE_E10S && addonService) {
+    console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
+    target = addonService.createAddon();
+  } else {
+    let browser = createRemoteBrowser(ENABLE_E10S);
+    scope = browser.ownerDocument.defaultView;
+    target = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.
+                     messageManager;
   }
+
+  loadScript(target, packaging.uri + 'bootstrap.js', false);
+  loadScript(target, 'data:,main(' + JSON.stringify(packaging) +
+                     ', "' + id + '");', false);
+
+  return { channel: channel.bind(null, scope, target) }
 };

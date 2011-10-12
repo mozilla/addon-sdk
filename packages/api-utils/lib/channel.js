@@ -43,7 +43,7 @@ function listener(callee) {
   return function listener() { return callee.apply(this, arguments); };
 }
 function messageListener(scope, callee) {
-  return scope.eval('(' + listener + ')')(callee);
+  return scope ? scope.eval('(' + listener + ')')(callee) : callee
 }
 
 exports.channel = function channel(scope, messageManager, address, raw) {
