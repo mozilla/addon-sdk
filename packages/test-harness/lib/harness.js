@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -203,19 +204,19 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (let name in sandbox.sandboxes)
-      sandbox.memory.track(sandbox.sandboxes[name].globalScope,
+    for (let name in sandbox.modules)
+      sandbox.globals.memory.track(sandbox.modules[name],
                            "module global scope: " + name);
-    sandbox.memory.track(sandbox, "Cuddlefish Loader");
+    sandbox.globals.memory.track(sandbox, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
-                      for each (info in sandbox.memory.getObjects())];
+                      for each (info in sandbox.globals.memory.getObjects())];
     }
 
     sandbox.unload();
 
-    if (sandbox.console.errorsLogged && !results.failed) {
+    if (sandbox.globals.console.errorsLogged && !results.failed) {
       results.failed++;
       console.error("warnings and/or errors were logged.");
     }
@@ -248,7 +249,7 @@ function nextIteration(tests) {
 
     if (profileMemory)
       reportMemoryUsage();
-    
+
     let testRun = [];
     for each (let test in tests.testRunSummary) {
       let testCopy = {};
@@ -261,11 +262,11 @@ function nextIteration(tests) {
     results.testRuns.push(testRun);
     iterationsLeft--;
   }
+
   if (iterationsLeft)
-    sandbox.require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: packaging.enableE10s,
+    sandbox.require(null, "api-utils/unit-test").findAndRunTests({
+      testOutOfProcess: sandbox.require(null, "@packaging").enableE10s,
       testInProcess: true,
-      fs: sandbox.fs,
       dirs: dirs,
       filter: filter,
       onDone: nextIteration
@@ -325,35 +326,23 @@ var runTests = exports.runTests = function runTests(options) {
   try {
     cService.registerListener(consoleListener);
 
-    var cuddlefish = require("api-utils/cuddlefish");
+    var { Loader } = require("@loader")
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
+    var system = require("api-utils/system");
 
     dirs = [url.toFilename(path)
             for each (path in options.rootPaths)];
-    var console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
-                                        options);
-    var globals = {packaging: packaging};
 
-    var xulApp = require("api-utils/xul-app");
-    var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
-                     .getService(Ci.nsIXULRuntime);
+    print("Running tests on " + system.name + " " + system.version +
+          "/Gecko " + system.platformVersion + " (" +
+          system.id + ") under " +
+          system.platform + "/" + system.architecture + ".\n");
 
-    print("Running tests on " + xulApp.name + " " + xulApp.version +
-          "/Gecko " + xulApp.platformVersion + " (" + 
-          xulApp.ID + ") under " +
-          xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
+    sandbox = Loader.new(require("@packaging"));
+    sandbox.globals.console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
+                                                    options);
 
-    dump("test-harness/lib/harness creating loader, packaging is "+packaging+"\n");
-    sandbox = new cuddlefish.Loader({console: console,
-                                     globals: globals,
-                                     metadata: packaging.options.metadata,
-                                     jetpackID: packaging.options.jetpackID,
-                                     uriPrefix: packaging.options.uriPrefix,
-                                     name: packaging.options.name,
-                                     basePath: require("packaging").myURI,
-                                     packaging: packaging,
-                                     __proto__: options});
     nextIteration();
   } catch (e) {
     print(require("api-utils/traceback").format(e) + "\n" + e + "\n");
@@ -361,7 +350,6 @@ var runTests = exports.runTests = function runTests(options) {
   }
 };
 
-require("api-utils/unload").when(
-  function() {
-    cService.unregisterListener(consoleListener);
-  });
+require("api-utils/unload").when(function() {
+  cService.unregisterListener(consoleListener);
+});
