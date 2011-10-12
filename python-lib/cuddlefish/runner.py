@@ -417,10 +417,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     logfile_tail = None
 
-    if sys.platform in ['win32', 'cygwin']:
+    # We use a temporary file to catch stdout on windows,
+    # but not on Fennec for Desktop as stdout just works!
+    if sys.platform in ['win32', 'cygwin'] and \
+       not (enable_mobile or app_type in ['fennec']):
         if not logfile:
-            # If we're on Windows, we need to keep a logfile simply
-            # to print console output to stdout.
             fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
             os.close(fileno)
         logfile_tail = follow_file(logfile)

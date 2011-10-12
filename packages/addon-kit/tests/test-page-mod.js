@@ -6,6 +6,7 @@ var testPageMod = require("pagemod-test-helpers").testPageMod;
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
  * the last. */
+ /*
 exports.delay = function(test) {
   if (false) {
     test.waitUntilDone(60000);
@@ -13,27 +14,30 @@ exports.delay = function(test) {
   } else
     test.pass();
 }
-
+*/
 /* Tests for the PageMod APIs */
 
 exports.testPageMod1 = function(test) {
-  let mods = testPageMod(test, "about:", [{
-      include: /about:/,
+  let mods = testPageMod(test, "data:text/html,<html><head><title>foo</title></head><body>foo</body></html>", [{
+      include: /data:text\/html,.*/,
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         window.document.body.setAttribute("JEP-107", "worked");
+        document.body.innerHTML += "fooooo";
       },
       onAttach: function() {
         test.assertEqual(this, mods[0], "The 'this' object is the page mod.");
       }
     }],
-    function(win, done) {
-      test.assertEqual(
-        win.document.body.getAttribute("JEP-107"),
-        "worked",
-        "PageMod.onReady test"
-      );
-      done();
+    function(evaluate, done) {
+      evaluate('content.document.body.getAttribute("JEP-107")', function (attr) {
+        test.assertEqual(
+          attr,
+          "worked",
+          "PageMod.onReady test"
+        );
+        done();
+      });
     }
   );
 };
@@ -56,16 +60,20 @@ exports.testPageMod2 = function(test) {
           document.documentElement.setAttribute("second", "true");
         }
       ]
-    }], function(win, done) {
-      test.assertEqual(win.document.documentElement.getAttribute("first"),
-                       "true",
-                       "PageMod test #2: first script has run");
-      test.assertEqual(win.document.documentElement.getAttribute("second"),
-                       "true",
-                       "PageMod test #2: second script has run");
-      test.assertEqual("AUQLUE" in win, false,
-                       "PageMod test #2: scripts get a wrapped window");
-      done();
+    }], function(evaluate, done) {
+      evaluate('[content.document.documentElement.getAttribute("first"),'+
+               'content.document.documentElement.getAttribute("second"),'+
+               '"AUQLUE" in content]', function (list) {
+        test.assertEqual(list[0],
+                         "true",
+                         "PageMod test #2: first script has run");
+        test.assertEqual(list[1],
+                         "true",
+                         "PageMod test #2: second script has run");
+        test.assertEqual(list[2], false,
+                         "PageMod test #2: scripts get a wrapped window");
+        done();
+      });
     });
 };
 
@@ -73,10 +81,9 @@ exports.testPageModIncludes = function(test) {
   var asserts = [];
   function createPageModTest(include, expectedMatch) {
     // Create an 'onload' test function...
-    asserts.push(function(test, win) {
-      var matches = include in win.localStorage;
-      test.assert(expectedMatch ? matches : !matches,
-                  "'" + include + "' match test, expected: " + expectedMatch);
+    asserts.push({
+      include: include,
+      expectedMatch: expectedMatch
     });
     // ...and corresponding PageMod options
     return {
@@ -89,7 +96,7 @@ exports.testPageModIncludes = function(test) {
       // The testPageMod callback with test assertions is called on 'end',
       // and we want this page mod to be attached before it gets called,
       // so we attach it on 'start'.
-      contentScriptWhen: 'start',
+      contentScriptWhen: 'end',
       onAttach: function(worker) {
         worker.postMessage(this.include[0]);
       }
@@ -103,16 +110,25 @@ exports.testPageModIncludes = function(test) {
       createPageModTest("about:", false),
       createPageModTest("about:buildconfig", true)
     ],
-    function (win, done) {
-      test.waitUntil(function () win.localStorage["about:buildconfig"],
-                     "about:buildconfig page-mod to be executed")
-          .then(function () {
-            asserts.forEach(function(fn) {
-              fn(test, win);
-            });
-            done();
+    function (evaluate, done) {
+      let i = 0;
+      function loop() {
+        let assert = asserts[i++];
+        if (!assert) {
+          done();
+          return;
+        }
+        evaluate("'" + assert.include + "' in content.wrappedJSObject.localStorage", 
+          function (matches) {
+            test.assert(assert.expectedMatch ? matches : !matches,
+              "'" + assert.include + "' match test, expected: " + assert.expectedMatch);
+            loop();
           });
-    }
+      }
+      loop();
+    },
+    undefined,
+    2
     );
 };
 
@@ -124,13 +140,14 @@ exports.testPageModErrorHandling = function(test) {
     "PageMod() throws when 'include' option is not specified.");
 };
 
-/* Tests for internal functions. */
+
 exports.testCommunication1 = function(test) {
   let workerDone = false,
-      callbackDone = null;
+      callbackDone = null,
+      called = false;
 
   testPageMod(test, "about:", [{
-      include: "about:*",
+      include: "about:",
       contentScriptWhen: 'end',
       contentScript: 'new ' + function WorkerScope() {
         self.on('message', function(msg) {
@@ -143,6 +160,11 @@ exports.testCommunication1 = function(test) {
           test.fail('Errors where reported');
         });
         worker.on('message', function(value) {
+          test.assert(
+            !called,
+            "We should receive only one message"
+          );
+          called = true;
           test.assertEqual(
             "worked",
             value,
@@ -155,15 +177,18 @@ exports.testCommunication1 = function(test) {
         worker.postMessage('do it!')
       }
     }],
-    function(win, done) {
+    function (evaluate, done) {
       (callbackDone = function() {
         if (workerDone) {
-          test.assertEqual(
-            'worked',
-            win.document.body.getAttribute('JEP-107'),
-            'attribute should be modified'
-          );
-          done();
+          evaluate("content.document.body.getAttribute('JEP-107')", 
+                   function (attr) {
+                     test.assertEqual(
+                       'worked',
+                       attr,
+                       'attribute should be modified'
+                     );
+                     done();
+                   });
         }
       })();
     }
@@ -172,7 +197,7 @@ exports.testCommunication1 = function(test) {
 
 exports.testCommunication2 = function(test) {
   let callbackDone = null,
-      window;
+      evaluate;
 
   testPageMod(test, "about:", [{
       include: "about:*",
@@ -192,13 +217,21 @@ exports.testCommunication2 = function(test) {
         });
         worker.on('message', function(msg) {
           if ('onload' == msg) {
-            test.assertEqual(
-              '42',
-              window.document.documentElement.getAttribute('AUQLUE'),
-              'PageMod scripts executed in order'
-            );
-            window.document.documentElement.setAttribute('test', 'changes in window');
-            worker.postMessage('get window.test')
+            let get = "content.document.documentElement.getAttribute('AUQLUE')";
+            let set = "content.document.documentElement.setAttribute('test', " +
+                      "'changes in window')";
+            evaluate(get,
+                     function (attr) {
+                       test.assertEqual(
+                         '42',
+                         attr,
+                         'PageMod scripts executed in order'
+                       );
+                       evaluate(set,
+                                function () {
+                                  worker.postMessage('get window.test')
+                                });
+                     });
           } else {
             test.assertEqual(
               'changes in window',
@@ -210,11 +243,12 @@ exports.testCommunication2 = function(test) {
         });
       }
     }],
-    function(win, done) {
-      window = win;
+    function (aEvaluate, done) {
+      evaluate = aEvaluate;
       callbackDone = done;
     }
   );
+
 };
 
 exports.testEventEmitter = function(test) {
@@ -246,7 +280,7 @@ exports.testEventEmitter = function(test) {
         worker.port.emit('addon-to-content', 'worked');
       }
     }],
-    function(win, done) {
+    function(evaluate, done) {
       if (workerDone)
         done();
       else
@@ -260,7 +294,7 @@ exports.testHistory = function(test) {
   // (i.e do not work on data: or about: pages)
   // Test bug 679054.
   let url = require("self").data.url("test-page-mod.html");
-  let callbackDone = null;
+  let callbackDone = null, alreadyDone = false;
   testPageMod(test, url, [{
       include: url,
       contentScriptWhen: 'end',
@@ -273,16 +307,22 @@ exports.testHistory = function(test) {
         worker.on('message', function (data) {
           test.assertEqual(JSON.stringify(data), JSON.stringify({foo: "bar"}),
                            "History API works!");
-          callbackDone();
+          if (callbackDone)
+            callbackDone();
+          else
+            alreadyDone = true;
         });
       }
     }],
-    function(win, done) {
-      callbackDone = done;
+    function(evaluate, done) {
+      if (alreadyDone)
+        done();
+      else
+        callbackDone = done;
     }
   );
 };
-
+/*
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
@@ -378,3 +418,4 @@ exports.testAutomaticDestroy = function(test) {
   });
   
 }
+*/
