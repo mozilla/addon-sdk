@@ -72,7 +72,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 const Panel = Symbiont.resolve({
   constructor: '_init',
   _onInit: '_onSymbiontInit',
-  destroy: '_symbiontDestructor'
+  destroy: '_symbiontDestructor',
+  _documentUnload: '_workerDocumentUnload'
 }).compose({
   _frame: Symbiont.required,
   _init: Symbiont.required,
@@ -350,7 +351,16 @@ const Panel = Symbiont.resolve({
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.
     this._emit('inited');
-    this._removeAllListeners('inited');
+  },
+
+  // Catch document unload event in order to rebind load event listener with
+  // Symbiont._initFrame if Worker._documentUnload destroyed the worker
+  _documentUnload: function(subject, topic, data) {
+    if (this._workerDocumentUnload(subject, topic, data)) {
+      this._initFrame(this._frame);
+      return true;
+    }
+    return false;
   }
 });
 exports.Panel = function(options) Panel(options)

@@ -204,3 +204,13 @@ var toString = exports.toString = function toString(hotkey, separator) {
   keys.push(hotkey.key);
   return keys.join(separator || SEPARATOR);
 };
+
+/**
+ * Utility function takes `key` name and returns `true` if it's function key
+ * (F1, ..., F24) and `false` if it's not.
+ */
+var isFunctionKey = exports.isFunctionKey = function isFunctionKey(key) {
+  var $
+  return key[0].toLowerCase() === 'f' &&
+         ($ = parseInt(key.substr(1)), 0 < $ && $ < 25);
+};
