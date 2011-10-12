@@ -140,8 +140,9 @@ parser_groups = (
 
     ("Experimental Command-Specific Options", [
         (("-a", "--app",), dict(dest="app",
-                                help=("app to run: firefox (default), "
-                                      "xulrunner, fennec, or thunderbird"),
+                                help=("app to run: firefox (default), fennec, "
+                                      "fennec-on-device, xulrunner or "
+                                      "thunderbird"),
                                 metavar=None,
                                 default="firefox",
                                 cmds=['test', 'run', 'testex', 'testpkgs',
@@ -165,6 +166,13 @@ parser_groups = (
                                     action="store_true",
                                     default=False,
                                     cmds=['run', 'test', 'xpi', 'testall'])),
+        (("", "--mobile-app",), dict(dest="mobile_app_name",
+                                    help=("Name of your Android application to "
+                                          "use. Possible values: 'firefox', "
+                                          "'firefox_beta', 'firefox_nightly'."),
+                                    metavar=None,
+                                    default=None,
+                                    cmds=['run', 'test', 'testall'])),
         ]
      ),
 
@@ -738,7 +746,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              args=options.cmdargs,
                              norun=options.no_run,
                              used_files=used_files,
-                             enable_mobile=options.enable_mobile)
+                             enable_mobile=options.enable_mobile,
+                             mobile_app_name=options.mobile_app_name)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
