@@ -160,7 +160,7 @@ const Loader = {
       // URIs.
       root: { value: options.uriPrefix },
 
-      modules: { value: options.modules || Loader.modules },
+      modules: { value: options.modules || Object.create(Loader.modules) },
 
       // If `true` sandboxes will be created per module, otherwise
       // one sandbox will be used for all modules.
