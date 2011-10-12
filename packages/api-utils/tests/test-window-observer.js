@@ -1,12 +1,15 @@
 "use strict";
 
+var { Loader } = require("@loader");
+var options = require("@packaging");
+
 exports["test unload window observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader(require("packaging").myURI);
+  let loader = Loader.new(options);
 
-  let utils = loader.require("api-utils/window-utils");
+  let utils = loader.require(module.url, "api-utils/window-utils");
   let { isBrowser, activeBrowserWindow: activeWindow } = utils;
-  let observer = loader.require("api-utils/windows/observer").observer;
+  let observer = loader.require(module.url, "api-utils/windows/observer").observer;
   let opened = 0;
   let closed = 0;
 

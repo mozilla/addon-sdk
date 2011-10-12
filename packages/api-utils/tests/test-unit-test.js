@@ -1,4 +1,6 @@
 const timer = require("timer");
+const { Loader } = require("@loader");
+const options = require("@packaging");
 
 var setupCalled = false, teardownCalled = false;
 
@@ -42,15 +44,11 @@ exports.testATeardownAsyncTestPart2 = function(test) {
 };
 
 exports.testModuleOverrides = function(test) {
-  var options = {
-    moduleOverrides: {
-      'unit-test': {
-        foo: 5
-      }
-    }
+  var loader = Loader.new(options);
+  loader.modules['unit-test.js'] = {
+    exports: { foo: 5 }
   };
-  var loader = test.makeSandboxedLoader(require("packaging").myURI, options);
-  test.assertEqual(loader.require('unit-test').foo, 5,
+  test.assertEqual(loader.require(null, 'unit-test').foo, 5,
                    "options.moduleOverrides works");
   loader.unload();
 };

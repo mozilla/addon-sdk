@@ -40,10 +40,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 var unload = require("unload");
+var { Loader } = require("@loader");
+var options = require("@packaging");
 
 exports.testUnloading = function(test) {
-  var loader = test.makeSandboxedLoader(require("packaging").myURI);
-  var ul = loader.require("unload");
+  var loader = Loader.new(options);
+  var ul = loader.require(module.uri, "unload");
   var unloadCalled = 0;
   var errorsReported = 0;
   function unload() {
@@ -93,8 +95,8 @@ exports.testEnsure = function(test) {
 exports.testEnsureWithTraits = function(test) {
 
   let { Trait } = require("traits");
-  let loader = test.makeSandboxedLoader(require("packaging").myURI);
-  let ul = loader.require("unload");
+  let loader = Loader.new(options);
+  let ul = loader.require(module.uri, "unload");
 
   let called = 0;
   let composedCalled = 0;
@@ -149,8 +151,8 @@ exports.testEnsureWithTraits = function(test) {
 exports.testEnsureWithTraitsPrivate = function(test) {
 
   let { Trait } = require("traits");
-  let loader = test.makeSandboxedLoader(require("packaging").myURI);
-  let ul = loader.require("unload");
+  let loader = Loader.new(options);
+  let ul = loader.require(module.uri, "unload");
 
   let called = 0;
   let privateObj = null;
@@ -178,8 +180,8 @@ exports.testEnsureWithTraitsPrivate = function(test) {
 
 exports.testReason = function (test) {
   var reason = "Reason doesn't actually have to be anything in particular.";
-  var loader = test.makeSandboxedLoader(require("packaging").myURI);
-  var ul = loader.require("unload");
+  var loader = Loader.new(options);
+  var ul = loader.require(module.uri, "unload");
   ul.when(function (rsn) {
     test.assertEqual(rsn, reason,
                      "when() reason should be reason given to loader");

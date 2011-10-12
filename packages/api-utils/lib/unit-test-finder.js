@@ -46,6 +46,8 @@ require("chrome");
 //dump("finder got tests "+alltests+"\n");
 
 var file = require("./file");
+var packaging = require('@packaging');
+
 const NOT_TESTS = ['setup', 'teardown'];
 
 var TestFinder = exports.TestFinder = function TestFinder(options) {
@@ -100,6 +102,7 @@ TestFinder.prototype = {
 
         suites.forEach(
           function(suite) {
+
             var module = require(suite);
             if (self.testInProcess)
               for each (let name in Object.keys(module).sort()) {

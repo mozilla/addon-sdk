@@ -1,6 +1,8 @@
 var windowUtils = require("window-utils");
 var timer = require("timer");
 var {Cc,Ci} = require("chrome");
+var { Loader } = require("@loader");
+var options = require("@packaging");
 
 function makeEmptyWindow() {
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -42,20 +44,20 @@ exports.testCloseOnUnload = function(test) {
     }
   };
 
-  var loader = test.makeSandboxedLoader(require("packaging").myURI);
-  loader.require("window-utils").closeOnUnload(fakeWindow);
+  var loader = Loader.new(options);
+  loader.require(module.uri, "window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");
   test.assertEqual(timesClosed, 0,
                    "window not closed when registered.");
-  loader.require("unload").send();
+  loader.require(module.uri, "unload").send();
   test.assertEqual(timesClosed, 1,
                    "window closed on module unload.");
   test.assertEqual(fakeWindow._listeners.length, 0,
                    "unload event listener removed on module unload");
 
   timesClosed = 0;
-  loader.require("window-utils").closeOnUnload(fakeWindow);
+  loader.require(module.uri, "window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(timesClosed, 0,
                    "window not closed when registered.");
   fakeWindow.close();
@@ -63,7 +65,7 @@ exports.testCloseOnUnload = function(test) {
                    "window closed when close() called.");
   test.assertEqual(fakeWindow._listeners.length, 0,
                    "unload event listener removed on window close");
-  loader.require("unload").send();
+  loader.require(module.uri, "unload").send();
   test.assertEqual(timesClosed, 1,
                    "window not closed again on module unload.");
   loader.unload();  
