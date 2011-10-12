@@ -15,6 +15,17 @@ from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
+# Maximum time we'll wait for tests to finish, in seconds.
+# The purpose of this timeout is to recover from infinite loops.  It should be
+# longer than the amount of time any test run takes, including those on slow
+# machines running slow (debug) versions of Firefox.
+RUN_TIMEOUT = 30 * 60 # 30 minutes
+
+# Maximum time we'll wait for tests to emit output, in seconds.
+# The purpose of this timeout is to recover from hangs.  It should be longer
+# than the amount of time any test takes to report results.
+OUTPUT_TIMEOUT = 60 # one minute
+
 def follow_file(filename):
     """
     Generator that yields the latest unread content from the given
@@ -354,7 +365,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None, args=None, norun=None,
+            logfile=None, addons=None, args=None, norun=None,
             used_files=None, enable_mobile=False,
             mobile_app_name=None):
     if binary:
@@ -417,19 +428,19 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     logfile_tail = None
 
-    if sys.platform in ['win32', 'cygwin']:
-        if not logfile:
-            # If we're on Windows, we need to keep a logfile simply
-            # to print console output to stdout.
-            fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
-            os.close(fileno)
-        logfile_tail = follow_file(logfile)
-        atexit.register(maybe_remove_logfile)
+    # We always buffer output through a logfile for two reasons:
+    # 1. On Windows, it's the only way to print console output to stdout/err.
+    # 2. It enables us to keep track of the last time output was emitted,
+    #    so we can raise an exception if the test runner hangs.
+    if not logfile:
+        fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
+        os.close(fileno)
+    logfile_tail = follow_file(logfile)
+    atexit.register(maybe_remove_logfile)
 
-    if logfile and app_type != "fennec-on-device":
-        logfile = os.path.abspath(os.path.expanduser(logfile))
-        maybe_remove_logfile()
-        harness_options['logFile'] = logfile
+    logfile = os.path.abspath(os.path.expanduser(logfile))
+    maybe_remove_logfile()
+    harness_options['logFile'] = logfile
 
     env = {}
     env.update(os.environ)
@@ -450,9 +461,15 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
               limit_to=used_files)
     addons.append(xpi_path)
 
-    starttime = time.time()
+    starttime = last_output_time = time.time()
 
-    popen_kwargs = {}
+    # Redirect runner output to /dev/null, since the runner also writes
+    # the output to the logfile, which we then print.  In theory, we could
+    # print the logfile only on Windows and leave runner output alone on other
+    # OSes, but this way we only have a single codepath to maintain.
+    dev_null = open(os.devnull, "w")
+    popen_kwargs = { 'stdout': dev_null, 'stderr': dev_null }
+
     profile = None
 
     if app_type == "fennec-on-device":
@@ -555,38 +572,43 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     runner.start()
 
     done = False
-    output = None
+    result = None
     try:
         while not done:
             time.sleep(0.05)
             if logfile_tail:
                 new_chars = logfile_tail.next()
                 if new_chars:
+                    last_output_time = time.time()
                     sys.stderr.write(new_chars)
                     sys.stderr.flush()
             if os.path.exists(resultfile):
-                output = open(resultfile).read()
-                if output:
-                    if output in ['OK', 'FAIL']:
+                result = open(resultfile).read()
+                if result:
+                    if result in ['OK', 'FAIL']:
                         done = True
                     else:
-                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
-                        sys.stderr.write("'"+output+"'\n")
-            if timeout and (time.time() - starttime > timeout):
-                raise Exception("Wait timeout exceeded (%ds)" %
-                                timeout)
+                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(result)))
+                        sys.stderr.write("'"+result+"'\n")
+            if time.time() - last_output_time > OUTPUT_TIMEOUT:
+                raise Exception("Test output exceeded timeout (%ds)." %
+                                OUTPUT_TIMEOUT)
+            if time.time() - starttime > RUN_TIMEOUT:
+                raise Exception("Test run exceeded timeout (%ds)." %
+                                RUN_TIMEOUT)
     except:
         runner.stop()
         raise
     else:
         runner.wait(10)
     finally:
+        dev_null.close()
         if profile:
             profile.cleanup()
 
     print >>sys.stderr, "Total time: %f seconds" % (time.time() - starttime)
 
-    if output == 'OK':
+    if result == 'OK':
         print >>sys.stderr, "Program terminated successfully."
         return 0
     else:

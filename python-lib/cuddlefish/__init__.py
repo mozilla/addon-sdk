@@ -231,9 +231,6 @@ parser_groups = (
      ),
     )
 
-# Maximum time we'll wait for tests to finish, in seconds.
-TEST_RUN_TIMEOUT = 10 * 60
-
 def find_parent_package(cur_dir):
     tail = True
     while tail:
@@ -507,7 +504,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    timeout = None
     inherited_options = ['verbose', 'enable_e10s']
 
     if command == "xpi":
@@ -515,7 +511,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        timeout = TEST_RUN_TIMEOUT
         inherited_options.extend(['iterations', 'filter', 'profileMemory'])
     elif command == "run":
         use_main = True
@@ -740,7 +735,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              binary=options.binary,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
-                             timeout=timeout,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
