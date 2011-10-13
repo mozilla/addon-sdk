@@ -10,9 +10,9 @@ class Filter(unittest.TestCase):
                              sorted(["foo", "bar.js", "image.png"]))
 
     def test_filter_dirnames(self):
-        names = ["subdir", "data", ".git", ".hg", ".svn"]
+        names = ["subdir", "data", ".git", ".hg", ".svn", "defaults"]
         self.failUnlessEqual(sorted(filter_dirnames(names)),
-                             sorted(["subdir", "data"]))
+                             sorted(["subdir", "data", "defaults"]))
 
 if __name__ == '__main__':
     unittest.main()
