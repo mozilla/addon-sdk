@@ -1,4 +1,6 @@
 var timer = require("timer");
+const { Loader } = require("@loader");
+const options = require("@packaging");
 
 exports.testSetTimeout = function(test) {
   timer.setTimeout(function() {
@@ -105,8 +107,8 @@ exports.testParamedClearInterval = function(test) {
 
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader(require("packaging").myURI);
-  var sbtimer = loader.require("timer");
+  var loader = Loader.new(options);
+  var sbtimer = loader.require(module.uri, "timer");
 
   var myFunc = function myFunc() {
     test.fail("myFunc() should not be called in testUnload");
