@@ -1,4 +1,5 @@
-const {Cc,Ci} = require("chrome");
+const { Cc,Ci } = require("chrome");
+const { Iterator } = require("api-utils/iterators");
 
 let StringBundle = require("app-strings").StringBundle;
 exports.testStringBundle = function(test) {
