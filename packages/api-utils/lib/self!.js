@@ -40,7 +40,7 @@
 "use strict";
 
 const { CC } = require('chrome');
-const { jetpackID, name, manifest } = require('@packaging');
+const { jetpackID, name, manifest, metadata } = require('@packaging');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
@@ -92,8 +92,12 @@ exports.create = function create(base) {
     exports: Object.freeze({
       id: jetpackID,
       uri: uri,
-      url: url.bind(null, moduleData.dataURIPrefix),
-      load: read.bind(null, moduleData.dataURIPrefix)
+      name: name,
+      version: metadata[name].version,
+      data: {
+        url: url.bind(null, moduleData.dataURIPrefix),
+        load: read.bind(null, moduleData.dataURIPrefix)
+      }
     })
   });
 };
