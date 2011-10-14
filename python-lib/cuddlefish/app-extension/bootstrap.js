@@ -139,7 +139,7 @@ const Loader = {
   new: function (options) {
     // TODO: Also adding legacy global that some code depends on, which should
     // migrate to require("packaging") or similar instead.
-    let globals = {
+    let globals = options.globals || {
       packaging: { jetpackID: options.jetpackID, options: options },
       dump: dump
     };
