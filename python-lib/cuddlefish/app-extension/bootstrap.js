@@ -237,6 +237,11 @@ const Loader = {
   },
   require: function require(base, id) {
     var uri, manifest = this.manifest[base], requirer = this.modules[base];
+
+    if (!id)
+      throw Error("you must provide a module name when calling require() from "
+                  + requirer.id);
+
     // TODO: Remove debug log!
     // dump('>>>> ' + (requirer && requirer.id) + ' ? ' + id + '\n')
     // If we have a manifest for requirer, then all it's requirements have been
