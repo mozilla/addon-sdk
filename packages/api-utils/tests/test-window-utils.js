@@ -44,20 +44,21 @@ exports.testCloseOnUnload = function(test) {
     }
   };
 
-  var loader = Loader.new(options);
-  loader.require(module.uri, "window-utils").closeOnUnload(fakeWindow);
+  let loader = Loader.new(options);
+  let require = loader.require.bind(loader, module.uri);
+  require("window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");
   test.assertEqual(timesClosed, 0,
                    "window not closed when registered.");
-  loader.require(module.uri, "unload").send();
+  require("unload").send();
   test.assertEqual(timesClosed, 1,
                    "window closed on module unload.");
   test.assertEqual(fakeWindow._listeners.length, 0,
                    "unload event listener removed on module unload");
 
   timesClosed = 0;
-  loader.require(module.uri, "window-utils").closeOnUnload(fakeWindow);
+  require("window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(timesClosed, 0,
                    "window not closed when registered.");
   fakeWindow.close();
@@ -65,7 +66,7 @@ exports.testCloseOnUnload = function(test) {
                    "window closed when close() called.");
   test.assertEqual(fakeWindow._listeners.length, 0,
                    "unload event listener removed on window close");
-  loader.require(module.uri, "unload").send();
+  require("unload").send();
   test.assertEqual(timesClosed, 1,
                    "window not closed again on module unload.");
   loader.unload();  
@@ -191,13 +192,10 @@ exports.testActiveWindow = function(test) {
 
   let testRunnerWindow = Cc["@mozilla.org/appshell/window-mediator;1"]
                          .getService(Ci.nsIWindowMediator)
-                         .getMostRecentWindow(null);
+                         .getMostRecentWindow("test:runner");
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
-
-  test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
-                    "Test runner is the active window.");
 
   test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
                     "Browser window is the active browser window.");
@@ -211,22 +209,19 @@ exports.testActiveWindow = function(test) {
     function() {
       test.assertEqual(windowUtils.activeWindow, browserWindow,
                        "Correct active window [1]");
-      windowUtils.activeWindow = testRunnerWindow;
-      continueAfterFocus(testRunnerWindow);
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
                        "Correct active window [2]");
       test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [3]");
-      windowUtils.activeWindow = browserWindow;
-      continueAfterFocus(browserWindow);
+      continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, browserWindow,
                        "Correct active window [4]");
-      windowUtils.activeWindow = testRunnerWindow;
-      continueAfterFocus(testRunnerWindow);
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, testRunnerWindow,

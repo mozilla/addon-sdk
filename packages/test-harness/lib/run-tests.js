@@ -45,8 +45,14 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, p
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
            .getService(Ci.nsIWindowWatcher);
 
-  var window = ww.openWindow(null, "data:text/plain,Running tests...",
-                             "harness", "centerscreen", null);
+  let ns = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+  let markup = '<?xml version="1.0"?><window xmlns="' + ns +
+               '" windowtype="test:runner">Running tests...</window>';
+  let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
+
+
+  var window = ww.openWindow(null, url, "harness", "centerscreen", null);
+  window.type = 'test:runner'
 
   var harness = require("./harness");
 
