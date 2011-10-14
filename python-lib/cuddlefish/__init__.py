@@ -505,6 +505,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     use_main = False
     inherited_options = ['verbose', 'enable_e10s']
+    enforce_timeouts = False
 
     if command == "xpi":
         use_main = True
@@ -512,6 +513,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        enforce_timeouts = True
     elif command == "run":
         use_main = True
     else:
@@ -735,6 +737,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              binary=options.binary,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
+                             enforce_timeouts=enforce_timeouts,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,

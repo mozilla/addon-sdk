@@ -365,6 +365,7 @@ class XulrunnerAppRunner(mozrunner.Runner):
 
 def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
+            enforce_timeouts=False,
             logfile=None, addons=None, args=None, norun=None,
             used_files=None, enable_mobile=False,
             mobile_app_name=None):
@@ -590,12 +591,13 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                     else:
                         sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(result)))
                         sys.stderr.write("'"+result+"'\n")
-            if time.time() - last_output_time > OUTPUT_TIMEOUT:
-                raise Exception("Test output exceeded timeout (%ds)." %
-                                OUTPUT_TIMEOUT)
-            if time.time() - starttime > RUN_TIMEOUT:
-                raise Exception("Test run exceeded timeout (%ds)." %
-                                RUN_TIMEOUT)
+            if enforce_timeouts:
+                if time.time() - last_output_time > OUTPUT_TIMEOUT:
+                    raise Exception("Test output exceeded timeout (%ds)." %
+                                    OUTPUT_TIMEOUT)
+                if time.time() - starttime > RUN_TIMEOUT:
+                    raise Exception("Test run exceeded timeout (%ds)." %
+                                    RUN_TIMEOUT)
     except:
         runner.stop()
         raise
