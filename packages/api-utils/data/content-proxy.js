@@ -6,6 +6,7 @@ let Ci = Components.interfaces;
  * Access key that allows privileged code to unwrap proxy wrappers through 
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
+ * This key should only be used by proxy unit test.
  */
  const UNWRAP_ACCESS_KEY = {};
 
@@ -139,7 +140,7 @@ function unwrap(value, obj, name) {
 }
 
 /**
- * Returns a XrayWrapper proxy object that allow to wrap any of its function
+ * Returns an XrayWrapper proxy object that allow to wrap any of its function
  * though `ContentScriptFunctionWrapper`. These proxies are given to
  * XrayWrappers in order to automatically wrap values when they call a method
  * of these proxies. So that they are only used internaly and content script,
@@ -581,7 +582,7 @@ const xRayWrappersMethodsFixes = {
 
   // Bug 679054: History API doesn't work with Proxy objects. We have to pass
   // regular JS objects on `pushState` and `replaceState` methods.
-  // In addition, the first argument have to come from the same compartment.
+  // In addition, the first argument has to come from the same compartment.
   pushState: function (obj) {
     // Ensure that we are on an object that expose History API
     try {

@@ -255,20 +255,23 @@ exports.testEventEmitter = function(test) {
   );
 };
 
-// Execute two distinct page mods on same document to ensure that their
-// JS context are differents
+// Execute two concurrent page mods on same document to ensure that their
+// JS contexts are different
 exports.testMixedContext = function(test) {
   let doneCallback = null;
   let messages = 0;
   let modObject = {
     include: "data:text/html,",
     contentScript: 'new ' + function WorkerScope() {
-      self.postMessage("foo" in document);
-      document.foo = true;
+      // Both scripts will execute this,
+      // context is shared if one script see the other one modification.
+      let isContextShared = "sharedAttribute" in document;
+      self.postMessage(isContextShared);
+      document.sharedAttribute = true;
     },
     onAttach: function(w) {
-      w.on("message", function (data) {
-        if (data) {
+      w.on("message", function (isContextShared) {
+        if (isContextShared) {
           test.fail("Page mod contexts are mixed.");
           doneCallback();
         }
@@ -279,7 +282,7 @@ exports.testMixedContext = function(test) {
       });
     }
   };
-  let mods = testPageMod(test, "data:text/html,", [modObject, modObject],
+  testPageMod(test, "data:text/html,", [modObject, modObject],
     function(win, done) {
       doneCallback = done;
     }

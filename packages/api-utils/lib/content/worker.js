@@ -51,7 +51,7 @@ const { Cortex } = require('../cortex');
 const { Enqueued } = require('../utils/function');
 const self = require("self");
 const scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
-                   getService(Ci.mozIJSSubScriptLoader);
+                     getService(Ci.mozIJSSubScriptLoader);
 
 const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
 
@@ -61,10 +61,11 @@ const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
 
 /**
- * Access key that allows test-content-proxy to unwrap proxy with valueOf:
+ * This key is not exported and should only be used for proxy tests.
+ * The following `PRIVATE_KEY` is used in addon module scope in order to tell
+ * Worker API to expose `UNWRAP_ACCESS_KEY` in content script.
+ * This key allows test-content-proxy.js to unwrap proxy with valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
- * The following `PRIVATE_KEY` is used in addon modules scope in order to tell
- * Worker api to expose UNWRAP_ACCESS_KEY in content script.
  */
 const PRIVATE_KEY = {};
 
@@ -228,8 +229,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let proxySandbox = null;
     // Build content proxies only if the document has a non-system principal
     if (window.wrappedJSObject) {
-      // Instanciate the proxy code in another Sandbox in order to avoid
-      // content script to pollute globals used by proxy code
+      // Instantiate the proxy code in another Sandbox in order to prevent
+      // content script from polluting globals used by proxy code
       proxySandbox = Cu.Sandbox(window, {
         wantXrays: true
       });
@@ -257,11 +258,12 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       // at any time!
       unsafeWindow: { get: function () window.wrappedJSObject }
     });
-    
-    // We inject unlock key into content script scope, only when Worker
-    // constructor receive `exposeUnlockKey` attribute set to `PRIVATE_KEY`
+
+    // Internal feature that is only used by sdk tests:
+    // Expose unlock key to content script context.
+    // See `PRIVATE_KEY` definition for more information.
     if (proxySandbox && worker._expose_key)
-      sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY
+      sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY;
 
     // Overriding / Injecting some natives into sandbox.
     Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
@@ -328,7 +330,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // that first try to access to `___proxy` and then call it through `apply`.
     // We need to move function given to content script to a sandbox
     // with same principal than the content script.
-    // In the meantime, we need to allow such access explicitely
+    // In the meantime, we need to allow such access explicitly
     // by using `__exposedProps__` property, documented here:
     // https://developer.mozilla.org/en/XPConnect_wrappers
     sandbox.self.postMessage.__exposedProps__ = {
@@ -529,6 +531,9 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
+
+    // Internal feature that is only used by sdk unit tests.
+    // See `PRIVATE_KEY` definition for more information.
     if ('exposeUnlockKey' in options && options.exposeUnlockKey === PRIVATE_KEY)
       this._expose_key = true;
 
