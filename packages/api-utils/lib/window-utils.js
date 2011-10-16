@@ -73,7 +73,7 @@ function browserWindowIterator() {
 }
 exports.browserWindowIterator = browserWindowIterator;
 
-var WindowTrackers = [];
+var windowTrackers = [];
 
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   this.delegate = delegate;
@@ -83,7 +83,7 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
 
   //Add the tracker to the list of trackers, if it is the first one,
   //then register the observer.
-  if (WindowTrackers.push(this) === 1)
+  if (windowTrackers.push(this) === 1)
     gWindowWatcher.registerNotification(WindowTrackerObs);
 };
 
@@ -120,13 +120,13 @@ WindowTracker.prototype = {
   },
 
   unload: function unload() {
-    var index = WindowTrackers.indexOf(this);
+    var index = windowTrackers.indexOf(this);
     if (!~index)
       return;
 
-    WindowTrackers.splice(index, 1);
+    windowTrackers.splice(index, 1);
 
-    if (WindowTrackers.length === 0)
+    if (windowTrackers.length === 0)
       gWindowWatcher.unregisterNotification(WindowTrackerObs);
 
     for (let window in windowIterator())
@@ -144,24 +144,31 @@ WindowTracker.prototype = {
 
 var WindowTrackerObs = {
   observe: function observe(subject, topic, data) {
+    // get the window associated to the event observed
     var window = subject.QueryInterface(Ci.nsIDOMWindow);
-    var i = WindowTrackers.length - 1;
 
-    if (topic == "domwindowopened") {
-      for (; ~i; i--)
-        WindowTrackers[i]._regWindow(window);
-    } else {
-      for (; ~i; i--)
-        WindowTrackers[i]._unregWindow(window);
+    let (i = windowTrackers.length - 1) {
+      // handle window open event
+      if (topic == "domwindowopened") {
+        // loop thru windowTracker array and register the window
+        for (; ~i; i--)
+          windowTrackers[i]._regWindow(window);
+      }
+      // handle window close (ie: "domwindowclosed") event
+      else {
+        // loop thru windowTracker array and unregister the window
+        for (; ~i; i--)
+          windowTrackers[i]._unregWindow(window);
+      }
     }
   }
 };
 
 require("./unload").when(function() {
-  // unload() removes the tracker from the WindowTrackers array, so looping
-  // backwards thru WindowTrackers is important here.
-  for (var i = WindowTrackers.length - 1; ~i; i--)
-    WindowTrackers[i].unload();
+  // unload() removes the tracker from the windowTrackers array, so looping
+  // backwards thru windowTrackers is important here.
+  for (var i = windowTrackers.length - 1; ~i; i--)
+    windowTrackers[i].unload();
 });
 
 errors.catchAndLogProps(WindowTracker.prototype, ["handleEvent", "observe"]);
