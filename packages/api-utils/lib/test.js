@@ -38,7 +38,7 @@
 "use strict";
 
 const BaseAssert = require("./test/assert").Assert;
-const { isFunction, isObject } = require("type");
+const { isFunction, isObject } = require("./type");
 
 /**
  * Function takes test `suite` object in CommonJS format and defines all of the

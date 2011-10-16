@@ -39,8 +39,9 @@
 
 "use strict";
 
-const keyboardObserver = require("keyboard/observer");
-const { getKeyForCode, normalize } = require("keyboard/utils");
+const { observer: keyboardObserver } = require("./observer");
+const { getKeyForCode, normalize, isFunctionKey,
+        MODIFIERS } = require("./utils");
 
 /**
  * Register a global `hotkey` that executes `listener` when the key combination
@@ -97,7 +98,7 @@ exports.unregister = function unregister(hotkey, listener) {
  */
 const hotkeys = exports.hotkeys = {};
 
-keyboardObserver.on("keypress", function onKeypress(event, window) {
+keyboardObserver.on("keydown", function onKeypress(event, window) {
   let key, modifiers = [];
   let isChar = "isChar" in event && event.isChar;
   let which = "which" in event ? event.which : null;
@@ -115,16 +116,14 @@ keyboardObserver.on("keypress", function onKeypress(event, window) {
   // If it's not a printable character then we fall back to a human readable
   // equivalent of one of the following constants.
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
-  if (!isChar)
-    key = getKeyForCode(keyCode);
+  key = getKeyForCode(keyCode);
 
-  // If don't have a key yet then it's either printable character so we just
-  // create a string from it's charcode. For some keys like "!" `isChar` is
-  // `false` but it's still printable and that's also a case when
-  // `getKeyForCode` returns `undefined`.
-  if (!key)
-    key = String.fromCharCode(which);
-
+  // If only non-function (f1 - f24) key or only modifiers are pressed we don't
+  // have a valid combination so we return immediately (Also, sometimes
+  // `keyCode` may be one for the modifier which means we do not have a
+  // modifier).
+  if (!key || (!isFunctionKey(key) && !modifiers.length) || key in MODIFIERS)
+    return;
 
   let combination = normalize({ key: key, modifiers: modifiers });
   let hotkey = hotkeys[combination];

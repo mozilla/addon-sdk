@@ -37,7 +37,7 @@
 "use strict";
 
 const { isFunction, isNull, isObject, isString, isRegExp, isArray, isDate,
-        isPrimitive, isUndefined, instanceOf, source } = require("type");
+        isPrimitive, isUndefined, instanceOf, source } = require("../type");
 
 /**
  * The `AssertionError` is defined in assert.

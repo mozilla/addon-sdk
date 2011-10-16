@@ -38,10 +38,10 @@
 
 "use strict";
 
-const { emit } = require("dom/events");
-const { getCodeForKey, toJSON } = require("keyboard/utils");
-const { has } = require("array");
-const { isString } = require("type");
+const { emit } = require("../events");
+const { getCodeForKey, toJSON } = require("../../keyboard/utils");
+const { has } = require("../../array");
+const { isString } = require("../../type");
 
 const INITIALIZER = "initKeyEvent";
 const CATEGORY = "KeyboardEvent";
@@ -74,7 +74,7 @@ var keyEvent = exports.keyEvent = function keyEvent(element, type, options) {
       "shift" in options && !!options.shift,
       "meta" in options && !!options.meta,
       getCodeForKey(options.key) || 0,
-      options.key.charCodeAt(0)
+      options.key.length === 1 ? options.key.charCodeAt(0) : 0
     ]
   });
 }

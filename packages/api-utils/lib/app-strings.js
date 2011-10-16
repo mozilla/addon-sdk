@@ -34,8 +34,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
-const apiUtils = require("api-utils");
+const apiUtils = require("./api-utils");
 
 /**
  * A bundle of strings.

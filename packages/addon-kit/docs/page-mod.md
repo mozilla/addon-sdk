@@ -60,6 +60,30 @@ then the content script can interact with the DOM itself:
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
+### Using `contentScriptFile` ###
+
+Most of the examples in this page define content scripts as strings,
+and use the `contentScript` option to assign them to page mods.
+
+In your code you will more often create content scripts in separate files
+under your add-on's `data` directory. Then you can use the
+[`self`](packages/addon-kit/docs/self.html) module to retrieve a URL pointing
+to the file, and assign this to the page-mod's `contentScriptFile`
+property.
+
+For example, if you save the content script
+file in your `data` directory as "myScript.js", you would assign it using
+code like:
+
+    var data = require("self").data;
+    
+    var pageMod = require("page-mod");
+    pageMod.PageMod({
+      include: "*.org",
+      contentScriptWhen: 'end',
+      contentScriptFile: data.url("myScript.js")
+    });
+
 ## Communicating With Content Scripts ##
 
 When a matching page is loaded the `PageMod` will call the function that the
@@ -79,14 +103,14 @@ is loaded into its own execution context with its own copy of the content
 scripts. In this case `onAttach` is called once for each loaded page, and the
 add-on code will have a separate worker for each page:
 
-![Multiple workers](media/multiple-workers.jpg)
+![Multiple workers](static-files/media/multiple-workers.jpg)
 
 This is demonstrated in the following example:
 
     var pageMod = require("page-mod");
     var tabs = require("tabs");
 
-    var workers = new Array();
+    var workers = [];
 
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
@@ -127,7 +151,7 @@ attached and registers a listener function that simply logs the message:
 
 
     var pageMod = require("page-mod");
-    const data = require("self").data;
+    var data = require("self").data;
     var tabs = require("tabs");
 
     pageMod.PageMod({
@@ -189,10 +213,11 @@ scripts are executed immediately.
 The following add-on creates a widget which, when clicked, highlights all the
 `div` elements in the page loaded into the active tab:
 
-    const widgets = require("widget");
-    const tabs = require("tabs");
+    var widgets = require("widget");
+    var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "div-show",
       label: "Show divs",
       contentURL: "http://www.mozilla.org/favicon.ico",
       onClick: function() {

@@ -3,6 +3,10 @@ as a whole. It also provides access to the
 [Program ID](dev-guide/addon-development/program-id.html), a value which is
 unique for each add-on.
 
+Note that the `self` module is completely different from the global `self`
+object accessible to content scripts, which is used by a content script to
+[communicate with the add-on code](dev-guide/addon-development/content-scripts/using-port.html).
+
 <api name="id">
 @property {string}
 This property is a printable string that is unique for each add-on. It comes
@@ -14,10 +18,17 @@ Eventually, this ID will be unspoofable (see
 [JEP 118](https://wiki.mozilla.org/Labs/Jetpack/Reboot/JEP/118) for details).
 </api>
 
-<span class="aside">
-The [Package Specification](dev-guide/addon-development/package-spec.html)
-section explains the `package.json` file.
-</span>
+<api name="name">
+@property {string}
+This property contains the add-on's short name. It comes from the `name`
+property in the main package's `package.json` file.
+</api>
+
+<api name="version">
+@property {string}
+This property contains the add-on's version string. It comes from the
+`version` property set in the `package.json` file in the main package.
+</api>
 
 <api name="data">
 @property {object}
@@ -25,6 +36,9 @@ The `data` object is used to access data that was bundled with the add-on.
 This data lives in the main package's `data/` directory, immediately below
 the `package.json` file. All files in this directory will be copied into the
 XPI and made available through the `data` object.
+
+The [Package Specification](dev-guide/addon-development/package-spec.html)
+section explains the `package.json` file.
 
 <api name="data.load">
 @method

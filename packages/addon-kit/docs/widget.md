@@ -54,6 +54,85 @@ handled by [content scripts](dev-guide/addon-development/web-content.html).
 So, for example, to be notified when your widget's content has loaded, you can
 make a small script that calls back to the widget when it finishes loading.
 
+## Attaching Panels to Widgets ##
+
+You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
+constructor: if you do this, the panel is automatically displayed when the
+user clicks the widget.
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png"),
+      panel: clockPanel
+    });
+
+<!-- The icon the widget displays, shown in the screenshot, is taken from the
+Nuvola icon set, http://www.icon-king.com/projects/nuvola/ which is made
+available under the LGPL 2.1:
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html -->
+
+<img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
+alt="Panel attached to a widget">
+<br>
+
+Note that this is, at the moment, the only way you can attach a panel to a widget.
+
+You must supply the panel in the widget's constructor for it to work. If you
+assign the panel to the widget after construction, the panel can still be shown
+but will not be anchored to the widget:
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    widget = require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png")
+    });
+
+    widget.panel = clockPanel;
+
+    // Will not be anchored
+    widget.panel.show();
+
+Also, if you try to call `panel.show()` inside your widget's `click` event
+listener, the panel will not be anchored:
+
+    data = require("self").data
+
+    var clockPanel = require("panel").Panel({
+      width:215,
+      height:160,
+      contentURL: data.url("clock.html")
+    });
+
+    require("widget").Widget({
+      id: "open-clock-btn",
+      label: "Clock",
+      contentURL: data.url("History.png"),
+      panel: clockPanel,
+      onClick: function() {
+        // Will not be anchored
+        this.panel.show();
+      }
+    });
+
+See [bug 638142](https://bugzilla.mozilla.org/show_bug.cgi?id=638142).
+
 ## Examples ##
 
 For conciseness, these examples create their content scripts as strings and use
@@ -255,7 +334,7 @@ Represents a widget object.
 @param data {value}
   The message to send.
   The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -370,9 +449,9 @@ Represents a widget object.
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
 
-See
-<a href="dev-guide/addon-development/web-content.html#content_script_events">
-Communicating with Content Scripts</a> for details.
+See the guide to
+<a href="dev-guide/addon-development/content-scripts/using-port.html">
+communicating using <code>port</code></a> for details.
 </api>
 
 <api name="attach">
@@ -396,7 +475,7 @@ code in the widget's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -458,7 +537,7 @@ In this example `WidgetView` is used to display different content for
   Sends a message to the widget view's content scripts.
 @param data {value}
   The message to send. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -563,9 +642,9 @@ In this example `WidgetView` is used to display different content for
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on`
 
-See
-<a href="dev-guide/addon-development/web-content.html#content_script_events">
-Communicating with Content Scripts</a> for details.
+See the guide to
+<a href="dev-guide/addon-development/content-scripts/using-port.html">
+communicating using <code>port</code></a> for details.
 </api>
 
 <api name="detach">
@@ -591,7 +670,7 @@ code in the widget view's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">

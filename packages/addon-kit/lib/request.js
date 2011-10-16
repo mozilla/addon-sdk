@@ -35,13 +35,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const xpcom = require("xpcom");
-const xhr = require("xhr");
-const errors = require("errors");
-const apiUtils = require("api-utils");
+"use strict";
+const xpcom = require("api-utils/xpcom");
+const xhr = require("api-utils/xhr");
+const errors = require("api-utils/errors");
+const apiUtils = require("api-utils/api-utils");
 
 // Ugly but will fix with: https://bugzilla.mozilla.org/show_bug.cgi?id=596248
-const EventEmitter = require('events').EventEmitter.compose({
+const EventEmitter = require('api-utils/events').EventEmitter.compose({
   constructor: function EventEmitter() this
 });
 
@@ -61,7 +62,11 @@ const validator = new OptionsValidator({
   },
   contentType: {
     map: function (v) v || "application/x-www-form-urlencoded",
-    is:  ["string"]
+    is:  ["string"],
+  },
+  overrideMimeType: {
+    map: function(v) v || null,
+    is: ["string", "null"],
   }
 });
 
@@ -106,6 +111,11 @@ function Request(options) {
     // set other headers
     for (let k in options.headers) {
       request.setRequestHeader(k, options.headers[k]);
+    }
+
+    // set overrideMimeType
+    if (options.overrideMimeType) {
+      request.overrideMimeType(options.overrideMimeType);
     }
 
     // handle the readystate, create the response, and call the callback
@@ -183,7 +193,7 @@ function makeQueryString(content) {
   }
 
   function make(key, val) {
-    if (typeof(val) == "object") {
+    if (typeof(val) === "object" && val !== null) {
       for ([k, v] in Iterator(val)) {
         make(key + "[" + k + "]", v);
       }

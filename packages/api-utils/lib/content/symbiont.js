@@ -41,9 +41,9 @@
 
 const { Worker } = require('./worker');
 const { Loader } = require('./loader');
-const hiddenFrames = require("hidden-frame");
-const observers = require('observer-service');
-const unload = require("unload");
+const hiddenFrames = require('../hidden-frame');
+const observers = require('../observer-service');
+const unload = require('../unload');
 
 /**
  * This trait is layered on top of `Worker` and in contrast to symbiont
@@ -194,7 +194,7 @@ const Symbiont = Worker.resolve({
    * content scripts according to contentScriptWhen. Overloaded by Panel. 
    */
   _onInit: function () {
-    this._initWorker({ window: this._frame.contentWindow.wrappedJSObject });
+    this._initWorker({ window: this._frame.contentWindow });
   }
   
 });

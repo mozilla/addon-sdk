@@ -38,6 +38,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 // The possible return values of getTypeOf.
 const VALID_TYPES = [
   "array",

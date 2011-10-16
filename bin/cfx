@@ -5,7 +5,7 @@ import sys
 
 # set the cuddlefish "root directory" for this process if it's not already
 # set in the environment
-cuddlefish_root = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
+cuddlefish_root = os.path.dirname(os.path.dirname(os.path.realpath(sys.argv[0])))
 
 if 'CUDDLEFISH_ROOT' not in os.environ:
     os.environ['CUDDLEFISH_ROOT'] = cuddlefish_root

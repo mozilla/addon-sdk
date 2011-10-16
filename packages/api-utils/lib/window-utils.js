@@ -35,15 +35,17 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 
-var errors = require("errors");
+var errors = require("./errors");
 
 var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
                      .getService(Ci.nsIWindowWatcher);
 
-const { EventEmitter } = require('events'),
-      { Trait } = require('traits');
+const { EventEmitter } = require('./events'),
+      { Trait } = require('./traits');
 
 /**
  * An iterator for XUL windows currently in the application.
@@ -76,11 +78,12 @@ var WindowTrackers = [];
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   this.delegate = delegate;
   this._loadingWindows = [];
-  for (window in windowIterator())
+  for (let window in windowIterator())
     this._regWindow(window);
 
-  // if this is the first tracker, then register the observer
-  if (1 === WindowTrackers.push(this))
+  //Add the tracker to the list of trackers, if it is the first one,
+  //then register the observer.
+  if (WindowTrackers.push(this) === 1)
     gWindowWatcher.registerNotification(WindowTrackerObs);
 };
 
@@ -108,25 +111,25 @@ WindowTracker.prototype = {
   },
 
   _unregWindow: function _unregWindow(window) {
-    if (!this.delegate.onUntrack)
-      return;
-
-    if (window.document.readyState == "complete")
-      this.delegate.onUntrack(window);
-    else
+    if (window.document.readyState == "complete") {
+      if (this.delegate.onUntrack)
+        this.delegate.onUntrack(window);
+    } else {
       this._unregLoadingWindow(window);
+    }
   },
 
-  unload: function() {
+  unload: function unload() {
     var index = WindowTrackers.indexOf(this);
-    if (!~index) return;
+    if (!~index)
+      return;
 
     WindowTrackers.splice(index, 1);
 
     if (WindowTrackers.length === 0)
       gWindowWatcher.unregisterNotification(WindowTrackerObs);
 
-    for (window in windowIterator())
+    for (let window in windowIterator())
       this._unregWindow(window);
   },
 
@@ -154,7 +157,7 @@ var WindowTrackerObs = {
   }
 };
 
-require("unload").when(function() {
+require("./unload").when(function() {
   // unload() removes the tracker from the WindowTrackers array, so looping
   // backwards thru WindowTrackers is important here.
   for (var i = WindowTrackers.length - 1; ~i; i--)
@@ -186,7 +189,7 @@ function onDocUnload(event) {
   document.defaultView.removeEventListener("unload", onDocUnload, false);
 }
 
-onDocUnload = require("errors").catchAndLog(onDocUnload);
+onDocUnload = require("./errors").catchAndLog(onDocUnload);
 
 exports.closeOnUnload = function closeOnUnload(window) {
   window.addEventListener("unload", onDocUnload, false);
@@ -233,7 +236,7 @@ function isBrowser(window) {
 };
 exports.isBrowser = isBrowser;
 
-require("unload").when(
+require("./unload").when(
   function() {
     gDocsToClose.slice().forEach(
       function(doc) { doc.defaultView.close(); });

@@ -1,7 +1,7 @@
 import sys
 import os
 import optparse
-import glob
+import webbrowser
 
 from copy import copy
 import simplejson as json
@@ -27,9 +27,6 @@ Supported Commands:
   test       - run tests
   run        - run program
   xpi        - generate an xpi
-
-Experimental Commands:
-  develop    - run development server
 
 Internal Commands:
   sdocs      - export static documentation
@@ -74,13 +71,12 @@ parser_groups = (
                                    default=None,
                                    cmds=['test', 'run', 'testex', 'testpkgs',
                                          'testall'])),
-        (("-a", "--app",), dict(dest="app",
-                                help=("app to run: firefox (default), "
-                                      "xulrunner, fennec, or thunderbird"),
-                                metavar=None,
-                                default="firefox",
-                                cmds=['test', 'run', 'testex', 'testpkgs',
-                                      'testall'])),
+        (("", "--binary-args",), dict(dest="cmdargs",
+                                 help=("additional arguments passed to the "
+                                       "binary"),
+                                 metavar=None,
+                                 default=None,
+                                 cmds=['run', 'test'])),
         (("", "--dependencies",), dict(dest="dep_tests",
                                        help="include tests for all deps",
                                        action="store_true",
@@ -95,8 +91,9 @@ parser_groups = (
                                       'testall'])),
         (("-f", "--filter",), dict(dest="filter",
                                    help=("only run tests whose filenames "
-                                         "match FILTER, a regexp"),
-                                   metavar=None,
+                                         "match FILENAME and optionally "
+                                         "match TESTNAME, both regexps"),
+                                   metavar="FILENAME[:TESTNAME]",
                                    default=None,
                                    cmds=['test', 'testex', 'testpkgs',
                                          'testall'])),
@@ -142,12 +139,14 @@ parser_groups = (
      ),
 
     ("Experimental Command-Specific Options", [
-        (("", "--use-server",), dict(dest="use_server",
-                                     help="use development server",
-                                     action="store_true",
-                                     default=False,
-                                     cmds=['run', 'test', 'testex', 'testpkgs',
-                                           'testall'])),
+        (("-a", "--app",), dict(dest="app",
+                                help=("app to run: firefox (default), fennec, "
+                                      "fennec-on-device, xulrunner or "
+                                      "thunderbird"),
+                                metavar=None,
+                                default="firefox",
+                                cmds=['test', 'run', 'testex', 'testpkgs',
+                                      'testall'])),
         (("", "--no-run",), dict(dest="no_run",
                                      help=("Instead of launching the "
                                            "application, just show the command "
@@ -157,11 +156,23 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
-        (("", "--strip-xpi",), dict(dest="strip_xpi",
-                                    help="remove unused modules from XPI",
+        (("", "--no-strip-xpi",), dict(dest="no_strip_xpi",
+                                    help="retain unused modules in XPI",
                                     action="store_true",
                                     default=False,
                                     cmds=['xpi'])),
+        (("", "--force-mobile",), dict(dest="enable_mobile",
+                                    help="Force compatibility with Firefox Mobile",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['run', 'test', 'xpi', 'testall'])),
+        (("", "--mobile-app",), dict(dest="mobile_app_name",
+                                    help=("Name of your Android application to "
+                                          "use. Possible values: 'firefox', "
+                                          "'firefox_beta', 'firefox_nightly'."),
+                                    metavar=None,
+                                    default=None,
+                                    cmds=['run', 'test', 'testall'])),
         ]
      ),
 
@@ -216,18 +227,9 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
-        (("", "--binary-args",), dict(dest="cmdargs",
-                                 help=("additional arguments passed to the "
-                                       "binary"),
-                                 metavar=None,
-                                 default=None,
-                                 cmds=['run', 'test'])),
         ]
      ),
     )
-
-# Maximum time we'll wait for tests to finish, in seconds.
-TEST_RUN_TIMEOUT = 10 * 60
 
 def find_parent_package(cur_dir):
     tail = True
@@ -361,7 +363,7 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps)
+    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
     pkg_cfg = packaging.build_config(env_root, target_cfg)
     for name in pkg_cfg.packages:
         if name != "testpkgs":
@@ -372,28 +374,6 @@ def test_all_packages(env_root, defaults):
         target_cfg=target_cfg,
         pkg_cfg=pkg_cfg,
         defaults=defaults)
-
-def run_development_mode(env_root, defaults):
-    pkgdir = os.path.join(env_root, 'packages', 'development-mode')
-    app = defaults['app']
-
-    from cuddlefish import server
-    port = server.DEV_SERVER_PORT
-    httpd = server.make_httpd(env_root, port=port)
-    thread = server.threading.Thread(target=httpd.serve_forever)
-    thread.setDaemon(True)
-    thread.start()
-
-    print "I am starting an instance of %s in development mode." % app
-    print "From a separate shell, you can now run cfx commands with"
-    print "'--use-server' as an option to send the cfx command to this"
-    print "instance. All logging messages will appear below."
-
-    os.environ['JETPACK_DEV_SERVER_PORT'] = str(port)
-    options = {}
-    options.update(defaults)
-    run(["run", "--pkgdir", pkgdir],
-        defaults=options, env_root=env_root)
 
 def get_config_args(name, env_root):
     local_json = os.path.join(env_root, "local.json")
@@ -474,9 +454,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "init":
         initializer(env_root, args)
         return
-    if command == "develop":
-        run_development_mode(env_root, defaults=options.__dict__)
-        return
     if command == "testpkgs":
         test_all_packages(env_root, defaults=options.__dict__)
         return
@@ -490,25 +467,18 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_cfx(env_root, options.verbose)
         return
     elif command == "docs":
-        import subprocess
-        import time
-        import cuddlefish.server
-
-        print >>stdout, "One moment."
-        popen = subprocess.Popen([sys.executable,
-                                  cuddlefish.server.__file__,
-                                  'daemonic'])
-        # TODO: See if there's actually a way to block on
-        # a particular event occurring, rather than this
-        # relatively arbitrary/generous amount.
-        time.sleep(cuddlefish.server.IDLE_WEBPAGE_TIMEOUT * 2)
+        from cuddlefish.docs import generate
+        if len(args) > 1:
+            docs_home = generate.generate_docs(env_root, filename=args[1])
+        else:
+            docs_home = generate.generate_docs(env_root)
+        webbrowser.open(docs_home)
         return
     elif command == "sdocs":
-        import cuddlefish.server
+        from cuddlefish.docs import generate
 
         # TODO: Allow user to change this filename via cmd line.
-        filename = 'addon-sdk-docs.tgz'
-        cuddlefish.server.generate_static_docs(env_root, filename, options.baseurl)
+        filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
         print >>stdout, "Wrote %s." % filename
         return
 
@@ -534,16 +504,16 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    timeout = None
     inherited_options = ['verbose', 'enable_e10s']
+    enforce_timeouts = False
 
     if command == "xpi":
         use_main = True
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        timeout = TEST_RUN_TIMEOUT
         inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        enforce_timeouts = True
     elif command == "run":
         use_main = True
     else:
@@ -599,20 +569,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if "id" in target_cfg:
         jid = target_cfg["id"]
-        if not ("@" in jid or jid.startswith("{")):
-            jid = jid + "@jetpack"
-        unique_prefix = '%s-' % jid # used for resource: URLs
     else:
-        # The Jetpack ID is not required for cfx test, in which case we have to
-        # make one up based on the GUID.
-        if options.use_server:
-            # The harness' contractID (hence also the jid and the harness_guid)
-            # need to be static in the "development mode", so that bootstrap.js
-            # can unload the previous version of the package being developed.
-            harness_guid = '2974c5b5-b671-46f8-a4bb-63c6eca6261b'
-        unique_prefix = '%s-' % target
         jid = harness_guid
-
+    if not ("@" in jid or jid.startswith("{")):
+        jid = jid + "@jetpack"
+    unique_prefix = '%s-' % jid # used for resource: URLs
     bundle_id = jid
 
     # the resource: URL's prefix is treated too much like a DNS hostname
@@ -633,7 +594,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
-    from cuddlefish.manifest import build_manifest
+    from cuddlefish.manifest import build_manifest, ModuleNotFoundError
     uri_prefix = "resource://%s" % unique_prefix
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
@@ -652,8 +613,13 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
                                       "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
-    manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, False,
-                              loader_modules)
+    scan_tests = command == "test"
+    try:
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
+                                  loader_modules)
+    except ModuleNotFoundError, e:
+        print str(e)
+        sys.exit(1)
     used_deps = manifest.get_used_packages()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
@@ -693,7 +659,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
-        harness_options['main'] = 'run-tests'
+        harness_options['main'] = 'test-harness/run-tests'
     else:
         harness_options['main'] = target_cfg.get('main')
 
@@ -713,54 +679,48 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.abspath(options.templatedir)
     else:
         mydir = os.path.dirname(os.path.abspath(__file__))
-        if sys.platform == "darwin":
-            # If we're on OS X, at least point into the XULRunner
-            # app dir so we run as a proper app if using XULRunner.
-            app_extension_dir = os.path.join(mydir, "Test App.app",
-                                             "Contents", "Resources")
-        else:
-            app_extension_dir = os.path.join(mydir, "app-extension")
+        app_extension_dir = os.path.join(mydir, "app-extension")
 
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
 
+    from cuddlefish.rdf import gen_manifest, RDFUpdate
+
+    manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
+                                target_cfg=target_cfg,
+                                bundle_id=bundle_id,
+                                update_url=options.update_url,
+                                bootstrap=True,
+                                enable_mobile=options.enable_mobile)
+
+    if command == "xpi" and options.update_link:
+        rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
+        print >>stdout, "Exporting update description to %s." % rdf_name
+        update = RDFUpdate()
+        update.add(manifest_rdf, options.update_link)
+        open(rdf_name, "w").write(str(update))
+
+    # ask the manifest what files were used, so we can construct an XPI
+    # without the rest. This will include the loader (and everything it
+    # uses) because of the "loader_modules" starting points we passed to
+    # build_manifest earlier
+    used_files = None
+    if command == "xpi":
+      used_files = set(manifest.get_used_files())
+
+    if options.no_strip_xpi:
+        used_files = None # disables the filter, includes all files
+
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
-        from cuddlefish.rdf import gen_manifest, RDFUpdate
-
-        manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
-                                    target_cfg=target_cfg,
-                                    bundle_id=bundle_id,
-                                    update_url=options.update_url,
-                                    bootstrap=True)
-
-        if options.update_link:
-            rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
-            print >>stdout, "Exporting update description to %s." % rdf_name
-            update = RDFUpdate()
-            update.add(manifest_rdf, options.update_link)
-            open(rdf_name, "w").write(str(update))
-
-        # ask the manifest what files were used, so we can construct an XPI
-        # without the rest. This will include the loader (and everything it
-        # uses) because of the "loader_modules" starting points we passed to
-        # build_manifest earlier
-        used_files = set(manifest.get_used_files())
-
-        if not options.strip_xpi:
-            used_files = None # disables the filter
-
-        xpi_name = XPI_FILENAME % target_cfg.name
-        print >>stdout, "Exporting extension to %s." % xpi_name
+        xpi_path = XPI_FILENAME % target_cfg.name
+        print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
-                  xpi_name=xpi_name,
+                  xpi_path=xpi_path,
                   harness_options=harness_options,
                   limit_to=used_files)
     else:
-        if options.use_server:
-            from cuddlefish.server import run_app
-        else:
-            from cuddlefish.runner import run_app
+        from cuddlefish.runner import run_app
 
         if options.profiledir:
             options.profiledir = os.path.expanduser(options.profiledir)
@@ -771,16 +731,20 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
         try:
             retval = run_app(harness_root_dir=app_extension_dir,
+                             manifest_rdf=manifest_rdf,
                              harness_options=harness_options,
                              app_type=options.app,
                              binary=options.binary,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
-                             timeout=timeout,
+                             enforce_timeouts=enforce_timeouts,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
-                             norun=options.no_run)
+                             norun=options.no_run,
+                             used_files=used_files,
+                             enable_mobile=options.enable_mobile,
+                             mobile_app_name=options.mobile_app_name)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
