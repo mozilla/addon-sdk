@@ -39,6 +39,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 let {Cc,Ci} = require("chrome");
+const { Loader } = require('./helpers');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -49,7 +50,7 @@ const OVERFLOW_THRESH_PREF =
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
-const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
+const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
 
 // Destroying items that were previously created should cause them to be absent
@@ -1945,11 +1946,11 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader(require("packaging").myURI);
+    let loader = Loader(module);
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
-      globalScope: loader.findSandboxForModule("context-menu").globalScope,
+      globalScope: loader.sandbox("context-menu"),
       unload: function () {
         loader.unload();
         let idx = self.loaders.indexOf(wrapper);

@@ -40,12 +40,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 var unload = require("unload");
-var { Loader } = require("@loader");
-var options = require("@packaging");
+var { Loader } = require("./helpers");
 
 exports.testUnloading = function(test) {
-  var loader = Loader.new(options);
-  var ul = loader.require(module.uri, "unload");
+  var loader = Loader(module);
+  var ul = loader.require("unload");
   var unloadCalled = 0;
   var errorsReported = 0;
   function unload() {
@@ -95,8 +94,8 @@ exports.testEnsure = function(test) {
 exports.testEnsureWithTraits = function(test) {
 
   let { Trait } = require("traits");
-  let loader = Loader.new(options);
-  let ul = loader.require(module.uri, "unload");
+  let loader = Loader(module);
+  let ul = loader.require("unload");
 
   let called = 0;
   let composedCalled = 0;
@@ -151,8 +150,8 @@ exports.testEnsureWithTraits = function(test) {
 exports.testEnsureWithTraitsPrivate = function(test) {
 
   let { Trait } = require("traits");
-  let loader = Loader.new(options);
-  let ul = loader.require(module.uri, "unload");
+  let loader = Loader(module);
+  let ul = loader.require("unload");
 
   let called = 0;
   let privateObj = null;
@@ -180,8 +179,8 @@ exports.testEnsureWithTraitsPrivate = function(test) {
 
 exports.testReason = function (test) {
   var reason = "Reason doesn't actually have to be anything in particular.";
-  var loader = Loader.new(options);
-  var ul = loader.require(module.uri, "unload");
+  var loader = Loader(module);
+  var ul = loader.require("unload");
   ul.when(function (rsn) {
     test.assertEqual(rsn, reason,
                      "when() reason should be reason given to loader");

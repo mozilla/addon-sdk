@@ -1,17 +1,13 @@
 "use strict";
 
 const { keyPress } = require("api-utils/dom/events/keys");
-const { Loader } = require("@loader");
-const options = require("@packaging");
-var windowUtils = require("api-utils/window-utils");
-var keyboardObserver = require("api-utils/keyboard/observer");
+const { Loader } = require("./helpers");
 
 exports["test unload keyboard observer"] = function(assert, done) {
-  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = Loader.new(options);
-  let element = loader.require(module.uri, "api-utils/window-utils").
+  let loader = Loader(module);
+  let element = loader.require("api-utils/window-utils").
                        activeBrowserWindow.document.documentElement;
-  let observer = loader.require(module.uri, "api-utils/keyboard/observer").
+  let observer = loader.require("api-utils/keyboard/observer").
                         observer;
   let called = 0;
 

@@ -1,17 +1,14 @@
 "use strict";
 
 const { openTab, closeTab } = require("api-utils/tabs/utils");
-const { Loader } = require("@loader");
-const options = require("@packaging");
-const { setTimeout } = require("timer")
+const { Loader } = require("./helpers");
+const { setTimeout } = require("timer");
 
 exports["test unload tab observer"] = function(assert, done) {
-  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = Loader.new(options);
-  let require = loader.require.bind(loader, module.uri);
+  let loader = Loader(module);
 
-  let window = require("api-utils/window-utils").activeBrowserWindow;
-  let observer = require("api-utils/tabs/observer").observer;
+  let window = loader.require("api-utils/window-utils").activeBrowserWindow;
+  let observer = loader.require("api-utils/tabs/observer").observer;
   let opened = 0;
   let closed = 0;
 

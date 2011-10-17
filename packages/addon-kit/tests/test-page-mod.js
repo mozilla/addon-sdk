@@ -2,8 +2,7 @@
 
 var pageMod = require("page-mod");
 var testPageMod = require("pagemod-test-helpers").testPageMod;
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require('./helpers');
 const tabs = require("tabs");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
@@ -356,9 +355,9 @@ exports['test tab worker on message'] = function(test) {
 
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
-  let loader = Loader.new(options);
+  let loader = Loader(module);
   
-  let pageMod = loader.require(module.uri, "page-mod").PageMod({
+  let pageMod = loader.require("page-mod").PageMod({
     include: "about:*",
     contentScriptWhen: "start",
     onAttach: function(w) {

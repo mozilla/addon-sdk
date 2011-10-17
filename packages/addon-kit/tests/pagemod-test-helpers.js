@@ -3,8 +3,7 @@
 const {Cc,Ci} = require("chrome");
 const timer = require("timer");
 const xulApp = require("xul-app");
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require('./helpers');
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL
@@ -32,9 +31,8 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   else
     test.waitUntilDone();
 
-  let loader = Loader.new(options);
-  let require = function(id) loader.require(module.uri, id)
-  let pageMod = require("page-mod");
+  let loader = Loader(module);
+  let pageMod = loader.require("page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
 

@@ -40,8 +40,7 @@
 const byteStreams = require("byte-streams");
 const file = require("file");
 const url = require("url");
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require("./helpers");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
 
@@ -178,8 +177,8 @@ exports.testTruncate = function (test) {
 };
 
 exports.testUnload = function (test) {
-  let loader = Loader.new(options);
-  let file = loader.require(module.uri, "file");
+  let loader = Loader(module);
+  let file = loader.require("file");
 
   let filename = url.toFilename(module.uri);
   let stream = file.open(filename, "b");

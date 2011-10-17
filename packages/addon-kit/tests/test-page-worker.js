@@ -1,14 +1,8 @@
 let tests = {}, Pages, Page;
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require('./helpers');
 
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
-
-function getSandbox(loader, id) {
-  let uri = options.manifest[module.uri].requirements[id].uri;
-  return loader.sandboxes[uri].sandbox;
-}
 
 tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
@@ -95,9 +89,9 @@ tests.testPageProperties = function(test) {
 tests.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = Loader.new(options);
-  let Pages = loader.require(module.uri, "page-worker");
-  let global = getSandbox(loader, "page-worker");
+  let loader = Loader(module);
+  let Pages = loader.require("page-worker");
+  let global = loader.sandbox("page-worker");
 
   let pagesReady = 0;
 
@@ -132,8 +126,8 @@ tests.testConstructorAndDestructor = function(test) {
 tests.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = Loader.new(options);
-  let Pages = loader.require(module.uri, "page-worker");
+  let loader = Loader(module);
+  let Pages = loader.require("page-worker");
 
   let page = Pages.Page({
     contentScript: "self.postMessage('')",

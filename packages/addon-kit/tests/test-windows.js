@@ -37,8 +37,7 @@
 
 const {Cc, Ci} = require("chrome");
 const { setTimeout } = require("timer");
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require('./helpers');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
@@ -79,9 +78,8 @@ exports.testAutomaticDestroy = function(test) {
 
   // Create a second windows instance that we will unload
   let called = false;
-  let loader = Loader.new(options);
-  let require = function(id) loader.require(module.uri, id)
-  let windows2 = require("windows").browserWindows;
+  let loader = Loader(module);
+  let windows2 = loader.require("windows").browserWindows;
   windows2.on("open", function() {
     called = true;
   });

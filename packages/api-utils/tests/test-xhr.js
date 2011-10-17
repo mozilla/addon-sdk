@@ -1,7 +1,6 @@
 var xhr = require("xhr");
 var timer = require("timer");
-var { Loader } = require("@loader");
-var options = require("@packaging");
+var { Loader } = require("./helpers");
 
 exports.testAbortedXhr = function(test) {
   var req = new xhr.XMLHttpRequest();
@@ -32,8 +31,8 @@ exports.testLocalXhr = function(test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = Loader.new(options);
-  var sbxhr = loader.require(module.uri, "xhr");
+  var loader = Loader(module);
+  var sbxhr = loader.require("xhr");
   var req = new sbxhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);
