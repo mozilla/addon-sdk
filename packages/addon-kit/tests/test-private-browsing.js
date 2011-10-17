@@ -38,6 +38,8 @@
 
 let pb = require("private-browsing");
 let {Cc,Ci} = require("chrome");
+const { Loader } = require("@loader");
+const options = require("@packaging");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -110,8 +112,8 @@ if (pbService) {
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
-    let loader = test.makeSandboxedLoader(require("packaging").myURI);
-    let pb2 = loader.require("private-browsing");
+    let loader = Loader.new(options);
+    let pb2 = loader.require(module.uri, "private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
       called = true;
