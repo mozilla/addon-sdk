@@ -25,7 +25,7 @@ function assertList(test, array, list) {
 }
 
 const { List } = require('api-utils/list');
-const { Iterator } = require('api-utils/iterators');
+let { Iterator } = require('api-utils/iterators');
 
 exports['test:test for'] = function(test) {
   let fixture = List(3, 2, 1);

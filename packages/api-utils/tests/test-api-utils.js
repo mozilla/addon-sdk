@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 const apiUtils = require("api-utils/api-utils");
-const { Iterator } = require("api-utils/iterators");
+let { Iterator } = require("api-utils/iterators");
 
 exports.testPublicConstructor = function (test) {
   function PrivateCtor() {}
