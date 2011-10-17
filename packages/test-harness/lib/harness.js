@@ -340,8 +340,9 @@ var runTests = exports.runTests = function runTests(options) {
           system.platform + "/" + system.architecture + ".\n");
 
     sandbox = Loader.new(require("@packaging"));
-    sandbox.globals.console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
-                                                    options);
+    Object.defineProperty(sandbox.globals, 'console', {
+      value: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+    });
 
     nextIteration();
   } catch (e) {

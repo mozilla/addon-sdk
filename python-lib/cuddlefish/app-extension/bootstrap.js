@@ -52,7 +52,8 @@ const resourceHandler = ioService.getProtocolHandler('resource')
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
-
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
 
 // TODO: Remove this temporary hack! Module `id` should map to corresponding
 // resource `uri` in more trivial way. I think changing cuddlefish so that
@@ -110,7 +111,7 @@ function readURI(uri) {
 
 const Sandbox = {
   new: function (prototype, principal) {
-    return Object.create(Sandbox, {
+    let sandbox = Object.create(Sandbox, {
       sandbox: {
         value: Cu.Sandbox(principal || Sandbox.principal, {
           sandboxPrototype: prototype || Sandbox.prototype,
@@ -118,6 +119,7 @@ const Sandbox = {
         })
       }
     })
+    return sandbox
   },
   evaluate: function evaluate(source, uri, lineNumber) {
     return Cu.evalInSandbox(
@@ -128,6 +130,15 @@ const Sandbox = {
       lineNumber || this.lineNumber
     );
   },
+  load: function load(uri) {
+    scriptLoader.loadSubScript(uri, this.sandbox)
+  },
+  merge: function merge(properties) {
+    Object.getOwnPropertyNames(properties).forEach(function(name) {
+      Object.defineProperty(this.sandbox, name,
+                            Object.getOwnPropertyDescriptor(properties, name));
+    }, this);
+  },
   principal: systemPrincipal,
   version: '1.8',
   lineNumber: 1,
@@ -137,15 +148,8 @@ const Sandbox = {
 
 const Loader = {
   new: function (options) {
-    // TODO: Also adding legacy global that some code depends on, which should
-    // migrate to require("packaging") or similar instead.
-    let globals = options.globals || {
-      packaging: { jetpackID: options.jetpackID, options: options },
-      dump: dump
-    };
-
     let loader = Object.create(Loader, {
-      globals: { value: globals },
+      globals: { value: options.globals || { dump: dump } },
 
       // Metadata from package.json.
       // Maybe this is obsolete.
@@ -162,9 +166,7 @@ const Loader = {
 
       modules: { value: options.modules || Object.create(Loader.modules) },
 
-      // If `true` sandboxes will be created per module, otherwise
-      // one sandbox will be used for all modules.
-      sandboxes: { value: options.sandboxes <= 1 ? Sandbox.new(globals) : {} }
+      sandboxes: { value: options.sandboxes || {} }
     });
 
     loader.modules['@packaging.js'] = Object.freeze({
@@ -182,9 +184,10 @@ const Loader = {
     mapResources(options.uri, options.resources);
 
     // Loading globals for special module and put them into loader globals.
-    globals = loader.require(null, 'api-utils/globals!');
-    Object.keys(globals).forEach(function(name) {
-      loader.globals[name] = globals[name];
+    let globals = loader.require(null, 'api-utils/globals!');
+    Object.getOwnPropertyNames(globals).forEach(function(name) {
+      Object.defineProperty(loader.globals, name,
+                            Object.getOwnPropertyDescriptor(globals, name));
     });
 
     return loader
@@ -219,13 +222,12 @@ const Loader = {
       throw new Error('Module: ' + module.id + ' was not found: ' + uri)
     }
 
-    let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
-    let exports = module.exports;
     let require = this.require.bind(this, uri);
     require.main = this.main;
+    let sandbox = this.sandboxes[uri] = Sandbox.new(this.globals);
+    sandbox.merge({ require: require, module: module, exports: module.exports });
     try {
-      let factory = sandbox.evaluate('(function(require, exports, module, dump) {' + source + ' })', uri);
-      factory.call(exports, require, exports, module, dump);
+      sandbox.load(module.uri)
     } catch(error) {
       dump(error.fileName + '#' + error.lineNumber + '\n')
       dump(error.message + '\n')
