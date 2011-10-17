@@ -2,6 +2,9 @@
 
 var pageMod = require("page-mod");
 var testPageMod = require("pagemod-test-helpers").testPageMod;
+const { Loader } = require("@loader");
+const options = require("@packaging");
+const tabs = require("tabs");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -286,9 +289,9 @@ exports.testHistory = function(test) {
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
-  let tabs = require("tabs");
   let tab;
-  let pageMod = new require("page-mod").PageMod({
+  let { PageMod } = require("page-mod");
+  let pageMod = new PageMod({
     include: "about:*",
     onAttach: function(worker) {
       test.assertEqual(tab, worker.tab, "Worker.tab is valid");
@@ -353,9 +356,9 @@ exports['test tab worker on message'] = function(test) {
 
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
-  let loader = test.makeSandboxedLoader(require("packaging").myURI);
+  let loader = Loader.new(options);
   
-  let pageMod = loader.require("page-mod").PageMod({
+  let pageMod = loader.require(module.uri, "page-mod").PageMod({
     include: "about:*",
     contentScriptWhen: "start",
     onAttach: function(w) {
