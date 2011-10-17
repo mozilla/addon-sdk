@@ -1,6 +1,8 @@
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
+const { Loader } = require("@loader");
+const options = require("@packaging");
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -318,8 +320,8 @@ function makeEventOrderTest(options) {
 }
 
 tests.testAutomaticDestroy = function(test) {
-  let loader = test.makeSandboxedLoader(require("packaging").myURI);
-  let panel = loader.require("panel").Panel({
+  let loader = Loader.new(options);
+  let panel = loader.require(module.uri, "panel").Panel({
     contentURL: "about:buildconfig",
     contentScript: 
       "self.port.on('event', function() self.port.emit('event-back'));"
