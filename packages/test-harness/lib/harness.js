@@ -263,16 +263,19 @@ function nextIteration(tests) {
     iterationsLeft--;
   }
 
-  if (iterationsLeft)
-    sandbox.require(null, "api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: sandbox.require(null, "@packaging").enableE10s,
+  if (iterationsLeft) {
+    let require = function(id) sandbox.require(null, id)
+    require("api-utils/unit-test").findAndRunTests({
+      testOutOfProcess: require("@packaging").enableE10s,
       testInProcess: true,
       dirs: dirs,
       filter: filter,
       onDone: nextIteration
     });
-  else
+  }
+  else {
     require("api-utils/timer").setTimeout(cleanup, 0);
+  }
 }
 
 var POINTLESS_ERRORS = [
