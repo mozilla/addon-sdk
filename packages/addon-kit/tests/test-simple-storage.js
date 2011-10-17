@@ -44,11 +44,14 @@ const prefs = require("preferences-service");
 const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 
 let {Cc,Ci} = require("chrome");
+const { Loader } = require("@loader");
+const options = require("@packaging");
+
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
                 getService(Ci.nsIProperties).
                 get("ProfD", Ci.nsIFile);
 storeFile.append("jetpack");
-storeFile.append(packaging.jetpackID);
+storeFile.append(options.jetpackID);
 storeFile.append("simple-storage");
 storeFile.append("store.json");
 let storeFilename = storeFile.path;
@@ -303,11 +306,17 @@ exports.testSetNoSetRead = function (test) {
 };
 
 function manager(loader) {
-  return loader.findSandboxForModule("simple-storage").globalScope.manager;
+  let uri = options.manifest[module.uri].requirements['simple-storage'].uri
+  return loader.sandboxes[uri].sandbox.manager
 }
 
 function newLoader(test) {
-  return test.makeSandboxedLoader(require("packaging").myURI);
+  let loader = Loader.new(options)
+  return {
+    require: function(id) loader.require(module.uri, id),
+    sandboxes: loader.sandboxes,
+    unload: function(reason) loader.unload(reason)
+  }
 }
 
 function setGetRoot(test, val, compare) {
