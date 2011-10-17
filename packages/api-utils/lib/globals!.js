@@ -65,3 +65,13 @@ let print = (function define(global) {
 exports.dump = print;
 exports.memory = require('./memory');
 exports.console = new (require('./plain-text-console').PlainTextConsole)(print);
+
+Object.defineProperty(exports, 'define', {
+  get: function define() {
+    let scope = this;
+    return function define(factory) {
+      factory = Array.slice(arguments).pop();
+      factory.call(scope, scope.require, scope.exports, scope.module);
+    }
+  }
+});
