@@ -1,3 +1,4 @@
+/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -11,16 +12,14 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Weave.
+ * The Original Code is Jetpack.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2008
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  Dan Mills <thunder@mozilla.com>
- *  Atul Varma <atul@mozilla.com>
- *  Drew Willcoxon <adw@mozilla.com>
+ *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,119 +35,335 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+// @see http://mxr.mozilla.org/mozilla-central/source/js/src/xpconnect/loader/mozJSComponentLoader.cpp
+
+var EXPORTED_SYMBOLS = [ 'Loader' ];
+
+!function(exports) {
+
 "use strict";
 
-// For more information on the context in which this script is executed, see:
-// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
+        results: Cr, manager: Cm } = Components;
+const ioService = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
+const resourceHandler = ioService.getProtocolHandler('resource')
+                        .QueryInterface(Ci.nsIResProtocolHandler);
+const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
+                          'nsIXMLHttpRequest');
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
 
-// Object containing information about the XPCOM harness service
-// that manages our addon.
-
-var gHarness;
-
-var ios = Cc['@mozilla.org/network/io-service;1']
-          .getService(Ci.nsIIOService);
-
-var manager = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-
-// Dynamically evaluate and initialize the XPCOM component in
-// components/harness.js, which bootstraps our addon. (We want to keep
-// components/harness.js around so that versions of Gecko that don't
-// support rebootless addons can still work.)
-
-function setupHarness(installPath, loadReason) {
-  var harnessJs = installPath.clone();
-  harnessJs.append("components");
-  harnessJs.append("harness.js");
-  var path = ios.newFileURI(harnessJs).spec;
-  var harness = {};
-  var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-               .getService(Ci.mozIJSSubScriptLoader);
-  loader.loadSubScript(path, harness);
-
-  var HarnessService = harness.buildHarnessService(installPath);
-  var factory = HarnessService.prototype._xpcom_factory;
-  var proto = HarnessService.prototype;
-
-  // We want to keep this factory around for the lifetime of
-  // the addon so legacy code with access to Components can
-  // access the addon if needed.
-  manager.registerFactory(proto.classID,
-                          proto.classDescription,
-                          proto.contractID,
-                          factory);
-
-  var harnessService = factory.createInstance(null, Ci.nsISupports);
-  harnessService = harnessService.wrappedJSObject;
-
-  gHarness = {
-    service: harnessService,
-    classID: proto.classID,
-    contractID: proto.contractID,
-    factory: factory
-  };
-
-  if (loadReason == "startup")
-    // Simulate a startup event; the harness service will take care of
-    // waiting until the app is ready for the extension's code to run.
-    harnessService.observe(null, "profile-after-change", null);
-  else
-    harnessService.load(loadReason);
+// TODO: Remove this temporary hack! Module `id` should map to corresponding
+// resource `uri` in more trivial way. I think changing cuddlefish so that
+// addons are layout in a simple structure like http://cl.ly/8r99 is the right
+// way to go about this.
+function resolveURI(root, id) {
+  let paths = normalize(id).split('/')
+  return paths.length <= 1 ? id :
+         [root + paths.shift() + '-lib'].concat(paths).join('/');
 }
 
-function reasonToString(reason) {
-  // If you change these names, change them in harness.js's lifeCycleObserver192
-  // too.
-  switch (reason) {
-  case ADDON_INSTALL:
-    return "install";
-  case ADDON_UNINSTALL:
-    return "uninstall";
-  case ADDON_ENABLE:
-    return "enable";
-  case ADDON_DISABLE:
-    return "disable";
-  case ADDON_UPGRADE:
-    return "upgrade";
-  case ADDON_DOWNGRADE:
-    return "downgrade";
-  // The startup and shutdown strings are also used outside of
-  // lifeCycleObserver192.
-  case APP_STARTUP:
-    return "startup";
-  case APP_SHUTDOWN:
-    return "shutdown";
+// TODO: Remove this temporary hack! I think manifest should contain module `id`
+// along with or instead of `uri` properties. This function creates parses out
+// id out of the `uri`.
+function resolveID(root, uri) {
+  let paths = uri.replace(root, '').split('/');
+  return [ paths.shift().replace(/\-lib$/, '') ].concat(paths).join('/');
+}
+
+// Normalizes `uri`, so that it contains `.js` file extension.
+function normalize(uri) uri.substr(-3) === '.js' ? uri : uri + '.js'
+
+// Returns `true` if given `id` is relative.
+function isRelative(id) id.indexOf('.') === 0
+
+// Resolves given `id` to the `base` one, if it's a relative.
+function resolve(id, base) {
+  var path, paths, last
+  if (!isRelative(id)) return id
+  paths = id.split('/')
+  base = base ? base.split('/') : [ '.' ]
+  if (base.length > 1) base.pop()
+  while ((path = paths.shift())) {
+    if (path === '..') {
+      if (base.length && base[base.length - 1] !== '..') {
+        if (base.pop() === '.') base.push(path)
+      } else base.push(path)
+    } else if (path !== '.') {
+      base.push(path)
+    }
   }
-  return undefined;
+  if (base[base.length - 1].substr(-1) === '.') base.push('')
+  return base.join('/')
 }
 
-function install(data, reason) {
-  // We shouldn't start up here; startup() will always be called when
-  // an extension should load, and install() sometimes gets called when
-  // an extension has been installed but is disabled.
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
 }
 
-function startup(data, reason) {
-  if (!gHarness)
-    setupHarness(data.installPath, reasonToString(reason));
-}
+function Require(loader, manifest, base) {
+  function require(id) {
+    // TODO: Remove debug log!
+    // dump('>>>> ' + base + ' ? ' + id + '\n')
+    // If we have a manifest for requirer, then all it's requirements have been
+    // registered by linker.
+    if (base && manifest) {
+      // If required module is in manifest we use take resolved requirement
+      // `id` from manifest.
+      let requirement = manifest.requirements[id];
+      if (requirement)
+        id = requirement.uri ? resolveID(loader.root, requirement.uri) : id;
 
-function shutdown(data, reason) {
-  if (gHarness) {
-    var harness = gHarness;
-    gHarness = undefined;
-    harness.service.unload(reasonToString(reason));
-    manager.unregisterFactory(harness.classID, harness.factory);
+      // If module is known to have "sudo" privileges, we allow it to go
+      // off-manifest. Otherwise we throw an error.
+      else if (!('chrome' in manifest.requirements))
+        throw new Error("Module: " + base.id + " has no athority to load: " + id);
+    }
+
+    // Resolving requirement `id` to it's requirer `id`.
+    id = resolve(id, base && base.id);
+
+    // TODO: Remove debug log!
+    // dump('require: ' + id + '\n');
+
+    // Loading required module and return it's exports.
+    let exports = loader.load(id, base);
+
+    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
+    // so we create decedent and freeze it instead.
+    if (typeof(exports) === 'object') {
+      exports = Object.prototype.isPrototypeOf(exports) ?
+                Object.freeze(exports) :
+                Object.freeze(Object.create(exports));
+    }
+    return exports;
   }
+  require.main = loader.main;
+  return require;
 }
 
-function uninstall(data, reason) {
-  // We shouldn't shutdown here; shutdown() will always be called when
-  // an extension should shutdown, and uninstall() sometimes gets
-  // called when startup() has never been called before it.
+const Sandbox = {
+  new: function (prototype, principal) {
+    return Object.create(Sandbox, {
+      sandbox: {
+        value: Cu.Sandbox(principal || Sandbox.principal, {
+          sandboxPrototype: prototype || Sandbox.prototype,
+          wantXrays: Sandbox.wantXrays
+        })
+      }
+    })
+  },
+  evaluate: function evaluate(source, uri, lineNumber) {
+    return Cu.evalInSandbox(
+      source,
+      this.sandbox,
+      this.version,
+      uri,
+      lineNumber || this.lineNumber
+    );
+  },
+  principal: systemPrincipal,
+  version: '1.8',
+  lineNumber: 1,
+  wantXrays: false,
+  prototype: {}
+};
+
+const Loader = {
+  new: function (options) {
+    // TODO: Also adding legacy global that some code depends on, which should
+    // migrate to require("packaging") or similar instead.
+    let globals = {
+      packaging: { jetpackID: options.jetpackID, options: options }
+    };
+
+    let loader = Object.create(Loader, {
+      globals: { value: globals },
+
+      // Metadata from package.json.
+      // Maybe this is obsolete.
+      metadata: { value: options.metadata || {} },
+
+      // Manifest generated by a linker, containing map of module url's mapped
+      // to it's requirements.
+      manifest: { value: options.manifest || {} },
+
+      // TODO: Hack to allow module URI resolution from ID.
+      // Hopefully we'll modify linker in a way that id's will map one on one
+      // URIs.
+      root: { value: options.uriPrefix },
+
+      modules: { value: options.modules || Loader.modules },
+
+      // If `true` sandboxes will be created per module, otherwise
+      // one sandbox will be used for all modules.
+      sandboxes: { value: options.sandboxes <= 1 ? Sandbox.new(globals) : {} }
+    });
+
+    loader.modules['@packaging.js'] = Object.freeze({
+      id: '@packaging',
+      exports: JSON.parse(JSON.stringify(options))
+    });
+    loader.modules['@loader.js'] = Object.freeze({
+      exports: Object.freeze({ Loader: Loader }),
+      id: '@loader'
+    });
+
+    // TODO: This is unnecessary overhead add-on already has resource URI which
+    // we should use, it's just packages should be aligned so that they can map
+    // easily to the module IDs.
+    mapResources(options.uri, options.resources);
+
+    // Loading globals for special module and put them into loader globals.
+    globals = loader.load('api-utils/globals!');
+    Object.keys(globals).forEach(function(name) {
+      loader.globals[name] = globals[name];
+    });
+
+    return loader
+  },
+  modules: {
+    'chrome.js': Object.freeze({
+      exports: Object.freeze({
+        Cc: Cc,
+        CC: CC,
+        Ci: Ci,
+        Cu: Cu,
+        Cr: Cr,
+        Cm: Cm,
+        components: Components,
+        messageManager: 'addMessageListener' in exports ? exports : null
+      }),
+      id: 'chrome'
+    }),
+    'self.js': function self(loader, requirer) {
+      return loader.load('api-utils/self!').create(requirer.uri);
+    },
+  },
+  load: function load(id, base) {
+    let uri = resolveURI(this.root, normalize(id));
+    let module = this.modules[uri] || (this.modules[uri] = {});
+
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(this, base);
+
+    if (module.exports)
+      return module.exports;
+
+    module.id = id;
+    module.uri = uri;
+    module.main = this.main;
+    module.exports = {};
+
+    let manifest = this.manifest[uri];
+    let exports = module.exports;
+
+    let source;
+    try {
+      source = readURI(uri);
+    } catch(error) {
+      throw new Error('Module: ' + id + ' was not found: ' + uri)
+    }
+    let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
+    let factory;
+    try {
+      factory = sandbox.evaluate('(function(require, exports, module) {' + source + ' })', uri);
+      factory.call(exports, Require(this, manifest, module), exports, module);
+    } catch(error) {
+      dump(error.fileName + '#' + error.lineNumber + '\n')
+      dump(error.message + '\n')
+      dump(error.stack + '\n')
+      throw error
+    }
+
+    return Object.freeze(module).exports;
+  },
+  main: function main(id) {
+    // Overriding main so that all modules point to it.
+    this.main = this.modules[resolveURI(this.root, id)] = {};
+    return Require(this, null)(id);
+  }
+};
+exports.Loader = Loader;
+
+// Shim function to get `resourceURI` in pre Gecko 7.0.
+// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
+function resourceURI(file) {
+  // First creating "file:" URI.
+  let uri = ioService.newFileURI(file);
+  if (uri.spec.substr(-4) === '.xpi') // `unpack` is `false`
+    uri = ioService.newURI('jar:' + uri.spec + '!/', null, null);
+
+  return uri;
 }
+
+/**
+ * Maps each path - value from `resources` hash in the resources protocol
+ * handler with an associated key. Each path is resolved relative to the given
+ * `root` path.
+ */
+function mapResources(root, resources) {
+  Object.keys(resources).forEach(function(id) {
+    let path = resources[id];
+    let uri = Array.isArray(path) ? resolve('./' + path.join('/'), root)
+                                  : 'file://' + path;
+    uri = ioService.newURI(uri + '/', null, null);
+    resourceHandler.setSubstitution(id, uri);
+    // TODO: Remove debug log!
+    dump(id + ' -> ' + uri.spec + '\n');
+  });
+}
+
+exports.install = function install(data, reason) {
+};
+
+exports.uninstall = function uninstall(data, reason) {
+};
+
+exports.main = function main(options, id) {
+  let loader = Loader.new(options)
+  let main = loader.main(id);
+  if (main.main)
+    main.main();
+};
+
+exports.startup = function startup(data, reason) {
+  let uri = (data.resolveURI || resourceURI(data.installPath)).spec;
+  let options = JSON.parse(readURI(resolve('./harness-options.json', uri)));
+  let mainID = resolve('./' + options.main, options.name);
+  options.uri = uri;
+
+  let loader = Loader.new(options);
+
+  // TODO: Also does not feels right to defer loading an add-on, but doing so
+  // to match behavior of the legacy module loader.
+  let observres = loader.load('api-utils/observer-service');
+  observres.add('sessionstore-windows-restored', function onReady() {
+    let process = loader.main('api-utils/process');
+    // Spawning an add-on process for the main module.
+    let addon = process.spawn(mainID);
+    // Listen to `require!` channel's input messages from the add-on process
+    // and load modules being required.
+    addon.channel('require!').input(function(id) {
+      try {
+        loader.load(id).initialize(addon.channel(id));
+      } catch (error) {
+        loader.globals.console.exception(error)
+      }
+    });
+  });
+};
+
+exports.shutdown = function shutdown(data, reason) {
+};
+
+}(typeof(exports) === 'undefined' ? this : exports);
