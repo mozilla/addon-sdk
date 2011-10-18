@@ -118,7 +118,15 @@ const Sandbox = {
           wantXrays: Sandbox.wantXrays
         })
       }
-    })
+    });
+    // There are few properties (dump, Iterator) that by default appear in
+    // sandboxes shadowing properties provided by a prototype. To workaround
+    // this we override all such properties by copying them directly to the
+    // sandbox.
+    Object.keys(prototype).forEach(function onEach(key) {
+      if (sandbox.sandbox[key] !== prototype[key])
+        sandbox.sandbox[key] = prototype[key]
+    });
     return sandbox
   },
   evaluate: function evaluate(source, uri, lineNumber) {
@@ -149,7 +157,7 @@ const Sandbox = {
 const Loader = {
   new: function (options) {
     let loader = Object.create(Loader, {
-      globals: { value: options.globals || { dump: dump } },
+      globals: { value: options.globals || {} },
 
       // Metadata from package.json.
       // Maybe this is obsolete.
@@ -211,10 +219,6 @@ const Loader = {
     },
   },
   load: function load(uri, module) {
-    // HACK: `dump` is overridden on windows for details see:
-    // packages/api-utils/globals!.js
-    let { dump } = this.globals;
-
     let source;
     try {
       source = readURI(uri);
