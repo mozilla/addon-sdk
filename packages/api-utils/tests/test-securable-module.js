@@ -36,9 +36,6 @@ FakeCompositeFileSystem.prototype = {
 };
 
 
-(function(global) {
-   var exports = new Object();
-
    var ios = Cc['@mozilla.org/network/io-service;1']
              .getService(Ci.nsIIOService);
 
@@ -290,25 +287,6 @@ FakeCompositeFileSystem.prototype = {
     });
 
    };
-
-   if (global.window) {
-     // We're being loaded in a chrome window, or a web page with
-     // UniversalXPConnect privileges.
-     global.SecurableModuleTests = exports;
-   } else if (global.exports) {
-     // We're being loaded in a SecurableModule.
-     for (let name in exports) {
-       global.exports[name] = exports[name];
-     }
-   } else {
-     // We're being loaded in a JS module.
-     global.EXPORTED_SYMBOLS = [];
-     for (let name in exports) {
-       global.EXPORTED_SYMBOLS.push(name);
-       global[name] = exports[name];
-     }
-   }
- })(this);
 
 exports.testFindSandboxForModule = function(test) {
   var fs = {
