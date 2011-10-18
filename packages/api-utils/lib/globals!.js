@@ -79,12 +79,28 @@ exports.Iterator = (function(DefaultIterator) {
 exports.memory = require('./memory');
 exports.console = new PlainTextConsole(exports.dump);
 
+// Provide CommonJS `define` to allow authoring modules in a format that can be
+// loaded both into jetpack and into browser via AMD loaders.
 Object.defineProperty(exports, 'define', {
-  get: function define() {
-    let scope = this;
-    return function define(factory) {
+  // `define` is provided as a lazy getter that binds below defined `define`
+  // function to the module scope, so that require, exports and module
+  // variables remain accessible.
+  configurable: true,
+  get: (function() {
+    function define(factory) {
       factory = Array.slice(arguments).pop();
-      factory.call(scope, scope.require, scope.exports, scope.module);
+      factory.call(this, this.require, this.exports, this.module);
     }
-  }
+
+    return function getter() {
+      // Redefine `define` as a static property to make sure that module
+      // gets access to the same function so that `define === define` is
+      // `true`.
+      Object.defineProperty(this, 'define', {
+        configurable: false,
+        value: define.bind(this)
+      });
+      return this.define;
+    }
+  })()
 });
