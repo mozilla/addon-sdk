@@ -27,6 +27,8 @@ DEFAULT_FIREFOX_PREFS = {
     'extensions.getAddons.cache.enabled' : False,
     # Disable intalling any distribution add-ons
     'extensions.installDistroAddons' : False,
+    # Allow installing extensions dropped into the profile folder
+    'extensions.autoDisableScopes' : 10,
     'extensions.testpilot.runStudies' : False,
 
     # From:
