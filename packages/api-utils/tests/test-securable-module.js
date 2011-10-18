@@ -13,6 +13,27 @@ var beetFs = {
   }
 };
 
+exports.testRunScript = function(test) {
+  var output = [];
+  function outPrint(msg) { output.push(msg); }
+  var SecurableModule = require("securable-module");
+  var loader = new SecurableModule.Loader({fs: beetFs,
+                                           globals: {print: outPrint},
+                                           uriPrefix: "resource://bogus-"});
+  var extraOutput = {};
+  loader.runScript({contents: 'print("beets is " + ' +
+                    'require("beets").beets);'}, extraOutput);
+  test.assertEqual(output[0], 'hi from beets', 'module should load');
+  test.assertEqual(output[1], 'beets is 5', 'module should export');
+  var printSrc = extraOutput.sandbox.getProperty('print');
+  if (printSrc == "function outPrint() {\n    [native code]\n}")
+    test.pass('extraOutput.sandbox should work');
+  else
+    test.assertEqual(printSrc,
+                     outPrint,
+                     'extraOutput.sandbox should work');
+};
+
 function FakeCompositeFileSystem(fses) {
   this.fses = fses;
   this._pathMap = {};
@@ -35,66 +56,10 @@ FakeCompositeFileSystem.prototype = {
   }
 };
 
-
-exports.testSecurableModule = function(test) {
-  // Basic test of module loading with a fake fs.
-  // The tests in this file weren't originally written for
-  // Cuddlefish. This function is essentially an adapter
-  // that runs the tests using the Cuddlefish testing
-  // framework.
-  var SecurableModule = require("securable-module");
-  function log(msg, type) {
-    switch (type) {
-    case "fail":
-      test.fail(msg);
-      break;
-    case "pass":
-      test.pass(msg);
-      break;
-    case "info":
-      console.info(msg);
-    }
-  }
-  var assert = {
-    pass: function(msg) {
-      test.pass(msg);
-    },
-    isEqual: function(a, b, msg) {
-      test.assertEqual(a, b, msg);
-    }
-  };
-
-  var url = require("url");
-  var path = url.URL("interoperablejs-read-only/compliance/",
-                     __url__).toString();
-  path = url.toFilename(path);
-
-  var ios = Cc['@mozilla.org/network/io-service;1']
-    .getService(Ci.nsIIOService);
-
-  var rootDir = Cc['@mozilla.org/file/local;1']
-    .createInstance(Ci.nsILocalFile);
-  rootDir.initWithPath(path);
-
+exports.testFakeCompositeFileSystem = function(test) {
   var output = [];
-
   function outPrint(msg) { output.push(msg); }
-
-  var loader = new SecurableModule.Loader({fs: beetFs,
-                                           globals: {print: outPrint},
-                                           uriPrefix: "resource://bogus-"});
-  var extraOutput = {};
-  loader.runScript({contents: 'print("beets is " + ' +
-                    'require("beets").beets);'}, extraOutput);
-  assert.isEqual(output[0], 'hi from beets', 'module should load');
-  assert.isEqual(output[1], 'beets is 5', 'module should export');
-  var printSrc = extraOutput.sandbox.getProperty('print');
-  if (printSrc == "function outPrint() {\n    [native code]\n}")
-    assert.pass('extraOutput.sandbox should work');
-  else
-    assert.isEqual(printSrc,
-                   outPrint,
-                   'extraOutput.sandbox should work');
+  var SecurableModule = require("securable-module");
 
   var neatFs = {
     resolveModule: function(root, path) {
@@ -108,7 +73,7 @@ exports.testSecurableModule = function(test) {
     }
   };
 
-  loader = new SecurableModule.Loader(
+  var loader = new SecurableModule.Loader(
     {fs: new FakeCompositeFileSystem([beetFs, neatFs]),
      globals: {print: outPrint},
      uriPrefix: "resource://bogus-"
@@ -116,39 +81,50 @@ exports.testSecurableModule = function(test) {
   output = [];
   loader.runScript({contents: 'print("neat is " + ' +
                     'require("neat").neat);'});
-  assert.isEqual(output[0], 'hi from beets',
+  test.assertEqual(output[0], 'hi from beets',
                  'submodule from composite fs should load');
-  assert.isEqual(output[1], 'hi from neat',
+  test.assertEqual(output[1], 'hi from neat',
                  'module from composite fs should load');
-  assert.isEqual(output[2], 'neat is yo',
+  test.assertEqual(output[2], 'neat is yo',
                  'module from composite fs should export');
+};
+
+exports.testAnonymousScriptFilenames = function(test) {
+  var SecurableModule = require("securable-module");
 
   // Ensure parenting of anonymous script filenames works.
-  loader = new SecurableModule.Loader({fs: {},
-                                       uriPrefix: "resource://bogus-"});
+  var loader = new SecurableModule.Loader({fs: {},
+                                           uriPrefix: "resource://bogus-"});
   try {
     loader.runScript('throw new Error();');
     log("errors must be propogated from content sandboxes", "fail");
   } catch (e) {
-    assert.isEqual(e.fileName, '<string>',
-                   ('anonymous scripts w/o chrome privs should be ' +
-                    'unparented'));
+    test.assertEqual(e.fileName, '<string>',
+                     ('anonymous scripts w/o chrome privs should be ' +
+                      'unparented'));
   }
+};
 
-  loader = new SecurableModule.Loader({fs: {},
-                                       defaultPrincipal: "system",
-                                       uriPrefix: "resource://bogus-"});
+exports.testSystemPrincipal = function(test) {
+  var SecurableModule = require("securable-module");
+  var loader = new SecurableModule.Loader({fs: {},
+                                           defaultPrincipal: "system",
+                                           uriPrefix: "resource://bogus-"});
   try {
     loader.runScript('throw new Error();');
     log("errors must be propogated from chrome sandboxes", "fail");
   } catch (e) {
-    assert.isEqual(e.fileName.slice(-11), '-> <string>',
+    test.assertEqual(e.fileName.slice(-11), '-> <string>',
                    ('anonymous scripts w/ chrome privs should be ' +
                     'parented'));
   }
+};
+
+exports.testNonExistentModule = function(test) {
+  var SecurableModule = require("securable-module");
 
   // Ensure loading nonexistent modules raises an error.
-  loader = new SecurableModule.Loader(
+  var loader = new SecurableModule.Loader(
     {fs: {
        resolveModule: function() { return null; },
        getFile: function(path) {
@@ -162,12 +138,15 @@ exports.testSecurableModule = function(test) {
     log("loading of nonexistent module did not raise exception",
         "fail");
   } catch (e) {
-    assert.isEqual(e.message, 'Module "foo" not found',
+    test.assertEqual(e.message, 'Module "foo" not found',
                    'loading of nonexistent module should raise error');
   }
+};
 
-  loader = new SecurableModule.Loader({fs: {},
-                                       uriPrefix: "resource://bogus-"});
+exports.testNoChrome = function(test) {
+  var SecurableModule = require("securable-module");
+  var loader = new SecurableModule.Loader({fs: {},
+                                           uriPrefix: "resource://bogus-"});
   try {
     loader.runScript({contents: COMPONENTS_DOT_CLASSES});
     log("modules shouldn't have chrome privileges by default.",
@@ -190,55 +169,118 @@ exports.testSecurableModule = function(test) {
       map(function(v) String.fromCharCode(v)).
       join("");
 
-    assert.isEqual(e.message, message,
+    test.assertEqual(e.message, message,
                    "modules shouldn't have chrome privileges by default.");
   }
+};
 
-  loader = new SecurableModule.Loader(
+exports.testYesChrome = function(test) {
+  var SecurableModule = require("securable-module");
+  var loader = new SecurableModule.Loader(
     {fs: {},
      defaultPrincipal: "system",
      uriPrefix: "resource://bogus-"
     });
   loader.runScript({contents: COMPONENTS_DOT_CLASSES});
-  log("modules should be able to have chrome privileges.", "pass");
+  test.pass("modules should be able to have chrome privileges.");
+};
+
+var url = require("url");
+var path = url.URL("interoperablejs-read-only/compliance/",
+                   __url__).toString();
+path = url.toFilename(path);
+
+var ios = Cc['@mozilla.org/network/io-service;1']
+  .getService(Ci.nsIIOService);
+
+var rootDir = Cc['@mozilla.org/file/local;1']
+  .createInstance(Ci.nsILocalFile);
+rootDir.initWithPath(path);
+
+exports.testInferRootDirectory = function(test) {
+  var SecurableModule = require("securable-module");
 
   // Test the way LocalFileSystem infers root directories.
   var fs = new SecurableModule.LocalFileSystem(rootDir);
-  assert.isEqual(fs._rootURIDir, ios.newFileURI(rootDir).spec,
+  test.assertEqual(fs._rootURIDir, ios.newFileURI(rootDir).spec,
                  "fs rootdir should be same as passed-in dir");
 
   var someFile = rootDir.clone();
   someFile.append("ORACLE");
   fs = new SecurableModule.LocalFileSystem(someFile);
-  assert.isEqual(fs._rootURIDir, ios.newFileURI(rootDir).spec,
+  test.assertEqual(fs._rootURIDir, ios.newFileURI(rootDir).spec,
                  "fs rootdir sould be dirname of file");
 
   someFile = rootDir.clone();
   someFile.append("monkeys");
   fs = new SecurableModule.LocalFileSystem(someFile);
-  assert.isEqual(fs._rootURIDir, ios.newFileURI(someFile).spec,
+  test.assertEqual(fs._rootURIDir, ios.newFileURI(someFile).spec,
                  "fs rootdir should be same as passed-in subdir");
 
   if (SecurableModule.baseURI) {
     // Note that a '/' must be put after the directory name.
     var newURI = ios.newURI('lib/', null, SecurableModule.baseURI);
     fs = new SecurableModule.LocalFileSystem(newURI);
-    assert.isEqual(fs._rootURIDir, newURI.spec,
+    test.assertEqual(fs._rootURIDir, newURI.spec,
                    "fs rootdir should be subdir of document's dir");
 
     loader = new SecurableModule.Loader();
-    assert.isEqual(loader._fs._rootURI.spec, SecurableModule.baseURI.spec,
+    test.assertEqual(loader._fs._rootURI.spec, SecurableModule.baseURI.spec,
                    "fs rootdir should be document's dir");
   } else {
     try {
       loader = new SecurableModule.Loader();
-      log("Loader() w/ no params in a non-document context should " +
-          "raise an exception.", "fail");
+      test.fail("Loader() w/ no params in a non-document context should " +
+                "raise an exception.");
     } catch (e if e.message == "Need a root path for module filesystem") {
-      log("Loader() w/ no params in a non-document context should " +
-          "raise an exception.", "pass");
+      test.pass("Loader() w/ no params in a non-document context should " +
+                "raise an exception.");
     }
   }
+};
+
+exports.testCallbackStyle = function(test) {
+  // Confirm callback-based require works from an instantiated loader.
+  // want to be back in api-utils/tests directory instead of
+  // what rootDir is now:
+  // api-utils/tests/interoperablejs-read-only/compliance/
+  var SecurableModule = require("securable-module");
+  var moduleDir = rootDir.parent.parent;
+  moduleDir.append("modules");
+  var loader = new SecurableModule.Loader(
+    {rootPath: moduleDir,
+     defaultPrincipal: "system",
+     uriPrefix: "resource://bogus-"
+    });
+
+  loader.require(["subtract"], function (subtract) {
+                   test.assertEqual(2, subtract(3, 1),
+                                    "subtract module works with callback-style require");
+                 });
+};
+
+
+
+exports.testCompliance = function(test) {
+  // The tests in this file weren't originally written for
+  // Cuddlefish. This function is essentially an adapter
+  // that runs the tests using the Cuddlefish testing
+  // framework.
+  var SecurableModule = require("securable-module");
+  function log(msg, type) {
+    switch (type) {
+    case "fail":
+      test.fail(msg);
+      break;
+    case "pass":
+      test.pass(msg);
+      break;
+    case "info":
+      console.info(msg);
+    }
+  }
+
+  var loader;
 
   // Run all CommonJS SecurableModule compliance tests.
   var testDirs = [];
@@ -261,24 +303,6 @@ exports.testSecurableModule = function(test) {
       });
     loader.require("program");
   }
-
-  // Confirm callback-based require works from an instantiated loader.
-  // want to be back in api-utils/tests directory instead of
-  // what rootDir is now:
-  // api-utils/tests/interoperablejs-read-only/compliance/
-  var moduleDir = rootDir.parent.parent;
-  moduleDir.append("modules"),
-  loader = new SecurableModule.Loader(
-    {rootPath: moduleDir,
-     defaultPrincipal: "system",
-     globals: {sys: {print: log}},
-     uriPrefix: "resource://bogus-"
-    });
-
-  loader.require(["subtract"], function (subtract) {
-                   assert.isEqual(2, subtract(3, 1),
-                                  "subtract module works with callback-style require");
-                 });
 
 };
 
