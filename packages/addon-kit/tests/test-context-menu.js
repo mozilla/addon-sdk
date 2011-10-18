@@ -474,6 +474,7 @@ exports.testContentContextMatchString = function (test) {
 exports.testContentContextArgs = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
+  let callbacks = 0;
 
   let item = new loader.cm.Item({
     label: "item",
@@ -484,13 +485,14 @@ exports.testContentContextArgs = function (test) {
                    '});',
     onMessage: function (isElt) {
       test.assert(isElt, "node should be an HTML element");
-      test.done();
+      if (++callbacks == 2) test.done();
     }
   });
 
-  test.showMenu(null, function () {});
+  test.showMenu(null, function () {
+    if (++callbacks == 2) test.done();
+  });
 };
-
 
 // Multiple contexts imply intersection, not union, and content context
 // listeners should not be called if all declarative contexts are not current.
