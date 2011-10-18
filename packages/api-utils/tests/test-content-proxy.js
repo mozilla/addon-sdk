@@ -1,3 +1,4 @@
+const xulApp = require("xul-app");
 const proxy = require("content/content-proxy");
 const hiddenFrames = require("hidden-frame");
 
@@ -297,15 +298,21 @@ exports.testProxy = function (test) {
                            UNORDERED_NODE_SNAPSHOT_TYPE, 
                          value, 
                          "XPathResult's constants are valid on unwrapped node");
-        // The following test will fail if platform is fixed,
-        // so we will be able to know when to remove the work around.
-        test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
-                         undefined, 
-                         "XPathResult's constants are undefined on " + 
-                         "XPCNativeWrapper (platform bug #)");
-        // Check that our work around is working:
-        test.assertEqual(wrapped.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
-                         value, "XPathResult works correctly on Proxies");
+
+        if (xulApp.versionInRange(xulApp.platformVersion, "10.0a1", "*")) {
+          test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 6, 
+                           "XPathResult's constants are defined on " + 
+                           "XPCNativeWrapper (platform bug #)");
+        }
+        else {
+          test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                           undefined, 
+                           "XPathResult's constants are undefined on " + 
+                           "XPCNativeWrapper (platform bug #665279)");
+          // Check that our work around is working:
+          test.assertEqual(wrapped.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 
+                           value, "XPathResult works correctly on Proxies");
+        }
 
         // Verify that inherited prototype function like initEvent 
         // are handled correctly. (e2.type will return an error if it's not the case)

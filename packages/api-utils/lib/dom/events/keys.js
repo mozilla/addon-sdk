@@ -74,7 +74,7 @@ var keyEvent = exports.keyEvent = function keyEvent(element, type, options) {
       "shift" in options && !!options.shift,
       "meta" in options && !!options.meta,
       getCodeForKey(options.key) || 0,
-      options.key.charCodeAt(0)
+      options.key.length === 1 ? options.key.charCodeAt(0) : 0
     ]
   });
 }

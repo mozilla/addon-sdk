@@ -40,7 +40,8 @@
 "use strict";
 
 const { observer: keyboardObserver } = require("./observer");
-const { getKeyForCode, normalize, MODIFIERS } = require("./utils");
+const { getKeyForCode, normalize, isFunctionKey,
+        MODIFIERS } = require("./utils");
 
 /**
  * Register a global `hotkey` that executes `listener` when the key combination
@@ -117,10 +118,11 @@ keyboardObserver.on("keydown", function onKeypress(event, window) {
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/events/nsIDOMKeyEvent.idl
   key = getKeyForCode(keyCode);
 
-  // If only key or only modifiers are pressed we don't have a valid
-  // combination so we return immediately (Also, sometimes `keyCode` may be
-  // one for the modifier which means we do not have a modifier).
-  if (!key || !modifiers.length || key in MODIFIERS)
+  // If only non-function (f1 - f24) key or only modifiers are pressed we don't
+  // have a valid combination so we return immediately (Also, sometimes
+  // `keyCode` may be one for the modifier which means we do not have a
+  // modifier).
+  if (!key || (!isFunctionKey(key) && !modifiers.length) || key in MODIFIERS)
     return;
 
   let combination = normalize({ key: key, modifiers: modifiers });
