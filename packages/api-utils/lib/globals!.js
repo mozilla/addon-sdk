@@ -38,14 +38,16 @@
 "use strict";
 
 let { Cc, Ci } = require('chrome');
+let { PlainTextConsole } = require('./plain-text-console');
 let options = require('@packaging');
 
 // On windows dump does not writes into stdout so cfx can't read thous dumps.
 // To workaround this issue we write to a special file from which cfx will
 // read and print to the console.
 // For more details see: bug-673383
-let print = (function define(global) {
+exports.dump = (function define(global) {
   let print = Object.getPrototypeOf(global).dump
+  if (print) return print;
   if ('logFile' in options) {
     let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
     file.initWithPath(options.logFile);
@@ -53,16 +55,15 @@ let print = (function define(global) {
                 .createInstance(Ci.nsIFileOutputStream);
     stream.init(file, -1, -1, 0);
 
-    print = function print(message) {
+    return function print(message) {
       message = String(message);
       stream.write(message, message.length);
       stream.flush();
     };
   }
-  return print;
+  return dump;
 })(this);
 
-exports.dump = print;
 // Override the default Iterator function with one that passes
 // a second argument to custom iterator methods that identifies
 // the call as originating from an Iterator function so the custom
@@ -76,7 +77,7 @@ exports.Iterator = (function(DefaultIterator) {
   };
 })(Iterator);
 exports.memory = require('./memory');
-exports.console = new (require('./plain-text-console').PlainTextConsole)(print);
+exports.console = new PlainTextConsole(exports.dump);
 
 Object.defineProperty(exports, 'define', {
   get: function define() {
