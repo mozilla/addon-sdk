@@ -36,6 +36,13 @@ if "%PYTHONVERSION%" EQU "" (
 )
 
 if "%PYTHONVERSION%" EQU "" (
+  REG QUERY "%PYTHONKEY%\2.7\InstallPath" /ve >nul 2>nul
+  if %ERRORLEVEL% EQU 0 (
+    SET PYTHONVERSION=2.7
+  )
+)
+
+if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.5\InstallPath" /ve >nul 2>nul
   if %ERRORLEVEL% EQU 0 (
     SET PYTHONVERSION=2.5
