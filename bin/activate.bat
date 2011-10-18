@@ -66,6 +66,11 @@ if not defined PYTHONPATH (
 set _OLD_PYTHONPATH=%PYTHONPATH%
 set PYTHONPATH=%VIRTUAL_ENV%\python-lib;%PYTHONPATH%
 
+if not exist %PYTHONPATH% (
+    echo Please make sure you run bin\activate from the SDK root directory.
+    goto END
+)
+
 if not defined PROMPT (
     set PROMPT=$P$G
 )
