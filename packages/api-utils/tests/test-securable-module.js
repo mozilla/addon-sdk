@@ -36,14 +36,13 @@ FakeCompositeFileSystem.prototype = {
 };
 
 
-var ios = Cc['@mozilla.org/network/io-service;1']
-  .getService(Ci.nsIIOService);
-
 exports.testSecurableModule = function(test) {
+  // Basic test of module loading with a fake fs.
   // The tests in this file weren't originally written for
   // Cuddlefish. This function is essentially an adapter
   // that runs the tests using the Cuddlefish testing
   // framework.
+  var SecurableModule = require("securable-module");
   function log(msg, type) {
     switch (type) {
     case "fail":
@@ -70,18 +69,13 @@ exports.testSecurableModule = function(test) {
                      __url__).toString();
   path = url.toFilename(path);
 
-  var file = Cc['@mozilla.org/file/local;1']
+  var ios = Cc['@mozilla.org/network/io-service;1']
+    .getService(Ci.nsIIOService);
+
+  var rootDir = Cc['@mozilla.org/file/local;1']
     .createInstance(Ci.nsILocalFile);
-  file.initWithPath(path);
+  rootDir.initWithPath(path);
 
-  run(require("securable-module"),
-      log,
-      assert,
-      file);
-};
-
-function run(SecurableModule, log, assert, rootDir) {
-  // Basic test of module loading with a fake fs.
   var output = [];
 
   function outPrint(msg) { output.push(msg); }
