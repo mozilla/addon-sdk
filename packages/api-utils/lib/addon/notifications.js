@@ -39,7 +39,10 @@
 
 // TODO: Tweak linker and loader to use following instead:
 // require('env!api-utils/chrome/notifications')
-const channel = require('api-utils/env!')('api-utils/chrome/notifications');
+const chrome = require('api-utils/env!')(module);
+
+const channel = chrome.require('api-utils/chrome/notifications');
+
 const { distributed } = require('../stream-utils');
 const { compose } = require("../functional");
 const guards = require("../guards");

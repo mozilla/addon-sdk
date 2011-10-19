@@ -39,7 +39,8 @@
 
 // TODO: Tweak linker and loader to use following instead:
 // require('env!api-utils/chrome/notifications')
-const { input, output } = require('api-utils/env!')('api-utils/chrome/tabs');
+const chrome = require('api-utils/env!')(module);
+const { input, output } = chrome.require('api-utils/chrome/tabs');
 const { map, filter } = require('../streamer');
 const Tab = require('../tabs/model').Tab.extend({ sync: output });
 exports.Tab = Tab;

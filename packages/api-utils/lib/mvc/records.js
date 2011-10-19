@@ -31,8 +31,8 @@ exports.Record = Model.extend({
 
 /*
 
-var Record = require("mvc/record").Record;
-var guards = require('guards');
+// var Record = require("mvc/record").Record;
+// var guards = require('guards');
 
 var PointModel = Record.extend({
   fields: {
