@@ -49,14 +49,13 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, p
 
   function onDone(tests) {
     window.close();
-    if (tests.passed > 0 && tests.failed == 0) {
-      quit("OK");
-    } else {
+    if (tests.failed == 0) {
       if (tests.passed == 0) {
         print("No tests were run\n");
-      } else {
-        printFailedTests(tests, verbose, print);
       }
+      quit("OK");
+    } else {
+      printFailedTests(tests, verbose, print);
       quit("FAIL");
     }
   };
