@@ -42,16 +42,6 @@ exports.testATeardownAsyncTestPart2 = function(test) {
     test.assertEqual(true, teardownCalled, "teardown called after done");
 };
 
-exports.testModuleOverrides = function(test) {
-  var loader = Loader.new(options);
-  loader.modules['unit-test.js'] = {
-    exports: { foo: 5 }
-  };
-  test.assertEqual(loader.require(null, 'unit-test').foo, 5,
-                   "options.moduleOverrides works");
-  loader.unload();
-};
-
 exports.testWaitUntilInstant = function(test) {
   test.waitUntilDone();
   
