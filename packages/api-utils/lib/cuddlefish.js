@@ -246,7 +246,7 @@ const Loader = {
       // and load modules being required.
       addon.channel('require!').input(function({ requirer: { uri }, id }) {
         try {
-          loader.require(uri, id).initialize(addon.channel(id));
+          Loader.require.call(loader, uri, id).initialize(addon.channel(id));
         } catch (error) {
           this.globals.console.exception(error);
         }

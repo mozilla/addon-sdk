@@ -38,8 +38,15 @@
 const { messageManager } = require("chrome");
 const { channel } = require("./channel");
 
-module.exports = function load(id) {
-  // Load required module on the chrome process.
-  channel(messageManager, messageManager, 'require!').sync(id);
-  return channel(messageManager, messageManager, id);
+module.exports = function load(module) {
+  return {
+    require: function require(id) {
+      // Load required module on the chrome process.
+      channel(messageManager, messageManager, 'require!').sync({
+        requirer: module,
+        id: id
+      });
+      return channel(messageManager, messageManager, id);
+    }
+  };
 };
