@@ -46,14 +46,17 @@ let options = require('@packaging');
 // read and print to the console.
 // For more details see: bug-673383
 exports.dump = (function define(global) {
+  const PR_WRONLY = 0x02;
+  const PR_CREATE_FILE = 0x08;
+  const PR_APPEND = 0x10;
   let print = Object.getPrototypeOf(global).dump
   if (print) return print;
   if ('logFile' in options) {
     let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
     file.initWithPath(options.logFile);
-    let stream = Cc["@mozilla.org/network/file-output-stream;1"]
-                .createInstance(Ci.nsIFileOutputStream);
-    stream.init(file, -1, -1, 0);
+    let stream = Cc["@mozilla.org/network/file-output-stream;1"].
+                 createInstance(Ci.nsIFileOutputStream);
+    stream.init(file, PR_WRONLY|PR_CREATE_FILE|PR_APPEND, -1, 0);
 
     return function print(message) {
       message = String(message);
