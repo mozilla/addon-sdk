@@ -212,9 +212,8 @@ const Loader = {
       module = this.modules[uri];
     }
     else {
-      module = Module.new(requirer, id, uri);
+      module = this.modules[uri] = Module.new(requirer, id, uri);
       this.load(module);
-      this.modules[uri] = module;
       Object.freeze(module);
     }
 
@@ -227,7 +226,7 @@ const Loader = {
   },
   main: function main(id, uri) {
     try {
-      let module = Module.new(null, id, uri);
+      let module = this.modules[uri] = Module.new(null, id, uri);
       this.load(module);
       let main = Object.freeze(module).exports;
       if (main.main)
