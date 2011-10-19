@@ -92,12 +92,11 @@ const Sandbox = {
 };
 
 const Module = {
-  new: function(loader, requirer, id, uri) {
-    let module = loader.modules[uri] = Object.create(this);
+  new: function(requirer, id, uri) {
+    let module = Object.create(this);
 
     module.id = id;
     module.uri = uri;
-    module.main = loader.main;
     module.exports = {};
 
     return module;
@@ -209,14 +208,13 @@ const Loader = {
         throw Error("Module: " + requirer && requirer.id + ' located at ' +
                     base + " has no athority to load: " + id);
 
-    //dump('require("' + base + '", "' + id + '")\n')
-
     if (uri in this.modules) {
       module = this.modules[uri];
     }
     else {
-      module = Module.new(this, requirer, id, uri);
+      module = Module.new(requirer, id, uri);
       this.load(module);
+      this.modules[uri] = module;
       Object.freeze(module);
     }
 
@@ -229,7 +227,7 @@ const Loader = {
   },
   main: function main(id, uri) {
     try {
-      let module = Module.new(this, null, id, uri);
+      let module = Module.new(null, id, uri);
       this.load(module);
       let main = Object.freeze(module).exports;
       if (main.main)
