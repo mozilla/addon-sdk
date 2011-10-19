@@ -46,13 +46,13 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, p
            .getService(Ci.nsIWindowWatcher);
 
   let ns = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+  let msg = 'Running tests...';
   let markup = '<?xml version="1.0"?><window xmlns="' + ns +
-               '" windowtype="test:runner">Running tests...</window>';
+               '" windowtype="test:runner"><label>' + msg + '</label></window>';
   let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
 
 
   var window = ww.openWindow(null, url, "harness", "centerscreen", null);
-  window.type = 'test:runner'
 
   var harness = require("./harness");
 
