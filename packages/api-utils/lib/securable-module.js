@@ -333,11 +333,7 @@
 
          if (!moduleData) {
            // search
-           dump("\nSEARCH for "+moduleName+", from "+basePath+"\n");
-           let path = self.fs.resolveModule(basePath, moduleName);
-           if (!path)
-             throw new Error('Module "' + moduleName + '" not found');
-           moduleData = {uri: path};
+           throw new Error("NO SEARCH FOR YOU");
          }
 
          // Track accesses to this module via its normalized path. This lets
