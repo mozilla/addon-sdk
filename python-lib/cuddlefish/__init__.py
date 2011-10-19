@@ -140,8 +140,9 @@ parser_groups = (
 
     ("Experimental Command-Specific Options", [
         (("-a", "--app",), dict(dest="app",
-                                help=("app to run: firefox (default), "
-                                      "xulrunner, fennec, or thunderbird"),
+                                help=("app to run: firefox (default), fennec, "
+                                      "fennec-on-device, xulrunner or "
+                                      "thunderbird"),
                                 metavar=None,
                                 default="firefox",
                                 cmds=['test', 'run', 'testex', 'testpkgs',
@@ -165,6 +166,13 @@ parser_groups = (
                                     action="store_true",
                                     default=False,
                                     cmds=['run', 'test', 'xpi', 'testall'])),
+        (("", "--mobile-app",), dict(dest="mobile_app_name",
+                                    help=("Name of your Android application to "
+                                          "use. Possible values: 'firefox', "
+                                          "'firefox_beta', 'firefox_nightly'."),
+                                    metavar=None,
+                                    default=None,
+                                    cmds=['run', 'test', 'testall'])),
         ]
      ),
 
@@ -222,9 +230,6 @@ parser_groups = (
         ]
      ),
     )
-
-# Maximum time we'll wait for tests to finish, in seconds.
-TEST_RUN_TIMEOUT = 10 * 60
 
 def find_parent_package(cur_dir):
     tail = True
@@ -357,18 +362,26 @@ def test_all_examples(env_root, defaults):
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
-    deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
-    pkg_cfg = packaging.build_config(env_root, target_cfg)
-    for name in pkg_cfg.packages:
-        if name != "testpkgs":
-            deps.append(name)
-    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(deps))
+    packages_dir = os.path.join(env_root, "packages")
+    packages = [dirname for dirname in os.listdir(packages_dir)
+                if os.path.isdir(os.path.join(packages_dir, dirname))]
+    packages.sort()
+    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))
     sys.stderr.flush()
-    run(arguments=["test", "--dependencies"],
-        target_cfg=target_cfg,
-        pkg_cfg=pkg_cfg,
-        defaults=defaults)
+    fail = False
+    for dirname in packages:
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
+        try:
+            run(arguments=["test",
+                           "--pkgdir",
+                           os.path.join(packages_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+    if fail:
+        sys.exit(-1)
 
 def get_config_args(name, env_root):
     local_json = os.path.join(env_root, "local.json")
@@ -499,16 +512,16 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    timeout = None
     inherited_options = ['verbose', 'enable_e10s']
+    enforce_timeouts = False
 
     if command == "xpi":
         use_main = True
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        timeout = TEST_RUN_TIMEOUT
         inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        enforce_timeouts = True
     elif command == "run":
         use_main = True
     else:
@@ -616,6 +629,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print str(e)
         sys.exit(1)
     used_deps = manifest.get_used_packages()
+    print "TESTS", manifest.get_all_test_modules()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
         # because it loads everything at runtime (invisible to the linker).
@@ -654,9 +668,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
+        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
+        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri(uri_prefix)
     else:
         harness_options['main'] = target_cfg.get('main')
+        harness_options['mainURI'] = manifest.top_uri
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
@@ -677,6 +694,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.join(mydir, "app-extension")
 
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+    harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
@@ -732,13 +750,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              binary=options.binary,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
-                             timeout=timeout,
+                             enforce_timeouts=enforce_timeouts,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
                              norun=options.no_run,
                              used_files=used_files,
-                             enable_mobile=options.enable_mobile)
+                             enable_mobile=options.enable_mobile,
+                             mobile_app_name=options.mobile_app_name)
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()

@@ -1,7 +1,3 @@
-// This implementation is neither secure nor complete,
-// because timer functionality should be implemented
-// natively in-process by bug 568695.
-
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -15,14 +11,14 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Jetpack.
+ * The Original Code is Weave.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Portions created by the Initial Developer are Copyright (C) 2008
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
+ *  Alexandre Poirot <poirot.alex@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -40,36 +36,36 @@
 
 "use strict";
 
-if (this.chrome) {
-  var callbacks = {};
-  exports.setTimeout = function setTimeout(cb, ms) {
-    var id = chrome.call("setTimeout", ms);
-    callbacks[id] = cb;
-    return id;
-  };
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
+const Cr = Components.results;
 
-  exports.clearTimeout = function clearTimeout(id) {
-    delete callbacks[id];
-    chrome.send("clearTimeout", id);
+Components.utils.import("resource://gre/modules/Services.jsm");
+
+function startup(data, reason) {
+  let Watcher = {
+    window: null,
+    onOpenWindow: function(window) {
+      window = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+      window.addEventListener("keydown", this, true);
+    },
+    onWindowTitleChange: function () {},
+    handleEvent: function(event) {
+      // This event is dispatched via: abd shell input keycode 19
+      // KEYCODE_DPAD_UP=19, UP can't be fired by virtual keyboard,
+      // so it should be safe to take this event as a kill signal.
+      if (event.keyCode == 38 && event.which == 38) {
+        Cu.reportError("Mobile killer triggered!");
+        let appStartup = Cc['@mozilla.org/toolkit/app-startup;1'].
+          getService(Ci.nsIAppStartup);
+        appStartup.quit(Ci.nsIAppStartup.eForceQuit);
+      }
+    }
   };
-  
-  chrome.on("onTimeout", function(name, id) {
-    var cb = callbacks[id];
-    delete callbacks[id];
-    if (cb)
-      cb(); // yay race conditions
-  });
-} else {
-  exports.register = function(addon) {
-    var timer = require("./timer");
-    addon.registerCall("setTimeout", function(name, ms) {
-      var id = timer.setTimeout(function() {
-        addon.send("onTimeout", id);
-      }, ms);
-      return id;
-    });
-    addon.on("clearTimeout", function(name, id) {
-      timer.clearTimeout(id);
-    });
-  };
+  Services.wm.addListener(Watcher);
+  Cu.reportError("Mobile killer ready to kill firefox.");
 }
+
+function install() {}
+function shutdown() {}

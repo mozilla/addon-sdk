@@ -38,7 +38,6 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { shims } = require('../cuddlefish');
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -229,10 +228,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       // at any time!
       unsafeWindow: { get: function () window.wrappedJSObject }
     });
-    
-    // Overriding / Injecting some natives into sandbox.
-    Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
-    
+
     // Initialize timer lists
     this._timers = {};
 
@@ -520,8 +516,9 @@ const Worker = AsyncEventEmitter.compose({
   
   _documentUnload: function _documentUnload(subject, topic, data) {
     let innerWinID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    if (innerWinID != this._windowID) return;
+    if (innerWinID != this._windowID) return false;
     this._workerCleanup();
+    return true;
   },
 
   get url() {

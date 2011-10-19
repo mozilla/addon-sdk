@@ -1,4 +1,4 @@
 exports.main = function(options, callbacks) {
-  require("e10s-samples/bug-617499").go();
+  console.log("1 + 1 =", require("bar-module").add(1, 1));
   callbacks.quit();
-}
+};

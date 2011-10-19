@@ -1,7 +1,7 @@
 
 IGNORED_FILE_PREFIXES = ["."]
 IGNORED_FILE_SUFFIXES = ["~", ".swp"]
-IGNORED_DIRS = [".git", ".svn", ".hg", "defaults"]
+IGNORED_DIRS = [".git", ".svn", ".hg"]
 
 def filter_filenames(filenames, ignored_files=[".hgignore"]):
     for filename in filenames:

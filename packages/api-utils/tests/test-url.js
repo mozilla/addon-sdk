@@ -81,7 +81,7 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  test.assertMatches(url.toFilename(__url__),
+  test.assertMatches(url.toFilename(module.uri),
                      /.*test-url\.js$/,
                      "url.toFilename() on resource: URIs should work");
 
@@ -111,7 +111,7 @@ exports.testToFilename = function(test) {
 };
 
 exports.testFromFilename = function(test) {
-  var fileUrl = url.fromFilename(url.toFilename(__url__));
+  var fileUrl = url.fromFilename(url.toFilename(module.uri));
   test.assertEqual(url.URL(fileUrl).scheme, 'file',
                    'url.toFilename() should return a file: url');
   test.assertEqual(url.fromFilename(url.toFilename(fileUrl)),

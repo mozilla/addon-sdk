@@ -1,3 +1,4 @@
+/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -14,11 +15,11 @@
  * The Original Code is Jetpack.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
+ *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,150 +34,231 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+var EXPORTED_SYMBOLS = [ 'Loader' ];
+
+!function(exports) {
 
 "use strict";
 
-(function(global) {
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
+        results: Cr, manager: Cm } = Components;
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
 
-   const Cc = Components.classes;
-   const Ci = Components.interfaces;
-   const Cu = Components.utils;
-   const Cr = Components.results;
+const Sandbox = {
+  new: function (prototype, principal) {
+    let sandbox = Object.create(Sandbox, {
+      sandbox: {
+        value: Cu.Sandbox(principal || Sandbox.principal, {
+          sandboxPrototype: prototype || Sandbox.prototype,
+          wantXrays: Sandbox.wantXrays
+        })
+      }
+    });
+    // There are few properties (dump, Iterator) that by default appear in
+    // sandboxes shadowing properties provided by a prototype. To workaround
+    // this we override all such properties by copying them directly to the
+    // sandbox.
+    Object.keys(prototype).forEach(function onEach(key) {
+      if (sandbox.sandbox[key] !== prototype[key])
+        sandbox.sandbox[key] = prototype[key]
+    });
+    return sandbox
+  },
+  evaluate: function evaluate(source, uri, lineNumber) {
+    return Cu.evalInSandbox(
+      source,
+      this.sandbox,
+      this.version,
+      uri,
+      lineNumber || this.lineNumber
+    );
+  },
+  load: function load(uri) {
+    scriptLoader.loadSubScript(uri, this.sandbox);
+  },
+  merge: function merge(properties) {
+    Object.getOwnPropertyNames(properties).forEach(function(name) {
+      Object.defineProperty(this.sandbox, name,
+                            Object.getOwnPropertyDescriptor(properties, name));
+    }, this);
+  },
+  principal: systemPrincipal,
+  version: '1.8',
+  lineNumber: 1,
+  wantXrays: false,
+  prototype: {}
+};
 
-   var exports = {};
+const Module = {
+  new: function(loader, requirer, id, uri) {
+    let module = loader.modules[uri] = Object.create(this);
 
-   // Load the SecurableModule prerequisite.
-   var securableModule;
-   var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
+    module.id = id;
+    module.uri = uri;
+    module.main = loader.main;
+    module.exports = {};
 
-   if (global.require) {
-     // We're being loaded in a SecurableModule. This call also tells the
-     // manifest-scanner that it ought to scan securable-module.js
-     securableModule = require("api-utils/securable-module");
-   } else {
-     var ios = Cc['@mozilla.org/network/io-service;1']
-               .getService(Ci.nsIIOService);
-     var securableModuleURI = ios.newURI("securable-module.js", null,
-                                         ios.newURI(myURI, null, null));
-     if (securableModuleURI.scheme == "chrome") {
-       // The securable-module module is at a chrome URI, so we can't
-       // simply load it via Cu.import(). Let's assume we're in a
-       // chrome-privileged document and use mozIJSSubScriptLoader.
-       var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-                    .getService(Ci.mozIJSSubScriptLoader);
+    return module;
+  },
+  // TODO: I'd like to remove this, it's not used adds complexity and does
+  // not has much adoption in commonjs either.
+  setExports: function setExports(exports) {
+    this.exports = exports;
+  }
+};
 
-       // Import the script, don't pollute the global scope.
-       securableModule = {__proto__: global};
-       loader.loadSubScript(securableModuleURI.spec, securableModule);
-       securableModule = securableModule.SecurableModule;
-     } else {
-       securableModule = {};
-       try {
-         Cu.import(securableModuleURI.spec, securableModule);
-       } catch (e if e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
-         Cu.reportError("Failed to load " + securableModuleURI.spec);
-       }
-     }
-   }
+const Loader = {
+  new: function (options) {
+    let loader = Object.create(Loader, {
+      uri: { value: options.loader },
 
-   if (false) // force the manifest-scanner to copy shims.js into the XPI
-     require("api-utils/shims");
-   var localFS = new securableModule.LocalFileSystem(myURI);
-   var shimsPath = localFS.resolveModule(null, "shims");
-   var shims = exports.shims = localFS.getFile(shimsPath);
+      globals: { value: options.globals || {} },
 
-   shims.filename = shimsPath;
+      // Metadata from package.json.
+      // Maybe this is obsolete.
+      metadata: { value: options.metadata || {} },
 
-   function unloadLoader(reason, onError) {
-     this.require("api-utils/unload").send(reason, onError);
-   }
+      // Manifest generated by a linker, containing map of module url's mapped
+      // to it's requirements.
+      manifest: { value: options.manifest || {} },
 
-   function makeGetModuleExports(delegate) {
-     return function getModuleExports(basePath, module) {
-       switch (module) {
-       case "chrome":
-         var chrome = { Cc: Components.classes,
-                        Ci: Components.interfaces,
-                        Cu: Components.utils,
-                        Cr: Components.results,
-                        Cm: Components.manager,
-                        components: Components };
-         return chrome;
-       default:
-         return (delegate ? delegate.call(this, basePath, module) : null);
-       }
-     };
-   }
+      // TODO: Hack to allow module URI resolution from ID.
+      // Hopefully we'll modify linker in a way that id's will map one on one
+      // URIs.
+      root: { value: options.uriPrefix },
 
-   function modifyModuleSandbox(sandbox, options) {
-     sandbox.evaluate(shims);
-     var filename = options.filename ? options.filename : null;
-     sandbox.defineProperty("__url__", filename);
-   }
+      modules: { value: options.modules || Object.create(Loader.modules) },
 
-   var Loader = exports.Loader = function Loader(options) {
-     var globals = {};
+      sandboxes: { value: options.sandboxes || {} },
 
-     if (options.globals)
-       for (let name in options.globals)
-         globals[name] = options.globals[name];
+    });
+    loader.require = this.require.bind(loader, options.loader);
 
-     if (options.console)
-       globals.console = options.console;
-     if (options.memory)
-       globals.memory = options.memory;
+    loader.modules['@packaging'] = Object.freeze({
+      id: '@packaging',
+      exports: JSON.parse(JSON.stringify(options))
+    });
+    loader.modules['@loader'] = Object.freeze({
+      exports: Object.freeze({ Loader: Loader }),
+      id: '@loader'
+    });
 
-     if ('modules' in options)
-       throw new Error('options.modules is no longer supported');
+    // Loading globals for special module and put them into loader globals.
+    let globals = loader.require('api-utils/globals!');
+    Object.getOwnPropertyNames(globals).forEach(function(name) {
+      Object.defineProperty(loader.globals, name,
+                            Object.getOwnPropertyDescriptor(globals, name));
+    });
 
-     var getModuleExports = makeGetModuleExports(options.getModuleExports);
+    dump = globals.dump;
+    return loader;
+  },
+  modules: {
+    'chrome': Object.freeze({
+      exports: Object.freeze({
+        Cc: Cc,
+        CC: CC,
+        Ci: Ci,
+        Cu: Cu,
+        Cr: Cr,
+        Cm: Cm,
+        components: Components,
+        messageManager: 'addMessageListener' in exports ? exports : null
+      }),
+      id: 'chrome'
+    }),
+    'self': function self(loader, requirer) {
+      return loader.require('api-utils/self!').create(requirer.uri);
+    },
+  },
+  load: function load(module) {
+    let require = Loader.require.bind(this, module.uri);
+    require.main = this.main;
+    let sandbox = this.sandboxes[module.uri] = Sandbox.new(this.globals);
+    sandbox.merge({
+      require: require,
+      module: module,
+      exports: module.exports
+    });
 
-     var manifest = {};
-     if ("packaging" in options)
-       manifest = options.packaging.options.manifest;
-     var loaderOptions = {rootPath: options.rootPath,
-                          rootPaths: options.rootPaths,
-                          metadata: options.metadata,
-                          uriPrefix: options.uriPrefix,
-                          name: options.name,
-                          fs: options.fs,
-                          defaultPrincipal: "system",
-                          globals: globals,
-                          modifyModuleSandbox: modifyModuleSandbox,
-                          manifest: manifest,
-                          getModuleExports: getModuleExports};
+    sandbox.load(module.uri);
 
-     var loader = new securableModule.Loader(loaderOptions);
+    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
+    // so we create decedent and freeze it instead.
+    if (typeof(module.exports) === 'object') {
+      module.exports = Object.prototype.isPrototypeOf(module.exports) ?
+                Object.freeze(module.exports) :
+                Object.freeze(Object.create(module.exports));
+    }
+  },
+  require: function require(base, id) {
+    let module, manifest = this.manifest[base], requirer = this.modules[base];
 
-     if (!globals.console) {
-       var console = loader.require("api-utils/plain-text-console");
-       globals.console = new console.PlainTextConsole(options.print);
-     }
-     if (!globals.memory)
-       globals.memory = loader.require("api-utils/memory");
+    if (!id)
+      throw Error("you must provide a module name when calling require() from "
+                  + (requirer && requirer.id), base, id);
 
-     loader.console = globals.console;
-     loader.memory = globals.memory;
-     loader.unload = unloadLoader;
+    // If we have a manifest for requirer, then all it's requirements have been
+    // registered by linker.
+    let requirement = manifest && manifest.requirements[id];
+    let uri = requirement && requirement.uri || id;
 
-     return loader;
-   };
+    if (!uri)
+        throw Error("Module: " + requirer && requirer.id + ' located at ' +
+                    base + " has no athority to load: " + id);
 
-   if (global.window) {
-     // We're being loaded in a chrome window, or a web page with
-     // UniversalXPConnect privileges.
-     global.Cuddlefish = exports;
-   } else if (global.exports) {
-     // We're being loaded in a SecurableModule.
-     for (let name in exports) {
-       global.exports[name] = exports[name];
-     }
-   } else {
-     // We're being loaded in a JS module.
-     global.EXPORTED_SYMBOLS = [];
-     for (let name in exports) {
-       global.EXPORTED_SYMBOLS.push(name);
-       global[name] = exports[name];
-     }
-   }
- })(this);
+    //dump('require("' + base + '", "' + id + '")\n')
+
+    if (uri in this.modules) {
+      module = this.modules[uri];
+    }
+    else {
+      module = Module.new(this, requirer, id, uri);
+      this.load(module);
+      Object.freeze(module);
+    }
+
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(this, requirer);
+
+    return module.exports;
+  },
+  main: function main(id, uri) {
+    try {
+      let module = Module.new(this, null, id, uri);
+      this.load(module);
+      let main = Object.freeze(module).exports;
+      if (main.main)
+        main.main();
+    } catch (error) {
+      Cu.reportError(error);
+      if (this.globals.console) this.globals.console.exception(error);
+      throw error;
+    }
+  },
+  spawn: function spawn(id, uri) {
+    let loader = this;
+    let process = this.require('api-utils/process');
+    process.spawn(id, uri)(function(addon) {
+      // Listen to `require!` channel's input messages from the add-on process
+      // and load modules being required.
+      addon.channel('require!').input(function({ requirer: { uri }, id }) {
+        try {
+          loader.require(uri, id).initialize(addon.channel(id));
+        } catch (error) {
+          this.globals.console.exception(error);
+        }
+      });
+    });
+  },
+  unload: function unload(reason, callback) {
+    this.require('api-utils/unload').send(reason, callback);
+  }
+};
+exports.Loader = Loader;
+
+}(this);

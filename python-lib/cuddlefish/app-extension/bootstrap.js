@@ -37,10 +37,6 @@
 
 // @see http://mxr.mozilla.org/mozilla-central/source/js/src/xpconnect/loader/mozJSComponentLoader.cpp
 
-var EXPORTED_SYMBOLS = [ 'Loader' ];
-
-!function(exports) {
-
 "use strict";
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
@@ -51,52 +47,9 @@ const resourceHandler = ioService.getProtocolHandler('resource')
                         .QueryInterface(Ci.nsIResProtocolHandler);
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
-const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 
-
-// TODO: Remove this temporary hack! Module `id` should map to corresponding
-// resource `uri` in more trivial way. I think changing cuddlefish so that
-// addons are layout in a simple structure like http://cl.ly/8r99 is the right
-// way to go about this.
-function resolveURI(root, id) {
-  let paths = normalize(id).split('/')
-  return paths.length <= 1 ? id :
-         [root + paths.shift() + '-lib'].concat(paths).join('/');
-}
-
-// TODO: Remove this temporary hack! I think manifest should contain module `id`
-// along with or instead of `uri` properties. This function creates parses out
-// id out of the `uri`.
-function resolveID(root, uri) {
-  let paths = uri.replace(root, '').split('/');
-  return [ paths.shift().replace(/\-lib$/, '') ].concat(paths).join('/');
-}
-
-// Normalizes `uri`, so that it contains `.js` file extension.
-function normalize(uri) uri.substr(-3) === '.js' ? uri : uri + '.js'
-
-// Returns `true` if given `id` is relative.
-function isRelative(id) id.indexOf('.') === 0
-
-// Resolves given `id` to the `base` one, if it's a relative.
-function resolve(id, base) {
-  var path, paths, last
-  if (!isRelative(id)) return id
-  paths = id.split('/')
-  base = base ? base.split('/') : [ '.' ]
-  if (base.length > 1) base.pop()
-  while ((path = paths.shift())) {
-    if (path === '..') {
-      if (base.length && base[base.length - 1] !== '..') {
-        if (base.pop() === '.') base.push(path)
-      } else base.push(path)
-    } else if (path !== '.') {
-      base.push(path)
-    }
-  }
-  if (base[base.length - 1].substr(-1) === '.') base.push('')
-  return base.join('/')
-}
+const APP_STARTUP = 1;
+let loader = null;
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -107,193 +60,6 @@ function readURI(uri) {
   request.send();
   return request.responseText;
 }
-
-function Require(loader, manifest, base) {
-  function require(id) {
-    // TODO: Remove debug log!
-    // dump('>>>> ' + base + ' ? ' + id + '\n')
-    // If we have a manifest for requirer, then all it's requirements have been
-    // registered by linker.
-    if (base && manifest) {
-      // If required module is in manifest we use take resolved requirement
-      // `id` from manifest.
-      let requirement = manifest.requirements[id];
-      if (requirement)
-        id = requirement.uri ? resolveID(loader.root, requirement.uri) : id;
-
-      // If module is known to have "sudo" privileges, we allow it to go
-      // off-manifest. Otherwise we throw an error.
-      else if (!('chrome' in manifest.requirements))
-        throw new Error("Module: " + base.id + " has no athority to load: " + id);
-    }
-
-    // Resolving requirement `id` to it's requirer `id`.
-    id = resolve(id, base && base.id);
-
-    // TODO: Remove debug log!
-    // dump('require: ' + id + '\n');
-
-    // Loading required module and return it's exports.
-    let exports = loader.load(id, base);
-
-    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
-    // so we create decedent and freeze it instead.
-    if (typeof(exports) === 'object') {
-      exports = Object.prototype.isPrototypeOf(exports) ?
-                Object.freeze(exports) :
-                Object.freeze(Object.create(exports));
-    }
-    return exports;
-  }
-  require.main = loader.main;
-  return require;
-}
-
-const Sandbox = {
-  new: function (prototype, principal) {
-    return Object.create(Sandbox, {
-      sandbox: {
-        value: Cu.Sandbox(principal || Sandbox.principal, {
-          sandboxPrototype: prototype || Sandbox.prototype,
-          wantXrays: Sandbox.wantXrays
-        })
-      }
-    })
-  },
-  evaluate: function evaluate(source, uri, lineNumber) {
-    return Cu.evalInSandbox(
-      source,
-      this.sandbox,
-      this.version,
-      uri,
-      lineNumber || this.lineNumber
-    );
-  },
-  principal: systemPrincipal,
-  version: '1.8',
-  lineNumber: 1,
-  wantXrays: false,
-  prototype: {}
-};
-
-const Loader = {
-  new: function (options) {
-    // TODO: Also adding legacy global that some code depends on, which should
-    // migrate to require("packaging") or similar instead.
-    let globals = {
-      packaging: { jetpackID: options.jetpackID, options: options }
-    };
-
-    let loader = Object.create(Loader, {
-      globals: { value: globals },
-
-      // Metadata from package.json.
-      // Maybe this is obsolete.
-      metadata: { value: options.metadata || {} },
-
-      // Manifest generated by a linker, containing map of module url's mapped
-      // to it's requirements.
-      manifest: { value: options.manifest || {} },
-
-      // TODO: Hack to allow module URI resolution from ID.
-      // Hopefully we'll modify linker in a way that id's will map one on one
-      // URIs.
-      root: { value: options.uriPrefix },
-
-      modules: { value: options.modules || Loader.modules },
-
-      // If `true` sandboxes will be created per module, otherwise
-      // one sandbox will be used for all modules.
-      sandboxes: { value: options.sandboxes <= 1 ? Sandbox.new(globals) : {} }
-    });
-
-    loader.modules['@packaging.js'] = Object.freeze({
-      id: '@packaging',
-      exports: JSON.parse(JSON.stringify(options))
-    });
-    loader.modules['@loader.js'] = Object.freeze({
-      exports: Object.freeze({ Loader: Loader }),
-      id: '@loader'
-    });
-
-    // TODO: This is unnecessary overhead add-on already has resource URI which
-    // we should use, it's just packages should be aligned so that they can map
-    // easily to the module IDs.
-    mapResources(options.uri, options.resources);
-
-    // Loading globals for special module and put them into loader globals.
-    globals = loader.load('api-utils/globals!');
-    Object.keys(globals).forEach(function(name) {
-      loader.globals[name] = globals[name];
-    });
-
-    return loader
-  },
-  modules: {
-    'chrome.js': Object.freeze({
-      exports: Object.freeze({
-        Cc: Cc,
-        CC: CC,
-        Ci: Ci,
-        Cu: Cu,
-        Cr: Cr,
-        Cm: Cm,
-        components: Components,
-        messageManager: 'addMessageListener' in exports ? exports : null
-      }),
-      id: 'chrome'
-    }),
-    'self.js': function self(loader, requirer) {
-      return loader.load('api-utils/self!').create(requirer.uri);
-    },
-  },
-  load: function load(id, base) {
-    let uri = resolveURI(this.root, normalize(id));
-    let module = this.modules[uri] || (this.modules[uri] = {});
-
-    // TODO: Find a better way to implement `self`.
-    // Maybe something like require('self!path/to/data')
-    if (typeof(module) === 'function')
-      module = module(this, base);
-
-    if (module.exports)
-      return module.exports;
-
-    module.id = id;
-    module.uri = uri;
-    module.main = this.main;
-    module.exports = {};
-
-    let manifest = this.manifest[uri];
-    let exports = module.exports;
-
-    let source;
-    try {
-      source = readURI(uri);
-    } catch(error) {
-      throw new Error('Module: ' + id + ' was not found: ' + uri)
-    }
-    let sandbox = this.sandbox || (this.sandboxes[uri] = Sandbox.new(this.globals));
-    let factory;
-    try {
-      factory = sandbox.evaluate('(function(require, exports, module) {' + source + ' })', uri);
-      factory.call(exports, Require(this, manifest, module), exports, module);
-    } catch(error) {
-      dump(error.fileName + '#' + error.lineNumber + '\n')
-      dump(error.message + '\n')
-      dump(error.stack + '\n')
-      throw error
-    }
-
-    return Object.freeze(module).exports;
-  },
-  main: function main(id) {
-    // Overriding main so that all modules point to it.
-    this.main = this.modules[resolveURI(this.root, id)] = {};
-    return Require(this, null)(id);
-  }
-};
-exports.Loader = Loader;
 
 // Shim function to get `resourceURI` in pre Gecko 7.0.
 // https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
@@ -306,6 +72,22 @@ function resourceURI(file) {
   return uri;
 }
 
+// Function takes `topic` to be observer via `nsIObserverService` and returns
+// promise that will be delivered once notification is published.
+function on(topic) {
+  return function promise(deliver) {
+    const observerService = Cc['@mozilla.org/observer-service;1'].
+                            getService(Ci.nsIObserverService);
+
+    observerService.addObserver({
+      observe: function observer(subject, topic, data) {
+        observerService.removeObserver(this, topic);
+        deliver(subject, topic, data);
+      }
+    }, topic, false);
+  }
+}
+
 /**
  * Maps each path - value from `resources` hash in the resources protocol
  * handler with an associated key. Each path is resolved relative to the given
@@ -314,56 +96,55 @@ function resourceURI(file) {
 function mapResources(root, resources) {
   Object.keys(resources).forEach(function(id) {
     let path = resources[id];
-    let uri = Array.isArray(path) ? resolve('./' + path.join('/'), root)
+    let uri = Array.isArray(path) ? root + '/' + path.join('/')
                                   : 'file://' + path;
     uri = ioService.newURI(uri + '/', null, null);
     resourceHandler.setSubstitution(id, uri);
-    // TODO: Remove debug log!
-    dump(id + ' -> ' + uri.spec + '\n');
   });
 }
 
-exports.install = function install(data, reason) {
-};
+// We don't do anything on install & uninstall yet, but in a future
+// we should allow add-ons to cleanup after uninstall.
+function install(data, reason) {}
+function uninstall(data, reason) {}
 
-exports.uninstall = function uninstall(data, reason) {
-};
+function startup(data, reason) {
+  let uri = (data.resourceURI || resourceURI(data.installPath)).spec;
+  // TODO: Maybe we should perform read harness-options.json asynchronously,
+  // since we can't do anything until 'sessionstore-windows-restored' anyway.
+  let options = JSON.parse(readURI(uri + './harness-options.json'));
 
-exports.main = function main(options, id) {
-  let loader = Loader.new(options)
-  let main = loader.main(id);
-  if (main.main)
-    main.main();
-};
+  // TODO: This is unnecessary overhead per add-on instance. Manifest should
+  // probably contain paths relative to add-on root to avoid this, but that
+  // requires simpler package layout that is being worked under the bug-660629.
+  mapResources(uri, options.resources);
 
-exports.startup = function startup(data, reason) {
-  let uri = (data.resolveURI || resourceURI(data.installPath)).spec;
-  let options = JSON.parse(readURI(resolve('./harness-options.json', uri)));
-  let mainID = resolve('./' + options.main, options.name);
-  options.uri = uri;
+  // Import loader module using `Cu.imports` and bootstrap module loader.
+  loader = Cu.import(options.loader).Loader.new(options);
 
-  let loader = Loader.new(options);
+  // Creating a promise, that will be delivered once application is ready.
+  // If application is at startup then promise is delivered on
+  // 'sessionstore-windows-restored' otherwise it's delivered immediately.
+  let promise = reason === APP_STARTUP ? on('sessionstore-windows-restored') :
+                                         function promise(deliver) deliver()
 
-  // TODO: Also does not feels right to defer loading an add-on, but doing so
-  // to match behavior of the legacy module loader.
-  let observres = loader.load('api-utils/observer-service');
-  observres.add('sessionstore-windows-restored', function onReady() {
-    let process = loader.main('api-utils/process');
-    // Spawning an add-on process for the main module.
-    let addon = process.spawn(mainID);
-    // Listen to `require!` channel's input messages from the add-on process
-    // and load modules being required.
-    addon.channel('require!').input(function(id) {
-      try {
-        loader.load(id).initialize(addon.channel(id));
-      } catch (error) {
-        loader.globals.console.exception(error)
-      }
-    });
+  // Once application is ready we spawn a new process with main module of
+  // on add-on.
+  promise(function() {
+    try {
+      loader.spawn(options.main, options.mainURI);
+    } catch (error) {
+      // If at this stage we have an error only thing we can do is report about
+      // it via error console. Keep in mind that error won't automatically show
+      // up there when called via observerService.
+      Cu.reportError(error);
+      throw error;
+    }
   });
 };
 
-exports.shutdown = function shutdown(data, reason) {
+function shutdown(data, reason) {
+  // If loader is already present unload it, since add-on is disabled.
+  if (loader)
+    loader.unload(reason);
 };
-
-}(typeof(exports) === 'undefined' ? this : exports);

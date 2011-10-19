@@ -80,31 +80,6 @@ TestRunner.prototype = {
     }
   },
 
-  makeSandboxedLoader: function makeSandboxedLoader(options) {
-    if (!this.fs)
-      console.error("Hey, either you didn't pass .fs when building the" +
-                    " TestRunner, or you used 'new' when calling" +
-                    " test.makeSandboxedLoader. Don't do that.");
-
-    if (!options)
-      options = {console: console};
-    options.fs = this.fs;
-
-    var Cuddlefish = require("./cuddlefish");
-
-    if ("moduleOverrides" in options) {
-      var moduleOverrides = options.moduleOverrides;
-      delete options.moduleOverrides;
-      options.getModuleExports = function getModuleExports(basePath, module) {
-        if (module in moduleOverrides)
-          return moduleOverrides[module];
-        return null;
-      }
-    }
-
-    return new Cuddlefish.Loader(options);
-  },
-
   pass: function pass(message) {
     if(!this.expectFailure) {
       console.info("pass:", message);

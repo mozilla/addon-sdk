@@ -37,7 +37,73 @@
 
 "use strict";
 
-let memory = require('./memory');
-let console = new (require('./plain-text-console').PlainTextConsole)(dump);
-exports.memory = memory;
-exports.console = console;
+let { Cc, Ci } = require('chrome');
+let { PlainTextConsole } = require('./plain-text-console');
+let options = require('@packaging');
+
+// On windows dump does not writes into stdout so cfx can't read thous dumps.
+// To workaround this issue we write to a special file from which cfx will
+// read and print to the console.
+// For more details see: bug-673383
+exports.dump = (function define(global) {
+  const PR_WRONLY = 0x02;
+  const PR_CREATE_FILE = 0x08;
+  const PR_APPEND = 0x10;
+  let print = Object.getPrototypeOf(global).dump
+  if (print) return print;
+  if ('logFile' in options) {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    file.initWithPath(options.logFile);
+    let stream = Cc["@mozilla.org/network/file-output-stream;1"].
+                 createInstance(Ci.nsIFileOutputStream);
+    stream.init(file, PR_WRONLY|PR_CREATE_FILE|PR_APPEND, -1, 0);
+
+    return function print(message) {
+      message = String(message);
+      stream.write(message, message.length);
+      stream.flush();
+    };
+  }
+  return dump;
+})(this);
+
+// Override the default Iterator function with one that passes
+// a second argument to custom iterator methods that identifies
+// the call as originating from an Iterator function so the custom
+// iterator method can return [key, value] pairs just like default
+// iterators called via the default Iterator function.
+exports.Iterator = (function(DefaultIterator) {
+  return function Iterator(obj, keysOnly) {
+    if ("__iterator__" in obj && !keysOnly)
+      return obj.__iterator__.call(obj, false, true);
+    return DefaultIterator(obj, keysOnly);
+  };
+})(Iterator);
+exports.memory = require('./memory');
+exports.console = new PlainTextConsole(exports.dump);
+
+// Provide CommonJS `define` to allow authoring modules in a format that can be
+// loaded both into jetpack and into browser via AMD loaders.
+Object.defineProperty(exports, 'define', {
+  // `define` is provided as a lazy getter that binds below defined `define`
+  // function to the module scope, so that require, exports and module
+  // variables remain accessible.
+  configurable: true,
+  get: (function() {
+    function define(factory) {
+      factory = Array.slice(arguments).pop();
+      factory.call(this, this.require, this.exports, this.module);
+    }
+
+    return function getter() {
+      // Redefine `define` as a static property to make sure that module
+      // gets access to the same function so that `define === define` is
+      // `true`.
+      Object.defineProperty(this, 'define', {
+        configurable: false,
+        value: define.bind(this)
+      });
+      return this.define;
+    }
+  })()
+});

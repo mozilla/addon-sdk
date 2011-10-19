@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:st=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -13,12 +14,12 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is Mozilla
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Brian Warner <warner@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,18 +37,6 @@
 
 "use strict";
 
-// Override the default Iterator function with one that passes
-// a second argument to custom iterator methods that identifies
-// the call as originating from an Iterator function so the custom
-// iterator method can return [key, value] pairs just like default
-// iterators called via the default Iterator function.
+exports.makeAllTestModulesModule = function (reqdata) {
+};
 
-"use strict";
-
-Iterator = (function(DefaultIterator) {
-  return function Iterator(obj, keysOnly) {
-    if ("__iterator__" in obj && !keysOnly)
-      return obj.__iterator__.call(obj, false, true);
-    return DefaultIterator(obj, keysOnly);
-  };
-})(Iterator);

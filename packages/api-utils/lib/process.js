@@ -52,24 +52,51 @@ function loadScript(target, uri, sync) {
                                 : target.loadFrameScript(uri, sync)
 }
 
-exports.spawn = function spawn(id) {
-  let scope, target
+function process(target, id, uri, scope) {
+  function scopify(fn, scope) {
+      return scope.eval('(' + function(fn) {
+        return function() {
+          fn.apply(null, arguments);
+        }
+      } + ')')(fn);
+    }
 
-  // If `nsIAddonService` is available we use it to create an add-on process,
-  // otherwise we fallback to the remote browser's message manager.
-  if (ENABLE_E10S && addonService) {
-    console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
-    target = addonService.createAddon();
-  } else {
-    let browser = createRemoteBrowser(ENABLE_E10S);
-    scope = browser.ownerDocument.defaultView;
-    target = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.
-                     messageManager;
-  }
+    loadScript(target, packaging.loader, false);
+    loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
+    loadScript(target, 'data:,Loader.new(options).main(' +
+                        '"' + id + '", "' + uri + '");', false);
 
-  loadScript(target, packaging.uri + 'bootstrap.js', false);
-  loadScript(target, 'data:,main(' + JSON.stringify(packaging) +
-                     ', "' + id + '");', false);
+    target.addMessageListener('foo', function(message) {
+      console.log(JSON.stringify(message.json, '', ' '));
+    });
 
-  return { channel: channel.bind(null, scope, target) }
+    try {
+      target.loadFrameScript('data:,(' + function() {
+        sendSyncMessage('foo', 'sending sync message');
+        sendSyncMessage('foo', 'What is sendAsyncMessage ? ' + typeof(sendAsyncMessage));
+        sendAsyncMessage('foo', 'sending async message');
+      } + ')()', false);
+    } catch (error) {
+      console.exception(error)
+    }
+
+    return { channel: channel.bind(null, scope, target) }
+}
+
+exports.spawn = function spawn(id, uri) {
+  return function promise(deliver) {
+    // If `nsIAddonService` is available we use it to create an add-on process,
+    // otherwise we fallback to the remote browser's message manager.
+    if (ENABLE_E10S && addonService) {
+      console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
+      deliver(process(addonService.createAddon()), id, uri);
+    } else {
+      createRemoteBrowser(ENABLE_E10S)(function(browser) {
+        let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
+                                     frameLoader.messageManager
+        let window = browser.ownerDocument.defaultView;
+        deliver(process(messageManager, id, uri, window));
+      });
+    }
+  };
 };
