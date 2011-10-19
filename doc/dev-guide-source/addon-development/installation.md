@@ -9,7 +9,7 @@ To develop with the Add-on SDK, you'll need:
 
 * Firefox version 4.0 or later.
 
-At the moment, the latest stable version of the Add-on SDK is 1.2.
+At the moment, the latest stable version of the Add-on SDK is 1.2.1.
 You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
@@ -22,22 +22,22 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  ~/mozilla > tar -xf addon-sdk-1.2.tar.gz
-  ~/mozilla > cd addon-sdk-1.2
-  ~/mozilla/addon-sdk-1.2 >
+  ~/mozilla > tar -xf addon-sdk-1.2.1.tar.gz
+  ~/mozilla > cd addon-sdk-1.2.1
+  ~/mozilla/addon-sdk-1.2.1 >
 </pre>
 
 Then run:
 
 <pre>
-  ~/mozilla/addon-sdk-1.2 > source bin/activate
+  ~/mozilla/addon-sdk-1.2.1 > source bin/activate
 </pre>
 
 Your command prompt should now have a new prefix containing the name of the
 SDK's root directory:
 
 <pre>
-  (addon-sdk-1.2)~/mozilla/addon-sdk-1.2 >
+  (addon-sdk-1.2.1)~/mozilla/addon-sdk-1.2.1 >
 </pre>
 
 ## Installation on Windows ##
@@ -46,15 +46,15 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  C:\Users\mozilla\sdk>7z.exe x addon-sdk-1.2.zip
-  C:\Users\mozilla\sdk>cd addon-sdk-1.2
-  C:\Users\mozilla\sdk\addon-sdk-1.2>
+  C:\Users\mozilla\sdk>7z.exe x addon-sdk-1.2.1.zip
+  C:\Users\mozilla\sdk>cd addon-sdk-1.2.1
+  C:\Users\mozilla\sdk\addon-sdk-1.2.1>
 </pre>
 
 Then run:
 
 <pre>
-  C:\Users\mozilla\sdk\addon-sdk-1.2>bin\activate
+  C:\Users\mozilla\sdk\addon-sdk-1.2.1>bin\activate
 </pre>
 
 You might see an error like this:
@@ -71,7 +71,7 @@ Your command prompt should now have a new prefix containing the full path to
 the SDK's root directory:
 
 <pre>
-  (C:\Users\mozilla\sdk\addon-sdk-1.2) C:\Users\Work\sdk\addon-sdk-1.2>
+  (C:\Users\mozilla\sdk\addon-sdk-1.2.1) C:\Users\Work\sdk\addon-sdk-1.2.1>
 </pre>
 
 ## SDK Virtual Environment ##
@@ -97,7 +97,7 @@ prompts at the same time.
 Run this at your shell prompt:
 
 <pre>
-  ~/mozilla/addon-sdk-1.2 > cfx
+  ~/mozilla/addon-sdk-1.2.1 > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by
