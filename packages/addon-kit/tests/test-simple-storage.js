@@ -44,7 +44,8 @@ const prefs = require("preferences-service");
 const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 
 let {Cc,Ci} = require("chrome");
-const { Loader } = require("@loader");
+
+const { Loader } = require("./helpers");
 const options = require("@packaging");
 
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
@@ -305,19 +306,9 @@ exports.testSetNoSetRead = function (test) {
   loader.unload();
 };
 
-function manager(loader) {
-  let uri = options.manifest[module.uri].requirements['simple-storage'].uri
-  return loader.sandboxes[uri].sandbox.manager
-}
+function manager(loader) loader.sandbox("simple-storage").manager;
 
-function newLoader(test) {
-  let loader = Loader.new(options)
-  return {
-    require: function(id) loader.require(module.uri, id),
-    sandboxes: loader.sandboxes,
-    unload: function(reason) loader.unload(reason)
-  }
-}
+function newLoader() Loader(module);
 
 function setGetRoot(test, val, compare) {
   test.waitUntilDone();

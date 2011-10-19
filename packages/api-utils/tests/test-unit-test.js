@@ -1,6 +1,5 @@
 const timer = require("timer");
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require("./helpers");
 
 var setupCalled = false, teardownCalled = false;
 

@@ -36,8 +36,7 @@
 "use strict";
 
 var {Cc,Ci} = require("chrome");
-const { Loader } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require("./helpers");
 
 // test tab.activeTab getter
 exports.testActiveTab_getter = function(test) {
@@ -120,8 +119,8 @@ exports.testAutomaticDestroy = function(test) {
     // Create a second tab instance that we will destroy
     let called = false;
     
-    let loader = Loader.new(options);
-    let tabs2 = loader.require(module.uri, "tabs");
+    let loader = Loader(module);
+    let tabs2 = loader.require("tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
     });
