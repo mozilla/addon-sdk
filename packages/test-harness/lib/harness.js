@@ -37,7 +37,8 @@
 
 "use strict";
 
-var {Cc,Ci} = require("chrome");
+const { Cc,Ci } = require("chrome");
+const { Loader } = require("@loader")
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
@@ -264,7 +265,7 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft) {
-    let require = function(id) sandbox.require(null, id)
+    let require = Loader.require.bind(sandbox, module.uri);
     require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: require("@packaging").enableE10s,
       testInProcess: true,
@@ -329,7 +330,6 @@ var runTests = exports.runTests = function runTests(options) {
   try {
     cService.registerListener(consoleListener);
 
-    var { Loader } = require("@loader")
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
     var system = require("api-utils/system");

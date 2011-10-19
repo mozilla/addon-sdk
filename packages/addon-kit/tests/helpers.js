@@ -7,9 +7,7 @@ exports.Loader = function(module, globals) {
   options.globals = globals;
   let loader = Loader.new(options);
   return Object.create(loader, {
-    require: { value: function require(id) {
-      return loader.require(module.uri, id);
-    }},
+    require: { value: Loader.require.bind(loader, module.uri) },
     sandbox: { value: function sandbox(id) {
       let uri = options.manifest[module.uri].requirements[id].uri;
       return loader.sandboxes[uri].sandbox;
@@ -19,4 +17,3 @@ exports.Loader = function(module, globals) {
     }}
   })
 };
-
