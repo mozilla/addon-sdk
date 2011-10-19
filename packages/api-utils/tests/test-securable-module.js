@@ -280,29 +280,17 @@ exports.testCompliance = function(test) {
     }
   }
 
-  var loader;
-
   // Run all CommonJS SecurableModule compliance tests.
-  var testDirs = [];
-  var enumer = rootDir.directoryEntries;
-  while (enumer.hasMoreElements()) {
-    var testDir = enumer.getNext().QueryInterface(Ci.nsIFile);
-    if (testDir.isDirectory() &&
-        testDir.leafName.charAt(0) != '.')
-      testDirs.push(testDir);
-  }
+  if (false)
+    require("./interoperablejs-read-only/all"); // add to manifest
 
-  for (var i = 0; i < testDirs.length; i++) {
-    var testDir = testDirs[i];
-    log("running compliance test '" + testDir.leafName + "'", "info");
-    loader = new SecurableModule.Loader(
-      {rootPath: testDir,
-       defaultPrincipal: "system",
-       globals: {sys: {print: log}},
-       uriPrefix: "resource://bogus-"
-      });
-    loader.require("program");
-  }
+  var loader = test.makeSandboxedLoader(require("packaging").myURI,
+                                        {rootPath: rootDir,
+                                         defaultPrincipal: "system",
+                                         globals: {sys: {print: log}},
+                                         uriPrefix: "resource://bogus-"
+                                        });
+  loader.require("./interoperablejs-read-only/all");
 
 };
 
