@@ -11,12 +11,12 @@ const ERRORS = {
 
 var myurl = module.uri;
 var mydir = myurl.slice(0, -("test-file.js".length));
-var otherdir = mydir + "interoperablejs-read-only/";
+var otherdir = mydir + "modules/";
 
 exports.testDirName = function(test) {
   var aDir = url.toFilename(otherdir);
   test.assertEqual(file.dirname(aDir),
-                   aDir.slice(0, aDir.lastIndexOf("interoperablejs-read-only")-1),
+                   aDir.slice(0, aDir.lastIndexOf("modules")-1),
                    "file.dirname() of dir should return parent dir");
 
   aDir = url.toFilename(myurl);
@@ -58,7 +58,7 @@ exports.testBasename = function(test) {
 exports.testList = function(test) {
   var list = file.list(url.toFilename(otherdir));
   var found = [true for each (name in list)
-                    if (name == "README.txt")];
+                    if (name == "add.js")];
   if (found.length > 1)
     test.fail("a dir can't contain two files of the same name!");
   test.assertEqual(found[0], true, "file.list() should work");
