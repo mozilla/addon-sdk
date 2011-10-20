@@ -53,9 +53,6 @@ var onDone;
 // Function to print text to a console, w/o CR at the end.
 var print;
 
-// The directories to look for tests in.
-var dirs;
-
 // How many more times to run all tests.
 var iterationsLeft;
 
@@ -267,9 +264,8 @@ function nextIteration(tests) {
   if (iterationsLeft) {
     let require = Loader.require.bind(sandbox, module.uri);
     require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: require("@packaging").enableE10s,
+      testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,
-      dirs: dirs,
       filter: filter,
       onDone: nextIteration
     });
@@ -333,9 +329,6 @@ var runTests = exports.runTests = function runTests(options) {
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
     var system = require("api-utils/system");
-
-    dirs = [url.toFilename(path)
-            for each (path in options.rootPaths)];
 
     print("Running tests on " + system.name + " " + system.version +
           "/Gecko " + system.platformVersion + " (" +
