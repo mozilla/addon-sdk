@@ -53,32 +53,10 @@ function loadScript(target, uri, sync) {
 }
 
 function process(target, id, uri, scope) {
-  function scopify(fn, scope) {
-      return scope.eval('(' + function(fn) {
-        return function() {
-          fn.apply(null, arguments);
-        }
-      } + ')')(fn);
-    }
-
     loadScript(target, packaging.loader, false);
     loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
     loadScript(target, 'data:,Loader.new(options).main(' +
                         '"' + id + '", "' + uri + '");', false);
-
-    target.addMessageListener('foo', function(message) {
-      console.log(JSON.stringify(message.json, '', ' '));
-    });
-
-    try {
-      target.loadFrameScript('data:,(' + function() {
-        sendSyncMessage('foo', 'sending sync message');
-        sendSyncMessage('foo', 'What is sendAsyncMessage ? ' + typeof(sendAsyncMessage));
-        sendAsyncMessage('foo', 'sending async message');
-      } + ')()', false);
-    } catch (error) {
-      console.exception(error)
-    }
 
     return { channel: channel.bind(null, scope, target) }
 }
@@ -89,7 +67,7 @@ exports.spawn = function spawn(id, uri) {
     // otherwise we fallback to the remote browser's message manager.
     if (ENABLE_E10S && addonService) {
       console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
-      deliver(process(addonService.createAddon()), id, uri);
+      deliver(process(addonService.createAddon(), id, uri));
     } else {
       createRemoteBrowser(ENABLE_E10S)(function(browser) {
         let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
