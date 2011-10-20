@@ -42,9 +42,11 @@ const { Cc, Ci } = require('chrome');
 const { ready } = require('../windows/events');
 const { browsers } = require('../windows/utils');
 const { events: progress } = require('../progress/events');
-const { map, merge, append } = require('../streamer');
+const { map, merge, append, list } = require('../streamer');
 const { events } = require('../events/stream');
 const { curry, identity } = require('../functional');
+const { getTabs } = require('../tabs/utils');
+const extract = require('../tabs/extractors');
 
 // Composing stream of all open windows + windows that will be opened (Actually
 // when open windows become ready).
@@ -62,20 +64,25 @@ exports.move = merge(map(curry(events)('TabMove'), windows));
 
 // For details see:
 // http://mxr.mozilla.org/mozilla-central/source/mobile/chrome/content/bindings/browser.js#403
+exports.opened = merge(map(function onBrowser(browser) {
+  return list.apply(null, getTabs(browser));
+}, browsers));
 
-exports.title = merge(map(function({ originalTarget: tab }) {
+let tabs = append(exports.opened, map(extract.tab, exports.open));
+
+exports.title = merge(map(function(tab) {
   return map(curry(identity, 2)(tab),
              events('DOMTitleChanged', tab.linkedBrowser))
-}, exports.open));
+}, tabs));
 
-exports.ready = merge(map(function({ originalTarget: tab }) {
+exports.ready = merge(map(function(tab) {
   return map(curry(identity, 2)(tab),
              events('DOMContentLoaded', tab.linkedBrowser))
-}, exports.open));
+}, tabs));
 
-exports.location = merge(map(function({ originalTarget: tab }) {
+exports.location = merge(map(function(tab) {
   return map(curry(identity, 2)(tab),
              progress(tab.linkedBrowser.docShell.
                       QueryInterface(Ci.nsIInterfaceRequestor).
                       getInterface(Ci.nsIWebProgress), 'location'));
-}, exports.open));
+}, tabs));

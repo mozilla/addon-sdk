@@ -38,7 +38,7 @@
 "use strict";
 
 const extract = require('../tabs/extractors');
-const { map, merge, list } = require('../streamer');
+const { map, merge, list, append } = require('../streamer');
 const events = require('../tabs/events2');
 
 function event(type) function(value) ({ type: type, value: value })
@@ -53,7 +53,7 @@ exports.open = map(event('create'), map(function onOpen(tab) {
     pinned: extract.pinned(tab),
     active: extract.active(tab)
   };
-}, map(extract.tab, events.open)));
+}, append(events.opened, map(extract.tab, events.open))));
 
 exports.close = map(event('delete'), map(function onClose(tab) {
   return { id: extract.id(tab) }

@@ -73,7 +73,7 @@ update(function({ value }) {
 });
 
 destroy(function({ value }) {
-  console.log('delete')
+  console.log('delete', JSON.stringify(value, '', '  '))
   let $ = tab(value.id);
   exports.tabs.splice(exports.tabs.indexOf($), 1);
   $.destroy();
