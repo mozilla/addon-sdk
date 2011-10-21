@@ -9,9 +9,9 @@ DEFAULT_COMMON_PREFS = {
 }
 
 DEFAULT_FENNEC_PREFS = {
-  'extensions.logging.enabled': True,
   'javascript.options.showInConsole': True,
-  'browser.console.showInPanel': True
+  'browser.console.showInPanel': True,
+  'browser.firstrun.show.uidiscovery': False
 }
 
 # When launching a temporary new Firefox profile, use these preferences.
@@ -34,6 +34,8 @@ DEFAULT_FIREFOX_PREFS = {
     'extensions.getAddons.cache.enabled' : False,
     # Disable intalling any distribution add-ons
     'extensions.installDistroAddons' : False,
+    # Allow installing extensions dropped into the profile folder
+    'extensions.autoDisableScopes' : 10,
     'extensions.testpilot.runStudies' : False,
 
     # From:

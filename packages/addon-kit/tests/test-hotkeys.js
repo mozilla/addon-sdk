@@ -3,6 +3,29 @@
 const { Hotkey } = require("hotkeys");
 const { keyDown } = require("dom/events/keys");
 
+exports["test hotkey: function key"] = function(assert, done) {
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var showHotKey = Hotkey({
+    combo: "f1",
+    onPress: function() {
+      assert.pass("first callback is called");
+      keyDown(element, "f2");
+      showHotKey.destroy();
+    }
+  });
+
+  var hideHotKey = Hotkey({
+    combo: "f2",
+    onPress: function() {
+      assert.pass("second callback is called");
+      hideHotKey.destroy();
+      done();
+    }
+  });
+
+  keyDown(element, "f1");
+};
+
 exports["test hotkey: accel alt shift"] = function(assert, done) {
   var element = require("window-utils").activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({

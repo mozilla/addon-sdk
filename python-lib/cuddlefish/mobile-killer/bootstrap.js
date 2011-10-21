@@ -1,4 +1,3 @@
-/* vim:set ts=2 sw=2 sts=2 et: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -12,16 +11,14 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Jetpack.
+ * The Original Code is Weave.
  *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2011
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2008
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
- *   Henri Wiechers <hwiechers@gmail.com>
+ *  Alexandre Poirot <poirot.alex@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,33 +36,36 @@
 
 "use strict";
 
-const INVALID_HOTKEY = "Hotkey must have at least one modifier.";
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cu = Components.utils;
+const Cr = Components.results;
 
-const { toJSON: jsonify, toString: stringify,
-        isFunctionKey } = require("api-utils/keyboard/utils");
-const { register, unregister } = require("api-utils/keyboard/hotkeys");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
-const Hotkey = exports.Hotkey = function Hotkey(options) {
-  if (!(this instanceof Hotkey))
-    return new Hotkey(options);
+function startup(data, reason) {
+  let Watcher = {
+    window: null,
+    onOpenWindow: function(window) {
+      window = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+      window.addEventListener("keydown", this, true);
+    },
+    onWindowTitleChange: function () {},
+    handleEvent: function(event) {
+      // This event is dispatched via: abd shell input keycode 19
+      // KEYCODE_DPAD_UP=19, UP can't be fired by virtual keyboard,
+      // so it should be safe to take this event as a kill signal.
+      if (event.keyCode == 38 && event.which == 38) {
+        Cu.reportError("Mobile killer triggered!");
+        let appStartup = Cc['@mozilla.org/toolkit/app-startup;1'].
+          getService(Ci.nsIAppStartup);
+        appStartup.quit(Ci.nsIAppStartup.eForceQuit);
+      }
+    }
+  };
+  Services.wm.addListener(Watcher);
+  Cu.reportError("Mobile killer ready to kill firefox.");
+}
 
-  // Parsing key combination string.
-  let hotkey = jsonify(options.combo);
-  if (!isFunctionKey(hotkey.key) && !hotkey.modifiers.length) {
-    throw new TypeError(INVALID_HOTKEY);
-  }
-
-  this.onPress = options.onPress;
-  this.toString = stringify.bind(null, hotkey);
-  // Registering listener on keyboard combination enclosed by this hotkey.
-  // Please note that `this.toString()` is a normalized version of
-  // `options.combination` where order of modifiers is sorted and `accel` is
-  // replaced with platform specific key.
-  register(this.toString(), this.onPress);
-  // We freeze instance before returning it in order to make it's properties
-  // read-only.
-  return Object.freeze(this);
-};
-Hotkey.prototype.destroy = function destroy() {
-  unregister(this.toString(), this.onPress);
-};
+function install() {}
+function shutdown() {}
