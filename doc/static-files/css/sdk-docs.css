@@ -303,3 +303,7 @@ pre {
   margin-right: auto;
   display: block;
 }
+
+.image-right {
+  float:right;
+}
