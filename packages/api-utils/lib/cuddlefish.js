@@ -181,8 +181,8 @@
      loader.console = globals.console;
      loader.memory = globals.memory;
      var unloader = load_helper_module("api-utils/unload");
-       if (false) // force the manifest-scanner to copy this into the XPI
-         require("api-utils/unload");
+     if (false) // force the manifest-scanner to copy this into the XPI
+       require("api-utils/unload");
      loader.unload = function(reason, onError) {
              unloader.send(reason, onError);
      };

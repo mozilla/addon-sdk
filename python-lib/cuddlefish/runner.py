@@ -486,8 +486,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                             preferences=preferences)
 
     # Delete the temporary xpi file
-    print "XPI_PATH is", xpi_path
-    #os.remove(xpi_path)
+    os.remove(xpi_path)
 
     runner = runner_class(profile=profile,
                           binary=binary,

@@ -239,22 +239,17 @@
         */
        var self = this;
        let reqs;
-       if (!basePath)
-         //throw new Error("_makeApi must always be given a basePath");
-         dump("warning, _makeApi called without basePath\n");
        if (basePath && (basePath in self.manifest))
          reqs = self.manifest[basePath].requirements;
 
        function syncRequire(module) {
          if (reqs) {
            // if we know about you, you must follow the manifest
-           if (module in reqs) {
+           if (module in reqs)
              return loadMaybeMagicModule(module, reqs[module]);
-           }
            // if you invoke chrome, you can go off-manifest and search
-           if ("chrome" in reqs) {
+           if ("chrome" in reqs)
              return loadMaybeMagicModule(module, null);
-           }
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
          } else {
            // if we don't know about you, you can do anything you want.
@@ -295,7 +290,6 @@
             */
            if (!moduleData) {
              // we don't know where you live, so we must search for your data
-             dump("\nSEARCH for self, from "+basePath+"\n");
              // resource://api-utils-api-utils-tests/test-self.js
              // make a prefix of resource://api-utils-api-utils-data/
              let doubleslash = basePath.indexOf("//");
@@ -325,7 +319,6 @@
             */
            // the 'packaging' module is not cached
            return {
-             //allTestModules: packaging.options.allTestModules,
              myURI: moduleData.basePath,
              harnessOptions: self.harnessOptions
            };
@@ -610,8 +603,7 @@
 
      require: function require(module, callback) {
        if (!this.basePath)
-         //throw new Error("loader.require() must always have a basePath");
-         dump("warning, loader.require() called, but Loader has no basePath: "+module+"\n");
+         throw new Error("loader.require() must always have a basePath");
        return (this._makeApi(this.basePath).require)(module, callback);
      },
 
