@@ -16,6 +16,15 @@ if "%WIN64%" EQU "1" (
   SET PYTHONKEY=HKLM\SOFTWARE\Python\PythonCore
 )
 
+REG QUERY "%PYTHONKEY%" >nul 2>nul
+if NOT %ERRORLEVEL% EQU 0 (
+  if "%WIN64%" EQU "1" (
+    SET PYTHONKEY=HKCU\SOFTWARE\Wow6432Node\Python\PythonCore
+  ) else (
+    SET PYTHONKEY=HKCU\SOFTWARE\Python\PythonCore
+  )
+)
+
 SET PYTHONVERSION=
 SET PYTHONINSTALL=
 
@@ -23,6 +32,13 @@ if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.6\InstallPath" /ve >nul 2>nul
   if %ERRORLEVEL% EQU 0 (
     SET PYTHONVERSION=2.6
+  )
+)
+
+if "%PYTHONVERSION%" EQU "" (
+  REG QUERY "%PYTHONKEY%\2.7\InstallPath" /ve >nul 2>nul
+  if %ERRORLEVEL% EQU 0 (
+    SET PYTHONVERSION=2.7
   )
 )
 

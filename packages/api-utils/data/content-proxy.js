@@ -512,12 +512,13 @@ const xRayWrappersMissFixes = [
     }
     return null;
   },
-  
+
   // Fix XPathResult's constants being undefined on XrayWrappers
   // these constants are defined here:
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
   // and are only numbers.
-  // See bug 665279 for platform fix progress
+  // The platform bug 665279 was fixed in Gecko 10.0a1.
+  // FIXME: remove this workaround once the SDK no longer supports Firefox 9.
   function (obj, name) {
     if (typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
       let value = Ci.nsIDOMXPathResult[name];
@@ -526,7 +527,7 @@ const xRayWrappersMissFixes = [
     }
     return null;
   }
-  
+
 ];
 
 // XrayWrappers have some buggy methods.

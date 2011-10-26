@@ -1,4 +1,5 @@
 const hiddenFrames = require("hidden-frame");
+const xulApp = require("xul-app");
 
 /*
  * Utility function that allow to easily run a proxy test with a clean
@@ -561,12 +562,18 @@ exports.testXPathResult = createProxyTest("", function (helper, test) {
                      UNORDERED_NODE_SNAPSHOT_TYPE,
                    value,
                    "XPathResult's constants are valid on unwrapped node");
-  // The following test will fail if platform is fixed,
-  // so we will be able to know when to remove the work around.
-  test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
-                   undefined,
-                   "XPathResult's constants are undefined on " +
-                   "XPCNativeWrapper (platform bug #)");
+
+  if (xulApp.versionInRange(xulApp.platformVersion, "10.0a1", "*")) {
+    test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 6,
+                     "XPathResult's constants are defined on " +
+                     "XPCNativeWrapper (platform bug #)");
+  }
+  else {
+    test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+                     undefined,
+                     "XPathResult's constants are undefined on " +
+                     "XPCNativeWrapper (platform bug #665279)");
+  }
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
