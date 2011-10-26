@@ -534,7 +534,8 @@ function getDefaults(rootFileSpec) {
 
     logStream = Cc["@mozilla.org/network/file-output-stream;1"]
                 .createInstance(Ci.nsIFileOutputStream);
-    logStream.init(logFile, -1, -1, 0);
+    logStream.init(logFile, 26 /* PR_WRONLY | PR_APPEND | PR_CREATE_FILE */,
+                   -1 , 0);
   }
 
   function print(msg, level) {
