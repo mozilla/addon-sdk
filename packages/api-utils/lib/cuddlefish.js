@@ -200,9 +200,14 @@ const Loader = {
                   + (requirer && requirer.id), base, id);
 
     // If we have a manifest for requirer, then all it's requirements have been
-    // registered by linker.
+    // registered by linker and we should have a `uri` to the required module.
+    // If we don't have a `uri` then it's pseudo-module requirement similar
+    // to `chome`, in which case we use `id` to identify it in the module cache.
+    // TODO: Modify manifest builder so that pseudo module entries like `chorme`
+    // do have `uri` property that matches it's key in the module cache. For
+    // details see: Bug-697422.
     let requirement = manifest && manifest.requirements[id];
-    let uri = requirement && requirement.uri || id;
+    let uri = requirement && (requirement.uri || this.modules[id] && id);
 
     if (!uri)
         throw Error("Module: " + requirer && requirer.id + ' located at ' +
