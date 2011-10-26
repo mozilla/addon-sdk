@@ -185,7 +185,7 @@ const Loader = {
     sandbox.load(module.uri);
 
     // Workaround for bug 674195. Freezing objects from other sandboxes fail,
-    // so we create decedent and freeze it instead.
+    // so we create descendant and freeze it instead.
     if (typeof(module.exports) === 'object') {
       module.exports = Object.prototype.isPrototypeOf(module.exports) ?
                 Object.freeze(module.exports) :
