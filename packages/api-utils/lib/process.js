@@ -53,12 +53,19 @@ function loadScript(target, uri, sync) {
 }
 
 function process(target, id, uri, scope) {
-    loadScript(target, packaging.loader, false);
-    loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
-    loadScript(target, 'data:,Loader.new(options).main(' +
+  // Please not that even though `loadScript`, is executed before channel is
+  // returned, users still are able to subscribe for messages before any message
+  // will be send. That's because `loadScript` queues script execution on the
+  // other process (which means they will execute async (on the next turn of
+  // event loop), while channel for messages is return immediately (in the same
+  // turn of event loop).
+
+  loadScript(target, packaging.loader, false);
+  loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
+  loadScript(target, 'data:,Loader.new(options).main(' +
                         '"' + id + '", "' + uri + '");', false);
 
-    return { channel: channel.bind(null, scope, target) }
+  return { channel: channel.bind(null, scope, target) }
 }
 
 exports.spawn = function spawn(id, uri) {
