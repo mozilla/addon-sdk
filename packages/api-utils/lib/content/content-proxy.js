@@ -1,4 +1,5 @@
 const { Ci, Cc } = require("chrome");
+const xulApp = require("xul-app");
 
 /**
  * Access key that allows privileged code to unwrap proxy wrappers through 
@@ -505,22 +506,27 @@ const xRayWrappersMissFixes = [
           return wrap(node);
       }
     }
-  },
-  
+  }
+
+];
+
+if (!xulApp.versionInRange(xulApp.platformVersion, "10.0a1", "*")) {
   // Fix XPathResult's constants being undefined on XrayWrappers
   // these constants are defined here:
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
   // and are only numbers.
-  // See bug 665279 for platform fix progress
-  function (obj, name) {
-    if (typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
-      let value = Ci.nsIDOMXPathResult[name];
-      if (typeof value == "number" && value === obj.wrappedJSObject[name])
-        return value;
+  // The platform bug 665279 was fixed in Gecko 10.0a1.
+  // FIXME: remove this workaround once the SDK no longer supports Firefox 9.
+  xRayWrappersMissFixes.push(
+    function (obj, name) {
+      if (typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
+        let value = Ci.nsIDOMXPathResult[name];
+        if (typeof value == "number" && value === obj.wrappedJSObject[name])
+          return value;
+      }
     }
-  }
-  
-];
+  );
+}
 
 // XrayWrappers have some buggy methods.
 // Here is the list of them with functions returning some replacement 

@@ -218,9 +218,8 @@ class ManifestBuilder:
                 test_finder.add_requirement(testname, tme)
                 # finally, tell the runtime about it, so they won't have to
                 # search for all tests. self.test_modules will be passed
-                # through the harness-options.json file and available to
-                # unit-test-finder through the magic "all-test-modules"
-                # pseudomodule.
+                # through the harness-options.json file in the
+                # .allTestModules property.
                 self.test_modules.append(testname)
 
         # include files used by the loader
@@ -361,8 +360,6 @@ class ManifestBuilder:
 
         js_lines = open(mi.js,"r").readlines()
         requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
-        #if mi.section == "tests":
-        #    requires["chrome"] = {}
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -371,7 +368,7 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "loader", "@loader", "manifest", "@packaging", "all-test-modules"):
+            if reqname in ("chrome", "loader", "manifest", "@packaging", "@loader"):
                 me.add_requirement(reqname, {})
             elif reqname == "packaging":
                 my_uri = me.get_uri(self.uri_prefix)

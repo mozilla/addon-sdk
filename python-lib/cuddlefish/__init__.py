@@ -629,7 +629,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         print str(e)
         sys.exit(1)
     used_deps = manifest.get_used_packages()
-    print "TESTS", manifest.get_all_test_modules()
     if command == "test":
         # The test runner doesn't appear to link against any actual packages,
         # because it loads everything at runtime (invisible to the linker).
