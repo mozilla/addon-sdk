@@ -155,7 +155,6 @@ class Contents(unittest.TestCase):
             # the first problem found in bug 664840 was that cuddlefish.js
             # (the loader) was stripped out on windows, due to a /-vs-\ bug
             self.assertIn("resources/jid1-at-jetpack-api-utils-lib/cuddlefish.js", names)
-            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/securable-module.js", names)
             # the second problem found in bug 664840 was that an addon
             # without an explicit tests/ directory would copy all files from
             # the package into a bogus JID-PKGNAME-tests/ directory, so check
@@ -186,7 +185,6 @@ class Contents(unittest.TestCase):
             zf = zipfile.ZipFile("seven.xpi", "r")
             names = zf.namelist()
             self.assertIn("resources/jid1-at-jetpack-api-utils-lib/cuddlefish.js", names)
-            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/securable-module.js", names)
             testfiles = [fn for fn in names if "jid1-at-jetpack-seven-tests" in fn]
             self.failUnlessEqual([], testfiles)
             self.assertIn("resources/jid1-at-jetpack-seven-data/text.data",
