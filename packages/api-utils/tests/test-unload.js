@@ -42,7 +42,7 @@
 var unload = require("unload");
 
 exports.testUnloading = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader(require("packaging").myURI);
   var ul = loader.require("unload");
   var unloadCalled = 0;
   var errorsReported = 0;
@@ -93,7 +93,7 @@ exports.testEnsure = function(test) {
 exports.testEnsureWithTraits = function(test) {
 
   let { Trait } = require("traits");
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let ul = loader.require("unload");
 
   let called = 0;
@@ -149,7 +149,7 @@ exports.testEnsureWithTraits = function(test) {
 exports.testEnsureWithTraitsPrivate = function(test) {
 
   let { Trait } = require("traits");
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let ul = loader.require("unload");
 
   let called = 0;
@@ -178,7 +178,7 @@ exports.testEnsureWithTraitsPrivate = function(test) {
 
 exports.testReason = function (test) {
   var reason = "Reason doesn't actually have to be anything in particular.";
-  var loader = test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader(require("packaging").myURI);
   var ul = loader.require("unload");
   ul.when(function (rsn) {
     test.assertEqual(rsn, reason,

@@ -6,7 +6,8 @@ exports.testUnloadAndErrorLogging = function(test) {
   function print(message) {
     prints.push(message);
   }
-  var loader = test.makeSandboxedLoader({print: print});
+  var loader = test.makeSandboxedLoader(require("packaging").myURI,
+                                        {print: print});
   var sbobsvc = loader.require("observer-service");
 
   var timesCalled = 0;

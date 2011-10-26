@@ -4,7 +4,7 @@ const { openTab, closeTab } = require("api-utils/tabs/utils");
 
 exports["test unload tab observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader();
+  let loader = assert._log.makeSandboxedLoader(require("packaging").myURI);
 
 
   let window = loader.require("api-utils/window-utils").activeBrowserWindow;

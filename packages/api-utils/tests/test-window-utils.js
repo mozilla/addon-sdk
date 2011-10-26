@@ -42,7 +42,7 @@ exports.testCloseOnUnload = function(test) {
     }
   };
 
-  var loader = test.makeSandboxedLoader();
+  var loader = test.makeSandboxedLoader(require("packaging").myURI);
   loader.require("window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");

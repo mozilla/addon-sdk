@@ -110,7 +110,7 @@ if (pbService) {
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
-    let loader = test.makeSandboxedLoader();
+    let loader = test.makeSandboxedLoader(require("packaging").myURI);
     let pb2 = loader.require("private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
