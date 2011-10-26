@@ -259,7 +259,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       unsafeWindow: { get: function () window.wrappedJSObject }
     });
 
-    // Internal feature that is only used by sdk tests:
+    // Internal feature that is only used by SDK tests:
     // Expose unlock key to content script context.
     // See `PRIVATE_KEY` definition for more information.
     if (proxySandbox && worker._expose_key)
@@ -532,7 +532,7 @@ const Worker = AsyncEventEmitter.compose({
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
 
-    // Internal feature that is only used by sdk unit tests.
+    // Internal feature that is only used by SDK unit tests.
     // See `PRIVATE_KEY` definition for more information.
     if ('exposeUnlockKey' in options && options.exposeUnlockKey === PRIVATE_KEY)
       this._expose_key = true;

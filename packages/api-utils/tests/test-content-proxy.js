@@ -2,7 +2,7 @@ const hiddenFrames = require("hidden-frame");
 
 /*
  * Utility function that allow to easily run a proxy test with a clean
- * new html document. See First unit test for usage.
+ * new HTML document. See first unit test for usage.
  */
 function createProxyTest(html, callback) {
   return function (test) {
@@ -78,7 +78,7 @@ function createWorker(test, xrayWindow, contentScript, done) {
   return worker;
 }
 
-/* Exemples for the `createProxyTest` uses */
+/* Examples for the `createProxyTest` uses */
 
 let html = "<script>var documentGlobal = true</script>";
 exports.testCreateProxyTest = createProxyTest(html, function (helper, test) {
@@ -87,10 +87,10 @@ exports.testCreateProxyTest = createProxyTest(html, function (helper, test) {
   test.assert(helper.rawWindow.documentGlobal,
               "You have access to a raw window reference via `helper.rawWindow`");
   test.assert(!("documentGlobal" in helper.xrayWindow),
-              "You have access to a XrayWrapper reference via `helper.xrayWindow`");
+              "You have access to an XrayWrapper reference via `helper.xrayWindow`");
 
   // If you do not create a Worker, you have to call helper.done(),
-  // in order to say when you test is finished
+  // in order to say when your test is finished
   helper.done();
 });
 
@@ -293,7 +293,7 @@ exports.testEventsOverload = createProxyTest("", function (helper) {
       //     return obj._proxy = Proxy.create(...);
       //   }
       //
-      //   // Get a proxy of a XrayWrapper prototype object
+      //   // Get a proxy of an XrayWrapper prototype object
       //   let proto = proxify(xpcProto);
       //
       //   // Use this proxy as a prototype
