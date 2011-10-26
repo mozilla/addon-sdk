@@ -21,7 +21,8 @@ combination, the listener is executed only on the last one created
   Options for the hotkey, with the following keys:
 
 @prop combo {String}
-Key combination in the format of `'modifier-key'`:
+Any function key: `"f1, f2, ..., f24"` or key combination in the format
+of `'modifier-key'`:
 
       "accel-s"
       "meta-shift-i"
@@ -57,13 +58,13 @@ destroyed it can no longer be used.
     const { Hotkey } = require("hotkeys");
 
     var showHotKey = Hotkey({
-      combo: "accel-shift-p",
+      combo: "accel-shift-o",
       onPress: function() {
         showMyPanel();
       }
     });
     var hideHotKey = Hotkey({
-      combo: "accel-alt-shift-p",
+      combo: "accel-alt-shift-o",
       onPress: function() {
         hideMyPanel();
       }
