@@ -62,6 +62,7 @@ const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
+const timer = require("timer");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -125,6 +126,10 @@ const PRIVATE_PROPS_KEY = {
 // number will be 0, when the second is created it will be 1, and so on.
 let nextItemID = 0;
 
+// The number of items that haven't finished initializing yet.  See
+// AIT__finishActiveItemInit().
+let numItemsWithUnfinishedInit = 0;
+
 exports.Item = Item;
 exports.Menu = Menu;
 exports.Separator = Separator;
@@ -174,7 +179,7 @@ const ItemBaseTrait = Trait({
       return;
     if (this.parentMenu)
       this.parentMenu.removeItem(this._public);
-    else if (!(this instanceof Separator))
+    else if (!(this instanceof Separator) && this._hasFinishedInit)
       browserManager.removeTopLevelItem(this._public);
     browserManager.unregisterItem(this._public);
     this._wasDestroyed = true;
@@ -248,6 +253,24 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
       if (self._workerReg && args.some(function (a) a instanceof URLContext))
         self._workerReg.createNeededWorkers();
     };
+  },
+
+  // Workers are only created for top-level menu items.  When a top-level item
+  // is later added to a Menu, its workers are destroyed.  Well, all items start
+  // out as top-level because there is, unfortunately, no contextMenu.add().  So
+  // when an item is created and immediately added to a Menu, workers for it are
+  // needlessly created and destroyed.  The point of this timeout is to avoid
+  // that.  Items that are created and added to Menus in the same turn of the
+  // event loop won't have workers created for them.
+  _finishActiveItemInit: function AIT__finishActiveItemInit() {
+    numItemsWithUnfinishedInit++;
+    const self = this;
+    timer.setTimeout(function AIT__finishActiveItemInitTimeout() {
+      if (!self.parentMenu && !self._wasDestroyed)
+        browserManager.addTopLevelItem(self._public);
+      self._hasFinishedInit = true;
+      numItemsWithUnfinishedInit--;
+    }, 0);
   },
 
   get label() {
@@ -328,17 +351,25 @@ function Item(options) {
 
   item._public = Cortex(item);
   browserManager.registerItem(item._public);
-  browserManager.addTopLevelItem(item._public);
+  item._finishActiveItemInit();
 
   return item._public;
 }
 
 // Menu is composed of this trait.
-const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
+const MenuTrait = Trait.compose(
+  ActiveItemTrait.resolve({ destroy: "_destroyThisItem" }),
+  Trait({
 
   _initMenu: function MT__initMenu(opts, optRules, optsToNotSet) {
     this._items = [];
     this._initActiveItem(opts, optRules, optsToNotSet);
+  },
+
+  destroy: function MT_destroy() {
+    while (this.items.length)
+      this.items[0].destroy();
+    this._destroyThisItem();
   },
 
   get items() {
@@ -347,22 +378,23 @@ const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
   set items(val) {
     let newItems = validateOpt(val, this._optRules.items);
-    while (this._items.length)
-      this.removeItem(this._items[0]);
+    while (this.items.length)
+      this.items[0].destroy();
     newItems.forEach(function (i) this.addItem(i), this);
     return newItems;
   },
 
   addItem: function MT_addItem(item) {
     // First, remove the item from its current parent.
+    let privates = privateItem(item);
     if (item.parentMenu)
       item.parentMenu.removeItem(item);
-    else if (!(item instanceof Separator))
+    else if (!(item instanceof Separator) && privates._hasFinishedInit)
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
     this._items.push(item);
-    privateItem(item)._parentMenu = this._public;
+    privates._parentMenu = this._public;
     browserManager.addItemToMenu(item, this._public);
   },
 
@@ -405,8 +437,8 @@ function Menu(options) {
 
   menu._public = Cortex(menu);
   browserManager.registerItem(menu._public);
-  browserManager.addTopLevelItem(menu._public);
   menu.items = options.items;
+  menu._finishActiveItemInit();
 
   return menu._public;
 }
@@ -418,6 +450,7 @@ function Separator() {
 
   sep._public = Cortex(sep);
   browserManager.registerItem(sep._public);
+  sep._hasFinishedInit = true;
   return sep._public;
 }
 
@@ -859,13 +892,13 @@ let browserManager = {
     if (doc.readyState == "loading") {
       const self = this;
       doc.addEventListener("readystatechange", function onReadyStateChange(e) {
-        if (e.target != doc)
+        if (e.target != doc || doc.readyState != "complete")
           return;
         doc.removeEventListener("readystatechange", onReadyStateChange, false);
         self._registerContentWin(contentWin);
       }, false);
     }
-    else
+    else if (doc.readyState == "complete")
       this._registerContentWin(contentWin);
   },
 
@@ -935,7 +968,7 @@ let browserManager = {
       let allContentWins = Array.slice(topContentWin.frames);
       allContentWins.push(topContentWin);
       allContentWins.forEach(function (contentWin) {
-        if (contentWin.document.readyState != "loading")
+        if (contentWin.document.readyState == "complete")
           this._registerContentWin(contentWin);
       }, this);
     }, this);
@@ -1049,10 +1082,11 @@ BrowserWindow.prototype = {
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    let privates = privateItem(item);
+    let { domElt, overflowDOMElt } = this.items[privates._id];
     this._setDOMEltLabel(domElt, label);
     this._setDOMEltLabel(overflowDOMElt, label);
-    if (!item.parentMenu)
+    if (!item.parentMenu && privates._hasFinishedInit)
       this.contextMenuPopup.itemLabelDidChange(item);
   },
 
@@ -1346,6 +1380,17 @@ ContextMenuPopup.prototype = {
   // window's current context and hide items that don't.  Each module instance
   // is responsible for showing and hiding the items it owns.
   _handlePopupShowing: function CMP__handlePopupShowing() {
+    // If there are items queued up to finish initializing, let them go first.
+    // Otherwise the overflow submenu and menu separator may end up in an
+    // inappropriate state when those items are later added to the menu.
+    if (numItemsWithUnfinishedInit) {
+      const self = this;
+      timer.setTimeout(function popupShowingTryAgain() {
+        self._handlePopupShowing();
+      }, 0);
+      return;
+    }
+
     // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
     // to avoid a Spidermonkey strict warning on earlier versions.
     let triggerNode = this.popupDOMElt.triggerNode || undefined;
@@ -1408,6 +1453,7 @@ ContextMenuPopup.prototype = {
     let submenu = this._overflowMenu;
     if (!submenu) {
       submenu = this._makeOverflowMenu();
+      submenu.hidden = true;
       this.popupDOMElt.insertBefore(submenu, sep.nextSibling);
     }
   },
