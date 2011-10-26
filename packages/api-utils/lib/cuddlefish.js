@@ -123,11 +123,6 @@ const Loader = {
       // to it's requirements.
       manifest: { value: options.manifest || {} },
 
-      // TODO: Hack to allow module URI resolution from ID.
-      // Hopefully we'll modify linker in a way that id's will map one on one
-      // URIs.
-      root: { value: options.uriPrefix },
-
       modules: { value: options.modules || Object.create(Loader.modules) },
 
       sandboxes: { value: options.sandboxes || {} },
