@@ -146,7 +146,8 @@ const Loader = {
     // currently we override dump to write to a file instead of `stdout` so that
     // python can read it on windows).
     dump = globals.dump;
-    return loader;
+
+    return Object.freeze(loader);
   },
   modules: {
     'chrome': Object.freeze({
