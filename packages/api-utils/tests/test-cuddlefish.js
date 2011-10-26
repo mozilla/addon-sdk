@@ -4,8 +4,8 @@ exports.testLoader = function(test) {
     prints.push(message);
   }
 
-  var loader = test.makeSandboxedLoader({print: print,
-                                         globals: {foo: 1}});
+  var loader = test.makeSandboxedLoader(require("packaging").myURI,
+                                        {print: print, globals: {foo: 1}});
 
   test.pass("loader instantiates within a securablemodule");
 
@@ -27,7 +27,7 @@ exports.testLoader = function(test) {
   test.assertEqual(unloadsCalled, 'ba',
                    "loader.unload() must call cb's in LIFO order.");
 
-  loader = test.makeSandboxedLoader();
+  loader = test.makeSandboxedLoader(require("packaging").myURI);
 
   loader.runScript("memory.track({}, 'blah');");
 

@@ -51,9 +51,6 @@ var onDone;
 // Function to print text to a console, w/o CR at the end.
 var print;
 
-// The directories to look for tests in.
-var dirs;
-
 // How many more times to run all tests.
 var iterationsLeft;
 
@@ -266,7 +263,6 @@ function nextIteration(tests) {
       testOutOfProcess: packaging.enableE10s,
       testInProcess: true,
       fs: sandbox.fs,
-      dirs: dirs,
       filter: filter,
       onDone: nextIteration
     });
@@ -329,8 +325,6 @@ var runTests = exports.runTests = function runTests(options) {
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
 
-    dirs = [url.toFilename(path)
-            for each (path in options.rootPaths)];
     var console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
                                         options);
     var globals = {packaging: packaging};
@@ -350,6 +344,7 @@ var runTests = exports.runTests = function runTests(options) {
                                      jetpackID: packaging.options.jetpackID,
                                      uriPrefix: packaging.options.uriPrefix,
                                      name: packaging.options.name,
+                                     basePath: require("packaging").myURI,
                                      packaging: packaging,
                                      __proto__: options});
     nextIteration();

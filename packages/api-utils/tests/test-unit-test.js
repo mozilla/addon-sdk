@@ -49,7 +49,7 @@ exports.testModuleOverrides = function(test) {
       }
     }
   };
-  var loader = test.makeSandboxedLoader(options);
+  var loader = test.makeSandboxedLoader(require("packaging").myURI, options);
   test.assertEqual(loader.require('unit-test').foo, 5,
                    "options.moduleOverrides works");
   loader.unload();

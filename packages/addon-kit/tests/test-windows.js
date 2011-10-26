@@ -73,7 +73,7 @@ exports.testAutomaticDestroy = function(test) {
 
   // Create a second windows instance that we will unload
   let called = false;
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let windows2 = loader.require("windows").browserWindows;
   windows2.on("open", function() {
     called = true;

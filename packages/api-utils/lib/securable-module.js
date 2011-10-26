@@ -219,6 +219,8 @@
      this.getModuleExports = options.getModuleExports;
      this.modifyModuleSandbox = options.modifyModuleSandbox;
      this.manifest = options.manifest || {};
+     this.harnessOptions = options.harnessOptions;
+     this.basePath = options.basePath; // used for off-manifest loader.require
    };
 
    exports.Loader.prototype = {
@@ -245,15 +247,10 @@
            // if we know about you, you must follow the manifest
            if (module in reqs)
              return loadMaybeMagicModule(module, reqs[module]);
-           // if you invoke chrome, you can go off-manifest and search
-           if ("chrome" in reqs)
-             return loadMaybeMagicModule(module, null);
            throw new Error("Module at "+basePath+" not allowed to require"+"("+module+")");
-         } else {
-           // if we don't know about you, you can do anything you want.
-           // You're going to have to search for your own modules, though.
-           return loadMaybeMagicModule(module, null);
          }
+         // you don't exist. go away.
+         throw new Error("Unknown module at "+basePath+" not allowed to require"+"("+module+")");
        }
 
        function loadMaybeMagicModule(moduleName, moduleData) {
@@ -269,6 +266,9 @@
           * it's 'null' then we're supposed to search all known packages for
           * it.
           */
+
+         if (!moduleData)
+           throw new Error("Error: loadMaybeMagicModule should always get moduleData");
 
          if (self.getModuleExports) {
            /* this currently handles 'chrome' */
@@ -286,20 +286,6 @@
             * function, passing in the manifest's moduleData, which will
             * include enough information to create the specialized module.
             */
-           if (!moduleData) {
-             // we don't know where you live, so we must search for your data
-             // resource://api-utils-api-utils-tests/test-self.js
-             // make a prefix of resource://api-utils-api-utils-data/
-             let doubleslash = basePath.indexOf("//");
-             let prefix = basePath.slice(0, doubleslash+2);
-             let rest = basePath.slice(doubleslash+2);
-             let slash = rest.indexOf("/");
-             prefix = prefix + rest.slice(0, slash);
-             prefix = prefix.slice(0, prefix.lastIndexOf("-")) + "-data/";
-             moduleData = { "dataURIPrefix": prefix };
-             // moduleData also wants mapName and mapSHA256, but they're
-             // currently unused
-           }
            if (false) // force scanner to copy self-maker.js into the XPI
              require("./self-maker"); 
            let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
@@ -310,12 +296,16 @@
            return selfMod.makeSelfModule(moduleData);
          }
 
-         if (!moduleData) {
-           // search
-           let path = self.fs.resolveModule(basePath, moduleName);
-           if (!path)
-             throw new Error('Module "' + moduleName + '" not found');
-           moduleData = {uri: path};
+         if (moduleName == "packaging") {
+           /* this is also magic, and provides access to the list of all
+            * test modules stored in harness-options.json, as well as
+            * makeSandboxedLoader
+            */
+           // the 'packaging' module is not cached
+           return {
+             myURI: moduleData.basePath,
+             harnessOptions: self.harnessOptions
+           };
          }
 
          // Track accesses to this module via its normalized path. This lets
@@ -330,6 +320,10 @@
          }
          self.pathAccessed[moduleData.uri] += 1;
 
+         return loadFromCacheOrModuleData(moduleData, moduleName);
+       }
+
+       function loadFromCacheOrModuleData(moduleData, moduleName) {
          if (moduleData.uri in self.modules) {
            // already loaded: return from cache
            return self.modules[moduleData.uri];
@@ -565,7 +559,8 @@
 
        return {
          require: asyncRequire,
-         define: define
+         define: define,
+         loadFromCacheOrModuleData: loadFromCacheOrModuleData
        };
        // END support for Async module-style
      },
@@ -586,7 +581,14 @@
      },
 
      require: function require(module, callback) {
-       return (this._makeApi(null).require)(module, callback);
+       if (!this.basePath)
+         throw new Error("loader.require() must always have a basePath");
+       return (this._makeApi(this.basePath).require)(module, callback);
+     },
+
+     requireURI: function requireURI(uri, modulename) {
+       var api = this._makeApi(uri);
+       return api.loadFromCacheOrModuleData({uri: uri}, modulename);
      },
 
      runScript: function runScript(options, extraOutput) {

@@ -30,7 +30,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   else
     test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let pageMod = loader.require("page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];

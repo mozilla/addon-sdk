@@ -88,7 +88,7 @@ tests.testPageProperties = function(test) {
 tests.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let Pages = loader.require("page-worker");
   let global = loader.findSandboxForModule("page-worker").globalScope;
 
@@ -125,7 +125,7 @@ tests.testConstructorAndDestructor = function(test) {
 tests.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let Pages = loader.require("page-worker");
 
   let page = Pages.Page({

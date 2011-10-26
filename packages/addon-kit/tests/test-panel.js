@@ -344,7 +344,7 @@ function makeEventOrderTest(options) {
 }
 
 tests.testAutomaticDestroy = function(test) {
-  let loader = test.makeSandboxedLoader();
+  let loader = test.makeSandboxedLoader(require("packaging").myURI);
   let panel = loader.require("panel").Panel({
     contentURL: "about:buildconfig",
     contentScript: 

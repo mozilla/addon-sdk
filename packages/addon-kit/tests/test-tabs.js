@@ -118,7 +118,7 @@ exports.testAutomaticDestroy = function(test) {
     // Create a second tab instance that we will destroy
     let called = false;
     
-    let loader = test.makeSandboxedLoader();
+    let loader = test.makeSandboxedLoader(require("packaging").myURI);
     let tabs2 = loader.require("tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
