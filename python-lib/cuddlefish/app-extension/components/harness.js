@@ -464,10 +464,6 @@ function buildForsakenConsoleDump(dump) {
   }
 
   return function forsakenConsoleDump(msg, level) {
-    // No harm in calling dump() just in case the
-    // end-user *can* see the console...
-    dump(msg);
-
     msg = stringify(msg);
     if (msg.indexOf('\n') >= 0) {
       var str = buffer + msg;
