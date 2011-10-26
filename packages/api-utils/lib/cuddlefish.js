@@ -92,7 +92,7 @@ const Sandbox = {
 };
 
 const Module = {
-  new: function(requirer, id, uri) {
+  new: function(id, uri) {
     let module = Object.create(this);
 
     module.id = id;
@@ -212,7 +212,7 @@ const Loader = {
       module = this.modules[uri];
     }
     else {
-      module = this.modules[uri] = Module.new(requirer, id, uri);
+      module = this.modules[uri] = Module.new(id, uri);
       this.load(module);
       Object.freeze(module);
     }
@@ -226,7 +226,7 @@ const Loader = {
   },
   main: function main(id, uri) {
     try {
-      let module = this.modules[uri] = Module.new(null, id, uri);
+      let module = this.modules[uri] = Module.new(id, uri);
       this.load(module);
       let main = Object.freeze(module).exports;
       if (main.main)
