@@ -117,6 +117,8 @@ const Loader = {
       manifest: { value: options.manifest || {} },
       sandboxes: { value: {} },
 
+      // Following property may be passed in (usually for mocking purposes) in
+      // order to override default modules cache.
       modules: { value: options.modules || Object.create(Loader.modules) },
     });
     loader.require = this.require.bind(loader, options.loader);
