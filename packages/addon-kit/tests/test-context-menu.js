@@ -1585,6 +1585,42 @@ exports.testItemImage = function (test) {
 };
 
 
+// Menu.destroy should destroy the item tree rooted at that menu.
+exports.testMenuDestroy = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "item 0" }),
+      loader.cm.Menu({
+        label: "item 1",
+        items: [
+          loader.cm.Item({ label: "subitem 0" }),
+          loader.cm.Item({ label: "subitem 1" }),
+          loader.cm.Item({ label: "subitem 2" })
+        ]
+      }),
+      loader.cm.Item({ label: "item 2" })
+    ]
+  });
+  menu.destroy();
+
+  let numRegistryEntries = 0;
+  loader.globalScope.browserManager.browserWins.forEach(function (bwin) {
+    for (let itemID in bwin.items)
+      numRegistryEntries++;
+  });
+  test.assertEqual(numRegistryEntries, 0, "All items should be unregistered.");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([], [], [menu]);
+    test.done();
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1845,7 +1881,7 @@ TestHelper.prototype = {
           self.test.exception(err);
           self.test.done();
         }
-      }, 10);
+      }, 20);
     }, useCapture);
   },
 
