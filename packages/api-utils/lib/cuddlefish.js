@@ -142,6 +142,9 @@ const Loader = {
     // other modules.
     Object.freeze(globals);
 
+    // Override global `dump` so that it behaves same as in any other module (
+    // currently we override dump to write to a file instead of `stdout` so that
+    // python can read it on windows).
     dump = globals.dump;
     return loader;
   },
