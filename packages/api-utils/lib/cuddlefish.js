@@ -138,6 +138,9 @@ const Loader = {
       Object.defineProperty(loader.globals, name,
                             Object.getOwnPropertyDescriptor(globals, name));
     });
+    // Freeze globals so that modules won't have a chance to mutate scope of
+    // other modules.
+    Object.freeze(globals);
 
     dump = globals.dump;
     return loader;
