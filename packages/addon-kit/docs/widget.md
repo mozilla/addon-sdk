@@ -36,6 +36,9 @@ For example, this widget contains an image, so it looks like a simple icon:
     });
 
 Upon creation, the widget is automatically added to the add-on bar.
+You can set the width of a widget, but the height is fixed so as to fit in the
+add-on bar. If the content is an image, it is automatically scaled to be 16x16
+pixels.
 
 This widget contains an entire web page:
 
@@ -253,11 +256,15 @@ Represents a widget object.
     It may contain HTML. Widgets must have either the `content` property or the
     `contentURL` property set.
 
+    If the content is an image, it is automatically scaled to be 16x16 pixels.
+
   @prop [contentURL] {string}
     An optional string URL to content to load into the widget. This can be
     [local content](dev-guide/addon-development/web-content.html) or remote
     content, an image or web content. Widgets must have either the `content`
     property or the `contentURL` property set.
+
+    If the content is an image, it is automatically scaled to be 16x16 pixels.
 
   @prop [panel] {Panel}
     An optional [panel](packages/addon-kit/docs/panel.html) to open when the
