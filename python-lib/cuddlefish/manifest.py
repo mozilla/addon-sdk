@@ -719,8 +719,8 @@ the equivalent shortcuts now.)
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
     requires, locations = scan_requirements_with_grep(fn, lines)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        # these are the loader: don't scan for chrome
+    if filename == "cuddlefish.js":
+        # this is the loader: don't scan for chrome
         problems = False
     elif "chrome" in requires:
         # if they declare require("chrome"), we tolerate the use of
