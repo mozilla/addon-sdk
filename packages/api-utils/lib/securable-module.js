@@ -286,14 +286,8 @@
             * function, passing in the manifest's moduleData, which will
             * include enough information to create the specialized module.
             */
-           if (false) // force scanner to copy self-maker.js into the XPI
-             require("./self-maker"); 
-           let makerModData = {uri: self.fs.resolveModule(null, "self-maker")};
-           if (!makerModData.uri)
-             throw new Error("Unable to find self-maker, from "+basePath);
-           let selfMod = loadFromModuleData(makerModData, "self-maker");
            // selfMod is not cached
-           return selfMod.makeSelfModule(moduleData);
+           return self.selfMaker.makeSelfModule(moduleData);
          }
 
          if (moduleName == "packaging") {

@@ -178,6 +178,10 @@
          require("api-utils/memory");
      }
 
+     if (false) // force the manifest-scanner to copy this into the XPI
+       require("api-utils/self-maker");
+     loader.selfMaker = load_helper_module("api-utils/self-maker");
+
      loader.console = globals.console;
      loader.memory = globals.memory;
      var unloader = load_helper_module("api-utils/unload");
