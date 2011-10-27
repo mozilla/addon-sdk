@@ -248,9 +248,17 @@ const Loader = {
     try {
       let module = this.modules[uri] = Module.new(id, uri);
       this.load(module); // this is where the addon's main.js finally runs
-      let main = Object.freeze(module).exports;
-      if (main.main)
-        main.main();
+      let program = Object.freeze(module).exports;
+
+      if (typeof(program.onUnload) === 'function')
+        this.require('api-utils/unload').when(program.onUnload);
+
+      if (program.main) {
+        let { print, exit, staticArgs } = this.require('api-utils/system');
+        let { loadReason } = this.require('@packaging');
+        program.main({ loadReason: loadReason, staticArgs: staticArgs },
+                     { print: print, quit: exit });
+      }
     } catch (error) {
       Cu.reportError(error);
       if (this.globals.console) this.globals.console.exception(error);
