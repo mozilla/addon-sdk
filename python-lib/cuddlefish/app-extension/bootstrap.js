@@ -48,7 +48,9 @@ const resourceHandler = ioService.getProtocolHandler('resource')
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
 
-const APP_STARTUP = 1;
+const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
+                 'install', 'uninstall', 'upgrade', 'downgrade' ];
+
 let loader = null;
 
 // Utility function that synchronously reads local resource from the given
@@ -113,6 +115,7 @@ function startup(data, reason) {
   // TODO: Maybe we should perform read harness-options.json asynchronously,
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
   let options = JSON.parse(readURI(uri + './harness-options.json'));
+  options.loadReason = REASON[reason];
 
   // TODO: This is unnecessary overhead per add-on instance. Manifest should
   // probably contain paths relative to add-on root to avoid this, but that
