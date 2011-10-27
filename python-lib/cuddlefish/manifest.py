@@ -75,6 +75,7 @@ class ManifestEntry:
             assert isinstance(entry["requirements"][req], dict)
         if self.datamap:
             entry["requirements"]["self"] = {
+                "uri": "self",
                 "mapSHA256": self.datamap.data_manifest_hash,
                 "mapName": self.packageName+"-data",
                 "dataURIPrefix": "%s%s-data/" % (prefix, self.packageName),
@@ -368,11 +369,8 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "loader", "manifest", "@packaging", "@loader"):
-                me.add_requirement(reqname, {})
-            elif reqname == "packaging":
-                my_uri = me.get_uri(self.uri_prefix)
-                me.add_requirement(reqname, {"basePath": my_uri})
+            if reqname in ("chrome", "@packaging", "@loader"):
+                me.add_requirement(reqname, {"uri": reqname})
             elif reqname == "self":
                 # this might reference bundled data, so:
                 #  1: hash that data, add the hash as a dependency
