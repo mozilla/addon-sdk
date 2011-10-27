@@ -164,9 +164,13 @@ OK
 
 What happens here is that `cfx test`:
 
+<span class="aside">Note the hyphen after "test" in the module name.
+`cfx test` will include a module called "test-myCode.js", but will exclude
+modules called "test_myCode.js" or "testMyCode.js".</span>
+
 * looks in the `test` directory of your
 package
-* loads any modules that start with the word `test`
+* loads any modules whose names start with the word `test-`
 *  calls all their exported functions, passing them a `test` object
 implementation as their only argument.
 
