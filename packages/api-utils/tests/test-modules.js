@@ -1,3 +1,15 @@
+exports.testDefine = function(test) {
+  let tiger = require('./modules/tiger');
+  test.assertEqual(tiger.name, 'tiger', 'name proprety was exported properly');
+  test.assertEqual(tiger.type, 'cat', 'property form other module exported');
+};
+
+exports.testDefineInoresNonFactory = function(test) {
+  let mod = require('./modules/async2');
+  test.assertEqual(mod.name, 'async2', 'name proprety was exported properly');
+  test.assertNotEqual(mod.traditional2Name, 'traditional2', '1st is ignored');
+};
+/* Disable test that require AMD specific functionality:
 
 // define() that exports a function as the module value,
 // specifying a module name.
@@ -129,3 +141,4 @@ exports.testOneDefineNested = function (test) {
   }
   test.assertEqual(passed, true, 'Only allow one define call per module');
 }
+*/

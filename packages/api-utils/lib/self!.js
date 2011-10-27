@@ -1,4 +1,5 @@
-/* ***** BEGIN LICENSE BLOCK *****
+/* vim:st=2:sts=2:sw=2:
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -13,11 +14,13 @@
  *
  * The Original Code is Jetpack.
  *
- * The Initial Developer of the Original Code is Mozilla
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * The Initial Developer of the Original Code is Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *   Brian Warner <warner@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -36,18 +39,44 @@
 
 "use strict";
 
-// Override the default Iterator function with one that passes
-// a second argument to custom iterator methods that identifies
-// the call as originating from an Iterator function so the custom
-// iterator method can return [key, value] pairs just like default
-// iterators called via the default Iterator function.
+const { CC } = require('chrome');
+const { jetpackID, name, manifest, metadata } = require('@packaging');
 
-"use strict";
+const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
+                          'nsIXMLHttpRequest');
 
-Iterator = (function(DefaultIterator) {
-  return function Iterator(obj, keysOnly) {
-    if ("__iterator__" in obj && !keysOnly)
-      return obj.__iterator__.call(obj, false, true);
-    return DefaultIterator(obj, keysOnly);
-  };
-})(Iterator);
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
+}
+
+// Some XPCOM APIs require valid URIs as an argument for certain operations (see
+// `nsILoginManager` for example). This property represents add-on associated
+// unique URI string that can be used for that.
+const uri = 'addon:' + jetpackID
+
+function url(root, path) root + (path || "")
+function read(root, path) readURI(url(root, path))
+
+exports.create = function create(base) {
+  let moduleData = manifest[base] && manifest[base].requirements['self'];
+
+  return Object.freeze({
+    id: 'self',
+    exports: Object.freeze({
+      id: jetpackID,
+      uri: uri,
+      name: name,
+      version: metadata[name].version,
+      data: {
+        url: url.bind(null, moduleData.dataURIPrefix),
+        load: read.bind(null, moduleData.dataURIPrefix)
+      }
+    })
+  });
+};

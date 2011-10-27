@@ -36,7 +36,9 @@
 
 "use strict";
 
-const suites = require("packaging").harnessOptions.allTestModules;
+const file = require("./file");
+const packaging = require('@packaging');
+const suites = packaging.allTestModules;
 
 const NOT_TESTS = ['setup', 'teardown'];
 

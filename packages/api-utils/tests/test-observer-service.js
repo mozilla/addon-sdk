@@ -1,14 +1,13 @@
-var observers = require("observer-service");
+var observers = require("api-utils/observer-service");
 var {Cc,Ci} = require("chrome");
+const { Loader } = require("./helpers");
 
 exports.testUnloadAndErrorLogging = function(test) {
   var prints = [];
-  function print(message) {
+  var loader = Loader(module, { dump: function print(message) {
     prints.push(message);
-  }
-  var loader = test.makeSandboxedLoader(require("packaging").myURI,
-                                        {print: print});
-  var sbobsvc = loader.require("observer-service");
+  }});
+  var sbobsvc = loader.require("api-utils/observer-service");
 
   var timesCalled = 0;
   var cb = function(subject, data) {

@@ -7,7 +7,7 @@ exports.test_no_args = function(test) {
   } catch(e) {
     let msg = e.toString();
     test.assertEqual(msg.indexOf("Error: you must provide a module name when calling require() from "), 0);
-    test.assertNotEqual(msg.indexOf("test-require.js"), -1, msg);
+    test.assertNotEqual(msg.indexOf("test-require"), -1, msg);
     // we'd also like to assert that the right filename and linenumber is in
     // the stack trace, but this currently doesn't work (see bugs 679591 and
     // 551604)

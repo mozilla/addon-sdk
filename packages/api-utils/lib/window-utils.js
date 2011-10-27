@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,17 +39,22 @@
 
 const {Cc,Ci} = require("chrome");
 
+const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+
 var errors = require("./errors");
 
 var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
                      .getService(Ci.nsIWindowWatcher);
+
+const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
+                        getService(Ci.nsIAppShellService);
 
 const { EventEmitter } = require('./events'),
       { Trait } = require('./traits');
 
 /**
  * An iterator for XUL windows currently in the application.
- * 
+ *
  * @return A generator that yields XUL windows exposing the
  *         nsIDOMWindow interface.
  */
@@ -207,6 +213,61 @@ function isBrowser(window) {
          "navigator:browser";
 };
 exports.isBrowser = isBrowser;
+
+exports.hiddenWindow = appShellService.hiddenDOMWindow;
+
+function createHiddenWindow() {
+  return function promise(deliver) {
+    // We use popup=yes and we explicitly hide it with `nsIBaseWindow` interface
+    // in order to have a window that doesn't appear in taskbar/dock.
+
+    let markup = '<?xml version="1.0"?><window xmlns="' + XUL + '"></window>';
+    let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
+    let features = "chrome,width=0,height=0,popup=yes";
+
+    let window = gWindowWatcher.openWindow(null, url, null, features, null);
+    let base = window.QueryInterface(Ci.nsIInterfaceRequestor).
+                      getInterface(Ci.nsIWebNavigation).
+                      QueryInterface(Ci.nsIDocShell).
+                      QueryInterface(Ci.nsIDocShellTreeItem).
+                      treeOwner.
+                      QueryInterface(Ci.nsIBaseWindow);
+
+    base.visibility = false;
+    base.enabled = false;
+
+    window.addEventListener('DOMContentLoaded', function onLoad(event) {
+      window.removeEventListener('DOMContentLoaded', onLoad, false);
+      deliver(window);
+    }, false);
+  };
+};
+exports.createHiddenWindow = createHiddenWindow;
+
+exports.createRemoteBrowser = function createRemoteBrowser(remote) {
+  return function promise(deliver) {
+    createHiddenWindow()(function(hiddenWindow) {
+      let document = hiddenWindow.document;
+      let browser = document.createElementNS(XUL, "browser");
+      // Remote="true" enable everything here:
+      // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
+      if (remote !== false)
+        browser.setAttribute("remote","true");
+      // Type="content" is mandatory to enable stuff here:
+      // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
+      browser.setAttribute("type","content");
+      // We remove XBL binding to avoid execution of code that is not going to work
+      // because browser has no docShell attribute in remote mode (for example)
+      browser.setAttribute("style","-moz-binding: none;");
+      // Flex it in order to be visible (optional, for debug purpose)
+      browser.setAttribute("flex", "1");
+      document.documentElement.appendChild(browser);
+
+      // Return browser
+      deliver(browser);
+    });
+  };
+};
 
 require("./unload").when(
   function() {
