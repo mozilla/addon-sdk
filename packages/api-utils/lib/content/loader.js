@@ -41,7 +41,7 @@
 
 const { EventEmitter } = require('../events');
 const { validateOptions, getTypeOf } = require('../api-utils');
-const { URL, toFilename } = require('../url');
+const { URL } = require('../url');
 const file = require('../file');
 
 // map of property validations
@@ -66,10 +66,10 @@ const valid = {
         // Make sure every item is a local file URL.
         return value.every(function (item) {
           try {
-            toFilename(item);
-            return true;
+            return URL(item).scheme === 'resource'
           }
           catch(e) {
+            console.exception(e);
             return false;
           }
         });
