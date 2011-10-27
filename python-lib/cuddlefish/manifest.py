@@ -75,6 +75,7 @@ class ManifestEntry:
             assert isinstance(entry["requirements"][req], dict)
         if self.datamap:
             entry["requirements"]["self"] = {
+                "uri": "self",
                 "mapSHA256": self.datamap.data_manifest_hash,
                 "mapName": self.packageName+"-data",
                 "dataURIPrefix": "%s%s-data/" % (prefix, self.packageName),
@@ -218,9 +219,8 @@ class ManifestBuilder:
                 test_finder.add_requirement(testname, tme)
                 # finally, tell the runtime about it, so they won't have to
                 # search for all tests. self.test_modules will be passed
-                # through the harness-options.json file and available to
-                # unit-test-finder through the magic "all-test-modules"
-                # pseudomodule.
+                # through the harness-options.json file in the
+                # .allTestModules property.
                 self.test_modules.append(testname)
 
         # include files used by the loader
@@ -361,8 +361,6 @@ class ManifestBuilder:
 
         js_lines = open(mi.js,"r").readlines()
         requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
-        #if mi.section == "tests":
-        #    requires["chrome"] = {}
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -371,11 +369,8 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "loader", "@loader", "manifest", "@packaging", "all-test-modules"):
-                me.add_requirement(reqname, {})
-            elif reqname == "packaging":
-                my_uri = me.get_uri(self.uri_prefix)
-                me.add_requirement(reqname, {"basePath": my_uri})
+            if reqname in ("chrome", "@packaging", "@loader"):
+                me.add_requirement(reqname, {"uri": reqname})
             elif reqname == "self":
                 # this might reference bundled data, so:
                 #  1: hash that data, add the hash as a dependency
@@ -724,8 +719,8 @@ the equivalent shortcuts now.)
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
     requires, locations = scan_requirements_with_grep(fn, lines)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        # these are the loader: don't scan for chrome
+    if filename == "cuddlefish.js":
+        # this is the loader: don't scan for chrome
         problems = False
     elif "chrome" in requires:
         # if they declare require("chrome"), we tolerate the use of

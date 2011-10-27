@@ -55,7 +55,6 @@ function readURI(uri) {
   return request.responseText;
 }
 
-
 // Some XPCOM APIs require valid URIs as an argument for certain operations (see
 // `nsILoginManager` for example). This property represents add-on associated
 // unique URI string that can be used for that.
@@ -66,26 +65,6 @@ function read(root, path) readURI(url(root, path))
 
 exports.create = function create(base) {
   let moduleData = manifest[base] && manifest[base].requirements['self'];
-
-  if (!moduleData) {
-    // we don't know where you live, so we must search for your data
-    // resource://api-utils-api-utils-tests/test-self.js
-    // make a prefix of resource://api-utils-api-utils-data/
-    let doubleslash = base.indexOf('//');
-    let prefix = base.slice(0, doubleslash + 2);
-    let rest = base.slice(doubleslash + 2);
-    let slash = rest.indexOf('/');
-    prefix = prefix + rest.slice(0, slash);
-    prefix = prefix.slice(0, prefix.lastIndexOf('-')) + '-data/';
-    moduleData = { dataURIPrefix: prefix };
-    // moduleData also wants mapName and mapSHA256, but they're
-    // currently unused
-  }
-
-  // a module loaded from URI has called require(MODULE)
-  // URI is like resource://jid0-$JID/$PACKAGE-$SECTION/$SUBDIR/$FILENAME
-  // resource://jid0-abc123/reading-data-lib/main.js
-  // and we want resource://jid0-abc123/reading-data-data/
 
   return Object.freeze({
     id: 'self',

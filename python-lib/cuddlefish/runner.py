@@ -464,12 +464,20 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     starttime = last_output_time = time.time()
 
-    # Redirect runner output to /dev/null, since the runner also writes
-    # the output to the logfile, which we then print.  In theory, we could
-    # print the logfile only on Windows and leave runner output alone on other
-    # OSes, but this way we only have a single codepath to maintain.
-    dev_null = open(os.devnull, "w")
-    popen_kwargs = { 'stdout': dev_null, 'stderr': dev_null }
+    # Redirect runner output to a file so we can catch output not generated
+    # by us.
+    # In theory, we could do this using simple redirection on all platforms
+    # other than Windows, but this way we only have a single codepath to
+    # maintain.
+    fileno,outfile = tempfile.mkstemp(prefix="harness-stdout-")
+    os.close(fileno)
+    outfile_tail = follow_file(outfile)
+    def maybe_remove_outfile():
+        if os.path.exists(outfile):
+            os.remove(outfile)
+    atexit.register(maybe_remove_outfile)
+    outf = open(outfile, "w")
+    popen_kwargs = { 'stdout': outf, 'stderr': outf}
 
     profile = None
 
@@ -486,8 +494,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                             preferences=preferences)
 
     # Delete the temporary xpi file
-    print "XPI_PATH is", xpi_path
-    #os.remove(xpi_path)
+    os.remove(xpi_path)
 
     runner = runner_class(profile=profile,
                           binary=binary,
@@ -578,12 +585,13 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     try:
         while not done:
             time.sleep(0.05)
-            if logfile_tail:
-                new_chars = logfile_tail.next()
-                if new_chars:
-                    last_output_time = time.time()
-                    sys.stderr.write(new_chars)
-                    sys.stderr.flush()
+            for tail in (logfile_tail, outfile_tail):
+                if tail:
+                    new_chars = tail.next()
+                    if new_chars:
+                        last_output_time = time.time()
+                        sys.stderr.write(new_chars)
+                        sys.stderr.flush()
             if os.path.exists(resultfile):
                 result = open(resultfile).read()
                 if result:
@@ -605,7 +613,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     else:
         runner.wait(10)
     finally:
-        dev_null.close()
+        outf.close()
         if profile:
             profile.cleanup()
 
