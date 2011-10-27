@@ -51,6 +51,11 @@ const runtime = Cc["@mozilla.org/xre/app-info;1"].
 const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
 
 /**
+ * Parsed JSON object that was passed via `cfx --static-args "{ foo: 'bar' }"`
+ */
+exports.staticArgs = options.staticArgs;
+
+/**
  * Ends the process with the specified `code`. If omitted, exit uses the
  * 'success' code 0. To exit with failure use `1`.
  * TODO: Improve platform to actually quit with an exit code.
