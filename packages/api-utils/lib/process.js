@@ -41,6 +41,7 @@ const { createRemoteBrowser } = require("api-utils/window-utils");
 const { channel } = require("./channel");
 const { setTimout } = require('./timer');
 const packaging = require('@packaging');
+const { when } = require('./unload');
 
 const addonService = '@mozilla.org/addon/service;1' in Cc ?
   Cc['@mozilla.org/addon/service;1'].getService(Ci.nsIAddonService) : null
@@ -62,8 +63,12 @@ function process(target, id, uri, scope) {
 
   loadScript(target, packaging.loader, false);
   loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
-  loadScript(target, 'data:,Loader.new(options).main(' +
-                        '"' + id + '", "' + uri + '");', false);
+  loadScript(target, 'data:,let loader = Loader.new(options);\n' +
+                     'loader.main("' + id + '", "' + uri + '");', false);
+
+  when(function (reason) {
+    loadScript(target, 'data:,loader.unload("' + reason + '")', true);
+  });
 
   return { channel: channel.bind(null, scope, target) }
 }
