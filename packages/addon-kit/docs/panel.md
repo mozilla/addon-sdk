@@ -230,11 +230,6 @@ The message to send.  Must be stringifiable to JSON.
 <api name="show">
 @method
 Displays the panel.
-@param [anchor] {handle}
-A handle to a DOM node in a page to which the panel should appear to be
-anchored.  If not given, the panel is centered inside the most recent browser
-window. Note that it is not currently possible to anchor panels in this way
-using only the high level APIs.
 </api>
 
 <api name="hide">
