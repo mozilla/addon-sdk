@@ -116,7 +116,6 @@ function startup(data, reason) {
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
   let options = JSON.parse(readURI(uri + './harness-options.json'));
   options.loadReason = REASON[reason];
-  Cu.reportError(options.loadReason)
 
   // TODO: This is unnecessary overhead per add-on instance. Manifest should
   // probably contain paths relative to add-on root to avoid this, but that
