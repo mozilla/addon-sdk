@@ -1,12 +1,7 @@
-var global = this;
-
 exports.testGlobals = function(test) {
-  test.assertMatches(global.__url__, /test-globals\.js$/,
-                     "__url__ global should contain filename");
+  test.assertMatches(module.uri, /test-globals\.js$/,
+                     'should contain filename');
 
-  ['console', 'memory'].forEach(
-    function(name) {
-      test.assertNotEqual(global[name], undefined,
-                          name + " should be defined");
-    });
+  test.assertEqual(typeof console, 'object', 'should define console');
+  test.assertEqual(typeof memory, 'object', 'should define memory');
 };

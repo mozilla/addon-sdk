@@ -1,7 +1,3 @@
-// This implementation is neither secure nor complete,
-// because timer functionality should be implemented
-// natively in-process by bug 568695.
-
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -18,11 +14,11 @@
  * The Original Code is Jetpack.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,38 +34,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-"use strict";
+const { jetpackID } = require('@packaging');
 
-if (this.chrome) {
-  var callbacks = {};
-  exports.setTimeout = function setTimeout(cb, ms) {
-    var id = chrome.call("setTimeout", ms);
-    callbacks[id] = cb;
-    return id;
-  };
-
-  exports.clearTimeout = function clearTimeout(id) {
-    delete callbacks[id];
-    chrome.send("clearTimeout", id);
-  };
-  
-  chrome.on("onTimeout", function(name, id) {
-    var cb = callbacks[id];
-    delete callbacks[id];
-    if (cb)
-      cb(); // yay race conditions
-  });
-} else {
-  exports.register = function(addon) {
-    var timer = require("./timer");
-    addon.registerCall("setTimeout", function(name, ms) {
-      var id = timer.setTimeout(function() {
-        addon.send("onTimeout", id);
-      }, ms);
-      return id;
-    });
-    addon.on("clearTimeout", function(name, id) {
-      timer.clearTimeout(id);
-    });
-  };
+// TODO: Create a bug report and remove this workaround once it's fixed.
+// Only function needs defined in the context of the message manager window
+// can be registered via `addMessageListener`.
+function listener(callee) {
+  return function listener() { return callee.apply(this, arguments); };
 }
+function messageListener(scope, callee) {
+  return scope ? scope.eval('(' + listener + ')')(callee) : callee
+}
+
+exports.channel = function channel(scope, messageManager, address, raw) {
+  address = jetpackID + ':' + address
+  return {
+    input: function input(next, stop) {
+      let listener = messageListener(scope, function onMessage(message) {
+        if (false === next(raw ? message : message.json))
+          messageManager.removeMessageListener(address, listener);
+      });
+      messageManager.addMessageListener(address, listener);
+    },
+    output: function output(data) {
+      messageManager.sendAsyncMessage(address, data);
+    },
+    sync: !messageManager.sendSyncMessage ? null : function sync(data) {
+      messageManager.sendSyncMessage(address, data);
+    }
+  };
+};
+

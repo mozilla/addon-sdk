@@ -153,15 +153,9 @@ def scan2(text, fn="fake.js"):
 class Chrome(unittest.TestCase, Extra):
 
     def test_ignore_loader(self):
-        # we specifically ignore the two loader files
+        # we specifically ignore the loader itself
         mod = """let {Cc,Ci} = require('chrome');"""
         requires, problems, err = scan2(mod, "blah/cuddlefish.js")
-        self.failUnlessKeysAre(requires, ["chrome"])
-        self.failUnlessEqual(problems, False)
-        self.failUnlessEqual(err, [])
-
-        mod = """let {Cc,Ci} = require('chrome');"""
-        requires, problems, err = scan2(mod, "securable-module.js")
         self.failUnlessKeysAre(requires, ["chrome"])
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])

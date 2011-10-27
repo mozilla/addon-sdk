@@ -47,19 +47,16 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
+
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
 const runtime = require("api-utils/runtime");
 
-require("api-utils/xpcom").utils.defineLazyServiceGetter(
-  this,
-  "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1",
-  "nsIWindowMediator"
-);
+const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
+                       getService(Ci.nsIWindowMediator);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
