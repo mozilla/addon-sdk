@@ -254,10 +254,10 @@ const Loader = {
         this.require('api-utils/unload').when(program.onUnload);
 
       if (program.main) {
-        let { print, exit, staticArgs } = this.require('api-utils/system');
+        let { exit, staticArgs } = this.require('api-utils/system');
         let { loadReason } = this.require('@packaging');
         program.main({ loadReason: loadReason, staticArgs: staticArgs },
-                     { print: print, quit: exit });
+                     { print: function($) dump($ + '\n'), quit: exit });
       }
     } catch (error) {
       Cu.reportError(error);
