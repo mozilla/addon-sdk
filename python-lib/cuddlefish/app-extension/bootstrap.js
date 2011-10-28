@@ -149,5 +149,5 @@ function startup(data, reason) {
 function shutdown(data, reason) {
   // If loader is already present unload it, since add-on is disabled.
   if (loader)
-    loader.unload(reason);
+    loader.unload(REASON[reason]);
 };
