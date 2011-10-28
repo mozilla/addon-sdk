@@ -24,8 +24,8 @@ context. If frame is not provided hidden frame will be created.
 Examples
 --------
 
-    const { Symbiont } = require('content');
-    const Thing = Symbiont.resolve({ constructor: '_init' }).compose({
+    var { Symbiont } = require('content');
+    var Thing = Symbiont.resolve({ constructor: '_init' }).compose({
       constructor: function Thing(options) {
         // `getMyFrame` returns the host application frame in which
         // the page is loaded.

@@ -55,7 +55,7 @@ destroyed it can no longer be used.
 ## Example ##
 
     // Define keyboard shortcuts for showing and hiding a custom panel.
-    const { Hotkey } = require("hotkeys");
+    var { Hotkey } = require("hotkeys");
 
     var showHotKey = Hotkey({
       combo: "accel-shift-o",

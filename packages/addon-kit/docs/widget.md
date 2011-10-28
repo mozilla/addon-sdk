@@ -145,7 +145,7 @@ create your content scripts in separate files and pass their URLs using the
 [Working with Content Scripts](dev-guide/addon-development/web-content.html) for more
 information.
 
-    const widgets = require("widget");
+    var widgets = require("widget");
 
     // A basic click-able image widget.
     widgets.Widget({

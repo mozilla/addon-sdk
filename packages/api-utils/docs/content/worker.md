@@ -23,7 +23,7 @@ are listed below.
 
 **Example**
 
-    const workers = require("content/worker");
+    var workers = require("content/worker");
     let worker =  workers.Worker({
       window: require("window-utils").activeWindow,
       contentScript:
