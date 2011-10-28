@@ -112,11 +112,9 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     <code>-jsconsole</code> argument to Firefox, which will launch the
     <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
     Error Console</a>, try the following:</p<>
-    <pre>
-    cfx run --binary-args -jsconsole</pre>
+    <pre>cfx run --binary-args -jsconsole</pre>
     <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
-    <pre>
-    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    <pre>cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
     </td>
 </tr>
 
@@ -145,10 +143,19 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     <code>-p PROFILEDIR, --profiledir=PROFILEDIR</code>
   </td>
   <td>
-    Use an existing
+    <p>Use an existing
     <a href="http://support.mozilla.com/en-US/kb/profiles">profile</a>
     located in PROFILEDIR. PROFILEDIR may be specified as
-    a full path or as a path relative to the current directory.
+    a full path or as a path relative to the current directory.</p>
+
+    <p>You can use this option to create a new profile. Calling:</p>
+    <pre>mkdir /path/to/dir
+cfx run --profiledir /path/to/dir</pre>
+    <p>will create a new profile at <code>/path/to/dir</code>, which would be
+    reused in any subsequent calls to
+    <code>cfx run --profiledir /path/to/dir</code>.</p>
+    <p>The directory must exist, and the path must contain at least one "/"
+    (although you may specify just "./dir").</p>
   </td>
 </tr>
 
@@ -327,11 +334,9 @@ times.
     <code>-jsconsole</code> argument to Firefox, which will launch the
     <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
     Error Console</a>, try the following:</p<>
-    <pre>
-    cfx run --binary-args -jsconsole</pre>
+    <pre>cfx run --binary-args -jsconsole</pre>
     <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
-    <pre>
-    cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
+    <pre>cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
     </td>
 </tr>
 
@@ -382,6 +387,15 @@ times.
     <a href="http://support.mozilla.com/en-US/kb/profiles">profile</a>
     located in PROFILEDIR. PROFILEDIR may be specified as
     a full path or as a path relative to the current directory.
+
+    <p>You can use this option to create a new profile. Calling:</p>
+    <pre>mkdir /path/to/dir
+cfx run --profiledir /path/to/dir</pre>
+    <p>will create a new profile at <code>/path/to/dir</code>, which would be
+    reused in any subsequent calls to
+    <code>cfx run --profiledir /path/to/dir</code>.</p>
+    <p>The directory must exist, and the path must contain at least one "/"
+    (although you may specify just "./dir").</p>
   </td>
 </tr>
 
