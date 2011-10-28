@@ -66,7 +66,7 @@ Examples
 
 Create and show a simple panel with content from the `data/` directory:
 
-    const data = require("self").data;
+    var data = require("self").data;
     var panel = require("panel").Panel({
       contentURL: data.url("foo.html")
     });
