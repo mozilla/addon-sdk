@@ -308,6 +308,10 @@ const Loader = {
   },
   unload: function unload(reason, callback) {
     this.require('api-utils/unload').send(reason, callback);
+    // `cfx run` expects to see 'OK' or 'FAIL' to be written into a `resultFile`
+    // as a signal of quit.
+    if ('resultFile' in options && reason === 'shutdown')
+      this.require('api-utils/system').exit(0);
   }
 };
 exports.Loader = Loader;
