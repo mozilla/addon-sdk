@@ -1,6 +1,8 @@
 const hiddenFrames = require("hidden-frame");
 const xulApp = require("xul-app");
 
+const { Loader } = require('./helpers');
+
 /*
  * Utility function that allow to easily run a proxy test with a clean
  * new HTML document. See first unit test for usage.
@@ -51,10 +53,9 @@ function createWorker(test, xrayWindow, contentScript, done) {
   // We have to use Sandboxed loader in order to get access to the private
   // unlock key `PRIVATE_KEY`. This key should not be used anywhere else.
   // See `PRIVATE_KEY` definition in worker.js
-  let loader = test.makeSandboxedLoader();
-  let workerReq = "api-utils/content/worker";
-  let Worker = loader.require(workerReq).Worker;
-  let key = loader.findSandboxForModule(workerReq).globalScope.PRIVATE_KEY;
+  let loader = Loader(module);
+  let Worker = loader.require("api-utils/content/worker").Worker;
+  let key = loader.sandbox("api-utils/content/worker").PRIVATE_KEY;
   let worker = Worker({
     exposeUnlockKey : key,
     window: xrayWindow,
