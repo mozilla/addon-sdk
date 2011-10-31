@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Eric H. Jung <eric.jung@yahoo.com>
  *   Irakli Gozalishivili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -58,6 +59,11 @@ const TEXT = 0x02;
 // The selection type DOM (internal use only)
 const DOM  = 0x03;
 
+// A more developer-friendly message than the caught exception when is not
+// possible change a selection.
+const ERR_CANNOT_CHANGE_SELECTION =
+  "It isn't possible to change the selection, as there isn't currently a selection";
+
 /**
  * Creates an object from which a selection can be set, get, etc. Each
  * object has an associated with a range number. Range numbers are the
@@ -80,18 +86,17 @@ function Selection(rangeNumber) {
   this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
 
   this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM, rangeNumber);
-    // It isn't enough to check that rangeCount is zero. If one or more ranges
-    // are selected and then unselected, rangeCount is set to one, not zero.
-    // Therefore, if rangeCount is one, we also check if the selection is
-    // collapsed.
-    if (sel.rangeCount == 0)
-      return null;
-    if (sel.rangeCount == 1) {
-      let range = safeGetRange(sel, 0);
-      return range && range.collapsed ? null : true;
-    }
-    return false;
+    let sel = getSelection(DOM);
+
+    // If there are multiple ranges, the selection is definitely discontiguous.
+    // It returns `false` also if there are no selection; and `true` if there is
+    // a single non empty range, or a selection in a text field - contiguous or
+    // not (text field selection APIs doesn't support multiple selections).
+
+    if (sel.rangeCount > 1)
+      return false;
+
+    return !!(safeGetRange(sel, 0) || getElementWithSelection());
   });
 }
 
@@ -135,7 +140,16 @@ function getSelection(type, rangeNumber) {
     return selection;
   else if (type == TEXT) {
     let range = safeGetRange(selection, rangeNumber);
-    return range ? range.toString() : null;
+
+    if (range)
+      return range.toString();
+
+    let node = getElementWithSelection(window);
+
+    if (!node)
+      return null;
+
+    return node.value.substring(node.selectionStart, node.selectionEnd);
   }
   else if (type == HTML) {
     let range = safeGetRange(selection, rangeNumber);
@@ -176,6 +190,39 @@ function safeGetRange(selection, rangeNumber) {
 }
 
 /**
+ * Returns a reference of the DOM's active element for the window given, if it
+ * supports the text field selection API and has a text selected.
+ *
+ * Note:
+ *   we need this method because window.getSelection doesn't return a selection
+ *   for text selected in a form field (see bug 85686)
+ *
+ * @param {nsIWindow} [window]
+ *    A reference to a window
+ */
+function getElementWithSelection(window) {
+  let element;
+
+  try {
+    element = (window || context()).document.activeElement;
+  }
+  catch (e) {
+    element = null;
+  }
+
+  if (!element)
+    return null;
+
+  let { value, selectionStart, selectionEnd } = element;
+
+  let hasSelection = typeof value === "string" &&
+                      !isNaN(selectionStart) &&
+                      !isNaN(selectionEnd) &&
+                      selectionStart !== selectionEnd;
+
+  return hasSelection ? element : null;
+}
+/**
  * Sets the current selection of the most recent content document by changing
  * the existing selected text/HTML range to the specified value.
  *
@@ -189,33 +236,52 @@ function safeGetRange(selection, rangeNumber) {
 function setSelection(val, rangeNumber) {
     // Make sure we have a window context & that there is a current selection.
     // Selection cannot be set unless there is an existing selection.
-    let window, range;
+    let window, selection;
+
     try {
       window = context();
-      range = window.getSelection().getRangeAt(rangeNumber);
+      selection = window.getSelection();
     }
     catch (e) {
-      // Rethrow with a more developer-friendly message than the caught
-      // exception.
-      throw new Error("It isn't possible to change the selection, as there isn't currently a selection");
+      throw new Error(ERR_CANNOT_CHANGE_SELECTION);
     }
-    // Get rid of the current selection and insert our own
-    range.deleteContents();
-    let node = window.document.createElement("span");
-    range.surroundContents(node);
 
-    // Some relevant JEP-111 requirements:
+    let range = safeGetRange(selection, rangeNumber);
 
-    // Setting the text property replaces the selection with the value to
-    // which the property is set and sets the html property to the same value
-    // to which the text property is being set.
+    if (range) {
+      // Get rid of the current selection and insert our own
+      range.deleteContents();
+      let node = window.document.createElement("span");
+      range.surroundContents(node);
 
-    // Setting the html property replaces the selection with the value to
-    // which the property is set and sets the text property to the text version
-    // of the HTML value.
+      // Some relevant JEP-111 requirements:
 
-    // This sets both the HTML and text properties.
-    node.innerHTML = val;
+      // Setting the text property replaces the selection with the value to
+      // which the property is set and sets the html property to the same value
+      // to which the text property is being set.
+
+      // Setting the html property replaces the selection with the value to
+      // which the property is set and sets the text property to the text version
+      // of the HTML value.
+
+      // This sets both the HTML and text properties.
+      node.innerHTML = val;
+    } else {
+      let node = getElementWithSelection(window);
+
+      if (!node)
+        throw new Error(ERR_CANNOT_CHANGE_SELECTION);
+
+      let { value, selectionStart, selectionEnd } = node;
+
+      let newSelectionEnd = selectionStart + val.length;
+
+      node.value = value.substring(0, selectionStart) +
+                    val +
+                    value.substring(selectionEnd, value.length);
+
+      node.setSelectionRange(selectionStart, newSelectionEnd);
+    }
 }
 
 function onLoad(event) {
@@ -224,6 +290,10 @@ function onLoad(event) {
 
 function onUnload(event) {
   SelectionListenerManager.onUnload(event);
+}
+
+function onSelect() {
+  SelectionListenerManager.onSelect();
 }
 
 let SelectionListenerManager = {
@@ -253,7 +323,12 @@ let SelectionListenerManager = {
     if (!["SELECTALL", "KEYPRESS", "MOUSEUP"].some(function(type) reason &
       Ci.nsISelectionListener[type + "_REASON"]) || selection.toString() == "")
         return;
-    setTimeout(this.listeners.emit, 0, 'select')
+
+    this.onSelect();
+  },
+
+  onSelect : function onSelect() {
+    setTimeout(this.listeners.emit, 0, "select");
   },
 
   /**
@@ -297,6 +372,13 @@ let SelectionListenerManager = {
     let selection = window.getSelection();
     if (selection instanceof Ci.nsISelectionPrivate)
       selection.addSelectionListener(this);
+
+    // nsISelectionListener implementation seems not fire a notification if
+    // a selection is in a text field, therefore we need to add a listener to
+    // window.onselect, that is fired only for text fields.
+    // https://developer.mozilla.org/en/DOM/window.onselect
+    window.addEventListener("select", onSelect, true);
+
     window.jetpack_core_selection_listener = true;
   },
 
@@ -316,6 +398,9 @@ let SelectionListenerManager = {
     let selection = window.getSelection();
     if (selection instanceof Ci.nsISelectionPrivate)
       selection.removeSelectionListener(this);
+
+    window.removeEventListener("select", onSelect);
+
     window.jetpack_core_selection_listener = false;
   },
 
@@ -342,9 +427,16 @@ require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
 /**
  * Exports an iterator so that discontiguous selections can be iterated.
+ *
+ * If discontiguous selections are in a text field, only the first one
+ * is returned because the text field selection APIs doesn't support
+ * multiple selections.
  */
 exports.__iterator__ = function __iterator__() {
-  for (let i = 0, sel = getSelection(DOM); i < sel.rangeCount; i++)
+  let sel = getSelection(DOM);
+  let rangeCount = sel.rangeCount || (getElementWithSelection() ? 1 : 0);
+
+  for (let i = 0; i < rangeCount; i++)
     yield new Selection(i);
 };
 
