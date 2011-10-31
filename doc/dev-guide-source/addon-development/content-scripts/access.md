@@ -65,8 +65,6 @@ But thanks to the content proxy, a content script which calls
 
     tabs.open(data.url("xray.html"));
 
-You can try out this example [using the builder](https://builder.addons.mozilla.org/addon/1013777/revision/4/).
-
 The proxy is transparent to content scripts: as far as the content script
 is concerned, it is accessing the DOM directly. But because it's not, some
 things that you might expect to work, won't. For example, if the page includes
@@ -80,12 +78,9 @@ as in [this example](dev-guide/addon-development/content-scripts/reddit-example.
 If you really need direct access to the underlying DOM, you can use the
 global `unsafeWindow` object.
 
-To see the difference, try editing the
-[example in the builder](https://builder.addons.mozilla.org/addon/1013777/revision/4/)
+To see the difference, try editing the example above
 so the content script uses `unsafeWindow.confirm()` instead of
-`window.confirm()` (to edit the example, you'll need to create an account
-with the Add-on Builder and clone the original add-on). Alternatively, try out
-[the example here](https://builder.addons.mozilla.org/addon/1015979/revision/3/).
+`window.confirm()`.
 
 Avoid using `unsafeWindow` if possible: it is the same concept as
 Greasemonkey's unsafeWindow, and the
@@ -170,6 +165,3 @@ Content scripts can send it messages using `document.defaultView.postMessage()`:
     });
 
     tabs.open(data.url("listener.html"));
-
-You can see this add-on at
-[https://builder.addons.mozilla.org/addon/1013849/revision/8/](https://builder.addons.mozilla.org/addon/1013849/revision/8/).
