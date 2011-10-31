@@ -216,9 +216,7 @@ The first time you do this, you'll see a message like this:
 
 <span class="aside">
 The ID that `cfx` generated the first time you executed `cfx run` is a unique
-identifier for you add-on called the **Program ID** and it is important. It is
-used by various tools and services to distinguish this add-on from any other.
-To learn more about the Program ID refer to the
+identifier for your add-on. To learn more about it refer to the
 [Program ID](dev-guide/addon-development/program-id.html) document.
 </span>
 

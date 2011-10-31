@@ -38,7 +38,7 @@ composition, since all of its API is private except for the `length` property.
 
 **Examples:**
 
-    const MyList = List.compose({
+    var MyList = List.compose({
       add: function add(item1, item2, /*item3...*/) {
         Array.slice(arguments).forEach(this._add.bind(this));
       },

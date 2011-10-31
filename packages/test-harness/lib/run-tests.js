@@ -35,29 +35,36 @@
  * ***** END LICENSE BLOCK ***** */
 
 "use strict";
+
 var obsvc = require("api-utils/observer-service");
+var system = require("api-utils/system");
+var options = require('@packaging');
 var {Cc,Ci} = require("chrome");
 
-function runTests(iterations, filter, profileMemory, verbose, rootPaths, quit, print) {
+function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, print) {
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
            .getService(Ci.nsIWindowWatcher);
 
-  var window = ww.openWindow(null, "data:text/plain,Running tests...",
-                             "harness", "centerscreen", null);
+  let ns = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+  let msg = 'Running tests...';
+  let markup = '<?xml version="1.0"?><window xmlns="' + ns +
+               '" windowtype="test:runner"><label>' + msg + '</label></window>';
+  let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
+
+
+  var window = ww.openWindow(null, url, "harness", "centerscreen", null);
 
   var harness = require("./harness");
 
   function onDone(tests) {
     window.close();
-    if (tests.passed > 0 && tests.failed == 0) {
-      quit("OK");
-    } else {
-      if (tests.passed == 0) {
+    if (tests.failed == 0) {
+      if (tests.passed === 0)
         print("No tests were run\n");
-      } else {
-        printFailedTests(tests, verbose, print);
-      }
-      quit("FAIL");
+      exit(0);
+    } else {
+      printFailedTests(tests, verbose, print);
+      exit(1);
     }
   };
 
@@ -95,27 +102,14 @@ function printFailedTests(tests, verbose, print) {
   }
 }
 
-exports.main = function main(options, callbacks) {
+exports.main = function main() {
   var testsStarted = false;
 
-  function doRunTests() {
-    if (!testsStarted) {
-      testsStarted = true;
-      runTests(options.iterations, options.filter,
-               options.profileMemory, options.verbose,
-               options.rootPaths, callbacks.quit,
-               callbacks.print);
-    }
-  }
-
-  // TODO: This is optional code that might be put in by
-  // something running this code to force it to just
-  // run tests immediately, rather than wait. We need
-  // to actually standardize on this, though.
-  if (options.runImmediately) {
-    doRunTests();
-  }
-  else {
-    obsvc.add(obsvc.topics.APPLICATION_READY, doRunTests);
+  if (!testsStarted) {
+    testsStarted = true;
+    runTests(options.iterations, options.filter,
+             options.profileMemory, options.verbose,
+             options.rootPaths, system.exit,
+             dump);
   }
 };

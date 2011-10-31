@@ -1,4 +1,5 @@
 const {Cc,Ci} = require("chrome");
+const { Loader } = require('./helpers');
 
 exports.testConstructor = function(test) {
 
@@ -36,7 +37,7 @@ exports.testConstructor = function(test) {
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
   
   // Test automatic widget destroy on unload
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let widgetsFromLoader = loader.require("widget");
   let widgetStartCount = widgetCount();
   let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
@@ -119,7 +120,7 @@ exports.testConstructor = function(test) {
   AddonsMgrListener.onUninstalled();
   
   // Test concurrent widget module instances on addon-bar hiding
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let anotherWidgetsInstance = loader.require("widget");
   test.assert(container().collapsed, "UI is hidden when no widgets");
   AddonsMgrListener.onInstalling();

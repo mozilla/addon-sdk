@@ -38,7 +38,6 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { shims } = require('../cuddlefish');
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -264,10 +263,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // See `PRIVATE_KEY` definition for more information.
     if (proxySandbox && worker._expose_key)
       sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY;
-
-    // Overriding / Injecting some natives into sandbox.
-    Cu.evalInSandbox(shims.contents, sandbox, JS_VERSION, shims.filename);
-    
     // Initialize timer lists
     this._timers = {};
 

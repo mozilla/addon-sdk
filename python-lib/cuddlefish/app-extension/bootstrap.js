@@ -1,3 +1,4 @@
+/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -11,16 +12,14 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Weave.
+ * The Original Code is Jetpack.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2008
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  Dan Mills <thunder@mozilla.com>
- *  Atul Varma <atul@mozilla.com>
- *  Drew Willcoxon <adw@mozilla.com>
+ *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,119 +35,119 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+// @see http://mxr.mozilla.org/mozilla-central/source/js/src/xpconnect/loader/mozJSComponentLoader.cpp
+
 "use strict";
 
-// For more information on the context in which this script is executed, see:
-// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
+        results: Cr, manager: Cm } = Components;
+const ioService = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
+const resourceHandler = ioService.getProtocolHandler('resource')
+                        .QueryInterface(Ci.nsIResProtocolHandler);
+const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
+                          'nsIXMLHttpRequest');
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
+                 'install', 'uninstall', 'upgrade', 'downgrade' ];
 
-// Object containing information about the XPCOM harness service
-// that manages our addon.
+let loader = null;
 
-var gHarness;
-
-var ios = Cc['@mozilla.org/network/io-service;1']
-          .getService(Ci.nsIIOService);
-
-var manager = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-
-// Dynamically evaluate and initialize the XPCOM component in
-// components/harness.js, which bootstraps our addon. (We want to keep
-// components/harness.js around so that versions of Gecko that don't
-// support rebootless addons can still work.)
-
-function setupHarness(installPath, loadReason) {
-  var harnessJs = installPath.clone();
-  harnessJs.append("components");
-  harnessJs.append("harness.js");
-  var path = ios.newFileURI(harnessJs).spec;
-  var harness = {};
-  var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-               .getService(Ci.mozIJSSubScriptLoader);
-  loader.loadSubScript(path, harness);
-
-  var HarnessService = harness.buildHarnessService(installPath);
-  var factory = HarnessService.prototype._xpcom_factory;
-  var proto = HarnessService.prototype;
-
-  // We want to keep this factory around for the lifetime of
-  // the addon so legacy code with access to Components can
-  // access the addon if needed.
-  manager.registerFactory(proto.classID,
-                          proto.classDescription,
-                          proto.contractID,
-                          factory);
-
-  var harnessService = factory.createInstance(null, Ci.nsISupports);
-  harnessService = harnessService.wrappedJSObject;
-
-  gHarness = {
-    service: harnessService,
-    classID: proto.classID,
-    contractID: proto.contractID,
-    factory: factory
-  };
-
-  if (loadReason == "startup")
-    // Simulate a startup event; the harness service will take care of
-    // waiting until the app is ready for the extension's code to run.
-    harnessService.observe(null, "profile-after-change", null);
-  else
-    harnessService.load(loadReason);
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
 }
 
-function reasonToString(reason) {
-  // If you change these names, change them in harness.js's lifeCycleObserver192
-  // too.
-  switch (reason) {
-  case ADDON_INSTALL:
-    return "install";
-  case ADDON_UNINSTALL:
-    return "uninstall";
-  case ADDON_ENABLE:
-    return "enable";
-  case ADDON_DISABLE:
-    return "disable";
-  case ADDON_UPGRADE:
-    return "upgrade";
-  case ADDON_DOWNGRADE:
-    return "downgrade";
-  // The startup and shutdown strings are also used outside of
-  // lifeCycleObserver192.
-  case APP_STARTUP:
-    return "startup";
-  case APP_SHUTDOWN:
-    return "shutdown";
+// Shim function to get `resourceURI` in pre Gecko 7.0.
+// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
+function resourceURI(file) {
+  // First creating "file:" URI.
+  let uri = ioService.newFileURI(file);
+  if (uri.spec.substr(-4) === '.xpi') // `unpack` is `false`
+    uri = ioService.newURI('jar:' + uri.spec + '!/', null, null);
+
+  return uri;
+}
+
+// Function takes `topic` to be observer via `nsIObserverService` and returns
+// promise that will be delivered once notification is published.
+function on(topic) {
+  return function promise(deliver) {
+    const observerService = Cc['@mozilla.org/observer-service;1'].
+                            getService(Ci.nsIObserverService);
+
+    observerService.addObserver({
+      observe: function observer(subject, topic, data) {
+        observerService.removeObserver(this, topic);
+        deliver(subject, topic, data);
+      }
+    }, topic, false);
   }
-  return undefined;
 }
 
-function install(data, reason) {
-  // We shouldn't start up here; startup() will always be called when
-  // an extension should load, and install() sometimes gets called when
-  // an extension has been installed but is disabled.
+/**
+ * Maps each path - value from `resources` hash in the resources protocol
+ * handler with an associated key. Each path is resolved relative to the given
+ * `root` path.
+ */
+function mapResources(root, resources) {
+  Object.keys(resources).forEach(function(id) {
+    let path = resources[id];
+    let uri = Array.isArray(path) ? root + '/' + path.join('/')
+                                  : 'file://' + path;
+    uri = ioService.newURI(uri + '/', null, null);
+    resourceHandler.setSubstitution(id, uri);
+  });
 }
+
+// We don't do anything on install & uninstall yet, but in a future
+// we should allow add-ons to cleanup after uninstall.
+function install(data, reason) {}
+function uninstall(data, reason) {}
 
 function startup(data, reason) {
-  if (!gHarness)
-    setupHarness(data.installPath, reasonToString(reason));
-}
+  let uri = (data.resourceURI || resourceURI(data.installPath)).spec;
+  // TODO: Maybe we should perform read harness-options.json asynchronously,
+  // since we can't do anything until 'sessionstore-windows-restored' anyway.
+  let options = JSON.parse(readURI(uri + './harness-options.json'));
+  options.loadReason = REASON[reason];
+
+  // TODO: This is unnecessary overhead per add-on instance. Manifest should
+  // probably contain paths relative to add-on root to avoid this, but that
+  // requires simpler package layout that is being worked under the bug-660629.
+  mapResources(uri, options.resources);
+
+  // Import loader module using `Cu.imports` and bootstrap module loader.
+  loader = Cu.import(options.loader).Loader.new(options);
+
+  // Creating a promise, that will be delivered once application is ready.
+  // If application is at startup then promise is delivered on
+  // 'sessionstore-windows-restored' otherwise it's delivered immediately.
+  let promise = reason === APP_STARTUP ? on('sessionstore-windows-restored') :
+                                         function promise(deliver) deliver()
+
+  // Once application is ready we spawn a new process with main module of
+  // on add-on.
+  promise(function() {
+    try {
+      loader.spawn(options.main, options.mainURI);
+    } catch (error) {
+      // If at this stage we have an error only thing we can do is report about
+      // it via error console. Keep in mind that error won't automatically show
+      // up there when called via observerService.
+      Cu.reportError(error);
+      throw error;
+    }
+  });
+};
 
 function shutdown(data, reason) {
-  if (gHarness) {
-    var harness = gHarness;
-    gHarness = undefined;
-    harness.service.unload(reasonToString(reason));
-    manager.unregisterFactory(harness.classID, harness.factory);
-  }
-}
-
-function uninstall(data, reason) {
-  // We shouldn't shutdown here; shutdown() will always be called when
-  // an extension should shutdown, and uninstall() sometimes gets
-  // called when startup() has never been called before it.
-}
+  // If loader is already present unload it, since add-on is disabled.
+  if (loader)
+    loader.unload(reason);
+};

@@ -55,8 +55,8 @@ You can copy the widget's icons from here:
 
 Now in the `lib` directory open `main.js` and replace its contents with this:
 
-    const widgets = require('widget');
-    const data = require('self').data;
+    var widgets = require('widget');
+    var data = require('self').data;
 
     var annotatorIsOn = false;
 

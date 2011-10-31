@@ -1,4 +1,5 @@
 const timer = require("timer");
+const { Loader } = require("./helpers");
 
 var setupCalled = false, teardownCalled = false;
 
@@ -39,20 +40,6 @@ exports.testATeardownAsyncTestPart1 = function(test) {
 
 exports.testATeardownAsyncTestPart2 = function(test) {
     test.assertEqual(true, teardownCalled, "teardown called after done");
-};
-
-exports.testModuleOverrides = function(test) {
-  var options = {
-    moduleOverrides: {
-      'unit-test': {
-        foo: 5
-      }
-    }
-  };
-  var loader = test.makeSandboxedLoader(options);
-  test.assertEqual(loader.require('unit-test').foo, 5,
-                   "options.moduleOverrides works");
-  loader.unload();
 };
 
 exports.testWaitUntilInstant = function(test) {

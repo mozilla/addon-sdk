@@ -1,4 +1,4 @@
-const {Cc,Ci} = require("chrome");
+const { Cc,Ci } = require("chrome");
 
 let StringBundle = require("app-strings").StringBundle;
 exports.testStringBundle = function(test) {

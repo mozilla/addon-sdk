@@ -1,6 +1,7 @@
 var traceback = require("traceback");
 var xpcom = require("xpcom");
 var {Cc,Ci,Cm,Cr} = require("chrome");
+var { Loader } = require("./helpers");
 
 exports.testRegister = function(test, text) {
   if (!text)
@@ -83,7 +84,7 @@ exports.testMakeUuid = function(test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = Loader(module);
   var sbxpcom = loader.require("xpcom");
 
   function Component() {}

@@ -1,12 +1,21 @@
-var global = this;
+Object.defineProperty(this, "global", { value: this });
 
 exports.testGlobals = function(test) {
-  test.assertMatches(global.__url__, /test-globals\.js$/,
-                     "__url__ global should contain filename");
+  // the only globals in module scope should be:
+  //   module, exports, require, dump, console
+  test.assertObject(module, "have 'module', good");
+  test.assertObject(exports, "have 'exports', good");
+  test.assertFunction(require, "have 'require', good");
+  test.assertFunction(dump, "have 'dump', good");
+  test.assertObject(console, "have 'console', good");
 
-  ['console', 'memory'].forEach(
-    function(name) {
-      test.assertNotEqual(global[name], undefined,
-                          name + " should be defined");
-    });
+  // in particular, these old globals should no longer be present
+  test.assertUndefined(global.packaging, "no 'packaging', good");
+  test.expectFail(
+    // this will be fixed by bug 620559
+    function () test.assertUndefined(global.memory, "no 'memory', good")
+  );
+
+  test.assertMatches(module.uri, /test-globals\.js$/,
+                     'should contain filename');
 };

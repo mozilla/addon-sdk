@@ -14,7 +14,7 @@ In this section we are only touching the `main.js` file.
 
 First, import the `simple-storage` module with a declaration like:
 
-    const simpleStorage = require('simple-storage');
+    var simpleStorage = require('simple-storage');
 
 In the module scope, initialize an array which will contain the stored annotations:
 
@@ -264,7 +264,7 @@ respond to it. Add the following to your add-on's `main` function:
 Because we use a notification to alert the user, we need to import the
 `notifications` module:
 
-    const notifications = require("notifications");
+    var notifications = require("notifications");
 
 (It should be obvious that this is an incredibly unhelpful way to deal with the
 problem. A real add-on should give the user a chance to choose which data to
@@ -279,7 +279,7 @@ from creating annotations while the browser is in
 
 First let's import the `private-browsing` module into `main.js`:
 
-    const privateBrowsing = require('private-browsing');
+    var privateBrowsing = require('private-browsing');
 
 We already have a variable `annotatorIsOn` that we use to indicate whether the
 user can enter annotations. But we don't want to use that here, because we want

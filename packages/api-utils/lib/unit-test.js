@@ -42,7 +42,6 @@ var timer = require("./timer");
 exports.findAndRunTests = function findAndRunTests(options) {
   var TestFinder = require("./unit-test-finder").TestFinder;
   var finder = new TestFinder({
-    dirs: options.dirs,
     filter: options.filter,
     testInProcess: options.testInProcess,
     testOutOfProcess: options.testOutOfProcess
@@ -78,36 +77,6 @@ TestRunner.prototype = {
       console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
       this.testFailureLogged = true;
     }
-  },
-
-  makeSandboxedLoader: function makeSandboxedLoader(options) {
-    if (!this.fs)
-      console.error("Hey, either you didn't pass .fs when building the" +
-                    " TestRunner, or you used 'new' when calling" +
-                    " test.makeSandboxedLoader. Don't do that.");
-
-    if (!options)
-      options = {console: console};
-    options.fs = this.fs;
-
-    if (!("globals" in options))
-      options.globals = {};
-    if (!("packaging" in options.globals))
-      options.globals.packaging = packaging;
-
-    var Cuddlefish = require("./cuddlefish");
-
-    if ("moduleOverrides" in options) {
-      var moduleOverrides = options.moduleOverrides;
-      delete options.moduleOverrides;
-      options.getModuleExports = function getModuleExports(basePath, module) {
-        if (module in moduleOverrides)
-          return moduleOverrides[module];
-        return null;
-      }
-    }
-
-    return new Cuddlefish.Loader(options);
   },
 
   pass: function pass(message) {
