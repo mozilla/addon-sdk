@@ -215,7 +215,7 @@ const Loader = {
     // details see: Bug-697422.
     let requirement = manifest && manifest.requirements[id];
     if (!requirement)
-        throw Error("Module: " + requirer && requirer.id + ' located at ' +
+        throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
                     base + " has no athority to load: " + id);
     let uri = requirement.uri;
 
