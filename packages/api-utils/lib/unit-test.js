@@ -58,6 +58,7 @@ var TestRunner = exports.TestRunner = function TestRunner(options) {
   if (options) {
     this.fs = options.fs;
   }
+  this.console = (options && "console" in options) ? options.console : console;
   memory.track(this);
   this.passed = 0;
   this.failed = 0;
@@ -74,14 +75,14 @@ TestRunner.prototype = {
   _logTestFailed: function _logTestFailed(why) {
     this.test.errors[why]++;
     if (!this.testFailureLogged) {
-      console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
+      this.console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
       this.testFailureLogged = true;
     }
   },
 
   pass: function pass(message) {
     if(!this.expectFailure) {
-      console.info("pass:", message);
+      this.console.info("pass:", message);
       this.passed++;
       this.test.passed++;
     }
@@ -94,8 +95,8 @@ TestRunner.prototype = {
   fail: function fail(message) {
     if(!this.expectFailure) {
       this._logTestFailed("failure");
-      console.error("fail:", message);
-      console.trace();
+      this.console.error("fail:", message);
+      this.console.trace();
       this.failed++;
       this.test.failed++;
     }
@@ -113,7 +114,7 @@ TestRunner.prototype = {
 
   exception: function exception(e) {
     this._logTestFailed("exception");
-    console.exception(e);
+    this.console.exception(e);
     this.failed++;
     this.test.failed++;
   },
@@ -321,31 +322,49 @@ TestRunner.prototype = {
   _waitUntil: function waitUntil(assertionMethod, args) {
     let count = 0;
     let maxCount = this.DEFAULT_PAUSE_TIMEOUT / this.PAUSE_DELAY;
-    
+
+    // We need to ensure that test is asynchronous
+    if (!this.waitTimeout)
+      this.waitUntilDone(this.DEFAULT_PAUSE_TIMEOUT);
+
     let callback = null;
     let finished = false;
     
     let test = this;
-    function loop() {
+
+    // capture a traceback before we go async.
+    let traceback = require("./traceback");
+    let stack = traceback.get();
+    stack.splice(-2, 2);
+    let currentWaitStack = traceback.format(stack);
+    let timeout = null;
+
+    function loop(stopIt) {
+      timeout = null;
+
       // Build a mockup object to fake TestRunner API and intercept calls to
       // pass and fail methods, in order to retrieve nice error messages
       // and assertion result
       let mock = {
         pass: function (msg) {
           test.pass(msg);
-          if (callback)
+          test.waitUntilCallback = null;
+          if (callback && !stopIt)
             callback();
           finished = true;
         },
         fail: function (msg) {
-          if (++count > maxCount) {
-            test.fail(msg);
-            if (callback)
-              callback();
-            finished = true;
+          // If we are called on test timeout, we stop the loop
+          // and print which test keeps failing:
+          if (stopIt) {
+            test.console.error("test assertion never became true:\n",
+                               msg + "\n",
+                               currentWaitStack);
+            if (timeout)
+              timer.clearTimeout(timeout);
             return;
           }
-          timer.setTimeout(loop, test.PAUSE_DELAY);
+          timeout = timer.setTimeout(loop, test.PAUSE_DELAY);
         }
       };
       
@@ -371,6 +390,7 @@ TestRunner.prototype = {
       assertionMethod.apply(mock, appliedArgs);
     }
     loop();
+    this.waitUntilCallback = loop;
     
     // Return an object with `then` method, to offer a way to execute 
     // some code when the assertion passed or failed
@@ -394,10 +414,18 @@ TestRunner.prototype = {
 
     function tiredOfWaiting() {
       self._logTestFailed("timed out");
+      if (self.waitUntilCallback) {
+        self.waitUntilCallback(true);
+        self.waitUntilCallback = null;
+      }
       self.failed++;
       self.test.failed++;
       self.done();
     }
+
+    // We may already have registered a timeout callback
+    if (this.waitTimeout)
+      timer.clearTimeout(this.waitTimeout);
 
     this.waitTimeout = timer.setTimeout(tiredOfWaiting, ms);
   },

@@ -109,6 +109,48 @@ exports.testWaitUntilErrorInCallback = function(test) {
   });
 }
 
+exports.testWaitUntilTimeoutInCallback = function(test) {
+  test.waitUntilDone(1000);
+
+  let runner = new (require("unit-test").TestRunner)({
+    console: {
+      calls: 0,
+      error: function(msg) {
+        this.calls++;
+        if (this.calls == 1)
+          test.assertEqual(arguments[0], "TEST FAILED: wait4ever (timed out)");
+        else if (this.calls == 2) {
+          test.assertEqual(arguments[0], "test assertion never became true:\n");
+          test.assertEqual(arguments[1], "assertion failed, value is false\n");
+          // We could additionally check that arguments[1] contains the correct
+          // stack, but it would be difficult to do so given that it contains
+          // resource: URLs with a randomly generated string embedded in them
+          // (the ID of the test addon created to run the tests). And in any
+          // case, checking the arguments seems sufficient.
+
+          test.done();
+        }
+        else {
+          test.fail("We got unexpected console.error() calls from waitUntil" +
+                    " assertion callback: '" + arguments[1] + "'");
+        }
+      },
+      trace: function () {}
+    }
+  });
+
+  runner.start({
+    test: {
+      name: "wait4ever",
+      testFunction: function(test) {
+        test.waitUntilDone(100);
+        test.waitUntil(function() false);
+      }
+    },
+    onDone: function() {}
+  });
+};
+
 exports.testExpectFail = function(test) {
     test.expectFail(function() {
         test.fail('expectFail masking .fail');
