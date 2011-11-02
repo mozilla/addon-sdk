@@ -22,15 +22,14 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  ~/mozilla > tar -xf addon-sdk-1.4a0.tar.gz
-  ~/mozilla > cd addon-sdk-1.4a0
-  ~/mozilla/addon-sdk-1.4a0 >
+  tar -xf addon-sdk-1.4a0.tar.gz
+  cd addon-sdk-1.4a0
 </pre>
 
 Then run:
 
 <pre>
-  ~/mozilla/addon-sdk-1.4a0 > source bin/activate
+  source bin/activate
 </pre>
 
 Your command prompt should now have a new prefix containing the name of the
@@ -46,15 +45,14 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  C:\Users\mozilla\sdk>7z.exe x addon-sdk-1.4a0.zip
-  C:\Users\mozilla\sdk>cd addon-sdk-1.4a0
-  C:\Users\mozilla\sdk\addon-sdk-1.4a0>
+  7z.exe x addon-sdk-1.4a0.zip
+  cd addon-sdk-1.4a0
 </pre>
 
 Then run:
 
 <pre>
-  C:\Users\mozilla\sdk\addon-sdk-1.4a0>bin\activate
+  bin\activate
 </pre>
 
 You might see an error like this:
@@ -91,6 +89,37 @@ prompt.
 You can have multiple copies of the SDK in different locations on disk and
 switch between them, or even have them both activated in different command
 prompts at the same time.
+
+### Making `activate` Permanent ###
+
+All `activate` does is to set a number of environment variables for the
+current command prompt, using a script located in the top-level `bin`
+directory. By setting these variables permanently in your environment so
+every new command prompt reads them, you can make activation permanent. Then
+you don't need to type `activate` every time you open up a new command prompt.
+
+Because the exact set of variables may change with new releases of the SDK,
+it's best to refer to the activation scripts to determine which variables need
+to be set. Activation uses different scripts and sets different variables for
+bash environments (Linux and Mac OS X) and for Windows environments.
+
+#### Windows ####
+
+On Windows, `bin\activate` uses `activate.bat`, and you can make activation
+permanent using the command line `setx` tool or the Control Panel.
+
+#### Linux/Mac OS X ####
+
+On Linux and Mac OS X, `source bin/activate` uses the `activate` bash
+script, and you can make activation permanent using your `~/.bashrc`
+(on Linux) or `~/.bashprofile` (on Mac OS X).
+
+As an alternative to this, you can create a symbolic link to the `cfx`
+program in your `~/bin` directory:
+
+<pre>
+  ln -s PATH_TO_SDK/bin/cfx ~/bin/cfx
+</pre>
 
 ## Sanity Check ##
 
