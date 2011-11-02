@@ -48,13 +48,25 @@ const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { Enqueued } = require('../utils/function');
-const proxy = require('./content-proxy');
+const self = require("self");
+const scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
+                     getService(Ci.mozIJSSubScriptLoader);
+
+const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
 
 const JS_VERSION = '1.8';
 
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
 
+/**
+ * This key is not exported and should only be used for proxy tests.
+ * The following `PRIVATE_KEY` is used in addon module scope in order to tell
+ * Worker API to expose `UNWRAP_ACCESS_KEY` in content script.
+ * This key allows test-content-proxy.js to unwrap proxy with valueOf:
+ *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
+ */
+const PRIVATE_KEY = {};
 
 function ensureArgumentsAreJSON(args) {
   // First convert to real array
@@ -212,13 +224,30 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // We receive an unwrapped window, with raw js access
     let window = worker._window;
     
+    let proto = window;
+    let proxySandbox = null;
+    // Build content proxies only if the document has a non-system principal
+    if (window.wrappedJSObject) {
+      // Instantiate the proxy code in another Sandbox in order to prevent
+      // content script from polluting globals used by proxy code
+      proxySandbox = Cu.Sandbox(window, {
+        wantXrays: true
+      });
+      proxySandbox.console = console;
+      // Execute the proxy code
+      scriptLoader.loadSubScript(CONTENT_PROXY_URL, proxySandbox);
+      // Get a reference of the window's proxy
+      proto = proxySandbox.create(window);
+    }
+
     // Create the sandbox and bind it to window in order for content scripts to
     // have access to all standard globals (window, document, ...)
     let sandbox = this._sandbox = new Cu.Sandbox(window, {
-      sandboxPrototype: proxy.create(window),
-      wantXrays: false
+      sandboxPrototype: proto,
+      wantXrays: true
     });
     Object.defineProperties(sandbox, {
+      // We need "this === window === top" to be true in toplevel scope:
       window: { get: function() sandbox },
       top: { get: function() sandbox },
       // Use the Greasemonkey naming convention to provide access to the
@@ -229,6 +258,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       unsafeWindow: { get: function () window.wrappedJSObject }
     });
 
+    // Internal feature that is only used by SDK tests:
+    // Expose unlock key to content script context.
+    // See `PRIVATE_KEY` definition for more information.
+    if (proxySandbox && worker._expose_key)
+      sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY;
     // Initialize timer lists
     this._timers = {};
 
@@ -287,6 +321,18 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       }
     });
 
+    // Temporary fix for test-widget, that pass self.postMessage to proxy code
+    // that first try to access to `___proxy` and then call it through `apply`.
+    // We need to move function given to content script to a sandbox
+    // with same principal than the content script.
+    // In the meantime, we need to allow such access explicitly
+    // by using `__exposedProps__` property, documented here:
+    // https://developer.mozilla.org/en/XPConnect_wrappers
+    sandbox.self.postMessage.__exposedProps__ = {
+      ___proxy: 'rw',
+      apply: 'rw'
+    }
+
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
@@ -313,11 +359,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // as internal implementation of timer module use same method for both.
     for (let id in this._timers)
       timer.clearTimeout(id);
-    let publicAPI = this._public,
-        sandbox = this._sandbox;
-    delete sandbox.__proto__;
-    for (let key in publicAPI)
-      delete sandbox[key];
     this._sandbox = null;
     this._addonWorker = null;
     this.__onMessage = undefined;
@@ -485,7 +526,12 @@ const Worker = AsyncEventEmitter.compose({
       this.on('message', options.onMessage);
     if ('onDetach' in options)
       this.on('detach', options.onDetach);
-    
+
+    // Internal feature that is only used by SDK unit tests.
+    // See `PRIVATE_KEY` definition for more information.
+    if ('exposeUnlockKey' in options && options.exposeUnlockKey === PRIVATE_KEY)
+      this._expose_key = true;
+
     // Track document unload to destroy this worker.
     // We can't watch for unload event on page's window object as it 
     // prevents bfcache from working: 
@@ -585,4 +631,3 @@ const Worker = AsyncEventEmitter.compose({
   _window: null,
 });
 exports.Worker = Worker;
-
