@@ -249,8 +249,22 @@ Once you have finished testing your add-on you can package it for deployment
 like any other Firefox add-on, as a XPI file. The Add-on SDK simplifies the
 packaging process by generating this file for you.
 
+### Specifying an Icon ###
+
+You can specify an icon for your add-on. This icon will appear beside your
+add-on in Firefox's Add-ons Manager and on
+[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/).
+
+To specify an icon, save it as "icon.png" in your add-on's root directory. To
+give the icon a different name or to store it in a different location
+under the root, use the "icon" key in your `package.json` file. See the
+[Package Specification](file:///Users/Work/mozilla/jetpack-sdk/doc/dev-guide/addon-development/package-spec.html)
+for more details.
+
+### cfx xpi ###
+
 To package your program as a XPI, navigate to the root of your package
-directory in your shell and run `cfx xpi`. You should see a message:
+directory in your shell and run `cfx xpi`. You should see a message like:
 
 <pre>
   Exporting extension to wikipanel.xpi.
