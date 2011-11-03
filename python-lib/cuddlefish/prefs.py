@@ -5,21 +5,9 @@ DEFAULT_COMMON_PREFS = {
     'browser.dom.window.dump.enabled': True,
     # warn about possibly incorrect code
     'javascript.options.strict': True,
-    'javascript.options.showInConsole': True
-}
+    'javascript.options.showInConsole': True,
 
-DEFAULT_FENNEC_PREFS = {
-  'javascript.options.showInConsole': True,
-  'browser.console.showInPanel': True,
-  'browser.firstrun.show.uidiscovery': False
-}
-
-# When launching a temporary new Firefox profile, use these preferences.
-DEFAULT_FIREFOX_PREFS = {
     'extensions.checkCompatibility.nightly' : False,
-    'browser.startup.homepage' : 'about:blank',
-    'startup.homepage_welcome_url' : 'about:blank',
-    'devtools.errorconsole.enabled' : True,
 
     # Disable extension updates and notifications.
     'extensions.update.enabled' : False,
@@ -36,6 +24,27 @@ DEFAULT_FIREFOX_PREFS = {
     'extensions.installDistroAddons' : False,
     # Allow installing extensions dropped into the profile folder
     'extensions.autoDisableScopes' : 10,
+
+    # Point update checks to a nonexistent local URL for fast failures.
+    'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
+    'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
+    # Make sure opening about:addons won't hit the network.
+    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
+}
+
+DEFAULT_FENNEC_PREFS = {
+  'javascript.options.showInConsole': True,
+  'browser.console.showInPanel': True,
+  'browser.firstrun.show.uidiscovery': False
+}
+
+# When launching a temporary new Firefox profile, use these preferences.
+DEFAULT_FIREFOX_PREFS = {
+    'browser.startup.homepage' : 'about:blank',
+    'startup.homepage_welcome_url' : 'about:blank',
+    'devtools.errorconsole.enabled' : True,
+
+    # Disable the feedback extension
     'extensions.testpilot.runStudies' : False,
 
     # From:
@@ -46,11 +55,6 @@ DEFAULT_FIREFOX_PREFS = {
     'browser.safebrowsing.provider.0.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
     'browser.safebrowsing.provider.0.keyURL' : 'http://localhost/safebrowsing-dummy/newkey',
     'browser.safebrowsing.provider.0.updateURL' : 'http://localhost/safebrowsing-dummy/update',
-    # Point update checks to a nonexistent local URL for fast failures.
-    'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
-    'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',
-    # Make sure opening about:addons won't hit the network.
-    'extensions.webservice.discoverURL' : 'http://localhost/extensions-dummy/discoveryURL'
     }
 
 # When launching a temporary new Thunderbird profile, use these preferences.
@@ -60,9 +64,6 @@ DEFAULT_THUNDERBIRD_PREFS = {
     # say no to slow script warnings
     'dom.max_chrome_script_run_time': 200,
     'dom.max_script_run_time': 0,
-    # disable extension stuffs
-    'extensions.update.enabled'    : False,
-    'extensions.update.notifyUser' : False,
     # do not ask about being the default mail client
     'mail.shell.checkDefaultClient': False,
     # disable non-gloda indexing daemons
