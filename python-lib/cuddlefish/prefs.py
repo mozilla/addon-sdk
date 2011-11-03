@@ -33,7 +33,6 @@ DEFAULT_COMMON_PREFS = {
 }
 
 DEFAULT_FENNEC_PREFS = {
-  'javascript.options.showInConsole': True,
   'browser.console.showInPanel': True,
   'browser.firstrun.show.uidiscovery': False
 }
