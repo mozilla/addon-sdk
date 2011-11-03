@@ -36,6 +36,7 @@
 "use strict";
 
 var {Cc,Ci} = require("chrome");
+const { Loader } = require("./helpers");
 
 // test tab.activeTab getter
 exports.testActiveTab_getter = function(test) {
@@ -118,7 +119,7 @@ exports.testAutomaticDestroy = function(test) {
     // Create a second tab instance that we will destroy
     let called = false;
     
-    let loader = test.makeSandboxedLoader();
+    let loader = Loader(module);
     let tabs2 = loader.require("tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
@@ -227,6 +228,39 @@ exports.testTabClose = function(test) {
     });
 
     tabs.open(url);
+  });
+};
+
+// test tab.reload()
+exports.testTabReload = function(test) {
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+    let url = "data:text/html,<!doctype%20html><title></title>";
+
+    tabs.open({ url: url, onReady: function onReady(tab) {
+      tab.removeListener("ready", onReady);
+
+      browser.addEventListener(
+        "load",
+        function onLoad() {
+          browser.removeEventListener("load", onLoad, true);
+
+          browser.addEventListener(
+            "load",
+            function onReload() {
+              browser.removeEventListener("load", onReload, true);
+              test.pass("the tab was loaded again");
+              test.assertEqual(tab.url, url, "the tab has the same URL");
+              closeBrowserWindow(window, function() test.done());
+            },
+            true
+          );
+          tab.reload();
+        },
+        true
+      );
+    }});
   });
 };
 

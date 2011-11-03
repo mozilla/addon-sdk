@@ -38,6 +38,7 @@
 
 let pb = require("private-browsing");
 let {Cc,Ci} = require("chrome");
+const { Loader } = require('./helpers');
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -57,6 +58,9 @@ if (pbService) {
     pbService.privateBrowsingEnabled = true;
     test.assert(pb.isActive,
                 "private-browsing.isActive is correct after modifying PB service");
+
+    // Switch back to normal mode.
+    pbService.privateBrowsingEnabled = false;
   };
 
   // tests that activating does put the browser into private browsing mode
@@ -107,7 +111,7 @@ if (pbService) {
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
-    let loader = test.makeSandboxedLoader();
+    let loader = Loader(module);
     let pb2 = loader.require("private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
@@ -115,7 +119,7 @@ if (pbService) {
       test.fail("should not be called:x");
     });
     loader.unload();
-    
+
     // Then switch to private mode in order to check that the previous instance
     // is correctly destroyed
     pb.activate();
@@ -123,6 +127,9 @@ if (pbService) {
       require("timer").setTimeout(function () {
         test.assert(!called, 
           "First private browsing instance is destroyed and inactive");
+
+        // Must reset to normal mode, so that next test starts with it.
+        pb.deactivate();
         test.done();
       }, 0);
     });

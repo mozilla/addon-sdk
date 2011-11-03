@@ -39,6 +39,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 let {Cc,Ci} = require("chrome");
+const { Loader } = require('./helpers');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -49,7 +50,7 @@ const OVERFLOW_THRESH_PREF =
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
-const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
+const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
 
 // Destroying items that were previously created should cause them to be absent
@@ -473,6 +474,7 @@ exports.testContentContextMatchString = function (test) {
 exports.testContentContextArgs = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
+  let callbacks = 0;
 
   let item = new loader.cm.Item({
     label: "item",
@@ -483,13 +485,14 @@ exports.testContentContextArgs = function (test) {
                    '});',
     onMessage: function (isElt) {
       test.assert(isElt, "node should be an HTML element");
-      test.done();
+      if (++callbacks == 2) test.done();
     }
   });
 
-  test.showMenu(null, function () {});
+  test.showMenu(null, function () {
+    if (++callbacks == 2) test.done();
+  });
 };
-
 
 // Multiple contexts imply intersection, not union, and content context
 // listeners should not be called if all declarative contexts are not current.
@@ -1585,6 +1588,42 @@ exports.testItemImage = function (test) {
 };
 
 
+// Menu.destroy should destroy the item tree rooted at that menu.
+exports.testMenuDestroy = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "item 0" }),
+      loader.cm.Menu({
+        label: "item 1",
+        items: [
+          loader.cm.Item({ label: "subitem 0" }),
+          loader.cm.Item({ label: "subitem 1" }),
+          loader.cm.Item({ label: "subitem 2" })
+        ]
+      }),
+      loader.cm.Item({ label: "item 2" })
+    ]
+  });
+  menu.destroy();
+
+  let numRegistryEntries = 0;
+  loader.globalScope.browserManager.browserWins.forEach(function (bwin) {
+    for (let itemID in bwin.items)
+      numRegistryEntries++;
+  });
+  test.assertEqual(numRegistryEntries, 0, "All items should be unregistered.");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([], [], [menu]);
+    test.done();
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -1845,7 +1884,7 @@ TestHelper.prototype = {
           self.test.exception(err);
           self.test.done();
         }
-      }, 10);
+      }, 20);
     }, useCapture);
   },
 
@@ -1945,13 +1984,11 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader({
-      globals: { packaging: packaging }
-    });
+    let loader = Loader(module);
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
-      globalScope: loader.findSandboxForModule("context-menu").globalScope,
+      globalScope: loader.sandbox("context-menu"),
       unload: function () {
         loader.unload();
         let idx = self.loaders.indexOf(wrapper);

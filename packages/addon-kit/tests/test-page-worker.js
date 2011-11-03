@@ -1,4 +1,5 @@
 let tests = {}, Pages, Page;
+const { Loader } = require('./helpers');
 
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
@@ -88,9 +89,9 @@ tests.testPageProperties = function(test) {
 tests.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let Pages = loader.require("page-worker");
-  let global = loader.findSandboxForModule("page-worker").globalScope;
+  let global = loader.sandbox("page-worker");
 
   let pagesReady = 0;
 
@@ -125,7 +126,7 @@ tests.testConstructorAndDestructor = function(test) {
 tests.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let Pages = loader.require("page-worker");
 
   let page = Pages.Page({

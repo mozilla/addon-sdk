@@ -162,7 +162,7 @@ const PageMod = Loader.compose(EventEmitter, {
   },
   _createWorker: function _createWorker(window) {
     let worker = Worker({
-      window: window.wrappedJSObject,
+      window: window,
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
       onError: this._onUncaughtError

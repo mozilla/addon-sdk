@@ -30,7 +30,7 @@ access to any local area networks, VPNs, and the internet.
 
 ### Threat Model ###
 
-The `XMLHttpRequest` object can be used by an extension to "phone
+The `XMLHttpRequest` object can be used by an add-on to "phone
 home" and transmit potentially sensitive user data to third
 parties.
 

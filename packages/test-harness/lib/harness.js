@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,7 +37,8 @@
 
 "use strict";
 
-var {Cc,Ci} = require("chrome");
+const { Cc,Ci } = require("chrome");
+const { Loader } = require("@loader")
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
@@ -50,9 +52,6 @@ var onDone;
 
 // Function to print text to a console, w/o CR at the end.
 var print;
-
-// The directories to look for tests in.
-var dirs;
 
 // How many more times to run all tests.
 var iterationsLeft;
@@ -203,19 +202,19 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (let name in sandbox.sandboxes)
-      sandbox.memory.track(sandbox.sandboxes[name].globalScope,
+    for (let name in sandbox.modules)
+      sandbox.globals.memory.track(sandbox.modules[name],
                            "module global scope: " + name);
-    sandbox.memory.track(sandbox, "Cuddlefish Loader");
+    sandbox.globals.memory.track(sandbox, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
-                      for each (info in sandbox.memory.getObjects())];
+                      for each (info in sandbox.globals.memory.getObjects())];
     }
 
     sandbox.unload();
 
-    if (sandbox.console.errorsLogged && !results.failed) {
+    if (sandbox.globals.console.errorsLogged && !results.failed) {
       results.failed++;
       console.error("warnings and/or errors were logged.");
     }
@@ -248,7 +247,7 @@ function nextIteration(tests) {
 
     if (profileMemory)
       reportMemoryUsage();
-    
+
     let testRun = [];
     for each (let test in tests.testRunSummary) {
       let testCopy = {};
@@ -261,17 +260,19 @@ function nextIteration(tests) {
     results.testRuns.push(testRun);
     iterationsLeft--;
   }
-  if (iterationsLeft)
-    sandbox.require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: packaging.enableE10s,
+
+  if (iterationsLeft) {
+    let require = Loader.require.bind(sandbox, module.uri);
+    require("api-utils/unit-test").findAndRunTests({
+      testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,
-      fs: sandbox.fs,
-      dirs: dirs,
       filter: filter,
       onDone: nextIteration
     });
-  else
+  }
+  else {
     require("api-utils/timer").setTimeout(cleanup, 0);
+  }
 }
 
 var POINTLESS_ERRORS = [
@@ -325,33 +326,20 @@ var runTests = exports.runTests = function runTests(options) {
   try {
     cService.registerListener(consoleListener);
 
-    var cuddlefish = require("api-utils/cuddlefish");
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
+    var system = require("api-utils/system");
 
-    dirs = [url.toFilename(path)
-            for each (path in options.rootPaths)];
-    var console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
-                                        options);
-    var globals = {packaging: packaging};
+    print("Running tests on " + system.name + " " + system.version +
+          "/Gecko " + system.platformVersion + " (" +
+          system.id + ") under " +
+          system.platform + "/" + system.architecture + ".\n");
 
-    var xulApp = require("api-utils/xul-app");
-    var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
-                     .getService(Ci.nsIXULRuntime);
+    sandbox = Loader.new(require("@packaging"));
+    Object.defineProperty(sandbox.globals, 'console', {
+      value: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+    });
 
-    print("Running tests on " + xulApp.name + " " + xulApp.version +
-          "/Gecko " + xulApp.platformVersion + " (" + 
-          xulApp.ID + ") under " +
-          xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
-
-    sandbox = new cuddlefish.Loader({console: console,
-                                     globals: globals,
-                                     metadata: packaging.options.metadata,
-                                     jetpackID: packaging.options.jetpackID,
-                                     uriPrefix: packaging.options.uriPrefix,
-                                     name: packaging.options.name,
-                                     packaging: packaging,
-                                     __proto__: options});
     nextIteration();
   } catch (e) {
     print(require("api-utils/traceback").format(e) + "\n" + e + "\n");
@@ -359,7 +347,6 @@ var runTests = exports.runTests = function runTests(options) {
   }
 };
 
-require("api-utils/unload").when(
-  function() {
-    cService.unregisterListener(consoleListener);
-  });
+require("api-utils/unload").when(function() {
+  cService.unregisterListener(consoleListener);
+});

@@ -1,5 +1,5 @@
-const m = require("main");
-const self = require("self");
+var m = require("main");
+var self = require("self");
 
 exports.testMain = function(test) {
   var callbacks = { quit: function() {

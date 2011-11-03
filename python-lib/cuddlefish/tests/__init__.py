@@ -31,7 +31,7 @@ def get_tests():
                 if len(test.examples) > 0:
                     tests.append(doctest.DocTestCase(test))
 
-    md_dir = os.path.join(env_root, 'static-files', 'md')
+    md_dir = os.path.join(env_root, 'dev-guide')
     doctest_opts = (doctest.NORMALIZE_WHITESPACE |
                     doctest.REPORT_UDIFF)
     for dirpath, dirnames, filenames in os.walk(md_dir):

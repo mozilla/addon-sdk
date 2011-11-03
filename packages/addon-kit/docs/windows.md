@@ -65,14 +65,30 @@ Open a new window.
     var windows = require("windows").browserWindows;
 
     // Open a new window.
-    windows.open("http://www.mysite.com");
+    windows.open("http://www.example.com");
 
     // Open a new window and set a listener for "open" event.
     windows.open({
-      url: "http://www.mysite.com",
+      url: "http://www.example.com",
       onOpen: function(window) {
         // do stuff like listen for content
         // loading.
+      }
+    });
+
+Returns the window that was opened:
+
+    var widgets = require("widget");
+    var windows = require("windows").browserWindows;
+
+    var example = windows.open("http://www.example.com");
+
+    var widget = widgets.Widget({
+      id: "close-window",
+      label: "Close window",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        example.close();
       }
     });
 
@@ -95,6 +111,8 @@ functional and its properties can be accessed. This is an optional property.
 @prop [onClose] {function}
 A callback function that is called when the window will be called.
 This is an optional property.
+
+@returns {BrowserWindow}
 </api>
 
 <api name="BrowserWindow">

@@ -9,14 +9,14 @@ const ERRORS = {
   NOT_A_FILE: /^path is not a file: .+$/,
 };
 
-var myurl = __url__;
+var myurl = module.uri;
 var mydir = myurl.slice(0, -("test-file.js".length));
-var otherdir = mydir + "interoperablejs-read-only/";
+var otherdir = mydir + "modules/";
 
 exports.testDirName = function(test) {
   var aDir = url.toFilename(otherdir);
   test.assertEqual(file.dirname(aDir),
-                   aDir.slice(0, aDir.lastIndexOf("interoperablejs-read-only")-1),
+                   aDir.slice(0, aDir.lastIndexOf("modules")-1),
                    "file.dirname() of dir should return parent dir");
 
   aDir = url.toFilename(myurl);
@@ -58,13 +58,13 @@ exports.testBasename = function(test) {
 exports.testList = function(test) {
   var list = file.list(url.toFilename(otherdir));
   var found = [true for each (name in list)
-                    if (name == "README.txt")];
+                    if (name == "add.js")];
   if (found.length > 1)
     test.fail("a dir can't contain two files of the same name!");
   test.assertEqual(found[0], true, "file.list() should work");
 
   test.assertRaises(
-    function() { file.list(url.toFilename(__url__)); },
+    function() { file.list(url.toFilename(module.uri)); },
     ERRORS.NOT_A_DIRECTORY,
     "file.list() on non-dir should raise error"
   );
@@ -77,7 +77,7 @@ exports.testList = function(test) {
 };
 
 exports.testRead = function(test) {
-  var filename = url.toFilename(__url__);
+  var filename = url.toFilename(module.uri);
   var contents = file.read(filename);
   test.assertMatches(contents, /file\.read\(\) should work/,
                      "file.read() should work");
@@ -140,7 +140,7 @@ exports.testOpenNonexistentForWrite = function (test) {
 };
 
 exports.testOpenDirectory = function (test) {
-  var dir = file.dirname(url.toFilename(__url__));
+  var dir = file.dirname(url.toFilename(module.uri));
   test.assertRaises(function () file.open(dir),
                     ERRORS.NOT_A_FILE,
                     "file.open() on directory should raise error");
@@ -187,7 +187,7 @@ exports.testOpenTypes = function (test) {
 };
 
 exports.testMkpathRmdir = function (test) {
-  var basePath = file.dirname(url.toFilename(__url__));
+  var basePath = file.dirname(url.toFilename(module.uri));
   var dirs = [];
   for (var i = 0; i < 3; i++)
     dirs.push("test-file-dir");
@@ -210,7 +210,7 @@ exports.testMkpathRmdir = function (test) {
 };
 
 exports.testMkpathTwice = function (test) {
-  var dir = file.dirname(url.toFilename(__url__));
+  var dir = file.dirname(url.toFilename(module.uri));
   var path = file.join(dir, "test-file-dir");
   test.assert(!file.exists(path),
               "Sanity check: path should not exist: " + path);
@@ -248,7 +248,7 @@ exports.testRmdirNondirectory = function (test) {
 };
 
 exports.testRmdirNonempty = function (test) {
-  var dir = file.dirname(url.toFilename(__url__));
+  var dir = file.dirname(url.toFilename(module.uri));
   var path = file.join(dir, "test-file-dir");
   test.assert(!file.exists(path),
               "Sanity check: path should not exist: " + path);
@@ -267,7 +267,7 @@ exports.testRmdirNonempty = function (test) {
 
 // Returns the name of a file that should be used to test writing and reading.
 function dataFileFilename(test) {
-  var dir = file.dirname(url.toFilename(__url__));
+  var dir = file.dirname(url.toFilename(module.uri));
   var fname = file.join(dir, "test-file-data");
   test.assert(!file.exists(fname),
               "Sanity check: the file that this test assumes does not " +

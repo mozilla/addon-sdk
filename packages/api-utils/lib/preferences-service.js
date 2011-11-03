@@ -91,10 +91,8 @@ var set = exports.set = function set(name, value) {
     break;
 
   case "Number":
-    // We throw if the number is outside the range, since the result
-    // will never be what the consumer wanted to store, but we only warn
-    // if the number is non-integer, since the consumer might not mind
-    // the loss of precision.
+    // We throw if the number is outside the range or not an integer, since
+    // the result will not be what the consumer wanted to store.
     if (value > MAX_INT || value < MIN_INT)
       throw new Error("you cannot set the " + name +
                       " pref to the number " + value +
@@ -113,7 +111,7 @@ var set = exports.set = function set(name, value) {
 
   default:
     throw new Error("can't set pref " + name + " to value '" + value +
-                    "'; it isn't a String, Number, or Boolean");
+                    "'; it isn't a string, integer, or boolean");
   }
 };
 

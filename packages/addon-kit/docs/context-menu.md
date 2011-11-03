@@ -22,7 +22,7 @@ current context are automatically removed from the menu.  You never need to
 manually remove your items from the menu unless you want them to never appear
 again.
 
-For example, if your extension needs to add a context menu item whenever the
+For example, if your add-on needs to add a context menu item whenever the
 user visits a certain page, don't create the item when that page loads, and
 don't remove it when the page unloads.  Rather, create your item only once and
 supply a context that matches the target URL.
@@ -501,7 +501,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -630,7 +630,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/web-content.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
