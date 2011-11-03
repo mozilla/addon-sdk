@@ -173,6 +173,13 @@ parser_groups = (
                                     metavar=None,
                                     default=None,
                                     cmds=['run', 'test', 'testall'])),
+        (("", "--harness-option",), dict(dest="extra_harness_option_args",
+                                         help=("Extra properties added to "
+                                               "harness-options.json"),
+                                         action="append",
+                                         metavar="KEY=VALUE",
+                                         default=[],
+                                         cmds=['xpi'])),
         ]
      ),
 
@@ -724,13 +731,18 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
+        extra_harness_options = {}
+        for kv in options.extra_harness_option_args:
+            key,value = kv.split("=", 1)
+            extra_harness_options[key] = value
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_path=xpi_path,
                   harness_options=harness_options,
-                  limit_to=used_files)
+                  limit_to=used_files,
+                  extra_harness_options=extra_harness_options)
     else:
         from cuddlefish.runner import run_app
 
