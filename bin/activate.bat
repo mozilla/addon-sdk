@@ -1,4 +1,6 @@
 @echo off
+setlocal ENABLEDELAYEDEXPANSION
+
 set VIRTUAL_ENV=%CD%
 set CUDDLEFISH_ROOT=%VIRTUAL_ENV%
 
@@ -30,34 +32,34 @@ SET PYTHONINSTALL=
 
 if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.6\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
+  if !ERRORLEVEL! EQU 0 (
     SET PYTHONVERSION=2.6
   )
 )
 
 if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.7\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
+  if !ERRORLEVEL! EQU 0 (
     SET PYTHONVERSION=2.7
   )
 )
 
 if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.5\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
+  if !ERRORLEVEL! EQU 0 (
     SET PYTHONVERSION=2.5
   )
 )
 
 if "%PYTHONVERSION%" EQU "" (
   REG QUERY "%PYTHONKEY%\2.4\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
+  if !ERRORLEVEL! EQU 0 (
     SET PYTHONVERSION=2.4
   )
 )
 
 if "%PYTHONVERSION%" NEQ "" (
-  FOR /F "tokens=3* skip=1 delims=	 " %%A IN ('REG QUERY "%PYTHONKEY%\%PYTHONVERSION%\InstallPath" /ve') DO SET "PYTHONINSTALL=%%A"
+  FOR /F "tokens=3* skip=1 delims=	 " %%A IN ('REG QUERY "%PYTHONKEY%\%PYTHONVERSION%\InstallPath" /ve ^>nul 2^>nul') DO SET "PYTHONINSTALL=%%A"
 )
 
 if "%PYTHONINSTALL%" NEQ "" (
