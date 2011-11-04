@@ -189,8 +189,10 @@ exports.compose = compose;
  */
 function exclude(keys, trait) {
   let exclusions = Map(keys),
-      result = {},
-      keys = getOwnPropertyNames(trait);
+      result = {};
+
+  keys = getOwnPropertyNames(trait);
+
   for each (let key in keys) {
     if (!hasOwn.call(exclusions, key) || trait[key].required)
       result[key] = trait[key];
