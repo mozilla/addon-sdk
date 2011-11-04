@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *  Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -52,6 +53,33 @@ const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
+
+
+// Gets the topic that fit best as application startup event, in according with
+// the current application (e.g. Firefox, Fennec, Thunderbird...)
+function getAppStartupTopic() {
+  let ids = {
+    Firefox: '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}',
+    Mozilla: '{86c18b42-e466-45a9-ae7a-9b95ba6f5640}',
+    Sunbird: '{718e30fb-e89b-41dd-9da7-e25a45638b28}',
+    SeaMonkey: '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}',
+    Fennec: '{a23983c0-fd0e-11dc-95ff-0800200c9a66}',
+    Thunderbird: '{3550f703-e582-4d05-9a08-453d09bdfdc6}'
+  }
+
+  let id = Cc['@mozilla.org/xre/app-info;1'].getService(Ci.nsIXULAppInfo).ID;
+
+  switch (id) {
+    case ids.Firefox:
+    case ids.Fennec:
+    case ids.SeaMonkey:
+      return 'sessionstore-windows-restored';
+    case ids.Thunderbird:
+      return 'mail-startup-done';
+    default:
+      return 'final-ui-startup';
+  }
+}
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -127,8 +155,8 @@ function startup(data, reason) {
 
   // Creating a promise, that will be delivered once application is ready.
   // If application is at startup then promise is delivered on
-  // 'sessionstore-windows-restored' otherwise it's delivered immediately.
-  let promise = reason === APP_STARTUP ? on('sessionstore-windows-restored') :
+  // the application startup topic, otherwise it's delivered immediately.
+  let promise = reason === APP_STARTUP ? on(getAppStartupTopic()) :
                                          function promise(deliver) deliver()
 
   // Once application is ready we spawn a new process with main module of
