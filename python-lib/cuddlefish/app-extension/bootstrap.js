@@ -58,6 +58,9 @@ let loader = null;
 // Gets the topic that fit best as application startup event, in according with
 // the current application (e.g. Firefox, Fennec, Thunderbird...)
 function getAppStartupTopic() {
+  // The following mapping of application names to GUIDs was taken
+  // from `xul-app` module. They should keep in sync, so if you change one,
+  // change the other too!
   let ids = {
     Firefox: '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}',
     Mozilla: '{86c18b42-e466-45a9-ae7a-9b95ba6f5640}',
