@@ -5,12 +5,6 @@ set CUDDLEFISH_ROOT=%VIRTUAL_ENV%
 
 SET PYTHONKEY=SOFTWARE\Python\PythonCore
 
-rem This kinda sucks - xp has a different output format for reg.exe
-rem than vista+ - so first work out the major version number of the OS.
-for /f "tokens=2 delims=[]" %%x in ('ver') do set _winversion=%%x
-for /f "tokens=2 delims=. " %%G in ('echo %_winversion%') Do (set _winmajor=%%G)
-set _winversion=
-
 rem look for 32-bit windows and python, or 64-bit windows and python
 
 SET PYTHONVERSION=2.7
@@ -93,7 +87,6 @@ set PYTHONINSTALL=
 set PYTHONVERSION=
 set key=
 set reg=
-set _winmajor=
 set _tokens=
 cd "%VIRTUAL_ENV%"
 python -c "from jetpack_sdk_env import welcome; welcome()"
@@ -106,13 +99,25 @@ GOTO :EOF
 SET key=%2%
 SET "%~1="
 SET reg=reg
-rem The string we want is token 3 in vista+, or 4 in xp.
-if "%_winmajor%" LSS "6" (set "_tokens=4") ELSE (set "_tokens=3")
 if defined ProgramFiles(x86) (
   rem 32-bit cmd on 64-bit windows
   if exist %WINDIR%\sysnative\reg.exe SET reg=%WINDIR%\sysnative\reg.exe
 )
-FOR /F "usebackq tokens=%_tokens%* skip=1 delims=	 " %%A IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+rem On Vista+, the last line of output is:
+rem    (default)  REG_SZ  the_value
+rem (but note the word "default" will be localized.
+rem On XP, the last line of output is:
+rem   <NO NAME>\tREG_SZ\tthe_value
+rem (not sure if "NO NAME" is localized or not!)
+rem SO: we use ")>" as the tokens to split on, then nuke
+rem the REG_SZ and any tabs or spaces.
+FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+rem Remove the REG_SZ
+set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
+rem Remove tabs (note the literal \t in the next line
+set PYTHONINSTALL=%PYTHONINSTALL:	=%
+rem Remove spaces.
+set PYTHONINSTALL=%PYTHONINSTALL: =%
 if exist %PYTHONINSTALL%\python.exe goto :EOF
 rem It may be a 32bit Python directory built from source, in which case the
 rem executable is in the PCBuild directory.
@@ -121,7 +126,10 @@ rem Or maybe a 64bit build directory.
 if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
 
 rem And try HKCU
-FOR /F "usebackq tokens=%_tokens%* skip=1 delims=	 " %%A IN (`%reg% QUERY HKCU\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKCU\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
+set PYTHONINSTALL=%PYTHONINSTALL:	=%
+set PYTHONINSTALL=%PYTHONINSTALL: =%
 if exist %PYTHONINSTALL%\python.exe goto :EOF
 if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
 if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
