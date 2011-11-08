@@ -37,20 +37,17 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
+const { EventEmitter } = require('./events'),
+      { Trait } = require('./traits');
+const errors = require("./errors");
 
-const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
-
-var errors = require("./errors");
-
-var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-                     .getService(Ci.nsIWindowWatcher);
-
+const gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+                       getService(Ci.nsIWindowWatcher);
 const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
                         getService(Ci.nsIAppShellService);
 
-const { EventEmitter } = require('./events'),
-      { Trait } = require('./traits');
+const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 /**
  * An iterator for XUL windows currently in the application.
@@ -216,6 +213,26 @@ exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 
+/**
+ * Returns `nsIXULWindow` for the given `nsIDOMWindow`.
+ */
+function getXULWindow(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+                getInterface(Ci.nsIWebNavigation).
+                QueryInterface(Ci.nsIDocShellTreeItem).
+                treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
+                getInterface(Ci.nsIXULWindow);
+};
+exports.getXULWindow = getXULWindow;
+
+/**
+ * Returns `nsIDOMWindow` for the given `nsIXULWindow`.
+ */
+function getDOMWindow(window) {
+  window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).
+         getInterface(Ci.nsIDOMWindow)
+}
+
 function createHiddenWindow() {
   return function promise(deliver) {
     // We use popup=yes and we explicitly hide it with `nsIBaseWindow` interface
@@ -235,6 +252,9 @@ function createHiddenWindow() {
 
     base.visibility = false;
     base.enabled = false;
+
+    // We unregister this window so that it won't show up anywhere.
+    appShellService.unregisterTopLevelWindow(getXULWindow(window));
 
     window.addEventListener('DOMContentLoaded', function onLoad(event) {
       window.removeEventListener('DOMContentLoaded', onLoad, false);
