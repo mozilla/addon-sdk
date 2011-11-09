@@ -233,40 +233,33 @@ function getDOMWindow(window) {
          getInterface(Ci.nsIDOMWindow)
 }
 
-function createHiddenWindow() {
+function createHiddenXULFrame() {
   return function promise(deliver) {
-    // We use popup=yes and we explicitly hide it with `nsIBaseWindow` interface
-    // in order to have a window that doesn't appear in taskbar/dock.
+    let window = appShellService.hiddenDOMWindow;
+    let document = window.document;
 
-    let markup = '<?xml version="1.0"?><window xmlns="' + XUL + '"></window>';
-    let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
-    let features = "chrome,width=0,height=0,popup=yes";
-
-    let window = gWindowWatcher.openWindow(null, url, null, features, null);
-    let base = window.QueryInterface(Ci.nsIInterfaceRequestor).
-                      getInterface(Ci.nsIWebNavigation).
-                      QueryInterface(Ci.nsIDocShell).
-                      QueryInterface(Ci.nsIDocShellTreeItem).
-                      treeOwner.
-                      QueryInterface(Ci.nsIBaseWindow);
-
-    base.visibility = false;
-    base.enabled = false;
-
-    // We unregister this window so that it won't show up anywhere.
-    appShellService.unregisterTopLevelWindow(getXULWindow(window));
-
-    window.addEventListener('DOMContentLoaded', function onLoad(event) {
-      window.removeEventListener('DOMContentLoaded', onLoad, false);
-      deliver(window);
-    }, false);
-  };
+    if (document.contentType == "application/vnd.mozilla.xul+xml" ||
+        document.contentType == "application/xhtml+xml")
+    {
+      deliver(window)
+    } else {
+      let frame = document.createElement('iframe');
+      // This is ugly but we need window for XUL document in order to create
+      // browser elements.
+      frame.setAttribute('src', 'chrome://browser/content/hiddenWindow.xul');
+      frame.addEventListener('DOMContentLoaded', function onLoad(event) {
+        frame.removeEventListener('DOMContentLoaded', onLoad, false);
+        deliver(frame.contentWindow);
+      }, false);
+      document.documentElement.appendChild(frame);
+    }
+  }
 };
-exports.createHiddenWindow = createHiddenWindow;
+exports.createHiddenXULFrame = createHiddenXULFrame;
 
 exports.createRemoteBrowser = function createRemoteBrowser(remote) {
   return function promise(deliver) {
-    createHiddenWindow()(function(hiddenWindow) {
+    createHiddenXULFrame()(function(hiddenWindow) {
       let document = hiddenWindow.document;
       let browser = document.createElementNS(XUL, "browser");
       // Remote="true" enable everything here:
