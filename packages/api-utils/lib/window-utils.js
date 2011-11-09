@@ -213,26 +213,6 @@ exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 
-/**
- * Returns `nsIXULWindow` for the given `nsIDOMWindow`.
- */
-function getXULWindow(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIWebNavigation).
-                QueryInterface(Ci.nsIDocShellTreeItem).
-                treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIXULWindow);
-};
-exports.getXULWindow = getXULWindow;
-
-/**
- * Returns `nsIDOMWindow` for the given `nsIXULWindow`.
- */
-function getDOMWindow(window) {
-  window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).
-         getInterface(Ci.nsIDOMWindow)
-}
-
 function createHiddenXULFrame() {
   return function promise(deliver) {
     let window = appShellService.hiddenDOMWindow;
