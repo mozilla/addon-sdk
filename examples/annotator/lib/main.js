@@ -1,10 +1,10 @@
-const widgets = require('widget');
-const pageMod = require('page-mod');
-const data = require('self').data;
-const panels = require('panel');
-const simpleStorage = require('simple-storage');
-const notifications = require("notifications");
-const privateBrowsing = require('private-browsing');
+var widgets = require('widget');
+var pageMod = require('page-mod');
+var data = require('self').data;
+var panels = require('panel');
+var simpleStorage = require('simple-storage');
+var notifications = require("notifications");
+var privateBrowsing = require('private-browsing');
 
 /*
 Global variables

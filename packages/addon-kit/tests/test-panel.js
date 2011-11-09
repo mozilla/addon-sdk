@@ -1,6 +1,7 @@
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
+const { Loader } = require('./helpers');
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -78,6 +79,32 @@ tests.testShowHidePanel = function(test) {
       test.assertEqual(this.isShowing, false, "panel.isShowing == false.");
       panel.destroy();
       test.done();
+    }
+  });
+};
+
+tests.testDocumentReload = function(test) {
+  test.waitUntilDone();
+  let content =
+    "<script>" +
+    "setTimeout(function () {" +
+    "  window.location = 'about:blank';" +
+    "}, 250);" +
+    "</script>";
+  let messageCount = 0;
+  let panel = Panel({
+    contentURL: "data:text/html," + encodeURIComponent(content),
+    contentScript: "self.postMessage(window.location.href)",
+    onMessage: function (message) {
+      messageCount++;
+      if (messageCount == 1) {
+        test.assertMatches(message, /data:text\/html,/, "First document had a content script");
+      }
+      else if (messageCount == 2) {
+        test.assertEqual(message, "about:blank", "Second document too");
+        panel.destroy();
+        test.done();
+      }
     }
   });
 };
@@ -318,7 +345,7 @@ function makeEventOrderTest(options) {
 }
 
 tests.testAutomaticDestroy = function(test) {
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let panel = loader.require("panel").Panel({
     contentURL: "about:buildconfig",
     contentScript: 

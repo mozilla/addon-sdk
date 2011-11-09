@@ -11,199 +11,166 @@ collection of modules. This makes the design of the add-on easier to understand
 and provides some encapsulation as each module will export only what it chooses
 to, so you can change the internals of the module without breaking its users.
 
-In this example we'll start with the [translator
+In this example we'll start with the [wikipanel
 add-on](dev-guide/addon-development/implementing-simple-addon.html), and create
-a separate module containing the code that performs the translation.
+a separate module containing the code that loads the panel.
 
-## Implementing "translate.js" ##
+## Implementing "wikipanel.js" ##
 
-In the `lib` directory under your translator's root, create a new file called
-`translate.js` with the following contents:
+In the `lib` directory under your wikipanel's root, create a new file called
+`wikipanel.js` with the following contents:
 
-    // Import the APIs we need.
-    var request = require("request");
-
-    // Define the 'translate' function using Request
-    function translate(text, callback) {
-      if (text.length === 0) {
-        throw ("Text to translate must not be empty");
-      }
-      var req = request.Request({
-        url: "http://ajax.googleapis.com/ajax/services/language/translate",
-        content: {
-          v: "1.0",
-          q: text,
-          langpair: "|en"
-        },
-        onComplete: function (response) {
-          callback(response.json.responseData.translatedText);
-        }
+    // Define the 'lookup' function using Panel
+    function lookup(item) {
+      var panel = require("panel").Panel({
+        width: 240,
+        height: 320,
+        contentURL: getURL(item)
       });
-      req.get();
+      panel.show();
     }
 
-    // Export the 'translate' function
-    exports.translate = translate;
+    // Define a function to build the URL
+    function getURL(item) {
+      if (item.length === 0) {
+        throw ("Text to look up must not be empty");
+      }
+      return "http://en.wikipedia.org/w/index.php?title=" + item + "&useformat=mobile";
+    }
 
+    // Export the 'lookup' and 'getURL' functions
+    exports.lookup = lookup;
+    exports.getURL = getURL;
 
-The `translate` function here is essentially the same as the listener function
-assigned to `onMessage` in the original code, except that it calls a callback
-with the translation instead of assigning the result directly to the selection.
+The `lookup()` function here is essentially the same as the `lookup()` in the
+original code.
 
-We export the function by adding it to the global `exports` object.
+Just so we can demonstrate the SDK's unit testing framework, we've also
+split the code that creates the URL into its own trivial `getURL()` function.
+
+We export both functions by adding them to the global `exports` object.
 
 ## Editing "main.js" ##
 
-Next we edit `main.js` to make it use our new module rather than the `request`
+Next we edit `main.js` to make it use our new module rather than the `panel`
 module:
 
     // Import the APIs we need.
     var contextMenu = require("context-menu");
-    var selection = require("selection");
-    var translate = require("translate");
+    var wikipanel = require("wikipanel");
 
     exports.main = function(options, callbacks) {
       console.log(options.loadReason);
 
       // Create a new context menu item.
-      var menuItem = contextMenu.Item({
-        label: "Translate Selection",
+     var menuItem = contextMenu.Item({
+        label: "What's this?",
         // Show this item when a selection exists.
         context: contextMenu.SelectionContext(),
-        // When this item is clicked, post a message to the item with the
-        // selected text and current URL.
+        // When this item is clicked, post a message back with the selection
         contentScript: 'self.on("click", function () {' +
                        '  var text = window.getSelection().toString();' +
                        '  self.postMessage(text);' +
                        '});',
-
-        // When we receive the message, call the translator with the
-        // selected text and replace it with the translation.
-        onMessage: function (text) {
-          translate.translate(text, function(translation) {
-                                        selection.text = translation; })
+        // When we receive a message, look up the item
+        onMessage: function (item) {
+          console.log('looking up "' + item + '"');
+          wikipanel.lookup(item);
         }
       });
     };
 
-    exports.onUnload = function (reason) {
-      console.log(reason);
-    };
-
-
 Next, execute `cfx run` again, and try out the add-on. It should work in
 exactly the same way as the previous version, except that now the core
-translate function has been made available to other parts of your add-on or
-to *any other program* that imports it.
+`lookup()` function has been made available to other parts of your add-on or
+to any other module that imports it.
 
 ## Testing Your Module ##
 
 The SDK provides a framework to help test any modules you develop. To
-demonstrate this we will add some slightly unlikely tests for the translator
-module.
+demonstrate this we will add a test for the `getURL` function.
 
 Navigate to the `test` directory and delete the `test-main.js` file. In its
-place create a file called `test-translate.js` with the following contents:
+place create a file called `test-wikipanel.js` with the following contents:
 
-    var translate = require("translator/translate")
-    var testRunner;
-    var remainingTests;
+    var wikipanel = require("wikipanel/wikipanel")
 
-    function check_translation(translation) {
-      testRunner.assertEqual("Lizard", translation);
-      testRunner.done();
+    var referenceURL =
+      "http://en.wikipedia.org/w/index.php?title=Mozilla&useformat=mobile";
+
+    function test_getURL(test) {
+      test.assertEqual(wikipanel.getURL("Mozilla"), referenceURL);
+      test.done();
     }
 
-    function test_languages(test, text) {
-      testRunner= test;
-      testRunner.waitUntilDone(2000);
-      translate.translate(text, check_translation);
-    }
-
-    exports.test_german = function(test) {
-      test_languages(test, "Eidechse");
-    }
-
-    exports.test_italian = function(test) {
-      test_languages(test, "Lucertola");
-    }
-
-    exports.test_finnish = function(test) {
-      test_languages(test, "Lisko");
-    }
-
-    exports.test_error = function(test) {
+    function test_empty_string(test) {
       test.assertRaises(function() {
-        translate.translate("", check_translation);
+        wikipanel.getURL("");
       },
-      "Text to translate must not be empty");
+      "Text to look up must not be empty");
     };
 
-This file exports four functions, each of which expects to receive a single
+    exports.test_getURL = test_getURL;
+    exports.test_empty_string = test_empty_string;
+
+This file:
+
+* exports two functions, each of which expects to receive a single
 argument which is a `test` object. `test` is supplied by the
 [`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
-functions to simplify unit testing. The file imports one module, the
-`translate` module that lives in our `translator` package. The
-`PACKAGE/MODULE` syntax lets you identify a specific module in a specific
-package, rather than searching all available packages (using, for example,
-`require("request")`). The
+functions to simplify unit testing.
+The first function calls `getURL()` and uses [`test.assertEqual()`](packages/api-utils/docs/unit-test.html#assertEqual(a, b, message))
+to check that the URL is as expected.
+The second function tests the wikipanel's error-handling code by passing an
+empty string into `getURL()` and using
+[`test.assertRaises()`](packages/api-utils/docs/unit-test.html#assertRaises(func%2C predicate%2C message))
+to check that the expected exception is raised.
+
+* imports one module, the `wikipanel` module that lives in our
+`wikipanel` package. The `PACKAGE/MODULE` ("wikipanel/wikipanel") syntax lets
+you identify a specific module in a specific package, rather than searching
+all available packages (using, for example, `require("request")`). The
 [module-search](dev-guide/addon-development/module-search.html) documentation
-has more detail.
-
-<span class="aside">
-`waitUntilDone()` and `done()` are needed here because the translator is
-asynchronous. To test an asynchronous function (a function that completes
-using a callback, rather than a return value), you call `test.waitUntilDone(),`
-supplying a delay time in milliseconds long enough for the function to
-complete. You put the test assertion in the callback, then call `test.done()`
-to signal that the test has finished.
-</span>
-
-The first three functions call `translate` and in the callback use
-`test.assertEqual()` to check that the translation is as expected.
-
-The fourth function tests the translator's error-handling code by passing an
-empty string into `translate` and using `test.assertRaises()` to check that the
-expected exception is raised.
+has more detail on this.
 
 At this point your package ought to look like this:
 
 <pre>
-  /translator
+  /wikipanel
       package.json
       README.md
       /doc
           main.md
       /lib
           main.js
-          translate.js
+          wikipanel.js
       /test
-          test-translate.js
+          test-wikipanel.js
 </pre>
 
 Now execute `cfx --verbose test` from under the package root directory.
 You should see something like this:
 
 <pre>
-  Running tests on Firefox 4.0.1/Gecko 2.0.1 ...
-  info: executing 'test-translate.test_german'
-  info: pass: a == b == "Lizard"
-  info: executing 'test-translate.test_italian'
-  info: pass: a == b == "Lizard"
-  info: executing 'test-translate.test_finnish'
-  info: pass: a == b == "Lizard"
-  info: executing 'test-translate.test_error'
-  info: pass: a == b == "Text to translate must not be empty"
-  4 of 4 tests passed.
-  OK
+Running tests on Firefox 7.0.1/Gecko 7.0.1 ({ec8030f7-c20a-464f-9b0e-13a3a9e97384}) under Darwin/x86_64-gcc3.
+info: executing 'test-wikipanel.test_empty_string'
+info: pass: a == b == "Text to look up must not be empty"
+info: executing 'test-wikipanel.test_getURL'
+info: pass: a == b == "http://en.wikipedia.org/w/index.php?title=Mozilla&useformat=mobile"
+
+2 of 2 tests passed.
+OK
 </pre>
 
 What happens here is that `cfx test`:
 
+<span class="aside">Note the hyphen after "test" in the module name.
+`cfx test` will include a module called "test-myCode.js", but will exclude
+modules called "test_myCode.js" or "testMyCode.js".</span>
+
 * looks in the `test` directory of your
 package
-
-* loads any modules that start with the word `test`
+* loads any modules whose names start with the word `test-`
 *  calls all their exported functions, passing them a `test` object
 implementation as their only argument.
 

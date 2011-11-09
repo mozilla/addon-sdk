@@ -2,6 +2,8 @@
 
 var pageMod = require("page-mod");
 var testPageMod = require("pagemod-test-helpers").testPageMod;
+const { Loader } = require('./helpers');
+const tabs = require("tabs");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -255,6 +257,40 @@ exports.testEventEmitter = function(test) {
   );
 };
 
+// Execute two concurrent page mods on same document to ensure that their
+// JS contexts are different
+exports.testMixedContext = function(test) {
+  let doneCallback = null;
+  let messages = 0;
+  let modObject = {
+    include: "data:text/html,",
+    contentScript: 'new ' + function WorkerScope() {
+      // Both scripts will execute this,
+      // context is shared if one script see the other one modification.
+      let isContextShared = "sharedAttribute" in document;
+      self.postMessage(isContextShared);
+      document.sharedAttribute = true;
+    },
+    onAttach: function(w) {
+      w.on("message", function (isContextShared) {
+        if (isContextShared) {
+          test.fail("Page mod contexts are mixed.");
+          doneCallback();
+        }
+        else if (++messages == 2) {
+          test.pass("Page mod contexts are different.");
+          doneCallback();
+        }
+      });
+    }
+  };
+  testPageMod(test, "data:text/html,", [modObject, modObject],
+    function(win, done) {
+      doneCallback = done;
+    }
+  );
+};
+
 exports.testHistory = function(test) {
   // We need a valid url in order to have a working History API.
   // (i.e do not work on data: or about: pages)
@@ -286,9 +322,9 @@ exports.testHistory = function(test) {
 exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
-  let tabs = require("tabs");
   let tab;
-  let pageMod = new require("page-mod").PageMod({
+  let { PageMod } = require("page-mod");
+  let pageMod = new PageMod({
     include: "about:*",
     onAttach: function(worker) {
       test.assertEqual(tab, worker.tab, "Worker.tab is valid");
@@ -353,7 +389,7 @@ exports['test tab worker on message'] = function(test) {
 
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   
   let pageMod = loader.require("page-mod").PageMod({
     include: "about:*",

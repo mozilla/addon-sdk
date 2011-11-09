@@ -1,6 +1,7 @@
 var windowUtils = require("window-utils");
 var timer = require("timer");
 var {Cc,Ci} = require("chrome");
+var { Loader } = require("./helpers");
 
 function makeEmptyWindow() {
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -42,7 +43,7 @@ exports.testCloseOnUnload = function(test) {
     }
   };
 
-  var loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   loader.require("window-utils").closeOnUnload(fakeWindow);
   test.assertEqual(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");
@@ -189,13 +190,10 @@ exports.testActiveWindow = function(test) {
 
   let testRunnerWindow = Cc["@mozilla.org/appshell/window-mediator;1"]
                          .getService(Ci.nsIWindowMediator)
-                         .getMostRecentWindow(null);
+                         .getMostRecentWindow("test:runner");
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
-
-  test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
-                    "Test runner is the active window.");
 
   test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
                     "Browser window is the active browser window.");
@@ -209,22 +207,19 @@ exports.testActiveWindow = function(test) {
     function() {
       test.assertEqual(windowUtils.activeWindow, browserWindow,
                        "Correct active window [1]");
-      windowUtils.activeWindow = testRunnerWindow;
-      continueAfterFocus(testRunnerWindow);
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
                        "Correct active window [2]");
       test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [3]");
-      windowUtils.activeWindow = browserWindow;
-      continueAfterFocus(browserWindow);
+      continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, browserWindow,
                        "Correct active window [4]");
-      windowUtils.activeWindow = testRunnerWindow;
-      continueAfterFocus(testRunnerWindow);
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
       test.assertEqual(windowUtils.activeWindow, testRunnerWindow,

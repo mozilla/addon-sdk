@@ -2,12 +2,13 @@
 
 This section of the tutorial takes you through the process of implementing,
 running and packaging a simple add-on using the SDK. The add-on will add a
-menu item to Firefox's context menu that replaces selected text with its
-English translation.
+menu item to Firefox's context menu, to appear when anything in the page
+is selected. The menu item displays a popup dialog containing the
+Wikipedia entry for the selected text.
 
 ## Initializing Your Add-on ##
 
-Create a directory called `translator`. This is where we will keep all the
+Create a directory called `wikipanel`. This is where we will keep all the
 files for this add-on.
 
 You *do not* have to create this directory under the SDK root: once you have
@@ -19,7 +20,7 @@ for you to update the SDK and to manage your code using a version control
 system.
 
 Next we'll use `cfx init` to create a skeleton structure for your add-on.
-Navigate to the `translator` directory and execute `cfx init`. You should see
+Navigate to the `wikipanel` directory and execute `cfx init`. You should see
 something like this:
 
 <pre>
@@ -61,14 +62,14 @@ Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
 
 * `/test` contains unit test code.
 
-Next, `cfx init` creates a file called `package.json` in the root `translator`
+Next, `cfx init` creates a file called `package.json` in the root `wikipanel`
 directory. This contains information about your add-on and should look
 something like this:
 
 <pre>
   {
-    "name":"translator",
-    "fullName":"translator",
+    "name":"wikipanel",
+    "fullName":"wikipanel",
     "description":"This is an example of addon description.",
     "author":"",
     "license":"MPL",
@@ -86,84 +87,64 @@ contents with the following:
 
     // Import the APIs we need.
     var contextMenu = require("context-menu");
-    var request = require("request");
-    var selection = require("selection");
+    var panel = require("panel");
 
     exports.main = function(options, callbacks) {
       console.log(options.loadReason);
 
       // Create a new context menu item.
       var menuItem = contextMenu.Item({
-
-        label: "Translate Selection",
-
+        label: "What's this?",
         // Show this item when a selection exists.
-
         context: contextMenu.SelectionContext(),
-
-        // When this item is clicked, post a message to the item with the
-        // selected text and current URL.
+        // When this item is clicked, post a message back with the selection
         contentScript: 'self.on("click", function () {' +
                        '  var text = window.getSelection().toString();' +
                        '  self.postMessage(text);' +
                        '});',
-
-        // When we receive the message, call the Google Translate API with the
-        // selected text and replace it with the translation.
-        onMessage: function (text) {
-          if (text.length === 0) {
-            throw ("Text to translate must not be empty");
-          }
-          console.log("input: " + text);
-          var req = request.Request({
-            url: "http://ajax.googleapis.com/ajax/services/language/translate",
-            content: {
-              v: "1.0",
-              q: text,
-              langpair: "|en"
-            },
-            onComplete: function (response) {
-              translated = response.json.responseData.translatedText;
-              console.log("output: " + translated);
-              selection.text = translated;
-            }
-          });
-          req.get();
+        // When we receive a message, look up the item
+        onMessage: function (item) {
+          console.log('looking up "' + item + '"');
+          lookup(item);
         }
       });
     };
 
-    exports.onUnload = function (reason) {
-      console.log(reason);
-    };
-
+    function lookup(item) {
+      wikipanel = panel.Panel({
+        width: 240,
+        height: 320,
+        contentURL: "http://en.wikipedia.org/w/index.php?title=" +
+                    item + "&useformat=mobile"
+      });
+      wikipanel.show();
+    }
 
 ### Importing Modules ###
 
-The first three lines are used to import three SDK modules from the
+The first two lines are used to import two SDK modules from the
 addon-kit package:
 
 * [`context-menu`](packages/addon-kit/docs/context-menu.html) enables add-ons
 to add new items to the context menu
-* [`request`](packages/addon-kit/docs/request.html) enables add-ons to make
-network requests
-* [`selection`](packages/addon-kit/docs/selection.html) gives add-ons access
-to selected text in the active browser window
+* [`panel`](packages/addon-kit/docs/panel.html) enables add-ons to display
+popup windows
 
 ### Creating a Context Menu Item ###
 
 Next, this code constructs a context menu item. It supplies:
 
-* the name of the item to display: "Translate Selection"
+* the text to appear in the menu: "What's this?"
 * a context in which the item should be displayed: `SelectionContext()`,
 meaning: include this item in the context menu whenever some content on the
 page is selected
 * a script to execute when the item is clicked: this script sends the selected
 text to the function assigned to the `onMessage` property
 * a value for the `onMessage` property: this function will now be called with
-the selected text, whenever the user clicks the menu. It uses Google's
-AJAX-based translation service to translate the selection to English and sets
-the selection to the translated text.
+the selected text, whenever the user clicks the menu.
+
+The supplied function loads the Wikipedia entry for the selection into a
+panel.
 
 ### Listening for Load and Unload ###
 
@@ -199,8 +180,8 @@ your add-on's code at the top level instead of wrapping it in a function
 assigned to `exports.main`: it will be loaded in the same circumstances, but
 you won't get access to the `options` or `callbacks` arguments.
 
-This particular add-on doesn't need to use `exports.main` or `exports.onUnload`
-for anything, and only includes them to illustrate their use.
+This particular add-on doesn't need to use `exports.main` for anything, and
+only includes it to illustrate its use.
 
 ### Logging ###
 
@@ -220,7 +201,7 @@ For more information on the `console` object see its
 
 ## Running It ##
 
-To run your program, navigate to the `translator` directory and type:
+To run your program, navigate to the `wikipanel` directory and type:
 
 <pre>
   cfx run
@@ -233,44 +214,33 @@ The first time you do this, you'll see a message like this:
   package.json modified: please re-run 'cfx run'
 </pre>
 
+<span class="aside">
+The ID that `cfx` generated the first time you executed `cfx run` is a unique
+identifier for your add-on. To learn more about it refer to the
+[Program ID](dev-guide/addon-development/program-id.html) document.
+</span>
+
 Run it again, and it will run an instance of Firefox with your add-on
 installed.
-
-The ID that `cfx` generated the first time you executed `cfx run` is a unique
-identifier for you add-on called the **Program ID** and it is important. It is
-used by various tools and services to distinguish this add-on from any other.
-
-To learn more about the Program ID refer to the
-[Program ID](dev-guide/addon-development/program-id.html) document.
 
 Once `cfx run` has launched Firefox you can try out the new add-on. Load a
 page containing some text that is not in English, for example:
 [http://www.mozilla.org/about/manifesto.fr.html](http://www.mozilla.org/about/manifesto.fr.html)
 
 Select some text on that page and right-click to activate the context menu.
-You should see a new item labeled "Translate Selection":
+You should see a new item labeled "What's this?":
 
-![translator context-menu](static-files/media/screenshots/translator/context-menu-osx.png)
+![wikipanel context-menu](static-files/media/screenshots/wikipanel/wikipanel-context-menu.png)
 
-Select that item and the text you selected should be replaced with its English
-translation:
+Select that item and you'll see a popup panel showing the Wikipedia entry for
+the selection:
 
-![translator context-menu](static-files/media/screenshots/translator/translated-osx.png)
+![wikipanel panel](static-files/media/screenshots/wikipanel/wikipanel-panel.png)
 
 You will also see output like this appear in your command shell:
 
 <pre>
-  info: input: Le projet Mozilla est une communauté mondiale de personnes
-  qui pensent que l'ouverture, l'innovation et la saisie des chances qui nous
-  sont offertes sont les clés de la vitalité d'Internet. Nous travaillons
-  ensemble depuis 1998 pour nous assurer qu'Internet se développe d'une manière
-  qui bénéficie à tout le monde. On nous connaît surtout pour la création du
-  navigateur Web Mozilla Firefox.
-  info: output: The Mozilla project is a global community of people who believe
-  that openness, innovation and seizing opportunities offered to us are the
-  keys to the vitality of the Internet. We have been working together since
-  1998 to ensure that the Internet develops in a way that benefits everyone.
-  We are best known for creating the Mozilla Firefox Web browser.
+  info: looking up "Jetpack"
 </pre>
 
 ## Preparing Your Add-on for Deployment ##
@@ -279,14 +249,28 @@ Once you have finished testing your add-on you can package it for deployment
 like any other Firefox add-on, as a XPI file. The Add-on SDK simplifies the
 packaging process by generating this file for you.
 
+### Specifying an Icon ###
+
+You can specify an icon for your add-on. This icon will appear beside your
+add-on in Firefox's Add-ons Manager and on
+[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/).
+
+To specify an icon, save it as "icon.png" in your add-on's root directory. To
+give the icon a different name or to store it in a different location
+under the root, use the "icon" key in your `package.json` file. See the
+[Package Specification](file:///Users/Work/mozilla/jetpack-sdk/doc/dev-guide/addon-development/package-spec.html)
+for more details.
+
+### cfx xpi ###
+
 To package your program as a XPI, navigate to the root of your package
-directory in your shell and run `cfx xpi`. You should see a message:
+directory in your shell and run `cfx xpi`. You should see a message like:
 
 <pre>
-  Exporting extension to translator.xpi.
+  Exporting extension to wikipanel.xpi.
 </pre>
 
-The `translator.xpi` file can be found in the directory in which you ran
+The `wikipanel.xpi` file can be found in the directory in which you ran
 the command.
 
 ## Installing the Package ##
@@ -296,7 +280,7 @@ installation.
 
 You can do this by pressing the Ctrl+O key combination (Cmd+O on Mac) from
 within Firefox. This will bring up a file selection dialog: navigate to the
-`translator.xpi` file, open it and follow the prompts to install the
+`wikipanel.xpi` file, open it and follow the prompts to install the
 add-on.
 
 Alternatively:

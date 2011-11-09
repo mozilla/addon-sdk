@@ -39,6 +39,7 @@
 
 const file = require("file");
 const url = require("url");
+const { Loader } = require("./helpers");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
 
@@ -172,10 +173,10 @@ exports.testWriteAsync = function (test) {
 };
 
 exports.testUnload = function (test) {
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let file = loader.require("file");
 
-  let filename = url.toFilename(__url__);
+  let filename = url.toFilename(module.uri);
   let stream = file.open(filename);
 
   loader.unload();
@@ -184,6 +185,6 @@ exports.testUnload = function (test) {
 
 // Returns the name of a file that should be used to test writing and reading.
 function dataFileFilename() {
-  let dir = file.dirname(url.toFilename(__url__));
+  let dir = file.dirname(url.toFilename(module.uri));
   return file.join(dir, "test-text-streams-data");
 }

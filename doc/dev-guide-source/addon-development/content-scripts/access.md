@@ -65,8 +65,6 @@ But thanks to the content proxy, a content script which calls
 
     tabs.open(data.url("xray.html"));
 
-You can try out this example [using the builder](https://builder.addons.mozilla.org/addon/1013777/revision/4/).
-
 The proxy is transparent to content scripts: as far as the content script
 is concerned, it is accessing the DOM directly. But because it's not, some
 things that you might expect to work, won't. For example, if the page includes
@@ -75,24 +73,56 @@ adds other objects to any DOM nodes, they won't be visible to the content
 script. So to use jQuery you'll typically have to add it as a content script,
 as in [this example](dev-guide/addon-development/content-scripts/reddit-example.html).
 
+### Adding Event Listeners ###
+
+You can listen for DOM events in a content script just as you can in a normal
+page script, but there's one important difference: if you define an event
+listener by passing it as a string into
+[`setAttribute()`](https://developer.mozilla.org/en/DOM/element.setAttribute),
+then the listener is evaluated in the page's context, so it will not have
+access to any variables defined in the content script.
+
+For example, this content script will fail with the error "theMessage is not
+defined":
+
+    var theMessage = "Hello from content script!";
+
+    anElement.setAttribute("onclick", "alert(theMessage);");
+
+So using `setAttribute()` is not recommended. Instead, add a listener by
+assignment to
+[`onclick`](https://developer.mozilla.org/en/DOM/element.onclick) or by using
+[`addEventListener()`](https://developer.mozilla.org/en/DOM/element.addEventListener),
+in either case defining the listener as a function:
+
+    var theMessage = "Hello from content script!";
+
+    anElement.onclick = function() {
+      alert(theMessage);
+    };
+
+    anotherElement.addEventListener("click", function() {
+      alert(theMessage);
+    });
+
+Note that with both `onclick` assignment and `addEventListener()`, you must
+define the listener as a function. It cannot be defined as a string, whether
+in a content script or in a page script.
+
 ### unsafeWindow ###
 
 If you really need direct access to the underlying DOM, you can use the
 global `unsafeWindow` object.
 
-To see the difference, try editing the
-[example in the builder](https://builder.addons.mozilla.org/addon/1013777/revision/4/)
+To see the difference, try editing the example above
 so the content script uses `unsafeWindow.confirm()` instead of
-`window.confirm()` (to edit the example, you'll need to create an account
-with the Add-on Builder and clone the original add-on). Alternatively, try out
-[the example here](https://builder.addons.mozilla.org/addon/1015979/revision/3/).
+`window.confirm()`.
 
 Avoid using `unsafeWindow` if possible: it is the same concept as
 Greasemonkey's unsafeWindow, and the
 [warnings for that](http://wiki.greasespot.net/UnsafeWindow) apply equally
 here. Also, `unsafeWindow` isn't a supported API, so it could be removed or
 changed in a future version of the SDK.
-
 
 ## Access to Other Content Scripts ##
 
@@ -170,6 +200,3 @@ Content scripts can send it messages using `document.defaultView.postMessage()`:
     });
 
     tabs.open(data.url("listener.html"));
-
-You can see this add-on at
-[https://builder.addons.mozilla.org/addon/1013849/revision/8/](https://builder.addons.mozilla.org/addon/1013849/revision/8/).

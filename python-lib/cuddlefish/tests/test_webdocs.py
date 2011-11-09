@@ -9,7 +9,7 @@ class WebDocTests(unittest.TestCase):
         root = os.path.join(os.getcwd() + \
                             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
-        aarvark_package = web_docs.create_package_page('packages/aardvark')
+        aarvark_package = web_docs.create_package_page('aardvark')
         self._test_common_contents(aarvark_package)
         self.assertTrue('<h1>aardvark</h1>'\
             in aarvark_package)
@@ -83,6 +83,8 @@ class WebDocTests(unittest.TestCase):
     def _test_common_contents(self, doc):
         self.assertTrue(\
             '<a href="packages/aardvark/aardvark.html"' in doc)
+        self.assertTrue(\
+            '<a href="packages/anteater_files/anteater.html"' in doc)
         self.assertTrue(\
             '<a href="packages/aardvark/doc/main.html">main</a>' in doc)
 
