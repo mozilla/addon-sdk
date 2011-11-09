@@ -1,7 +1,8 @@
 exports.testBasicHTTPServer = function(test) {
   var port = 8080;
+  var self = require("self");
   var basePath = require("file").dirname( // the directory...
-                   require("url").toFilename(__url__)); // ...this file is in
+                   require("url").toFilename(self.data.url("test-httpd.txt"))); // ...this file is in
   var {startServerAsync} = require("httpd")
 
   var srv = startServerAsync(port, basePath);
@@ -11,10 +12,9 @@ exports.testBasicHTTPServer = function(test) {
   // Request this very file.
   var Request = require('request').Request;
   Request({
-    url: "http://localhost:" + port + "/test-httpd.js",
+    url: "http://localhost:" + port + "/test-httpd.txt",
     onComplete: function (response) {
-      test.assertEqual(response.text.indexOf(
-        "exports.testBasicHTTPServer = function(test) {"), 0);
+      test.assertEqual(response.text, "This is the HTTPD test file.");
       done();
     }
   }).get();
