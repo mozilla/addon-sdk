@@ -40,6 +40,16 @@
 const BaseAssert = require("./test/assert").Assert;
 const { isFunction, isObject } = require("./type");
 
+function extend(target) {
+  let descriptor = {}
+  Array.slice(arguments, 1).forEach(function(source) {
+    Object.getOwnPropertyNames(source).forEach(function onEach(name) {
+      descriptor[name] = Object.getOwnPropertyDescriptor(source, name);
+    });
+  });
+  return Object.create(target, descriptor);
+}
+
 /**
  * Function takes test `suite` object in CommonJS format and defines all of the
  * tests from that suite and nested suites in a jetpack format on a given
@@ -96,7 +106,9 @@ function defineTestSuite(target, suite, prefix) {
       // and / or nested test suites. In that case we just extend prefix used
       // and call this function to copy and wrap tests from nested suite.
       else if (isObject(test)) {
-        test.Assert = test.Assert || Assert;
+        test = extend(Object.prototype, test, {
+          Assert: test.Assert || Assert
+        });
         defineTestSuite(target, test, prefix + key + ".");
       }
     }
