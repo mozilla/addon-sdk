@@ -60,6 +60,36 @@ class Bug588119Tests(unittest.TestCase):
         self.makexpi('implicit-icon')
         assert 'icon64' not in self.xpi_harness_options
 
+class ExtraHarnessOptions(unittest.TestCase):
+    def setUp(self):
+        self.xpiname = None
+        self.xpi = None
+
+    def tearDown(self):
+        if self.xpi:
+            self.xpi.close()
+        if self.xpiname and os.path.exists(self.xpiname):
+            os.remove(self.xpiname)
+
+    def testOptions(self):
+        pkg_name = "extra-options"
+        self.xpiname = "%s.xpi" % pkg_name
+        create_xpi(self.xpiname, pkg_name, "bug-669274-files",
+                   extra_harness_options={"builderVersion": "futuristic"})
+        self.xpi = zipfile.ZipFile(self.xpiname, 'r')
+        options = self.xpi.read('harness-options.json')
+        hopts = json.loads(options)
+        self.failUnless("builderVersion" in hopts)
+        self.failUnlessEqual(hopts["builderVersion"], "futuristic")
+
+    def testBadOptionName(self):
+        pkg_name = "extra-options"
+        self.xpiname = "%s.xpi" % pkg_name
+        self.failUnlessRaises(xpi.HarnessOptionAlreadyDefinedError,
+                              create_xpi,
+                              self.xpiname, pkg_name, "bug-669274-files",
+                              extra_harness_options={"main": "already in use"})
+
 class SmallXPI(unittest.TestCase):
     def setUp(self):
         self.root = up(os.path.abspath(__file__), 4)
@@ -208,14 +238,16 @@ def document_dir_files(path):
         print "%s:" % filename
         print "  %s" % contents
 
-def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files'):
+def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files',
+               extra_harness_options={}):
     configs = test_packaging.get_configs(pkg_name, dirname)
     options = {'main': configs.target_cfg.main}
     options.update(configs.build)
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,
                   xpi_path=xpiname,
-                  harness_options=options)
+                  harness_options=options,
+                  extra_harness_options=extra_harness_options)
 
 if __name__ == '__main__':
     unittest.main()
