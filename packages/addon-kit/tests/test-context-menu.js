@@ -922,7 +922,7 @@ exports.testMenuClick = function (test) {
   // Create a top-level menu, submenu, and item, like this:
   // topMenu -> submenu -> item
   // Click the item and make sure the click bubbles.
-  let test = new TestHelper(test);
+  test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({

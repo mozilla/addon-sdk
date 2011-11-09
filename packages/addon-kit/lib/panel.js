@@ -332,6 +332,8 @@ const Panel = Symbiont.resolve({
     } catch(e) {
       this._emit('error', e);
     }
+
+    return undefined;
   },
   /**
    * Notification that panel was fully initialized.

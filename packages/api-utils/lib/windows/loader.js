@@ -116,7 +116,7 @@ const WindowLoader = Trait.compose({
     else { // If window is loaded calling listener next turn of event loop.
       this._onLoad(window)
     }
-    return window;
+    return;
   },
   __window: null,
   /**
