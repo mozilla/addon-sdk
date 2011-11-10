@@ -567,8 +567,7 @@ exports.URLContext = apiUtils.publicConstructor(URLContext);
 
 // Returns a version of opt validated against the given rule.
 function validateOpt(opt, rule) {
-  let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
-  return opt;
+  return apiUtils.validateOptions({ opt: opt }, { opt: rule }).opt;
 }
 
 // Returns rules for apiUtils.validateOptions() common to Item and Menu.
