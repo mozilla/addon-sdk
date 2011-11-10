@@ -1,8 +1,8 @@
 exports.testBasicHTTPServer = function(test) {
   var port = 8080;
-  var self = require("self");
-  var basePath = require("file").dirname( // the directory...
-                   require("url").toFilename(self.data.url("test-httpd.txt"))); // ...this file is in
+  var data = require("self").data;
+  var testFilePath = require("url").toFilename(data.url("test-httpd.txt"));
+  var basePath = require("file").dirname(testFilePath);
   var {startServerAsync} = require("httpd")
 
   var srv = startServerAsync(port, basePath);
