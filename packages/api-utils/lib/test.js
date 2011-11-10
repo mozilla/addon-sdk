@@ -106,6 +106,8 @@ function defineTestSuite(target, suite, prefix) {
       // and / or nested test suites. In that case we just extend prefix used
       // and call this function to copy and wrap tests from nested suite.
       else if (isObject(test)) {
+        // We need to clone `tests` instead of modifying it, since it's very
+        // likely that it is frozen (usually test suites imported modules).
         test = extend(Object.prototype, test, {
           Assert: test.Assert || Assert
         });

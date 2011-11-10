@@ -89,34 +89,35 @@ const WindowLoader = Trait.compose({
   set _window(window) {
     let _window = this.__window;
     if (!window) window = null;
-    if (window == _window) return;
-    if (_window) {
-      _window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
-      _window.removeEventListener(ON_LOAD, this.__loadListener, false);
+    if (window !== _window) {
+      if (_window) {
+        _window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
+        _window.removeEventListener(ON_LOAD, this.__loadListener, false);
+      }
+      if (window) {
+        window.addEventListener(
+          ON_UNLOAD,
+          this.__unloadListener ||
+            (this.__unloadListener = this._unloadListener.bind(this))
+          ,
+          false
+        );
+        this.__window = window;
+        // If window is not loaded yet setting up a listener.
+        if (STATE_LOADED != window.document.readyState) {
+          window.addEventListener(
+            ON_LOAD,
+            this.__loadListener ||
+              (this.__loadListener = this._loadListener.bind(this))
+            ,
+            false
+          );
+        }
+        else { // If window is loaded calling listener next turn of event loop.
+          this._onLoad(window)
+        }
+      }
     }
-    if (!window) return;
-    window.addEventListener(
-      ON_UNLOAD,
-      this.__unloadListener ||
-        (this.__unloadListener = this._unloadListener.bind(this))
-      ,
-      false
-    );
-    this.__window = window;
-    // If window is not loaded yet setting up a listener.
-    if (STATE_LOADED != window.document.readyState) {
-      window.addEventListener(
-        ON_LOAD,
-        this.__loadListener ||
-          (this.__loadListener = this._loadListener.bind(this))
-        ,
-        false
-      );
-    }
-    else { // If window is loaded calling listener next turn of event loop.
-      this._onLoad(window)
-    }
-    return;
   },
   __window: null,
   /**
