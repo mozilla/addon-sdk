@@ -14,7 +14,7 @@ exports.testBasicHTTPServer = function(test) {
   Request({
     url: "http://localhost:" + port + "/test-httpd.txt",
     onComplete: function (response) {
-      test.assertEqual(response.text, "This is the HTTPD test file.");
+      test.assertEqual(response.text, "This is the HTTPD test file.\n");
       done();
     }
   }).get();
