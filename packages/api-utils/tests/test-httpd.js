@@ -3,7 +3,7 @@ exports.testBasicHTTPServer = function(test) {
   var data = require("self").data;
   var testFilePath = require("url").toFilename(data.url("test-httpd.txt"));
   var basePath = require("file").dirname(testFilePath);
-  var {startServerAsync} = require("httpd")
+  var {startServerAsync} = require("httpd;
 
   var srv = startServerAsync(port, basePath);
 
