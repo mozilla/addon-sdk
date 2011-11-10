@@ -217,12 +217,13 @@ function createHiddenXULFrame() {
   return function promise(deliver) {
     let window = appShellService.hiddenDOMWindow;
     let document = window.document;
+    let isXMLDoc = (document.contentType == "application/xhtml+xml" ||
+                    document.contentType == "application/vnd.mozilla.xul+xml")
 
-    if (document.contentType == "application/vnd.mozilla.xul+xml" ||
-        document.contentType == "application/xhtml+xml")
-    {
+    if (isXMLDoc) {
       deliver(window)
-    } else {
+    }
+    else {
       let frame = document.createElement('iframe');
       // This is ugly but we need window for XUL document in order to create
       // browser elements.
