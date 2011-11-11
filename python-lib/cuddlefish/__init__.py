@@ -487,7 +487,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             docs_home = generate.generate_docs(env_root, filename=args[1])
         else:
             docs_home = generate.generate_docs(env_root)
-        webbrowser.open(docs_home)
+            webbrowser.open(docs_home)
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate

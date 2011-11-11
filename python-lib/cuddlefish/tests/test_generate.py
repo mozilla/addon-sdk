@@ -38,7 +38,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         os.utime(os.path.join(test_root, "packages", "aardvark", "lib", "main.js"), None)
         self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching a non MD file under static-files **does not** cause a regenerate
-        os.utime(os.path.join(docs_root, "static-files", "base.html"), None)
+        os.utime(os.path.join(docs_root, "static-files", "another.html"), None)
         new_digest = self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching an MD file under dev-guide **does** cause a regenerate
         os.utime(os.path.join(docs_root, "dev-guide-source", "welcome.md"), None)
