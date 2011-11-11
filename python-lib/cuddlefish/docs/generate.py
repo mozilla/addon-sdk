@@ -107,6 +107,9 @@ def calculate_current_status(env_root):
             if filename.endswith(".md"):
                 current_status.update(filename)
                 current_status.update(str(os.path.getmtime(os.path.join(dirpath, filename))))
+    base_html_file = os.path.join(env_root, DOCS_DIR, "static-files", "base.html")
+    current_status.update(base_html_file)
+    current_status.update(str(os.path.getmtime(os.path.join(dirpath, base_html_file))))
     return current_status.digest()
 
 def generate_docs_from_scratch(env_root, base_url, docs_dir):
