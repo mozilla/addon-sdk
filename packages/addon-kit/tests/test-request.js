@@ -126,40 +126,6 @@ exports.testStatus_404 = function (test) {
   }
 }
 
-/*
-exports.testSimpleXML = function (test) {
-  test.waitUntilDone();
-  Request({
-    // File originally available at http://www.w3schools.com/xml/note.xml
-    url: "http://playground.zpao.com/jetpack/request/note.xml",
-    onComplete: function (response) {
-      // response.xml should be a document, so lets use it
-      test.assertRaises(function() { response.xml },
-                        "Sorry, the 'xml' property is no longer available. " +
-                        "see bug 611042 for more information.");
-      test.done();
-      return;
-      let xml = response.xml;
-      let notes = xml.getElementsByTagName("note");
-      // Notes should have length of 1
-      test.assertEqual(notes.length, 1, "Should be 1 <note> in the XML");
-      let note = notes[0];
-
-      // Silly whitespace text nodes...
-      let text = note.childNodes[0];
-      test.assertEqual(note.childNodes[0].nodeName, "#text");
-
-      // Just test the next real node
-      let to = note.childNodes[1];
-      test.assertEqual(to.nodeName, "to");
-      test.assertEqual(to.textContent, "Tove");
-      test.assertEqual(to.childNodes[0].nodeValue, "Tove");
-      test.done();
-    }
-  }).get();
-}
-*/
-
 // a simple file with known contents
 exports.testSimpleText = function (test) {
   var srv = startServerAsync(port, basePath);
