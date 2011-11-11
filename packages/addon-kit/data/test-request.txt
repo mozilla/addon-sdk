@@ -1,0 +1,2 @@
+Please don't delete this file as it is needed for 
+the bundled webserver to locate the data/ directory. :)

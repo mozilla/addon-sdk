@@ -37,6 +37,13 @@
 
 const Request = require("request").Request;
 
+var port = 8080;
+var data = require("self").data;
+var testFilePath = require("url").toFilename(data.url("test-request.txt"));
+var basePath = require("file").dirname(testFilePath);
+
+var {startServerAsync} = require("httpd");
+
 exports.testOptionsValidator = function(test) {
   // First, a simple test to make sure we didn't break normal functionality.
   test.assertRaises(function () {
@@ -75,35 +82,51 @@ exports.testContentValidator = function(test) {
 // When we have the means, these tests will be converted so that they don't
 // require an external server nor a network connection.
 
-/*
 // This is request to a file that exists
 exports.testStatus_200 = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   var req = Request({
-    url: "http://playground.zpao.com/jetpack/request/text.php",
+    url: "http://localhost:" + port + "/test-request.txt",
     onComplete: function (response) {
       test.assertEqual(this, req, "`this` should be request");
       test.assertEqual(response.status, 200);
       test.assertEqual(response.statusText, "OK");
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
 // This tries to get a file that doesn't exist
 exports.testStatus_404 = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   Request({
     // the following URL doesn't exist
-    url: "http://playground.zpao.com/jetpack/request/nonexistent.php",
+    url: "http://localhost:" + port + "/test-request-404.txt",
     onComplete: function (response) {
       test.assertEqual(response.status, 404);
       test.assertEqual(response.statusText, "Not Found");
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
+/*
 exports.testSimpleXML = function (test) {
   test.waitUntilDone();
   Request({
@@ -135,19 +158,29 @@ exports.testSimpleXML = function (test) {
     }
   }).get();
 }
+*/
 
 // a simple file with known contents
 exports.testSimpleText = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/text.php",
+    url: "http://localhost:" + port + "/test-requestText.php",
     onComplete: function (response) {
       test.assertEqual(response.text, "Look ma, no hands!\n");
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
+/*
 // a simple file with a known header
 exports.testKnownHeader = function (test) {
   test.waitUntilDone();
@@ -178,40 +211,67 @@ exports.testKnownHeader = function (test) {
     }
   }).get();
 }
+*/
 
 exports.testContentTypeHeader = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/text.txt",
+    url: "http://localhost:" + port + "/test-request.txt",
     onComplete: function (response) {
       test.assertEqual(response.headers["Content-Type"], "text/plain");
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
+
 exports.testSimpleJSON = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/json.php",
+    url: "http://localhost:" + port + "/test-requestJSON.php",
     onComplete: function (response) {
       assertDeepEqual(test, response.json, { foo: "bar" });
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
 exports.testInvalidJSON = function (test) {
+  var srv = startServerAsync(port, basePath);
+  
   test.waitUntilDone();
   Request({
     url: "http://playground.zpao.com/jetpack/request/invalid_json.php",
     onComplete: function (response) {
       test.assertEqual(response.json, null);
-      test.done();
+      done();
     }
   }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
 }
 
+/*
 exports.testGetWithParamsNotContent = function (test) {
   test.waitUntilDone();
   Request({
