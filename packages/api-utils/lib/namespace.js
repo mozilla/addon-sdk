@@ -38,12 +38,12 @@
 
 /**
  * Function creates a new namespace. Optionally `prototype` object may be
- * passed in which case namespace objects will inherit form it. Returned value
+ * passed, in which case namespace objects will inherit from it. Returned value
  * is a function that can be used to get access to the namespaced properties
  * for the passed object.
  * @examples
- *    const privates = Namespace();
- *    privates(myObject).secret = secret;
+ *    const ns = Namespace();
+ *    ns(myObject).secret = secret;
  */
 exports.Namespace = function Namespace(prototype) {
   prototype = prototype || Object.prototype;

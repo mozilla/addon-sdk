@@ -29,7 +29,7 @@ exports["test namespace overlays"] = function(assert) {
 
   object.foo = "baz";
   assert.equal(_(object).foo, "bar",
-               "property changes do not affect namsepaced properties");
+               "property changes do not affect namespaced properties");
 
   object.bar = "foo";
   assert.ok(!("bar" in _(object)),
@@ -64,7 +64,7 @@ exports["test multi namespace"] = function(assert) {
   assert.notEqual(n1(object).foo, n2(object).foo,
                   "object can have multiple namespaces");
   assert.equal(n1(object).bar, n2(object).bar,
-               "object can have matiching props in diff namespaces");
+               "object can have matching props in diff namespaces");
 };
 
 require("test").run(exports);
