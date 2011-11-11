@@ -216,7 +216,7 @@ const Loader = {
     let requirement = manifest && manifest.requirements[id];
     if (!requirement)
         throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
-                    base + " has no athority to load: " + id);
+                    base + " has no authority to load: " + id);
     let uri = requirement.uri;
 
     if (uri in this.modules) {
