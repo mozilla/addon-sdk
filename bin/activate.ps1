@@ -13,7 +13,7 @@ function global:deactivate($nondestructive) {
     }
 
     if (Test-Path Env:_OLD_PYTHONPATH) {
-        if ($Env:_OLD_PYTHON_PATH -ne 'REMOVE') {
+        if ($Env:_OLD_PYTHONPATH -ne 'NONE') {
             $Env:PYTHONPATH = $Env:_OLD_PYTHONPATH;
         }
         else {
@@ -37,7 +37,7 @@ function global:deactivate($nondestructive) {
 
 deactivate $True;
 
-$Env:_OLD_PYTHONPATH = if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'REMOVE' };
+$Env:_OLD_PYTHONPATH = if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'NONE' };
 $Env:_OLD_VIRTUAL_PATH = $Env:PATH;
 
 $Env:VIRTUAL_ENV = (Get-Location);
