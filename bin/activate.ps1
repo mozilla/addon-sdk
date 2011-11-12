@@ -1,95 +1,70 @@
-$Env:VIRTUAL_ENV = (gl);
-$Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
+# This is a translation of `activate` with the addition of putting 
+# the latest 2.x Python version on the Path.
 
-# http://stackoverflow.com/questions/5648931/powershell-test-if-registry-value-exists/5652674#5652674
-Function Test-RegistryValue {
-    param(
-        [Alias("PSPath")]
-        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-        [String]$Path
-        ,
-        [Parameter(Position = 1, Mandatory = $true)]
-        [String]$Name
-        ,
-        [Switch]$PassThru
-    ) 
+function global:deactivate($nondestructive) {
+    if (Test-Path Env:_OLD_VIRTUAL_PATH) {
+        $Env:Path = $Env:_OLD_VIRTUAL_PATH;
+        Remove-Item Env:_OLD_VIRTUAL_PATH;
+    }
 
-    process {
-        if (Test-Path $Path) {
-            $Key = Get-Item -LiteralPath $Path
-            if ($Key.GetValue($Name, $null) -ne $null) {
-                if ($PassThru) {
-                    Get-ItemProperty $Path $Name
-                } else {
-                    $true
-                }
-            } else {
-                $false
-            }
-        } else {
-            $false
+    if (Test-Path Function:_OLD_VIRTUAL_PROMPT) {
+        Set-Content Function:Prompt (Get-Content Function:_OLD_VIRTUAL_PROMPT);
+        Remove-Item Function:_OLD_VIRTUAL_PROMPT;
+    }
+
+    if (Test-Path Env:_OLD_PYTHONPATH) {
+        if ($Env:_OLD_PYTHON_PATH -ne 'REMOVE') {
+            $Env:PYTHONPATH = $Env:_OLD_PYTHONPATH;
         }
+        else {
+            Remove-Item Env:PYTHONPATH;
+        }
+        Remove-Item Env:_OLD_PYTHONPATH;
+    }
+
+    if (Test-Path Env:CUDDLEFISH_ROOT) {
+        Remove-Item Env:CUDDLEFISH_ROOT;
+    }
+
+    if (Test-Path Env:VIRTUAL_ENV) {
+        Remove-Item Env:VIRTUAL_ENV;
+    }
+
+    if (-not $nondestructive) {
+        Remove-Item Function:deactivate;
     }
 }
 
-$WINCURVERKEY = 'HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion';
-$WIN64 = (Test-RegistryValue $WINCURVERKEY 'ProgramFilesDir (x86)');
+deactivate $True;
 
-if($WIN64) { 
-    $PYTHONKEY='HKLM:SOFTWARE\Wow6432Node\Python\PythonCore';
-}
-else {
-    $PYTHONKEY='HKLM:SOFTWARE\Python\PythonCore';
-}
+$Env:_OLD_PYTHONPATH = if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'REMOVE' };
+$Env:_OLD_VIRTUAL_PATH = $Env:PATH;
 
-$Env:PYTHONVERSION = '';
-$Env:PYTHONINSTALL = '';
+$Env:VIRTUAL_ENV = (Get-Location);
+$Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
+$Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
+$Env:PATH = "$Env:VIRTUAL_ENV\bin;$Env:PATH";
 
-foreach ($version in @('2.6', '2.5', '2.4')) {
-    if (Test-RegistryValue "$PYTHONKEY\$version\InstallPath" '(default)') { 
-        $Env:PYTHONVERSION = $version;
-    }
-}
+$PyRegKey = (
+    @('HKCU:SOFTWARE\Python\PythonCore',
+    'HKLM:SOFTWARE\Python\PythonCore',
+    'HKLM:SOFTWARE\Wow6432Node\Python\PythonCore',
+    'HKCU:SOFTWARE\Wow6432Node\Python\PythonCore') |
+    Where-Object { Test-Path $_ } |
+    ForEach-Object {(
+        Get-ChildItem $_ |
+        Where-Object { $_.PSChildName -LIKE '2.*' } |
+        Sort-Object -Property Name |
+        Select-Object -Last 1 )} |
+    Select-Object -First 1 )
 
-if ($Env:PYTHONVERSION) { 
-    $Env:PYTHONINSTALL = (Get-Item "$PYTHONKEY\$version\InstallPath)").'(default)';
-}
+$PyInstallPath = $PyRegKey.OpenSubKey('InstallPath', $False).GetValue('')
+$Env:Path="$PyInstallPath;$Env:Path"
 
-if ($Env:PYTHONINSTALL) { 
-    $Env:Path += ";$Env:PYTHONINSTALL";
-}
-
-if (Test-Path Env:_OLD_PYTHONPATH) { 
-    $Env:PYTHONPATH = $Env:_OLD_PYTHONPATH;
-}
-else {
-    $Env:PYTHONPATH = '';
-}
-
-$Env:_OLD_PYTHONPATH=$Env:PYTHONPATH;
-$Env:PYTHONPATH= "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
-
-if (Test-Path Function:_OLD_VIRTUAL_PROMPT) {
-    Set-Content Function:Prompt (Get-Content Function:_OLD_VIRTUAL_PROMPT);
-}
-else {
-    function global:_OLD_VIRTUAL_PROMPT {}
-}
-
+function global:_OLD_VIRTUAL_PROMPT {};
 Set-Content Function:_OLD_VIRTUAL_PROMPT (Get-Content Function:Prompt);
+Set-Content Function:prompt { "($Env:VIRTUAL_ENV) $(_OLD_VIRTUAL_PROMPT)"; };
 
-function global:prompt { "($Env:VIRTUAL_ENV) $(_OLD_VIRTUAL_PROMPT)"; };
-
-if (Test-Path Env:_OLD_VIRTUAL_PATH) {
-    $Env:PATH = $Env:_OLD_VIRTUAL_PATH;
-}
-else {
-    $Env:_OLD_VIRTUAL_PATH = $Env:PATH;
-}
-
-$Env:Path="$Env:VIRTUAL_ENV\bin;$Env:Path"
-
-[System.Console]::WriteLine("Note: this PowerShell SDK activation script is experimental.")
+"Note: this PowerShell SDK activation script is experimental."
 
 python -c "from jetpack_sdk_env import welcome; welcome()"
-
