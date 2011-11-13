@@ -1,6 +1,8 @@
 # This is a translation of `activate` with the addition of putting
 # the latest 2.x Python version (>=PYTHON_MIN_VERSION) on the Path.
 
+"Note: this PowerShell SDK activation script is experimental."
+
 $PYTHON_MIN_VERSION = [decimal]2.5
 
 function global:deactivate($nondestructive) {
@@ -83,7 +85,5 @@ $Env:Path="$PyInstallPath;$Env:Path"
 function global:_OLD_VIRTUAL_PROMPT {};
 Set-Content Function:_OLD_VIRTUAL_PROMPT (Get-Content Function:Prompt);
 Set-Content Function:prompt { "($Env:VIRTUAL_ENV) $(_OLD_VIRTUAL_PROMPT)"; };
-
-"Note: this PowerShell SDK activation script is experimental."
 
 python -c "from jetpack_sdk_env import welcome; welcome()"
