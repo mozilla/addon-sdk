@@ -1,5 +1,7 @@
 # This is a translation of `activate` with the addition of putting 
-# the latest 2.x Python version on the Path.
+# the latest 2.x Python version (>=PYTHON_MIN_VERSION) on the Path.
+
+$PYTHON_MIN_VERSION = [decimal]2.5
 
 function global:deactivate($nondestructive) {
     if (Test-Path Env:_OLD_VIRTUAL_PATH) {
@@ -37,8 +39,11 @@ function global:deactivate($nondestructive) {
 
 deactivate $True;
 
-$Env:_OLD_PYTHONPATH = (
-    if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'NONE' });
+if (Test-Path Env:PYTHONPATH) { 
+    $Env:_OLD_PYTHONPATH = $Env:PYTHONPATH 
+} else { 
+    $Env:_OLD_PYTHONPATH = 'NONE' 
+};
 $Env:_OLD_VIRTUAL_PATH = $Env:PATH;
 
 $Env:VIRTUAL_ENV = (Get-Location);
@@ -47,19 +52,27 @@ $Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
 $Env:PATH = "$Env:VIRTUAL_ENV\bin;$Env:PATH";
 
 $PyRegKey = (
-    @('HKCU:SOFTWARE\Python\PythonCore',
-    'HKLM:SOFTWARE\Python\PythonCore',
-    'HKLM:SOFTWARE\Wow6432Node\Python\PythonCore',
-    'HKCU:SOFTWARE\Wow6432Node\Python\PythonCore') |
+    @('HKCU:SOFTWARE\Python\PythonCore\*\InstallPath',
+    'HKLM:SOFTWARE\Python\PythonCore\*\InstallPath',
+    'HKLM:SOFTWARE\Wow6432Node\Python\PythonCore\*\InstallPath',
+    'HKCU:SOFTWARE\Wow6432Node\Python\PythonCore\*\InstallPath') |
     Where-Object { Test-Path $_ } |
-    ForEach-Object {(
+    ForEach-Object {
         Get-ChildItem $_ |
-        Where-Object { $_.PSChildName -LIKE '2.*' } |
-        Sort-Object -Property Name |
-        Select-Object -Last 1 )} |
-    Select-Object -First 1 );
+        Add-Member -MemberType ScriptProperty `
+            -Name ParentName -Value {Split-Path -Leaf $this.PSParentPath} `
+            -PassThru |
+        Where-Object { $_.ParentName -match '2\.\d+$' } |
+        Add-Member -MemberType ScriptProperty `
+            -Name Version -Value {[decimal]$this.ParentName} -PassThru |
+        Where-Object { $_.Version -ge $PYTHON_MIN_VERSION }
+        Sort-Object Version |
+        Select-Object -Last 1 
+        } |
+    Sort-Object Version |
+    Select-Object -Last 1 );
 
-$PyInstallPath = $PyRegKey.OpenSubKey('InstallPath', $False).GetValue('');
+$PyInstallPath = $PyRegKey.GetValue('');
 $Env:Path="$PyInstallPath;$Env:Path"
 
 function global:_OLD_VIRTUAL_PROMPT {};
