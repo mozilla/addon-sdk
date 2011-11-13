@@ -37,7 +37,8 @@ function global:deactivate($nondestructive) {
 
 deactivate $True;
 
-$Env:_OLD_PYTHONPATH = if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'NONE' };
+$Env:_OLD_PYTHONPATH = (
+    if (Test-Path Env:PYTHONPATH) { $Env:PYTHONPATH } else { 'NONE' });
 $Env:_OLD_VIRTUAL_PATH = $Env:PATH;
 
 $Env:VIRTUAL_ENV = (Get-Location);
@@ -56,9 +57,9 @@ $PyRegKey = (
         Where-Object { $_.PSChildName -LIKE '2.*' } |
         Sort-Object -Property Name |
         Select-Object -Last 1 )} |
-    Select-Object -First 1 )
+    Select-Object -First 1 );
 
-$PyInstallPath = $PyRegKey.OpenSubKey('InstallPath', $False).GetValue('')
+$PyInstallPath = $PyRegKey.OpenSubKey('InstallPath', $False).GetValue('');
 $Env:Path="$PyInstallPath;$Env:Path"
 
 function global:_OLD_VIRTUAL_PROMPT {};
