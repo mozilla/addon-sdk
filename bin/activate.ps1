@@ -1,4 +1,4 @@
-# This is a translation of `activate` with the addition of putting 
+# This is a translation of `activate` with the addition of putting
 # the latest 2.x Python version (>=PYTHON_MIN_VERSION) on the Path.
 
 $PYTHON_MIN_VERSION = [decimal]2.5
@@ -39,10 +39,10 @@ function global:deactivate($nondestructive) {
 
 deactivate $True;
 
-if (Test-Path Env:PYTHONPATH) { 
-    $Env:_OLD_PYTHONPATH = $Env:PYTHONPATH 
-} else { 
-    $Env:_OLD_PYTHONPATH = 'NONE' 
+if (Test-Path Env:PYTHONPATH) {
+    $Env:_OLD_PYTHONPATH = $Env:PYTHONPATH
+} else {
+    $Env:_OLD_PYTHONPATH = 'NONE'
 };
 $Env:_OLD_VIRTUAL_PATH = $Env:PATH;
 
@@ -51,7 +51,7 @@ $Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
 $Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
 $Env:PATH = "$Env:VIRTUAL_ENV\bin;$Env:PATH";
 
-$PyRegKey = (
+$PyInstallPathKey = (
     @('HKCU:SOFTWARE\Python\PythonCore\*\InstallPath',
     'HKLM:SOFTWARE\Python\PythonCore\*\InstallPath',
     'HKLM:SOFTWARE\Wow6432Node\Python\PythonCore\*\InstallPath',
@@ -67,7 +67,7 @@ $PyRegKey = (
             -Name Version -Value {[decimal]$this.ParentName} -PassThru |
         Where-Object { $_.Version -ge $PYTHON_MIN_VERSION }
         Sort-Object Version |
-        Select-Object -Last 1 
+        Select-Object -Last 1
         } |
     Sort-Object Version |
     Select-Object -Last 1 );
@@ -77,7 +77,7 @@ if (!$PyRegKey) {
     return
 }
 
-$PyInstallPath = $PyRegKey.GetValue('');
+$PyInstallPath = $PyInstallPathKey.GetValue('');
 $Env:Path="$PyInstallPath;$Env:Path"
 
 function global:_OLD_VIRTUAL_PROMPT {};
