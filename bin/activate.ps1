@@ -72,6 +72,11 @@ $PyRegKey = (
     Sort-Object Version |
     Select-Object -Last 1 );
 
+if (!$PyRegKey) {
+    "Error: A recent version of Python 2.x must be installed.";
+    return
+}
+
 $PyInstallPath = $PyRegKey.GetValue('');
 $Env:Path="$PyInstallPath;$Env:Path"
 
