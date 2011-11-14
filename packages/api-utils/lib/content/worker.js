@@ -526,12 +526,14 @@ const Worker = AsyncEventEmitter.compose({
   },
 
   get url() {
-    return this._window.document.location.href;
+    // this._window will be null after detach
+    return this._window ? this._window.document.location.href : null;
   },
   
   get tab() {
     let tab = require("../tabs/tab");
-    return tab.getTabForWindow(this._window);
+    // this._window will be null after detach
+    return this._window ? tab.getTabForWindow(this._window) : null;
   },
   
   /**
