@@ -255,9 +255,6 @@ exports.Options = Options;
 
 
 exports.getTabForWindow = function (win) {
-  if (!win) {
-    return null;
-  }
   // Get browser window
   let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIWebNavigation)
