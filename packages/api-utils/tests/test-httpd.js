@@ -22,7 +22,6 @@ exports.testBasicHTTPServer = function(test) {
 
   function done() {
     srv.stop(function() {
-      test.pass();
       test.done();
     });
   }
