@@ -573,9 +573,12 @@ const Worker = AsyncEventEmitter.compose({
   },
   
   get tab() {
-    let tab = require("../tabs/tab");
-    // this._window will be null after detach
-    return this._window ? tab.getTabForWindow(this._window) : null;
+    if (this._window) {
+      let tab = require("../tabs/tab");
+      // this._window will be null after detach
+      return tab.getTabForWindow(this._window);
+    }
+    return null;
   },
   
   /**
