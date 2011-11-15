@@ -1,7 +1,7 @@
 
 import os
 import unittest
-from cuddlefish.apiparser import parse_hunks, ParseError
+from cuddlefish.docs.apiparser import parse_hunks, ParseError
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
 static_files_path = os.path.join(tests_path, "static-files")

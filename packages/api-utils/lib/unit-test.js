@@ -42,7 +42,6 @@ var timer = require("./timer");
 exports.findAndRunTests = function findAndRunTests(options) {
   var TestFinder = require("./unit-test-finder").TestFinder;
   var finder = new TestFinder({
-    dirs: options.dirs,
     filter: options.filter,
     testInProcess: options.testInProcess,
     testOutOfProcess: options.testOutOfProcess
@@ -59,10 +58,12 @@ var TestRunner = exports.TestRunner = function TestRunner(options) {
   if (options) {
     this.fs = options.fs;
   }
+  this.console = (options && "console" in options) ? options.console : console;
   memory.track(this);
   this.passed = 0;
   this.failed = 0;
   this.testRunSummary = [];
+  this.expectFailNesting = 0;
 };
 
 TestRunner.prototype = {
@@ -74,53 +75,46 @@ TestRunner.prototype = {
   _logTestFailed: function _logTestFailed(why) {
     this.test.errors[why]++;
     if (!this.testFailureLogged) {
-      console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
+      this.console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
       this.testFailureLogged = true;
     }
   },
 
-  makeSandboxedLoader: function makeSandboxedLoader(options) {
-    if (!this.fs)
-      console.error("Hey, either you didn't pass .fs when building the" +
-                    " TestRunner, or you used 'new' when calling" +
-                    " test.makeSandboxedLoader. Don't do that.");
-
-    if (!options)
-      options = {console: console};
-    options.fs = this.fs;
-
-    var Cuddlefish = require("./cuddlefish");
-
-    if ("moduleOverrides" in options) {
-      var moduleOverrides = options.moduleOverrides;
-      delete options.moduleOverrides;
-      options.getModuleExports = function getModuleExports(basePath, module) {
-        if (module in moduleOverrides)
-          return moduleOverrides[module];
-        return null;
-      }
-    }
-
-    return new Cuddlefish.Loader(options);
-  },
-
   pass: function pass(message) {
-    console.info("pass:", message);
-    this.passed++;
-    this.test.passed++;
+    if(!this.expectFailure) {
+      this.console.info("pass:", message);
+      this.passed++;
+      this.test.passed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.fail('Failure Expected: ' + message);
+    }
   },
 
   fail: function fail(message) {
-    this._logTestFailed("failure");
-    console.error("fail:", message);
-    console.trace();
-    this.failed++;
-    this.test.failed++;
+    if(!this.expectFailure) {
+      this._logTestFailed("failure");
+      this.console.error("fail:", message);
+      this.console.trace();
+      this.failed++;
+      this.test.failed++;
+    }
+    else {
+      this.expectFailure = false;
+      this.pass(message);
+    }
+  },
+
+  expectFail: function(callback) {
+    this.expectFailure = true;
+    callback();
+    this.expectFailure = false;
   },
 
   exception: function exception(e) {
     this._logTestFailed("exception");
-    console.exception(e);
+    this.console.exception(e);
     this.failed++;
     this.test.failed++;
   },
@@ -229,9 +223,48 @@ TestRunner.prototype = {
     }
   },
 
+  assertFunction: function assertFunction(a, message) {
+    this.assertStrictEqual('function', typeof a, message);
+  },
+
+  assertUndefined: function(a, message) {
+    this.assertStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNotUndefined: function(a, message) {
+    this.assertNotStrictEqual('undefined', typeof a, message);
+  },
+
+  assertNull: function(a, message) {
+    this.assertStrictEqual(null, a, message);
+  },
+
+  assertNotNull: function(a, message) {
+    this.assertNotStrictEqual(null, a, message);
+  },
+
+  assertObject: function(a, message) {
+    this.assertStrictEqual('[object Object]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertString: function(a, message) {
+    this.assertStrictEqual('[object String]', Object.prototype.toString.apply(a), message);
+  },
+
+  assertArray: function(a, message) {
+    this.assertStrictEqual('[object Array]', Object.prototype.toString.apply(a), message);
+  },
+  
+  assertNumber: function(a, message) {
+    this.assertStrictEqual('[object Number]', Object.prototype.toString.apply(a), message);                
+  },
+
   done: function done() {
     if (!this.isDone) {
       this.isDone = true;
+      if(this.test.teardown) {
+        this.test.teardown(this);
+      }
       if (this.waitTimeout !== null) {
         timer.clearTimeout(this.waitTimeout);
         this.waitTimeout = null;
@@ -289,31 +322,49 @@ TestRunner.prototype = {
   _waitUntil: function waitUntil(assertionMethod, args) {
     let count = 0;
     let maxCount = this.DEFAULT_PAUSE_TIMEOUT / this.PAUSE_DELAY;
-    
+
+    // We need to ensure that test is asynchronous
+    if (!this.waitTimeout)
+      this.waitUntilDone(this.DEFAULT_PAUSE_TIMEOUT);
+
     let callback = null;
     let finished = false;
     
     let test = this;
-    function loop() {
+
+    // capture a traceback before we go async.
+    let traceback = require("./traceback");
+    let stack = traceback.get();
+    stack.splice(-2, 2);
+    let currentWaitStack = traceback.format(stack);
+    let timeout = null;
+
+    function loop(stopIt) {
+      timeout = null;
+
       // Build a mockup object to fake TestRunner API and intercept calls to
       // pass and fail methods, in order to retrieve nice error messages
       // and assertion result
       let mock = {
         pass: function (msg) {
           test.pass(msg);
-          if (callback)
+          test.waitUntilCallback = null;
+          if (callback && !stopIt)
             callback();
           finished = true;
         },
         fail: function (msg) {
-          if (++count > maxCount) {
-            test.fail(msg);
-            if (callback)
-              callback();
-            finished = true;
+          // If we are called on test timeout, we stop the loop
+          // and print which test keeps failing:
+          if (stopIt) {
+            test.console.error("test assertion never became true:\n",
+                               msg + "\n",
+                               currentWaitStack);
+            if (timeout)
+              timer.clearTimeout(timeout);
             return;
           }
-          timer.setTimeout(loop, test.PAUSE_DELAY);
+          timeout = timer.setTimeout(loop, test.PAUSE_DELAY);
         }
       };
       
@@ -327,7 +378,9 @@ TestRunner.prototype = {
             a = a();
           }
           catch(e) {
-            mock.fail("Exception when calling asynchronous assertion: " + e);
+            test.fail("Exception when calling asynchronous assertion: " + e);
+            finished = true;
+            return;
           }
         }
         appliedArgs.push(a);
@@ -337,6 +390,7 @@ TestRunner.prototype = {
       assertionMethod.apply(mock, appliedArgs);
     }
     loop();
+    this.waitUntilCallback = loop;
     
     // Return an object with `then` method, to offer a way to execute 
     // some code when the assertion passed or failed
@@ -360,10 +414,18 @@ TestRunner.prototype = {
 
     function tiredOfWaiting() {
       self._logTestFailed("timed out");
+      if (self.waitUntilCallback) {
+        self.waitUntilCallback(true);
+        self.waitUntilCallback = null;
+      }
       self.failed++;
       self.test.failed++;
       self.done();
     }
+
+    // We may already have registered a timeout callback
+    if (this.waitTimeout)
+      timer.clearTimeout(this.waitTimeout);
 
     this.waitTimeout = timer.setTimeout(tiredOfWaiting, ms);
   },
@@ -391,6 +453,9 @@ TestRunner.prototype = {
     this.testFailureLogged = false;
 
     try {
+      if(this.test.setup) {
+        this.test.setup(this);
+      }
       this.test.testFunction(this);
     } catch (e) {
       this.exception(e);

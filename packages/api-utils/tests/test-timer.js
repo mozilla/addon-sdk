@@ -1,4 +1,5 @@
 var timer = require("timer");
+const { Loader } = require("./helpers");
 
 exports.testSetTimeout = function(test) {
   timer.setTimeout(function() {
@@ -105,7 +106,7 @@ exports.testParamedClearInterval = function(test) {
 
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = Loader(module);
   var sbtimer = loader.require("timer");
 
   var myFunc = function myFunc() {

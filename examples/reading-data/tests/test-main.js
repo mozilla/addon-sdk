@@ -1,9 +1,9 @@
-const m = require("main");
-const self = require("self");
+var m = require("main");
+var self = require("self");
 
 exports.testReplace = function(test) {
-  const input = "Hello World";
-  const output = m.replaceMom(input);
+  var input = "Hello World";
+  var output = m.replaceMom(input);
   test.assertEqual(output, "Hello Mom");
   var callbacks = { quit: function() {} };
 

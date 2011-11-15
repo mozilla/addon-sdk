@@ -47,18 +47,16 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
+
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
+const runtime = require("api-utils/runtime");
 
-require("api-utils/xpcom").utils.defineLazyServiceGetter(
-  this,
-  "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1",
-  "nsIWindowMediator"
-);
+const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
+                       getService(Ci.nsIWindowMediator);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
@@ -71,7 +69,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 const Panel = Symbiont.resolve({
   constructor: '_init',
   _onInit: '_onSymbiontInit',
-  destroy: '_symbiontDestructor'
+  destroy: '_symbiontDestructor',
+  _documentUnload: '_workerDocumentUnload'
 }).compose({
   _frame: Symbiont.required,
   _init: Symbiont.required,
@@ -173,6 +172,10 @@ const Panel = Symbiont.resolve({
       frame.setAttribute('type', 'content');
       frame.setAttribute('flex', '1');
       frame.setAttribute('transparent', 'transparent');
+      if (runtime.OS === "Darwin") {
+        frame.style.borderRadius = "6px";
+        frame.style.padding = "1px";
+      }
       
       // Load an empty document in order to have an immediatly loaded iframe, 
       // so swapFrameLoaders is going to work without having to wait for load.
@@ -304,28 +307,30 @@ const Panel = Symbiont.resolve({
    */
   _onShow: function _onShow() {
     try {
-      if (!this._inited) // defer if not initialized yet
-        return this.on('inited', this._onShow.bind(this));
-      this._frameLoadersSwapped = true;
+      if (!this._inited) { // defer if not initialized yet
+        this.on('inited', this._onShow.bind(this));
+      } else {
+        this._frameLoadersSwapped = true;
 
-      // Retrieve computed text color style in order to apply to the iframe
-      // document. As MacOS background is dark gray, we need to use skin's text
-      // color.
-      let win = this._xulPanel.ownerDocument.defaultView;
-      let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
-                 "class", "panel-inner-arrowcontent");
-      let textColor = win.getComputedStyle(node).getPropertyValue("color");
-      let doc = this._xulPanel.firstChild.contentDocument;
-      let style = doc.createElement("style");
-      style.textContent = "body { color: " + textColor + "; }";
-      let container = doc.head ? doc.head : doc.documentElement;
-      if (container.firstChild)
-        container.insertBefore(style, container.firstChild);
-      else
-        container.appendChild(style);
+        // Retrieve computed text color style in order to apply to the iframe
+        // document. As MacOS background is dark gray, we need to use skin's
+        // text color.
+        let win = this._xulPanel.ownerDocument.defaultView;
+        let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
+                    "class", "panel-inner-arrowcontent");
+        let textColor = win.getComputedStyle(node).getPropertyValue("color");
+        let doc = this._xulPanel.firstChild.contentDocument;
+        let style = doc.createElement("style");
+        style.textContent = "body { color: " + textColor + "; }";
+        let container = doc.head ? doc.head : doc.documentElement;
 
+        if (container.firstChild)
+          container.insertBefore(style, container.firstChild);
+        else
+          container.appendChild(style);
 
-      this._emit('show');
+        this._emit('show');
+      }
     } catch(e) {
       this._emit('error', e);
     }
@@ -345,7 +350,16 @@ const Panel = Symbiont.resolve({
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.
     this._emit('inited');
-    this._removeAllListeners('inited');
+  },
+
+  // Catch document unload event in order to rebind load event listener with
+  // Symbiont._initFrame if Worker._documentUnload destroyed the worker
+  _documentUnload: function(subject, topic, data) {
+    if (this._workerDocumentUnload(subject, topic, data)) {
+      this._initFrame(this._frame);
+      return true;
+    }
+    return false;
   }
 });
 exports.Panel = function(options) Panel(options)

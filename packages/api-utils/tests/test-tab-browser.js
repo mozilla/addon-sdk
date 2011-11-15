@@ -188,7 +188,7 @@ exports.testWhenContentLoaded = function(test) {
       test.assertEqual(item.textContent, "bar",
                        "whenContentLoaded() works.");
       tracker.unload();
-      closeBrowserWindow(activeWindow, function() {
+      closeBrowserWindow(activeWindow(), function() {
         test.done();
       });
     });
@@ -498,11 +498,11 @@ exports.testModuleListenersDontInteract = function(test) {
 /******************* helpers *********************/
 
 // Helper for getting the active window
-this.__defineGetter__("activeWindow", function activeWindow() {
+function activeWindow() {
   return Cc["@mozilla.org/appshell/window-mediator;1"].
          getService(Ci.nsIWindowMediator).
          getMostRecentWindow("navigator:browser");
-});
+};
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy

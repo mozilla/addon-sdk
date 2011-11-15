@@ -1,6 +1,6 @@
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
-
+<!-- edited by Shane Tomlinson[stomlinson@mozilla.com] -->
 
 The `unit-test` module makes it easy to find and run unit tests.
 
@@ -26,6 +26,13 @@ Each function which represents a test case is passed a single argument
   Optional failure message.
 </api>
 
+<api name="expectFail">
+@method
+  *experimental* Expect the test enclosed within `func` to fail. 
+
+@param func {function}
+  A function that should contain a test that is expected to fail.
+</api>
 
 <api name="exception">
 @method
@@ -149,6 +156,132 @@ Each function which represents a test case is passed a single argument
 </api>
 
 
+<api name="assertFunction">
+@method
+  Ensures that `a` is a function.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertUndefined">
+@method
+  Ensures that `a` is `undefined`.  `null`, `0`, and `false` will all fail.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertNotUndefined">
+@method
+  Ensures that `a` is not `undefined`.  `null`, `0`, and `false` will all pass.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertNull">
+@method
+  Ensures that `a` is `null`.  `undefined`, `0`, and `false` will all fail.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertNotNull">
+@method
+  Ensures that `a` is not `null`.  `undefined`, `0`, and `false` will all pass.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertObject">
+@method
+  Ensures that `a` is an object.  A function, string, or number will fail.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertString">
+@method
+  Ensures that `a` is a string.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertArray">
+@method
+  Ensures that `a` is an array.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
+<api name="assertNumber">
+@method
+  Ensures that `a` is a number.
+
+@param a {value}
+  A value.
+
+@param [message] {string}
+  The test is marked as passing or failing depending on the result, logging
+  *message* with it.
+  
+</api>  
+
+
 <api name="waitUntilDone">
 @method
   Puts the test runner into asynchronous testing mode, waiting up to
@@ -161,6 +294,7 @@ Each function which represents a test case is passed a single argument
   If this number of milliseconds elapses and `test.done()` has not yet been
   called, the test is marked as failing.
 </api>
+
 
 <api name="done">
 @method

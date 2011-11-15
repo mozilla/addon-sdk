@@ -47,13 +47,15 @@ var version = exports.version = appInfo.version;
 var platformVersion = exports.platformVersion = appInfo.platformVersion;
 
 // The following mapping of application names to GUIDs was taken from:
-// 
+//
 //   https://addons.mozilla.org/en-US/firefox/pages/appversions
 //
 // Using the GUID instead of the app's name is preferable because sometimes
 // re-branded versions of a product have different names: for instance,
 // Firefox, Minefield, Iceweasel, and Shiretoko all have the same
 // GUID.
+// This mapping is duplicated in `app-extensions/bootstrap.js`. They should keep
+// in sync, so if you change one, change the other too!
 
 var ids = exports.ids = {
   Firefox: "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",

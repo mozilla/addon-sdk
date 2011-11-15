@@ -64,16 +64,18 @@ class ManifestEntry:
                   "requirements": {},
                   }
         for req in self.requirements:
-            if self.requirements[req]:
+            if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
                 them_uri = them.get_uri(prefix)
                 entry["requirements"][req] = {"uri": them_uri}
             else:
                 # something magic. The manifest entry indicates that they're
                 # allowed to require() it
-                entry["requirements"][req] = {}
+                entry["requirements"][req] = self.requirements[req]
+            assert isinstance(entry["requirements"][req], dict)
         if self.datamap:
             entry["requirements"]["self"] = {
+                "uri": "self",
                 "mapSHA256": self.datamap.data_manifest_hash,
                 "mapName": self.packageName+"-data",
                 "dataURIPrefix": "%s%s-data/" % (prefix, self.packageName),
@@ -176,27 +178,51 @@ class ManifestBuilder:
         self.modules = {} # maps ModuleInfo to URI in self.manifest
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
+        self.test_modules = [] # for runtime
 
     def build(self, scan_tests):
         # process the top module, which recurses to process everything it
         # reaches
         if "main" in self.target_cfg:
-            self.top_uri = self.process_module(self.find_top(self.target_cfg))
+            top_me = self.process_module(self.find_top(self.target_cfg))
+            self.top_uri = top_me.get_uri(self.uri_prefix)
         if scan_tests:
-            # also scan all test files in all packages that we use
-            for packagename in self.used_packagenames:
-                package = self.pkg_cfg.packages[packagename]
-                dirnames = package["tests"]
-                if isinstance(dirnames, basestring):
-                    dirnames = [dirnames]
-                dirnames = [os.path.join(package.root_dir, d) for d in dirnames]
-                for d in dirnames:
-                    for tname in os.listdir(d):
-                        if tname.startswith("test-") and tname.endswith(".js"):
-                            #re.search(r'^test-.*\.js$', tname):
-                            tmi = ModuleInfo(package, "tests", tname[:-3],
-                                             os.path.join(d, tname), None)
-                            self.process_module(tmi)
+            mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
+            self.process_module(mi)
+            # also scan all test files in all packages that we use. By making
+            # a copy of self.used_packagenames first, we refrain from
+            # processing tests in packages that our own tests depend upon. If
+            # we're running tests for package A, and either modules in A or
+            # tests in A depend upon modules from package B, we *don't* want
+            # to run tests for package B.
+            test_modules = []
+            dirnames = self.target_cfg["tests"]
+            if isinstance(dirnames, basestring):
+                dirnames = [dirnames]
+            dirnames = [os.path.join(self.target_cfg.root_dir, d)
+                        for d in dirnames]
+            for d in dirnames:
+                for filename in os.listdir(d):
+                    if filename.startswith("test-") and filename.endswith(".js"):
+                        testname = filename[:-3] # require(testname)
+                        #re.search(r'^test-.*\.js$', filename):
+                        tmi = ModuleInfo(self.target_cfg, "tests", testname,
+                                         os.path.join(d, filename), None)
+                        # scan the test's dependencies
+                        tme = self.process_module(tmi)
+                        test_modules.append( (testname, tme) )
+            # also add it as an artificial dependency of unit-test-finder, so
+            # the runtime dynamic load can work.
+            test_finder = self.get_manifest_entry("api-utils", "lib",
+                                                  "unit-test-finder")
+            for (testname,tme) in test_modules:
+                test_finder.add_requirement(testname, tme)
+                # finally, tell the runtime about it, so they won't have to
+                # search for all tests. self.test_modules will be passed
+                # through the harness-options.json file in the
+                # .allTestModules property.
+                self.test_modules.append(testname)
+
         # include files used by the loader
         for em in self.extra_modules:
             (pkgname, section, modname, js) = em
@@ -226,6 +252,9 @@ class ManifestBuilder:
             if me.datamap:
                 for (zipname, absname) in me.datamap.files_to_copy:
                     yield absname
+
+    def get_all_test_modules(self):
+        return self.test_modules
 
     def get_harness_options_manifest(self, uri_prefix):
         manifest = {}
@@ -340,8 +369,8 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "loader", "manifest"):
-                me.add_requirement(reqname, None)
+            if reqname in ("chrome", "@packaging", "@loader"):
+                me.add_requirement(reqname, {"uri": reqname})
             elif reqname == "self":
                 # this might reference bundled data, so:
                 #  1: hash that data, add the hash as a dependency
@@ -362,6 +391,11 @@ class ManifestBuilder:
                 looked_in = [] # populated by subroutines
                 them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
+                    if mi.section == "tests":
+                        # tolerate missing modules in tests, because
+                        # test-securable-module.js, and the modules/red.js
+                        # that it imports, both do that intentionally
+                        continue
                     lineno = locations.get(reqname) # None means define()
                     if lineno is None:
                         reqtype = "define"
@@ -685,8 +719,8 @@ the equivalent shortcuts now.)
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
     requires, locations = scan_requirements_with_grep(fn, lines)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        # these are the loader: don't scan for chrome
+    if filename == "cuddlefish.js":
+        # this is the loader: don't scan for chrome
         problems = False
     elif "chrome" in requires:
         # if they declare require("chrome"), we tolerate the use of

@@ -104,8 +104,12 @@ const KEYS = exports.KEYS = new function Keys() {
   }, this)
 }
 
-exports.getKeyForCode = function getKeyForCode(code) { return KEYS[code]; };
-exports.getCodeForKey = function getCodeForKey(key) { return CODES[key]; };
+exports.getKeyForCode = function getKeyForCode(code) {
+  return (code in KEYS) && KEYS[code];
+};
+exports.getCodeForKey = function getCodeForKey(key) {
+  return (key in CODES) && CODES[key];
+};
 
 /**
  * Utility function that takes string or JSON that defines a `hotkey` and
@@ -203,4 +207,14 @@ var toString = exports.toString = function toString(hotkey, separator) {
   let keys = hotkey.modifiers.slice();
   keys.push(hotkey.key);
   return keys.join(separator || SEPARATOR);
+};
+
+/**
+ * Utility function takes `key` name and returns `true` if it's function key
+ * (F1, ..., F24) and `false` if it's not.
+ */
+var isFunctionKey = exports.isFunctionKey = function isFunctionKey(key) {
+  var $
+  return key[0].toLowerCase() === 'f' &&
+         ($ = parseInt(key.substr(1)), 0 < $ && $ < 25);
 };

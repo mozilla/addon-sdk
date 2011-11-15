@@ -733,7 +733,7 @@ ModuleTabTracker.prototype = {
 function getThumbnailCanvasForTab(tabEl, window) {
   var thumbnail = window.document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
   thumbnail.mozOpaque = true;
-  var window = tabEl.linkedBrowser.contentWindow;
+  window = tabEl.linkedBrowser.contentWindow;
   thumbnail.width = Math.ceil(window.screen.availWidth / 5.75);
   var aspectRatio = 0.5625; // 16:9
   thumbnail.height = Math.round(thumbnail.width * aspectRatio);

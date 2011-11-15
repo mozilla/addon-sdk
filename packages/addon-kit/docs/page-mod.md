@@ -103,7 +103,7 @@ is loaded into its own execution context with its own copy of the content
 scripts. In this case `onAttach` is called once for each loaded page, and the
 add-on code will have a separate worker for each page:
 
-![Multiple workers](media/multiple-workers.jpg)
+![Multiple workers](static-files/media/multiple-workers.jpg)
 
 This is demonstrated in the following example:
 
@@ -217,6 +217,7 @@ The following add-on creates a widget which, when clicked, highlights all the
     var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "div-show",
       label: "Show divs",
       contentURL: "http://www.mozilla.org/favicon.ico",
       onClick: function() {
@@ -347,7 +348,7 @@ This event is emitted this event when the page-mod's content scripts are
 attached to a page whose URL matches the page-mod's `include` filter.
 
 @argument {Worker}
-The listener function is passed a `Worker` object that can be used to communicate
+The listener function is passed a [`Worker`](packages/api-utils/docs/content/worker.html) object that can be used to communicate
 with any content scripts attached to this page.
 </api>
 
