@@ -82,8 +82,8 @@ exports.testContentValidator = function(test) {
 // When we have the means, these tests will be converted so that they don't
 // require an external server nor a network connection.
 
-// This is request to a file that exists
-exports.testStatus_200 = function (test) {
+// This is a request to a file that exists.
+exports.testStatus200 = function (test) {
   var srv = startServerAsync(port, basePath);
   
   test.waitUntilDone();
@@ -93,19 +93,16 @@ exports.testStatus_200 = function (test) {
       test.assertEqual(this, req, "`this` should be request");
       test.assertEqual(response.status, 200);
       test.assertEqual(response.statusText, "OK");
-      done();
+      test.assertEqual(response.text, "This file is used by the httpd module " +
+        "to find the data/ directory in\ntests/test-request.js. Please " +
+        "don't delete it!\n");
+      srv.stop(function() test.done());
     }
   }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
 }
 
 // This tries to get a file that doesn't exist
-exports.testStatus_404 = function (test) {
+exports.testStatus404 = function (test) {
   var srv = startServerAsync(port, basePath);
   
   test.waitUntilDone();
@@ -115,35 +112,9 @@ exports.testStatus_404 = function (test) {
     onComplete: function (response) {
       test.assertEqual(response.status, 404);
       test.assertEqual(response.statusText, "Not Found");
-      done();
+      srv.stop(function() test.done());
     }
   }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
-}
-
-// a simple file with known contents
-exports.testSimpleText = function (test) {
-  var srv = startServerAsync(port, basePath);
-  
-  test.waitUntilDone();
-  Request({
-    url: "http://localhost:" + port + "/test-requestText.php",
-    onComplete: function (response) {
-      test.assertEqual(response.text, "Look ma, no hands!\n");
-      done();
-    }
-  }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
 }
 
 /*
@@ -187,15 +158,9 @@ exports.testContentTypeHeader = function (test) {
     url: "http://localhost:" + port + "/test-request.txt",
     onComplete: function (response) {
       test.assertEqual(response.headers["Content-Type"], "text/plain");
-      done();
+      srv.stop(function() test.done());
     }
   }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
 }
 
 
@@ -204,18 +169,12 @@ exports.testSimpleJSON = function (test) {
   
   test.waitUntilDone();
   Request({
-    url: "http://localhost:" + port + "/test-requestJSON.php",
+    url: "http://localhost:" + port + "/test-request.json",
     onComplete: function (response) {
       assertDeepEqual(test, response.json, { foo: "bar" });
-      done();
+      srv.stop(function() test.done());
     }
   }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
 }
 
 exports.testInvalidJSON = function (test) {
@@ -223,18 +182,12 @@ exports.testInvalidJSON = function (test) {
   
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/invalid_json.php",
+    url: "http://localhost:" + port + "/test-request-invalid.json",
     onComplete: function (response) {
       test.assertEqual(response.json, null);
-      done();
+      srv.stop(function() test.done());
     }
   }).get();
-
-  function done() {
-    srv.stop(function() {
-      test.done();
-    });
-  }
 }
 
 /*

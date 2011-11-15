@@ -1,2 +1,2 @@
-Please don't delete this file as it is needed for 
-the bundled webserver to locate the data/ directory. :)
+This file is used by the httpd module to find the data/ directory in
+tests/test-request.js. Please don't delete it!
