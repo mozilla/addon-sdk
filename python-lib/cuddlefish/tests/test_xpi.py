@@ -14,6 +14,33 @@ xpi_template_path = os.path.join(test_packaging.static_files_path,
 
 fake_manifest = '<RDF><!-- Extension metadata is here. --></RDF>'
 
+class PrefsTests(unittest.TestCase):
+    def makexpi(self, pkg_name):
+        self.xpiname = "%s.xpi" % pkg_name
+        create_xpi(self.xpiname, pkg_name, 'preferences-files')
+        self.xpi = zipfile.ZipFile(self.xpiname, 'r')
+        options = self.xpi.read('harness-options.json')
+        self.xpi_harness_options = json.loads(options)
+
+    def setUp(self):
+        self.xpiname = None
+        self.xpi = None
+
+    def tearDown(self):
+        if self.xpi:
+            self.xpi.close()
+        if self.xpiname and os.path.exists(self.xpiname):
+            os.remove(self.xpiname)
+
+    def testPackageWithSimplePrefs(self):
+        self.makexpi('simple-prefs')
+        assert 'options.xul' in self.xpi.namelist()
+
+    def testPackageWithNoPrefs(self):
+        self.makexpi('no-prefs')
+        assert 'options.xul' not in self.xpi.namelist()
+
+
 class Bug588119Tests(unittest.TestCase):
     def makexpi(self, pkg_name):
         self.xpiname = "%s.xpi" % pkg_name
@@ -25,7 +52,7 @@ class Bug588119Tests(unittest.TestCase):
     def setUp(self):
         self.xpiname = None
         self.xpi = None
-        
+
     def tearDown(self):
         if self.xpi:
             self.xpi.close()
