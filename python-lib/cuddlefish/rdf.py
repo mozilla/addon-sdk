@@ -124,10 +124,16 @@ def gen_manifest(template_root_dir, target_cfg, bundle_id,
                  target_cfg.get("author", ""))
     manifest.set("em:bootstrap", str(bootstrap).lower())
     manifest.set("em:unpack", "true")
+
     if update_url:
         manifest.set("em:updateURL", update_url)
     else:
         manifest.remove("em:updateURL")
+
+    if target_cfg.get("preferences"):
+        manifest.set("em:optionsType", "2")
+    else:
+        manifest.remove("em:optionsType")
 
     if enable_mobile:
         dom = manifest.dom
