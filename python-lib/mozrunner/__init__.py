@@ -191,6 +191,9 @@ class Profile(object):
                         data = compressed_file.read(name)
                         f = open(os.path.join(tmpdir, name), 'wb')
                         f.write(data) ; f.close()
+                        zi = compressed_file.getinfo(name)
+                        os.chmod(os.path.join(tmpdir,name),
+                                 (zi.external_attr>>16))
                 addon = tmpdir
 
             tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
