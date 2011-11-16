@@ -190,3 +190,20 @@ exports.Base = Object.freeze(Object.create(null, {
     return Object.freeze(this.merge.apply(Object.create(this), arguments));
   }}
 }));
+
+/**
+ * Function takes prototype object that implements `initialize` method, and
+ * returns `constructor` function (with correct prototype property), that can
+ * be used for simulating classes for given prototypes.
+ */
+exports.Class = Object.freeze(function Class(prototype) {
+  function constructor() {
+    var instance = Object.create(prototype);
+    prototype.initialize.apply(instance, arguments);
+    return instance;
+  }
+  return Object.freeze(Object.defineProperties(constructor, {
+    prototype: { value: prototype },
+    new: { value: constructor }
+  }));
+});

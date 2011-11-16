@@ -185,6 +185,17 @@ Also it's easy to mix composition with inheritance:
     // pure prototypal inheritance where object inherit from objects.
     Color.isPrototypeOf(Pixel)
 
+### Classes ###
+
+Module exports `Class` function. `Class` takes argument of exemplar object
+extending `Base` and returns `constructor` function that can be used for
+simulating classes defined by given exemplar.
+
+    var CPixel = Class(Pixel);
+    var pixel = Pixel(11, 12, '000000');
+    pixel instanceof CPixel // true
+    Pixel.prototypeOf(pixel) // true
+
 [inheritance in JavaScript]:https://developer.mozilla.org/en/Introduction_to_Object-Oriented_JavaScript
 [prototypal inheritance]:http://javascript.crockford.com/prototypal.html
 [ecmpascript 5]:https://developer.mozilla.org/en/New_in_JavaScript_1.8.5

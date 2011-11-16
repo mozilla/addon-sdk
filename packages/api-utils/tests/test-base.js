@@ -1,6 +1,6 @@
 "use strict";
 
-var Base = require("api-utils/base").Base;
+var { Base, Class } = require("api-utils/base");
 
 exports["test .isPrototypeOf"] = function(assert) {
   assert.ok(Base.isPrototypeOf(Base.new()),
@@ -158,6 +158,78 @@ exports['test super'] = function(assert) {
   assert.ok(Base.isPrototypeOf(bar), 'Base is prototype of Bar.new');
   assert.equal(bar.type, 'bar', 'bar initializer was called');
   assert.equal(bar.name, 'test', 'bar initializer called Foo initializer');
+};
+
+exports['test class'] = function(assert) {
+  var Foo = Base.extend({
+    type: 'Foo',
+    initialize: function(options) {
+      this.name = options.name;
+    },
+    serialize: function serialize() {
+      return '<' + this.name + ':' + this.type + '>';
+    }
+  });
+  var CFoo = Class(Foo);
+  var f1 = CFoo({ name: 'f1' });
+  var f2 = new CFoo({ name: 'f2' });
+  var f3 = CFoo.new({ name: 'f3' });
+  var f4 = Foo.new({ name: 'f4' });
+
+  assert.ok(f1 instanceof CFoo, 'correct instanceof');
+  assert.equal(f1.name, 'f1', 'property initialized');
+  assert.equal(f1.serialize(), '<f1:Foo>', 'method works');
+
+  assert.ok(f2 instanceof CFoo, 'correct instanceof when created with new')
+  assert.equal(f2.name, 'f2', 'property initialized');
+  assert.equal(f2.serialize(), '<f2:Foo>', 'method works');
+
+  assert.ok(f3 instanceof CFoo, 'correct instanceof when created with .new')
+  assert.equal(f3.name, 'f3', 'property initialized');
+  assert.equal(f3.serialize(), '<f3:Foo>', 'method works');
+
+  assert.ok(f4 instanceof CFoo, 'correct instanceof when created from prototype')
+  assert.equal(f4.name, 'f4', 'property initialized');
+  assert.equal(f4.serialize(), '<f4:Foo>', 'method works');
+
+  var Bar = Foo.extend({
+    type: 'Bar',
+    initialize: function(options) {
+      this.size = options.size;
+      Foo.initialize.call(this, options);
+    }
+  });
+  var CBar = Class(Bar);
+
+
+  var b1 = CBar({ name: 'b1', size: 1 });
+  var b2 = new CBar({ name: 'b2', size: 2 });
+  var b3 = CBar.new({ name: 'b3', size: 3 });
+  var b4 = Bar.new({ name: 'b4', size: 4 });
+
+  assert.ok(b1 instanceof CFoo, 'correct instanceof');
+  assert.ok(b1 instanceof CBar, 'correct instanceof');
+  assert.equal(b1.name, 'b1', 'property initialized');
+  assert.equal(b1.size, 1, 'property initialized');
+  assert.equal(b1.serialize(), '<b1:Bar>', 'method works');
+
+  assert.ok(b2 instanceof CFoo, 'correct instanceof when created with new');
+  assert.ok(b2 instanceof CBar, 'correct instanceof when created with new');
+  assert.equal(b2.name, 'b2', 'property initialized');
+  assert.equal(b2.size, 2, 'property initialized');
+  assert.equal(b2.serialize(), '<b2:Bar>', 'method works');
+
+  assert.ok(b3 instanceof CFoo, 'correct instanceof when created with .new');
+  assert.ok(b3 instanceof CBar, 'correct instanceof when created with .new');
+  assert.equal(b3.name, 'b3', 'property initialized');
+  assert.equal(b3.size, 3, 'property initialized');
+  assert.equal(b3.serialize(), '<b3:Bar>', 'method works');
+
+  assert.ok(b4 instanceof CFoo, 'correct instanceof when created from prototype');
+  assert.ok(b4 instanceof CBar, 'correct instanceof when created from prototype');
+  assert.equal(b4.name, 'b4', 'property initialized');
+  assert.equal(b4.size, 4, 'property initialized');
+  assert.equal(b4.serialize(), '<b4:Bar>', 'method works');
 };
 
 require("test").run(exports);
