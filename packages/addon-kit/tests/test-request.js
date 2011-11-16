@@ -93,9 +93,8 @@ exports.testStatus200 = function (test) {
       test.assertEqual(this, req, "`this` should be request");
       test.assertEqual(response.status, 200);
       test.assertEqual(response.statusText, "OK");
-      test.assertEqual(response.text, "This file is used by the httpd module " +
-        "to find the data/ directory in\ntests/test-request.js. Please " +
-        "don't delete it!\n");
+      test.assertEqual(response.headers["Content-Type"], "text/plain");
+      test.assertEqual(response.text, "Look ma, no hands!\n");
       srv.stop(function() test.done());
     }
   }).get();
@@ -149,20 +148,6 @@ exports.testKnownHeader = function (test) {
   }).get();
 }
 */
-
-exports.testContentTypeHeader = function (test) {
-  var srv = startServerAsync(port, basePath);
-  
-  test.waitUntilDone();
-  Request({
-    url: "http://localhost:" + port + "/test-request.txt",
-    onComplete: function (response) {
-      test.assertEqual(response.headers["Content-Type"], "text/plain");
-      srv.stop(function() test.done());
-    }
-  }).get();
-}
-
 
 exports.testSimpleJSON = function (test) {
   var srv = startServerAsync(port, basePath);

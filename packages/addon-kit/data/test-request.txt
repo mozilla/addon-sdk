@@ -1,2 +1,1 @@
-This file is used by the httpd module to find the data/ directory in
-tests/test-request.js. Please don't delete it!
+Look ma, no hands!
