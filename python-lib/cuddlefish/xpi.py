@@ -29,15 +29,15 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         zf.write(str(harness_options['icon']), 'icon.png')
         del harness_options['icon']
 
-    if 'preferences' in harness_options:
-        from options_xul import parse_options
-        open('.options.xul','w').write(parse_options(harness_options["preferences"], harness_options["jetpackID"]))
-        zf.write('.options.xul','options.xul')
-        os.remove('.options.xul')
-
     if 'icon64' in harness_options:
         zf.write(str(harness_options['icon64']), 'icon64.png')
         del harness_options['icon64']
+
+    if 'preferences' in harness_options:
+        from options_xul import parse_options
+        open('.options.xul', 'w').write(parse_options(harness_options["preferences"], harness_options["jetpackID"]))
+        zf.write('.options.xul', 'options.xul')
+        os.remove('.options.xul')
 
     IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
                      "application.ini", xpi_path]
