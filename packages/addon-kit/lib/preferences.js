@@ -68,15 +68,15 @@ const events = EventEmitter.compose({
     branch.addObserver("", this._prefObserver, false);
 
     // Listen to clicks on buttons
-    observers.add(BUTTON_PRESSED,this._buttonObserver,this);
+    observers.add(BUTTON_PRESSED, this._buttonObserver, this);
   },
-  _prefObserver: function PrefsPrefObserver(subject, topic, prefName){
+  _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
                   console.log(topic);
-                  if(topic == "nsPref:changed"){
+                  if (topic == "nsPref:changed") {
                     this._emit(prefName);
                   }
                 },
-  _buttonObserver: function PrefsButtonObserver(subject, data){
+  _buttonObserver: function PrefsButtonObserver(subject, data) {
                   this._emit(data);
                 },
   unload: function manager_unload() {
@@ -86,27 +86,27 @@ const events = EventEmitter.compose({
 })();
 
 const simple = Proxy.create({
-  get: function(rcvr, pref){
-    return prefService.get(ADDON_BRANCH+pref);
+  get: function(rcvr, pref) {
+    return prefService.get(ADDON_BRANCH + pref);
   },
-  set: function(rcvr, pref, val){
+  set: function(rcvr, pref, val) {
+    // TODO: switch on `val` type
     try {
-      prefService.set(ADDON_BRANCH+pref,val);
+      prefService.set(ADDON_BRANCH + pref, val);
     } catch(e) {
       throw new Error("can't set pref " + pref + " to value '" + val +
                       "'; it isn't a String, Integer, or Boolean");
     }
   },
-  delete: function(pref){
-    prefService.reset(ADDON_BRANCH+pref);
+  delete: function(pref) {
+    prefService.reset(ADDON_BRANCH + pref);
     return true;
   },
-  has: function(pref){
-    return prefService.has(ADDON_BRANCH+pref);
+  has: function(pref) {
+    return prefService.has(ADDON_BRANCH + pref);
   }
 });
 
 exports.on = events.on;
 exports.removeListener = events.removeListener;
 exports.simple = simple;
-
