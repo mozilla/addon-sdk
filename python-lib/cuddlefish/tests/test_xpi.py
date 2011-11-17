@@ -35,10 +35,12 @@ class PrefsTests(unittest.TestCase):
     def testPackageWithSimplePrefs(self):
         self.makexpi('simple-prefs')
         assert 'options.xul' in self.xpi.namelist()
+        assert 'defaults/preferences/prefs.js' in self.xpi.namelist()
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
         assert 'options.xul' not in self.xpi.namelist()
+        assert 'defaults/preferences/prefs.js' not in self.xpi.namelist()
 
 
 class Bug588119Tests(unittest.TestCase):
