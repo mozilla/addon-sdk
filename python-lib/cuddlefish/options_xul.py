@@ -1,5 +1,4 @@
 from xml.dom.minidom import Document
-import simplejson as json
 
 def parse_options(options, jetpack_id):
 
@@ -11,7 +10,7 @@ def parse_options(options, jetpack_id):
     for pref_name in options:
         pref = options[pref_name]
         setting = doc.createElement("setting")
-        setting.setAttribute("pref", "extensions." + jetpack_id+"." + pref_name)
+        setting.setAttribute("pref", "extensions." + jetpack_id + "." + pref_name)
         setting.setAttribute("type", pref["type"])
         setting.setAttribute("title", pref["title"])
 

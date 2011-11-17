@@ -39,6 +39,12 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         zf.write('.options.xul', 'options.xul')
         os.remove('.options.xul')
 
+        from options_defaults import parse_options_defaults
+        open('.prefs.js', 'w').write(parse_options_defaults(harness_options["preferences"], harness_options["jetpackID"]))
+        zf.write('.prefs.js', 'defaults/preferences/prefs.js')
+        os.remove('.prefs.js')
+
+
     IGNORED_FILES = [".hgignore", ".DS_Store", "install.rdf",
                      "application.ini", xpi_path]
 
