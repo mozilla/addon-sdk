@@ -2,6 +2,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import re
 
 from copy import copy
 import simplejson as json
@@ -446,6 +447,31 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
+def get_unique_prefix(jid):
+    """Get a string that can be used to uniquely identify addon resources
+       in resource: URLs.  The string can't simply be the JID because
+       the resource: URL prefix is treated too much like a DNS hostname,
+       so we have to sanitize it in various ways."""
+
+    unique_prefix = jid
+    unique_prefix = unique_prefix.lower()
+    unique_prefix = unique_prefix.replace("@", "-at-")
+    unique_prefix = unique_prefix.replace(".", "-dot-")
+
+    # Strip optional but common curly brackets from around UUID-based IDs.
+    unique_prefix = re.sub(r'''(?x) ^\{
+                                    ([0-9a-f]{8}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{12})
+                                    \}$
+                           ''', r'\1', unique_prefix)
+
+    unique_prefix = '%s-' % unique_prefix
+
+    return unique_prefix
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -588,13 +614,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         jid = harness_guid
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
-    unique_prefix = '%s-' % jid # used for resource: URLs
-    bundle_id = jid
 
-    # the resource: URL's prefix is treated too much like a DNS hostname
-    unique_prefix = unique_prefix.lower()
-    unique_prefix = unique_prefix.replace("@", "-at-")
-    unique_prefix = unique_prefix.replace(".", "-dot-")
+    unique_prefix = get_unique_prefix(jid)
+    bundle_id = jid
 
     targets = [target]
     if command == "test":
