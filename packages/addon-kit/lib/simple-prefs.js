@@ -111,4 +111,4 @@ const simple = Proxy.create({
 
 exports.on = events.on;
 exports.removeListener = events.removeListener;
-exports.simple = simple;
+exports.prefs = simple;

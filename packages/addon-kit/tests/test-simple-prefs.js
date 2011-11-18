@@ -15,7 +15,7 @@
  *
  * The Initial Developer of the Original Code is
  * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -37,15 +37,46 @@
 
 const { Loader } = require("./helpers");
 
-exports.testSetGet = function (test) {
+exports.testSetGetBool = function (test) {
   test.waitUntilDone();
 
   // Load the module once, set a value.
   let loader = Loader(module);
-  let sp = loader.require("simple-prefs").simple;
+  let sp = loader.require("simple-prefs").prefs;
 
+  test.assertEqual(sp.test, undefined, "Value should not exist");
   sp.test = true;
-  test.assert(sp.test, "Value read should be the value set");
+  test.assert(sp.test, "Value read should be the value previously set");
+
+  loader.unload();
+  test.done();
+};
+
+exports.testSetGetInt = function (test) {
+  test.waitUntilDone();
+
+  // Load the module once, set a value.
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  test.assertEqual(sp["test-int"], undefined, "Value should not exist");
+  sp["test-int"] = 1;
+  test.assertEqual(sp["test-int"], 1, "Value read should be the value previously set");
+
+  loader.unload();
+  test.done();
+};
+
+exports.testSetGetString = function (test) {
+  test.waitUntilDone();
+
+  // Load the module once, set a value.
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  test.assertEqual(sp["test-string"], undefined, "Value should not exist");
+  sp["test-string"] = "test";
+  test.assertEqual(sp["test-string"], "test", "Value read should be the value previously set");
 
   loader.unload();
   test.done();
