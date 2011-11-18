@@ -26,6 +26,9 @@ def parse_options(options, jetpack_id):
             setting.setAttribute("on", pref["on"])
             setting.setAttribute("off", pref["off"])
 
+        if ("description" in pref):
+            setting.appendChild(doc.createTextNode(pref["description"]))
+
         root.appendChild(setting)
 
     return doc.toprettyxml(indent="  ")
