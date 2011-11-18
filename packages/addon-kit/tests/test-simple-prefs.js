@@ -67,6 +67,26 @@ exports.testSetGetInt = function (test) {
   test.done();
 };
 
+exports.testSetComplex = function (test) {
+  test.waitUntilDone();
+
+  // Load the module once, set a value.
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  try {
+    sp["test-complex"] = {test: true};
+    test.fail("Complex values are not allowed");
+  }
+  catch (e) {
+    test.pass("Complex values are not allowed");
+  }
+
+
+  loader.unload();
+  test.done();
+};
+
 exports.testSetGetString = function (test) {
   test.waitUntilDone();
 
