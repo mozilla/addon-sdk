@@ -19,7 +19,8 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *  Hernan Rodriguez Colmeiro <colmeiro@gmail.com>
+ *  Hernan Rodriguez Colmeiro <colmeiro@gmail.com> (Original Author)
+ *  Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,14 +36,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const {Cc,Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
 const observers = require("observer-service");
 const { EventEmitter } = require("events");
 const unload = require("unload");
 const prefService = require("preferences-service");
+const { jetpackID } = require("@packaging");
 
-const ADDON_BRANCH = "extensions." + packaging.jetpackID + ".";
-const BUTTON_PRESSED = packaging.jetpackID+"-cmdPressed";
+const ADDON_BRANCH = "extensions." + jetpackID + ".";
+const BUTTON_PRESSED = jetpackID + "-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
 if (!require("xul-app").is("Firefox"))
@@ -86,10 +88,10 @@ const events = EventEmitter.compose({
 })();
 
 const simple = Proxy.create({
-  get: function(rcvr, pref) {
+  get: function(receiver, pref) {
     return prefService.get(ADDON_BRANCH + pref);
   },
-  set: function(rcvr, pref, val) {
+  set: function(receiver, pref, val) {
     // TODO: switch on `val` type
     try {
       prefService.set(ADDON_BRANCH + pref, val);
