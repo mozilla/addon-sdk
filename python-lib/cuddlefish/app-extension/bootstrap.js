@@ -21,6 +21,7 @@
  * Contributor(s):
  *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *  Matteo Ferretti <zer0@mozilla.com>
+ *  Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -48,12 +49,48 @@ const resourceHandler = ioService.getProtocolHandler('resource')
                         .QueryInterface(Ci.nsIResProtocolHandler);
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
+const prefs = Cc["@mozilla.org/preferences-service;1"].
+              getService(Ci.nsIPrefService).
+              QueryInterface(Ci.nsIPrefBranch2);
+const mozIJSSubScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
+                            getService(Ci.mozIJSSubScriptLoader);
 
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
 
+
+// Initializes default preferences
+function setDefaultPrefs() {
+  let branch = prefs.getDefaultBranch("");
+  let prefLoaderScope = {
+    pref: function(key, val) {
+      switch (typeof val) {
+        case "boolean":
+          branch.setBoolPref(key, val);
+          break;
+        case "number":
+          branch.setIntPref(key, val);
+          break;
+        case "string":
+          branch.setCharPref(key, val);
+          break;
+      }
+    }
+  };
+
+  let uri = ioService.newURI(
+      "defaults/preferences/prefs.js",
+      null,
+      ioService.newURI(__SCRIPT_URI_SPEC__, null, null));
+
+  // if there is a prefs.js file, then import the default prefs
+  if (uri.QueryInterface(Ci.nsIFileURL).file.exists()) {
+    // setup default prefs
+    mozIJSSubScriptLoader.loadSubScript(uri.spec, prefLoaderScope);
+  }
+}
 
 // Gets the topic that fit best as application startup event, in according with
 // the current application (e.g. Firefox, Fennec, Thunderbird...)
@@ -143,6 +180,11 @@ function uninstall(data, reason) {}
 
 function startup(data, reason) {
   let uri = (data.resourceURI || resourceURI(data.installPath)).spec;
+
+  // TODO: When bug 564675 is implemented this will no longer be needed
+  // Always set the default prefs, because they disappear on restart
+  setDefaultPrefs();
+
   // TODO: Maybe we should perform read harness-options.json asynchronously,
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
   let options = JSON.parse(readURI(uri + './harness-options.json'));
