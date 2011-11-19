@@ -37,10 +37,9 @@
 
 const { Loader } = require("./helpers");
 
-exports.testSetGetBool = function (test) {
+exports.testSetGetBool = function(test) {
   test.waitUntilDone();
 
-  // Load the module once, set a value.
   let loader = Loader(module);
   let sp = loader.require("simple-prefs").prefs;
 
@@ -52,7 +51,7 @@ exports.testSetGetBool = function (test) {
   test.done();
 };
 
-exports.testSetGetInt = function (test) {
+exports.testSetGetInt = function(test) {
   test.waitUntilDone();
 
   // Load the module once, set a value.
@@ -67,10 +66,9 @@ exports.testSetGetInt = function (test) {
   test.done();
 };
 
-exports.testSetComplex = function (test) {
+exports.testSetComplex = function(test) {
   test.waitUntilDone();
 
-  // Load the module once, set a value.
   let loader = Loader(module);
   let sp = loader.require("simple-prefs").prefs;
 
@@ -82,15 +80,13 @@ exports.testSetComplex = function (test) {
     test.pass("Complex values are not allowed");
   }
 
-
   loader.unload();
   test.done();
 };
 
-exports.testSetGetString = function (test) {
+exports.testSetGetString = function(test) {
   test.waitUntilDone();
 
-  // Load the module once, set a value.
   let loader = Loader(module);
   let sp = loader.require("simple-prefs").prefs;
 
@@ -100,4 +96,19 @@ exports.testSetGetString = function (test) {
 
   loader.unload();
   test.done();
+};
+
+exports.testPrefListener = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+
+  sp.on("test-listen", function () {
+    test.pass("The prefs listener heard the right event");
+    test.done();
+  });
+
+  sp.prefs["test-listen"] = true;
+  loader.unload();
 };
