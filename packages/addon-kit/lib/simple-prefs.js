@@ -92,13 +92,7 @@ const simple = Proxy.create({
     return prefService.get(ADDON_BRANCH + pref);
   },
   set: function(receiver, pref, val) {
-    // TODO: switch on `val` type
-    try {
-      prefService.set(ADDON_BRANCH + pref, val);
-    } catch(e) {
-      throw new Error("can't set pref " + pref + " to value '" + val +
-                      "'; it isn't a String, Integer, or Boolean");
-    }
+    prefService.set(ADDON_BRANCH + pref, val);
   },
   delete: function(pref) {
     prefService.reset(ADDON_BRANCH + pref);
