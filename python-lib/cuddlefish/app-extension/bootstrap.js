@@ -71,7 +71,8 @@ function setDefaultPrefs() {
           branch.setBoolPref(key, val);
           break;
         case "number":
-          branch.setIntPref(key, val);
+          if (value % 1 == 0) // number must be a integer, otherwise ignore it
+            branch.setIntPref(key, val);
           break;
         case "string":
           branch.setCharPref(key, val);

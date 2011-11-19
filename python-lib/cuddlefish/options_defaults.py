@@ -7,7 +7,9 @@ def parse_options_defaults(options, jetpack_id):
             value = pref["value"]
             vtype = str(type(value))
 
-            if ("<type 'bool'>" == vtype):
+            if ("<type 'float'>" == vtype):
+                continue
+            elif ("<type 'bool'>" == vtype):
                 value = str(pref["value"]).lower()
             elif ("<type 'str'>" == vtype):
                 value = "\"" + str(pref["value"]) + "\""
