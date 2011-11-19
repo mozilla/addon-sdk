@@ -36,6 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 const { Loader } = require("./helpers");
+const setTimeout = require("timers").setTimeout;
 
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
@@ -104,11 +105,42 @@ exports.testPrefListener = function(test) {
   let loader = Loader(module);
   let sp = loader.require("simple-prefs");
 
-  sp.on("test-listen", function () {
+  let listener = function () {
     test.pass("The prefs listener heard the right event");
     test.done();
-  });
+  };
+
+  sp.on("test-listen", listener);
 
   sp.prefs["test-listen"] = true;
   loader.unload();
+};
+
+exports.testPrefRemoveListener = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+  let counter = 0;
+
+  let listener = function () {
+    test.pass("The prefs listener was not removed yet");
+
+    if (++counter > 1)
+      test.fail("The prefs listener was not removed");
+
+    sp.removeListener("test-listen2", listener);
+
+    sp.prefs["test-listen2"] = false;
+
+    setTimeout(function() {
+      test.pass("The prefs listener was removed");
+      loader.unload();
+      test.done();
+    }, 250);
+  };
+
+  sp.on("test-listen2", listener);
+
+  sp.prefs["test-listen2"] = true;
 };
