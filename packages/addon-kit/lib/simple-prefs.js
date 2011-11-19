@@ -73,9 +73,8 @@ const events = EventEmitter.compose({
     observers.add(BUTTON_PRESSED, this._buttonObserver, this);
   },
   _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
-    console.log(topic);
     if (topic == "nsPref:changed") {
-      this._emit(prefName);
+      this._emit(prefName, prefName);
     }
   },
   _buttonObserver: function PrefsButtonObserver(subject, data) {

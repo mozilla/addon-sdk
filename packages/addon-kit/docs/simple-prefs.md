@@ -17,3 +17,31 @@ values.
   A persistent object private to your add-on.  Properties with boolean,
   number, and string values will be persisted in the Mozilla preferences system.
 </api>
+
+
+<api name="on">
+@function
+Registers an event `listener` that will be called when a preference is changed.
+
+**Example:**
+
+    require("simple-prefs").on('pref-name', function(prefName) {
+      console.log('The following pref was changed: ' + prefName)
+    });
+
+@param prefName {String}
+  The name of the preference to watch for changes.
+@param listener {Function}
+  The listener function that processes the event.
+</api>
+
+<api name="removeListener">
+@function
+Unregisters an event `listener` for the specified preference.
+
+@param prefName {String}
+  The name of the preference to watch for changes.
+@param listener {Function}
+  The listener function that processes the event.
+</api>
+

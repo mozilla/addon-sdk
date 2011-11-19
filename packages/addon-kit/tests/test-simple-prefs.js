@@ -105,8 +105,8 @@ exports.testPrefListener = function(test) {
   let loader = Loader(module);
   let sp = loader.require("simple-prefs");
 
-  let listener = function () {
-    test.pass("The prefs listener heard the right event");
+  let listener = function(prefName) {
+    test.assertEqual(prefName, "test-listen", "The prefs listener heard the right event");
     test.done();
   };
 
@@ -123,7 +123,7 @@ exports.testPrefRemoveListener = function(test) {
   let sp = loader.require("simple-prefs");
   let counter = 0;
 
-  let listener = function () {
+  let listener = function() {
     test.pass("The prefs listener was not removed yet");
 
     if (++counter > 1)
