@@ -51,8 +51,9 @@ called `package.json`. This file is also referred to as the
 * `preferences` - a JSON object whose keys are preference names, where each
   key is has a JSON object that has the following optional keys `type`, `value`,
   `title`, and `description`.  This JSON object will be used to automatically
-  create a `options.xul` file for inline options,
+  create a `options.xul` file for [inline options](https://developer.mozilla.org/en/Extensions/Inline_Options),
   and a `defaults/preferences/prefs.js` file for default preference values.
+  For more information see the documentation of [simple-prefs](packages/addon-kit/docs/simple-prefs.html).
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
