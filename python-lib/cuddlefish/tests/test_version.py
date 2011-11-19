@@ -2,7 +2,7 @@ import os
 import unittest
 import shutil
 
-from cuddlefish.version import get_version
+from cuddlefish._version import get_version
 
 class Version(unittest.TestCase):
     def get_basedir(self):
@@ -23,10 +23,3 @@ class Version(unittest.TestCase):
         version = get_version(env_root)
         self.failUnless(isinstance(version, str), (version, type(version)))
         self.failUnless(len(version) > 0, version)
-    def test_read(self):
-        basedir = self.make_basedir()
-        f = open(os.path.join(basedir, ".version"), "w")
-        f.write("versioniffic\n")
-        f.close()
-        sdk_version = get_version(basedir)
-        self.failUnlessEqual(sdk_version, "versioniffic")
