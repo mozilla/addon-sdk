@@ -73,14 +73,14 @@ const events = EventEmitter.compose({
     observers.add(BUTTON_PRESSED, this._buttonObserver, this);
   },
   _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
-                  console.log(topic);
-                  if (topic == "nsPref:changed") {
-                    this._emit(prefName);
-                  }
-                },
+    console.log(topic);
+    if (topic == "nsPref:changed") {
+      this._emit(prefName);
+    }
+  },
   _buttonObserver: function PrefsButtonObserver(subject, data) {
-                  this._emit(data);
-                },
+    this._emit(data);
+  },
   unload: function manager_unload() {
     this._removeAllListeners("error");
     branch.removeObserver("", this._prefObserver);
