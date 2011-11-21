@@ -706,3 +706,20 @@ exports.testGlobalScope = createProxyTest("", function (helper) {
   );
 
 });
+
+// Bug 671016: Typed arrays should not be proxified
+exports.testTypedArrays = createProxyTest("", function (helper) {
+
+  helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      let canvas = document.createElement("canvas");
+      let context = canvas.getContext("2d");
+      let imageData = context.getImageData(0,0, 1, 1);
+      let unwrappedData = imageData.valueOf(UNWRAP_ACCESS_KEY).data;
+      let data = imageData.data;
+      assert(unwrappedData === data, "Typed array isn't proxified")
+      done();
+    }
+  );
+
+});
