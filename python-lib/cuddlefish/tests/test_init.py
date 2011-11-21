@@ -1,6 +1,6 @@
 import os, unittest, shutil
 from StringIO import StringIO
-from cuddlefish import initializer
+from cuddlefish import initializer, get_unique_prefix
 from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
 
 class TestInit(unittest.TestCase):
@@ -80,6 +80,17 @@ class TestInit(unittest.TestCase):
 
     def test_existing_files(self):
         self.run_init_in_subdir("existing_files", self._test_existing_files)
+
+class TestRun(unittest.TestCase):
+
+    def test_get_unique_prefix(self):
+        self.assertEqual(get_unique_prefix("LOWERCASEME"), "lowercaseme-")
+        self.assertEqual(get_unique_prefix("foo@example.com"),
+                         "foo-at-example-dot-com-")
+        self.assertEqual(
+            get_unique_prefix("{74343602-334C-4570-BBCD-69BDE8CAFBD1}"),
+            "74343602-334c-4570-bbcd-69bde8cafbd1-"
+        )
 
 if __name__ == "__main__":
     unittest.main()

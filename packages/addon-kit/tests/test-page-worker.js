@@ -307,7 +307,7 @@ tests.testPingPong = function(test) {
       + 'self.postMessage("ready");',
     onMessage: function(message) {
       if ('ready' == message) {
-        return page.postMessage('ping');
+        page.postMessage('ping');
       }
       else {
         test.assert(message, 'pong', 'Callback from contentScript');

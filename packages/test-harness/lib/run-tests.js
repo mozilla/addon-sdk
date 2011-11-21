@@ -68,13 +68,31 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, p
     }
   };
 
-  harness.runTests({iterations: iterations,
-                    filter: filter,
-                    profileMemory: profileMemory,
-                    verbose: verbose,
-                    rootPaths: rootPaths,
-                    print: print,
-                    onDone: onDone});
+  // We have to wait for this window to be fully loaded *and* focused
+  // in order to avoid it to mess with our various window/focus tests.
+  // We are first waiting for our window to be fully loaded before ensuring
+  // that it will take the focus, and then we wait for it to be focused.
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    window.addEventListener("focus", function onfocus() {
+      window.removeEventListener("focus", onfocus, true);
+      // Finally, we have to run test on next cycle, otherwise XPCOM components
+      // are not correctly updated.
+      // For ex: nsIFocusManager.getFocusedElementForWindow may throw
+      // NS_ERROR_ILLEGAL_VALUE exception.
+      require("timer").setTimeout(function () {
+        harness.runTests({iterations: iterations,
+                          filter: filter,
+                          profileMemory: profileMemory,
+                          verbose: verbose,
+                          rootPaths: rootPaths,
+                          print: print,
+                          onDone: onDone});
+      }, 0);
+    }, true);
+    window.focus();
+  }, true);
 }
 
 function printFailedTests(tests, verbose, print) {

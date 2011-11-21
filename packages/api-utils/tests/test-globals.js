@@ -10,11 +10,11 @@ exports.testGlobals = function(test) {
   test.assertObject(console, "have 'console', good");
 
   // in particular, these old globals should no longer be present
-  test.assertUndefined(global.packaging, "no 'packaging', good");
-  test.expectFail(
-    // this will be fixed by bug 620559
-    function () test.assertUndefined(global.memory, "no 'memory', good")
-  );
+  test.assert(!('packaging' in global), "no 'packaging', good");
+  // this will be fixed by bug 620559
+  test.expectFail(function() {
+    test.assert(!('memory' in global), "no 'memory', good");
+  });
 
   test.assertMatches(module.uri, /test-globals\.js$/,
                      'should contain filename');

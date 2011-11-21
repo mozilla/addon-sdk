@@ -111,7 +111,7 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     <p>For example, to pass the
     <code>-jsconsole</code> argument to Firefox, which will launch the
     <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
-    Error Console</a>, try the following:</p<>
+    Error Console</a>, try the following:</p>
     <pre>cfx run --binary-args -jsconsole</pre>
     <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
     <pre>cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
@@ -263,9 +263,8 @@ To launch the application, enter the following command:
     <code>--e10s</code>
   </td>
   <td>
-    If this option is set then the add-on runs in a separate process. See
-    <a href="dev-guide/module-development/e10s.html">out-of-process add-ons</a>
-    for details.
+    If this option is set then the add-on runs in a separate process.
+    This option is currently not implemented.
   </td>
 </tr>
 
@@ -333,7 +332,7 @@ times.
     <p>For example, to pass the
     <code>-jsconsole</code> argument to Firefox, which will launch the
     <a href="https://developer.mozilla.org/en/Error_Console">JavaScript
-    Error Console</a>, try the following:</p<>
+    Error Console</a>, try the following:</p>
     <pre>cfx run --binary-args -jsconsole</pre>
     <p>To pass multiple arguments, or arguments containing spaces, quote them:</p>
     <pre>cfx run --binary-args '-url "www.mozilla.org" -jsconsole'</pre>
@@ -488,9 +487,8 @@ To launch the application, enter the following command:
     <code>--e10s</code>
   </td>
   <td>
-    If this option is set then the add-on runs in a separate process. See
-    <a href="dev-guide/module-development/e10s.html">out-of-process add-ons</a>
-    for details.
+    If this option is set then the add-on runs in a separate process.
+    This option is currently not implemented.
   </td>
 </tr>
 

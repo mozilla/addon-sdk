@@ -37,20 +37,17 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
+const { EventEmitter } = require('./events'),
+      { Trait } = require('./traits');
+const errors = require("./errors");
 
-const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
-
-var errors = require("./errors");
-
-var gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-                     .getService(Ci.nsIWindowWatcher);
-
+const gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+                       getService(Ci.nsIWindowWatcher);
 const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
                         getService(Ci.nsIAppShellService);
 
-const { EventEmitter } = require('./events'),
-      { Trait } = require('./traits');
+const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 /**
  * An iterator for XUL windows currently in the application.
@@ -216,37 +213,34 @@ exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 
-function createHiddenWindow() {
+function createHiddenXULFrame() {
   return function promise(deliver) {
-    // We use popup=yes and we explicitly hide it with `nsIBaseWindow` interface
-    // in order to have a window that doesn't appear in taskbar/dock.
+    let window = appShellService.hiddenDOMWindow;
+    let document = window.document;
+    let isXMLDoc = (document.contentType == "application/xhtml+xml" ||
+                    document.contentType == "application/vnd.mozilla.xul+xml")
 
-    let markup = '<?xml version="1.0"?><window xmlns="' + XUL + '"></window>';
-    let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
-    let features = "chrome,width=0,height=0,popup=yes";
-
-    let window = gWindowWatcher.openWindow(null, url, null, features, null);
-    let base = window.QueryInterface(Ci.nsIInterfaceRequestor).
-                      getInterface(Ci.nsIWebNavigation).
-                      QueryInterface(Ci.nsIDocShell).
-                      QueryInterface(Ci.nsIDocShellTreeItem).
-                      treeOwner.
-                      QueryInterface(Ci.nsIBaseWindow);
-
-    base.visibility = false;
-    base.enabled = false;
-
-    window.addEventListener('DOMContentLoaded', function onLoad(event) {
-      window.removeEventListener('DOMContentLoaded', onLoad, false);
-      deliver(window);
-    }, false);
-  };
+    if (isXMLDoc) {
+      deliver(window)
+    }
+    else {
+      let frame = document.createElement('iframe');
+      // This is ugly but we need window for XUL document in order to create
+      // browser elements.
+      frame.setAttribute('src', 'chrome://browser/content/hiddenWindow.xul');
+      frame.addEventListener('DOMContentLoaded', function onLoad(event) {
+        frame.removeEventListener('DOMContentLoaded', onLoad, false);
+        deliver(frame.contentWindow);
+      }, false);
+      document.documentElement.appendChild(frame);
+    }
+  }
 };
-exports.createHiddenWindow = createHiddenWindow;
+exports.createHiddenXULFrame = createHiddenXULFrame;
 
 exports.createRemoteBrowser = function createRemoteBrowser(remote) {
   return function promise(deliver) {
-    createHiddenWindow()(function(hiddenWindow) {
+    createHiddenXULFrame()(function(hiddenWindow) {
       let document = hiddenWindow.document;
       let browser = document.createElementNS(XUL, "browser");
       // Remote="true" enable everything here:
