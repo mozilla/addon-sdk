@@ -35,8 +35,11 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+
 const { Loader } = require("./helpers");
 const setTimeout = require("timers").setTimeout;
+const notify = require("observer-service").notify;
+const { jetpackID } = require("@packaging");
 
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
@@ -113,6 +116,21 @@ exports.testPrefListener = function(test) {
   sp.on("test-listen", listener);
 
   sp.prefs["test-listen"] = true;
+  loader.unload();
+};
+
+exports.testBtnListener = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+
+  sp.on("test-btn-listen", function() {
+    test.pass("Button press event was heard");
+    test.done();
+  });
+  notify((jetpackID + "-cmdPressed"), "", "test-btn-listen");
+
   loader.unload();
 };
 
