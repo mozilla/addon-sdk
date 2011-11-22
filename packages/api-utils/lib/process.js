@@ -62,11 +62,14 @@ function process(target, id, uri, scope) {
   // the same turn of event loop).
 
   loadScript(target, packaging.loader, false);
-  loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
-  loadScript(target, 'data:,let loader = Loader.new(options);\n' +
+  loadScript(target, 'data:,let loader = Loader.new(' +
+                      JSON.stringify(packaging) + ');\n' +
                      'loader.main("' + id + '", "' + uri + '");', false);
 
   when(function (reason) {
+    // Please note that it's important to unload remote loader
+    // synchronously (using synchronous frame script), to make sure that we
+    // don't stop during unload.
     loadScript(target, 'data:,loader.unload("' + reason + '")', true);
   });
 
