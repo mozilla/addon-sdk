@@ -8,7 +8,7 @@ from copy import copy
 import simplejson as json
 from cuddlefish import packaging
 from cuddlefish.bunch import Bunch
-from cuddlefish.version import get_version
+from cuddlefish._version import get_versions
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
 MOZRUNNER_BIN_NOT_FOUND_HELP = """
@@ -475,6 +475,7 @@ def get_unique_prefix(jid):
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
+    sdk_version = get_versions()["version"]
     parser_kwargs = dict(arguments=arguments,
                          global_options=global_options,
                          parser_groups=parser_groups,
@@ -492,6 +493,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     command = args[0]
 
+    if command == "version":
+        print "addon-sdk %s" % sdk_version
+        print " full revisionid: %s" % get_versions()["full"]
+        return
     if command == "init":
         initializer(env_root, args)
         return
@@ -510,9 +515,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_docs(env_root, filename=args[1])
+            docs_home = generate.generate_docs(env_root,
+                                               sdk_version=sdk_version,
+                                               filename=args[1])
         else:
-            docs_home = generate.generate_docs(env_root)
+            docs_home = generate.generate_docs(env_root,
+                                               sdk_version=sdk_version)
             webbrowser.open(docs_home)
         return
     elif command == "sdocs":
@@ -708,7 +716,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['metadata'] = packaging.get_metadata(pkg_cfg, used_deps)
 
-    sdk_version = get_version(env_root)
     harness_options['sdkVersion'] = sdk_version
 
     packaging.call_plugins(pkg_cfg, used_deps)

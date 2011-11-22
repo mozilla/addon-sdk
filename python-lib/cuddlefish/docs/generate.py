@@ -39,17 +39,18 @@ def generate_static_docs(env_root, base_url=None):
     tgz.close()
     return TGZ_FILENAME
 
-def generate_docs(env_root, base_url=None, filename=None, stdout=sys.stdout):
+def generate_docs(env_root, sdk_version=None, base_url=None, filename=None,
+                  stdout=sys.stdout):
     docs_dir = os.path.join(env_root, DOCS_DIR)
     base_url = calculate_base_url(base_url, docs_dir)
     # if we were given a filename, just generate the named file
     # and return its URL
     if filename:
-        return generate_named_file(env_root, base_url, filename)
+        return generate_named_file(env_root, base_url, filename, sdk_version)
     # if the generated docs don't exist, generate everything
     if not os.path.exists(os.path.join(docs_dir, "index.html")):
         print >>stdout, "Generating documentation..."
-        generate_docs_from_scratch(env_root, base_url, docs_dir)
+        generate_docs_from_scratch(env_root, base_url, docs_dir, sdk_version)
         current_status = calculate_current_status(env_root)
         open(os.path.join(env_root, DOCS_DIR, DIGEST), "w").write(current_status)
     else:
@@ -61,7 +62,7 @@ def generate_docs(env_root, base_url=None, filename=None, stdout=sys.stdout):
         # if the docs are not up to date, generate everything
         if not docs_are_up_to_date:
             print >>stdout, "Regenerating documentation..."
-            generate_docs_from_scratch(env_root, base_url, docs_dir)
+            generate_docs_from_scratch(env_root, base_url, docs_dir, sdk_version)
             open(os.path.join(env_root, DOCS_DIR, DIGEST), "w").write(current_status)
     return base_url + "index.html"
 
@@ -77,16 +78,16 @@ def calculate_base_url(base_url, docs_dir):
         base_url = "file://" + "/".join(base_url_path_pieces) + "/"
     return base_url
 
-def generate_named_file(env_root, base_url, filename):
+def generate_named_file(env_root, base_url, filename, sdk_version):
     docs_dir = os.path.join(env_root, DOCS_DIR)
     web_docs = webdocs.WebDocs(env_root, base_url)
 
     # next, generate api doc or guide doc
     abs_path = os.path.abspath(filename)
     if abs_path.startswith(os.path.join(env_root, 'packages')):
-        return generate_api_doc(env_root, abs_path, web_docs)
+        return generate_api_doc(env_root, abs_path, web_docs, sdk_version)
     elif abs_path.startswith(os.path.join(env_root, DOCS_DIR, 'dev-guide-source')):
-        return generate_guide_doc(env_root, abs_path, web_docs)
+        return generate_guide_doc(env_root, abs_path, web_docs, sdk_version)
     else:
         raise ValueError("Not a valid path to a documentation file")
 
@@ -112,7 +113,7 @@ def calculate_current_status(env_root):
     current_status.update(str(os.path.getmtime(os.path.join(dirpath, base_html_file))))
     return current_status.digest()
 
-def generate_docs_from_scratch(env_root, base_url, docs_dir):
+def generate_docs_from_scratch(env_root, base_url, docs_dir, sdk_version):
     web_docs = webdocs.WebDocs(env_root, base_url)
     clean_generated_docs(docs_dir)
 
@@ -153,26 +154,28 @@ def generate_docs_from_scratch(env_root, base_url, docs_dir):
         docs_src_dir = os.path.join(src_dir, "doc")
         if os.path.isdir(os.path.join(src_dir, "docs")):
             docs_src_dir = os.path.join(src_dir, "docs")
-        generate_file_tree(env_root, docs_src_dir, web_docs, generate_api_doc)
+        generate_file_tree(env_root, docs_src_dir, web_docs, sdk_version,
+                           generate_api_doc)
 
     # generate all the guide docs
     dev_guide_src = os.path.join(env_root, DOCS_DIR, "dev-guide-source")
-    generate_file_tree(env_root, dev_guide_src, web_docs, generate_guide_doc)
+    generate_file_tree(env_root, dev_guide_src, web_docs, sdk_version,
+                       generate_guide_doc)
 
     # make /md/dev-guide/welcome.html the top level index file
     shutil.copy(os.path.join(env_root, DOCS_DIR, 'dev-guide', 'welcome.html'), \
                  os.path.join(docs_dir, 'index.html'))
 
-def generate_file_tree(env_root, src_dir, web_docs, generate_file):
+def generate_file_tree(env_root, src_dir, web_docs, sdk_version, generate_file):
     for (dirpath, dirnames, filenames) in os.walk(src_dir):
         assert dirpath.startswith(src_dir) # what is this for??
         for filename in filenames:
             if filename.endswith("~"):
                 continue
             src_path = os.path.join(dirpath, filename)
-            generate_file(env_root, src_path, web_docs)
+            generate_file(env_root, src_path, web_docs, sdk_version)
 
-def generate_api_doc(env_root, src_dir, web_docs):
+def generate_api_doc(env_root, src_dir, web_docs, sdk_version):
     if src_dir.endswith(".md"):
         dest_dir, filename = get_api_doc_dest_path(env_root, src_dir)
         if not os.path.exists(dest_dir):
@@ -192,18 +195,20 @@ def generate_api_doc(env_root, src_dir, web_docs):
 
         # write the standalone HTML files
         docs_html = web_docs.create_module_page(src_dir)
+        docs_html = docs_html.replace("$SDKVERSION", sdk_version)
         dest_path_html = os.path.join(dest_dir, filename) + ".html"
         replace_file(dest_path_html, docs_html)
 
         return dest_path_html
 
-def generate_guide_doc(env_root, src_dir, web_docs):
+def generate_guide_doc(env_root, src_dir, web_docs, sdk_version):
     if src_dir.endswith(".md"):
         dest_dir, filename = get_guide_doc_dest_path(env_root, src_dir)
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
         # write the standalone HTML files
         docs_html = web_docs.create_guide_page(src_dir)
+        docs_html = docs_html.replace("$SDKVERSION", sdk_version)
         dest_path_html = os.path.join(dest_dir, filename) + ".html"
         replace_file(dest_path_html, docs_html)
         return dest_path_html

@@ -22,3 +22,6 @@ use it to build add-ons. If you're new to the SDK start with the
 * The [Internals Guide](dev-guide/module-development/about.html) explains how you can
 use the low-level modules in the SDK to extend the APIs. It's intended for
 advanced developers and people working on the SDK itself.
+
+--
+SDK version $SDKVERSION
