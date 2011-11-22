@@ -7,23 +7,24 @@ public API.
 
       ns(publicAPI).secret = secret;
 
-One namespace may be used for may be used with multiple objects:
+One namespace may be used with multiple objects:
 
       let { Namespace } = require('api-utils/namespace');
-      let domns = Namespace();
+      let dom = Namespace();
 
       function View(element) {
         let view = Object.create(View.prototype);
-        domns(view).element = element;
+        dom(view).element = element;
         // ....
       }
       View.prototype.destroy = function destroy() {
-        let { element } = domns(this);
+        let { element } = dom(this);
         element.parentNode.removeChild(element);
         // ...
       };
       // ...
       exports.View = View;
+      // ...
 
 Also, multiple namespaces can be used with one object:
 
@@ -33,6 +34,7 @@ Also, multiple namespaces can be used with one object:
       let { Namespace } = require('api-utils/namespace');
       let { View } = require('./view');
 
+      // Note this is completely independent from View's internal Namespace object.
       let ns = Namespace();
 
       function Widget(options) {
@@ -55,10 +57,10 @@ Also, multiple namespaces can be used with one object:
       };
       exports.Widget = Widget;
 
-In addition access to the namespace can be shared by just handing them a
-namespace accessor function.
+In addition access to the namespace can be shared with other code by just
+handing them a namespace accessor function.
 
-      let { domns } = require('./view');
+      let { dom } = require('./view');
       Widget.prototype.setInnerHTML = function setInnerHTML(html) {
-        domns(this).element.innerHTML = String(html);
+        dom(this).element.innerHTML = String(html);
       };
