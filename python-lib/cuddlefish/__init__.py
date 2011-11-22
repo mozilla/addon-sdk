@@ -515,9 +515,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_docs(env_root, filename=args[1])
+            docs_home = generate.generate_docs(env_root,
+                                               sdk_version=sdk_version,
+                                               filename=args[1])
         else:
-            docs_home = generate.generate_docs(env_root)
+            docs_home = generate.generate_docs(env_root,
+                                               sdk_version=sdk_version)
             webbrowser.open(docs_home)
         return
     elif command == "sdocs":
