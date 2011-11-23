@@ -25,7 +25,7 @@ Examples
 The following code creates a hidden frame, loads a web page into it, and then
 logs its title:
 
-    const hiddenFrames = require("hidden-frame");
+    var hiddenFrames = require("hidden-frame");
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function() {
         this.element.contentWindow.location = "http://www.mozilla.org/";

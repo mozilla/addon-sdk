@@ -3,6 +3,10 @@ import zipfile
 import simplejson as json
 from cuddlefish.util import filter_filenames, filter_dirnames
 
+class HarnessOptionAlreadyDefinedError(Exception):
+    """You cannot use --harness-option on keys that already exist in
+    harness-options.json"""
+
 ZIPSEP = "/" # always use "/" in zipfiles
 
 def make_zipfile_path(localroot, localpath):
@@ -14,7 +18,7 @@ def mkzipdir(zf, path):
     zf.writestr(dirinfo, "")
 
 def build_xpi(template_root_dir, manifest, xpi_path,
-              harness_options, limit_to=None):
+              harness_options, limit_to=None, extra_harness_options={}):
     zf = zipfile.ZipFile(xpi_path, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
@@ -87,6 +91,12 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         if name in files_to_copy:
             zf.write(files_to_copy[name], name)
 
+    harness_options = harness_options.copy()
+    for key,value in extra_harness_options.items():
+        if key in harness_options:
+            msg = "Can't use --harness-option for existing key '%s'" % key
+            raise HarnessOptionAlreadyDefinedError(msg)
+        harness_options[key] = value
     open('.options.json', 'w').write(json.dumps(harness_options, indent=1,
                                                 sort_keys=True))
     zf.write('.options.json', 'harness-options.json')

@@ -7,15 +7,15 @@ exports.testSelf = function(test) {
   test.assertEqual(typeof(self.id), "string", "self.id is a string");
   test.assert(self.id.length > 0);
 
-  var source = self.data.load("bootstrap-remote-process.js");
-  test.assert(source.match(/registerReceiver/), "self.data.load() works");
+  var source = self.data.load("test-content-symbiont.js");
+  test.assert(source.match(/test-content-symbiont/), "self.data.load() works");
 
   // Likewise, we can't assert anything about the full URL, because that
   // depends on self.id . We can only assert that it ends in the right
   // thing.
-  var url = self.data.url("bootstrap-remote-process.js");
+  var url = self.data.url("test-content-symbiont.js");
   test.assertEqual(typeof(url), "string", "self.data.url('x') returns string");
-  test.assertEqual(/\/bootstrap-remote-process\.js$/.test(url), true);
+  test.assertEqual(/\/test-content-symbiont\.js$/.test(url), true);
 
   // Make sure 'undefined' is not in url when no string is provided.
   url = self.data.url();

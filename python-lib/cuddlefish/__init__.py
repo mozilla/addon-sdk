@@ -2,6 +2,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import re
 
 from copy import copy
 import simplejson as json
@@ -173,6 +174,13 @@ parser_groups = (
                                     metavar=None,
                                     default=None,
                                     cmds=['run', 'test', 'testall'])),
+        (("", "--harness-option",), dict(dest="extra_harness_option_args",
+                                         help=("Extra properties added to "
+                                               "harness-options.json"),
+                                         action="append",
+                                         metavar="KEY=VALUE",
+                                         default=[],
+                                         cmds=['xpi'])),
         ]
      ),
 
@@ -362,18 +370,26 @@ def test_all_examples(env_root, defaults):
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
-    deps = []
-    target_cfg = Bunch(name = "testpkgs", dependencies = deps, version="fake")
-    pkg_cfg = packaging.build_config(env_root, target_cfg)
-    for name in pkg_cfg.packages:
-        if name != "testpkgs":
-            deps.append(name)
-    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(deps))
+    packages_dir = os.path.join(env_root, "packages")
+    packages = [dirname for dirname in os.listdir(packages_dir)
+                if os.path.isdir(os.path.join(packages_dir, dirname))]
+    packages.sort()
+    print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))
     sys.stderr.flush()
-    run(arguments=["test", "--dependencies"],
-        target_cfg=target_cfg,
-        pkg_cfg=pkg_cfg,
-        defaults=defaults)
+    fail = False
+    for dirname in packages:
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
+        try:
+            run(arguments=["test",
+                           "--pkgdir",
+                           os.path.join(packages_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+    if fail:
+        sys.exit(-1)
 
 def get_config_args(name, env_root):
     local_json = os.path.join(env_root, "local.json")
@@ -431,6 +447,31 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
+def get_unique_prefix(jid):
+    """Get a string that can be used to uniquely identify addon resources
+       in resource: URLs.  The string can't simply be the JID because
+       the resource: URL prefix is treated too much like a DNS hostname,
+       so we have to sanitize it in various ways."""
+
+    unique_prefix = jid
+    unique_prefix = unique_prefix.lower()
+    unique_prefix = unique_prefix.replace("@", "-at-")
+    unique_prefix = unique_prefix.replace(".", "-dot-")
+
+    # Strip optional but common curly brackets from around UUID-based IDs.
+    unique_prefix = re.sub(r'''(?x) ^\{
+                                    ([0-9a-f]{8}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{4}-
+                                     [0-9a-f]{12})
+                                    \}$
+                           ''', r'\1', unique_prefix)
+
+    unique_prefix = '%s-' % unique_prefix
+
+    return unique_prefix
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -472,7 +513,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             docs_home = generate.generate_docs(env_root, filename=args[1])
         else:
             docs_home = generate.generate_docs(env_root)
-        webbrowser.open(docs_home)
+            webbrowser.open(docs_home)
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate
@@ -573,13 +614,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         jid = harness_guid
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
-    unique_prefix = '%s-' % jid # used for resource: URLs
-    bundle_id = jid
 
-    # the resource: URL's prefix is treated too much like a DNS hostname
-    unique_prefix = unique_prefix.lower()
-    unique_prefix = unique_prefix.replace("@", "-at-")
-    unique_prefix = unique_prefix.replace(".", "-dot-")
+    unique_prefix = get_unique_prefix(jid)
+    bundle_id = jid
 
     targets = [target]
     if command == "test":
@@ -659,9 +696,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == "test":
         # This should be contained in the test runner package.
+        # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
+        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri(uri_prefix)
     else:
         harness_options['main'] = target_cfg.get('main')
+        harness_options['mainURI'] = manifest.top_uri
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
@@ -682,6 +722,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.join(mydir, "app-extension")
 
     harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+    harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
@@ -712,13 +753,18 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
+        extra_harness_options = {}
+        for kv in options.extra_harness_option_args:
+            key,value = kv.split("=", 1)
+            extra_harness_options[key] = value
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
                   manifest=manifest_rdf,
                   xpi_path=xpi_path,
                   harness_options=harness_options,
-                  limit_to=used_files)
+                  limit_to=used_files,
+                  extra_harness_options=extra_harness_options)
     else:
         from cuddlefish.runner import run_app
 

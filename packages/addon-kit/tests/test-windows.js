@@ -36,21 +36,26 @@
  * ***** END LICENSE BLOCK ***** */
 
 const {Cc, Ci} = require("chrome");
+const { setTimeout } = require("timer");
+const { Loader } = require('./helpers');
+const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
+           getService(Ci.nsIWindowMediator);
+let browserWindows;
+
+function getTestRunnerWindow() wm.getMostRecentWindow("test:runner")
 
 exports.testOpenAndCloseWindow = function(test) {
-    
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
 
-  test.assertEqual(windows.length, 1, "Only one window open");
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
-  windows.open({
+  browserWindows.open({
     url: "data:text/html,<title>windows API test</title>",
     onOpen: function(window) {
-      test.assertEqual(this, windows,
+      test.assertEqual(this, browserWindows,
                        "The 'this' object is the windows object.");
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
-      test.assertEqual(windows.length, 2, "Two windows open");
+      test.assertEqual(browserWindows.length, 2, "Two windows open");
       window.tabs.activeTab.on('ready', function onReady(tab) {
         tab.removeListener('ready', onReady);
         test.assert(window.title.indexOf("windows API test") != -1,
@@ -60,7 +65,7 @@ exports.testOpenAndCloseWindow = function(test) {
     },
     onClose: function(window) {
       test.assertEqual(window.tabs.length, 0, "Tabs were cleared");
-      test.assertEqual(windows.length, 1, "Only one window open");
+      test.assertEqual(browserWindows.length, 1, "Only one window open");
       test.done();
     }
   });
@@ -69,11 +74,11 @@ exports.testOpenAndCloseWindow = function(test) {
 exports.testAutomaticDestroy = function(test) {
     
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
   // Create a second windows instance that we will unload
   let called = false;
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let windows2 = loader.require("windows").browserWindows;
   windows2.on("open", function() {
     called = true;
@@ -85,7 +90,7 @@ exports.testAutomaticDestroy = function(test) {
   windows.open({
     url: "data:text/html,foo",
     onOpen: function(window) {
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         test.assert(!called, 
           "Unloaded windows instance is destroyed and inactive");
         window.close(function () {
@@ -99,9 +104,9 @@ exports.testAutomaticDestroy = function(test) {
 
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
-  test.assertEqual(windows.length, 1, "Only one window open");
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   let received = {
     listener1: false,
@@ -165,9 +170,8 @@ exports.testOnOpenOnCloseListeners = function(test) {
 
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
 
-  windows.open({
+  browserWindows.open({
     url: "data:text/html,<title>tab 1</title>",
     onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
@@ -202,29 +206,13 @@ exports.testActiveWindow = function(test) {
     return;
   }
 
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
   // API window objects
   let window2, window3;
 
   // Raw window objects
-  let nonBrowserWindow, rawWindow2, rawWindow3;
-
-  // Find the first non-browser window: probably the test runner window
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-             .getService(Ci.nsIWindowMediator);
-  let winEnum = wm.getEnumerator("");
-  while (winEnum.hasMoreElements()) {
-    let win = winEnum.getNext();
-    if (win.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
-      nonBrowserWindow = win;
-      break;
-    }
-  }
-  if (!nonBrowserWindow) {
-    test.fail("This test can't proceed without a non-browser window");
-    return;
-  }
+  let nonBrowserWindow = getTestRunnerWindow(), rawWindow2, rawWindow3;
 
   test.waitUntilDone();
 
@@ -337,7 +325,7 @@ exports.testActiveWindow = function(test) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("windows");
+  browserWindows = require("windows").browserWindows;
 }
 catch (err) {
   // This bug should be mentioned in the error message.

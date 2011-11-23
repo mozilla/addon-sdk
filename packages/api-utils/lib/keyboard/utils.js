@@ -104,8 +104,12 @@ const KEYS = exports.KEYS = new function Keys() {
   }, this)
 }
 
-exports.getKeyForCode = function getKeyForCode(code) { return KEYS[code]; };
-exports.getCodeForKey = function getCodeForKey(key) { return CODES[key]; };
+exports.getKeyForCode = function getKeyForCode(code) {
+  return (code in KEYS) && KEYS[code];
+};
+exports.getCodeForKey = function getCodeForKey(key) {
+  return (key in CODES) && CODES[key];
+};
 
 /**
  * Utility function that takes string or JSON that defines a `hotkey` and
