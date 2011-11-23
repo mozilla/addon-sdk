@@ -8,7 +8,7 @@ from copy import copy
 import simplejson as json
 from cuddlefish import packaging
 from cuddlefish.bunch import Bunch
-from cuddlefish.version import get_version
+from cuddlefish._version import get_versions
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
 MOZRUNNER_BIN_NOT_FOUND_HELP = """
@@ -259,8 +259,10 @@ class CfxOption(optparse.Option):
     TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
     TYPE_CHECKER['json'] = check_json
 
-def parse_args(arguments, global_options, usage, parser_groups, defaults=None):
-    parser = optparse.OptionParser(usage=usage.strip(), option_class=CfxOption)
+def parse_args(arguments, global_options, usage, version, parser_groups,
+               defaults=None):
+    parser = optparse.OptionParser(usage=usage.strip(), option_class=CfxOption,
+                                   version=version)
 
     def name_cmp(a, b):
         # a[0]    = name sequence
@@ -475,10 +477,14 @@ def get_unique_prefix(jid):
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
+    versions = get_versions()
+    sdk_version = versions["version"]
+    display_version = "Add-on SDK %s (%s)" % (sdk_version, versions["full"])
     parser_kwargs = dict(arguments=arguments,
                          global_options=global_options,
                          parser_groups=parser_groups,
                          usage=usage,
+                         version=display_version,
                          defaults=defaults)
 
     (options, args) = parse_args(**parser_kwargs)
@@ -708,7 +714,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['metadata'] = packaging.get_metadata(pkg_cfg, used_deps)
 
-    sdk_version = get_version(env_root)
     harness_options['sdkVersion'] = sdk_version
 
     packaging.call_plugins(pkg_cfg, used_deps)
