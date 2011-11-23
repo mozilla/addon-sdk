@@ -169,7 +169,7 @@ var WindowTrackerObs = {
 
 require("./unload").when(function() {
   // note: unload() removes the tracker from the WindowTrackers array
-  for each (let tracker in WindowTrackers.slice())
+  for each (let tracker in windowTrackers.slice())
     tracker.unload();
 });
 
