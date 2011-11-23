@@ -165,10 +165,9 @@ var WindowTrackerObs = {
 };
 
 require("./unload").when(function() {
-  // unload() removes the tracker from the windowTrackers array, so looping
-  // backwards thru windowTrackers is important here.
-  for (var i = windowTrackers.length - 1; ~i; i--)
-    windowTrackers[i].unload();
+  // note: unload() removes the tracker from the WindowTrackers array
+  for each (let tracker in WindowTrackers.slice())
+    tracker.unload();
 });
 
 errors.catchAndLogProps(WindowTracker.prototype, ["handleEvent", "observe"]);
