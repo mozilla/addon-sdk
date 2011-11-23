@@ -116,7 +116,7 @@ def get_metadata(pkg_cfg, deps):
 def set_section_dir(base_json, name, base_path, dirnames, allow_root=False):
     resolved = compute_section_dir(base_json, base_path, dirnames, allow_root)
     if resolved:
-        base_json[name] = os.path.abspath(resolved)
+        base_json[name] = [os.path.abspath(path) for path in resolved]
 
 def compute_section_dir(base_json, base_path, dirnames, allow_root):
     # PACKAGE_JSON.lib is highest priority
@@ -125,16 +125,22 @@ def compute_section_dir(base_json, base_path, dirnames, allow_root):
     # then . (but only if allow_root=True)
     for dirname in dirnames:
         if base_json.get(dirname):
-            return os.path.join(base_path, base_json[dirname])
+            normalize_string_or_array(base_json, dirname)
+            return [os.path.join(base_path, path)
+                    for path in base_json[dirname]]
     if "directories" in base_json:
         for dirname in dirnames:
-            if dirname in base_json.directories:
-                return os.path.join(base_path, base_json.directories[dirname])
+            bjdirs = base_json.directories
+            if dirname in bjdirs:
+                if isinstance(bjdirs[dirname], basestring):
+                    bjdirs[dirname] = [bjdirs[dirname]]
+                return [os.path.join(base_path, path)
+                        for path in bjdirs[dirname]]
     for dirname in dirnames:
         if os.path.isdir(os.path.join(base_path, dirname)):
-            return os.path.join(base_path, dirname)
+            return [os.path.join(base_path, dirname)]
     if allow_root:
-        return os.path.abspath(base_path)
+        return [os.path.abspath(base_path)]
     return None
 
 def normalize_string_or_array(base_json, key):
@@ -189,10 +195,9 @@ def get_config_in_dir(path):
         os.path.isfile(os.path.join(path, DEFAULT_ICON64))):
         base_json['icon64'] = DEFAULT_ICON64
 
-    for key in ['lib', 'tests', 'dependencies', 'packages']:
-        # TODO: lib/tests can be an array?? consider interaction with
-        # compute_section_dir above
-        normalize_string_or_array(base_json, key)
+    # Note 'lib', 'tests' and 'packages' are already guaranteed to be lists
+    # via set_section_dir above, so only 'dependencies' needs handling here.
+    normalize_string_or_array(base_json, 'dependencies')
 
     if 'main' not in base_json and 'lib' in base_json:
         for dirname in base_json['lib']:
@@ -291,21 +296,18 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # function, it has nothing to do w/ a non-canonical
                 # configuration dict.
                 dirnames = [dirnames]
-            for dirname in resolve_dirs(cfg, dirnames):
-                lib_base = os.path.basename(dirname)
-                name = "-".join([prefix + cfg.name, section])
-                validate_resource_hostname(name)
-                if name in build.resources:
-                    raise KeyError('resource already defined', name)
-                build.resourcePackages[name] = cfg.name
-                build.resources[name] = dirname
-                resource_url = 'resource://%s/' % name
+            name = "-".join([prefix + cfg.name, section])
+            validate_resource_hostname(name)
+            if name in build.resources:
+                raise KeyError('resource already defined', name)
+            build.resources[name] = [d for d in resolve_dirs(cfg, dirnames)]
+            resource_url = 'resource://%s/' % name
 
-                if is_code:
-                    build.rootPaths.insert(0, resource_url)
+            if is_code:
+                build.rootPaths.insert(0, resource_url)
 
-                if is_data:
-                    build.packageData[cfg.name] = resource_url
+            if is_data:
+                build.packageData[cfg.name] = resource_url
 
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]

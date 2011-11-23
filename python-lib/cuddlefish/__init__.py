@@ -677,7 +677,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if 'resources' in build:
         resources = build.resources
         for name in resources:
-            resources[name] = os.path.abspath(resources[name])
+            resources[name] = [os.path.abspath(path) for path in resources[name]]
 
     harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
