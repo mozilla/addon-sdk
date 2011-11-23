@@ -6,4 +6,3 @@
 
 ### [XPI Generation](dev-guide/module-development/xpi.html) ###
 
-### [Out-of-Process Add-ons](dev-guide/module-development/e10s.html) ###

@@ -1,6 +1,7 @@
 import sys, os, re, errno
 import markdown
 import simplejson as json
+import cgi
 
 from cuddlefish import packaging
 from cuddlefish import Bunch
@@ -153,7 +154,7 @@ class WebDocs(object):
         table_contents = ''
         if package_json.get('author', None):
             table_contents += self._create_package_detail_row(\
-                package_json['author'], 'Author', 'author')
+                cgi.escape(package_json['author']), 'Author', 'author')
         if package_json.get('version', None):
             table_contents += self._create_package_detail_row(\
                 package_json['version'], 'Version', 'version')

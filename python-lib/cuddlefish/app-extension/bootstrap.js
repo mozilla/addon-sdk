@@ -222,6 +222,13 @@ function startup(data, reason) {
 
 function shutdown(data, reason) {
   // If loader is already present unload it, since add-on is disabled.
-  if (loader)
-    loader.unload(REASON[reason]);
+  if (loader) {
+    reason = REASON[reason]
+    let options = loader.require('@packaging');
+    loader.unload(reason);
+    // `cfx run` expects to see 'OK' or 'FAIL' to be written into a `resultFile`
+    // as a signal of quit.
+    if ('resultFile' in options && reason === 'shutdown')
+      loader.require('api-utils/system').exit(0);
+  }
 };

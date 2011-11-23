@@ -258,7 +258,7 @@ add-on in Firefox's Add-ons Manager and on
 To specify an icon, save it as "icon.png" in your add-on's root directory. To
 give the icon a different name or to store it in a different location
 under the root, use the "icon" key in your `package.json` file. See the
-[Package Specification](file:///Users/Work/mozilla/jetpack-sdk/doc/dev-guide/addon-development/package-spec.html)
+[Package Specification](dev-guide/addon-development/package-spec.html)
 for more details.
 
 ### cfx xpi ###
