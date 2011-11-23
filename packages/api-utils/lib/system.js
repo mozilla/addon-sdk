@@ -56,6 +56,12 @@ const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
 exports.staticArgs = options.staticArgs;
 
 /**
+ * Environment variables. Environment variables are non-enumerable properties
+ * of this object (key is name and value is value).
+ */
+exports.env = require('./environment');
+
+/**
  * Ends the process with the specified `code`. If omitted, exit uses the
  * 'success' code 0. To exit with failure use `1`.
  * TODO: Improve platform to actually quit with an exit code.
