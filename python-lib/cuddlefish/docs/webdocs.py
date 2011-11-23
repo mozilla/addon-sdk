@@ -10,6 +10,8 @@ from cuddlefish.docs import apirenderer
 
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
+VERSION_FILE = ".version"
+VERSION_INSERTION_POINT = '<div id="version">'
 HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
 LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
@@ -132,6 +134,7 @@ class WebDocs(object):
         base_page = unicode(open(root + INDEX_PAGE, 'r').read(), 'utf8')
         base_tag = 'href="' + base_url + '"'
         base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
+        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + open(os.path.join(root, VERSION_FILE), "r").read())
         high_level_summaries = \
             self._create_package_summaries(self.packages_json, is_high_level)
         base_page = insert_after(base_page, \
