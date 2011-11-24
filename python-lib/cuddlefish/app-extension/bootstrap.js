@@ -180,12 +180,13 @@ function startup(data, reason) {
 function shutdown(data, reason) {
   // If loader is already present unload it, since add-on is disabled.
   if (loader) {
-    reason = REASON[reason]
-    let options = loader.require('@packaging');
+    reason = REASON[reason];
+    let system = loader.require('api-utils/system');
     loader.unload(reason);
-    // `cfx run` expects to see 'OK' or 'FAIL' to be written into a `resultFile`
-    // as a signal of quit.
-    if ('resultFile' in options && reason === 'shutdown')
-      loader.require('api-utils/system').exit(0);
+    // If add-on is lunched via `cfx run` we need to use `system.exit` to let
+    // cfx know we're done (`cfx test` will take care of exit so we don't do
+    // anything here).
+    if (system.env.CFX_COMMAND === 'run' && reason === 'shutdown')
+      system.exit(0);
   }
 };
