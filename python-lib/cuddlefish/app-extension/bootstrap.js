@@ -60,6 +60,7 @@ const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
 
 let loader = null;
 
+const URI = __SCRIPT_URI_SPEC__.replace(/bootstrap\.js$/, "");
 
 // Initializes default preferences
 function setDefaultPrefs() {
@@ -84,7 +85,7 @@ function setDefaultPrefs() {
   let uri = ioService.newURI(
       "defaults/preferences/prefs.js",
       null,
-      ioService.newURI(__SCRIPT_URI_SPEC__, null, null));
+      ioService.newURI(URI, null, null));
 
   // if there is a prefs.js file, then import the default prefs
   if (uri.QueryInterface(Ci.nsIFileURL).file.exists()) {
@@ -132,17 +133,6 @@ function readURI(uri) {
   return request.responseText;
 }
 
-// Shim function to get `resourceURI` in pre Gecko 7.0.
-// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
-function resourceURI(file) {
-  // First creating "file:" URI.
-  let uri = ioService.newFileURI(file);
-  if (uri.spec.substr(-4) === '.xpi') // `unpack` is `false`
-    uri = ioService.newURI('jar:' + uri.spec + '!/', null, null);
-
-  return uri;
-}
-
 // Function takes `topic` to be observer via `nsIObserverService` and returns
 // promise that will be delivered once notification is published.
 function on(topic) {
@@ -164,10 +154,10 @@ function on(topic) {
  * handler with an associated key. Each path is resolved relative to the given
  * `root` path.
  */
-function mapResources(root, resources) {
+function mapResources(resources) {
   Object.keys(resources).forEach(function(id) {
     let path = resources[id];
-    let uri = Array.isArray(path) ? root + '/' + path.join('/')
+    let uri = Array.isArray(path) ? URI + '/' + path.join('/')
                                   : 'file://' + path;
     uri = ioService.newURI(uri + '/', null, null);
     resourceHandler.setSubstitution(id, uri);
@@ -180,21 +170,19 @@ function install(data, reason) {}
 function uninstall(data, reason) {}
 
 function startup(data, reason) {
-  let uri = (data.resourceURI || resourceURI(data.installPath)).spec;
-
   // TODO: When bug 564675 is implemented this will no longer be needed
   // Always set the default prefs, because they disappear on restart
   setDefaultPrefs();
 
   // TODO: Maybe we should perform read harness-options.json asynchronously,
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
-  let options = JSON.parse(readURI(uri + './harness-options.json'));
+  let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
 
   // TODO: This is unnecessary overhead per add-on instance. Manifest should
   // probably contain paths relative to add-on root to avoid this, but that
   // requires simpler package layout that is being worked under the bug-660629.
-  mapResources(uri, options.resources);
+  mapResources(options.resources);
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
   loader = Cu.import(options.loader).Loader.new(options);
