@@ -102,6 +102,22 @@ exports.testSetGetString = function(test) {
   test.done();
 };
 
+exports.testHasAndRemove = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  sp.test = true;
+  test.assert(("test" in sp), "Value exists");
+  delete sp.test;
+  test.assertEqual(sp.test, undefined, "Value should be undefined");
+
+  loader.unload();
+  test.done();
+  
+};
+
 exports.testPrefListener = function(test) {
   test.waitUntilDone();
 
