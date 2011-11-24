@@ -37,7 +37,7 @@ header {
   margin: 35px 0 0;
 }
 
-#site-header h1, #site-header #site-nav {
+#site-header h1, #site-header #version, #site-header #site-nav {
   margin-left: 64px;
 }
 
@@ -48,14 +48,17 @@ header {
 #site-header h1 a {
   -moz-transition-duration: 0.2s;
   -moz-transition-property: color, text-shadow;
+  font-size: 40px;
+  text-transform: uppercase;
   color: #333333;
+}
+
+#site-header, #site-header h1 a {
   display: inline-block;
   font-family: MetaBlack;
-  font-size: 40px;
   font-weight: bold;
   letter-spacing: -1px;
   text-decoration: none;
-  text-transform: uppercase;
 }
 
 #site-header h1 a span {

@@ -700,6 +700,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
+    extra_environment = {}
     if command == "test":
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
@@ -708,6 +709,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainURI'] = manifest.top_uri
+    extra_environment["CFX_COMMAND"] = command
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)
@@ -792,6 +794,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              logfile=options.logfile,
                              addons=options.addons,
                              args=options.cmdargs,
+                             extra_environment=extra_environment,
                              norun=options.no_run,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,

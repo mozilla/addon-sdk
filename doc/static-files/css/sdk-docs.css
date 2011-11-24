@@ -18,7 +18,7 @@ h2 {
 #columns {
   padding-left: 250px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/
-  padding-top: 40px;
+  padding-top: 20px;
   min-height: 100%;
   margin-bottom: 170px;
   position: relative;
@@ -37,7 +37,7 @@ h2 {
   left: 45px;
 }
 
-#site-header h1 a {
+#site-header {
   padding-left: 45px;
 }
 
