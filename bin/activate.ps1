@@ -3,7 +3,7 @@
 
 "Note: this PowerShell SDK activation script is experimental."
 
-$PYTHON_MIN_VERSION = [decimal]2.5
+$script:PYTHON_MIN_VERSION = [decimal]2.5
 
 function global:deactivate($nondestructive) {
     if (Test-Path Env:_OLD_VIRTUAL_PATH) {
@@ -53,7 +53,7 @@ $Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
 $Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
 $Env:PATH = "$Env:VIRTUAL_ENV\bin;$Env:PATH";
 
-$PyInstallPathKey = (
+$script:PyInstallPathKey = (
     @('HKCU:SOFTWARE\Python\PythonCore\*\InstallPath',
     'HKLM:SOFTWARE\Python\PythonCore\*\InstallPath',
     'HKLM:SOFTWARE\Wow6432Node\Python\PythonCore\*\InstallPath',
@@ -79,7 +79,7 @@ if (!$PyInstallPathKey) {
     return
 }
 
-$PyInstallPath = $PyInstallPathKey.GetValue('');
+$script:PyInstallPath = $PyInstallPathKey.GetValue('');
 $Env:Path="$PyInstallPath;$Env:Path"
 
 function global:_OLD_VIRTUAL_PROMPT {};
