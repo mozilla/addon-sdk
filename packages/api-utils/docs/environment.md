@@ -1,7 +1,7 @@
 Module provides API to access, set and unset environment variables via exported
 `env` object.
 
-    var env = require('api-utils/environment');
+    var { env } = require('api-utils/environment');
 
 You can get the value of an environment variable, by accessing property that
 has name of desired variable:
