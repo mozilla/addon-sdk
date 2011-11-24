@@ -366,7 +366,8 @@ class XulrunnerAppRunner(mozrunner.Runner):
 def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
             enforce_timeouts=False,
-            logfile=None, addons=None, args=None, norun=None,
+            logfile=None, addons=None, args=None, extra_environment={},
+            norun=None,
             used_files=None, enable_mobile=False,
             mobile_app_name=None):
     if binary:
@@ -448,6 +449,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     env['MOZ_NO_REMOTE'] = '1'
     env['XPCOM_DEBUG_BREAK'] = 'stack'
     env['NS_TRACE_MALLOC_DISABLE_STACKS'] = '1'
+    env.update(extra_environment)
     if norun:
         cmdargs.append("-no-remote")
 
