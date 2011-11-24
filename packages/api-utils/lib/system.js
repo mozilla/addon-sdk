@@ -59,7 +59,7 @@ exports.staticArgs = options.staticArgs;
  * Environment variables. Environment variables are non-enumerable properties
  * of this object (key is name and value is value).
  */
-exports.env = require('./environment');
+exports.env = require('./environment').env;
 
 /**
  * Ends the process with the specified `code`. If omitted, exit uses the
