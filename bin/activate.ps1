@@ -41,18 +41,6 @@ function global:deactivate($nondestructive) {
 
 deactivate $True;
 
-if (Test-Path Env:PYTHONPATH) {
-    $Env:_OLD_PYTHONPATH = $Env:PYTHONPATH
-} else {
-    $Env:_OLD_PYTHONPATH = 'NONE'
-};
-$Env:_OLD_VIRTUAL_PATH = $Env:PATH;
-
-$Env:VIRTUAL_ENV = (Get-Location);
-$Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
-$Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
-$Env:PATH = "$Env:VIRTUAL_ENV\bin;$Env:PATH";
-
 $script:PyInstallPathKey = (
     @('HKCU:SOFTWARE\Python\PythonCore\*\InstallPath',
     'HKLM:SOFTWARE\Python\PythonCore\*\InstallPath',
@@ -93,7 +81,17 @@ if (!$PyExePath) {
     return;
 }
 
-$Env:Path="$PyExeDir;$Env:Path"
+if (Test-Path Env:PYTHONPATH) {
+    $Env:_OLD_PYTHONPATH = $Env:PYTHONPATH
+} else {
+    $Env:_OLD_PYTHONPATH = 'NONE'
+};
+$Env:_OLD_VIRTUAL_PATH = $Env:PATH;
+
+$Env:VIRTUAL_ENV = (Get-Location);
+$Env:CUDDLEFISH_ROOT = $Env:VIRTUAL_ENV;
+$Env:PYTHONPATH = "$Env:VIRTUAL_ENV\python-lib;$Env:PYTHONPATH";
+$Env:PATH = "$PyExeDir;$Env:VIRTUAL_ENV\bin;$Env:PATH";
 
 function global:_OLD_VIRTUAL_PROMPT {};
 Set-Content Function:_OLD_VIRTUAL_PROMPT (Get-Content Function:Prompt);
