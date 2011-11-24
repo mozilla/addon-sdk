@@ -69,14 +69,15 @@ if (!$PyInstallPathKey) {
 
 $script:PyInstallPath = $PyInstallPathKey.GetValue('');
 ForEach($subdir in @('', 'PCBuild', 'PCBuild\amd64')) {
-    $script:PyExeDir = Join-Path $PyInstallPath $_;
-    $script:PyExePath = Join-Path $PyExeDir python.exe;
-    if (Test-Path $PyExePath) {
+    $script:PossiblePyExePath = (
+        Join-Path (Join-Path $PyInstallPath $subdir) python.exe);
+    if (Test-Path $PossiblePyExePath) {
+        $script:PyExeDir = Split-Path $PossiblePyExePath
         break;
     }
 }
 
-if (!$PyExePath) {
+if (!$PyExeDir) {
     "Error: Unable to find python.exe in installation path " + $PyInstallPath
     return;
 }
