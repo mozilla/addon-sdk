@@ -74,7 +74,7 @@ $PyInstallPathKey = (
     Sort-Object Version |
     Select-Object -Last 1 );
 
-if (!$PyRegKey) {
+if (!$PyInstallPathKey) {
     "Error: A recent version of Python 2.x must be installed.";
     return
 }
