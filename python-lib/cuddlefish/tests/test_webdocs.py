@@ -35,6 +35,8 @@ class WebDocTests(unittest.TestCase):
             in guide)
         self.assertTrue('<p><em>Some words!</em></p>'\
             in guide)
+        self.assertTrue('<div id="version">Version 2.0'\
+            in guide)
 
     def test_create_guide2_doc(self):
         root = os.path.join(os.getcwd() + \
