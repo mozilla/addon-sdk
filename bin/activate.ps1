@@ -80,7 +80,20 @@ if (!$PyInstallPathKey) {
 }
 
 $script:PyInstallPath = $PyInstallPathKey.GetValue('');
-$Env:Path="$PyInstallPath;$Env:Path"
+ForEach($subdir in @('', 'PCBuild', 'PCBuild\amd64')) {
+    $script:PyExeDir = Join-Path $PyInstallPath $_;
+    $script:PyExePath = Join-Path $PyExeDir python.exe;
+    if (Test-Path $PyExePath) {
+        break;
+    }
+}
+
+if (!$PyExePath) {
+    "Error: Unable to find python.exe in installation path " + $PyInstallPath
+    return;
+}
+
+$Env:Path="$PyExeDir;$Env:Path"
 
 function global:_OLD_VIRTUAL_PROMPT {};
 Set-Content Function:_OLD_VIRTUAL_PROMPT (Get-Content Function:Prompt);
