@@ -13,12 +13,10 @@ class MissingPrefAttr(Error):
     pass
 
 def validate_prefs(options):
-    for pref_name in options:
-        pref = options[pref_name]
-
+    for pref in options:
         # Make sure there is a 'title'
         if ("title" not in pref):
-            raise MissingPrefAttr("The '%s' pref requires a 'title'" % (pref_name))
+            raise MissingPrefAttr("The '%s' pref requires a 'title'" % (pref["name"]))
 
         # Make sure that the pref type is a valid inline pref type
         if (pref["type"] not in VALID_PREF_TYPES):
@@ -37,10 +35,9 @@ def parse_options(options, jetpack_id):
     root.setAttribute("xmlns", "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
     doc.appendChild(root)
 
-    for pref_name in options:
-        pref = options[pref_name]
+    for pref in options:
         setting = doc.createElement("setting")
-        setting.setAttribute("pref", "extensions." + jetpack_id + "." + pref_name)
+        setting.setAttribute("pref", "extensions." + jetpack_id + "." + pref["name"])
         setting.setAttribute("type", pref["type"])
         setting.setAttribute("title", pref["title"])
 
@@ -52,7 +49,7 @@ def parse_options(options, jetpack_id):
             button.setAttribute("label", pref["label"])
             button.setAttribute("oncommand", "Services.obs.notifyObservers(null, '" +
                                               jetpack_id + "-cmdPressed', '" +
-                                              pref_name + "');");
+                                              pref["name"] + "');");
             setting.appendChild(button)
         elif (pref["type"] == "boolint"):
             setting.setAttribute("on", pref["on"])
