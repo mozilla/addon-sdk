@@ -318,6 +318,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                                                  dep_cfg.loader)
 
     target_cfg = pkg_cfg.packages[target]
+
     if include_tests and not include_dep_tests:
         add_section_to_build(target_cfg, "tests", is_code=True)
 
@@ -334,6 +335,12 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
     if 'icon64' in target_cfg:
         build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
         del target_cfg['icon64']
+
+    if ('preferences' in target_cfg):
+        build['preferences'] = target_cfg.preferences
+
+    if ('id' in target_cfg):
+        build['jetpackID'] = target_cfg.id
 
     return build
 

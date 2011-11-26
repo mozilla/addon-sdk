@@ -48,6 +48,11 @@ called `package.json`. This file is also referred to as the
   [`icon64URL` entry in the Install Manifest](https://developer.mozilla.org/en/install_manifests#icon64URL),
   so the icon should be 64x64 pixels in size.
 
+* `preferences` - *experimental*
+  An array of JSON objects that use the following keys `name`, `type`, `value`,
+  `title`, and `description`.  These JSON objects will be used to automatically
+  create a preferences interface for the addon in the Add-ons Manager.
+  For more information see the documentation of [simple-prefs](packages/addon-kit/docs/simple-prefs.html).
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
