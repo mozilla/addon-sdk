@@ -34,7 +34,10 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         del harness_options['icon64']
 
     if 'preferences' in harness_options:
-        from options_xul import parse_options
+        from options_xul import parse_options, validate_prefs
+
+        validate_prefs(harness_options["preferences"])
+
         open('.options.xul', 'w').write(parse_options(harness_options["preferences"], harness_options["jetpackID"]))
         zf.write('.options.xul', 'options.xul')
         os.remove('.options.xul')

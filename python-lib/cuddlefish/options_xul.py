@@ -32,8 +32,6 @@ def validate_prefs(options):
         # TODO: Check that pref["type"] matches default value type
 
 def parse_options(options, jetpack_id):
-    validate_prefs(options)
-
     doc = Document()
     root = doc.createElement("vbox")
     root.setAttribute("xmlns", "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
