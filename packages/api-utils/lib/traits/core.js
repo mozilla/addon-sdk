@@ -42,6 +42,16 @@ const getOwnPropertyNames = Object.getOwnPropertyNames,
       getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
       hasOwn = Object.prototype.hasOwnProperty,
       _create = Object.create;
+
+function doPropertiesMatch(object1, object2, name) {
+  // If `object1` has property with a given `name`
+  return name in object1 ?
+         // then `object2` should have it with a same value.
+         name in object2 && object1[name] === object2[name] :
+         // otherwise `object2` should not have property with a given `name`
+         !(name in object2);
+}
+
 /**
  * Compares two trait custom property descriptors if they are the same. If
  * both are `conflict` or all the properties of descriptor are equal returned
@@ -50,14 +60,14 @@ const getOwnPropertyNames = Object.getOwnPropertyNames,
  * @param {Object} desc2
  */
 function areSame(desc1, desc2) {
-  return (desc1.conflict && desc2.conflict) || (
-    desc1.get === desc2.get &&
-    desc1.set === desc2.set &&
-    desc1.value === desc2.value &&
-    desc1.enumerable === desc2.enumerable &&
-    desc1.required === desc2.required &&
-    desc1.conflict === desc2.conflict
-  );
+  return ('conflict' in desc1 && desc1.conflict &&
+          'conflict' in desc2 && desc2.conflict) ||
+         (doPropertiesMatch(desc1, desc2, 'get') &&
+          doPropertiesMatch(desc1, desc2, 'set') &&
+          doPropertiesMatch(desc1, desc2, 'value') &&
+          doPropertiesMatch(desc1, desc2, 'enumerable') &&
+          doPropertiesMatch(desc1, desc2, 'required') &&
+          doPropertiesMatch(desc1, desc2, 'conflict'));
 }
 
 /**
