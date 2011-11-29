@@ -73,22 +73,23 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         # Always write the top directory, even if it contains no files, since
         # the harness will try to access it.
         dirs_to_create.add(base_arcpath)
-        abs_dirname = harness_options['resources'][resource]
-        # cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
-        for dirpath, dirnames, filenames in os.walk(abs_dirname):
-            goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
-            dirnames[:] = filter_dirnames(dirnames)
-            for filename in goodfiles:
-                abspath = os.path.join(dirpath, filename)
-                if limit_to is not None and abspath not in limit_to:
-                    continue  # strip unused files
-                arcpath = ZIPSEP.join(
-                    ['resources',
-                     resource,
-                     make_zipfile_path(abs_dirname,
-                                       os.path.join(dirpath, filename)),
-                     ])
-                files_to_copy[str(arcpath)] = str(abspath)
+        abs_dirnames = harness_options['resources'][resource]
+        for abs_dirname in abs_dirnames:
+            # cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
+            for dirpath, dirnames, filenames in os.walk(abs_dirname):
+                goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
+                dirnames[:] = filter_dirnames(dirnames)
+                for filename in goodfiles:
+                    abspath = os.path.join(dirpath, filename)
+                    if limit_to is not None and abspath not in limit_to:
+                        continue  # strip unused files
+                    arcpath = ZIPSEP.join(
+                        ['resources',
+                         resource,
+                         make_zipfile_path(abs_dirname,
+                                           os.path.join(dirpath, filename)),
+                         ])
+                    files_to_copy[str(arcpath)] = str(abspath)
     harness_options['resources'] = new_resources
 
     # now figure out which directories we need: all retained files parents
