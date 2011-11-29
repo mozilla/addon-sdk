@@ -25,7 +25,7 @@
     <em:iconURL></em:iconURL>
     <em:icon64URL></em:icon64URL>
     <em:homepageURL></em:homepageURL>
-    <em:optionsURL></em:optionsURL>
+    <em:optionsType></em:optionsType>
     <em:updateURL></em:updateURL>
   </Description>
 </RDF>

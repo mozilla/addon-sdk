@@ -716,7 +716,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         mydir = os.path.dirname(os.path.abspath(__file__))
         app_extension_dir = os.path.join(mydir, "app-extension")
 
-    harness_options['manifest'] = manifest.get_harness_options_manifest()
+
+    if target_cfg.get('preferences'):
+        harness_options['preferences'] = target_cfg.get('preferences')
+
+    harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
     harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
