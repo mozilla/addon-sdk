@@ -80,6 +80,7 @@ def build_xpi(template_root_dir, manifest, xpi_path,
                                        os.path.join(dirpath, filename)),
                      ])
                 files_to_copy[str(arcpath)] = str(abspath)
+    del harness_options['packages']
 
     # now figure out which directories we need: all retained files parents
     for arcpath in files_to_copy:

@@ -621,8 +621,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
 
-    unique_prefix = get_unique_prefix(jid)
-    bundle_id = jid
 
     targets = [target]
     if command == "test":
@@ -638,7 +636,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
     from cuddlefish.manifest import build_manifest, ModuleNotFoundError
-    uri_prefix = "resource://%s" % unique_prefix
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
     # dependent package that defines a "loader" property in its package.json.
@@ -676,14 +673,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     build = packaging.generate_build_for_target(
         pkg_cfg, target, used_deps,
-        prefix=unique_prefix,  # used to create resource: URLs
         include_dep_tests=options.dep_tests
         )
-
-    if 'resources' in build:
-        resources = build.resources
-        for name in resources:
-            resources[name] = os.path.abspath(resources[name])
 
     harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
@@ -692,8 +683,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             'classID': '{%s}' % harness_guid
             },
         'jetpackID': jid,
-        'bundleID': bundle_id,
-        'unique_prefix': unique_prefix,
+        'unique_prefix': get_unique_prefix(jid),
         'staticArgs': options.static_args,
         'name': target,
         }
@@ -735,7 +725,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     manifest_rdf = gen_manifest(template_root_dir=app_extension_dir,
                                 target_cfg=target_cfg,
-                                bundle_id=bundle_id,
+                                jid=jid,
                                 update_url=options.update_url,
                                 bootstrap=True,
                                 enable_mobile=options.enable_mobile)

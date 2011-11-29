@@ -18,8 +18,7 @@ def get_configs(pkg_name, dirname='static-files'):
     build = packaging.generate_build_for_target(
         pkg_cfg=pkg_cfg,
         target=pkg_name,
-        deps=deps,
-        prefix='guid-'
+        deps=deps
         )
     return Bunch(target_cfg=target_cfg, pkg_cfg=pkg_cfg, build=build)
 

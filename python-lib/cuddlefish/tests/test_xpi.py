@@ -140,7 +140,6 @@ class SmallXPI(unittest.TestCase):
 
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
                                                     used_deps,
-                                                    prefix="p-",
                                                     include_tests=False)
         options = {'main': target_cfg.main}
         options.update(build)
