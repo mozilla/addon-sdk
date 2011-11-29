@@ -128,7 +128,23 @@ const Symbiont = Worker.resolve({
     this._frame = frame;
     frame.docShell.allowJavascript = this.allow.script;
     frame.setAttribute("src", this._contentURL);
-    
+
+    // Inject `addon` object in document if we load a document from
+    // one of our addon folder and if no content script are defined. bug 612726
+    let isDataResource =
+      typeof this._contentURL == "string" &&
+      this._contentURL.indexOf(require("@packaging").uriPrefix) == 0;
+    let hasContentScript =
+      (Array.isArray(this.contentScript) ? this.contentScript.length > 0
+                                             : !!this.contentScript) ||
+      (Array.isArray(this.contentScriptFile) ? this.contentScriptFile.length > 0
+                                             : !!this.contentScriptFile);
+    // If we have to inject `addon` we have to do it before document
+    // script execution, so during `start`:
+    this._injectInDocument = isDataResource && !hasContentScript;
+    if (this._injectInDocument)
+      this.contentScriptWhen = "start";
+
     if ((frame.contentDocument.readyState == "complete" ||
         (frame.contentDocument.readyState == "interactive" &&
          this.contentScriptWhen != 'end' )) &&
