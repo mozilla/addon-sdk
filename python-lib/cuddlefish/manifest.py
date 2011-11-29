@@ -48,12 +48,12 @@ class ManifestEntry:
         self.requirements = {}
         self.datamap = None
 
-    def get_uri(self):
-        uri = "%s/%s/%s" % \
+    def get_path(self):
+        path = "%s/%s/%s" % \
                (self.packageName, self.sectionName, self.moduleName)
-        if not uri.endswith(".js"):
-          uri += ".js"
-        return uri
+        if not path.endswith(".js"):
+          path += ".js"
+        return path
 
     def get_entry_for_manifest(self):
         entry = { "packageName": self.packageName,
@@ -66,8 +66,8 @@ class ManifestEntry:
         for req in self.requirements:
             if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
-                them_uri = them.get_uri()
-                entry["requirements"][req] = {"path": them_uri}
+                them_path = them.get_path()
+                entry["requirements"][req] = {"path": them_path}
             else:
                 # something magic. The manifest entry indicates that they're
                 # allowed to require() it
@@ -184,7 +184,7 @@ class ManifestBuilder:
         # reaches
         if "main" in self.target_cfg:
             top_me = self.process_module(self.find_top(self.target_cfg))
-            self.top_uri = top_me.get_uri()
+            self.top_path = top_me.get_path()
         if scan_tests:
             mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
             self.process_module(mi)
@@ -258,8 +258,8 @@ class ManifestBuilder:
     def get_harness_options_manifest(self):
         manifest = {}
         for me in self.get_module_entries():
-            uri = me.get_uri()
-            manifest[uri] = me.get_entry_for_manifest()
+            path = me.get_path()
+            manifest[path] = me.get_entry_for_manifest()
         return manifest
 
     def get_manifest_entry(self, package, section, module):

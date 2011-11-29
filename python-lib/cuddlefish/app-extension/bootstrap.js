@@ -153,7 +153,7 @@ function startup(data, reason) {
   // on add-on.
   promise(function() {
     try {
-      loader.spawn(options.main, options.mainURI);
+      loader.spawn(options.main, options.mainPath);
     } catch (error) {
       // If at this stage we have an error only thing we can do is report about
       // it via error console. Keep in mind that error won't automatically show

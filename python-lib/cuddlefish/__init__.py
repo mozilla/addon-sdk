@@ -470,8 +470,6 @@ def get_unique_prefix(jid):
                                     \}$
                            ''', r'\1', unique_prefix)
 
-    #unique_prefix = '%s-' % unique_prefix
-
     return unique_prefix
 
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
@@ -640,7 +638,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # computed inside packaging.generate_build_for_target(), by the first
     # dependent package that defines a "loader" property in its package.json.
     # This property is interpreted as a filename relative to the top of that
-    # file, and stored as a URI in build.loader . generate_build_for_target()
+    # file, and stored as a path in build.loader . generate_build_for_target()
     # cannot be called yet (it needs the list of used_deps that
     # build_manifest() computes, but build_manifest() needs the list of
     # loader files that it computes). We could duplicate or factor out this
@@ -695,10 +693,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
-        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri()
+        harness_options['mainPath'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_path()
     else:
         harness_options['main'] = target_cfg.get('main')
-        harness_options['mainURI'] = manifest.top_uri
+        harness_options['mainPath'] = manifest.top_path
     extra_environment["CFX_COMMAND"] = command
 
     for option in inherited_options:
