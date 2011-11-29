@@ -270,16 +270,13 @@ def get_deps_for_targets(pkg_cfg, targets):
 
     return visited
 
-def generate_build_for_target(pkg_cfg, target, deps, prefix='',
+def generate_build_for_target(pkg_cfg, target, deps,
                               include_tests=True,
                               include_dep_tests=False,
                               default_loader=DEFAULT_LOADER):
-    validate_resource_hostname(prefix)
 
-    build = Bunch(resources=Bunch(),
-                  resourcePackages=Bunch(),
-                  packageData=Bunch(),
-                  rootPaths=[],
+    build = Bunch(# Contains section directories for all packages:
+                  packages=Bunch()
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -292,20 +289,17 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # configuration dict.
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
-                lib_base = os.path.basename(dirname)
-                name = "-".join([prefix + cfg.name, section])
-                validate_resource_hostname(name)
-                if name in build.resources:
-                    raise KeyError('resource already defined', name)
-                build.resourcePackages[name] = cfg.name
-                build.resources[name] = dirname
-                resource_url = 'resource://%s/' % name
-
-                if is_code:
-                    build.rootPaths.insert(0, resource_url)
-
-                if is_data:
-                    build.packageData[cfg.name] = resource_url
+                # ensure that package name is valid
+                validate_resource_hostname(cfg.name)
+                # ensure that this package has an entry
+                if not cfg.name in build.packages:
+                    build.packages[cfg.name] = Bunch()
+                # detect duplicated sections
+                if section in build.packages[cfg.name]:
+                    raise KeyError("package's section already defined",
+                                   cfg.name, section)
+                # Register this section (lib, data, tests)
+                build.packages[cfg.name][section] = dirname
 
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]
@@ -314,7 +308,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         if include_tests and include_dep_tests:
             add_section_to_build(dep_cfg, "tests", is_code=True)
         if ("loader" in dep_cfg) and ("loader" not in build):
-            build.loader = "resource://%s-%s" % (prefix + dep,
+            build.loader = "%s/%s" % (dep,
                                                  dep_cfg.loader)
 
     target_cfg = pkg_cfg.packages[target]

@@ -84,12 +84,12 @@ class TestInit(unittest.TestCase):
 class TestRun(unittest.TestCase):
 
     def test_get_unique_prefix(self):
-        self.assertEqual(get_unique_prefix("LOWERCASEME"), "lowercaseme-")
+        self.assertEqual(get_unique_prefix("LOWERCASEME"), "lowercaseme")
         self.assertEqual(get_unique_prefix("foo@example.com"),
-                         "foo-at-example-dot-com-")
+                         "foo-at-example-dot-com")
         self.assertEqual(
             get_unique_prefix("{74343602-334C-4570-BBCD-69BDE8CAFBD1}"),
-            "74343602-334c-4570-bbcd-69bde8cafbd1-"
+            "74343602-334c-4570-bbcd-69bde8cafbd1"
         )
 
 if __name__ == "__main__":

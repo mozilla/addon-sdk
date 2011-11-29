@@ -108,12 +108,12 @@ class RDFManifest(RDF):
 
         return True;
 
-def gen_manifest(template_root_dir, target_cfg, bundle_id,
+def gen_manifest(template_root_dir, target_cfg, jid,
                  update_url=None, bootstrap=True, enable_mobile=False):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
     manifest = RDFManifest(install_rdf)
 
-    manifest.set("em:id", bundle_id)
+    manifest.set("em:id", jid)
     manifest.set("em:version",
                  target_cfg.get('version', '1.0'))
     manifest.set("em:name",
