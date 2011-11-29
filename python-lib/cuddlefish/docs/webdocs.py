@@ -28,25 +28,19 @@ def get_modules(modules_json):
                 modules.append([name[:-3]])
     return modules
 
-def get_documented_modules(root, package_name, modules_json):
+def get_documented_modules(package_name, modules_json, doc_path):
     modules = get_modules(modules_json)
-    doc_prefix = 'doc'
-    module_md_root = os.path.join(root, 'packages', package_name, 'doc')
-    mmr2 = os.path.join(root, 'packages', package_name, 'docs')
-    if os.path.isdir(mmr2):
-        doc_prefix = 'docs'
-        module_md_root = mmr2
     documented_modules = []
     for module in modules:
         path = os.path.join(*module)
-        if module_md_exists(module_md_root, path):
+        if module_md_exists(doc_path, path):
             documented_modules.append(module)
     if package_name == "addon-kit":
         # hack for bug 664001, self-maker.js is in api-utils, self.md is in
         # addon-kit. Real fix is for this function to look for all .md files,
         # not for .js files with matching .md file in the same package.
         documented_modules.append(["self"])
-    return doc_prefix, documented_modules
+    return documented_modules
 
 def module_md_exists(root, module_name):
     module_md_path = os.path.join(root, module_name + '.md')
@@ -72,7 +66,8 @@ def insert_after(target, insertion_point_id, text_to_insert):
 class WebDocs(object):
     def __init__(self, root, base_url = '/'):
         self.root = root
-        self.packages_json = self._create_packages_json(root)
+        self.pkg_cfg = packaging.build_pkg_cfg(root)
+        self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
         self.base_page = self._create_base_page(root, base_url)
 
     def create_guide_page(self, path):
@@ -88,9 +83,7 @@ class WebDocs(object):
         module_content = apirenderer.md_to_div(md_path)
         return self._create_page(module_content)
 
-    def create_package_page(self, path):
-        path, ext = os.path.splitext(path)
-        head, package_name = os.path.split(path)
+    def create_package_page(self, package_name):
         package_content = self._create_package_detail(package_name)
         return self._create_page(package_content)
 
@@ -102,14 +95,17 @@ class WebDocs(object):
     def _create_module_list(self, package_json):
         package_name = package_json['name']
         libs = package_json['files'][1]['lib'][1]
-        doc_prefix, modules = get_documented_modules(self.root, package_name,
-                                                     libs)
+        doc_path = package_json.get('doc', None)
+        if not doc_path:
+            return ''
+        modules = get_documented_modules(package_name, libs, doc_path)
         modules.sort()
         module_items = ''
+        relative_doc_path = doc_path[len(self.root) + 1:]
+        relative_doc_URL = "/".join(relative_doc_path.split(os.sep))
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
-                {'href':'packages/' + package_name + \
-                 '/' + doc_prefix + '/' + '/'.join(module) + '.html'})
+                {'href': relative_doc_URL + '/' + '/'.join(module) + '.html'})
             module_items += tag_wrap(module_link, 'li', {'class':'module'})
         return tag_wrap(module_items, 'ul', {'class':'modules'})
 
@@ -119,18 +115,17 @@ class WebDocs(object):
             package_json = packages_json[package_name]
             if not include(package_json):
                 continue
-            package_link = tag_wrap(package_name, 'a', {'href':'packages/' \
-                                    + package_name + "/" \
+            package_path = self.pkg_cfg["packages"][package_name]["root_dir"]
+            package_directory = package_path[len(self.root) + 1:]
+            package_directory = "/".join(package_directory.split(os.sep))
+            package_link = tag_wrap(package_name, 'a', {'href': \
+                                    package_directory + "/" \
                                     + package_name + '.html'})
             text = tag_wrap(package_link, 'h4')
             text += self._create_module_list(package_json)
             packages += tag_wrap(text, 'div', {'class':'package-summary', \
               'style':'display: block;'})
         return packages
-
-    def _create_packages_json(self, root):
-        pkg_cfg = packaging.build_pkg_cfg(root)
-        return packaging.build_pkg_index(pkg_cfg)
 
     def _create_base_page(self, root, base_url):
         base_page = unicode(open(root + INDEX_PAGE, 'r').read(), 'utf8')

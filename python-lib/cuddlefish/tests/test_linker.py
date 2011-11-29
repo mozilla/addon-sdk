@@ -171,34 +171,6 @@ class Contents(unittest.TestCase):
                         in names, names)
         self.run_in_subdir("x", _test)
 
-    def test_strip(self):
-        seven = get_linker_files_dir("seven")
-        # now run 'cfx xpi' in that directory, except put the generated .xpi
-        # elsewhere
-        def _test(basedir):
-            stdout = StringIO()
-            shutil.copytree(seven, "seven")
-            os.chdir("seven")
-            try:
-                # regrettably, run() always finishes with sys.exit()
-                cuddlefish.run(["xpi", "--strip-xpi"],
-                               stdout=stdout)
-            except SystemExit, e:
-                self.failUnlessEqual(e.args[0], 0)
-            self.assertIn("--strip-xpi is now the default: argument ignored",
-                          stdout.getvalue())
-            zf = zipfile.ZipFile("seven.xpi", "r")
-            names = zf.namelist()
-            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/cuddlefish.js", names)
-            self.assertIn("resources/jid1-at-jetpack-api-utils-lib/securable-module.js", names)
-            testfiles = [fn for fn in names if "jid1-at-jetpack-seven-tests" in fn]
-            self.failUnlessEqual([], testfiles)
-            self.assertIn("resources/jid1-at-jetpack-seven-data/text.data",
-                          names)
-            self.failIf("resources/jid1-at-jetpack-seven-lib/unused.js"
-                        in names, names)
-        self.run_in_subdir("x", _test)
-
     def test_no_strip(self):
         seven = get_linker_files_dir("seven")
         def _test(basedir):

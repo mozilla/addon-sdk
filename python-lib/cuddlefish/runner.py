@@ -13,6 +13,18 @@ import mozrunner
 from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
+from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
+
+# Maximum time we'll wait for tests to finish, in seconds.
+# The purpose of this timeout is to recover from infinite loops.  It should be
+# longer than the amount of time any test run takes, including those on slow
+# machines running slow (debug) versions of Firefox.
+RUN_TIMEOUT = 30 * 60 # 30 minutes
+
+# Maximum time we'll wait for tests to emit output, in seconds.
+# The purpose of this timeout is to recover from hangs.  It should be longer
+# than the amount of time any test takes to report results.
+OUTPUT_TIMEOUT = 60 # one minute
 
 def follow_file(filename):
     """
@@ -103,6 +115,145 @@ class FennecRunner(mozrunner.Runner):
                     return self.__DARWIN_PATH
             self.__real_binary = mozrunner.Runner.find_binary(self)
         return self.__real_binary
+
+
+class RemoteFennecRunner(mozrunner.Runner):
+    profile_class = FennecProfile
+
+    names = ['fennec']
+
+    _REMOTE_PATH = '/mnt/sdcard/jetpack-profile'
+    _INTENT_PREFIX = 'org.mozilla.'
+
+    _adb_path = None
+
+    def __init__(self, binary=None, **kwargs):
+        # Check that we have a binary set
+        if not binary:
+            raise ValueError("You have to define `--binary` option set to the "
+                            "path to your ADB executable.")
+        # Ensure that binary refer to a valid ADB executable
+        output = subprocess.Popen([binary], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE).communicate()
+        output = "".join(output)
+        if not ("Android Debug Bridge" in output):
+            raise ValueError("`--binary` option should be the path to your "
+                            "ADB executable.")
+        self.binary = binary
+
+        mobile_app_name = kwargs['cmdargs'][0]
+        self.profile = kwargs['profile']
+        self._adb_path = binary
+
+        # This pref has to be set to `false` otherwise, we do not receive
+        # output of adb commands!
+        subprocess.call([self._adb_path, "shell",
+                        "setprop log.redirect-stdio false"])
+
+        # Android apps are launched by their "intent" name,
+        # Automatically detect already installed firefox by using `pm` program
+        # or use name given as cfx `--mobile-app` argument.
+        intents = self.getIntentNames()
+        if not intents:
+            raise ValueError("Unable to found any Firefox "
+                            "application on your device.")
+        elif mobile_app_name:
+            if not mobile_app_name in intents:
+                raise ValueError("Unable to found Firefox application "
+                                "with intent name '%s'", mobile_app_name)
+            self._intent_name = self._INTENT_PREFIX + mobile_app_name
+        else:
+            if "firefox" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox"
+            elif "firefox_beta" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox_beta"
+            elif "firefox_nightly" in intents:
+                self._intent_name = self._INTENT_PREFIX + "firefox_nightly"
+            else:
+                self._intent_name = self._INTENT_PREFIX + intents[0]
+
+        print "Launching mobile application with intent name " + self._intent_name
+
+        # First try to kill firefox if it is already running
+        pid = self.getProcessPID(self._intent_name)
+        if pid != None:
+            # Send a key "up" signal to mobile-killer addon
+            # in order to kill running firefox instance
+            print "Killing running Firefox instance ..."
+            subprocess.call([self._adb_path, "shell", "input keyevent 19"])
+            subprocess.Popen(self.command, stdout=subprocess.PIPE).wait()
+            time.sleep(2)
+
+        print "Pushing the addon to your device"
+
+        # Create a clean empty profile on the sd card
+        subprocess.call([self._adb_path, "shell", "rm -r " + self._REMOTE_PATH])
+        subprocess.call([self._adb_path, "shell", "mkdir " + self._REMOTE_PATH])
+
+        # Push the profile folder created by mozrunner to the device
+        # (we can't simply use `adb push` as it doesn't copy empty folders)
+        localDir = self.profile.profile
+        remoteDir = self._REMOTE_PATH
+        for root, dirs, files in os.walk(localDir, followlinks='true'):
+            relRoot = os.path.relpath(root, localDir)
+            # Note about os.path usage below:
+            # Local files may be using Windows `\` separators but
+            # remote are always `/`, so we need to convert local ones to `/`
+            for file in files:
+                localFile = os.path.join(root, file)
+                remoteFile = remoteDir.replace("/", os.sep)
+                if relRoot != ".":
+                    remoteFile = os.path.join(remoteFile, relRoot)
+                remoteFile = os.path.join(remoteFile, file)
+                remoteFile = "/".join(remoteFile.split(os.sep))
+                subprocess.Popen([self._adb_path, "push", localFile, remoteFile], 
+                                 stderr=subprocess.PIPE).wait()
+            for dir in dirs:
+                targetDir = remoteDir.replace("/", os.sep)
+                if relRoot != ".":
+                    targetDir = os.path.join(targetDir, relRoot)
+                targetDir = os.path.join(targetDir, dir)
+                targetDir = "/".join(targetDir.split(os.sep))
+                # `-p` option is not supported on all devices!
+                subprocess.call([self._adb_path, "shell", "mkdir " + targetDir])
+
+    @property
+    def command(self):
+        """Returns the command list to run."""
+        return [self._adb_path,
+            "shell",
+            "am start " +
+                "-a android.activity.MAIN " +
+                "-n " + self._intent_name + "/" + self._intent_name + ".App " +
+                "--es args \"-profile " + self._REMOTE_PATH + "\""
+        ]
+
+    def start(self):
+        subprocess.call(self.command)
+
+    def getProcessPID(self, processName):
+        p = subprocess.Popen([self._adb_path, "shell", "ps"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        line = p.stdout.readline()
+        while line:
+            columns = line.split()
+            pid = columns[1]
+            name = columns[-1]
+            line = p.stdout.readline()
+            if processName in name:
+                return pid
+        return None
+
+    def getIntentNames(self):
+        p = subprocess.Popen([self._adb_path, "shell", "pm list packages"],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        names = []
+        for line in p.stdout.readlines():
+            line = re.sub("(^package:)|\s", "", line)
+            if self._INTENT_PREFIX in line:
+                names.append(line.replace(self._INTENT_PREFIX, ""))
+        return names
+
 
 class XulrunnerAppProfile(mozrunner.Profile):
     preferences = {}
@@ -212,9 +363,12 @@ class XulrunnerAppRunner(mozrunner.Runner):
                 self.names = runner.names
         return self.__real_binary
 
-def run_app(harness_root_dir, harness_options,
+def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            timeout=None, logfile=None, addons=None, args=None, norun=None):
+            enforce_timeouts=False,
+            logfile=None, addons=None, args=None, norun=None,
+            used_files=None, enable_mobile=False,
+            mobile_app_name=None):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -226,41 +380,48 @@ def run_app(harness_root_dir, harness_options,
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
 
-    if app_type == "xulrunner":
+    if app_type == "fennec-on-device":
+        profile_class = FennecProfile
+        preferences.update(DEFAULT_FENNEC_PREFS)
+        runner_class = RemoteFennecRunner
+        # We pass the intent name through command arguments
+        cmdargs.append(mobile_app_name)
+    elif enable_mobile or app_type == "fennec":
+        profile_class = FennecProfile
+        preferences.update(DEFAULT_FENNEC_PREFS)
+        runner_class = FennecRunner
+    elif app_type == "xulrunner":
         profile_class = XulrunnerAppProfile
         runner_class = XulrunnerAppRunner
         cmdargs.append(os.path.join(harness_root_dir, 'application.ini'))
+    elif app_type == "firefox":
+        profile_class = mozrunner.FirefoxProfile
+        preferences.update(DEFAULT_FIREFOX_PREFS)
+        runner_class = mozrunner.FirefoxRunner
+    elif app_type == "thunderbird":
+        profile_class = mozrunner.ThunderbirdProfile
+        preferences.update(DEFAULT_THUNDERBIRD_PREFS)
+        runner_class = mozrunner.ThunderbirdRunner
     else:
-        addons.append(harness_root_dir)
-        if app_type == "firefox":
-            profile_class = mozrunner.FirefoxProfile
-            preferences.update(DEFAULT_FIREFOX_PREFS)
-            runner_class = mozrunner.FirefoxRunner
-        elif app_type == "thunderbird":
-            profile_class = mozrunner.ThunderbirdProfile
-            preferences.update(DEFAULT_THUNDERBIRD_PREFS)
-            runner_class = mozrunner.ThunderbirdRunner
-        elif app_type == "fennec":
-            profile_class = FennecProfile
-            runner_class = FennecRunner
-        else:
-            raise ValueError("Unknown app: %s" % app_type)
-        if sys.platform == 'darwin':
-            cmdargs.append('-foreground')
+        raise ValueError("Unknown app: %s" % app_type)
+    if sys.platform == 'darwin' and app_type != 'xulrunner':
+        cmdargs.append('-foreground')
     
     if args:
         cmdargs.extend(shlex.split(args))
 
-    # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
-    # run"/"cfx test" on the same host. On unix it points at /tmp (which is
-    # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
-    # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
-    # gives us a unique filename that fixes both problems. We leave the
-    # (0-byte) file in place until the browser-side code starts writing to
-    # it, otherwise the symlink attack becomes possible again.
-    fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
-    os.close(fileno)
-    harness_options['resultFile'] = resultfile
+    # TODO: handle logs on remote device
+    if app_type != "fennec-on-device":
+        # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
+        # run"/"cfx test" on the same host. On unix it points at /tmp (which is
+        # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
+        # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
+        # gives us a unique filename that fixes both problems. We leave the
+        # (0-byte) file in place until the browser-side code starts writing to
+        # it, otherwise the symlink attack becomes possible again.
+        fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
+        os.close(fileno)
+        harness_options['resultFile'] = resultfile
 
     def maybe_remove_logfile():
         if os.path.exists(logfile):
@@ -268,19 +429,19 @@ def run_app(harness_root_dir, harness_options,
 
     logfile_tail = None
 
-    if sys.platform in ['win32', 'cygwin']:
-        if not logfile:
-            # If we're on Windows, we need to keep a logfile simply
-            # to print console output to stdout.
-            fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
-            os.close(fileno)
-        logfile_tail = follow_file(logfile)
-        atexit.register(maybe_remove_logfile)
+    # We always buffer output through a logfile for two reasons:
+    # 1. On Windows, it's the only way to print console output to stdout/err.
+    # 2. It enables us to keep track of the last time output was emitted,
+    #    so we can raise an exception if the test runner hangs.
+    if not logfile:
+        fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
+        os.close(fileno)
+    logfile_tail = follow_file(logfile)
+    atexit.register(maybe_remove_logfile)
 
-    if logfile:
-        logfile = os.path.abspath(os.path.expanduser(logfile))
-        maybe_remove_logfile()
-        harness_options['logFile'] = logfile
+    logfile = os.path.abspath(os.path.expanduser(logfile))
+    maybe_remove_logfile()
+    harness_options['logFile'] = logfile
 
     env = {}
     env.update(os.environ)
@@ -290,25 +451,50 @@ def run_app(harness_root_dir, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
-    # Write the harness options file to the SDK's extension template directory
-    # so mozrunner will copy it to the profile it creates.  We don't want
-    # to leave such files lying around the SDK's directory tree, so we delete it
-    # below after getting mozrunner to create the profile.
-    optionsFile = os.path.join(harness_root_dir, 'harness-options.json')
-    open(optionsFile, "w").write(str(json.dumps(harness_options)))
+    # Create the addon XPI so mozrunner will copy it to the profile it creates.
+    # We delete it below after getting mozrunner to create the profile.
+    from cuddlefish.xpi import build_xpi
+    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
+    build_xpi(template_root_dir=harness_root_dir,
+              manifest=manifest_rdf,
+              xpi_path=xpi_path,
+              harness_options=harness_options,
+              limit_to=used_files)
+    addons.append(xpi_path)
 
-    starttime = time.time()
+    starttime = last_output_time = time.time()
 
-    popen_kwargs = {}
+    # Redirect runner output to a file so we can catch output not generated
+    # by us.
+    # In theory, we could do this using simple redirection on all platforms
+    # other than Windows, but this way we only have a single codepath to
+    # maintain.
+    fileno,outfile = tempfile.mkstemp(prefix="harness-stdout-")
+    os.close(fileno)
+    outfile_tail = follow_file(outfile)
+    def maybe_remove_outfile():
+        if os.path.exists(outfile):
+            os.remove(outfile)
+    atexit.register(maybe_remove_outfile)
+    outf = open(outfile, "w")
+    popen_kwargs = { 'stdout': outf, 'stderr': outf}
+
     profile = None
 
+    if app_type == "fennec-on-device":
+        # Install a special addon when we run firefox on mobile device
+        # in order to be able to kill it
+        mydir = os.path.dirname(os.path.abspath(__file__))
+        killer_dir = os.path.join(mydir, "mobile-killer")
+        addons.append(killer_dir)
+
+    # the XPI file is copied into the profile here
     profile = profile_class(addons=addons,
                             profile=profiledir,
                             preferences=preferences)
 
-    # Delete the harness options file we wrote to the SDK's extension template
-    # directory.
-    os.remove(optionsFile)
+    # Delete the temporary xpi file
+    os.remove(xpi_path)
 
     runner = runner_class(profile=profile,
                           binary=binary,
@@ -317,6 +503,15 @@ def run_app(harness_root_dir, harness_options,
                           kp_kwargs=popen_kwargs)
 
     sys.stdout.flush(); sys.stderr.flush()
+
+    if app_type == "fennec-on-device":
+      # in case we run it on a mobile device, we only have to launch it
+      runner.start()
+      profile.cleanup()
+      time.sleep(1)
+      print >>sys.stderr, "Remote application launched successfully."
+      return 0
+
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
 
     # Ensure cfx is being used with Firefox 4.0+.
@@ -326,7 +521,7 @@ def run_app(harness_root_dir, harness_options,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel) ((\d+)\.\S*)",
+    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
@@ -335,6 +530,15 @@ def run_app(harness_root_dir, harness_options,
   WARNING: cannot determine Firefox version; please ensure you are running
   a Mozilla application equivalent to Firefox 4.0 or greater.
   """
+    elif mo.group(1) == "Fennec":
+        # For now, only allow running on Mobile with --force-mobile argument
+        if not enable_mobile:
+            print """
+  WARNING: Firefox Mobile support is still experimental.
+  If you would like to run an addon on this platform, use --force-mobile flag:
+
+    cfx --force-mobile"""
+            return
     else:
         version = mo.group(3)
         if int(version) < 4:
@@ -377,38 +581,45 @@ def run_app(harness_root_dir, harness_options,
     runner.start()
 
     done = False
-    output = None
+    result = None
     try:
         while not done:
             time.sleep(0.05)
-            if logfile_tail:
-                new_chars = logfile_tail.next()
-                if new_chars:
-                    sys.stderr.write(new_chars)
-                    sys.stderr.flush()
+            for tail in (logfile_tail, outfile_tail):
+                if tail:
+                    new_chars = tail.next()
+                    if new_chars:
+                        last_output_time = time.time()
+                        sys.stderr.write(new_chars)
+                        sys.stderr.flush()
             if os.path.exists(resultfile):
-                output = open(resultfile).read()
-                if output:
-                    if output in ['OK', 'FAIL']:
+                result = open(resultfile).read()
+                if result:
+                    if result in ['OK', 'FAIL']:
                         done = True
                     else:
-                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(output)))
-                        sys.stderr.write("'"+output+"'\n")
-            if timeout and (time.time() - starttime > timeout):
-                raise Exception("Wait timeout exceeded (%ds)" %
-                                timeout)
+                        sys.stderr.write("Hrm, resultfile (%s) contained something weird (%d bytes)\n" % (resultfile, len(result)))
+                        sys.stderr.write("'"+result+"'\n")
+            if enforce_timeouts:
+                if time.time() - last_output_time > OUTPUT_TIMEOUT:
+                    raise Exception("Test output exceeded timeout (%ds)." %
+                                    OUTPUT_TIMEOUT)
+                if time.time() - starttime > RUN_TIMEOUT:
+                    raise Exception("Test run exceeded timeout (%ds)." %
+                                    RUN_TIMEOUT)
     except:
         runner.stop()
         raise
     else:
         runner.wait(10)
     finally:
+        outf.close()
         if profile:
             profile.cleanup()
 
     print >>sys.stderr, "Total time: %f seconds" % (time.time() - starttime)
 
-    if output == 'OK':
+    if result == 'OK':
         print >>sys.stderr, "Program terminated successfully."
         return 0
     else:

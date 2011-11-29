@@ -4,7 +4,14 @@ DEFAULT_COMMON_PREFS = {
     # sets this preference)
     'browser.dom.window.dump.enabled': True,
     # warn about possibly incorrect code
-    'javascript.options.strict': True
+    'javascript.options.strict': True,
+    'javascript.options.showInConsole': True
+}
+
+DEFAULT_FENNEC_PREFS = {
+  'javascript.options.showInConsole': True,
+  'browser.console.showInPanel': True,
+  'browser.firstrun.show.uidiscovery': False
 }
 
 # When launching a temporary new Firefox profile, use these preferences.

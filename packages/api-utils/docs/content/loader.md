@@ -17,9 +17,9 @@ events on an instances.
 The following code creates a wrapper on hidden frame that reloads a web page
 in frame every time `contentURL` property is changed:
 
-    const hiddenFrames = require("hidden-frame");
-    const { Loader } = require("content");
-    const PageLoader = Loader.compose({
+    var hiddenFrames = require("hidden-frame");
+    var { Loader } = require("content");
+    var PageLoader = Loader.compose({
       constructor: function PageLoader(options) {
         options = options || {};
         if (options.contentURL)

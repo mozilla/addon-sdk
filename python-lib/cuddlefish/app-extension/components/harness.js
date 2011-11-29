@@ -464,10 +464,6 @@ function buildForsakenConsoleDump(dump) {
   }
 
   return function forsakenConsoleDump(msg, level) {
-    // No harm in calling dump() just in case the
-    // end-user *can* see the console...
-    dump(msg);
-
     msg = stringify(msg);
     if (msg.indexOf('\n') >= 0) {
       var str = buffer + msg;
@@ -537,7 +533,8 @@ function getDefaults(rootFileSpec) {
 
     logStream = Cc["@mozilla.org/network/file-output-stream;1"]
                 .createInstance(Ci.nsIFileOutputStream);
-    logStream.init(logFile, -1, -1, 0);
+    logStream.init(logFile, 26 /* PR_WRONLY | PR_APPEND | PR_CREATE_FILE */,
+                   -1 , 0);
   }
 
   function print(msg, level) {

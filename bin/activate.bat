@@ -1,55 +1,61 @@
 @echo off
-set VIRTUAL_ENV=%CD%
+set VIRTUAL_ENV=%~dp0
+set VIRTUAL_ENV=%VIRTUAL_ENV:~0,-5%
 set CUDDLEFISH_ROOT=%VIRTUAL_ENV%
 
-SET WINCURVERKEY=HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion
-REG QUERY "%WINCURVERKEY%" /v "ProgramFilesDir (x86)" >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-  SET WIN64=1
-) else (
-  SET WIN64=0
-)
+SET PYTHONKEY=SOFTWARE\Python\PythonCore
 
-if "%WIN64%" EQU "1" (
-  SET PYTHONKEY=HKLM\SOFTWARE\Wow6432Node\Python\PythonCore
-) else (
-  SET PYTHONKEY=HKLM\SOFTWARE\Python\PythonCore
-)
+rem look for 32-bit windows and python, or 64-bit windows and python
+
+SET PYTHONVERSION=2.7
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.6
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.5
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.4
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+if not defined ProgramFiles(x86) goto win32
+
+rem look for 32-bit python on 64-bit windows
+
+SET PYTHONKEY=SOFTWARE\Wow6432Node\Python\PythonCore
+
+SET PYTHONVERSION=2.7
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.6
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.5
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+SET PYTHONVERSION=2.4
+call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
+if "%PYTHONINSTALL%" NEQ "" goto FoundPython
+
+:win32
 
 SET PYTHONVERSION=
-SET PYTHONINSTALL=
+set PYTHONKEY=
+echo Warning: Failed to find Python installation directory
+goto :EOF
 
-if "%PYTHONVERSION%" EQU "" (
-  REG QUERY "%PYTHONKEY%\2.6\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
-    SET PYTHONVERSION=2.6
-  )
-)
-
-if "%PYTHONVERSION%" EQU "" (
-  REG QUERY "%PYTHONKEY%\2.5\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
-    SET PYTHONVERSION=2.5
-  )
-)
-
-if "%PYTHONVERSION%" EQU "" (
-  REG QUERY "%PYTHONKEY%\2.4\InstallPath" /ve >nul 2>nul
-  if %ERRORLEVEL% EQU 0 (
-    SET PYTHONVERSION=2.4
-  )
-)
-
-if "%PYTHONVERSION%" NEQ "" (
-  FOR /F "tokens=3* skip=1 delims=	 " %%A IN ('REG QUERY "%PYTHONKEY%\%PYTHONVERSION%\InstallPath" /ve') DO SET "PYTHONINSTALL=%%A"
-)
-
-if "%PYTHONINSTALL%" NEQ "" (
-  SET "PATH=%PATH%;%PYTHONINSTALL%"
-)
+:FoundPython
 
 if defined _OLD_PYTHONPATH (
-    set "PYTHONPATH=%_OLD_PYTHONPATH%"
+    set PYTHONPATH=%_OLD_PYTHONPATH%
 )
 if not defined PYTHONPATH (
     set PYTHONPATH=;
@@ -62,21 +68,72 @@ if not defined PROMPT (
 )
 
 if defined _OLD_VIRTUAL_PROMPT (
-    set "PROMPT=%_OLD_VIRTUAL_PROMPT%"
+    set PROMPT=%_OLD_VIRTUAL_PROMPT%
 )
 
 set _OLD_VIRTUAL_PROMPT=%PROMPT%
 set PROMPT=(%VIRTUAL_ENV%) %PROMPT%
 
-if defined _OLD_VIRTUAL_PATH (
-    set "PATH=%_OLD_VIRTUAL_PATH%"
-    goto SKIPPATH
-)
-set _OLD_VIRTUAL_PATH=%PATH%
+if defined _OLD_VIRTUAL_PATH goto OLDPATH
+goto SKIPPATH
+:OLDPATH
+PATH %_OLD_VIRTUAL_PATH%
 
 :SKIPPATH
-set PATH=%VIRTUAL_ENV%\bin;%PATH%
-
+set _OLD_VIRTUAL_PATH=%PATH%
+PATH %VIRTUAL_ENV%\bin;%PYTHONINSTALL%;%PATH%
+set PYTHONKEY=
+set PYTHONINSTALL=
+set PYTHONVERSION=
+set key=
+set reg=
+set _tokens=
+cd "%VIRTUAL_ENV%"
 python -c "from jetpack_sdk_env import welcome; welcome()"
+GOTO :EOF
 
-:END
+:CheckPython
+::CheckPython(retVal, key)
+::Reads the registry at %2% and checks if a Python exists there.
+::Checks both HKLM and HKCU, then checks the executable actually exists.
+SET key=%2%
+SET "%~1="
+SET reg=reg
+if defined ProgramFiles(x86) (
+  rem 32-bit cmd on 64-bit windows
+  if exist %WINDIR%\sysnative\reg.exe SET reg=%WINDIR%\sysnative\reg.exe
+)
+rem On Vista+, the last line of output is:
+rem    (default)  REG_SZ  the_value
+rem (but note the word "default" will be localized.
+rem On XP, the last line of output is:
+rem   <NO NAME>\tREG_SZ\tthe_value
+rem (not sure if "NO NAME" is localized or not!)
+rem SO: we use ")>" as the tokens to split on, then nuke
+rem the REG_SZ and any tabs or spaces.
+FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKLM\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+rem Remove the REG_SZ
+set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
+rem Remove tabs (note the literal \t in the next line
+set PYTHONINSTALL=%PYTHONINSTALL:	=%
+rem Remove spaces.
+set PYTHONINSTALL=%PYTHONINSTALL: =%
+if exist %PYTHONINSTALL%\python.exe goto :EOF
+rem It may be a 32bit Python directory built from source, in which case the
+rem executable is in the PCBuild directory.
+if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
+rem Or maybe a 64bit build directory.
+if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
+
+rem And try HKCU
+FOR /F "usebackq tokens=2 delims=)>" %%A IN (`%reg% QUERY HKCU\%key% /ve 2^>NUL`) DO SET "%~1=%%A"
+set PYTHONINSTALL=%PYTHONINSTALL:REG_SZ=%
+set PYTHONINSTALL=%PYTHONINSTALL:	=%
+set PYTHONINSTALL=%PYTHONINSTALL: =%
+if exist %PYTHONINSTALL%\python.exe goto :EOF
+if exist %PYTHONINSTALL%\PCBuild\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild" & goto :EOF)
+if exist %PYTHONINSTALL%\PCBuild\amd64\python.exe (set "PYTHONINSTALL=%PYTHONINSTALL%\PCBuild\amd64" & goto :EOF)
+rem can't find it here, so arrange to try the next key
+set PYTHONINSTALL=
+
+GOTO :EOF

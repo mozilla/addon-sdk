@@ -36,20 +36,26 @@ called `package.json`. This file is also referred to as the
   PNG file containing the icon for the package. By default, this
   is `icon.png`. If the package is built as an XPI, this is used
   as the add-on's icon to display in the Add-on Manager's add-ons list.
+  This key maps on to the
+  [`iconURL` entry in the Install Manifest](https://developer.mozilla.org/en/install_manifests#iconURL),
+  so the icon may be up to 48x48 pixels in size.
 
 * `icon64` - the relative path from the root of the package to a
   PNG file containing the icon64 for the package. By default, this
   is `icon64.png`. If the package is built as an XPI, this is used
   as the add-on's icon to display in the Addon Manager's add-on details view.
+  This key maps on to the
+  [`icon64URL` entry in the Install Manifest](https://developer.mozilla.org/en/install_manifests#icon64URL),
+  so the icon should be 64x64 pixels in size.
+
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
 
-* `id` - a globally unique identifier for the package, a String
-  derived from the public half of a private/public keypair, generated
-  the first time you run `cfx xpi`. When the package is built as an
-  XPI, this is used as the add-on's `em:id` element in its
-  `install.rdf`.
+* `id` - a globally unique identifier for the package. When the package is
+   built as an XPI, this is used as the add-on's `em:id` element in its
+  `install.rdf`. See the
+  [Program ID page](dev-guide/addon-development/program-id.html).
 
 * `version` - a String representing the version of the package. If the
   package is ever built as an XPI, this is used as the add-on's

@@ -9,7 +9,7 @@ To develop with the Add-on SDK, you'll need:
 
 * Firefox version 4.0 or later.
 
-At the moment, the latest stable version of the Add-on SDK is 1.2.1.
+At the moment, the latest stable version of the Add-on SDK is 1.3.
 You can obtain it as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
@@ -22,22 +22,21 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  ~/mozilla > tar -xf addon-sdk-1.2.1.tar.gz
-  ~/mozilla > cd addon-sdk-1.2.1
-  ~/mozilla/addon-sdk-1.2.1 >
+  tar -xf addon-sdk-1.3.tar.gz
+  cd addon-sdk-1.3
 </pre>
 
 Then run:
 
 <pre>
-  ~/mozilla/addon-sdk-1.2.1 > source bin/activate
+  source bin/activate
 </pre>
 
 Your command prompt should now have a new prefix containing the name of the
 SDK's root directory:
 
 <pre>
-  (addon-sdk-1.2.1)~/mozilla/addon-sdk-1.2.1 >
+  (addon-sdk-1.3)~/mozilla/addon-sdk-1.3 >
 </pre>
 
 ## Installation on Windows ##
@@ -46,15 +45,14 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  C:\Users\mozilla\sdk>7z.exe x addon-sdk-1.2.1.zip
-  C:\Users\mozilla\sdk>cd addon-sdk-1.2.1
-  C:\Users\mozilla\sdk\addon-sdk-1.2.1>
+  7z.exe x addon-sdk-1.3.zip
+  cd addon-sdk-1.3
 </pre>
 
 Then run:
 
 <pre>
-  C:\Users\mozilla\sdk\addon-sdk-1.2.1>bin\activate
+  bin\activate
 </pre>
 
 You might see an error like this:
@@ -71,7 +69,7 @@ Your command prompt should now have a new prefix containing the full path to
 the SDK's root directory:
 
 <pre>
-  (C:\Users\mozilla\sdk\addon-sdk-1.2.1) C:\Users\Work\sdk\addon-sdk-1.2.1>
+  (C:\Users\mozilla\sdk\addon-sdk-1.3) C:\Users\Work\sdk\addon-sdk-1.3>
 </pre>
 
 ## SDK Virtual Environment ##
@@ -92,12 +90,43 @@ You can have multiple copies of the SDK in different locations on disk and
 switch between them, or even have them both activated in different command
 prompts at the same time.
 
+### Making `activate` Permanent ###
+
+All `activate` does is to set a number of environment variables for the
+current command prompt, using a script located in the top-level `bin`
+directory. By setting these variables permanently in your environment so
+every new command prompt reads them, you can make activation permanent. Then
+you don't need to type `activate` every time you open up a new command prompt.
+
+Because the exact set of variables may change with new releases of the SDK,
+it's best to refer to the activation scripts to determine which variables need
+to be set. Activation uses different scripts and sets different variables for
+bash environments (Linux and Mac OS X) and for Windows environments.
+
+#### Windows ####
+
+On Windows, `bin\activate` uses `activate.bat`, and you can make activation
+permanent using the command line `setx` tool or the Control Panel.
+
+#### Linux/Mac OS X ####
+
+On Linux and Mac OS X, `source bin/activate` uses the `activate` bash
+script, and you can make activation permanent using your `~/.bashrc`
+(on Linux) or `~/.bashprofile` (on Mac OS X).
+
+As an alternative to this, you can create a symbolic link to the `cfx`
+program in your `~/bin` directory:
+
+<pre>
+  ln -s PATH_TO_SDK/bin/cfx ~/bin/cfx
+</pre>
+
 ## Sanity Check ##
 
 Run this at your shell prompt:
 
 <pre>
-  ~/mozilla/addon-sdk-1.2.1 > cfx
+  ~/mozilla/addon-sdk-1.3 > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by

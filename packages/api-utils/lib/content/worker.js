@@ -520,17 +520,23 @@ const Worker = AsyncEventEmitter.compose({
   
   _documentUnload: function _documentUnload(subject, topic, data) {
     let innerWinID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    if (innerWinID != this._windowID) return;
+    if (innerWinID != this._windowID) return false;
     this._workerCleanup();
+    return true;
   },
 
   get url() {
-    return this._window.document.location.href;
+    // this._window will be null after detach
+    return this._window ? this._window.document.location.href : null;
   },
   
   get tab() {
-    let tab = require("../tabs/tab");
-    return tab.getTabForWindow(this._window);
+    if (this._window) {
+      let tab = require("../tabs/tab");
+      // this._window will be null after detach
+      return tab.getTabForWindow(this._window);
+    }
+    return null;
   },
   
   /**

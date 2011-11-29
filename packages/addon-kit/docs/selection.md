@@ -4,9 +4,6 @@
 The `selection` module provides a means to get and set text and HTML selections
 in the current Firefox page.  It can also observe new selections.
 
-It does not currently support selections inside `textarea` and `input` elements,
-however.
-
 Registering for Selection Notifications
 ---------------------------------------
 
@@ -79,8 +76,7 @@ Surround HTML selections with delimiters:
 @property {boolean}
   `true` if the current selection is a single, contiguous selection, and `false`
   if there are two or more discrete selections, each of which may or may not be
-  spatially adjacent. If there is no current selection, this property is `null`.
-  (Discontiguous selections can be created by the user with
+  spatially adjacent. (Discontiguous selections can be created by the user with
   Ctrl+click-and-drag.)
 </api>
 

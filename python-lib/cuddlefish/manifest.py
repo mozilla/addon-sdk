@@ -183,20 +183,27 @@ class ManifestBuilder:
         if "main" in self.target_cfg:
             self.top_uri = self.process_module(self.find_top(self.target_cfg))
         if scan_tests:
-            # also scan all test files in all packages that we use
-            for packagename in self.used_packagenames:
-                package = self.pkg_cfg.packages[packagename]
-                dirnames = package["tests"]
-                if isinstance(dirnames, basestring):
-                    dirnames = [dirnames]
-                dirnames = [os.path.join(package.root_dir, d) for d in dirnames]
-                for d in dirnames:
-                    for tname in os.listdir(d):
-                        if tname.startswith("test-") and tname.endswith(".js"):
-                            #re.search(r'^test-.*\.js$', tname):
-                            tmi = ModuleInfo(package, "tests", tname[:-3],
-                                             os.path.join(d, tname), None)
-                            self.process_module(tmi)
+            mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
+            self.process_module(mi)
+            # also scan all test files in all packages that we use. By making
+            # a copy of self.used_packagenames first, we refrain from
+            # processing tests in packages that our own tests depend upon. If
+            # we're running tests for package A, and either modules in A or
+            # tests in A depend upon modules from package B, we *don't* want
+            # to run tests for package B.
+            dirnames = self.target_cfg["tests"]
+            if isinstance(dirnames, basestring):
+                dirnames = [dirnames]
+            dirnames = [os.path.join(self.target_cfg.root_dir, d)
+                        for d in dirnames]
+            for d in dirnames:
+                for tname in os.listdir(d):
+                    if tname.startswith("test-") and tname.endswith(".js"):
+                        #re.search(r'^test-.*\.js$', tname):
+                        tmi = ModuleInfo(self.target_cfg, "tests", tname[:-3],
+                                         os.path.join(d, tname), None)
+                        self.process_module(tmi)
+
         # include files used by the loader
         for em in self.extra_modules:
             (pkgname, section, modname, js) = em
@@ -332,6 +339,8 @@ class ManifestBuilder:
 
         js_lines = open(mi.js,"r").readlines()
         requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
+        if mi.section == "tests":
+            requires["chrome"] = {}
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -362,6 +371,11 @@ class ManifestBuilder:
                 looked_in = [] # populated by subroutines
                 them_me = self.find_req_for(mi, reqname, looked_in)
                 if them_me is None:
+                    if mi.section == "tests":
+                        # tolerate missing modules in tests, because
+                        # test-securable-module.js, and the modules/red.js
+                        # that it imports, both do that intentionally
+                        continue
                     lineno = locations.get(reqname) # None means define()
                     if lineno is None:
                         reqtype = "define"

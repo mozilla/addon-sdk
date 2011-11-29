@@ -3,6 +3,18 @@ html, body {
   height: 100%;
 }
 
+pre {
+  color: black;
+  background-color: #e0effd;
+  padding: 10px;
+}
+
+h2 {
+  color: black;
+  background-color: #F0F8FF;
+  padding: 10px;
+}
+
 #columns {
   padding-left: 250px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/
@@ -296,4 +308,9 @@ html, body {
   margin-left: auto;
   margin-right: auto;
   display: block;
+}
+
+.image-right {
+  margin-left: 1.0em;
+  float:right;
 }
