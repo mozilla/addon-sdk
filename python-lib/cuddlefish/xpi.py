@@ -51,14 +51,19 @@ def build_xpi(template_root_dir, manifest, xpi_path,
             arcpath = make_zipfile_path(template_root_dir, abspath)
             files_to_copy[arcpath] = abspath
 
-    new_resources = {}
-    for resource in harness_options['resources']:
-        new_resources[resource] = ['resources', resource]
-        base_arcpath = ZIPSEP.join(['resources', resource])
+    # `packages` attribute contains a dictionnary of dictionnary
+    # of all packages sections directories
+    for packageName in harness_options['packages']:
+      base_arcpath = ZIPSEP.join(['resources', packageName])
+      # Always write the top directory, even if it contains no files, since
+      # the harness will try to access it.
+      dirs_to_create.add(base_arcpath)
+      for sectionName in harness_options['packages'][packageName]:
+        abs_dirname = harness_options['packages'][packageName][sectionName]
+        base_arcpath = ZIPSEP.join(['resources', packageName, sectionName])
         # Always write the top directory, even if it contains no files, since
         # the harness will try to access it.
         dirs_to_create.add(base_arcpath)
-        abs_dirname = harness_options['resources'][resource]
         # cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
         for dirpath, dirnames, filenames in os.walk(abs_dirname):
             goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
@@ -69,12 +74,12 @@ def build_xpi(template_root_dir, manifest, xpi_path,
                     continue  # strip unused files
                 arcpath = ZIPSEP.join(
                     ['resources',
-                     resource,
+                     packageName,
+                     sectionName,
                      make_zipfile_path(abs_dirname,
                                        os.path.join(dirpath, filename)),
                      ])
                 files_to_copy[str(arcpath)] = str(abspath)
-    harness_options['resources'] = new_resources
 
     # now figure out which directories we need: all retained files parents
     for arcpath in files_to_copy:

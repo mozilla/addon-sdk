@@ -121,21 +121,6 @@ function on(topic) {
   }
 }
 
-/**
- * Maps each path - value from `resources` hash in the resources protocol
- * handler with an associated key. Each path is resolved relative to the given
- * `root` path.
- */
-function mapResources(root, resources) {
-  Object.keys(resources).forEach(function(id) {
-    let path = resources[id];
-    let uri = Array.isArray(path) ? root + '/' + path.join('/')
-                                  : 'file://' + path;
-    uri = ioService.newURI(uri + '/', null, null);
-    resourceHandler.setSubstitution(id, uri);
-  });
-}
-
 // We don't do anything on install & uninstall yet, but in a future
 // we should allow add-ons to cleanup after uninstall.
 function install(data, reason) {}
@@ -148,13 +133,15 @@ function startup(data, reason) {
   let options = JSON.parse(readURI(uri + './harness-options.json'));
   options.loadReason = REASON[reason];
 
-  // TODO: This is unnecessary overhead per add-on instance. Manifest should
-  // probably contain paths relative to add-on root to avoid this, but that
-  // requires simpler package layout that is being worked under the bug-660629.
-  mapResources(uri, options.resources);
+  // Register a new resource "domain" for this addon which is mapping to
+  // XPI's `resources` folder.
+  let resourcesUri = ioService.newURI(uri + '/resources/', null, null);
+  resourceHandler.setSubstitution(options.unique_prefix, resourcesUri);
+  options.uriPrefix = "resource://" + options.unique_prefix + "/";
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
-  loader = Cu.import(options.loader).Loader.new(options);
+  let loaderUri = options.uriPrefix + options.loader;
+  loader = Cu.import(loaderUri).Loader.new(options);
 
   // Creating a promise, that will be delivered once application is ready.
   // If application is at startup then promise is delivered on

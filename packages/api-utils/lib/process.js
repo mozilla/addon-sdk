@@ -61,7 +61,7 @@ function process(target, id, uri, scope) {
   // event loop), while the channel for messages is returned immediately (in
   // the same turn of event loop).
 
-  loadScript(target, packaging.loader, false);
+  loadScript(target, packaging.uriPrefix + packaging.loader, false);
   loadScript(target, 'data:,let loader = Loader.new(' +
                       JSON.stringify(packaging) + ');\n' +
                      'loader.main("' + id + '", "' + uri + '");', false);

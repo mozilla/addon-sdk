@@ -470,7 +470,7 @@ def get_unique_prefix(jid):
                                     \}$
                            ''', r'\1', unique_prefix)
 
-    unique_prefix = '%s-' % unique_prefix
+    #unique_prefix = '%s-' % unique_prefix
 
     return unique_prefix
 
@@ -658,7 +658,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
     try:
-        manifest = build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
+        manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
                                   loader_modules)
     except ModuleNotFoundError, e:
         print str(e)
@@ -693,7 +693,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             },
         'jetpackID': jid,
         'bundleID': bundle_id,
-        'uriPrefix': uri_prefix,
+        'unique_prefix': unique_prefix,
         'staticArgs': options.static_args,
         'name': target,
         }
@@ -705,7 +705,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'test-harness/run-tests'
-        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri(uri_prefix)
+        harness_options['mainURI'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_uri()
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainURI'] = manifest.top_uri
@@ -728,7 +728,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         mydir = os.path.dirname(os.path.abspath(__file__))
         app_extension_dir = os.path.join(mydir, "app-extension")
 
-    harness_options['manifest'] = manifest.get_harness_options_manifest(uri_prefix)
+    harness_options['manifest'] = manifest.get_harness_options_manifest()
     harness_options['allTestModules'] = manifest.get_all_test_modules()
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate

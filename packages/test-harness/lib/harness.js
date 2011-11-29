@@ -262,7 +262,7 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft) {
-    let require = Loader.require.bind(sandbox, module.uri);
+    let require = Loader.require.bind(sandbox, module.path);
     require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,

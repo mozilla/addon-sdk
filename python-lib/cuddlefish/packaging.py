@@ -280,6 +280,8 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                   resourcePackages=Bunch(),
                   packageData=Bunch(),
                   rootPaths=[],
+                  # Contains section directories for all packages:
+                  packages=Bunch()
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -299,13 +301,9 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                     raise KeyError('resource already defined', name)
                 build.resourcePackages[name] = cfg.name
                 build.resources[name] = dirname
-                resource_url = 'resource://%s/' % name
-
-                if is_code:
-                    build.rootPaths.insert(0, resource_url)
-
-                if is_data:
-                    build.packageData[cfg.name] = resource_url
+                if not cfg.name in build.packages:
+                  build.packages[cfg.name] = Bunch()
+                build.packages[cfg.name][section] = dirname
 
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]
@@ -314,7 +312,7 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         if include_tests and include_dep_tests:
             add_section_to_build(dep_cfg, "tests", is_code=True)
         if ("loader" in dep_cfg) and ("loader" not in build):
-            build.loader = "resource://%s-%s" % (prefix + dep,
+            build.loader = "%s/%s" % (dep,
                                                  dep_cfg.loader)
 
     target_cfg = pkg_cfg.packages[target]

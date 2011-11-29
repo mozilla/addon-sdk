@@ -7,10 +7,10 @@ exports.Loader = function(module, globals) {
   options.globals = globals;
   let loader = Loader.new(options);
   return Object.create(loader, {
-    require: { value: Loader.require.bind(loader, module.uri) },
+    require: { value: Loader.require.bind(loader, module.path) },
     sandbox: { value: function sandbox(id) {
-      let uri = options.manifest[module.uri].requirements[id].uri;
-      return loader.sandboxes[uri].sandbox;
+      let path = options.manifest[module.path].requirements[id].path;
+      return loader.sandboxes[path].sandbox;
     }},
     unload: { value: function unload(reason, callback) {
       loader.unload(reason, callback);
