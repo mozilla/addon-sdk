@@ -43,7 +43,7 @@ const IOService = Cc["@mozilla.org/network/io-service;1"].
 const AppShellService = Cc["@mozilla.org/appshell/appShellService;1"].
   getService(Ci.nsIAppShellService);
 
-Cu.import("resource://gre/modules/NetUtil.jsm", this);
+const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 const FaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                           getService(Ci.nsIFaviconService);
 

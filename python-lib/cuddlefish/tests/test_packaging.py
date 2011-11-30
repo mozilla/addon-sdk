@@ -18,8 +18,7 @@ def get_configs(pkg_name, dirname='static-files'):
     build = packaging.generate_build_for_target(
         pkg_cfg=pkg_cfg,
         target=pkg_name,
-        deps=deps,
-        prefix='guid-'
+        deps=deps
         )
     return Bunch(target_cfg=target_cfg, pkg_cfg=pkg_cfg, build=build)
 
@@ -27,7 +26,7 @@ class PackagingTests(unittest.TestCase):
     def test_bug_588661(self):
         configs = get_configs('foo', 'bug-588661-files')
         self.assertEqual(configs.build.loader,
-                         'resource://guid-foo-lib/foo-loader.js')
+                         'foo/lib/foo-loader.js')
 
     def test_bug_614712(self):
         configs = get_configs('commonjs-naming', 'bug-614712-files')

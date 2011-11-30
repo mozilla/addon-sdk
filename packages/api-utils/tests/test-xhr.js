@@ -1,5 +1,6 @@
 var xhr = require("xhr");
 var timer = require("timer");
+var { Loader } = require("./helpers");
 
 exports.testAbortedXhr = function(test) {
   var req = new xhr.XMLHttpRequest();
@@ -11,7 +12,7 @@ exports.testAbortedXhr = function(test) {
 exports.testLocalXhr = function(test) {
   var req = new xhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
-  req.open("GET", __url__);
+  req.open("GET", module.uri);
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
       test.assertMatches(req.responseText,
@@ -30,11 +31,11 @@ exports.testLocalXhr = function(test) {
 };
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = Loader(module);
   var sbxhr = loader.require("xhr");
   var req = new sbxhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
-  req.open("GET", __url__);
+  req.open("GET", module.uri);
   req.send(null);
   test.assertEqual(sbxhr.getRequestCount(), 1);
   loader.unload();
@@ -44,7 +45,7 @@ exports.testUnload = function(test) {
 exports.testDelegatedReturns = function(test) {
   var req = new xhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
-  req.open("GET", __url__);
+  req.open("GET", module.uri);
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
       // This response isn't going to have any headers, so the return value

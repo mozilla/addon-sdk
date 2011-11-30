@@ -9,8 +9,7 @@ To develop with the Add-on SDK, you'll need:
 
 * Firefox version 4.0 or later.
 
-At the moment, the latest stable version of the Add-on SDK is 1.3.
-You can obtain it as a
+You can obtain the latest stable version of the SDK as a
 [tarball](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.tar.gz)
 or a [zip file](https://ftp.mozilla.org/pub/mozilla.org/labs/jetpack/jetpack-sdk-latest.zip).
 Alternatively, you can get the latest development version of the
@@ -22,21 +21,21 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  tar -xf addon-sdk-1.3.tar.gz
-  cd addon-sdk-1.3
+tar -xf addon-sdk.tar.gz
+cd addon-sdk
 </pre>
 
 Then run:
 
 <pre>
-  source bin/activate
+source bin/activate
 </pre>
 
 Your command prompt should now have a new prefix containing the name of the
 SDK's root directory:
 
 <pre>
-  (addon-sdk-1.3)~/mozilla/addon-sdk-1.3 >
+(addon-sdk)~/mozilla/addon-sdk >
 </pre>
 
 ## Installation on Windows ##
@@ -45,8 +44,8 @@ Extract the file contents wherever you choose, and navigate to the root
 directory of the SDK with a shell/command prompt. For example:
 
 <pre>
-  7z.exe x addon-sdk-1.3.zip
-  cd addon-sdk-1.3
+7z.exe x addon-sdk.zip
+cd addon-sdk
 </pre>
 
 Then run:
@@ -69,7 +68,7 @@ Your command prompt should now have a new prefix containing the full path to
 the SDK's root directory:
 
 <pre>
-  (C:\Users\mozilla\sdk\addon-sdk-1.3) C:\Users\Work\sdk\addon-sdk-1.3>
+(C:\Users\mozilla\sdk\addon-sdk) C:\Users\Work\sdk\addon-sdk>
 </pre>
 
 ## SDK Virtual Environment ##
@@ -126,7 +125,7 @@ program in your `~/bin` directory:
 Run this at your shell prompt:
 
 <pre>
-  ~/mozilla/addon-sdk-1.3 > cfx
+~/mozilla/addon-sdk > cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by

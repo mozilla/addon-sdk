@@ -36,18 +36,14 @@
 
 "use strict";
 
-// We don't actually use chrome directly, but we do access the 
-// filesystem and scan it to dynamically import modules, so
-// we put this here to tell the module loader to give us
-// permission to require() whatever we want.
-require("chrome");
+const file = require("./file");
+const packaging = require('@packaging');
+const suites = packaging.allTestModules;
 
-var file = require("./file");
 const NOT_TESTS = ['setup', 'teardown'];
 
 var TestFinder = exports.TestFinder = function TestFinder(options) {
   memory.track(this);
-  this.dirs = options.dirs || [];
   this.filter = options.filter;
   this.testInProcess = options.testInProcess === false ? false : true;
   this.testOutOfProcess = options.testOutOfProcess === true ? true : false;
@@ -89,27 +85,20 @@ TestFinder.prototype = {
     } else
       filter = function() {return true};
 
-    this.dirs.forEach(
-      function(dir) {
-        var suites = [name.slice(0, -3)
-                      for each (name in file.list(dir).sort())
-                      if (/^test-.*\.js$/.test(name) && filter(name))];
-
-        suites.forEach(
-          function(suite) {
-            var module = require(suite);
-            if (self.testInProcess)
-              for each (let name in Object.keys(module).sort()) {
-                if(NOT_TESTS.indexOf(name) === -1 && filter(suite, name)) {
-                  tests.push({
-                    setup: module.setup,
-                    teardown: module.teardown,
-                    testFunction: self._makeTest(suite, name, module[name]),
-                    name: suite + "." + name
-                  });
-                }
-              }
-          });
+    suites.forEach(
+      function(suite) {
+        var module = require(suite);
+        if (self.testInProcess)
+          for each (let name in Object.keys(module).sort()) {
+            if(NOT_TESTS.indexOf(name) === -1 && filter(suite, name)) {
+              tests.push({
+                           setup: module.setup,
+                           teardown: module.teardown,
+                           testFunction: self._makeTest(suite, name, module[name]),
+                           name: suite + "." + name
+                         });
+            }
+          }
       });
 
     cb(tests);

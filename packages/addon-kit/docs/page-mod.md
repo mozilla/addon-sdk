@@ -50,6 +50,7 @@ loaded:
     });
 
 If you specify a value of "ready" or "end" for `contentScriptWhen`,
+as opposed to "start",
 then the content script can interact with the DOM itself:
 
     var pageMod = require("page-mod");

@@ -1,11 +1,11 @@
 "use strict";
 
 const { openTab, closeTab } = require("api-utils/tabs/utils");
+const { Loader } = require("./helpers");
+const { setTimeout } = require("timer");
 
 exports["test unload tab observer"] = function(assert, done) {
-  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader();
-
+  let loader = Loader(module);
 
   let window = loader.require("api-utils/window-utils").activeBrowserWindow;
   let observer = loader.require("api-utils/tabs/observer").observer;
@@ -25,7 +25,7 @@ exports["test unload tab observer"] = function(assert, done) {
   closeTab(openTab(window, "data:text/html,tab-2"));
 
   // Enqueuing asserts to make sure that assertion is not performed early.
-  require("timer").setTimeout(function () {
+  setTimeout(function () {
     assert.equal(1, opened, "observer open was called before unload only");
     assert.equal(1, closed, "observer close was called before unload only");
     done();

@@ -48,14 +48,14 @@ class ManifestEntry:
         self.requirements = {}
         self.datamap = None
 
-    def get_uri(self, prefix):
-        uri = "%s%s-%s/%s" % \
-               (prefix, self.packageName, self.sectionName, self.moduleName)
-        if not uri.endswith(".js"):
-          uri += ".js"
-        return uri
+    def get_path(self):
+        path = "%s/%s/%s" % \
+               (self.packageName, self.sectionName, self.moduleName)
+        if not path.endswith(".js"):
+          path += ".js"
+        return path
 
-    def get_entry_for_manifest(self, prefix):
+    def get_entry_for_manifest(self):
         entry = { "packageName": self.packageName,
                   "sectionName": self.sectionName,
                   "moduleName": self.moduleName,
@@ -64,19 +64,21 @@ class ManifestEntry:
                   "requirements": {},
                   }
         for req in self.requirements:
-            if self.requirements[req]:
+            if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
-                them_uri = them.get_uri(prefix)
-                entry["requirements"][req] = {"uri": them_uri}
+                them_path = them.get_path()
+                entry["requirements"][req] = {"path": them_path}
             else:
                 # something magic. The manifest entry indicates that they're
                 # allowed to require() it
-                entry["requirements"][req] = {}
+                entry["requirements"][req] = self.requirements[req]
+            assert isinstance(entry["requirements"][req], dict)
         if self.datamap:
             entry["requirements"]["self"] = {
+                "path": "self",
                 "mapSHA256": self.datamap.data_manifest_hash,
                 "mapName": self.packageName+"-data",
-                "dataURIPrefix": "%s%s-data/" % (prefix, self.packageName),
+                "dataURIPrefix": "%s/data/" % (self.packageName),
                 }
         return entry
 
@@ -118,7 +120,7 @@ def get_datafiles(datadir):
 
 class DataMap:
     # one per package
-    def __init__(self, pkg, uri_prefix):
+    def __init__(self, pkg):
         self.pkg = pkg
         self.name = pkg.name
         self.files_to_copy = []
@@ -132,7 +134,7 @@ class DataMap:
         self.data_manifest = to_json(datamap)
         self.data_manifest_hash = hashlib.sha256(self.data_manifest).hexdigest()
         self.data_manifest_zipname = datamap_zipname(pkg.name)
-        self.data_uri_prefix = "%s%s-data/" % (uri_prefix, self.name)
+        self.data_uri_prefix = "%s/data/" % (self.name)
 
 class BadChromeMarkerError(Exception):
     pass
@@ -163,7 +165,7 @@ class ModuleInfo:
                                                    self.js, self.docs)
 
 class ManifestBuilder:
-    def __init__(self, target_cfg, pkg_cfg, deps, uri_prefix, extra_modules,
+    def __init__(self, target_cfg, pkg_cfg, deps, extra_modules,
                  stderr=sys.stderr):
         self.manifest = {} # maps (package,section,module) to ManifestEntry
         self.target_cfg = target_cfg # the entry point
@@ -171,17 +173,18 @@ class ManifestBuilder:
         self.deps = deps # list of package names to search
         self.used_packagenames = set()
         self.stderr = stderr
-        self.uri_prefix = uri_prefix
         self.extra_modules = extra_modules
         self.modules = {} # maps ModuleInfo to URI in self.manifest
         self.datamaps = {} # maps package name to DataMap instance
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
+        self.test_modules = [] # for runtime
 
     def build(self, scan_tests):
         # process the top module, which recurses to process everything it
         # reaches
         if "main" in self.target_cfg:
-            self.top_uri = self.process_module(self.find_top(self.target_cfg))
+            top_me = self.process_module(self.find_top(self.target_cfg))
+            self.top_path = top_me.get_path()
         if scan_tests:
             mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
             self.process_module(mi)
@@ -191,18 +194,33 @@ class ManifestBuilder:
             # we're running tests for package A, and either modules in A or
             # tests in A depend upon modules from package B, we *don't* want
             # to run tests for package B.
+            test_modules = []
             dirnames = self.target_cfg["tests"]
             if isinstance(dirnames, basestring):
                 dirnames = [dirnames]
             dirnames = [os.path.join(self.target_cfg.root_dir, d)
                         for d in dirnames]
             for d in dirnames:
-                for tname in os.listdir(d):
-                    if tname.startswith("test-") and tname.endswith(".js"):
-                        #re.search(r'^test-.*\.js$', tname):
-                        tmi = ModuleInfo(self.target_cfg, "tests", tname[:-3],
-                                         os.path.join(d, tname), None)
-                        self.process_module(tmi)
+                for filename in os.listdir(d):
+                    if filename.startswith("test-") and filename.endswith(".js"):
+                        testname = filename[:-3] # require(testname)
+                        #re.search(r'^test-.*\.js$', filename):
+                        tmi = ModuleInfo(self.target_cfg, "tests", testname,
+                                         os.path.join(d, filename), None)
+                        # scan the test's dependencies
+                        tme = self.process_module(tmi)
+                        test_modules.append( (testname, tme) )
+            # also add it as an artificial dependency of unit-test-finder, so
+            # the runtime dynamic load can work.
+            test_finder = self.get_manifest_entry("api-utils", "lib",
+                                                  "unit-test-finder")
+            for (testname,tme) in test_modules:
+                test_finder.add_requirement(testname, tme)
+                # finally, tell the runtime about it, so they won't have to
+                # search for all tests. self.test_modules will be passed
+                # through the harness-options.json file in the
+                # .allTestModules property.
+                self.test_modules.append(testname)
 
         # include files used by the loader
         for em in self.extra_modules:
@@ -234,11 +252,14 @@ class ManifestBuilder:
                 for (zipname, absname) in me.datamap.files_to_copy:
                     yield absname
 
-    def get_harness_options_manifest(self, uri_prefix):
+    def get_all_test_modules(self):
+        return self.test_modules
+
+    def get_harness_options_manifest(self):
         manifest = {}
         for me in self.get_module_entries():
-            uri = me.get_uri(uri_prefix)
-            manifest[uri] = me.get_entry_for_manifest(uri_prefix)
+            path = me.get_path()
+            manifest[path] = me.get_entry_for_manifest()
         return manifest
 
     def get_manifest_entry(self, package, section, module):
@@ -339,8 +360,6 @@ class ManifestBuilder:
 
         js_lines = open(mi.js,"r").readlines()
         requires, problems, locations = scan_module(mi.js,js_lines,self.stderr)
-        if mi.section == "tests":
-            requires["chrome"] = {}
         if problems:
             # the relevant instructions have already been written to stderr
             raise BadChromeMarkerError()
@@ -349,14 +368,14 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "loader", "manifest"):
-                me.add_requirement(reqname, None)
+            if reqname in ("chrome", "@packaging", "@loader"):
+                me.add_requirement(reqname, {"path": reqname})
             elif reqname == "self":
                 # this might reference bundled data, so:
                 #  1: hash that data, add the hash as a dependency
                 #  2: arrange for the data to be copied into the XPI later
                 if pkg.name not in self.datamaps:
-                    self.datamaps[pkg.name] = DataMap(pkg, self.uri_prefix)
+                    self.datamaps[pkg.name] = DataMap(pkg)
                 dm = self.datamaps[pkg.name]
                 me.add_data(dm) # 'self' is implicit
             else:
@@ -551,7 +570,7 @@ class ManifestBuilder:
                     return ModuleInfo(pkg, section, name, js, docs)
         return None
 
-def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
+def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
                    extra_modules=[]):
     """
     Perform recursive dependency analysis starting from entry_point,
@@ -578,7 +597,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, uri_prefix, scan_tests,
     code which does, so it knows what to copy into the XPI.
     """
 
-    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, uri_prefix, extra_modules)
+    mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules)
     mxt.build(scan_tests)
     return mxt
 
@@ -699,8 +718,8 @@ the equivalent shortcuts now.)
 def scan_module(fn, lines, stderr=sys.stderr):
     filename = os.path.basename(fn)
     requires, locations = scan_requirements_with_grep(fn, lines)
-    if filename == "cuddlefish.js" or filename == "securable-module.js":
-        # these are the loader: don't scan for chrome
+    if filename == "cuddlefish.js":
+        # this is the loader: don't scan for chrome
         problems = False
     elif "chrome" in requires:
         # if they declare require("chrome"), we tolerate the use of

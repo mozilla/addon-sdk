@@ -47,19 +47,16 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
+
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
 const runtime = require("api-utils/runtime");
 
-require("api-utils/xpcom").utils.defineLazyServiceGetter(
-  this,
-  "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1",
-  "nsIWindowMediator"
-);
+const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
+                       getService(Ci.nsIWindowMediator);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
@@ -310,28 +307,30 @@ const Panel = Symbiont.resolve({
    */
   _onShow: function _onShow() {
     try {
-      if (!this._inited) // defer if not initialized yet
-        return this.on('inited', this._onShow.bind(this));
-      this._frameLoadersSwapped = true;
+      if (!this._inited) { // defer if not initialized yet
+        this.on('inited', this._onShow.bind(this));
+      } else {
+        this._frameLoadersSwapped = true;
 
-      // Retrieve computed text color style in order to apply to the iframe
-      // document. As MacOS background is dark gray, we need to use skin's text
-      // color.
-      let win = this._xulPanel.ownerDocument.defaultView;
-      let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
-                 "class", "panel-inner-arrowcontent");
-      let textColor = win.getComputedStyle(node).getPropertyValue("color");
-      let doc = this._xulPanel.firstChild.contentDocument;
-      let style = doc.createElement("style");
-      style.textContent = "body { color: " + textColor + "; }";
-      let container = doc.head ? doc.head : doc.documentElement;
-      if (container.firstChild)
-        container.insertBefore(style, container.firstChild);
-      else
-        container.appendChild(style);
+        // Retrieve computed text color style in order to apply to the iframe
+        // document. As MacOS background is dark gray, we need to use skin's
+        // text color.
+        let win = this._xulPanel.ownerDocument.defaultView;
+        let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
+                    "class", "panel-inner-arrowcontent");
+        let textColor = win.getComputedStyle(node).getPropertyValue("color");
+        let doc = this._xulPanel.firstChild.contentDocument;
+        let style = doc.createElement("style");
+        style.textContent = "body { color: " + textColor + "; }";
+        let container = doc.head ? doc.head : doc.documentElement;
 
+        if (container.firstChild)
+          container.insertBefore(style, container.firstChild);
+        else
+          container.appendChild(style);
 
-      this._emit('show');
+        this._emit('show');
+      }
     } catch(e) {
       this._emit('error', e);
     }
