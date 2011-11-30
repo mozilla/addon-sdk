@@ -56,6 +56,12 @@ const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
 exports.staticArgs = options.staticArgs;
 
 /**
+ * Environment variables. Environment variables are non-enumerable properties
+ * of this object (key is name and value is value).
+ */
+exports.env = require('./environment').env;
+
+/**
  * Ends the process with the specified `code`. If omitted, exit uses the
  * 'success' code 0. To exit with failure use `1`.
  * TODO: Improve platform to actually quit with an exit code.
@@ -63,7 +69,7 @@ exports.staticArgs = options.staticArgs;
 exports.exit = function exit(code) {
   // This is used by 'cfx' to find out exit code.
   if ('resultFile' in options)
-    file.open(options.resultFile, 'w').writeAsync(code ? 'FAIL' : 'OK');
+    file.open(options.resultFile, 'w').write(code ? 'FAIL' : 'OK');
 
   appStartup.quit(code ? E_ATTEMPT : E_FORCE);
 };

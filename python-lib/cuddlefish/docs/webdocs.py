@@ -1,14 +1,17 @@
 import sys, os, re, errno
 import markdown
 import simplejson as json
+import cgi
 
 from cuddlefish import packaging
 from cuddlefish import Bunch
 from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
+from cuddlefish._version import get_versions
 
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
+VERSION_INSERTION_POINT = '<div id="version">'
 HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
 LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
@@ -131,6 +134,8 @@ class WebDocs(object):
         base_page = unicode(open(root + INDEX_PAGE, 'r').read(), 'utf8')
         base_tag = 'href="' + base_url + '"'
         base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
+        sdk_version = get_versions()["version"]
+        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
         high_level_summaries = \
             self._create_package_summaries(self.packages_json, is_high_level)
         base_page = insert_after(base_page, \
@@ -153,7 +158,7 @@ class WebDocs(object):
         table_contents = ''
         if package_json.get('author', None):
             table_contents += self._create_package_detail_row(\
-                package_json['author'], 'Author', 'author')
+                cgi.escape(package_json['author']), 'Author', 'author')
         if package_json.get('version', None):
             table_contents += self._create_package_detail_row(\
                 package_json['version'], 'Version', 'version')

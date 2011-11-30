@@ -153,7 +153,10 @@ exports.testPostMessage = createProxyTest(html, function (helper, test) {
     test.assertEqual(event.source, ifWindow,
                      "event.source is the iframe window");
     test.assertEqual(event.origin, "null", "origin is null");
-    test.assertEqual(event.data, "ok", "message data is correct");
+
+    test.assertEqual(event.data, "{\"foo\":\"bar\\n \\\"escaped\\\".\"}",
+                     "message data is correct");
+
     helper.done();
   }, false);
 
@@ -161,7 +164,10 @@ exports.testPostMessage = createProxyTest(html, function (helper, test) {
     'new ' + function ContentScriptScope() {
       assert(postMessage === postMessage,
           "verify that we doesn't generate multiple functions for the same method");
-      document.getElementById("iframe").contentWindow.postMessage("ok", "*");
+
+      var json = JSON.stringify({foo : "bar\n \"escaped\"."});
+
+      document.getElementById("iframe").contentWindow.postMessage(json, "*");
     }
   );
 });
@@ -703,6 +709,23 @@ exports.testGlobalScope = createProxyTest("", function (helper) {
     'assert(window.toplevelScope, "variables in toplevel scope are set to `window` object");' +
     'assert(this.toplevelScope, "variables in toplevel scope are set to `this` object");' +
     'done();'
+  );
+
+});
+
+// Bug 671016: Typed arrays should not be proxified
+exports.testTypedArrays = createProxyTest("", function (helper) {
+
+  helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      let canvas = document.createElement("canvas");
+      let context = canvas.getContext("2d");
+      let imageData = context.getImageData(0,0, 1, 1);
+      let unwrappedData = imageData.valueOf(UNWRAP_ACCESS_KEY).data;
+      let data = imageData.data;
+      assert(unwrappedData === data, "Typed array isn't proxified")
+      done();
+    }
   );
 
 });

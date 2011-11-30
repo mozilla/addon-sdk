@@ -223,6 +223,22 @@ function ContentScriptObjectWrapper(obj) {
   return proxy;
 }
 
+// List of all existing typed arrays.
+//   Can be found here:
+//   http://mxr.mozilla.org/mozilla-central/source/js/src/jsapi.cpp#1790
+const typedArraysCtor = [
+  ArrayBuffer,
+  Int8Array,
+  Uint8Array,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+  Uint8ClampedArray
+];
+
 /*
  * Wrap a JS value coming from the document by building a proxy wrapper.
  */
@@ -231,6 +247,13 @@ function wrap(value, obj, name, debug) {
     return value;
   let type = typeof value;
   if (type == "object") {
+    // Bug 671016: Typed arrays don't need to be proxified.
+    // We avoid checking the whole constructor list on all objects
+    // by doing this check only on non-extensible objects:
+    if (!Object.isExtensible(value) &&
+        typedArraysCtor.indexOf(value.constructor) !== -1)
+      return value;
+
     // We may have a XrayWrapper proxy.
     // For example:
     //   let myListener = { handleEvent: function () {} };
@@ -551,8 +574,9 @@ const xRayWrappersMethodsFixes = {
     }
     // Create a wrapper that is going to call `postMessage` through `eval`
     let f = function postMessage(message, targetOrigin) {
-      message = message.toString().replace(/'/g,"\\'");
-      targetOrigin = targetOrigin.toString().replace(/'/g,"\\'");
+      message = message.toString().replace(/['\\]/g,"\\$&");
+      targetOrigin = targetOrigin.toString().replace(/['\\]/g,"\\$&");
+
       let jscode = "this.postMessage('" + message + "', '" +
                                 targetOrigin + "')";
       return this.wrappedJSObject.eval(jscode);

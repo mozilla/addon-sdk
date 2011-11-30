@@ -333,6 +333,16 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       apply: 'rw'
     }
 
+    // Inject `addon` global into target document if document is trusted,
+    // `addon` in document is equivalent to `self` in content script.
+    if (worker._injectInDocument) {
+      let win = window.wrappedJSObject ? window.wrappedJSObject : window;
+      Object.defineProperty(win, "addon", {
+          get: function () publicAPI
+        }
+      );
+    }
+
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
@@ -568,12 +578,17 @@ const Worker = AsyncEventEmitter.compose({
   },
 
   get url() {
-    return this._window.document.location.href;
+    // this._window will be null after detach
+    return this._window ? this._window.document.location.href : null;
   },
   
   get tab() {
-    let tab = require("../tabs/tab");
-    return tab.getTabForWindow(this._window);
+    if (this._window) {
+      let tab = require("../tabs/tab");
+      // this._window will be null after detach
+      return tab.getTabForWindow(this._window);
+    }
+    return null;
   },
   
   /**
@@ -629,5 +644,11 @@ const Worker = AsyncEventEmitter.compose({
    * @type {Object}
    */
   _window: null,
+
+  /**
+   * Flag to enable `addon` object injection in document. (bug 612726)
+   * @type {Boolean}
+   */
+  _injectInDocument: false
 });
 exports.Worker = Worker;

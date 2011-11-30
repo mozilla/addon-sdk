@@ -94,10 +94,11 @@ const Sandbox = {
 // the Module object made available to CommonJS modules when they are
 // evaluated, along with 'exports' and 'uri'
 const Module = {
-  new: function(id, uri) {
+  new: function(id, path, uri) {
     let module = Object.create(this);
 
     module.id = id;
+    module.path = path;
     module.uri = uri;
     module.exports = {};
 
@@ -121,6 +122,8 @@ const Loader = {
       // order to override default modules cache.
       modules: { value: options.modules || Object.create(Loader.modules) },
       globals: { value: options.globals || {} },
+
+      uriPrefix: { value: options.uriPrefix },
 
       sandboxes: { value: {} }
     });
@@ -169,15 +172,15 @@ const Loader = {
       id: 'chrome'
     }),
     'self': function self(loader, requirer) {
-      return loader.require('api-utils/self!').create(requirer.uri);
+      return loader.require('api-utils/self!').create(requirer.path);
     },
   },
 
   // populate a Module by evaluating the CommonJS module code in the sandbox
   load: function load(module) {
-    let require = Loader.require.bind(this, module.uri);
+    let require = Loader.require.bind(this, module.path);
     require.main = this.main;
-    let sandbox = this.sandboxes[module.uri] = Sandbox.new(this.globals);
+    let sandbox = this.sandboxes[module.path] = Sandbox.new(this.globals);
     sandbox.merge({
       require: require,
       module: module,
@@ -209,21 +212,22 @@ const Loader = {
                   + (requirer && requirer.id), base, id);
 
     // If we have a manifest for requirer, then all it's requirements have been
-    // registered by linker and we should have a `uri` to the required module.
+    // registered by linker and we should have a `path` to the required module.
     // Even pseudo-modules like 'chrome', 'self', '@packaging', and '@loader'
-    // have pseudo-URIs: exactly those same names.
+    // have pseudo-paths: exactly those same names.
     // details see: Bug-697422.
     let requirement = manifest && manifest.requirements[id];
     if (!requirement)
         throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
                     base + " has no authority to load: " + id);
-    let uri = requirement.uri;
+    let path = requirement.path;
 
-    if (uri in this.modules) {
-      module = this.modules[uri];
+    if (path in this.modules) {
+      module = this.modules[path];
     }
     else {
-      module = this.modules[uri] = Module.new(id, uri);
+      let uri = this.uriPrefix + path;
+      module = this.modules[path] = Module.new(id, path, uri);
       this.load(module);
       Object.freeze(module);
     }
@@ -244,9 +248,10 @@ const Loader = {
   // process.process() will eventually cause a call to main() to be evaluated
   // in the addon's context. This function loads and executes the addon's
   // entry point module.
-  main: function main(id, uri) {
+  main: function main(id, path) {
     try {
-      let module = this.modules[uri] = Module.new(id, uri);
+      let uri = this.uriPrefix + path;
+      let module = this.modules[path] = Module.new(id, path, uri);
       this.load(module); // this is where the addon's main.js finally runs
       let program = Object.freeze(module).exports;
 
@@ -285,21 +290,21 @@ const Loader = {
   //   to do the following:
   //   * create a Loader, initialized with the same manifest and
   //     harness-options.json that we've got
-  //   * invoke it's main() method, with the name and URI of the addon's
+  //   * invoke it's main() method, with the name and path of the addon's
   //     entry module (which comes from linker via harness-options.js, and is
   //     usually main.js). That executes main(), above.
   //   * main() loads the addon's main.js, which executes all top-level
   //     forms. If the module defines an "exports.main=" function, we invoke
   //     that too. This is where the addon finally gets to run.
-  spawn: function spawn(id, uri) {
+  spawn: function spawn(id, path) {
     let loader = this;
     let process = this.require('api-utils/process');
-    process.spawn(id, uri)(function(addon) {
+    process.spawn(id, path)(function(addon) {
       // Listen to `require!` channel's input messages from the add-on process
       // and load modules being required.
-      addon.channel('require!').input(function({ requirer: { uri }, id }) {
+      addon.channel('require!').input(function({ requirer: { path }, id }) {
         try {
-          Loader.require.call(loader, uri, id).initialize(addon.channel(id));
+          Loader.require.call(loader, path, id).initialize(addon.channel(id));
         } catch (error) {
           this.globals.console.exception(error);
         }
@@ -308,10 +313,6 @@ const Loader = {
   },
   unload: function unload(reason, callback) {
     this.require('api-utils/unload').send(reason, callback);
-    // `cfx run` expects to see 'OK' or 'FAIL' to be written into a `resultFile`
-    // as a signal of quit.
-    if ('resultFile' in options && reason === 'shutdown')
-      this.require('api-utils/system').exit(0);
   }
 };
 exports.Loader = Loader;

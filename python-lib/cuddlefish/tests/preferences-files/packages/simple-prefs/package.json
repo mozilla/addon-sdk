@@ -1,0 +1,11 @@
+{
+    "id": "jid1-fZHqN9JfrDBa8A",
+    "fullName": "Simple Prefs Test",
+    "author": "Erik Vold",
+    "preferences": [{
+        "name": "test",
+        "type": "bool", 
+        "title": "test"
+    }],
+    "loader": "lib/main.js"
+}

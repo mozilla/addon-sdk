@@ -53,7 +53,7 @@ function loadScript(target, uri, sync) {
                                 : target.loadFrameScript(uri, sync)
 }
 
-function process(target, id, uri, scope) {
+function process(target, id, path, scope) {
   // Please note that even though `loadScript`, is executed before channel is
   // returned, users still are able to subscribe for messages before any message
   // will be sent. That's because `loadScript` queues script execution on the
@@ -61,31 +61,34 @@ function process(target, id, uri, scope) {
   // event loop), while the channel for messages is returned immediately (in
   // the same turn of event loop).
 
-  loadScript(target, packaging.loader, false);
-  loadScript(target, 'data:,let options = ' + JSON.stringify(packaging));
-  loadScript(target, 'data:,let loader = Loader.new(options);\n' +
-                     'loader.main("' + id + '", "' + uri + '");', false);
+  loadScript(target, packaging.uriPrefix + packaging.loader, false);
+  loadScript(target, 'data:,let loader = Loader.new(' +
+                      JSON.stringify(packaging) + ');\n' +
+                     'loader.main("' + id + '", "' + path + '");', false);
 
   when(function (reason) {
+    // Please note that it's important to unload remote loader
+    // synchronously (using synchronous frame script), to make sure that we
+    // don't stop during unload.
     loadScript(target, 'data:,loader.unload("' + reason + '")', true);
   });
 
   return { channel: channel.bind(null, scope, target) }
 }
 
-exports.spawn = function spawn(id, uri) {
+exports.spawn = function spawn(id, path) {
   return function promise(deliver) {
     // If `nsIAddonService` is available we use it to create an add-on process,
     // otherwise we fallback to the remote browser's message manager.
     if (ENABLE_E10S && addonService) {
       console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
-      deliver(process(addonService.createAddon(), id, uri));
+      deliver(process(addonService.createAddon(), id, path));
     } else {
       createRemoteBrowser(ENABLE_E10S)(function(browser) {
         let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).
                                      frameLoader.messageManager
         let window = browser.ownerDocument.defaultView;
-        deliver(process(messageManager, id, uri, window));
+        deliver(process(messageManager, id, path, window));
       });
     }
   };

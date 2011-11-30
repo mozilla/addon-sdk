@@ -3,7 +3,6 @@
     "description": "A harness for running Jetpack tests.",
     "author": "Atul Varma (http://toolness.com/)",
     "keywords": ["jetpack-low-level"],
-    "version": "1.4a0",
     "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
     "dependencies": ["api-utils"]
 }

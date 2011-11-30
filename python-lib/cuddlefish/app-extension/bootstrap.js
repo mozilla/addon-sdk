@@ -21,6 +21,7 @@
  * Contributor(s):
  *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *  Matteo Ferretti <zer0@mozilla.com>
+ *  Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -48,12 +49,50 @@ const resourceHandler = ioService.getProtocolHandler('resource')
                         .QueryInterface(Ci.nsIResProtocolHandler);
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
+const prefs = Cc["@mozilla.org/preferences-service;1"].
+              getService(Ci.nsIPrefService).
+              QueryInterface(Ci.nsIPrefBranch2);
+const mozIJSSubScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
+                            getService(Ci.mozIJSSubScriptLoader);
 
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
 
+const URI = __SCRIPT_URI_SPEC__.replace(/bootstrap\.js$/, "");
+
+// Initializes default preferences
+function setDefaultPrefs() {
+  let branch = prefs.getDefaultBranch("");
+  let prefLoaderScope = {
+    pref: function(key, val) {
+      switch (typeof val) {
+        case "boolean":
+          branch.setBoolPref(key, val);
+          break;
+        case "number":
+          if (value % 1 == 0) // number must be a integer, otherwise ignore it
+            branch.setIntPref(key, val);
+          break;
+        case "string":
+          branch.setCharPref(key, val);
+          break;
+      }
+    }
+  };
+
+  let uri = ioService.newURI(
+      "defaults/preferences/prefs.js",
+      null,
+      ioService.newURI(URI, null, null));
+
+  // if there is a prefs.js file, then import the default prefs
+  if (uri.QueryInterface(Ci.nsIFileURL).file.exists()) {
+    // setup default prefs
+    mozIJSSubScriptLoader.loadSubScript(uri.spec, prefLoaderScope);
+  }
+}
 
 // Gets the topic that fit best as application startup event, in according with
 // the current application (e.g. Firefox, Fennec, Thunderbird...)
@@ -94,17 +133,6 @@ function readURI(uri) {
   return request.responseText;
 }
 
-// Shim function to get `resourceURI` in pre Gecko 7.0.
-// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions#Bootstrap_data
-function resourceURI(file) {
-  // First creating "file:" URI.
-  let uri = ioService.newFileURI(file);
-  if (uri.spec.substr(-4) === '.xpi') // `unpack` is `false`
-    uri = ioService.newURI('jar:' + uri.spec + '!/', null, null);
-
-  return uri;
-}
-
 // Function takes `topic` to be observer via `nsIObserverService` and returns
 // promise that will be delivered once notification is published.
 function on(topic) {
@@ -121,40 +149,30 @@ function on(topic) {
   }
 }
 
-/**
- * Maps each path - value from `resources` hash in the resources protocol
- * handler with an associated key. Each path is resolved relative to the given
- * `root` path.
- */
-function mapResources(root, resources) {
-  Object.keys(resources).forEach(function(id) {
-    let path = resources[id];
-    let uri = Array.isArray(path) ? root + '/' + path.join('/')
-                                  : 'file://' + path;
-    uri = ioService.newURI(uri + '/', null, null);
-    resourceHandler.setSubstitution(id, uri);
-  });
-}
-
 // We don't do anything on install & uninstall yet, but in a future
 // we should allow add-ons to cleanup after uninstall.
 function install(data, reason) {}
 function uninstall(data, reason) {}
 
 function startup(data, reason) {
-  let uri = (data.resourceURI || resourceURI(data.installPath)).spec;
+  // TODO: When bug 564675 is implemented this will no longer be needed
+  // Always set the default prefs, because they disappear on restart
+  setDefaultPrefs();
+
   // TODO: Maybe we should perform read harness-options.json asynchronously,
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
-  let options = JSON.parse(readURI(uri + './harness-options.json'));
+  let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
 
-  // TODO: This is unnecessary overhead per add-on instance. Manifest should
-  // probably contain paths relative to add-on root to avoid this, but that
-  // requires simpler package layout that is being worked under the bug-660629.
-  mapResources(uri, options.resources);
+  // Register a new resource "domain" for this addon which is mapping to
+  // XPI's `resources` folder.
+  let resourcesUri = ioService.newURI(URI + '/resources/', null, null);
+  resourceHandler.setSubstitution(options.unique_prefix, resourcesUri);
+  options.uriPrefix = "resource://" + options.unique_prefix + "/";
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
-  loader = Cu.import(options.loader).Loader.new(options);
+  let loaderUri = options.uriPrefix + options.loader;
+  loader = Cu.import(loaderUri).Loader.new(options);
 
   // Creating a promise, that will be delivered once application is ready.
   // If application is at startup then promise is delivered on
@@ -166,7 +184,7 @@ function startup(data, reason) {
   // on add-on.
   promise(function() {
     try {
-      loader.spawn(options.main, options.mainURI);
+      loader.spawn(options.main, options.mainPath);
     } catch (error) {
       // If at this stage we have an error only thing we can do is report about
       // it via error console. Keep in mind that error won't automatically show
@@ -179,6 +197,14 @@ function startup(data, reason) {
 
 function shutdown(data, reason) {
   // If loader is already present unload it, since add-on is disabled.
-  if (loader)
-    loader.unload(REASON[reason]);
+  if (loader) {
+    reason = REASON[reason];
+    let system = loader.require('api-utils/system');
+    loader.unload(reason);
+    // If add-on is lunched via `cfx run` we need to use `system.exit` to let
+    // cfx know we're done (`cfx test` will take care of exit so we don't do
+    // anything here).
+    if (system.env.CFX_COMMAND === 'run' && reason === 'shutdown')
+      system.exit(0);
+  }
 };
