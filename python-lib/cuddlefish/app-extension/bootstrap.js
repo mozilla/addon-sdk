@@ -166,9 +166,18 @@ function startup(data, reason) {
 
   // Register a new resource "domain" for this addon which is mapping to
   // XPI's `resources` folder.
+  // Generate the domain name by using jetpack ID, which is the extension ID
+  // by stripping common characters that doesn't work as a domain name:
+  let uuidRe =
+    /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
+  let domain = options.jetpackID.toLowerCase()
+                            .replace(/@/g, "-at-")
+                            .replace(/\./g, "-dot-")
+                            .replace(uuidRe, "$1");
+
   let resourcesUri = ioService.newURI(URI + '/resources/', null, null);
-  resourceHandler.setSubstitution(options.unique_prefix, resourcesUri);
-  options.uriPrefix = "resource://" + options.unique_prefix + "/";
+  resourceHandler.setSubstitution(domain, resourcesUri);
+  options.uriPrefix = "resource://" + domain + "/";
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
   let loaderUri = options.uriPrefix + options.loader;
