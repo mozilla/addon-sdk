@@ -1,8 +1,8 @@
 Add-on SDK README
 ==================
 
-Before proceeding, please make sure you've installed Python 2.5
-or 2.6 if it's not already on your system:
+Before proceeding, please make sure you've installed Python 2.5,
+2.6, or 2.7 (if it's not already on your system):
 
   http://python.org/download/
 
