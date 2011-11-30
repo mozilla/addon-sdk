@@ -574,8 +574,9 @@ const xRayWrappersMethodsFixes = {
     }
     // Create a wrapper that is going to call `postMessage` through `eval`
     let f = function postMessage(message, targetOrigin) {
-      message = message.toString().replace(/'/g,"\\'");
-      targetOrigin = targetOrigin.toString().replace(/'/g,"\\'");
+      message = message.toString().replace(/['\\]/g,"\\$&");
+      targetOrigin = targetOrigin.toString().replace(/['\\]/g,"\\$&");
+
       let jscode = "this.postMessage('" + message + "', '" +
                                 targetOrigin + "')";
       return this.wrappedJSObject.eval(jscode);
