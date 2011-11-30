@@ -44,11 +44,11 @@ const getOwnPropertyNames = Object.getOwnPropertyNames,
       _create = Object.create;
 
 function doPropertiesMatch(object1, object2, name) {
-  // If `object1` has property with a given `name`
+  // If `object1` has property with the given `name`
   return name in object1 ?
-         // then `object2` should have it with a same value.
+         // then `object2` should have it with the same value.
          name in object2 && object1[name] === object2[name] :
-         // otherwise `object2` should not have property with a given `name`
+         // otherwise `object2` should not have property with the given `name`.
          !(name in object2);
 }
 

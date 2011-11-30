@@ -120,10 +120,10 @@ var remove = exports.remove = function remove(topic, callback, thisObject) {
             v.callback == callback &&
             v.thisObject == thisObject);
   });
-  let observer = observers.length && observers[0];
-  if (observer) {
-    service.removeObserver(observer, topic);
-    cache.splice(cache.indexOf(observer), 1);
+
+  if (observers.length) {
+    service.removeObserver(observers[0], topic);
+    cache.splice(cache.indexOf(observers[0]), 1);
   }
 };
 
