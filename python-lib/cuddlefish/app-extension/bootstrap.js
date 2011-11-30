@@ -88,9 +88,13 @@ function setDefaultPrefs() {
       ioService.newURI(URI, null, null));
 
   // if there is a prefs.js file, then import the default prefs
-  if (uri.QueryInterface(Ci.nsIFileURL).file.exists()) {
+  try {
     // setup default prefs
     mozIJSSubScriptLoader.loadSubScript(uri.spec, prefLoaderScope);
+  }
+  // errors here should not kill addon
+  catch (e) {
+    Cu.reportError(e);
   }
 }
 
