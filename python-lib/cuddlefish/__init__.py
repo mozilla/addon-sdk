@@ -555,17 +555,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     target = target_cfg.name
 
-    # the harness_guid is used for an XPCOM class ID. We use the
-    # JetpackID for the add-on ID and the XPCOM contract ID.
-    if "harnessClassID" in target_cfg:
-        # For the sake of non-bootstrapped extensions, we allow to specify the
-        # classID of harness' XPCOM component in package.json. This makes it
-        # possible to register the component using a static chrome.manifest file
-        harness_guid = target_cfg["harnessClassID"]
-    else:
-        import uuid
-        harness_guid = str(uuid.uuid4())
-
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
@@ -592,7 +581,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if "id" in target_cfg:
         jid = target_cfg["id"]
     else:
-        jid = harness_guid
+        import uuid
+        jid = str(uuid.uuid4())
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
 
@@ -651,12 +641,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         include_dep_tests=options.dep_tests
         )
 
-    harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
-        'bootstrap': {
-            'contractID': harness_contract_id,
-            'classID': '{%s}' % harness_guid
-            },
         'jetpackID': jid,
         'staticArgs': options.static_args,
         'name': target,
