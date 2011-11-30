@@ -235,6 +235,12 @@ parser_groups = (
                                          default=0,
                                          cmds=['test', 'testex', 'testpkgs',
                                                'testall'])),
+        (("", "--stop-on-error",), dict(dest="stopOnError",
+                                  help="Stop running tests after the first failure",
+                                  action="store_true",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['test', 'testex', 'testpkgs'])),
         ]
      ),
     )
@@ -557,7 +563,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        inherited_options.extend(['iterations', 'filter', 'profileMemory',
+                                  'stopOnError'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
