@@ -1,9 +1,8 @@
-import sys
-
-from cuddlefish import runner
 
 def xulrunner_app_runner_doctests():
     """
+    >>> import sys
+    >>> from cuddlefish import runner
     >>> runner.XulrunnerAppRunner(binary='foo')
     Traceback (most recent call last):
     ...

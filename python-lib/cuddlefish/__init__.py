@@ -6,7 +6,6 @@ import webbrowser
 from copy import copy
 import simplejson as json
 from cuddlefish import packaging
-from cuddlefish.bunch import Bunch
 from cuddlefish._version import get_versions
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
