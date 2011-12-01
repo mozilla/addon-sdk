@@ -1,5 +1,4 @@
 exports.main = function(options, callbacks) {
-  // Tell Firefox to quit immediatly
-  //callbacks.quit();
+  // Close Firefox window. Firefox should quit.
   require("window-utils").activeBrowserWindow.close();
 }
