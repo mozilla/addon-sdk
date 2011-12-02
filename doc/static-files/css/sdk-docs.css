@@ -24,6 +24,15 @@ h2 {
   position: relative;
 }
 
+hr {
+  border-style: solid;
+  border-width: 1px;
+  color: #003595;
+  width: 75%;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
 .funnel .menu {
   padding-right: 50px;     /* main-content padding*/
 }

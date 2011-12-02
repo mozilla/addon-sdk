@@ -1,12 +1,40 @@
 # Tutorials #
 
-### [Getting Started](dev-guide/addon-development/getting-started.html) ###
-In this tutorial we'll implement a simple add-on and introduce the main
-concepts in the SDK.
+<hr />
 
-### [Introducing the APIs](dev-guide/addon-development/api-intro.html) ###
-An introduction to the SDK APIs.
+#### [Getting Started With `cfx`](dev-guide/addon-development/getting-started-with-cfx.html) ####
 
-### [Annotator: a More Complex Add-on](dev-guide/addon-development/annotator/annotator.html) ###
-This tutorial takes you through the implementation of a more complex add-on,
-and introduces most of the APIs in the [addon-kit package](packages/addon-kit/addon-kit.html).
+<hr />
+
+#### [Modifying Web Pages](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Adding a Button to the Toolbar](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Adding HTML Content to the Toolbar](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Displaying Popups](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Adding Menu Items to Firefox](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Adding Context Menu Items](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Making Network Requests](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Preferences and Local Storage](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+#### [Working With Windows and Tabs](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+<br/>
+
+<hr />
+
+#### [Putting It All Together](dev-guide/addon-development/tutorials/modifying-web-pages.html) ####
+
+<hr />
