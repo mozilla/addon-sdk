@@ -33,6 +33,19 @@ exports.testClearTimeout = function(test) {
   test.waitUntilDone();
 };
 
+exports.testCancelTimeout = function(test) {
+  var myFunc = function myFunc() {
+    test.fail("myFunc() should not be called in testClearTimeout");
+  };
+  var id = timer.setTimeout(myFunc, 1);
+  timer.setTimeout(function() {
+    test.pass("testClearTimeout passed");
+    test.done();
+  }, 2);
+  id.cancel();
+  test.waitUntilDone();
+};
+
 exports.testParamedClearTimeout = function(test) {
   let params = [1, 'foo', { bar: 'test' }, null, undefined];
   var myFunc = function myFunc() {
@@ -83,6 +96,18 @@ exports.testClearInterval = function (test) {
   timer.clearInterval(timer.setInterval(function () {
     test.fail("setInterval callback should not be called");
   }, 1));
+  var id = timer.setInterval(function () {
+    timer.clearInterval(id);
+    test.pass("testClearInterval passed");
+    test.done();
+  }, 2);
+  test.waitUntilDone();
+};
+
+exports.testCancelInterval = function(test) {
+  timer.setInterval(function () {
+    test.fail("setInterval callback should not be called");
+  }, 1).cancel();
   var id = timer.setInterval(function () {
     timer.clearInterval(id);
     test.pass("testClearInterval passed");

@@ -41,10 +41,18 @@
 
 const {Cc,Ci} = require("chrome");
 var xpcom = require("./xpcom");
+var Cortex = require("./cortex").Cortex;
+var Trait = require("./light-traits").Trait;
 
 var timerClass = Cc["@mozilla.org/timer;1"];
 var nextID = 1;
 var timers = {};
+
+var TimerTokenTrait = Trait({
+  _timerID: Trait.required,
+  cancel: function() cancelTimer(this._timerID),
+  toString: function() (this._timerID + "")
+});
 
 function TimerCallback(timerID, callback, params) {
   this._callback = callback;
@@ -122,14 +130,17 @@ function makeTimer(type, callback, callbackType, delay, params) {
     delay || 0,
     type
   );
-  return timerID;
+
+  return Cortex(TimerTokenTrait.create({
+    _timerID: timerID
+  }));
 }
 
 function cancelTimer(timerID) {
-  var timer = timers[timerID];
+  var timer = timers[timerID.toString()];
   if (timer) {
     timer.cancel();
-    delete timers[timerID];
+    delete timers[timerID.toString()];
   }
 }
 
