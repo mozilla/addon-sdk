@@ -101,7 +101,7 @@ class TestCfxQuits(unittest.TestCase):
             import cuddlefish
             cuddlefish.run(arguments=command)
         except SystemExit, e:
-            rc = e.args[0]
+            rc = e.code
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
