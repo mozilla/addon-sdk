@@ -3,8 +3,6 @@ from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
 
-tests_path = os.path.abspath(os.path.dirname(__file__))
-
 class TestInit(unittest.TestCase):
 
     def run_init_in_subdir(self, dirname, f, *args, **kwargs):
@@ -82,43 +80,6 @@ class TestInit(unittest.TestCase):
 
     def test_existing_files(self):
         self.run_init_in_subdir("existing_files", self._test_existing_files)
-
-
-
-class TestCfxQuits(unittest.TestCase):
-
-    def run_cfx(self, addon_name, command):
-        old_cwd = os.getcwd()
-        addon_path = os.path.join(tests_path,
-                                  "addons", addon_name)
-        os.chdir(addon_path)
-        import sys
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        sys.stdout = out = StringIO()
-        sys.stderr = err = StringIO()
-        try:
-            import cuddlefish
-            cuddlefish.run(arguments=command)
-        except SystemExit, e:
-            rc = e.code
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-            os.chdir(old_cwd)
-        return rc, out.getvalue(), err.getvalue()
-
-    def test_run(self):
-        rc, out, err = self.run_cfx("simplest-test", ["run"])
-        self.assertEqual(rc, 0)
-        self.assertIn("Program terminated successfully.", err)
-
-    def test_test(self):
-        rc, out, err = self.run_cfx("simplest-test", ["test"])
-        self.assertEqual(rc, 0)
-        self.assertIn("1 of 1 tests passed.", err)
-        self.assertIn("Program terminated successfully.", err)
-
 
 if __name__ == "__main__":
     unittest.main()
