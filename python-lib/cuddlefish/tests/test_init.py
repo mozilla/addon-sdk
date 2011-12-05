@@ -101,12 +101,28 @@ class TestCfxQuits(unittest.TestCase):
             import cuddlefish
             cuddlefish.run(arguments=command)
         except SystemExit, e:
-            rc = e.args[0]
+            if "code" in e:
+                rc = e.code
+            elif "args" in e and len(e.args)>0:
+                rc = e.args[0]
+            else:
+                rc = 0
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
             os.chdir(old_cwd)
+        out.flush()
+        err.flush()
         return rc, out.getvalue(), err.getvalue()
+
+    # this method doesn't exists in python 2.5,
+    # implements our own
+    def assertIn(self, member, container):
+        """Just like self.assertTrue(a in b), but with a nicer default message."""
+        if member not in container:
+            standardMsg = '"%s" not found in "%s"' % (member,
+                                                  container)
+            self.fail(standardMsg)
 
     def test_run(self):
         rc, out, err = self.run_cfx("simplest-test", ["run"])
