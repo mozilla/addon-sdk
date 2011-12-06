@@ -437,10 +437,11 @@ TestRunner.prototype = {
       if (options.stopOnError && self.test && self.test.failed) {
         self.console.error("aborted: test failed and --stop-on-error was specified");
         options.onDone(self);
-      } else if (test)
+      } else if (test) {
         self.start({test: test, onDone: runNextTest});
-      else
+      } else {
         options.onDone(self);
+      }
     }
     runNextTest(this);
   },
