@@ -59,6 +59,7 @@ exports.testProcessSpawn = function(test) {
 
   promise(function() {
     test.pass("spawn's promise was kept.");
+    loader.unload();
     test.done();
   });
 };
@@ -70,7 +71,6 @@ exports.testBug707562 = function(test) {
     "observe": function({message}) {
       if (message.match('JavaScript Error: "unterminated string literal"'))
         test.fail('JavaScript Error: "unterminated string literal"');
-      test.done();
     }
   };
   consoleService.registerListener(listener);
@@ -86,13 +86,13 @@ exports.testBug707562 = function(test) {
 
   promise(function() {
     test.pass("spawn's promise was kept.");
-
-    // wait a bit for a possible error..
-    setTimeout(function() {
-      test.done();
-    }, 250);
   });
 
-  consoleService.unregisterListener(listener);
+  // wait a bit for a possible error..
+  setTimeout(function() {
+    consoleService.unregisterListener(listener);
+    loader.unload();
+    test.done();
+  }, 250);
 };
 
