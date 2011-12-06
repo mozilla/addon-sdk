@@ -99,7 +99,11 @@ class TestCfxQuits(unittest.TestCase):
         sys.stderr = err = StringIO()
         try:
             import cuddlefish
-            cuddlefish.run(arguments=command)
+            args = list(command)
+            # Pass arguments given to cfx so that cfx can find firefox path
+            # if --binary option is given:
+            args.extend(sys.argv[1:])
+            cuddlefish.run(arguments=args)
         except SystemExit, e:
             if "code" in e:
                 rc = e.code
