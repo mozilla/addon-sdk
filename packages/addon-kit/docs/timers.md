@@ -2,6 +2,7 @@
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com] -->
+<!-- contributed by Erik Vold [erikvvold@gmail.com] -->
 
 The `timers` module provides access to web-like timing functionality.
 
@@ -9,7 +10,10 @@ The `timers` module provides access to web-like timing functionality.
 @function
   Schedules `callback` to be called in `ms` milliseconds. Any additional
   arguments are passed straight through to the callback.
-@returns {integer}
+
+  The timer can be cancelled by passing the ID to `clearTimeout` or by calling
+  the ID's `cancel` method.
+@returns {timerID}
   An ID that can later be used to undo this scheduling, if `callback` hasn't yet
   been called.
 @param callback {function}
@@ -22,7 +26,7 @@ The `timers` module provides access to web-like timing functionality.
 @function
   Given an ID returned from `setTimeout()`, prevents the callback with the ID
   from being called (if it hasn't yet been called).
-@param ID {integer}
+@param ID {timerID}
   An ID returned from `setTimeout()`.
 </api>
 
@@ -30,7 +34,10 @@ The `timers` module provides access to web-like timing functionality.
 @function
   Schedules `callback` to be called repeatedly every `ms` milliseconds. Any
   additional arguments are passed straight through to the callback.
-@returns {integer}
+
+  The interval can be cancelled by passing the ID to `clearTimeout` or by
+  calling the ID's `cancel` method.
+@returns {timerID}
   An ID that can later be used to unschedule the callback.
 @param callback {function}
   Function to be called.
@@ -42,7 +49,7 @@ The `timers` module provides access to web-like timing functionality.
 @function
   Given an ID returned from `setInterval()`, prevents the callback with the ID
   from being called again.
-@param ID {integer}
+@param ID {timerID}
   An ID returned from `setInterval()`.
 </api>
 
