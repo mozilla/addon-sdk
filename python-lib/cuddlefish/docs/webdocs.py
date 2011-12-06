@@ -1,11 +1,8 @@
-import sys, os, re, errno
+import os, re, errno
 import markdown
-import simplejson as json
 import cgi
 
 from cuddlefish import packaging
-from cuddlefish import Bunch
-from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
 from cuddlefish._version import get_versions
 

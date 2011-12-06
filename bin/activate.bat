@@ -19,10 +19,6 @@ SET PYTHONVERSION=2.5
 call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
 if "%PYTHONINSTALL%" NEQ "" goto FoundPython
 
-SET PYTHONVERSION=2.4
-call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
-if "%PYTHONINSTALL%" NEQ "" goto FoundPython
-
 if not defined ProgramFiles(x86) goto win32
 
 rem look for 32-bit python on 64-bit windows
@@ -38,10 +34,6 @@ call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
 if "%PYTHONINSTALL%" NEQ "" goto FoundPython
 
 SET PYTHONVERSION=2.5
-call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
-if "%PYTHONINSTALL%" NEQ "" goto FoundPython
-
-SET PYTHONVERSION=2.4
 call:CheckPython PYTHONINSTALL %PYTHONKEY%\%PYTHONVERSION%\InstallPath
 if "%PYTHONINSTALL%" NEQ "" goto FoundPython
 

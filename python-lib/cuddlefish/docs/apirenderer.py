@@ -1,7 +1,6 @@
 import sys, os
 import markdown
 import apiparser
-import time
 
 # list of all the 'class' and 'id' attributes assigned to
 # <div> and <span> tags by the renderer.
