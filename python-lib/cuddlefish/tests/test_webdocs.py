@@ -1,8 +1,7 @@
-import os, re
+import os
 import unittest
 
 from cuddlefish.docs import webdocs
-from cuddlefish.tests import env_root
 
 class WebDocTests(unittest.TestCase):
     def test_create_package_doc(self):

@@ -115,14 +115,15 @@ var remove = exports.remove = function remove(topic, callback, thisObject) {
   // we can make it.  We could index by topic, but we can't index by callback
   // or thisObject, as far as I know, since the keys to JavaScript hashes
   // (a.k.a. objects) can apparently only be primitive values.
-  var [observer] = cache.filter(function(v) {
-                                  return (v.topic      == topic    &&
-                                          v.callback   == callback &&
-                                          v.thisObject == thisObject);
-                                });
-  if (observer) {
-    service.removeObserver(observer, topic);
-    cache.splice(cache.indexOf(observer), 1);
+  let observers = cache.filter(function(v) {
+    return (v.topic == topic &&
+            v.callback == callback &&
+            v.thisObject == thisObject);
+  });
+
+  if (observers.length) {
+    service.removeObserver(observers[0], topic);
+    cache.splice(cache.indexOf(observers[0]), 1);
   }
 };
 

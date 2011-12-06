@@ -2,12 +2,10 @@ import sys
 import os
 import optparse
 import webbrowser
-import re
 
 from copy import copy
 import simplejson as json
 from cuddlefish import packaging
-from cuddlefish.bunch import Bunch
 from cuddlefish._version import get_versions
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
@@ -455,29 +453,6 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
-def get_unique_prefix(jid):
-    """Get a string that can be used to uniquely identify addon resources
-       in resource: URLs.  The string can't simply be the JID because
-       the resource: URL prefix is treated too much like a DNS hostname,
-       so we have to sanitize it in various ways."""
-
-    unique_prefix = jid
-    unique_prefix = unique_prefix.lower()
-    unique_prefix = unique_prefix.replace("@", "-at-")
-    unique_prefix = unique_prefix.replace(".", "-dot-")
-
-    # Strip optional but common curly brackets from around UUID-based IDs.
-    unique_prefix = re.sub(r'''(?x) ^\{
-                                    ([0-9a-f]{8}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{12})
-                                    \}$
-                           ''', r'\1', unique_prefix)
-
-    return unique_prefix
-
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -585,17 +560,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     target = target_cfg.name
 
-    # the harness_guid is used for an XPCOM class ID. We use the
-    # JetpackID for the add-on ID and the XPCOM contract ID.
-    if "harnessClassID" in target_cfg:
-        # For the sake of non-bootstrapped extensions, we allow to specify the
-        # classID of harness' XPCOM component in package.json. This makes it
-        # possible to register the component using a static chrome.manifest file
-        harness_guid = target_cfg["harnessClassID"]
-    else:
-        import uuid
-        harness_guid = str(uuid.uuid4())
-
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
     # or something.
@@ -622,7 +586,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if "id" in target_cfg:
         jid = target_cfg["id"]
     else:
-        jid = harness_guid
+        import uuid
+        jid = str(uuid.uuid4())
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
 
@@ -681,14 +646,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         include_dep_tests=options.dep_tests
         )
 
-    harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
-        'bootstrap': {
-            'contractID': harness_contract_id,
-            'classID': '{%s}' % harness_guid
-            },
         'jetpackID': jid,
-        'unique_prefix': get_unique_prefix(jid),
         'staticArgs': options.static_args,
         'name': target,
         }
