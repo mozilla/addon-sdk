@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -63,7 +64,7 @@ function process(target, id, path, scope) {
 
   loadScript(target, packaging.uriPrefix + packaging.loader, false);
   loadScript(target, 'data:,let loader = Loader.new(' +
-                      JSON.stringify(packaging) + ');\n' +
+                      encodeURIComponent(JSON.stringify(packaging)) + ');\n' +
                      'loader.main("' + id + '", "' + path + '");', false);
 
   when(function (reason) {
@@ -73,7 +74,7 @@ function process(target, id, path, scope) {
     loadScript(target, 'data:,loader.unload("' + reason + '")', true);
   });
 
-  return { channel: channel.bind(null, scope, target) }
+  return { channel: channel.bind(null, scope, target) };
 }
 
 exports.spawn = function spawn(id, path) {
