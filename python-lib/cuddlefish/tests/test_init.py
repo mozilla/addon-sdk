@@ -3,6 +3,8 @@ from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
 
+tests_path = os.path.abspath(os.path.dirname(__file__))
+
 class TestInit(unittest.TestCase):
 
     def run_init_in_subdir(self, dirname, f, *args, **kwargs):
@@ -80,6 +82,63 @@ class TestInit(unittest.TestCase):
 
     def test_existing_files(self):
         self.run_init_in_subdir("existing_files", self._test_existing_files)
+
+
+
+class TestCfxQuits(unittest.TestCase):
+
+    def run_cfx(self, addon_name, command):
+        old_cwd = os.getcwd()
+        addon_path = os.path.join(tests_path,
+                                  "addons", addon_name)
+        os.chdir(addon_path)
+        import sys
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = out = StringIO()
+        sys.stderr = err = StringIO()
+        try:
+            import cuddlefish
+            args = list(command)
+            # Pass arguments given to cfx so that cfx can find firefox path
+            # if --binary option is given:
+            args.extend(sys.argv[1:])
+            cuddlefish.run(arguments=args)
+        except SystemExit, e:
+            if "code" in e:
+                rc = e.code
+            elif "args" in e and len(e.args)>0:
+                rc = e.args[0]
+            else:
+                rc = 0
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+            os.chdir(old_cwd)
+        out.flush()
+        err.flush()
+        return rc, out.getvalue(), err.getvalue()
+
+    # this method doesn't exists in python 2.5,
+    # implements our own
+    def assertIn(self, member, container):
+        """Just like self.assertTrue(a in b), but with a nicer default message."""
+        if member not in container:
+            standardMsg = '"%s" not found in "%s"' % (member,
+                                                  container)
+            self.fail(standardMsg)
+
+    def test_run(self):
+        rc, out, err = self.run_cfx("simplest-test", ["run"])
+        self.assertEqual(rc, 0)
+        self.assertIn("Program terminated successfully.", err)
+
+    def test_test(self):
+        rc, out, err = self.run_cfx("simplest-test", ["test"])
+        self.assertEqual(rc, 0)
+        self.assertIn("1 of 1 tests passed.", err)
+        self.assertIn("Program terminated successfully.", err)
+
 
 if __name__ == "__main__":
     unittest.main()
