@@ -37,68 +37,152 @@
 
 "use strict";
 
-const {Cc,Ci,Cm,Cr,Cu} = require("chrome");
+const { Cc, Ci, Cr, Cm } = require('chrome');
+const { registerFactory, unregisterFactory, isCIDRegistered } =
+      Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
-var jsm = {};
-Cu.import("resource://gre/modules/XPCOMUtils.jsm", jsm);
-var utils = exports.utils = jsm.XPCOMUtils;
+const { sdkVersion } = require('@packaging');
+const { when: unload } = require('./unload');
+const { Base } = require('./base');
+const { uuid } = require('./uuid');
 
-Cm.QueryInterface(Ci.nsIComponentRegistrar);
+// This is a base prototype, that provides bare bones of XPCOM. JS based
+// components can be easily implement by extending it.
+const Unknown = Base.extend({
+  // Method `extend` is overridden so that resulting object will contain
+  // `interfaces` array property, containing elements from ancestor and all
+  // provided sources.
+  extend: function extend() {
+    let args = Array.slice(arguments);
+    return Base.extend.apply(this, args.concat([{
+      interfaces: args.reduce(function(interfaces, source) {
+        // If given source has `interfaces` property concatenate it's elements
+        // them resulting `interfaces` array, otherwise return resulting
+        // `interfaces` array.
+        return 'interfaces' in source ? source.interfaces.concat(interfaces)
+                                      : interfaces;
+      }, this.interfaces)
+    }]));
+  },
+  /**
+   * The `QueryInterface` method provides runtime type discovery used by XPCOM.
+   * This method return quired instance of `this` if given `queryInterface` is
+   * listed in the `interfaces` property.
+   */
+  QueryInterface: function QueryInterface(queryInterface) {
+    if (!this.interfaces.some(function(id) queryInterface.equals(Ci[id])))
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    return this;
+  },
+  /**
+   * Array of `XPCOM` interfaces (as strings) implemented by this component. All
+   * components implement `nsISupports` by default which is default value here.
+   * Provide array of interfaces implemented by an object when extending, to
+   * append them to this list (Please note that there is no need to repeat
+   * interfaces implemented by super as they will be added automatically).
+   */
+  interfaces: [ 'nsISupports' ]
+});
+exports.Unknown = Unknown;
 
-var factories = [];
-
-function Factory(options) {
-  memory.track(this);
-
-  this.wrappedJSObject = this;
-  this.create = options.create;
-  this.uuid = options.uuid;
-  this.name = options.name;
-  this.contractID = options.contractID;
-
-  Cm.registerFactory(this.uuid,
-                     this.name,
-                     this.contractID,
-                     this);
-
-  var self = this;
-
-  factories.push(this);
-}
-
-Factory.prototype = {
-  createInstance: function(outer, iid) {
+const Factory = Unknown.extend({
+  // Method `extend` is overridden so that resulting object will have unique
+  // classID unless provided by an argument.
+  extend: function extend() {
+    let args = Array.slice(arguments)
+    return Unknown.extend.apply(this, args.concat([{
+      classID: args.reduce(function(classID, source) {
+        return 'classID' in source ? source.classID : classID;
+      }, null) || uuid()
+    }]));
+  },
+  // Method `new` is overridden so that factory can be registered prior to
+  // first instantiation and unregistered prior to unload.
+  new: function create() {
+    if (this.classRegister && !(this.contractID in Cc))
+      register(this);
+    return Unknown.new.apply(this, arguments);
+  },
+  /**
+   * If property is `true` XPCOM factory will be registered prior to first
+   * object instantiation.
+   */
+  classRegister: true,
+  /**
+   * If property is `true` XPCOM factory will be unregistered prior to add-on
+   * unload.
+   */
+  classUnregister: true,
+  // All XPCOM factories implement `nsIFactory` interface.
+  interfaces: [ 'nsIFactory' ],
+  // All the descendants will get auto generated `classID` unless one is
+  // provided manually.
+  classID: null,
+  /**
+   * The name of the class being registered. This value is intended as a
+   * human-readable name for the class and does not needs to be globally unique.
+   */
+  className: 'Jetpack factory',
+  /**
+   * XPCOM contract id. May be `null` if no needed. Usually string like:
+   * '@mozilla.org/jetpack/factory;1'.
+   */
+  contractID: '@mozilla.org/jetpack/factory;1',
+  /**
+   * XPConnect lets you bypass its wrappers and access the underlying JS object
+   * directly using the `wrappedJSObject` property if the wrapped object allows
+   * this. All Factory descendants expose it's underlying JS objects unless
+   * intentionally overridden.
+   */
+  get wrappedJSObject() this,
+  /**
+   * This method is required by `nsIFactory` interfaces, but as in most
+   * implementations it does nothing interesting.
+   */
+  lockFactory: function lockFactory(lock) undefined,
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  createInstance: function createInstance(outer, iid) {
     try {
       if (outer)
         throw Cr.NS_ERROR_NO_AGGREGATION;
-      return (new this.create()).QueryInterface(iid);
-    } catch (e) {
-      console.exception(e);
-      if (e instanceof Ci.nsIException)
-        throw e;
-      else
-        throw Cr.NS_ERROR_FAILURE;
+      return this.QueryInterface(iid);
     }
-  },
-  unregister: function() {
-    var index = factories.indexOf(this);
-    if (index == -1)
-      throw new Error("factory already unregistered");
+    catch (error) {
+      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
+    }
+  }
+});
+exports.Factory = Factory;
 
-    var self = this;
+function isRegistered({ classID }) isCIDRegistered(classID)
+exports.isRegistered = isRegistered;
 
-    factories.splice(index, 1);
-    Cm.unregisterFactory(this.uuid, this);
-  },
-  QueryInterface: utils.generateQI([Ci.nsIFactory])
+/**
+ * Registers given `factory` object to be used to instantiate a particular class
+ * identified by `factory.classID`, and creates an association of class name
+ * and `factory.contractID` with the class.
+ */
+function register(factory) {
+  if (Factory.isPrototypeOf(factory)) {
+    let { classID, className, contractID, classUnregister } = factory;
+    registerFactory(classID, className, contractID, factory);
+    if (classUnregister)
+      unload(unregister.bind(null, factory));
+  }
 };
+exports.register = register;
 
-var makeUuid = exports.makeUuid = function makeUuid() {
-  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"]
-                      .getService(Ci.nsIUUIDGenerator);
-  var uuid = uuidGenerator.generateUUID();
-  return uuid;
+/**
+ * Unregister a factory associated with a particular class identified by
+ * `factory.classID`.
+ */
+function unregister(factory) {
+  if (isRegistered(factory))
+    unregisterFactory(factory.classID, factory);
 };
+exports.unregister = unregister;
 
 var autoRegister = exports.autoRegister = function autoRegister(path) {
   // TODO: This assumes that the url points to a directory
@@ -131,22 +215,8 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
   Cm.autoRegister(file);
 };
 
-var register = exports.register = function register(options) {
-  options = {__proto__: options};
-  if (!options.uuid)
-    options.uuid = makeUuid();
-  return new Factory(options);
-};
-
 var getClass = exports.getClass = function getClass(contractID, iid) {
   if (!iid)
     iid = Ci.nsISupports;
   return Cm.getClassObjectByContractID(contractID, iid);
 };
-
-require("./unload").when(
-  function() {
-    var copy = factories.slice();
-    copy.reverse();
-    copy.forEach(function(factory) { factory.unregister(); });
-  });
