@@ -5,8 +5,9 @@ html, body {
 
 pre {
   color: black;
-  background-color: #e0effd;
-  padding: 10px;
+  background-color: whitesmoke;
+  padding: 1em;
+  padding-left: 3em;
 }
 
 h2 {
