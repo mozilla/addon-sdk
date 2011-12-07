@@ -42,7 +42,7 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
 
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
@@ -78,10 +78,11 @@ const { EventEmitter, EventEmitterTrait } = require("api-utils/events");
 const { Trait } = require("api-utils/traits");
 const LightTrait = require('api-utils/light-traits').Trait;
 const { Loader, Symbiont } = require("api-utils/content");
-const timer = require("api-utils/timer");
 const { Cortex } = require('api-utils/cortex');
 const windowsAPI = require("./windows");
+const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
+const { uuid } = require("api-utils/uuid");
 
 // Data types definition
 const valid = {
@@ -721,7 +722,7 @@ WidgetChrome.prototype.update = function WC_update(updatedItem, property, value)
 WidgetChrome.prototype._createNode = function WC__createNode() {
   // XUL element container for widget
   let node = this._doc.createElement("toolbaritem");
-  let guid = require("api-utils/xpcom").makeUuid().toString();
+  let guid = String(uuid());
   
   // Temporary work around require("self") failing on unit-test execution ...
   let jetpackID = "testID";
@@ -825,7 +826,7 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
     contentScriptWhen: this._widget.contentScriptWhen,
     allow: this._widget.allow,
     onMessage: function(message) {
-      timer.setTimeout(function() {
+      setTimeout(function() {
         self._widget._onEvent("message", message);
       }, 0);
     }
@@ -855,7 +856,7 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       return;
 
     // Proxy event to the widget
-    timer.setTimeout(function() {
+    setTimeout(function() {
       self._widget._onEvent(EVENTS[e.type], null, self.node);
     }, 0);
   };
