@@ -10,12 +10,6 @@ pre {
   padding-left: 3em;
 }
 
-h2 {
-  color: black;
-  background-color: #F0F8FF;
-  padding: 10px;
-}
-
 #columns {
   padding-left: 250px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/
@@ -218,6 +212,9 @@ hr {
 
 #main-content h2 {
   font-size: 1.7em;
+  color: black;
+  background-color: #F0F8FF;
+  padding: 10px;
 }
 
 .sidebar-subsection-contents {

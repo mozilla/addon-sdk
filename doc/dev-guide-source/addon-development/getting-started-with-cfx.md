@@ -1,7 +1,7 @@
 # Getting Started With cfx #
 
 To create add-ons using the SDK you'll have to get to know the `cfx`
-command-line tool. It's what you'll use for testing and packing add-ons.
+command-line tool. It's what you'll use for testing and packaging add-ons.
 
 There's comprehensive
 [reference documentation](dev-guide/addon-development/cfx-tool.html) covering
@@ -31,15 +31,12 @@ Create a new directory, navigate to it in your command shell, and run
 <pre>
 mkdir my-addon
 cd my-addon
+cfx init
 </pre>
 
 You don't have to create this directory under the SDK root: once you have
 activated from the SDK root, `cfx` will remember where the SDK is, and you
 will be able to use it from any directory.
-
-<pre>
-cfx init
-</pre>
 
 You'll see some output like this:
 
