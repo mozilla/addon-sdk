@@ -2,12 +2,14 @@ var xhr = require("xhr");
 var timer = require("timer");
 var { Loader } = require("./helpers");
 
+/* Test is intentionally disabled until platform bug 707256 is fixed.
 exports.testAbortedXhr = function(test) {
   var req = new xhr.XMLHttpRequest();
   test.assertEqual(xhr.getRequestCount(), 1);
   req.abort();
   test.assertEqual(xhr.getRequestCount(), 0);
 };
+*/
 
 exports.testLocalXhr = function(test) {
   var req = new xhr.XMLHttpRequest();

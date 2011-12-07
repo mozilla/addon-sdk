@@ -3,12 +3,10 @@ import sys
 import time
 import tempfile
 import atexit
-import shutil
 import shlex
 import subprocess
 import re
 
-import simplejson as json
 import mozrunner
 from cuddlefish.prefs import DEFAULT_COMMON_PREFS
 from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
