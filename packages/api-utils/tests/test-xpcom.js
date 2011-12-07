@@ -1,15 +1,17 @@
-var traceback = require("traceback");
-var xpcom = require("xpcom");
-var {Cc,Ci,Cm,Cr} = require("chrome");
-var { Loader } = require("./helpers");
+const traceback = require("traceback");
+const xpcom = require("xpcom");
+const { Cc, Ci, Cm, Cr } = require("chrome");
+const { Loader } = require("./helpers");
+const manager = Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
 exports.testRegister = function(test, text) {
   if (!text)
     text = "hai2u";
 
-  function Component() {}
-
-  Component.prototype = {
+  const Component = xpcom.Factory.extend({
+    className: 'test about:boop page',
+    contractID: '@mozilla.org/network/protocol/about;1?what=boop',
+    interfaces: [ 'nsIAboutModule' ],
     newChannel : function(aURI) {
       var ios = Cc["@mozilla.org/network/io-service;1"].
                 getService(Ci.nsIIOService);
@@ -25,23 +27,16 @@ exports.testRegister = function(test, text) {
     },
     getURIFlags: function(aURI) {
         return Ci.nsIAboutModule.ALLOW_SCRIPT;
-    },
-    QueryInterface: xpcom.utils.generateQI([Ci.nsIAboutModule])
-  };
+    }
+  });
+  xpcom.register(Component);
 
-  var contractID = "@mozilla.org/network/protocol/about;1?what=boop";
-
-  var factory = xpcom.register({name: "test about:boop page",
-                                contractID: contractID,
-                                create: Component});
-
-  var manager = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-  test.assertEqual(manager.isCIDRegistered(factory.uuid), true);
+  test.assertEqual(manager.isCIDRegistered(Component.classID), true);
 
   // We don't want to use Cc[contractID] here because it's immutable,
   // so it can't accept updated versions of a contractID during the
   // same application session.
-  var aboutFactory = xpcom.getClass(contractID, Ci.nsIFactory);
+  var aboutFactory = xpcom.getClass(Component.contractID, Ci.nsIFactory);
 
   test.assertNotEqual(aboutFactory.wrappedJSObject,
                       undefined,
@@ -67,41 +62,45 @@ exports.testRegister = function(test, text) {
   iStream.close();
   test.assertEqual(data, text);
 
-  factory.unregister();
-  test.assertEqual(manager.isCIDRegistered(factory.uuid), false);
+  xpcom.unregister(Component);
+  test.assertEqual(manager.isCIDRegistered(Component.classID), false);
 };
 
 exports.testReRegister = function(test) {
   exports.testRegister(test, "hai2u again");
 };
 
-exports.testMakeUuid = function(test) {
-  var first = xpcom.makeUuid().toString();
-  var second = xpcom.makeUuid().toString();
-  test.assertMatches(first, /{[0-9a-f\-]+}/);
-  test.assertMatches(second, /{[0-9a-f\-]+}/);
-  test.assertNotEqual(first, second);
-};
+exports.testLoadUnload = function(test) {
+  let loader = Loader(module);
+  let sbxpcom = loader.require("xpcom");
 
-exports.testUnload = function(test) {
-  var loader = Loader(module);
-  var sbxpcom = loader.require("xpcom");
+  let Auto = sbxpcom.Factory.extend({
+    contractID: "@mozilla.org/test/demo-auto;1",
+    className: "test auto"
+  });
+  let Manual = sbxpcom.Factory.extend({
+    contractID: "@mozilla.org/test/demo-manual;1",
+    className: "test manual",
+    classRegister: true,
+    classUnregister: false
+  });
 
-  function Component() {}
+  sbxpcom.register(Auto);
 
-  Component.prototype = {
-    QueryInterface: sbxpcom.utils.generateQI([Ci.nsISupports])
-  };
-
-  var contractID = "@mozilla.org/blargle;1";
-  var factory = sbxpcom.register({name: "test component",
-                                  contractID: contractID,
-                                  create: Component});
-
-  var manager = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-  test.assertEqual(manager.isCIDRegistered(factory.uuid), true);
-
+  test.assertEqual(manager.isCIDRegistered(Auto.classID), true,
+                   'component registered');
+  test.assertEqual(manager.isCIDRegistered(Manual.classID), false,
+                   'component not registered');
+  let manual = Manual.new();
+  test.assertEqual(manager.isCIDRegistered(Manual.classID), true,
+                   'component was automatically registered on first instance');
   loader.unload();
 
-  test.assertEqual(manager.isCIDRegistered(factory.uuid), false);
+  test.assertEqual(manager.isCIDRegistered(Auto.classID), false,
+                   'component was atumatically unregistered on unload');
+  test.assertEqual(manager.isCIDRegistered(Manual.classID), true,
+                   'component was not automatically unregistered on unload');
+  sbxpcom.unregister(Manual);
+  test.assertEqual(manager.isCIDRegistered(Manual.classID), false,
+                   'component was manually unregistered on unload');
 };
