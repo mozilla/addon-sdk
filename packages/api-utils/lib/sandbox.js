@@ -67,15 +67,3 @@ function load(sandbox, uri) {
   scriptLoader.loadSubScript(uri, sandbox);
 }
 exports.load = load;
-
-/**
- * Merges given `properties` onto a `sandbox`'s global scope.
- */
-function merge(sandbox, properties) {
-  let descriptor = {}
-  Object.getOwnPropertyNames(properties).forEach(function(name) {
-    descriptor[name] = Object.getOwnPropertyDescriptor(properties, name);
-  });
-  Object.defineProperties(sandbox, descriptor);
-}
-exports.merge = merge;
