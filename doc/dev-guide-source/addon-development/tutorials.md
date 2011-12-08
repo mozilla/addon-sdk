@@ -40,4 +40,4 @@
 
  [Connecting `panel` to `page-mod`](dev-guide/addon-development/tutorials/panel-to-pagemod.html) 
 
- [Creating an Annotator add-on](dev-guide/addon-development/tutorials/annotator.html) 
+ [Creating an Annotator add-on](dev-guide/addon-development/tutorials/annotator/annotator.html) 
