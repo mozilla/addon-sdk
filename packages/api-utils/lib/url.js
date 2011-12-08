@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -37,6 +38,7 @@
 "use strict";
 
 const {Cc,Ci,Cr} = require("chrome");
+const {Trait} = require("traits");
 
 var ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
@@ -113,11 +115,43 @@ function URL(url, base) {
     port = uri.port == -1 ? null : uri.port;
   } catch (e if e.result == Cr.NS_ERROR_FAILURE) {}
 
-  this.__defineGetter__("scheme", function() uri.scheme);
-  this.__defineGetter__("userPass", function() userPass);
-  this.__defineGetter__("host", function() host);
-  this.__defineGetter__("port", function() port);
-  this.__defineGetter__("path", function() uri.path);
-  this.toString = function URL_toString() uri.spec;
+  this._uri = {
+    "scheme": uri.scheme,
+    "userPass": userPass,
+    "host": host,
+    "port": port,
+    "path": uri.path,
+    "spec": uri.spec
+  };
 };
-exports.URL = require("./api-utils").publicConstructor(URL);
+
+var URL_STRING_OVERWRITES = {};
+Object.defineProperty(URL_STRING_OVERWRITES, "toString", {
+  value: function URL_toString() this._uri.spec,
+  enumerable: false
+});
+
+Object.defineProperty(URL_STRING_OVERWRITES, "valueOf", {
+  value: function URL_valueOf() this.toString(),
+  enumerable: false
+});
+
+Object.defineProperty(URL_STRING_OVERWRITES, "toSource", {
+  value: function URL_toSource() this.toString().toSource(),
+  enumerable: false
+});
+
+exports.URL = Trait.compose(String.prototype).resolve({
+  constructor: null,
+  toString: null,
+  valueOf: null,
+  toSource: null
+}).compose(URL_STRING_OVERWRITES, {
+  _uri: null,
+  constructor: URL,
+  get "scheme"() this._uri.scheme,
+  get "userPass"() this._uri.userPass,
+  get "host"() this._uri.host,
+  get "port"() this._uri.port,
+  get "path"() this._uri.path
+});
