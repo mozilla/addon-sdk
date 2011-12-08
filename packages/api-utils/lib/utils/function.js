@@ -62,3 +62,24 @@ exports.Enqueued = Enqueued;
  */
 function invoke(callee, params, self) callee.apply(self, params);
 exports.invoke = invoke;
+
+
+/**
+ * Takes `lambda` function and returns a method. When returned method is
+ * invoked it calls wrapped `lambda` and passes `this` as a first argument
+ * and given argument as rest.
+ */
+function method(lambda) {
+  return function method() {
+    return lambda.apply(null, [this].concat(Array.slice(arguments)));
+  }
+}
+exports.method = method;
+
+function curry(lambda) {
+  let rest = Array.slice(arguments, 1);
+  return function curried() {
+    return lambda.apply(this, rest.concat(Array.slice(arguments)));
+  };
+}
+exports.curry = curry;
