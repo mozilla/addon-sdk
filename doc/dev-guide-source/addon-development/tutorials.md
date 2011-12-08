@@ -5,14 +5,14 @@
  [Installation](dev-guide/addon-development/installation.html) 
 <br/>
 
- [Getting Started With cfx](dev-guide/addon-development/getting-started-with-cfx.html) 
+ [Getting Started With cfx](dev-guide/addon-development/tutorials/getting-started-with-cfx.html) 
 
 ## Introducing the APIs ##
 
  [Modifying Web Pages](dev-guide/addon-development/tutorials/modifying-web-pages.html) 
 <br/>
 
- [Adding a Button to the Toolbar](dev-guide/addon-development/tutorials/modifying-web-pages.html) 
+ [Adding a Button to the Toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html) 
 <br/>
 
  [Adding HTML Content to the Toolbar](dev-guide/addon-development/tutorials/modifying-web-pages.html) 
