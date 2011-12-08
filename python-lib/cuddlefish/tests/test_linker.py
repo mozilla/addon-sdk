@@ -165,29 +165,6 @@ class Contents(unittest.TestCase):
                         in names, names)
         self.run_in_subdir("x", _test)
 
-    def test_no_strip(self):
-        seven = get_linker_files_dir("seven")
-        def _test(basedir):
-            stdout = StringIO()
-            shutil.copytree(seven, "seven")
-            os.chdir("seven")
-            try:
-                # regrettably, run() always finishes with sys.exit()
-                cuddlefish.run(["xpi", "--no-strip-xpi"],
-                               stdout=stdout)
-            except SystemExit, e:
-                self.failUnlessEqual(e.args[0], 0)
-            zf = zipfile.ZipFile("seven.xpi", "r")
-            names = zf.namelist()
-            self.assertIn("resources/api-utils/lib/cuddlefish.js", names)
-            testfiles = [fn for fn in names if "seven/tests" in fn]
-            self.failUnlessEqual([], testfiles)
-            self.assertIn("resources/seven/data/text.data",
-                          names)
-            self.failUnless("resources/seven/lib/unused.js"
-                            in names, names)
-        self.run_in_subdir("x", _test)
-
 
 if __name__ == '__main__':
     unittest.main()
