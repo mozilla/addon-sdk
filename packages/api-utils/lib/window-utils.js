@@ -76,27 +76,27 @@ function browserWindowIterator() {
 }
 exports.browserWindowIterator = browserWindowIterator;
 
-var WindowTracker = exports.WindowTracker = Trait.compose({
-  _delegate: null,
-  _loadingWindows: null,
-  unload: null,
+var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
+   if (!(this instanceof WindowTracker)) {
+     return new WindowTracker(delegate);
+   }
 
-  constructor: function WindowTracker(delegate) {
-    this._delegate = delegate;
-    this._loadingWindows = [];
+  this._delegate = delegate;
+  this._loadingWindows = [];
 
+  for (let window in windowIterator())
+    this._regWindow(window);
+  gWindowWatcher.registerNotification(this);
+
+  this.unload = function unload() {
+    gWindowWatcher.unregisterNotification(this);
     for (let window in windowIterator())
-      this._regWindow(window);
-    gWindowWatcher.registerNotification(this);
+      this._unregWindow(window);
+  };
+  require("./unload").ensure(this);
+};
 
-    this.unload = function unload() {
-      gWindowWatcher.unregisterNotification(this);
-      for (let window in windowIterator())
-        this._unregWindow(window);
-    };
-    require("./unload").ensure(this);
-  },
-
+WindowTracker.prototype = {
   _regLoadingWindow: function _regLoadingWindow(window) {
     this._loadingWindows.push(window);
     window.addEventListener("load", this, true);
@@ -143,7 +143,7 @@ var WindowTracker = exports.WindowTracker = Trait.compose({
     else
       this._unregWindow(window);
   })
-});
+};
 
 const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
