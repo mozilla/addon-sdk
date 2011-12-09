@@ -149,7 +149,7 @@ const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
   _onUntrack: Trait.required,
   constructor: function WindowTrackerTrait() {
-    new WindowTracker({
+    WindowTracker({
       onTrack: this._onTrack.bind(this),
       onUntrack: this._onUntrack.bind(this)
     });
