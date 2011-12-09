@@ -12,6 +12,11 @@ application-wide preferences service singleton.
 Sets the application preference `name` to `value`.
 @param name {string} Preference name.
 @param value {string,number,bool} Preference value.
+
+**Example:**
+
+    var name = "extensions.checkCompatibility.nightly";
+    require("preferences-service").set(name, false);
 </api>
 
 
@@ -22,6 +27,11 @@ Gets the application preference `name`.
 @param defaultValue {string,number,bool} Preference value.
 @returns {string,number,bool} Preference value, returns a default value if no
 preference is set.
+
+**Example:**
+
+    var name = "extensions.checkCompatibility.nightly";
+    var nightlyCompatChk = require("preferences-service").get(name);
 </api>
 
 
@@ -29,6 +39,13 @@ preference is set.
 @function
 @param name {string} Preference name.
 @returns {bool} Returns whether or not the application preference `name` exists.
+
+**Example:**
+
+    var name = "extensions.checkCompatibility.nightly";
+    if (require("preferences-service").has(name)) {
+      // ...
+    }
 </api>
 
 
@@ -39,6 +56,13 @@ preference is set.
 Returns whether or not the application preference `name` both exists
 and has been set to a non-default value by the user (or a program
 acting on the user's behalf).
+
+**Example:**
+
+    var name = "extensions.checkCompatibility.nightly";
+    if (require("preferences-service").isSet(name)) {
+      // ...
+    }
 </api>
 
 
@@ -48,4 +72,9 @@ Clears a non-default, user-set value from the application preference
 `name`. If no user-set value is defined on `name`, the function
 does nothing.
 @param name {string} Preference name.
+
+**Example:**
+
+    var name = "extensions.checkCompatibility.nightly";
+    require("preferences-service").reset(name);
 </api>
