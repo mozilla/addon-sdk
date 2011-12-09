@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 "use strict";
 
-const { Cc, Ci, Cr, Cm } = require('chrome');
+const { Cc, Ci, CC, Cu } = require('chrome');
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
