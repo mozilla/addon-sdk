@@ -50,7 +50,7 @@ const OVERFLOW_THRESH_PREF =
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
-const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
+const TEST_DOC_URL = require("self").data.url("test-context-menu.html")
 
 
 // Destroying items that were previously created should cause them to be absent
