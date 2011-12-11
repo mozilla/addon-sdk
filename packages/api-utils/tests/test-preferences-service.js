@@ -1,3 +1,5 @@
+"use strict";
+
 var prefs = require("preferences-service");
 var {Cc,Ci} = require("chrome");
 
@@ -8,20 +10,25 @@ exports.testReset = function(test) {
   prefs.set("test_reset_pref", 5);
   test.assertEqual(prefs.has("test_reset_pref"), true);
   test.assertEqual(prefs.isSet("test_reset_pref"), true);
+  test.assertEqual(prefs.getChildList("test_reset_pref").toString(), "test_reset_pref");
 };
 
 exports.testGetAndSet = function(test) {
   let svc = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService).
             getBranch(null);
-  svc.setCharPref("test_get_string_pref", "a normal string");
-  test.assertEqual(prefs.get("test_get_string_pref"), "a normal string",
+  svc.setCharPref("test_set_get_pref", "a normal string");
+  test.assertEqual(prefs.get("test_set_get_pref"), "a normal string",
                    "preferences-service should read from " +
                    "application-wide preferences service");
 
   prefs.set("test_set_get_pref.integer", 1);
   test.assertEqual(prefs.get("test_set_get_pref.integer"), 1,
                    "set/get integer preference should work");
+
+  test.assertEqual(
+      prefs.getChildList("test_set_get_pref").toString(),
+      "test_set_get_pref.integer,test_set_get_pref");
 
   prefs.set("test_set_get_number_pref", 42);
   test.assertRaises(

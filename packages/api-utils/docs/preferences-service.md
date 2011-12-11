@@ -32,6 +32,13 @@ preference is set.
 </api>
 
 
+<api name="getChildList">
+@function
+@param aStartingAt {string} Preference name.
+@returns {array} Returns an array of strings representing the child preferences of the root of this branch.
+</api>
+
+
 <api name="isSet">
 @function
 @param name {string} Preference name.

@@ -41,6 +41,32 @@ const setTimeout = require("timers").setTimeout;
 const notify = require("observer-service").notify;
 const { jetpackID } = require("@packaging");
 
+exports.testIterations = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  sp["test"] = true;
+  sp["test.test"] = true;
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assertEqual(["test", "test.test"].toString(), prefAry.sort().toString(), "for (x in y) part 1/2 works");
+
+  delete sp["test"];
+  delete sp["test.test"];
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assertEqual([].toString(), prefAry.toString(), "for (x in y) part 2/2 works");
+
+  loader.unload();
+  test.done();
+}
+
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
 

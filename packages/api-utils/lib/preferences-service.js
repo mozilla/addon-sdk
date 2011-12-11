@@ -119,6 +119,10 @@ var has = exports.has = function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
 };
 
+var getChildList = exports.getChildList = function getChildList(aStartingAt) {
+  return prefSvc.getChildList(aStartingAt);
+}
+
 var isSet = exports.isSet = function isSet(name) {
   return (has(name) && prefSvc.prefHasUserValue(name));
 };
