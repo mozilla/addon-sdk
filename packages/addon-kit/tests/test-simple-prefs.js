@@ -54,6 +54,7 @@ exports.testIterations = function(test) {
     prefAry.push(name);
   }
   test.assertEqual(["test", "test.test"].toString(), prefAry.sort().toString(), "for (x in y) part 1/2 works");
+  test.assertEqual(["test", "test.test"].toString(), Object.keys(sp).sort().toString(), "Object.keys works");
 
   delete sp["test"];
   delete sp["test.test"];

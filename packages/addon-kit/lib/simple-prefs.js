@@ -100,12 +100,15 @@ const simple = Proxy.create({
   has: function(pref) {
     return prefService.has(ADDON_BRANCH + pref);
   },
-  enumerate: function(pref) {
-    return prefService.getChildList(ADDON_BRANCH).map(function(pref) {
-      return pref.replace(ADDON_BRANCH, "");
-    });
-  }
+  enumerate: getPrefKeys,
+  keys: getPrefKeys
 });
+
+function getPrefKeys() {
+  return prefService.getChildList(ADDON_BRANCH).map(function(pref) {
+    return pref.replace(ADDON_BRANCH, "");
+  });
+}
 
 exports.on = events.on;
 exports.removeListener = events.removeListener;
