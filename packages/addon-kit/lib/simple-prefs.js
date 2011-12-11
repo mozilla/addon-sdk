@@ -97,12 +97,17 @@ const simple = Proxy.create({
     prefService.reset(ADDON_BRANCH + pref);
     return true;
   },
-  has: function(pref) {
-    return prefService.has(ADDON_BRANCH + pref);
+  has: hasPrefKey,
+  getPropertyDescriptor: function(name) {
+    return {
+      value: prefService.get(ADDON_BRANCH + name)
+    };
   },
   enumerate: getPrefKeys,
   keys: getPrefKeys
 });
+
+function hasPrefKey(pref) prefService.has(ADDON_BRANCH + pref);
 
 function getPrefKeys() {
   return prefService.getChildList(ADDON_BRANCH).map(function(pref) {
