@@ -70,7 +70,7 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
       ...
-      ValueError: package names can only contain letters, numbers, underscores and dashes: foo@bar
+      SystemExit: 1
     """
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
@@ -82,7 +82,10 @@ def validate_resource_hostname(name):
         raise ValueError('package names cannot contain spaces or periods: %s' % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
-        raise ValueError('package names can only contain letters, numbers, underscores and dashes: %s' % name)
+        print >>sys.stdout, "Error: the name of your package contains an invalid character."
+        print >>sys.stdout, "Package names can contain only letters, numbers, underscores, and dashes."
+        print >>sys.stdout, "Current package name: %s" % name
+        sys.exit(1)
 
 def find_packages_with_module(pkg_cfg, name):
     # TODO: Make this support more than just top-level modules.
