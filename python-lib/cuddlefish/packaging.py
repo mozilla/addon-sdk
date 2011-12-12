@@ -75,22 +75,22 @@ def validate_resource_hostname(name):
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
-        print >>sys.stdout, "Error: the name of your package contains upper-case letters."
-        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print >>sys.stdout, "Current package name: %s" % name
+        print "Error: the name of your package contains upper-case letters."
+        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
+        print "Current package name: %s" % name
         sys.exit(1)
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
     if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
-        print >>sys.stdout, "Error: the name of your package contains spaces or periods."
-        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print >>sys.stdout, "Current package name: %s" % name
+        print "Error: the name of your package contains spaces or periods."
+        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
+        print "Current package name: %s" % name
         sys.exit(1)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
-        print >>sys.stdout, "Error: the name of your package contains an invalid character."
-        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print >>sys.stdout, "Current package name: %s" % name
+        print "Error: the name of your package contains an invalid character."
+        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
+        print "Current package name: %s" % name
         sys.exit(1)
 
 def find_packages_with_module(pkg_cfg, name):
