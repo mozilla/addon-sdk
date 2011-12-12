@@ -60,12 +60,12 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('bl arg')
       Traceback (most recent call last):
       ...
-      ValueError: package names cannot contain spaces or periods: bl arg
+      SystemExit: 1
 
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      ValueError: package names need to be lowercase: BLARG
+      SystemExit: 1
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
@@ -75,15 +75,21 @@ def validate_resource_hostname(name):
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
-        raise ValueError('package names need to be lowercase: %s' % name)
+        print >>sys.stdout, "Error: the name of your package contains upper-case letters."
+        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
+        print >>sys.stdout, "Current package name: %s" % name
+        sys.exit(1)
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
     if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
-        raise ValueError('package names cannot contain spaces or periods: %s' % name)
+        print >>sys.stdout, "Error: the name of your package contains spaces or periods."
+        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
+        print >>sys.stdout, "Current package name: %s" % name
+        sys.exit(1)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
         print >>sys.stdout, "Error: the name of your package contains an invalid character."
-        print >>sys.stdout, "Package names can contain only letters, numbers, underscores, and dashes."
+        print >>sys.stdout, "Package names can contain only lower-case letters, numbers, underscores, and dashes."
         print >>sys.stdout, "Current package name: %s" % name
         sys.exit(1)
 
