@@ -19,8 +19,6 @@ METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'contributors', 'license', 'homepage', 'icon', 'icon64',
                   'main', 'directories']
 
-RESOURCE_BAD_PACKAGE_NAME_RE = re.compile(r'[\s\.]')
-
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
 class Error(Exception):
@@ -76,13 +74,6 @@ def validate_resource_hostname(name):
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
         print "Error: the name of your package contains upper-case letters."
-        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print "Current package name: %s" % name
-        sys.exit(1)
-
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
-    if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
-        print "Error: the name of your package contains spaces or periods."
         print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
         print "Current package name: %s" % name
         sys.exit(1)
