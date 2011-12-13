@@ -33,6 +33,7 @@ Internal Commands:
   testex     - test all example code
   testpkgs   - test all installed packages
   testall    - test whole environment
+  unpack     - unpack XPI, reconstruct source tree
 
 Experimental and internal commands and options are not supported and may be
 changed or removed in the future.
@@ -495,6 +496,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         # TODO: Allow user to change this filename via cmd line.
         filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
         print >>stdout, "Wrote %s." % filename
+        return
+    elif command == "unpack":
+        from cuddlefish.unpack import unpack
+        xpifile, outputdir = args[1:3]
+        unpack(xpifile, outputdir, stdout)
         return
 
     target_cfg_json = None
