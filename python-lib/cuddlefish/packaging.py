@@ -58,31 +58,35 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('bl arg')
       Traceback (most recent call last):
       ...
-      SystemExit: 1
+      ValueError: Error: the name of your package contains an invalid character.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: bl arg
 
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      SystemExit: 1
+      ValueError: Error: the name of your package contains upper-case letters.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: BLARG
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
       ...
-      SystemExit: 1
+      ValueError: Error: the name of your package contains an invalid character.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: foo@bar
     """
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
-        print "Error: the name of your package contains upper-case letters."
-        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print "Current package name: %s" % name
-        sys.exit(1)
+        raise ValueError("""Error: the name of your package contains upper-case letters.
+Package names can contain only lower-case letters, numbers, underscores, and dashes.
+Current package name: %s""" % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
-        print "Error: the name of your package contains an invalid character."
-        print "Package names can contain only lower-case letters, numbers, underscores, and dashes."
-        print "Current package name: %s" % name
-        sys.exit(1)
+        raise ValueError("""Error: the name of your package contains an invalid character.
+Package names can contain only lower-case letters, numbers, underscores, and dashes.
+Current package name: %s""" % name)
 
 def find_packages_with_module(pkg_cfg, name):
     # TODO: Make this support more than just top-level modules.
@@ -290,7 +294,11 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
                 # ensure that package name is valid
-                validate_resource_hostname(cfg.name)
+                try:
+                    validate_resource_hostname(cfg.name)
+                except ValueError as err:
+                    print err
+                    sys.exit(1)
                 # ensure that this package has an entry
                 if not cfg.name in build.packages:
                     build.packages[cfg.name] = Bunch()
