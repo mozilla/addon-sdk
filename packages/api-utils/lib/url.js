@@ -142,5 +142,5 @@ function URL(url, base) {
   return this;
 };
 
-URL.prototype = new String();
+URL.prototype = Object.create(String.prototype);
 exports.URL = URL;
