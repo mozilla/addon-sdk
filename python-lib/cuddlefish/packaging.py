@@ -296,7 +296,7 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 # ensure that package name is valid
                 try:
                     validate_resource_hostname(cfg.name)
-                except ValueError as err:
+                except ValueError, err:
                     print err
                     sys.exit(1)
                 # ensure that this package has an entry
