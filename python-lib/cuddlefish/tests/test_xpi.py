@@ -32,13 +32,19 @@ class PrefsTests(unittest.TestCase):
         if self.xpiname and os.path.exists(self.xpiname):
             os.remove(self.xpiname)
 
+    def failUnlessIn(self, element, sequence):
+        self.failUnless(element in sequence, (element, sequence))
+
+    def failIfIn(self, element, sequence):
+        self.failIf(element in sequence, (element, sequence))
+
     def testPackageWithSimplePrefs(self):
         self.makexpi('simple-prefs')
-        assert 'options.xul' in self.xpi.namelist()
+        self.failUnlessIn('options.xul', self.xpi.namelist())
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
-        assert 'options.xul' not in self.xpi.namelist()
+        self.failIfIn('options.xul', self.xpi.namelist())
 
 
 class Bug588119Tests(unittest.TestCase):
@@ -59,33 +65,39 @@ class Bug588119Tests(unittest.TestCase):
         if self.xpiname and os.path.exists(self.xpiname):
             os.remove(self.xpiname)
 
+    def failUnlessIn(self, element, sequence):
+        self.failUnless(element in sequence, (element, sequence))
+
+    def failIfIn(self, element, sequence):
+        self.failIf(element in sequence, (element, sequence))
+
     def testPackageWithImplicitIcon(self):
         self.makexpi('implicit-icon')
-        assert 'icon.png' in self.xpi.namelist()
+        self.failUnlessIn('icon.png', self.xpi.namelist())
 
     def testPackageWithImplicitIcon64(self):
         self.makexpi('implicit-icon')
-        assert 'icon64.png' in self.xpi.namelist()
+        self.failUnlessIn('icon64.png', self.xpi.namelist())
 
     def testPackageWithExplicitIcon(self):
         self.makexpi('explicit-icon')
-        assert 'icon.png' in self.xpi.namelist()
+        self.failUnlessIn('icon.png', self.xpi.namelist())
 
     def testPackageWithExplicitIcon64(self):
         self.makexpi('explicit-icon')
-        assert 'icon64.png' in self.xpi.namelist()
+        self.failUnlessIn('icon64.png', self.xpi.namelist())
 
     def testPackageWithNoIcon(self):
         self.makexpi('no-icon')
-        assert 'icon.png' not in self.xpi.namelist()
+        self.failIfIn('icon.png', self.xpi.namelist())
 
     def testIconPathNotInHarnessOptions(self):
         self.makexpi('implicit-icon')
-        assert 'icon' not in self.xpi_harness_options
+        self.failIfIn('icon', self.xpi_harness_options)
 
     def testIcon64PathNotInHarnessOptions(self):
         self.makexpi('implicit-icon')
-        assert 'icon64' not in self.xpi_harness_options
+        self.failIfIn('icon64', self.xpi_harness_options)
 
 class ExtraHarnessOptions(unittest.TestCase):
     def setUp(self):
@@ -145,7 +157,7 @@ class SmallXPI(unittest.TestCase):
         deps = packaging.get_deps_for_targets(pkg_cfg,
                                               [target_cfg.name, "addon-kit"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
-        used_files = list(m.get_used_files())
+        used_files = list(m.get_compile_map().values())
         here = up(os.path.abspath(__file__))
         def absify(*parts):
             fn = os.path.join(here, "linker-files", *parts)
@@ -166,17 +178,16 @@ class SmallXPI(unittest.TestCase):
         used_deps = m.get_used_packages()
 
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
-                                                    used_deps,
+                                                    used_deps, m,
                                                     include_tests=False)
         options = {'main': target_cfg.main}
-        options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
-                      manifest=fake_manifest,
+                      manifest_rdf=fake_manifest,
                       xpi_path=xpi_name,
                       harness_options=options,
-                      limit_to=used_files)
+                      build=build)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
         expected = ["components/",
@@ -185,15 +196,17 @@ class SmallXPI(unittest.TestCase):
                     # one in tests/static-files/xpi-template doesn't
                     "harness-options.json",
                     "install.rdf",
+                    "defaults/",
+                    "defaults/preferences/",
                     "defaults/preferences/prefs.js",
+                    "decompile_data.json",
                     "resources/",
-                    "resources/api-utils/",
-                    "resources/api-utils/data/",
-                    "resources/api-utils/lib/",
                     "resources/three/",
                     "resources/three/lib/",
                     "resources/three/lib/main.js",
+                    "resources/three/package.json",
                     "resources/three-a/",
+                    "resources/three-a/data.json",
                     "resources/three-a/data/",
                     "resources/three-a/data/msg.txt",
                     "resources/three-a/data/subdir/",
@@ -202,14 +215,17 @@ class SmallXPI(unittest.TestCase):
                     "resources/three-a/lib/main.js",
                     "resources/three-a/lib/subdir/",
                     "resources/three-a/lib/subdir/subfile.js",
+                    "resources/three-a/package.json",
                     "resources/three-b/",
                     "resources/three-b/lib/",
                     "resources/three-b/lib/main.js",
+                    "resources/three-b/package.json",
                     "resources/three-c/",
                     "resources/three-c/lib/",
                     "resources/three-c/lib/main.js",
                     "resources/three-c/lib/sub/",
                     "resources/three-c/lib/sub/foo.js",
+                    "resources/three-c/package.json",
                     # notably absent: three-a/lib/unused.js
                     ]
         # showing deltas makes failures easier to investigate
@@ -272,12 +288,13 @@ def document_dir_files(path):
 def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files',
                extra_harness_options={}):
     configs = test_packaging.get_configs(pkg_name, dirname)
-    options = {'main': configs.target_cfg.main}
-    options.update(configs.build)
+    options = {'main': configs.target_cfg.main,
+               'jetpackID': "jetpackID"}
     xpi.build_xpi(template_root_dir=xpi_template_path,
-                  manifest=fake_manifest,
+                  manifest_rdf=fake_manifest,
                   xpi_path=xpiname,
                   harness_options=options,
+                  build=configs.build,
                   extra_harness_options=extra_harness_options)
 
 if __name__ == '__main__':

@@ -155,11 +155,6 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
-        (("", "--no-strip-xpi",), dict(dest="no_strip_xpi",
-                                    help="retain unused modules in XPI",
-                                    action="store_true",
-                                    default=False,
-                                    cmds=['xpi'])),
         (("", "--force-mobile",), dict(dest="enable_mobile",
                                     help="Force compatibility with Firefox Mobile",
                                     action="store_true",
@@ -635,7 +630,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
             used_deps.append(xp)
 
     build = packaging.generate_build_for_target(
-        pkg_cfg, target, used_deps,
+        pkg_cfg, target, used_deps, manifest,
         include_dep_tests=options.dep_tests
         )
 
@@ -643,9 +638,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         'jetpackID': jid,
         'staticArgs': options.static_args,
         'name': target,
+        'loader': build.loader,
         }
-
-    harness_options.update(build)
 
     extra_environment = {}
     if command == "test":
@@ -698,17 +692,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         update.add(manifest_rdf, options.update_link)
         open(rdf_name, "w").write(str(update))
 
-    # ask the manifest what files were used, so we can construct an XPI
-    # without the rest. This will include the loader (and everything it
-    # uses) because of the "loader_modules" starting points we passed to
-    # build_manifest earlier
-    used_files = None
-    if command == "xpi":
-      used_files = set(manifest.get_used_files())
-
-    if options.no_strip_xpi:
-        used_files = None # disables the filter, includes all files
-
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
         extra_harness_options = {}
@@ -718,10 +701,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
-                  manifest=manifest_rdf,
+                  manifest_rdf=manifest_rdf,
                   xpi_path=xpi_path,
                   harness_options=harness_options,
-                  limit_to=used_files,
+                  build=build,
                   extra_harness_options=extra_harness_options)
     else:
         from cuddlefish.runner import run_app
@@ -747,7 +730,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              args=options.cmdargs,
                              extra_environment=extra_environment,
                              norun=options.no_run,
-                             used_files=used_files,
+                             build=build,
                              enable_mobile=options.enable_mobile,
                              mobile_app_name=options.mobile_app_name)
         except Exception, e:

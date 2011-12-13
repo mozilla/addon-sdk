@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from cuddlefish import packaging
+from cuddlefish import packaging, manifest
 from cuddlefish.bunch import Bunch
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
@@ -15,12 +15,15 @@ def get_configs(pkg_name, dirname='static-files'):
     target_cfg = packaging.get_config_in_dir(pkg_path)
     pkg_cfg = packaging.build_config(root_path, target_cfg)
     deps = packaging.get_deps_for_targets(pkg_cfg, [pkg_name])
+    m = manifest.build_manifest(target_cfg, pkg_cfg, deps, False)
     build = packaging.generate_build_for_target(
         pkg_cfg=pkg_cfg,
         target=pkg_name,
-        deps=deps
+        deps=deps,
+        manifest=m,
         )
-    return Bunch(target_cfg=target_cfg, pkg_cfg=pkg_cfg, build=build)
+    return Bunch(target_cfg=target_cfg, pkg_cfg=pkg_cfg, build=build,
+                 deps=deps, manifest=m)
 
 class PackagingTests(unittest.TestCase):
     def test_bug_588661(self):
