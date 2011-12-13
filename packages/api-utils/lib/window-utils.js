@@ -88,11 +88,6 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
     this._regWindow(window);
   gWindowWatcher.registerNotification(this);
 
-  this.unload = function unload() {
-    gWindowWatcher.unregisterNotification(this);
-    for (let window in windowIterator())
-      this._unregWindow(window);
-  };
   require("./unload").ensure(this);
 };
 
@@ -126,6 +121,12 @@ WindowTracker.prototype = {
     } else {
       this._unregLoadingWindow(window);
     }
+  },
+
+  unload: function unload() {
+    gWindowWatcher.unregisterNotification(this);
+    for (let window in windowIterator())
+      this._unregWindow(window);
   },
 
   handleEvent: errors.catchAndLog(function handleEvent(event) {
