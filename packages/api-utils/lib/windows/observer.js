@@ -68,7 +68,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
 });
 
 // Using `WindowTracker` to track window events.
-new WindowTracker({
+WindowTracker({
   onTrack: function onTrack(chromeWindow) {
     observer._emit("open", chromeWindow);
     observer.observe(chromeWindow);
