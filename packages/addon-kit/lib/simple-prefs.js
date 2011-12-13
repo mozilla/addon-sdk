@@ -81,7 +81,7 @@ const events = EventEmitter.compose({
     this._emit(data);
   },
   unload: function manager_unload() {
-    this._removeAllListeners("error");
+    this._removeAllListeners();
     branch.removeObserver("", this._prefObserver);
  },
 })();
