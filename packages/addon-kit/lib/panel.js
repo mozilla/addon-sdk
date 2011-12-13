@@ -122,7 +122,7 @@ const Panel = Symbiont.resolve({
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;
     this._symbiontDestructor(this);
-    this._removeAllListeners(this, 'hide');
+    this._removeAllListeners();
   },
   destroy: function destroy() {
     this._destructor();

@@ -194,6 +194,11 @@ const eventEmitter =  {
    *    The type of event.
    */
   _removeAllListeners: function _removeAllListeners(type) {
+    if (typeof type == "undefined") {
+      this._events = null;
+      return this;
+    }
+
     this._listeners(type).splice(0);
     return this;
   }

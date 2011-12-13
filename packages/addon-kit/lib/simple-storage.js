@@ -241,8 +241,7 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
   },
 
   unload: function manager_unload() {
-    this._removeAllListeners("OverQuota");
-    this._removeAllListeners("error");
+    this._removeAllListeners();
   },
 
   constructor: function manager_constructor() {
