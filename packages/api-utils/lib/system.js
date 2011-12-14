@@ -68,8 +68,11 @@ exports.env = require('./environment').env;
  */
 exports.exit = function exit(code) {
   // This is used by 'cfx' to find out exit code.
-  if ('resultFile' in options)
-    file.open(options.resultFile, 'w').write(code ? 'FAIL' : 'OK');
+  if ('resultFile' in options) {
+    let stream = file.open(options.resultFile, 'w');
+    stream.write(code ? 'FAIL' : 'OK');
+    stream.close();
+  }
 
   appStartup.quit(code ? E_ATTEMPT : E_FORCE);
 };
