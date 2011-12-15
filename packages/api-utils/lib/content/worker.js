@@ -243,7 +243,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
-    merge(content, Object.freeze({
+    merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
       get top() content,
@@ -253,7 +253,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       // NOTE: this functionality is experimental and may change or go away
       // at any time!
       get unsafeWindow() window.wrappedJSObject
-    }));
+    });
 
     // Internal feature that is only used by SDK tests:
     // Expose unlock key to content script context.
@@ -267,7 +267,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let self = this;
     let publicAPI = this._public;
 
-    merge(content, Object.freeze({
+    merge(content, {
       console: console,
       self: publicAPI.self,
       setTimeout: publicAPI.setTimeout,
@@ -304,7 +304,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
                      "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
         publicAPI.on.apply(publicAPI, arguments);
       }
-    }));
+    });
 
     // Temporary fix for test-widget, that pass self.postMessage to proxy code
     // that first try to access to `___proxy` and then call it through `apply`.
