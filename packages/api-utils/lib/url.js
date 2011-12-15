@@ -75,7 +75,7 @@ function parse(href) {
         extension: { position: {}, length: {}, value: null }
       },
       // ;
-      params: { position: {}, length: {}, value: null },
+      param: { position: {}, length: {}, value: null },
       // ?
       query: { position: {}, length: {}, value: null },
       // #
@@ -133,8 +133,8 @@ function parse(href) {
     url.path.length.value,
     url.path.filepath.position,
     url.path.filepath.length,
-    url.path.params.position,
-    url.path.params.length,
+    url.path.param.position,
+    url.path.param.length,
     url.path.query.position,
     url.path.query.length,
     url.path.ref.position,
@@ -143,9 +143,9 @@ function parse(href) {
   url.path.filepath.value = url.path.value.substr(
     url.path.filepath.position.value,
     url.path.filepath.length.value);
-  url.path.params.value = url.path.value.substr(
-    url.path.params.position.value,
-    url.path.params.length.value);
+  url.path.param.value = url.path.value.substr(
+    url.path.param.position.value,
+    url.path.param.length.value);
   url.path.query.value = encodeURI(url.path.value.substr(
     url.path.query.position.value,
     url.path.query.length.value));
@@ -195,6 +195,8 @@ function parse(href) {
   if (value.auth)
     value.userPass = value.auth;
 
+  if (url.path.param.value)
+    value.param = url.path.param.value;
   if (url.path.query.value)
     value.query = url.path.query.value;
   if (value.query)
