@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,13 +37,187 @@
 
 "use strict";
 
-const {Cc,Ci,Cr} = require("chrome");
+const { Cc, Ci, Cr } = require("chrome");
 
-var ios = Cc['@mozilla.org/network/io-service;1']
-          .getService(Ci.nsIIOService);
+const ios = Cc['@mozilla.org/network/io-service;1'].
+            getService(Ci.nsIIOService);
 
-var resProt = ios.getProtocolHandler("resource")
-              .QueryInterface(Ci.nsIResProtocolHandler);
+const resProt = ios.getProtocolHandler("resource").
+                    QueryInterface(Ci.nsIResProtocolHandler);
+const urlParser = Cc['@mozilla.org/network/url-parser;1?auth=maybe'].
+                  getService(Ci.nsIURLParser);
+
+/**
+ * Take a `url` string, and return an object representation of it.
+ */
+function parse(href) {
+  href = String(href)
+
+  let url = {
+    href: { value: null },
+    slashes: { value: null },
+    scheme: { position: {}, length: {}, value: null },
+    // ://
+    authority: { position: {}, length: {}, value: null,
+      username: { position: {}, length: {}, value: null },
+      // :
+      password: { position: {}, length: {}, value: null },
+      // @
+      hostname: { position: {}, length: {}, value: null },
+      // :
+      port: { value: null }
+    },
+    path: { position: {}, length: {}, value: null,
+      filepath: { position: {}, length: {}, value: null,
+        directory: { position: {}, length: {}, value: null },
+        basename: { position: {}, length: {}, value: null },
+        // .
+        extension: { position: {}, length: {}, value: null }
+      },
+      // ;
+      params: { position: {}, length: {}, value: null },
+      // ?
+      query: { position: {}, length: {}, value: null },
+      // #
+      ref: { position: {}, length: {}, value: null }
+    }
+  };
+
+  urlParser.parseURL(
+    href,
+    href.length,
+    url.scheme.position,
+    url.scheme.length,
+    url.authority.position,
+    url.authority.length,
+    url.path.position,
+    url.path.length);
+
+  url.scheme.value = href.substr(url.scheme.position.value,
+                                 url.scheme.length.value).toLowerCase();
+  url.slashes.value = href.substr(url.scheme.length.value, 3) === '://';
+  url.authority.value = href.substr(url.authority.position.value,
+                                    url.authority.length.value);
+  url.path.value = href.substr(url.path.position.value,
+                               url.path.length.value);
+
+  urlParser.parseAuthority(
+    url.authority.value,
+    url.authority.length.value,
+    url.authority.username.position,
+    url.authority.username.length,
+    url.authority.password.position,
+    url.authority.password.length,
+    url.authority.hostname.position,
+    url.authority.hostname.length,
+    url.authority.port);
+
+  // Normalize URL by lower casing anything that is not a user / password.
+  url.href.value = href.toLowerCase().substring(0, url.authority.position.value)
+                 + url.authority.value.substring(0, url.authority.hostname.position.value)
+                 + url.authority.value.substr(url.authority.hostname.position.value).toLowerCase()
+                 + url.path.value;
+
+  url.authority.username.value = url.authority.value.substr(
+    url.authority.username.position.value,
+    url.authority.username.length.value);
+  url.authority.password.value = url.authority.value.substr(
+    url.authority.password.position.value,
+    url.authority.password.length.value);
+  url.authority.hostname.value = url.authority.value.substr(
+    url.authority.hostname.position.value,
+    url.authority.hostname.length.value).toLowerCase();
+
+  urlParser.parsePath(
+    url.path.value,
+    url.path.length.value,
+    url.path.filepath.position,
+    url.path.filepath.length,
+    url.path.params.position,
+    url.path.params.length,
+    url.path.query.position,
+    url.path.query.length,
+    url.path.ref.position,
+    url.path.ref.length);
+
+  url.path.filepath.value = url.path.value.substr(
+    url.path.filepath.position.value,
+    url.path.filepath.length.value);
+  url.path.params.value = url.path.value.substr(
+    url.path.params.position.value,
+    url.path.params.length.value);
+  url.path.query.value = encodeURI(url.path.value.substr(
+    url.path.query.position.value,
+    url.path.query.length.value));
+  url.path.ref.value = url.path.value.substr(
+    url.path.ref.position.value,
+    url.path.ref.length.value);
+
+
+  urlParser.parseFilePath(
+    url.path.filepath.value,
+    url.path.filepath.length.value,
+    url.path.filepath.directory.position,
+    url.path.filepath.directory.length,
+    url.path.filepath.basename.position,
+    url.path.filepath.basename.length,
+    url.path.filepath.extension.position,
+    url.path.filepath.extension.length);
+
+  url.path.filepath.directory.value = url.path.filepath.value.substr(
+    url.path.filepath.directory.position.value,
+    url.path.filepath.directory.length.value);
+  url.path.filepath.basename.value = url.path.filepath.value.substr(
+    url.path.filepath.basename.position.value,
+    url.path.filepath.basename.length.value);
+  url.path.filepath.extension.value = url.path.filepath.value.substr(
+    url.path.filepath.extension.position.value,
+    url.path.filepath.extension.length.value);
+
+  let value = {};
+  value.href = value.spec = url.href.value;
+  value.scheme = url.scheme.value;
+  value.protocol = value.scheme + ':';
+  value.authority = url.authority.value;
+  value.hostname = url.authority.hostname.value;
+  value.pathname = url.path.filepath.value;
+  value.slashes = url.slashes.value;
+
+  // port is set to `-1` if not specified.
+  if (~url.authority.port.value)
+    value.port = url.authority.port.value;
+  if (url.authority.username)
+    value.username = url.authority.username.value;
+  if (url.authority.password)
+    value.password = url.authority.password.value;
+  if (value.username || value.password)
+    value.auth = value.username + (value.password ? ':' + value.password : '');
+  if (value.auth)
+    value.userPass = value.auth;
+
+  if (url.path.query.value)
+    value.query = url.path.query.value;
+  if (value.query)
+    value.search = '?' + value.query;
+  if (url.path.ref.value)
+    value.ref = url.path.ref.value;
+  if (value.ref)
+    value.hash = '#' + value.ref;
+  if (url.path.filepath.directory.value)
+    value.directory = url.path.filepath.directory.value;
+  if (url.path.filepath.basename.value)
+    value.basename = url.path.filepath.basename.value;
+  if (url.path.filepath.extension.value)
+    value.extension = url.path.filepath.extension.value;
+  if (value.basename)
+    value.filename = value.basename + (value.extension ? '.' + value.extension : '');
+
+  value.path = value.pathname + ('search' in value ? value.search : '');
+  value.host = value.hostname + ('port' in value ? ':' + value.port : '');
+
+  return value;
+};
+exports.parse = parse;
 
 function newURI(uriStr, base) {
   try {

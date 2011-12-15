@@ -155,3 +155,284 @@ exports.testURL = function(test) {
   test.assertStrictEqual(a + "", "h:foo",
                          "toString is implicit when a URL is concatenated to a string");
 };
+
+var parseTests = {
+  'HTTP://www.example.com/' : {
+    'href': 'http://www.example.com/',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'www.example.com',
+    'hostname': 'www.example.com',
+    'pathname': '/',
+    'path': '/'
+  },
+  'http://www.ExAmPlE.com/' : {
+    'href': 'http://www.example.com/',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'www.example.com',
+    'hostname': 'www.example.com',
+    'pathname': '/',
+    'path': '/'
+  },
+  'http://user:pw@www.ExAmPlE.com/' : {
+    'href': 'http://user:pw@www.example.com/',
+    'protocol': 'http:',
+    'slashes': true,
+    'auth': 'user:pw',
+    'host': 'www.example.com',
+    'hostname': 'www.example.com',
+    'pathname': '/',
+    'path': '/'
+  },
+  'http://USER:PW@www.ExAmPlE.com/' : {
+    'href': 'http://USER:PW@www.example.com/',
+    'protocol': 'http:',
+    'slashes': true,
+    'auth': 'USER:PW',
+    'host': 'www.example.com',
+    'hostname': 'www.example.com',
+    'pathname': '/',
+    'path': '/'
+  },
+  'HTTP://X.COM/Y' : {
+    'href': 'http://x.com/Y',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'x.com',
+    'hostname': 'x.com',
+    'pathname': '/Y',
+    'path': '/Y'
+  },
+  'http://www.narwhaljs.org/blog/categories?id=news' : {
+    'href': 'http://www.narwhaljs.org/blog/categories?id=news',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'www.narwhaljs.org',
+    'hostname': 'www.narwhaljs.org',
+    'search': '?id=news',
+    'query': 'id=news',
+    'pathname': '/blog/categories',
+    'path': '/blog/categories?id=news'
+  },
+  'http://mt0.google.com/vt/lyrs=m@114&hl=en&src=api&x=2&y=2&z=3&s=' : {
+    'href': 'http://mt0.google.com/vt/lyrs=m@114&hl=en&src=api&x=2&y=2&z=3&s=',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'mt0.google.com',
+    'hostname': 'mt0.google.com',
+    'pathname': '/vt/lyrs=m@114&hl=en&src=api&x=2&y=2&z=3&s=',
+    'path': '/vt/lyrs=m@114&hl=en&src=api&x=2&y=2&z=3&s='
+  },
+  'http://mt0.google.com/vt/lyrs=m@114???&hl=en&src=api&x=2&y=2&z=3&s=' : {
+    'href': 'http://mt0.google.com/vt/lyrs=m@114???&hl=en&src=api' +
+        '&x=2&y=2&z=3&s=',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'mt0.google.com',
+    'hostname': 'mt0.google.com',
+    'search': '???&hl=en&src=api&x=2&y=2&z=3&s=',
+    'query': '??&hl=en&src=api&x=2&y=2&z=3&s=',
+    'pathname': '/vt/lyrs=m@114',
+    'path': '/vt/lyrs=m@114???&hl=en&src=api&x=2&y=2&z=3&s='
+  },
+  'http://user:pass@mt0.google.com/vt/lyrs=m@114???&hl=en&src=api&x=2&y=2&z=3&s=': {
+    'href': 'http://user:pass@mt0.google.com/vt/lyrs=m@114???' +
+        '&hl=en&src=api&x=2&y=2&z=3&s=',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'mt0.google.com',
+    'auth': 'user:pass',
+    'hostname': 'mt0.google.com',
+    'search': '???&hl=en&src=api&x=2&y=2&z=3&s=',
+    'query': '??&hl=en&src=api&x=2&y=2&z=3&s=',
+    'pathname': '/vt/lyrs=m@114',
+    'path': '/vt/lyrs=m@114???&hl=en&src=api&x=2&y=2&z=3&s='
+  },
+  'file:///etc/passwd' : {
+    'href': 'file:///etc/passwd',
+    'slashes': true,
+    'protocol': 'file:',
+    'pathname': '/etc/passwd',
+    'hostname': '',
+    'host': '',
+    'path': '/etc/passwd'
+  },
+  'file://localhost/etc/passwd' : {
+    'href': 'file://localhost/etc/passwd',
+    'protocol': 'file:',
+    'slashes': true,
+    'pathname': '/etc/passwd',
+    'hostname': 'localhost',
+    'host': 'localhost',
+    'path': '/etc/passwd'
+  },
+  'file://foo/etc/passwd' : {
+    'href': 'file://foo/etc/passwd',
+    'protocol': 'file:',
+    'slashes': true,
+    'pathname': '/etc/passwd',
+    'hostname': 'foo',
+    'host': 'foo',
+    'path': '/etc/passwd'
+  },
+  'file:///etc/node/' : {
+    'href': 'file:///etc/node/',
+    'slashes': true,
+    'protocol': 'file:',
+    'pathname': '/etc/node/',
+    'hostname': '',
+    'host': '',
+    'path': '/etc/node/'
+  },
+  'file://localhost/etc/node/' : {
+    'href': 'file://localhost/etc/node/',
+    'protocol': 'file:',
+    'slashes': true,
+    'pathname': '/etc/node/',
+    'hostname': 'localhost',
+    'host': 'localhost',
+    'path': '/etc/node/'
+  },
+  'file://foo/etc/node/' : {
+    'href': 'file://foo/etc/node/',
+    'protocol': 'file:',
+    'slashes': true,
+    'pathname': '/etc/node/',
+    'hostname': 'foo',
+    'host': 'foo',
+    'path': '/etc/node/'
+  },
+  'http:/baz/../foo/bar' : {
+    'href': 'http:/baz/../foo/bar',
+    'protocol': 'http:',
+    'pathname': '/baz/../foo/bar',
+    'path': '/baz/../foo/bar'
+  },
+  'http://user:pass@example.com:8000/foo/bar?baz=quux#frag' : {
+    'href': 'http://user:pass@example.com:8000/foo/bar?baz=quux#frag',
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'example.com:8000',
+    'auth': 'user:pass',
+    'port': '8000',
+    'hostname': 'example.com',
+    'hash': '#frag',
+    'search': '?baz=quux',
+    'query': 'baz=quux',
+    'pathname': '/foo/bar',
+    'path': '/foo/bar?baz=quux'
+  },
+  'http:/foo/bar?baz=quux#frag' : {
+    'href': 'http:/foo/bar?baz=quux#frag',
+    'protocol': 'http:',
+    'hash': '#frag',
+    'search': '?baz=quux',
+    'query': 'baz=quux',
+    'pathname': '/foo/bar',
+    'path': '/foo/bar?baz=quux'
+  },
+  'mailto:foo@bar.com?subject=hello' : {
+    'href': 'mailto:foo@bar.com?subject=hello',
+    'protocol': 'mailto:',
+    'host': 'bar.com',
+    'auth' : 'foo',
+    'hostname' : 'bar.com',
+    'search': '?subject=hello',
+    'query': 'subject=hello',
+    'path': '?subject=hello'
+  },
+  'xmpp:isaacschlueter@jabber.org' : {
+    'href': 'xmpp:isaacschlueter@jabber.org',
+    'protocol': 'xmpp:',
+    'host': 'jabber.org',
+    'auth': 'isaacschlueter',
+    'hostname': 'jabber.org'
+  },
+  'http://atpass:foo%40bar@127.0.0.1:8080/path?search=foo#bar' : {
+    'href' : 'http://atpass:foo%40bar@127.0.0.1:8080/path?search=foo#bar',
+    'protocol' : 'http:',
+    'slashes': true,
+    'host' : '127.0.0.1:8080',
+    'auth' : 'atpass:foo%40bar',
+    'hostname' : '127.0.0.1',
+    'port' : '8080',
+    'pathname': '/path',
+    'search' : '?search=foo',
+    'query' : 'search=foo',
+    'hash' : '#bar',
+    'path': '/path?search=foo'
+  },
+  'svn+ssh://foo/bar': {
+    'href': 'svn+ssh://foo/bar',
+    'host': 'foo',
+    'hostname': 'foo',
+    'protocol': 'svn+ssh:',
+    'pathname': '/bar',
+    'path': '/bar',
+    'slashes': true
+  },
+  'dash-test://foo/bar': {
+    'href': 'dash-test://foo/bar',
+    'host': 'foo',
+    'hostname': 'foo',
+    'protocol': 'dash-test:',
+    'pathname': '/bar',
+    'path': '/bar',
+    'slashes': true
+  },
+  'dash-test:foo/bar': {
+    'href': 'dash-test:foo/bar',
+    'host': 'foo',
+    'hostname': 'foo',
+    'protocol': 'dash-test:',
+    'pathname': '/bar',
+    'path': '/bar'
+  },
+  'dot.test://foo/bar': {
+    'href': 'dot.test://foo/bar',
+    'host': 'foo',
+    'hostname': 'foo',
+    'protocol': 'dot.test:',
+    'pathname': '/bar',
+    'path': '/bar',
+    'slashes': true
+  },
+  'dot.test:foo/bar': {
+    'href': 'dot.test:foo/bar',
+    'host': 'foo',
+    'hostname': 'foo',
+    'protocol': 'dot.test:',
+    'pathname': '/bar',
+    'path': '/bar'
+  },
+  'http://bucket_name.s3.amazonaws.com/image.jpg': {
+    'protocol': 'http:',
+    'slashes': true,
+    'host': 'bucket_name.s3.amazonaws.com',
+    'hostname': 'bucket_name.s3.amazonaws.com',
+    'pathname': '/image.jpg',
+    'href': 'http://bucket_name.s3.amazonaws.com/image.jpg',
+    'path': '/image.jpg'
+  },
+  'git+http://github.com/joyent/node.git': {
+    'protocol': 'git+http:',
+    'slashes': true,
+    'host': 'github.com',
+    'hostname': 'github.com',
+    'pathname': '/joyent/node.git',
+    'path': '/joyent/node.git',
+    'href': 'git+http://github.com/joyent/node.git'
+  }
+};
+
+Object.keys(parseTests).forEach(function(name) {
+  exports['test parse ' + name] = function(test) {
+    let actual = url.parse(name);
+    let expected = parseTests[name];
+    Object.keys(expected).forEach(function(key) {
+      test.assertEqual(actual[key], expected[key],
+                       'proprety ' + key + ' is correct');
+    });
+  };
+});
