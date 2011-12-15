@@ -195,7 +195,7 @@ exports['test:contentScriptFile'] = function(test) {
   } catch(e) {
     test.assertEqual(
       'The `contentScriptFile` option must be a local file URL or an array of'
-          + 'URLs.',
+          + ' URLs.',
       e.message
     );
   }
@@ -205,7 +205,7 @@ exports['test:contentScriptFile'] = function(test) {
   } catch(e) {
     test.assertEqual(
       'The `contentScriptFile` option must be a local file URL or an array of'
-          + 'URLs.',
+          + ' URLs.',
       e.message
     );
   }

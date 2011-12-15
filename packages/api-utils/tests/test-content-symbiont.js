@@ -35,7 +35,7 @@ exports['test:constructing symbiont && validating API'] = function(test) {
     });
 
     test.assertEqual(
-      self.data.url("test-content-symbiont.js"),
+      self.data.url("test-content-symbiont.js").toString(),
       contentSymbiont.contentScriptFile,
       "There is one contentScriptFile, as specified in options."
     );
