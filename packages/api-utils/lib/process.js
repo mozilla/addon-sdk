@@ -62,19 +62,28 @@ function process(target, id, path, scope) {
   // event loop), while the channel for messages is returned immediately (in
   // the same turn of event loop).
 
-  loadScript(target, packaging.uriPrefix + packaging.loader, false);
-  loadScript(target, 'data:,let loader = Loader.new(' +
-                      encodeURIComponent(JSON.stringify(packaging)) + ');\n' +
-                     'loader.main("' + id + '", "' + path + '");', false);
+  let load = loadScript.bind(null, target);
 
-  when(function (reason) {
+  load(packaging.uriPrefix + packaging.loader, false);
+  load('data:,' + encodeURIComponent(
+           'let loader = Loader.new(' + JSON.stringify(packaging) + ');\n' +
+           'loader.main("' + id + '", "' + path + '");'), false);
+
+  when(makeProcessUnloader(target));
+
+  return {
+    channel: channel.bind(null, scope, target),
+    loadScript: load
+  };
+}
+
+function makeProcessUnloader(target) {
+  return function (reason) {
     // Please note that it's important to unload remote loader
     // synchronously (using synchronous frame script), to make sure that we
     // don't stop during unload.
     loadScript(target, 'data:,loader.unload("' + reason + '")', true);
-  });
-
-  return { channel: channel.bind(null, scope, target) };
+  }
 }
 
 exports.spawn = function spawn(id, path) {

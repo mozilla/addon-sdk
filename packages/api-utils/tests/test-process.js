@@ -37,62 +37,33 @@
 
 "use strict";
 
-var { Cc, Ci } = require("chrome");
-var { Loader } = require("./helpers");
-var { setTimeout } = require("timer");
-var consoleService = Cc["@mozilla.org/consoleservice;1"]
-    .getService(Ci.nsIConsoleService);
+const { Loader } = require("./helpers");
+const { jetpackID } = require('@packaging');
 
-exports.testProcessSpawn = function(test) {
-  test.waitUntilDone();
-  var packaging = JSON.parse(JSON.stringify(require("@packaging")));
-
-  var loader = Loader(module, {}, packaging);
-
-  let process = loader.require("process");
-
-  // has spawn?
-  test.assert(!!process.spawn, "'process' module exports 'spawn' method.");
-
-  let promise = process.spawn("testID", "");
-  test.assert(typeof promise == "function", "spawn makes a promise.");
-
-  promise(function() {
-    test.pass("spawn's promise was kept.");
-    loader.unload();
-    test.done();
-  });
-};
-
+// bug 707562: '#' char in packaging was causing loader to be undefined
 exports.testBug707562 = function(test) {
   test.waitUntilDone();
 
-  let listener = {
-    "observe": function({message}) {
-      if (message.match('JavaScript Error: "unterminated string literal"'))
-        test.fail('JavaScript Error: "unterminated string literal"');
-    }
-  };
-  consoleService.registerListener(listener);
-
-  var packaging = JSON.parse(JSON.stringify(require("@packaging")));
+  let packaging = JSON.parse(JSON.stringify(require("@packaging")));
   packaging.metadata["api-utils"].author = "###";
 
-  var loader = Loader(module, {}, packaging);
-
+  let loader = Loader(module, {}, packaging);
   let process = loader.require("process");
 
+  // has spawn?
+  test.assert(process.spawn, "'process' module exports 'spawn' method.");
+
   let promise = process.spawn("testID", "");
+  test.assertFunction(promise, "spawn makes a promise.");
 
-  promise(function() {
-    test.pass("spawn's promise was kept.");
+  promise(function(addon) {
+    addon.channel("TEST:LOADED").input(function(data) {
+      test.assert(data, "The loader was successfully created!");
+      loader.unload();
+      test.done();
+    });
+
+    addon.loadScript('data:,sendAsyncMessage("'+jetpackID+':TEST:LOADED", !!this.loader);', false);
+    test.pass("spawn's promise was delivered! (which means a addon process object is available)).");
   });
-
-  // wait a bit for a possible error..
-  setTimeout(function() {
-    consoleService.unregisterListener(listener);
-    loader.unload();
-    test.done();
-  }, 250);
 };
-
