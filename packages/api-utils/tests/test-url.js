@@ -163,6 +163,10 @@ exports.testStringInterface = function(test) {
 
   // make sure the standard URL properties are enumerable and not the String interface bits
   test.assertEqual(Object.keys(a), "scheme,userPass,host,port,path", "enumerable key list check for URL.");
+  test.assertEqual(
+      JSON.stringify(a),
+      "{\"scheme\":\"about\",\"userPass\":null,\"host\":null,\"port\":null,\"path\":\"addons\"}",
+      "JSON.stringify should return a object with correct props and vals.");
 
   // make sure that the String interface exists and works as expected
   test.assertEqual(a.indexOf(":"), EM.indexOf(":"), "indexOf on URL works");
