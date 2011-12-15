@@ -55,8 +55,8 @@ exports.sandbox = sandbox
 /**
  * Evaluates given `source` in a given `sandbox` and returns result.
  */
-function evaluate(sandbox, source, uri, line, version) {
-  return Cu.evalInSandbox(source, sandbox, version || '1.8', uri, line || 1);
+function evaluate(sandbox, code, uri, line, version) {
+  return Cu.evalInSandbox(code, sandbox, version || '1.8', uri || '', line || 1);
 }
 exports.evaluate = evaluate;
 
