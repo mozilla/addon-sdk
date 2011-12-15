@@ -64,6 +64,6 @@ exports.evaluate = evaluate;
  * Evaluates code under the given `uri` in the given `sandbox`.
  */
 function load(sandbox, uri) {
-  scriptLoader.loadSubScript(uri, sandbox);
+  return scriptLoader.loadSubScript(uri, sandbox);
 }
 exports.load = load;
