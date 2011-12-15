@@ -32,7 +32,15 @@ class UnreachablePrefixError(Exception):
     pass
 
 def hash_file(fn):
-    return hashlib.sha256(open(fn,"rb").read()).hexdigest()
+    h = hashlib.sha256()
+    f = open(fn,"rb")
+    while True:
+        data = f.read(64*1024)
+        if not data:
+            break
+        h.update(data)
+    f.close()
+    return h.hexdigest()
 
 class ManifestEntry:
     docs_filename = None
@@ -136,7 +144,8 @@ class DataMap:
             zipname = "resources/%s/data/%s" % (self.name, "/".join(relpath))
             absname = os.path.join(datadir, dataname)
             datamap[dataname] = hash_file(absname)
-            self.files_to_copy.append( (zipname,absname,relpath) )
+            filedata = (zipname, absname, relpath)
+            self.files_to_copy.append(filedata)
         self.data_manifest = to_json(datamap)
 
     def get_files_to_copy(self):
