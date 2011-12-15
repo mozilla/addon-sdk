@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -59,7 +60,7 @@ const valid = {
     msg: 'The `contentURL` option must be a valid URL.'
   },
   contentScriptFile: {
-    is: ['undefined', 'null', 'string', 'array'],
+    is: ['undefined', 'null', 'string', 'array', 'object'],
     map: function(value) 'undefined' === getTypeOf(value) ? null : value,
     ok: function(value) {
       if (getTypeOf(value) === 'array') {
@@ -74,10 +75,15 @@ const valid = {
           }
         });
       }
+      if (getTypeOf(value) === 'object') {
+        if (!(value instanceof URL)) {
+          return false;
+        }
+      }
       return true;
     },
     msg: 'The `contentScriptFile` option must be a local file URL or an array of'
-          + 'URLs.'
+          + ' URLs.'
   },
   contentScript: {
     is: ['undefined', 'null', 'string', 'array'],

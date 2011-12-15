@@ -23,6 +23,7 @@
  * Contributor(s):
  *   Myk Melez <myk@mozilla.org> (Original Author)
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -44,6 +45,7 @@ const { Loader } = require('./loader');
 const hiddenFrames = require('../hidden-frame');
 const observers = require('../observer-service');
 const unload = require('../unload');
+const { URL } = require('../url');
 
 /**
  * This trait is layered on top of `Worker` and in contrast to symbiont
@@ -132,7 +134,7 @@ const Symbiont = Worker.resolve({
     // Inject `addon` object in document if we load a document from
     // one of our addon folder and if no content script are defined. bug 612726
     let isDataResource =
-      typeof this._contentURL == "string" &&
+      (typeof this._contentURL == "string" || this._contentURL instanceof URL) &&
       this._contentURL.indexOf(require("@packaging").uriPrefix) == 0;
     let hasContentScript =
       (Array.isArray(this.contentScript) ? this.contentScript.length > 0

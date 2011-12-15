@@ -41,6 +41,7 @@
 
 const { CC } = require('chrome');
 const { jetpackID, name, manifest, metadata, uriPrefix } = require('@packaging');
+const { URL } = require('url');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
@@ -60,7 +61,7 @@ function readURI(uri) {
 // unique URI string that can be used for that.
 const uri = 'addon:' + jetpackID
 
-function url(root, path) root + (path || "")
+function url(root, path) URL(root + (path || ""))
 function read(root, path) readURI(url(root, path))
 
 exports.create = function create(base) {
