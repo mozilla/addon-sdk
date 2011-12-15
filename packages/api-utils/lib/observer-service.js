@@ -21,6 +21,7 @@
  *   Daniel Aquino <mr.danielaquino@gmail.com>
  *   Myk Melez <myk@mozilla.org>
  *   Atul Varma <atul@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or

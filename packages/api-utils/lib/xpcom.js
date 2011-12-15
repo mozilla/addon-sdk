@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
  *   Drew Willcoxon <adw@mozilla.com>
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
