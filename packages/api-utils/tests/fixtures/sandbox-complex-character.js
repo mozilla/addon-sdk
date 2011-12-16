@@ -1,1 +1,1 @@
-var chars = 'l´╗┐';
+var chars = 'გამარჯობა';

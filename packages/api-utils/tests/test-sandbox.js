@@ -82,7 +82,7 @@ exports['test load'] = function(assert) {
 exports['test load script with complex char'] = function(assert) {
   let fixture = sandbox();
   load(fixture, fixturesURI + 'sandbox-complex-character.js');
-  assert.equal(fixture.chars, 'l´╗┐', 'complex chars were loaded correctly');
+  assert.equal(fixture.chars, 'გამარჯობა', 'complex chars were loaded correctly');
 };
 
 require('test').run(exports);
