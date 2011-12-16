@@ -37,8 +37,8 @@
 
 
 const { Loader } = require("./helpers");
-const setTimeout = require("timers").setTimeout;
-const notify = require("observer-service").notify;
+const { setTimeout } = require("timers");
+const { notify } = require("observer-service");
 const { jetpackID } = require("@packaging");
 
 exports.testSetGetBool = function(test) {
@@ -176,5 +176,39 @@ exports.testPrefRemoveListener = function(test) {
 
   sp.on("test-listen2", listener);
 
+  // emit change
   sp.prefs["test-listen2"] = true;
+};
+
+// Bug 710117
+exports.testPrefUnloadListener = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+  let counter = 0;
+
+  let listener = function() {
+    test.pass("The prefs listener was not removed yet");
+
+    if (++counter > 1) {
+      test.fail("The prefs listener was not removed on unload");
+      return;
+    }
+
+    let emit = loader.sandbox("simple-prefs").events.emit;
+    loader.unload();
+
+    emit("test-listen3");
+
+    setTimeout(function() {
+      test.pass("The prefs listener was removed");
+      test.done();
+    }, 250);
+  };
+
+  sp.on("test-listen3", listener);
+
+  // emit change
+  sp.prefs["test-listen3"] = true;
 };

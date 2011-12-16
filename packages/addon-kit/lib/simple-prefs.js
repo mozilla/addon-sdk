@@ -74,16 +74,17 @@ const events = EventEmitter.compose({
   },
   _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
     if (topic == "nsPref:changed") {
-      this._emit(prefName, prefName);
+      this.emit(prefName, prefName);
     }
   },
   _buttonObserver: function PrefsButtonObserver(subject, data) {
-    this._emit(data);
+    this.emit(data);
   },
   unload: function manager_unload() {
     this._removeAllListeners();
     branch.removeObserver("", this._prefObserver);
- },
+  },
+  emit: function(key, value) this._emit(key, value),
 })();
 
 const simple = Proxy.create({
