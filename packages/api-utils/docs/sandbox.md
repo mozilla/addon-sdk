@@ -14,7 +14,8 @@ loaded from that URL. Argument also could be a DOM window object, to inherit
 privileges from the window being passed. Finally if argument is omitted or is
 `null` sandbox will have a chrome privileges giving it access to all the XPCOM
 components. Optionally `sandbox` function can be passed a second optional 
-argument (See [sandbox documentation on MDN] for details).
+argument (See [sandbox documentation on MDN](https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter)
+for details).
 
 ### Evaluate code ###
 
@@ -42,5 +43,3 @@ API provides limited API for loading scripts right form the local URLs.
 
     load(scope, 'resource://path/to/my/script.js');
     load(scope, 'file:///path/to/script.js');
-
-[Sandbox documentation on MDN]:https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter
