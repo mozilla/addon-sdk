@@ -20,6 +20,7 @@
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -76,11 +77,17 @@ function browserWindowIterator() {
 exports.browserWindowIterator = browserWindowIterator;
 
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
-  this.delegate = delegate;
+   if (!(this instanceof WindowTracker)) {
+     return new WindowTracker(delegate);
+   }
+
+  this._delegate = delegate;
   this._loadingWindows = [];
+
   for (let window in windowIterator())
     this._regWindow(window);
   gWindowWatcher.registerNotification(this);
+
   require("./unload").ensure(this);
 };
 
@@ -102,15 +109,15 @@ WindowTracker.prototype = {
   _regWindow: function _regWindow(window) {
     if (window.document.readyState == "complete") {
       this._unregLoadingWindow(window);
-      this.delegate.onTrack(window);
+      this._delegate.onTrack(window);
     } else
       this._regLoadingWindow(window);
   },
 
   _unregWindow: function _unregWindow(window) {
     if (window.document.readyState == "complete") {
-      if (this.delegate.onUntrack)
-        this.delegate.onUntrack(window);
+      if (this._delegate.onUntrack)
+        this._delegate.onUntrack(window);
     } else {
       this._unregLoadingWindow(window);
     }
@@ -122,30 +129,28 @@ WindowTracker.prototype = {
       this._unregWindow(window);
   },
 
-  handleEvent: function handleEvent(event) {
+  handleEvent: errors.catchAndLog(function handleEvent(event) {
     if (event.type == "load" && event.target) {
       var window = event.target.defaultView;
       if (window)
         this._regWindow(window);
     }
-  },
+  }),
 
-  observe: function observe(subject, topic, data) {
+  observe: errors.catchAndLog(function observe(subject, topic, data) {
     var window = subject.QueryInterface(Ci.nsIDOMWindow);
     if (topic == "domwindowopened")
       this._regWindow(window);
     else
       this._unregWindow(window);
-  }
+  })
 };
-
-errors.catchAndLogProps(WindowTracker.prototype, ["handleEvent", "observe"]);
 
 const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
   _onUntrack: Trait.required,
   constructor: function WindowTrackerTrait() {
-    new WindowTracker({
+    WindowTracker({
       onTrack: this._onTrack.bind(this),
       onUntrack: this._onUntrack.bind(this)
     });
