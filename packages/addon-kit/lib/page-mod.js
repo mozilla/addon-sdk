@@ -205,8 +205,8 @@ const PageModManager = Registry.resolve({
   },
   _destructor: function _destructor() {
     observers.remove(ON_CONTENT, this._onContentWindow);
+    this._removeAllListeners();
     for (let rule in RULES) {
-      this._removeAllListeners(rule);
       delete RULES[rule];
     }
     this._registryDestructor();

@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Atul Varma <atul@mozilla.com>
+ *   Erik Vold <erikvvold@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -96,6 +97,10 @@ let toFilename = exports.toFilename = function toFilename(url) {
 };
 
 function URL(url, base) {
+  if (!(this instanceof URL)) {
+     return new URL(url, base);
+  }
+
   var uri = newURI(url, base);
 
   var userPass = null;
@@ -118,6 +123,24 @@ function URL(url, base) {
   this.__defineGetter__("host", function() host);
   this.__defineGetter__("port", function() port);
   this.__defineGetter__("path", function() uri.path);
-  this.toString = function URL_toString() uri.spec;
+
+  Object.defineProperties(this, {
+    toString: {
+      value: function URL_toString() new String(uri.spec).toString(),
+      enumerable: false
+    },
+    valueOf: {
+      value: function() new String(uri.spec).valueOf(),
+      enumerable: false
+    },
+    toSource: {
+      value: function() new String(uri.spec).toSource(),
+      enumerable: false
+    }
+  });
+
+  return this;
 };
-exports.URL = require("./api-utils").publicConstructor(URL);
+
+URL.prototype = Object.create(String.prototype);
+exports.URL = URL;

@@ -1,3 +1,5 @@
+<!-- edited by Erik Vold [erikvvold@gmail.com]  -->
+
 The `self` module provides access to data that is bundled with the add-on
 as a whole. It also provides access to the
 [Program ID](dev-guide/addon-development/program-id.html), a value which is
@@ -54,10 +56,10 @@ data that can be displayed directly in a content frame, use `data.url(NAME)`.
 
 <api name="data.url">
 @method
-The `data.url(NAME)` method returns a URL instance that points at an embedded
+The `data.url(NAME)` method returns a url that points at an embedded
 data file. It is most useful for data that can be displayed directly in a
-content frame. The URL instance can be passed to a content frame constructor,
-such as the Panel:
+content frame. The url can be passed to a content frame constructor, such
+as the Panel:
 
     var self = require("self");
     var myPanel = require("panel").Panel({
@@ -68,6 +70,6 @@ such as the Panel:
 @param name {string} The filename to be read, relative to the
   package's `data` directory. Each package that uses the `self` module
   will see its own `data` directory.
-@returns {URL}
+@returns {String}
 </api>
 </api>
