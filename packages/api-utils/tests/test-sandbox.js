@@ -38,8 +38,9 @@ exports['test exceptions'] = function(assert) {
       var message = 'boom';
       throw Error(message);
     } + '();');
-  } catch (error) {
-    assert.equal(error.fileName, '', 'no fileName reporeted');
+  }
+  catch (error) {
+    assert.equal(error.fileName, '', 'no fileName reported');
     assert.equal(error.lineNumber, 3, 'reports correct line number');
   }
 
@@ -48,18 +49,20 @@ exports['test exceptions'] = function(assert) {
       var message = 'boom';
       throw Error(message);
     } + '();', 'foo.js');
-  } catch (error) {
-    assert.equal(error.fileName, 'foo.js', 'correct fileName reporeted');
+  }
+  catch (error) {
+    assert.equal(error.fileName, 'foo.js', 'correct fileName reported');
     assert.equal(error.lineNumber, 3, 'reports correct line number');
   }
 
-    try {
+  try {
     evaluate(fixture, '!' + function() {
       var message = 'boom';
       throw Error(message);
     } + '();', 'foo.js', 2);
-  } catch (error) {
-    assert.equal(error.fileName, 'foo.js', 'correct fileName reporeted');
+  }
+  catch (error) {
+    assert.equal(error.fileName, 'foo.js', 'correct fileName reported');
     assert.equal(error.lineNumber, 4, 'line number was opted');
   }
 };
@@ -74,7 +77,7 @@ exports['test opt version'] = function(assert) {
 exports['test load'] = function(assert) {
   let fixture = sandbox();
   load(fixture, fixturesURI + 'sandbox-normal.js');
-  assert.equal(fixture.a, 1, 'global variabel defined');
+  assert.equal(fixture.a, 1, 'global variable defined');
   assert.equal(fixture.b, 2, 'global via `this` property was set');
   assert.equal(fixture.f(), 4, 'function was defined');
 };
