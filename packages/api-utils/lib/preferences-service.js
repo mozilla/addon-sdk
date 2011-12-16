@@ -22,6 +22,7 @@
  *   Daniel Aquino <mr.danielaquino@gmail.com>
  *   Atul Varma <atul@mozilla.com>
  *   Erik Vold <erikvvold@gmail.com>
+ *  Hernan Rodriguez Colmeiro <colmeiro@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -51,7 +52,40 @@ const {Cc,Ci,Cr} = require("chrome");
 var prefSvc = Cc["@mozilla.org/preferences-service;1"].
               getService(Ci.nsIPrefService).getBranch(null);
 
-var get = exports.get = function get(name, defaultValue) {
+function Prefs(branchName) {
+  if (!(this instanceof Prefs)) {
+    return new Prefs(branchName);
+  }
+
+  function getPrefKeys() {
+    return Prefs.getChildList(branchName).map(function(pref) {
+      return pref.replace(branchName, "");
+    });
+  }
+
+  return Proxy.create({
+    get: function(receiver, pref) {
+      return Prefs.get(branchName + pref);
+    },
+    set: function(receiver, pref, val) {
+      Prefs.set(branchName + pref, val);
+    },
+    delete: function(pref) {
+      Prefs.reset(branchName + pref);
+      return true;
+    },
+    has: function hasPrefKey(pref) Prefs.has(branchName + pref),
+    getPropertyDescriptor: function(name) {
+      return {
+        value: Prefs.get(branchName + name)
+      };
+    },
+    enumerate: getPrefKeys,
+    keys: getPrefKeys
+  }, Prefs.prototype);
+}
+
+Prefs.get = function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
   case Ci.nsIPrefBranch.PREF_STRING:
     return prefSvc.getComplexValue(name, Ci.nsISupportsString).data;
@@ -75,7 +109,7 @@ var get = exports.get = function get(name, defaultValue) {
   }
 };
 
-var set = exports.set = function set(name, value) {
+Prefs.set = function set(name, value) {
   var prefType;
   if (typeof value != "undefined" && value != null)
     prefType = value.constructor.name;
@@ -115,19 +149,19 @@ var set = exports.set = function set(name, value) {
   }
 };
 
-var has = exports.has = function has(name) {
+Prefs.has = function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
 };
 
-var getChildList = exports.getChildList = function getChildList(aStartingAt) {
+Prefs.getChildList = function getChildList(aStartingAt) {
   return prefSvc.getChildList(aStartingAt);
 }
 
-var isSet = exports.isSet = function isSet(name) {
-  return (has(name) && prefSvc.prefHasUserValue(name));
+Prefs.isSet = function isSet(name) {
+  return (Prefs.has(name) && prefSvc.prefHasUserValue(name));
 };
 
-var reset = exports.reset = function reset(name) {
+Prefs.reset = function reset(name) {
   try {
     prefSvc.clearUserPref(name);
   } catch (e if e.result == Cr.NS_ERROR_UNEXPECTED) {
@@ -140,3 +174,5 @@ var reset = exports.reset = function reset(name) {
     // know what other exceptions might be thrown and what they might mean.
   }
 };
+
+module.exports = Prefs;

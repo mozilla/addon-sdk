@@ -38,7 +38,8 @@
 
 "use strict";
 
-let Prefs = prefs = require("preferences-service").Prefs;
+var prefs = require("preferences-service");
+var Prefs = prefs;
 var {Cc,Ci} = require("chrome");
 
 exports.testReset = function(test) {
@@ -133,10 +134,10 @@ exports.testGetAndSet = function(test) {
 
 exports.testPrefClass = function(test) {
   var branch = Prefs("test_foo");
-  test.asset(branch instanceof Prefs, "Prefs instance is a instanceof Prefs");
-  test.assetEqual(branch.test, undefined, "test_foo.test is undefined");
+
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
   branch.test = true;
-  test.assetEqual(branch.test, true, "test_foo.test is true");
+  test.assertEqual(branch.test, true, "test_foo.test is true");
   delete branch.test;
-  test.assetEqual(branch.test, undefined, "test_foo.test is undefined");
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
 }
