@@ -597,9 +597,7 @@ const Worker = AsyncEventEmitter.compose({
    */
   destroy: function destroy() {
     this._workerCleanup();
-    this._removeAllListeners('message');
-    this._removeAllListeners('error');
-    this._removeAllListeners('detach');
+    this._removeAllListeners();
   },
   
   /**
