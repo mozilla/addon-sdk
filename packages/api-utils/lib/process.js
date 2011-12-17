@@ -39,7 +39,6 @@
 const { Cc, Ci } = require("chrome");
 const { createRemoteBrowser } = require("api-utils/window-utils");
 const { channel } = require("./channel");
-const { setTimout } = require('./timer');
 const packaging = require('@packaging');
 const { when } = require('./unload');
 
