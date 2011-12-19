@@ -109,6 +109,7 @@ const AboutHandler = Factory.extend(AbstractHandler, {
 exports.AboutHandler = AboutHandler;
 
 const ProtocolHandler = Factory.extend(AbstractHandler, {
+  onResolve: function onResolve() throw Error('Not implemented'),
   interfaces: [ 'nsIProtocolHandler' ],
   get classDescription() 'Protocol handler for "' + this.scheme + ':*"',
   get contractID() '@mozilla.org/network/protocol;1?name=' + this.scheme,
@@ -126,7 +127,10 @@ const ProtocolHandler = Factory.extend(AbstractHandler, {
    */
   type: 1,
   newURI: function newURI(relative, charset, base) {
-    return this.onResolve ?
+    // If protocol handler defines URI resolution use `CustomURL` implementation
+    // to allow protocols like 'about:addons'. Otherwise fallback to
+    // `standardURL`.
+    return this.onResolve !== ProtocolHandler.onResolve ?
            CustomURL.new(this.onResolve(relative, base && base.spec, charset)) :
            this.newURL(relative, charset, base);
   },
