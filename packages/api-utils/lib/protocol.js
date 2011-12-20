@@ -49,14 +49,14 @@ const Response = Base.extend({
 });
 
 const AbstractHandler = {
-  onRequest: function throw Error('Not implemented'),
+  onRequest: function onRequest() { throw Error('Not implemented') },
   newChannel: function newChannel(uri) {
     let channel, pipe, response, request;
 
     // We create `nsIPipe` which where response's output will be forwarded to.
     pipe = Pipe(true, true, 0, 0, null);
-    response = Response.new(request.uri, pipe.outputStream);
     request = { uri: uri.spec };
+    response = Response.new(request.uri, pipe.outputStream);
 
     this.onRequest(request, response);
 
