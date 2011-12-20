@@ -28,7 +28,7 @@ function run() {
 }
 
 exports['test about handler must be registered'] = function (assert, done) {
-   let requested = 0;
+  let requested = 0;
   let protocol = AboutHandler.extend({
     what: 'register' + new Date().getTime().toString(36),
     onRequest: function onRequest(request, response) {
