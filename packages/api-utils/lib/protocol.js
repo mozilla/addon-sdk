@@ -7,7 +7,7 @@
 
 const { Cc, Ci, components: { Constructor: CC } } = require('chrome')
 const { Factory } = require('./xpcom');
-const { Base } = require('./selfish');
+const { Base } = require('./base');
 const { CustomURL } = require('./xpcom/uri');
 const { Namespace: ns } = require('./namespace');
 
