@@ -35,7 +35,8 @@ const Response = Base.extend({
       originalURI: uri,
       principalURI: uri,
       contentLength: -1,
-      contentType: ''
+      contentType: '',
+      contentCharset: null
     });
   },
   write: function write(content) {
@@ -82,10 +83,10 @@ const AbstractHandler = {
       channel.contentStream = pipe.inputStream;
       channel.QueryInterface(Ci.nsIChannel);
 
-      // Copy length & type of the content from the response, which will default
-      // to undefined indicating that length & type are unknown.
+      // Copy content length, type and charset from the response.
       channel.contentLength = response.contentLength;
       channel.contentType = response.contentType;
+      channel.contentCharset = response.contentCharset;
     }
 
     // If `principalURI` is set to anything other then an `request.uri` it
