@@ -101,6 +101,7 @@ const AbstractHandler = {
 exports.AbstractHandler = AbstractHandler;
 
 const AboutHandler = Factory.extend(AbstractHandler, {
+  get what() { throw Error('Property `what` is required') },
   interfaces: [ 'nsIAboutModule' ],
   get classDescription() 'Protocol handler for "about:' + this.scheme + '"',
   get contractID() '@mozilla.org/network/protocol/about;1?what=' + this.scheme,
@@ -109,7 +110,7 @@ const AboutHandler = Factory.extend(AbstractHandler, {
 exports.AboutHandler = AboutHandler;
 
 const ProtocolHandler = Factory.extend(AbstractHandler, {
-  onResolve: function onResolve() throw Error('Not implemented'),
+  onResolve: function onResolve() { throw Error('Not implemented') },
   interfaces: [ 'nsIProtocolHandler' ],
   get classDescription() 'Protocol handler for "' + this.scheme + ':*"',
   get contractID() '@mozilla.org/network/protocol;1?name=' + this.scheme,
