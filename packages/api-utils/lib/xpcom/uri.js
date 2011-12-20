@@ -37,18 +37,22 @@
 "use strict";
 
 const { Cc, Ci, CC } = require('chrome');
+const { newURI } = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
 const { Unknown } = require('../xpcom');
 const { parse } = require('../url');
-const { merge } = require('../function');
+const { merge } = require('../utils/function');
 
 // Implementation of nsIMutable
 const Mutable = Unknown.extend({
-  interfaces [ 'nsIMutable' ],
+  interfaces: [ 'nsIMutable' ],
   mutable: true
 });
 exports.Mutable = Mutable;
 
+// Implements base exemplar for a `nsIURI` interface.
 const CustomURI = Unknown.extend({
+  initialize: function initialize(uri) this.merge(parse(uri)),
   interfaces: [ 'nsIURI' ],
   originCharset: 'UTF-8',
   get asciiHost() this.host,
@@ -60,14 +64,13 @@ const CustomURI = Unknown.extend({
   equalsExceptRef: function equalsExceptRef(uri) this.equals(uri),
   schemeIs: function schemeIs(scheme) this.scheme === scheme,
   resolve: function resolve(path) {
-    console.log(path)
-    this.spec + path
+    return newURI(path, null, newURI(this.spec)).spec;
   }
 });
 exports.CustomURI = CustomURI;
 
 const CustomURL = CustomURI.extend(Mutable, {
-  initialize: function initialize(uri) this.merge(parse(uri),
+  initialize: function initialize(uri) this.merge(parse(uri)),
   get userPass() this.password,
   get filePath() this.filepath,
   get fileName() this.filename,
