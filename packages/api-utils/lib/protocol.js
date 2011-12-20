@@ -104,8 +104,8 @@ exports.AbstractHandler = AbstractHandler;
 const AboutHandler = Factory.extend(AbstractHandler, {
   get what() { throw Error('Property `what` is required') },
   interfaces: [ 'nsIAboutModule' ],
-  get classDescription() 'Protocol handler for "about:' + this.scheme + '"',
-  get contractID() '@mozilla.org/network/protocol/about;1?what=' + this.scheme,
+  get classDescription() 'Protocol handler for "about:' + this.what + '"',
+  get contractID() '@mozilla.org/network/protocol/about;1?what=' + this.what,
   getURIFlags: function(uri) Ci.nsIAboutModule.URI_SAFE_FOR_UNTRUSTED_CONTENT
 });
 exports.AboutHandler = AboutHandler;
