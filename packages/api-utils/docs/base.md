@@ -1,8 +1,9 @@
 ### Inheritance ###
 
-Doing [inheritance in JavaScript] is both verbose and painful. Reading or
-writing such code requires requires sharp eye and lot's of discipline, mainly
-due to code fragmentation and lots of machinery exposed:
+Doing [inheritance in JavaScript](https://developer.mozilla.org/en/Introduction_to_Object-Oriented_JavaScript)
+is both verbose and painful. Reading or writing such code requires requires
+sharp eye and lot's of discipline, mainly due to code fragmentation and lots of
+machinery exposed:
 
     // Defining a simple Class
     function Dog(name) {
@@ -200,7 +201,3 @@ simulating classes defined by given exemplar.
     var p2 = CPixel(17, 2, 'cccccc');
     p2 instanceof CPixel // true
     p2.prototypeOf(pixel) // true
-
-[inheritance in JavaScript]:https://developer.mozilla.org/en/Introduction_to_Object-Oriented_JavaScript
-[prototypal inheritance]:http://javascript.crockford.com/prototypal.html
-[ecmpascript 5]:https://developer.mozilla.org/en/New_in_JavaScript_1.8.5
