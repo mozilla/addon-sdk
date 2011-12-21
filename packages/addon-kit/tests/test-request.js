@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
+ *   Wes Kocher <wkocher@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -54,14 +55,14 @@ exports.testOptionsValidator = function(test) {
 
   // Next we'll have a Request that doesn't throw from c'tor, but from a setter.
   let req = Request({
-    url: "http://playground.zpao.com/jetpack/request/text.php",
+    url: "http://localhost:" + port + "/test-request.txt",
     onComplete: function () {}
   });
   test.assertRaises(function () {
     req.url = null;
   }, 'The option "url" must be one of the following types: string');
   // The url shouldn't have changed, so check that
-  test.assertEqual(req.url, "http://playground.zpao.com/jetpack/request/text.php");
+  test.assertEqual(req.url, "http://localhost:" + port + "/test-request.txt");
 }
 
 exports.testContentValidator = function(test) {
@@ -85,7 +86,7 @@ exports.testContentValidator = function(test) {
 // This is a request to a file that exists.
 exports.testStatus200 = function (test) {
   var srv = startServerAsync(port, basePath);
-  
+
   test.waitUntilDone();
   var req = Request({
     url: "http://localhost:" + port + "/test-request.txt",
@@ -103,7 +104,7 @@ exports.testStatus200 = function (test) {
 // This tries to get a file that doesn't exist
 exports.testStatus404 = function (test) {
   var srv = startServerAsync(port, basePath);
-  
+
   test.waitUntilDone();
   Request({
     // the following URL doesn't exist
@@ -116,34 +117,42 @@ exports.testStatus404 = function (test) {
   }).get();
 }
 
-/*
+
 // a simple file with a known header
 exports.testKnownHeader = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/headers.php",
+    url: "http://localhost:" + port + "/test-request-headers.txt",
     onComplete: function (response) {
-      test.assertEqual(response.headers["x-zpao-header"], "Jamba Juice");
-      test.done();
+      test.assertEqual(response.headers["x-jetpack-header"], "Jamba Juice");
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
+/*
 // complex headers
-exports.testKnownHeader = function (test) {
+// XXX: Why did this have the same name as the previous test?
+exports.testKnownHeader2 = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   let headers = {
-    "x-zpao-header": "Jamba Juice is: delicious",
-    "x-zpao-header-2": "foo, bar",
+    "x-jetpack-header": "Jamba Juice is: delicious",
+    "x-jetpack-header-2": "foo, bar",
+    "x-jetpack-header-3": "sup dawg, i heard you like x, so we put a x in yo" +
+                          " x so you can y while you y",
     "Set-Cookie": "foo=bar\nbaz=foo"
   }
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/complex_headers.php",
+    url: "http://localhost:" + port + "/test-request-complex-headers.php",
     onComplete: function (response) {
       for (k in headers) {
         test.assertEqual(response.headers[k], headers[k]);
       }
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
@@ -151,7 +160,7 @@ exports.testKnownHeader = function (test) {
 
 exports.testSimpleJSON = function (test) {
   var srv = startServerAsync(port, basePath);
-  
+
   test.waitUntilDone();
   Request({
     url: "http://localhost:" + port + "/test-request.json",
@@ -164,7 +173,7 @@ exports.testSimpleJSON = function (test) {
 
 exports.testInvalidJSON = function (test) {
   var srv = startServerAsync(port, basePath);
-  
+
   test.waitUntilDone();
   Request({
     url: "http://localhost:" + port + "/test-request-invalid.json",
@@ -177,24 +186,28 @@ exports.testInvalidJSON = function (test) {
 
 /*
 exports.testGetWithParamsNotContent = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php?foo=bar",
+    url: "http://localhost:" + port + "/test-request-getpost.php?foo=bar",
     onComplete: function (response) {
       let expected = {
         "POST": [],
         "GET" : { foo: "bar" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testGetWithContent = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: { foo: "bar" },
     onComplete: function (response) {
       let expected = {
@@ -202,15 +215,17 @@ exports.testGetWithContent = function (test) {
         "GET" : { foo: "bar" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testGetWithParamsAndContent = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php?foo=bar",
+    url: "http://localhost:" + port + "/test-request-getpost.php?foo=bar",
     content: { baz: "foo" },
     onComplete: function (response) {
       let expected = {
@@ -218,15 +233,17 @@ exports.testGetWithParamsAndContent = function (test) {
         "GET" : { foo: "bar", baz: "foo" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testSimplePost = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: { foo: "bar" },
     onComplete: function (response) {
       let expected = {
@@ -234,15 +251,17 @@ exports.testSimplePost = function (test) {
         "GET" : []
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).post();
 }
 
 exports.testEncodedContent = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: "foo=bar&baz=foo",
     onComplete: function (response) {
       let expected = {
@@ -250,15 +269,17 @@ exports.testEncodedContent = function (test) {
         "GET" : { foo: "bar", baz: "foo" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testEncodedContentWithSpaces = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: "foo=bar+hop!&baz=foo",
     onComplete: function (response) {
       let expected = {
@@ -266,15 +287,17 @@ exports.testEncodedContentWithSpaces = function (test) {
         "GET" : { foo: "bar hop!", baz: "foo" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testGetWithArray = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: { foo: [1, 2], baz: "foo" },
     onComplete: function (response) {
       let expected = {
@@ -282,15 +305,17 @@ exports.testGetWithArray = function (test) {
         "GET" : { foo: [1, 2], baz: "foo" }
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testGetWithNestedArray = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: { foo: [1, 2, [3, 4]], bar: "baz" },
     onComplete: function (response) {
       let expected = {
@@ -298,15 +323,17 @@ exports.testGetWithNestedArray = function (test) {
         "GET" : this.content
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testGetWithNestedArray = function (test) {
+  var srv = startServerAsync(port, basePath);
+
   test.waitUntilDone();
   let request = Request({
-    url: "http://playground.zpao.com/jetpack/request/getpost.php",
+    url: "http://localhost:" + port + "/test-request-getpost.php",
     content: {
       foo: [1, 2, {
         omg: "bbq",
@@ -320,7 +347,7 @@ exports.testGetWithNestedArray = function (test) {
         "GET" : request.content
       };
       assertDeepEqual(test, response.json, expected);
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
