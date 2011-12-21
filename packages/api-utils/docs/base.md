@@ -192,7 +192,7 @@ extending `Base` and returns `constructor` function that can be used for
 simulating classes defined by given exemplar.
 
     var CPixel = Class(Pixel);
-    var pixel = Pixel(11, 12, '000000');
+    var pixel = CPixel(11, 12, '000000');
     pixel instanceof CPixel // true
     Pixel.prototypeOf(pixel) // true
 
