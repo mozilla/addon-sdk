@@ -47,6 +47,9 @@ const appInfo = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULAppInfo); 
 const runtime = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULRuntime);
+const directroyServcie = Cc['@mozilla.org/file/directory_service;1'].
+                         getService(Ci.nsIProperties);
+
 
 const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
 
@@ -75,6 +78,18 @@ exports.exit = function exit(code) {
   }
 
   appStartup.quit(code ? E_ATTEMPT : E_FORCE);
+};
+
+/**
+ * Returns a path to the systems special directory./ file associated with a
+ * given `id`. For list of all `id`s see:
+ * http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsAppDirectoryServiceDefs.h
+ * @example
+ *
+ *    let profilePath = require('system').pathTo('ProfD');
+ */
+exports.pathTo = function pathTo(id) {
+  return directroyServcie.get(id, Ci.nsIFile).path;
 };
 
 /**
