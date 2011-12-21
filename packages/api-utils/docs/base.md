@@ -173,18 +173,18 @@ Also it's easy to mix composition with inheritance:
       toString: function toString() {
         return this.x + ':' + this.y + '@' + this.hex()
       }
-    })
+    });
 
-    var pixel = Pixel.new(11, 23, 'CC3399')
+    var pixel = Pixel.new(11, 23, 'CC3399');
     pixel.toString()              // 11:23@#CC3399
-    Pixel.isPrototypeOf(pixel)
+    Pixel.isPrototypeOf(pixel)    // true
 
     // Pixel instances inhertis from `Color`
-    Color.isPrototypeOf(pixel)    // true
+    Color.isPrototypeOf(pixel);   // true
 
     // In fact `Pixel` itself inherits from `Color`, remember just simple and
     // pure prototypal inheritance where object inherit from objects.
-    Color.isPrototypeOf(Pixel)
+    Color.isPrototypeOf(Pixel);   // true
 
 ### Classes ###
 
@@ -194,10 +194,10 @@ simulating classes defined by given exemplar.
 
     var CPixel = Class(Pixel);
     var pixel = CPixel(11, 12, '000000');
-    pixel instanceof CPixel // true
-    Pixel.prototypeOf(pixel) // true
+    pixel instanceof CPixel     // true
+    Pixel.prototypeOf(pixel);   // true
 
     // Use of `new` is optional, but possible.
     var p2 = CPixel(17, 2, 'cccccc');
-    p2 instanceof CPixel // true
-    p2.prototypeOf(pixel) // true
+    p2 instanceof CPixel      // true
+    p2.prototypeOf(pixel);    // true
