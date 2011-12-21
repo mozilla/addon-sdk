@@ -875,7 +875,7 @@ let browserManager = {
   // for each currently open browser window.
   init: function BM_init() {
     require("api-utils/unload").ensure(this);
-    let windowTracker = new winUtils.WindowTracker(this);
+    let windowTracker = winUtils.WindowTracker(this);
 
     // Register content windows on content-document-global-created and
     // unregister them on inner-window-destroyed.  For rationale, see bug 667957
