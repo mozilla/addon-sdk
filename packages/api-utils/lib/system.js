@@ -47,7 +47,7 @@ const appInfo = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULAppInfo); 
 const runtime = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULRuntime);
-const directroyServcie = Cc['@mozilla.org/file/directory_service;1'].
+const directoryService = Cc['@mozilla.org/file/directory_service;1'].
                          getService(Ci.nsIProperties);
 
 
@@ -89,7 +89,7 @@ exports.exit = function exit(code) {
  *    let profilePath = require('system').pathTo('ProfD');
  */
 exports.pathTo = function pathTo(id) {
-  return directroyServcie.get(id, Ci.nsIFile).path;
+  return directoryService.get(id, Ci.nsIFile).path;
 };
 
 /**
