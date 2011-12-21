@@ -81,14 +81,21 @@ exports.exit = function exit(code) {
 };
 
 /**
- * Returns a path to the systems special directory./ file associated with a
- * given `id`. For list of all `id`s see:
+ * Returns a path of the system's or application's special directory / file
+ * associated with a given `id`. For list of possible `id`s please see:
+ * https://developer.mozilla.org/en/Code_snippets/File_I%2F%2FO#Getting_special_files
  * http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsAppDirectoryServiceDefs.h
  * @example
  *
- *    let profilePath = require('system').pathTo('ProfD');
+ *    // get firefox profile path
+ *    let profilePath = require('system').pathFor('ProfD');
+ *    // get OS temp files directory (/tmp)
+ *    let temps = require('system').pothFor('TmpD');
+ *    // get OS desktop path for an active user (~/Desktop on linux
+ *    // or C:\Documents and Settings\username\Desktop on windows).
+ *    let desktopPath = require('system').pothFor('Desk');
  */
-exports.pathTo = function pathTo(id) {
+exports.pathFor = function pathFor(id) {
   return directoryService.get(id, Ci.nsIFile).path;
 };
 

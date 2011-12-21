@@ -1,6 +1,6 @@
 "use strict";
 
-const { pathTo } = require('api-utils/system');
+const { pathFor } = require('api-utils/system');
 const file = require("api-utils/file");
 const url = require("api-utils/url");
 
@@ -14,7 +14,7 @@ const ERRORS = {
 };
 
 // Use profile directory to list / read / write files.
-const profilePath = pathTo('ProfD');
+const profilePath = pathFor('ProfD');
 const fileNameInProfile = 'compatibility.ini';
 const dirNameInProfile = 'extensions';
 const filePathInProfile = file.join(profilePath, fileNameInProfile);
@@ -84,7 +84,7 @@ exports.testRead = function(test) {
                      "file.read() should work");
 
   test.assertRaises(function() {
-    file.read(file.join(dirPathInProfile, "does-not-extists"));
+    file.read(file.join(dirPathInProfile, "does-not-exists"));
   }, ERRORS.FILE_NOT_FOUND, "file.read() on nonexistent file should throw");
 
   test.assertRaises(function() {

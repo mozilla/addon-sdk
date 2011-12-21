@@ -1,9 +1,9 @@
 const port = 8080;
 const file = require("api-utils/file");
-const { pathTo } = require("api-utils/system");
+const { pathFor } = require("api-utils/system");
 
 exports.testBasicHTTPServer = function(test) {
-  let basePath = pathTo("TmpD");
+  let basePath = pathFor("TmpD");
   let filePath = file.join(basePath, 'test-httpd.txt');
   let content = "This is the HTTPD test file.\n";
   let fileStream = file.open(filePath, 'w');

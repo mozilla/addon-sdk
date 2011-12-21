@@ -39,7 +39,7 @@
 
 const byteStreams = require("byte-streams");
 const file = require("file");
-const { pathTo } = require("api-utils/system");
+const { pathFor } = require("api-utils/system");
 const { Loader } = require("./helpers");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
@@ -189,7 +189,7 @@ exports.testUnload = function (test) {
 
 // Returns the name of a file that should be used to test writing and reading.
 function dataFileFilename() {
-  return file.join(pathTo("ProfD"), "test-byte-streams-data");
+  return file.join(pathFor("ProfD"), "test-byte-streams-data");
 }
 
 // Opens and returns the given file and ensures it's of the correct class.

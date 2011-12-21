@@ -36,11 +36,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 const { Request } = require("addon-kit/request");
-const { pathTo } = require("api-utils/system");
+const { pathFor } = require("api-utils/system");
 const { startServerAsync } = require("api-utils/httpd");
 const file = require("api-utils/file");
 
-const basePath = pathTo("TmpD")
+const basePath = pathFor("TmpD")
 const port = 8080;
 
 
