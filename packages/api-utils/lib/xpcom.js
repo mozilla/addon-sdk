@@ -42,7 +42,6 @@ const { Cc, Ci, Cr, Cm } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
-const { sdkVersion } = require('@packaging');
 const { when: unload } = require('./unload');
 const { Base } = require('./base');
 const { uuid } = require('./uuid');
