@@ -591,7 +591,10 @@ const xRayWrappersMethodsFixes = {
   mozMatchesSelector: function (obj) {
     // Ensure that we are on an object to expose this buggy method
     try {
-      obj.QueryInterface(Ci.nsIDOMNSElement);
+      // Bug 707576 removed nsIDOMNSElement.
+      // Can be simplified as soon as Firefox 11 become the minversion
+      obj.QueryInterface("nsIDOMElement" in Ci ? Ci.nsIDOMElement :
+                                                 Ci.nsIDOMNSElement);
     }
     catch(e) {
       return null;

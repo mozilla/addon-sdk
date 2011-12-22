@@ -47,6 +47,9 @@ const appInfo = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULAppInfo); 
 const runtime = Cc["@mozilla.org/xre/app-info;1"].
                 getService(Ci.nsIXULRuntime);
+const directoryService = Cc['@mozilla.org/file/directory_service;1'].
+                         getService(Ci.nsIProperties);
+
 
 const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
 
@@ -75,6 +78,25 @@ exports.exit = function exit(code) {
   }
 
   appStartup.quit(code ? E_ATTEMPT : E_FORCE);
+};
+
+/**
+ * Returns a path of the system's or application's special directory / file
+ * associated with a given `id`. For list of possible `id`s please see:
+ * https://developer.mozilla.org/en/Code_snippets/File_I%2F%2FO#Getting_special_files
+ * http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsAppDirectoryServiceDefs.h
+ * @example
+ *
+ *    // get firefox profile path
+ *    let profilePath = require('system').pathFor('ProfD');
+ *    // get OS temp files directory (/tmp)
+ *    let temps = require('system').pathFor('TmpD');
+ *    // get OS desktop path for an active user (~/Desktop on linux
+ *    // or C:\Documents and Settings\username\Desktop on windows).
+ *    let desktopPath = require('system').pathFor('Desk');
+ */
+exports.pathFor = function pathFor(id) {
+  return directoryService.get(id, Ci.nsIFile).path;
 };
 
 /**

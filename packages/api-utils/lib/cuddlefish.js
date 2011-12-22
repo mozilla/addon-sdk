@@ -76,7 +76,7 @@ const Sandbox = {
     );
   },
   load: function load(uri) {
-    scriptLoader.loadSubScript(uri, this.sandbox);
+    scriptLoader.loadSubScript(uri, this.sandbox, 'UTF-8');
   },
   merge: function merge(properties) {
     Object.getOwnPropertyNames(properties).forEach(function(name) {

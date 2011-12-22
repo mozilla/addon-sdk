@@ -1,7 +1,11 @@
-var file = require("file");
-var url = require("url");
-var byteStreams = require("byte-streams");
-var textStreams = require("text-streams");
+"use strict";
+
+const { pathFor } = require('api-utils/system');
+const file = require("api-utils/file");
+const url = require("api-utils/url");
+
+const byteStreams = require("api-utils/byte-streams");
+const textStreams = require("api-utils/text-streams");
 
 const ERRORS = {
   FILE_NOT_FOUND: /^path does not exist: .+$/,
@@ -9,24 +13,25 @@ const ERRORS = {
   NOT_A_FILE: /^path is not a file: .+$/,
 };
 
-var myurl = module.uri;
-var mydir = myurl.slice(0, -("test-file.js".length));
-var otherdir = mydir + "modules/";
+// Use profile directory to list / read / write files.
+const profilePath = pathFor('ProfD');
+const fileNameInProfile = 'compatibility.ini';
+const dirNameInProfile = 'extensions';
+const filePathInProfile = file.join(profilePath, fileNameInProfile);
+const dirPathInProfile = file.join(profilePath, dirNameInProfile);
 
 exports.testDirName = function(test) {
-  var aDir = url.toFilename(otherdir);
-  test.assertEqual(file.dirname(aDir),
-                   aDir.slice(0, aDir.lastIndexOf("modules")-1),
+  test.assertEqual(file.dirname(dirPathInProfile), profilePath,
                    "file.dirname() of dir should return parent dir");
 
-  aDir = url.toFilename(myurl);
-  test.assertEqual(file.dirname(aDir),
-                   aDir.slice(0, aDir.lastIndexOf("test-file")-1),
+  test.assertEqual(file.dirname(filePathInProfile), profilePath,
                    "file.dirname() of file should return its dir");
 
-  while (aDir)
-    aDir = file.dirname(aDir);
-  test.assertEqual(aDir, "",
+  let dir = profilePath;
+  while (dir)
+    dir = file.dirname(dir);
+
+  test.assertEqual(dir, "",
                    "dirname should return empty string when dir has no parent");
 };
 
@@ -35,14 +40,14 @@ exports.testBasename = function(test) {
   // systems this will be /.  We'll use it below to build up some test paths.
   // We have to go to this trouble because file.join() needs a legal path as a
   // base case; join("foo", "bar") doesn't work unfortunately.
-  var topPath = url.toFilename(myurl);
-  var parentPath = file.dirname(topPath);
+  let topPath = profilePath;
+  let parentPath = file.dirname(topPath);
   while (parentPath) {
     topPath = parentPath;
     parentPath = file.dirname(topPath);
   }
 
-  var path = topPath;
+  let path = topPath;
   test.assertEqual(file.basename(path), "",
                    "basename should work on paths with no components");
 
@@ -56,71 +61,63 @@ exports.testBasename = function(test) {
 };
 
 exports.testList = function(test) {
-  var list = file.list(url.toFilename(otherdir));
-  var found = [true for each (name in list)
-                    if (name == "add.js")];
+  let list = file.list(profilePath);
+  let found = [ true for each (name in list)
+                    if (name === fileNameInProfile) ];
+
   if (found.length > 1)
     test.fail("a dir can't contain two files of the same name!");
   test.assertEqual(found[0], true, "file.list() should work");
 
-  test.assertRaises(
-    function() { file.list(url.toFilename(module.uri)); },
-    ERRORS.NOT_A_DIRECTORY,
-    "file.list() on non-dir should raise error"
-  );
+  test.assertRaises(function() {
+    file.list(filePathInProfile);
+  }, ERRORS.NOT_A_DIRECTORY, "file.list() on non-dir should raise error");
 
-  test.assertRaises(
-    function() { file.list(url.toFilename(mydir + "foo/")); },
-    ERRORS.FILE_NOT_FOUND,
-    "file.list() on nonexistent dir should raise error"
-  );
+  test.assertRaises(function() {
+    file.list(file.join(dirPathInProfile, "does-not-exist"));
+  }, ERRORS.FILE_NOT_FOUND, "file.list() on nonexistent should raise error");
 };
 
 exports.testRead = function(test) {
-  var filename = url.toFilename(module.uri);
-  var contents = file.read(filename);
-  test.assertMatches(contents, /file\.read\(\) should work/,
+  let contents = file.read(filePathInProfile);
+  test.assertMatches(contents, /Compatibility/,
                      "file.read() should work");
 
-  test.assertRaises(
-    function() { file.read(filename + "blah"); },
-    ERRORS.FILE_NOT_FOUND,
-    "file.read() on nonexistent file should raise error"
-  );
+  test.assertRaises(function() {
+    file.read(file.join(dirPathInProfile, "does-not-exists"));
+  }, ERRORS.FILE_NOT_FOUND, "file.read() on nonexistent file should throw");
 
-  test.assertRaises(
-   function() { file.read(url.toFilename(otherdir)); },
-   ERRORS.NOT_A_FILE,
-   "file.read() on dir should raise error"
-  );
+  test.assertRaises(function() {
+    file.read(dirPathInProfile);
+  }, ERRORS.NOT_A_FILE, "file.read() on dir should throw");
 };
 
 exports.testJoin = function(test) {
-  var filename = url.toFilename(myurl);
-  var baseDir = file.dirname(filename);
+  let baseDir = file.dirname(filePathInProfile);
 
-  test.assertEqual(file.join(baseDir, "test-file.js"),
-                   filename,
-                   "file.join() should work");
+  test.assertEqual(file.join(baseDir, fileNameInProfile),
+                   filePathInProfile, "file.join() should work");
 };
 
 exports.testOpenNonexistentForRead = function (test) {
-  var filename = dataFileFilename(test);
-  test.assertRaises(function () file.open(filename),
-                    ERRORS.FILE_NOT_FOUND,
-                    "file.open() on nonexistent file should raise error");
-  test.assertRaises(function () file.open(filename, "r"),
-                    ERRORS.FILE_NOT_FOUND,
-                    "file.open('r') on nonexistent file should raise error");
-  test.assertRaises(function () file.open(filename, "zzz"),
-                    ERRORS.FILE_NOT_FOUND,
-                    "file.open('zzz') on nonexistent file should raise error");
+  var filename = file.join(profilePath, 'does-not-exists');
+  test.assertRaises(function() {
+    file.open(filename);
+  }, ERRORS.FILE_NOT_FOUND, "file.open() on nonexistent file should throw");
+
+  test.assertRaises(function() {
+    file.open(filename, "r");
+  }, ERRORS.FILE_NOT_FOUND, "file.open('r') on nonexistent file should throw");
+
+  test.assertRaises(function() {
+    file.open(filename, "zz");
+  }, ERRORS.FILE_NOT_FOUND, "file.open('zz') on nonexistent file should throw");
 };
 
 exports.testOpenNonexistentForWrite = function (test) {
-  var filename = dataFileFilename(test);
+  let filename = file.join(profilePath, 'open.txt');
 
-  var stream = file.open(filename, "w");
+  let stream = file.open(filename, "w");
   stream.close();
 
   test.assert(file.exists(filename),
@@ -140,17 +137,19 @@ exports.testOpenNonexistentForWrite = function (test) {
 };
 
 exports.testOpenDirectory = function (test) {
-  var dir = file.dirname(url.toFilename(module.uri));
-  test.assertRaises(function () file.open(dir),
-                    ERRORS.NOT_A_FILE,
-                    "file.open() on directory should raise error");
-  test.assertRaises(function () file.open(dir, "w"),
-                    ERRORS.NOT_A_FILE,
-                    "file.open('w') on directory should raise error");
+  let dir = dirPathInProfile;
+  test.assertRaises(function() {
+    file.open(dir);
+  }, ERRORS.NOT_A_FILE, "file.open() on directory should throw");
+
+  test.assertRaises(function() {
+    file.open(dir, "w");
+  }, ERRORS.NOT_A_FILE, "file.open('w') on directory should throw");
 };
 
 exports.testOpenTypes = function (test) {
-  var filename = dataFileFilename(test);
+  let filename = file.join(profilePath, 'open-types.txt');
+
 
   // Do the opens first to create the data file.
   var stream = file.open(filename, "w");
@@ -187,22 +186,26 @@ exports.testOpenTypes = function (test) {
 };
 
 exports.testMkpathRmdir = function (test) {
-  var basePath = file.dirname(url.toFilename(module.uri));
-  var dirs = [];
-  for (var i = 0; i < 3; i++)
+  let basePath = profilePath;
+  let dirs = [];
+  for (let i = 0; i < 3; i++)
     dirs.push("test-file-dir");
-  var paths = [];
-  for (var i = 0; i < dirs.length; i++) {
-    var args = [basePath].concat(dirs.slice(0, i + 1));
+
+  let paths = [];
+  for (let i = 0; i < dirs.length; i++) {
+    let args = [basePath].concat(dirs.slice(0, i + 1));
     paths.unshift(file.join.apply(null, args));
   }
-  for (i = 0; i < paths.length; i++) {
+
+  for (let i = 0; i < paths.length; i++) {
     test.assert(!file.exists(paths[i]),
                 "Sanity check: path should not exist: " + paths[i]);
   }
+
   file.mkpath(paths[0]);
   test.assert(file.exists(paths[0]), "mkpath should create path: " + paths[0]);
-  for (i = 0; i < paths.length; i++) {
+
+  for (let i = 0; i < paths.length; i++) {
     file.rmdir(paths[i]);
     test.assert(!file.exists(paths[i]),
                 "rmdir should remove path: " + paths[i]);
@@ -210,8 +213,8 @@ exports.testMkpathRmdir = function (test) {
 };
 
 exports.testMkpathTwice = function (test) {
-  var dir = file.dirname(url.toFilename(module.uri));
-  var path = file.join(dir, "test-file-dir");
+  let dir = profilePath;
+  let path = file.join(dir, "test-file-dir");
   test.assert(!file.exists(path),
               "Sanity check: path should not exist: " + path);
   file.mkpath(path);
@@ -224,22 +227,22 @@ exports.testMkpathTwice = function (test) {
 };
 
 exports.testMkpathExistingNondirectory = function (test) {
-  var fname = dataFileFilename(test);
+  var fname = file.join(profilePath, 'conflict.txt');
   file.open(fname, "w").close();
   test.assert(file.exists(fname), "File should exist");
-  test.assertRaises(function () file.mkpath(fname),
+  test.assertRaises(function() file.mkpath(fname),
                     /^The path already exists and is not a directory: .+$/,
                     "mkpath on file should raise error");
   file.remove(fname);
 };
 
 exports.testRmdirNondirectory = function (test) {
-  var fname = dataFileFilename(test);
+  var fname = file.join(profilePath, 'not-a-dir')
   file.open(fname, "w").close();
   test.assert(file.exists(fname), "File should exist");
-  test.assertRaises(function () file.rmdir(fname),
-                    ERRORS.NOT_A_DIRECTORY,
-                    "rmdir on file should raise error");
+  test.assertRaises(function() {
+    file.rmdir(fname);
+  }, ERRORS.NOT_A_DIRECTORY, "rmdir on file should raise error");
   file.remove(fname);
   test.assert(!file.exists(fname), "File should not exist");
   test.assertRaises(function () file.rmdir(fname),
@@ -248,12 +251,12 @@ exports.testRmdirNondirectory = function (test) {
 };
 
 exports.testRmdirNonempty = function (test) {
-  var dir = file.dirname(url.toFilename(module.uri));
-  var path = file.join(dir, "test-file-dir");
+  let dir = profilePath;
+  let path = file.join(dir, "test-file-dir");
   test.assert(!file.exists(path),
               "Sanity check: path should not exist: " + path);
   file.mkpath(path);
-  var filePath = file.join(path, "file");
+  let filePath = file.join(path, "file");
   file.open(filePath, "w").close();
   test.assert(file.exists(filePath),
               "Sanity check: path should exist: " + filePath);
@@ -264,13 +267,3 @@ exports.testRmdirNonempty = function (test) {
   file.rmdir(path);
   test.assert(!file.exists(path), "Path should not exist");
 };
-
-// Returns the name of a file that should be used to test writing and reading.
-function dataFileFilename(test) {
-  var dir = file.dirname(url.toFilename(module.uri));
-  var fname = file.join(dir, "test-file-data");
-  test.assert(!file.exists(fname),
-              "Sanity check: the file that this test assumes does not " +
-              "exist should really not exist!");
-  return fname;
-}
