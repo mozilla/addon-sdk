@@ -128,7 +128,7 @@ function removeMessageListener(name, listener) {
  *    Indicates if the call is synchronous or asynchronous
  * @param {String} name
  *    The name of the message to send to the listeners.
- * @param {Object} data
+ * @param {Object} [data=null]
  *    A JSON object containing data to be delivered to the listeners.
  * @param {Object} [sender=undefined]
  *    The object that sent the message. If is not specified is the context
@@ -139,38 +139,49 @@ function removeMessageListener(name, listener) {
  */
 function sendMessage(sync, name, data, sender) {
   sender || (sender = this);
+  typeof data === "undefined" && (data = null);
 
   if (!sync && this) {
     setTimeout(sendMessage, 10, sync, name, data, this);
-    return;
+    return undefined;
   }
 
   let listeners = frame(frame(sender).receiver).listeners;
 
-  let returnValues = [];
+  let responses = [];
+
+  let returnValue = sync ? responses : undefined;
 
   if (!(name in listeners))
-    return sync ? returnValues : undefined;
+    return returnValue;
 
   let json = JSON.parse(JSON.stringify(data, jsonFixer));
 
   for each(let listener in listeners[name]) {
     try {
-      returnValues.push(listener.call(null, {
+      let response = listener.call(null, {
         sync : sync,
         name : name,
         json : json,
         target : null
-      }));
+      });
+
+      if (sync) {
+        if (typeof response === "undefined")
+          responses.push(response);
+        else
+          responses.push(JSON.parse(JSON.stringify(response, jsonFixer)));
+      }
+
     } catch (e) {
       console.exception(e);
     }
   }
 
-  return sync ? returnValues : undefined;
+  return returnValue;
 };
 
-let frame = NS({receiver: null, listeners: {}});
+let frame = NS({receiver: null, listeners: null});
 
 /**
  * The MessageManager object emulates the Message Manager API, without creating
@@ -195,6 +206,9 @@ function MessageManager() {
 
   frame(this).receiver = sandbox;
   frame(sandbox).receiver = this;
+
+  frame(this).listeners = {};
+  frame(sandbox).listeners = {};
 }
 
 MessageManager.prototype = {
@@ -213,7 +227,7 @@ MessageManager.prototype = {
    *    The URL of the script to load into the frame; this must be an absolute
    *    URL, but data: URLs are supported.
    * @param {Boolean} allowDelayedLoad
-   *    Not implemented.
+   *    Not used.
    */
   loadFrameScript: function loadFrameScript(uri, async) {
     if (arguments.length < loadFrameScript.length)
