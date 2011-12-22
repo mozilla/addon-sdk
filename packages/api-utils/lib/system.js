@@ -90,10 +90,10 @@ exports.exit = function exit(code) {
  *    // get firefox profile path
  *    let profilePath = require('system').pathFor('ProfD');
  *    // get OS temp files directory (/tmp)
- *    let temps = require('system').pothFor('TmpD');
+ *    let temps = require('system').pathFor('TmpD');
  *    // get OS desktop path for an active user (~/Desktop on linux
  *    // or C:\Documents and Settings\username\Desktop on windows).
- *    let desktopPath = require('system').pothFor('Desk');
+ *    let desktopPath = require('system').pathFor('Desk');
  */
 exports.pathFor = function pathFor(id) {
   return directoryService.get(id, Ci.nsIFile).path;
