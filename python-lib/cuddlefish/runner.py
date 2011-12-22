@@ -366,7 +366,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
             norun=None,
-            used_files=None, enable_mobile=False,
+            build=None, enable_mobile=False,
             mobile_app_name=None):
     if binary:
         binary = os.path.expanduser(binary)
@@ -456,10 +456,10 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     from cuddlefish.xpi import build_xpi
     xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
     build_xpi(template_root_dir=harness_root_dir,
-              manifest=manifest_rdf,
+              manifest_rdf=manifest_rdf,
               xpi_path=xpi_path,
               harness_options=harness_options,
-              limit_to=used_files)
+              build=build)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()

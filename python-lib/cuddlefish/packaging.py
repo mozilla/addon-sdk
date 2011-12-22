@@ -161,6 +161,7 @@ def get_config_in_dir(path):
         raise MalformedPackageError('%s not found in "%s"' % (MANIFEST_NAME,
                                                               path))
     base_json = load_json_file(package_json)
+    base_json.fullContents = open(package_json, 'rb').read().decode('utf-8')
 
     if 'name' not in base_json:
         base_json.name = os.path.basename(path)
@@ -274,14 +275,18 @@ def get_deps_for_targets(pkg_cfg, targets):
 
     return visited
 
-def generate_build_for_target(pkg_cfg, target, deps,
+def generate_build_for_target(pkg_cfg, target, deps, manifest,
                               include_tests=True,
                               include_dep_tests=False,
                               default_loader=DEFAULT_LOADER):
-
-    build = Bunch(# Contains section directories for all packages:
-                  packages=Bunch()
-                  )
+    # this 'build' provides everything we'll need to know when constructing
+    # the XPI
+    build = Bunch()
+    build.packages=Bunch() # Contains section directories for all packages
+    build.manifest = manifest
+    build.compile_map = manifest.get_compile_map().copy()
+    build.pseudofile_map = manifest.get_pseudofile_map().copy()
+    build.decompile_data = manifest.get_decompile_data().copy()
 
     def add_section_to_build(cfg, section, is_code=False,
                              is_data=False):
@@ -316,8 +321,7 @@ def generate_build_for_target(pkg_cfg, target, deps,
         if include_tests and include_dep_tests:
             add_section_to_build(dep_cfg, "tests", is_code=True)
         if ("loader" in dep_cfg) and ("loader" not in build):
-            build.loader = "%s/%s" % (dep,
-                                                 dep_cfg.loader)
+            build.loader = "%s/%s" % (dep, dep_cfg.loader)
 
     target_cfg = pkg_cfg.packages[target]
 
@@ -331,11 +335,17 @@ def generate_build_for_target(pkg_cfg, target, deps,
         add_dep_to_build(DEFAULT_LOADER)
 
     if 'icon' in target_cfg:
-        build['icon'] = os.path.join(target_cfg.root_dir, target_cfg.icon)
+        build.compile_map["icon.png"] = os.path.join(target_cfg.root_dir,
+                                                     target_cfg.icon)
+        build.decompile_data["filemap"]["icon.png"] = [target_cfg.name,
+                                                       target_cfg.icon]
         del target_cfg['icon']
 
     if 'icon64' in target_cfg:
-        build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
+        build.compile_map["icon64.png"] = os.path.join(target_cfg.root_dir,
+                                                       target_cfg.icon64)
+        build.decompile_data["filemap"]["icon64.png"] = [target_cfg.name,
+                                                         target_cfg.icon64]
         del target_cfg['icon64']
 
     if ('preferences' in target_cfg):

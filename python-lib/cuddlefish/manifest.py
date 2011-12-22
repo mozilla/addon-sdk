@@ -1,17 +1,7 @@
 
 import os, sys, re, hashlib
 import simplejson as json
-SEP = os.path.sep
 from cuddlefish.util import filter_filenames, filter_dirnames
-
-def js_zipname(packagename, modulename):
-    return "%s-lib/%s.js" % (packagename, modulename)
-def docs_zipname(packagename, modulename):
-    return "%s-docs/%s.md" % (packagename, modulename)
-def datamap_zipname(packagename):
-    return "%s-data.json" % packagename
-def datafile_zipname(packagename, datapath):
-    return "%s-data/%s" % (packagename, datapath)
 
 def to_json(o):
     return json.dumps(o, indent=1).encode("utf-8")+"\n"
@@ -41,28 +31,54 @@ class BadSection(Exception):
 class UnreachablePrefixError(Exception):
     pass
 
-class ManifestEntry:
-    def __init__(self):
-        self.docs_filename = None
-        self.docs_hash = None
-        self.requirements = {}
-        self.datamap = None
+def hash_file(fn):
+    h = hashlib.sha256()
+    f = open(fn,"rb")
+    while True:
+        data = f.read(64*1024)
+        if not data:
+            break
+        h.update(data)
+    f.close()
+    return h.hexdigest()
 
-    def get_path(self):
-        path = "%s/%s/%s" % \
-               (self.packageName, self.sectionName, self.moduleName)
-        if not path.endswith(".js"):
-          path += ".js"
-        return path
+class ManifestEntry:
+    docs_filename = None
+    docs_hash = None
+    datamap = None
+
+    def __init__(self, packageName, sectionName, moduleName):
+        # the module graph may have cycles, so it's not trivial to include
+        # js_filename and docs_filename as constructor arguments
+        self.packageName = packageName
+        self.sectionName = sectionName
+        self.moduleName = moduleName
+        if self.moduleName.endswith(".js"):
+            self.moduleName = self.moduleName[:-3]
+        self.moduleNameJS = self.moduleName+".js"
+        self.path = "%s/%s/%s" % (packageName, sectionName, self.moduleNameJS)
+        self.requirements = {}
+
+    def add_js(self, js_filename):
+        self.js_filename = js_filename
+        self.js_hash = hash_file(js_filename)
+    def add_docs(self, docs_filename):
+        self.docs_filename = docs_filename
+        self.docs_hash = hash_file(docs_filename)
+    def add_requirement(self, reqname, reqdata):
+        self.requirements[reqname] = reqdata # sometimes a ManifestEntry
+    def add_data(self, datamap):
+        self.datamap = datamap
 
     def get_entry_for_manifest(self):
         entry = { "packageName": self.packageName,
                   "sectionName": self.sectionName,
                   "moduleName": self.moduleName,
                   "jsSHA256": self.js_hash,
-                  "docsSHA256": self.docs_hash,
                   "requirements": {},
                   }
+        if self.docs_hash:
+            entry["docsSHA256"] = self.docs_hash
         for req in self.requirements:
             if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
@@ -76,35 +92,33 @@ class ManifestEntry:
         if self.datamap:
             entry["requirements"]["self"] = {
                 "path": "self",
-                "mapSHA256": self.datamap.data_manifest_hash,
-                "mapName": self.packageName+"-data",
-                "dataURIPrefix": "%s/data/" % (self.packageName),
+                "mapSHA256": self.datamap.get_manifest_hash(),
+                "mapName": "%s/data.json" % self.packageName,
+                "dataURIPrefix": "%s/data/" % self.packageName,
                 }
         return entry
 
-    def add_js(self, js_filename):
-        self.js_filename = js_filename
-        self.js_hash = hash_file(js_filename)
-    def add_docs(self, docs_filename):
-        self.docs_filename = docs_filename
-        self.docs_hash = hash_file(docs_filename)
-    def add_requirement(self, reqname, reqdata):
-        self.requirements[reqname] = reqdata
-    def add_data(self, datamap):
-        self.datamap = datamap
 
+    def get_path(self):
+        # this goes into the manifest. The loader knows to prepend
+        # "resources/" before looking in the XPI.
+        return self.path
     def get_js_zipname(self):
-        return js_zipname(self.packagename, self.modulename)
+        return "resources/"+self.path
+    def get_js_filename(self):
+        return self.js_filename
+    def get_relative_js_filepath(self):
+        return [self.packageName, self.sectionName, self.moduleNameJS]
+
+    def has_docs(self):
+        return bool(self.docs_filename)
     def get_docs_zipname(self):
-        if self.docs_hash:
-            return docs_zipname(self.packagename, self.modulename)
-        return None
-    # self.js_filename
-    # self.docs_filename
+        return "resources/%s/docs/%s.md" % (self.packageName, self.moduleName)
+    def get_docs_filename(self):
+        return self.docs_filename
+    def get_relative_docs_filepath(self):
+        return [self.packageName, "docs", self.moduleName+".md"]
 
-
-def hash_file(fn):
-    return hashlib.sha256(open(fn,"rb").read()).hexdigest()
 
 def get_datafiles(datadir):
     # yields pathnames relative to DATADIR, ignoring some files
@@ -114,9 +128,8 @@ def get_datafiles(datadir):
         dirnames[:] = filter_dirnames(dirnames)
         for filename in filenames:
             fullname = os.path.join(dirpath, filename)
-            assert fullname.startswith(datadir+SEP), "%s%s not in %s" % (datadir, SEP, fullname)
-            yield fullname[len(datadir+SEP):]
-
+            assert fullname.startswith(datadir+os.path.sep), "%s%s not in %s" % (datadir, os.path.sep, fullname)
+            yield fullname[len(datadir+os.path.sep):]
 
 class DataMap:
     # one per package
@@ -127,14 +140,23 @@ class DataMap:
         datamap = {}
         datadir = os.path.join(pkg.root_dir, "data")
         for dataname in get_datafiles(datadir):
+            relpath = dataname.split(os.path.sep)
+            zipname = "resources/%s/data/%s" % (self.name, "/".join(relpath))
             absname = os.path.join(datadir, dataname)
-            zipname = datafile_zipname(pkg.name, dataname)
             datamap[dataname] = hash_file(absname)
-            self.files_to_copy.append( (zipname, absname) )
+            filedata = (zipname, absname, relpath)
+            self.files_to_copy.append(filedata)
         self.data_manifest = to_json(datamap)
-        self.data_manifest_hash = hashlib.sha256(self.data_manifest).hexdigest()
-        self.data_manifest_zipname = datamap_zipname(pkg.name)
-        self.data_uri_prefix = "%s/data/" % (self.name)
+
+    def get_files_to_copy(self):
+        return self.files_to_copy
+    def get_manifest_zipname(self):
+        return "resources/%s/data.json" % self.name
+    def get_manifest(self):
+        return self.data_manifest
+    def get_manifest_hash(self):
+        return hashlib.sha256(self.data_manifest).hexdigest()
+
 
 class BadChromeMarkerError(Exception):
     pass
@@ -186,49 +208,51 @@ class ManifestBuilder:
             top_me = self.process_module(self.find_top(self.target_cfg))
             self.top_path = top_me.get_path()
         if scan_tests:
-            mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
-            self.process_module(mi)
-            # also scan all test files in all packages that we use. By making
-            # a copy of self.used_packagenames first, we refrain from
-            # processing tests in packages that our own tests depend upon. If
-            # we're running tests for package A, and either modules in A or
-            # tests in A depend upon modules from package B, we *don't* want
-            # to run tests for package B.
-            test_modules = []
-            dirnames = self.target_cfg["tests"]
-            if isinstance(dirnames, basestring):
-                dirnames = [dirnames]
-            dirnames = [os.path.join(self.target_cfg.root_dir, d)
-                        for d in dirnames]
-            for d in dirnames:
-                for filename in os.listdir(d):
-                    if filename.startswith("test-") and filename.endswith(".js"):
-                        testname = filename[:-3] # require(testname)
-                        #re.search(r'^test-.*\.js$', filename):
-                        tmi = ModuleInfo(self.target_cfg, "tests", testname,
-                                         os.path.join(d, filename), None)
-                        # scan the test's dependencies
-                        tme = self.process_module(tmi)
-                        test_modules.append( (testname, tme) )
-            # also add it as an artificial dependency of unit-test-finder, so
-            # the runtime dynamic load can work.
-            test_finder = self.get_manifest_entry("api-utils", "lib",
-                                                  "unit-test-finder")
-            for (testname,tme) in test_modules:
-                test_finder.add_requirement(testname, tme)
-                # finally, tell the runtime about it, so they won't have to
-                # search for all tests. self.test_modules will be passed
-                # through the harness-options.json file in the
-                # .allTestModules property.
-                self.test_modules.append(testname)
-
+            self.scan_tests()
         # include files used by the loader
         for em in self.extra_modules:
             (pkgname, section, modname, js) = em
             mi = ModuleInfo(self.pkg_cfg.packages[pkgname], section, modname,
                             js, None)
             self.process_module(mi)
+        self.build_compile_maps()
 
+    def scan_tests(self):
+        mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
+        self.process_module(mi)
+        # also scan all test files in all packages that we use. By making
+        # a copy of self.used_packagenames first, we refrain from
+        # processing tests in packages that our own tests depend upon. If
+        # we're running tests for package A, and either modules in A or
+        # tests in A depend upon modules from package B, we *don't* want
+        # to run tests for package B.
+        test_modules = []
+        dirnames = self.target_cfg["tests"]
+        if isinstance(dirnames, basestring):
+            dirnames = [dirnames]
+        dirnames = [os.path.join(self.target_cfg.root_dir, d)
+                    for d in dirnames]
+        for d in dirnames:
+            for filename in os.listdir(d):
+                if filename.startswith("test-") and filename.endswith(".js"):
+                    testname = filename[:-3] # require(testname)
+                    #re.search(r'^test-.*\.js$', filename):
+                    tmi = ModuleInfo(self.target_cfg, "tests", testname,
+                                     os.path.join(d, filename), None)
+                    # scan the test's dependencies
+                    tme = self.process_module(tmi)
+                    test_modules.append( (testname, tme) )
+        # also add it as an artificial dependency of unit-test-finder, so
+        # the runtime dynamic load can work.
+        test_finder = self.get_manifest_entry("api-utils", "lib",
+                                              "unit-test-finder")
+        for (testname,tme) in test_modules:
+            test_finder.add_requirement(testname, tme)
+            # finally, tell the runtime about it, so they won't have to
+            # search for all tests. self.test_modules will be passed
+            # through the harness-options.json file in the
+            # .allTestModules property.
+            self.test_modules.append(testname)
 
     def get_module_entries(self):
         return frozenset(self.manifest.values())
@@ -242,16 +266,6 @@ class ManifestBuilder:
             used.add(package)
         return sorted(used)
 
-    def get_used_files(self):
-        # returns all .js files that we reference, plus data/ files. You will
-        # need to add the loader, off-manifest files that it needs, and
-        # generated metadata.
-        for me in self.get_module_entries():
-            yield me.js_filename
-            if me.datamap:
-                for (zipname, absname) in me.datamap.files_to_copy:
-                    yield absname
-
     def get_all_test_modules(self):
         return self.test_modules
 
@@ -262,13 +276,76 @@ class ManifestBuilder:
             manifest[path] = me.get_entry_for_manifest()
         return manifest
 
+    def build_compile_maps(self):
+        # create self.compile_map, self.pseudofiles, and self.decompile_data
+        self.compile_map = compile_map = {}
+        self.pseudofile_map = pseudofile_map = {} # maps zipname to bytestring
+        self.decompile_data = {}
+        self.decompile_data["main"] = self.target_cfg.name
+        self.decompile_data["filemap"] = decompile_map = {}
+
+        # JS and docs go into the zipfile
+        include_docs = False # need to consider this
+        for index, me in self.manifest.items():
+            js_zipname = me.get_js_zipname()
+            compile_map[js_zipname] = me.get_js_filename()
+            decompile_map[js_zipname] = me.get_relative_js_filepath()
+            docs_zipname = me.get_docs_zipname()
+            if include_docs and docs_zipname:
+                compile_map[docs_zipname] = me.get_docs_filename()
+                decompile_map[docs_zipname] = me.get_relative_docs_filepath()
+
+        # and all bundled data/ files
+        for pkgname, dm in self.datamaps.items():
+            for (zipname, absname, relpath) in dm.get_files_to_copy():
+                compile_map[zipname] = absname
+                decompile_map[zipname] = [pkgname, "data"] + relpath
+            pseudofile_map[dm.get_manifest_zipname()] = dm.get_manifest()
+
+        # include package.json too
+        for pkgname in self.used_packagenames:
+            pkg = self.pkg_cfg.packages[pkgname]
+            target = "resources/%s/package.json" % pkgname
+            pseudofile_map[target] = pkg.fullContents
+            decompile_map[target] = [pkgname, "package.json"]
+
+    def get_compile_map(self):
+        # return a dict that maps each XPI-relative pathname to a local disk
+        # filename. XPI pathnames are always joined with "/", regardless of
+        # the local os.sep value. Local disk filenames are absolute. If you
+        # copy all these files into the XPI, and add the files from the
+        # template_root_dir, and install.rdf, and icon/icon64.png, and
+        # harness-options.json, then you'll have a complete addon. You
+        # probably want to store the corresponding decompile map too, so you
+        # can reverse the process later.
+        return self.compile_map
+
+    def get_pseudofile_map(self):
+        # return a dict mapping XPI-relative pathname to bytestrings, which
+        # should be written into the XPI. This is used for generated files.
+        return self.pseudofile_map
+
+    def get_decompile_data(self):
+        # Return a dict which explains how to unpack the XPI into a source
+        # tree. The "main" element names the main (entry-point) package. The
+        # "filemap" element is a dict that maps XPI-relative name to a
+        # pathlist (list of pathname components, ready for
+        # os.sep.join(pathlist) ). If you make local copies of all these
+        # files (creating directories as necessary), and put them all on
+        # --package-path, and run 'cfx xpi' from inside data["main"], then
+        # you should be able to reconstruct the XPI.
+        #
+        # The filemap looks a lot like the return value of get_compile_map(),
+        # but the filename keys will be shorter (and are lists). The compile
+        # map's keys are absolute paths to various source directories, the
+        # decompile map's keys are all relative pathlists to the same
+        # anonymous output directory.
+        return self.decompile_data
+
     def get_manifest_entry(self, package, section, module):
         index = (package, section, module)
         if index not in self.manifest:
-            m = self.manifest[index] = ManifestEntry()
-            m.packageName = package
-            m.sectionName = section
-            m.moduleName = module
+            self.manifest[index] = ManifestEntry(package, section, module)
             self.used_packagenames.add(package)
         return self.manifest[index]
 
@@ -305,7 +382,7 @@ class ManifestBuilder:
         if not fn.startswith(libdir):
             raise UnreachablePrefixError("Sorry, but the 'main' file (%s) in package %s is outside that package's 'lib' directory (%s), so I cannot construct a URI to reach it."
                                          % (fn, pkg.name, pkglib))
-        name = fn[len(libdir):].lstrip(SEP)[:-len(".js")]
+        name = fn[len(libdir):].lstrip(os.path.sep)[:-len(".js")]
         return name
 
 
@@ -374,9 +451,7 @@ class ManifestBuilder:
                 # this might reference bundled data, so:
                 #  1: hash that data, add the hash as a dependency
                 #  2: arrange for the data to be copied into the XPI later
-                if pkg.name not in self.datamaps:
-                    self.datamaps[pkg.name] = DataMap(pkg)
-                dm = self.datamaps[pkg.name]
+                dm = self.add_datamap(pkg.name, pkg)
                 me.add_data(dm) # 'self' is implicit
             else:
                 # when two modules require() the same name, do they get a
@@ -408,6 +483,11 @@ class ManifestBuilder:
 
         return me
         #print "LEAVING", pkg.name, mi.name
+
+    def add_datamap(self, name, pkg):
+        if name not in self.datamaps:
+            self.datamaps[name] = DataMap(pkg)
+        return self.datamaps[name]
 
     def find_req_for(self, from_module, reqname, looked_in):
         # handle a single require(reqname) statement from from_module .
