@@ -194,21 +194,23 @@ exports['test:contentScriptFile'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptFile` option must be a local file URL or an array of'
+      'The `contentScriptFile` option must be a local URL or an array of'
           + 'URLs.',
       e.message
     );
   }
+
   try {
-    loader.contentScriptFile = ['oue', uri]
+    loader.contentScriptFile = [ 'oue', uri ]
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptFile` option must be a local file URL or an array of'
+      'The `contentScriptFile` option must be a local URL or an array of'
           + 'URLs.',
       e.message
     );
   }
+
   loader.contentScriptFile = undefined;
   test.assertEqual(
     null,
