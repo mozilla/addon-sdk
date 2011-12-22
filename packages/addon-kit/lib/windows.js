@@ -53,7 +53,6 @@ const { Cc, Ci } = require('chrome'),
       { WindowLoader } = require('api-utils/windows/loader'),
       { WindowTrackerTrait } = require('api-utils/window-utils'),
       { Options } = require('api-utils/tabs/tab'),
-      { utils } = require('api-utils/xpcom'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
 
