@@ -179,6 +179,12 @@ parser_groups = (
                                          metavar="KEY=VALUE",
                                          default=[],
                                          cmds=['xpi'])),
+        (("", "--stop-on-error",), dict(dest="stopOnError",
+                                  help="Stop running tests after the first failure",
+                                  action="store_true",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['test', 'testex', 'testpkgs'])),
         ]
      ),
 
@@ -314,20 +320,22 @@ def test_all(env_root, defaults):
     if result.failures or result.errors:
         fail = True
 
-    print >>sys.stderr, "Testing all examples..."
-    sys.stderr.flush()
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all examples..."
+        sys.stderr.flush()
 
-    try:
-        test_all_examples(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+        try:
+            test_all_examples(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
-    print >>sys.stderr, "Testing all packages..."
-    sys.stderr.flush()
-    try:
-        test_all_packages(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all packages..."
+        sys.stderr.flush()
+        try:
+            test_all_packages(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
@@ -365,8 +373,11 @@ def test_all_examples(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get("stopOnError"):
+            break
 
     if fail:
+        print >>sys.stderr, "Some examples tests were unsuccessful."
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
@@ -388,7 +399,10 @@ def test_all_packages(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get('stopOnError'):
+            break
     if fail:
+        print >>sys.stderr, "Some package tests were unsuccessful."
         sys.exit(-1)
 
 def get_config_args(name, env_root):
@@ -532,7 +546,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        inherited_options.extend(['iterations', 'filter', 'profileMemory',
+                                  'stopOnError'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True

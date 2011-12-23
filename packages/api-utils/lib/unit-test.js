@@ -50,6 +50,7 @@ exports.findAndRunTests = function findAndRunTests(options) {
   finder.findTests(
     function (tests) {
       runner.startMany({tests: tests,
+                        stopOnError: options.stopOnError,
                         onDone: options.onDone});
     });
 };
@@ -433,10 +434,14 @@ TestRunner.prototype = {
   startMany: function startMany(options) {
     function runNextTest(self) {
       var test = options.tests.shift();
-      if (test)
-        self.start({test: test, onDone: runNextTest});
-      else
+      if (options.stopOnError && self.test && self.test.failed) {
+        self.console.error("aborted: test failed and --stop-on-error was specified");
         options.onDone(self);
+      } else if (test) {
+        self.start({test: test, onDone: runNextTest});
+      } else {
+        options.onDone(self);
+      }
     }
     runNextTest(this);
   },

@@ -121,9 +121,7 @@ const BrowserWindowTrait = Trait.compose(
       this._window = null;
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
-      this._removeAllListeners('close');
-      this._removeAllListeners('open');
-      this._removeAllListeners('ready');
+      this._removeAllListeners();
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?

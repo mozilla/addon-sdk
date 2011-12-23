@@ -1,3 +1,4 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
@@ -20,7 +21,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original author)
+ *   Irakli Gozalishvili <gozala@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,52 +36,34 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-
 "use strict";
 
-const { EventEmitterTrait: EventEmitter } = require("../events");
-const { WindowTracker, windowIterator } = require("../window-utils");
-const { DOMEventAssembler } = require("../events/assembler");
-const { Trait } = require("../light-traits");
+const { Cc, Ci, CC, Cu } = require('chrome');
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
 
-// Event emitter objects used to register listeners and emit events on them
-// when they occur.
-const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
-  /**
-   * Method is implemented by `EventEmitter` and is used just for emitting
-   * events on registered listeners.
-   */
-  _emit: Trait.required,
-  /**
-   * Events that are supported and emitted by the module.
-   */
-  supportedEventsTypes: [ "activate", "deactivate" ],
-  /**
-   * Function handles all the supported events on all the windows that are
-   * observed. Method is used to proxy events to the listeners registered on
-   * this event emitter.
-   * @param {Event} event
-   *    Keyboard event being emitted.
-   */
-  handleEvent: function handleEvent(event) {
-    this._emit(event.type, event.target, event);
-  }
-});
+/**
+ * Make a new sandbox that inherits given `source`'s principals. Source can be
+ * URI string, DOMWindow or `null` for system principals.
+ */
+function sandbox(target, options) {
+  return Cu.Sandbox(target || systemPrincipal, options || {});
+}
+exports.sandbox = sandbox
 
-// Using `WindowTracker` to track window events.
-WindowTracker({
-  onTrack: function onTrack(chromeWindow) {
-    observer._emit("open", chromeWindow);
-    observer.observe(chromeWindow);
-  },
-  onUntrack: function onUntrack(chromeWindow) {
-    observer._emit("close", chromeWindow);
-    observer.ignore(chromeWindow);
-  }
-});
+/**
+ * Evaluates given `source` in a given `sandbox` and returns result.
+ */
+function evaluate(sandbox, code, uri, line, version) {
+  return Cu.evalInSandbox(code, sandbox, version || '1.8', uri || '', line || 1);
+}
+exports.evaluate = evaluate;
 
-// Making observer aware of already opened windows.
-for each (let window in windowIterator())
-  observer.observe(window);
-
-exports.observer = observer;
+/**
+ * Evaluates code under the given `uri` in the given `sandbox`.
+ */
+function load(sandbox, uri) {
+  return scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
+}
+exports.load = load;

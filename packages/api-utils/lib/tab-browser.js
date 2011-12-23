@@ -164,7 +164,7 @@ function Tracker(delegate, window) {
   this._delegate = delegate;
   this._browsers = [];
   this._window = window;
-  this._windowTracker = new windowUtils.WindowTracker(this);
+  this._windowTracker = windowUtils.WindowTracker(this);
 
   require("./unload").ensure(this);
 }
