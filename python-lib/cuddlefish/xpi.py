@@ -111,6 +111,7 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         file.close()
         zf.write('.locale.json', 'locales/' + language + '.json')
         os.remove('.locale.json')
+    del harness_options['locales']
 
     # now figure out which directories we need: all retained files parents
     for arcpath in files_to_copy:
