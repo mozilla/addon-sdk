@@ -42,8 +42,6 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
-
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
 const CONTENT_TYPE_HTML   = 2;

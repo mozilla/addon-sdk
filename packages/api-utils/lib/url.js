@@ -59,43 +59,6 @@ function newURI(uriStr, base) {
   }
 }
 
-function resolveResourceURI(uri) {
-  var resolved;
-  try {
-    resolved = resProt.resolveURI(uri);
-  } catch (e if e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
-    throw new Error("resource does not exist: " + uri.spec);
-  };
-  return resolved;
-}
-
-let fromFilename = exports.fromFilename = function fromFilename(path) {
-  var file = Cc['@mozilla.org/file/local;1']
-             .createInstance(Ci.nsILocalFile);
-  file.initWithPath(path);
-  return ios.newFileURI(file).spec;
-};
-
-let toFilename = exports.toFilename = function toFilename(url) {
-  var uri = newURI(url);
-  if (uri.scheme == "resource")
-    uri = newURI(resolveResourceURI(uri));
-  if (uri.scheme == "chrome") {
-    var channel = ios.newChannelFromURI(uri);
-    try {
-      channel = channel.QueryInterface(Ci.nsIFileChannel);
-      return channel.file.path;
-    } catch (e if e.result == Cr.NS_NOINTERFACE) {
-      throw new Error("chrome url isn't on filesystem: " + url);
-    }
-  }
-  if (uri.scheme == "file") {
-    var file = uri.QueryInterface(Ci.nsIFileURL).file;
-    return file.path;
-  }
-  throw new Error("cannot map to filename: " + url);
-};
-
 function URL(url, base) {
   if (!(this instanceof URL)) {
      return new URL(url, base);

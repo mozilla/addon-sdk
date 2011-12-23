@@ -41,7 +41,7 @@
 
 const { EventEmitter } = require('../events');
 const { validateOptions, getTypeOf } = require('../api-utils');
-const { URL, toFilename } = require('../url');
+const { URL } = require('../url');
 const file = require('../file');
 
 // map of property validations
@@ -66,8 +66,7 @@ const valid = {
         // Make sure every item is a local file URL.
         return value.every(function (item) {
           try {
-            toFilename(item);
-            return true;
+            return URL(item).scheme === 'resource'
           }
           catch(e) {
             return false;
@@ -76,7 +75,7 @@ const valid = {
       }
       return true;
     },
-    msg: 'The `contentScriptFile` option must be a local file URL or an array of'
+    msg: 'The `contentScriptFile` option must be a local URL or an array of'
           + 'URLs.'
   },
   contentScript: {

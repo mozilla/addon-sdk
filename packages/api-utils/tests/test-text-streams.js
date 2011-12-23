@@ -38,7 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 const file = require("file");
-const url = require("url");
+const { pathFor } = require("api-utils/system");
 const { Loader } = require("./helpers");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
@@ -176,8 +176,8 @@ exports.testUnload = function (test) {
   let loader = Loader(module);
   let file = loader.require("file");
 
-  let filename = url.toFilename(module.uri);
-  let stream = file.open(filename);
+  let filename = dataFileFilename("temp");
+  let stream = file.open(filename, "w");
 
   loader.unload();
   test.assert(stream.closed, "stream should be closed after module unload");
@@ -185,6 +185,5 @@ exports.testUnload = function (test) {
 
 // Returns the name of a file that should be used to test writing and reading.
 function dataFileFilename() {
-  let dir = file.dirname(url.toFilename(module.uri));
-  return file.join(dir, "test-text-streams-data");
+  return file.join(pathFor("ProfD"), "test-text-streams-data");
 }
