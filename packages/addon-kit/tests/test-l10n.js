@@ -57,12 +57,6 @@ exports.testExactMatching = function(test) {
                    "Multiple placeholders");
 
   // Plurals
-  test.assertEqual(_(["One download", "%d downloads"], 1),
-                   "Un téléchargement",
-                   "PluralForm as key, 1st form");
-  test.assertEqual(_(["One download", "%d downloads"], 2),
-                   "2 téléchargements",
-                   "PluralForm as key, 2nd form");
   test.assertEqual(_("downloadsCount", 1),
                    "Un téléchargement",
                    "PluralForm as value, 1st form");

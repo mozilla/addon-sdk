@@ -43,10 +43,10 @@ let globalHash = {};
 
 exports.get = function get(k) {
 
-  // In case of plural form hard coded in code,
-  // we take the last form as identifier
-  if (Array.isArray(k))
-    k = k[k.length-1];
+  // For now, we only accept a "string" as first argument
+  // TODO: handle plural forms in gettext pattern
+  if (typeof k !== "string")
+    throw new Error("First argument of localization method should be a string");
 
   // Get translation from big hashmap or default to hard coded string:
   let localized = globalHash[k] || k;
