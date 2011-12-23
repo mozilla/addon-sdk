@@ -33,7 +33,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-"use strict"
+"use strict";
 
 let prefs = require("preferences-service");
 let file = require("file");
@@ -45,10 +45,10 @@ exports.get = function get(k) {
 
   // In case of plural form hard coded in code,
   // we take the last form as identifier
-  if (typeof k == "object")
+  if (Array.isArray(k))
     k = k[k.length-1];
 
-  // Get translation from bigh hashmap or default to hard coded string:
+  // Get translation from big hashmap or default to hard coded string:
   let localized = globalHash[k] || k;
 
   // # Simplest usecase:

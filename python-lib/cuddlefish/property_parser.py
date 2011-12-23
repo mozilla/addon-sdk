@@ -68,7 +68,7 @@ def parse(lines, path=None):
 #   }
 PLURAL_FORM = re.compile(r'^(.*)\[(zero|one|two|few|many|other)\]$')
 def normalize_plural(path, pairs):
-    for key in pairs.keys():
+    for key in list(pairs.keys()):
         m = PLURAL_FORM.match(key)
         if not m:
             continue

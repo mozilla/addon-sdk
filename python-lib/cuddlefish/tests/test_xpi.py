@@ -226,17 +226,18 @@ class SmallXPI(unittest.TestCase):
         # Locales files are merged into one.
         # Conflicts are silently resolved by taking last package translation,
         # so that we get "No" translation from three-c instead of three-b one.
-        self.failUnlessEqual(locales, json.loads('\
-          {\
-            "No": "Nein",\
-            "one": "un",\
-            "What?": "Quoi?",\
-            "Yes": "Oui",\
-            "plural": {\
-              "other": "other",\
-              "one": "one"\
-            }\
-          }'))
+        self.failUnlessEqual(locales, json.loads(u'''
+          {
+            "No": "Nein",
+            "one": "un",
+            "What?": "Quoi?",
+            "Yes": "Oui",
+            "plural": {
+              "other": "other",
+              "one": "one"
+            },
+            "uft8_value": "\u00e9"
+          }'''))
 
 
 

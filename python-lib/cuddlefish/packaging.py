@@ -317,7 +317,7 @@ def generate_build_for_target(pkg_cfg, target, deps,
         for filename in files:
             fullpath = os.path.join(path, filename)
             if os.path.isfile(fullpath) and filename.endswith('.properties'):
-                language = filename[:-11]
+                language = filename[:-len('.properties')]
 
                 from property_parser import parse_file
                 content = parse_file(fullpath)

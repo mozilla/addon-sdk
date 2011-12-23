@@ -6,7 +6,7 @@ class TestParser(unittest.TestCase):
 
     def test_parse(self):
         pairs = parse([
-          # Comments are stipped only if `#` is the first non-space character
+          # Comments are striped only if `#` is the first non-space character
           "sharp=#can be in value",
           "# comment",
           "#key=value",
@@ -40,7 +40,7 @@ class TestParser(unittest.TestCase):
           "some": "spacesarestripped",
           "but": "not all of them"
         }
-        self.assertDictEqual(pairs, expected)
+        self.assertEqual(pairs, expected)
 
     def test_exceptions(self):
         self.failUnlessRaises(MalformedLocaleFileError, parse,
