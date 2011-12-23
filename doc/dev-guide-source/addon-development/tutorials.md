@@ -9,7 +9,10 @@
 
 ## Introducing the APIs ##
 
- [Modifying Web Pages](dev-guide/addon-development/tutorials/modifying-web-pages.html) 
+ [Modifying Web Pages Based on URL](dev-guide/addon-development/tutorials/modifying-web-pages-url.html) 
+<br/>
+
+ [Modifying the Current Web Page](dev-guide/addon-development/tutorials/modifying-web-pages-tab.html) 
 <br/>
 
  [Adding a Button to the Toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html) 
