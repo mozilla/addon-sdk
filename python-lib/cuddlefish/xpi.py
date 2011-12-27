@@ -101,6 +101,7 @@ def build_xpi(template_root_dir, manifest, xpi_path,
                 files_to_copy[str(arcpath)] = str(abspath)
     del harness_options['packages']
 
+    mkzipdir(zf, "locale/")
     for language in harness_options['locale']:
         locale = harness_options['locale'][language]
         # Be carefull about strings, we need to always ensure working with UTF-8

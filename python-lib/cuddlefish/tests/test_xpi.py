@@ -211,6 +211,7 @@ class SmallXPI(unittest.TestCase):
                     "resources/three-c/lib/sub/",
                     "resources/three-c/lib/sub/foo.js",
                     # notably absent: three-a/lib/unused.js
+                    "locale/",
                     "locale/fr-FR.json"
                     ]
         # showing deltas makes failures easier to investigate
