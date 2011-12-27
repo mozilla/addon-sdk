@@ -211,7 +211,7 @@ class SmallXPI(unittest.TestCase):
                     "resources/three-c/lib/sub/",
                     "resources/three-c/lib/sub/foo.js",
                     # notably absent: three-a/lib/unused.js
-                    "locales/fr-FR.json"
+                    "locale/fr-FR.json"
                     ]
         # showing deltas makes failures easier to investigate
         missing = set(expected) - set(names)
@@ -219,11 +219,11 @@ class SmallXPI(unittest.TestCase):
         self.failUnlessEqual((list(missing), list(extra)), ([], []))
         self.failUnlessEqual(sorted(names), sorted(expected))
 
-        # check locales file
+        # check locale files
         import simplejson as json
-        content = x.read("locales/fr-FR.json")
+        content = x.read("locale/fr-FR.json")
         locales = json.loads(content)
-        # Locales files are merged into one.
+        # Locale files are merged into one.
         # Conflicts are silently resolved by taking last package translation,
         # so that we get "No" translation from three-c instead of three-b one.
         self.failUnlessEqual(locales, json.loads(u'''

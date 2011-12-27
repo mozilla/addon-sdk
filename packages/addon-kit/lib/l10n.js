@@ -103,7 +103,7 @@ exports.get = function get(k) {
 // and following: http://tools.ietf.org/html/rfc4647#page-14
 function searchAddonLocaleFile(preferred) {
   // Locale files are stored in `locales` folder in XPI root folder:
-  let localesPath = file.join(require("@packaging").root, "locales");
+  let localesPath = file.join(require("@packaging").root, "locale");
   let locales = file.list(localesPath);
   let localeFile = null;
   // Select exact matching first

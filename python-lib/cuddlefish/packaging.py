@@ -282,7 +282,7 @@ def generate_build_for_target(pkg_cfg, target, deps,
 
     build = Bunch(# Contains section directories for all packages:
                   packages=Bunch(),
-                  locales=Bunch()
+                  locale=Bunch()
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -322,16 +322,16 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 from property_parser import parse_file
                 content = parse_file(fullpath)
 
-                # Merge current locales into global locales hashtable.
+                # Merge current locales into global locale hashtable.
                 # Locale files only contains one big JSON object
                 # that act as an hastable of:
                 # "keys to translate" => "translated keys"
-                if language in build.locales:
-                    merge = (build.locales[language].items() +
+                if language in build.locale:
+                    merge = (build.locale[language].items() +
                              content.items())
-                    build.locales[language] = Bunch(merge)
+                    build.locale[language] = Bunch(merge)
                 else:
-                    build.locales[language] = content
+                    build.locale[language] = content
 
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]

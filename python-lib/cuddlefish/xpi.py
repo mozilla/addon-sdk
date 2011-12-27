@@ -101,14 +101,14 @@ def build_xpi(template_root_dir, manifest, xpi_path,
                 files_to_copy[str(arcpath)] = str(abspath)
     del harness_options['packages']
 
-    for language in harness_options['locales']:
-        locale = harness_options['locales'][language]
+    for language in harness_options['locale']:
+        locale = harness_options['locale'][language]
         # Be carefull about strings, we need to always ensure working with UTF-8
         jsonStr = json.dumps(locale, indent=1, sort_keys=True, ensure_ascii=False)
-        info = zipfile.ZipInfo('locales/' + language + '.json')
+        info = zipfile.ZipInfo('locale/' + language + '.json')
         info.external_attr = 0444 << 16L
         zf.writestr(info, jsonStr.encode( "utf-8" ))
-    del harness_options['locales']
+    del harness_options['locale']
 
     # now figure out which directories we need: all retained files parents
     for arcpath in files_to_copy:
