@@ -168,6 +168,9 @@ function startup(data, reason) {
   let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
 
+  // Used by l10n module in order to fetch `locale` folder
+  options.root = data.installPath.path;
+
   // Register a new resource "domain" for this addon which is mapping to
   // XPI's `resources` folder.
   // Generate the domain name by using jetpack ID, which is the extension ID

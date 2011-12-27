@@ -100,5 +100,13 @@ class Directories(unittest.TestCase):
                          os.path.abspath(os.path.join(self.packages_path,
                                                       "default-root")))
 
+    def test_locale(self):
+        # package.json is empty, but locale/ exists and should be used
+        p = self.get_config("default-locale")
+        self.assertEqual(os.path.abspath(p.locale),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "default-locale",
+                                                      "locale")))
+
 if __name__ == "__main__":
     unittest.main()

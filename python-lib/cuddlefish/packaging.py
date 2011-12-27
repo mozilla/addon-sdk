@@ -184,6 +184,7 @@ def get_config_in_dir(path):
     set_section_dir(base_json, 'doc', path, ['doc', 'docs'])
     set_section_dir(base_json, 'data', path, ['data'])
     set_section_dir(base_json, 'packages', path, ['packages'])
+    set_section_dir(base_json, 'locale', path, ['locale'])
 
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
@@ -280,7 +281,8 @@ def generate_build_for_target(pkg_cfg, target, deps,
                               default_loader=DEFAULT_LOADER):
 
     build = Bunch(# Contains section directories for all packages:
-                  packages=Bunch()
+                  packages=Bunch(),
+                  locale=Bunch()
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -309,12 +311,36 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 # Register this section (lib, data, tests)
                 build.packages[cfg.name][section] = dirname
 
+    def add_locale_to_build(cfg):
+        path = resolve_dir(cfg, cfg['locale'])
+        files = os.listdir(path)
+        for filename in files:
+            fullpath = os.path.join(path, filename)
+            if os.path.isfile(fullpath) and filename.endswith('.properties'):
+                language = filename[:-len('.properties')]
+
+                from property_parser import parse_file
+                content = parse_file(fullpath)
+
+                # Merge current locales into global locale hashtable.
+                # Locale files only contains one big JSON object
+                # that act as an hastable of:
+                # "keys to translate" => "translated keys"
+                if language in build.locale:
+                    merge = (build.locale[language].items() +
+                             content.items())
+                    build.locale[language] = Bunch(merge)
+                else:
+                    build.locale[language] = content
+
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]
         add_section_to_build(dep_cfg, "lib", is_code=True)
         add_section_to_build(dep_cfg, "data", is_data=True)
         if include_tests and include_dep_tests:
             add_section_to_build(dep_cfg, "tests", is_code=True)
+        if 'locale' in dep_cfg:
+            add_locale_to_build(dep_cfg)
         if ("loader" in dep_cfg) and ("loader" not in build):
             build.loader = "%s/%s" % (dep,
                                                  dep_cfg.loader)
