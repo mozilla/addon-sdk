@@ -105,7 +105,9 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         locale = harness_options['locales'][language]
         # Be carefull about strings, we need to always ensure working with UTF-8
         jsonStr = json.dumps(locale, indent=1, sort_keys=True, ensure_ascii=False)
-        zf.writestr('locales/' + language + '.json', jsonStr.encode( "utf-8" ))
+        info = zipfile.ZipInfo('locales/' + language + '.json')
+        info.external_attr = 0444 << 16L
+        zf.writestr(info, jsonStr.encode( "utf-8" ))
     del harness_options['locales']
 
     # now figure out which directories we need: all retained files parents
