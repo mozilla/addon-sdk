@@ -79,8 +79,13 @@ exports.browserWindowIterator = browserWindowIterator;
 var windowTrackers = [];
 
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
-  this.delegate = delegate;
+   if (!(this instanceof WindowTracker)) {
+     return new WindowTracker(delegate);
+   }
+
+  this._delegate = delegate;
   this._loadingWindows = [];
+
   for (let window in windowIterator())
     this._regWindow(window);
 
@@ -88,6 +93,7 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   //then register the observer.
   if (windowTrackers.push(this) === 1)
     gWindowWatcher.registerNotification(WindowTrackerObs);
+
 };
 
 WindowTracker.prototype = {
@@ -108,15 +114,15 @@ WindowTracker.prototype = {
   _regWindow: function _regWindow(window) {
     if (window.document.readyState == "complete") {
       this._unregLoadingWindow(window);
-      this.delegate.onTrack(window);
+      this._delegate.onTrack(window);
     } else
       this._regLoadingWindow(window);
   },
 
   _unregWindow: function _unregWindow(window) {
     if (window.document.readyState == "complete") {
-      if (this.delegate.onUntrack)
-        this.delegate.onUntrack(window);
+      if (this._delegate.onUntrack)
+        this._delegate.onUntrack(window);
     } else {
       this._unregLoadingWindow(window);
     }
@@ -136,13 +142,13 @@ WindowTracker.prototype = {
       this._unregWindow(window);
   },
 
-  handleEvent: function handleEvent(event) {
+  handleEvent: errors.catchAndLog(function handleEvent(event) {
     if (event.type == "load" && event.target) {
       var window = event.target.defaultView;
       if (window)
         this._regWindow(window);
     }
-  }
+  })
 };
 
 var WindowTrackerObs = {
@@ -173,13 +179,11 @@ require("./unload").when(function() {
     tracker.unload();
 });
 
-errors.catchAndLogProps(WindowTracker.prototype, ["handleEvent", "observe"]);
-
 const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
   _onUntrack: Trait.required,
   constructor: function WindowTrackerTrait() {
-    new WindowTracker({
+    WindowTracker({
       onTrack: this._onTrack.bind(this),
       onUntrack: this._onUntrack.bind(this)
     });

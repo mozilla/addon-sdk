@@ -72,8 +72,7 @@ const privateBrowsing = EventEmitter.compose({
     }
   },
   unload: function _destructor() {
-    this._removeAllListeners(ON_START);
-    this._removeAllListeners(ON_STOP);
+    this._removeAllListeners();
   },
   // We don't need to do anything with cancel here.
   onTransition: function onTransition() {

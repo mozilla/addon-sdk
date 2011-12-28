@@ -574,8 +574,9 @@ const xRayWrappersMethodsFixes = {
     }
     // Create a wrapper that is going to call `postMessage` through `eval`
     let f = function postMessage(message, targetOrigin) {
-      message = message.toString().replace(/'/g,"\\'");
-      targetOrigin = targetOrigin.toString().replace(/'/g,"\\'");
+      message = message.toString().replace(/['\\]/g,"\\$&");
+      targetOrigin = targetOrigin.toString().replace(/['\\]/g,"\\$&");
+
       let jscode = "this.postMessage('" + message + "', '" +
                                 targetOrigin + "')";
       return this.wrappedJSObject.eval(jscode);
@@ -590,7 +591,10 @@ const xRayWrappersMethodsFixes = {
   mozMatchesSelector: function (obj) {
     // Ensure that we are on an object to expose this buggy method
     try {
-      obj.QueryInterface(Ci.nsIDOMNSElement);
+      // Bug 707576 removed nsIDOMNSElement.
+      // Can be simplified as soon as Firefox 11 become the minversion
+      obj.QueryInterface("nsIDOMElement" in Ci ? Ci.nsIDOMElement :
+                                                 Ci.nsIDOMNSElement);
     }
     catch(e) {
       return null;

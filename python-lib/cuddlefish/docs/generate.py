@@ -6,7 +6,6 @@ import tarfile
 import StringIO
 
 from cuddlefish import packaging
-from cuddlefish import Bunch
 from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
 from cuddlefish.docs import webdocs
@@ -78,7 +77,6 @@ def calculate_base_url(base_url, docs_dir):
     return base_url
 
 def generate_named_file(env_root, base_url, filename):
-    docs_dir = os.path.join(env_root, DOCS_DIR)
     web_docs = webdocs.WebDocs(env_root, base_url)
 
     # next, generate api doc or guide doc

@@ -62,6 +62,9 @@ var filter;
 // Whether to report memory profiling information.
 var profileMemory;
 
+// Whether we should stop as soon as a test reports a failure.
+var stopOnError;
+
 // Combined information from all test runs.
 var results = {
   passed: 0,
@@ -261,11 +264,12 @@ function nextIteration(tests) {
     iterationsLeft--;
   }
 
-  if (iterationsLeft) {
-    let require = Loader.require.bind(sandbox, module.uri);
+  if (iterationsLeft && (!stopOnError || results.failed == 0)) {
+    let require = Loader.require.bind(sandbox, module.path);
     require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,
+      stopOnError: stopOnError,
       filter: filter,
       onDone: nextIteration
     });
@@ -320,6 +324,7 @@ var runTests = exports.runTests = function runTests(options) {
   iterationsLeft = options.iterations;
   filter = options.filter;
   profileMemory = options.profileMemory;
+  stopOnError = options.stopOnError;
   onDone = options.onDone;
   print = options.print;
 

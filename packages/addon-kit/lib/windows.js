@@ -53,7 +53,6 @@ const { Cc, Ci } = require('chrome'),
       { WindowLoader } = require('api-utils/windows/loader'),
       { WindowTrackerTrait } = require('api-utils/window-utils'),
       { Options } = require('api-utils/tabs/tab'),
-      { utils } = require('api-utils/xpcom'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
 
@@ -121,9 +120,7 @@ const BrowserWindowTrait = Trait.compose(
       this._window = null;
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
-      this._removeAllListeners('close');
-      this._removeAllListeners('open');
-      this._removeAllListeners('ready');
+      this._removeAllListeners();
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?

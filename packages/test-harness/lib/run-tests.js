@@ -41,7 +41,7 @@ var system = require("api-utils/system");
 var options = require('@packaging');
 var {Cc,Ci} = require("chrome");
 
-function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, print) {
+function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit, print) {
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
            .getService(Ci.nsIWindowWatcher);
 
@@ -85,8 +85,8 @@ function runTests(iterations, filter, profileMemory, verbose, rootPaths, exit, p
         harness.runTests({iterations: iterations,
                           filter: filter,
                           profileMemory: profileMemory,
+                          stopOnError: stopOnError,
                           verbose: verbose,
-                          rootPaths: rootPaths,
                           print: print,
                           onDone: onDone});
       }, 0);
@@ -126,8 +126,8 @@ exports.main = function main() {
   if (!testsStarted) {
     testsStarted = true;
     runTests(options.iterations, options.filter,
-             options.profileMemory, options.verbose,
-             options.rootPaths, system.exit,
+             options.profileMemory, options.stopOnError, options.verbose,
+             system.exit,
              dump);
   }
 };

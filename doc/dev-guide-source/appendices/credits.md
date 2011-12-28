@@ -42,6 +42,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Aza Raskin
 * Justin Scott
 * Ayan Shah
+* [skratchdot](https://github.com/skratchdot)
 * [Mihai Sucan](https://github.com/mihaisucan)
 * Clint Talbert
 * Thomas

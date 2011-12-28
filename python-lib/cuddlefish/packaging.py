@@ -19,8 +19,6 @@ METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
                   'contributors', 'license', 'homepage', 'icon', 'icon64',
                   'main', 'directories']
 
-RESOURCE_BAD_PACKAGE_NAME_RE = re.compile(r'[\s\.]')
-
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
 class Error(Exception):
@@ -60,29 +58,35 @@ def validate_resource_hostname(name):
       >>> validate_resource_hostname('bl arg')
       Traceback (most recent call last):
       ...
-      ValueError: package names cannot contain spaces or periods: bl arg
+      ValueError: Error: the name of your package contains an invalid character.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: bl arg
 
       >>> validate_resource_hostname('BLARG')
       Traceback (most recent call last):
       ...
-      ValueError: package names need to be lowercase: BLARG
+      ValueError: Error: the name of your package contains upper-case letters.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: BLARG
 
       >>> validate_resource_hostname('foo@bar')
       Traceback (most recent call last):
       ...
-      ValueError: invalid resource hostname: foo@bar
+      ValueError: Error: the name of your package contains an invalid character.
+      Package names can contain only lower-case letters, numbers, underscores, and dashes.
+      Current package name: foo@bar
     """
 
     # See https://bugzilla.mozilla.org/show_bug.cgi?id=568131 for details.
     if not name.islower():
-        raise ValueError('package names need to be lowercase: %s' % name)
-
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=597837 for details.
-    if RESOURCE_BAD_PACKAGE_NAME_RE.search(name):
-        raise ValueError('package names cannot contain spaces or periods: %s' % name)
+        raise ValueError("""Error: the name of your package contains upper-case letters.
+Package names can contain only lower-case letters, numbers, underscores, and dashes.
+Current package name: %s""" % name)
 
     if not RESOURCE_HOSTNAME_RE.match(name):
-        raise ValueError('invalid resource hostname: %s' % name)
+        raise ValueError("""Error: the name of your package contains an invalid character.
+Package names can contain only lower-case letters, numbers, underscores, and dashes.
+Current package name: %s""" % name)
 
 def find_packages_with_module(pkg_cfg, name):
     # TODO: Make this support more than just top-level modules.
@@ -180,6 +184,7 @@ def get_config_in_dir(path):
     set_section_dir(base_json, 'doc', path, ['doc', 'docs'])
     set_section_dir(base_json, 'data', path, ['data'])
     set_section_dir(base_json, 'packages', path, ['packages'])
+    set_section_dir(base_json, 'locale', path, ['locale'])
 
     if (not base_json.get('icon') and
         os.path.isfile(os.path.join(path, DEFAULT_ICON))):
@@ -270,16 +275,14 @@ def get_deps_for_targets(pkg_cfg, targets):
 
     return visited
 
-def generate_build_for_target(pkg_cfg, target, deps, prefix='',
+def generate_build_for_target(pkg_cfg, target, deps,
                               include_tests=True,
                               include_dep_tests=False,
                               default_loader=DEFAULT_LOADER):
-    validate_resource_hostname(prefix)
 
-    build = Bunch(resources=Bunch(),
-                  resourcePackages=Bunch(),
-                  packageData=Bunch(),
-                  rootPaths=[],
+    build = Bunch(# Contains section directories for all packages:
+                  packages=Bunch(),
+                  locale=Bunch()
                   )
 
     def add_section_to_build(cfg, section, is_code=False,
@@ -292,20 +295,43 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
                 # configuration dict.
                 dirnames = [dirnames]
             for dirname in resolve_dirs(cfg, dirnames):
-                lib_base = os.path.basename(dirname)
-                name = "-".join([prefix + cfg.name, section])
-                validate_resource_hostname(name)
-                if name in build.resources:
-                    raise KeyError('resource already defined', name)
-                build.resourcePackages[name] = cfg.name
-                build.resources[name] = dirname
-                resource_url = 'resource://%s/' % name
+                # ensure that package name is valid
+                try:
+                    validate_resource_hostname(cfg.name)
+                except ValueError, err:
+                    print err
+                    sys.exit(1)
+                # ensure that this package has an entry
+                if not cfg.name in build.packages:
+                    build.packages[cfg.name] = Bunch()
+                # detect duplicated sections
+                if section in build.packages[cfg.name]:
+                    raise KeyError("package's section already defined",
+                                   cfg.name, section)
+                # Register this section (lib, data, tests)
+                build.packages[cfg.name][section] = dirname
 
-                if is_code:
-                    build.rootPaths.insert(0, resource_url)
+    def add_locale_to_build(cfg):
+        path = resolve_dir(cfg, cfg['locale'])
+        files = os.listdir(path)
+        for filename in files:
+            fullpath = os.path.join(path, filename)
+            if os.path.isfile(fullpath) and filename.endswith('.properties'):
+                language = filename[:-len('.properties')]
 
-                if is_data:
-                    build.packageData[cfg.name] = resource_url
+                from property_parser import parse_file
+                content = parse_file(fullpath)
+
+                # Merge current locales into global locale hashtable.
+                # Locale files only contains one big JSON object
+                # that act as an hastable of:
+                # "keys to translate" => "translated keys"
+                if language in build.locale:
+                    merge = (build.locale[language].items() +
+                             content.items())
+                    build.locale[language] = Bunch(merge)
+                else:
+                    build.locale[language] = content
 
     def add_dep_to_build(dep):
         dep_cfg = pkg_cfg.packages[dep]
@@ -313,11 +339,14 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
         add_section_to_build(dep_cfg, "data", is_data=True)
         if include_tests and include_dep_tests:
             add_section_to_build(dep_cfg, "tests", is_code=True)
+        if 'locale' in dep_cfg:
+            add_locale_to_build(dep_cfg)
         if ("loader" in dep_cfg) and ("loader" not in build):
-            build.loader = "resource://%s-%s" % (prefix + dep,
+            build.loader = "%s/%s" % (dep,
                                                  dep_cfg.loader)
 
     target_cfg = pkg_cfg.packages[target]
+
     if include_tests and not include_dep_tests:
         add_section_to_build(target_cfg, "tests", is_code=True)
 
@@ -334,6 +363,12 @@ def generate_build_for_target(pkg_cfg, target, deps, prefix='',
     if 'icon64' in target_cfg:
         build['icon64'] = os.path.join(target_cfg.root_dir, target_cfg.icon64)
         del target_cfg['icon64']
+
+    if ('preferences' in target_cfg):
+        build['preferences'] = target_cfg.preferences
+
+    if ('id' in target_cfg):
+        build['jetpackID'] = target_cfg.id
 
     return build
 

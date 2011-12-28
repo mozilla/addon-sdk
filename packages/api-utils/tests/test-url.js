@@ -74,50 +74,6 @@ exports.testParseFTPWithUserPass = function(test) {
   test.assertEqual(info.userPass, "user:pass");
 };
 
-exports.testToFilename = function(test) {
-  test.assertRaises(
-    function() { url.toFilename("resource://nonexistent"); },
-    "resource does not exist: resource://nonexistent/",
-    "url.toFilename() on nonexistent resources should throw"
-  );
-
-  test.assertMatches(url.toFilename(module.uri),
-                     /.*test-url\.js$/,
-                     "url.toFilename() on resource: URIs should work");
-
-  test.assertRaises(
-    function() { url.toFilename("http://foo.com/"); },
-    "cannot map to filename: http://foo.com/",
-    "url.toFilename() on http: URIs should raise error"
-  );
-
-  try {
-    test.assertMatches(
-      url.toFilename("chrome://global/content/console.xul"),
-      /.*console\.xul$/,
-      "url.toFilename() w/ console.xul works when it maps to filesystem"
-    );
-  } catch (e) {
-    if (/chrome url isn\'t on filesystem/.test(e.message))
-      test.pass("accessing console.xul in jar raises exception");
-    else
-      test.fail("accessing console.xul raises " + e);
-  }
-
-  // TODO: Are there any chrome URLs that we're certain exist on the
-  // filesystem?
-  // test.assertMatches(url.toFilename("chrome://myapp/content/main.js"),
-  //                    /.*main\.js$/);
-};
-
-exports.testFromFilename = function(test) {
-  var fileUrl = url.fromFilename(url.toFilename(module.uri));
-  test.assertEqual(url.URL(fileUrl).scheme, 'file',
-                   'url.toFilename() should return a file: url');
-  test.assertEqual(url.fromFilename(url.toFilename(fileUrl)),
-                   fileUrl);
-};
-
 exports.testURL = function(test) {
   let URL = url.URL;
   test.assert(URL("h:foo") instanceof URL, "instance is of correct type");
@@ -155,3 +111,34 @@ exports.testURL = function(test) {
   test.assertStrictEqual(a + "", "h:foo",
                          "toString is implicit when a URL is concatenated to a string");
 };
+
+exports.testStringInterface = function(test) {
+  let URL = url.URL;
+  var EM = "about:addons";
+  var a = URL(EM);
+
+  // make sure the standard URL properties are enumerable and not the String interface bits
+  test.assertEqual(Object.keys(a), "scheme,userPass,host,port,path", "enumerable key list check for URL.");
+  test.assertEqual(
+      JSON.stringify(a),
+      "{\"scheme\":\"about\",\"userPass\":null,\"host\":null,\"port\":null,\"path\":\"addons\"}",
+      "JSON.stringify should return a object with correct props and vals.");
+
+  // make sure that the String interface exists and works as expected
+  test.assertEqual(a.indexOf(":"), EM.indexOf(":"), "indexOf on URL works");
+  test.assertEqual(a.valueOf(), EM.valueOf(), "valueOf on URL works.");
+  test.assertEqual(a.toSource(), EM.toSource(), "toSource on URL works.");
+  test.assertEqual(a.lastIndexOf("a"), EM.lastIndexOf("a"), "lastIndexOf on URL works.");
+  test.assertEqual(a.match("t:").toString(), EM.match("t:").toString(), "match on URL works.");
+  test.assertEqual(a.toUpperCase(), EM.toUpperCase(), "toUpperCase on URL works.");
+  test.assertEqual(a.toLowerCase(), EM.toLowerCase(), "toLowerCase on URL works.");
+  test.assertEqual(a.split(":").toString(), EM.split(":").toString(), "split on URL works.");
+  test.assertEqual(a.charAt(2), EM.charAt(2), "charAt on URL works.");
+  test.assertEqual(a.charCodeAt(2), EM.charCodeAt(2), "charCodeAt on URL works.");
+  test.assertEqual(a.concat(EM), EM.concat(a), "concat on URL works.");
+  test.assertEqual(a.substr(2,3), EM.substr(2,3), "substr on URL works.");
+  test.assertEqual(a.substring(2,3), EM.substring(2,3), "substring on URL works.");
+  test.assertEqual(a.trim(), EM.trim(), "trim on URL works.");
+  test.assertEqual(a.trimRight(), EM.trimRight(), "trimRight on URL works.");
+  test.assertEqual(a.trimLeft(), EM.trimLeft(), "trimLeft on URL works.");
+}
