@@ -49,6 +49,7 @@ import killableprocess
 import subprocess
 import platform
 import shutil
+from StringIO import StringIO
 from xml.dom import minidom
 
 from distutils import dir_util
@@ -251,7 +252,7 @@ class Profile(object):
 
         for addon in addons:
             xpi_zipfile = zipfile.ZipFile(addon, "r")
-            details = addon_details(xpi_zipfile.open('install.rdf', "r"))
+            details = addon_details(StringIO(xpi_zipfile.read('install.rdf')))
             addon_path = os.path.join(extensions_path, details["id"])
             if details.get("unpack", True):
                 self.unpack_addon(xpi_zipfile, addon_path)
