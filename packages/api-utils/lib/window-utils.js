@@ -130,7 +130,7 @@ WindowTracker.prototype = {
 
   unload: function unload() {
     var index = windowTrackers.indexOf(this);
-    if (!~index)
+    if (index == -1)
       return;
 
     windowTrackers.splice(index, 1);
@@ -160,13 +160,13 @@ var WindowTrackerObs = {
       // handle window open event
       if (topic == "domwindowopened") {
         // loop thru windowTracker array and register the window
-        for (; ~i; i--)
+        for (; i >= 0; i--)
           windowTrackers[i]._regWindow(window);
       }
       // handle window close (ie: "domwindowclosed") event
       else {
         // loop thru windowTracker array and unregister the window
-        for (; ~i; i--)
+        for (; i >= 0; i--)
           windowTrackers[i]._unregWindow(window);
       }
     }
