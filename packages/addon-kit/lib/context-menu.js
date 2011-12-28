@@ -54,7 +54,7 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 const apiUtils = require("api-utils/api-utils");
 const collection = require("api-utils/collection");
 const { Worker } = require("api-utils/content");
-const url = require("api-utils/url");
+const { URL } = require("api-utils/url");
 const { MatchPattern } = require("api-utils/match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
@@ -609,7 +609,8 @@ function optionsRules() {
         let arr = apiUtils.getTypeOf(v) === "array" ? v : [v];
         try {
           return arr.every(function (s) {
-            return apiUtils.getTypeOf(s) === "string" && url.toFilename(s);
+            return apiUtils.getTypeOf(s) === "string" &&
+                   URL(s).scheme === 'resource';
           });
         }
         catch (err) {}
