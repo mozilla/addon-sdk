@@ -440,6 +440,46 @@ exports.testConstructor = function(test) {
     }
   }));
 
+  // test allow attribute
+  tests.push(function testDefaultAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated by default");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    allow: {script: true},
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated when we want to");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitDisallow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    allow: {script: false},
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertNotEqual(message, "ok", "scripts aren't evaluated when " +
+                                         "explicitly blocked it");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
   // test multiple windows
   tests.push(function testMultipleWindows() {
     tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
