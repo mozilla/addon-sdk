@@ -168,8 +168,10 @@ function startup(data, reason) {
   let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
 
-  // Used by l10n module in order to fetch `locale` folder
-  options.root = data.installPath.path;
+  // URI for the root of the XPI file.
+  // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
+  // (Used by l10n module in order to fetch `locale` folder)
+  options.rootURI = data.resourceURI.spec;
 
   // Register a new resource "domain" for this addon which is mapping to
   // XPI's `resources` folder.

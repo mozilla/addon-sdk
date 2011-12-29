@@ -36,8 +36,7 @@
 "use strict";
 
 let prefs = require("preferences-service");
-let file = require("file");
-let {components, Cc, Ci, Cu} = require("chrome");
+let { Cc, Ci } = require("chrome");
 
 let globalHash = {};
 
@@ -95,20 +94,33 @@ exports.get = function get(k) {
   return localized;
 }
 
-// Returns path of the best locales file to use from the XPI
+function readURI(uri) {
+  let request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
+                createInstance(Ci.nsIXMLHttpRequest);
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
+}
+
+// Returns URI of the best locales file to use from the XPI
 //   Reproduce platform algorithm, see `LanguagesMatch` and
 //   `nsChromeRegistryChrome::nsProviderArray::GetProvider` functions:
 //   http://mxr.mozilla.org/mozilla-central/source/chrome/src/nsChromeRegistryChrome.cpp#93
 // TODO: Implement a better matching algorithm using "intl.accept_languages"
 // and following: http://tools.ietf.org/html/rfc4647#page-14
 function searchAddonLocaleFile(preferred) {
-  // Locale files are stored in `locales` folder in XPI root folder:
-  let localesPath = file.join(require("@packaging").root, "locale");
-  let locales = file.list(localesPath);
+  // Get URI for the addon root folder:
+  let rootURI = require("@packaging").rootURI;
+
+  // Read localization manifest file that contains list of available languages
+  let localesManifest = JSON.parse(readURI(rootURI + "locales.json"));
+  let locales = localesManifest.locales;
+
   let localeFile = null;
   // Select exact matching first
-  if (locales.indexOf(preferred + ".json") != -1) {
-    localeFile = preferred + ".json";
+  if (locales.indexOf(preferred) != -1) {
+    localeFile = preferred;
   }
   // Then ignore yy in "xx-yy" pattern.
   // Ex: accept "fr-FR", if `preferred` is "fr"
@@ -124,17 +136,17 @@ function searchAddonLocaleFile(preferred) {
   if (!localeFile)
     return null;
 
-  return file.join(localesPath, localeFile);
+  return rootURI + "locale/" + localeFile + ".json";
 }
 
 function init() {
   // First, search for a locale file:
   let preferred = prefs.get("general.useragent.locale", "en-US");
-  let localePath = searchAddonLocaleFile(preferred);
-  if (!localePath)
+  let localeURI = searchAddonLocaleFile(preferred);
+  if (!localeURI)
     return;
 
-  let manifestJSON = file.read(localePath);
+  let manifestJSON = readURI(localeURI);
   let manifest = JSON.parse(manifestJSON);
 
   // Locale files only contains one big JSON object that is used as
