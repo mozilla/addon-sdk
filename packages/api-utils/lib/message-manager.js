@@ -41,36 +41,28 @@ const BAD_LISTENER = "The event listener must be a function.";
 const { Cc, Ci, Cu, CC } = require("chrome");
 const { setTimeout } = require("./timer");
 
-// `Namespace` is a e4x function in the scope, so we import the function as `NS`
-// to avoid clashing, until we don't have a better candidate to replace
-// `Namespace` in namespace module.
-const {Namespace: NS} = require("./namespace");
+const { ns } = require("./namespace");
 
-const scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
-                   getService(Ci.mozIJSSubScriptLoader);
+const { curry, invoke } = require("./utils/function");
 
-const systemPrincipal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
+const Sandbox = require("./sandbox");
 
 // JSON.stringify is buggy with cross-sandbox values,
 // it may return "{}" on functions. Use a replacer to match them correctly.
 const jsonFixer = function (k, v) typeof v === "function" ? undefined : v;
 
 /**
- * Curries a function with the arguments given.
+ * Defers invoking the function until the current call stack has cleared.
  *
  * @param {Function} fn
- *    The function to curry
+ *    The function to defer.
+ *
+ * @returns {Function}
+ *    The deferred function
  */
-const curry = function curry(fn) {
-  if (arguments.length < 2)
-    return fn;
-
-  let args = Array.slice(arguments, 1);
-
-  return function() {
-    return fn.apply(this, args.concat(Array.slice(arguments)));
-  }
-}
+const defer =  function(fn) function() {
+  setTimeout(invoke, 0, fn, arguments, this)
+};
 
 /**
  * Adds a message listener.
@@ -130,23 +122,15 @@ function removeMessageListener(name, listener) {
  *    The name of the message to send to the listeners.
  * @param {Object} [data=null]
  *    A JSON object containing data to be delivered to the listeners.
- * @param {Object} [sender=undefined]
- *    The object that sent the message. If is not specified is the context
- *    object `this`.
+ *
  * @returns {Array|undefined}
  *    An array with the return values of the listeners if `sync` is `true`,
  *    otherwise `undefined`.
  */
-function sendMessage(sync, name, data, sender) {
-  sender || (sender = this);
+function sendMessage(sync, name, data) {
   typeof data === "undefined" && (data = null);
 
-  if (!sync && this) {
-    setTimeout(sendMessage, 10, sync, name, data, this);
-    return undefined;
-  }
-
-  let listeners = frame(frame(sender).receiver).listeners;
+  let listeners = frame(frame(this).receiver).listeners;
 
   let responses = [];
 
@@ -177,11 +161,13 @@ function sendMessage(sync, name, data, sender) {
       console.exception(e);
     }
   }
-
   return returnValue;
 };
 
-let frame = NS({receiver: null, listeners: null});
+let sendSyncMessage = curry(sendMessage, true);
+let sendAsyncMessage = curry(defer(sendMessage), false);
+
+let frame = ns({receiver: null, listeners: null});
 
 /**
  * The MessageManager object emulates the Message Manager API, without creating
@@ -192,16 +178,16 @@ let frame = NS({receiver: null, listeners: null});
  */
 function MessageManager() {
 
-  let sandbox = Cu.Sandbox(systemPrincipal, { wantXrays : false });
+  let sandbox = Sandbox.sandbox(null, { wantXrays : false });
 
   Object.defineProperties(sandbox, {
     addMessageListener: {value: addMessageListener.bind(sandbox)},
 
     removeMessageListener: { value: removeMessageListener.bind(sandbox)},
 
-    sendAsyncMessage: {value: sendMessage.bind(sandbox, false)},
+    sendAsyncMessage: {value: sendAsyncMessage.bind(sandbox)},
 
-    sendSyncMessage: { value: sendMessage.bind(sandbox, true) }
+    sendSyncMessage: { value: sendSyncMessage.bind(sandbox) }
   });
 
   frame(this).receiver = sandbox;
@@ -218,14 +204,14 @@ MessageManager.prototype = {
 
   removeMessageListener : removeMessageListener,
 
-  sendAsyncMessage : curry(sendMessage, false),
+  sendAsyncMessage : sendAsyncMessage,
 
   /**
    * Loads a script into the remote frame.
    *
    * @param {String} uri
    *    The URL of the script to load into the frame; this must be an absolute
-   *    URL, but data: URLs are supported.
+   *    local URL, but data: URLs are supported.
    * @param {Boolean} allowDelayedLoad
    *    Not used.
    */
@@ -235,16 +221,10 @@ MessageManager.prototype = {
 
     let sandbox = frame(this).receiver;
 
-    if (uri.indexOf("data:") === 0) {
-      let source = uri.replace(/^data:[^,]*,/, "");
-
-      try {
-        Cu.evalInSandbox(source, sandbox, "1.8", uri, 0);
-      } catch (e) {
-        console.exception(e);
-      }
-    } else {
-      scriptLoader.loadSubScript(uri, sandbox);
+    try {
+      Sandbox.load(sandbox, uri);
+    } catch (e) {
+      console.exception(e)
     }
   }
 }
