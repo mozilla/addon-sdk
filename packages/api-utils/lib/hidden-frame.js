@@ -49,7 +49,7 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 let hostFrame, hostDocument, hiddenWindow, isHostFrameReady = false;
 
-if (!require("./xul-app").isOneOf(["Firefox", "Thunderbird"])) {
+if (!require("./xul-app").isOneOf(["Firefox", "Fennec", "Thunderbird"])) {
   throw new Error([
     "The hidden-frame module currently supports only Firefox and Thunderbird. ",
     "In the future, we would like it to support other applications, however. ",
@@ -121,7 +121,7 @@ function HiddenFrame(options) {
     hostFrame = hiddenWindow.document.createElement("iframe");
 
     // ugly ugly hack. This is the most lightweight chrome:// file I could find on the tree
-    // This hack should be removed by proper platform support on bug 565388 
+    // This hack should be removed by proper platform support on bug 565388
     hostFrame.setAttribute("src", "chrome://global/content/mozilla.xhtml");
     hostFrame.addEventListener("DOMContentLoaded", setHostFrameReady, false);
 

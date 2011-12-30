@@ -13,7 +13,7 @@ string, in which case sandbox will get exact same privileges as a scripts
 loaded from that URL. Argument also could be a DOM window object, to inherit
 privileges from the window being passed. Finally if argument is omitted or is
 `null` sandbox will have a chrome privileges giving it access to all the XPCOM
-components. Optionally `sandbox` function can be passed a second optional 
+components. Optionally `sandbox` function can be passed a second optional
 argument (See [sandbox documentation on MDN](https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter)
 for details).
 
@@ -39,7 +39,9 @@ Version of JavaScript can be also specified via optional argument:
 
 ### Loading scripts ###
 
-API provides limited API for loading scripts right form the local URLs.
+API provides limited API for loading scripts right form the local URLs,
+but data: URLs are supported.
 
     load(scope, 'resource://path/to/my/script.js');
     load(scope, 'file:///path/to/script.js');
+    load(scope, 'data:,var a = 5;');

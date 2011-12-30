@@ -62,8 +62,18 @@ exports.evaluate = evaluate;
 
 /**
  * Evaluates code under the given `uri` in the given `sandbox`.
+ *
+ * @param {String} uri
+ *    The URL pointing to the script to load.
+ *    It must be a local chrome:, resource:, file: or data: URL.
  */
 function load(sandbox, uri) {
-  return scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
+  if (uri.indexOf('data:') === 0) {
+    let source = uri.substr(uri.indexOf(',') + 1);
+
+    return evaluate(sandbox, decodeURIComponent(source), '1.8', uri, 0);
+  } else {
+    return scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
+  }
 }
 exports.load = load;

@@ -44,6 +44,19 @@ const Cr = Components.results;
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 function startup(data, reason) {
+  // Activate stderr/stdout redirection to logcat.
+  //
+  // This is a really basic approach. A proper implementation will be done by
+  // the bug 689777.
+  try {
+    Cu.import("resource://gre/modules/ctypes.jsm");
+
+    ctypes.open("libdvm.so")
+      .declare("dvmStdioConverterStartup", ctypes.default_abi, ctypes.void_t)();
+  } catch(e) {
+    Cu.reportError("Mobile Killer: Unable to execute jsctype hack: " +  e);
+  }
+
   let Watcher = {
     window: null,
     onOpenWindow: function(window) {

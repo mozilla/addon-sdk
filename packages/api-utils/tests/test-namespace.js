@@ -1,6 +1,6 @@
 "use strict";
 
-let { Namespace } = require("api-utils/namespace");
+let { Namespace, ns } = require("api-utils/namespace");
 
 exports["test namsepace basics"] = function(assert) {
   var privates = Namespace();
@@ -66,5 +66,10 @@ exports["test multi namespace"] = function(assert) {
   assert.equal(n1(object).bar, n2(object).bar,
                "object can have matching props in diff namespaces");
 };
+
+exports["test ns alias"] = function(assert) {
+  assert.strictEqual(ns, Namespace,
+                      "ns is an alias of Namespace");
+}
 
 require("test").run(exports);
