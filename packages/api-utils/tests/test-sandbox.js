@@ -82,9 +82,27 @@ exports['test load'] = function(assert) {
   assert.equal(fixture.f(), 4, 'function was defined');
 };
 
+exports['test load with data: URL'] = function(assert) {
+  let code = "var a = 1; this.b = 2; function f() 4";
+  let fixture = sandbox();
+  load(fixture, "data:," + encodeURIComponent(code));
+
+  assert.equal(fixture.a, 1, 'global variable defined');
+  assert.equal(fixture.b, 2, 'global via `this` property was set');
+  assert.equal(fixture.f(), 4, 'function was defined');
+};
+
 exports['test load script with complex char'] = function(assert) {
   let fixture = sandbox();
   load(fixture, fixturesURI + 'sandbox-complex-character.js');
+  assert.equal(fixture.chars, 'გამარჯობა', 'complex chars were loaded correctly');
+};
+
+exports['test load script with data: URL and complex char'] = function(assert) {
+  let code = "var chars = 'გამარჯობა';";
+  let fixture = sandbox();
+  load(fixture, "data:," + encodeURIComponent(code));
+
   assert.equal(fixture.chars, 'გამარჯობა', 'complex chars were loaded correctly');
 };
 
