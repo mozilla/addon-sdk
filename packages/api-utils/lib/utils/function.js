@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -62,3 +63,21 @@ exports.Enqueued = Enqueued;
  */
 function invoke(callee, params, self) callee.apply(self, params);
 exports.invoke = invoke;
+
+/**
+ * Curries a function with the arguments given.
+ *
+ * @param {Function} fn
+ *    The function to curry
+ *
+ * @returns The function curried
+ */
+function curry(fn) {
+  if (typeof fn !== "function")
+    throw new TypeError(String(fn) + " is not a function");
+
+  let args = Array.slice(arguments, 1);
+
+  return function() fn.apply(this, args.concat(Array.slice(arguments)));
+}
+exports.curry = curry;
