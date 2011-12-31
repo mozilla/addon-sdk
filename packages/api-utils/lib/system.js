@@ -40,13 +40,12 @@
 const { Cc, Ci, CC } = require('chrome');
 const options = require('@packaging');
 const file = require('./file');
+const runtime = require("./runtime.js");
 
 const appStartup = Cc['@mozilla.org/toolkit/app-startup;1'].
                    getService(Ci.nsIAppStartup);
 const appInfo = Cc["@mozilla.org/xre/app-info;1"].
-                getService(Ci.nsIXULAppInfo); 
-const runtime = Cc["@mozilla.org/xre/app-info;1"].
-                getService(Ci.nsIXULRuntime);
+                getService(Ci.nsIXULAppInfo);
 const directoryService = Cc['@mozilla.org/file/directory_service;1'].
                          getService(Ci.nsIProperties);
 
@@ -144,7 +143,7 @@ exports.version = appInfo.version;
 /**
  * XULRunner version.
  */
-exports.platformVersion = runtime.platformVersion;
+exports.platformVersion = appInfo.platformVersion;
 
 
 /**
