@@ -140,6 +140,29 @@ exports.testKeyAccess = createProxyTest("", function(helper) {
 });
 
 
+// Bug 714778: There was some issue around `toString` functions
+//             that ended up being shared between content scripts
+exports.testSharedToStringProxies = createProxyTest("", function(helper) {
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      assert(document.location.toString() == "data:text/html,",
+             "document.location.toString()");
+      self.postMessage("next");
+    }
+  );
+  worker.on("message", function () {
+    helper.createWorker(
+      'new ' + function ContentScriptScope2() {
+        assert(document.location.toString() == "data:text/html,",
+               "document.location.toString()");
+        done();
+      }
+    );
+  });
+});
+
+
 // Ensure that postMessage is working correctly across documents with an iframe
 let html = '<iframe id="iframe" name="test" src="data:text/html," />';
 exports.testPostMessage = createProxyTest(html, function (helper, test) {
