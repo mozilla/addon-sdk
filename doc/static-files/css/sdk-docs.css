@@ -6,12 +6,12 @@ html, body {
 pre {
   color: black;
   background-color: whitesmoke;
-<<<<<<< HEAD
-  padding: 1em;
-  padding-left: 3em;
-=======
   padding: 10px;
   overflow:auto;
+}
+
+h1 {
+  color: black;
 }
 
 h2 {
@@ -19,7 +19,9 @@ h2 {
   background-color: #F0F8FF;
   padding: 10px;
   overflow:auto;
->>>>>>> master
+  font-style: normal;
+  border: solid 1px;
+  border-color: #a0d0fb;
 }
 
 #columns {
@@ -335,8 +337,9 @@ hr {
   float:right;
 }
 
-div.two-column-content {
+div.buttonarray {
   -moz-column-count: 2;
+  -moz-column-width: 50%;
   -moz-column-rule: 1px solid #a0d0fb;
   -moz-column-gap: 4em;
 }
@@ -346,3 +349,17 @@ div.two-column-content {
   color: black;
   padding: 1px 10px;
 }
+
+div.buttonarray a {
+  padding: 10px;
+  display: block;
+  text-decoration:none;
+}
+
+div.buttonarray a:hover {
+  background-color: #F0F8FF;
+  padding: 9px;
+  border: solid 1px;
+  border-color: #a0d0fb;
+}
+
