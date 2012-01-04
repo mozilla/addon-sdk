@@ -215,6 +215,7 @@ hr {
   color: black;
   background-color: #F0F8FF;
   padding: 10px;
+  border-style:groove;
 }
 
 .sidebar-subsection-contents {
@@ -320,4 +321,10 @@ hr {
 .image-right {
   margin-left: 1.0em;
   float:right;
+}
+
+div.two-column-content {
+  -moz-column-count: 2;
+  -moz-column-rule: 1px solid #a0d0fb;
+  -moz-column-gap: 4em;
 }

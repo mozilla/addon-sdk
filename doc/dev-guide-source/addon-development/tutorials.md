@@ -2,12 +2,18 @@
 
 ## Getting Started ##
 
+<div class="two-column-content">
+
  [Installation](dev-guide/addon-development/installation.html) 
 <br/>
 
  [Getting Started With cfx](dev-guide/addon-development/tutorials/getting-started-with-cfx.html) 
 
+</div>
+
 ## Introducing the APIs ##
+
+<div class="two-column-content">
 
  [Modifying Web Pages Based on URL](dev-guide/addon-development/tutorials/modifying-web-pages-url.html) 
 <br/>
@@ -38,6 +44,8 @@
 
  [Working With Windows and Tabs](dev-guide/addon-development/tutorials/windows-and-tabs.html) 
 <br/>
+
+</div>
 
 ## Putting It Together ##
 
