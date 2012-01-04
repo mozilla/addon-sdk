@@ -345,9 +345,12 @@ function isDeepEqual(actual, expected) {
 }
 
 function isEquivalent(a, b, stack) {
-  return isArrayEquivalent(Object.keys(a).sort(),
-                           Object.keys(b).sort()) &&
-          Object.keys(a).every(function(key) {
+  let aKeys = Object.keys(a);
+  let bKeys = Object.keys(b);
+
+  return aKeys.length === bKeys.length &&
+          isArrayEquivalent(aKeys.sort(), bKeys.sort()) &&
+          aKeys.every(function(key) {
             return isDeepEqual(a[key], b[key], stack)
           });
 }

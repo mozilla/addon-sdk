@@ -41,11 +41,14 @@ const { createRemoteBrowser } = require("api-utils/window-utils");
 const { channel } = require("./channel");
 const packaging = require('@packaging');
 const { when } = require('./unload');
+const { MessageManager } = require('./message-manager');
 
 const addonService = '@mozilla.org/addon/service;1' in Cc ?
   Cc['@mozilla.org/addon/service;1'].getService(Ci.nsIAddonService) : null
 
 const ENABLE_E10S = packaging.enable_e10s;
+
+const isFennec = require("./xul-app").is("Fennec");
 
 function loadScript(target, uri, sync) {
   return 'loadScript' in target ? target.loadScript(uri, sync)
@@ -82,6 +85,8 @@ exports.spawn = function spawn(id, path) {
     if (ENABLE_E10S && addonService) {
       console.log('!!!!!!!!!!!!!!!!!!!! Using addon process !!!!!!!!!!!!!!!!!!');
       deliver(process(addonService.createAddon(), id, path));
+    } else if (isFennec) {
+      deliver(process(new MessageManager(), id, path));
     } else {
       createRemoteBrowser(ENABLE_E10S)(function(browser) {
         let messageManager = browser.QueryInterface(Ci.nsIFrameLoaderOwner).

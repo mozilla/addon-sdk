@@ -1,4 +1,4 @@
-const { invoke, Enqueued } = require('utils/function');
+const { invoke, Enqueued, curry } = require('utils/function');
 
 exports['test forwardApply'] = function(test) {
   function sum(b, c) this.a + b + c
@@ -20,4 +20,19 @@ exports['test enqueued function'] = function(test) {
   let fixture = { a: 1, method: Enqueued(sum) }
   fixture.method(2, 3);
   nextTurn = true;
+}
+
+exports['test curry function'] = function(test) {
+  function sum(b, c) this.a + b + c;
+
+  let foo = {a : 5};
+
+  foo.sum7 = curry(sum, 7);
+  foo.sum8and4 = curry(sum, 8, 4);
+
+  test.assertEqual(foo.sum7(2), 14,
+                    'curry one arguments works');
+
+  test.assertEqual(foo.sum8and4(), 17,
+                    'curry both arguments works');
 }

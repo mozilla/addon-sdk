@@ -204,7 +204,7 @@ class RemoteFennecRunner(mozrunner.Runner):
                     remoteFile = os.path.join(remoteFile, relRoot)
                 remoteFile = os.path.join(remoteFile, file)
                 remoteFile = "/".join(remoteFile.split(os.sep))
-                subprocess.Popen([self._adb_path, "push", localFile, remoteFile], 
+                subprocess.Popen([self._adb_path, "push", localFile, remoteFile],
                                  stderr=subprocess.PIPE).wait()
             for dir in dirs:
                 targetDir = remoteDir.replace("/", os.sep)
@@ -405,7 +405,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         raise ValueError("Unknown app: %s" % app_type)
     if sys.platform == 'darwin' and app_type != 'xulrunner':
         cmdargs.append('-foreground')
-    
+
     if args:
         cmdargs.extend(shlex.split(args))
 
@@ -440,7 +440,9 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     logfile = os.path.abspath(os.path.expanduser(logfile))
     maybe_remove_logfile()
-    harness_options['logFile'] = logfile
+
+    if app_type != "fennec-on-device":
+        harness_options['logFile'] = logfile
 
     env = {}
     env.update(os.environ)
@@ -572,12 +574,12 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     print >>sys.stderr, "Using profile at '%s'." % profile.profile
     sys.stderr.flush()
-    
+
     if norun:
         print "To launch the application, enter the following command:"
         print " ".join(runner.command) + " " + (" ".join(runner.cmdargs))
         return 0
-    
+
     runner.start()
 
     done = False

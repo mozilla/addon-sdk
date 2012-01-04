@@ -76,7 +76,7 @@ class RDFUpdate(RDF):
             for name in ["em:id", "em:minVersion", "em:maxVersion"]:
                 elem = app.getElementsByTagName(name)[0]
                 self._make_node(name, elem.firstChild.nodeValue, ta_desc)
-            
+
             self._make_node("em:updateLink", update_link, ta_desc)
 
 class RDFManifest(RDF):
@@ -123,7 +123,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     manifest.set("em:creator",
                  target_cfg.get("author", ""))
     manifest.set("em:bootstrap", str(bootstrap).lower())
-    manifest.set("em:unpack", "true")
+    manifest.set("em:unpack", "false")
 
     if update_url:
         manifest.set("em:updateURL", update_url)
@@ -144,15 +144,15 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         target_app.appendChild(ta_desc)
 
         elem = dom.createElement("em:id")
-        elem.appendChild(dom.createTextNode("{a23983c0-fd0e-11dc-95ff-0800200c9a66}"))
+        elem.appendChild(dom.createTextNode("{aa3c5121-dab2-40e2-81ca-7ea25febc110}"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("4.0b7"))
+        elem.appendChild(dom.createTextNode("10.0"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("9.0a1"))
+        elem.appendChild(dom.createTextNode("11.0a1"))
         ta_desc.appendChild(elem)
 
     if target_cfg.get("homepage"):

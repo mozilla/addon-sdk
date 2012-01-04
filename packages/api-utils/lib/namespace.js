@@ -19,6 +19,7 @@
  *
  * Contributor(s):
  *   Irakli Gozalishvili <gozala@mozilla.com>
+ *   Matteo Ferretti <zer0@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -53,3 +54,7 @@ exports.Namespace = function Namespace(prototype) {
            map.set(target, Object.create(prototype)), map.get(target);
   };
 };
+
+// `Namespace` is a e4x function in the scope, so we export the function also as
+// `ns` as alias to avoid clashing.
+exports.ns = exports.Namespace;

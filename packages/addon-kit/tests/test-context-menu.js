@@ -470,6 +470,35 @@ exports.testContentContextMatchString = function (test) {
 };
 
 
+// Ensure that contentScripFile is working correctly
+exports.testContentScriptFile = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  // Reject remote files
+  test.assertRaises(function() {
+      new loader.cm.Item({
+        label: "item",
+        contentScriptFile: "http://mozilla.com/context-menu.js"
+      });
+    },
+    "The 'contentScriptFile' option must be a local file URL " +
+    "or an array of local file URLs.",
+    "Item throws when contentScriptFile is a remote URL");
+
+  // But accept files from data folder
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScriptFile: require("self").data.url("test-context-menu.js")
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.done();
+  });
+};
+
+
 // The args passed to context listeners should be correct.
 exports.testContentContextArgs = function (test) {
   test = new TestHelper(test);

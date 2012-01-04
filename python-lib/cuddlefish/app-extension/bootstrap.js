@@ -109,7 +109,7 @@ function getAppStartupTopic() {
     Mozilla: '{86c18b42-e466-45a9-ae7a-9b95ba6f5640}',
     Sunbird: '{718e30fb-e89b-41dd-9da7-e25a45638b28}',
     SeaMonkey: '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}',
-    Fennec: '{a23983c0-fd0e-11dc-95ff-0800200c9a66}',
+    Fennec: '{aa3c5121-dab2-40e2-81ca-7ea25febc110}',
     Thunderbird: '{3550f703-e582-4d05-9a08-453d09bdfdc6}'
   };
 
@@ -117,11 +117,12 @@ function getAppStartupTopic() {
 
   switch (id) {
     case ids.Firefox:
-    case ids.Fennec:
     case ids.SeaMonkey:
       return 'sessionstore-windows-restored';
     case ids.Thunderbird:
       return 'mail-startup-done';
+    // Temporary, until Fennec Birch will support sessionstore event
+    case ids.Fennec:
     default:
       return 'final-ui-startup';
   }
@@ -167,6 +168,11 @@ function startup(data, reason) {
   // since we can't do anything until 'sessionstore-windows-restored' anyway.
   let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
+
+  // URI for the root of the XPI file.
+  // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
+  // (Used by l10n module in order to fetch `locale` folder)
+  options.rootURI = data.resourceURI.spec;
 
   // Register a new resource "domain" for this addon which is mapping to
   // XPI's `resources` folder.

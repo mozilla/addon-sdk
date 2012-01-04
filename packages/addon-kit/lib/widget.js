@@ -42,8 +42,6 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
-
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
 const CONTENT_TYPE_HTML   = 2;
@@ -110,6 +108,14 @@ const valid = {
     },
     defaultValue: 16
   },
+  allow: {
+    is: ["null", "undefined", "object"],
+    map: function (v) {
+      if (!v) v = { script: true };
+      return v;
+    },
+    get defaultValue() ({ script: true })
+  },
 };
 
 // Widgets attributes definition
@@ -119,7 +125,8 @@ let widgetAttributes = {
   tooltip: valid.string,
   width: valid.width,
   content: valid.string,
-  panel: valid.panel
+  panel: valid.panel,
+  allow: valid.allow
 };
 
 // Import data definitions from loader, but don't compose with it as Model
