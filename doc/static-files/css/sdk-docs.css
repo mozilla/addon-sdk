@@ -6,8 +6,20 @@ html, body {
 pre {
   color: black;
   background-color: whitesmoke;
+<<<<<<< HEAD
   padding: 1em;
   padding-left: 3em;
+=======
+  padding: 10px;
+  overflow:auto;
+}
+
+h2 {
+  color: black;
+  background-color: #F0F8FF;
+  padding: 10px;
+  overflow:auto;
+>>>>>>> master
 }
 
 #columns {
@@ -327,4 +339,10 @@ div.two-column-content {
   -moz-column-count: 2;
   -moz-column-rule: 1px solid #a0d0fb;
   -moz-column-gap: 4em;
+}
+
+.experimental {
+  background-color: #FFFAAE;
+  color: black;
+  padding: 1px 10px;
 }

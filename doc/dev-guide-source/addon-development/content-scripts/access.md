@@ -21,7 +21,7 @@ Any changes they make are made to the proxy, and so are not visible to
 page content.
 
 The proxy is based on `XRayWrapper`, (also known as
-[`XPCNativeWrapper`](https://developer.mozilla.oreg/en/XPCNativeWrapper)).
+[`XPCNativeWrapper`](https://developer.mozilla.org/en/XPCNativeWrapper)).
 These wrappers give the user access to the native values of DOM functions
 and properties, even if they have been redefined by a script.
 
