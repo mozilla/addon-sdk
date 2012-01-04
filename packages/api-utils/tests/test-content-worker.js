@@ -25,20 +25,20 @@ const { Worker } = require('content/worker');
 exports['test:sample'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
-  // As window has just being created, its document is still loading, 
+
+  // As window has just being created, its document is still loading,
   // and we have about:blank document before the expected one
-  test.assertEqual(window.document.location.href, "about:blank", 
+  test.assertEqual(window.document.location.href, "about:blank",
                    "window starts by loading about:blank");
-  
+
   // We need to wait for the load/unload of temporary about:blank
   // or our worker is going to be automatically destroyed
   window.addEventListener("load", function onload() {
     window.removeEventListener("load", onload, true);
-    
-    test.assertNotEqual(window.document.location.href, "about:blank", 
+
+    test.assertNotEqual(window.document.location.href, "about:blank",
                         "window is now on the right document");
-    
+
     let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -52,24 +52,24 @@ exports['test:sample'] = function(test) {
       contentScriptWhen: 'ready',
       onMessage: function(msg) {
         test.assertEqual('bye!', msg);
-        test.assertEqual(worker.url, window.document.location.href, 
+        test.assertEqual(worker.url, window.document.location.href,
                          "worker.url still works");
         test.done();
       }
     });
-    
-    test.assertEqual(worker.url, window.document.location.href, 
+
+    test.assertEqual(worker.url, window.document.location.href,
                      "worker.url works");
     worker.postMessage('hi!');
-    
+
   }, true);
-  
+
 }
 
 exports['test:emit'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
+
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -77,7 +77,7 @@ exports['test:emit'] = function(test) {
         self.port.on('addon-to-content', function (data) {
           self.port.emit('content-to-addon', data);
         });
-        
+
         // Check for global pollution
         //if (typeof on != "undefined")
         //  self.postMessage("`on` is in globals");
@@ -85,26 +85,26 @@ exports['test:emit'] = function(test) {
           self.postMessage("`once` is in globals");
         if (typeof emit != "undefined")
           self.postMessage("`emit` is in globals");
-        
+
       },
       onMessage: function(msg) {
         test.fail("Got an unexpected message : "+msg);
       }
     });
-  
+
   // Validate worker.port
   worker.port.on('content-to-addon', function (data) {
     test.assertEqual(data, "event data");
     test.done();
   });
   worker.port.emit('addon-to-content', 'event data');
-  
+
 }
 
 exports['test:emit hack message'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
+
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -121,7 +121,7 @@ exports['test:emit hack message'] = function(test) {
         test.fail("Got exception: "+e);
       }
     });
-  
+
   worker.port.on('message', function (data) {
     test.assertEqual(data, "event data");
     test.done();
@@ -130,13 +130,13 @@ exports['test:emit hack message'] = function(test) {
     test.fail("Got an unexpected message : "+msg);
   });
   worker.port.emit('message', 'event data');
-  
+
 }
 
 exports['test:n-arguments emit'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
+
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -146,7 +146,7 @@ exports['test:n-arguments emit'] = function(test) {
         });
       }
     });
-  
+
   // Validate worker.port
   worker.port.on('content-to-addon', function (arg1, arg2, arg3) {
     test.assertEqual(arg1, "first argument");
@@ -160,7 +160,7 @@ exports['test:n-arguments emit'] = function(test) {
 exports['test:post-json-values-only'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
+
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -187,7 +187,7 @@ exports['test:post-json-values-only'] = function(test) {
 exports['test:emit-json-values-only'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
-  
+
   let worker =  Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
@@ -204,7 +204,7 @@ exports['test:emit-json-values-only'] = function(test) {
         });
       }
     });
-  
+
   // Validate worker.port
   worker.port.on('content-to-addon', function (result) {
     test.assertEqual(result[0], true, "functions become null");
@@ -344,4 +344,82 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
 
   }, true);
 
-}
+};
+
+exports['test:interaction with content js'] = function(test) {
+  test.waitUntilDone();
+  let window = makeWindow();
+
+  let worker =  Worker({
+    window: window,
+    contentScript: 'new ' + function WorkerScope() {
+
+      function deliver(event) {
+        self.port.emit('<~', event.data);
+      }
+
+      function pipe(event) {
+
+        if (event.target === 'unsafeWindow')
+          unsafeWindow.postMessage(event.target, '*');
+        else if (event.target === 'defaultView')
+          document.defaultView.postMessage(event.target, '*');
+
+        // Notify that post was successful
+        self.port.emit('<-', event);
+      }
+
+      self.port.once('=>', function() {
+        window.removeEventListener('message', deliver, false);
+        self.removeListener('->', pipe);
+        self.port.emit('<=');
+      });
+
+      // Set up listeners
+      window.addEventListener('message', deliver, false);
+      self.port.on('->', pipe);
+      self.port.emit('<')
+    }
+  });
+
+  let unsafeWindowDelivered = false, defaultViewDelivered = false,
+      unsafeWindowPosted = false, defaultViewPosted = false,
+      deliverCount = 0, postCount = 0;
+
+  worker.port.on('<-', function (event) {
+    postCount ++;
+    if (event.target === 'unsafeWindow') {
+      unsafeWindowPosted = true;
+      worker.port.emit('->', { target: 'defaultView' });
+    }
+    if (event.target === 'defaultView') {
+      defaultViewPosted = true;
+      worker.port.emit('=>');
+    }
+  });
+
+  function delivered(target) {
+    deliverCount ++;
+    if (target === 'unsafeWindow')
+      unsafeWindowDelivered = true;
+    if (target === 'defaultView')
+      defaultViewDelivered = true;
+  }
+
+  worker.on('<~', delivered);
+
+  worker.port.once('<=', function stop() {
+    test.assert(unsafeWindowPosted, 'posted to use unsafeWindow');
+    test.assert(defaultViewPosted, 'posted to use defaultView');
+    test.assertEqual(postCount, 2, 'two messages were posted');
+    test.assertEqual(postCount, deliverCount, 'all messages were delivered');
+    test.assert(unsafeWindowDelivered, 'post via unsafeWindow was delivered');
+    test.assert(defaultViewDelivered, 'post via defaultView was delivered');
+    worker.port.removeListener('<~', delivered);
+    window.close();
+    test.done();
+  })
+  worker.port.once('<', function() {
+    worker.port.emit('->', { target: 'unsafeWindow' })
+  })
+};
