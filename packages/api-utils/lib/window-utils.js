@@ -76,6 +76,8 @@ function browserWindowIterator() {
 }
 exports.browserWindowIterator = browserWindowIterator;
 
+var windowTrackers = [];
+
 var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
    if (!(this instanceof WindowTracker)) {
      return new WindowTracker(delegate);
@@ -86,9 +88,12 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
 
   for (let window in windowIterator())
     this._regWindow(window);
-  gWindowWatcher.registerNotification(this);
 
-  require("./unload").ensure(this);
+  //Add the tracker to the list of trackers, if it is the first one,
+  //then register the observer.
+  if (windowTrackers.push(this) === 1)
+    gWindowWatcher.registerNotification(WindowTrackerObs);
+
 };
 
 WindowTracker.prototype = {
@@ -124,7 +129,15 @@ WindowTracker.prototype = {
   },
 
   unload: function unload() {
-    gWindowWatcher.unregisterNotification(this);
+    var index = windowTrackers.indexOf(this);
+    if (index == -1)
+      return;
+
+    windowTrackers.splice(index, 1);
+
+    if (windowTrackers.length === 0)
+      gWindowWatcher.unregisterNotification(WindowTrackerObs);
+
     for (let window in windowIterator())
       this._unregWindow(window);
   },
@@ -135,16 +148,36 @@ WindowTracker.prototype = {
       if (window)
         this._regWindow(window);
     }
-  }),
-
-  observe: errors.catchAndLog(function observe(subject, topic, data) {
-    var window = subject.QueryInterface(Ci.nsIDOMWindow);
-    if (topic == "domwindowopened")
-      this._regWindow(window);
-    else
-      this._unregWindow(window);
   })
 };
+
+var WindowTrackerObs = {
+  observe: function observe(subject, topic, data) {
+    // get the window associated to the event observed
+    var window = subject.QueryInterface(Ci.nsIDOMWindow);
+
+    let (i = windowTrackers.length - 1) {
+      // handle window open event
+      if (topic == "domwindowopened") {
+        // loop thru windowTracker array and register the window
+        for (; i >= 0; i--)
+          windowTrackers[i]._regWindow(window);
+      }
+      // handle window close (ie: "domwindowclosed") event
+      else {
+        // loop thru windowTracker array and unregister the window
+        for (; i >= 0; i--)
+          windowTrackers[i]._unregWindow(window);
+      }
+    }
+  }
+};
+
+require("./unload").when(function() {
+  // note: unload() removes the tracker from the WindowTrackers array
+  for each (let tracker in windowTrackers.slice())
+    tracker.unload();
+});
 
 const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
