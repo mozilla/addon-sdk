@@ -89,6 +89,8 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
   gWindowWatcher.registerNotification(this);
 
   require("./unload").ensure(this);
+
+  return this;
 };
 
 WindowTracker.prototype = {
