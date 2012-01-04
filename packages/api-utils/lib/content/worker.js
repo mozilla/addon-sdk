@@ -68,15 +68,21 @@ const ERR_DESTROYED =
  */
 const PRIVATE_KEY = {};
 
-function ensureArgumentsAreJSON(args) {
-  // First convert to real array
-  let array = Array.prototype.slice.call(args);
+function ensureArgumentsAreJSON(array, window) {
   // JSON.stringify is buggy with cross-sandbox values,
   // it may return "{}" on functions. Use a replacer to match them correctly.
   function replacer(k, v) {
     return typeof v === "function" ? undefined : v;
   }
-  return JSON.parse(JSON.stringify(array, replacer));
+  // If a window is given, we use its `JSON.parse` object in order to
+  // create JS objects for its compartments (See bug 714891)
+  let parse = JSON.parse;
+  if (window) {
+    // As we can't directly rely on `window.wrappedJSObject.JSON`, we create
+    // a temporary sandbox in order to get access to a safe `JSON` object:
+    parse = Cu.Sandbox(window).JSON.parse;
+  }
+  return parse(JSON.stringify(array, replacer));
 }
 
 /**
@@ -171,8 +177,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._addonWorker)
       throw new Error(ERR_DESTROYED);
-    this._addonWorker._asyncEmit('message',  
-                                      JSON.parse(JSON.stringify(data)));
+    this._addonWorker._asyncEmit('message', ensureArgumentsAreJSON(data));
   },
   
   /**
@@ -450,7 +455,8 @@ const Worker = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
-    this._contentWorker._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
+    this._contentWorker._asyncEmit('message',
+                                   ensureArgumentsAreJSON(data, this._window));
   },
   
   /**
@@ -508,7 +514,8 @@ const Worker = AsyncEventEmitter.compose({
     
     let scope = this._contentWorker._port;
     // Ensure that we pass only JSON values
-    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(args));
+    let array = Array.prototype.slice.call(args);
+    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(array, this._window));
   },
   
   // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
@@ -629,7 +636,8 @@ const Worker = AsyncEventEmitter.compose({
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
     // Ensure that we pass only JSON values
-    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(arguments));
+    let array = Array.prototype.slice.call(arguments);
+    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(array));
   },
   
   /**
