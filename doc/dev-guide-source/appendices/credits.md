@@ -19,6 +19,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Matteo Ferretti (ZER0)](https://github.com/ZER0)
 * fuzzykiller
 * [Marcio Galli](https://github.com/taboca)
+* [Ben Gillbanks](http://www.iconfinder.com/browse/iconset/circular_icons/)
 * Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
