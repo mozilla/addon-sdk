@@ -123,7 +123,12 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     manifest.set("em:creator",
                  target_cfg.get("author", ""))
     manifest.set("em:bootstrap", str(bootstrap).lower())
-    manifest.set("em:unpack", "false")
+    # XPIs remain packed by default, but package.json can override that. The
+    # RDF format accepts "true" as True, anything else as False, so we need
+    # to tolerate package.json passing True/False (boolean) or
+    # "True"/"true"/"False"/"false" (strings).
+    manifest.set("em:unpack",
+                 str(target_cfg.get("unpack", "false")).lower())
 
     if update_url:
         manifest.set("em:updateURL", update_url)
