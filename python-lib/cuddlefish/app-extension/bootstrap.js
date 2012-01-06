@@ -130,11 +130,24 @@ function getAppStartupTopic() {
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
 function readURI(uri) {
-  let request = XMLHttpRequest();
-  request.open('GET', uri, false);
-  request.overrideMimeType('text/plain');
-  request.send();
-  return request.responseText;
+  let ioservice = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+  let channel = ioservice.newChannel(uri, "UTF-8", null);
+  let stream = channel.open();
+
+  let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);  
+  cstream.init(stream, "UTF-8", 0, 0);
+
+  let str = {};
+  let data = "";
+  let read = 0;
+  do {
+    read = cstream.readString(0xffffffff, str);
+    data += str.value;
+  } while (read != 0);
+
+  cstream.close();
+
+  return data;
 }
 
 // Function takes `topic` to be observer via `nsIObserverService` and returns
