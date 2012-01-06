@@ -5,6 +5,5 @@
     "version": "0.1",
     "fullName": "empty",
     "id": "jid1-80fr8b6qeRlQSQ",
-    "unpack": "False",
     "description": "test unpack= support"
 }

@@ -25,9 +25,7 @@ class RDFTests(unittest.TestCase):
 
     def testUnpack(self):
         basedir = os.path.join(test_dir, "bug-715340-files")
-        for n in ["pkg-1-pack", "pkg-2-pack", "pkg-3-pack",
-                  "pkg-4-unpack", "pkg-5-unpack", "pkg-6-unpack",
-                  "pkg-7-pack"]:
+        for n in ["pkg-1-pack", "pkg-2-unpack", "pkg-3-pack"]:
             cfg = packaging.get_config_in_dir(os.path.join(basedir, n))
             m = rdf.gen_manifest(template_dir, cfg, jid="JID")
             if n.endswith("-pack"):
