@@ -13,14 +13,14 @@
 
 <div class="buttonarray">
 
- <a href="dev-guide/addon-development/tutorials/modifying-web-pages-url.html">Modifying Web Pages Based on URL</a>
- <a href="dev-guide/addon-development/tutorials/modifying-web-pages-tab.html">Modifying the Current Web Page</a>
- <a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">Adding a Button to the Toolbar</a>
- <a href="dev-guide/addon-development/tutorials/adding-toolbar-html.html">Adding HTML Content to the Toolbar</a>
- <a href="dev-guide/addon-development/tutorials/displaying popups.html">Displaying Popups</a>
- <a href="dev-guide/addon-development/tutorials/adding-menus.html">Adding Menu Items to Firefox</a>
- <a href="dev-guide/addon-development/tutorials/adding-context-menus.html">Adding Context Menu Items</a>
- <a href="dev-guide/addon-development/tutorials/network-requests.html">Making Network Requests</a>
+ <a href="dev-guide/addon-development/tutorials/modifying-web-pages-url.html">Modify Web Pages Based on URL</a>
+ <a href="dev-guide/addon-development/tutorials/modifying-web-pages-tab.html">Modify the Current Web Page</a>
+ <a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">Add a Button to the Toolbar</a>
+ <a href="dev-guide/addon-development/tutorials/adding-toolbar-content.html">Create a Toolbar</a>
+ <a href="dev-guide/addon-development/tutorials/displaying popups.html">Get User Input</a>
+ <a href="dev-guide/addon-development/tutorials/adding-menus.html">Add a Menu Item to Firefox</a>
+ <a href="dev-guide/addon-development/tutorials/adding-context-menus.html">Add a Context Menu Item</a>
+ <a href="dev-guide/addon-development/tutorials/network-requests.html">Make a Network Request</a>
  <a href="dev-guide/addon-development/tutorials/prefs-and-storage.html">Preferences and Local Storage</a>
  <a href="dev-guide/addon-development/tutorials/windows-and-tabs.html">Working With Windows and Tabs</a>
  
