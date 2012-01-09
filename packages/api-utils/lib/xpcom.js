@@ -76,13 +76,9 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
   // Gecko-specific binaries for a component (which will be the case
   // if only frozen interfaces are used).
 
-  var appInfo = Cc["@mozilla.org/xre/app-info;1"]
-                .getService(Ci.nsIXULAppInfo);
-  var runtime = Cc["@mozilla.org/xre/app-info;1"]
-                .getService(Ci.nsIXULRuntime);
-
+  var runtime = require("./runtime");
   var osDirName = runtime.OS + "_" + runtime.XPCOMABI;
-  var platformVersion = appInfo.platformVersion.substring(0, 5);
+  var platformVersion = require("./xul-app").platformVersion.substring(0, 5);
 
   var file = Cc['@mozilla.org/file/local;1']
              .createInstance(Ci.nsILocalFile);
