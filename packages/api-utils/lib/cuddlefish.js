@@ -47,11 +47,12 @@ const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
 
 const Sandbox = {
-  new: function (prototype, principal) {
+  new: function (prototype, uri, principal) {
     let sandbox = Object.create(Sandbox, {
       sandbox: {
         value: Cu.Sandbox(principal || Sandbox.principal, {
           sandboxPrototype: prototype || Sandbox.prototype,
+          sandboxName: uri,
           wantXrays: Sandbox.wantXrays
         })
       }
@@ -180,7 +181,8 @@ const Loader = {
   load: function load(module) {
     let require = Loader.require.bind(this, module.path);
     require.main = this.main;
-    let sandbox = this.sandboxes[module.path] = Sandbox.new(this.globals);
+    let sandbox = this.sandboxes[module.path] = Sandbox.new(this.globals,
+                                                            module.uri);
     sandbox.merge({
       require: require,
       module: module,
