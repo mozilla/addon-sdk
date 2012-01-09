@@ -152,7 +152,7 @@ exports['test:contentScript'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The script option must be a string or an array of strings.',
+      'The `contentScript` option must be a string or an array of strings.',
       e.message
     );
   }
@@ -161,7 +161,7 @@ exports['test:contentScript'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The script option must be a string or an array of strings.',
+      'The `contentScript` option must be a string or an array of strings.',
       e.message
     );
   }

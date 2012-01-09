@@ -84,7 +84,7 @@ const valid = {
     ok: function(value) 'array' !== getTypeOf(value) ? true :
       value.every(function(item) 'string' === getTypeOf(item))
     ,
-    msg: 'The script option must be a string or an array of strings.'
+    msg: 'The `contentScript` option must be a string or an array of strings.'
   },
   contentScriptWhen: {
     is: ['string'],
