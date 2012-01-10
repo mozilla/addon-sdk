@@ -154,8 +154,13 @@ const Loader = {
     // when creating the new one to reduce memory consumption.
     let existingSandbox = [this.sandboxes[p] for (p in this.sandboxes)][0];
 
+    // XXX Always set "principal" to work around bug 705795, which generates
+    // 'reference to undefined property "principal"' warnings when the argument
+    // is deconstructed in the "new" function's parameter list.
+    // FIXME: stop setting "principal" once bug 705795 is fixed.
     let sandbox = this.sandboxes[module.uri] =
-      Sandbox.new({ prototype: this.globals,
+      Sandbox.new({ principal: null,
+                    prototype: this.globals,
                     name: module.uri,
                     existingSandbox: existingSandbox });
     sandbox.merge({
