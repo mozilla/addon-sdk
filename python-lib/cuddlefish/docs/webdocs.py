@@ -9,7 +9,7 @@ from cuddlefish._version import get_versions
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
-HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
+HIGH_LEVEL_PACKAGE_SUMMARIES = '<div id="high-level-package-summaries">'
 LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
@@ -106,8 +106,8 @@ class WebDocs(object):
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
                 {'href': relative_doc_URL + '/' + '/'.join(module) + '.html'})
-            module_items += tag_wrap(module_link, 'li', {'class':'module'})
-        return tag_wrap(module_items, 'ul', {'class':'modules'})
+            module_items += module_link
+        return module_items
 
     def _create_package_summaries(self, packages_json, include):
         packages = ''
@@ -115,14 +115,7 @@ class WebDocs(object):
             package_json = packages_json[package_name]
             if not include(package_json):
                 continue
-            package_path = self.pkg_cfg["packages"][package_name]["root_dir"]
-            package_directory = package_path[len(self.root) + 1:]
-            package_directory = "/".join(package_directory.split(os.sep))
-            package_link = tag_wrap(package_name, 'a', {'href': \
-                                    package_directory + "/" \
-                                    + package_name + '.html'})
-            text = tag_wrap(package_link, 'h4')
-            text += self._create_module_list(package_json)
+            text = self._create_module_list(package_json)
             packages += tag_wrap(text, 'div', {'class':'package-summary', \
               'style':'display: block;'})
         return packages

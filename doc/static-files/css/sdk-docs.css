@@ -1,5 +1,5 @@
 html, body {
-  min-width: 570px;         /* 2 x sidebar fullwidth + main-content padding */
+  min-width: 510px;         /* 2 x sidebar fullwidth + main-content padding */
   height: 100%;
 }
 
@@ -25,7 +25,7 @@ h2 {
 }
 
 #columns {
-  padding-left: 250px;      /* sidebar width + sidebar padding */
+  padding-left: 220px;      /* sidebar width + sidebar padding */
   padding-right: 65px;     /* main-content padding*/
   padding-top: 20px;
   min-height: 100%;
@@ -74,8 +74,8 @@ hr {
 }
 
 #sidebar {
-  width: 200px;        /* sidebar usable width (fullwidth - padding) */
-  right: 300px;        /* sidebar fullwidth + main-content padding */
+  width: 170px;        /* sidebar usable width (fullwidth - padding) */
+  right: 270px;        /* sidebar fullwidth + main-content padding */
   padding-left: 30px;
   padding-right: 20px;
   margin-left: -100%;
@@ -244,20 +244,6 @@ hr {
   display: normal;
 }
 
-.sidebar-section ul {
-  margin-bottom: 0.2em;
-  list-style: none;
-}
-
-.sidebar-section li li {
-  padding-left: 30px;
-  margin-left: 0;
-}
-
-.sidebar-section .modules {
-  padding-left: 25px;
-}
-
 .sidebar-section h2, .sidebar-section h4 {
   padding-left: 10px;
 }
@@ -289,12 +275,26 @@ hr {
   border-radius-topright: 5px;
 }
 
-.sidebar-section h2 a {
+.sidebar-section h2 {
   color: white;
 }
 
-.sidebar-section h2.current-page a {
-  color: #3b69b1;
+.sidebar-section a h2:hover {
+  color: #003595;
+  background: white;
+  text-decoration: none;
+}
+
+.sidebar-section h3 {
+  color: #003595;
+}
+.sidebar-section a h3:hover {
+  background: white;
+  text-decoration: none;
+}
+
+.sidebar-section a:hover {
+  text-decoration: none;
 }
 
 .sidebar-section h3 {
@@ -320,10 +320,6 @@ hr {
 .sidebar-section li {
   font-family: Georgia, serif;
   margin-left: 0;
-}
-
-.sidebar-section .current-page {
-  background-color: white;
 }
 
 .image-center {
@@ -363,3 +359,22 @@ div.buttonarray a:hover {
   border-color: #a0d0fb;
 }
 
+div.package-summary {
+  padding-left:15px;
+  padding-right:15px;
+  padding-bottom:10px;
+}
+
+div.package-summary a {
+  display: block;
+  text-decoration: none;
+  padding: 1px 3px;
+}
+
+div.package-summary a:hover {
+  background-color: white;
+  border-color: #a0d0fb;
+  border: solid 1px;
+  padding: 0px 2px;
+  border-color: #a0d0fb;
+}
