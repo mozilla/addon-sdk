@@ -15,14 +15,15 @@ const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
 
 const Sandbox = {
-  new: function (prototype, principal) {
+  new: function ({ principal, prototype, name, existingSandbox }) {
+    let options = { sandboxPrototype: prototype || Sandbox.prototype,
+                    wantXrays: Sandbox.wantXrays };
+    if (name)
+      options.sandboxName = name;
+    if (existingSandbox)
+      options.sameGroupAs = existingSandbox.sandbox;
     let sandbox = Object.create(Sandbox, {
-      sandbox: {
-        value: Cu.Sandbox(principal || Sandbox.principal, {
-          sandboxPrototype: prototype || Sandbox.prototype,
-          wantXrays: Sandbox.wantXrays
-        })
-      }
+      sandbox: { value: Cu.Sandbox(principal || Sandbox.principal, options) }
     });
     // There are few properties (dump, Iterator) that by default appear in
     // sandboxes shadowing properties provided by a prototype. To workaround
@@ -148,7 +149,20 @@ const Loader = {
   load: function load(module) {
     let require = Loader.require.bind(this, module.path);
     require.main = this.main;
-    let sandbox = this.sandboxes[module.path] = Sandbox.new(this.globals);
+
+    // Get an existing module sandbox, if any, so we can reuse its compartment
+    // when creating the new one to reduce memory consumption.
+    let existingSandbox = [this.sandboxes[p] for (p in this.sandboxes)][0];
+
+    // XXX Always set "principal" to work around bug 705795, which generates
+    // 'reference to undefined property "principal"' warnings when the argument
+    // is deconstructed in the "new" function's parameter list.
+    // FIXME: stop setting "principal" once bug 705795 is fixed.
+    let sandbox = this.sandboxes[module.path] =
+      Sandbox.new({ principal: null,
+                    prototype: this.globals,
+                    name: module.uri,
+                    existingSandbox: existingSandbox });
     sandbox.merge({
       require: require,
       module: module,
