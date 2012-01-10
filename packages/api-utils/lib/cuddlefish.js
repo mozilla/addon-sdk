@@ -158,7 +158,7 @@ const Loader = {
     // 'reference to undefined property "principal"' warnings when the argument
     // is deconstructed in the "new" function's parameter list.
     // FIXME: stop setting "principal" once bug 705795 is fixed.
-    let sandbox = this.sandboxes[module.uri] =
+    let sandbox = this.sandboxes[module.path] =
       Sandbox.new({ principal: null,
                     prototype: this.globals,
                     name: module.uri,
