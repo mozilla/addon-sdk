@@ -15,9 +15,11 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Shane Caraveo](https://github.com/mixedpuppy)
 * [Matěj Cepl](https://github.com/mcepl)
 * Hernán Rodriguez Colmeiro
+* dexter
 * [Matteo Ferretti (ZER0)](https://github.com/ZER0)
 * fuzzykiller
 * [Marcio Galli](https://github.com/taboca)
+* [Ben Gillbanks](http://www.iconfinder.com/browse/iconset/circular_icons/)
 * Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
@@ -41,6 +43,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Aza Raskin
 * Justin Scott
 * Ayan Shah
+* [skratchdot](https://github.com/skratchdot)
 * [Mihai Sucan](https://github.com/mihaisucan)
 * Clint Talbert
 * Thomas

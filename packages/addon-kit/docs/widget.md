@@ -63,6 +63,14 @@ You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
 constructor: if you do this, the panel is automatically displayed when the
 user clicks the widget.
 
+<!-- The icon the widget displays, shown in the screenshot, is taken from the
+Circular icon set, http://prothemedesign.com/circular-icons/ which is made
+available under the Creative Commons Attribution 2.5 Generic License:
+http://creativecommons.org/licenses/by/2.5/ -->
+
+<img class="image-right" src="static-files/media/screenshots/widget-panel-clock.png"
+alt="Panel attached to a widget">
+
     data = require("self").data
 
     var clockPanel = require("panel").Panel({
@@ -77,15 +85,6 @@ user clicks the widget.
       contentURL: data.url("History.png"),
       panel: clockPanel
     });
-
-<!-- The icon the widget displays, shown in the screenshot, is taken from the
-Nuvola icon set, http://www.icon-king.com/projects/nuvola/ which is made
-available under the LGPL 2.1:
-http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html -->
-
-<img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
-alt="Panel attached to a widget">
-<br>
 
 Note that this is, at the moment, the only way you can attach a panel to a widget.
 

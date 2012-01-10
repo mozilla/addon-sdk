@@ -1,4 +1,5 @@
 const {Cc,Ci} = require("chrome");
+const { Loader } = require('./helpers');
 
 exports.testConstructor = function(test) {
 
@@ -36,7 +37,7 @@ exports.testConstructor = function(test) {
   test.assertEqual(widgetCount(), widgetStartCount, "panel has correct number of child elements after destroy");
   
   // Test automatic widget destroy on unload
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let widgetsFromLoader = loader.require("widget");
   let widgetStartCount = widgetCount();
   let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
@@ -119,7 +120,7 @@ exports.testConstructor = function(test) {
   AddonsMgrListener.onUninstalled();
   
   // Test concurrent widget module instances on addon-bar hiding
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let anotherWidgetsInstance = loader.require("widget");
   test.assert(container().collapsed, "UI is hidden when no widgets");
   AddonsMgrListener.onInstalling();
@@ -434,6 +435,46 @@ exports.testConstructor = function(test) {
     onMessage: function(message) {
       this.tooltip = "bar";
       test.assertEqual(this.tooltip, "bar", "tooltip gets updated");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  // test allow attribute
+  tests.push(function testDefaultAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated by default");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    allow: {script: true},
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated when we want to");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitDisallow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    allow: {script: false},
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertNotEqual(message, "ok", "scripts aren't evaluated when " +
+                                         "explicitly blocked it");
       this.destroy();
       doneTest();
     }

@@ -2,6 +2,10 @@ import os
 import shutil
 import unittest
 import StringIO
+import tarfile
+import HTMLParser
+import urlparse
+import urllib
 
 from cuddlefish.docs import generate
 from cuddlefish.tests import env_root
@@ -17,17 +21,74 @@ EXTENDED_FILESET = [ ["static-files", "base.html"], \
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
-class Generate_Docs_Tests(unittest.TestCase):
-    def test_generate_static_docs_does_not_smoke(self):
-        filename = 'testdocs.tgz'
-        if os.path.exists(filename):
-            os.remove(filename)
-        filename = generate.generate_static_docs(env_root)
-        self.assertTrue(os.path.exists(filename))
-        os.remove(filename)
+def get_test_root():
+    return os.path.join(env_root, "python-lib", "cuddlefish", "tests", "static-files")
 
-    def test_generate_docs_does_not_smoke(self):
-        test_root = os.path.join(env_root, "python-lib", "cuddlefish", "tests", "static-files")
+def get_sdk_docs_root():
+    return os.path.join(get_test_root(), "sdk-docs")
+
+def get_base_url_path():
+    return os.path.join(get_sdk_docs_root(), "doc")
+
+def get_base_url():
+    base_url_path = get_base_url_path().lstrip("/")
+    return "file://"+"/"+"/".join(base_url_path.split(os.sep))+"/"
+
+class Link_Checker(HTMLParser.HTMLParser):
+    def __init__(self, tester, filename, base_url):
+        HTMLParser.HTMLParser.__init__(self)
+        self.tester = tester
+        self.filename = filename
+        self.base_url = base_url
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            href = dict(attrs).get('href', '')
+            if href:
+                self.validate_href(href)
+
+    def validate_href(self, href):
+        parsed = urlparse.urlparse(href)
+        # there should not be any file:// URLs
+        self.tester.assertNotEqual(parsed.scheme, "file")
+        # any other absolute URLs will not be checked
+        if parsed.scheme:
+            return
+        # otherwise try to open the file at: baseurl + path
+        absolute_url = self.base_url + parsed.path
+        try:
+            urllib.urlopen(absolute_url)
+        except IOError:
+            self.tester.assertFalse(True, absolute_url + " link in " + self.filename + " is broken.")
+
+class Generate_Docs_Tests(unittest.TestCase):
+
+    def test_generate_static_docs(self):
+        # make sure we start clean
+        if os.path.exists(get_base_url_path()):
+            shutil.rmtree(get_base_url_path())
+        # generate a doc tarball, and extract it
+        base_url = get_base_url()
+        tar_filename = generate.generate_static_docs(env_root, base_url)
+        tgz = tarfile.open(tar_filename)
+        tgz.extractall(get_sdk_docs_root())
+        # get each HTML file...
+        for root, subFolders, filenames in os.walk(get_sdk_docs_root()):
+            for filename in filenames:
+                if not filename.endswith(".html"):
+                    continue
+                filename = os.path.join(root, filename)
+                # ...and feed it to the link checker
+                linkChecker = Link_Checker(self, filename, base_url)
+                linkChecker.feed(open(filename, "r").read())
+        # clean up
+        shutil.rmtree(get_base_url_path())
+        tgz.close()
+        os.remove(tar_filename)
+        generate.clean_generated_docs(os.path.join(env_root, "doc"))
+
+    def test_generate_docs(self):
+        test_root = get_test_root()
         docs_root = os.path.join(test_root, "doc")
         generate.clean_generated_docs(docs_root)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET)

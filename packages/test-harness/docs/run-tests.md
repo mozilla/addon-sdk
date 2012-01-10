@@ -1,6 +1,6 @@
 <span class="aside">
 For more information on testing in the Add-on SDK, see the
-[Reusable Modules](#guide/addon-development/implementing-reusable-module)
+[Reusable Modules](dev-guide/addon-development/implementing-reusable-module.html)
 tutorial.
 </span>
 

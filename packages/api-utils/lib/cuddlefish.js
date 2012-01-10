@@ -1,3 +1,4 @@
+/* vim:set ts=2 sw=2 sts=2 expandtab */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -14,11 +15,11 @@
  * The Original Code is Jetpack.
  *
  * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
+ *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -33,150 +34,287 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+var EXPORTED_SYMBOLS = [ 'Loader' ];
+
+!function(exports) {
 
 "use strict";
 
-(function(global) {
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
+        results: Cr, manager: Cm } = Components;
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
 
-   const Cc = Components.classes;
-   const Ci = Components.interfaces;
-   const Cu = Components.utils;
-   const Cr = Components.results;
+const Sandbox = {
+  new: function (prototype, principal) {
+    let sandbox = Object.create(Sandbox, {
+      sandbox: {
+        value: Cu.Sandbox(principal || Sandbox.principal, {
+          sandboxPrototype: prototype || Sandbox.prototype,
+          wantXrays: Sandbox.wantXrays
+        })
+      }
+    });
+    // There are few properties (dump, Iterator) that by default appear in
+    // sandboxes shadowing properties provided by a prototype. To workaround
+    // this we override all such properties by copying them directly to the
+    // sandbox.
+    Object.keys(prototype).forEach(function onEach(key) {
+      if (sandbox.sandbox[key] !== prototype[key])
+        sandbox.sandbox[key] = prototype[key];
+    });
+    return sandbox;
+  },
+  evaluate: function evaluate(source, uri, lineNumber) {
+    return Cu.evalInSandbox(
+      source,
+      this.sandbox,
+      this.version,
+      uri,
+      lineNumber || this.lineNumber
+    );
+  },
+  load: function load(uri) {
+    scriptLoader.loadSubScript(uri, this.sandbox);
+  },
+  merge: function merge(properties) {
+    Object.getOwnPropertyNames(properties).forEach(function(name) {
+      Object.defineProperty(this.sandbox, name,
+                            Object.getOwnPropertyDescriptor(properties, name));
+    }, this);
+  },
+  principal: systemPrincipal,
+  version: '1.8',
+  lineNumber: 1,
+  wantXrays: false,
+  prototype: {}
+};
 
-   var exports = {};
+// the Module object made available to CommonJS modules when they are
+// evaluated, along with 'exports' and 'uri'
+const Module = {
+  new: function(id, path, uri) {
+    let module = Object.create(this);
 
-   // Load the SecurableModule prerequisite.
-   var securableModule;
-   var myURI = Components.stack.filename.split(" -> ").slice(-1)[0];
+    module.id = id;
+    module.path = path;
+    module.uri = uri;
+    module.exports = {};
 
-   if (global.require) {
-     // We're being loaded in a SecurableModule. This call also tells the
-     // manifest-scanner that it ought to scan securable-module.js
-     securableModule = require("api-utils/securable-module");
-   } else {
-     var ios = Cc['@mozilla.org/network/io-service;1']
-               .getService(Ci.nsIIOService);
-     var securableModuleURI = ios.newURI("securable-module.js", null,
-                                         ios.newURI(myURI, null, null));
-     if (securableModuleURI.scheme == "chrome") {
-       // The securable-module module is at a chrome URI, so we can't
-       // simply load it via Cu.import(). Let's assume we're in a
-       // chrome-privileged document and use mozIJSSubScriptLoader.
-       var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-                    .getService(Ci.mozIJSSubScriptLoader);
+    return module;
+  },
+  // TODO: I'd like to remove this, it's not used adds complexity and does
+  // not has much adoption in commonjs either.
+  setExports: function setExports(exports) {
+    this.exports = exports;
+  }
+};
 
-       // Import the script, don't pollute the global scope.
-       securableModule = {__proto__: global};
-       loader.loadSubScript(securableModuleURI.spec, securableModule);
-       securableModule = securableModule.SecurableModule;
-     } else {
-       securableModule = {};
-       try {
-         Cu.import(securableModuleURI.spec, securableModule);
-       } catch (e if e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
-         Cu.reportError("Failed to load " + securableModuleURI.spec);
-       }
-     }
-   }
+const Loader = {
+  new: function (options) {
+    let loader = Object.create(Loader, {
+      // Manifest generated by a linker, containing map of module url's mapped
+      // to it's requirements, comes from harness-options.json
+      manifest: { value: options.manifest || {} },
 
-   if (false) // force the manifest-scanner to copy shims.js into the XPI
-     require("api-utils/shims");
-   var localFS = new securableModule.LocalFileSystem(myURI);
-   var shimsPath = localFS.resolveModule(null, "shims");
-   var shims = exports.shims = localFS.getFile(shimsPath);
+      // Following property may be passed in (usually for mocking purposes) in
+      // order to override default modules cache.
+      modules: { value: options.modules || Object.create(Loader.modules) },
+      globals: { value: options.globals || {} },
 
-   shims.filename = shimsPath;
+      uriPrefix: { value: options.uriPrefix },
 
-   function unloadLoader(reason, onError) {
-     this.require("api-utils/unload").send(reason, onError);
-   }
+      sandboxes: { value: {} }
+    });
+    loader.require = this.require.bind(loader, options.loader);
 
-   function makeGetModuleExports(delegate) {
-     return function getModuleExports(basePath, module) {
-       switch (module) {
-       case "chrome":
-         var chrome = { Cc: Components.classes,
-                        Ci: Components.interfaces,
-                        Cu: Components.utils,
-                        Cr: Components.results,
-                        Cm: Components.manager,
-                        components: Components };
-         return chrome;
-       default:
-         return (delegate ? delegate.call(this, basePath, module) : null);
-       }
-     };
-   }
+    // some 'magic' modules, that have no corresponding .js file
+    loader.modules['@packaging'] = Object.freeze({
+      id: '@packaging',
+      exports: JSON.parse(JSON.stringify(options))
+    });
+    loader.modules['@loader'] = Object.freeze({
+      exports: Object.freeze({ Loader: Loader }),
+      id: '@loader'
+    });
 
-   function modifyModuleSandbox(sandbox, options) {
-     sandbox.evaluate(shims);
-     var filename = options.filename ? options.filename : null;
-     sandbox.defineProperty("__url__", filename);
-   }
+    // This special module defines globals which will be added to every
+    // module this loader creates
+    let globals = loader.require('api-utils/globals!');
+    Object.getOwnPropertyNames(globals).forEach(function(name) {
+      Object.defineProperty(loader.globals, name,
+                            Object.getOwnPropertyDescriptor(globals, name));
+    });
+    // Freeze globals so that modules won't have a chance to mutate scope of
+    // other modules.
+    Object.freeze(globals);
 
-   var Loader = exports.Loader = function Loader(options) {
-     var globals = {};
+    // Override global `dump` so that it behaves same as in any other module (
+    // currently we override dump to write to a file instead of `stdout` so that
+    // python can read it on windows).
+    dump = globals.dump;
 
-     if (options.globals)
-       for (let name in options.globals)
-         globals[name] = options.globals[name];
+    return Object.freeze(loader);
+  },
+  modules: {
+    'chrome': Object.freeze({
+      exports: Object.freeze({
+        Cc: Cc,
+        CC: CC,
+        Ci: Ci,
+        Cu: Cu,
+        Cr: Cr,
+        Cm: Cm,
+        components: Components,
+        messageManager: 'addMessageListener' in exports ? exports : null
+      }),
+      id: 'chrome'
+    }),
+    'self': function self(loader, requirer) {
+      return loader.require('api-utils/self!').create(requirer.path);
+    },
+  },
 
-     if (options.console)
-       globals.console = options.console;
-     if (options.memory)
-       globals.memory = options.memory;
+  // populate a Module by evaluating the CommonJS module code in the sandbox
+  load: function load(module) {
+    let require = Loader.require.bind(this, module.path);
+    require.main = this.main;
+    let sandbox = this.sandboxes[module.path] = Sandbox.new(this.globals);
+    sandbox.merge({
+      require: require,
+      module: module,
+      exports: module.exports
+    });
 
-     if ('modules' in options)
-       throw new Error('options.modules is no longer supported');
+    sandbox.load(module.uri);
 
-     var getModuleExports = makeGetModuleExports(options.getModuleExports);
+    // Workaround for bug 674195. Freezing objects from other sandboxes fail,
+    // so we create descendant and freeze it instead.
+    if (typeof(module.exports) === 'object') {
+      module.exports = Object.prototype.isPrototypeOf(module.exports) ?
+                Object.freeze(module.exports) :
+                Object.freeze(Object.create(module.exports));
+    }
+  },
 
-     var manifest = {};
-     if ("packaging" in options)
-       manifest = options.packaging.options.manifest;
-     var loaderOptions = {rootPath: options.rootPath,
-                          rootPaths: options.rootPaths,
-                          metadata: options.metadata,
-                          uriPrefix: options.uriPrefix,
-                          name: options.name,
-                          fs: options.fs,
-                          defaultPrincipal: "system",
-                          globals: globals,
-                          modifyModuleSandbox: modifyModuleSandbox,
-                          manifest: manifest,
-                          getModuleExports: getModuleExports};
+  // this require() is the main entry point for regular CommonJS modules. The
+  // bind() in load (above) causes those modules to get a very restricted
+  // form of this require(): one which can only ever reference this one
+  // loader, and which always uses their URI as a "base" (so they're limited
+  // to their own manifest entries, and can't import anything off the
+  // manifest).
+  require: function require(base, id) {
+    let module, manifest = this.manifest[base], requirer = this.modules[base];
 
-     var loader = new securableModule.Loader(loaderOptions);
+    if (!id)
+      throw Error("you must provide a module name when calling require() from "
+                  + (requirer && requirer.id), base, id);
 
-     if (!globals.console) {
-       var console = loader.require("api-utils/plain-text-console");
-       globals.console = new console.PlainTextConsole(options.print);
-     }
-     if (!globals.memory)
-       globals.memory = loader.require("api-utils/memory");
+    // If we have a manifest for requirer, then all it's requirements have been
+    // registered by linker and we should have a `path` to the required module.
+    // Even pseudo-modules like 'chrome', 'self', '@packaging', and '@loader'
+    // have pseudo-paths: exactly those same names.
+    // details see: Bug-697422.
+    let requirement = manifest && manifest.requirements[id];
+    if (!requirement)
+        throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
+                    base + " has no authority to load: " + id);
+    let path = requirement.path;
 
-     loader.console = globals.console;
-     loader.memory = globals.memory;
-     loader.unload = unloadLoader;
+    if (path in this.modules) {
+      module = this.modules[path];
+    }
+    else {
+      let uri = this.uriPrefix + path;
+      module = this.modules[path] = Module.new(id, path, uri);
+      this.load(module);
+      Object.freeze(module);
+    }
 
-     return loader;
-   };
+    // "magic" modules which have contents that depend upon who imports them
+    // (like "self") are expressed in the Loader's pre-populated 'modules'
+    // table as callable functions, which are given the reference to this
+    // Loader and a copy of the importer's URI
+    //
+    // TODO: Find a better way to implement `self`.
+    // Maybe something like require('self!path/to/data')
+    if (typeof(module) === 'function')
+      module = module(this, requirer);
 
-   if (global.window) {
-     // We're being loaded in a chrome window, or a web page with
-     // UniversalXPConnect privileges.
-     global.Cuddlefish = exports;
-   } else if (global.exports) {
-     // We're being loaded in a SecurableModule.
-     for (let name in exports) {
-       global.exports[name] = exports[name];
-     }
-   } else {
-     // We're being loaded in a JS module.
-     global.EXPORTED_SYMBOLS = [];
-     for (let name in exports) {
-       global.EXPORTED_SYMBOLS.push(name);
-       global[name] = exports[name];
-     }
-   }
- })(this);
+    return module.exports;
+  },
+
+  // process.process() will eventually cause a call to main() to be evaluated
+  // in the addon's context. This function loads and executes the addon's
+  // entry point module.
+  main: function main(id, path) {
+    try {
+      let uri = this.uriPrefix + path;
+      let module = this.modules[path] = Module.new(id, path, uri);
+      this.load(module); // this is where the addon's main.js finally runs
+      let program = Object.freeze(module).exports;
+
+      if (typeof(program.onUnload) === 'function')
+        this.require('api-utils/unload').when(program.onUnload);
+
+      if (program.main) {
+        let { exit, staticArgs } = this.require('api-utils/system');
+        let { loadReason } = this.require('@packaging');
+        program.main({ loadReason: loadReason, staticArgs: staticArgs },
+                     { print: function($) dump($ + '\n'), quit: exit });
+      }
+    } catch (error) {
+      Cu.reportError(error);
+      if (this.globals.console) this.globals.console.exception(error);
+      throw error;
+    }
+  },
+
+  // This is the main entry-point: bootstrap.js calls this when the add-on is
+  // installed. The order of calls is a bit confusing, but here's what
+  // happens (in temporal order):
+  // * process.spawn creates a new XUL 'browser' element which will house the
+  //   main addon code. When e10s is active, this uses a real separate OS
+  //   process. When e10s is disabled, this element lives in the one original
+  //   process. Either way, its API is the same.
+  // * Grab the channel named "require!" and attach a handler which will load
+  //   modules (in the chrome process) when requested to by the addon
+  //   process. This handler uses Loader.require to import the module, then
+  //   calls the module's .initialize() function to connect a new channel.
+  //   The remote caller winds up with a channel reference, which they can
+  //   use to send messages to the newly loaded module. This is for e10s.
+  // * After the channel handler is attached, process.process() (invoked by
+  //   process.spawn()) will use loadScript() to evaluate code in the
+  //   'browser' element (which is where the main addon code starts running),
+  //   to do the following:
+  //   * create a Loader, initialized with the same manifest and
+  //     harness-options.json that we've got
+  //   * invoke it's main() method, with the name and path of the addon's
+  //     entry module (which comes from linker via harness-options.js, and is
+  //     usually main.js). That executes main(), above.
+  //   * main() loads the addon's main.js, which executes all top-level
+  //     forms. If the module defines an "exports.main=" function, we invoke
+  //     that too. This is where the addon finally gets to run.
+  spawn: function spawn(id, path) {
+    let loader = this;
+    let process = this.require('api-utils/process');
+    process.spawn(id, path)(function(addon) {
+      // Listen to `require!` channel's input messages from the add-on process
+      // and load modules being required.
+      addon.channel('require!').input(function({ requirer: { path }, id }) {
+        try {
+          Loader.require.call(loader, path, id).initialize(addon.channel(id));
+        } catch (error) {
+          this.globals.console.exception(error);
+        }
+      });
+    });
+  },
+  unload: function unload(reason, callback) {
+    this.require('api-utils/unload').send(reason, callback);
+  }
+};
+exports.Loader = Loader;
+
+}(this);

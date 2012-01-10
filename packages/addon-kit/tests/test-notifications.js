@@ -37,8 +37,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const { Loader } = require('./helpers');
+
 exports.testOnClick = function (test) {
-  let [loader, mockAlertServ] = makeLoader(test);
+  let [loader, mockAlertServ] = makeLoader(module);
   let notifs = loader.require("notifications");
   let data = "test data";
   let opts = {
@@ -59,7 +61,7 @@ exports.testOnClick = function (test) {
 
 // Returns [loader, mockAlertService].
 function makeLoader(test) {
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let mockAlertServ = {
     showAlertNotification: function (imageUrl, title, text, textClickable,
                                      cookie, alertListener, name) {
@@ -70,7 +72,8 @@ function makeLoader(test) {
       this._alertListener.observe(null, "alertclickcallback", this._cookie);
     }
   };
-  let scope = loader.findSandboxForModule("notifications").globalScope;
+  loader.require("notifications");
+  let scope = loader.sandbox("notifications");
   scope.notify = mockAlertServ.showAlertNotification.bind(mockAlertServ);
   return [loader, mockAlertServ];
 };

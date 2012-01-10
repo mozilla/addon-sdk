@@ -22,6 +22,7 @@
 #  Mikeal Rogers <mikeal.rogers@gmail.com>
 #  Clint Talbert <ctalbert@mozilla.com>
 #  Henrik Skupin <hskupin@mozilla.com>
+#  Myk Melez <myk@mozilla.org>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -191,6 +192,9 @@ class Profile(object):
                         data = compressed_file.read(name)
                         f = open(os.path.join(tmpdir, name), 'wb')
                         f.write(data) ; f.close()
+                        zi = compressed_file.getinfo(name)
+                        os.chmod(os.path.join(tmpdir,name),
+                                 (zi.external_attr>>16))
                 addon = tmpdir
 
             tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
@@ -288,6 +292,15 @@ class FirefoxProfile(Profile):
                    'extensions.update.notifyUser' : False,
                    }
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    # Note: Nightly is obsolete, as it has been renamed to FirefoxNightly,
+    # but it will still be present if users update an older nightly build
+    # via the app update service.
+    bundle_names = ['Firefox', 'FirefoxNightly', 'Nightly']
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     @property
     def names(self):
         if sys.platform == 'darwin':
@@ -305,6 +318,13 @@ class ThunderbirdProfile(Profile):
                    'browser.warnOnQuit': False,
                    'browser.sessionstore.resume_from_crash': False,
                    }
+
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    bundle_names = ["Thunderbird", "Shredder"]
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     names = ["thunderbird", "shredder"]
 
 
@@ -383,19 +403,29 @@ class Runner(object):
                             binary = path
                             break
         elif sys.platform == 'darwin':
-            for name in reversed(self.names):
-                appdir = os.path.join('Applications', name.capitalize()+'.app')
-                if os.path.isdir(os.path.join(os.path.expanduser('~/'), appdir)):
-                    binary = os.path.join(os.path.expanduser('~/'), appdir,
-                                          'Contents/MacOS/'+name+'-bin')
-                elif os.path.isdir('/'+appdir):
-                    binary = os.path.join("/"+appdir, 'Contents/MacOS/'+name+'-bin')
+            for bundle_name in self.bundle_names:
+                # Look for the application bundle in the user's home directory
+                # or the system-wide /Applications directory.  If we don't find
+                # it in one of those locations, we move on to the next possible
+                # bundle name.
+                appdir = os.path.join("~/Applications/%s.app" % bundle_name)
+                if not os.path.isdir(appdir):
+                    appdir = "/Applications/%s.app" % bundle_name
+                if not os.path.isdir(appdir):
+                    continue
 
-                if binary is not None:
-                    if not os.path.isfile(binary):
-                        binary = binary.replace(name+'-bin', 'firefox-bin')
-                    if not os.path.isfile(binary):
-                        binary = None
+                # Look for a binary with any of the possible binary names
+                # inside the application bundle.
+                for binname in self.names:
+                    binpath = os.path.join(appdir,
+                                           "Contents/MacOS/%s-bin" % binname)
+                    if (os.path.isfile(binpath)):
+                        binary = binpath
+                        break
+
+                if binary:
+                    break
+
         if binary is None:
             raise Exception('Mozrunner could not locate your binary, you will need to set it.')
         return binary
@@ -477,6 +507,13 @@ class FirefoxRunner(Runner):
     app_name = 'Firefox'
     profile_class = FirefoxProfile
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    # Note: Nightly is obsolete, as it has been renamed to FirefoxNightly,
+    # but it will still be present if users update an older nightly build
+    # only via the app update service.
+    bundle_names = ['Firefox', 'FirefoxNightly', 'Nightly']
+
     @property
     def names(self):
         if sys.platform == 'darwin':
@@ -492,6 +529,12 @@ class ThunderbirdRunner(Runner):
     app_name = 'Thunderbird'
     profile_class = ThunderbirdProfile
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    bundle_names = ["Thunderbird", "Shredder"]
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     names = ["thunderbird", "shredder"]
 
 class CLI(object):

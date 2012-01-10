@@ -74,8 +74,8 @@ const Registry = EventEmitter.compose({
     if (0 > _registry.indexOf(instance)) {
       _registry.push(instance);
       this._emit('add', instance);
-      return instance;
     }
+    return instance;
   },
   remove: function remove(instance) {
     let _registry = this._registry;
