@@ -49,6 +49,8 @@ const WindowTabTracker = Trait.compose({
     this._onTabClose = this._onTabEvent.bind(this, "close");
     this._onTabActivate = this._onTabEvent.bind(this, "activate");
     this._onTabDeactivate = this._onTabEvent.bind(this, "deactivate");
+    this._onTabPinned = this._onTabEvent.bind(this, "pinned");
+    this._onTabUnpinned = this._onTabEvent.bind(this, "unpinned");
 
     for each (let tab in getTabs(this._window)) {
       // We emulate "open" events for all open tabs since gecko does not emits
@@ -64,6 +66,8 @@ const WindowTabTracker = Trait.compose({
     tabsObserver.on("close", this._onTabClose);
     tabsObserver.on("activate", this._onTabActivate);
     tabsObserver.on("deactivate", this._onTabDeactivate);
+    tabsObserver.on("pinned", this._onTabPinned);
+    tabsObserver.on("unpinned", this._onTabUnpinned);
   },
   _destroyWindowTabTracker: function _destroyWindowTabTracker() {
     // We emulate close events on all tabs, since gecko does not emits such
