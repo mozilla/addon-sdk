@@ -1,6 +1,10 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os, unittest, shutil
 from StringIO import StringIO
-from cuddlefish import initializer, get_unique_prefix
+from cuddlefish import initializer
 from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
@@ -83,16 +87,7 @@ class TestInit(unittest.TestCase):
     def test_existing_files(self):
         self.run_init_in_subdir("existing_files", self._test_existing_files)
 
-class TestRun(unittest.TestCase):
 
-    def test_get_unique_prefix(self):
-        self.assertEqual(get_unique_prefix("LOWERCASEME"), "lowercaseme")
-        self.assertEqual(get_unique_prefix("foo@example.com"),
-                         "foo-at-example-dot-com")
-        self.assertEqual(
-            get_unique_prefix("{74343602-334C-4570-BBCD-69BDE8CAFBD1}"),
-            "74343602-334c-4570-bbcd-69bde8cafbd1"
-        )
 
 class TestCfxQuits(unittest.TestCase):
 

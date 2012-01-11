@@ -1,41 +1,7 @@
 /* vim:set ts=2 sw=2 sts=2 expandtab */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2011
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
- *  Matteo Ferretti <zer0@mozilla.com>
- *  Erik Vold <erikvvold@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // @see http://mxr.mozilla.org/mozilla-central/source/js/src/xpconnect/loader/mozJSComponentLoader.cpp
 
@@ -109,7 +75,7 @@ function getAppStartupTopic() {
     Mozilla: '{86c18b42-e466-45a9-ae7a-9b95ba6f5640}',
     Sunbird: '{718e30fb-e89b-41dd-9da7-e25a45638b28}',
     SeaMonkey: '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}',
-    Fennec: '{a23983c0-fd0e-11dc-95ff-0800200c9a66}',
+    Fennec: '{aa3c5121-dab2-40e2-81ca-7ea25febc110}',
     Thunderbird: '{3550f703-e582-4d05-9a08-453d09bdfdc6}'
   };
 
@@ -117,11 +83,12 @@ function getAppStartupTopic() {
 
   switch (id) {
     case ids.Firefox:
-    case ids.Fennec:
     case ids.SeaMonkey:
       return 'sessionstore-windows-restored';
     case ids.Thunderbird:
       return 'mail-startup-done';
+    // Temporary, until Fennec Birch will support sessionstore event
+    case ids.Fennec:
     default:
       return 'final-ui-startup';
   }
@@ -181,11 +148,25 @@ function startup(data, reason) {
   let options = JSON.parse(readURI(URI + './harness-options.json'));
   options.loadReason = REASON[reason];
 
+  // URI for the root of the XPI file.
+  // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
+  // (Used by l10n module in order to fetch `locale` folder)
+  options.rootURI = data.resourceURI.spec;
+
   // Register a new resource "domain" for this addon which is mapping to
   // XPI's `resources` folder.
+  // Generate the domain name by using jetpack ID, which is the extension ID
+  // by stripping common characters that doesn't work as a domain name:
+  let uuidRe =
+    /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
+  let domain = options.jetpackID.toLowerCase()
+                            .replace(/@/g, "-at-")
+                            .replace(/\./g, "-dot-")
+                            .replace(uuidRe, "$1");
+
   let resourcesUri = ioService.newURI(URI + '/resources/', null, null);
-  resourceHandler.setSubstitution(options.unique_prefix, resourcesUri);
-  options.uriPrefix = "resource://" + options.unique_prefix + "/";
+  resourceHandler.setSubstitution(domain, resourcesUri);
+  options.uriPrefix = "resource://" + domain + "/";
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
   let loaderUri = options.uriPrefix + options.loader;

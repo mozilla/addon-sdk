@@ -1,32 +1,64 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Felipe Gomes [felipc@gmail.com] -->
 
 The `page-worker` module provides a way to create a permanent, invisible page
 and access its DOM.
 
-Introduction
-------------
-
 The module exports a constructor function `Page`, which constructs a new page
 worker.  A page worker may be destroyed, after which its memory is freed, and
 you must create a new instance to load another page.
 
-Page workers have associated content scripts, which are JavaScript scripts that
-have access to the content loaded into the pages.  You can specify scripts to
-load for a page worker, and you communicate with those scripts over an
-asynchronous JSON pipe.  For more information on content scripts, see
-[Working with Content Scripts](dev-guide/addon-development/web-content.html).
+You specify the page to load using the `contentURL` option to the
+[`Page()` constructor](packages/addon-kit/docs/page-worker.html#Page(options)).
+This can point to a remote file:
 
-Examples
---------
+    pageWorker = require("page-worker").Page({
+      contentScript: "console.log(document.body.innerHTML);",
+      contentURL: "http://en.wikipedia.org/wiki/Internet"
+    });
 
-For conciseness, these examples create their content scripts as strings and use
-the `contentScript` property.  In your own add-ons, you will probably want to
-create your content scripts in separate files and pass their URLs using the
-`contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
-for more information.
+It can also point to an HTML file which you've packaged with your add-on.
+To do this, save the file in your add-on's `data` directory and create the
+URL using the `data.url()` method of the
+[`self`](packages/addon-kit/docs/self.html) module:
 
-### Print all header titles from a Wikipedia article ###
+    pageWorker = require("page-worker").Page({
+      contentScript: "console.log(document.body.innerHTML);",
+      contentURL: require("self").data.url("myFile.html")
+    });
+
+## Scripting Page-Worker Content ##
+
+To access the page's DOM you need to attach a script to it. In the SDK these
+scripts are called "content scripts" because they're explicitly used for
+interacting with web content.
+
+You can specify one or more content scripts to load into the page using the
+`contentScript` or `contentScriptFile` options to the
+[`Page()` constructor](packages/addon-kit/docs/page-worker.html#Page(options)).
+With `contentScript` you pass the script as a string, as in the examples
+above. With `contentScriptFile` you pass a URL which points to a script
+saved under your add-on's `data` directory. You construct the URL using
+the `data.url()` method of the
+[`self`](packages/addon-kit/docs/self.html) module.
+
+While content scripts can access DOM content, they can't access any of the SDK
+APIs, so in many cases you'll need to exchange messages between the content
+script and your main add-on code for a complete solution.
+
+For example, the content script might read some content and send it back to
+the main add-on, which could store it using the
+[`simple-storage`](packages/addon-kit/docs/simple-storage.html) API. You can
+communicate with the script using either the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or (preferably, usually) the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+
+For example, this add-on loads a page from Wikipedia, and runs a content script
+in it to send all the headers back to the main add-on code:
 
     var pageWorkers = require("page-worker");
 
@@ -46,8 +78,55 @@ for more information.
       }
     });
 
-The page worker's "message" event listener, specified by `onMessage`, will print
-all the titles it receives from the content script.
+For conciseness, this example creates the content script as a string and uses
+the `contentScript` property. In your own add-ons, you will probably want to
+create your content scripts in separate files and pass their URLs using the
+`contentScriptFile` property.
+
+To learn much more about content scripts, see the
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+guide.
+
+<div class="experimental">
+<h3>Scripting Trusted Page Content</h3>
+
+**Note that the feature described in this section is experimental: we'll
+very probably continue to support it, but the name of the `addon`
+property might change in a future release.**
+
+We've already seen that you can package HTML files in your add-on's `data`
+directory and load them using `page-worker`. We can call this "trusted"
+content, because unlike content loaded from a source outside the
+add-on, the add-on author knows exactly what it's doing. To
+interact with trusted content you don't need to use content scripts:
+you can just include a script from the HTML file in the normal way, using
+`<script>` tags.
+
+Like a content script, these scripts can communicate with the add-on code
+using the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+The crucial difference is that these scripts access the `postMessage`
+and `port` objects through the `addon` object, whereas content scripts
+access them through the `self` object.
+
+So given an add-on that loads trusted content and uses content scripts
+to access it, there are typically three changes you have to make, if you
+want to use normal page scripts instead:
+
+* **in the content script**: change occurrences of `self` to `addon`.
+For example, `self.port.emit("my-event")` becomes
+`addon.port.emit("my-event")`.
+
+* **in the HTML page itself**: add a `<script>` tag to load the script. So
+if your content script is saved under `data` as "my-script.js", you need
+a line like `<script src="my-script.js"></script>` in the page header.
+
+* **in the "main.js" file**: remove the `contentScriptFile` option in
+the `Page()` constructor.
+
+</div>
 
 <api name="Page">
 @class

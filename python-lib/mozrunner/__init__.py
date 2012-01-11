@@ -1,42 +1,6 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Mozilla Corporation Code.
-#
-# The Initial Developer of the Original Code is
-# Mikeal Rogers.
-# Portions created by the Initial Developer are Copyright (C) 2008-2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#  Mikeal Rogers <mikeal.rogers@gmail.com>
-#  Clint Talbert <ctalbert@mozilla.com>
-#  Henrik Skupin <hskupin@mozilla.com>
-#  Myk Melez <myk@mozilla.org>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
 import sys
@@ -50,15 +14,13 @@ import killableprocess
 import subprocess
 import platform
 import shutil
+from StringIO import StringIO
+from xml.dom import minidom
 
 from distutils import dir_util
 from time import sleep
 
 # conditional (version-dependent) imports
-try:
-    from xml.etree import ElementTree
-except ImportError:
-    from elementtree import ElementTree
 try:
     import simplejson
 except ImportError:
@@ -136,6 +98,63 @@ def makedirs(name):
     except:
         pass
 
+# addon_details() copied from mozprofile
+def addon_details(install_rdf_fh):
+    """
+    returns a dictionary of details about the addon
+    - addon_path : path to the addon directory
+    Returns:
+    {'id':      u'rainbow@colors.org', # id of the addon
+     'version': u'1.4',                # version of the addon
+     'name':    u'Rainbow',            # name of the addon
+     'unpack': # whether to unpack the addon
+    """
+
+    details = {
+        'id': None,
+        'unpack': False,
+        'name': None,
+        'version': None
+    }
+
+    def get_namespace_id(doc, url):
+        attributes = doc.documentElement.attributes
+        namespace = ""
+        for i in range(attributes.length):
+            if attributes.item(i).value == url:
+                if ":" in attributes.item(i).name:
+                    # If the namespace is not the default one remove 'xlmns:'
+                    namespace = attributes.item(i).name.split(':')[1] + ":"
+                    break
+        return namespace
+
+    def get_text(element):
+        """Retrieve the text value of a given node"""
+        rc = []
+        for node in element.childNodes:
+            if node.nodeType == node.TEXT_NODE:
+                rc.append(node.data)
+        return ''.join(rc).strip()
+
+    doc = minidom.parse(install_rdf_fh)
+
+    # Get the namespaces abbreviations
+    em = get_namespace_id(doc, "http://www.mozilla.org/2004/em-rdf#")
+    rdf = get_namespace_id(doc, "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+
+    description = doc.getElementsByTagName(rdf + "Description").item(0)
+    for node in description.childNodes:
+        # Remove the namespace prefix from the tag for comparison
+        entry = node.nodeName.replace(em, "")
+        if entry in details.keys():
+            details.update({ entry: get_text(node) })
+
+    # turn unpack into a true/false value
+    if isinstance(details['unpack'], basestring):
+        details['unpack'] = details['unpack'].lower() == 'true'
+
+    return details
+
 class Profile(object):
     """Handles all operations regarding profile. Created new profiles, installs extensions,
     sets preferences and handles cleanup."""
@@ -172,61 +191,39 @@ class Profile(object):
         profile = tempfile.mkdtemp(suffix='.mozrunner')
         return profile
 
+    def unpack_addon(self, xpi_zipfile, addon_path):
+        for name in xpi_zipfile.namelist():
+            if name.endswith('/'):
+                makedirs(os.path.join(addon_path, name))
+            else:
+                if not os.path.isdir(os.path.dirname(os.path.join(addon_path, name))):
+                    makedirs(os.path.dirname(os.path.join(addon_path, name)))
+                data = xpi_zipfile.read(name)
+                f = open(os.path.join(addon_path, name), 'wb')
+                f.write(data) ; f.close()
+                zi = xpi_zipfile.getinfo(name)
+                os.chmod(os.path.join(addon_path,name), (zi.external_attr>>16))
+
     def install_addon(self, path):
         """Installs the given addon or directory of addons in the profile."""
+
+        extensions_path = os.path.join(self.profile, 'extensions')
+        if not os.path.exists(extensions_path):
+            os.makedirs(extensions_path)
+
         addons = [path]
         if not path.endswith('.xpi') and not os.path.exists(os.path.join(path, 'install.rdf')):
             addons = [os.path.join(path, x) for x in os.listdir(path)]
 
         for addon in addons:
-            tmpdir = None
-            if addon.endswith('.xpi'):
-                tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
-                compressed_file = zipfile.ZipFile(addon, "r")
-                for name in compressed_file.namelist():
-                    if name.endswith('/'):
-                        makedirs(os.path.join(tmpdir, name))
-                    else:
-                        if not os.path.isdir(os.path.dirname(os.path.join(tmpdir, name))):
-                            makedirs(os.path.dirname(os.path.join(tmpdir, name)))
-                        data = compressed_file.read(name)
-                        f = open(os.path.join(tmpdir, name), 'wb')
-                        f.write(data) ; f.close()
-                        zi = compressed_file.getinfo(name)
-                        os.chmod(os.path.join(tmpdir,name),
-                                 (zi.external_attr>>16))
-                addon = tmpdir
-
-            tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
-            # description_element =
-            # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
-
-            desc = tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-            apps = desc.findall('.//{http://www.mozilla.org/2004/em-rdf#}targetApplication')
-            for app in apps:
-              desc.remove(app)
-            if len(desc) and desc.attrib.has_key('{http://www.mozilla.org/2004/em-rdf#}id'):
-                addon_id = desc.attrib['{http://www.mozilla.org/2004/em-rdf#}id']
-            elif len(desc) and desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id') is not None:
-                addon_id = desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id').text
+            xpi_zipfile = zipfile.ZipFile(addon, "r")
+            details = addon_details(StringIO(xpi_zipfile.read('install.rdf')))
+            addon_path = os.path.join(extensions_path, details["id"])
+            if details.get("unpack", True):
+                self.unpack_addon(xpi_zipfile, addon_path)
+                self.addons_installed.append(addon_path)
             else:
-                about = [e for e in tree.findall(
-                            './/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description') if
-                             e.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') ==
-                             'urn:mozilla:install-manifest'
-                        ]
-
-                x = e.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-
-                if len(about) == 0:
-                    addon_element = tree.find('.//{http://www.mozilla.org/2004/em-rdf#}id')
-                    addon_id = addon_element.text
-                else:
-                    addon_id = about[0].get('{http://www.mozilla.org/2004/em-rdf#}id')
-
-            addon_path = os.path.join(self.profile, 'extensions', addon_id)
-            copytree(addon, addon_path, preserve_symlinks=1)
-            self.addons_installed.append(addon_path)
+                shutil.copy(addon, addon_path + '.xpi')
 
     def set_preferences(self, preferences):
         """Adds preferences dict to profile preferences"""
@@ -373,16 +370,34 @@ class Runner(object):
 
             # find the default executable from the windows registry
             try:
-                # assumes self.app_name is defined, as it should be for
-                # implementors
                 import _winreg
-                app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"Software\Mozilla\Mozilla %s" % self.app_name)
-                version, _type = _winreg.QueryValueEx(app_key, "CurrentVersion")
-                version_key = _winreg.OpenKey(app_key, version + r"\Main")
-                path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
-                return path
-            except: # XXX not sure what type of exception this should be
+            except ImportError:
                 pass
+            else:
+                sam_flags = [0]
+                # KEY_WOW64_32KEY etc only appeared in 2.6+, but that's OK as
+                # only 2.6+ has functioning 64bit builds.
+                if hasattr(_winreg, "KEY_WOW64_32KEY"):
+                    if "64 bit" in sys.version:
+                        # a 64bit Python should also look in the 32bit registry
+                        sam_flags.append(_winreg.KEY_WOW64_32KEY)
+                    else:
+                        # possibly a 32bit Python on 64bit Windows, so look in
+                        # the 64bit registry incase there is a 64bit app.
+                        sam_flags.append(_winreg.KEY_WOW64_64KEY)
+                for sam_flag in sam_flags:
+                    try:
+                        # assumes self.app_name is defined, as it should be for
+                        # implementors
+                        keyname = r"Software\Mozilla\Mozilla %s" % self.app_name
+                        sam = _winreg.KEY_READ | sam_flag
+                        app_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, keyname, 0, sam)
+                        version, _type = _winreg.QueryValueEx(app_key, "CurrentVersion")
+                        version_key = _winreg.OpenKey(app_key, version + r"\Main")
+                        path, _ = _winreg.QueryValueEx(version_key, "PathToExe")
+                        return path
+                    except _winreg.error:
+                        pass
 
             # search for the binary in the path            
             for name in reversed(self.names):

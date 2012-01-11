@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 DEFAULT_COMMON_PREFS = {
     # allow debug output via dump to be printed to the system console
     # (setting it here just in case, even though PlainTextConsole also

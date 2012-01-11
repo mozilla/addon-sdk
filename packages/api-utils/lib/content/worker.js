@@ -1,56 +1,22 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
 const timer = require('../timer');
-const { toFilename } = require('../url');
-const file = require('../file');
+const { URL } = require('../url');
 const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { Enqueued } = require('../utils/function');
 const self = require("self");
-const scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
-                     getService(Ci.mozIJSSubScriptLoader);
+const { sandbox, evaluate, load } = require("../sandbox");
+const { merge } = require('../utils/object');
 
 const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
 
@@ -235,94 +201,80 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     if (window.wrappedJSObject) {
       // Instantiate the proxy code in another Sandbox in order to prevent
       // content script from polluting globals used by proxy code
-      proxySandbox = Cu.Sandbox(window, {
-        wantXrays: true
-      });
+      proxySandbox = sandbox(window, { wantXrays: true });
       proxySandbox.console = console;
       // Execute the proxy code
-      scriptLoader.loadSubScript(CONTENT_PROXY_URL, proxySandbox);
+      load(proxySandbox, CONTENT_PROXY_URL);
       // Get a reference of the window's proxy
       proto = proxySandbox.create(window);
     }
 
     // Create the sandbox and bind it to window in order for content scripts to
     // have access to all standard globals (window, document, ...)
-    let sandbox = this._sandbox = new Cu.Sandbox(window, {
+    let content = this._sandbox = sandbox(window, {
       sandboxPrototype: proto,
       wantXrays: true
     });
-    Object.defineProperties(sandbox, {
+    merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
-      window: { get: function() sandbox },
-      top: { get: function() sandbox },
+      get window() content,
+      get top() content,
       // Use the Greasemonkey naming convention to provide access to the
       // unwrapped window object so the content script can access document
       // JavaScript values.
       // NOTE: this functionality is experimental and may change or go away
       // at any time!
-      unsafeWindow: { get: function () window.wrappedJSObject }
+      get unsafeWindow() window.wrappedJSObject
     });
 
     // Internal feature that is only used by SDK tests:
     // Expose unlock key to content script context.
     // See `PRIVATE_KEY` definition for more information.
     if (proxySandbox && worker._expose_key)
-      sandbox.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY;
+      content.UNWRAP_ACCESS_KEY = proxySandbox.UNWRAP_ACCESS_KEY;
+
     // Initialize timer lists
     this._timers = {};
 
-    let publicAPI = this._public;
-    
-    // List of content script globals:
-    let keys = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 
-                'self'];
-    for each (let key in keys) {
-      Object.defineProperty(
-        sandbox, key, Object.getOwnPropertyDescriptor(publicAPI, key)
-      );
-    }
     let self = this;
-    Object.defineProperties(sandbox, {
-      onMessage: {
-        get: function() self._onMessage,
-        set: function(value) {
-          console.warn("The global `onMessage` function in content scripts " +
-                       "is deprecated in favor of the `self.on()` function. " +
-                       "Replace `onMessage = function (data){}` definitions " +
-                       "with calls to `self.on('message', function (data){})`. " +
-                       "For more info on `self.on`, see " +
-                       "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
-          self._onMessage = value;
-        },
-        configurable: true
+    let publicAPI = this._public;
+
+    merge(content, {
+      console: console,
+      self: publicAPI.self,
+      setTimeout: publicAPI.setTimeout,
+      clearTimeout: publicAPI.clearTimeout,
+      setInterval: publicAPI.setInterval,
+      clearInterval: publicAPI.clearInterval,
+      get onMessage() self._onMessage,
+      set onMessage(value) {
+        console.warn("The global `onMessage` function in content scripts " +
+                     "is deprecated in favor of the `self.on()` function. " +
+                     "Replace `onMessage = function (data){}` definitions " +
+                     "with calls to `self.on('message', function (data){})`. " +
+                     "For more info on `self.on`, see " +
+                     "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+        self._onMessage = value;
       },
-      console: { value: console, configurable: true },
-      
       // Deprecated use of on/postMessage from globals
-      on: {
-        value: function () {
-          console.warn("The global `on()` function in content scripts is " +
-                       "deprecated in favor of the `self.on()` function, " +
-                       "which works the same. Replace calls to `on()` with " +
-                       "calls to `self.on()`" +
-                       "For more info on `self.on`, see " +
-                       "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
-          publicAPI.on.apply(publicAPI, arguments);
-        },
-        configurable: true
-      }, 
-      postMessage: {
-        value: function () {
-          console.warn("The global `postMessage()` function in content " +
-                       "scripts is deprecated in favor of the " +
-                       "`self.postMessage()` function, which works the same. " +
-                       "Replace calls to `postMessage()` with calls to " +
-                       "`self.postMessage()`." +
-                       "For more info on `self.on`, see " +
-                       "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
-          publicAPI.postMessage.apply(publicAPI, arguments);
-        },
-        configurable: true
+      postMessage: function postMessage() {
+        console.warn("The global `postMessage()` function in content " +
+                     "scripts is deprecated in favor of the " +
+                     "`self.postMessage()` function, which works the same. " +
+                     "Replace calls to `postMessage()` with calls to " +
+                     "`self.postMessage()`." +
+                     "For more info on `self.on`, see " +
+                     "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+        publicAPI.postMessage.apply(publicAPI, arguments);
+      },
+      on: function on() {
+        console.warn("The global `on()` function in content scripts is " +
+                     "deprecated in favor of the `self.on()` function, " +
+                     "which works the same. Replace calls to `on()` with " +
+                     "calls to `self.on()`" +
+                     "For more info on `self.on`, see " +
+                     "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+        publicAPI.on.apply(publicAPI, arguments);
       }
     });
 
@@ -333,7 +285,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // In the meantime, we need to allow such access explicitly
     // by using `__exposedProps__` property, documented here:
     // https://developer.mozilla.org/en/XPConnect_wrappers
-    sandbox.self.postMessage.__exposedProps__ = {
+    content.self.postMessage.__exposedProps__ = {
       ___proxy: 'rw',
       apply: 'rw'
     }
@@ -399,9 +351,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
    *    Name of the file
    */
   _evaluate: function(code, filename) {
-    filename = filename || 'javascript:' + code;
     try {
-      Cu.evalInSandbox(code, this._sandbox, JS_VERSION, filename, 1);
+      evaluate(this._sandbox, code, filename || 'javascript:' + code);
     }
     catch(e) {
       this._addonWorker._asyncEmit('error', e);
@@ -420,8 +371,11 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let urls = Array.slice(arguments, 0);
     for each (let contentScriptFile in urls) {
       try {
-        let filename = toFilename(contentScriptFile);
-        this._evaluate(file.read(filename), filename);
+        let uri = URL(contentScriptFile);
+        if (uri.scheme === 'resource')
+          load(this._sandbox, String(uri));
+        else
+          throw Error("Unsupported `contentScriptFile` url: " + String(uri));
       }
       catch(e) {
         this._addonWorker._asyncEmit('error', e)
@@ -604,9 +558,7 @@ const Worker = AsyncEventEmitter.compose({
    */
   destroy: function destroy() {
     this._workerCleanup();
-    this._removeAllListeners('message');
-    this._removeAllListeners('error');
-    this._removeAllListeners('detach');
+    this._removeAllListeners();
   },
   
   /**

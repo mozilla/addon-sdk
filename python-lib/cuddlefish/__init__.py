@@ -1,13 +1,15 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import sys
 import os
 import optparse
 import webbrowser
-import re
 
 from copy import copy
 import simplejson as json
 from cuddlefish import packaging
-from cuddlefish.bunch import Bunch
 from cuddlefish._version import get_versions
 
 MOZRUNNER_BIN_NOT_FOUND = 'Mozrunner could not locate your binary'
@@ -181,6 +183,12 @@ parser_groups = (
                                          metavar="KEY=VALUE",
                                          default=[],
                                          cmds=['xpi'])),
+        (("", "--stop-on-error",), dict(dest="stopOnError",
+                                  help="Stop running tests after the first failure",
+                                  action="store_true",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['test', 'testex', 'testpkgs'])),
         ]
      ),
 
@@ -316,20 +324,22 @@ def test_all(env_root, defaults):
     if result.failures or result.errors:
         fail = True
 
-    print >>sys.stderr, "Testing all examples..."
-    sys.stderr.flush()
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all examples..."
+        sys.stderr.flush()
 
-    try:
-        test_all_examples(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+        try:
+            test_all_examples(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
-    print >>sys.stderr, "Testing all packages..."
-    sys.stderr.flush()
-    try:
-        test_all_packages(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all packages..."
+        sys.stderr.flush()
+        try:
+            test_all_packages(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
@@ -367,8 +377,11 @@ def test_all_examples(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get("stopOnError"):
+            break
 
     if fail:
+        print >>sys.stderr, "Some examples tests were unsuccessful."
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
@@ -390,7 +403,10 @@ def test_all_packages(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get('stopOnError'):
+            break
     if fail:
+        print >>sys.stderr, "Some package tests were unsuccessful."
         sys.exit(-1)
 
 def get_config_args(name, env_root):
@@ -449,29 +465,6 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
-def get_unique_prefix(jid):
-    """Get a string that can be used to uniquely identify addon resources
-       in resource: URLs.  The string can't simply be the JID because
-       the resource: URL prefix is treated too much like a DNS hostname,
-       so we have to sanitize it in various ways."""
-
-    unique_prefix = jid
-    unique_prefix = unique_prefix.lower()
-    unique_prefix = unique_prefix.replace("@", "-at-")
-    unique_prefix = unique_prefix.replace(".", "-dot-")
-
-    # Strip optional but common curly brackets from around UUID-based IDs.
-    unique_prefix = re.sub(r'''(?x) ^\{
-                                    ([0-9a-f]{8}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{4}-
-                                     [0-9a-f]{12})
-                                    \}$
-                           ''', r'\1', unique_prefix)
-
-    return unique_prefix
-
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -514,16 +507,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_docs(env_root, filename=args[1])
+            docs_home = generate.generate_named_file(env_root, filename=args[1])
         else:
-            docs_home = generate.generate_docs(env_root)
+            docs_home = generate.generate_local_docs(env_root)
             webbrowser.open(docs_home)
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate
-
-        # TODO: Allow user to change this filename via cmd line.
-        filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
+        filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
 
@@ -557,7 +548,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        inherited_options.extend(['iterations', 'filter', 'profileMemory',
+                                  'stopOnError'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
@@ -577,17 +569,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         pkg_cfg = packaging.build_config(env_root, target_cfg, options.packagepath)
 
     target = target_cfg.name
-
-    # the harness_guid is used for an XPCOM class ID. We use the
-    # JetpackID for the add-on ID and the XPCOM contract ID.
-    if "harnessClassID" in target_cfg:
-        # For the sake of non-bootstrapped extensions, we allow to specify the
-        # classID of harness' XPCOM component in package.json. This makes it
-        # possible to register the component using a static chrome.manifest file
-        harness_guid = target_cfg["harnessClassID"]
-    else:
-        import uuid
-        harness_guid = str(uuid.uuid4())
 
     # TODO: Consider keeping a cache of dynamic UUIDs, based
     # on absolute filesystem pathname, in the root directory
@@ -615,7 +596,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if "id" in target_cfg:
         jid = target_cfg["id"]
     else:
-        jid = harness_guid
+        import uuid
+        jid = str(uuid.uuid4())
     if not ("@" in jid or jid.startswith("{")):
         jid = jid + "@jetpack"
 
@@ -674,14 +656,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         include_dep_tests=options.dep_tests
         )
 
-    harness_contract_id = ('@mozilla.org/harness-service;1?id=%s' % jid)
     harness_options = {
-        'bootstrap': {
-            'contractID': harness_contract_id,
-            'classID': '{%s}' % harness_guid
-            },
         'jetpackID': jid,
-        'unique_prefix': get_unique_prefix(jid),
         'staticArgs': options.static_args,
         'name': target,
         }
