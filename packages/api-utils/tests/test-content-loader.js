@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 const { Loader } = require('content/loader');
 const self = require("self");
@@ -152,7 +156,7 @@ exports['test:contentScript'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The script option must be a string or an array of strings.',
+      'The `contentScript` option must be a string or an array of strings.',
       e.message
     );
   }
@@ -161,7 +165,7 @@ exports['test:contentScript'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The script option must be a string or an array of strings.',
+      'The `contentScript` option must be a string or an array of strings.',
       e.message
     );
   }
