@@ -15,6 +15,9 @@ Add-on bar. The main restrictions are:
 it must fit inside the Add-on bar
 * you can only place the toolbar in the Add-on bar, although the user can
 relocate it using toolbar customization.
+* any scripts attached to the widget can't use the SDK APIs. So if you want
+to do that, you need to send messages between the script and your main
+add-on code.
 
 If you haven't already followed the tutorial introducing
 [`cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html),

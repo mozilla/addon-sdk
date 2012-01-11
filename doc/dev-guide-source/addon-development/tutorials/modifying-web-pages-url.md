@@ -1,21 +1,18 @@
 # Modifying Web Pages Based on URL #
 
-## Prerequisites ##
-
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 
-## Details ##
+To modify any pages that match a particular pattern
+(for example, "http://example.org/") as they are loaded, use the
+[`page-mod`](packages/addon-kit/docs/page-mod.html) module.
 
-`page-mod` enables you to attach scripts to web pages which match a particular
-URL pattern (for example:"mozilla.com" or "*.org") as they are loaded.
-
-To use it you need to specify two things:
+To create a page-mod you need to specify two things:
 
 * one or more scripts to run. Because their job is to interact with web
-content, these scripts are called *content Scripts*.
+content, these scripts are called *content scripts*.
 * one or more patterns to match the URLs for the pages you want to modify
 
 Here's a simple example. The content script is supplied as the `contentScript`
@@ -54,8 +51,10 @@ syntax. You can pass a single match-pattern string, or an array.
 
 ### Keeping the Content Script in a Separate File ###
 
-In the example above we've passed in the content script as a string. In most
-real-world cases, it's easier to maintain the script as a separate file.
+In the example above we've passed in the content script as a string. Unless
+the script is extremely simple, you should instead maintain the script as a
+separate file. This makes the code easier to maintain, debug, and review.
+
 To do this, you need to:
 
 * save the script in your add-on's `data` directory
@@ -119,10 +118,13 @@ the receiver listens using `port.on()`.
 passed an object that contains `port`.
 
 Let's rewrite the example above to pass a message from the add-on to
-the content script. The content script now needs to look like this:
+the content script. The message will contain the new content to insert into
+the document. The content script now needs to look like this:
 
     // "self" is a global object in content scripts
-    self.port.on("displayMessage", function(message) {
+    // Listen for a message, and replace the document's
+    // contents with the message payload.
+    self.port.on("replacePage", function(message) {
       document.body.innerHTML = "<h1>" + message + "</h1>";
     });
 
@@ -141,9 +143,12 @@ In the add-on script, we'll send the content script a message inside `onAttach`:
       contentScriptFile: self.data.url("my-script.js"),
       // Send the content script a message inside onAttach
       onAttach: function(worker) {
-        worker.port.emit("displayMessage", "Page matches ruleset");
+        worker.port.emit("replacePage", "Page matches ruleset");
       }
     });
+
+The "replacePage" message isn't a built-in message: it's a message defined by
+the add-on in the `port.emit()` call.
 
 ## Learning More ##
 
