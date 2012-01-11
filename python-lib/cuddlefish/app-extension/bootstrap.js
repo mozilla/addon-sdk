@@ -176,7 +176,7 @@ function startup(data, reason) {
   // Generate the domain name by using jetpack ID, which is the extension ID
   // by stripping common characters that doesn't work as a domain name:
   let uuidRe =
-    /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
+    /^\{([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\}$/;
   let domain = options.jetpackID.toLowerCase()
                             .replace(/@/g, "-at-")
                             .replace(/\./g, "-dot-")
