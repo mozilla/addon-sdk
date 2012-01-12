@@ -58,16 +58,6 @@ Then run:
   bin\activate
 </pre>
 
-You might see an error like this:
-
-<pre>
-  ERROR: The system was unable to find the specified registry key or value.
-</pre>
-
-This is a known issue, being tracked as
-[bug 574563](https://bugzilla.mozilla.org/show_bug.cgi?id=574563), and should
-not affect the proper functioning of the SDK at all.
-
 Your command prompt should now have a new prefix containing the full path to
 the SDK's root directory:
 

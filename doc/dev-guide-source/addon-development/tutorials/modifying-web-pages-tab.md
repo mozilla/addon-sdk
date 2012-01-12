@@ -1,5 +1,13 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 # Modifying the Page Hosted by a Tab #
+
+To follow this tutorial you'll need to have
+[installed the SDK](dev-guide/addon-development/tutorials/installation.html)
+and learned the
+[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 
 To modify the page hosted by a particular tab, load a script into it
 using the `attach()` method of the
@@ -46,7 +54,7 @@ Mozilla icon. You should see a red border appear around the page, like this:
 <img class="image-center" src="static-files/media/screenshots/tabattach-bbc.png"
 alt="bbc.co.uk modded by tab.attach" />
 
-### Keeping the Content Script in a Separate File ###
+## Keeping the Content Script in a Separate File ##
 
 In the example above we've passed in the content script as a string. Unless
 the script is extremely simple, you should instead maintain the script as a
@@ -78,7 +86,7 @@ You can load more than one script, and the scripts can interact
 directly with each other. So you can load [jQuery](http://jquery.com/),
 and then your content script can use that.
 
-### Communicating With the Content Script ###
+## Communicating With the Content Script ##
 
 Your add-on script and the content script can't directly
 access each other's variables or call each other's functions, but they
@@ -123,7 +131,7 @@ using the object returned from `attach()`:
 The "drawBorder" message isn't a built-in message, it's one that this
 add-on defines in the `port.emit()` call.
 
-### Learning More ###
+## Learning More ##
 
 To learn more about working with tabs in the SDK, see the
 [Working With Tabs and Windows tutorial](dev-guide/addon-development/tutorials/tabs-and-windows.html),

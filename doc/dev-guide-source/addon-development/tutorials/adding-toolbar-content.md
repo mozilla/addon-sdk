@@ -1,5 +1,13 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 # Create a New Toolbar #
+
+To follow this tutorial you'll need to have
+[installed the SDK](dev-guide/addon-development/tutorials/installation.html)
+and learned the
+[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 
 You can use the [`widget`](packages/addon-kit/docs/widget.html)
 module to add a button to the
@@ -33,12 +41,13 @@ alt="Media player UI implemented as a widget">
 
 Suppose we want to implement a media player as an add-on.
 We could implement the main user interface as a widget hosting an array
-of buttons to control play/pause/stop functions.
+of buttons to control play/pause/stop functions. We can specify this
+using HTML.
 
-We can then use a content script to listen for clicks on those buttons.
-But because content scripts can't use the SDK's APIs, we'll want the
-content script to send messages to the main add-on code, which can then
-implement the media player functions using the SDK.
+We can then attach a script to the HTML to listen for clicks on those
+buttons. But because content scripts can't use the SDK's APIs, we'll
+want the content script to send messages to the main add-on code, which
+can then implement the media player functions using the SDK.
 
 The widget's content is specified using HTML like this:
 
@@ -57,8 +66,10 @@ We just include three icons, and assign an ID to each one. This HTML file,
 and the icon files it references, are saved in the add-on's `data`
 directory.
 
-Next, we write a content script that listens for click events on each icon
-and sends the corresponding message to the main add-on code:
+Next, we write a script that listens for click events on each icon
+and sends the corresponding message to the main add-on code. To
+send a message to the main add-on code, we use the `port.emit()`
+function attached to the global `self` object:
 
     var play_button = document.getElementById("play-button");
     play_button.onclick = function() {
@@ -91,6 +102,10 @@ script:
       contentScriptFile: data.url("button-script.js")
     });
 
+    // Listen for messages from the script
+    // using the "on()" function of the widget's
+    // "port" property
+
     player.port.on("play", function() {
       console.log("playing");
     });
@@ -102,6 +117,8 @@ script:
     player.port.on("stop", function() {
       console.log("stopping");
     });
+
+
 
 To learn much more about content scripts, see the
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)

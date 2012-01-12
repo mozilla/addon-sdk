@@ -1,4 +1,13 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Adding a Button to the Toolbar #
+
+To follow this tutorial you'll need to have
+[installed the SDK](dev-guide/addon-development/tutorials/installation.html)
+and learned the
+[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 
 To add a button to the toolbar, use the
 [`widget`](packages/addon-kit/docs/widget.html) module.
@@ -144,9 +153,9 @@ will be shown when the user clicks the widget:
     });
 
 <!-- The icon the widget displays, shown in the screenshot, is taken from the
-Nuvola icon set, http://www.icon-king.com/projects/nuvola/ which is made
-available under the LGPL 2.1:
-http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html -->
+Circular icon set, http://prothemedesign.com/circular-icons/ which is made
+available under the Creative Commons Attribution 2.5 Generic License:	
+http://creativecommons.org/licenses/by/2.5/ -->
 
 <img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
 alt="Panel attached to a widget">

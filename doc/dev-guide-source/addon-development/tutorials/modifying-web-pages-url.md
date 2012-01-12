@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Modifying Web Pages Based on URL #
 
 To follow this tutorial you'll need to have
@@ -43,13 +47,13 @@ This is what you should see:
 <img  class="image-center" src="static-files/media/screenshots/pagemod-ietf.png"
 alt="ietf.org eaten by page-mod" />
 
-### Specifying the Match Pattern ###
+## Specifying the Match Pattern ##
 
 The match pattern uses the
 [`match-pattern`](packages/api-utils/docs/match-pattern.html)
 syntax. You can pass a single match-pattern string, or an array.
 
-### Keeping the Content Script in a Separate File ###
+## Keeping the Content Script in a Separate File ##
 
 In the example above we've passed in the content script as a string. Unless
 the script is extremely simple, you should instead maintain the script as a
