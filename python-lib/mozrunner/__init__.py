@@ -216,14 +216,21 @@ class Profile(object):
             addons = [os.path.join(path, x) for x in os.listdir(path)]
 
         for addon in addons:
-            xpi_zipfile = zipfile.ZipFile(addon, "r")
-            details = addon_details(StringIO(xpi_zipfile.read('install.rdf')))
-            addon_path = os.path.join(extensions_path, details["id"])
-            if details.get("unpack", True):
-                self.unpack_addon(xpi_zipfile, addon_path)
-                self.addons_installed.append(addon_path)
+            if addon.endswith('.xpi'):
+                xpi_zipfile = zipfile.ZipFile(addon, "r")
+                details = addon_details(StringIO(xpi_zipfile.read('install.rdf')))
+                addon_path = os.path.join(extensions_path, details["id"])
+                if details.get("unpack", True):
+                    self.unpack_addon(xpi_zipfile, addon_path)
+                    self.addons_installed.append(addon_path)
+                else:
+                    shutil.copy(addon, addon_path + '.xpi')
             else:
-                shutil.copy(addon, addon_path + '.xpi')
+                # it's already unpacked, but we need to extract the id so we
+                # can copy it
+                details = addon_details(open(os.path.join(addon, "install.rdf"), "rb"))
+                addon_path = os.path.join(extensions_path, details["id"])
+                shutil.copytree(addon, addon_path, symlinks=True)
 
     def set_preferences(self, preferences):
         """Adds preferences dict to profile preferences"""
