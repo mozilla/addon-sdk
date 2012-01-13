@@ -32,11 +32,14 @@ const Unknown = Base.extend({
   },
   /**
    * The `QueryInterface` method provides runtime type discovery used by XPCOM.
-   * This method return quired instance of `this` if given `queryInterface` is
-   * listed in the `interfaces` property.
+   * This method return quired instance of `this` if given `iid` is listed in
+   * the `interfaces` property.
    */
-  QueryInterface: function QueryInterface(queryInterface) {
-    if (!this.interfaces.some(function(id) queryInterface.equals(Ci[id])))
+  QueryInterface: function QueryInterface(iid) {
+    // For some reason there are cases when `iid` is `null`. In such cases we
+    // just return `this`. Otherwise we verify that component implements given
+    // `iid` interface.
+    if (iid && !this.interfaces.some(function(id) iid.equals(Ci[id])))
       throw Cr.NS_ERROR_NO_INTERFACE;
     return this;
   },
@@ -51,7 +54,9 @@ const Unknown = Base.extend({
 });
 exports.Unknown = Unknown;
 
-const Factory = Unknown.extend({
+// This is a base prototype, that provides bare bones of XPCOM Service. JS based
+// components can be easily implement by extending it.
+const Service = Unknown.extend({
   // Method `extend` is overridden so that resulting object will have unique
   // classID unless provided by an argument.
   extend: function extend() {
@@ -62,7 +67,49 @@ const Factory = Unknown.extend({
       }, null) || uuid()
     }]));
   },
-  // Method `new` is overridden so that factory can be registered prior to
+  /**
+   * XPConnect lets you bypass its wrappers and access the underlying JS object
+   * directly using the `wrappedJSObject` property if the wrapped object allows
+   * this. All Factory descendants expose it's underlying JS objects unless
+   * intentionally overridden.
+   */
+  get wrappedJSObject() this,
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  createInstance: function createInstance(outer, iid) {
+    try {
+      if (outer)
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      return this.QueryInterface(iid);
+    }
+    catch (error) {
+      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
+    }
+  },
+  // All the descendants will get auto generated `classID` unless one is
+  // provided manually.
+  classID: null,
+  /**
+   * The name of the class being registered. This value is intended as a
+   * human-readable name for the class and does not needs to be globally unique.
+   */
+  className: 'Jetpack service',
+  /**
+   * XPCOM contract id. May be `null` if no needed. Usually string like:
+   * '@mozilla.org/jetpack/factory;1'.
+   */
+  contractID: '@mozilla.org/jetpack/service;1',
+  /**
+   * If property is `true` XPCOM factory will be unregistered prior to add-on
+   * unload.
+   */
+  classUnregister: true
+});
+exports.Service = Service;
+
+const Factory = Service.extend({
+    // Method `new` is overridden so that factory can be registered prior to
   // first instantiation and unregistered prior to unload.
   new: function create() {
     if (this.classRegister && !(this.contractID in Cc))
@@ -74,11 +121,6 @@ const Factory = Unknown.extend({
    * object instantiation.
    */
   classRegister: true,
-  /**
-   * If property is `true` XPCOM factory will be unregistered prior to add-on
-   * unload.
-   */
-  classUnregister: true,
   // All XPCOM factories implement `nsIFactory` interface.
   interfaces: [ 'nsIFactory' ],
   // All the descendants will get auto generated `classID` unless one is
@@ -95,13 +137,6 @@ const Factory = Unknown.extend({
    */
   contractID: '@mozilla.org/jetpack/factory;1',
   /**
-   * XPConnect lets you bypass its wrappers and access the underlying JS object
-   * directly using the `wrappedJSObject` property if the wrapped object allows
-   * this. All Factory descendants expose it's underlying JS objects unless
-   * intentionally overridden.
-   */
-  get wrappedJSObject() this,
-  /**
    * This method is required by `nsIFactory` interfaces, but as in most
    * implementations it does nothing interesting.
    */
@@ -110,14 +145,7 @@ const Factory = Unknown.extend({
    * Creates an instance of the class associated with this factory.
    */
   createInstance: function createInstance(outer, iid) {
-    try {
-      if (outer)
-        throw Cr.NS_ERROR_NO_AGGREGATION;
-      return this.QueryInterface(iid);
-    }
-    catch (error) {
-      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
-    }
+    return Service.createInstance.call(Object.create(this), outer, iid);
   }
 });
 exports.Factory = Factory;
@@ -131,7 +159,7 @@ exports.isRegistered = isRegistered;
  * and `factory.contractID` with the class.
  */
 function register(factory) {
-  if (Factory.isPrototypeOf(factory)) {
+  if (Service.isPrototypeOf(factory)) {
     let { classID, className, contractID, classUnregister } = factory;
     registerFactory(classID, className, contractID, factory);
     if (classUnregister)
