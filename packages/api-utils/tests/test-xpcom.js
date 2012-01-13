@@ -1,8 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 const traceback = require("traceback");
 const xpcom = require("xpcom");
 const { Cc, Ci, Cm, Cr } = require("chrome");
 const { Loader } = require("./helpers");
-const manager = Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
 exports.testRegister = function(test, text) {
   if (!text)

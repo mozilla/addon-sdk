@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import shutil
 import unittest
@@ -30,9 +34,12 @@ def get_sdk_docs_root():
 def get_base_url_path():
     return os.path.join(get_sdk_docs_root(), "doc")
 
+def url_from_path(path):
+    path = path.lstrip("/")
+    return "file://"+"/"+"/".join(path.split(os.sep))+"/"
+
 def get_base_url():
-    base_url_path = get_base_url_path().lstrip("/")
-    return "file://"+"/"+"/".join(base_url_path.split(os.sep))+"/"
+    return url_from_path(get_base_url_path())
 
 class Link_Checker(HTMLParser.HTMLParser):
     def __init__(self, tester, filename, base_url):
@@ -54,8 +61,9 @@ class Link_Checker(HTMLParser.HTMLParser):
         # any other absolute URLs will not be checked
         if parsed.scheme:
             return
+        current_path_as_url = url_from_path(os.path.dirname(self.filename))
         # otherwise try to open the file at: baseurl + path
-        absolute_url = self.base_url + parsed.path
+        absolute_url = current_path_as_url + parsed.path
         try:
             urllib.urlopen(absolute_url)
         except IOError:
@@ -69,13 +77,15 @@ class Generate_Docs_Tests(unittest.TestCase):
             shutil.rmtree(get_base_url_path())
         # generate a doc tarball, and extract it
         base_url = get_base_url()
-        tar_filename = generate.generate_static_docs(env_root, base_url)
+        tar_filename = generate.generate_static_docs(env_root)
         tgz = tarfile.open(tar_filename)
         tgz.extractall(get_sdk_docs_root())
         # get each HTML file...
         for root, subFolders, filenames in os.walk(get_sdk_docs_root()):
             for filename in filenames:
                 if not filename.endswith(".html"):
+                    continue
+                if root.endswith("static-files"):
                     continue
                 filename = os.path.join(root, filename)
                 # ...and feed it to the link checker
@@ -125,7 +135,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         generate.generate_docs(test_root, stdout=StringIO.StringIO())
         docs_root = os.path.join(test_root, "doc")
         for file_to_expect in files_to_expect:
-            self.assertTrue(os.path.exists(os.path.join(docs_root, *file_to_expect)))
+            self.assertTrue(os.path.exists(os.path.join(docs_root, *file_to_expect)), os.path.join(docs_root, *file_to_expect) + "not found")
         if initial_digest:
             self.assertTrue(initial_digest != open(os.path.join(docs_root, "status.md5"), "r").read())
         # and that if we regenerate, nothing changes...

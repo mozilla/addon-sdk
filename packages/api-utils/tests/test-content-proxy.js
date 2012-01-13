@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 const hiddenFrames = require("hidden-frame");
 const xulApp = require("xul-app");
 
@@ -137,6 +141,29 @@ exports.testKeyAccess = createProxyTest("", function(helper) {
     }
   );
 
+});
+
+
+// Bug 714778: There was some issue around `toString` functions
+//             that ended up being shared between content scripts
+exports.testSharedToStringProxies = createProxyTest("", function(helper) {
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      assert(document.location.toString() == "data:text/html,",
+             "document.location.toString()");
+      self.postMessage("next");
+    }
+  );
+  worker.on("message", function () {
+    helper.createWorker(
+      'new ' + function ContentScriptScope2() {
+        assert(document.location.toString() == "data:text/html,",
+               "document.location.toString()");
+        done();
+      }
+    );
+  });
 });
 
 

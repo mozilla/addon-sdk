@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var url = require("url");
 
 exports.testResolve = function(test) {
@@ -74,6 +78,11 @@ exports.testParseFTPWithUserPass = function(test) {
   test.assertEqual(info.userPass, "user:pass");
 };
 
+// rootURI is jar:file://...!/ if we're packed, and file://.../ if we're
+// unpacked. url.toFilename() is not required to work for the contents of
+// packed XPIs
+var unpacked = (require("@packaging").rootURI.indexOf("file:") == 0);
+
 exports.testToFilename = function(test) {
   test.assertRaises(
     function() { url.toFilename("resource://nonexistent"); },
@@ -81,9 +90,15 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  test.assertMatches(url.toFilename(module.uri),
-                     /.*test-url\.js$/,
-                     "url.toFilename() on resource: URIs should work");
+  if (unpacked)
+    test.assertMatches(url.toFilename(module.uri),
+                       /.*test-url\.js$/,
+                       "url.toFilename() on resource: URIs should work");
+  else
+    test.assertRaises(
+      function() { url.toFilename(module.uri); },
+      "cannot map to filename: "+module.uri,
+      "url.toFilename() can fail for packed XPIs");
 
   test.assertRaises(
     function() { url.toFilename("http://foo.com/"); },
@@ -111,7 +126,8 @@ exports.testToFilename = function(test) {
 };
 
 exports.testFromFilename = function(test) {
-  var fileUrl = url.fromFilename(url.toFilename(module.uri));
+  var profileDirName = require("system").pathFor("ProfD");
+  var fileUrl = url.fromFilename(profileDirName);
   test.assertEqual(url.URL(fileUrl).scheme, 'file',
                    'url.toFilename() should return a file: url');
   test.assertEqual(url.fromFilename(url.toFilename(fileUrl)),

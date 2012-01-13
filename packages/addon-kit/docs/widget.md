@@ -5,8 +5,6 @@
 The `widget` module provides your add-on with a simple user interface that is
 consistent with other add-ons and blends in well with Firefox.
 
-## Introduction ##
-
 "Widgets" are small pieces of content that live in the Firefox 4
 [add-on bar](https://developer.mozilla.org/en/The_add-on_bar).
 They can be simple icons or complex web pages.  You can attach
@@ -27,18 +25,34 @@ Widgets can contain images or arbitrary web content.  You can include this
 content inline as a string by using the `content` property, or point to content
 using a URL with the `contentURL` property.
 
-For example, this widget contains an image, so it looks like a simple icon:
-
-    require("widget").Widget({
-      id: "mozilla-icon", 
-      label: "My Mozilla Widget",
-      contentURL: "http://www.mozilla.org/favicon.ico"
-    });
-
 Upon creation, the widget is automatically added to the add-on bar.
 You can set the width of a widget, but the height is fixed so as to fit in the
 add-on bar. If the content is an image, it is automatically scaled to be 16x16
 pixels.
+
+For example, this widget contains an image, so it looks like a simple icon:
+
+    require("widget").Widget({
+      id: "mozilla-icon",
+      label: "My Mozilla Widget",
+      contentURL: "http://www.mozilla.org/favicon.ico"
+    });
+
+<img class="image-center" src="static-files/media/screenshots/widget-mozilla-icon.png"
+alt="Widget displaying an icon">
+
+You can make `contentURL` point to an HTML or icon file which you have
+packaged inside your add-on. Just save the file in your add-on's `data`
+directory, and reference it using the `data.url()` method of the
+[`self`](packages/addon-kit/docs/self.html) module:
+
+    var data = require("self").data;
+
+    require("widget").Widget({
+      id: "my-widget",
+      label: "My Widget",
+      contentURL: data.url("my-content.html")
+    });
 
 This widget contains an entire web page:
 
@@ -49,19 +63,219 @@ This widget contains an entire web page:
       width: 50
     });
 
+<img class="image-center" src="static-files/media/screenshots/widget-hello-text.png"
+alt="Widget displaying 'hello'">
+
 Widgets are quite small by default, so this example used the `width` property to
 grow it in order to show all the text.
 
-As with many SDK APIs, communication with the content inside your widgets is
-handled by [content scripts](dev-guide/addon-development/web-content.html).
-So, for example, to be notified when your widget's content has loaded, you can
-make a small script that calls back to the widget when it finishes loading.
+## Scripting Widget Content ##
+
+To interact with the widget's content you need to load a separate script into
+the panel. In the SDK these scripts are called "content scripts" because
+they're explicitly used for interacting with web content.
+
+While content scripts can access the content they're attached to, they can't
+use the SDK's APIs. So implementing a complete solution usually means you
+have to send messages between the content script and the main add-on code.
+
+* You can specify one or more content scripts to load into the widget using the
+`contentScript` or `contentScriptFile` options to the
+[`Widget()` constructor](packages/addon-kit/docs/widget.html#Widget(options)).
+
+* You can communicate with the script using either the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or (preferably, usually) the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+
+<!-- The icons this widget displays, shown in the screenshot, is taken from the
+Glossy Buttons icon set created by IconEden which is made freely available for
+commercial and non-commercial use.
+See: http://www.iconeden.com/icon/category/free -->
+
+<img class="image-right" src="static-files/media/screenshots/widget-player-buttons.png"
+alt="Media player UI implemented as a widget">
+
+For example, suppose we want to implement a media player as an add-on.
+We could implement the main user interface as a widget hosting an array
+of buttons to control play/pause/stop functions.
+
+We can then use a content script to listen for clicks on those buttons.
+But because content scripts can't use the SDK's APIs, we'll want the
+content script to send messages to the main add-on code, which can then
+implement the media player functions using the SDK.
+
+The widget's content is specified using HTML like this:
+
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+<html>
+  <body>
+    <img src="play.png" id="play-button"></img>
+    <img src="pause.png" id="pause-button"></img>
+    <img src="stop.png" id="stop-button"></img>
+  </body>
+</html>
+]]>
+</script>
+
+We just include three icons, and assign an ID to each one. This HTML file,
+and the icon files it references, are saved in the add-on's `data`
+directory.
+
+Next, we write a content script that listens for click events on each icon
+and sends the corresponding message to the main add-on code:
+
+    var play_button = document.getElementById("play-button");
+    play_button.onclick = function() {
+      self.port.emit("play");
+    }
+
+    var pause_button = document.getElementById("pause-button");
+    pause_button.onclick = function() {
+      self.port.emit("pause");
+    }
+
+    var stop_button = document.getElementById("stop-button");
+    stop_button.onclick = function() {
+      self.port.emit("stop");
+    }
+
+We save this file in the add-on's `data` directory as "button-script.js".
+Finally. in the add-on's "main.js" file, we create the widget, assign it
+the HTML file and the content script, and listen for events from the content
+script:
+
+    const widgets = require("widget");
+    const data = require("self").data;
+
+    var player = widgets.Widget({
+      id: "player",
+      width: 72,
+      label: "Player",
+      contentURL: data.url("buttons.html"),
+      contentScriptFile: data.url("button-script.js")
+    });
+
+    player.port.on("play", function() {
+      console.log("playing");
+    });
+
+    player.port.on("pause", function() {
+      console.log("pausing");
+    });
+
+    player.port.on("stop", function() {
+      console.log("stopping");
+    });
+
+To learn much more about content scripts, see the
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+guide.
+
+<div class="experimental">
+<h3>Scripting Trusted Widget Content</h3>
+
+**Note that the feature described in this section is experimental: we'll
+very probably continue to support it, but the name of the `addon`
+property might change in a future release.**
+
+We've already seen that you can package HTML files in your add-on's `data`
+directory and use them to define the widget's content. We can call this
+"trusted" content, because unlike content loaded from a source outside the
+add-on, the add-on author knows exactly what it's doing. To
+interact with trusted content you don't need to use content scripts:
+you can just include a script from the HTML file in the normal way, using
+`<script>` tags.
+
+Like a content script, these scripts can communicate with the add-on code
+using the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+The crucial difference is that these scripts access the `postMessage`
+and `port` objects through the `addon` object, whereas content scripts
+access them through the `self` object.
+
+To show the difference, let's convert the `player` add-on above
+to use normal page scripts instead of content scripts.
+
+First, in the content script, change `self` to `addon`, and wrap it in a
+function:
+
+    function init() {
+      var play_button = document.getElementById("play-button");
+      play_button.onclick = function() {
+        addon.port.emit("play");
+      }
+
+      var pause_button = document.getElementById("pause-button");
+      pause_button.onclick = function() {
+        addon.port.emit("pause");
+      }
+
+      var stop_button = document.getElementById("stop-button");
+      stop_button.onclick = function() {
+        addon.port.emit("stop");
+      }
+    }
+
+Next, add a `<script>` tag to reference "button-script.js", and
+call its `init()` function on load:
+
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+<html>
+  <head>
+    <script src="button-script.js">&lt;/script>
+  </head>
+  <body onLoad="init()">
+    <img src="play.png" id="play-button"></img>
+    <img src="pause.png" id="pause-button"></img>
+    <img src="stop.png" id="stop-button"></img>
+  </body>
+</html>
+]]>
+</script>
+
+Finally, remove the line attaching the content script from "main.js":
+
+    const widgets = require("widget");
+    const data = require("self").data;
+
+    var player = widgets.Widget({
+      id: "player",
+      width: 72,
+      label: "Player",
+      contentURL: data.url("buttons.html")
+    });
+
+    player.port.emit("init");
+
+    player.port.on("play", function() {
+      console.log("playing");
+    });
+
+    player.port.on("pause", function() {
+      console.log("pausing");
+    });
+
+    player.port.on("stop", function() {
+      console.log("stopping");
+    });
+</div>
 
 ## Attaching Panels to Widgets ##
 
 You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
 constructor: if you do this, the panel is automatically displayed when the
 user clicks the widget.
+
+<!-- The icon the widget displays, shown in the screenshot, is taken from the
+Circular icon set, http://prothemedesign.com/circular-icons/ which is made
+available under the Creative Commons Attribution 2.5 Generic License:
+http://creativecommons.org/licenses/by/2.5/ -->
+
+<img class="image-right" src="static-files/media/screenshots/widget-panel-clock.png"
+alt="Panel attached to a widget">
 
     data = require("self").data
 
@@ -77,15 +291,6 @@ user clicks the widget.
       contentURL: data.url("History.png"),
       panel: clockPanel
     });
-
-<!-- The icon the widget displays, shown in the screenshot, is taken from the
-Nuvola icon set, http://www.icon-king.com/projects/nuvola/ which is made
-available under the LGPL 2.1:
-http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html -->
-
-<img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
-alt="Panel attached to a widget">
-<br>
 
 Note that this is, at the moment, the only way you can attach a panel to a widget.
 

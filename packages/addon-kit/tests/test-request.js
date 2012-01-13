@@ -1,48 +1,15 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const Request = require("request").Request;
+const { Request } = require("addon-kit/request");
+const { pathFor } = require("api-utils/system");
+const { startServerAsync } = require("api-utils/httpd");
+const file = require("api-utils/file");
 
-var port = 8080;
-var data = require("self").data;
-var testFilePath = require("url").toFilename(data.url("test-request.txt"));
-var basePath = require("file").dirname(testFilePath);
+const basePath = pathFor("TmpD")
+const port = 8080;
 
-var {startServerAsync} = require("httpd");
 
 exports.testOptionsValidator = function(test) {
   // First, a simple test to make sure we didn't break normal functionality.
@@ -84,17 +51,20 @@ exports.testContentValidator = function(test) {
 
 // This is a request to a file that exists.
 exports.testStatus200 = function (test) {
-  var srv = startServerAsync(port, basePath);
-  
+  let srv = startServerAsync(port, basePath);
+  let content = "Look ma, no hands!\n";
+  let basename = "test-request.txt"
+  prepareFile(basename, content);
+
   test.waitUntilDone();
   var req = Request({
-    url: "http://localhost:" + port + "/test-request.txt",
+    url: "http://localhost:" + port + "/" + basename,
     onComplete: function (response) {
       test.assertEqual(this, req, "`this` should be request");
       test.assertEqual(response.status, 200);
       test.assertEqual(response.statusText, "OK");
       test.assertEqual(response.headers["Content-Type"], "text/plain");
-      test.assertEqual(response.text, "Look ma, no hands!\n");
+      test.assertEqual(response.text, content);
       srv.stop(function() test.done());
     }
   }).get();
@@ -103,7 +73,7 @@ exports.testStatus200 = function (test) {
 // This tries to get a file that doesn't exist
 exports.testStatus404 = function (test) {
   var srv = startServerAsync(port, basePath);
-  
+
   test.waitUntilDone();
   Request({
     // the following URL doesn't exist
@@ -150,24 +120,29 @@ exports.testKnownHeader = function (test) {
 */
 
 exports.testSimpleJSON = function (test) {
-  var srv = startServerAsync(port, basePath);
-  
+  let srv = startServerAsync(port, basePath);
+  let json = { foo: "bar" };
+  let basename = "test-request.json";
+  prepareFile(basename, JSON.stringify(json));
+
   test.waitUntilDone();
   Request({
-    url: "http://localhost:" + port + "/test-request.json",
+    url: "http://localhost:" + port + "/" + basename,
     onComplete: function (response) {
-      assertDeepEqual(test, response.json, { foo: "bar" });
+      assertDeepEqual(test, response.json, json);
       srv.stop(function() test.done());
     }
   }).get();
 }
 
 exports.testInvalidJSON = function (test) {
-  var srv = startServerAsync(port, basePath);
-  
+  let srv = startServerAsync(port, basePath);
+  let basename = "test-request-invalid.json";
+  prepareFile(basename, '"this": "isn\'t JSON"');
+
   test.waitUntilDone();
   Request({
-    url: "http://localhost:" + port + "/test-request-invalid.json",
+    url: "http://localhost:" + port + "/" + basename,
     onComplete: function (response) {
       test.assertEqual(response.json, null);
       srv.stop(function() test.done());
@@ -355,4 +330,11 @@ function assertDeepEqual(test, obj1, obj2, msg) {
   msg = msg || "objects not equal - " + JSON.stringify(obj1) + " != " +
                JSON.stringify(obj2);
   test.assert(equal(obj1, obj2), msg);
+}
+
+function prepareFile(basename, content) {
+  let filePath = file.join(basePath, basename);
+  let fileStream = file.open(filePath, 'w');
+  fileStream.write(content);
+  fileStream.close();
 }

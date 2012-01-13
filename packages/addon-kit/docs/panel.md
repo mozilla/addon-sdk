@@ -1,15 +1,27 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-The `panel` module creates floating modal "popup dialogs" that appear on top of
-web content and browser chrome and persist until dismissed by users or programs.
+This module exports a single constructor function `Panel` which constructs a
+new panel.
+
+A panel is a dialog. Its content is specified as HTML and you can
+execute scripts in it, so the appearance and behaviour of the panel
+is limited only by what you can do using HTML, CSS and JavaScript.
+
+The screenshot below shows a panel whose content is built from the
+list of currently open tabs:
+
+<img class="image-center" src="static-files/media/screenshots/panel-tabs-osx.png"
+alt="Simple panel example">
+
 Panels are useful for presenting temporary interfaces to users in a way that is
 easier for users to ignore and dismiss than a modal dialog, since panels are
 hidden the moment users interact with parts of the application interface outside
 them.
-
-The module exports a single constructor function `Panel` which constructs a
-new panel.
 
 A panel's content is loaded as soon as it is created, before the panel is shown,
 and the content remains loaded when a panel is hidden, so it is possible
@@ -19,63 +31,317 @@ in preparation for the next time it is shown.
 Your add-on can receive notifications when a panel is shown or hidden by
 listening to its `show` and `hide` events.
 
-Panels have associated content scripts, which are JavaScript scripts that have
-access to the content loaded into the panels.  An add-on can specify one or
-more content scripts to load for a panel, and the add-on can communicate with
-those scripts either using the `message` event or by using user-defined
-events. See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
-for more information.
+## Panel Content ##
 
-The panel's default style is different for each operating system.
-For example, suppose a panel's content is specified with the following HTML:
+The panel's content is specified as HTML, which is loaded from the URL
+supplied in the `contentURL` option to the panel's constructor.
+
+You can load remote HTML into the panel:
+
+    var panel = require("panel").Panel({
+      width: 180,
+      height: 180,
+      contentURL: "https://en.wikipedia.org/w/index.php?title=Jetpack&useformat=mobile"
+    });
+
+    panel.show();
+
+<img class="image-center" src="static-files/media/screenshots/wikipedia-jetpack-panel.png"
+alt="Wikipedia Jetpack panel">
+
+You can also load HTML that's been packaged with your add-on, and this is
+most probably how you will create dialogs. To do this, save
+the HTML in your add-on's `data` directory and load it using the `data.url()`
+method exported by the
+[`self`](packages/addon-kit/docs/self.html) module, like this:
+
+    var panel = require("panel").Panel({
+      contentURL: require("self").data.url("myFile.html")
+    });
+
+    panel.show();
+
+## Scripting Panel Content ##
+
+You can't directly access your panel's content from your main add-on code.
+To access the panel's content, you need to load a script into the panel.
+In the SDK these scripts are called "content scripts" because they're
+explicitly used for interacting with web content.
+
+While content scripts can access the content they're attached to, they can't
+use the SDK's APIs. So implementing a complete solution usually means you
+have to send messages between the content script and the main add-on code.
+
+* You can specify one or more content scripts to load into a panel using the
+`contentScript` or `contentScriptFile` options to the
+[`Panel()` constructor](packages/addon-kit/docs/panel.html#Panel%28options%29).
+
+* You can communicate with the script using either the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or (preferably, usually) the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+
+For example, here's an add-on whose content script intercepts mouse clicks
+on links inside the panel, and sends the target URL to the main add-on
+code. The content script sends messages using `self.port.emit()` and the
+add-on script receives them using `panel.port.on()`.
+
+    var myScript = "window.addEventListener('click', function(event) {" +
+                   "  var t = event.target;" +
+                   "  if (t.nodeName == 'A')" +
+                   "    self.port.emit('click-link', t.toString());" +
+                   "}, false);"
+
+    var panel = require("panel").Panel({
+      contentURL: "http://www.bbc.co.uk/mobile/index.html",
+      contentScript: myScript
+    });
+
+    panel.port.on("click-link", function(url) {
+      console.log(url);
+    });
+
+    panel.show();
+
+This example uses `contentScript` to supply the script as a string. It's
+usually better practice to use `contentScriptFile`, which is a URL pointing
+to a script file saved under your add-on's `data` directory.
+That's what the next example does.
+
+<img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
+alt="Text entry panel">
+
+### Getting User Input ###
+
+The following add-on adds a widget which displays a panel when
+clicked. The panel just contains a `<textarea>` element: when the user
+presses the `return` key, the contents of the `<textarea>` is sent to the
+main add-on code.
+
+The add-on consists of three files:
+
+* **`main.js`**: the main add-on code, that creates the widget and panel
+* **`get-text.js`**: the content script that interacts with the panel content
+* **`text-entry.html`**: the panel content itself, specified as HTML
+
+"main.js" is saved in your add-on's `lib` directory, and the other two files
+go in your add-on's `data` directory:
+
+<pre>
+my-addon/
+         data/
+              get-text.js
+              text-entry.html
+         lib/
+             main.js
+</pre>
+
+The "main.js" looks like this:
+
+    var data = require("self").data;
+
+    // Create a panel whose content is defined in "text-entry.html".
+    // Attach a content script called "get-text.js".
+    var text_entry = require("panel").Panel({
+      width: 212,
+      height: 200,
+      contentURL: data.url("text-entry.html"),
+      contentScriptFile: data.url("get-text.js")
+    });
+
+    // Send the content script a message called "show" when
+    // the panel is shown.
+    text_entry.on("show", function() {
+      text_entry.port.emit("show");
+    });
+
+    // Listen for messages called "text-entered" coming from
+    // the content script. The message payload is the text the user
+    // entered.
+    // In this implementation we'll just log the text to the console.
+    text_entry.port.on("text-entered", function (text) {
+      console.log(text);
+      text_entry.hide();
+    });
+
+    // Create a widget, and attach the panel to it, so the panel is
+    // shown when the user clicks the widget.
+    require("widget").Widget({
+      label: "Text entry",
+      id: "text-entry",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      panel: text_entry
+    });
+
+The content script "get-text.js" looks like this:
+
+    self.port.on("show", function (arg) {
+      var textArea = document.getElementById('edit-box');
+      textArea.focus();
+      // When the user hits return, send a message to main.js.
+      // The message payload is the contents of the edit box.
+      textArea.onkeyup = function(event) {
+        if (event.keyCode == 13) {
+          // Remove the newline.
+          text = textArea.value.replace(/(\r\n|\n|\r)/gm,"");
+          self.port.emit("text-entered", text);
+          textArea.value = '';
+        }
+      };
+    });
+
+Finally, the "text-entry.html" file defines the `<textarea>` element:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<h1>Default Style</h1>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-This is what a panel with no custom styling looks like.
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+  <style type="text/css" media="all">
+    textarea {
+      margin: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <textarea rows="10" cols="20" id="edit-box"></textarea>
+</body>
+
+</html>
 ]]>
 </script>
 
-On OS X it will look like this:
+To learn much more about content scripts, see the
+[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+guide.
 
-<img class="image-center" src="static-files/media/screenshots/default-panel-osx.png"
+<div class="experimental">
+<h3>Scripting Trusted Panel Content</h3>
+
+**Note that the feature described in this section is experimental: we'll
+very probably continue to support it, but the name of the `addon`
+property might change in a future release.**
+
+We've already seen that you can package HTML files in your add-on's `data`
+directory and use them to define the panel's content. We can call this
+"trusted" content, because unlike content loaded from a source outside the
+add-on, the add-on author knows exactly what it's doing. To
+interact with trusted content you don't need to use content scripts:
+you can just include a script from the HTML file in the normal way, using
+`<script>` tags.
+
+Like a content script, these scripts can communicate with the add-on code
+using the
+[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+API or the
+[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+The crucial difference is that these scripts access the `postMessage`
+and `port` objects through the `addon` object, whereas content scripts
+access them through the `self` object.
+
+To show the difference, we can easily convert the `text-entry` add-on above
+to use normal page scripts instead of content scripts.
+
+The main add-on code is exactly the same as the main add-on code in the
+previous example, except that we don't attach a content script:
+
+    var data = require("self").data;
+
+    // Create a panel whose content is defined in "text-entry.html".
+    var text_entry = require("panel").Panel({
+      width: 212,
+      height: 200,
+      contentURL: data.url("text-entry.html"),
+    });
+
+    // Send the page script a message called "show" when
+    // the panel is shown.
+    text_entry.on("show", function() {
+      text_entry.port.emit("show");
+    });
+
+    // Listen for messages called "text-entered" coming from
+    // the page script. The message payload is the text the user
+    // entered.
+    // In this implementation we'll just log the text to the console.
+    text_entry.port.on("text-entered", function (text) {
+      console.log(text);
+      text_entry.hide();
+    });
+
+    // Create a widget, and attach the panel to it, so the panel is
+    // shown when the user clicks the widget.
+    require("widget").Widget({
+      label: "Text entry",
+      id: "text-entry",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      panel: text_entry
+    });
+
+The page script is exactly the same as the content script above, except
+that instead of `self`, we use `addon` to access the messaging APIs:
+
+    addon.port.on("show", function (arg) {
+      var textArea = document.getElementById('edit-box');
+      textArea.focus();
+      // When the user hits return, send a message to main.js.
+      // The message payload is the contents of the edit box.
+      textArea.onkeyup = function(event) {
+        if (event.keyCode == 13) {
+          // Remove the newline.
+          text = textArea.value.replace(/(\r\n|\n|\r)/gm,"");
+          addon.port.emit("text-entered", text);
+          textArea.value = '';
+        }
+      };
+    });
+
+Finally, the HTML file now references "get-text.js" inside a `<script>` tag:
+
+<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+  <style type="text/css" media="all">
+    textarea {
+      margin: 10px;
+    }
+  </style>
+  <script src="get-text.js">&lt;/script>
+</head>
+
+<body>
+  <textarea rows="10" cols="20" id="edit-box"></textarea>
+</body>
+
+</html>
+]]>
+</script>
+
+</div>
+
+## Styling Trusted Panel Content ##
+
+When the panel's content is specified using an HTML file in your `data`
+directory, you can style it using CSS, either embedding the CSS directly
+in the file or referencing a CSS file stored under `data`.
+
+The panel's default style is different for each operating system:
+
+<img class="image-center" src="static-files/media/screenshots/panel-default-style.png"
 alt="OS X panel default style">
-<br>
-
-On Windows 7 it will look like this:
-
-<img class="image-center" src="static-files/media/screenshots/default-panel-windows.png"
-alt="Windows 7 panel default style">
-<br>
-
-On Ubuntu it will look like this:
-
-<img class="image-center" src="static-files/media/screenshots/default-panel-ubuntu.png"
-alt="Ubuntu panel default style">
-<br>
 
 This helps to ensure that the panel's style is consistent with the dialogs
 displayed by Firefox and other applications, but means you need to take care
 when applying your own styles. For example, if you set the panel's
 `background-color` property to `white` and do not set the `color` property,
 then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
-
-Examples
---------
-
-Create and show a simple panel with content from the `data/` directory:
-
-    var data = require("self").data;
-    var panel = require("panel").Panel({
-      contentURL: data.url("foo.html")
-    });
-
-    panel.show();
-
-The tutorial section on
-[web content](dev-guide/addon-development/web-content.html) has
-a more complex example using panels.
 
 <api name="Panel">
 @class
