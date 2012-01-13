@@ -1,16 +1,20 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 Provides an API for creating namespaces for any given objects, which
 effectively may be used for creating fields that are not part of objects
 public API.
 
-      let { Namespace } = require('api-utils/namespace');
-      let ns = Namespace();
+      let { ns } = require('api-utils/namespace');
+      let aNamespace = ns();
 
-      ns(publicAPI).secret = secret;
+      aNamespace(publicAPI).secret = secret;
 
 One namespace may be used with multiple objects:
 
-      let { Namespace } = require('api-utils/namespace');
-      let dom = Namespace();
+      let { ns } = require('api-utils/namespace');
+      let dom = ns();
 
       function View(element) {
         let view = Object.create(View.prototype);
@@ -31,29 +35,29 @@ Also, multiple namespaces can be used with one object:
       // ./widget.js
 
       let { Cu } = require('chrome');
-      let { Namespace } = require('api-utils/namespace');
+      let { ns } = require('api-utils/namespace');
       let { View } = require('./view');
 
       // Note this is completely independent from View's internal Namespace object.
-      let ns = Namespace();
+      let sandboxes = ns();
 
       function Widget(options) {
         let { element, contentScript } = options;
         let widget = Object.create(Widget.prototype);
         View.call(widget, options.element);
-        ns(widget).sandbox = Cu.Sandbox(element.ownerDocument.defaultView);
+        sandboxes(widget).sandbox = Cu.Sandbox(element.ownerDocument.defaultView);
         // ...
       }
       Widget.prototype = Object.create(View.prototype);
       Widget.prototype.postMessage = function postMessage(message) {
-        let { sandbox } = ns(this);
+        let { sandbox } = sandboxes(this);
         sandbox.postMessage(JSON.stringify(JSON.parse(message)));
         ...
       };
       Widget.prototype.destroy = function destroy() {
         View.prototype.destroy.call(this);
         // ...
-        delete ns(this).sandbox;
+        delete sandboxes(this).sandbox;
       };
       exports.Widget = Widget;
 
@@ -64,3 +68,4 @@ handing them a namespace accessor function.
       Widget.prototype.setInnerHTML = function setInnerHTML(html) {
         dom(this).element.innerHTML = String(html);
       };
+

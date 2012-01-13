@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 // This is a content script.  It executes inside the context of the Reddit page
 // loaded into the panel and has access to that page's window object and other
 // global objects (although the page does not have access to globals defined by

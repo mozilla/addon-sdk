@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 Provides an API for creating javascript sandboxes and for executing scripts
 in them.
 
@@ -13,7 +17,7 @@ string, in which case sandbox will get exact same privileges as a scripts
 loaded from that URL. Argument also could be a DOM window object, to inherit
 privileges from the window being passed. Finally if argument is omitted or is
 `null` sandbox will have a chrome privileges giving it access to all the XPCOM
-components. Optionally `sandbox` function can be passed a second optional 
+components. Optionally `sandbox` function can be passed a second optional
 argument (See [sandbox documentation on MDN](https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter)
 for details).
 
@@ -39,7 +43,9 @@ Version of JavaScript can be also specified via optional argument:
 
 ### Loading scripts ###
 
-API provides limited API for loading scripts right form the local URLs.
+API provides limited API for loading scripts right form the local URLs,
+but data: URLs are supported.
 
     load(scope, 'resource://path/to/my/script.js');
     load(scope, 'file:///path/to/script.js');
+    load(scope, 'data:,var a = 5;');

@@ -1,41 +1,6 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is Mozilla Corporation Code.
-#
-# The Initial Developer of the Original Code is
-# Mikeal Rogers.
-# Portions created by the Initial Developer are Copyright (C) 2008-2009
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#  Mikeal Rogers <mikeal.rogers@gmail.com>
-#  Clint Talbert <ctalbert@mozilla.com>
-#  Henrik Skupin <hskupin@mozilla.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
 import sys
@@ -49,15 +14,13 @@ import killableprocess
 import subprocess
 import platform
 import shutil
+from StringIO import StringIO
+from xml.dom import minidom
 
 from distutils import dir_util
 from time import sleep
 
 # conditional (version-dependent) imports
-try:
-    from xml.etree import ElementTree
-except ImportError:
-    from elementtree import ElementTree
 try:
     import simplejson
 except ImportError:
@@ -135,6 +98,63 @@ def makedirs(name):
     except:
         pass
 
+# addon_details() copied from mozprofile
+def addon_details(install_rdf_fh):
+    """
+    returns a dictionary of details about the addon
+    - addon_path : path to the addon directory
+    Returns:
+    {'id':      u'rainbow@colors.org', # id of the addon
+     'version': u'1.4',                # version of the addon
+     'name':    u'Rainbow',            # name of the addon
+     'unpack': # whether to unpack the addon
+    """
+
+    details = {
+        'id': None,
+        'unpack': False,
+        'name': None,
+        'version': None
+    }
+
+    def get_namespace_id(doc, url):
+        attributes = doc.documentElement.attributes
+        namespace = ""
+        for i in range(attributes.length):
+            if attributes.item(i).value == url:
+                if ":" in attributes.item(i).name:
+                    # If the namespace is not the default one remove 'xlmns:'
+                    namespace = attributes.item(i).name.split(':')[1] + ":"
+                    break
+        return namespace
+
+    def get_text(element):
+        """Retrieve the text value of a given node"""
+        rc = []
+        for node in element.childNodes:
+            if node.nodeType == node.TEXT_NODE:
+                rc.append(node.data)
+        return ''.join(rc).strip()
+
+    doc = minidom.parse(install_rdf_fh)
+
+    # Get the namespaces abbreviations
+    em = get_namespace_id(doc, "http://www.mozilla.org/2004/em-rdf#")
+    rdf = get_namespace_id(doc, "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+
+    description = doc.getElementsByTagName(rdf + "Description").item(0)
+    for node in description.childNodes:
+        # Remove the namespace prefix from the tag for comparison
+        entry = node.nodeName.replace(em, "")
+        if entry in details.keys():
+            details.update({ entry: get_text(node) })
+
+    # turn unpack into a true/false value
+    if isinstance(details['unpack'], basestring):
+        details['unpack'] = details['unpack'].lower() == 'true'
+
+    return details
+
 class Profile(object):
     """Handles all operations regarding profile. Created new profiles, installs extensions,
     sets preferences and handles cleanup."""
@@ -171,61 +191,46 @@ class Profile(object):
         profile = tempfile.mkdtemp(suffix='.mozrunner')
         return profile
 
+    def unpack_addon(self, xpi_zipfile, addon_path):
+        for name in xpi_zipfile.namelist():
+            if name.endswith('/'):
+                makedirs(os.path.join(addon_path, name))
+            else:
+                if not os.path.isdir(os.path.dirname(os.path.join(addon_path, name))):
+                    makedirs(os.path.dirname(os.path.join(addon_path, name)))
+                data = xpi_zipfile.read(name)
+                f = open(os.path.join(addon_path, name), 'wb')
+                f.write(data) ; f.close()
+                zi = xpi_zipfile.getinfo(name)
+                os.chmod(os.path.join(addon_path,name), (zi.external_attr>>16))
+
     def install_addon(self, path):
         """Installs the given addon or directory of addons in the profile."""
+
+        extensions_path = os.path.join(self.profile, 'extensions')
+        if not os.path.exists(extensions_path):
+            os.makedirs(extensions_path)
+
         addons = [path]
         if not path.endswith('.xpi') and not os.path.exists(os.path.join(path, 'install.rdf')):
             addons = [os.path.join(path, x) for x in os.listdir(path)]
 
         for addon in addons:
-            tmpdir = None
             if addon.endswith('.xpi'):
-                tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
-                compressed_file = zipfile.ZipFile(addon, "r")
-                for name in compressed_file.namelist():
-                    if name.endswith('/'):
-                        makedirs(os.path.join(tmpdir, name))
-                    else:
-                        if not os.path.isdir(os.path.dirname(os.path.join(tmpdir, name))):
-                            makedirs(os.path.dirname(os.path.join(tmpdir, name)))
-                        data = compressed_file.read(name)
-                        f = open(os.path.join(tmpdir, name), 'wb')
-                        f.write(data) ; f.close()
-                        zi = compressed_file.getinfo(name)
-                        os.chmod(os.path.join(tmpdir,name),
-                                 (zi.external_attr>>16))
-                addon = tmpdir
-
-            tree = ElementTree.ElementTree(file=os.path.join(addon, 'install.rdf'))
-            # description_element =
-            # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
-
-            desc = tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-            apps = desc.findall('.//{http://www.mozilla.org/2004/em-rdf#}targetApplication')
-            for app in apps:
-              desc.remove(app)
-            if len(desc) and desc.attrib.has_key('{http://www.mozilla.org/2004/em-rdf#}id'):
-                addon_id = desc.attrib['{http://www.mozilla.org/2004/em-rdf#}id']
-            elif len(desc) and desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id') is not None:
-                addon_id = desc.find('.//{http://www.mozilla.org/2004/em-rdf#}id').text
-            else:
-                about = [e for e in tree.findall(
-                            './/{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description') if
-                             e.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') ==
-                             'urn:mozilla:install-manifest'
-                        ]
-
-                x = e.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description')
-
-                if len(about) == 0:
-                    addon_element = tree.find('.//{http://www.mozilla.org/2004/em-rdf#}id')
-                    addon_id = addon_element.text
+                xpi_zipfile = zipfile.ZipFile(addon, "r")
+                details = addon_details(StringIO(xpi_zipfile.read('install.rdf')))
+                addon_path = os.path.join(extensions_path, details["id"])
+                if details.get("unpack", True):
+                    self.unpack_addon(xpi_zipfile, addon_path)
+                    self.addons_installed.append(addon_path)
                 else:
-                    addon_id = about[0].get('{http://www.mozilla.org/2004/em-rdf#}id')
-
-            addon_path = os.path.join(self.profile, 'extensions', addon_id)
-            copytree(addon, addon_path, preserve_symlinks=1)
-            self.addons_installed.append(addon_path)
+                    shutil.copy(addon, addon_path + '.xpi')
+            else:
+                # it's already unpacked, but we need to extract the id so we
+                # can copy it
+                details = addon_details(open(os.path.join(addon, "install.rdf"), "rb"))
+                addon_path = os.path.join(extensions_path, details["id"])
+                shutil.copytree(addon, addon_path, symlinks=True)
 
     def set_preferences(self, preferences):
         """Adds preferences dict to profile preferences"""
@@ -291,6 +296,15 @@ class FirefoxProfile(Profile):
                    'extensions.update.notifyUser' : False,
                    }
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    # Note: Nightly is obsolete, as it has been renamed to FirefoxNightly,
+    # but it will still be present if users update an older nightly build
+    # via the app update service.
+    bundle_names = ['Firefox', 'FirefoxNightly', 'Nightly']
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     @property
     def names(self):
         if sys.platform == 'darwin':
@@ -308,6 +322,13 @@ class ThunderbirdProfile(Profile):
                    'browser.warnOnQuit': False,
                    'browser.sessionstore.resume_from_crash': False,
                    }
+
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    bundle_names = ["Thunderbird", "Shredder"]
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     names = ["thunderbird", "shredder"]
 
 
@@ -404,19 +425,29 @@ class Runner(object):
                             binary = path
                             break
         elif sys.platform == 'darwin':
-            for name in reversed(self.names):
-                appdir = os.path.join('Applications', name.capitalize()+'.app')
-                if os.path.isdir(os.path.join(os.path.expanduser('~/'), appdir)):
-                    binary = os.path.join(os.path.expanduser('~/'), appdir,
-                                          'Contents/MacOS/'+name+'-bin')
-                elif os.path.isdir('/'+appdir):
-                    binary = os.path.join("/"+appdir, 'Contents/MacOS/'+name+'-bin')
+            for bundle_name in self.bundle_names:
+                # Look for the application bundle in the user's home directory
+                # or the system-wide /Applications directory.  If we don't find
+                # it in one of those locations, we move on to the next possible
+                # bundle name.
+                appdir = os.path.join("~/Applications/%s.app" % bundle_name)
+                if not os.path.isdir(appdir):
+                    appdir = "/Applications/%s.app" % bundle_name
+                if not os.path.isdir(appdir):
+                    continue
 
-                if binary is not None:
-                    if not os.path.isfile(binary):
-                        binary = binary.replace(name+'-bin', 'firefox-bin')
-                    if not os.path.isfile(binary):
-                        binary = None
+                # Look for a binary with any of the possible binary names
+                # inside the application bundle.
+                for binname in self.names:
+                    binpath = os.path.join(appdir,
+                                           "Contents/MacOS/%s-bin" % binname)
+                    if (os.path.isfile(binpath)):
+                        binary = binpath
+                        break
+
+                if binary:
+                    break
+
         if binary is None:
             raise Exception('Mozrunner could not locate your binary, you will need to set it.')
         return binary
@@ -498,6 +529,13 @@ class FirefoxRunner(Runner):
     app_name = 'Firefox'
     profile_class = FirefoxProfile
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    # Note: Nightly is obsolete, as it has been renamed to FirefoxNightly,
+    # but it will still be present if users update an older nightly build
+    # only via the app update service.
+    bundle_names = ['Firefox', 'FirefoxNightly', 'Nightly']
+
     @property
     def names(self):
         if sys.platform == 'darwin':
@@ -513,6 +551,12 @@ class ThunderbirdRunner(Runner):
     app_name = 'Thunderbird'
     profile_class = ThunderbirdProfile
 
+    # The possible names of application bundles on Mac OS X, in order of
+    # preference from most to least preferred.
+    bundle_names = ["Thunderbird", "Shredder"]
+
+    # The possible names of binaries, in order of preference from most to least
+    # preferred.
     names = ["thunderbird", "shredder"]
 
 class CLI(object):

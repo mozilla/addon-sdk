@@ -1,41 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Trait } = require('../traits');
@@ -67,15 +34,21 @@ const ERR_DESTROYED =
  */
 const PRIVATE_KEY = {};
 
-function ensureArgumentsAreJSON(args) {
-  // First convert to real array
-  let array = Array.prototype.slice.call(args);
+function ensureArgumentsAreJSON(array, window) {
   // JSON.stringify is buggy with cross-sandbox values,
   // it may return "{}" on functions. Use a replacer to match them correctly.
   function replacer(k, v) {
     return typeof v === "function" ? undefined : v;
   }
-  return JSON.parse(JSON.stringify(array, replacer));
+  // If a window is given, we use its `JSON.parse` object in order to
+  // create JS objects for its compartments (See bug 714891)
+  let parse = JSON.parse;
+  if (window) {
+    // As we can't directly rely on `window.wrappedJSObject.JSON`, we create
+    // a temporary sandbox in order to get access to a safe `JSON` object:
+    parse = Cu.Sandbox(window).JSON.parse;
+  }
+  return parse(JSON.stringify(array, replacer));
 }
 
 /**
@@ -170,8 +143,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._addonWorker)
       throw new Error(ERR_DESTROYED);
-    this._addonWorker._asyncEmit('message',  
-                                      JSON.parse(JSON.stringify(data)));
+    this._addonWorker._asyncEmit('message', ensureArgumentsAreJSON(data));
   },
   
   /**
@@ -437,7 +409,8 @@ const Worker = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
-    this._contentWorker._asyncEmit('message',  JSON.parse(JSON.stringify(data)));
+    this._contentWorker._asyncEmit('message',
+                                   ensureArgumentsAreJSON(data, this._window));
   },
   
   /**
@@ -495,7 +468,8 @@ const Worker = AsyncEventEmitter.compose({
     
     let scope = this._contentWorker._port;
     // Ensure that we pass only JSON values
-    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(args));
+    let array = Array.prototype.slice.call(args);
+    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(array, this._window));
   },
   
   // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
@@ -614,7 +588,8 @@ const Worker = AsyncEventEmitter.compose({
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
     // Ensure that we pass only JSON values
-    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(arguments));
+    let array = Array.prototype.slice.call(arguments);
+    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(array));
   },
   
   /**
