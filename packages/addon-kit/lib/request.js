@@ -5,12 +5,12 @@
 "use strict";
 
 const { Base } = require("api-utils/base");
-let { Namespace } = require("api-utils/namespace");
+const { ns } = require("api-utils/namespace");
 const xhr = require("api-utils/xhr");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
 
-let internals = Namespace();
+const response = ns();
 
 // Ugly but will fix with: https://bugzilla.mozilla.org/show_bug.cgi?id=596248
 const EventEmitter = require('api-utils/events').EventEmitter.compose({
@@ -201,15 +201,15 @@ function fixedEncodeURIComponent (str) {
 
 const Response = Base.extend({
   initialize: function initialize(request) {
-    internals(this).request = request;
+    response(this).request = request;
   },
-  get text() internals(this).request.responseText,
+  get text() response(this).request.responseText,
   get xml() {
     throw new Error("Sorry, the 'xml' property is no longer available. " +
                     "see bug 611042 for more information.");
   },
-  get status() internals(this).request.status,
-  get statusText() internals(this).request.statusText,
+  get status() response(this).request.status,
+  get statusText() response(this).request.statusText,
   get json() {
     try {
       return JSON.parse(this.text);
@@ -221,7 +221,7 @@ const Response = Base.extend({
     let headers = {}, lastKey;
     // Since getAllResponseHeaders() will return null if there are no headers,
     // defend against it by defaulting to ""
-    let rawHeaders = internals(this).request.getAllResponseHeaders() || "";
+    let rawHeaders = response(this).request.getAllResponseHeaders() || "";
     rawHeaders.split("\n").forEach(function (h) {
       // According to the HTTP spec, the header string is terminated by an empty
       // line, so we can just skip it.
