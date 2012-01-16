@@ -16,7 +16,7 @@ const { Cortex } = require('../cortex');
 const { Enqueued } = require('../utils/function');
 const self = require("self");
 const { sandbox, evaluate, load } = require("../sandbox");
-const { merge } = require('../utils/object');
+const { override } = require('../utils/object');
 
 const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
 
@@ -215,7 +215,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
-    merge(content, {
+    override(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
       get top() content,
@@ -239,7 +239,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     let self = this;
     let publicAPI = this._public;
 
-    merge(content, {
+    override(content, {
       console: console,
       self: publicAPI.self,
       setTimeout: publicAPI.setTimeout,
