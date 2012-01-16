@@ -7,12 +7,21 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
   <Description about="urn:mozilla:install-manifest">
-    <em:id>mobile-killer@mozilla.com</em:id>
+    <em:id>mobile-utils@mozilla.com</em:id>
     <em:version>1.0</em:version>
     <em:type>2</em:type>
     <em:bootstrap>true</em:bootstrap>
 
-    <!-- Fennec -->
+    <!-- Fennec-XUL -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{a23983c0-fd0e-11dc-95ff-0800200c9a66}</em:id>
+        <em:minVersion>1</em:minVersion>
+        <em:maxVersion>*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <!-- Fennec-NativeUI -->
     <em:targetApplication>
       <Description>
         <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
@@ -22,8 +31,8 @@
     </em:targetApplication>
 
     <!-- Front End MetaData -->
-    <em:name>Mobile killer</em:name>
-    <em:description>Allow cfx to automatically kill firefox.</em:description>
+    <em:name>Mobile Addon-SDK utility addon</em:name>
+    <em:description>Allow better integration with cfx tool.</em:description>
     <em:creator>Mozilla Corporation</em:creator>
 
   </Description>
