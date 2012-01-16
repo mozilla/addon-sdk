@@ -10,6 +10,7 @@ const { Cc, Ci, CC } = require('chrome');
 const { Service } = require('./xpcom');
 const { Base } = require('./base');
 const { CustomURL } = require('./xpcom/uri');
+const { pick, supplement } = require('./utils/object');
 const { ns } = require('./namespace');
 
 const StandardURL = CC('@mozilla.org/network/standard-url;1',
@@ -27,16 +28,8 @@ const IOService = Cc['@mozilla.org/network/io-service;1'].
 const URI = IOService.newURI.bind(IOService);
 const URIChannel = IOService.newChannel;
 
-
 const { ALLOW_SCRIPT, URI_SAFE_FOR_UNTRUSTED_CONTENT,
         HIDE_FROM_ABOUTABOUT } = Ci.nsIAboutModule;
-
-const { URI_STD, URI_NORELATIVE, URI_NOAUTH, URI_INHERITS_SECURITY_CONTEXT,
-        URI_FORBIDS_AUTOMATIC_DOCUMENT_REPLACEMENT, URI_LOADABLE_BY_ANYONE,
-        URI_DANGEROUS_TO_LOAD, URI_IS_UI_RESOURCE, URI_IS_LOCAL_FILE,
-        URI_LOADABLE_BY_SUBSUMERS, URI_NON_PERSISTABLE, URI_IS_LOCAL_RESOURCE,
-        URI_DOES_NOT_RETURN_DATA, URI_OPENING_EXECUTES_SCRIPT, ALLOWS_PROXY,
-        ALLOWS_PROXY_HTTP } = Ci.nsIProtocolHandler;
 
 const response = ns({ stream: null });
 
@@ -139,6 +132,17 @@ const AboutHandler = Service.extend(AbstractHandler, {
 });
 exports.AboutHandler = AboutHandler;
 
+const Flags = pick([ 'URI_STD', 'URI_NORELATIVE', 'URI_NOAUTH',
+  'URI_INHERITS_SECURITY_CONTEXT', 'URI_FORBIDS_AUTOMATIC_DOCUMENT_REPLACEMENT',
+  'URI_LOADABLE_BY_ANYONE', 'URI_DANGEROUS_TO_LOAD', 'URI_IS_UI_RESOURCE',
+  'URI_IS_LOCAL_FILE', 'URI_LOADABLE_BY_SUBSUMERS', 'URI_NON_PERSISTABLE',
+  'URI_IS_LOCAL_RESOURCE', 'URI_DOES_NOT_RETURN_DATA', 'ALLOWS_PROXY',
+  'URI_OPENING_EXECUTES_SCRIPT', 'ALLOWS_PROXY_HTTP' ], Ci.nsIProtocolHandler);
+
+const URITypes = supplement({ URITYPE_NON_STANDARD: 0 }, pick([
+  'URLTYPE_STANDARD', 'URLTYPE_AUTHORITY', 'URLTYPE_NO_AUTHORITY',
+  'URITYPE_NON_STANDARD' ], Ci.nsIStandardURL));
+
 const ProtocolHandler = Service.extend(AbstractHandler, Flags, URITypes, {
   onResolve: function onResolve() { throw Error('Not implemented') },
   interfaces: [ 'nsIProtocolHandler' ],
@@ -149,22 +153,7 @@ const ProtocolHandler = Service.extend(AbstractHandler, Flags, URITypes, {
   defaultPort: -1,
   // For more information on what these flags mean,
   // https://developer.mozilla.org/en/nsIProtocolHandler#Constants
-  protocolFlags: URI_NORELATIVE | URI_DANGEROUS_TO_LOAD,
-  URI_STD: URI_STD,
-  URI_NORELATIVE: URI_NORELATIVE,
-  URI_NOAUTH: URI_NOAUTH,
-  URI_INHERITS_SECURITY_CONTEXT: URI_INHERITS_SECURITY_CONTEXT,
-  URI_LOADABLE_BY_ANYONE: URI_LOADABLE_BY_ANYONE,
-  URI_DANGEROUS_TO_LOAD: URI_DANGEROUS_TO_LOAD,
-  URI_IS_UI_RESOURCE: URI_IS_UI_RESOURCE,
-  URI_IS_LOCAL_FILE: URI_IS_LOCAL_FILE,
-  URI_LOADABLE_BY_SUBSUMERS: URI_LOADABLE_BY_SUBSUMERS,
-  URI_NON_PERSISTABLE: URI_NON_PERSISTABLE,
-  URI_IS_LOCAL_RESOURCE: URI_IS_LOCAL_RESOURCE,
-  URI_DOES_NOT_RETURN_DATA: URI_DOES_NOT_RETURN_DATA,
-  URI_OPENING_EXECUTES_SCRIPT: URI_OPENING_EXECUTES_SCRIPT,
-  ALLOWS_PROXY: ALLOWS_PROXY,
-  ALLOWS_PROXY_HTTP: ALLOWS_PROXY_HTTP,
+  protocolFlags: Flags.URI_NORELATIVE | Flags.URI_DANGEROUS_TO_LOAD,
 
   /**
    * Property describe how to normalize an URL.
