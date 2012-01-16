@@ -27,6 +27,9 @@ const IOService = Cc['@mozilla.org/network/io-service;1'].
 const URI = IOService.newURI.bind(IOService);
 const URIChannel = IOService.newChannel;
 
+
+const { ALLOW_SCRIPT, URI_SAFE_FOR_UNTRUSTED_CONTENT,
+        HIDE_FROM_ABOUTABOUT } = Ci.nsIAboutModule;
 const response = ns({ stream: null });
 
 const Response = Base.extend({
@@ -109,9 +112,22 @@ exports.AbstractHandler = AbstractHandler;
 const AboutHandler = Factory.extend(AbstractHandler, {
   get what() { throw Error('Property `what` is required') },
   interfaces: [ 'nsIAboutModule' ],
+  // A flag that indicates whether script should be enabled for the given
+  // about: URI even if it's disabled in general.
+  allowScript: true,
+  // A flag that indicates whether a URI is safe for untrusted content. If it
+  // is, web pages and so forth will be allowed to link to this about: URI.
+  // Otherwise, only chrome will be able to link to it.
+  allowUnsafeLinks: false,
+  // A flag that indicates whether this about: URI doesn't want to be listed
+  // in about:about, especially if it's not useful without a query string.
+  allowListing: true,
   get classDescription() 'Protocol handler for "about:' + this.what + '"',
   get contractID() '@mozilla.org/network/protocol/about;1?what=' + this.what,
-  getURIFlags: function(uri) Ci.nsIAboutModule.URI_SAFE_FOR_UNTRUSTED_CONTENT
+  getURIFlags: function(uri)
+    this.allowScript ? ALLOW_SCRIPT : 0 |
+    this.allowUnsafeLinks ? URI_SAFE_FOR_UNTRUSTED_CONTENT : 0 |
+    this.allowListing ? HIDE_FROM_ABOUTABOUT : 0
 });
 exports.AboutHandler = AboutHandler;
 
