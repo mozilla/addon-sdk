@@ -7,7 +7,7 @@
 "use strict";
 
 const { Cc, Ci, CC } = require('chrome');
-const { Factory } = require('./xpcom');
+const { Service } = require('./xpcom');
 const { Base } = require('./base');
 const { CustomURL } = require('./xpcom/uri');
 const { ns } = require('./namespace');
@@ -117,7 +117,7 @@ const AbstractHandler = {
 }
 exports.AbstractHandler = AbstractHandler;
 
-const AboutHandler = Factory.extend(AbstractHandler, {
+const AboutHandler = Service.extend(AbstractHandler, {
   get what() { throw Error('Property `what` is required') },
   interfaces: [ 'nsIAboutModule' ],
   // A flag that indicates whether script should be enabled for the given
@@ -139,7 +139,7 @@ const AboutHandler = Factory.extend(AbstractHandler, {
 });
 exports.AboutHandler = AboutHandler;
 
-const ProtocolHandler = Factory.extend(AbstractHandler, {
+const ProtocolHandler = Service.extend(AbstractHandler, Flags, URITypes, {
   onResolve: function onResolve() { throw Error('Not implemented') },
   interfaces: [ 'nsIProtocolHandler' ],
   get classDescription() 'Protocol handler for "' + this.scheme + ':*"',
