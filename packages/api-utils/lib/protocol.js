@@ -20,6 +20,8 @@ const Channel = CC('@mozilla.org/network/input-stream-channel;1',
 const SecurityManager = Cc['@mozilla.org/scriptsecuritymanager;1'].
                         getService(Ci.nsIScriptSecurityManager);
 const Principal = SecurityManager.getCodebasePrincipal;
+const chromePrincipal = Cc['@mozilla.org/systemprincipal;1'].
+                        createInstance(Ci.nsIPrincipal);
 const IOService = Cc['@mozilla.org/network/io-service;1'].
                   getService(Ci.nsIIOService);
 const URI = IOService.newURI.bind(IOService);
@@ -90,11 +92,13 @@ const AbstractHandler = {
       channel.contentCharset = response.contentCharset;
     }
 
-    // If `principalURI` is set to anything other then an `request.uri` it
-    // means that channel owner must be different and it's privileges must be
-    // inherited. This feature is handy, for a custom URI implementers that
-    // proxy to a content of the different URIs.
-    if (response.principalURI !== response.uri)
+    // Bug 16004 prevents us from just inheriting principals from the URL, there
+    // for we use system principal if it's a chrome URL.
+    if (response.principalURI.indexOf('chrome:') === 0)
+      channel.owner = chromePrincipal;
+    // If `principalURI` is set to anything other then an `request.uri` and
+    // it's not a chrome URI channel will have principals of the URL.
+    else if (response.principalURI !== response.uri)
       channel.owner = Principal(URI(response.principalURI, null, null));
 
     return channel;
