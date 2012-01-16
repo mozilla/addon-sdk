@@ -11,7 +11,6 @@ const { newURI } = Cc['@mozilla.org/network/io-service;1'].
                   getService(Ci.nsIIOService);
 const { Unknown } = require('../xpcom');
 const { parse } = require('../url');
-const { merge } = require('../utils/function');
 
 // Implementation of nsIMutable
 const Mutable = Unknown.extend({
