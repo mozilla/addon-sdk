@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { Cc, Ci, components: { Constructor: CC } } = require('chrome')
+const { Cc, Ci, CC } = require('chrome');
 const { Factory } = require('./xpcom');
 const { Base } = require('./base');
 const { CustomURL } = require('./xpcom/uri');
