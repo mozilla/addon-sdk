@@ -30,7 +30,7 @@ h2.top {
 
 #columns {
   padding-left: 220px;      /* sidebar width + sidebar padding */
-  padding-right: 65px;     /* main-content padding*/
+  padding-right: 25px;     /* main-content padding*/
   padding-top: 20px;
   min-height: 100%;
   margin-bottom: 170px;
@@ -47,20 +47,20 @@ hr {
 }
 
 .funnel .menu {
-  padding-right: 50px;     /* main-content padding*/
+  padding-right: 25px;     /* main-content padding*/
 }
 
 #mozilla-tab {
-  padding-right: 50px;     /* main-content padding*/
+  padding-right: 25px;     /* main-content padding*/
 }
 
 #site-header h1 a span {
   top: 25px;
-  left: 45px;
+  left: 25px;
 }
 
 #site-header {
-  padding-left: 45px;
+  padding-left: 25px;
 }
 
 #columns .column {
@@ -70,7 +70,7 @@ hr {
 
 #main-content-column {
   width: 100%;
-  padding-right: 50px;
+  padding-right: 25px;
 }
 
 .check, .cross {
@@ -79,9 +79,9 @@ hr {
 
 #sidebar {
   width: 170px;        /* sidebar usable width (fullwidth - padding) */
-  right: 270px;        /* sidebar fullwidth + main-content padding */
-  padding-left: 30px;
-  padding-right: 20px;
+  right: 275px;        /* sidebar fullwidth + main-content padding */
+  padding-left: 55px;
+  padding-right: 25px;
   margin-left: -100%;
 }
 
@@ -96,7 +96,7 @@ hr {
   font-size: 0.9em;
   overflow: hidden;
   margin-top: 0;
-  margin-left: 20px;
+  margin-left: 25px;
   margin-bottom: 1em;
 }
 
@@ -351,14 +351,18 @@ div.buttonarray {
 }
 
 div.buttonarray a {
-  padding: 10px;
+  padding: 6px;
   display: block;
   text-decoration:none;
 }
 
+div.buttonarray p {
+  margin-bottom: 0px;
+}
+
 div.buttonarray a:hover {
   background-color: #F0F8FF;
-  padding: 9px;
+  padding: 5px;
   border: solid 1px;
   border-color: #a0d0fb;
 }

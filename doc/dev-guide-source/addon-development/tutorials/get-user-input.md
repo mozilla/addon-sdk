@@ -17,8 +17,6 @@ which displays a popup dialog when clicked. The popup just contains a
 `<textarea>` element: when the user presses the `return` key, the contents
 of the `<textarea>` is sent to the main add-on code.
 
-
-
 The add-on consists of three files:
 
 * **`main.js`**: the main add-on code, that creates the widget and panel

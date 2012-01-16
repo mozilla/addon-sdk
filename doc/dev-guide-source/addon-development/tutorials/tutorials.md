@@ -7,7 +7,6 @@
 ## Getting Started ##
 
 <div class="buttonarray">
-<p>
 
  [Installation](dev-guide/addon-development/installation.html)
  [Getting Started With cfx](dev-guide/addon-development/tutorials/getting-started-with-cfx.html)
@@ -17,7 +16,6 @@
 ## Introducing the APIs ##
 
 <div class="buttonarray">
-<p>
 
  <a href="dev-guide/addon-development/tutorials/modifying-web-pages-url.html">Modify Web Pages Based on URL</a>
  <a href="dev-guide/addon-development/tutorials/modifying-web-pages-tab.html">Modify the Current Web Page</a>
@@ -32,6 +30,17 @@
  <a href="dev-guide/addon-development/tutorials/network-requests.html">Make a Network Request</a>
  <a href="dev-guide/addon-development/tutorials/user-prefs.html">User Preferences</a>
  <a href="dev-guide/addon-development/tutorials/storage.html">Local Storage</a>
+ 
+</div>
+
+## Development Techniques ##
+
+<div class="buttonarray">
+
+ <a href="dev-guide/addon-development/tutorials/logging.html">Logging</a>
+ <a href="dev-guide/addon-development/tutorials/listening-for-load-and-unload.html">Listen for Load and Unload</a>
+ <a href="dev-guide/addon-development/tutorials/reusable-modules.html">Reusable Modules</a>
+ <a href="dev-guide/addon-development/tutorials/unit-testing.html">Unit Testing</a>
  
 </div>
 
