@@ -10,7 +10,7 @@ const { Cc, Ci, CC } = require('chrome');
 const { Factory } = require('./xpcom');
 const { Base } = require('./base');
 const { CustomURL } = require('./xpcom/uri');
-const { Namespace: ns } = require('./namespace');
+const { ns } = require('./namespace');
 
 const StandardURL = CC('@mozilla.org/network/standard-url;1',
                        'nsIStandardURL', 'init');
