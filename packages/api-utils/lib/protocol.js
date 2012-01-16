@@ -30,6 +30,14 @@ const URIChannel = IOService.newChannel;
 
 const { ALLOW_SCRIPT, URI_SAFE_FOR_UNTRUSTED_CONTENT,
         HIDE_FROM_ABOUTABOUT } = Ci.nsIAboutModule;
+
+const { URI_STD, URI_NORELATIVE, URI_NOAUTH, URI_INHERITS_SECURITY_CONTEXT,
+        URI_FORBIDS_AUTOMATIC_DOCUMENT_REPLACEMENT, URI_LOADABLE_BY_ANYONE,
+        URI_DANGEROUS_TO_LOAD, URI_IS_UI_RESOURCE, URI_IS_LOCAL_FILE,
+        URI_LOADABLE_BY_SUBSUMERS, URI_NON_PERSISTABLE, URI_IS_LOCAL_RESOURCE,
+        URI_DOES_NOT_RETURN_DATA, URI_OPENING_EXECUTES_SCRIPT, ALLOWS_PROXY,
+        ALLOWS_PROXY_HTTP } = Ci.nsIProtocolHandler;
+
 const response = ns({ stream: null });
 
 const Response = Base.extend({
@@ -140,10 +148,24 @@ const ProtocolHandler = Factory.extend(AbstractHandler, {
   allowPort: function(port, scheme) false,
   defaultPort: -1,
   // For more information on what these flags mean,
-  // see caps/src/nsScriptSecurityManager.cpp.
-  protocolFlags: Ci.nsIProtocolHandler.URI_NORELATIVE
-               | Ci.nsIProtocolHandler.URI_IS_UI_RESOURCE
-               | Ci.nsIProtocolHandler.URI_DANGEROUS_TO_LOAD,
+  // https://developer.mozilla.org/en/nsIProtocolHandler#Constants
+  protocolFlags: URI_NORELATIVE | URI_DANGEROUS_TO_LOAD,
+  URI_STD: URI_STD,
+  URI_NORELATIVE: URI_NORELATIVE,
+  URI_NOAUTH: URI_NOAUTH,
+  URI_INHERITS_SECURITY_CONTEXT: URI_INHERITS_SECURITY_CONTEXT,
+  URI_LOADABLE_BY_ANYONE: URI_LOADABLE_BY_ANYONE,
+  URI_DANGEROUS_TO_LOAD: URI_DANGEROUS_TO_LOAD,
+  URI_IS_UI_RESOURCE: URI_IS_UI_RESOURCE,
+  URI_IS_LOCAL_FILE: URI_IS_LOCAL_FILE,
+  URI_LOADABLE_BY_SUBSUMERS: URI_LOADABLE_BY_SUBSUMERS,
+  URI_NON_PERSISTABLE: URI_NON_PERSISTABLE,
+  URI_IS_LOCAL_RESOURCE: URI_IS_LOCAL_RESOURCE,
+  URI_DOES_NOT_RETURN_DATA: URI_DOES_NOT_RETURN_DATA,
+  URI_OPENING_EXECUTES_SCRIPT: URI_OPENING_EXECUTES_SCRIPT,
+  ALLOWS_PROXY: ALLOWS_PROXY,
+  ALLOWS_PROXY_HTTP: ALLOWS_PROXY_HTTP,
+
   /**
    * Property describe how to normalize an URL.
    * @see https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIStandardURL#Constants
