@@ -18,7 +18,7 @@ from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
 # Used to remove noise from ADB output
-CLEANUP_ADB = re.compile(r'(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)')
+CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
 
 # Maximum time we'll wait for tests to finish, in seconds.
 # The purpose of this timeout is to recover from infinite loops.  It should be
