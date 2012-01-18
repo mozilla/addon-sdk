@@ -96,6 +96,9 @@ def versions_from_vcs(tag_prefix, verbose=False):
     except NameError:
         # some py2exe/bbfreeze/non-CPython implementations don't do __file__
         return {} # not always correct
+    root = os.path.dirname(os.path.dirname(source_dir))
+    if not os.path.exists(os.path.join(root, ".git")):
+        return {}
     GIT = "git"
     if sys.platform == "win32":
         GIT = "git.cmd"
