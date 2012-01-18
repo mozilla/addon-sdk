@@ -184,6 +184,8 @@ class RemoteFennecRunner(mozrunner.Runner):
         if pid != None:
             # Send a key "up" signal to mobile-utils addon
             # in order to kill running firefox instance
+            # KEYCODE_DPAD_UP = 19
+            # http://developer.android.com/reference/android/view/KeyEvent.html#KEYCODE_DPAD_UP
             print "Killing running Firefox instance ..."
             subprocess.call([self._adb_path, "shell", "input keyevent 19"])
             subprocess.Popen(self.command, stdout=subprocess.PIPE).wait()

@@ -40,8 +40,11 @@ function startup(data, reason) {
       onWindowTitleChange: function () {},
       handleEvent: function(event) {
         // This event is dispatched via: abd shell input keycode 19
-        // KEYCODE_DPAD_UP=19, UP can't be fired by virtual keyboard,
+        // KEYCODE_DPAD_UP = 19, UP can't be fired by virtual keyboard,
         // so it should be safe to take this event as a kill signal.
+        // `adb shell input` and `JS keyCode` values doesn't map to same values
+        // In JS, KeyUp maps to DOM_VK_UP = 38:
+        // https://developer.mozilla.org/en/DOM/KeyboardEvent
         if (event.keyCode == 38 && event.which == 38) {
           Cu.reportError("Mobile killer triggered!");
           let appStartup = Cc['@mozilla.org/toolkit/app-startup;1'].
