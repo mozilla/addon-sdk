@@ -95,7 +95,7 @@ might handle that:
 
     ss.storage.history = [];
     var privateBrowsing = require("private-browsing");
-    if (!privateBrowsing.active) {
+    if (!privateBrowsing.isActive) {
       var url = getSelectedTabURL();
       ss.storage.history.push(url);
     }
