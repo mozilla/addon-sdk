@@ -4,6 +4,9 @@
 "use strict";
 
 const prefs = require("preferences-service");
+const { Cu, Cc, Ci } = require("chrome");
+const { Services } = Cu.import("resource://gre/modules/Services.jsm");
+
 
 /**
  * Gets the currently selected locale for display.
@@ -27,16 +30,29 @@ exports.getPreferedLocales = function getPreferedLocales() {
   if (prefs.get(PREF_MATCH_OS_LOCALE, false)) {
     let localeService = Cc["@mozilla.org/intl/nslocaleservice;1"].
                         getService(Ci.nsILocaleService);
-    let OsLocale = localeService.getLocaleComponentForUserAgent();
+    let osLocale = localeService.getLocaleComponentForUserAgent();
     addLocale(osLocale);
   }
 
-  // Then we use browser UI locale (that may match OS one too first)
-  // TODO: Verify that we do not need "Prefs.getComplexValue(PREF_SELECTED_LOCALE, Ci.nsIPrefLocalizedString)"
-  //       https://bugzilla.mozilla.org/show_bug.cgi?id=642203#c16
-  let browserUiLocale = prefs.get(PREF_SELECTED_LOCALE, "");
-  if (browserUiLocale)
-    addLocale(browserUiLocale);
+  // In some cases, mainly on Fennec and on Linux version,
+  // `general.useragent.locale` is a special 'localized' value, like:
+  // "chrome://global/locale/intl.properties"
+  let localizedBrowserUiLocale = null;
+  try {
+    localizedBrowserUiLocale = Services.prefs.getComplexValue(
+      PREF_SELECTED_LOCALE, Ci.nsIPrefLocalizedString).data;
+  } catch(e) {}
+  if (localizedBrowserUiLocale) {
+    addLocale(localizedBrowserUiLocale);
+  }
+  else {
+    // Then we use browser UI locale (that may match OS one too first)
+    // TODO: Verify that we do not need "Prefs.getComplexValue(PREF_SELECTED_LOCALE, Ci.nsIPrefLocalizedString)"
+    //       https://bugzilla.mozilla.org/show_bug.cgi?id=642203#c16
+    let browserUiLocale = prefs.get(PREF_SELECTED_LOCALE, "");
+    if (browserUiLocale)
+      addLocale(browserUiLocale);
+  }
 
   // Third priority is the list of locales used for web content
   let contentLocales = prefs.get(PREF_ACCEPT_LANGUAGES, "");
