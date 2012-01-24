@@ -5,6 +5,22 @@
 "use strict";
 
 let { Namespace, ns } = require("api-utils/namespace");
+let { Cc, Ci, Cu } = require("chrome");
+let { setTimeout } = require("api-utils/timer")
+
+exports["test post GC references"] = function (assert, done) {
+  // Test temporary workaround for a bug 673468.
+  var target = {}, local = ns()
+  var internal = local(target)
+
+  assert.equal(local(target), internal, "namespaced preserved");
+
+  setTimeout(function() {
+    Cu.forceGC();
+    assert.equal(local(target), internal, "namespace is preserved post GC");
+    done();
+  }, 300);
+};
 
 exports["test namsepace basics"] = function(assert) {
   var privates = Namespace();
