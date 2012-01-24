@@ -11,13 +11,13 @@ let { setTimeout } = require("api-utils/timer")
 exports["test post GC references"] = function (assert, done) {
   // Test temporary workaround for a bug 673468.
   var target = {}, local = ns()
-  var internal = local(target)
+  local(target).there = true
 
-  assert.equal(local(target), internal, "namespaced preserved");
+  assert.equal(local(target).there, true, "namespaced preserved");
 
   setTimeout(function() {
     Cu.forceGC();
-    assert.equal(local(target), internal, "namespace is preserved post GC");
+    assert.equal(local(target).there, true, "namespace is preserved post GC");
     done();
   }, 300);
 };
