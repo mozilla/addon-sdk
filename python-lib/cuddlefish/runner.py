@@ -17,6 +17,9 @@ from cuddlefish.prefs import DEFAULT_FIREFOX_PREFS
 from cuddlefish.prefs import DEFAULT_THUNDERBIRD_PREFS
 from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
+# Used to remove noise from ADB output
+CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
+
 # Maximum time we'll wait for tests to finish, in seconds.
 # The purpose of this timeout is to recover from infinite loops.  It should be
 # longer than the amount of time any test run takes, including those on slow
@@ -158,7 +161,7 @@ class RemoteFennecRunner(mozrunner.Runner):
         intents = self.getIntentNames()
         if not intents:
             raise ValueError("Unable to found any Firefox "
-                            "application on your device.")
+                             "application on your device.")
         elif mobile_app_name:
             if not mobile_app_name in intents:
                 raise ValueError("Unable to found Firefox application "
@@ -179,8 +182,10 @@ class RemoteFennecRunner(mozrunner.Runner):
         # First try to kill firefox if it is already running
         pid = self.getProcessPID(self._intent_name)
         if pid != None:
-            # Send a key "up" signal to mobile-killer addon
+            # Send a key "up" signal to mobile-utils addon
             # in order to kill running firefox instance
+            # KEYCODE_DPAD_UP = 19
+            # http://developer.android.com/reference/android/view/KeyEvent.html#KEYCODE_DPAD_UP
             print "Killing running Firefox instance ..."
             subprocess.call([self._adb_path, "shell", "input keyevent 19"])
             subprocess.Popen(self.command, stdout=subprocess.PIPE).wait()
@@ -491,8 +496,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         # Install a special addon when we run firefox on mobile device
         # in order to be able to kill it
         mydir = os.path.dirname(os.path.abspath(__file__))
-        killer_dir = os.path.join(mydir, "mobile-killer")
-        addons.append(killer_dir)
+        addon_dir = os.path.join(mydir, "mobile-utils")
+        addons.append(addon_dir)
 
     # the XPI file is copied into the profile here
     profile = profile_class(addons=addons,
@@ -511,12 +516,39 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     sys.stdout.flush(); sys.stderr.flush()
 
     if app_type == "fennec-on-device":
-      # in case we run it on a mobile device, we only have to launch it
-      runner.start()
-      profile.cleanup()
-      time.sleep(1)
-      print >>sys.stderr, "Remote application launched successfully."
-      return 0
+        # In case of mobile device, we need to get stdio from `adb logcat` cmd:
+
+        # First flush logs in order to avoid catching previous ones
+        subprocess.call([binary, "logcat", "-c"])
+
+        # Launch adb command
+        runner.start()
+
+        # We can immediatly remove temporary profile folder
+        # as it has been uploaded to the device
+        profile.cleanup()
+        # We are not going to use the output log file
+        outf.close()
+
+        # Then we simply display stdout of `adb logcat`
+        p = subprocess.Popen([binary, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
+        while True:
+            line = p.stdout.readline()
+            if line == '':
+                break
+            # mobile-utils addon contains an application quit event observer
+            # that will print this string:
+            if "APPLICATION-QUIT" in line:
+                break
+            m = CLEANUP_ADB.match(line)
+            if not m:
+                print line.rstrip()
+                continue
+            print m.group(3)
+
+        print >>sys.stderr, "Program terminated successfully."
+        return 0
+
 
     print >>sys.stderr, "Using binary at '%s'." % runner.binary
 

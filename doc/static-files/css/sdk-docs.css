@@ -174,8 +174,8 @@ hr {
   padding: 1em;
   border: solid 2px black;
   width: 75%;
-  background-color: #c63717;
-  color: white;
+  background-color: #FBEDED;
+  border: 1px solid #AC6262;
 }
 
 .logo {
