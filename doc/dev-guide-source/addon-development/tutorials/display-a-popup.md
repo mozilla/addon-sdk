@@ -4,10 +4,12 @@
 
 # Display a Popup #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 <img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
 alt="Text entry panel">

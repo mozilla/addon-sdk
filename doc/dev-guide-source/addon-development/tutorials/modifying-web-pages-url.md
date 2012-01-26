@@ -4,10 +4,12 @@
 
 # Modifying Web Pages Based on URL #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 To modify any pages that match a particular pattern
 (for example, "http://example.org/") as they are loaded, use the

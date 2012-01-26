@@ -4,10 +4,12 @@
 
 # Modifying the Page Hosted by a Tab #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 To modify the page hosted by a particular tab, load a script into it
 using the `attach()` method of the

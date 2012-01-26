@@ -4,10 +4,12 @@
 
 # Adding a Button to the Toolbar #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 To add a button to the toolbar, use the
 [`widget`](packages/addon-kit/docs/widget.html) module.

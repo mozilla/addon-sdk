@@ -14,8 +14,8 @@ and learned the
 <img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
 alt="Text entry panel">
 
-In this tutorial we'll create an add-on that adds a widget to the toolbar
-which displays a popup dialog when clicked. The popup just contains a
+In this tutorial we'll create an add-on that adds widget to the toolbar
+which displays a panel when clicked. The panel just contains a
 `<textarea>` element: when the user presses the `return` key, the contents
 of the `<textarea>` is sent to the main add-on code.
 

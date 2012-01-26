@@ -4,10 +4,12 @@
 
 # Add a Context Menu Item #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 To add items and submenus to the Firefox context menu, use the
 [`context-menu`](packages/addon-kit/docs/context-menu.html) module.

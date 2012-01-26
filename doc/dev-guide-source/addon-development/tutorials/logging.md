@@ -4,21 +4,24 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
-
-<span class="aside">
-Because `window.alert()` isn't available to your main add-on code,
-if you're used to using it for diagnostics then the console is a
-useful replacement.
 </span>
 
 To help debug your add-on you can use the SDK's global `console` object
 to log error, warning, or informational messages. You don't have to
 `require()` anything to get access to the console: it is automatically
 made available to you.
+
+<span class="aside">
+Because `window.alert()` isn't available to your main add-on code,
+if you use it for diagnostics then the console is a
+useful replacement.
+</span>
+
 
 The `console.log()` method prints an informational message:
 

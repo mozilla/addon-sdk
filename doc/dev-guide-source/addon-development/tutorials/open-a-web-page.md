@@ -4,10 +4,12 @@
 
 # Open a Web Page #
 
+<span class="aside">
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 To open a new web page, you can use the
 [`tabs`](packages/addon-kit/docs/tabs.html) module:
