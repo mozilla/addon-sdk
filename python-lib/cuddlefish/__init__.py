@@ -147,6 +147,10 @@ parser_groups = (
                                       "fennec-on-device, xulrunner or "
                                       "thunderbird"),
                                 metavar=None,
+                                type="choice",
+                                choices=["firefox", "fennec",
+                                         "fennec-on-device", "thunderbird",
+                                         "xulrunner"],
                                 default="firefox",
                                 cmds=['test', 'run', 'testex', 'testpkgs',
                                       'testall'])),
@@ -767,6 +771,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,
                              mobile_app_name=options.mobile_app_name)
+        except ValueError, e:
+            print ""
+            print "A given cfx option has an inappropriate value:"
+            print >>sys.stderr, "  " + "  \n  ".join(str(e).split("\n"))
+            retval = -1
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
