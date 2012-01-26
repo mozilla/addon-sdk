@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { getPreferedLocales, findClosestLocale } = require("locale");
+const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
 const prefs = require("preferences-service");
 const { Cc, Ci, Cu } = require("chrome");
 const { Services } = Cu.import("resource://gre/modules/Services.jsm");

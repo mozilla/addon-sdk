@@ -4,7 +4,7 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const { getPreferedLocales, findClosestLocale } = require("locale");
+const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
 
 let globalHash = {};
 
