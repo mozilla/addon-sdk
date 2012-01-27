@@ -165,7 +165,9 @@ class RemoteFennecRunner(mozrunner.Runner):
         elif mobile_app_name:
             if not mobile_app_name in intents:
                 raise ValueError("Unable to found Firefox application "
-                                "with intent name '%s'", mobile_app_name)
+                                 "with intent name '%s'\n"
+                                 "Available ones are: %s" %
+                                 (mobile_app_name, ", ".join(intents)))
             self._intent_name = self._INTENT_PREFIX + mobile_app_name
         else:
             if "firefox" in intents:
@@ -388,6 +390,15 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     cmdargs = []
     preferences = dict(DEFAULT_COMMON_PREFS)
 
+    # For now, only allow running on Mobile with --force-mobile argument
+    if app_type in ["fennec", "fennec-on-device"] and not enable_mobile:
+        print """
+  WARNING: Firefox Mobile support is still experimental.
+  If you would like to run an addon on this platform, use --force-mobile flag:
+
+    cfx --force-mobile"""
+        return 0
+
     if app_type == "fennec-on-device":
         profile_class = FennecProfile
         preferences.update(DEFAULT_FENNEC_PREFS)
@@ -516,6 +527,14 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     sys.stdout.flush(); sys.stderr.flush()
 
     if app_type == "fennec-on-device":
+        if not enable_mobile:
+            print >>sys.stderr, """
+  WARNING: Firefox Mobile support is still experimental.
+  If you would like to run an addon on this platform, use --force-mobile flag:
+
+    cfx --force-mobile"""
+            return 0
+
         # In case of mobile device, we need to get stdio from `adb logcat` cmd:
 
         # First flush logs in order to avoid catching previous ones
