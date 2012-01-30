@@ -176,7 +176,8 @@ parser_groups = (
         (("", "--mobile-app",), dict(dest="mobile_app_name",
                                     help=("Name of your Android application to "
                                           "use. Possible values: 'firefox', "
-                                          "'firefox_beta', 'firefox_nightly'."),
+                                          "'firefox_beta', 'fennec_aurora', "
+                                          "'fennec' (for nightly)."),
                                     metavar=None,
                                     default=None,
                                     cmds=['run', 'test', 'testall'])),
