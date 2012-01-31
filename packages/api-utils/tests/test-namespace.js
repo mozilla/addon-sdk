@@ -1,6 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
-let { Namespace } = require("api-utils/namespace");
+let { Namespace, ns } = require("api-utils/namespace");
+let { Cc, Ci, Cu } = require("chrome");
+let { setTimeout } = require("api-utils/timer")
+
+exports["test post GC references"] = function (assert, done) {
+  // Test temporary workaround for a bug 673468.
+  var target = {}, local = ns()
+  local(target).there = true
+
+  assert.equal(local(target).there, true, "namespaced preserved");
+
+  setTimeout(function() {
+    Cu.forceGC();
+    assert.equal(local(target).there, true, "namespace is preserved post GC");
+    done();
+  }, 300);
+};
 
 exports["test namsepace basics"] = function(assert) {
   var privates = Namespace();
@@ -66,5 +86,10 @@ exports["test multi namespace"] = function(assert) {
   assert.equal(n1(object).bar, n2(object).bar,
                "object can have matching props in diff namespaces");
 };
+
+exports["test ns alias"] = function(assert) {
+  assert.strictEqual(ns, Namespace,
+                      "ns is an alias of Namespace");
+}
 
 require("test").run(exports);

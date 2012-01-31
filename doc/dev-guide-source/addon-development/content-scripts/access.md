@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Content Script Access #
 
 This page talks about the access content scripts have to:
@@ -21,7 +25,7 @@ Any changes they make are made to the proxy, and so are not visible to
 page content.
 
 The proxy is based on `XRayWrapper`, (also known as
-[`XPCNativeWrapper`](https://developer.mozilla.oreg/en/XPCNativeWrapper)).
+[`XPCNativeWrapper`](https://developer.mozilla.org/en/XPCNativeWrapper)).
 These wrappers give the user access to the native values of DOM functions
 and properties, even if they have been redefined by a script.
 
