@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
@@ -99,7 +103,11 @@ class TestCfxQuits(unittest.TestCase):
         sys.stderr = err = StringIO()
         try:
             import cuddlefish
-            cuddlefish.run(arguments=command)
+            args = list(command)
+            # Pass arguments given to cfx so that cfx can find firefox path
+            # if --binary option is given:
+            args.extend(sys.argv[1:])
+            cuddlefish.run(arguments=args)
         except SystemExit, e:
             if "code" in e:
                 rc = e.code

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import unittest
 
@@ -99,6 +103,14 @@ class Directories(unittest.TestCase):
         self.assertEqual(os.path.abspath(p.lib[0]),
                          os.path.abspath(os.path.join(self.packages_path,
                                                       "default-root")))
+
+    def test_locale(self):
+        # package.json is empty, but locale/ exists and should be used
+        p = self.get_config("default-locale")
+        self.assertEqual(os.path.abspath(p.locale),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "default-locale",
+                                                      "locale")))
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import sys
 import os
 import optparse
@@ -143,6 +147,10 @@ parser_groups = (
                                       "fennec-on-device, xulrunner or "
                                       "thunderbird"),
                                 metavar=None,
+                                type="choice",
+                                choices=["firefox", "fennec",
+                                         "fennec-on-device", "thunderbird",
+                                         "xulrunner"],
                                 default="firefox",
                                 cmds=['test', 'run', 'testex', 'testpkgs',
                                       'testall'])),
@@ -168,7 +176,8 @@ parser_groups = (
         (("", "--mobile-app",), dict(dest="mobile_app_name",
                                     help=("Name of your Android application to "
                                           "use. Possible values: 'firefox', "
-                                          "'firefox_beta', 'firefox_nightly'."),
+                                          "'firefox_beta', 'fennec_aurora', "
+                                          "'fennec' (for nightly)."),
                                     metavar=None,
                                     default=None,
                                     cmds=['run', 'test', 'testall'])),
@@ -179,6 +188,12 @@ parser_groups = (
                                          metavar="KEY=VALUE",
                                          default=[],
                                          cmds=['xpi'])),
+        (("", "--stop-on-error",), dict(dest="stopOnError",
+                                  help="Stop running tests after the first failure",
+                                  action="store_true",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['test', 'testex', 'testpkgs'])),
         ]
      ),
 
@@ -314,20 +329,22 @@ def test_all(env_root, defaults):
     if result.failures or result.errors:
         fail = True
 
-    print >>sys.stderr, "Testing all examples..."
-    sys.stderr.flush()
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all examples..."
+        sys.stderr.flush()
 
-    try:
-        test_all_examples(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+        try:
+            test_all_examples(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
-    print >>sys.stderr, "Testing all packages..."
-    sys.stderr.flush()
-    try:
-        test_all_packages(env_root, defaults)
-    except SystemExit, e:
-        fail = (e.code != 0) or fail
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all packages..."
+        sys.stderr.flush()
+        try:
+            test_all_packages(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
@@ -365,8 +382,11 @@ def test_all_examples(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get("stopOnError"):
+            break
 
     if fail:
+        print >>sys.stderr, "Some examples tests were unsuccessful."
         sys.exit(-1)
 
 def test_all_packages(env_root, defaults):
@@ -388,7 +408,10 @@ def test_all_packages(env_root, defaults):
                 env_root=env_root)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+        if fail and defaults.get('stopOnError'):
+            break
     if fail:
+        print >>sys.stderr, "Some package tests were unsuccessful."
         sys.exit(-1)
 
 def get_config_args(name, env_root):
@@ -489,16 +512,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_docs(env_root, filename=args[1])
+            docs_home = generate.generate_named_file(env_root, filename=args[1])
         else:
-            docs_home = generate.generate_docs(env_root)
+            docs_home = generate.generate_local_docs(env_root)
             webbrowser.open(docs_home)
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate
-
-        # TODO: Allow user to change this filename via cmd line.
-        filename = generate.generate_static_docs(env_root, base_url=options.baseurl)
+        filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
 
@@ -532,7 +553,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "test":
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
-        inherited_options.extend(['iterations', 'filter', 'profileMemory'])
+        inherited_options.extend(['iterations', 'filter', 'profileMemory',
+                                  'stopOnError'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
@@ -750,6 +772,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,
                              mobile_app_name=options.mobile_app_name)
+        except ValueError, e:
+            print ""
+            print "A given cfx option has an inappropriate value:"
+            print >>sys.stderr, "  " + "  \n  ".join(str(e).split("\n"))
+            retval = -1
         except Exception, e:
             if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
                 print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
