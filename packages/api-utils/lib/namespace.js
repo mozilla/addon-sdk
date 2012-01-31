@@ -4,6 +4,21 @@
 
 "use strict";
 
+// This is a temporary workaround until bug 673468 is fixed, which causes
+// entries associated with `XPCWrappedNative` wrapped keys to be GC-ed. To
+// workaround that we create a cross reference with an object from the same
+// compartment as `WeakMap` and use that as a key. Cross reference prevents
+// wrapper to be GC-ed until reference to it's value is kept.
+function handle(target) {
+  return target[handle.key] || Object.defineProperty(target, handle.key, {
+    value: { '::': target },
+    enumerable: false,
+    configurable: false,
+    writable: false
+  })[handle.key];
+}
+handle.key = '::ns::' + Math.round(Math.random() * 100000000000000000);
+
 /**
  * Function creates a new namespace. Optionally `prototype` object may be
  * passed, in which case namespace objects will inherit from it. Returned value
@@ -17,8 +32,9 @@ exports.Namespace = function Namespace(prototype) {
   prototype = prototype || Object.prototype;
   const map = new WeakMap();
   return function namespace(target) {
-    return map.get(target) ||
-           map.set(target, Object.create(prototype)), map.get(target);
+    let key = handle(target);
+    return map.get(key) ||
+           map.set(key, Object.create(prototype)), map.get(key);
   };
 };
 
