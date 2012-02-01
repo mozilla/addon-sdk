@@ -49,10 +49,47 @@ exports['test implement xpcom interfaces'] = function(assert) {
                'derived component implements specified interfaces');
 };
 
+exports['test implement factory without contract'] = function(assert) {
+  let actual = xpcom.Factory.new({
+    component: xpcom.Unknown.extend({
+      get wrappedJSObject() this,
+    })
+  });
+
+  assert.ok(isCIDRegistered(actual.classID), 'factory is regiseterd');
+  xpcom.unregister(actual);
+  assert.ok(!isCIDRegistered(actual.classID), 'factory is unregistered');
+};
+
+exports['test implement xpcom factory'] = function(assert) {
+  let Component = xpcom.Unknown.extend({
+    interfaces: [ 'nsIObserver' ],
+    get wrappedJSObject() this,
+    observe: function() {}
+  });
+
+  let factory = xpcom.Factory.new({
+    register: false,
+    contractID: '@jetpack/test/factory;1',
+    component: Component
+  });
+
+  assert.ok(!isCIDRegistered(factory.classID), 'factory is not registered');
+  xpcom.register(factory);
+  assert.ok(isCIDRegistered(factory.classID), 'factory is registered');
+
+  let actual = Cc[factory.contractID].createInstance(Ci.nsIObserver);
+
+  assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
+            "createInstance returnes wrapped factory instances");
+};
+
 exports['test implement xpcom service'] = function(assert) {
   let actual = xpcom.Service.new({
+    contractID: '@jetpack/test/service;1',
     register: false,
     component: xpcom.Unknown.extend({
+      get wrappedJSObject() this,
       interfaces: [ 'nsIObserver'],
       observe: function() {},
       name: 'my-service'
@@ -71,34 +108,15 @@ exports['test implement xpcom service'] = function(assert) {
   assert.ok(!isCIDRegistered(actual.classID), 'service is unregistered');
 };
 
-exports['test implements xpcom factory'] = function(assert) {
-  let Component = xpcom.Unknown.extend({
-    interfaces: [ 'nsIObserver' ],
-    observe: function() {}
-  });
-
-  let Factory = xpcom.Factory.new({
-    register: false,
-    component: Component
-  });
-
-  assert.ok(!isCIDRegistered(Factory.classID), 'factory is not registered');
-  xpcom.register(Factory);
-  assert.ok(isCIDRegistered(Factory.classID), 'factory is registered');
-
-  let actual = Cc[Factory.contractID].createInstance(Ci.nsIObserver);
-
-  assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
-            "createInstance returnes wrapped factory instances");
-};
 
 function testRegister(assert, text) {
 
-  const Component = xpcom.Service.new({
+  const service = xpcom.Service.new({
     className: 'test about:boop page',
     contractID: '@mozilla.org/network/protocol/about;1?what=boop',
     register: false,
     component: xpcom.Unknown.extend({
+      get wrappedJSObject() this,
       interfaces: [ 'nsIAboutModule' ],
       newChannel : function(aURI) {
         var ios = Cc["@mozilla.org/network/io-service;1"].
@@ -119,18 +137,15 @@ function testRegister(assert, text) {
     })
   });
 
-  xpcom.register(Component);
+  xpcom.register(service);
 
-  assert.equal(isCIDRegistered(Component.classID), true);
+  assert.equal(isCIDRegistered(service.classID), true);
 
   // We don't want to use Cc[contractID] here because it's immutable,
   // so it can't accept updated versions of a contractID during the
   // same application session.
-  var aboutFactory = xpcom.getClass(Component.contractID, Ci.nsIFactory);
+  var aboutFactory = xpcom.getClass(service.contractID, Ci.nsIFactory);
 
-  assert.notEqual(aboutFactory.wrappedJSObject,
-                      undefined,
-                      "Factory wrappedJSObject should exist.");
 
   var about = aboutFactory.createInstance(null, Ci.nsIAboutModule);
   var ios = Cc["@mozilla.org/network/io-service;1"].
@@ -152,8 +167,8 @@ function testRegister(assert, text) {
   iStream.close();
   assert.equal(data, text);
 
-  xpcom.unregister(Component);
-  assert.equal(isCIDRegistered(Component.classID), false);
+  xpcom.unregister(service);
+  assert.equal(isCIDRegistered(service.classID), false);
 }
 
 exports["test register"] = function(assert) {
@@ -169,13 +184,13 @@ exports["test unload"] = function(assert) {
   let sbxpcom = loader.require("xpcom");
 
   let Auto = sbxpcom.Factory.new({
-    contractID: "@mozilla.org/test/demo-auto;1",
+    contractID: "@mozilla.org/test/auto-unload;1",
     className: "test auto",
     component: sbxpcom.Unknown.extend({ name: 'auto' })
   });
 
   let Manual = sbxpcom.Factory.new({
-    contractID: "@mozilla.org/test/demo-manual;1",
+    contractID: "@mozilla.org/test/manual-unload;1",
     className: "test manual",
     register: false,
     unregister: false,
