@@ -50,43 +50,14 @@ const Unknown = Base.extend({
    * append them to this list (Please note that there is no need to repeat
    * interfaces implemented by super as they will be added automatically).
    */
-  interfaces: [ 'nsISupports' ]
+  interfaces: [ 'nsISupports' ],
+  get wrappedJSObject() this
 });
 exports.Unknown = Unknown;
 
-// This is a base prototype, that provides bare bones of XPCOM Service. JS based
-// components can be easily implement by extending it.
+// This is a base prototype providing bare bones of XPCOM Services. JS based
+// components can be easily registered as service using it.
 const Service = Unknown.extend({
-  // Method `extend` is overridden so that resulting object will have unique
-  // classID unless provided by an argument.
-  extend: function extend() {
-    let args = Array.slice(arguments)
-    return Unknown.extend.apply(this, args.concat([{
-      classID: args.reduce(function(classID, source) {
-        return 'classID' in source ? source.classID : classID;
-      }, null) || uuid()
-    }]));
-  },
-  /**
-   * XPConnect lets you bypass its wrappers and access the underlying JS object
-   * directly using the `wrappedJSObject` property if the wrapped object allows
-   * this. All Factory descendants expose it's underlying JS objects unless
-   * intentionally overridden.
-   */
-  get wrappedJSObject() this,
-  /**
-   * Creates an instance of the class associated with this factory.
-   */
-  createInstance: function createInstance(outer, iid) {
-    try {
-      if (outer)
-        throw Cr.NS_ERROR_NO_AGGREGATION;
-      return this.QueryInterface(iid);
-    }
-    catch (error) {
-      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
-    }
-  },
   // All the descendants will get auto generated `classID` unless one is
   // provided manually.
   classID: null,
@@ -101,31 +72,51 @@ const Service = Unknown.extend({
    */
   contractID: '@mozilla.org/jetpack/service;1',
   /**
+   * Method is called on `Service.new(options)` passing given `options` to
+   * it. Options is expected to have `component` property holding component
+   * and optional `register`, `unregister` flags. Unless `register` is `false`
+   * Service / Factory will be automatically registered. Unless `unregister` is
+   * `false` component will be automatically unregistered on add-on unload.
+   */
+  initialize: function initialize(options) {
+    options = options || {}
+    this.merge(options, {
+      classID: 'classID' in options && options.classID || uuid()
+    });
+
+    // If service / factory has auto registration enabled then register.
+    if (this.register)
+      register(this);
+  },
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  createInstance: function createInstance(outer, iid) {
+    try {
+      if (outer)
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      return this.component.QueryInterface(iid);
+    }
+    catch (error) {
+      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
+    }
+  },
+  /**
+   * If property is `true` XPCOM service / factory will be registered
+   * automatically on creation.
+   */
+  register: true,
+  /**
    * If property is `true` XPCOM factory will be unregistered prior to add-on
    * unload.
    */
-  classUnregister: true
+  unregister: true
 });
 exports.Service = Service;
 
+
 const Factory = Service.extend({
-    // Method `new` is overridden so that factory can be registered prior to
-  // first instantiation and unregistered prior to unload.
-  new: function create() {
-    if (this.classRegister && !(this.contractID in Cc))
-      register(this);
-    return Unknown.new.apply(this, arguments);
-  },
-  /**
-   * If property is `true` XPCOM factory will be registered prior to first
-   * object instantiation.
-   */
-  classRegister: true,
-  // All XPCOM factories implement `nsIFactory` interface.
   interfaces: [ 'nsIFactory' ],
-  // All the descendants will get auto generated `classID` unless one is
-  // provided manually.
-  classID: null,
   /**
    * The name of the class being registered. This value is intended as a
    * human-readable name for the class and does not needs to be globally unique.
@@ -145,7 +136,14 @@ const Factory = Service.extend({
    * Creates an instance of the class associated with this factory.
    */
   createInstance: function createInstance(outer, iid) {
-    return Service.createInstance.call(Object.create(this), outer, iid);
+    try {
+      if (outer)
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      return Object.create(this.component).QueryInterface(iid);
+    }
+    catch (error) {
+      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
+    }
   }
 });
 exports.Factory = Factory;
@@ -154,27 +152,26 @@ function isRegistered({ classID }) isCIDRegistered(classID)
 exports.isRegistered = isRegistered;
 
 /**
- * Registers given `factory` object to be used to instantiate a particular class
- * identified by `factory.classID`, and creates an association of class name
- * and `factory.contractID` with the class.
+ * Registers given `component` object to be used to instantiate a particular
+ * class identified by `component.id`, and creates an association of class
+ * name and `component.contract` with the class.
  */
-function register(factory) {
-  if (Service.isPrototypeOf(factory)) {
-    let { classID, className, contractID, classUnregister } = factory;
-    registerFactory(classID, className, contractID, factory);
-    if (classUnregister)
-      unload(unregister.bind(null, factory));
-  }
-};
+function register(component) {
+  registerFactory(component.classID, component.className,
+                  component.contractID, component);
+
+  if (component.unregister)
+    unload(unregister.bind(null, component));
+}
 exports.register = register;
 
 /**
  * Unregister a factory associated with a particular class identified by
  * `factory.classID`.
  */
-function unregister(factory) {
-  if (isRegistered(factory))
-    unregisterFactory(factory.classID, factory);
+function unregister(component) {
+  if (isRegistered(component))
+    unregisterFactory(component.classID, component);
 };
 exports.unregister = unregister;
 

@@ -50,10 +50,13 @@ exports['test implement xpcom interfaces'] = function(assert) {
 };
 
 exports['test implement xpcom service'] = function(assert) {
-  let actual = xpcom.Service.extend({
-    interfaces: [ 'nsIObserver'],
-    observe: function() {},
-    name: 'my-service'
+  let actual = xpcom.Service.new({
+    register: false,
+    component: xpcom.Unknown.extend({
+      interfaces: [ 'nsIObserver'],
+      observe: function() {},
+      name: 'my-service'
+    })
   });
 
   assert.ok(!isCIDRegistered(actual.classID), 'component is not registered');
@@ -62,16 +65,21 @@ exports['test implement xpcom service'] = function(assert) {
   assert.ok(Cc[actual.contractID].getService(Ci.nsIObserver).observe,
             'service can be accessed via get service');
   assert.equal(Cc[actual.contractID].getService(Ci.nsIObserver).wrappedJSObject,
-               actual,
+               actual.component,
                'wrappedJSObject is an actual component');
   xpcom.unregister(actual);
   assert.ok(!isCIDRegistered(actual.classID), 'service is unregistered');
 };
 
 exports['test implements xpcom factory'] = function(assert) {
-  let Factory = xpcom.Factory.extend({
+  let Component = xpcom.Unknown.extend({
     interfaces: [ 'nsIObserver' ],
     observe: function() {}
+  });
+
+  let Factory = xpcom.Factory.new({
+    register: false,
+    component: Component
   });
 
   assert.ok(!isCIDRegistered(Factory.classID), 'factory is not registered');
@@ -80,32 +88,37 @@ exports['test implements xpcom factory'] = function(assert) {
 
   let actual = Cc[Factory.contractID].createInstance(Ci.nsIObserver);
 
-  assert.ok(Factory.isPrototypeOf(actual.wrappedJSObject),
+  assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
             "createInstance returnes wrapped factory instances");
 };
 
 function testRegister(assert, text) {
-  const Component = xpcom.Factory.extend({
+
+  const Component = xpcom.Service.new({
     className: 'test about:boop page',
     contractID: '@mozilla.org/network/protocol/about;1?what=boop',
-    interfaces: [ 'nsIAboutModule' ],
-    newChannel : function(aURI) {
-      var ios = Cc["@mozilla.org/network/io-service;1"].
-                getService(Ci.nsIIOService);
+    register: false,
+    component: xpcom.Unknown.extend({
+      interfaces: [ 'nsIAboutModule' ],
+      newChannel : function(aURI) {
+        var ios = Cc["@mozilla.org/network/io-service;1"].
+                  getService(Ci.nsIIOService);
 
-      var channel = ios.newChannel(
-        "data:text/plain," + text,
-        null,
-        null
-      );
+        var channel = ios.newChannel(
+          "data:text/plain," + text,
+          null,
+          null
+        );
 
-      channel.originalURI = aURI;
-      return channel;
-    },
-    getURIFlags: function(aURI) {
+        channel.originalURI = aURI;
+        return channel;
+      },
+      getURIFlags: function(aURI) {
         return Ci.nsIAboutModule.ALLOW_SCRIPT;
-    }
+      }
+    })
   });
+
   xpcom.register(Component);
 
   assert.equal(isCIDRegistered(Component.classID), true);
@@ -155,24 +168,27 @@ exports["test unload"] = function(assert) {
   let loader = Loader(module);
   let sbxpcom = loader.require("xpcom");
 
-  let Auto = sbxpcom.Factory.extend({
+  let Auto = sbxpcom.Factory.new({
     contractID: "@mozilla.org/test/demo-auto;1",
-    className: "test auto"
-  });
-  let Manual = sbxpcom.Factory.extend({
-    contractID: "@mozilla.org/test/demo-manual;1",
-    className: "test manual",
-    classRegister: true,
-    classUnregister: false
+    className: "test auto",
+    component: sbxpcom.Unknown.extend({ name: 'auto' })
   });
 
-  sbxpcom.register(Auto);
+  let Manual = sbxpcom.Factory.new({
+    contractID: "@mozilla.org/test/demo-manual;1",
+    className: "test manual",
+    register: false,
+    unregister: false,
+    component: sbxpcom.Unknown.extend({ name: 'manual' })
+  });
 
   assert.equal(isCIDRegistered(Auto.classID), true,
                    'component registered');
+
   assert.equal(isCIDRegistered(Manual.classID), false,
                    'component not registered');
-  let manual = Manual.new();
+
+  sbxpcom.register(Manual)
   assert.equal(isCIDRegistered(Manual.classID), true,
                    'component was automatically registered on first instance');
   loader.unload();

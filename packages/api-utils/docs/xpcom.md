@@ -46,11 +46,35 @@ implemented as follows:
 
 ## Implementing XCOM services
 
-Module exports `Service` exemplar object, that may be extended to implement
-custom XPCOM services in JS:
+Module exports `Service` exemplar object, that may be used to create a services
+out of custom XPCOM components in JS:
 
-      const { Service } = require('api-utils/xpcom');
-      var MyComponent = Service.extend({
+      const { Service, Unknown } = require('api-utils/xpcom');
+      const MyService = Service.new({
+        component: Unknown.extend({
+          // Interfaces implemented by this component.
+          interfaces: [ 'nsIRequestObserver', 'nsIObserver' ],
+
+          // nsIObserver properties
+          observer: function() {
+            // Implementation 
+          },
+
+          // nsIRequestObserver properties
+          onStartRequest: function() {
+            // Implementation
+          },
+          onStopRequest: function() {
+            // Implementation
+          }
+        })
+      });
+
+It's also recommended to pass additional `name` and `contract` options for a
+better descriptions in runtime:
+
+      const { Service, Unknown } = require('api-utils/xpcom');
+      const MyObserver = Unknown.extend({
         // Interfaces implemented by this component.
         interfaces: [ 'nsIRequestObserver', 'nsIObserver' ],
 
@@ -68,69 +92,98 @@ custom XPCOM services in JS:
         }
       });
 
-It's also recommended to implement `className`, `contractID` properties in your
-components to have them well described. Otherwise those properties take very
-generic values `'Jetpack service'` and `'@mozilla.org/jetpack/service;1'`. You
-also may provide optional `classID` property that otherwise will be auto
-generated via `uuid` module.
+      const myService = Service.new({
+        className: 'observer',
+        contractID: '@foo.com/my/observer;1',
+        component: MyComponent
+      });
+
+If those options are omitted generic values `'Jetpack service'` and
+`'@mozilla.org/jetpack/service;1'` are used. You also may provide optional `id`
+for the service that otherwise will be auto generated via `uuid` module.
+
 
 ## Registering / Unregistering XCOM components
 
-Module exports `register` and `unregister` functions to register / unregister
-custom XPCOM components into runtime:
+Services created using `Service.new` will automatically register into runtime
+unless explicitly specified otherwise:
+
+      var manualService = Service.new({
+        register: false,
+        component: Unknown.extend({ /* ... */ })
+      });
+
+Module exports `register` and `unregister` function that may be used to
+register / unregister XPCOM services manually.
 
       const { register, unregister } = require('api-utils/xpcom');
-      register(MyComponent);
+      register(manualService);
 
-Registered `services` may be accessed from anywhere in the runtime via
-traditional XPCOM APIs.
+Registered services will become available to the rest of the runtime via
+traditional XPCOM API:
 
-      let observer = Cc[MyComponent.contractID].getService(Ci.nsIObserver)
+      Cc[myService.contractID].getService(Ci.nsIObserver)
 
-Traditional XPCOM API will return a wrapped JS object exposing only an API
-defined by a given interface. Underlaying JS object may be accessed via
-`wrappedJSObject` property:
+Keep in mind that traditional XPCOM interface will always return a wrapped JS
+objects exposing only an properties defined by a given interface:
 
-      observer.wrappedJSObject === MyComponent // true
-      // or
-      Cc[MyComponent.contractID].getService().wrappedJSObject === MyComponent // true
+      Cc[myService.contractID].getService(Ci.nsIObserver) === MyObserver // => false
 
-Unless registered component has `classUnregister` property with value `false` it
-will be unregistered on add-on unload. Registered components can also be
-manually unregistered using `unregister` function:
+Underlaying JS object may be accessed via `wrappedJSObject` property:
+
+      Cc[MyService.contractID].getService().wrappedJSObject === MyObserver // => true
+
+All services created using `Service` will automatically be unregistered on
+add-on unload unless explicitly specified otherwise via `unregister` flag:
+
+      var manualService = Service.new({
+        unregister: false,
+        component: Unknown.extend({ /* ... */ })
+      });
+
+Registered services can be unregistered using `unregister` function:
 
       unregister(MyComponent);
 
+
 ## Implementing XCOM factories
 
-Module exports `Factory` exemplar object that may be extended to implement
-custom XPCOM factories. `Factory` inherits all properties and behavior from
-already described `Service` object and in addition implements `nsIFactory`
-interface:
+Module exports `Factory` exemplar object that may be used to implement custom
+XPCOM factories. `Factory` implements exact same API as already described
+`Service`:
 
-      const { Factory, register, unregister } = require('api-utils/xpcom');
-      let Observer = xpcom.Factory.extend({
-        interfaces: [ 'nsIObserver' ],
-        observe: function() {
-          // implementation
+      const { Factory } = require('api-utils/xpcom');
+      let Observer = Unknown.extend({
+          initialize: function initialize(f) {
+            this.listener = f;
+          },
+          interfaces: [ 'nsIObserver' ],
+          observe: function() {
+            // implementation
+          }
         }
       });
 
-Unless `classRegister` properties are `false` factory very first instance
-created by `Observer.new()` will register a factory component into runtime. Of
-course component can be manually registered via `register` function.
+      let ObserverFactory = xpcom.Factory.new({ component: Observer });
 
-Register factories can also be used with a traditional XPCOM API:
+In contrast to services, that are singletons and are obtained via `getService`,
+factories produce instances of it's components:
 
-      let observer = Cc[Observer.contractID].createInstance(Ci.nsIObserver);
+      let observer = Cc[ObserverFactory.contractID].createInstance(Ci.nsIObserver);
 
-In contrast to `Observer.new()` such instantiation won't run `initialize` method
-which should be manually called if necessary:
+As already mentioned traditional `XPCOM` API will return wrap instances by
+exposing only API defined by a given interface.
 
-      observer.initialize(fn);
+      Observer.isPrototypeOf(observer)  // => false
 
-As mentioned above traditional `XPCOM` API will return wrap instances by
-exposing only API defined by interface. For an access to underlaying object use
-`wrappedJSObject` property.
+In order to get access to underlaying object `wrappedJSObject` property may be
+used.
 
-      Observer.isPrototypeOf(observer.wrappedJSObject) // true
+      Observer.isPrototypeOf(observer.wrappedJSObject) // => true
+
+Instantiation through XPCOM API is also different from regular instantiation
+`Observer.new(f)` which calls `initialize`. When creating instances through
+XPCOM API initialization should be performed manually:
+
+      let observer =  Cc[ObserverFactory.contractID].createInstance(Ci.nsIObserver);
+      observer.wrappedJSObject.initialize(f);
