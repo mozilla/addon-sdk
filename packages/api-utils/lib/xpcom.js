@@ -50,27 +50,46 @@ const Unknown = Base.extend({
    * append them to this list (Please note that there is no need to repeat
    * interfaces implemented by super as they will be added automatically).
    */
-  interfaces: [ 'nsISupports' ],
-  get wrappedJSObject() this
+  interfaces: [ 'nsISupports' ]
 });
 exports.Unknown = Unknown;
 
-// This is a base prototype providing bare bones of XPCOM Services. JS based
-// components can be easily registered as service using it.
-const Service = Unknown.extend({
-  // All the descendants will get auto generated `classID` unless one is
-  // provided manually.
-  classID: null,
+// Base exemplar for creating instances implementing `nsIFactory` interface,
+// that maybe registered into runtime via `register` function. Instances of
+// this factory create instances of enclosed component on `createInstance`.
+const Factory = Unknown.extend({
+  interfaces: [ 'nsIFactory' ],
+  /**
+   * All the descendants will get auto generated `classID` unless one is
+   * manually provided.
+   */
+  get classID() throw Error('Factory must implement `classID` property'),
+  /**
+   * XPCOM `contractID` must be provided to a constructor function. It is a
+   * unique string in a form of '@vendor.com/unique/id;1' associated with this
+   * factory.
+   */
+  get contractID() throw Error('Factory must implement `contractID` property'),
   /**
    * The name of the class being registered. This value is intended as a
    * human-readable name for the class and does not needs to be globally unique.
    */
-  className: 'Jetpack service',
+  className: 'Jetpack generated untitiled factory',
   /**
-   * XPCOM contract id. May be `null` if no needed. Usually string like:
-   * '@mozilla.org/jetpack/factory;1'.
+   * This method is required by `nsIFactory` interfaces, but as in most
+   * implementations it does nothing interesting.
    */
-  contractID: '@mozilla.org/jetpack/service;1',
+  lockFactory: function lockFactory(lock) undefined,
+  /**
+   * If property is `true` XPCOM service / factory will be registered
+   * automatically on creation.
+   */
+  register: true,
+  /**
+   * If property is `true` XPCOM factory will be unregistered prior to add-on
+   * unload.
+   */
+  unregister: true,
   /**
    * Method is called on `Service.new(options)` passing given `options` to
    * it. Options is expected to have `component` property holding component
@@ -95,58 +114,35 @@ const Service = Unknown.extend({
     try {
       if (outer)
         throw Cr.NS_ERROR_NO_AGGREGATION;
-      return this.component.QueryInterface(iid);
+        return this.create().QueryInterface(iid);
     }
     catch (error) {
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  /**
-   * If property is `true` XPCOM service / factory will be registered
-   * automatically on creation.
-   */
-  register: true,
-  /**
-   * If property is `true` XPCOM factory will be unregistered prior to add-on
-   * unload.
-   */
-  unregister: true
+  create: function create() {
+    return this.component.new()
+  }
 });
-exports.Service = Service;
+exports.Factory = Factory;
 
-
-const Factory = Service.extend({
-  interfaces: [ 'nsIFactory' ],
+// Exemplar for creating services that implement `nsIFactory` interface, that
+// can be registered into runtime via call to `register`. This services return
+// enclosed `component` on `getService`.
+const Service = Factory.extend({
   /**
    * The name of the class being registered. This value is intended as a
    * human-readable name for the class and does not needs to be globally unique.
    */
-  className: 'Jetpack factory',
-  /**
-   * XPCOM contract id. May be `null` if no needed. Usually string like:
-   * '@mozilla.org/jetpack/factory;1'.
-   */
-  contractID: '@mozilla.org/jetpack/factory;1',
-  /**
-   * This method is required by `nsIFactory` interfaces, but as in most
-   * implementations it does nothing interesting.
-   */
-  lockFactory: function lockFactory(lock) undefined,
+  className: 'Jetpack service',
   /**
    * Creates an instance of the class associated with this factory.
    */
-  createInstance: function createInstance(outer, iid) {
-    try {
-      if (outer)
-        throw Cr.NS_ERROR_NO_AGGREGATION;
-      return Object.create(this.component).QueryInterface(iid);
-    }
-    catch (error) {
-      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
-    }
+  create: function create() {
+    return this.component;
   }
 });
-exports.Factory = Factory;
+exports.Service = Service;
 
 function isRegistered({ classID }) isCIDRegistered(classID)
 exports.isRegistered = isRegistered;
@@ -156,12 +152,12 @@ exports.isRegistered = isRegistered;
  * class identified by `component.id`, and creates an association of class
  * name and `component.contract` with the class.
  */
-function register(component) {
-  registerFactory(component.classID, component.className,
-                  component.contractID, component);
+function register(factory) {
+  registerFactory(factory.classID, factory.className,
+                  factory.contractID, factory);
 
-  if (component.unregister)
-    unload(unregister.bind(null, component));
+  if (factory.unregister)
+    unload(unregister.bind(null, factory));
 }
 exports.register = register;
 
@@ -169,13 +165,13 @@ exports.register = register;
  * Unregister a factory associated with a particular class identified by
  * `factory.classID`.
  */
-function unregister(component) {
-  if (isRegistered(component))
-    unregisterFactory(component.classID, component);
+function unregister(factory) {
+  if (isRegistered(factory))
+    unregisterFactory(factory.classID, factory);
 };
 exports.unregister = unregister;
 
-var autoRegister = exports.autoRegister = function autoRegister(path) {
+function autoRegister(path) {
   // TODO: This assumes that the url points to a directory
   // that contains subdirectories corresponding to OS/ABI and then
   // further subdirectories corresponding to Gecko platform version.
@@ -200,10 +196,12 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
 
   Cm.QueryInterface(Ci.nsIComponentRegistrar);
   Cm.autoRegister(file);
-};
+}
+exports.autoRegister = autoRegister;
 
-var getClass = exports.getClass = function getClass(contractID, iid) {
+function getClass(contractID, iid) {
   if (!iid)
     iid = Ci.nsISupports;
   return Cm.getClassObjectByContractID(contractID, iid);
-};
+}
+exports.getClass = getClass;
