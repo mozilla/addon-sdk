@@ -157,10 +157,9 @@ const Subject = Unknown.extend({
     // subjects that are one of our wrappers (which we should unwrap
     // when notifying our observers) and those that are real JS XPCOM
     // components (which we should pass through unaltered).
-    this.wrappedJSObject = {
-      observersModuleSubjectWrapper: true,
-      object: object
-    };
+    this.merge({
+      wrappedJSObject: { observersModuleSubjectWrapper: true, object: object }
+    });
   },
   getHelperForLanguage: function() {},
   getInterfaces: function() {}
