@@ -73,7 +73,7 @@ PACKAGE_JSON = '''\
   "fullName": "%(fullName)s",
   "description": "a basic add-on",
   "author": "",
-  "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+  "license": "MPL 2.0",
   "version": "0.1"
 }
 '''
