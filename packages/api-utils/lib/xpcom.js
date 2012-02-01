@@ -63,13 +63,15 @@ const Factory = Unknown.extend({
    * All the descendants will get auto generated `classID` unless one is
    * manually provided.
    */
-  get classID() throw Error('Factory must implement `classID` property'),
+  get classID() {
+    throw Error('Factory must implement `classID` property')
+  },
   /**
    * XPCOM `contractID` must be provided to a constructor function. It is a
    * unique string in a form of '@vendor.com/unique/id;1' associated with this
    * factory.
    */
-  get contractID() throw Error('Factory must implement `contractID` property'),
+  contractID: null,
   /**
    * The name of the class being registered. This value is intended as a
    * human-readable name for the class and does not needs to be globally unique.
@@ -168,7 +170,7 @@ exports.register = register;
 function unregister(factory) {
   if (isRegistered(factory))
     unregisterFactory(factory.classID, factory);
-};
+}
 exports.unregister = unregister;
 
 function autoRegister(path) {
