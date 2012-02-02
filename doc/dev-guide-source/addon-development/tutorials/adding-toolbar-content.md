@@ -23,15 +23,15 @@ Add-on bar. The main restrictions are:
 
 * although you can set the width of the toolbar, you can't set its height:
 it must fit inside the Add-on bar
+
 * you can only place the toolbar in the Add-on bar, although the user can
-relocate it using toolbar customization.
+relocate it using toolbar customization (but when
+[bug 695913](https://bugzilla.mozilla.org/show_bug.cgi?id=695913) is fixed,
+widgets will be placed in the navigation bar by default).
+
 * any scripts attached to the widget can't use the SDK APIs. So if you want
 to do that, you need to send messages between the script and your main
 add-on code.
-
-If you haven't already followed the tutorial introducing
-[`cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html),
-do that now, then come back here.
 
 <!-- The icons this widget displays, shown in the screenshot, is taken from the
 Glossy Buttons icon set created by IconEden which is made freely available for

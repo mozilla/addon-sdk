@@ -13,7 +13,7 @@
 
 </div>
 
-## Introducing the APIs ##
+## Introducing the High-level APIs ##
 
 <div class="buttonarray">
 
@@ -38,7 +38,7 @@
 <div class="buttonarray">
 
  <a href="dev-guide/addon-development/tutorials/logging.html">Logging</a>
- <a href="dev-guide/addon-development/tutorials/listening-for-load-and-unload.html">Listen for Load and Unload</a>
+ <a href="dev-guide/addon-development/tutorials/load-and-unload.html">Listen for Load and Unload</a>
  <a href="dev-guide/addon-development/tutorials/reusable-modules.html">Reusable Modules</a>
  <a href="dev-guide/addon-development/tutorials/unit-testing.html">Unit Testing</a>
  
