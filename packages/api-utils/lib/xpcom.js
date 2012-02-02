@@ -60,23 +60,22 @@ exports.Unknown = Unknown;
 const Factory = Unknown.extend({
   interfaces: [ 'nsIFactory' ],
   /**
-   * All the descendants will get auto generated `classID` unless one is
-   * manually provided.
+   * All the descendants will get auto generated `id` unless one is manually
+   * provided.
    */
-  get classID() {
-    throw Error('Factory must implement `classID` property')
-  },
+  get id() { throw Error('Factory must implement `id` property') },
   /**
-   * XPCOM `contractID` must be provided to a constructor function. It is a
-   * unique string in a form of '@vendor.com/unique/id;1' associated with this
-   * factory.
+   * XPCOM `contractID` may optionally  be provided to associate this factory
+   * with it. `contract` is a unique string that has a following format:
+   * '@vendor.com/unique/id;1'.
    */
-  contractID: null,
+  contract: null,
   /**
-   * The name of the class being registered. This value is intended as a
-   * human-readable name for the class and does not needs to be globally unique.
+   * Class description that is being registered. This value is intended as a
+   * human-readable description for the given class and does not needs to be
+   * globally unique.
    */
-  className: 'Jetpack generated untitiled factory',
+  description: 'Jetpack generated factory',
   /**
    * This method is required by `nsIFactory` interfaces, but as in most
    * implementations it does nothing interesting.
@@ -101,9 +100,7 @@ const Factory = Unknown.extend({
    */
   initialize: function initialize(options) {
     options = options || {}
-    this.merge(options, {
-      classID: 'classID' in options && options.classID || uuid()
-    });
+    this.merge(options, { id: 'id' in options && options.id || uuid() });
 
     // If service / factory has auto registration enabled then register.
     if (this.register)
@@ -122,9 +119,7 @@ const Factory = Unknown.extend({
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  create: function create() {
-    return this.component.new()
-  }
+  create: function create() { return this.component.new(); }
 });
 exports.Factory = Factory;
 
@@ -132,21 +127,15 @@ exports.Factory = Factory;
 // can be registered into runtime via call to `register`. This services return
 // enclosed `component` on `getService`.
 const Service = Factory.extend({
-  /**
-   * The name of the class being registered. This value is intended as a
-   * human-readable name for the class and does not needs to be globally unique.
-   */
-  className: 'Jetpack service',
+  description: 'Jetpack generated service',
   /**
    * Creates an instance of the class associated with this factory.
    */
-  create: function create() {
-    return this.component;
-  }
+  create: function create() { return this.component; }
 });
 exports.Service = Service;
 
-function isRegistered({ classID }) isCIDRegistered(classID)
+function isRegistered({ id }) isCIDRegistered(id)
 exports.isRegistered = isRegistered;
 
 /**
@@ -155,8 +144,7 @@ exports.isRegistered = isRegistered;
  * name and `component.contract` with the class.
  */
 function register(factory) {
-  registerFactory(factory.classID, factory.className,
-                  factory.contractID, factory);
+  registerFactory(factory.id, factory.description, factory.contract, factory);
 
   if (factory.unregister)
     unload(unregister.bind(null, factory));
@@ -169,7 +157,7 @@ exports.register = register;
  */
 function unregister(factory) {
   if (isRegistered(factory))
-    unregisterFactory(factory.classID, factory);
+    unregisterFactory(factory.id, factory);
 }
 exports.unregister = unregister;
 
