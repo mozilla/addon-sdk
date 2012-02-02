@@ -56,9 +56,9 @@ exports['test implement factory without contract'] = function(assert) {
     })
   });
 
-  assert.ok(isCIDRegistered(actual.classID), 'factory is regiseterd');
+  assert.ok(isCIDRegistered(actual.id), 'factory is regiseterd');
   xpcom.unregister(actual);
-  assert.ok(!isCIDRegistered(actual.classID), 'factory is unregistered');
+  assert.ok(!isCIDRegistered(actual.id), 'factory is unregistered');
 };
 
 exports['test implement xpcom factory'] = function(assert) {
@@ -70,15 +70,15 @@ exports['test implement xpcom factory'] = function(assert) {
 
   let factory = xpcom.Factory.new({
     register: false,
-    contractID: '@jetpack/test/factory;1',
+    contract: '@jetpack/test/factory;1',
     component: Component
   });
 
-  assert.ok(!isCIDRegistered(factory.classID), 'factory is not registered');
+  assert.ok(!isCIDRegistered(factory.id), 'factory is not registered');
   xpcom.register(factory);
-  assert.ok(isCIDRegistered(factory.classID), 'factory is registered');
+  assert.ok(isCIDRegistered(factory.id), 'factory is registered');
 
-  let actual = Cc[factory.contractID].createInstance(Ci.nsIObserver);
+  let actual = Cc[factory.contract].createInstance(Ci.nsIObserver);
 
   assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
             "createInstance returnes wrapped factory instances");
@@ -86,7 +86,7 @@ exports['test implement xpcom factory'] = function(assert) {
 
 exports['test implement xpcom service'] = function(assert) {
   let actual = xpcom.Service.new({
-    contractID: '@jetpack/test/service;1',
+    contract: '@jetpack/test/service;1',
     register: false,
     component: xpcom.Unknown.extend({
       get wrappedJSObject() this,
@@ -96,24 +96,24 @@ exports['test implement xpcom service'] = function(assert) {
     })
   });
 
-  assert.ok(!isCIDRegistered(actual.classID), 'component is not registered');
+  assert.ok(!isCIDRegistered(actual.id), 'component is not registered');
   xpcom.register(actual);
-  assert.ok(isCIDRegistered(actual.classID), 'service is regiseterd');
-  assert.ok(Cc[actual.contractID].getService(Ci.nsIObserver).observe,
+  assert.ok(isCIDRegistered(actual.id), 'service is regiseterd');
+  assert.ok(Cc[actual.contract].getService(Ci.nsIObserver).observe,
             'service can be accessed via get service');
-  assert.equal(Cc[actual.contractID].getService(Ci.nsIObserver).wrappedJSObject,
+  assert.equal(Cc[actual.contract].getService(Ci.nsIObserver).wrappedJSObject,
                actual.component,
                'wrappedJSObject is an actual component');
   xpcom.unregister(actual);
-  assert.ok(!isCIDRegistered(actual.classID), 'service is unregistered');
+  assert.ok(!isCIDRegistered(actual.id), 'service is unregistered');
 };
 
 
 function testRegister(assert, text) {
 
   const service = xpcom.Service.new({
-    className: 'test about:boop page',
-    contractID: '@mozilla.org/network/protocol/about;1?what=boop',
+    description: 'test about:boop page',
+    contract: '@mozilla.org/network/protocol/about;1?what=boop',
     register: false,
     component: xpcom.Unknown.extend({
       get wrappedJSObject() this,
@@ -139,15 +139,11 @@ function testRegister(assert, text) {
 
   xpcom.register(service);
 
-  assert.equal(isCIDRegistered(service.classID), true);
+  assert.equal(isCIDRegistered(service.id), true);
 
-  // We don't want to use Cc[contractID] here because it's immutable,
-  // so it can't accept updated versions of a contractID during the
-  // same application session.
-  var aboutFactory = xpcom.getClass(service.contractID, Ci.nsIFactory);
+  var aboutFactory = xpcom.factoryByContract(service.contract);
+  var about = aboutFactory.createInstance(Ci.nsIAboutModule);
 
-
-  var about = aboutFactory.createInstance(null, Ci.nsIAboutModule);
   var ios = Cc["@mozilla.org/network/io-service;1"].
             getService(Ci.nsIIOService);
   assert.equal(
@@ -168,7 +164,7 @@ function testRegister(assert, text) {
   assert.equal(data, text);
 
   xpcom.unregister(service);
-  assert.equal(isCIDRegistered(service.classID), false);
+  assert.equal(isCIDRegistered(service.id), false);
 }
 
 exports["test register"] = function(assert) {
@@ -183,37 +179,34 @@ exports["test unload"] = function(assert) {
   let loader = Loader(module);
   let sbxpcom = loader.require("xpcom");
 
-  let Auto = sbxpcom.Factory.new({
-    contractID: "@mozilla.org/test/auto-unload;1",
-    className: "test auto",
+  let auto = sbxpcom.Factory.new({
+    contract: "@mozilla.org/test/auto-unload;1",
+    description: "test auto",
     component: sbxpcom.Unknown.extend({ name: 'auto' })
   });
 
-  let Manual = sbxpcom.Factory.new({
-    contractID: "@mozilla.org/test/manual-unload;1",
-    className: "test manual",
+  let manual = sbxpcom.Factory.new({
+    contract: "@mozilla.org/test/manual-unload;1",
+    description: "test manual",
     register: false,
     unregister: false,
     component: sbxpcom.Unknown.extend({ name: 'manual' })
   });
 
-  assert.equal(isCIDRegistered(Auto.classID), true,
-                   'component registered');
+  assert.equal(isCIDRegistered(auto.id), true, 'component registered');
+  assert.equal(isCIDRegistered(manual.id), false, 'component not registered');
 
-  assert.equal(isCIDRegistered(Manual.classID), false,
-                   'component not registered');
-
-  sbxpcom.register(Manual)
-  assert.equal(isCIDRegistered(Manual.classID), true,
+  sbxpcom.register(manual)
+  assert.equal(isCIDRegistered(manual.id), true,
                    'component was automatically registered on first instance');
   loader.unload();
 
-  assert.equal(isCIDRegistered(Auto.classID), false,
+  assert.equal(isCIDRegistered(auto.id), false,
                    'component was atumatically unregistered on unload');
-  assert.equal(isCIDRegistered(Manual.classID), true,
+  assert.equal(isCIDRegistered(manual.id), true,
                    'component was not automatically unregistered on unload');
-  sbxpcom.unregister(Manual);
-  assert.equal(isCIDRegistered(Manual.classID), false,
+  sbxpcom.unregister(manual);
+  assert.equal(isCIDRegistered(manual.id), false,
                    'component was manually unregistered on unload');
 };
 
