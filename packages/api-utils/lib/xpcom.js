@@ -196,8 +196,10 @@ function factoryByID(id) classesByID[id] || null
 exports.factoryByID = factoryByID;
 
 /**
- * Returns registered factory associated with a given `contract` or `null` if
- * not found.
+ * Returns factory registered with a given `contract` or `null` if not found.
+ * In contrast to `Cc[contract]` that does ignores new factory registration
+ * with a given `contract` this will return a factory currently associated
+ * with a `contract`.
  */
 function factoryByContract(contract) factoryByID(Cm.contractIDToCID(contract))
 exports.factoryByContract = factoryByContract;
