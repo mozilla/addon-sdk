@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cr, Cm } = require('chrome');
+const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
@@ -201,9 +201,15 @@ function autoRegister(path) {
 }
 exports.autoRegister = autoRegister;
 
-function getClass(contractID, iid) {
-  if (!iid)
-    iid = Ci.nsISupports;
-  return Cm.getClassObjectByContractID(contractID, iid);
-}
-exports.getClass = getClass;
+/**
+ * Returns registered factory that has a given `id` or `null` if not found.
+ */
+function factoryByID(id) classesByID[id] || null
+exports.factoryByID = factoryByID;
+
+/**
+ * Returns registered factory associated with a given `contract` or `null` if
+ * not found.
+ */
+function factoryByContract(contract) factoryByID(Cm.contractIDToCID(contract))
+exports.factoryByContract = factoryByContract;
