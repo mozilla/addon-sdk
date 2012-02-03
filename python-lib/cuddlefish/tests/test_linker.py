@@ -6,7 +6,7 @@ import os.path
 import shutil
 import zipfile
 from StringIO import StringIO
-import json
+import simplejson as json
 import unittest
 import cuddlefish
 from cuddlefish import packaging, manifest
