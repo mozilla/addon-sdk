@@ -367,9 +367,6 @@ def generate_build_for_target(pkg_cfg, target, deps,
     if ('preferences' in target_cfg):
         build['preferences'] = target_cfg.preferences
 
-    if ('id' in target_cfg):
-        build['jetpackID'] = target_cfg.id
-
     return build
 
 def _get_files_in_dir(path):
