@@ -80,7 +80,7 @@ The content script "get-text.js" looks like this:
     self.port.on("show", function (arg) {
       // Set the focus to the text area so the user can
       // just start typing.
-      var textArea = document.getElementById('edit-box');
+      var textArea = document.getElementById("edit-box");
       textArea.focus();
       // When the user hits return, send the "text-entered"
       // message to main.js.

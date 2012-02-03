@@ -34,7 +34,7 @@ logs it:
 Try it: run the add-on, load a web page, select some text and right-click.
 You should see the new item appear:
 
-<img src="static-files/media/screenshots/context-menu-selection.png"></img>
+<img class="image-center" src="static-files/media/screenshots/context-menu-selection.png"></img>
 
 Click it, and the selection is logged to the
 [console](dev-guide/addon-development/console.html):
