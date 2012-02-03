@@ -36,17 +36,17 @@ You should see the new item appear:
 
 <img class="image-center" src="static-files/media/screenshots/context-menu-selection.png"></img>
 
-Click it, and the selection is logged to the
-[console](dev-guide/addon-development/console.html):
+Click it, and the selection is
+[logged to the console](dev-guide/addon-development/tutorials/logging.html):
 
 <pre>
 info: elephantine lizard
 </pre>
 
 All this add-on does is to construct a context menu item. You don't need
-to add it: once it's constructed it is automatically added in the correct
-context. The constructor in this case takes four options: `label`, `context`,
-`contentScript`, and `onMessage`.
+to add it: once you have constructed the item, it is automatically added
+in the correct context. The constructor in this case takes four options:
+`label`, `context`, `contentScript`, and `onMessage`.
 
 ### label ###
 

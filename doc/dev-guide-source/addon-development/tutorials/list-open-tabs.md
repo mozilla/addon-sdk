@@ -43,7 +43,7 @@ info: http://www.bbc.co.uk/
 You don't get direct access to any content hosted in the tab.
 To access tab content you need to attach a script to the tab
 using `tab.attach()`. This add-on attaches a script to all open
-tabs that adds a red border to the document:
+tabs. The script adds a red border to the tab's document:
 
     var widget = require("widget").Widget({
       id: "mozilla-link",
