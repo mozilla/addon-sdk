@@ -470,6 +470,16 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
+def buildJID(target_cfg):
+    if "id" in target_cfg:
+        jid = target_cfg["id"]
+    else:
+        import uuid
+        jid = str(uuid.uuid4())
+    if not ("@" in jid or jid.startswith("{")):
+        jid = jid + "@jetpack"
+    return jid
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -598,14 +608,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         assert command == "test"
 
-    if "id" in target_cfg:
-        jid = target_cfg["id"]
-    else:
-        import uuid
-        jid = str(uuid.uuid4())
-    if not ("@" in jid or jid.startswith("{")):
-        jid = jid + "@jetpack"
-
+    jid = buildJID(target_cfg)
 
     targets = [target]
     if command == "test":
