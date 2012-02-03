@@ -3,9 +3,10 @@ import unittest
 import zipfile
 import pprint
 import shutil
+import uuid
 
 import simplejson as json
-from cuddlefish import xpi, packaging, manifest
+from cuddlefish import xpi, packaging, manifest, buildJID
 from cuddlefish.tests import test_packaging
 from test_linker import up
 
@@ -34,11 +35,20 @@ class PrefsTests(unittest.TestCase):
 
     def testPackageWithSimplePrefs(self):
         self.makexpi('simple-prefs')
-        assert 'options.xul' in self.xpi.namelist()
+        self.failUnless('options.xul' in self.xpi.namelist())
+        prefs = self.xpi.read('options.xul')
+        self.failUnless('pref="extensions.jid1-fZHqN9JfrDBa8A@jetpack.test"'
+                        in prefs, prefs)
+        self.failUnless('type="bool"' in prefs, prefs)
+        self.failUnless('title="test"' in prefs, prefs)
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
+                             "jid1-fZHqN9JfrDBa8A@jetpack")
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
-        assert 'options.xul' not in self.xpi.namelist()
+        self.failIf('options.xul' in self.xpi.namelist())
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
+                             "jid1-fZHqN9JfrDBa8A@jetpack")
 
 
 class Bug588119Tests(unittest.TestCase):
@@ -272,7 +282,8 @@ def document_dir_files(path):
 def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files',
                extra_harness_options={}):
     configs = test_packaging.get_configs(pkg_name, dirname)
-    options = {'main': configs.target_cfg.main}
+    options = {'main': configs.target_cfg.main,
+               'jetpackID': buildJID(configs.target_cfg, str(uuid.uuid4())), }
     options.update(configs.build)
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,

@@ -472,6 +472,15 @@ def get_unique_prefix(jid):
 
     return unique_prefix
 
+def buildJID(target_cfg, harness_guid):
+    if "id" in target_cfg:
+        jid = target_cfg["id"]
+    else:
+        jid = harness_guid
+    if not ("@" in jid or jid.startswith("{")):
+        jid = jid + "@jetpack"
+    return jid
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -612,13 +621,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         assert command == "test"
 
-    if "id" in target_cfg:
-        jid = target_cfg["id"]
-    else:
-        jid = harness_guid
-    if not ("@" in jid or jid.startswith("{")):
-        jid = jid + "@jetpack"
-
+    jid = buildJID(target_cfg, harness_guid)
 
     targets = [target]
     if command == "test":
