@@ -82,6 +82,10 @@ exports['test implement xpcom factory'] = function(assert) {
 
   assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
             "createInstance returnes wrapped factory instances");
+
+  assert.notEqual(Cc[factory.contract].createInstance(Ci.nsIObserver),
+                  Cc[factory.contract].createInstance(Ci.nsIObserver),
+                  "createInstance returns new instance each time");
 };
 
 exports['test implement xpcom service'] = function(assert) {
