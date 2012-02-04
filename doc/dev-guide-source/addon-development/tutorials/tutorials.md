@@ -4,6 +4,12 @@
 
 # Tutorials #
 
+This page lists practical explanations of how to develop add-ons with
+the SDK.
+
+The tutorials don't yet cover all the high-level APIs: see the sidebar
+on the left for the full list.
+
 ## Getting Started ##
 
 <div class="buttonarray">

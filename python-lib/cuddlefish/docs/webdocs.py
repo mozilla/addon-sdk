@@ -118,6 +118,7 @@ class WebDocs(object):
             text = self._create_module_list(package_json)
             packages += tag_wrap(text, 'div', {'class':'package-summary', \
               'style':'display: block;'})
+            packages = tag_wrap('', 'div', {'class':'divider'}) + packages;
         return packages
 
     def _create_base_page(self, root, base_url):
