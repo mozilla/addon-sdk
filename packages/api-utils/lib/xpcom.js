@@ -60,8 +60,8 @@ exports.Unknown = Unknown;
 const Factory = Unknown.extend({
   interfaces: [ 'nsIFactory' ],
   /**
-   * All the descendants will get auto generated `id` unless one is manually
-   * provided.
+   * All the descendants will get auto generated `id` (also known as `classID`
+   * in XPCOM world) unless one is manually provided.
    */
   get id() { throw Error('Factory must implement `id` property') },
   /**
@@ -93,10 +93,12 @@ const Factory = Unknown.extend({
   unregister: true,
   /**
    * Method is called on `Service.new(options)` passing given `options` to
-   * it. Options is expected to have `component` property holding component
-   * and optional `register`, `unregister` flags. Unless `register` is `false`
-   * Service / Factory will be automatically registered. Unless `unregister` is
-   * `false` component will be automatically unregistered on add-on unload.
+   * it. Options is expected to have `component` property holding XPCOM
+   * component implementation typically decedent of `Unknown` or any custom
+   * implementation with a `new` method and optional `register`, `unregister`
+   * flags. Unless `register` is `false` Service / Factory will be
+   * automatically registered. Unless `unregister` is `false` component will
+   * be automatically unregistered on add-on unload.
    */
   initialize: function initialize(options) {
     options = options || {}
