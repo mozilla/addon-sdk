@@ -338,10 +338,10 @@ hr {
 }
 
 div.buttonarray {
-  -moz-column-count: 2;
-  -moz-column-width: 50%;
+  -moz-column-count: 3;
+  -moz-column-width: 33%;
   -moz-column-rule: 1px solid #a0d0fb;
-  -moz-column-gap: 4em;
+  -moz-column-gap: 2em;
 }
 
 .experimental {

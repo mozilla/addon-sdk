@@ -4,19 +4,33 @@
 
 # Programming Guides #
 
-### [Two Types of Scripts](dev-guide/addon-development/two-types-of-scripts.html) ###
-An introduction to the different sorts of scripts you can write, and
-a summary of which APIs are available to which scripts.
+## SDK Infrastructure ##
 
-### [Working with Events](dev-guide/addon-development/events.html) ###
-Writing event-driven code using the SDK.
+<div class="buttonarray">
 
-### [Working with Content Scripts](dev-guide/addon-development/web-content.html) ###
-How to write code that interacts with web content using content scripts.
+<a href="dev-guide/addon-development/commonjs.html">CommonJS and the SDK</a>
+<a href="dev-guide/addon-development/program-id.html">Program ID</a>
+<a href="dev-guide/addon-development/module-search.html">Module Search</a>
 
-### [The Program ID](dev-guide/addon-development/program-id.html) ###
-What the program ID is and why it matters to your add-on.
+</div>
 
-### [Module Search](dev-guide/addon-development/module-search.html) ###
-How the `require()` function finds the module you asked for.
+## SDK Idioms ##
+
+<div class="buttonarray">
+
+ <a href="dev-guide/addon-development/events.html">Working With Events</a>
+ <a href="dev-guide/addon-development/two-types-of-scripts.html">Two Types of Scripts</a>
+ <a href="dev-guide/addon-development/web-content.html">Content Scripts</a>
+
+</div>
+
+## XUL Migration ##
+
+<div class="buttonarray">
+
+ <a href="dev-guide/addon-development/xul-migration.html">XUL Migration Guide</a>
+ <a href="dev-guide/addon-development/sdk-vs-xul.html">XUL versus the SDK</a>
+ <a href="dev-guide/addon-development/library-detector.html">Porting Guide</a>
+ 
+</div>
 

@@ -162,6 +162,3 @@ http://creativecommons.org/licenses/by/2.5/ -->
 <img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
 alt="Panel attached to a widget">
 <br>
-
-## Window-Specific Widgets ##
-
