@@ -113,7 +113,7 @@ const Factory = Unknown.extend({
     try {
       if (outer)
         throw Cr.NS_ERROR_NO_AGGREGATION;
-        return this.create().QueryInterface(iid);
+      return this.create().QueryInterface(iid);
     }
     catch (error) {
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
