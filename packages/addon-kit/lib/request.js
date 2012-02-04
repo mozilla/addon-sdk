@@ -3,10 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-const xpcom = require("api-utils/xpcom");
+
+const { Base } = require("api-utils/base");
+const { ns } = require("api-utils/namespace");
 const xhr = require("api-utils/xhr");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
+
+const response = ns();
 
 // Ugly but will fix with: https://bugzilla.mozilla.org/show_bug.cgi?id=596248
 const EventEmitter = require('api-utils/events').EventEmitter.compose({
@@ -88,7 +92,7 @@ function Request(options) {
     // handle the readystate, create the response, and call the callback
     request.onreadystatechange = function () {
       if (request.readyState == 4) {
-        response = new Response(request);
+        response = Response.new(request);
         errors.catchAndLog(function () {
           self._emit('complete', response);
         })();
@@ -195,34 +199,29 @@ function fixedEncodeURIComponent (str) {
                                  replace(/\)/g, "%29").replace(/\*/g, "%2A");
 }
 
-function Response(request) {
-  // Define the straight mappings of our value to original request value
-  xpcom.utils.defineLazyGetter(this, "text", function () request.responseText);
-  xpcom.utils.defineLazyGetter(this, "xml", function () {
+const Response = Base.extend({
+  initialize: function initialize(request) {
+    response(this).request = request;
+  },
+  get text() response(this).request.responseText,
+  get xml() {
     throw new Error("Sorry, the 'xml' property is no longer available. " +
                     "see bug 611042 for more information.");
-  });
-  xpcom.utils.defineLazyGetter(this, "status", function () request.status);
-  xpcom.utils.defineLazyGetter(this, "statusText", function () request.statusText);
-
-  // this.json should be the JS object, so we need to attempt to parse it.
-  xpcom.utils.defineLazyGetter(this, "json", function () {
-    let _json = null;
+  },
+  get status() response(this).request.status,
+  get statusText() response(this).request.statusText,
+  get json() {
     try {
-      _json = JSON.parse(this.text);
+      return JSON.parse(this.text);
+    } catch(error) {
+      return null;
     }
-    catch (e) {}
-    return _json;
-  });
-
-  // this.headers also should be a JS object, so we need to split up the raw
-  // headers string provided by the request.
-  xpcom.utils.defineLazyGetter(this, "headers", function () {
-    let _headers = {};
-    let lastKey;
+  },
+  get headers() {
+    let headers = {}, lastKey;
     // Since getAllResponseHeaders() will return null if there are no headers,
     // defend against it by defaulting to ""
-    let rawHeaders = request.getAllResponseHeaders() || "";
+    let rawHeaders = response(this).request.getAllResponseHeaders() || "";
     rawHeaders.split("\n").forEach(function (h) {
       // According to the HTTP spec, the header string is terminated by an empty
       // line, so we can just skip it.
@@ -241,16 +240,16 @@ function Response(request) {
       // new line. We'll assume lastKey will be set because there should never
       // be an empty key on the first pass.
       if (key) {
-        _headers[key] = val;
+        headers[key] = val;
         lastKey = key;
       }
       else {
-        _headers[lastKey] += "\n" + val;
+        headers[lastKey] += "\n" + val;
       }
     });
-    return _headers;
-  })
-}
+    return headers;
+  }
+});
 
 // apiUtils.validateOptions doesn't give the ability to easily validate single
 // options, so this is a wrapper that provides that ability.
