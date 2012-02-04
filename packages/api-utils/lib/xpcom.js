@@ -119,7 +119,7 @@ const Factory = Unknown.extend({
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  create: function create() { return this.component.new(); }
+  create: function create() this.component.new()
 });
 exports.Factory = Factory;
 
@@ -131,7 +131,7 @@ const Service = Factory.extend({
   /**
    * Creates an instance of the class associated with this factory.
    */
-  create: function create() { return this.component; }
+  create: function create() this.component
 });
 exports.Service = Service;
 
