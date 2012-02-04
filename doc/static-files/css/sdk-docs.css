@@ -205,18 +205,6 @@ hr {
   margin-right: 1.0em;
 }
 
-.package-summary .module {
-  padding-left: 0em;
-}
-
-.package-summary .module,
-.package-entry .module,
-.package-detail .module {
-  display: inline;
-  white-space: nowrap;
-  margin-left: 0em;
-}
-
 .package-detail .authors, .package-detail .dependencies,
 .package-detail .version, .package-detail .license {
   font-family: Monaco, Lucida Console, monospace;
@@ -234,10 +222,6 @@ hr {
   background-color: #F0F8FF;
   padding: 10px;
   border-style:groove;
-}
-
-.sidebar-subsection-contents {
-  display: none;
 }
 
 .sidebar-subsection {
@@ -321,11 +305,6 @@ hr {
 
 }
 
-.sidebar-section li {
-  font-family: Georgia, serif;
-  margin-left: 0;
-}
-
 .image-center {
   margin-left: auto;
   margin-right: auto;
@@ -367,19 +346,31 @@ div.buttonarray a:hover {
   border-color: #a0d0fb;
 }
 
-div.package-summary {
-  padding-left:15px;
+.sidebar-subsection-contents {
+  padding-left:10px;
   padding-right:15px;
   padding-bottom:10px;
 }
 
-div.package-summary a {
+.package-summary {
+  border-style: solid;
+  border-top-width: 1px;
+  border-color: #a0d0fb;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+ul li.package-summary:first-child {  
+   border-top: none;  
+}
+
+.sidebar-subsection-contents a {
   display: block;
   text-decoration: none;
   padding: 1px 3px;
 }
 
-div.package-summary a:hover {
+.sidebar-subsection-contents a:hover {
   background-color: white;
   border-color: #a0d0fb;
   border: solid 1px;

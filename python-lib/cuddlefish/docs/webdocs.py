@@ -9,8 +9,8 @@ from cuddlefish._version import get_versions
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
-HIGH_LEVEL_PACKAGE_SUMMARIES = '<div id="high-level-package-summaries">'
-LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
+HIGH_LEVEL_PACKAGE_SUMMARIES = '<ul id="high-level-package-summaries">'
+LOW_LEVEL_PACKAGE_SUMMARIES = '<ul id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
 DEFAULT_TITLE = 'Add-on SDK Documentation'
@@ -116,9 +116,8 @@ class WebDocs(object):
             if not include(package_json):
                 continue
             text = self._create_module_list(package_json)
-            packages += tag_wrap(text, 'div', {'class':'package-summary', \
+            packages += tag_wrap(text, 'li', {'class':'package-summary', \
               'style':'display: block;'})
-            packages = tag_wrap('', 'div', {'class':'divider'}) + packages;
         return packages
 
     def _create_base_page(self, root, base_url):
