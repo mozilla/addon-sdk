@@ -4,8 +4,10 @@
 
 "use strict";
 
-const { Cc, Ci } = require('chrome');
+const { Cc, Ci, components: { ID: parseUUID } } = require('chrome');
+const { generateUUID } = Cc['@mozilla.org/uuid-generator;1'].
+                          getService(Ci.nsIUUIDGenerator);
 
-exports.uuid = Cc['@mozilla.org/uuid-generator;1'].
-               getService(Ci.nsIUUIDGenerator).
-               generateUUID;
+// Returns `uuid`. If `id` is passed then it's parsed to `uuid` and returned
+// if not then new one is generated.
+exports.uuid = function uuid(id) id ? parseUUID(id) : generateUUID()
