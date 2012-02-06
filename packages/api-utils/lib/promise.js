@@ -5,14 +5,6 @@
 "use strict";
 
 /**
- * Returns `value` back if it's a promise or creates a promise that resolves
- * into a given `value`.
- */
-function ref(value) {
-  return isPromise(value) ? value : resolution(value);
-}
-
-/**
  * Returns promise that resolves to a given `value`.
  */
 function resolution(value) {
@@ -103,7 +95,7 @@ function defer(prototype) {
         // promise), so that all subsequent listeners can be forwarded to it,
         // which either resolves immediately or forwards if `value` is
         // a promise.
-        result = ref(value);
+        result = isPromise(value) ? value : resolution(value);
         // forward all pending observers.
         pending.forEach(function onEach([ resolve, reject ]) {
           result.then(resolve, reject);
