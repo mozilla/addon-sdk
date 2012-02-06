@@ -273,5 +273,18 @@ exports['test lazy futurues are lazy'] = function(assert, done) {
   });
 };
 
+exports['test observer at resolution'] = function(assert, done) {
+  let { resolve, promise } = defer();
+  promise.then(function(value1) {
+    assert.equal(value1, 'whatever', 'first observer notified');
+    promise.then(function(value2) {
+      assert.equal(value2, 'whatever', 'second observer notified');
+      done();
+    });
+  });
+
+  resolve('whatever')
+}
+
 require("test").run(exports);
 

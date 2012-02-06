@@ -97,9 +97,7 @@ function defer(prototype) {
         // a promise.
         result = isPromise(value) ? value : resolution(value);
         // forward all pending observers.
-        pending.forEach(function onEach([ resolve, reject ]) {
-          result.then(resolve, reject);
-        });
+        while (pending.length) result.then.apply(result, pending.shift());
         // mark promise as resolved.
         pending = null;
       }
