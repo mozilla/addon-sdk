@@ -25,8 +25,10 @@ exports.getPreferedLocales = function getPreferedLocales() {
       locales.push(locale);
   }
 
-  // Most important locale is OS one. Use it only if relevant preference is set
-  // TODO: confirm usecase, seems to be mostly used on mobile?
+  // Most important locale is OS one. But we use it, only if
+  // "intl.locale.matchOS" pref is set to `true`.
+  // Currently only used for multi-locales mobile builds.
+  // http://mxr.mozilla.org/mozilla-central/source/mobile/android/installer/Makefile.in#46
   if (prefs.get(PREF_MATCH_OS_LOCALE, false)) {
     let localeService = Cc["@mozilla.org/intl/nslocaleservice;1"].
                         getService(Ci.nsILocaleService);
