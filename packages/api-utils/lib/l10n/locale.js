@@ -37,20 +37,11 @@ exports.getPreferedLocales = function getPreferedLocales() {
   // In some cases, mainly on Fennec and on Linux version,
   // `general.useragent.locale` is a special 'localized' value, like:
   // "chrome://global/locale/intl.properties"
-  let localizedBrowserUiLocale = null;
-  try {
-    localizedBrowserUiLocale = Services.prefs.getComplexValue(
-      PREF_SELECTED_LOCALE, Ci.nsIPrefLocalizedString).data;
-  } catch(e) {}
-  if (localizedBrowserUiLocale) {
-    addLocale(localizedBrowserUiLocale);
-  }
-  else {
-    // Then we use browser UI locale (that may match OS one too first)
-    let browserUiLocale = prefs.get(PREF_SELECTED_LOCALE, "");
-    if (browserUiLocale)
-      addLocale(browserUiLocale);
-  }
+  let browserUiLocale = prefs.getLocalized(PREF_SELECTED_LOCALE, "") ||
+                        prefs.get(PREF_SELECTED_LOCALE, "");
+  if (browserUiLocale)
+    addLocale(browserUiLocale);
+
 
   // Third priority is the list of locales used for web content
   let contentLocales = prefs.get(PREF_ACCEPT_LANGUAGES, "");

@@ -51,15 +51,7 @@ exports.testGetPreferedLocales = function(test) {
 exports.testPreferedLocalizedLocale = function(test) {
   prefs.set(PREF_MATCH_OS_LOCALE, false);
   let bundleURL = "chrome://global/locale/intl.properties";
-  Services.prefs.getDefaultBranch(null).clearUserPref(PREF_SELECTED_LOCALE);
-  // We can't use `prefs.set` here as we have to use getDefaultBranch
-  // (instead of getBranch) in order to have `mIsDefault` set to true, here:
-  // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#233
-  // Otherwise, we do not enter into this expected condition:
-  // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#244
-  Services.prefs.getDefaultBranch(null).setCharPref(
-    PREF_SELECTED_LOCALE,
-    bundleURL);
+  prefs.setLocalized(PREF_SELECTED_LOCALE, bundleURL);
   prefs.set(PREF_ACCEPT_LANGUAGES, "fr");
 
   // Read manually the expected locale value from the property file
