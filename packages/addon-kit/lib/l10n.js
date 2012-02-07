@@ -6,6 +6,9 @@
 const { Cc, Ci } = require("chrome");
 const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
 
+// Get URI for the addon root folder:
+const { rootURI } = require("@packaging");
+
 let globalHash = {};
 
 exports.get = function get(k) {
@@ -71,20 +74,38 @@ function readURI(uri) {
   return request.responseText;
 }
 
+// Returns the array stored in `locales.json` manifest that list available
+// locales files
+function getAvailableLocales() {
+  let uri = rootURI + "locales.json";
+  let manifest = {};
+  try {
+    manifest = JSON.parse(readURI(uri));
+  }
+  catch(e) {
+    console.error("Error while reading locales manifest:\n" +
+                      uri + "\n" + e);
+  }
+  if ("locales" in manifest && Array.isArray(manifest.locales))
+    return manifest.locales;
+  return [];
+}
+
 // Returns URI of the best locales file to use from the XPI
 function getBestLocaleFile() {
-  // Get URI for the addon root folder:
-  let rootURI = require("@packaging").rootURI;
 
   // Read localization manifest file that contains list of available languages
-  let localesManifest = JSON.parse(readURI(rootURI + "locales.json"));
-  let availableLocales = localesManifest.locales;
+  let availableLocales = getAvailableLocales();
 
   // Retrieve list of prefered locales to use
   let preferedLocales = getPreferedLocales();
 
   // Compute the most preferable locale to use by using these two lists
   let bestMatchingLocale = findClosestLocale(availableLocales, preferedLocales);
+
+  // It may be null if the addon doesn't have any locale file
+  if (!bestMatchingLocale)
+    return null;
 
   return rootURI + "locale/" + bestMatchingLocale + ".json";
 }
@@ -95,8 +116,14 @@ function init() {
   if (!localeURI)
     return;
 
-  let manifestJSON = readURI(localeURI);
-  let manifest = JSON.parse(manifestJSON);
+  let manifest = {};
+  try {
+    manifest = JSON.parse(readURI(localeURI));
+  }
+  catch(e) {
+    console.error("Error while reading locale file:\n" +
+                  localeURI + "\n" + e);
+  }
 
   // Locale files only contains one big JSON object that is used as
   // an hashtable of: "key to translate" => "translated key"

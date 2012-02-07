@@ -47,8 +47,6 @@ exports.getPreferedLocales = function getPreferedLocales() {
   }
   else {
     // Then we use browser UI locale (that may match OS one too first)
-    // TODO: Verify that we do not need "Prefs.getComplexValue(PREF_SELECTED_LOCALE, Ci.nsIPrefLocalizedString)"
-    //       https://bugzilla.mozilla.org/show_bug.cgi?id=642203#c16
     let browserUiLocale = prefs.get(PREF_SELECTED_LOCALE, "");
     if (browserUiLocale)
       addLocale(browserUiLocale);
@@ -84,8 +82,7 @@ exports.getPreferedLocales = function getPreferedLocales() {
  */
 exports.findClosestLocale = function findClosestLocale(aLocales, aMatchLocales) {
 
-  if (!aMatchLocales)
-    aMatchLocales = exports.getPreferedLocales();
+  aMatchLocales = aMatchLocales || exports.getPreferedLocales();
 
   // Holds the best matching localized resource
   let bestmatch = null;
