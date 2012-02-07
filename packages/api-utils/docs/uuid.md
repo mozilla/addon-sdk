@@ -21,3 +21,7 @@ Sometimes one might need to create `nsID` from an existing UUID string. Same
 
     let { uuid } = require('api-utils/uuid');
     let firefoxUUID = uuid('{ec8030f7-c20a-464f-9b0e-13a3a9e97384}');
+
+For more details about UUID representations and what they are used for by the
+platform see MDN documentation for
+[JSID](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIJSID)
