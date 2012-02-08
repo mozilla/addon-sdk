@@ -9,6 +9,15 @@ import StringIO
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 EM_NS = "http://www.mozilla.org/2004/em-rdf#"
 
+APPLICATION_ID = {
+    "firefox": '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}',
+    "xulrunner": '{86c18b42-e466-45a9-ae7a-9b95ba6f5640}',
+    "sunbird": '{718e30fb-e89b-41dd-9da7-e25a45638b28}',
+    "seaMonkey": '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}',
+    "fennec": '{aa3c5121-dab2-40e2-81ca-7ea25febc110}',
+    "thunderbird": '{3550f703-e582-4d05-9a08-453d09bdfdc6}'
+}
+
 class RDF(object):
     def __str__(self):
         # real files have an .encoding attribute and use it when you
@@ -112,6 +121,29 @@ class RDFManifest(RDF):
 
         return True;
 
+def inject_applications_support(dom, applications):
+    for application in applications:
+        range = applications[application]
+        target_app = dom.createElement("em:targetApplication")
+        description = dom.documentElement.getElementsByTagName("Description")[0]
+        description.appendChild(target_app)
+
+        ta_desc = dom.createElement("Description")
+        target_app.appendChild(ta_desc)
+
+        elem = dom.createElement("em:id")
+        id = APPLICATION_ID[application.lower()]
+        elem.appendChild(dom.createTextNode(id))
+        ta_desc.appendChild(elem)
+
+        elem = dom.createElement("em:minVersion")
+        elem.appendChild(dom.createTextNode("9"))
+        ta_desc.appendChild(elem)
+
+        elem = dom.createElement("em:maxVersion")
+        elem.appendChild(dom.createTextNode("12"))
+        ta_desc.appendChild(elem)
+
 def gen_manifest(template_root_dir, target_cfg, jid,
                  update_url=None, bootstrap=True, enable_mobile=False):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
@@ -142,25 +174,16 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     else:
         manifest.remove("em:optionsType")
 
+    # Force mobile support, if `--force-mobile` option is given
     if enable_mobile:
-        dom = manifest.dom
-        target_app = dom.createElement("em:targetApplication")
-        dom.documentElement.getElementsByTagName("Description")[0].appendChild(target_app)
+        if not "applications" in target_cfg:
+            target_cfg["applications"] = dict()
+        if not "fennec" in target_cfg["applications"]:
+            target_cfg["applications"]["fennec"] = ["10.0", "11.0a1"]
 
-        ta_desc = dom.createElement("Description")
-        target_app.appendChild(ta_desc)
-
-        elem = dom.createElement("em:id")
-        elem.appendChild(dom.createTextNode("{aa3c5121-dab2-40e2-81ca-7ea25febc110}"))
-        ta_desc.appendChild(elem)
-
-        elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("10.0"))
-        ta_desc.appendChild(elem)
-
-        elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("11.0a1"))
-        ta_desc.appendChild(elem)
+    if "applications" in target_cfg:
+        inject_applications_support(manifest.dom,
+                                    target_cfg.get("applications"))
 
     if target_cfg.get("homepage"):
         manifest.set("em:homepageURL", target_cfg.get("homepage"))
