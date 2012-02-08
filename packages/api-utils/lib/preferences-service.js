@@ -105,13 +105,13 @@ var reset = exports.reset = function reset(name) {
 };
 
 exports.getLocalized = function getLocalized(name, defaultValue) {
+  let value = null;
   try {
-    return prefSvc.getComplexValue(name,
-                                   Ci.nsIPrefLocalizedString).data
-           || defaultValue;
+    value = prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
   }
-  catch(e) {}
-  return defaultValue;
+  finally {
+    return value || defaultValue;
+  }
 }
 
 exports.setLocalized = function setLocalized(name, value) {

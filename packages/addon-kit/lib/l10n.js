@@ -74,21 +74,24 @@ function readURI(uri) {
   return request.responseText;
 }
 
+function readJsonUri(uri) {
+  try {
+    return JSON.parse(readURI(uri));
+  }
+  catch(e) {
+    console.error("Error while reading locale file:\n" + uri + "\n" + e);
+  }
+  return {};
+}
+
 // Returns the array stored in `locales.json` manifest that list available
 // locales files
 function getAvailableLocales() {
   let uri = rootURI + "locales.json";
-  let manifest = {};
-  try {
-    manifest = JSON.parse(readURI(uri));
-  }
-  catch(e) {
-    console.error("Error while reading locales manifest:\n" +
-                      uri + "\n" + e);
-  }
-  if ("locales" in manifest && Array.isArray(manifest.locales))
-    return manifest.locales;
-  return [];
+  let manifest = readJsonUri(uri);
+
+  return "locales" in manifest && Array.isArray(manifest.locales) ?
+         manifest.locales : [];
 }
 
 // Returns URI of the best locales file to use from the XPI
@@ -116,19 +119,10 @@ function init() {
   if (!localeURI)
     return;
 
-  let manifest = {};
-  try {
-    manifest = JSON.parse(readURI(localeURI));
-  }
-  catch(e) {
-    console.error("Error while reading locale file:\n" +
-                  localeURI + "\n" + e);
-  }
-
   // Locale files only contains one big JSON object that is used as
   // an hashtable of: "key to translate" => "translated key"
   // TODO: We are likely to change this in order to be able to overload
   //       a specific key translation. For a specific package, module or line?
-  globalHash = manifest;
+  globalHash = readJsonUri(localeURI);
 }
 init();
