@@ -12,7 +12,6 @@ const WARNING = 'This API is deprecated and will be removed in an upcoming ' +
 
 exports.EventEmitter = require("./traits").Trait.compose({
   on: function(type, listener) {
-    console.log(type, !listener && Error().stack)
     on(this._public, type, listener);
     return this._public;
   },
