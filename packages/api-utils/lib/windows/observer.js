@@ -8,16 +8,12 @@
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { WindowTracker, windowIterator } = require("../window-utils");
 const { DOMEventAssembler } = require("../events/assembler");
+const { emit } = require("../event/core");
 const { Trait } = require("../light-traits");
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
 const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
-  /**
-   * Method is implemented by `EventEmitter` and is used just for emitting
-   * events on registered listeners.
-   */
-  _emit: Trait.required,
   /**
    * Events that are supported and emitted by the module.
    */
@@ -30,18 +26,18 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
    *    Keyboard event being emitted.
    */
   handleEvent: function handleEvent(event) {
-    this._emit(event.type, event.target, event);
+    emit(this, event.type, event.target, event);
   }
 });
 
 // Using `WindowTracker` to track window events.
 WindowTracker({
   onTrack: function onTrack(chromeWindow) {
-    observer._emit("open", chromeWindow);
+    emit(observer, "open", chromeWindow);
     observer.observe(chromeWindow);
   },
   onUntrack: function onUntrack(chromeWindow) {
-    observer._emit("close", chromeWindow);
+    emit(observer, "close", chromeWindow);
     observer.ignore(chromeWindow);
   }
 });
