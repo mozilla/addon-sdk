@@ -195,10 +195,10 @@ function createHiddenXULFrame() {
     if (window.document.readyState != "complete") {
       window.addEventListener("load", function onload() {
         window.removeEventListener("load", onload, false);
+        // We recurse with same arguments, when the window is ready
         promise(deliver);
       }, false);
       return;
-      return require("timer").setTimeout(promise, 1000, deliver);
     }
 
     let document = window.document;
