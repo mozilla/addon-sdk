@@ -43,6 +43,7 @@ on the left for the full list.
  <a href="dev-guide/addon-development/tutorials/load-and-unload.html">Listen for Load and Unload</a>
  <a href="dev-guide/addon-development/tutorials/reusable-modules.html">Reusable Modules</a>
  <a href="dev-guide/addon-development/tutorials/unit-testing.html">Unit Testing</a>
+ <a href="dev-guide/addon-development/l10n.html">Localization</a>
  
 </div>
 
