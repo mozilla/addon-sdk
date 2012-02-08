@@ -4,13 +4,8 @@
 
 'use strict';
 
-// Exposing private methods as public in order to test
-const EventEmitter = require('events').EventEmitter.compose({
-  listeners: function(type) this._listeners(type),
-  emit: function() this._emit.apply(this, arguments),
-  emitOnObject: function() this._emitOnObject.apply(this, arguments),
-  removeAllListeners: function(type) this._removeAllListeners(type)
-});
+const { EventEmitter } = require('api-utils/events');
+const { emit, off } = require('api-utils/event/core')
 
 exports['test:add listeners'] = function(test) {
   let e = new EventEmitter();
@@ -29,7 +24,7 @@ exports['test:add listeners'] = function(test) {
     test.assertEqual(this, e, '`this` pseudo-variable is bound to instance');
   })
 
-  e.emit("hello", "a", "b")
+  emit(e, "hello", "a", "b")
 };
 
 exports['test:removeListener'] = function(test) {
@@ -44,37 +39,24 @@ exports['test:removeListener'] = function(test) {
 
   // test adding and removing listener
   let e1 = new EventEmitter();
-  test.assertEqual(0, e1.listeners('hello').length);
   e1.on("hello", listener1);
-  test.assertEqual(1, e1.listeners('hello').length);
-  test.assertEqual(listener1, e1.listeners('hello')[0]);
   e1.removeListener("hello", listener1);
-  test.assertEqual(0, e1.listeners('hello').length);
-  e1.emit("hello", "");
+  emit(e1, "hello", "");
   test.assertEqual(0, count);
 
   // test adding one listener and removing another which was not added
   let e2 = new EventEmitter();
-  test.assertEqual(0, e2.listeners('hello').length);
   e2.on("hello", listener1);
-  test.assertEqual(1, e2.listeners('hello').length);
   e2.removeListener("hello", listener2);
-  test.assertEqual(1, e2.listeners('hello').length);
-  test.assertEqual(listener1, e2.listeners('hello')[0]);
-  e2.emit("hello", "");
+  emit(e2, "hello", "");
   test.assertEqual(1, count);
 
   // test adding 2 listeners, and removing one
   let e3 = new EventEmitter();
-  test.assertEqual(0, e3.listeners('hello').length);
   e3.on("hello", listener1);
-  test.assertEqual(1, e3.listeners('hello').length);
   e3.on("hello", listener2);
-  test.assertEqual(2, e3.listeners('hello').length);
   e3.removeListener("hello", listener1);
-  test.assertEqual(1, e3.listeners('hello').length);
-  test.assertEqual(listener2, e3.listeners('hello')[0]);
-  e3.emit("hello", "");
+  emit(e3, "hello", "");
   test.assertEqual(2, count);
 };
 
@@ -91,44 +73,33 @@ exports['test:removeAllListeners'] = function(test) {
   // test adding a listener and removing all of that type
   let e1 = new EventEmitter();
   e1.on("hello", listener1);
-  test.assertEqual(1, e1.listeners('hello').length);
-  e1.removeAllListeners("hello");
-  test.assertEqual(0, e1.listeners('hello').length);
-  e1.emit("hello", "");
+  off(e1, "hello");
+  emit(e1, "hello", "");
   test.assertEqual(0, count);
 
   // test adding a listener and removing all of another type
   let e2 = new EventEmitter();
   e2.on("hello", listener1);
-  test.assertEqual(1, e2.listeners('hello').length);
-  e2.removeAllListeners('goodbye');
-  test.assertEqual(1, e2.listeners('hello').length);
-  e2.emit("hello", "");
+  off(e2, 'goodbye');
+  emit(e2, "hello", "");
   test.assertEqual(1, count);
 
   // test adding 1+ listeners and removing all of that type
   let e3 = new EventEmitter();
   e3.on("hello", listener1);
-  test.assertEqual(1, e3.listeners('hello').length);
   e3.on("hello", listener2);
-  test.assertEqual(2, e3.listeners('hello').length);
-  e3.removeAllListeners("hello");
-  test.assertEqual(0, e3.listeners('hello').length);
-  e3.emit("hello", "");
+  off(e3, "hello");
+  emit(e3, "hello", "");
   test.assertEqual(1, count);
 
   // test adding 2 listeners for 2 types and removing all listeners
   let e4 = new EventEmitter();
   e4.on("hello", listener1);
-  test.assertEqual(1, e4.listeners('hello').length);
   e4.on('goodbye', listener2);
-  test.assertEqual(1, e4.listeners('goodbye').length);
-  e4.emit("goodbye", "");
-  e4.removeAllListeners();
-  test.assertEqual(0, e4.listeners('hello').length);
-  test.assertEqual(0, e4.listeners('goodbye').length);
-  e4.emit("hello", "");
-  e4.emit("goodbye", "");
+  emit(e4, "goodbye", "");
+  off(e4);
+  emit(e4, "hello", "");
+  emit(e4, "goodbye", "");
   test.assertEqual(2, count);
 };
 
@@ -152,22 +123,18 @@ exports['test: modify in emit'] = function(test) {
   }
 
   e.on("foo", callback1);
-  test.assertEqual(1, e.listeners("foo").length);
 
-  e.emit("foo");
-  test.assertEqual(2, e.listeners("foo").length);
+  emit(e, "foo");
   test.assertEqual(1, callbacks_called.length);
   test.assertEqual('callback1', callbacks_called[0]);
 
-  e.emit("foo");
-  test.assertEqual(0, e.listeners("foo").length);
+  emit(e, "foo");
   test.assertEqual(3, callbacks_called.length);
   test.assertEqual('callback1', callbacks_called[0]);
   test.assertEqual('callback2', callbacks_called[1]);
   test.assertEqual('callback3', callbacks_called[2]);
 
-  e.emit("foo");
-  test.assertEqual(0, e.listeners("foo").length);
+  emit(e, "foo");
   test.assertEqual(3, callbacks_called.length);
   test.assertEqual('callback1', callbacks_called[0]);
   test.assertEqual('callback2', callbacks_called[1]);
@@ -175,9 +142,7 @@ exports['test: modify in emit'] = function(test) {
 
   e.on("foo", callback1);
   e.on("foo", callback2);
-  test.assertEqual(2, e.listeners("foo").length);
-  e.removeAllListeners("foo");
-  test.assertEqual(0, e.listeners("foo").length);
+  off(e, "foo");
 
   // Verify that removing callbacks while in emit allows emits to propagate to
   // all listeners
@@ -185,24 +150,22 @@ exports['test: modify in emit'] = function(test) {
 
   e.on("foo", callback2);
   e.on("foo", callback3);
-  test.assertEqual(2, e.listeners("foo").length);
-  e.emit("foo");
+  emit(e, "foo");
   test.assertEqual(2, callbacks_called.length);
   test.assertEqual('callback2', callbacks_called[0]);
   test.assertEqual('callback3', callbacks_called[1]);
-  test.assertEqual(0, e.listeners("foo").length);
 };
 
 exports['test:adding same listener'] = function(test) {
-  function foo() {}
+  let called = 0;
+  function foo() { called ++; }
   let e = new EventEmitter();
   e.on("foo", foo);
   e.on("foo", foo);
-  test.assertEqual(
-    1,
-    e.listeners("foo").length,
-    "listener reregistration is ignored"
- );
+
+  emit(e, "foo");
+
+  test.assertEqual(called, 1, 'same listener is registered only once');
 }
 
 exports['test:errors are reported if listener throws'] = function(test) {
@@ -210,7 +173,7 @@ exports['test:errors are reported if listener throws'] = function(test) {
       reported = false;
   e.on('error', function(e) reported = true)
   e.on('boom', function() { throw new Error('Boom!') });
-  e.emit('boom', 3);
+  emit(e, 'boom', 3);
   test.assert(reported, 'error should be reported through event');
 };
 
@@ -220,13 +183,7 @@ exports['test:emitOnObject'] = function(test) {
   e.on("foo", function() {
     test.assertEqual(this, e, "`this` should be emitter");
   });
-  e.emitOnObject(e, "foo");
-
-  e.on("bar", function() {
-    test.assertEqual(this, obj, "`this` should be other object");
-  });
-  let obj = {};
-  e.emitOnObject(obj, "bar");
+  emit(e, "foo");
 };
 
 exports['test:once'] = function(test) {
@@ -238,13 +195,13 @@ exports['test:once'] = function(test) {
     test.assertEqual(value, "bar", "correct argument was passed");
   });
 
-  e.emit('foo', 'bar');
-  e.emit('foo', 'baz');
+  emit(e, 'foo', 'bar');
+  emit(e, 'foo', 'baz');
 };
 
 exports["test:removing once"] = function(test) {
   let e = require("events").EventEmitterTrait.create();
   e.once("foo", function() { test.pass("listener was called"); });
   e.once("error", function() { test.fail("error event was emitted"); });
-  e._emit("foo", "bug-656684");
+  emit(e, "foo", "bug-656684");
 };
