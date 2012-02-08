@@ -20,6 +20,7 @@ const { Cc, Ci } = require('chrome'),
       { WindowLoader } = require('api-utils/windows/loader'),
       { WindowTrackerTrait } = require('api-utils/window-utils'),
       { Options } = require('api-utils/tabs/tab'),
+      { emit, off } = require('api-utils/event/core'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
 
@@ -40,7 +41,6 @@ const BrowserWindowTrait = Trait.compose(
   WindowLoader,
   /* WindowSidebars, */
   Trait.compose({
-    _emit: Trait.required,
     _close: Trait.required,
     _load: Trait.required,
     /**
@@ -77,17 +77,17 @@ const BrowserWindowTrait = Trait.compose(
       try {
         this._initWindowTabTracker();
       } catch(e) {
-        this._emit('error', e)
+        emit(this._public, 'error', e);
       }
-      this._emitOnObject(browserWindows, 'open', this._public);
+      emit(this._public, 'open', this._public);
     },
     _onUnload: function() {
       this._destroyWindowTabTracker();
-      this._emitOnObject(browserWindows, 'close', this._public);
+      emit(this._public, 'close', this._public);
       this._window = null;
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
-      this._removeAllListeners();
+      off(this._public);
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?
@@ -129,7 +129,6 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
   EventEmitter.resolve({ toString: null }),
   WindowTrackerTrait.resolve({ constructor: '_initTracker', toString: null }),
   Trait.compose({
-    _emit: Trait.required,
     _add: Trait.required,
     _remove: Trait.required,
 
@@ -146,8 +145,8 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       unload.ensure(this, "_destructor");
     },
     _destructor: function _destructor() {
-      this._removeAllListeners('open');
-      this._removeAllListeners('close');
+      off(this._public, 'open')
+      off(this._public, 'close');
     },
     /**
      * This property represents currently active window.
@@ -181,7 +180,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       if (!this._isBrowser(chromeWindow)) return;
       let window = BrowserWindow({ window: chromeWindow });
       this._add(window);
-      this._emit('open', window);
+      emit(this._public, 'open', window);
     },
     /**
      * Internal listener which is called whenever window gets closed.
@@ -194,7 +193,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       // `_onUnload` method of the `BrowserWindow` will remove `chromeWindow`
       // from the `windows` array.
       this._remove(window);
-      this._emit('close', window);
+      emit(this._public, 'close', window);
     }
   }).resolve({ toString: null })
 )();
