@@ -15,36 +15,16 @@ CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
 DEFAULT_TITLE = 'Add-on SDK Documentation'
 
-def get_modules(modules_json):
-    modules = []
-    for name in modules_json:
-        typ = modules_json[name][0]
-        if typ == "directory":
-            sub_modules = get_modules(modules_json[name][1])
-            for sub_module in sub_modules:
-                modules.append([name, sub_module[0]])
-        elif typ == "file":
-            if not name.startswith(".") and name.endswith('.js'):
-                modules.append([name[:-3]])
-    return modules
-
-def get_documented_modules(package_name, modules_json, doc_path):
-    modules = get_modules(modules_json)
+def get_documentation(package_name, modules_json, doc_path):
     documented_modules = []
-    for module in modules:
-        path = os.path.join(*module)
-        if module_md_exists(doc_path, path):
-            documented_modules.append(module)
-    if package_name == "addon-kit":
-        # hack for bug 664001, self-maker.js is in api-utils, self.md is in
-        # addon-kit. Real fix is for this function to look for all .md files,
-        # not for .js files with matching .md file in the same package.
-        documented_modules.append(["self"])
+    for root, dirs, files in os.walk(doc_path):
+        subdir_path = root.split(os.sep)[len(doc_path.split(os.sep)):]
+        for filename in files:
+            if filename.endswith(".md"):
+                modname = filename[:-len(".md")]
+                modpath = subdir_path + [modname]
+                documented_modules.append(modpath)
     return documented_modules
-
-def module_md_exists(root, module_name):
-    module_md_path = os.path.join(root, module_name + '.md')
-    return os.path.exists(module_md_path)
 
 def tag_wrap(text, tag, attributes={}):
     result = '\n<' + tag
@@ -64,7 +44,7 @@ def insert_after(target, insertion_point_id, text_to_insert):
     return target[:insertion_point] + text_to_insert + target[insertion_point:]
 
 class WebDocs(object):
-    def __init__(self, root, base_url = '/'):
+    def __init__(self, root, base_url = None):
         self.root = root
         self.pkg_cfg = packaging.build_pkg_cfg(root)
         self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
@@ -98,7 +78,7 @@ class WebDocs(object):
         doc_path = package_json.get('doc', None)
         if not doc_path:
             return ''
-        modules = get_documented_modules(package_name, libs, doc_path)
+        modules = get_documentation(package_name, libs, doc_path)
         modules.sort()
         module_items = ''
         relative_doc_path = doc_path[len(self.root) + 1:]
@@ -129,8 +109,9 @@ class WebDocs(object):
 
     def _create_base_page(self, root, base_url):
         base_page = unicode(open(root + INDEX_PAGE, 'r').read(), 'utf8')
-        base_tag = 'href="' + base_url + '"'
-        base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
+        if base_url:
+            base_tag = 'href="' + base_url + '"'
+            base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         sdk_version = get_versions()["version"]
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
         high_level_summaries = \

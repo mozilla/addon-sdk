@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Nickolay Ponomarev [asqueella@gmail.com] -->
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com] -->
@@ -66,7 +70,7 @@ then the content script can interact with the DOM itself:
 Most of the examples in this page define content scripts as strings,
 and use the `contentScript` option to assign them to page mods.
 
-In your code you will more often create content scripts in separate files
+Alternatively, you can create content scripts in separate files
 under your add-on's `data` directory. Then you can use the
 [`self`](packages/addon-kit/docs/self.html) module to retrieve a URL pointing
 to the file, and assign this to the page-mod's `contentScriptFile`
@@ -84,6 +88,15 @@ code like:
       contentScriptWhen: 'end',
       contentScriptFile: data.url("myScript.js")
     });
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
 
 ## Communicating With Content Scripts ##
 

@@ -1,45 +1,16 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Paul O’Shannessy <paul@oshannessy.com> (Original Author)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-const xpcom = require("api-utils/xpcom");
+
+const { Base } = require("api-utils/base");
+const { ns } = require("api-utils/namespace");
 const xhr = require("api-utils/xhr");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
+
+const response = ns();
 
 // Ugly but will fix with: https://bugzilla.mozilla.org/show_bug.cgi?id=596248
 const EventEmitter = require('api-utils/events').EventEmitter.compose({
@@ -121,7 +92,7 @@ function Request(options) {
     // handle the readystate, create the response, and call the callback
     request.onreadystatechange = function () {
       if (request.readyState == 4) {
-        response = new Response(request);
+        response = Response.new(request);
         errors.catchAndLog(function () {
           self._emit('complete', response);
         })();
@@ -228,34 +199,29 @@ function fixedEncodeURIComponent (str) {
                                  replace(/\)/g, "%29").replace(/\*/g, "%2A");
 }
 
-function Response(request) {
-  // Define the straight mappings of our value to original request value
-  xpcom.utils.defineLazyGetter(this, "text", function () request.responseText);
-  xpcom.utils.defineLazyGetter(this, "xml", function () {
+const Response = Base.extend({
+  initialize: function initialize(request) {
+    response(this).request = request;
+  },
+  get text() response(this).request.responseText,
+  get xml() {
     throw new Error("Sorry, the 'xml' property is no longer available. " +
                     "see bug 611042 for more information.");
-  });
-  xpcom.utils.defineLazyGetter(this, "status", function () request.status);
-  xpcom.utils.defineLazyGetter(this, "statusText", function () request.statusText);
-
-  // this.json should be the JS object, so we need to attempt to parse it.
-  xpcom.utils.defineLazyGetter(this, "json", function () {
-    let _json = null;
+  },
+  get status() response(this).request.status,
+  get statusText() response(this).request.statusText,
+  get json() {
     try {
-      _json = JSON.parse(this.text);
+      return JSON.parse(this.text);
+    } catch(error) {
+      return null;
     }
-    catch (e) {}
-    return _json;
-  });
-
-  // this.headers also should be a JS object, so we need to split up the raw
-  // headers string provided by the request.
-  xpcom.utils.defineLazyGetter(this, "headers", function () {
-    let _headers = {};
-    let lastKey;
+  },
+  get headers() {
+    let headers = {}, lastKey;
     // Since getAllResponseHeaders() will return null if there are no headers,
     // defend against it by defaulting to ""
-    let rawHeaders = request.getAllResponseHeaders() || "";
+    let rawHeaders = response(this).request.getAllResponseHeaders() || "";
     rawHeaders.split("\n").forEach(function (h) {
       // According to the HTTP spec, the header string is terminated by an empty
       // line, so we can just skip it.
@@ -274,16 +240,16 @@ function Response(request) {
       // new line. We'll assume lastKey will be set because there should never
       // be an empty key on the first pass.
       if (key) {
-        _headers[key] = val;
+        headers[key] = val;
         lastKey = key;
       }
       else {
-        _headers[lastKey] += "\n" + val;
+        headers[lastKey] += "\n" + val;
       }
     });
-    return _headers;
-  })
-}
+    return headers;
+  }
+});
 
 // apiUtils.validateOptions doesn't give the ability to easily validate single
 // options, so this is a wrapper that provides that ability.

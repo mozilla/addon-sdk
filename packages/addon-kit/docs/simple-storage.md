@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 The `simple-storage` module lets you easily and persistently store data across
 application restarts.  If you're familiar with [DOM storage][] on the Web, it's
 kind of like that, but for add-ons.
@@ -91,7 +95,7 @@ might handle that:
 
     ss.storage.history = [];
     var privateBrowsing = require("private-browsing");
-    if (!privateBrowsing.active) {
+    if (!privateBrowsing.isActive) {
       var url = getSelectedTabURL();
       ss.storage.history.push(url);
     }
