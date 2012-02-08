@@ -93,7 +93,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         delete self._timers[id];
         callback.apply(null, params);
       } catch(e) {
-        self._addonWorker._asyncEmit('error', e);
+        deferEmit(self._addonWorker, 'error', e)
       }
     }, delay, this);
     this._timers[id] = true;
@@ -110,7 +110,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       try {
         callback.apply(null, params); 
       } catch(e) {
-        self._addonWorker._asyncEmit('error', e);
+        deferEmit(self._addonWorker, 'error', e);
       }
     }, delay, this);
     this._timers[id] = true;
@@ -358,7 +358,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       evaluate(this._sandbox, code, filename || 'javascript:' + code);
     }
     catch(e) {
-      this._addonWorker._asyncEmit('error', e);
+      deferEmit(this._addonWorker._public, 'error', e);
     }
   },
   /**
@@ -381,7 +381,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
           throw Error("Unsupported `contentScriptFile` url: " + String(uri));
       }
       catch(e) {
-        this._addonWorker._asyncEmit('error', e)
+        deferEmit(this._addonWorker._public, 'error', e);
       }
     }
   }
@@ -394,7 +394,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
  */
 const Worker = AsyncEventEmitter.compose({
   on: Trait.required,
-  _asyncEmit: Trait.required,
   
   /**
    * Sends a message to the worker's global scope. Method takes single
@@ -411,8 +410,8 @@ const Worker = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
-    this._contentWorker._asyncEmit('message',
-                                   ensureArgumentsAreJSON(data, this._window));
+    deferEmit(this._contentWorker._public, 'message',
+              ensureArgumentsAreJSON(data, this._window));
   },
   
   /**
@@ -470,8 +469,8 @@ const Worker = AsyncEventEmitter.compose({
     
     let scope = this._contentWorker._port;
     // Ensure that we pass only JSON values
-    let array = Array.prototype.slice.call(args);
-    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(array, this._window));
+    let array = ensureArgumentsAreJSON(Array.slice(args), this._window);
+    deferEmit.apply(null, [ this._contentWorker._port ].concat(array))
   },
   
   // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
