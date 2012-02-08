@@ -578,7 +578,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
+    mo = re.search(r"(Mozilla )?(Firefox|Iceweasel|Fennec|Thunderbird) ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox
@@ -587,7 +587,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
   WARNING: cannot determine Firefox version; please ensure you are running
   a Mozilla application equivalent to Firefox 4.0 or greater.
   """
-    elif mo.group(1) == "Fennec":
+    elif mo.group(2) == "Fennec":
         # For now, only allow running on Mobile with --force-mobile argument
         if not enable_mobile:
             print """
@@ -597,7 +597,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     cfx --force-mobile"""
             return
     else:
-        version = mo.group(3)
+        version = mo.group(4)
         if int(version) < 4:
             print """
   cfx requires Firefox 4 or greater and is unable to find a compatible
@@ -617,7 +617,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         # /toolkit/mozapps/extensions/content/extensions.js, which toolkit apps
         # use to determine whether or not to load an incompatible addon.
         #
-        br = re.search(r"^([^\.]+\.[0-9]+[a-z]*).*", mo.group(2), re.I)
+        br = re.search(r"^([^\.]+\.[0-9]+[a-z]*).*", mo.group(3), re.I)
         if br:
             prefname = 'extensions.checkCompatibility.' + br.group(1)
             profile.preferences[prefname] = False
