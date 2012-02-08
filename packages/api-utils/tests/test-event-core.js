@@ -89,8 +89,9 @@ exports['test remove a listener'] = function(assert) {
   assert.deepEqual([ 1 ], actual, 'first listener called');
   emit(target, 'message');
   assert.deepEqual([ 1, 1, 2 ], actual, 'second listener called');
+
   emit(target, 'message');
-  assert.deepEqual([ 1, 1, 2, 2 ], actual, 'first listener removed');
+  assert.deepEqual([ 1, 1, 2, 2, 2 ], actual, 'first listener removed');
 };
 
 exports['test remove all listeners for type'] = function(assert) {
