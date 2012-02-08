@@ -9,9 +9,9 @@
 const UNCAUGHT_ERROR = 'An error event was emitted for which there was no listener.';
 const BAD_LISTENER = 'The event listener must be a function.';
 
-let { Namespace } = require('../namespace');
+const { ns } = require('../namespace');
 
-const event = Namespace();
+const event = ns();
 
 // Utility function to access given event `target` object's event listeners for
 // the specific event `type`. If listeners for this type does not exists they
