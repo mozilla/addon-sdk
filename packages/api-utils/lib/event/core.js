@@ -36,7 +36,7 @@ function on(target, type, listener) {
   if (typeof(listener) !== 'function')
     throw new Error(BAD_LISTENER);
 
-  if (!~listeners.indexOf(observers))
+  if (!~listeners.indexOf(listener))
     listeners.push(listener);
 }
 exports.on = on;
@@ -53,7 +53,7 @@ exports.on = on;
  */
 function once(target, type, listener) {
   on(target, type, function observer() {
-    removeListener(target, type, observer);
+    off(target, type, observer);
     listener.apply(target, arguments);
   });
 }
