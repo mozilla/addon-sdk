@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { invoke, Enqueued, curry } = require('utils/function');
+const { invoke, defer, curry } = require('utils/function');
 
 exports['test forwardApply'] = function(test) {
   function sum(b, c) this.a + b + c
@@ -21,7 +21,7 @@ exports['test enqueued function'] = function(test) {
                      'passed arguments an pseoude-variable are used');
     test.done();
   }
-  let fixture = { a: 1, method: Enqueued(sum) }
+  let fixture = { a: 1, method: defer(sum) }
   fixture.method(2, 3);
   nextTurn = true;
 }
