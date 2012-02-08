@@ -20,7 +20,19 @@
 
  <a href="dev-guide/addon-development/events.html">Working With Events</a>
  <a href="dev-guide/addon-development/two-types-of-scripts.html">Two Types of Scripts</a>
- <a href="dev-guide/addon-development/web-content.html">Content Scripts</a>
+
+</div>
+
+## Content Scripts ##
+
+<div class="buttonarray">
+
+ <a href="dev-guide/addon-development/web-content.html">Introducing Content Scripts</a>
+ <a href="dev-guide/addon-development/content-scripts/loading.html">Loading Content Scripts</a>
+ <a href="dev-guide/addon-development/content-scripts/access.html">Content Script Access</a>
+ <a href="dev-guide/addon-development/content-scripts/using-port.html">Using "port"</a>
+ <a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using "postMessage()"</a>
+ <a href="dev-guide/addon-development/content-scripts/reddit-example.html">Reddit Example</a>
 
 </div>
 
@@ -30,7 +42,6 @@
 
  <a href="dev-guide/addon-development/xul-migration.html">XUL Migration Guide</a>
  <a href="dev-guide/addon-development/sdk-vs-xul.html">XUL versus the SDK</a>
- <a href="dev-guide/addon-development/library-detector.html">Porting Guide</a>
+ <a href="dev-guide/addon-development/library-detector.html">Porting Example</a>
  
 </div>
-
