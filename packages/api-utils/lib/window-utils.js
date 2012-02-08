@@ -189,6 +189,18 @@ exports.hiddenWindow = appShellService.hiddenDOMWindow;
 function createHiddenXULFrame() {
   return function promise(deliver) {
     let window = appShellService.hiddenDOMWindow;
+
+    // Ensuring waiting for hidden window end of loading
+    // (The hidden window is still loading on windows/thunderbird)
+    if (window.document.readyState != "complete") {
+      window.addEventListener("load", function onload() {
+        window.removeEventListener("load", onload, false);
+        promise(deliver);
+      }, false);
+      return;
+      return require("timer").setTimeout(promise, 1000, deliver);
+    }
+
     let document = window.document;
     let isXMLDoc = (document.contentType == "application/xhtml+xml" ||
                     document.contentType == "application/vnd.mozilla.xul+xml")
@@ -200,7 +212,14 @@ function createHiddenXULFrame() {
       let frame = document.createElement('iframe');
       // This is ugly but we need window for XUL document in order to create
       // browser elements.
-      frame.setAttribute('src', 'chrome://browser/content/hiddenWindow.xul');
+
+      // See bug 725323: hiddenWindow URL is different on each mozilla product
+      let prefs = Cc["@mozilla.org/preferences-service;1"].
+                  getService(Ci.nsIPrefBranch);
+      let hiddenWindowURL = prefs.getCharPref("browser.hiddenWindowChromeURL", "");
+
+      frame.src = hiddenWindowURL;
+      frame.setAttribute('src', hiddenWindowURL);
       frame.addEventListener('DOMContentLoaded', function onLoad(event) {
         frame.removeEventListener('DOMContentLoaded', onLoad, false);
         deliver(frame.contentWindow);
