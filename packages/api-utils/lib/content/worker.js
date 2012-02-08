@@ -7,6 +7,7 @@
 
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
+const { emit, off } = require('../event/core');
 const { Ci, Cu, Cc } = require('chrome');
 const timer = require('../timer');
 const { URL } = require('../url');
@@ -33,6 +34,9 @@ const ERR_DESTROYED =
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  */
 const PRIVATE_KEY = {};
+
+// emit that works asynchronously.
+const deferEmit = defer(emit);
 
 function ensureArgumentsAreJSON(array, window) {
   // JSON.stringify is buggy with cross-sandbox values,
@@ -72,7 +76,6 @@ const AsyncEventEmitter = EventEmitter.compose({
  */
 const WorkerGlobalScope = AsyncEventEmitter.compose({
   on: Trait.required,
-  _removeAllListeners: Trait.required,
 
   // wrapped functions from `'timer'` module.
   // Wrapper adds `try catch` blocks to the callbacks in order to
@@ -320,7 +323,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     }
   },
   _destructor: function _destructor() {
-    this._removeAllListeners();
+    off(this._public);
     // Unregister all setTimeout/setInterval
     // We can use `clearTimeout` for both setTimeout/setInterval
     // as internal implementation of timer module use same method for both.
@@ -392,7 +395,6 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
 const Worker = AsyncEventEmitter.compose({
   on: Trait.required,
   _asyncEmit: Trait.required,
-  _removeAllListeners: Trait.required,
   
   /**
    * Sends a message to the worker's global scope. Method takes single
@@ -558,7 +560,7 @@ const Worker = AsyncEventEmitter.compose({
    */
   destroy: function destroy() {
     this._workerCleanup();
-    this._removeAllListeners();
+    off(this._public);
   },
   
   /**
@@ -578,7 +580,7 @@ const Worker = AsyncEventEmitter.compose({
       this._windowID = null;
       observers.remove("inner-window-destroyed", this._documentUnload);
       this._earlyEvents.slice(0, this._earlyEvents.length);
-      this._emit("detach");
+      emit(this._public, "detach");
     }
   },
   
@@ -587,9 +589,8 @@ const Worker = AsyncEventEmitter.compose({
    * worker.port. Provide a way for composed object to catch all events.
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
-    // Ensure that we pass only JSON values
-    let array = Array.prototype.slice.call(arguments);
-    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(array));
+    let args = ensureArgumentsAreJSON(Array.slice(arguments));
+    deferEmit.apply(null, [ this._port ].concat(args));
   },
   
   /**
