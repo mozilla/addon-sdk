@@ -19,10 +19,20 @@ exports.channel = function channel(scope, messageManager, address, raw) {
   return {
     input: function input(next, stop) {
       let listener = messageListener(scope, function onMessage(message) {
-        if (false === next(raw ? message : message.json))
+        if (false === next(raw ? message : message.json) && listener) {
           messageManager.removeMessageListener(address, listener);
+          listener = null;
+        }
       });
       messageManager.addMessageListener(address, listener);
+      return {
+        destroy: function () {
+          if (listener) {
+            messageManager.removeMessageListener(address, listener);
+            listener = null;
+          }
+        }
+      };
     },
     output: function output(data) {
       messageManager.sendAsyncMessage(address, data);
