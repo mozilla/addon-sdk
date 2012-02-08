@@ -56,25 +56,11 @@ function ensureArgumentsAreJSON(array, window) {
 }
 
 /**
- * Extended `EventEmitter` allowing us to emit events asynchronously.
- */
-const AsyncEventEmitter = EventEmitter.compose({
-  /**
-   * Emits event in the next turn of event loop.
-   */
-  _asyncEmit: function _asyncEmit() {
-    timer.setTimeout(function emitter(emit, scope, params) {
-      emit.apply(scope, params);
-    }, 0, this._emit, this, arguments)
-  }
-});
-
-/**
  * Local trait providing implementation of the workers global scope.
  * Used to configure global object in the sandbox.
  * @see http://www.w3.org/TR/workers/#workerglobalscope
  */
-const WorkerGlobalScope = AsyncEventEmitter.compose({
+const WorkerGlobalScope = EventEmitter.compose({
   on: Trait.required,
 
   // wrapped functions from `'timer'` module.
@@ -393,7 +379,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
  * in the content and add-on process.
  * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/content/worker
  */
-const Worker = AsyncEventEmitter.compose({
+const Worker = EventEmitter.compose({
   on: Trait.required,
   
   /**
