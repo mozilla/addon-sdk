@@ -6,6 +6,7 @@
 "use strict";
 
 const { EventEmitter } = require('../events');
+const { emit } = require('../event/core');
 const unload = require('../unload');
 
 const Registry = EventEmitter.compose({
@@ -14,18 +15,13 @@ const Registry = EventEmitter.compose({
   constructor: function Registry(constructor) {
     this._registry = [];
     this._constructor = constructor;
-    this.on('error', this._onError = this._onError.bind(this));
     unload.ensure(this, "_destructor");
   },
   _destructor: function _destructor() {
     let _registry = this._registry.slice(0);
     for each (let instance in _registry)
-      this._emit('remove', instance);
+      emit(this._public, 'remove', instance);
     this._registry.splice(0);
-  },
-  _onError: function _onError(e) {
-    if (!this._listeners('error').length)
-      console.error(e);
   },
   has: function has(instance) {
     let _registry = this._registry;
@@ -40,7 +36,7 @@ const Registry = EventEmitter.compose({
       instance = new _constructor(instance);
     if (0 > _registry.indexOf(instance)) {
       _registry.push(instance);
-      this._emit('add', instance);
+      emit(this._public, 'add', instance);
     }
     return instance;
   },
@@ -48,7 +44,7 @@ const Registry = EventEmitter.compose({
     let _registry = this._registry;
     let index = _registry.indexOf(instance)
     if (0 <= index) {
-      this._emit('remove', instance);
+      emit(this._public, 'remove', instance);
       _registry.splice(index, 1);
     }
   }
