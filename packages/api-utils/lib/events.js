@@ -5,11 +5,14 @@
 "use strict";
 
 
-const { on, once, off } = require('./event/core');
+const { on, once, off, emit } = require('./event/core');
 const { method } = require('./utils/function');
+const WARNING = 'This API is deprecated and will be removed in an upcoming ' +
+                'version please use "api-utils/event/target" instead';
 
 exports.EventEmitter = require("./traits").Trait.compose({
   on: function(type, listener) {
+    console.log(type, !listener && Error().stack)
     on(this._public, type, listener);
     return this._public;
   },
@@ -19,6 +22,16 @@ exports.EventEmitter = require("./traits").Trait.compose({
   },
   removeListener: function(type, listener) {
     off(this._public, type, listener);
+    return this._public;
+  },
+  _emit: function(type) {
+    console.warn(WARNING);
+    emit.apply(null, [ this._public ].concat(Array.slice(arguments)));
+    return this._public;
+  },
+  _removeAllListeners: function(type) {
+    console.warn(WARNING);
+    type ? off(this._public, type) : off(this._public);
     return this._public;
   }
 });
@@ -34,6 +47,16 @@ exports.EventEmitterTrait = require('./light-traits').Trait({
   },
   removeListener: function(type, listener) {
     off(this, type, listener);
+    return this;
+  },
+  _emit: function(type) {
+    console.warn(WARNING);
+    emit.apply(null, [ this ].concat(Array.slice(arguments)));
+    return this;
+  },
+  _removeAllListeners: function(type) {
+    console.warn(WARNING);
+    type ? off(this, type) : off(this);
     return this;
   }
 });
