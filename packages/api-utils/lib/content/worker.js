@@ -146,7 +146,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._addonWorker)
       throw new Error(ERR_DESTROYED);
-    this._addonWorker._asyncEmit('message', ensureArgumentsAreJSON(data));
+      deferEmit(this._addonWorker._public, 'message',
+                ensureArgumentsAreJSON(data));
   },
   
   /**
