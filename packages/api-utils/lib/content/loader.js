@@ -7,6 +7,7 @@
 "use strict";
 
 const { EventEmitter } = require('../events');
+const { emit } = require('../event/core');
 const { validateOptions, getTypeOf } = require('../api-utils');
 const { URL } = require('../url');
 const file = require('../file');
@@ -105,7 +106,7 @@ const Loader = EventEmitter.compose({
   set contentURL(value) {
     value = validate(value, valid.contentURL);
     if (this._contentURL != value) {
-      this._emit('propertyChange', {
+      emit(this._public, 'propertyChange', {
         contentURL: this._contentURL = value
       });
     }
@@ -126,7 +127,7 @@ const Loader = EventEmitter.compose({
   set contentScriptWhen(value) {
     value = validate(value, valid.contentScriptWhen);
     if (value !== this._contentScriptWhen) {
-      this._emit('propertyChange', { 
+      emit(this._public, 'propertyChange', { 
         contentScriptWhen: this._contentScriptWhen = value 
       });
     }
@@ -142,7 +143,7 @@ const Loader = EventEmitter.compose({
   set contentScriptFile(value) {
     value = validate(value, valid.contentScriptFile);
     if (value != this._contentScriptFile) {
-      this._emit('propertyChange', { 
+      emit(this._public, 'propertyChange', { 
         contentScriptFile: this._contentScriptFile = value
       });
     }
@@ -158,7 +159,7 @@ const Loader = EventEmitter.compose({
   set contentScript(value) {
     value = validate(value, valid.contentScript);
     if (value != this._contentScript) {
-      this._emit('propertyChange', {
+      emit(this._public, 'propertyChange', {
         contentScript: this._contentScript = value 
       });
     }
