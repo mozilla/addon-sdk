@@ -12,11 +12,15 @@ var { setTimeout } = require("../timer");
  * function is reused, instead of creating a new one each time. This also allows
  * to use this functions as event listeners.
  */
-function Enqueued(callee) {
-  return function enqueued()
-    setTimeout(invoke, 0, callee, arguments, this);
+function defer(f) {
+  return function deferred()
+    setTimeout(invoke, 0, f, arguments, this);
 }
-exports.Enqueued = Enqueued;
+exports.defer = defer;
+exports.Enqueued = function Enqueued() {
+  console.warn('Function was renamed to `defer` please use it instead.')
+  return defer.apply(this, arguments);
+};
 
 /**
  * Invokes `callee` by passing `params` as an arguments and `self` as `this`
