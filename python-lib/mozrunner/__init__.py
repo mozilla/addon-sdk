@@ -251,13 +251,49 @@ class Profile(object):
         f.write('#MozRunner Prefs End\n')
         f.flush() ; f.close()
 
+    def pop_preferences(self):
+        """
+        pop the last set of preferences added
+        returns True if popped
+        """
+
+        # our magic markers
+        delimeters = ('#MozRunner Prefs Start', '#MozRunner Prefs End')
+
+        lines = file(os.path.join(self.profile, 'user.js')).read().splitlines()
+        def last_index(_list, value):
+            """
+            returns the last index of an item;
+            this should actually be part of python code but it isn't
+            """
+            for index in reversed(range(len(_list))):
+                if _list[index] == value:
+                    return index
+        s = last_index(lines, delimeters[0])
+        e = last_index(lines, delimeters[1])
+
+        # ensure both markers are found
+        if s is None:
+            assert e is None, '%s found without %s' % (delimeters[1], delimeters[0])
+            return False # no preferences found
+        elif e is None:
+            assert e is None, '%s found without %s' % (delimeters[0], delimeters[1])
+
+        # ensure the markers are in the proper order
+        assert e > s, '%s found at %s, while %s found at %s' (delimeter[1], e, delimeter[0], s)
+
+        # write the prefs
+        cleaned_prefs = '\n'.join(lines[:s] + lines[e+1:])
+        f = file(os.path.join(self.profile, 'user.js'), 'w')
+        f.write(cleaned_prefs)
+        f.close()
+        return True
+
     def clean_preferences(self):
         """Removed preferences added by mozrunner."""
-        lines = open(os.path.join(self.profile, 'user.js'), 'r').read().splitlines()
-        s = lines.index('#MozRunner Prefs Start') ; e = lines.index('#MozRunner Prefs End')
-        cleaned_prefs = '\n'.join(lines[:s] + lines[e+1:])
-        f = open(os.path.join(self.profile, 'user.js'), 'w')
-        f.write(cleaned_prefs) ; f.flush() ; f.close()
+        while True:
+            if not self.pop_preferences():
+                break
 
     def clean_addons(self):
         """Cleans up addons in the profile."""

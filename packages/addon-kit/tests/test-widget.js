@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 const { Loader } = require('./helpers');
 
@@ -90,7 +92,7 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({id:"fooID", label: "foo", content: "", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
-  
+
   // Test duplicated ID
   let duplicateID = widgets.Widget({id: "foo", label: "foo", content: "bar"});
   test.assertRaises(
@@ -98,7 +100,13 @@ exports.testConstructor = function(test) {
     /This widget ID is already used:/,
     "throws on duplicated id");
   duplicateID.destroy();
-  
+
+  // Test Bug 652527
+  test.assertRaises(
+    function() widgets.Widget({id: "", label: "bar", content: "bar"}),
+    /You have to specify a unique value for the id property of/,
+    "throws on falsey id");
+
   // Test duplicate label, different ID
   let w1 = widgets.Widget({id: "id1", label: "foo", content: "bar"});
   let w2 = widgets.Widget({id: "id2", label: "foo", content: "bar"});
