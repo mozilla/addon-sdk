@@ -25,6 +25,8 @@ exports.addCollectionProperty = function addCollProperty(obj, propName, array) {
   let publicIface = new Collection(array);
 
   Object.defineProperty(obj, propName, {
+    configurable: true,
+    enumerable: true,
     get: function() publicIface,
     set: function(itemOrItems) {
       array.splice(0, array.length);
