@@ -4,9 +4,9 @@
 
 function run(jQuery) {
 
-  function hideThirdPartyModulesIfEmpty() {
-    if ($("#third-party-package-summaries").html() == "") {
-      $("#third-party-packages-subsection").hide();
+  function showThirdPartyModules() {
+    if ($("#third-party-package-summaries").html() != "") {
+      $("#third-party-packages-subsection").show();
     }
   }
 
@@ -74,7 +74,7 @@ function run(jQuery) {
     }
   }
 
-  hideThirdPartyModulesIfEmpty();
+  showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateToC();

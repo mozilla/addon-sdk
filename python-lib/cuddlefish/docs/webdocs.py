@@ -100,7 +100,14 @@ class WebDocs(object):
             package_json = packages_json[package_name]
             if not include(package_json):
                 continue
-            text = self._create_module_list(package_json)
+            package_path = self.pkg_cfg["packages"][package_name]["root_dir"]
+            package_directory = package_path[len(self.root) + 1:]
+            package_directory = "/".join(package_directory.split(os.sep))
+            package_link = tag_wrap(package_name, 'a', {'href': \
+                                    package_directory + "/" \
+                                    + package_name + '.html'})
+            text = tag_wrap(package_link, 'h4')
+            text += self._create_module_list(package_json)
             packages += tag_wrap(text, 'li', {'class':'package-summary', \
               'style':'display: block;'})
         return packages

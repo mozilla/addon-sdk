@@ -29,9 +29,10 @@ cd packages
 tar -xf ../erikvold-menuitems-jplib-d80630c.zip
 </pre>
 
-Now if you run `cfx docs` you'll see the `menuitems` package appearing
-in the sidebar below `addon-kit`. As with `addon-kit`, the modules it contains
-are listed below it: you'll see that `menuitems` contains a single module, also
+Now if you run `cfx docs` you'll see a new section appear in the sidebar
+labeled "Third-Party APIs", which contains the `menuitems` package.
+The modules it contains are listed below it: you'll
+see that `menuitems` contains a single module, also
 called `menuitems`.
 
 Click on the module name and you'll see API documentation for the module. Click
