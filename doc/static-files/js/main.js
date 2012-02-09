@@ -4,6 +4,12 @@
 
 function run(jQuery) {
 
+  function hideThirdPartyModulesIfEmpty() {
+    if ($("#third-party-package-summaries").html() == "") {
+      $("#third-party-packages-subsection").hide();
+    }
+  }
+
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
@@ -68,6 +74,7 @@ function run(jQuery) {
     }
   }
 
+  hideThirdPartyModulesIfEmpty();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateToC();

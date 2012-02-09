@@ -1,4 +1,4 @@
-# Implementing Reusable Modules #
+# Creating Reusable Modules #
 
 <span class="aside">
 To follow this tutorial you'll need to have

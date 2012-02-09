@@ -2,10 +2,10 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# CommonJS, Modules, Packages, and the SDK #
+# CommonJS, Packages, and the SDK #
 
-CommonJS is the underlying infrastructure for both the SDK modules and add-ons
-themselves.
+CommonJS is the underlying infrastructure for both the SDK and the add-ons
+you build using the SDK.
 
 The [CommonJS group](http://wiki.commonjs.org/wiki/CommonJS) defines
 specifications for **modules** and **packages**.
@@ -66,13 +66,77 @@ CommonJS package, that module will be evaluated as soon as your program is
 loaded. For an add-on, that means that the `main` module will be evaluated as
 soon as Firefox has enabled the add-on.
 
-So in terms of CommonJS objects the wikipanel add-on consists of a package
-that contains a single module called `main`, and which imports two SDK
-modules.
-
 Because an add-on is a CommonJS package it's possible to include more than one
 module in an add-on, and to make your modules available to any code that want
 to use them.
 
-In the next section we'll see how you can use the SDK implement and test your
-own [reusable modules](dev-guide/addon-development/implementing-reusable-module.html).
+## Packages in the SDK ##
+
+Navigate to the root of your SDK installation and list the contents of
+the "packages" directory:
+
+<pre>
+ls packages
+</pre>
+
+You will see something like this:
+
+<pre>
+addon-kit	api-utils	test-harness
+</pre>
+
+So the modules which implement the SDK's APIs are
+collected into three packages, `addon-kit`, `api-utils` and `test-harness`.
+
+### <a name="addon-kit">addon-kit</a> ###
+
+Modules in the `addon-kit` package implement high-level APIs for
+building add-ons:
+
+* creating user interfaces
+* interacting with the web
+* interacting with the browser
+
+These modules are "supported": meaning that they are relatively
+stable, and that we'll avoid making incompatible changes to them
+unless absolutely necessary.
+
+They are documented in the "High-Level APIs" section
+of the sidebar.
+
+### <a name="api-utils">api-utils</a> ###
+
+Modules in the `api-utils` package implement low-level APIs. These
+modules fall roughly into three categories:
+
+* fundamental utilities such as
+[collection](packages/api-utils/docs/collection.html) and
+[url](packages/api-utils/docs/url.html). Many add-ons are likely to
+want to use modules from this category.
+
+* building blocks for higher level modules, such as
+[events](packages/api-utils/docs/events.html),
+[worker](packages/api-utils/docs/worker.html), and
+[api-utils](packages/api-utils/docs/api-utils.html). You're more
+likely to use these if you are building your own modules that
+implement new APIs, thus extending the SDK itself.
+
+* privileged modules that expose powerful low-level capabilities
+such as [tab-browser](packages/api-utils/docs/tab-browser.html),
+[xhr](packages/api-utils/docs/xhr.html), and
+[xpcom](packages/api-utils/docs/xpcom.html). You can use these
+modules in your add-on if you need to, but should be aware that
+the cost of privileged access is the need to take more elaborate
+security precautions. In many cases these modules have simpler,
+more restricted analogs in the high-level addon-kit package (for
+example, [tabs](packages/addon-kit/docs/tabs.html) or
+[request](packages/addon-kit/docs/request.html)).
+
+These modules are still in active development, and we expect to
+make incompatible changes to them in future releases.
+
+They are documented in the "Low-Level APIs" section of the sidebar.
+
+### test-harness ###
+
+Modules in this packages are used internally by the SDK's test code.

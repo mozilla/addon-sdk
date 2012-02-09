@@ -88,7 +88,8 @@ In your add-on's `package.json` add the line:
 Note that due to
 [bug 663480](https://bugzilla.mozilla.org/show_bug.cgi?id=663480), if you
 add a `dependencies` line to `package.json`, and you use any modules from
-built-in packages like [`addon-kit`](packages/addon-kit/addon-kit.html), then
+built-in packages like
+[`addon-kit`](dev-guide/addon-development/sdk-packages.html), then
 you must also declare your dependency on that built-in package, like this:
 
 <pre>

@@ -2,13 +2,13 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# Programming Guides #
+# Guides #
 
 ## SDK Infrastructure ##
 
 <div class="buttonarray">
 
-<a href="dev-guide/addon-development/commonjs.html">CommonJS and the SDK</a>
+<a href="dev-guide/addon-development/commonjs.html">CommonJS, Packages, and the SDK</a>
 <a href="dev-guide/addon-development/program-id.html">Program ID</a>
 <a href="dev-guide/addon-development/module-search.html">Module Search</a>
 

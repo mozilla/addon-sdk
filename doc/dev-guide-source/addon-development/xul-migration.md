@@ -101,13 +101,12 @@ There's much more information on content scripts in the
 The SDK provides a set of high level APIs providing some basic user
 interface components and functionality commonly required by add-ons.
 These are collected together in the
-[`addon-kit`](packages/addon-kit/addon-kit.html) package. Because we expect
-to keep these APIs compatible as new versions of Firefox are released, we
-call them the "supported" APIs.
+[`addon-kit`](dev-guide/addon-development/sdk-packages.html#addon-kit)
+package. Because we expect to keep these APIs compatible as new versions
+of Firefox are released, we call them the "supported" APIs.
 
-See this
-[quick overview](dev-guide/addon-development/api-modules.html) and
-[links to detailed API documentation](packages/addon-kit/addon-kit.html).
+See the [tutorials](dev-guide/addon-development/tutorials/tutorials.html)
+and the API reference in the "Developer Guide" sidebar.
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
 model.
@@ -150,7 +149,8 @@ way to use features not supported in the SDK without having to use the
 low-level APIs.
 
 See the
-[guide to using third party packages](dev-guide/addon-development/third-party-packages.html). Some useful third party packages are
+[guide to adding Firefox menu items](dev-guide/addon-development/tutorials/adding-menu-items.html).
+Some useful third party packages are
 [collected in the Jetpack Wiki](https://wiki.mozilla.org/Jetpack/Modules).
 
 Note, though, that by using third party packages you're likely to lose the

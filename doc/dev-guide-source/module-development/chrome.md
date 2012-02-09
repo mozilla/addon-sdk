@@ -2,6 +2,9 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<div class="warning">The API used to gain Chrome access is currently an
+experimental feature of the SDK, and may change in future releases.</div>
+
 # Chrome Authority #
 
 ## Using Chrome Authority ##
