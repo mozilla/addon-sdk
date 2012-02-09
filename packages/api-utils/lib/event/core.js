@@ -120,3 +120,12 @@ function off(target, type, listener) {
   }
 }
 exports.off = off;
+
+/**
+ * Returns a number of event listeners registered for the given event `type`
+ * on the given event `target`.
+ */
+function count(target, type) {
+  return observers(target, type).length;
+}
+exports.count = count;
