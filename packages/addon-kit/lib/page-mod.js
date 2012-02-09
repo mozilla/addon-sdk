@@ -7,7 +7,7 @@
 
 const observers = require("api-utils/observer-service");
 const { Worker, Loader } = require('api-utils/content');
-const { emit, off } = require('api-utils/event/core');
+const { emit, off, count } = require('api-utils/event/core');
 const { EventEmitter } = require('api-utils/events');
 const { List } = require('api-utils/list');
 const { Registry } = require('api-utils/utils/registry');
@@ -47,7 +47,7 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
     if (!this._has(rule))
       return;
     this._remove(rule);
-    emit(this._public, remove, rule);
+    emit(this._public, 'remove', rule);
   }.bind(this)),
 });
 
@@ -57,7 +57,6 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
  */
 const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
-  _listeners: EventEmitter.required,
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
@@ -87,7 +86,6 @@ const PageMod = Loader.compose(EventEmitter, {
     else
       rules.add(include);
 
-    this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
     pageModManager.add(this._public);
 
     this._loadingWindows = [];
@@ -132,8 +130,7 @@ const PageMod = Loader.compose(EventEmitter, {
     let worker = Worker({
       window: window,
       contentScript: this.contentScript,
-      contentScriptFile: this.contentScriptFile,
-      onError: this._onUncaughtError
+      contentScriptFile: this.contentScriptFile
     });
     emit(this._public, 'attach', worker);
     let self = this;
@@ -152,10 +149,6 @@ const PageMod = Loader.compose(EventEmitter, {
   },
   _onRuleRemove: function _onRuleRemove(url) {
     pageModManager.off(url, this._onContent);
-  },
-  _onUncaughtError: function _onUncaughtError(e) {
-    if (this._listeners('error').length == 1)
-      console.exception(e);
   }
 });
 exports.PageMod = function(options) PageMod(options)
@@ -190,7 +183,7 @@ const PageModManager = Registry.resolve({
   },
   off: function off(topic, listener) {
     this.removeListener(topic, listener);
-    if (!this._listeners(topic).length)
+    if (!count(this._public, topic))
       delete RULES[topic];
   }
 });
