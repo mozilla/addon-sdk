@@ -103,7 +103,7 @@ exports.testGetSetLocalized = function(test) {
     GetStringFromName(prefName).
     toLowerCase();
 
-  test.assertEqual(prefs.getLocalized(prefName),
+  test.assertEqual(prefs.getLocalized(prefName).toLowerCase(),
                    expectedValue,
                    "get localized preference");
 

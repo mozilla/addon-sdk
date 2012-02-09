@@ -52,16 +52,23 @@ exports.testPreferedLocalizedLocale = function(test) {
   prefs.set(PREF_MATCH_OS_LOCALE, false);
   let bundleURL = "chrome://global/locale/intl.properties";
   prefs.setLocalized(PREF_SELECTED_LOCALE, bundleURL);
-  prefs.set(PREF_ACCEPT_LANGUAGES, "fr");
+  let contentLocale = "ja";
+  prefs.set(PREF_ACCEPT_LANGUAGES, contentLocale);
 
   // Read manually the expected locale value from the property file
   let expectedLocale = BundleService.createBundle(bundleURL).
     GetStringFromName(PREF_SELECTED_LOCALE).
     toLowerCase();
+
+  // First add the useragent locale
   let expectedLocaleList = [expectedLocale];
 
+  // Then the content locale
+  if (expectedLocaleList.indexOf(contentLocale) == -1)
+    expectedLocaleList.push(contentLocale);
+
   // Add default "en-us" fallback if the main language is not already en-us
-  if (expectedLocale != "en-us")
+  if (expectedLocaleList.indexOf("en-us") == -1)
     expectedLocaleList.push("en-us");
 
   assertPrefered(test, expectedLocaleList, "test localized pref value");
