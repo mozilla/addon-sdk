@@ -13,8 +13,10 @@ const MIN_INT = -0x80000000;
 
 const {Cc,Ci,Cr} = require("chrome");
 
-var prefSvc = Cc["@mozilla.org/preferences-service;1"].
-              getService(Ci.nsIPrefService).getBranch(null);
+const prefService = Cc["@mozilla.org/preferences-service;1"].
+                getService(Ci.nsIPrefService);
+const prefSvc = prefService.getBranch(null);
+const defaultBranch = prefService.getDefaultBranch(null);
 
 var get = exports.get = function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
@@ -101,3 +103,22 @@ var reset = exports.reset = function reset(name) {
     // know what other exceptions might be thrown and what they might mean.
   }
 };
+
+exports.getLocalized = function getLocalized(name, defaultValue) {
+  let value = null;
+  try {
+    value = prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
+  }
+  finally {
+    return value || defaultValue;
+  }
+}
+
+exports.setLocalized = function setLocalized(name, value) {
+  // We can't use `prefs.set` here as we have to use `getDefaultBranch`
+  // (instead of `getBranch`) in order to have `mIsDefault` set to true, here:
+  // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#233
+  // Otherwise, we do not enter into this expected condition:
+  // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#244
+  defaultBranch.setCharPref(name, value);
+}
