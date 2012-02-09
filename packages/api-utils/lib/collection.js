@@ -24,13 +24,12 @@ exports.addCollectionProperty = function addCollProperty(obj, propName, array) {
   array = array || [];
   let publicIface = new Collection(array);
 
-  obj.__defineSetter__(propName, function (itemOrItems) {
-    array.splice(0, array.length);
-    publicIface.add(itemOrItems);
-  });
-
-  obj.__defineGetter__(propName, function () {
-    return publicIface;
+  Object.defineProperty(obj, propName, {
+    get: function() publicIface,
+    set: function(itemOrItems) {
+      array.splice(0, array.length);
+      publicIface.add(itemOrItems);
+    }
   });
 };
 
