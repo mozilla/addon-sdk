@@ -45,6 +45,7 @@ const windowsAPI = require("./windows");
 const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
 const { uuid } = require("api-utils/uuid");
+const { emit, off, count } = require("api-utils/event/core");
 
 // Data types definition
 const valid = {
@@ -424,7 +425,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
     // Special case for click events: if the widget doesn't have a click
     // handler, but it does have a panel, display the panel.
-    if ("click" == type && !this._listeners("click").length && this.panel)
+    if ("click" == type && !count(this, "click") && this.panel)
       this.panel.show(domNode);
   },
   
