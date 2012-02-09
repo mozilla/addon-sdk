@@ -22,6 +22,8 @@ const { Worker } = require("api-utils/content");
 const { URL } = require("api-utils/url");
 const { MatchPattern } = require("api-utils/match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
+const { defer } = require("api-utils/utils/function");
+const { emit, off, count } = require("api-utils/event/core");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
@@ -94,6 +96,8 @@ let nextItemID = 0;
 // The number of items that haven't finished initializing yet.  See
 // AIT__finishActiveItemInit().
 let numItemsWithUnfinishedInit = 0;
+
+const delayEmit = defer(emit);
 
 exports.Item = Item;
 exports.Menu = Menu;
@@ -638,7 +642,7 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._contentWorker._listeners("context").length > 0;
+    return count(this._contentWorker._public, "context") > 0;
   },
 
   // Returns the first string or truthy value returned by a context listener in
@@ -646,16 +650,10 @@ const ContextMenuWorker = Worker.compose({
   // no context listeners, returns false.  popupNode is the node that was
   // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._contentWorker._listeners("context");
-    for (let i = 0; i < listeners.length; i++) {
-      try {
-        let val = listeners[i].call(this._contentWorker._sandbox, popupNode);
-        if (typeof(val) === "string" || val)
-          return val;
-      }
-      catch (err) {
-        console.exception(err);
-      }
+    let values = emit.lazy(this._contentWorker._public, "context");
+    for each (let value in values) {
+      if (typeof(value) === 'string' || value)
+        return value;
     }
     return false;
   },
@@ -664,7 +662,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
+    delayEmit(this._contentWorker._public, "click", popupNode, clickedItemData);
   }
 });
 
@@ -764,7 +762,8 @@ WorkerRegistry.prototype = {
     let item = this.item;
     worker.on("message", function workerOnMessage(msg) {
       try {
-        privateItem(item)._emitOnObject(item, "message", msg);
+        emit(privateItem(item), "message", msg);
+        //privateItem(item)._emitOnObject(item, "message", msg);
       }
       catch (err) {
         console.exception(err);
