@@ -52,3 +52,25 @@ function curry(fn) {
   return function() fn.apply(this, args.concat(Array.slice(arguments)));
 }
 exports.curry = curry;
+
+/**
+* Returns the composition of a list of functions, where each function consumes
+* the return value of the function that follows. In math terms, composing the
+* functions `f()`, `g()`, and `h()` produces `f(g(h()))`.
+* @exmple
+* var greet = function(name){ return "hi: " + name; };
+* var exclaim = function(statement){ return statement + "!"; };
+* var welcome = _.compose(exclaim, greet);
+* welcome('moe');
+* //> 'hi: moe!'
+*/
+function compose() {
+  var lambdas = Array.slice(arguments);
+  return function composed() {
+    var args = Array.slice(arguments), index = lambdas.length;
+    while (0 <= --index)
+      args = [ lambdas[index].apply(this, args) ];
+    return args[0];
+  };
+}
+exports.compose = compose;
