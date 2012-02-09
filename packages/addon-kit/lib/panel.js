@@ -18,6 +18,7 @@ const { Cc, Ci } = require("chrome");
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
+const { emit, off, count } = require("api-utils/event/core");
 const timer = require("api-utils/timer");
 const runtime = require("api-utils/runtime");
 
@@ -82,11 +83,11 @@ const Panel = Symbiont.resolve({
   },
   _destructor: function _destructor() {
     this.hide();
-    this._removeAllListeners('show');
+    off(this._public, 'show');
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;
     this._symbiontDestructor(this);
-    this._removeAllListeners();
+    off(this._public);
   },
   destroy: function destroy() {
     this._destructor();
@@ -260,9 +261,9 @@ const Panel = Symbiont.resolve({
     try {
       this._frameLoadersSwapped = false;
       this._xulPanel = null;
-      this._emit('hide');
+      emit(this._public, 'hide');
     } catch(e) {
-      this._emit('error', e);
+      emit(this._public, 'error', e);
     }
   },
   /**
@@ -293,10 +294,10 @@ const Panel = Symbiont.resolve({
         else
           container.appendChild(style);
 
-        this._emit('show');
+        emit(this._public, 'show');
       }
     } catch(e) {
-      this._emit('error', e);
+      emit(this._public, 'error', e);
     }
   },
   /**
@@ -313,7 +314,7 @@ const Panel = Symbiont.resolve({
     // perform all deferred tasks like initSymbiont, show, hide ...
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.
-    this._emit('inited');
+    emit(this._public, 'inited');
   },
 
   // Catch document unload event in order to rebind load event listener with
