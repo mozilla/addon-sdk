@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { invoke, defer, curry, compose } = require('utils/function');
+const { setTimeout } = require('api-utils/timer');
+const utils = require('api-utils/utils/function');
+const { invoke, defer, curry, compose, memoize, once, delay, wrap } = utils;
 
 exports['test forwardApply'] = function(assert) {
   function sum(b, c) this.a + b + c
@@ -40,7 +42,7 @@ exports['test curry function'] = function(assert) {
   assert.equal(foo.sum8and4(), 17, 'curry both arguments works');
 };
 
-exports["test compose"] = function(assert) {
+exports['test compose'] = function(assert) {
   let greet = function(name) { return 'hi: ' + name; };
   let exclaim = function(sentence) { return sentence + '!'; };
 
@@ -50,7 +52,7 @@ exports["test compose"] = function(assert) {
   assert.equal(compose(greet, exclaim)('moe'), 'hi: moe!',
                'in this case, the functions are also commutative');
 
-  var target = {
+  let target = {
     name: 'Joe',
     greet: compose(function exclaim(sentence) {
       return sentence + '!'
@@ -63,6 +65,81 @@ exports["test compose"] = function(assert) {
                'this can be passed in');
   assert.equal(target.greet.call({ name: 'Alex' }, 'Dr'), 'hi : Dr Alex!',
                'this can be applied');
+
+  let single = compose(function(value) {
+    return value + ':suffix';
+  });
+
+  assert.equal(single('text'), 'text:suffix', 'works with single function');
+
+  let identity = compose();
+  assert.equal(identity('bla'), 'bla', 'works with zero functions');
+};
+
+exports['test wrap'] = function(assert) {
+  let greet = function(name) { return 'hi: ' + name; };
+  let backwards = wrap(greet, function(f, name) {
+    return f(name) + ' ' + name.split('').reverse().join('');
+  });
+
+  assert.equal(backwards('moe'), 'hi: moe eom',
+               'wrapped the saluation function');
+
+  let inner = function () { return 'Hello '; };
+  let target = {
+    name: 'Matteo',
+    hi: wrap(inner, function(f) { return f() + this.name; })
+  };
+
+  assert.equal(target.hi(), 'Hello Matteo', 'works with this');
+
+  function noop() { };
+  let wrapped = wrap(noop, function(f) {
+    return Array.slice(arguments);
+  });
+
+  let actual = wrapped([ 'whats', 'your' ], 'vector', 'victor');
+  assert.deepEqual(actual, [ noop, ['whats', 'your'], 'vector', 'victor' ],
+                   'works with fancy stuff');
+};
+
+exports['test memoize'] = function(assert) {
+  function fib(n) n < 2 ? n : fib(n - 1) + fib(n - 2)
+  let fibnitro = memoize(fib);
+
+  assert.equal(fib(10), 55,
+        'a memoized version of fibonacci produces identical results');
+  assert.equal(fibnitro(10), 55,
+        'a memoized version of fibonacci produces identical results');
+
+  function o(value) { return value; };
+  var oo = memoize(o);
+
+  assert.equal(oo('toString'), 'toString', 'checks hasOwnProperty');
+  assert.equal(o('toString'), 'toString', 'checks hasOwnProperty');
+};
+
+exports['test delay'] = function(assert, done) {
+  let delayed = false;
+  delay(function() { delayed = true; }, 100);
+
+  setTimeout(function() {
+    assert.ok(!delayed, 'did not delay the function quite yet');
+  }, 50);
+  setTimeout(function() {
+    assert.ok(delayed, 'delayed the function');
+    done();
+  }, 150);
+};
+
+exports['test once'] = function(assert) {
+  let n = 0;
+  let increment = once(function() { n ++; });
+
+  increment();
+  increment();
+
+  assert.equal(n, 1, 'only incremented once');
 };
 
 require('test').run(exports);

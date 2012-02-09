@@ -54,16 +54,17 @@ function curry(fn) {
 exports.curry = curry;
 
 /**
-* Returns the composition of a list of functions, where each function consumes
-* the return value of the function that follows. In math terms, composing the
-* functions `f()`, `g()`, and `h()` produces `f(g(h()))`.
-* @exmple
-* var greet = function(name){ return "hi: " + name; };
-* var exclaim = function(statement){ return statement + "!"; };
-* var welcome = _.compose(exclaim, greet);
-* welcome('moe');
-* //> 'hi: moe!'
-*/
+ * Returns the composition of a list of functions, where each function consumes
+ * the return value of the function that follows. In math terms, composing the
+ * functions `f()`, `g()`, and `h()` produces `f(g(h()))`.
+ * @example
+ *
+ *   var greet = function(name) { return "hi: " + name; };
+ *   var exclaim = function(statement) { return statement + "!"; };
+ *   var welcome = compose(exclaim, greet);
+ *
+ *   welcome('moe');    // => 'hi: moe!'
+ */
 function compose() {
   var lambdas = Array.slice(arguments);
   return function composed() {
@@ -74,3 +75,70 @@ function compose() {
   };
 }
 exports.compose = compose;
+
+/*
+ * Returns the first function passed as an argument to the second,
+ * allowing you to adjust arguments, run code before and after, and
+ * conditionally execute the original function.
+ * @example
+ *
+ *  var hello = function(name) { return "hello: " + name; };
+ *  hello = wrap(hello, function(f) {
+ *    return "before, " + f("moe") + ", after";
+ *  });
+ *
+ *  hello();    // => 'before, hello: moe, after'
+ */
+function wrap(f, wrapper) {
+  return function wrapped()
+    wrapper.apply(this, [ f ].concat(Array.slice(arguments)))
+};
+exports.wrap = wrap;
+
+/**
+ * Returns the same value that is used as the argument. In math: f(x) = x
+ */
+function identity(value) value
+exports.identity = identity;
+
+/**
+ * Memoizes a given function by caching the computed result. Useful for
+ * speeding up slow-running computations. If passed an optional hashFunction,
+ * it will be used to compute the hash key for storing the result, based on
+ * the arguments to the original function. The default hashFunction just uses
+ * the first argument to the memoized function as the key.
+ */
+function memoize(f, hasher) {
+  let memo = Object.create(null);
+  hasher = hasher || identity;
+  return function memoizer() {
+    let key = hasher.apply(this, arguments);
+    return key in memo ? memo[key] : (memo[key] = f.apply(this, arguments));
+  };
+}
+exports.memoize = memoize;
+
+/**
+ * Much like setTimeout, invokes function after wait milliseconds. If you pass
+ * the optional arguments, they will be forwarded on to the function when it is
+ * invoked.
+ */
+function delay(f, ms) {
+  let args = Array.slice(arguments, 2);
+  setTimeout(function() { return f.apply(f, args); }, ms);
+};
+exports.delay = delay;
+
+/**
+ * Creates a version of the function that can only be called one time. Repeated
+ * calls to the modified function will have no effect, returning the value from
+ * the original call. Useful for initialization functions, instead of having to
+ * set a boolean flag and then check it later.
+ */
+function once(f) {
+  let ran = false, cache;
+  return function() ran ? cache : (ran = true, cache = f.apply(this, arguments))
+};
+exports.once = once;
+// export cache as once will may be conflicting with event once a lot.
+exports.cache = once;
