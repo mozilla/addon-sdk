@@ -74,23 +74,24 @@ exports.once = once;
  *    Arguments that will be passed to listeners.
  */
 function emit(target, type, message) {
-  // At the moment `emit` just wraps `amass` but intention is to optimize
-  // is to not promise return value aggregation so that it can be optimized
-  // if turns out to be a bottleneck.
-  amass.apply(null, arguments);
+  for each (let item in emit.lazy.apply(emit.lazy, arguments))
+    item;
 }
-exports.emit = emit;
 
 /**
- * Just like emit but aggregates return values into array and returns
- * it as a result value.
+ * This is very experimental feature that you should not use unless absolutely
+ * need it. Also it may be removed at any point without any further notice.
+ *
+ * Creates lazy iterator of return values of listeners. You can think of it
+ * as lazy array of return values of listeners for the `emit` with the given
+ * arguments.
  */
-function amass(target, type, message) {
-  let rest = Array.slice(arguments, 2);
-  // slice listeners so that listeners registered in this emit won't be called.
-  return observers(target, type).slice().map(function(listener) {
+emit.lazy = function lazy(target, type, message) {
+  let args = Array.slice(arguments, 2)
+  let listeners = observers(target, type).slice()
+  while (listeners.length) {
     try {
-      return listener.apply(target, rest);
+      yield listeners.shift().apply(target, args);
     }
     catch (error) {
       // If exception is not thrown by a error listener and error listener is
@@ -100,9 +101,9 @@ function amass(target, type, message) {
       else
         console.exception(error);
     }
-  });
+  }
 }
-exports.amass = amass;
+exports.emit = emit;
 
 /**
  * Removes an event `listener` for the given event `type` on the given event
