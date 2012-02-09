@@ -1,6 +1,6 @@
 'use strict';
 
-const { on, once, off, emit } = require('api-utils/event/core');
+const { on, once, off, emit, count, amass } = require('api-utils/event/core');
 const { Loader } = require('./helpers');
 
 exports['test add a listener'] = function(assert) {
@@ -178,6 +178,33 @@ exports['test unhandled errors'] = function(assert) {
   emit(target, 'message');
   assert.ok(~String(exceptions[1]).indexOf('Draax!'),
             'error in error handler is logged');
+};
+
+exports['test count'] = function(assert) {
+  let target = {};
+
+  assert.equal(count(target, 'foo'), 0, 'no listeners for "foo" events');
+  on(target, 'foo', function() {});
+  assert.equal(count(target, 'foo'), 1, 'listener registered');
+  on(target, 'foo', function() {}, 2, 'another listener registered');
+  off(target)
+  assert.equal(count(target, 'foo'), 0, 'listeners unregistered');
+};
+
+exports['test amass'] = function(assert) {
+  let target = {}, boom = Error('boom!'), errors = []
+
+  on(target, 'error', function error(e) errors.push(e))
+
+  on(target, 'a', function() 1);
+  on(target, 'a', function() {});
+  on(target, 'a', function() 2);
+  on(target, 'a', function() { throw boom });
+  on(target, 'a', function() 3);
+
+  assert.deepEqual(amass(target, 'a'), [ 1, undefined, 2, undefined, 3 ],
+                   'all results were collected');
+  assert.deepEqual(errors, [ boom ], 'errors reporetd');
 };
 
 require('test').run(exports);
