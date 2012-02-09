@@ -23,17 +23,19 @@ storeFile.append("simple-storage");
 storeFile.append("store.json");
 let storeFilename = storeFile.path;
 
+function manager(loader) loader.sandbox("simple-storage").manager;
+
 exports.testSetGet = function (test) {
   test.waitUntilDone();
 
   // Load the module once, set a value.
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   manager(loader).jsonStore.onWrite = function (storage) {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       file.remove(storeFilename);
@@ -100,7 +102,7 @@ exports.testSetGetRootUndefined = function (test) {
 };
 
 exports.testEmpty = function (test) {
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   loader.unload();
   test.assert(!file.exists(storeFilename), "Store file should not exist");
@@ -110,7 +112,7 @@ exports.testMalformed = function (test) {
   let stream = file.open(storeFilename, "w");
   stream.write("i'm not json");
   stream.close();
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   let empty = true;
   for (let key in ss.storage) {
@@ -126,7 +128,7 @@ exports.testQuotaExceededHandle = function (test) {
   test.waitUntilDone();
   prefs.set(QUOTA_PREF, 18);
 
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   ss.on("OverQuota", function () {
     test.pass("OverQuota was emitted as expected");
@@ -134,7 +136,7 @@ exports.testQuotaExceededHandle = function (test) {
     ss.storage = { x: 4, y: 5 };
 
     manager(loader).jsonStore.onWrite = function () {
-      loader = newLoader(test);
+      loader = Loader(module);
       ss = loader.require("simple-storage");
       let numProps = 0;
       for (let prop in ss.storage)
@@ -161,11 +163,11 @@ exports.testQuotaExceededNoHandle = function (test) {
   test.waitUntilDone();
   prefs.set(QUOTA_PREF, 5);
 
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
 
   manager(loader).jsonStore.onWrite = function (storage) {
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     test.assertEqual(ss.storage, val,
                      "Value should have persisted: " + ss.storage);
@@ -177,7 +179,7 @@ exports.testQuotaExceededNoHandle = function (test) {
       };
       loader.unload();
 
-      loader = newLoader(test);
+      loader = Loader(module);
       ss = loader.require("simple-storage");
       test.assertEqual(ss.storage, val,
                        "Over-quota value should not have been written, " +
@@ -200,7 +202,7 @@ exports.testQuotaUsage = function (test) {
   let quota = 21;
   prefs.set(QUOTA_PREF, quota);
 
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
 
   // {"a":1} (7 bytes)
@@ -224,12 +226,12 @@ exports.testQuotaUsage = function (test) {
 
 exports.testUninstall = function (test) {
   test.waitUntilDone();
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     loader.unload("uninstall");
     test.assert(!file.exists(storeFilename), "Store file should be removed");
@@ -243,13 +245,13 @@ exports.testSetNoSetRead = function (test) {
   test.waitUntilDone();
 
   // Load the module, set a value.
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   manager(loader).jsonStore.onWrite = function (storage) {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again but don't access ss.storage.
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       test.fail("Nothing should be written since `storage` was not accessed.");
@@ -257,7 +259,7 @@ exports.testSetNoSetRead = function (test) {
     loader.unload();
 
     // Load the module a third time and make sure the value stuck.
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       file.remove(storeFilename);
@@ -272,9 +274,6 @@ exports.testSetNoSetRead = function (test) {
   loader.unload();
 };
 
-function manager(loader) loader.sandbox("simple-storage").manager;
-
-function newLoader() Loader(module);
 
 function setGetRoot(test, val, compare) {
   test.waitUntilDone();
@@ -282,13 +281,13 @@ function setGetRoot(test, val, compare) {
   compare = compare || function (a, b) a === b;
 
   // Load the module once, set a value.
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
-    loader = newLoader(test);
+    loader = Loader(module);
     ss = loader.require("simple-storage");
     manager(loader).jsonStore.onWrite = function () {
       file.remove(storeFilename);
@@ -305,7 +304,7 @@ function setGetRoot(test, val, compare) {
 function setGetRootError(test, val, msg) {
   let pred = "storage must be one of the following types: " +
              "array, boolean, null, number, object, string";
-  let loader = newLoader(test);
+  let loader = Loader(module);
   let ss = loader.require("simple-storage");
   test.assertRaises(function () ss.storage = val, pred, msg);
   loader.unload();
