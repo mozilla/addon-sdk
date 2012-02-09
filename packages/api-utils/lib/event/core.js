@@ -74,12 +74,25 @@ exports.once = once;
  *    Arguments that will be passed to listeners.
  */
 function emit(target, type, message) {
+  // At the moment `emit` just wraps `amass` but intention is to optimize
+  // is to not promise return value aggregation so that it can be optimized
+  // if turns out to be a bottleneck.
+  amass.apply(null, arguments);
+}
+exports.emit = emit;
+
+/**
+ * Just like emit but aggregates return values into array and returns
+ * it as a result value.
+ */
+function amass(target, type, message) {
   let rest = Array.slice(arguments, 2);
   // slice listeners so that listeners registered in this emit won't be called.
-  observers(target, type).slice().forEach(function onEach(listener) {
+  return observers(target, type).slice().map(function(listener) {
     try {
-      listener.apply(target, rest);
-    } catch (error) {
+      return listener.apply(target, rest);
+    }
+    catch (error) {
       // If exception is not thrown by a error listener and error listener is
       // registered emit `error` event. Otherwise dump exception to the console.
       if (type !== 'error' && observers(target, 'error').length)
@@ -89,7 +102,7 @@ function emit(target, type, message) {
     }
   });
 }
-exports.emit = emit;
+exports.amass = amass;
 
 /**
  * Removes an event `listener` for the given event `type` on the given event
