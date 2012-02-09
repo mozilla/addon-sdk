@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
+const {Cc, Ci, Cu, Cm, components} = require('chrome');
+Cu.import("resource://gre/modules/AddonManager.jsm", this);
+
 exports.testSelf = function(test) {
   var self = require("self");
-  // We can't assert anything about the ID inside the unit test right now,
-  // because the ID we get depends upon how the test was invoked. The idea
-  // is that it is supposed to come from the main top-level package's
-  // package.json file, from the "id" key.
-  test.assertEqual(typeof(self.id), "string", "self.id is a string");
-  test.assert(self.id.length > 0);
 
   var source = self.data.load("test-content-symbiont.js");
   test.assert(source.match(/test-content-symbiont/), "self.data.load() works");
@@ -31,3 +30,25 @@ exports.testSelf = function(test) {
   test.assert((self.name == "api-utils") || (self.name == "testpkgs"),
               "self.name is api-utils or testpkgs");
 };
+
+exports.testSelfID = function(test) {
+  test.waitUntilDone();
+
+  var self = require("self");
+  // We can't assert anything about the ID inside the unit test right now,
+  // because the ID we get depends upon how the test was invoked. The idea
+  // is that it is supposed to come from the main top-level package's
+  // package.json file, from the "id" key.
+  test.assertEqual(typeof(self.id), "string", "self.id is a string");
+  test.assert(self.id.length > 0);
+
+  AddonManager.getAddonByID(self.id, function(addon) {
+    if (!addon) {
+      test.fail("did not find addon with self.id");
+    }
+    else {
+      test.pass("found addon with self.id");
+    }
+    test.done();
+  });
+}
