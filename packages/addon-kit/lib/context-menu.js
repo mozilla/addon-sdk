@@ -325,7 +325,7 @@ const Menu = ActiveItem.extend({
     ActiveItem.initialize.call(this, options, optRules, [ "items" ]);
 
     browserManager.registerItem(this);
-    menu.items = options.items;
+    this.items = options.items;
     finishActiveItemInit(this);
   },
   destroy: function destroyMenu() {
@@ -383,7 +383,8 @@ const Separator = ItemBase.extend({
     ItemBase.initialize.call(this, {}, {}, []);
     browserManager.registerItem(this);
     itemBaseModel(this).hasFinishedInit = true;
-  }
+  },
+  toString: function toStringMenu() '[object Separator"]'
 });
 exports.Separator = Class(Separator);
 
@@ -596,7 +597,7 @@ const ContextMenuWorker = Worker.compose({
   // no context listeners, returns false.  popupNode is the node that was
   // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let values = emit.lazy(this._contentWorker._public, "context");
+    let values = emit.lazy(this._contentWorker._public, "context", popupNode);
     for each (let value in values) {
       if (typeof(value) === 'string' || value)
         return value;
@@ -665,9 +666,7 @@ WorkerRegistry.prototype = {
   // Destroys the worker for each window that has a worker but doesn't need it.
   destroyUnneededWorkers: function WR_destroyUnneededWorkers() {
     for (let [innerWinID, winWorker] in Iterator(this.winWorkers)) {
-      console.log('~~~~~~~~~', winWorker.win.document.URL)
       if (!this._doesURLNeedWorker(winWorker.win.document.URL)) {
-        console.log('!!!!!!', innerWinID)
         this.unregisterContentWin(innerWinID);
         this.winsWithoutWorkers[innerWinID] = winWorker.win;
       }
@@ -711,7 +710,6 @@ WorkerRegistry.prototype = {
     worker.on("message", function workerOnMessage(msg) {
       try {
         emit(item, "message", msg);
-        //privateItem(item)._emitOnObject(item, "message", msg);
       }
       catch (err) {
         console.exception(err);
