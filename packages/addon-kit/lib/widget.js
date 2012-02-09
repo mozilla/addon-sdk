@@ -247,7 +247,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._port = EventEmitterTrait.create({
       emit: function () {
         let args = arguments;
-        self._views.forEach(function(v) v.port.emit.apply(v.port, args));
+        self._views.forEach(function({ port }) port.emit.apply(port, args))
       }
     });
     // expose wrapped port, that exposes only public properties. 
