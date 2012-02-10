@@ -17,10 +17,10 @@ function defer(f) {
     setTimeout(invoke, 0, f, arguments, this);
 }
 exports.defer = defer;
-// Exporting `enqueue` alias as `defer` may conflict with promises.
+// Exporting `remit` alias as `defer` may conflict with promises.
 exports.remit = defer;
 exports.Enqueued = function Enqueued() {
-  console.warn('Function was renamed to `defer` please use it instead.')
+  console.warn('`Enqueue` was renamed to `defer` please use it instead.');
   return defer.apply(this, arguments);
 };
 
