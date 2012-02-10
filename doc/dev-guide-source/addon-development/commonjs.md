@@ -20,8 +20,7 @@ CommonJS defines:
 module wants to make available to other modules
 
 * a function called `require` which a module can use to import the `exports`
-object of another module. The "wikipanel" add-on uses `require` to import the
-SDK modules it uses.
+object of another module.
 
 ![CommonJS modules](static-files/media/commonjs-modules.png)
 
