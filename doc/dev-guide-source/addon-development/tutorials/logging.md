@@ -43,9 +43,11 @@ info: Hello World!
 
 ## `console` in Content Scripts ##
 
-You can use the console in [content scripts]() as well as in your main
-add-on code. The following add-on logs the HTML content of every tab the
-user loads, by calling `console.log()` inside a content script:
+You can use the console in
+[content scripts](dev-guide/addon-development/web-content.html) as well
+as in your main add-on code. The following add-on logs the HTML content
+of every tab the user loads, by calling `console.log()` inside a content
+script:
 
     require("tabs").on("ready", function(tab) {
       tab.attach({

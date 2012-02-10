@@ -97,7 +97,6 @@ that MDN page:
 <pre><code>
 var activeBrowserWindow = require("window-utils").activeBrowserWindow;
 var {Cc, Ci} = require("chrome");
-var ACCESS_DENIED = "The user denied access";
 
 // Ask the user to confirm that they want to share their location.
 // If they agree, call the geolocation function, passing the in the
@@ -112,7 +111,7 @@ function getCurrentPositionWithCheck(callback) {
     case "always":
       return getCurrentPosition(callback);
     case "never":
-      return callback(ACCESS_DENIED);
+      return callback(null);
     }
   }
   let done = false;
@@ -125,7 +124,7 @@ function getCurrentPositionWithCheck(callback) {
         getCurrentPosition(callback);
       }
       else {
-        callback(ACCESS_DENIED);
+        callback(null);
       }
     }
   }
@@ -157,7 +156,7 @@ function getCurrentPositionWithCheck(callback) {
       eventCallback: function (event) {
         if (event === "dismissed") {
           if (!done)
-            callback(ACCESS_DENIED);
+            callback(null);
           done = true;
           PopupNotifications.remove(self);
         }
@@ -180,7 +179,7 @@ var widget = require("widget").Widget({
   contentURL: "http://www.mozilla.org/favicon.ico",
   onClick: function() {
     getCurrentPositionWithCheck(function(position) {
-      if (position == ACCESS_DENIED) {
+      if (!position) {
         console.log("The user denied access to geolocation.");
       }
       else {
@@ -208,24 +207,19 @@ geolocation code into a separate module.
 First create a new file in "lib" called "geolocation.js", and copy
 everything except the widget code into this new file.
 
-Next, add the following lines somewhere in the new file:
+Next, add the following line somewhere in the new file:
 
     exports.getCurrentPosition = getCurrentPositionWithCheck;
-    exports.userDenied = ACCESS_DENIED;
 
-This defines the public interface of the new module. We export:
-
-* a function to prompt the user for permission and get the current position
-if they agree
-* the string used as the "access denied" message in case the user refuses
-permission.
+This defines the public interface of the new module. We export a single
+a function to prompt the user for permission and get the current position
+if they agree.
 
 So "geolocation.js" should look like this:
 
 <pre><code>
 var activeBrowserWindow = require("window-utils").activeBrowserWindow;
 var {Cc, Ci} = require("chrome");
-var ACCESS_DENIED = "The user denied access";
 
 // Ask the user to confirm that they want to share their location.
 // If they agree, call the geolocation function, passing the in the
@@ -240,7 +234,7 @@ function getCurrentPositionWithCheck(callback) {
     case "always":
       return getCurrentPosition(callback);
     case "never":
-      return callback(ACCESS_DENIED);
+      return callback(null);
     }
   }
   let done = false;
@@ -253,7 +247,7 @@ function getCurrentPositionWithCheck(callback) {
         getCurrentPosition(callback);
       }
       else {
-        callback(ACCESS_DENIED);
+        callback(null);
       }
     }
   }
@@ -285,7 +279,7 @@ function getCurrentPositionWithCheck(callback) {
       eventCallback: function (event) {
         if (event === "dismissed") {
           if (!done)
-            callback(ACCESS_DENIED);
+            callback(null);
           done = true;
           PopupNotifications.remove(self);
         }
@@ -303,7 +297,6 @@ function getCurrentPosition(callback) {
 }
 
 exports.getCurrentPosition = getCurrentPositionWithCheck;
-exports.userDenied = ACCESS_DENIED;
 </code></pre>
 
 ### Update `main.js` ###
@@ -313,12 +306,10 @@ Finally, update "main.js". First add a line to import the new module:
     var geolocation = require("geolocation");
 
 Edit the widget's call to `getCurrentPositionWithCheck()` so it calls
-the geolocation module's `getCurrentPosition()` function instead.
-Replace the direct reference to `ACCESS_DENIED` with a reference to
-the geolocation module's `userDenied` export:
+the geolocation module's `getCurrentPosition()` function instead:
 
     geolocation.getCurrentPosition(function(position) {
-      if (position == geolocation.userDenied) {
+      if (!position) {
 
 Now "main.js" should look like this:
 
@@ -331,7 +322,7 @@ var widget = require("widget").Widget({
   contentURL: "http://www.mozilla.org/favicon.ico",
   onClick: function() {
     geolocation.getCurrentPosition(function(position) {
-      if (position == geolocation.userDenied) {
+      if (!position) {
         console.log("The user denied access to geolocation.");
       }
       else {
@@ -376,7 +367,39 @@ Next we'll repackage the geolocation module.
 * delete the "main.js" that `cfx` generated, and copy "geolocation.js"
 there instead.
 
-That's it. Now this package can be used by any other SDK-based add-on.
+### Documentation ###
+
+If you document the package and the modules it contains, then people
+who install your package and execute `cfx docs` will see the documentation
+integrated with the SDK's own documentation.
+
+You can document the package that contains the geolocation module by editing
+the "README.md" file that `cfx init` created in the package root. It's in
+[Markdown](http://daringfireball.net/projects/markdown/syntax) syntax.
+
+You can document the geolocation module itself by creating a file called
+"geolocation.md" in your package's "doc" directory. This file is also
+written in Markdown, although you can optionally use some
+[extended syntax](https://wiki.mozilla.org/Jetpack/SDK/Writing_Documentation#APIDoc_Syntax)
+to document APIs.
+
+Try it:
+
+* edit "README.md", and add a "geolocation.md" under "doc"
+* copy your geolocation package under the "packages" directory in the SDK root
+* execute `cfx docs`
+
+Once `cfx docs` has finished, you should see a new entry appear in the
+sidebar called "Third-Party APIs", which lists the geolocation package
+and the module it contains.
+
+### Editing "package.json" ###
+
+The "package.json" file in your package's root directory contains metadata
+for your package. See the
+[package specification](dev-guide/addon-development/package-spec.html) for
+full details. If you intend to distribute the package, this is a good place
+to add your name as the author, choose a distribution license, and so on.
 
 ## Learning More ##
 
