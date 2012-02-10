@@ -146,7 +146,6 @@ http://creativecommons.org/licenses/by/2.5/ -->
 
 <img class="image-right" src="static-files/media/screenshots/widget-panel-clock.png"
 alt="Panel attached to a widget">
-<br>
 
     data = require("self").data
 
@@ -163,3 +162,7 @@ alt="Panel attached to a widget">
       panel: clockPanel
     });
 
+## Learning More ##
+
+To learn more about the widget module, see its
+[API reference documentation](packages/addon-kit/docs/widget.html).
