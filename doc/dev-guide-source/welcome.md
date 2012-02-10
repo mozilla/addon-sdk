@@ -24,7 +24,7 @@ tools and APIs.
 
 </div>
 
-## Introducing the High-level APIs ##
+## Introducing the High-Level APIs ##
 
 <div class="buttonarray">
 
