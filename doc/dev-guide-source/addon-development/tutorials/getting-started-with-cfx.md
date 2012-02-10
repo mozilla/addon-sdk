@@ -2,6 +2,11 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<span class="aside">This tutorial assumes that you've read and followed the instructions in
+the [installation guide](dev-guide/addon-development/installation.html), to
+install and activate the SDK. If you haven't, go back and do that now, then
+come back here.</span>
+
 # Getting Started With cfx #
 
 To create add-ons using the SDK you'll have to get to know the `cfx`
@@ -19,11 +24,6 @@ three commands you need to get going:
 * [`cfx xpi`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html#cfx-xpi)
 : build an installable [XPI](https://developer.mozilla.org/en/XPI) file to
 distribute your add-on
-
-Note: this tutorial assumes that you've read and followed the instructions in
-the [installation guide](dev-guide/addon-development/installation.html), to
-install and activate the SDK. If you haven't, go back and do that now, then
-come back here.
 
 ## <a name="cfx-init">cfx init</a> ##
 

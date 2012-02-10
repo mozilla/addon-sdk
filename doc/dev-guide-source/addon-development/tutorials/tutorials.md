@@ -52,6 +52,6 @@ on the left for the full list.
 ## Putting It Together ##
 
 <div class="buttonarray">
-<a href="dev-guide/addon-development/annotator/annotator.html">Annotator add-on</a>
+<a href="dev-guide/addon-development/annotator/annotator.html">Annotator Add-on</a>
 
 </div>

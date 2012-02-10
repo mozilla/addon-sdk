@@ -36,7 +36,7 @@ The `lib/main.js` file looks like this:
 
 The widget is added to the "Add-on Bar" at the bottom of the browser window:
 
-<img src="static-files/media/screenshots/widget-mozilla.png"
+<img class="image-right" src="static-files/media/screenshots/widget-mozilla.png"
 alt="Mozilla icon widget" />
 
 You can't change the initial location for the widget, but the user can move
@@ -139,6 +139,15 @@ right-click: this is a
 If you supply a `panel` object to the widget's constructor, then the panel
 will be shown when the user clicks the widget:
 
+<!-- The icon the widget displays, shown in the screenshot, is taken from the
+Circular icon set, http://prothemedesign.com/circular-icons/ which is made
+available under the Creative Commons Attribution 2.5 Generic License:	
+http://creativecommons.org/licenses/by/2.5/ -->
+
+<img class="image-right" src="static-files/media/screenshots/widget-panel-clock.png"
+alt="Panel attached to a widget">
+<br>
+
     data = require("self").data
 
     var clockPanel = require("panel").Panel({
@@ -154,11 +163,3 @@ will be shown when the user clicks the widget:
       panel: clockPanel
     });
 
-<!-- The icon the widget displays, shown in the screenshot, is taken from the
-Circular icon set, http://prothemedesign.com/circular-icons/ which is made
-available under the Creative Commons Attribution 2.5 Generic License:	
-http://creativecommons.org/licenses/by/2.5/ -->
-
-<img class="image-center" src="static-files/media/screenshots/widget-panel-clock.png"
-alt="Panel attached to a widget">
-<br>
