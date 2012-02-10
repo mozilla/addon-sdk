@@ -32,7 +32,7 @@ Minimally you'll have a single module implemented by a script called
 "main.js", but you can include additional modules in `lib`, and import them
 using the `require()` function. To learn how to implement and import your own
 modules, see the tutorial on
-[Implementing Reusable Modules](dev-guide/addon-development/implementing-reusable-module.html).
+[Implementing Reusable Modules](dev-guide/addon-development/tutorials/reusable-modules.html).
 
 ## Content Scripts ##
 
@@ -82,9 +82,7 @@ by version 1.0 of the
 You use <code>require()</code> to import functionality from another module,
 and <code>exports</code> to export functionality from your module.</p>
 If <code>require()</code> is available, then so are the modules supplied in the
-SDK. See this
-<a href="dev-guide/addon-development/api-modules.html">quick overview</a>
-of some of the most commonly used modules.
+SDK.
     </td>
     <td class="check">✔</td>
     <td class="cross">✘</td>

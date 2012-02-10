@@ -10,7 +10,7 @@ want to use modules from this category.
 
 * building blocks for higher level modules, such as
 [events](packages/api-utils/docs/events.html),
-[worker](packages/api-utils/docs/worker.html), and
+[worker](packages/api-utils/docs/content/worker.html), and
 [api-utils](packages/api-utils/docs/api-utils.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.

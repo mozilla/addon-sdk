@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/tutorials/installation.html)
+[installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 </span>
@@ -90,7 +90,7 @@ Note that due to
 [bug 663480](https://bugzilla.mozilla.org/show_bug.cgi?id=663480), if you
 add a `dependencies` line to `package.json`, and you use any modules from
 built-in packages like
-[`addon-kit`](dev-guide/addon-development/sdk-packages.html), then
+[`addon-kit`](packages/addon-kit/addon-kit.html), then
 you must also declare your dependency on that built-in package, like this:
 
 <pre>

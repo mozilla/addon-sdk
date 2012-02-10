@@ -58,6 +58,6 @@ tools and APIs.
 ## Putting It Together ##
 
 <div class="buttonarray">
-<a href="dev-guide/addon-development/tutorials/annotator/annotator.html">Annotator add-on</a>
+<a href="dev-guide/addon-development/annotator/annotator.html">Annotator add-on</a>
 
 </div>

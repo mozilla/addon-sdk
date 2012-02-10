@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/tutorials/installation.html)
+[installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 </span>
@@ -136,8 +136,10 @@ add-on defines in the `port.emit()` call.
 ## Learning More ##
 
 To learn more about working with tabs in the SDK, see the
-[Working With Tabs and Windows tutorial](dev-guide/addon-development/tutorials/tabs-and-windows.html),
-and the [`tabs` API reference](packages/addon-kit/docs/tabs.html).
+[Open a Web Page](dev-guide/addon-development/tutorials/open-a-web-page.html)
+tutorial, the
+[List Open Tabs](dev-guide/addon-development/tutorials/list-open-tabs.html)
+tutorial, and the [`tabs` API reference](packages/addon-kit/docs/tabs.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/addon-development/web-content.html).

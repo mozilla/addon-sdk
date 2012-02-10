@@ -12,11 +12,11 @@ There's comprehensive
 everything you can do using `cfx`, but in this tutorial we'll introduce the
 three commands you need to get going:
 
-* [`cfx init`](dev-guide/addon-development/getting-started-with-cfx.html#cfx-init)
+* [`cfx init`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html#cfx-init)
 : creates the skeleton structure for your add-on
-* [`cfx run`](dev-guide/addon-development/getting-started-with-cfx.html#cfx-run)
+* [`cfx run`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html#cfx-run)
 : runs an instance of Firefox with your add-on installed
-* [`cfx xpi`](dev-guide/addon-development/getting-started-with-cfx.html#cfx-xpi)
+* [`cfx xpi`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html#cfx-xpi)
 : build an installable [XPI](https://developer.mozilla.org/en/XPI) file to
 distribute your add-on
 

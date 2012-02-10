@@ -42,11 +42,6 @@ while providing each module with necessary globals and
 enforcing security boundaries between the modules as necessary. It's
 entirely possible for Loaders to create new Loaders.
 
-<span class="aside">
-For more information on Low-Level Modules, see the
-[Low-Level Module Best Practices][] appendix.
-</span>
-
 __Low-Level Module__: A module with the following properties:
 
   * Has "chrome" access to the Mozilla platform (e.g. `Components.classes`)

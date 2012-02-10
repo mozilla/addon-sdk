@@ -149,7 +149,7 @@ way to use features not supported in the SDK without having to use the
 low-level APIs.
 
 See the
-[guide to adding Firefox menu items](dev-guide/addon-development/tutorials/adding-menu-items.html).
+[guide to adding Firefox menu items](dev-guide/addon-development/tutorials/adding-menus.html).
 Some useful third party packages are
 [collected in the Jetpack Wiki](https://wiki.mozilla.org/Jetpack/Modules).
 
