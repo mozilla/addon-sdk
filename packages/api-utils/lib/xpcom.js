@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cr, Cm } = require('chrome');
+const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
@@ -54,26 +54,60 @@ const Unknown = Base.extend({
 });
 exports.Unknown = Unknown;
 
-// This is a base prototype, that provides bare bones of XPCOM Service. JS based
-// components can be easily implement by extending it.
-const Service = Unknown.extend({
-  // Method `extend` is overridden so that resulting object will have unique
-  // classID unless provided by an argument.
-  extend: function extend() {
-    let args = Array.slice(arguments)
-    return Unknown.extend.apply(this, args.concat([{
-      classID: args.reduce(function(classID, source) {
-        return 'classID' in source ? source.classID : classID;
-      }, null) || uuid()
-    }]));
-  },
+// Base exemplar for creating instances implementing `nsIFactory` interface,
+// that maybe registered into runtime via `register` function. Instances of
+// this factory create instances of enclosed component on `createInstance`.
+const Factory = Unknown.extend({
+  interfaces: [ 'nsIFactory' ],
   /**
-   * XPConnect lets you bypass its wrappers and access the underlying JS object
-   * directly using the `wrappedJSObject` property if the wrapped object allows
-   * this. All Factory descendants expose it's underlying JS objects unless
-   * intentionally overridden.
+   * All the descendants will get auto generated `id` (also known as `classID`
+   * in XPCOM world) unless one is manually provided.
    */
-  get wrappedJSObject() this,
+  get id() { throw Error('Factory must implement `id` property') },
+  /**
+   * XPCOM `contractID` may optionally  be provided to associate this factory
+   * with it. `contract` is a unique string that has a following format:
+   * '@vendor.com/unique/id;1'.
+   */
+  contract: null,
+  /**
+   * Class description that is being registered. This value is intended as a
+   * human-readable description for the given class and does not needs to be
+   * globally unique.
+   */
+  description: 'Jetpack generated factory',
+  /**
+   * This method is required by `nsIFactory` interfaces, but as in most
+   * implementations it does nothing interesting.
+   */
+  lockFactory: function lockFactory(lock) undefined,
+  /**
+   * If property is `true` XPCOM service / factory will be registered
+   * automatically on creation.
+   */
+  register: true,
+  /**
+   * If property is `true` XPCOM factory will be unregistered prior to add-on
+   * unload.
+   */
+  unregister: true,
+  /**
+   * Method is called on `Service.new(options)` passing given `options` to
+   * it. Options is expected to have `component` property holding XPCOM
+   * component implementation typically decedent of `Unknown` or any custom
+   * implementation with a `new` method and optional `register`, `unregister`
+   * flags. Unless `register` is `false` Service / Factory will be
+   * automatically registered. Unless `unregister` is `false` component will
+   * be automatically unregistered on add-on unload.
+   */
+  initialize: function initialize(options) {
+    options = options || {}
+    this.merge(options, { id: 'id' in options && options.id || uuid() });
+
+    // If service / factory has auto registration enabled then register.
+    if (this.register)
+      register(this);
+  },
   /**
    * Creates an instance of the class associated with this factory.
    */
@@ -81,91 +115,42 @@ const Service = Unknown.extend({
     try {
       if (outer)
         throw Cr.NS_ERROR_NO_AGGREGATION;
-      return this.QueryInterface(iid);
+      return this.create().QueryInterface(iid);
     }
     catch (error) {
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  // All the descendants will get auto generated `classID` unless one is
-  // provided manually.
-  classID: null,
-  /**
-   * The name of the class being registered. This value is intended as a
-   * human-readable name for the class and does not needs to be globally unique.
-   */
-  className: 'Jetpack service',
-  /**
-   * XPCOM contract id. May be `null` if no needed. Usually string like:
-   * '@mozilla.org/jetpack/factory;1'.
-   */
-  contractID: '@mozilla.org/jetpack/service;1',
-  /**
-   * If property is `true` XPCOM factory will be unregistered prior to add-on
-   * unload.
-   */
-  classUnregister: true
-});
-exports.Service = Service;
-
-const Factory = Service.extend({
-    // Method `new` is overridden so that factory can be registered prior to
-  // first instantiation and unregistered prior to unload.
-  new: function create() {
-    if (this.classRegister && !(this.contractID in Cc))
-      register(this);
-    return Unknown.new.apply(this, arguments);
-  },
-  /**
-   * If property is `true` XPCOM factory will be registered prior to first
-   * object instantiation.
-   */
-  classRegister: true,
-  // All XPCOM factories implement `nsIFactory` interface.
-  interfaces: [ 'nsIFactory' ],
-  // All the descendants will get auto generated `classID` unless one is
-  // provided manually.
-  classID: null,
-  /**
-   * The name of the class being registered. This value is intended as a
-   * human-readable name for the class and does not needs to be globally unique.
-   */
-  className: 'Jetpack factory',
-  /**
-   * XPCOM contract id. May be `null` if no needed. Usually string like:
-   * '@mozilla.org/jetpack/factory;1'.
-   */
-  contractID: '@mozilla.org/jetpack/factory;1',
-  /**
-   * This method is required by `nsIFactory` interfaces, but as in most
-   * implementations it does nothing interesting.
-   */
-  lockFactory: function lockFactory(lock) undefined,
-  /**
-   * Creates an instance of the class associated with this factory.
-   */
-  createInstance: function createInstance(outer, iid) {
-    return Service.createInstance.call(Object.create(this), outer, iid);
-  }
+  create: function create() this.component.new()
 });
 exports.Factory = Factory;
 
-function isRegistered({ classID }) isCIDRegistered(classID)
+// Exemplar for creating services that implement `nsIFactory` interface, that
+// can be registered into runtime via call to `register`. This services return
+// enclosed `component` on `getService`.
+const Service = Factory.extend({
+  description: 'Jetpack generated service',
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  create: function create() this.component
+});
+exports.Service = Service;
+
+function isRegistered({ id }) isCIDRegistered(id)
 exports.isRegistered = isRegistered;
 
 /**
- * Registers given `factory` object to be used to instantiate a particular class
- * identified by `factory.classID`, and creates an association of class name
- * and `factory.contractID` with the class.
+ * Registers given `component` object to be used to instantiate a particular
+ * class identified by `component.id`, and creates an association of class
+ * name and `component.contract` with the class.
  */
 function register(factory) {
-  if (Service.isPrototypeOf(factory)) {
-    let { classID, className, contractID, classUnregister } = factory;
-    registerFactory(classID, className, contractID, factory);
-    if (classUnregister)
-      unload(unregister.bind(null, factory));
-  }
-};
+  registerFactory(factory.id, factory.description, factory.contract, factory);
+
+  if (factory.unregister)
+    unload(unregister.bind(null, factory));
+}
 exports.register = register;
 
 /**
@@ -174,11 +159,11 @@ exports.register = register;
  */
 function unregister(factory) {
   if (isRegistered(factory))
-    unregisterFactory(factory.classID, factory);
-};
+    unregisterFactory(factory.id, factory);
+}
 exports.unregister = unregister;
 
-var autoRegister = exports.autoRegister = function autoRegister(path) {
+function autoRegister(path) {
   // TODO: This assumes that the url points to a directory
   // that contains subdirectories corresponding to OS/ABI and then
   // further subdirectories corresponding to Gecko platform version.
@@ -203,10 +188,20 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
 
   Cm.QueryInterface(Ci.nsIComponentRegistrar);
   Cm.autoRegister(file);
-};
+}
+exports.autoRegister = autoRegister;
 
-var getClass = exports.getClass = function getClass(contractID, iid) {
-  if (!iid)
-    iid = Ci.nsISupports;
-  return Cm.getClassObjectByContractID(contractID, iid);
-};
+/**
+ * Returns registered factory that has a given `id` or `null` if not found.
+ */
+function factoryByID(id) classesByID[id] || null
+exports.factoryByID = factoryByID;
+
+/**
+ * Returns factory registered with a given `contract` or `null` if not found.
+ * In contrast to `Cc[contract]` that does ignores new factory registration
+ * with a given `contract` this will return a factory currently associated
+ * with a `contract`.
+ */
+function factoryByContract(contract) factoryByID(Cm.contractIDToCID(contract))
+exports.factoryByContract = factoryByContract;

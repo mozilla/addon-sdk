@@ -574,6 +574,33 @@ exports.testTabsEvent_onDeactivate = function(test) {
   });
 };
 
+exports.testTabsEvent_pinning = function(test) {
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    var tabs = require("tabs");
+    let url = "data:text/html,1";
+
+    tabs.on('open', function onOpen(tab) {
+      tabs.removeListener('open', onOpen);
+      tab.pin();
+    });
+
+    tabs.on('pinned', function onPinned(tab) {
+      tabs.removeListener('pinned', onPinned);
+      test.assert(tab.isPinned, "notified tab is pinned");
+      tab.unpin();
+    });
+
+    tabs.on('unpinned', function onUnpinned(tab) {
+      tabs.removeListener('unpinned', onUnpinned);
+      test.assert(!tab.isPinned, "notified tab is not pinned");
+      closeBrowserWindow(window, function() test.done());
+    });
+
+    tabs.open(url);
+  });
+};
+
 // per-tab event handlers
 exports.testPerTabEvents = function(test) {
   test.waitUntilDone();

@@ -11,7 +11,9 @@ const EVENTS = {
   open: "TabOpen",
   close: "TabClose",
   activate: "TabSelect",
-  deactivate: null
+  deactivate: null,
+  pinned: "TabPinned",
+  unpinned: "TabUnpinned"
 }
 exports.EVENTS = EVENTS;
 

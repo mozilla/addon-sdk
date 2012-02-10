@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var prefs = require("preferences-service");
-var {Cc,Ci} = require("chrome");
+const prefs = require("preferences-service");
+const { Cc, Ci, Cu } = require("chrome");
+const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
 exports.testReset = function(test) {
   prefs.reset("test_reset_pref");
@@ -89,3 +90,23 @@ exports.testGetAndSet = function(test) {
       );
     });
 };
+
+exports.testGetSetLocalized = function(test) {
+  let prefName = "general.useragent.locale";
+
+  // Ensure that "general.useragent.locale" is a 'localized' pref
+  let bundleURL = "chrome://global/locale/intl.properties";
+  prefs.setLocalized(prefName, bundleURL);
+
+  // Fetch the expected value directly from the property file
+  let expectedValue = BundleService.createBundle(bundleURL).
+    GetStringFromName(prefName).
+    toLowerCase();
+
+  test.assertEqual(prefs.getLocalized(prefName).toLowerCase(),
+                   expectedValue,
+                   "get localized preference");
+
+  // Undo our modification
+  prefs.reset(prefName);
+}

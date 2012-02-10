@@ -14,3 +14,6 @@ An introduction to the SDK APIs.
 ### [Annotator: a More Complex Add-on](dev-guide/addon-development/annotator/annotator.html) ###
 This tutorial takes you through the implementation of a more complex add-on,
 and introduces most of the APIs in the [addon-kit package](packages/addon-kit/addon-kit.html).
+
+### [Localization](dev-guide/addon-development/l10n.html) ###
+How to localize an SDK-based add-on.

@@ -106,7 +106,15 @@ add-on script receives them using `panel.port.on()`.
 This example uses `contentScript` to supply the script as a string. It's
 usually better practice to use `contentScriptFile`, which is a URL pointing
 to a script file saved under your add-on's `data` directory.
-That's what the next example does.
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
 
 <img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
 alt="Text entry panel">

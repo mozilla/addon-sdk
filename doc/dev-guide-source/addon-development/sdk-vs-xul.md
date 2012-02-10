@@ -84,8 +84,7 @@ small set of this functionality.</p></td>
 
 <tr>
 <td><strong><a name="localization">Localization Support</a></strong></td>
-<td><p>The SDK doesn't yet support localization, although this is
-<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=691782">coming soon</a>.
+<td><p>The SDK currently only has fairly basic <a href="dev-guide/addon-development/l10n.html">localization support</a>.
 </p></td>
 </tr>
 

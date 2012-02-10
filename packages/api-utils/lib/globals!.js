@@ -8,6 +8,8 @@
 let { Cc, Ci } = require('chrome');
 let { PlainTextConsole } = require('./plain-text-console');
 let options = require('@packaging');
+let consoleService = Cc['@mozilla.org/consoleservice;1'].getService().
+                     QueryInterface(Ci.nsIConsoleService);
 
 // On windows dump does not writes into stdout so cfx can't read thous dumps.
 // To workaround this issue we write to a special file from which cfx will
@@ -52,7 +54,22 @@ exports.Iterator = (function(DefaultIterator) {
 // there is no real reason to favor global memory over
 // `require('api-utils/memory')`. For details see: Bug-620559
 exports.memory = require('./memory');
-exports.console = new PlainTextConsole(exports.dump);
+
+// Bug 718230: We need to send console messages to stdout and JS Console
+function forsakenConsoleDump(msg, level) {
+  exports.dump(msg);
+
+  if (level === "error") {
+    let err = Cc["@mozilla.org/scripterror;1"].
+              createInstance(Ci.nsIScriptError);
+    msg = msg.replace(/^error: /, "");
+    err.init(msg, null, null, 0, 0, 0, "Add-on SDK");
+    consoleService.logMessage(err);
+  }
+  else
+    consoleService.logStringMessage(msg);
+};
+exports.console = new PlainTextConsole(forsakenConsoleDump);
 
 // Provide CommonJS `define` to allow authoring modules in a format that can be
 // loaded both into jetpack and into browser via AMD loaders.
