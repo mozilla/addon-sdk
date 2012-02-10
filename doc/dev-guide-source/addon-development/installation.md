@@ -146,6 +146,5 @@ page.
 ## Next Steps ##
 
 Next, take a look at the
-[Getting Started](dev-guide/addon-development/getting-started.html) tutorial,
-which explains the basic concepts behind the SDK and walks through a simple
-example.
+[Getting Started With cfx](dev-guide/addon-development/tutorials/getting-started-with-cfx.html)
+tutorial, which explains how to create add-ons using the `cfx` tool.

@@ -101,12 +101,12 @@ There's much more information on content scripts in the
 The SDK provides a set of high level APIs providing some basic user
 interface components and functionality commonly required by add-ons.
 These are collected together in the
-[`addon-kit`](dev-guide/addon-development/sdk-packages.html#addon-kit)
+[`addon-kit`](packages/addon-kit/addon-kit.html)
 package. Because we expect to keep these APIs compatible as new versions
 of Firefox are released, we call them the "supported" APIs.
 
 See the [tutorials](dev-guide/addon-development/tutorials/tutorials.html)
-and the API reference in the "Developer Guide" sidebar.
+and the "High-Level API" reference in the "Developer Guide" sidebar.
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
 model.
@@ -163,8 +163,8 @@ But note that unlike the supported APIs, low-level APIs do not come with a
 compatibility guarantee, so we do not expect code using them will necessarily
 continue to work as new versions of Firefox are released.
 </span>
-In addition to the supported APIs, the SDK includes a number of
-[low-level modules](packages/api-utils/api-utils.html) some of which, such
+In addition to the High-Level APIs, the SDK includes a number of
+Low-Level APIs some of which, such
 as [`tab-browser`](packages/api-utils/docs/tab-browser.html), [`xhr`](packages/api-utils/docs/xhr.html), and
 [`window-utils`](packages/api-utils/docs/window-utils.html), expose powerful
 browser capabilities.
@@ -277,7 +277,7 @@ to display an alert dialog:
     });
 
 It's good practice to encapsulate code which uses XPCOM by
-[packaging it in its own module](dev-guide/addon-development/implementing-reusable-module.html).
+[packaging it in its own module](dev-guide/addon-development/tutorials/reusable-modules.html).
 For example, we could package the alert feature implemented above using a
 script like:
 

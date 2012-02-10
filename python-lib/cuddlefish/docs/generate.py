@@ -198,8 +198,10 @@ def replace_file(env_root, dest_path, file_contents, must_rewrite_links):
         os.remove(dest_path)
     # before we copy the final version, we'll rewrite the links
     # I'll do this last, just because we know definitely what the dest_path is at this point
+    print "starting" + dest_path
     if must_rewrite_links and dest_path.endswith(".html"):
         file_contents = rewrite_links(env_root, file_contents, dest_path)
+    print "finished" + dest_path
     open(dest_path, "w").write(file_contents)
 
 def rewrite_links(env_root, page, dest_path):

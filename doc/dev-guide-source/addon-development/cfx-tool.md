@@ -544,10 +544,6 @@ To launch the application, enter the following command:
 
 ### cfx xpi ###
 
-<span class="aside"> For more information on how XPIs are generated,
-see the
-[XPI Generation](dev-guide/module-development/xpi.html) reference.</span>
-
 This tool is used to package your add-on as an
 [XPI](https://developer.mozilla.org/en/XPI) file, which is the install file
 format for Mozilla add-ons.
