@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { setTimeout } = require('api-utils/timer');
-const utils = require('api-utils/utils/function');
+const utils = require('api-utils/functional');
 const { invoke, defer, curry, compose, memoize, once, delay, wrap } = utils;
 
 exports['test forwardApply'] = function(assert) {
