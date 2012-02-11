@@ -24,10 +24,6 @@ function defer(f) {
 exports.defer = defer;
 // Exporting `remit` alias as `defer` may conflict with promises.
 exports.remit = defer;
-exports.Enqueued = function Enqueued() {
-  console.warn('`Enqueue` was renamed to `defer` please use it instead.');
-  return defer.apply(this, arguments);
-};
 
 /**
  * Invokes `callee` by passing `params` as an arguments and `self` as `this`
