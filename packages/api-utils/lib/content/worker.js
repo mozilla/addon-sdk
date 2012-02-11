@@ -13,7 +13,7 @@ const { URL } = require('../url');
 const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
-const { Enqueued } = require('../utils/function');
+const { defer } = require('../functional');
 const self = require("self");
 const { sandbox, evaluate, load } = require("../sandbox");
 const { merge } = require('../utils/object');
@@ -188,7 +188,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       }
     });
     // create emit that executes in next turn of event loop.
-    this._port._asyncEmit = Enqueued(this._port._emit);
+    this._port._asyncEmit = defer(this._port._emit);
     // expose wrapped port, that exposes only public properties. 
     this._port._public = Cortex(this._port);
     
@@ -429,7 +429,7 @@ const Worker = AsyncEventEmitter.compose({
       emit: function () self._emitEventToContent(arguments)
     });
     // create emit that executes in next turn of event loop.
-    this._port._asyncEmit = Enqueued(this._port._emit);
+    this._port._asyncEmit = defer(this._port._emit);
     // expose wrapped port, that exposes only public properties:
     // We need to destroy this getter in order to be able to set the
     // final value. We need to update only public port attribute as we never 
