@@ -2,8 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
+// Disclaimer: Most of the functions in this module implement APIs from
+// Jeremy Ashkenas's http://underscorejs.org/ library and all credits for
+// those goes to him.
 
+"use strict";
 
 var { setTimeout } = require("../timer");
 
