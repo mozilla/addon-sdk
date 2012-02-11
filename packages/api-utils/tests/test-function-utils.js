@@ -120,8 +120,8 @@ exports['test memoize'] = function(assert) {
   assert.equal(oo(1, v2), v1, 'memoized by a first argument');
   assert.equal(oo(2, v2), v2, 'returns back value if not memoized');
   assert.equal(oo(2), v2, 'memoized new value');
-  assert.equal(oo(1), oo(2), 'values do not override');
-  assert.equal(o(3, v), oo(2, 3), 'returns same value as un-memoized');
+  assert.notEqual(oo(1), oo(2), 'values do not override');
+  assert.equal(o(3, v2), oo(2, 3), 'returns same value as un-memoized');
 
   let get = memoize(function(attribute) this[attribute])
   let target = { name: 'Bob', get: get }
@@ -146,14 +146,12 @@ exports['test delay'] = function(assert, done) {
 };
 
 exports['test delay with this'] = function(assert, done) {
-  var context = {}
-  var delayed = delay(function(name) {
+  let context = {}
+  delay.call(context, function(name) {
     assert.equal(this, context, 'this was passed in');
     assert.equal(name, 'Tom', 'argument was passed in');
     done();
-  });
-
-  delayed.call(this, context, 'Tom');
+  }, 10, 'Tom');
 }
 
 exports['test once'] = function(assert) {
