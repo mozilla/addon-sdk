@@ -4,7 +4,6 @@
 
 "use strict";
 
-meta: ({ stability: 'unstable' })
 
 var { setTimeout } = require("../timer");
 
