@@ -8,7 +8,7 @@
 
 "use strict";
 
-var { setTimeout } = require("../timer");
+const { setTimeout } = require("../timer");
 
 /**
  * Takes a function and returns a wrapped one instead, calling which will call
