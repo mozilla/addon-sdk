@@ -132,7 +132,7 @@ exports.memoize = memoize;
  */
 function delay(f, ms) {
   let args = Array.slice(arguments, 2);
-  setTimeout(function() { return f.apply(f, args); }, ms);
+  setTimeout(function(context) { return f.apply(context, args); }, ms, this);
 };
 exports.delay = delay;
 
