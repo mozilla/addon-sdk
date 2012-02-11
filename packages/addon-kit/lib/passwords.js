@@ -6,7 +6,7 @@
 "use strict";
 const { Trait } = require("api-utils/light-traits");
 const utils = require("api-utils/passwords/utils");
-const defer = require("api-utils/utils/function").Enqueued;
+const defer = require("api-utils/functional").defer;
 
 /**
  * Utility function that returns `onComplete` and `onError` callbacks form the
