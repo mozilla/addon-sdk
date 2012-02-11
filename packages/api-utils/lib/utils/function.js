@@ -73,9 +73,9 @@ exports.curry = curry;
  *   welcome('moe');    // => 'hi: moe!'
  */
 function compose() {
-  var lambdas = Array.slice(arguments);
+  let lambdas = Array.slice(arguments);
   return function composed() {
-    var args = Array.slice(arguments), index = lambdas.length;
+    let args = Array.slice(arguments), index = lambdas.length;
     while (0 <= --index)
       args = [ lambdas[index].apply(this, args) ];
     return args[0];
