@@ -6,6 +6,7 @@ import os.path
 import shutil
 import zipfile
 from StringIO import StringIO
+import simplejson as json
 import unittest
 import cuddlefish
 from cuddlefish import packaging, manifest
@@ -134,6 +135,42 @@ class Contents(unittest.TestCase):
 
     def assertIn(self, what, inside_what):
         self.failUnless(what in inside_what, inside_what)
+
+    def test_jetpackID(self):
+        # this uses "id": "jid7", to which a @jetpack should be appended
+        seven = get_linker_files_dir("seven")
+        def _test(basedir):
+            stdout = StringIO()
+            shutil.copytree(seven, "seven")
+            os.chdir("seven")
+            try:
+                # regrettably, run() always finishes with sys.exit()
+                cuddlefish.run(["xpi", "--no-strip-xpi"],
+                               stdout=stdout)
+            except SystemExit, e:
+                self.failUnlessEqual(e.args[0], 0)
+            zf = zipfile.ZipFile("seven.xpi", "r")
+            hopts = json.loads(zf.read("harness-options.json"))
+            self.failUnlessEqual(hopts["jetpackID"], "jid7@jetpack")
+        self.run_in_subdir("x", _test)
+
+    def test_jetpackID_suffix(self):
+        # this uses "id": "jid1@jetpack", so no suffix should be appended
+        one = get_linker_files_dir("one")
+        def _test(basedir):
+            stdout = StringIO()
+            shutil.copytree(one, "one")
+            os.chdir("one")
+            try:
+                # regrettably, run() always finishes with sys.exit()
+                cuddlefish.run(["xpi", "--no-strip-xpi"],
+                               stdout=stdout)
+            except SystemExit, e:
+                self.failUnlessEqual(e.args[0], 0)
+            zf = zipfile.ZipFile("one.xpi", "r")
+            hopts = json.loads(zf.read("harness-options.json"))
+            self.failUnlessEqual(hopts["jetpackID"], "jid1@jetpack")
+        self.run_in_subdir("x", _test)
 
     def test_strip_default(self):
         seven = get_linker_files_dir("seven")

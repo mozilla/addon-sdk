@@ -12,9 +12,14 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-let { Ci } = require("chrome"),
+let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
-    { EventEmitter } = require("api-utils/events");
+    { EventEmitter } = require("api-utils/events"),
+    { Unknown } = require("api-utils/xpcom");
+
+const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
+                       getService(Ci.nsIWindowMediator);
+
 
 // The selection type HTML
 const HTML = 0x01;
@@ -65,9 +70,6 @@ function Selection(rangeNumber) {
     return !!(safeGetRange(sel, 0) || getElementWithSelection());
   });
 }
-
-require("api-utils/xpcom").utils.defineLazyServiceGetter(this, "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1", "nsIWindowMediator");
 
 /**
  * Returns the most recent content window
@@ -262,10 +264,8 @@ function onSelect() {
   SelectionListenerManager.onSelect();
 }
 
-let SelectionListenerManager = {
-  QueryInterface: require("api-utils/xpcom").utils.
-                  generateQI([Ci.nsISelectionListener]),
-
+let SelectionListenerManager = Unknown.extend({
+  interfaces: [ 'nsISelectionListener' ],
   // The collection of listeners wanting to be notified of selection changes
   listeners: EventEmitter.compose({
     emit: function emit(type) this._emitOnObject(exports, type),
@@ -325,7 +325,7 @@ let SelectionListenerManager = {
     let self = this;
     function wrap(count, func) {
       if (count-- > 0)
-        require("api-utils/timer").setTimeout(wrap, 0);
+        setTimeout(wrap, 0);
       else
         self.addSelectionListener(window);
     }
@@ -382,7 +382,7 @@ let SelectionListenerManager = {
     browser.removeEventListener("load", onLoad, true);
     browser.removeEventListener("unload", onUnload, true);
   }
-};
+});
 SelectionListenerManager.listeners.on('error', console.error);
 
 /**

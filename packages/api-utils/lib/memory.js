@@ -39,7 +39,7 @@ timer.initWithCallback(Compacter,
 var track = exports.track = function track(object, bin, stackFrameNumber) {
   var frame = components.stack.caller;
   var weakref = Cu.getWeakReference(object);
-  if (!bin)
+  if (!bin && 'constructor' in object)
     bin = object.constructor.name;
   if (bin == "Object")
     bin = frame.name;
