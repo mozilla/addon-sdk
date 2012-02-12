@@ -8,7 +8,6 @@ const { uriPrefix, name } = require('@packaging');
 const { WindowTracker, isBrowser } = require('api-utils/window-utils');
 const { add, remove } = require('api-utils/array');
 const { getTabs, closeTab } = require('api-utils/tabs/utils');
-const { when: unload } = require('api-utils/unload');
 
 const addonURL = uriPrefix + name + '/data/index.html';
 
