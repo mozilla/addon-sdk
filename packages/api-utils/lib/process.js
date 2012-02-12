@@ -38,21 +38,17 @@ function process(target, id, path, scope) {
            'let loader = Loader.new(' + JSON.stringify(packaging) + ');\n' +
            'loader.main("' + id + '", "' + path + '");'), false);
 
-  when(makeProcessUnloader(target));
+  when(function (reason) {
+    // Please note that it's important to unload remote loader
+    // synchronously (using synchronous frame script), to make sure that we
+    // don't stop during unload.
+    load('data:,loader.unload("' + reason + '")', true);
+  });
 
   return {
     channel: channel.bind(null, scope, target),
     loadScript: load
   };
-}
-
-function makeProcessUnloader(target) {
-  return function (reason) {
-    // Please note that it's important to unload remote loader
-    // synchronously (using synchronous frame script), to make sure that we
-    // don't stop during unload.
-    loadScript(target, 'data:,loader.unload("' + reason + '")', true);
-  }
 }
 
 exports.spawn = function spawn(id, path) {
