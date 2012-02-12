@@ -11,8 +11,8 @@ const { setTimeout } = require('api-utils/timer');
 
 let uri = require('self').data.url('index.html');
 
-function isChromeVisible({ document })
-  document.documentElement.getAttribute('disablechrome') !== 'true'
+function isChromeVisible(window)
+  window.document.documentElement.getAttribute('disablechrome') !== 'true'
 
 exports['test that add-on page has no chrome'] = function(assert, done) {
   let loader = Loader(module);
