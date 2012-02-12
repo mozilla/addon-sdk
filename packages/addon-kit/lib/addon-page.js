@@ -9,6 +9,10 @@ const { WindowTracker, isBrowser } = require('api-utils/window-utils');
 const { add, remove } = require('api-utils/array');
 const { getTabs, closeTab } = require('api-utils/tabs/utils');
 
+// Note: This is an URL that will be returned by calling
+// `require('self').data.url('index.html')` from the add-on modules.
+// We could not use this expression as in this module it would have
+// returned "addon-kit/data/index.html" instead.
 const addonURL = uriPrefix + name + '/data/index.html';
 
 WindowTracker({
