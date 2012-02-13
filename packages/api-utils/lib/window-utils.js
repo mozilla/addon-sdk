@@ -7,6 +7,7 @@
 const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events'),
       { Trait } = require('./traits');
+const { when } = require('./unload');
 const errors = require("./errors");
 
 const gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -229,6 +230,11 @@ exports.createRemoteBrowser = function createRemoteBrowser(remote) {
       // Flex it in order to be visible (optional, for debug purpose)
       browser.setAttribute("flex", "1");
       document.documentElement.appendChild(browser);
+
+      // Bug 724433: do not leak this <browser> DOM node
+      when(function () {
+        document.documentElement.removeChild(browser);
+      });
 
       // Return browser
       deliver(browser);

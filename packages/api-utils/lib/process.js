@@ -42,7 +42,11 @@ function process(target, id, path, scope) {
     // Please note that it's important to unload remote loader
     // synchronously (using synchronous frame script), to make sure that we
     // don't stop during unload.
-    load('data:,loader.unload("' + reason + '")', true);
+    // Bug 724433: Take care to nullify all globals set by `cuddlefish.js`
+    // otherwise, we will leak any still defined global.
+    // `dump` is set in Loader.new method, `dump = globals.dump;`
+    load('data:,loader.unload("' + reason + '");' +
+         'loader = null; Loader = null; dump = null;', true);
   });
 
   return {
