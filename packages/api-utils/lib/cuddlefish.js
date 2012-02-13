@@ -288,7 +288,7 @@ const Loader = {
     process.spawn(id, path)(function(addon) {
       // Listen to `require!` channel's input messages from the add-on process
       // and load modules being required.
-      loader.data.channel = addon.channel('require!').input(
+      addon.channel('require!').input(
         function({ requirer: { path }, id }) {
           try {
             Loader.require.call(loader, path, id).initialize(addon.channel(id));
@@ -300,7 +300,6 @@ const Loader = {
   },
   unload: function unload(reason, callback) {
     this.require('api-utils/unload').send(reason, callback);
-    this.data.channel.destroy();
   }
 };
 exports.Loader = Loader;
