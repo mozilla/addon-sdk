@@ -17,3 +17,6 @@ and introduces most of the APIs in the [addon-kit package](packages/addon-kit/ad
 
 ### [Localization](dev-guide/addon-development/l10n.html) ###
 How to localize an SDK-based add-on.
+
+### [Mobile Development](dev-guide/addon-development/mobile.html) ###
+How to develop for Firefox Mobile using the SDK.
