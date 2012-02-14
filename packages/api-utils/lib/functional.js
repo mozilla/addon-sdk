@@ -1,9 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Disclaimer: Most of the functions in this module implement APIs from
+// Jeremy Ashkenas's http://underscorejs.org/ library and all credits for
+// those goes to him.
+
 "use strict";
 
-var { setTimeout } = require("../timer");
+const { setTimeout } = require("./timer");
 
 /**
  * Takes `lambda` function and returns a method. When returned method is
@@ -29,12 +34,8 @@ function defer(f) {
     setTimeout(invoke, 0, f, arguments, this);
 }
 exports.defer = defer;
-// Exporting `enqueue` alias as `defer` may conflict with promises.
+// Exporting `remit` alias as `defer` may conflict with promises.
 exports.remit = defer;
-exports.Enqueued = function Enqueued() {
-  console.warn('Function was renamed to `defer` please use it instead.')
-  return defer.apply(this, arguments);
-};
 
 /**
  * Invokes `callee` by passing `params` as an arguments and `self` as `this`
@@ -80,9 +81,9 @@ exports.curry = curry;
  *   welcome('moe');    // => 'hi: moe!'
  */
 function compose() {
-  var lambdas = Array.slice(arguments);
+  let lambdas = Array.slice(arguments);
   return function composed() {
-    var args = Array.slice(arguments), index = lambdas.length;
+    let args = Array.slice(arguments), index = lambdas.length;
     while (0 <= --index)
       args = [ lambdas[index].apply(this, args) ];
     return args[0];
@@ -139,7 +140,7 @@ exports.memoize = memoize;
  */
 function delay(f, ms) {
   let args = Array.slice(arguments, 2);
-  setTimeout(function() { return f.apply(f, args); }, ms);
+  setTimeout(function(context) { return f.apply(context, args); }, ms, this);
 };
 exports.delay = delay;
 

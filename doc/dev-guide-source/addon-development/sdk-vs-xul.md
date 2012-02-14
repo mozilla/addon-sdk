@@ -59,6 +59,13 @@ anyway.</p></td>
 guidelines for Firefox, giving your users a better, more consistent experience.</p></td>
 </tr>
 
+<tr>
+<td> <strong><a name="mobile_support">Mobile Support</a></strong></td>
+<td><p>Starting in SDK 1.5, we've added experimental support for developing
+add-ons on the new native version of Firefox Mobile. See the
+<a href="dev-guide/addon-development/mobile.html">tutorial on mobile development<a>.</p></td>
+</tr>
+
 </table>
 
 ## Advantages of XUL-based Add-ons ##

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { setTimeout } = require('api-utils/timer');
-const utils = require('api-utils/utils/function');
+const utils = require('api-utils/functional');
 const { invoke, defer, curry, compose, memoize, once, delay, wrap } = utils;
 
 exports['test forwardApply'] = function(assert) {
@@ -112,11 +112,24 @@ exports['test memoize'] = function(assert) {
   assert.equal(fibnitro(10), 55,
         'a memoized version of fibonacci produces identical results');
 
-  function o(value) { return value; };
-  var oo = memoize(o);
+  function o(key, value) { return value; };
+  let oo = memoize(o), v1 = {}, v2 = {};
 
-  assert.equal(oo('toString'), 'toString', 'checks hasOwnProperty');
-  assert.equal(o('toString'), 'toString', 'checks hasOwnProperty');
+
+  assert.equal(oo(1, v1), v1, 'returns value back');
+  assert.equal(oo(1, v2), v1, 'memoized by a first argument');
+  assert.equal(oo(2, v2), v2, 'returns back value if not memoized');
+  assert.equal(oo(2), v2, 'memoized new value');
+  assert.notEqual(oo(1), oo(2), 'values do not override');
+  assert.equal(o(3, v2), oo(2, 3), 'returns same value as un-memoized');
+
+  let get = memoize(function(attribute) this[attribute])
+  let target = { name: 'Bob', get: get }
+
+  assert.equal(target.get('name'), 'Bob', 'has correct `this`');
+  assert.equal(target.get.call({ name: 'Jack' }, 'name'), 'Bob',
+               'name is memoized')
+  assert.equal(get('name'), 'Bob', 'once memoized can be called without this');
 };
 
 exports['test delay'] = function(assert, done) {
@@ -132,6 +145,15 @@ exports['test delay'] = function(assert, done) {
   }, 150);
 };
 
+exports['test delay with this'] = function(assert, done) {
+  let context = {}
+  delay.call(context, function(name) {
+    assert.equal(this, context, 'this was passed in');
+    assert.equal(name, 'Tom', 'argument was passed in');
+    done();
+  }, 10, 'Tom');
+}
+
 exports['test once'] = function(assert) {
   let n = 0;
   let increment = once(function() { n ++; });
@@ -140,6 +162,13 @@ exports['test once'] = function(assert) {
   increment();
 
   assert.equal(n, 1, 'only incremented once');
+
+  let target = { state: 0, update: once(function() this.state ++ ) };
+
+  target.update();
+  target.update();
+
+  assert.equal(target.state, 1, 'this was passed in and called only once');
 };
 
 require('test').run(exports);
