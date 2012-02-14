@@ -7,6 +7,7 @@ const { Trait } = require("../traits");
 const { List } = require("../list");
 const { Tab, Options } = require("../tabs/tab");
 const { EventEmitter } = require("../events");
+const { emit } = require("../event/core");
 const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,
         openTab, activateTab } = require("../tabs/utils");
@@ -28,7 +29,6 @@ const WindowTabTracker = Trait.compose({
   /**
    * Function used to emit events.
    */
-  _emit: EventEmitter.required,
   _tabOptions: Trait.required,
   /**
    * Function to add event listeners.
@@ -99,9 +99,9 @@ const WindowTabTracker = Trait.compose({
   },
   _emitEvent: function _emitEvent(type, tab) {
     // Notifies combined tab list that tab was added / removed.
-    tabs._emit(type, tab);
+    emit(tabs._public, type, tab);
     // Notifies contained tab list that window was added / removed.
-    this._tabs._emit(type, tab);
+    emit(this._tabs._public, type, tab);
   }
 });
 exports.WindowTabTracker = WindowTabTracker;
@@ -120,7 +120,6 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
   EventEmitter.resolve({ toString: null }),
   Trait.compose({
     on: Trait.required,
-    _emit: Trait.required,
     constructor: function TabList(options) {
       this._window = options.window;
       // Add new items to the list

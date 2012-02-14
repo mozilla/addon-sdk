@@ -6,6 +6,7 @@
 
 const { Base } = require("api-utils/base");
 const { ns } = require("api-utils/namespace");
+const { emit, off } = require("api-utils/event/core");
 const xhr = require("api-utils/xhr");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
@@ -94,7 +95,7 @@ function Request(options) {
       if (request.readyState == 4) {
         response = Response.new(request);
         errors.catchAndLog(function () {
-          self._emit('complete', response);
+          emit(self._public, 'complete', response);
         })();
       }
     }

@@ -11,6 +11,18 @@
 const { setTimeout } = require("./timer");
 
 /**
+ * Takes `lambda` function and returns a method. When returned method is
+ * invoked it calls wrapped `lambda` and passes `this` as a first argument
+ * and given argument as rest.
+ */
+function method(lambda) {
+  return function method() {
+    return lambda.apply(null, [this].concat(Array.slice(arguments)));
+  }
+}
+exports.method = method;
+
+/**
  * Takes a function and returns a wrapped one instead, calling which will call
  * original function in the next turn of event loop. This is basically utility
  * to do `setTimeout(function() { ... }, 0)`, with a difference that returned

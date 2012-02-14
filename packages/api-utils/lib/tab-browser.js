@@ -342,7 +342,9 @@ let TabModule = exports.TabModule = function TabModule(window) {
       // create a collection for each event
       collection.addCollectionProperty(tab, e);
       // make tabs setter for each event, for adding via property assignment
-      tab.__defineSetter__(e, function(val) tab[e].add(val));
+      Object.defineProperty(tab, e, {
+        set: function(val) tab[e].add(val)
+      });
     });
 
     // listen for events, filtered on this tab
@@ -379,7 +381,9 @@ let TabModule = exports.TabModule = function TabModule(window) {
     // create a collection for each event
     collection.addCollectionProperty(self, eventHandler);
     // make tabs setter for each event, for adding via property assignment
-    self.__defineSetter__(eventHandler, function(val) self[eventHandler].add(val));
+    Object.defineProperty(self, eventHandler, {
+      set: function(value) self[eventHandler].add(value)
+    });
   });
 
   // Tracker that listens for tab events, and proxies

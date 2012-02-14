@@ -7,6 +7,7 @@
 
 const observers = require("api-utils/observer-service");
 const { Worker, Loader } = require('api-utils/content');
+const { emit, off, count } = require('api-utils/event/core');
 const { EventEmitter } = require('api-utils/events');
 const { List } = require('api-utils/list');
 const { Registry } = require('api-utils/utils/registry');
@@ -40,13 +41,13 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
     if (!(rule in RULES))
       RULES[rule] = new MatchPattern(rule);
     this._add(rule);
-    this._emit('add', rule);
+    emit(this._public, 'add', rule);
   }.bind(this)),
   remove: function() Array.slice(arguments).forEach(function onRemove(rule) {
     if (!this._has(rule))
       return;
     this._remove(rule);
-    this._emit('remove', rule);
+    emit(this._public, 'remove', rule);
   }.bind(this)),
 });
 
@@ -56,7 +57,6 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
  */
 const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
-  _listeners: EventEmitter.required,
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
@@ -86,7 +86,6 @@ const PageMod = Loader.compose(EventEmitter, {
     else
       rules.add(include);
 
-    this.on('error', this._onUncaughtError = this._onUncaughtError.bind(this));
     pageModManager.add(this._public);
 
     this._loadingWindows = [];
@@ -131,10 +130,9 @@ const PageMod = Loader.compose(EventEmitter, {
     let worker = Worker({
       window: window,
       contentScript: this.contentScript,
-      contentScriptFile: this.contentScriptFile,
-      onError: this._onUncaughtError
+      contentScriptFile: this.contentScriptFile
     });
-    this._emit('attach', worker);
+    emit(this._public, 'attach', worker);
     let self = this;
     worker.once('detach', function detach() {
       worker.destroy();
@@ -151,10 +149,6 @@ const PageMod = Loader.compose(EventEmitter, {
   },
   _onRuleRemove: function _onRuleRemove(url) {
     pageModManager.off(url, this._onContent);
-  },
-  _onUncaughtError: function _onUncaughtError(e) {
-    if (this._listeners('error').length == 1)
-      console.exception(e);
   }
 });
 exports.PageMod = function(options) PageMod(options)
@@ -172,7 +166,7 @@ const PageModManager = Registry.resolve({
   },
   _destructor: function _destructor() {
     observers.remove(ON_CONTENT, this._onContentWindow);
-    this._removeAllListeners();
+    off(this._public);
     for (let rule in RULES) {
       delete RULES[rule];
     }
@@ -185,11 +179,11 @@ const PageModManager = Registry.resolve({
       return;
     for (let rule in RULES)
       if (RULES[rule].test(window.document.URL))
-        this._emit(rule, window);
+        emit(this._public, rule, window);
   },
   off: function off(topic, listener) {
     this.removeListener(topic, listener);
-    if (!this._listeners(topic).length)
+    if (!count(this._public, topic))
       delete RULES[topic];
   }
 });

@@ -8,17 +8,13 @@
 const { Trait } = require("../light-traits");
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
+const { emit } = require("../event/core");
 const { browserWindowIterator, isBrowser } = require('../window-utils');
 const { observer: windowObserver } = require("../windows/observer");
 
 // Event emitter objects used to register listeners and emit events on them
 // when they occur.
 const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
-  /**
-   * Method is implemented by `EventEmitter` and is used just for emitting
-   * events on registered listeners.
-   */
-  _emit: Trait.required,
   /**
    * Events that are supported and emitted by the module.
    */
@@ -31,7 +27,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
    *    Keyboard event being emitted.
    */
   handleEvent: function handleEvent(event) {
-    this._emit(event.type, event, event.target.ownerDocument.defaultView);
+    emit(this, event.type, event, event.target.ownerDocument.defaultView);
   }
 });
 

@@ -45,6 +45,7 @@ const windowsAPI = require("./windows");
 const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
 const { uuid } = require("api-utils/uuid");
+const { emit, off, count } = require("api-utils/event/core");
 
 // Data types definition
 const valid = {
@@ -182,7 +183,7 @@ let model = {
         value = newValue;
         // The main goal of all this Model stuff is here:
         // We want to forward all changes to some listeners
-        this._emit("change", name, value);
+        emit(this, "change", name, value);
       },
       enumerable: true,
       configurable: false
@@ -246,7 +247,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._port = EventEmitterTrait.create({
       emit: function () {
         let args = arguments;
-        self._views.forEach(function(v) v.port.emit.apply(v.port, args));
+        self._views.forEach(function({ port }) port.emit.apply(port, args))
       }
     });
     // expose wrapped port, that exposes only public properties. 
@@ -273,7 +274,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
 
   _onEvent: function _onEvent(type, eventData) {
-    this._emit(type, eventData);
+    emit(this, type, eventData);
   },
   
   _createView: function _createView() {
@@ -284,7 +285,7 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._views.push(view);
     
     // Emit an `attach` event with a WidgetView instance without private attrs
-    this._emit("attach", view._public);
+    emit(this, "attach", view._public);
     
     return view;
   },
@@ -414,7 +415,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
   _onEvent: function WidgetView__onEvent(type, eventData, domNode) {
     // Dispatch event in view
-    this._emit(type, eventData);
+    emit(this, type, eventData);
     
     // And forward it to the main Widget object
     if ("click" == type || type.indexOf("mouse") == 0)
@@ -424,7 +425,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
     // Special case for click events: if the widget doesn't have a click
     // handler, but it does have a panel, display the panel.
-    if ("click" == type && !this._listeners("click").length && this.panel)
+    if ("click" == type && !count(this, "click") && this.panel)
       this.panel.show(domNode);
   },
   
@@ -439,10 +440,10 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
   },
   
   _onPortEvent: function WidgetView__onPortEvent(args) {
-    let port = this._port;
-    port._emit.apply(port, args);
-    let basePort = this._baseWidget._port;
-    basePort._emit.apply(basePort, args);
+    let params = Array.slice(args)
+    let [ port, basePort ] = [ this._port, this._baseWidget._port ];
+    emit.apply(null, [ port ].concat(params));
+    emit.apply(null, [ basePort ].concat(params));
   },
   
   get port() this._port._public,
@@ -460,7 +461,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     this._chrome.destroy();
     delete this._chrome;
     this._baseWidget._onViewDestroyed(this);
-    this._emit("detach");
+    emit(this, "detach");
   }
 
 }));

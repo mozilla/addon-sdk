@@ -7,6 +7,7 @@
 
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
+const { emit } = require("../event/core");
 const { Trait } = require("../light-traits");
 const { getActiveTab, getTabs, getTabContainers } = require("./utils");
 const { browserWindowIterator, isBrowser } = require("../window-utils");
@@ -26,11 +27,6 @@ const EVENTS = {
 // when they occur.
 const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
   /**
-   * Method is implemented by `EventEmitter` and is used just for emitting
-   * events on registered listeners.
-   */
-  _emit: Trait.required,
-  /**
    * Events that are supported and emitted by the module.
    */
   supportedEventsTypes: Object.keys(EVENTS),
@@ -42,7 +38,7 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
    *    Keyboard event being emitted.
    */
   handleEvent: function handleEvent(event) {
-    this._emit(EVENTS[event.type], event.target, event);
+    emit(this, EVENTS[event.type], event.target, event);
   }
 });
 
@@ -53,8 +49,8 @@ const observer = Trait.compose(DOMEventAssembler, EventEmitter).create({
 var selectedTab = null;
 function onTabSelect(tab) {
   if (selectedTab !== tab) {
-    if (selectedTab) observer._emit("deactivate", selectedTab);
-    if (tab) observer._emit("activate", selectedTab = tab);
+    if (selectedTab) emit(observer, "deactivate", selectedTab);
+    if (tab) emit(observer, "activate", selectedTab = tab);
   }
 };
 observer.on("select", onTabSelect);
@@ -83,7 +79,7 @@ windowObserver.on("close", onWindowClose);
 // event for this case.
 windowObserver.on("activate", function onWindowActivate(chromeWindow) {
   if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
-  observer._emit("select", getActiveTab(chromeWindow));
+  emit(observer, "select", getActiveTab(chromeWindow));
 });
 
 // We should synchronize state, since probably we already have at least one

@@ -6,6 +6,7 @@
 const { Ci } = require('chrome');
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");
+const { emit, off } = require('../event/core');
 const { validateOptions } = require("../api-utils");
 const { defer } = require("../functional");
 const { EVENTS } = require("./events");
@@ -22,7 +23,6 @@ const TABS = [];
  */
 const TabTrait = Trait.compose(EventEmitter, {
   on: Trait.required,
-  _emit: Trait.required,
   /**
    * Tab DOM element that is being wrapped.
    */
@@ -56,7 +56,7 @@ const TabTrait = Trait.compose(EventEmitter, {
     return this;
   },
   destroy: function destroy() {
-    this._removeAllListeners();
+    off(this._public);
     this._browser.removeEventListener(EVENTS.ready.dom, this._onReady,
                                             true);
   },
@@ -68,7 +68,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   _onReady: function _onReady(event) {
     // IFrames events will bubble so we need to ignore those.
     if (event.target == this._contentDocument)
-      this._emit(EVENTS.ready.name, this._public);
+      emit(this._public, EVENTS.ready.name, this._public);
   },
   /**
    * Internal tab event router. Window will emit tab related events for all it's
@@ -77,7 +77,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   _onEvent: function _onEvent(type, tab) {
     if (tab == this._public)
-      this._emit(type, tab);
+      emit(this._public, type, tab);
   },
   /**
    * Browser DOM element where page of this tab is currently loaded.

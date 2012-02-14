@@ -12,8 +12,7 @@ const prefs = require("api-utils/preferences-service");
 const jpSelf = require("self");
 const timer = require("api-utils/timer");
 const unload = require("api-utils/unload");
-const { EventEmitter } = require("api-utils/events");
-const { Trait } = require("api-utils/traits");
+const { emit, on, off } = require("api-utils/event/core");
 
 const WRITE_PERIOD_PREF = "extensions.addon-sdk.simple-storage.writePeriod";
 const WRITE_PERIOD_DEFAULT = 300000; // 5 minutes
@@ -176,7 +175,7 @@ JsonStore.prototype = {
 // This manages a JsonStore singleton and tailors its use to simple storage.
 // The root of the JsonStore is lazy-loaded:  The backing file is only read the
 // first time the root's gotten.
-let manager = Trait.compose(EventEmitter, Trait.compose({
+let manager = ({
   jsonStore: null,
 
   // The filename of the store, based on the profile dir and extension ID.
@@ -207,22 +206,27 @@ let manager = Trait.compose(EventEmitter, Trait.compose({
   },
 
   unload: function manager_unload() {
-    this._removeAllListeners();
+    off(this);
   },
 
-  constructor: function manager_constructor() {
-    // Log unhandled errors.
-    this.on("error", console.exception.bind(console));
-    unload.ensure(this);
+  new: function manager_constructor() {
+    let manager = Object.create(this);
+    unload.ensure(manager);
 
-    this.jsonStore = new JsonStore({
-      filename: this.filename,
+    manager.jsonStore = new JsonStore({
+      filename: manager.filename,
       writePeriod: prefs.get(WRITE_PERIOD_PREF, WRITE_PERIOD_DEFAULT),
       quota: prefs.get(QUOTA_PREF, QUOTA_DEFAULT),
-      onOverQuota: this._emitOnObject.bind(this, exports, "OverQuota")
+      onOverQuota: emit.bind(null, exports, "OverQuota")
     });
-  }
-}))();
 
-exports.on = manager.on;
-exports.removeListener = manager.removeListener;
+    return manager;
+  }
+}).new();
+
+// This is workaround making sure that exports get's wrapped before it's
+// frozen, that needs to happen in order to workaround Bug 673468.
+off(exports, 'workaround');
+
+exports.on = on.bind(null, exports);
+exports.removeListener = function(type, listener) off(exports, type, listener);

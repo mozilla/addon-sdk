@@ -7,6 +7,7 @@
 
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
+const { emit, off } = require('../event/core');
 const { Ci, Cu, Cc } = require('chrome');
 const timer = require('../timer');
 const { URL } = require('../url');
@@ -34,6 +35,9 @@ const ERR_DESTROYED =
  */
 const PRIVATE_KEY = {};
 
+// emit that works asynchronously.
+const deferEmit = defer(emit);
+
 function ensureArgumentsAreJSON(array, window) {
   // JSON.stringify is buggy with cross-sandbox values,
   // it may return "{}" on functions. Use a replacer to match them correctly.
@@ -52,27 +56,12 @@ function ensureArgumentsAreJSON(array, window) {
 }
 
 /**
- * Extended `EventEmitter` allowing us to emit events asynchronously.
- */
-const AsyncEventEmitter = EventEmitter.compose({
-  /**
-   * Emits event in the next turn of event loop.
-   */
-  _asyncEmit: function _asyncEmit() {
-    timer.setTimeout(function emitter(emit, scope, params) {
-      emit.apply(scope, params);
-    }, 0, this._emit, this, arguments)
-  }
-});
-
-/**
  * Local trait providing implementation of the workers global scope.
  * Used to configure global object in the sandbox.
  * @see http://www.w3.org/TR/workers/#workerglobalscope
  */
-const WorkerGlobalScope = AsyncEventEmitter.compose({
+const WorkerGlobalScope = EventEmitter.compose({
   on: Trait.required,
-  _removeAllListeners: Trait.required,
 
   // wrapped functions from `'timer'` module.
   // Wrapper adds `try catch` blocks to the callbacks in order to
@@ -90,7 +79,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
         delete self._timers[id];
         callback.apply(null, params);
       } catch(e) {
-        self._addonWorker._asyncEmit('error', e);
+        deferEmit(self._addonWorker, 'error', e)
       }
     }, delay, this);
     this._timers[id] = true;
@@ -107,7 +96,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       try {
         callback.apply(null, params); 
       } catch(e) {
-        self._addonWorker._asyncEmit('error', e);
+        deferEmit(self._addonWorker, 'error', e);
       }
     }, delay, this);
     this._timers[id] = true;
@@ -143,7 +132,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._addonWorker)
       throw new Error(ERR_DESTROYED);
-    this._addonWorker._asyncEmit('message', ensureArgumentsAreJSON(data));
+      deferEmit(this._addonWorker._public, 'message',
+                ensureArgumentsAreJSON(data));
   },
   
   /**
@@ -320,7 +310,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     }
   },
   _destructor: function _destructor() {
-    this._removeAllListeners();
+    off(this._public);
     // Unregister all setTimeout/setInterval
     // We can use `clearTimeout` for both setTimeout/setInterval
     // as internal implementation of timer module use same method for both.
@@ -355,7 +345,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
       evaluate(this._sandbox, code, filename || 'javascript:' + code);
     }
     catch(e) {
-      this._addonWorker._asyncEmit('error', e);
+      deferEmit(this._addonWorker._public, 'error', e);
     }
   },
   /**
@@ -378,7 +368,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
           throw Error("Unsupported `contentScriptFile` url: " + String(uri));
       }
       catch(e) {
-        this._addonWorker._asyncEmit('error', e)
+        deferEmit(this._addonWorker._public, 'error', e);
       }
     }
   }
@@ -389,10 +379,8 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
  * in the content and add-on process.
  * @see https://jetpack.mozillalabs.com/sdk/latest/docs/#module/api-utils/content/worker
  */
-const Worker = AsyncEventEmitter.compose({
+const Worker = EventEmitter.compose({
   on: Trait.required,
-  _asyncEmit: Trait.required,
-  _removeAllListeners: Trait.required,
   
   /**
    * Sends a message to the worker's global scope. Method takes single
@@ -409,8 +397,8 @@ const Worker = AsyncEventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
-    this._contentWorker._asyncEmit('message',
-                                   ensureArgumentsAreJSON(data, this._window));
+    deferEmit(this._contentWorker._public, 'message',
+              ensureArgumentsAreJSON(data, this._window));
   },
   
   /**
@@ -468,8 +456,8 @@ const Worker = AsyncEventEmitter.compose({
     
     let scope = this._contentWorker._port;
     // Ensure that we pass only JSON values
-    let array = Array.prototype.slice.call(args);
-    scope._asyncEmit.apply(scope, ensureArgumentsAreJSON(array, this._window));
+    let array = ensureArgumentsAreJSON(Array.slice(args), this._window);
+    deferEmit.apply(null, [ this._contentWorker._port ].concat(array))
   },
   
   // Is worker connected to the content worker (i.e. WorkerGlobalScope) ?
@@ -558,7 +546,7 @@ const Worker = AsyncEventEmitter.compose({
    */
   destroy: function destroy() {
     this._workerCleanup();
-    this._removeAllListeners();
+    off(this._public);
   },
   
   /**
@@ -578,7 +566,7 @@ const Worker = AsyncEventEmitter.compose({
       this._windowID = null;
       observers.remove("inner-window-destroyed", this._documentUnload);
       this._earlyEvents.slice(0, this._earlyEvents.length);
-      this._emit("detach");
+      emit(this._public, "detach");
     }
   },
   
@@ -587,9 +575,8 @@ const Worker = AsyncEventEmitter.compose({
    * worker.port. Provide a way for composed object to catch all events.
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
-    // Ensure that we pass only JSON values
-    let array = Array.prototype.slice.call(arguments);
-    this._port._asyncEmit.apply(this._port, ensureArgumentsAreJSON(array));
+    let args = ensureArgumentsAreJSON(Array.slice(arguments));
+    deferEmit.apply(null, [ this._port ].concat(args));
   },
   
   /**

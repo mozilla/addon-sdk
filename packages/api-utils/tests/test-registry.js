@@ -49,6 +49,7 @@ exports['test:remove'] = function(test) {
 
   fixture.remove({});
   let object = fixture.add({});
+  let isRemoveEmitted = false;
   fixture.remove(object);
   fixture.remove(object);
 };

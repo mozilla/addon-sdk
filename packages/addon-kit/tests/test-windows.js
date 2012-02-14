@@ -16,10 +16,10 @@ exports.testOpenAndCloseWindow = function(test) {
 
   test.assertEqual(browserWindows.length, 1, "Only one window open");
 
-  browserWindows.open({
+  let browserWindow = browserWindows.open({
     url: "data:text/html,<title>windows API test</title>",
     onOpen: function(window) {
-      test.assertEqual(this, browserWindows,
+      test.assertEqual(this, browserWindow,
                        "The 'this' object is the windows object.");
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
       test.assertEqual(browserWindows.length, 2, "Two windows open");
