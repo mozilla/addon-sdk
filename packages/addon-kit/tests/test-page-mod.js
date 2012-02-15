@@ -180,7 +180,7 @@ exports.testCommunication2 = function(test) {
   let callbackDone = null,
       window;
 
-  testPageMod(test, "about:", [{
+  testPageMod(test, "about:credits", [{
       include: "about:*",
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
