@@ -148,7 +148,12 @@ const eventEmitter =  {
       try {
         listener.apply(targetObj, params);
       } catch(e) {
-        this._emit('error', e);
+        // Bug 726967: Ignore exceptions being throws while notifying the error
+        // in order to avoid infinite loops.
+        if (type !== ERROR_TYPE)
+          this._emit(ERROR_TYPE, e);
+        else
+          console.exception("Exception in error event listener " + e);
       }
     }
     return true;
