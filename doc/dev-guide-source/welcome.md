@@ -52,6 +52,7 @@ tools and APIs.
  <a href="dev-guide/addon-development/tutorials/unit-testing.html">Unit Testing</a>
  <a href="dev-guide/addon-development/l10n.html">Localization</a>
  <a href="dev-guide/module-development/chrome.html">Chrome Authority</a>
+ <a href="dev-guide/addon-development/mobile.html">Mobile Development</a>
 
 </div>
 

@@ -1,9 +1,20 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <div class="warning">Developing add-ons for Firefox Mobile is still
 an experimental feature of the SDK. Although the SDK modules used are
 stable, the setup instructions and cfx commands are likely to change.
 </div>
 
 # Developing for Firefox Mobile #
+
+<span class="aside">
+To follow this tutorial you'll need to have
+[installed the SDK](dev-guide/addon-development/installation.html)
+and learned the
+[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+</span>
 
 Mozilla has recently decided to
 [reimplement the UI for Firefox Mobile on Android](http://starkravingfinkle.org/blog/2011/11/firefox-for-android-native-android-ui/)
