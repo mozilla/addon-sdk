@@ -11,7 +11,7 @@ const { setTimeout } = require("./timer");
 
 const { ns } = require("./namespace");
 
-const { curry, invoke } = require("./utils/function");
+const { curry, invoke } = require("./functional");
 
 const Sandbox = require("./sandbox");
 
