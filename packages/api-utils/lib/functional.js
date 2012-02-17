@@ -8,8 +8,6 @@
 
 "use strict";
 
-const { setTimeout } = require("./timer");
-
 /**
  * Takes a function and returns a wrapped one instead, calling which will call
  * original function in the next turn of event loop. This is basically utility

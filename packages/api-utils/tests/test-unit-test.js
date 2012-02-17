@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const timer = require("timer");
 const { Loader } = require("./helpers");
 
 var setupCalled = false, teardownCalled = false;
@@ -35,7 +34,7 @@ exports.testASetupTeardownSyncTestPart2 = function(test) {
 exports.testATeardownAsyncTestPart1 = function(test) {
     teardownCalled = false;
 
-    timer.setTimeout(function() {
+    setTimeout(function() {
         test.assertEqual(false, teardownCalled, "teardown not called until done");
         test.done();
     }, 200);
@@ -60,7 +59,7 @@ exports.testWaitUntil = function(test) {
   test.waitUntil(function () succeed, "waitUntil pass")
       .then(function () test.done());
   
-  timer.setTimeout(function () {
+  setTimeout(function () {
     succeed = true;
   }, 200);
 }
@@ -73,7 +72,7 @@ exports.testWaitUntilEqual = function(test) {
                       "waitUntilEqual pass")
       .then(function () test.done());
   
-  timer.setTimeout(function () {
+  setTimeout(function () {
     succeed = true;
   }, 200);
 }
@@ -86,7 +85,7 @@ exports.testWaitUntilNotEqual = function(test) {
                          "waitUntilNotEqual pass")
       .then(function () test.done());
   
-  timer.setTimeout(function () {
+  setTimeout(function () {
     succeed = true;
   }, 200);
 }
@@ -99,7 +98,7 @@ exports.testWaitUntilMatches = function(test) {
                         /foo/, "waitUntilEqual pass")
       .then(function () test.done());
   
-  timer.setTimeout(function () {
+  setTimeout(function () {
     succeed = true;
   }, 200);
 }

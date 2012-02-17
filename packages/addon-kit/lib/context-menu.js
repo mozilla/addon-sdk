@@ -27,7 +27,6 @@ const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
-const timer = require("timer");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -230,7 +229,7 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
   _finishActiveItemInit: function AIT__finishActiveItemInit() {
     numItemsWithUnfinishedInit++;
     const self = this;
-    timer.setTimeout(function AIT__finishActiveItemInitTimeout() {
+    setTimeout(function AIT__finishActiveItemInitTimeout() {
       if (!self.parentMenu && !self._wasDestroyed)
         browserManager.addTopLevelItem(self._public);
       self._hasFinishedInit = true;
@@ -1350,7 +1349,7 @@ ContextMenuPopup.prototype = {
     // inappropriate state when those items are later added to the menu.
     if (numItemsWithUnfinishedInit) {
       const self = this;
-      timer.setTimeout(function popupShowingTryAgain() {
+      setTimeout(function popupShowingTryAgain() {
         self._handlePopupShowing();
       }, 0);
       return;

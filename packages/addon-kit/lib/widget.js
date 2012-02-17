@@ -42,7 +42,6 @@ const LightTrait = require('api-utils/light-traits').Trait;
 const { Loader, Symbiont } = require("api-utils/content");
 const { Cortex } = require('api-utils/cortex');
 const windowsAPI = require("./windows");
-const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
 const { uuid } = require("api-utils/uuid");
 

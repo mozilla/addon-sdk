@@ -7,7 +7,6 @@
 const {Cc,Ci} = require("chrome");
 const observers = require("api-utils/observer-service");
 const { EventEmitter } = require("api-utils/events");
-const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
 
 const ON_START = "start";

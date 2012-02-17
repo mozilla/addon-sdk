@@ -6,7 +6,6 @@
 
 const { openTab, closeTab } = require("api-utils/tabs/utils");
 const { Loader } = require("./helpers");
-const { setTimeout } = require("timer");
 
 exports["test unload tab observer"] = function(assert, done) {
   let loader = Loader(module);

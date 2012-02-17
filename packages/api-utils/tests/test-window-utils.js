@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var windowUtils = require("window-utils");
-var timer = require("timer");
 var {Cc,Ci} = require("chrome");
 var { Loader } = require("./helpers");
 
@@ -82,13 +81,13 @@ exports.testWindowWatcher = function(test) {
     onTrack: function(window) {
       if (window == myWindow) {
         test.pass("onTrack() called with our test window");
-        timer.setTimeout(function() { myWindow.close(); }, 1);
+        setTimeout(function() { myWindow.close(); }, 1);
       }
     },
     onUntrack: function(window) {
       if (window == myWindow) {
         test.pass("onUntrack() called with our test window");
-        timer.setTimeout(function() {
+        setTimeout(function() {
                            if (!finished) {
                              finished = true;
                              myWindow = null;
@@ -117,7 +116,7 @@ exports.testWindowWatcherUntracker = function(test) {
       tracks = tracks + 1;
       if (window == myWindow) {
         test.pass("onTrack() called with our test window");
-        timer.setTimeout(function() {
+        setTimeout(function() {
           myWindow.close();
         }, 1);
       }
@@ -126,7 +125,7 @@ exports.testWindowWatcherUntracker = function(test) {
       tracks = tracks - 1;
       if (window == myWindow && !unloadCalled) {
         unloadCalled = true;
-        timer.setTimeout(function() {
+        setTimeout(function() {
           wt.unload();
         }, 1);
       }
@@ -134,7 +133,7 @@ exports.testWindowWatcherUntracker = function(test) {
         test.fail("WindowTracker onUntrack was called more times than onTrack..");
       }
       else if (0 == tracks) {
-        timer.setTimeout(function() {
+        setTimeout(function() {
             myWindow = null;
             test.done();
         }, 1);
@@ -210,7 +209,7 @@ exports.testWindowWatcherWithoutUntracker = function(test) {
     onTrack: function(window) {
       if (window == myWindow) {
         test.pass("onTrack() called with our test window");
-        timer.setTimeout(function() {
+        setTimeout(function() {
           myWindow.close();
 
           if (!finished) {

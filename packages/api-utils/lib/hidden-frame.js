@@ -9,7 +9,6 @@
 const {Cc, Ci} = require("chrome");
 const errors = require("./errors");
 const apiUtils = require("./api-utils");
-const timer = require("./timer");
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 

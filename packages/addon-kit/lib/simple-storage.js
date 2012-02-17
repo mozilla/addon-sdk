@@ -10,7 +10,6 @@ const {Cc,Ci} = require("chrome");
 const file = require("api-utils/file");
 const prefs = require("api-utils/preferences-service");
 const jpSelf = require("self");
-const timer = require("api-utils/timer");
 const unload = require("api-utils/unload");
 const { EventEmitter } = require("api-utils/events");
 const { Trait } = require("api-utils/traits");
@@ -42,7 +41,7 @@ function JsonStore(options) {
 
   unload.ensure(this);
 
-  this.writeTimer = timer.setInterval(this.write.bind(this),
+  this.writeTimer = setInterval(this.write.bind(this),
                                       this.writePeriod);
 }
 
@@ -119,7 +118,7 @@ JsonStore.prototype = {
   // Cleans up on unload.  If unloading because of uninstall, the store is
   // purged; otherwise it's written.
   unload: function JsonStore_unload(reason) {
-    timer.clearInterval(this.writeTimer);
+    clearInterval(this.writeTimer);
     this.writeTimer = null;
 
     if (reason === "uninstall")

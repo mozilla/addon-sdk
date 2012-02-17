@@ -97,7 +97,7 @@ exports.testAutomaticDestroy = function(test) {
     
     // Fire a tab event an ensure that this destroyed tab is inactive
     tabs.once('open', function () {
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         test.assert(!called, "Unloaded tab module is destroyed and inactive");
         closeBrowserWindow(window, function() test.done());
       }, 0);
@@ -859,7 +859,7 @@ function openBrowserWindow(callback, url) {
         window.removeEventListener("load", onLoad, true);
         let browsers = window.document.getElementsByTagName("tabbrowser");
         try {
-          require("timer").setTimeout(function () {
+          setTimeout(function () {
             callback(window, browsers[0]);
           }, 10);
         } catch (e) { console.exception(e); }

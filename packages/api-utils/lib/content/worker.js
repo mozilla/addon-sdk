@@ -8,7 +8,6 @@
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
-const timer = require('../timer');
 const { URL } = require('../url');
 const unload = require('../unload');
 const observers = require('../observer-service');
@@ -59,7 +58,7 @@ const AsyncEventEmitter = EventEmitter.compose({
    * Emits event in the next turn of event loop.
    */
   _asyncEmit: function _asyncEmit() {
-    timer.setTimeout(function emitter(emit, scope, params) {
+    setTimeout(function emitter(emit, scope, params) {
       emit.apply(scope, params);
     }, 0, this._emit, this, arguments)
   }
@@ -83,9 +82,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
   // List of all living timeouts/intervals
   _timers: null,
 
-  setTimeout: function setTimeout(callback, delay) {
+  setTimeout: function setTimeoutInWorker(callback, delay) {
     let params = Array.slice(arguments, 2);
-    let id = timer.setTimeout(function(self) {
+    let id = setTimeout(function(self) {
       try {
         delete self._timers[id];
         callback.apply(null, params);
@@ -96,14 +95,14 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     this._timers[id] = true;
     return id;
   },
-  clearTimeout: function clearTimeout(id){
+  clearTimeout: function clearTimeoutInWorker(id){
     delete this._timers[id];
-    return timer.clearTimeout(id);
+    return clearTimeout(id);
   },
 
-  setInterval: function setInterval(callback, delay) {
+  setInterval: function setIntervalInWorker(callback, delay) {
     let params = Array.slice(arguments, 2);
-    let id = timer.setInterval(function(self) {
+    let id = setInterval(function(self) {
       try {
         callback.apply(null, params); 
       } catch(e) {
@@ -113,9 +112,9 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     this._timers[id] = true;
     return id;
   },
-  clearInterval: function clearInterval(id) {
+  clearInterval: function clearIntervalInWorker(id) {
     delete this._timers[id];
-    return timer.clearInterval(id);
+    return clearInterval(id);
   },
 
   /**
@@ -325,7 +324,7 @@ const WorkerGlobalScope = AsyncEventEmitter.compose({
     // We can use `clearTimeout` for both setTimeout/setInterval
     // as internal implementation of timer module use same method for both.
     for (let id in this._timers)
-      timer.clearTimeout(id);
+      clearTimeout(id);
     this._sandbox = null;
     this._addonWorker = null;
     this.__onMessage = undefined;

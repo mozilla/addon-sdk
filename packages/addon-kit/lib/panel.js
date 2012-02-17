@@ -18,7 +18,6 @@ const { Cc, Ci } = require("chrome");
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
-const timer = require("api-utils/timer");
 const runtime = require("api-utils/runtime");
 
 const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
@@ -198,7 +197,7 @@ const Panel = Symbiont.resolve({
     // Wait for the XBL binding to be constructed
     function waitForBinding() {
       if (!xulPanel.openPopup) {
-        timer.setTimeout(waitForBinding, 50);
+        setTimeout(waitForBinding, 50);
         return;
       }
       xulPanel.openPopup(anchor, position, x, y);

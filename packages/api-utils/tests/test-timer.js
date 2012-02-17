@@ -2,11 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var timer = require("timer");
 const { Loader } = require("./helpers");
 
 exports.testSetTimeout = function(test) {
-  timer.setTimeout(function() {
+  setTimeout(function() {
     test.pass("testSetTimeout passed");
     test.done();
   }, 1);
@@ -15,7 +14,7 @@ exports.testSetTimeout = function(test) {
 
 exports.testParamedSetTimeout = function(test) {
   let params = [1, 'foo', { bar: 'test' }, null, undefined];
-  timer.setTimeout.apply(null, [function() {
+  setTimeout.apply(null, [function() {
     test.assertEqual(arguments.length, params.length);
     for (let i = 0, ii = params.length; i < ii; i++)
       test.assertEqual(params[i], arguments[i]);
@@ -28,12 +27,12 @@ exports.testClearTimeout = function(test) {
   var myFunc = function myFunc() {
     test.fail("myFunc() should not be called in testClearTimeout");
   };
-  var id = timer.setTimeout(myFunc, 1);
-  timer.setTimeout(function() {
+  var id = setTimeout(myFunc, 1);
+  setTimeout(function() {
     test.pass("testClearTimeout passed");
     test.done();
   }, 2);
-  timer.clearTimeout(id);
+  clearTimeout(id);
   test.waitUntilDone();
 };
 
@@ -42,23 +41,23 @@ exports.testParamedClearTimeout = function(test) {
   var myFunc = function myFunc() {
     test.fail("myFunc() should not be called in testClearTimeout");
   };
-  var id = timer.setTimeout(myFunc, 1);
-  timer.setTimeout.apply(null, [function() {
+  var id = setTimeout(myFunc, 1);
+  setTimeout.apply(null, [function() {
     test.assertEqual(arguments.length, params.length);
     for (let i = 0, ii = params.length; i < ii; i++)
       test.assertEqual(params[i], arguments[i]);
     test.done();
   }, 1].concat(params));
-  timer.clearTimeout(id);
+  clearTimeout(id);
   test.waitUntilDone();
 };
 
 exports.testSetInterval = function (test) {
   var count = 0;
-  var id = timer.setInterval(function () {
+  var id = setInterval(function () {
     count++;
     if (count >= 5) {
-      timer.clearInterval(id);
+      clearInterval(id);
       test.pass("testSetInterval passed");
       test.done();
     }
@@ -69,14 +68,14 @@ exports.testSetInterval = function (test) {
 exports.testParamedSetInerval = function(test) {
   let params = [1, 'foo', { bar: 'test' }, null, undefined];
   let count = 0;
-  let id = timer.setInterval.apply(null, [function() {
+  let id = setInterval.apply(null, [function() {
     count ++;
     if (count < 5) {
       test.assertEqual(arguments.length, params.length);
       for (let i = 0, ii = params.length; i < ii; i++)
         test.assertEqual(params[i], arguments[i]);
     } else {
-      timer.clearInterval(id);
+      clearInterval(id);
       test.done();
     }
   }, 1].concat(params));
@@ -84,11 +83,11 @@ exports.testParamedSetInerval = function(test) {
 };
 
 exports.testClearInterval = function (test) {
-  timer.clearInterval(timer.setInterval(function () {
+  clearInterval(setInterval(function () {
     test.fail("setInterval callback should not be called");
   }, 1));
-  var id = timer.setInterval(function () {
-    timer.clearInterval(id);
+  var id = setInterval(function () {
+    clearInterval(id);
     test.pass("testClearInterval passed");
     test.done();
   }, 2);
@@ -96,12 +95,12 @@ exports.testClearInterval = function (test) {
 };
 
 exports.testParamedClearInterval = function(test) {
-  timer.clearInterval(timer.setInterval(function () {
+  clearInterval(setInterval(function () {
     test.fail("setInterval callback should not be called");
-  }, 1, timer, {}, null));
+  }, 1, {}, null));
 
-  let id = timer.setInterval(function() {
-    timer.clearInterval(id);
+  let id = setInterval(function() {
+    clearInterval(id);
     test.assertEqual(3, arguments.length);
     test.done();
   }, 2, undefined, 'test', {});
@@ -111,7 +110,7 @@ exports.testParamedClearInterval = function(test) {
 
 exports.testUnload = function(test) {
   var loader = Loader(module);
-  var sbtimer = loader.require("timer");
+  var sbtimer = loader.globals;
 
   var myFunc = function myFunc() {
     test.fail("myFunc() should not be called in testUnload");
@@ -122,7 +121,7 @@ exports.testUnload = function(test) {
   sbtimer.setInterval(myFunc, 1);
   sbtimer.setInterval(myFunc, 1, {}, null, 'bar', undefined, 87);
   loader.unload();
-  timer.setTimeout(function() {
+  setTimeout(function() {
     test.pass("timer testUnload passed");
     test.done();
   }, 2);

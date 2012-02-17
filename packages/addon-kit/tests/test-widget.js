@@ -184,7 +184,7 @@ exports.testConstructor = function(test) {
     if (!tests.length)
       test.done();
     else
-      require("timer").setTimeout(tests.shift(), 0);
+      setTimeout(tests.shift(), 0);
   }
   function doneTest() nextTest();
 
@@ -929,7 +929,7 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  require("timer").setTimeout(function() {
+  setTimeout(function() {
     window.addEventListener("unload", function onUnload() {
       window.removeEventListener("unload", onUnload, false);
       callback();

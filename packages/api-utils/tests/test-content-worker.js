@@ -5,7 +5,6 @@
 "use stirct";
 
 const { Cc, Ci } = require('chrome');
-const timer = require('timer');
 
 function makeWindow(contentURL) {
   let content =
@@ -355,14 +354,14 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     // Change location so that content script is destroyed,
     // and all setTimeout/setInterval should be unregistered.
     // Wait some cycles in order to execute some intervals.
-    timer.setTimeout(function () {
+    setTimeout(function () {
       // Bug 689621: Wait for the new document load so that we are sure that
       // previous document cancelled its intervals
       iframe.addEventListener("load", function onload() {
         iframe.removeEventListener("load", onload, true);
         let titleAfterLoad = originalDocument.title;
         // Wait additional cycles to verify that intervals are really cancelled
-        timer.setTimeout(function () {
+        setTimeout(function () {
           test.assertEqual(iframe.contentDocument.title, "final",
                            "New document has not been modified");
           test.assertEqual(originalDocument.title, titleAfterLoad,
