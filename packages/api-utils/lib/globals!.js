@@ -7,6 +7,8 @@
 
 let { Cc, Ci } = require('chrome');
 let { PlainTextConsole } = require('./plain-text-console');
+let { setTimeout, setInterval,
+      clearTimeout, clearInterval } = require('./timer');
 let options = require('@packaging');
 let consoleService = Cc['@mozilla.org/consoleservice;1'].getService().
                      QueryInterface(Ci.nsIConsoleService);
@@ -96,3 +98,10 @@ Object.defineProperty(exports, 'define', {
     }
   })()
 });
+
+
+// Exporting all timer functions as globals.
+exports.setTimeout = setTimeout;
+exports.clearTimeout = clearTimeout;
+exports.setInterval = setInterval;
+exports.clearInterval = clearInterval;
