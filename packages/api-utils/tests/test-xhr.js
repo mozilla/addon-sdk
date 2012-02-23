@@ -5,6 +5,7 @@
 var xhr = require("xhr");
 var timer = require("timer");
 var { Loader } = require("./helpers");
+var xulApp = require("xul-app");
 
 /* Test is intentionally disabled until platform bug 707256 is fixed.
 exports.testAbortedXhr = function(test) {
@@ -54,10 +55,16 @@ exports.testResponseHeaders = function(test) {
   req.open("GET", module.uri);
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
-      // Now that bug 608939 is FIXED, headers works correctly on files:
       var headers = req.getAllResponseHeaders();
-      test.assertEqual(headers, "Content-Type: text/plain\n",
-                  "XHR's delegated methods should return");
+      if (xulApp.versionInRange(xulApp.platformVersion, "13.0a1", "*")) {
+        // Now that bug 608939 is FIXED, headers works correctly on files:
+        test.assertEqual(headers, "Content-Type: text/plain\n",
+                         "XHR's headers are valid");
+      }
+      else {
+        test.assert(headers === null || headers === "",
+                    "XHR's headers are empty");
+      }
       test.done();
     }
   };
