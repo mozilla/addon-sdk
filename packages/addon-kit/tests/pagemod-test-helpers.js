@@ -5,7 +5,6 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const timer = require("timer");
 const xulApp = require("xul-app");
 const { Loader } = require('./helpers');
 
@@ -51,7 +50,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
     // load event. So page-mod actions may not be already done.
     // If we delay even more contentScriptWhen:'end', we may want to modify
     // this code again.
-    timer.setTimeout(testCallback, 0,
+    setTimeout(testCallback, 0,
       b.contentWindow.wrappedJSObject, 
       function done() {
         pageMods.forEach(function(mod) mod.destroy());

@@ -7,8 +7,6 @@
 const BAD_LISTENER = "The event listener must be a function.";
 
 const { Cc, Ci, Cu, CC } = require("chrome");
-const { setTimeout } = require("./timer");
-
 const { ns } = require("./namespace");
 
 const { curry, invoke } = require("./functional");

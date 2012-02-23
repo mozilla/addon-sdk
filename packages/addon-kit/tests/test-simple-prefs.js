@@ -4,7 +4,6 @@
 
 
 const { Loader } = require("./helpers");
-const setTimeout = require("timers").setTimeout;
 const notify = require("observer-service").notify;
 const { jetpackID } = require("@packaging");
 

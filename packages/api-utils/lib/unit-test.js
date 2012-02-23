@@ -4,7 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-var timer = require("./timer");
 
 exports.findAndRunTests = function findAndRunTests(options) {
   var TestFinder = require("./unit-test-finder").TestFinder;
@@ -234,7 +233,7 @@ TestRunner.prototype = {
         this.test.teardown(this);
       }
       if (this.waitTimeout !== null) {
-        timer.clearTimeout(this.waitTimeout);
+        clearTimeout(this.waitTimeout);
         this.waitTimeout = null;
       }
       if (this.test.passed == 0 && this.test.failed == 0) {
@@ -254,7 +253,7 @@ TestRunner.prototype = {
         var onDone = this.onDone;
         var self = this;
         this.onDone = null;
-        timer.setTimeout(function() { onDone(self); }, 0);
+        setTimeout(function() { onDone(self); }, 0);
       }
     }
   },
@@ -329,10 +328,10 @@ TestRunner.prototype = {
                                msg + "\n",
                                currentWaitStack);
             if (timeout)
-              timer.clearTimeout(timeout);
+              clearTimeout(timeout);
             return;
           }
-          timeout = timer.setTimeout(loop, test.PAUSE_DELAY);
+          timeout = setTimeout(loop, test.PAUSE_DELAY);
         }
       };
       
@@ -393,9 +392,9 @@ TestRunner.prototype = {
 
     // We may already have registered a timeout callback
     if (this.waitTimeout)
-      timer.clearTimeout(this.waitTimeout);
+      clearTimeout(this.waitTimeout);
 
-    this.waitTimeout = timer.setTimeout(tiredOfWaiting, ms);
+    this.waitTimeout = setTimeout(tiredOfWaiting, ms);
   },
 
   startMany: function startMany(options) {

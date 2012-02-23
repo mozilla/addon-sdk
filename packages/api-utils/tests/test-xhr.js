@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var xhr = require("xhr");
-var timer = require("timer");
 var { Loader } = require("./helpers");
 var xulApp = require("xul-app");
 
@@ -25,7 +24,7 @@ exports.testLocalXhr = function(test) {
       test.assertMatches(req.responseText,
                          /onreadystatechange/,
                          "XMLHttpRequest should get local files");
-      timer.setTimeout(
+      setTimeout(
         function() { test.assertEqual(xhr.getRequestCount(), 0);
                      test.done(); },
         0

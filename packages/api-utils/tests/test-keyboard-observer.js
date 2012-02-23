@@ -27,7 +27,7 @@ exports["test unload keyboard observer"] = function(assert, done) {
   keyPress(element, "accel-%");
 
   // Enqueuing asserts to make sure that assertion is not performed early.
-  require("timer").setTimeout(function () {
+  setTimeout(function () {
     assert.equal(called, 1, "observer was called before unload only.");
     done();
   }, 0);

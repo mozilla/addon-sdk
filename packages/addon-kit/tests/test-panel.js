@@ -150,7 +150,7 @@ tests.testParentResizeHack = function(test) {
     },
     onShow: function () {
       panel.postMessage('resize');
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         test.assertEqual(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
         test.assertEqual(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
         panel.destroy();
@@ -338,7 +338,7 @@ function makeEventOrderTest(options) {
       panel.on(event, function() {
         test.assertEqual(event, expectedEvents.shift());
         if (cb)
-          require("timer").setTimeout(cb, 1);
+          setTimeout(cb, 1);
       });
       return {then: expect};
     }

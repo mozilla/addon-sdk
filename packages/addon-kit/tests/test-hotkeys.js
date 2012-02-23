@@ -151,7 +151,7 @@ exports["test hotkey: automatic destroy"] = function(assert, done) {
   // Ensure that the hotkey is really destroyed
   keyDown(element, "accel-shift-x");
   
-  require("timer").setTimeout(function () {
+  setTimeout(function () {
     assert.ok(!called, "Hotkey is destroyed and not called.");
     done();
   }, 0);

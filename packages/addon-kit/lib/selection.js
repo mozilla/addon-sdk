@@ -13,7 +13,6 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 }
 
 let { Ci, Cc } = require("chrome"),
-    { setTimeout } = require("api-utils/timer"),
     { EventEmitter } = require("api-utils/events"),
     { Unknown } = require("api-utils/xpcom");
 

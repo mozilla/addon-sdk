@@ -30,7 +30,7 @@ function onBrowserLoad(callback, event) {
   if (event.target && event.target.defaultView == this) {
     this.removeEventListener("load", onBrowserLoad, true);
     try {
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         callback(event);
       }, 10);
     } catch (e) { console.exception(e); }
@@ -536,7 +536,7 @@ function openURLInNewTab(options, window, tabConstructor) {
       // for subsequent loads in same tab.
       tabBrowser.removeEventListener("load", onLoad, true);
       let tab = tabConstructor(tabEl);
-      require("./timer").setTimeout(function() {
+      setTimeout(function() {
         require("./errors").catchAndLog(function(tab) options.onOpen(tab))(tab);
       }, 10);
     }, true);

@@ -1871,7 +1871,7 @@ TestHelper.prototype = {
     const self = this;
     node.addEventListener(event, function handler(evt) {
       node.removeEventListener(event, handler, useCapture);
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         try {
           callback.call(self, evt);
         }

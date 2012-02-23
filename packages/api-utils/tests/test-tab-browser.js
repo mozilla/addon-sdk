@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var timer = require("timer");
 var {Cc,Ci} = require("chrome");
 
 function onBrowserLoad(callback, event) {
@@ -10,7 +9,7 @@ function onBrowserLoad(callback, event) {
     this.removeEventListener("load", onBrowserLoad, true);
     let browsers = this.document.getElementsByTagName("tabbrowser");
     try {
-      require("timer").setTimeout(function (window) {
+      setTimeout(function (window) {
         callback(window, browsers[0]);
       }, 10, this);
     } catch (e) { console.exception(e); }
@@ -33,7 +32,7 @@ function openBrowserWindow(callback, url) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  require("timer").setTimeout(function() {
+  setTimeout(function() {
     window.addEventListener("unload", function onUnload() {
       window.removeEventListener("unload", onUnload, false);
       callback();
@@ -119,7 +118,7 @@ exports.testTrackerWithDelegate = function(test) {
       }
       else if (this.state == "waiting for browser window to open") {
         this.state = "waiting for browser window to close";
-        require("timer").setTimeout(function() {
+        setTimeout(function() {
           closeBrowserWindow(browser.ownerDocument.defaultView, function() {
             test.assertEqual(delegate.state, "deinitializing");
             tb.unload();
@@ -232,7 +231,7 @@ exports.testTabTracker = function(test) {
         test.assertEqual(delegate.tracked, tracked + 3, "delegate tracked tabs matched count");
         tabTracker.unload();
         closeBrowserWindow(browserWindow, function() {
-          require("timer").setTimeout(function() test.done(), 0);
+          setTimeout(function() test.done(), 0);
         });
       }
     }
@@ -342,7 +341,7 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
 
     tm1.onActivate = function onActivate() {
       tm1.onActivate.remove(onActivate);
-      require("timer").setTimeout(function() {
+      setTimeout(function() {
         test.assertEqual(tm1.activeTab.title, "window1,tab1", "activeTab setter works");
         closeTwoWindows(window1, window2, function() test.done());
       }, 1000);

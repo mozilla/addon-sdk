@@ -15,7 +15,7 @@ const tabs = require("tabs");
 exports.delay = function(test) {
   if (false) {
     test.waitUntilDone(60000);
-    require("timer").setTimeout(function() {test.done();}, 4000);
+    setTimeout(function() {test.done();}, 4000);
   } else
     test.pass();
 }

@@ -4,7 +4,6 @@
 "use strict";
 
 const { Cc, Ci } = require('chrome'),
-      { setTimeout } = require("../timer"),
       { Trait } = require('../traits'),
 
       WM = Cc['@mozilla.org/appshell/window-mediator;1'].

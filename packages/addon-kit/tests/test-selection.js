@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-let timer = require("timer");
 let {Cc,Ci} = require("chrome");
 
 // Arbitrary delay needed to avoid weird behavior.
@@ -41,7 +40,7 @@ function primeTestCase(html, test, callback) {
       if (window.document.location.href != dataURL)
         return;
       callback(window, test);
-      timer.setTimeout(function() {
+      setTimeout(function() {
           tracker.unload();
           test.done();
           window.close();

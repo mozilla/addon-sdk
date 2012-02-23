@@ -6,7 +6,6 @@
 
 let { Namespace, ns } = require("api-utils/namespace");
 let { Cc, Ci, Cu } = require("chrome");
-let { setTimeout } = require("api-utils/timer")
 
 exports["test post GC references"] = function (assert, done) {
   // Test temporary workaround for a bug 673468.

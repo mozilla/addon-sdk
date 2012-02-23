@@ -56,23 +56,22 @@ function step2(url, test) {
       test.assertEqual(matchedTab, tab, 
         "We are able to find the tab with his content window object");
       
-      let timer = require("timer");
       function waitForFrames() {
         let iframe = window.document.getElementById("iframe");
         if (!iframe) {
-          timer.setTimeout(waitForFrames, 100);
+          setTimeout(waitForFrames, 100);
           return;
         }
         iframeWin = iframe.contentWindow;
         let subIframe = iframeWin.document.getElementById("sub-iframe");
         if (!subIframe) {
-          timer.setTimeout(waitForFrames, 100);
+          setTimeout(waitForFrames, 100);
           return;
         }
         let subIframeWin = subIframe.contentWindow;
         let subSubIframe = subIframeWin.document.getElementById("sub-sub-iframe");
         if (!subSubIframe) {
-          timer.setTimeout(waitForFrames, 100);
+          setTimeout(waitForFrames, 100);
           return;
         }
         let subSubIframeWin = subSubIframe.contentWindow;

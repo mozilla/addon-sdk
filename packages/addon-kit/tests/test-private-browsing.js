@@ -90,7 +90,7 @@ if (pbService) {
     // is correctly destroyed
     pb.activate();
     pb.once("start", function onStart() {
-      require("timer").setTimeout(function () {
+      setTimeout(function () {
         test.assert(!called, 
           "First private browsing instance is destroyed and inactive");
 

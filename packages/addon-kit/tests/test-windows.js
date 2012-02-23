@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const {Cc, Ci} = require("chrome");
-const { setTimeout } = require("timer");
 const { Loader } = require('./helpers');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
