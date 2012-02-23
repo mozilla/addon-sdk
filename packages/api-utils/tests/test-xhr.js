@@ -48,21 +48,15 @@ exports.testUnload = function(test) {
   test.assertEqual(sbxhr.getRequestCount(), 0);
 };
 
-exports.testDelegatedReturns = function(test) {
+exports.testResponseHeaders = function(test) {
   var req = new xhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
-      // This response isn't going to have any headers, so the return value
-      // should be null. Previously it wasn't returning anything, and thus was
-      // undefined.
-      
-      // Depending on whether Bug 608939 has been applied
-      // to the platform, getAllResponseHeaders() may return
-      // null or the empty string; accept either.
+      // Now that bug 608939 is FIXED, headers works correctly on files:
       var headers = req.getAllResponseHeaders();
-      test.assert(headers === null || headers === "",
+      test.assertEqual(headers, "Content-Type: text/plain\n",
                   "XHR's delegated methods should return");
       test.done();
     }
