@@ -116,6 +116,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
                  update_url=None, bootstrap=True, enable_mobile=False):
     install_rdf = os.path.join(template_root_dir, "install.rdf")
     manifest = RDFManifest(install_rdf)
+    dom = manifest.dom
 
     manifest.set("em:id", jid)
     manifest.set("em:version",
@@ -132,6 +133,11 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     # booleans in the .json file, not strings.
     manifest.set("em:unpack", "true" if target_cfg.get("unpack") else "false")
 
+    for contributor in target_cfg.get("contributors", [ ]):
+        elem = dom.createElement("em:contributor");
+        elem.appendChild(dom.createTextNode(contributor))
+        dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
+
     if update_url:
         manifest.set("em:updateURL", update_url)
     else:
@@ -143,7 +149,6 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         manifest.remove("em:optionsType")
 
     if enable_mobile:
-        dom = manifest.dom
         target_app = dom.createElement("em:targetApplication")
         dom.documentElement.getElementsByTagName("Description")[0].appendChild(target_app)
 

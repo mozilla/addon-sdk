@@ -6,6 +6,7 @@
 
 const { Cc, Ci } = require('chrome');
 const timer = require('timer');
+const { Loader } = require("@loader");
 
 function makeWindow(contentURL) {
   let content =
@@ -32,7 +33,7 @@ exports['test:sample'] = function(test) {
   
   // As window has just being created, its document is still loading, 
   // and we have about:blank document before the expected one
-  test.assertEqual(window.document.location.href, "about:blank", 
+  test.assertEqual(window.document.location.href, "about:blank",
                    "window starts by loading about:blank");
   
   // We need to wait for the load/unload of temporary about:blank
@@ -56,13 +57,13 @@ exports['test:sample'] = function(test) {
       contentScriptWhen: 'ready',
       onMessage: function(msg) {
         test.assertEqual('bye!', msg);
-        test.assertEqual(worker.url, window.document.location.href, 
+        test.assertEqual(worker.url, window.document.location.href,
                          "worker.url still works");
         test.done();
       }
     });
     
-    test.assertEqual(worker.url, window.document.location.href, 
+    test.assertEqual(worker.url, window.document.location.href,
                      "worker.url works");
     worker.postMessage('hi!');
     
@@ -201,6 +202,7 @@ exports['test:post-json-values-only'] = function(test) {
 
 };
 
+
 exports['test:emit-json-values-only'] = function(test) {
   let window = makeWindow("data:text/html,");
   test.waitUntilDone();
@@ -237,20 +239,20 @@ exports['test:emit-json-values-only'] = function(test) {
       test.assertEqual(result[3], "about:blank", "json attribute is accessible");
       test.assert(!result[4], "function as object attribute is removed");
       test.assertEqual(result[5], 0, "DOM nodes are converted into empty object");
-      // See bug 714891, Arrays may be broken over compartements:
+      // See bug 714891, Arrays may be broken over compartments:
       test.assert(result[6], "Array keeps being an array");
       test.assertEqual(result[7], JSON.stringify(array),
                        "Array is correctly serialized");
       test.done();
     });
+
     let obj = {
       fun: function () {},
-      dom: win.document.documentElement
+      dom: window.document.createElement("div")
     };
-    worker.port.emit('addon-to-content', function () {}, worker, obj, array);
+    worker.port.emit("addon-to-content", function () {}, worker, obj, array);
 
   }, true);
-
 }
 
 exports['test:content is wrapped'] = function(test) {
@@ -301,6 +303,91 @@ exports['test:chrome is unwrapped'] = function(test) {
   }, true);
 
 }
+
+exports['test:nothing is leaked to content script'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let worker =  Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage([
+          "ContentWorker" in window,
+          "UNWRAP_ACCESS_KEY" in window,
+          "getProxyForObject" in window
+        ]);
+      },
+      contentScriptWhen: 'ready',
+      onMessage: function(list) {
+        test.assert(!list[0], "worker API contrustor isn't leaked");
+        test.assert(!list[1], "Proxy API stuff isn't leaked 1/2");
+        test.assert(!list[2], "Proxy API stuff isn't leaked 2/2");
+        test.done();
+      }
+    });
+
+  }, true);
+
+}
+
+exports['test:ensure console.xxx works in cs'] = function(test) {
+  test.waitUntilDone(5000);
+
+  // Create a new module loader in order to be able to create a `console`
+  // module mockup:
+  let sandbox = Loader.new(require("@packaging"));
+  let sandboxRequire = Loader.require.bind(sandbox, module.path);
+  Object.defineProperty(sandbox.globals, 'console', {
+    value: {
+      log: hook.bind("log"),
+      info: hook.bind("info"),
+      warn: hook.bind("warn"),
+      error: hook.bind("error"),
+      debug: hook.bind("debug"),
+      exception: hook.bind("exception")
+    }
+  });
+
+  // Intercept all console method calls
+  let calls = [];
+  function hook(msg) {
+    test.assertEqual(this, msg,
+                     "console.xxx(\"xxx\"), i.e. message is equal to the " +
+                     "console method name we are calling");
+    calls.push(msg);
+  }
+
+  // Finally, create a worker that will call all console methods
+  let window = makeWindow();
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let worker =  sandboxRequire('content/worker').Worker({
+      window: window,
+      contentScript: 'new ' + function WorkerScope() {
+        console.log("log");
+        console.info("info");
+        console.warn("warn");
+        console.error("error");
+        console.debug("debug");
+        console.exception("exception");
+        self.postMessage();
+      },
+      onMessage: function() {
+        // Ensure that console methods are called in the same execution order
+        test.assertEqual(JSON.stringify(calls),
+                         JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
+                         "console has been called successfully, in the expected order");
+        test.done();
+      }
+    });
+  }, true);
+
+}
+
 
 exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
   let contentURL = 'data:text/html,<script>var documentValue=true;</script>';

@@ -17,8 +17,8 @@ const EVENTS = {
   "TabClose": "close",
   "TabSelect": "select",
   "TabMove": "move",
-  "TabPinned": "pin",
-  "TabUnpinned": "unpin"
+  "TabPinned": "pinned",
+  "TabUnpinned": "unpinned"
 };
 
 

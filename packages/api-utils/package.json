@@ -8,7 +8,7 @@
         "Myk Melez (http://melez.com/) <myk@mozilla.org>",
         "Daniel Aquino <mr.danielaquino@gmail.com>"
     ],
-    "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+    "license": "MPL 2.0",
     "dependencies": ["addon-kit"],
     "loader": "lib/cuddlefish.js"
 }

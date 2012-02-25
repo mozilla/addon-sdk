@@ -4,8 +4,11 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
-var xpcom = require("./xpcom");
+const { Cc, Ci } = require("chrome");
+const { Unknown } = require("./xpcom");
+const { when: unload } = require("./unload");
+let memory = require("./memory");
+
 
 /**
  * A service for adding, removing and notifying observers of notifications.
@@ -51,13 +54,13 @@ exports.topics = {
  *          the callback; an Object that implements nsIObserver or a Function
  *          that gets called when the notification occurs
  *
- * @param   thisObject  {Object}  [optional]
+ * @param   target  {Object}  [optional]
  *          the object to use as |this| when calling a Function callback
  *
  * @returns the observer
  */
-var add = exports.add = function add(topic, callback, thisObject) {
-  var observer = new Observer(topic, callback, thisObject);
+var add = exports.add = function add(topic, callback, target) {
+  var observer = Observer.new(topic, callback, target);
   service.addObserver(observer, topic, true);
   cache.push(observer);
 
@@ -73,18 +76,18 @@ var add = exports.add = function add(topic, callback, thisObject) {
  * @param   callback    {Object}
  *          the callback doing the observing
  *
- * @param   thisObject  {Object}  [optional]
+ * @param   target  {Object}  [optional]
  *          the object being used as |this| when calling a Function callback
  */
-var remove = exports.remove = function remove(topic, callback, thisObject) {
+var remove = exports.remove = function remove(topic, callback, target) {
   // This seems fairly inefficient, but I'm not sure how much better
   // we can make it.  We could index by topic, but we can't index by callback
-  // or thisObject, as far as I know, since the keys to JavaScript hashes
+  // or target, as far as I know, since the keys to JavaScript hashes
   // (a.k.a. objects) can apparently only be primitive values.
   let observers = cache.filter(function(v) {
     return (v.topic == topic &&
             v.callback == callback &&
-            v.thisObject == thisObject);
+            v.target == target);
   });
 
   if (observers.length) {
@@ -110,21 +113,19 @@ var remove = exports.remove = function remove(topic, callback, thisObject) {
  *        parameter (i.e.: { foo: 1, bar: "some string", baz: myObject })
  */
 var notify = exports.notify = function notify(topic, subject, data) {
-  subject = (typeof subject == "undefined") ? null : new Subject(subject);
+  subject = (typeof subject == "undefined") ? null : Subject.new(subject);
   data = (typeof    data == "undefined") ? null : data;
   service.notifyObservers(subject, topic, data);
 };
 
-function Observer(topic, callback, thisObject) {
-  memory.track(this);
-  this.topic = topic;
-  this.callback = callback;
-  this.thisObject = thisObject;
-}
-
-Observer.prototype = {
-  QueryInterface: xpcom.utils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+const Observer = Unknown.extend({
+  initialize: function initialize(topic, callback, target) {
+    memory.track(this);
+    this.topic = topic;
+    this.callback = callback;
+    this.target = target;
+  },
+  interfaces: [ 'nsIObserver', 'nsISupportsWeakReference' ],
   observe: function(subject, topic, data) {
     // Extract the wrapped object for subjects that are one of our
     // wrappers around a JS object.  This way we support both wrapped
@@ -137,8 +138,8 @@ Observer.prototype = {
 
     try {
       if (typeof this.callback == "function") {
-        if (this.thisObject)
-          this.callback.call(this.thisObject, subject, data);
+        if (this.target)
+          this.callback.call(this.target, subject, data);
         else
           this.callback(subject, data);
       } else // typeof this.callback == "object" (nsIObserver)
@@ -147,32 +148,28 @@ Observer.prototype = {
       console.exception(e);
     }
   }
-};
+});
 
-function Subject(object) {
-  // Double-wrap the object and set a property identifying the
-  // wrappedJSObject as one of our wrappers to distinguish between
-  // subjects that are one of our wrappers (which we should unwrap
-  // when notifying our observers) and those that are real JS XPCOM
-  // components (which we should pass through unaltered).
-  this.wrappedJSObject = {
-    observersModuleSubjectWrapper: true,
-    object: object
-  };
-}
-
-Subject.prototype = {
-  QueryInterface: xpcom.utils.generateQI([]),
+const Subject = Unknown.extend({
+  initialize: function initialize(object) {
+    // Double-wrap the object and set a property identifying the
+    // wrappedJSObject as one of our wrappers to distinguish between
+    // subjects that are one of our wrappers (which we should unwrap
+    // when notifying our observers) and those that are real JS XPCOM
+    // components (which we should pass through unaltered).
+    this.wrappedJSObject = {
+      observersModuleSubjectWrapper: true,
+      object: object
+    };
+  },
   getHelperForLanguage: function() {},
   getInterfaces: function() {}
-};
+});
 
-require("./unload").when(
-  function removeAllObservers() {
-    // Make a copy of cache first, since cache will be changing as we
-    // iterate through it.
-    cache.slice().forEach(
-      function(observer) {
-        remove(observer.topic, observer.callback, observer.thisObject);
-      });
+unload(function() {
+  // Make a copy of cache first, since cache will be changing as we
+  // iterate through it.
+  cache.slice().forEach(function({ topic, callback, target }) {
+    remove(topic, callback, target);
   });
+})
