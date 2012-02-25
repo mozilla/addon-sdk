@@ -20,3 +20,5 @@ What the program ID is and why it matters to your add-on.
 ### [Module Search](dev-guide/addon-development/module-search.html) ###
 How the `require()` function finds the module you asked for.
 
+### [Firefox Compatibility](dev-guide/addon-development/firefox-compatibility.html) ###
+How SDK versions map to Firefox versions.
