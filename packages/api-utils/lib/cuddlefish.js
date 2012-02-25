@@ -94,11 +94,7 @@ const Loader = {
 
       uriPrefix: { value: options.uriPrefix },
 
-      sandboxes: { value: {} },
-
-      // Workaround loader instances Object.freeze,
-      // we need to set attributes lazily, like `loader.data.channel`.
-      data: { value: {} }
+      sandboxes: { value: {} }
     });
     loader.require = this.require.bind(loader, options.loader);
 
@@ -288,14 +284,13 @@ const Loader = {
     process.spawn(id, path)(function(addon) {
       // Listen to `require!` channel's input messages from the add-on process
       // and load modules being required.
-      addon.channel('require!').input(
-        function({ requirer: { path }, id }) {
-          try {
-            Loader.require.call(loader, path, id).initialize(addon.channel(id));
-          } catch (error) {
-            this.globals.console.exception(error);
-          }
-        });
+      addon.channel('require!').input(function({ requirer: { path }, id }) {
+        try {
+          Loader.require.call(loader, path, id).initialize(addon.channel(id));
+        } catch (error) {
+          this.globals.console.exception(error);
+        }
+      });
     });
   },
   unload: function unload(reason, callback) {
