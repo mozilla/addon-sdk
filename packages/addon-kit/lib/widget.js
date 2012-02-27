@@ -817,6 +817,7 @@ WidgetChrome._isImageDoc = function WC__isImageDoc(doc) {
 WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   let contentType = this.getContentType();
 
+  let container = this._doc.getElementById("addon-bar");
   let self = this;
   let listener = function(e) {
     // Ignore event firings that target the iframe.
@@ -845,8 +846,8 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   
   // On document load, make modifications required for nice default
   // presentation.
-  let self = this;
   function loadListener(e) {
+    let containerStyle = self.window.getComputedStyle(container);
     // Ignore event firings that target the iframe
     if (e.target == iframe)
       return;
@@ -866,6 +867,12 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       doc.body.firstElementChild.style.height = "16px";
     }
 
+    // Extend the add-on bar's default text styles to the widget.
+    doc.body.style.color = containerStyle.color;
+    doc.body.style.fontFamily = containerStyle.fontFamily;
+    doc.body.style.fontSize = containerStyle.fontSize;
+    doc.body.style.fontWeight = containerStyle.fontWeight;
+    doc.body.style.textShadow = containerStyle.textShadow;
     // Allow all content to fill the box by default.
     doc.body.style.margin = "0";
   }
