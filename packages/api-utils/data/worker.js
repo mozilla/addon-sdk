@@ -177,13 +177,13 @@ const ContentWorker = Object.freeze({
       ContentWorker.createEventEmitter(pipe.emit.bind(null, "event"));
     pipe.on("event", portEmit);
 
-    let self = Object.freeze({
+    let self = {
       port: port,
       postMessage: pipe.emit.bind(null, "message"),
       on: pipe.on.bind(null),
       once: pipe.once.bind(null),
       removeListener: pipe.removeListener.bind(null),
-    });
+    };
     Object.defineProperty(exports, "self", {
       value: self
     });
@@ -229,12 +229,23 @@ const ContentWorker = Object.freeze({
     });
   },
 
-  inject: function (exports, chromeAPI, emitToChrome) {
+  injectData: function (exports, data) {
+  	Object.defineProperty( exports.self, "data", { value: JSON.parse( data ) });
+  },
+
+  inject: function (exports, chromeAPI, emitToChrome, data) {
     let { pipe, onChromeEvent, hasListenerFor } =
       ContentWorker.createPipe(emitToChrome);
+
     ContentWorker.injectConsole(exports, pipe);
     ContentWorker.injectTimers(exports, chromeAPI, pipe, exports.console);
     ContentWorker.injectMessageAPI(exports, pipe);
+    if ( data !== undefined ) {
+      ContentWorker.injectData(exports, data);
+    }
+
+    Object.freeze( exports.self );
+
     return {
       emitToContent: onChromeEvent,
       hasListenerFor: hasListenerFor

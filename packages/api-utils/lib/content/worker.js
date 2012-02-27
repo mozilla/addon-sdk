@@ -139,6 +139,11 @@ const WorkerSandbox = EventEmitter.compose({
     // avoid having any kind of wrapper.
     load(apiSanbox, CONTENT_WORKER_URL);
 
+    // prepare a clean `addon.data`
+    let data = 'contentScriptData' in worker ?
+      JSON.stringify( worker.contentScriptData ) :
+      undefined;
+
     // Then call `inject` method and communicate with this script
     // by trading two methods that allow to send events to the other side:
     //   - `onEvent` called by content script
@@ -153,7 +158,7 @@ const WorkerSandbox = EventEmitter.compose({
     };
     let onEvent = this._onContentEvent.bind(this);
     // `ContentWorker` is defined in CONTENT_WORKER_URL file
-    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent);
+    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent, data);
     this._emitToContent = result.emitToContent;
     this._hasListenerFor = result.hasListenerFor;
 
@@ -186,15 +191,6 @@ const WorkerSandbox = EventEmitter.compose({
       let win = window.wrappedJSObject ? window.wrappedJSObject : window;
       Object.defineProperty(win, "addon", {
           value: content.self
-        }
-      );
-    }
-
-    // add a `state` global variable
-    if ('contentScriptState' in worker) {
-        Object.defineProperty( content, "state", {
-          // there's probably a cleaner way to sanitize contentScriptState
-          value: JSON.parse( JSON.stringify( worker.contentScriptState ) )
         }
       );
     }
@@ -377,8 +373,8 @@ const Worker = EventEmitter.compose({
       this._window = options.window;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
-    if ('contentScriptState' in options)
-      this.contentScriptState = options.contentScriptState;
+    if ('contentScriptData' in options)
+      this.contentScriptData = options.contentScriptData;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)
