@@ -190,6 +190,15 @@ const WorkerSandbox = EventEmitter.compose({
       );
     }
 
+    // add a `state` global variable
+    if ('contentScriptState' in worker) {
+        Object.defineProperty( content, "state", {
+          // there's probably a cleaner way to sanitize contentScriptState
+          value: JSON.parse( JSON.stringify( worker.contentScriptState ) )
+        }
+      );
+    }
+
     // The order of `contentScriptFile` and `contentScript` evaluation is
     // intentional, so programs can load libraries like jQuery from script URLs
     // and use them in scripts.
@@ -368,6 +377,8 @@ const Worker = EventEmitter.compose({
       this._window = options.window;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
+    if ('contentScriptState' in options)
+      this.contentScriptState = options.contentScriptState;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)

@@ -69,6 +69,8 @@ const PageMod = Loader.compose(EventEmitter, {
       this.contentScript = options.contentScript;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
+    if ('contentScriptState' in options)
+      this.contentScriptState = options.contentScriptState;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
     if ('onAttach' in options)
@@ -132,6 +134,7 @@ const PageMod = Loader.compose(EventEmitter, {
       window: window,
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
+      contentScriptState: this.contentScriptState,
       onError: this._onUncaughtError
     });
     this._emit('attach', worker);
