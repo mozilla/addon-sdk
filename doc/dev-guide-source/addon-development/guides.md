@@ -11,6 +11,7 @@
 <a href="dev-guide/addon-development/commonjs.html">CommonJS, Packages, and the SDK</a>
 <a href="dev-guide/addon-development/program-id.html">Program ID</a>
 <a href="dev-guide/addon-development/module-search.html">Module Search</a>
+<a href="dev-guide/addon-development/firefox-compatibility.html">Firefox Compatibility</a>
 
 </div>
 
