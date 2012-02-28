@@ -14,6 +14,8 @@ const gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                        getService(Ci.nsIWindowWatcher);
 const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
                         getService(Ci.nsIAppShellService);
+const observers = require('api-utils/observer-service');
+
 
 const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
@@ -260,6 +262,56 @@ exports.createRemoteBrowser = function createRemoteBrowser(remote) {
     });
   };
 };
+
+function getXULWindow(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+    getInterface(Ci.nsIWebNavigation).
+    QueryInterface(Ci.nsIDocShellTreeItem).
+    treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
+    getInterface(Ci.nsIXULWindow);
+};
+exports.getXULWindow = getXULWindow
+
+function serializeFeatures(options) {
+  return Object.keys(options).reduce(function(result, name) {
+    let value = options[name]
+    return result + ',' + name + '=' +
+           (value === true ? 'yes' : value === false ? 'no' : value)
+  }, '').substr(1)
+}
+
+function makeBackground(window, options) {
+  appShellService.unregisterTopLevelWindow(getXULWindow(window));
+  observers.add('quit-application-granted', window.close.bind(window));
+}
+exports.makeBackground = makeBackground;
+
+function openWindow(options) {
+  let window = gWindowWatcher.
+    openWindow(options.parent || null,
+               options.uri,
+               options.name || null,
+               serializeFeatures(options.features || {}),
+               options.arguments || null);
+  if (options.background === true)
+    makeBackground(window);
+  return window;
+}
+exports.openWindow = openWindow;
+
+function createFrame(options) {
+  let document = options.document || options.window && options.window.document;
+  let frame = document.createElement('iframe');
+  frame.setAttribute('type', options.type || 'content-targetable');
+  document.documentElement.appendChild(frame);
+  let docShell = frame.docShell;
+  docShell.allowAuth = options.allowAuth || false;
+  docShell.allowJavascript = options.allowJavascript || false;
+  docShell.allowPlugins = options.allowPlugins || false;
+  frame.setAttribute('src', options.uri);
+  return frame;
+}
+exports.createFrame = createFrame;
 
 require("./unload").when(
   function() {
