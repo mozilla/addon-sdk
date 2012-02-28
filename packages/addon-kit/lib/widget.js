@@ -817,7 +817,6 @@ WidgetChrome._isImageDoc = function WC__isImageDoc(doc) {
 WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   let contentType = this.getContentType();
 
-  let container = this._doc.getElementById("addon-bar");
   let self = this;
   let listener = function(e) {
     // Ignore event firings that target the iframe.
@@ -847,7 +846,7 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   // On document load, make modifications required for nice default
   // presentation.
   function loadListener(e) {
-    let containerStyle = self.window.getComputedStyle(container);
+    let containerStyle = self.window.getComputedStyle(self.node.parentNode);
     // Ignore event firings that target the iframe
     if (e.target == iframe)
       return;
