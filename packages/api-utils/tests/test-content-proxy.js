@@ -756,3 +756,43 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
   );
 
 });
+
+// Bug 715755: proxy code throw an exception on COW
+// Create an http server in order to simulate real cross domain documents
+let serverPort = 8080;
+let server = require("httpd").startServerAsync(serverPort);
+server.registerPathHandler("/", function handle(request, response) {
+  // Returns an empty webpage
+  response.write("");
+});
+exports.testCrossDomainIframe = createProxyTest("", function (helper) {
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      // Waits for the server page url
+      self.on("message", function (url) {
+        // Creates an iframe with this page
+        let iframe = document.createElement("iframe");
+        iframe.addEventListener("load", function onload() {
+          iframe.removeEventListener("load", onload, true);
+          try {
+            // Try accessing iframe's content that is made of COW wrappers
+            assert(iframe.contentWindow == "[object Window]", "COW works properly")
+          } catch(e) {
+            assert(false, "COW fails : "+e.message);
+          }
+          self.port.emit("end");
+        }, true);
+        iframe.setAttribute("src", url);
+        document.body.appendChild(iframe);
+      });
+    }
+  );
+
+  worker.port.on("end", function () {
+    server.stop(helper.done);
+  });
+
+  worker.postMessage("http://localhost:" + serverPort + "/");
+
+});
