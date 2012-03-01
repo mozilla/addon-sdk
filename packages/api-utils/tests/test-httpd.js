@@ -29,10 +29,44 @@ exports.testBasicHTTPServer = function(test) {
     }
   }).get();
 
-
   function done() {
     srv.stop(function() {
       test.done();
     });
   }
 };
+
+exports.testDynamicServer = function (test) {
+  let content = "This is the HTTPD test file.\n";
+
+  let { startServerAsync } = require("httpd");
+  let srv = startServerAsync(port);
+
+  // See documentation here:
+  //http://doxygen.db48x.net/mozilla/html/interfacensIHttpServer.html#a81fc7e7e29d82aac5ce7d56d0bedfb3a
+  //http://doxygen.db48x.net/mozilla/html/interfacensIHttpRequestHandler.html
+  srv.registerPathHandler("/test-httpd.txt", function handle(request, response) {
+    // Add text content type, only to avoid error in `Request` API
+    response.setHeader("Content-Type", "text/plain", false);
+    response.write(content);
+  });
+
+  test.waitUntilDone();
+
+  // Request this very file.
+  let Request = require('request').Request;
+  Request({
+    url: "http://localhost:" + port + "/test-httpd.txt",
+    onComplete: function (response) {
+      test.assertEqual(response.text, content);
+      done();
+    }
+  }).get();
+
+  function done() {
+    srv.stop(function() {
+      test.done();
+    });
+  }
+
+}
