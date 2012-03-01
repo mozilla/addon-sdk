@@ -263,14 +263,30 @@ exports.createRemoteBrowser = function createRemoteBrowser(remote) {
   };
 };
 
-function getXULWindow(window) {
+/**
+ * Returns `nsIXULWindow` for the given `nsIDOMWindow`.
+ */
+function xul(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIWebNavigation).
     QueryInterface(Ci.nsIDocShellTreeItem).
     treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIXULWindow);
 };
-exports.getXULWindow = getXULWindow
+exports.xul = xul;
+
+/**
+ * Returns `nsIBaseWindow` for the given `nsIDOMWindow`.
+ */
+function base(window) {
+  return window.QueryInterface(Ci.nsIInterfaceRequestor).
+    getInterface(Ci.nsIWebNavigation).
+    QueryInterface(Ci.nsIDocShell).
+    QueryInterface(Ci.nsIDocShellTreeItem).
+    treeOwner.
+    QueryInterface(Ci.nsIBaseWindow);
+}
+exports.base = base;
 
 function serializeFeatures(options) {
   return Object.keys(options).reduce(function(result, name) {
@@ -280,38 +296,94 @@ function serializeFeatures(options) {
   }, '').substr(1)
 }
 
-function makeBackground(window, options) {
-  appShellService.unregisterTopLevelWindow(getXULWindow(window));
-  observers.add('quit-application-granted', window.close.bind(window));
-}
-exports.makeBackground = makeBackground;
+/**
+ * Removes given window from the application's window registry. Unless
+ * `options.close` is `false` window is automatically closed on application
+ * quit.
+ * @params {nsIDOMWindow} window
+ * @params {Boolean} options.close
+ */
+function backgroundify(window, options) {
+  let base = baseWindow(window);
+  base.visibility = false;
+  base.enabled = false;
+  appShellService.unregisterTopLevelWindow(xul(window));
+  if (!options || options.close !== false)
+    observers.add('quit-application-granted', window.close.bind(window));
 
-function openWindow(options) {
-  let window = gWindowWatcher.
+  return window
+}
+exports.backgroundify = backgroundify;
+
+/**
+ * Creates a top level window and returns it's `nsIWindow` representation.
+ * @params {String} uri
+ *    URI of the document to be loaded into window.
+ * @params {nsIDOMWindow} options.parent
+ *    Used as parent for the created window.
+ * @params {String} options.name
+ *    Optional name that is assigned to the window.
+ * @params {Object} options.features
+ *    Map of key, values like: `{ width: 10, height: 15, chrome: true }`.
+ * @params {Array} options.arguments
+ *    Array of arguments that will be attached to the created window as a
+ *    `window.arguments` property.
+ */
+function newTopWindow(uri, options) {
+  options = options || {};
+  return gWindowWatcher.
     openWindow(options.parent || null,
-               options.uri,
+               uri,
                options.name || null,
                serializeFeatures(options.features || {}),
                options.arguments || null);
-  if (options.background === true)
-    makeBackground(window);
-  return window;
 }
-exports.openWindow = openWindow;
+exports.newTopWindow = newTopWindow;
 
-function createFrame(options) {
-  let document = options.document || options.window && options.window.document;
-  let frame = document.createElement('iframe');
-  frame.setAttribute('type', options.type || 'content-targetable');
+/**
+ * Creates an iframe in a provided document.
+ * @params {nsIDOMDocument} document
+ * @params {String} options.type
+ *    By default is 'content-targetable' for possible values see:
+ *    https://developer.mozilla.org/en/XUL/iframe#a-browser.type
+ * @params {String} options.uri
+ *    URI of the document to be loaded into created frame.
+ * @params {Boolean} options.allowAuth
+ *    Whether to allow auth dialogs. Defaults to `false`.
+ * @params {Boolean} options.allowJavascript
+ *    Whether to allow Javascript execution. Defaults to `false`.
+ * @params {Boolean} options.allowPlugins
+ *    Whether to allow plugin execution. Defaults to `false`.
+ */
+function newFrame(document, options) {
+  let frame, docShell;
+
+  options = options || {};
+  frame = document.createElementNS(XUL, 'browser');
   document.documentElement.appendChild(frame);
-  let docShell = frame.docShell;
+  // Type="content" is mandatory to enable stuff here:
+  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
+  frame.setAttribute('type', options.type || 'content');
+  // We remove XBL binding to avoid execution of code that is not going to work
+  // because browser has no docShell attribute in remote mode (for example)
+  frame.setAttribute('style','-moz-binding: none;');
+  // Load in separate process if `options.remote` is `true`.
+  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
+  if (options.remote === true)
+    frame.setAttribute('remote', 'true');
+
+  docShell = frame.docShell;
   docShell.allowAuth = options.allowAuth || false;
   docShell.allowJavascript = options.allowJavascript || false;
   docShell.allowPlugins = options.allowPlugins || false;
-  frame.setAttribute('src', options.uri);
+
+  // If `uri` is provided load it into this frame.
+  if (options.uri)
+    frame.setAttribute('src', options.uri);
+
   return frame;
 }
-exports.createFrame = createFrame;
+exports.newFrame = newFrame;
 
 require("./unload").when(
   function() {
