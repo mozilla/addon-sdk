@@ -11,6 +11,131 @@ interface.
 
 [nsIDOMWindow]: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/base/nsIDOMWindow.idl
 
+### xul
+
+Module provides `xulWindow` function that can be used get access [nsIXULWindow]
+for the given [nsIDOMWindow]:
+[nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
+[nsIXULWindow]:https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow
+
+    let { Ci } = require('chrome');
+    let utils = require('api-utils/window-utils');
+    let active = utils.activeBrowserWindow;
+    active instanceof Ci.nsIXULWindow // => false
+    utils.xul(active) instanceof Ci.nsIXULWindow // => true
+
+### base
+
+Module provides `baseWindow` function that can be used get access [nsIBaseWindow]
+for the given [nsIDOMWindow]:
+[nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
+[nsIBaseWindow]:http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl
+
+    let { Ci } = require('chrome');
+    let utils = require('api-utils/window-utils');
+    let active = utils.activeBrowserWindow;
+    active instanceof Ci.nsIBaseWindow // => false
+    utils.base(active) instanceof Ci.nsIBaseWindow // => true
+
+### newTopWindow
+
+Module exports `newTopWindow` function that may be used to open top level
+(application) windows. Function takes `uri` of the window document as a first
+argument and optional hash of `options` as second argument.
+
+    let { newTopWindow } = require('api-utils/window-utils');
+    let window = newTopWindow('data:text/html,Hello Window');
+
+Following options may be provided to used to configure created window behavior:
+
+- `parent`
+If provided must be `nsIDOMWindow` and will be used as parent for the created
+window.
+
+- `name`
+Optional name that will assigned to the window.
+
+- `features`
+Hash of option that will be serialized to features string. See
+[features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
+for more details.
+
+- `arguments`
+Array of arguments that will be attached to the created window as a
+`window.arguments` property.
+
+    let { newTopWindow } = require('api-utils/window-utils');
+    let window = newTopWindow('data:text/html,Hello Window', {
+      name: 'jetpack window',
+      features: {
+        chrome: true,
+        width: 200,
+        height: 50,
+        popup: true
+      }
+    });
+
+
+### backgroundify
+
+Module exports `backgroundify` function that takes `nsIDOMWindow` and
+removes it from the application's window registry, so that they won't appear
+in the OS specific window lists for the application.
+
+    let { backgroundify, newTopWindow } = require('api-utils/window-utils');
+    let bgwin = backgroundify(newTopWindow('data:text/html,Hello backgroundy'));
+
+If optional `options.close` is `false` unregistered window won't automatically
+be closed on application quit, preventing application from quiting. While this
+is possible you should make sure to close all such windows manually:
+
+    let { backgroundify, newTopWindow } = require('api-utils/window-utils');
+    let bgwin = backgroundify(newTopWindow('data:text/html,Foo', {
+      close: false
+    }));
+
+### createFrame
+
+Module exports `createFrame` function that takes `nsIDOMDocument` of the
+privileged document (which is either top level window or document from chrome)
+and creates a `browser` element in it's `documentElement`:
+
+    let { newFrame, newTopWindow } = require('api-utils/window-utils');
+    let window = newTopWindow('data:text/html,Foo');
+    let frame = newFrame(window.document);
+
+Optionally `newFrame` can be passed set of `options` to configure frame
+even further. Following option are supported:
+
+- type
+String that defines access type of the document loaded into it. Defaults to
+`'content'`. For more details and other possible values see
+[documentation on MDN](https://developer.mozilla.org/en/XUL/Attribute/browser.type)
+
+- uri
+URI of the document to be loaded into created frame. Defaults to `about:blank`.
+
+- remote
+If `true` separate process will be used for browser content and `messageManager`
+property of return value can be used to communicate with it.
+
+- allowAuth
+Whether to allow auth dialogs. Defaults to `false`.
+
+- allowJavascript
+Whether to allow Javascript execution. Defaults to `false`.
+
+- allowPlugins
+Whether to allow plugin execution. Defaults to `false`.
+
+    let { newFrame, newTopWindow } = require('api-utils/window-utils');
+    let window = newTopWindow('data:text/html,top');
+    let frame = newFrame(window.document, {
+      uri: 'data:text/html,<script>alert("Hello")</script>',
+      allowJavascript: true
+    });
+
+
 <api name="WindowTracker">
 @class
 `WindowTracker` objects make it easy to "monkeypatch" windows when a program is
