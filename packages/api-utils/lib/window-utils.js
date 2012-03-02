@@ -298,6 +298,11 @@ function base(window) {
 }
 exports.base = base;
 
+/**
+ * Takes hash of options and serializes it to a features string that
+ * can be used passed to `window.open`. For more details on features string see:
+ * https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features
+ */
 function serializeFeatures(options) {
   return Object.keys(options).reduce(function(result, name) {
     let value = options[name]
