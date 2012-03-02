@@ -372,7 +372,6 @@ function newFrame(document, options) {
 
   options = options || {};
   frame = document.createElementNS(XUL, 'browser');
-  document.documentElement.appendChild(frame);
   // Type="content" is mandatory to enable stuff here:
   // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
   frame.setAttribute('type', options.type || 'content');
@@ -383,6 +382,8 @@ function newFrame(document, options) {
   // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
   if (options.remote === true)
     frame.setAttribute('remote', 'true');
+
+  document.documentElement.appendChild(frame);
 
   docShell = frame.docShell;
   docShell.allowAuth = options.allowAuth || false;
