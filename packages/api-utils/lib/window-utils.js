@@ -319,14 +319,14 @@ function serializeFeatures(options) {
  * @params {Boolean} options.close
  */
 function backgroundify(window, options) {
-  let base = baseWindow(window);
-  base.visibility = false;
-  base.enabled = false;
+  let baseWindow = base(window);
+  baseWindow.visibility = false;
+  baseWindow.enabled = false;
   appShellService.unregisterTopLevelWindow(xul(window));
   if (!options || options.close !== false)
     observers.add('quit-application-granted', window.close.bind(window));
 
-  return window
+  return window;
 }
 exports.backgroundify = backgroundify;
 
