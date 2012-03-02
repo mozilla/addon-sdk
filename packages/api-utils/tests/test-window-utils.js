@@ -2,10 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 var windowUtils = require("api-utils/window-utils");
 var timer = require("api-utils/timer");
 var { Cc, Ci } = require("chrome");
 var { Loader } = require("./helpers");
+
+function toArray(iterator) {
+  let array = [];
+  for each (let item in iterator())
+    array.push(item);
+  return array;
+}
 
 function makeEmptyWindow() {
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -307,6 +316,111 @@ exports['test active window'] = function(assert, done) {
   }
 
   nextTest();
+};
+
+exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
+  let active = windowUtils.activeBrowserWindow;
+  assert.ok(!(active instanceof Ci.nsIBaseWindow),
+            'active window is not nsIBaseWindow')
+  assert.ok(windowUtils.base(active) instanceof Ci.nsIBaseWindow,
+            'base returns nsIBaseWindow');
+};
+
+exports['test get nsIXULWindow from nsIDomWindow'] = function(assert) {
+  let active = windowUtils.activeBrowserWindow;
+  assert.ok(!(active instanceof Ci.nsIXULWindow),
+            'active window is not nsIXULWindow');
+  assert.ok(windowUtils.xul(active) instanceof Ci.nsIXULWindow,
+            'base returns nsIXULWindow');
+};
+
+exports['test top window creation'] = function(assert) {
+  let window = windowUtils.newTopWindow('data:text/html,Hello top window');
+  let windows = toArray(windowUtils.windowIterator);
+  assert.ok(~windows.indexOf(window), 'window was opened');
+  window.close();
+};
+
+exports['test new top window with options'] = function(assert) {
+  let window = windowUtils.newTopWindow('data:text/html,Hi custom top window', {
+    name: 'test',
+    features: { height: 100, width: 200, toolbar: true }
+  });
+  let windows = toArray(windowUtils.windowIterator);
+  assert.ok(~windows.indexOf(window), 'window was opened');
+  assert.equal(window.name, 'test', 'name was set');
+  assert.equal(window.innerHeight, 100, 'height is set');
+  assert.equal(window.innerWidth, 200, 'height is set');
+  assert.equal(window.toolbar.visible, true, 'toolbar was set');
+  window.close();
+};
+
+exports['test backgroundify'] = function(assert) {
+  let window = windowUtils.newTopWindow('data:text/html,backgroundy');
+  assert.ok(~toArray(windowUtils.windowIterator).indexOf(window),
+            'window is in the list of windows');
+  let backgroundy = windowUtils.backgroundify(window);
+  assert.equal(backgroundy, window, 'backgroundify returs give window back');
+  assert.ok(!~toArray(windowUtils.windowIterator).indexOf(window),
+            'backgroundifyied window is in the list of windows');
+  window.close();
+};
+
+exports['test frame creation'] = function(assert) {
+  let window = windowUtils.newTopWindow('data:text/html,Window');
+  let frame = windowUtils.newFrame(window.document);
+
+  assert.equal(frame.getAttribute('type'), 'content',
+               'frame type is content');
+  assert.ok(frame.contentWindow, 'frame has contentWindow');
+  assert.equal(frame.contentWindow.location.href, 'about:blank',
+               'by default "about:blank" is loaded');
+  assert.equal(frame.docShell.allowAuth, false, 'auth disabled by default');
+  assert.equal(frame.docShell.allowJavascript, false, 'js disabled by default');
+  assert.equal(frame.docShell.allowPlugins, false,
+               'plugins disabled by default');
+  window.close();
+};
+
+exports['test fram has js disabled by default'] = function(assert, done) {
+  let window = windowUtils.newTopWindow('data:text/html,window');
+  window.addEventListener('DOMContentLoaded', function windowReady() {
+    window.removeEventListener('DOMContentLoaded', windowReady, false);
+    let frame = windowUtils.newFrame(window.document, {
+      uri: 'data:text/html,<script>document.documentElement.innerHTML' +
+           '= "J" + "S"</script>',
+    });
+    frame.contentWindow.addEventListener('DOMContentLoaded', function ready() {
+      frame.contentWindow.removeEventListener('DOMContentLoaded', ready, false);
+      assert.ok(!~frame.contentDocument.documentElement.innerHTML.indexOf('JS'),
+                "JS was executed");
+
+      window.close();
+      done();
+    }, false);
+
+  }, false);
+};
+
+exports['test frame with js enabled'] = function(assert, done) {
+  let window = windowUtils.newTopWindow('data:text/html,window');
+  window.addEventListener('DOMContentLoaded', function windowReady() {
+    window.removeEventListener('DOMContentLoaded', windowReady, false);
+    let frame = windowUtils.newFrame(window.document, {
+      uri: 'data:text/html,<script>document.documentElement.innerHTML' +
+           '= "J" + "S"</script>',
+      allowJavascript: true
+    });
+    frame.contentWindow.addEventListener('DOMContentLoaded', function ready() {
+      frame.contentWindow.removeEventListener('DOMContentLoaded', ready, false);
+      assert.ok(~frame.contentDocument.documentElement.innerHTML.indexOf('JS'),
+                "JS was executed");
+
+      window.close();
+      done();
+    }, false);
+
+  }, false);
 };
 
 require('test').run(exports)
