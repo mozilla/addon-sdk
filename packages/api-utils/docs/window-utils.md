@@ -112,8 +112,8 @@ String that defines access type of the document loaded into it. Defaults to
 URI of the document to be loaded into created frame. Defaults to `about:blank`.
 
 - remote
-If `true` separate process will be used for browser content and `messageManager`
-property of return value can be used to communicate with it.
+If `true` separate process will be used for this frame, also in such case all
+the following options are ignored.
 
 - allowAuth
 Whether to allow auth dialogs. Defaults to `false`.
