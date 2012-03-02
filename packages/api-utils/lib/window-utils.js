@@ -335,9 +335,6 @@ exports.backgroundify = backgroundify;
  *    Optional name that is assigned to the window.
  * @params {Object} options.features
  *    Map of key, values like: `{ width: 10, height: 15, chrome: true }`.
- * @params {Array} options.arguments
- *    Array of arguments that will be attached to the created window as a
- *    `window.arguments` property.
  */
 function newTopWindow(uri, options) {
   options = options || {};
@@ -346,7 +343,7 @@ function newTopWindow(uri, options) {
                uri,
                options.name || null,
                serializeFeatures(options.features || {}),
-               options.arguments || null);
+               null);
 }
 exports.newTopWindow = newTopWindow;
 

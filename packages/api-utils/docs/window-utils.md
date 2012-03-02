@@ -60,10 +60,6 @@ Hash of option that will be serialized to features string. See
 [features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
 for more details.
 
-- `arguments`
-Array of arguments that will be attached to the created window as a
-`window.arguments` property.
-
     let { newTopWindow } = require('api-utils/window-utils');
     let window = newTopWindow('data:text/html,Hello Window', {
       name: 'jetpack window',
