@@ -14,7 +14,7 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 
 let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
-    { EventEmitter } = require("api-utils/events"),
+    { emit, on, off } = require("api-utils/event/core"),
     { Unknown } = require("api-utils/xpcom");
 
 const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
@@ -35,6 +35,35 @@ const DOM  = 0x03;
 const ERR_CANNOT_CHANGE_SELECTION =
   "It isn't possible to change the selection, as there isn't currently a selection";
 
+var SelectionAPI = {
+  text: {
+    enumerable: true,
+    get: function () getSelection(TEXT, this.rangeNumber),
+    set: function (value) setSelection(value, this.rangeNumber)
+  },
+  html: {
+    enumerable: true,
+    get: function () getSelection(HTML, this.rangeNumber),
+    set: function (value) setSelection(value, this.rangeNumber)
+  },
+  isContiguous: {
+    enumerable: true,
+    get: function () {
+      let selection = getSelection(DOM);
+
+      // If there are multiple ranges, the selection is definitely discontiguous.
+      // It returns `false` also if there are no selection; and `true` if there is
+      // a single non empty range, or a selection in a text field - contiguous or
+      // not (text field selection APIs doesn't support multiple selections).
+
+      if (selection.rangeCount > 1)
+        return false;
+
+      return !!(safeGetRange(selection, 0) || getElementWithSelection());
+    }
+  }
+};
+
 /**
  * Creates an object from which a selection can be set, get, etc. Each
  * object has an associated with a range number. Range numbers are the
@@ -46,30 +75,20 @@ const ERR_CANNOT_CHANGE_SELECTION =
  */
 function Selection(rangeNumber) {
 
-  // In order to hide the private rangeNumber argument from API consumers while
-  // still enabling Selection getters/setters to access it, the getters/setters
-  // are defined as lexical closures in the Selector constructor.
-
-  this.__defineGetter__("text", function () getSelection(TEXT, rangeNumber));
-  this.__defineSetter__("text", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("html", function () getSelection(HTML, rangeNumber));
-  this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM);
-
-    // If there are multiple ranges, the selection is definitely discontiguous.
-    // It returns `false` also if there are no selection; and `true` if there is
-    // a single non empty range, or a selection in a text field - contiguous or
-    // not (text field selection APIs doesn't support multiple selections).
-
-    if (sel.rangeCount > 1)
-      return false;
-
-    return !!(safeGetRange(sel, 0) || getElementWithSelection());
+  // In order to hide the private `rangeNumber` argument from API consumers
+  // while still enabling Selection getters/setters to access it, we define
+  // it as non enumerable, non configurable property. While consumers still
+  // may discover it they won't be able to do any harm which is good enough
+  // in this case.
+  Object.defineProperties(this, {
+    rangeNumber: {
+      enumerable: false,
+      configurable: false,
+      value: rangeNumber
+    }
   });
 }
+Object.freeze(Object.defineProperties(Selection.prototype, SelectionAPI));
 
 /**
  * Returns the most recent content window
@@ -266,11 +285,6 @@ function onSelect() {
 
 let SelectionListenerManager = Unknown.extend({
   interfaces: [ 'nsISelectionListener' ],
-  // The collection of listeners wanting to be notified of selection changes
-  listeners: EventEmitter.compose({
-    emit: function emit(type) this._emitOnObject(exports, type),
-    off: function() this._removeAllListeners.apply(this, arguments)
-  })(),
   /**
    * This is the nsISelectionListener implementation. This function is called
    * by Gecko when a selection is changed interactively.
@@ -294,7 +308,7 @@ let SelectionListenerManager = Unknown.extend({
   },
 
   onSelect : function onSelect() {
-    setTimeout(this.listeners.emit, 0, "select");
+    setTimeout(emit, 0, exports, "select");
   },
 
   /**
@@ -354,8 +368,7 @@ let SelectionListenerManager = Unknown.extend({
     if (!window)
       return;
     this.removeSelectionListener(window);
-    this.listeners.off('error');
-    this.listeners.off('selection');
+    off(exports);
   },
 
   removeSelectionListener: function removeSelectionListener(window) {
@@ -383,7 +396,6 @@ let SelectionListenerManager = Unknown.extend({
     browser.removeEventListener("unload", onUnload, true);
   }
 });
-SelectionListenerManager.listeners.on('error', console.error);
 
 /**
  * Install |SelectionListenerManager| as tab tracker in order to watch
@@ -391,24 +403,29 @@ SelectionListenerManager.listeners.on('error', console.error);
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
-/**
- * Exports an iterator so that discontiguous selections can be iterated.
- *
- * If discontiguous selections are in a text field, only the first one
- * is returned because the text field selection APIs doesn't support
- * multiple selections.
- */
-exports.__iterator__ = function __iterator__() {
-  let sel = getSelection(DOM);
-  let rangeCount = sel.rangeCount || (getElementWithSelection() ? 1 : 0);
+var selection = new Selection();
+Object.defineProperties(selection, {
+  /**
+   * Exports an iterator so that discontiguous selections can be iterated.
+   *
+   * If discontiguous selections are in a text field, only the first one
+   * is returned because the text field selection APIs doesn't support
+   * multiple selections.
+   */
+  __iterator__: { enumerable: false, value: function() {
+    let selection = getSelection(DOM);
+    let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
 
-  for (let i = 0; i < rangeCount; i++)
-    yield new Selection(i);
-};
+    for (let i = 0; i < count; i++)
+      yield new Selection(i);
+  }},
+  on: { value: on.bind(null, selection) },
+  removeListener: { value: function(type, listener) {
+    off(this, type, listener);
+  }}
+});
 
-exports.on = SelectionListenerManager.listeners.on;
-exports.removeListener = SelectionListenerManager.listeners.removeListener;
-
-// Export the Selection singleton. Its rangeNumber is always zero.
-Selection.call(exports, 0);
-
+// This is workaround making sure that exports is wrapped before it's
+// frozen, which needs to happen in order to workaround Bug 673468.
+off(selection, 'workaround-bug-673468');
+module.exports = selection;
