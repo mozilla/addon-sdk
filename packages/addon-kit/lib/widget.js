@@ -707,6 +707,8 @@ WidgetChrome.prototype._createNode = function WC__createNode() {
   node.setAttribute("label", this._widget.label);
   node.setAttribute("tooltiptext", this._widget.tooltip);
   node.setAttribute("align", "center");
+  // Bug 626326: Prevent customize toolbar context menu to appear
+  node.setAttribute("context", "");
 
   // TODO move into a stylesheet, configurable by consumers.
   // Either widget.style, exposing the style object, or a URL
