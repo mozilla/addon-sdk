@@ -41,7 +41,22 @@ next time event of the specified type is emitted:
 
     target.removeListener('message', onMessage);
 
-### More details ###
+### Emitting events
+
+`EventTarget` interface intentionally does not defines an API for emitting
+events. In majority of cases party emitting events is different from party
+registering listeners. In order to emit events one needs to use `event/core`
+module instead:
+
+    let { emit } = require('api-utils/event/core');
+
+    target.on('hi', function(person) { console.log(person + 'tells hi'); });
+    emit(target, 'hi', 'Mark');
+    // info: 'Mark tells hi'
+
+For more details see [event/core](./core.html) documentation.
+
+### More details
 
 Listeners registered during the event propagation (by one of the listeners)
 won't be triggered until next emit of the matching type:
