@@ -50,6 +50,9 @@ exports.deactivate = function deactivate() pbService && setMode(false)
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
+  // Note: We can't just bind `off` as we do it for other methods cause skipping
+  // a listener argument will remove all listeners for the given event type
+  // causing misbehavior. This way we make sure all arguments are passed.
   off(exports, type, listener);
 };
 
