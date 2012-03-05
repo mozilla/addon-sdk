@@ -10,7 +10,7 @@ const { on, once, off } = require('./core');
 const { method } = require('../utils/function');
 const { Base } = require('../base');
 
-const EVENT_TYPE_PATTERN = /^on([A-Z]\S+$)/;
+const EVENT_TYPE_PATTERN = /^on([A-Z]\w+$)/;
 
 /**
  * `EventTarget` is an exemplar for creating an objects that can be used to
