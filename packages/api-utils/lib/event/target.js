@@ -65,6 +65,10 @@ const EventTarget = Base.extend({
    *    The listener function that processes the event.
    */
   removeListener: function removeListener(type, listener) {
+    // Note: We can't just wrap `off` in `method` as we do it for other methods
+    // cause skipping a second or third argument will behave very differently
+    // than intended. This way we make sure all arguments are passed and only
+    // one listener is removed at most.
     off(this, type, listener);
   }
 });
