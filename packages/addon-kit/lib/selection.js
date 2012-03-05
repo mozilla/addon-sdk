@@ -405,6 +405,6 @@ exports.removeListener = function(type, listener) off(exports, type, listener);
 // Export the Selection singleton. Its rangeNumber is always zero.
 Selection.call(exports, 0);
 
-// This is workaround making sure that exports get's wrapped before it's
-// frozen, that needs to happen in order to workaround Bug 673468.
-off(exports, 'workaround');
+// This is workaround making sure that exports is wrapped before it's
+// frozen, which needs to happen in order to workaround Bug 673468.
+off(exports, 'workaround-bug-673468');
