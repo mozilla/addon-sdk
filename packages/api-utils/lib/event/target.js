@@ -24,9 +24,10 @@ const EventTarget = Base.extend({
    * event listeners.
    */
   initialize: function initialize(options) {
+    options = options || {};
     // Go through each property and registers event listeners for those
     // that have a name matching following pattern (`onEventType`).
-    Object.keys(options = options || {}).forEach(function onEach(key) {
+    Object.keys(options).forEach(function onEach(key) {
       let match = EVENT_TYPE_PATTERN.exec(key);
       let type = match && match[1].toLowerCase();
       let listener = options[key];
@@ -36,7 +37,7 @@ const EventTarget = Base.extend({
     }, this);
   },
   /**
-   *  Registers an event `listener` that is called every time events of
+   * Registers an event `listener` that is called every time events of
    * specified `type` are emitted.
    * @param {String} type
    *    The type of event.

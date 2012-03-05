@@ -130,7 +130,7 @@ function off(target, type, listener) {
   else if (length === 2) {
     observers(target, type).splice(0);
   }
-  if (length === 1) {
+  else if (length === 1) {
     let listeners = event(target);
     Object.keys(listeners).forEach(function(type) delete listeners[type]);
   }
