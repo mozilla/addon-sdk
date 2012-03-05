@@ -30,7 +30,10 @@ exports.EventEmitter = require("./traits").Trait.compose({
   },
   _removeAllListeners: function(type) {
     console.warn(WARNING);
-    type ? off(this._public, type) : off(this._public);
+    if (type)
+      off(this._public, type);
+    else
+      off(this._public);
     return this._public;
   }
 });
@@ -55,7 +58,10 @@ exports.EventEmitterTrait = require('./light-traits').Trait({
   },
   _removeAllListeners: function(type) {
     console.warn(WARNING);
-    type ? off(this, type) : off(this);
+    if (type)
+      off(this, type);
+    else
+      off(this);
     return this;
   }
 });
