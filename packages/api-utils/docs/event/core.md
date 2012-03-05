@@ -9,19 +9,22 @@ provided `on` function:
     on(target, 'message', function listener(event) {
       console.log('hello ' + event);
     });
+    on(target, 'data', console.log);
 
 Event of specific `type` may be emitted on any event `target` object using
 `emit` function. This will call all registered `listener`s for the given `type`
 on the given event `target` in the same order they were registered.
 
     emit(target, 'message', 'event');
-    // 'hello event'
+    // info: 'hello event'
     emit(target, 'data', { type: 'data' }, 'second arg');
+    // info: [Object object] 'second arg'
 
 Registered event listeners may be removed using `off` function:
 
     off(target, 'message');
     emit(target, 'message', 'bye');
+    // info: 'hello bye'
 
 Sometimes listener only cares about first event of specific `type`. To avoid
 hassles of removing such listeners there is convenient `once` function:
@@ -30,7 +33,7 @@ hassles of removing such listeners there is convenient `once` function:
       console.log('ready');
     });
     emit(target, 'load')
-    // 'ready'
+    // info: 'ready'
     emit(target, 'load')
 
 There are also convenient ways to remove registered listeners. All listeners of
