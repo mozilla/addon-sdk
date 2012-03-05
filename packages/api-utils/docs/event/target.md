@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 Provides an exemplar `EventTarget` object, that implements interface for
 adding removing event listeners of a specific type. `EventTarget` is a
 base of all objects in SDK on which events are emitted.
