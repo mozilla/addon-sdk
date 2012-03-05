@@ -14,7 +14,8 @@ const EVENT_TYPE_PATTERN = /^on([A-Z]\S+$)/;
 
 /**
  * `EventTarget` is an exemplar for creating an objects that can be used to
- * add / remove event listeners on them.
+ * add / remove event listeners on them. Events on these objects may be emitted
+ * via `emit` function exported by 'event/core' module.
  */
 const EventTarget = Base.extend({
   /**
