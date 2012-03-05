@@ -58,7 +58,7 @@ module instead:
     emit(target, 'hi', 'Mark');
     // info: 'Mark tells hi'
 
-For more details see [event/core](./core.html) documentation.
+For more details see **event/core** documentation.
 
 ### More details
 
