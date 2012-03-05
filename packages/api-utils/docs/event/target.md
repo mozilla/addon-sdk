@@ -2,7 +2,7 @@ Provides an exemplar `EventTarget` object, that implements interface for
 adding removing event listeners of a specific type. `EventTarget` is a
 base of all objects in SDK on which events are emitted.
 
-### Instantiation ###
+### Instantiation
 
 It's easy to create event target objects, no special arguments are required.
 
@@ -14,7 +14,7 @@ case all the function properties with keys like: `onMessage`, `onMyEvent`...
 will be auto registered for associated `'message'`, `'myEvent'` events on
 the created instance. _All other properties of `options` will be ignored_.
 
-### Adding listeners ###
+### Adding listeners
 
 `EventTarget` interface defines `on` method, that can be used to register
 event listeners on them for the given event type:
@@ -34,7 +34,7 @@ next time event of the specified type is emitted:
       // Do the thing once ready!
     });
 
-### Removing listeners ###
+### Removing listeners
 
 `EventTarget` interface defines API for unregistering event listeners, via
 `removeListener` method:
@@ -61,7 +61,8 @@ For more details see [event/core](./core.html) documentation.
 Listeners registered during the event propagation (by one of the listeners)
 won't be triggered until next emit of the matching type:
 
-    let { emit } = require('api-utils/event/target');
+    let { emit } = require('api-utils/event/core');
+
     target.on('message', function onMessage(message) {
       console.log('listener trigerred');
       target.on('message', function() {
@@ -70,10 +71,10 @@ won't be triggered until next emit of the matching type:
     });
 
     emit(target, 'message');
-    // => 'listener trigerred'
+    // info: 'listener trigerred'
     emit(target, 'message');
-    // => 'listener trigerred'
-    // => 'nested listener trigerred'
+    // info: 'listener trigerred'
+    // info: 'nested listener trigerred'
 
 Exceptions in the listeners can be handled via `'error'` event listeners:
 
@@ -84,7 +85,7 @@ Exceptions in the listeners can be handled via `'error'` event listeners:
       console.log('caught an error: ' + error.message);
     });
     emit(target, 'boom');
-    // => caught an error: Boom!
+    // info: caught an error: Boom!
 
 If there is no listener registered for `error` event or if it also throws
 exception then such exceptions are logged into a console.
