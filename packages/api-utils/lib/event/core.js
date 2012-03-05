@@ -32,10 +32,10 @@ const observers = function observers(target, type) {
  *    The listener function that processes the event.
  */
 function on(target, type, listener) {
-  let listeners = observers(target, type);
-  if (typeof(listener) !== 'function')
+   if (typeof(listener) !== 'function')
     throw new Error(BAD_LISTENER);
 
+  let listeners = observers(target, type);
   if (!~listeners.indexOf(listener))
     listeners.push(listener);
 }
