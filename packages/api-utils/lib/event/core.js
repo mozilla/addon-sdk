@@ -70,10 +70,12 @@ exports.once = once;
  *    Event target object.
  * @param {String} type
  *    The type of event.
- * @params {Object|Number|String|Boolean}
- *    Arguments that will be passed to listeners.
+ * @params {Object|Number|String|Boolean} message
+ *    First argument that will be passed to listeners.
+ * @params {Object|Number|String|Boolean} ...
+ *    More arguments that will be passed to listeners.
  */
-function emit(target, type, message) {
+function emit(target, type, message, /*, ...*/) {
   for each (let item in emit.lazy.apply(emit.lazy, arguments))
     item;
 }
@@ -86,7 +88,7 @@ function emit(target, type, message) {
  * as lazy array of return values of listeners for the `emit` with the given
  * arguments.
  */
-emit.lazy = function lazy(target, type, message) {
+emit.lazy = function lazy(target, type, message, /*, ...*/) {
   let args = Array.slice(arguments, 2)
   let listeners = observers(target, type).slice()
   while (listeners.length) {
