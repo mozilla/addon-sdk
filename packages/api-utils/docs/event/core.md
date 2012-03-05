@@ -10,7 +10,7 @@ provided `on` function:
       console.log('hello ' + event);
     });
 
-Event may of specific `type` be emitted on any event `target` object using
+Event of specific `type` may be emitted on any event `target` object using
 `emit` function. This will call all registered `listener`s for the given `type`
 on the given event `target` in the same order they were registered.
 
