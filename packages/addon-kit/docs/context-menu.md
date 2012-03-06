@@ -117,9 +117,9 @@ exported by the `context-menu` module.
       match pattern strings.  When <code>matchPattern</code> is an array, the
       context occurs when the menu is invoked on a page whose URL matches any of
       the patterns.  These are the same match pattern strings that you use with
-      the <a href="packages/addon-kit/docs/page-mod.html"><code>page-mod</code></a>
+      the <a href="packages/addon-kit/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="packages/api-utils/docs/match-pattern.html">Read more about patterns</a>.
+      <a href="packages/api-utils/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -709,7 +709,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](packages/api-utils/docs/match-pattern.html) string or an array of
+  A [match pattern](packages/api-utils/match-pattern.html) string or an array of
   match pattern strings.
 </api>
 </api>

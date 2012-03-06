@@ -11,7 +11,7 @@ add-on for distribution using `cfx xpi`, it will become the
 The ID is used for a variety
 of purposes. For example: [addons.mozilla.org](http://addons.mozilla.org) uses
 it to distinguish between new add-ons and updates to existing add-ons, and the
-[`simple-storage`](packages/addon-kit/docs/simple-storage.html) module uses it
+[`simple-storage`](packages/addon-kit/simple-storage.html) module uses it
 to figure out which stored data belongs to which add-on.
 
 It is read from the `id` key in your add-on's [`package.json`](dev-guide/addon-development/package-spec.html) file.

@@ -5,7 +5,7 @@
 # Storing Annotations #
 
 Now we are able to create annotations, let's store them using the
-[`simple-storage`](packages/addon-kit/docs/simple-storage.html) module. In
+[`simple-storage`](packages/addon-kit/simple-storage.html) module. In
 this chapter we will cover three topics relating to persistent storage:
 
 * using `simple-storage` to persist objects

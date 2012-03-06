@@ -58,7 +58,7 @@ on the difference between these two sorts of files, see
 [content scripts](dev-guide/addon-development/web-content.html) included
 with your add-on. You can access the
 content of the `data` subdirectory from within your add-on's code using the
-Add-on SDK's [`self`](packages/addon-kit/docs/self.html) module.
+Add-on SDK's [`self`](packages/addon-kit/self.html) module.
 
 * `/doc` contains any documentation for your add-on.
 
@@ -129,9 +129,9 @@ contents with the following:
 The first two lines are used to import two SDK modules from the
 addon-kit package:
 
-* [`context-menu`](packages/addon-kit/docs/context-menu.html) enables add-ons
+* [`context-menu`](packages/addon-kit/context-menu.html) enables add-ons
 to add new items to the context menu
-* [`panel`](packages/addon-kit/docs/panel.html) enables add-ons to display
+* [`panel`](packages/addon-kit/panel.html) enables add-ons to display
 popup windows
 
 ### Creating a Context Menu Item ###

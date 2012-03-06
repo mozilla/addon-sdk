@@ -4,7 +4,7 @@
 
 # Internals > Reference #
 
-### [api-utils](packages/api-utils/api-utils.html) ##
+### [api-utils](packages/api-utils/index.html) ##
 
 Documentation for the modules provided by the `api-utils` package.
 

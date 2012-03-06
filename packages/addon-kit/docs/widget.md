@@ -12,7 +12,7 @@ consistent with other add-ons and blends in well with Firefox.
 "Widgets" are small pieces of content that live in the Firefox 4
 [add-on bar](https://developer.mozilla.org/en/The_add-on_bar).
 They can be simple icons or complex web pages.  You can attach
-[panels](packages/addon-kit/docs/panel.html) to them that open when they're
+[panels](packages/addon-kit/panel.html) to them that open when they're
 clicked, or you can define a custom click handler to perform some other action,
 like opening a web page in a tab.
 
@@ -48,7 +48,7 @@ alt="Widget displaying an icon">
 You can make `contentURL` point to an HTML or icon file which you have
 packaged inside your add-on. Just save the file in your add-on's `data`
 directory, and reference it using the `data.url()` method of the
-[`self`](packages/addon-kit/docs/self.html) module:
+[`self`](packages/addon-kit/self.html) module:
 
     var data = require("self").data;
 
@@ -85,7 +85,7 @@ have to send messages between the content script and the main add-on code.
 
 * You can specify one or more content scripts to load into the widget using the
 `contentScript` or `contentScriptFile` options to the
-[`Widget()` constructor](packages/addon-kit/docs/widget.html#Widget(options)).
+[`Widget()` constructor](packages/addon-kit/widget.html#Widget(options)).
 
 * You can communicate with the script using either the
 [`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
@@ -278,7 +278,7 @@ Finally, remove the line attaching the content script from "main.js":
 
 ## Attaching Panels to Widgets ##
 
-You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
+You can supply a [panel](packages/addon-kit/panel.html) to the widget's
 constructor: if you do this, the panel is automatically displayed when the
 user clicks the widget.
 
@@ -485,7 +485,7 @@ Represents a widget object.
     If the content is an image, it is automatically scaled to be 16x16 pixels.
 
   @prop [panel] {Panel}
-    An optional [panel](packages/addon-kit/docs/panel.html) to open when the
+    An optional [panel](packages/addon-kit/panel.html) to open when the
     user clicks on the widget. Note: If you also register a "click" listener,
     it will be called instead of the panel being opened.  However, you can show
     the panel from the listener by calling `this.panel.show()`.
@@ -584,7 +584,7 @@ Represents a widget object.
 @method
   Retrieve a `WidgetView` instance of this widget relative to a browser window.
 @param window {BrowserWindow}
-  The [BrowserWindow](packages/addon-kit/docs/windows.html) instance to match.
+  The [BrowserWindow](packages/addon-kit/windows.html) instance to match.
 @returns {WidgetView}
   A `WidgetView` instance associated with the browser window. Any changes
   subsequently applied to this object will only be applied to the widget
@@ -615,7 +615,7 @@ Represents a widget object.
 
 <api name="panel">
 @property {Panel}
-  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  A [panel](packages/addon-kit/panel.html) to open when the user clicks on
   the widget.
 </api>
 
@@ -669,7 +669,7 @@ Represents a widget object.
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
@@ -807,7 +807,7 @@ In this example `WidgetView` is used to display different content for
 
 <api name="panel">
 @property {Panel}
-  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  A [panel](packages/addon-kit/panel.html) to open when the user clicks on
   the widget view.
 </api>
 
@@ -862,7 +862,7 @@ In this example `WidgetView` is used to display different content for
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on`

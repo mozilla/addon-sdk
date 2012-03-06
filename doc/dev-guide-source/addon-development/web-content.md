@@ -10,19 +10,19 @@ content of web pages or be notified when the user clicks a link.
 
 The SDK provides several core modules to support this:
 
-**[panel](packages/addon-kit/docs/panel.html)**<br>
+**[panel](packages/addon-kit/panel.html)**<br>
 Create a dialog that can host web content.
 
-**[page-worker](packages/addon-kit/docs/page-worker.html)**<br>
+**[page-worker](packages/addon-kit/page-worker.html)**<br>
 Retrieve a page and access its content, without displaying it to the user.
 
-**[page-mod](packages/addon-kit/docs/page-mod.html)**<br>
+**[page-mod](packages/addon-kit/page-mod.html)**<br>
 Execute scripts in the context of selected web pages.
 
-**[widget](packages/addon-kit/docs/widget.html)**<br>
+**[widget](packages/addon-kit/widget.html)**<br>
 Host an add-on's user interface, including web content.
 
-**[context-menu](packages/addon-kit/docs/context-menu.html)**<br>
+**[context-menu](packages/addon-kit/context-menu.html)**<br>
 Add items to the browser's context menu.
 
 Firefox is moving towards a model in which it uses separate
@@ -57,7 +57,7 @@ relationships. The gray fill represents code written by the add-on developer.
 alt="Content script events">
 
 This might sound complicated but it doesn't need to be. The following add-on
-uses the [page-mod](packages/addon-kit/docs/page-mod.html) module to replace the
+uses the [page-mod](packages/addon-kit/page-mod.html) module to replace the
 content of any web page in the `.co.uk` domain by executing a content script
 in the context of that page:
 

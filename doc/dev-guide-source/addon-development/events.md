@@ -5,7 +5,7 @@
 # Working with Events #
 
 The Add-on SDK supports event-driven programming through its
-[`EventEmitter`](packages/api-utils/docs/events.html) framework.
+[`EventEmitter`](packages/api-utils/events.html) framework.
 
 Objects emit events on state changes that might be of interest to add-on code,
 such as browser windows opening, pages loading, network requests completing,
@@ -52,7 +52,7 @@ whenever the event occurs. The arguments that will be passed to the listener
 are specific to an event type and are documented with the event emitter.
 
 For example, the following add-on registers two listeners with the
-[`private-browsing`](packages/addon-kit/docs/private-browsing.html) module to
+[`private-browsing`](packages/addon-kit/private-browsing.html) module to
 listen for the `start` and `stop` events, and logs a string to the console
 reporting the change:
 
@@ -83,7 +83,7 @@ with "on": for example, "onOpen", "onReady" and so on. Then in the constructor
 you can assign a listener function to this property as an alternative to
 calling the object's `on()` method.
 
-For example: the [`widget`](packages/addon-kit/docs/widget.html) object emits
+For example: the [`widget`](packages/addon-kit/widget.html) object emits
 an event when the widget is clicked.
 
 The following add-on creates a widget and assigns a listener to the
