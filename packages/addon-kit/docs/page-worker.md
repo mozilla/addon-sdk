@@ -12,7 +12,7 @@ worker.  A page worker may be destroyed, after which its memory is freed, and
 you must create a new instance to load another page.
 
 You specify the page to load using the `contentURL` option to the
-[`Page()` constructor](packages/addon-kit/docs/page-worker.html#Page(options)).
+[`Page()` constructor](packages/addon-kit/page-worker.html#Page(options)).
 This can point to a remote file:
 
     pageWorker = require("page-worker").Page({
@@ -23,7 +23,7 @@ This can point to a remote file:
 It can also point to an HTML file which you've packaged with your add-on.
 To do this, save the file in your add-on's `data` directory and create the
 URL using the `data.url()` method of the
-[`self`](packages/addon-kit/docs/self.html) module:
+[`self`](packages/addon-kit/self.html) module:
 
     pageWorker = require("page-worker").Page({
       contentScript: "console.log(document.body.innerHTML);",
@@ -38,12 +38,12 @@ interacting with web content.
 
 You can specify one or more content scripts to load into the page using the
 `contentScript` or `contentScriptFile` options to the
-[`Page()` constructor](packages/addon-kit/docs/page-worker.html#Page(options)).
+[`Page()` constructor](packages/addon-kit/page-worker.html#Page(options)).
 With `contentScript` you pass the script as a string, as in the examples
 above. With `contentScriptFile` you pass a URL which points to a script
 saved under your add-on's `data` directory. You construct the URL using
 the `data.url()` method of the
-[`self`](packages/addon-kit/docs/self.html) module.
+[`self`](packages/addon-kit/self.html) module.
 
 While content scripts can access DOM content, they can't access any of the SDK
 APIs, so in many cases you'll need to exchange messages between the content
@@ -51,7 +51,7 @@ script and your main add-on code for a complete solution.
 
 For example, the content script might read some content and send it back to
 the main add-on, which could store it using the
-[`simple-storage`](packages/addon-kit/docs/simple-storage.html) API. You can
+[`simple-storage`](packages/addon-kit/simple-storage.html) API. You can
 communicate with the script using either the
 [`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
@@ -194,7 +194,7 @@ loaded until its `destroy` method is called or the add-on is unloaded.
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function

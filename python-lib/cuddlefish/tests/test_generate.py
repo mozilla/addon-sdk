@@ -15,13 +15,13 @@ from cuddlefish.docs import generate
 from cuddlefish.tests import env_root
 
 INITIAL_FILESET = [ ["static-files", "base.html"], \
-                    ["dev-guide", "welcome.html"], \
-                    ["packages", "aardvark", "aardvark.html"] ]
+                    ["dev-guide", "index.html"], \
+                    ["packages", "aardvark", "index.html"] ]
 
 EXTENDED_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "extra.html"], \
-                    ["dev-guide", "welcome.html"], \
-                    ["packages", "aardvark", "aardvark.html"] ]
+                    ["dev-guide", "index.html"], \
+                    ["packages", "aardvark", "index.html"] ]
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
@@ -112,7 +112,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         os.utime(os.path.join(docs_root, "static-files", "another.html"), None)
         new_digest = self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching an MD file under dev-guide **does** cause a regenerate
-        os.utime(os.path.join(docs_root, "dev-guide-source", "welcome.md"), None)
+        os.utime(os.path.join(docs_root, "dev-guide-source", "index.md"), None)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET, new_digest)
         # adding a file **does** cause a regenerate
         open(os.path.join(docs_root, "dev-guide-source", "extra.md"), "w").write("some content")

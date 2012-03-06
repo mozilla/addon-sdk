@@ -153,7 +153,7 @@ This property is read-only.
 <api name="tabs">
 @property {TabList}
 A live list of tabs in this window. This object has the same interface as the
-[`tabs` API](packages/addon-kit/docs/tabs.html), except it contains only the
+[`tabs` API](packages/addon-kit/tabs.html), except it contains only the
 tabs in this window, not all tabs in all windows. This property is read-only.
 </api>
 

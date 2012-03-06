@@ -53,7 +53,7 @@ You can also load HTML that's been packaged with your add-on, and this is
 most probably how you will create dialogs. To do this, save
 the HTML in your add-on's `data` directory and load it using the `data.url()`
 method exported by the
-[`self`](packages/addon-kit/docs/self.html) module, like this:
+[`self`](packages/addon-kit/self.html) module, like this:
 
     var panel = require("panel").Panel({
       contentURL: require("self").data.url("myFile.html")
@@ -74,7 +74,7 @@ have to send messages between the content script and the main add-on code.
 
 * You can specify one or more content scripts to load into a panel using the
 `contentScript` or `contentScriptFile` options to the
-[`Panel()` constructor](packages/addon-kit/docs/panel.html#Panel%28options%29).
+[`Panel()` constructor](packages/addon-kit/panel.html#Panel%28options%29).
 
 * You can communicate with the script using either the
 [`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
@@ -417,7 +417,7 @@ Creates a panel.
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function

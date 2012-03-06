@@ -25,4 +25,4 @@ aspects of programming with the SDK.
 Detailed documentation for the high-level APIs and tools in the SDK. In
 particular, this section includes API reference documentation for the
 high-level modules supplied in the
-[addon-kit](packages/addon-kit/addon-kit.html) package.
+[addon-kit](packages/addon-kit/index.html) package.

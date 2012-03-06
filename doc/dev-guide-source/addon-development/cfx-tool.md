@@ -294,7 +294,7 @@ Called with no options this command will look for a file called `package.json`
 in the current directory. If `package.json` exists, `cfx` will load the
 corresponding add-on and run its tests by loading from the `tests` directory
 any modules that start with the word `test-` and calling each of their exported
-functions, passing them a [test runner](packages/api-utils/docs/unit-test.html)
+functions, passing them a [test runner](packages/api-utils/unit-test.html)
 object as an argument.
 
 #### Supported Options #####
@@ -806,7 +806,7 @@ one run of `cfx` will not, by default, be available in the next run.
 
 This includes, for example, any extra add-ons you installed, or your
 history, or any data stored using the
-[simple-storage](packages/addon-kit/docs/simple-storage.html) API.
+[simple-storage](packages/addon-kit/simple-storage.html) API.
 
 To make `cfx` use a specific profile, pass the `--profiledir` option,
 specifying the path to the profile you wish to use.
