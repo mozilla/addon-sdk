@@ -24,6 +24,7 @@ skip = [
     "examples/library-detector/data/library-detector.js", # MIT
     "python-lib/mozrunner/killableprocess.py", # MIT? BSDish?
     "python-lib/mozrunner/winprocess.py", # MIT
+    "packages/api-utils/tests/test-querystring.js" # MIT
     ]
 absskip = [from_sdk_top(os.path.join(*fn.split("/"))) for fn in skip]
 

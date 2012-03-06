@@ -8,7 +8,8 @@ const { Base, Class } = require("api-utils/base");
 const { ns } = require("api-utils/namespace");
 const { emit, off } = require("api-utils/event/core");
 const { merge } = require("api-utils/utils/object");
-const { EventTarget } = require('api-utils/event/target');
+const { stringify } = require("api-utils/querystring");
+const { EventTarget } = require("api-utils/event/target");
 const { XMLHttpRequest } = require("api-utils/xhr");
 const apiUtils = require("api-utils/api-utils");
 
@@ -58,7 +59,7 @@ function runRequest(mode, target) {
 
   // Build the data to be set. For GET requests, we want to append that to
   // the URL before opening the request.
-  let data = makeQueryString(content);
+  let data = stringify(content);
   // If the URL already has ? in it, then we want to just use &
   if (mode == "GET" && data)
     url = url + (/\?/.test(url) ? "&" : "?") + data;
@@ -124,75 +125,6 @@ const Request = EventTarget.extend({
   }
 });
 exports.Request = Class(Request);
-
-// Converts an object of unordered key-vals to a string that can be passed
-// as part of a request
-function makeQueryString(content) {
-  // Explicitly return null if we have null, and empty string, or empty object.
-  if (!content)
-    return null;
-
-  // If content is already a string, just return it as is.
-  if (typeof(content) == "string") {
-    return content;
-  }
-
-  // At this point we have a k:v object. Iterate over it and encode each value.
-  // Arrays and nested objects will get encoded as needed. For example...
-  //
-  //   { foo: [1, 2, { omg: "bbq", "all your base!": "are belong to us" }], bar: "baz" }
-  //
-  // will be encoded as
-  //
-  //   foo[0]=1&foo[1]=2&foo[2][omg]=bbq&foo[2][all+your+base!]=are+belong+to+us&bar=baz
-  //
-  // Keys (including "[" and "]") and values will be encoded with
-  // fixedEncodeURIComponent before returning.
-  //
-  // Execution was inspired by jQuery, but some details have changed and numeric
-  // array keys are included (whereas they are not in jQuery).
-
-  let encodedContent = [];
-  function add(key, val) {
-    encodedContent.push(fixedEncodeURIComponent(key) + "=" +
-                        fixedEncodeURIComponent(val));
-  }
-
-  function make(key, val) {
-    if (typeof(val) === "object" && val !== null) {
-      for ([k, v] in Iterator(val)) {
-        make(key + "[" + k + "]", v);
-      }
-    }
-    else {
-      add(key, val)
-    }
-  }
-  for ([k, v] in Iterator(content)) {
-    make(k, v);
-  }
-  return encodedContent.join("&");
-
-  //XXXzpao In theory, we can just use a FormData object on 1.9.3, but I had
-  //        trouble getting that working. It would also be nice to stay
-  //        backwards-compat as long as possible. Keeping this in for now...
-  // let formData = Cc["@mozilla.org/files/formdata;1"].
-  //                createInstance(Ci.nsIDOMFormData);
-  // for ([k, v] in Iterator(content)) {
-  //   formData.append(k, v);
-  // }
-  // return formData;
-}
-
-
-// encodes a string safely for application/x-www-form-urlencoded
-// adheres to RFC 3986
-// see https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Global_Functions/encodeURIComponent
-function fixedEncodeURIComponent (str) {
-  return encodeURIComponent(str).replace(/%20/g, "+").replace(/!/g, "%21").
-                                 replace(/'/g, "%27").replace(/\(/g, "%28").
-                                 replace(/\)/g, "%29").replace(/\*/g, "%2A");
-}
 
 const Response = Base.extend({
   initialize: function initialize(request) {
