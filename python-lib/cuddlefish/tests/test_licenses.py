@@ -34,7 +34,9 @@ class Licenses(unittest.TestCase):
         # licenses.
         self.missing = []
         self.scan_file(from_sdk_top(os.path.join("python-lib", "jetpack_sdk_env.py")))
-        self.scan(os.path.join("python-lib", "cuddlefish"), [".js", ".py"])
+        self.scan(os.path.join("python-lib", "cuddlefish"), [".js", ".py"],
+                  skipdirs=["sdk-docs"], # test_generate.py makes this
+                  )
         self.scan(os.path.join("python-lib", "mozrunner"), [".py"])
 
         for sdk_package in ["addon-kit", "api-utils", "test-harness"]:
