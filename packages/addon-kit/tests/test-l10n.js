@@ -5,10 +5,23 @@
 const prefs = require("preferences-service");
 const { Loader } = require('./helpers');
 
+const PREF_MATCH_OS_LOCALE  = "intl.locale.matchOS";
+const PREF_SELECTED_LOCALE  = "general.useragent.locale";
+
+function setLocale(locale) {
+  prefs.set(PREF_MATCH_OS_LOCALE, false);
+  prefs.set(PREF_SELECTED_LOCALE, locale);
+}
+
+function resetLocale() {
+  prefs.reset(PREF_MATCH_OS_LOCALE);
+  prefs.reset(PREF_SELECTED_LOCALE);
+}
+
 exports.testExactMatching = function(test) {
   let loader = Loader(module);
+  setLocale("fr-FR");
 
-  prefs.set("general.useragent.locale", "fr-FR");
   let _ = loader.require("l10n").get;
   test.assertEqual(_("Not translated"), "Not translated",
                    "Key not translated");
@@ -33,24 +46,29 @@ exports.testExactMatching = function(test) {
                    "PluralForm as value, 1nd form");
 
   loader.unload();
+  resetLocale();
 }
 
 exports.testEnUsLocaleName = function(test) {
   let loader = Loader(module);
+  setLocale("en-US");
 
-  prefs.set("general.useragent.locale", "en-US");
   let _ = loader.require("l10n").get;
   test.assertEqual(_("Not translated"), "Not translated");
   test.assertEqual(_("Translated"), "Yes");
+
   loader.unload();
+  resetLocale();
 }
 
 exports.testShortLocaleName = function(test) {
   let loader = Loader(module);
+  setLocale("eo");
 
-  prefs.set("general.useragent.locale", "eo");
   let _ = loader.require("l10n").get;
   test.assertEqual(_("Not translated"), "Not translated");
   test.assertEqual(_("Translated"), "jes");
+
   loader.unload();
+  resetLocale();
 }
