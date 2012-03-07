@@ -229,19 +229,19 @@ const ContentWorker = Object.freeze({
     });
   },
 
-  injectData: function (exports, data) {
-  	Object.defineProperty( exports.self, "data", { value: JSON.parse( data ) });
+  injectOptions: function (exports, options) {
+  	Object.defineProperty( exports.self, "options", { value: JSON.parse( options ) });
   },
 
-  inject: function (exports, chromeAPI, emitToChrome, data) {
+  inject: function (exports, chromeAPI, emitToChrome, options) {
     let { pipe, onChromeEvent, hasListenerFor } =
       ContentWorker.createPipe(emitToChrome);
 
     ContentWorker.injectConsole(exports, pipe);
     ContentWorker.injectTimers(exports, chromeAPI, pipe, exports.console);
     ContentWorker.injectMessageAPI(exports, pipe);
-    if ( data !== undefined ) {
-      ContentWorker.injectData(exports, data);
+    if ( options !== undefined ) {
+      ContentWorker.injectOptions(exports, options);
     }
 
     Object.freeze( exports.self );
