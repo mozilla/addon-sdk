@@ -5,6 +5,7 @@
 const { Cc, Ci } = require("chrome");
 const observers = require("observer-service");
 const { EventEmitter } = require("events");
+const { emit, off } = require("api-utils/event/core");
 const unload = require("unload");
 const prefService = require("preferences-service");
 const { jetpackID } = require("@packaging");
@@ -40,14 +41,14 @@ const events = EventEmitter.compose({
   },
   _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
     if (topic == "nsPref:changed") {
-      this._emit(prefName, prefName);
+      emit(this._public, prefName, prefName);
     }
   },
   _buttonObserver: function PrefsButtonObserver(subject, data) {
-    this._emit(data);
+    emit(this._public, data);
   },
   unload: function manager_unload() {
-    this._removeAllListeners();
+    off(this._public);
     branch.removeObserver("", this._prefObserver);
  },
 })();
