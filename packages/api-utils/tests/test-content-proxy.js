@@ -759,7 +759,7 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
 
 // Bug 715755: proxy code throw an exception on COW
 // Create an http server in order to simulate real cross domain documents
-let serverPort = 8080;
+let serverPort = 8099;
 let server = require("httpd").startServerAsync(serverPort);
 server.registerPathHandler("/", function handle(request, response) {
   // Returns an empty webpage
