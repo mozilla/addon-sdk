@@ -327,6 +327,31 @@ tests.testPanelTextColor = function(test) {
   });
 };
 
+// Bug 696552: Ensure panel.contentURL modification support
+tests.testChangeContentURL = function(test) {
+  test.waitUntilDone();
+
+  let panel = Panel({
+    contentURL: "about:blank",
+    contentScript: "self.port.emit('ready', document.location.href);"
+  });
+  let count = 0;
+  panel.port.on("ready", function (location) {
+    count++;
+    if (count == 1) {
+      test.assertEqual(location, "about:blank");
+      test.assertEqual(panel.contentURL, "about:blank");
+      panel.contentURL = "about:buildconfig";
+    }
+    else {
+      test.assertEqual(location, "about:buildconfig");
+      test.assertEqual(panel.contentURL, "about:buildconfig");
+      panel.destroy();
+      test.done();
+    }
+  });
+};
+
 function makeEventOrderTest(options) {
   let expectedEvents = [];
 

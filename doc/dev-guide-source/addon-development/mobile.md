@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <div class="warning">Developing add-ons for Firefox Mobile is still
 an experimental feature of the SDK. Although the SDK modules used are
 stable, the setup instructions and cfx commands are likely to change.
@@ -17,12 +21,12 @@ and `cfx xpi` when targeting Firefox Mobile.
 
 Right now only the following modules are fully functional:
 
-* [page-mod](packages/addon-kit/docs/page-mod.html)
-* [page-worker](packages/addon-kit/docs/page-worker.html)
-* [request](packages/addon-kit/docs/request.html)
-* [self](packages/addon-kit/docs/self.html)
-* [simple-storage](packages/addon-kit/docs/simple-storage.html)
-* [timers](packages/addon-kit/docs/timers.html)
+* [page-mod](packages/addon-kit/page-mod.html)
+* [page-worker](packages/addon-kit/page-worker.html)
+* [request](packages/addon-kit/request.html)
+* [self](packages/addon-kit/self.html)
+* [simple-storage](packages/addon-kit/simple-storage.html)
+* [timers](packages/addon-kit/timers.html)
 
 We're working on adding support for the other modules.
 

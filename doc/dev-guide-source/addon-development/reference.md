@@ -4,7 +4,7 @@
 
 # Reference #
 
-### [addon-kit](packages/addon-kit/addon-kit.html) ##
+### [addon-kit](packages/addon-kit/index.html) ##
 
 Documentation for the modules provided by the `addon-kit` package.
 

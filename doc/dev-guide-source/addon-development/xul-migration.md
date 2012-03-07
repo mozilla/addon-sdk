@@ -81,7 +81,7 @@ registers a listener function for messages from the content script
 * the content script (3) extracts the data from the page and (4) sends
 it to the main add-on code in a message
 * the main add-on code (5) receives the message and (6) sends the request,
-using the SDK's [`request`](packages/addon-kit/docs/request.html) API
+using the SDK's [`request`](packages/addon-kit/request.html) API
 
 <img class="image-center" src="static-files/media/xul-migration-cs.png"
 alt="Content script organization">
@@ -101,19 +101,19 @@ There's much more information on content scripts in the
 The SDK provides a set of high level APIs providing some basic user
 interface components and functionality commonly required by add-ons.
 These are collected together in the
-[`addon-kit`](packages/addon-kit/addon-kit.html) package. Because we expect
+[`addon-kit`](packages/addon-kit/index.html) package. Because we expect
 to keep these APIs compatible as new versions of Firefox are released, we
 call them the "supported" APIs.
 
 See this
 [quick overview](dev-guide/addon-development/api-modules.html) and
-[links to detailed API documentation](packages/addon-kit/addon-kit.html).
+[links to detailed API documentation](packages/addon-kit/index.html).
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
 model.
 
-APIs like [`widget`](packages/addon-kit/docs/widget.html) and
-[`panel`](packages/addon-kit/docs/panel.html) are very generic and with the
+APIs like [`widget`](packages/addon-kit/widget.html) and
+[`panel`](packages/addon-kit/panel.html) are very generic and with the
 right content can be used to replace many specific XUL elements. But there are
 some notable limitations in the SDK APIs and even a fairly simple UI may need
 some degree of redesign to work with them.
@@ -164,9 +164,9 @@ compatibility guarantee, so we do not expect code using them will necessarily
 continue to work as new versions of Firefox are released.
 </span>
 In addition to the supported APIs, the SDK includes a number of
-[low-level modules](packages/api-utils/api-utils.html) some of which, such
-as [`tab-browser`](packages/api-utils/docs/tab-browser.html), [`xhr`](packages/api-utils/docs/xhr.html), and
-[`window-utils`](packages/api-utils/docs/window-utils.html), expose powerful
+[low-level modules](packages/api-utils/index.html) some of which, such
+as [`tab-browser`](packages/api-utils/tab-browser.html), [`xhr`](packages/api-utils/xhr.html), and
+[`window-utils`](packages/api-utils/window-utils.html), expose powerful
 browser capabilities.
 
 In this section we'll use low-level modules how to:
@@ -177,7 +177,7 @@ object
 
 ### <a name="browser-chrome">Modifying the Browser Chrome</a> ###
 
-The [`window-utils`](packages/api-utils/docs/window-utils.html) module gives
+The [`window-utils`](packages/api-utils/window-utils.html) module gives
 you direct access to chrome windows, including the browser's chrome window.
 Here's a really simple example add-on that modifies the browser chrome using
 `window-utils`:
@@ -205,7 +205,7 @@ collection of [third party modules](https://wiki.mozilla.org/Jetpack/Modules).
 ### <a name="accessing-tabbrowser">Accessing <a href="https://developer.mozilla.org/en/XUL/tabbrowser">tabbrowser</a> ###
 
 
-The [`tab-browser`](packages/api-utils/docs/tab-browser.html) module gives
+The [`tab-browser`](packages/api-utils/tab-browser.html) module gives
 you direct access to the
 [tabbrowser](https://developer.mozilla.org/en/XUL/tabbrowser) object. This
 simple example modifies the selected tab's CSS to enable the user to highlight
@@ -240,9 +240,9 @@ APIs it explicitly imports via `require()`. This is useful, because it means
 that if a malicious web page is able to inject code into your add-on's
 context, it is only able to use the APIs you have imported. For example, if
 you have only imported the
-[`notifications`](packages/addon-kit/docs/notifications.html) module, then
+[`notifications`](packages/addon-kit/notifications.html) module, then
 even if a malicious web page manages to inject code into your add-on, it
-can't use the SDK's [`file`](packages/api-utils/docs/file.html) module to
+can't use the SDK's [`file`](packages/api-utils/file.html) module to
 access the user's data.
 
 But this means that the more powerful modules you `require()`, the greater

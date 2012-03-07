@@ -53,4 +53,4 @@ characteristics:
        be attenuated to reduce authority
 
 The current best practices are illustrated well by the
-[xhr module](packages/api-utils/docs/xhr.html).
+[xhr module](packages/api-utils/xhr.html).

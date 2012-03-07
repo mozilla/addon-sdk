@@ -707,6 +707,8 @@ WidgetChrome.prototype._createNode = function WC__createNode() {
   node.setAttribute("label", this._widget.label);
   node.setAttribute("tooltiptext", this._widget.tooltip);
   node.setAttribute("align", "center");
+  // Bug 626326: Prevent customize toolbar context menu to appear
+  node.setAttribute("context", "");
 
   // TODO move into a stylesheet, configurable by consumers.
   // Either widget.style, exposing the style object, or a URL
@@ -843,8 +845,8 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   
   // On document load, make modifications required for nice default
   // presentation.
-  let self = this;
   function loadListener(e) {
+    let containerStyle = self.window.getComputedStyle(self.node.parentNode);
     // Ignore event firings that target the iframe
     if (e.target == iframe)
       return;
@@ -864,6 +866,12 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       doc.body.firstElementChild.style.height = "16px";
     }
 
+    // Extend the add-on bar's default text styles to the widget.
+    doc.body.style.color = containerStyle.color;
+    doc.body.style.fontFamily = containerStyle.fontFamily;
+    doc.body.style.fontSize = containerStyle.fontSize;
+    doc.body.style.fontWeight = containerStyle.fontWeight;
+    doc.body.style.textShadow = containerStyle.textShadow;
     // Allow all content to fill the box by default.
     doc.body.style.margin = "0";
   }

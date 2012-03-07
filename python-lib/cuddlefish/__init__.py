@@ -532,6 +532,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
+    elif command not in ["xpi", "test", "run"]:
+        print >>sys.stderr, "Unknown command: %s" % command
+        print >>sys.stderr, "Try using '--help' for assistance."
+        sys.exit(1)
 
     target_cfg_json = None
     if not target_cfg:
@@ -569,9 +573,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "run":
         use_main = True
     else:
-        print >>sys.stderr, "Unknown command: %s" % command
-        print >>sys.stderr, "Try using '--help' for assistance."
-        sys.exit(1)
+        assert 0, "shouldn't get here"
 
     if use_main and 'main' not in target_cfg:
         # If the user supplies a template dir, then the main

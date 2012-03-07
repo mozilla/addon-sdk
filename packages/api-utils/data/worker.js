@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 const ContentWorker = Object.freeze({
   // TODO: Bug 727854 Use same implementation than common JS modules,
   // i.e. EventEmitter module

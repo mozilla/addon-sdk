@@ -35,9 +35,9 @@ To learn more about events, see the
 ## Content Scripting ##
 
 Several modules need to interact directly with web content, either web content
-they host themselves (such as the [`panel`](packages/addon-kit/docs/panel.html) module) or
+they host themselves (such as the [`panel`](packages/addon-kit/panel.html) module) or
 web content hosted by the browser (such as the
-[`page-mod`](packages/addon-kit/docs/page-mod.html)).
+[`page-mod`](packages/addon-kit/page-mod.html)).
 
 These modules follow a common pattern in which the code
 that actually interacts with the content is executed as a separate script
