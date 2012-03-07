@@ -258,6 +258,17 @@ function wrap(value, obj, name, debug) {
         typedArraysCtor.indexOf(value.constructor) !== -1)
       return value;
 
+    // Bug 715755: do not proxify COW wrappers
+    // These wrappers throw an exception when trying to access
+    // any attribute that is not in a white list
+    try {
+      ("nonExistantAttribute" in value);
+    }
+    catch(e) {
+      if (e.message.indexOf("Permission denied to access property") !== -1)
+        return value;
+    }
+
     // We may have a XrayWrapper proxy.
     // For example:
     //   let myListener = { handleEvent: function () {} };
