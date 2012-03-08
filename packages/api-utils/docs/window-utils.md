@@ -80,14 +80,15 @@ in the OS specific window lists for the application.
     let { backgroundify, open } = require('api-utils/window-utils');
     let bgwin = backgroundify(open('data:text/html,Hello backgroundy'));
 
-If optional `options.close` is `false` unregistered window won't automatically
+Optionally more configuration options via second `options` argument. If
+`options.close` is `false` unregistered window won't automatically
 be closed on application quit, preventing application from quiting. While this
 is possible you should make sure to close all such windows manually:
 
     let { backgroundify, open } = require('api-utils/window-utils');
-    let bgwin = backgroundify(open('data:text/html,Foo', {
+    let bgwin = backgroundify(open('data:text/html,Foo'), {
       close: false
-    }));
+    });
 
 ### createFrame
 
