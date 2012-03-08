@@ -353,7 +353,7 @@ function open(uri, options) {
 exports.open = open;
 
 /**
- * Creates an iframe in a provided document.
+ * Creates a XUL `browser` element in a privileged document.
  * @params {nsIDOMDocument} document
  * @params {String} options.type
  *    By default is 'content' for possible values see:
@@ -371,11 +371,10 @@ exports.open = open;
  *    Whether to allow plugin execution. Defaults to `false`.
  */
 function newFrame(document, options) {
-  let frame, docShell, remote;
   options = options || {};
-  remote = options.remote === true
+  let remote = 'remote' in options && options.remote === true;
 
-  frame = document.createElementNS(XUL, 'browser');
+  let frame = document.createElementNS(XUL, 'browser');
   // Type="content" is mandatory to enable stuff here:
   // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
   frame.setAttribute('type', options.type || 'content');
@@ -395,7 +394,7 @@ function newFrame(document, options) {
 
   // If browser is remote it won't have a `docShell`.
   if (!remote) {
-    docShell = frame.docShell;
+    let docShell = frame.docShell;
     docShell.allowAuth = options.allowAuth || false;
     docShell.allowJavascript = options.allowJavascript || false;
     docShell.allowPlugins = options.allowPlugins || false;
