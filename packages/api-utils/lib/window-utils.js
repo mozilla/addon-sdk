@@ -276,19 +276,19 @@ exports.createRemoteBrowser = createRemoteBrowser;
 /**
  * Returns `nsIXULWindow` for the given `nsIDOMWindow`.
  */
-function xul(window) {
+function getXULWindow(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIWebNavigation).
     QueryInterface(Ci.nsIDocShellTreeItem).
     treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIXULWindow);
 };
-exports.xul = xul;
+exports.getXULWindow = getXULWindow;
 
 /**
  * Returns `nsIBaseWindow` for the given `nsIDOMWindow`.
  */
-function base(window) {
+function getBaseWindow(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIWebNavigation).
     QueryInterface(Ci.nsIDocShell).
@@ -296,7 +296,7 @@ function base(window) {
     treeOwner.
     QueryInterface(Ci.nsIBaseWindow);
 }
-exports.base = base;
+exports.getBaseWindow = getBaseWindow;
 
 /**
  * Takes hash of options and serializes it to a features string that
@@ -319,10 +319,10 @@ function serializeFeatures(options) {
  * @params {Boolean} options.close
  */
 function backgroundify(window, options) {
-  let baseWindow = base(window);
-  baseWindow.visibility = false;
-  baseWindow.enabled = false;
-  appShellService.unregisterTopLevelWindow(xul(window));
+  let base = getBaseWindow(window);
+  base.visibility = false;
+  base.enabled = false;
+  appShellService.unregisterTopLevelWindow(getXULWindow(window));
   if (!options || options.close !== false)
     observers.add('quit-application-granted', window.close.bind(window));
 
@@ -331,7 +331,7 @@ function backgroundify(window, options) {
 exports.backgroundify = backgroundify;
 
 /**
- * Creates a top level window and returns it's `nsIWindow` representation.
+ * Opens a top level window and returns it's `nsIDOMWindow` representation.
  * @params {String} uri
  *    URI of the document to be loaded into window.
  * @params {nsIDOMWindow} options.parent
@@ -341,7 +341,7 @@ exports.backgroundify = backgroundify;
  * @params {Object} options.features
  *    Map of key, values like: `{ width: 10, height: 15, chrome: true }`.
  */
-function newTopWindow(uri, options) {
+function open(uri, options) {
   options = options || {};
   return windowWatcher.
     openWindow(options.parent || null,
@@ -350,7 +350,7 @@ function newTopWindow(uri, options) {
                serializeFeatures(options.features || {}),
                null);
 }
-exports.newTopWindow = newTopWindow;
+exports.open = open;
 
 /**
  * Creates an iframe in a provided document.

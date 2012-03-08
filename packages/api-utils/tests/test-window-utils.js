@@ -322,7 +322,7 @@ exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
   let active = windowUtils.activeBrowserWindow;
   assert.ok(!(active instanceof Ci.nsIBaseWindow),
             'active window is not nsIBaseWindow')
-  assert.ok(windowUtils.base(active) instanceof Ci.nsIBaseWindow,
+  assert.ok(windowUtils.getBaseWindow(active) instanceof Ci.nsIBaseWindow,
             'base returns nsIBaseWindow');
 };
 
@@ -330,19 +330,19 @@ exports['test get nsIXULWindow from nsIDomWindow'] = function(assert) {
   let active = windowUtils.activeBrowserWindow;
   assert.ok(!(active instanceof Ci.nsIXULWindow),
             'active window is not nsIXULWindow');
-  assert.ok(windowUtils.xul(active) instanceof Ci.nsIXULWindow,
+  assert.ok(windowUtils.getXULWindow(active) instanceof Ci.nsIXULWindow,
             'base returns nsIXULWindow');
 };
 
 exports['test top window creation'] = function(assert) {
-  let window = windowUtils.newTopWindow('data:text/html,Hello top window');
+  let window = windowUtils.open('data:text/html,Hello top window');
   let windows = toArray(windowUtils.windowIterator);
   assert.ok(~windows.indexOf(window), 'window was opened');
   window.close();
 };
 
 exports['test new top window with options'] = function(assert) {
-  let window = windowUtils.newTopWindow('data:text/html,Hi custom top window', {
+  let window = windowUtils.open('data:text/html,Hi custom top window', {
     name: 'test',
     features: { height: 100, width: 200, toolbar: true }
   });
@@ -356,7 +356,7 @@ exports['test new top window with options'] = function(assert) {
 };
 
 exports['test backgroundify'] = function(assert) {
-  let window = windowUtils.newTopWindow('data:text/html,backgroundy');
+  let window = windowUtils.open('data:text/html,backgroundy');
   assert.ok(~toArray(windowUtils.windowIterator).indexOf(window),
             'window is in the list of windows');
   let backgroundy = windowUtils.backgroundify(window);
@@ -367,7 +367,7 @@ exports['test backgroundify'] = function(assert) {
 };
 
 exports['test frame creation'] = function(assert) {
-  let window = windowUtils.newTopWindow('data:text/html,Window');
+  let window = windowUtils.open('data:text/html,Window');
   let frame = windowUtils.newFrame(window.document);
 
   assert.equal(frame.getAttribute('type'), 'content',
@@ -383,7 +383,7 @@ exports['test frame creation'] = function(assert) {
 };
 
 exports['test fram has js disabled by default'] = function(assert, done) {
-  let window = windowUtils.newTopWindow('data:text/html,window');
+  let window = windowUtils.open('data:text/html,window');
   window.addEventListener('DOMContentLoaded', function windowReady() {
     window.removeEventListener('DOMContentLoaded', windowReady, false);
     let frame = windowUtils.newFrame(window.document, {
@@ -403,7 +403,7 @@ exports['test fram has js disabled by default'] = function(assert, done) {
 };
 
 exports['test frame with js enabled'] = function(assert, done) {
-  let window = windowUtils.newTopWindow('data:text/html,window');
+  let window = windowUtils.open('data:text/html,window');
   window.addEventListener('DOMContentLoaded', function windowReady() {
     window.removeEventListener('DOMContentLoaded', windowReady, false);
     let frame = windowUtils.newFrame(window.document, {

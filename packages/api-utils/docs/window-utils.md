@@ -11,10 +11,10 @@ interface.
 
 [nsIDOMWindow]: http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/base/nsIDOMWindow.idl
 
-### xul
+### getXULWindow
 
-Module provides `xulWindow` function that can be used get access [nsIXULWindow]
-for the given [nsIDOMWindow]:
+Module provides `getXULWindow` function that can be used get access
+[nsIXULWindow] for the given [nsIDOMWindow]\:
 [nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
 [nsIXULWindow]:https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow
 
@@ -22,12 +22,12 @@ for the given [nsIDOMWindow]:
     let utils = require('api-utils/window-utils');
     let active = utils.activeBrowserWindow;
     active instanceof Ci.nsIXULWindow // => false
-    utils.xul(active) instanceof Ci.nsIXULWindow // => true
+    utils.getXULWindow(active) instanceof Ci.nsIXULWindow // => true
 
-### base
+### getBaseWindow
 
-Module provides `baseWindow` function that can be used get access [nsIBaseWindow]
-for the given [nsIDOMWindow]:
+Module provides `getBaseWindow` function that can be used get access
+[nsIBaseWindow] for the given [nsIDOMWindow]\:
 [nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
 [nsIBaseWindow]:http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl
 
@@ -35,16 +35,16 @@ for the given [nsIDOMWindow]:
     let utils = require('api-utils/window-utils');
     let active = utils.activeBrowserWindow;
     active instanceof Ci.nsIBaseWindow // => false
-    utils.base(active) instanceof Ci.nsIBaseWindow // => true
+    utils.getBaseWindow(active) instanceof Ci.nsIBaseWindow // => true
 
-### newTopWindow
+### open
 
-Module exports `newTopWindow` function that may be used to open top level
+Module exports `open` function that may be used to open top level
 (application) windows. Function takes `uri` of the window document as a first
 argument and optional hash of `options` as second argument.
 
-    let { newTopWindow } = require('api-utils/window-utils');
-    let window = newTopWindow('data:text/html,Hello Window');
+    let { open } = require('api-utils/window-utils');
+    let window = open('data:text/html,Hello Window');
 
 Following options may be provided to used to configure created window behavior:
 
@@ -60,8 +60,8 @@ Hash of option that will be serialized to features string. See
 [features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
 for more details.
 
-    let { newTopWindow } = require('api-utils/window-utils');
-    let window = newTopWindow('data:text/html,Hello Window', {
+    let { open } = require('api-utils/window-utils');
+    let window = open('data:text/html,Hello Window', {
       name: 'jetpack window',
       features: {
         chrome: true,
@@ -78,15 +78,15 @@ Module exports `backgroundify` function that takes `nsIDOMWindow` and
 removes it from the application's window registry, so that they won't appear
 in the OS specific window lists for the application.
 
-    let { backgroundify, newTopWindow } = require('api-utils/window-utils');
-    let bgwin = backgroundify(newTopWindow('data:text/html,Hello backgroundy'));
+    let { backgroundify, open } = require('api-utils/window-utils');
+    let bgwin = backgroundify(open('data:text/html,Hello backgroundy'));
 
 If optional `options.close` is `false` unregistered window won't automatically
 be closed on application quit, preventing application from quiting. While this
 is possible you should make sure to close all such windows manually:
 
-    let { backgroundify, newTopWindow } = require('api-utils/window-utils');
-    let bgwin = backgroundify(newTopWindow('data:text/html,Foo', {
+    let { backgroundify, open } = require('api-utils/window-utils');
+    let bgwin = backgroundify(open('data:text/html,Foo', {
       close: false
     }));
 
@@ -96,8 +96,8 @@ Module exports `createFrame` function that takes `nsIDOMDocument` of the
 privileged document (which is either top level window or document from chrome)
 and creates a `browser` element in it's `documentElement`:
 
-    let { newFrame, newTopWindow } = require('api-utils/window-utils');
-    let window = newTopWindow('data:text/html,Foo');
+    let { newFrame, open } = require('api-utils/window-utils');
+    let window = open('data:text/html,Foo');
     let frame = newFrame(window.document);
 
 Optionally `newFrame` can be passed set of `options` to configure frame
@@ -124,8 +124,8 @@ Whether to allow Javascript execution. Defaults to `false`.
 - allowPlugins
 Whether to allow plugin execution. Defaults to `false`.
 
-    let { newFrame, newTopWindow } = require('api-utils/window-utils');
-    let window = newTopWindow('data:text/html,top');
+    let { newFrame, open } = require('api-utils/window-utils');
+    let window = open('data:text/html,top');
     let frame = newFrame(window.document, {
       uri: 'data:text/html,<script>alert("Hello")</script>',
       allowJavascript: true
