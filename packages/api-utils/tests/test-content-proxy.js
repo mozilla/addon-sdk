@@ -777,7 +777,9 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
           iframe.removeEventListener("load", onload, true);
           try {
             // Try accessing iframe's content that is made of COW wrappers
-            assert(iframe.contentWindow == "[object Window]", "COW works properly")
+            // Take care of debug builds that add object address after `Window`
+            assert(String(iframe.contentWindow).match(/\[object Window.*\]/),
+                   "COW works properly");
           } catch(e) {
             assert(false, "COW fails : "+e.message);
           }
