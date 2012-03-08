@@ -104,25 +104,25 @@ Module exports `createFrame` function that takes `nsIDOMDocument` of the
 Optionally `newFrame` can be passed set of `options` to configure frame
 even further. Following option are supported:
 
-- type
+- `type`
 String that defines access type of the document loaded into it. Defaults to
 `'content'`. For more details and other possible values see
 [documentation on MDN](https://developer.mozilla.org/en/XUL/Attribute/browser.type)
 
-- uri
+- `uri`
 URI of the document to be loaded into created frame. Defaults to `about:blank`.
 
-- remote
+- `remote`
 If `true` separate process will be used for this frame, also in such case all
 the following options are ignored.
 
-- allowAuth
+- `allowAuth`
 Whether to allow auth dialogs. Defaults to `false`.
 
-- allowJavascript
+- `allowJavascript`
 Whether to allow Javascript execution. Defaults to `false`.
 
-- allowPlugins
+- `allowPlugins`
 Whether to allow plugin execution. Defaults to `false`.
 
     let { newFrame, open } = require('api-utils/window-utils');
