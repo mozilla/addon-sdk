@@ -5,7 +5,7 @@
 import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
-from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
+from cuddlefish.templates import TEST_MAIN_JS, PACKAGE_JSON
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -45,7 +45,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(main_js))
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
-        self.assertEqual(open(main_js,"r").read(),MAIN_JS)
+        self.assertEqual(open(main_js,"r").read(),"")
         self.assertEqual(open(package_json,"r").read(),
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
                                          "fullName": "tmp_addon_SAMPLE" })
