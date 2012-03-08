@@ -93,8 +93,9 @@ is possible you should make sure to close all such windows manually:
 ### createFrame
 
 Module exports `createFrame` function that takes `nsIDOMDocument` of the
-privileged document (which is either top level window or document from chrome)
-and creates a `browser` element in it's `documentElement`:
+[privileged document] and creates a `browser` element in it's `documentElement`
+\:
+[privileged document]:https://developer.mozilla.org/en/Working_with_windows_in_chrome_code
 
     let { newFrame, open } = require('api-utils/window-utils');
     let window = open('data:text/html,Foo');
