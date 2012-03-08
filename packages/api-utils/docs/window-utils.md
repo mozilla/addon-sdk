@@ -64,7 +64,6 @@ for more details.
     let window = open('data:text/html,Hello Window', {
       name: 'jetpack window',
       features: {
-        chrome: true,
         width: 200,
         height: 50,
         popup: true
