@@ -418,3 +418,29 @@ exports.testAutomaticDestroy = function(test) {
   });
   
 }
+
+exports.testContentScriptOptionsOption = function(test) {
+	test.waitUntilDone();
+
+  let callbackDone = null;
+  testPageMod(test, "about:", [{
+      include: "about:*",
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onAttach: function(worker) {
+      	worker.on('message', function(msg) {
+          test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+          test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+          test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+          test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+          test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+          callbackDone();
+        });
+      }
+    }],
+    function(win, done) {
+      callbackDone = done;
+    }
+  );
+};
