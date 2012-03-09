@@ -9,9 +9,10 @@ The constructors for content-script-using objects such as panel and page-mod
 define a group of options for loading content scripts:
 
 <pre>
-  contentScript      string, array
-  contentScriptFile  string, array
-  contentScriptWhen  string
+  contentScript         string, array
+  contentScriptFile     string, array
+  contentScriptWhen     string
+  contentScriptOptions  object
 </pre>
 
 We have already seen the `contentScript` option, which enables you to pass
@@ -71,3 +72,8 @@ has been loaded, at the time the
 fires.
 
 The default value is "end".
+
+The `contentScriptOptions` option creates a read-only value available from the
+content scripts as `self.options`.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
