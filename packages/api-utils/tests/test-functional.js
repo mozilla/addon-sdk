@@ -137,7 +137,7 @@ exports['test delay'] = function(assert, done) {
   delay(function() {
     assert.ok(Date.now() - start, 'delayed the function');
     done();
-  }, 1);
+  }, 50);
 };
 
 exports['test delay with this'] = function(assert, done) {
