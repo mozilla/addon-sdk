@@ -99,8 +99,8 @@ function Request(options) {
       }
     }
 
-    // actually send the request. we only want to send data on POST requests
-    request.send(mode == "POST" ? data : null);
+    // actually send the request. don't send data with GET requests
+    request.send(mode != "GET" ? data : null);
   }
 
   // Map these setters/getters to the options
@@ -122,6 +122,11 @@ function Request(options) {
 
   _public.post = function () {
     makeRequest("POST");
+    return this;
+  };
+
+  _public.put = function () {
+    makeRequest("PUT");
     return this;
   };
 
