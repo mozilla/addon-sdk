@@ -797,6 +797,7 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
     contentScriptFile: this._widget.contentScriptFile,
     contentScript: this._widget.contentScript,
     contentScriptWhen: this._widget.contentScriptWhen,
+    contentScriptOptions: this._widget.contentScriptOptions,
     allow: this._widget.allow,
     onMessage: function(message) {
       setTimeout(function() {

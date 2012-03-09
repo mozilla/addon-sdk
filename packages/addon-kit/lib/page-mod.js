@@ -60,6 +60,7 @@ const PageMod = Loader.compose(EventEmitter, {
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
+  contentScriptOptions: Loader.required,
   include: null,
   constructor: function PageMod(options) {
     this._onContent = this._onContent.bind(this);

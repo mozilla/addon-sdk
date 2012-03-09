@@ -40,6 +40,8 @@ const Symbiont = Worker.resolve({
         this.contentURL = options.contentURL;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
+    if ('contentScriptOptions' in options)
+      this.contentScriptOption = options.contentScriptOptions;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
     if ('contentScript' in options)

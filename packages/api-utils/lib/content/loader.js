@@ -133,6 +133,18 @@ const Loader = EventEmitter.compose({
   },
   _contentScriptWhen: 'end',
   /**
+   * Options avalaible from the content script as `self.options`.
+   * The value of options can be of any type (object, array, string, etc.)
+   * but only jsonable values will be available as frozen objects from the
+   * content script.
+   * Property change emits `propertyChange` event on instance with this key
+   * and new value.
+   * @type {Object}
+   */
+  get contentScriptOptions() this._contentScriptOptions,
+  set contentScriptOptions(value) this._contentScriptOptions = value,
+  _contentScriptOptions: null,
+  /**
    * The URLs of content scripts.
    * Property change emits `propertyChange` event on instance with this key
    * and new value.
