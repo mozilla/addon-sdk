@@ -59,7 +59,8 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
         tabBrowser.removeTab(newTab);
         loader.unload();
         test.done();
-      });
+      }
+    );
   }
   b.addEventListener("load", onPageLoad, true);
 
