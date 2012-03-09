@@ -47,15 +47,33 @@ class Link_Checker(HTMLParser.HTMLParser):
         self.tester = tester
         self.filename = filename
         self.base_url = base_url
+        self.errors = []
 
     def handle_starttag(self, tag, attrs):
-        if tag == "a":
-            href = dict(attrs).get('href', '')
-            if href:
-                self.validate_href(href)
+        link = self.find_link(attrs)
+        if link:
+            self.validate_link(link)
 
-    def validate_href(self, href):
-        parsed = urlparse.urlparse(href)
+    def handle_startendtag(self, tag, attrs):
+        link = self.find_link(attrs)
+        if link:
+            self.validate_link(link)
+
+    def find_link(self, attrs):
+        attrs = dict(attrs)
+        href = attrs.get('href', '')
+        if href:
+            parsed = urlparse.urlparse(href)
+            if not parsed.scheme:
+                return href
+        src = attrs.get('src', '')
+        if src:
+            parsed = urlparse.urlparse(src)
+            if not parsed.scheme:
+                return src
+
+    def validate_link(self, link):
+        parsed = urlparse.urlparse(link)
         # there should not be any file:// URLs
         self.tester.assertNotEqual(parsed.scheme, "file")
         # any other absolute URLs will not be checked
@@ -67,7 +85,7 @@ class Link_Checker(HTMLParser.HTMLParser):
         try:
             urllib.urlopen(absolute_url)
         except IOError:
-            self.tester.assertFalse(True, absolute_url + " link in " + self.filename + " is broken.")
+            self.errors.append(self.filename + "\n    " + absolute_url)
 
 class Generate_Docs_Tests(unittest.TestCase):
 
@@ -80,6 +98,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         tar_filename = generate.generate_static_docs(env_root)
         tgz = tarfile.open(tar_filename)
         tgz.extractall(get_sdk_docs_root())
+        broken_links = []
         # get each HTML file...
         for root, subFolders, filenames in os.walk(get_sdk_docs_root()):
             for filename in filenames:
@@ -91,6 +110,13 @@ class Generate_Docs_Tests(unittest.TestCase):
                 # ...and feed it to the link checker
                 linkChecker = Link_Checker(self, filename, base_url)
                 linkChecker.feed(open(filename, "r").read())
+                broken_links.extend(linkChecker.errors)
+        if broken_links:
+            print
+            print "The following links are broken:"
+            for broken_link in sorted(broken_links):
+                print " "+ broken_link
+            self.fail("%d links are broken" % len(broken_link))
         # clean up
         shutil.rmtree(get_base_url_path())
         tgz.close()

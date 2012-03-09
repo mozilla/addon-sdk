@@ -200,27 +200,24 @@ The content script "get-text.js" looks like this:
 
 Finally, the "text-entry.html" file defines the `<textarea>` element:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<pre class="brush: html">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+&lt;html&gt;
 
-<head>
-  <style type="text/css" media="all">
+&lt;head&gt;
+  &lt;style type="text/css" media="all"&gt;
     textarea {
       margin: 10px;
     }
-  </style>
-</head>
+  &lt;/style&gt;
+&lt;/head&gt;
 
-<body>
-  <textarea rows="10" cols="20" id="edit-box"></textarea>
-</body>
+&lt;body&gt;
+  &lt;textarea rows="10" cols="20" id="edit-box">&lt;/textarea&gt;
+&lt;/body&gt;
 
-</html>
-]]>
-</script>
+&lt;/html&gt;
+</pre>
 
 To learn much more about content scripts, see the
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
@@ -239,7 +236,7 @@ directory and use them to define the panel's content. We can call this
 add-on, the add-on author knows exactly what it's doing. To
 interact with trusted content you don't need to use content scripts:
 you can just include a script from the HTML file in the normal way, using
-`<script>` tags.
+`script` tags.
 
 Like a content script, these scripts can communicate with the add-on code
 using the
@@ -307,31 +304,27 @@ that instead of `self`, we use `addon` to access the messaging APIs:
       };
     });
 
-Finally, the HTML file now references "get-text.js" inside a `<script>` tag:
+Finally, the HTML file now references "get-text.js" inside a `script` tag:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<pre class="brush: html">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+&lt;html&gt;
 
-<head>
-  <style type="text/css" media="all">
+&lt;head&gt;
+  &lt;style type="text/css" media="all"&gt;
     textarea {
       margin: 10px;
     }
-  </style>
-  <script src="get-text.js">&lt;/script>
-</head>
+  &lt;/style&gt;
+  &lt;script src="get-text.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
 
-<body>
-  <textarea rows="10" cols="20" id="edit-box"></textarea>
-</body>
+&lt;body&gt;
+  &lt;textarea rows="10" cols="20" id="edit-box">&lt;/textarea&gt;
+&lt;/body&gt;
 
-</html>
-]]>
-</script>
-
+&lt;/html&gt;
+</pre>
 </div>
 
 ## Styling Trusted Panel Content ##
