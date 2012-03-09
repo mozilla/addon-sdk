@@ -40,7 +40,7 @@ Examples
 
 See the [panel][] module for a real-world example of usage of this module.
 
-[panel]:packages/addon-kit/docs/panel.html
+[panel]:packages/addon-kit/panel.html
 
 Reference
 ---------
@@ -52,14 +52,14 @@ of Symbiont and their descendants expose all the public properties
 exposed by [Worker][] along with additional public properties that
 are listed below:
 
-[Worker]:packages/api-utils/docs/content/worker.html
+[Worker]:packages/api-utils/content/worker.html
 
 <api name="Symbiont">
 @constructor
 Creates a content symbiont.
 @param options {object}
   Options for the constructor. Includes all the keys that
-the [Worker](packages/api-utils/docs/content/worker.html)
+the [Worker](packages/api-utils/content/worker.html)
 constructor accepts and a few more:
 
   @prop [frame] {object}

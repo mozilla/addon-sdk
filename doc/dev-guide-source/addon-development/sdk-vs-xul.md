@@ -23,6 +23,7 @@ the process of developing, testing, and packaging an add-on.</p>
 
 <tr>
 <td> <strong><a name="compatibility">Compatibility</a></strong></td>
+
 <td><p>Although we can't promise we'll never break a High-Level API,
 maintaining compatibility across Firefox versions is a top priority for us.</p>
 <p>We've designed the APIs to be forward-compatible with the new
@@ -99,8 +100,7 @@ small set of this functionality.</p></td>
 ### Low-level APIs and Third-party Modules ###
 
 That's not the whole story. If you need more flexibility than the SDK's
-High-Level APIs provide, you can
-use its Low-level APIs to load
+High-Level APIs provide, you can use its Low-level APIs to load
 XPCOM objects directly or to manipulate the DOM directly as in a
 traditional
 <a href="https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions">bootstrapped extension</a>.

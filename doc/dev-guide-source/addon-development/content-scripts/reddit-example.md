@@ -42,7 +42,7 @@ link clicks.
 
 Finally, it registers a listener to the user-defined `click` event which in
 turn passes the URL into the `open` function of the
-[tabs](packages/addon-kit/docs/tabs.html) module.
+[tabs](packages/addon-kit/tabs.html) module.
 
 This is the `panel.js` content script that intercepts link clicks:
 

@@ -119,11 +119,11 @@ version you downloaded.
 The page-mod matches all pages, so each time the user loads a page the page-mod
 emits the `attach` event, which will call the listener function we've assigned
 to `onAttach`. The handler is passed a
-[worker](packages/api-utils/docs/content/worker.html) object. Each worker
+[worker](packages/api-utils/content/worker.html) object. Each worker
 represents a channel of communication between the add-on code and any content
 scripts running in that particular page context. For a more detailed discussion
 of the way `page-mod` uses workers, see the
-[page-mod documentation](packages/addon-kit/docs/page-mod.html).
+[page-mod documentation](packages/addon-kit/page-mod.html).
 
 In the attach handler we do three things:
 

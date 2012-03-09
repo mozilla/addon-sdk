@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os, re, errno
 import markdown
 import cgi
@@ -87,7 +91,9 @@ class WebDocs(object):
         modules.sort()
         module_items = ''
         relative_doc_path = doc_path[len(self.root) + 1:]
-        relative_doc_URL = "/".join(relative_doc_path.split(os.sep))
+        relative_doc_path_pieces = relative_doc_path.split(os.sep)
+        del relative_doc_path_pieces[-1]
+        relative_doc_URL = "/".join(relative_doc_path_pieces)
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
                 {'href': relative_doc_URL + '/' + '/'.join(module) + '.html'})
@@ -105,7 +111,7 @@ class WebDocs(object):
             package_directory = "/".join(package_directory.split(os.sep))
             package_link = tag_wrap(package_name, 'a', {'href': \
                                     package_directory + "/" \
-                                    + package_name + '.html'})
+                                    + 'index.html'})
             text = tag_wrap(package_link, 'h4')
             text += self._create_module_list(package_json)
             packages += tag_wrap(text, 'li', {'class':'package-summary', \

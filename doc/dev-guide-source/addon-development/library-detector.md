@@ -73,7 +73,7 @@ libraries, so we’ll need to use the experimental
 [unsafeWindow](dev-guide/addon-development/content-scripts/access.html) object.
 
 The main add-on script, `main.js`, will use a
-[`page-mod`](packages/addon-kit/docs/page-mod.html)
+[`page-mod`](packages/addon-kit/page-mod.html)
 to inject the content script into every new page.
 
 The content script, which we'll call `library-detector.js`, will keep most of
@@ -102,7 +102,7 @@ the array of library names, and post it back to `main.js`:
 
 `main.js` responds to that message by fetching the tab
 corresponding to that worker using
-[`worker.tab`](packages/api-utils/docs/content/worker.html#tab), and adding
+[`worker.tab`](packages/api-utils/content/worker.html#tab), and adding
 the array of library names to that tab's `libraries` property:
 
     pageMod.PageMod({
@@ -135,11 +135,11 @@ a page contains more than one iframe, and those iframes use the same library.
 
 #### Showing the Library Array ####
 
-The [`widget`](packages/addon-kit/docs/widget.html) module is a natural fit
+The [`widget`](packages/addon-kit/widget.html) module is a natural fit
 for displaying the library list. We'll specify its content using HTML, so we
 can display an array of icons. The widget must be able to display different
 content for different windows, so we'll use the
-[`WidgetView`](packages/addon-kit/docs/widget.html) object.
+[`WidgetView`](packages/addon-kit/widget.html) object.
 
 `main.js` will create an array of icons corresponding to the array of library
 names, and use that to build the widget's HTML content dynamically:
@@ -164,7 +164,7 @@ names, and use that to build the widget's HTML content dynamically:
     }
 
 `main.js` will
-use the [`tabs`](packages/addon-kit/docs/tabs.html) module to update the
+use the [`tabs`](packages/addon-kit/tabs.html) module to update the
 widget's content when necessary (for example, when the user switches between
 tabs):
 
