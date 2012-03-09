@@ -6,10 +6,10 @@ The `request` module lets you make simple yet powerful network requests.
 
 <api name="Request">
 @class
-The `Request` object is used to make `GET` or `POST` network requests. It is
-constructed with a URL to which the request is sent. Optionally the user may
-specify a collection of headers and content to send alongside the request and
-a callback which will be executed once the request completes.
+The `Request` object is used to make `GET`, `POST` or `PUT` network requests.
+It is constructed with a URL to which the request is sent. Optionally the user
+may specify a collection of headers and content to send alongside the request
+and a callback which will be executed once the request completes.
 
 Once a `Request` object has been created a `GET` request can be executed by
 calling its `get()` method, a `POST` request by calling its `post()` method,
