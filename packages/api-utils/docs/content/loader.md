@@ -77,6 +77,15 @@ fires
 
 </api>
 
+<api name="contentScriptOptions">
+@property {object}
+Read-only value available from the content scripts as `self.options`.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+
+Optional.
+</api>
+
 <api name="contentURL">
 @property {string}
 The URL of the content loaded.

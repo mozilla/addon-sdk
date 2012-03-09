@@ -330,6 +330,12 @@ Creates a PageMod.
     fires
 
     This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value available from the content scripts as `self.options`.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+
+    Optional.
 
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
