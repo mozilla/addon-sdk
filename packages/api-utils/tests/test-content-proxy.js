@@ -759,13 +759,13 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
 
 // Bug 715755: proxy code throw an exception on COW
 // Create an http server in order to simulate real cross domain documents
-let serverPort = 8099;
-let server = require("httpd").startServerAsync(serverPort);
-server.registerPathHandler("/", function handle(request, response) {
-  // Returns an empty webpage
-  response.write("");
-});
 exports.testCrossDomainIframe = createProxyTest("", function (helper) {
+  let serverPort = 8099;
+  let server = require("httpd").startServerAsync(serverPort);
+  server.registerPathHandler("/", function handle(request, response) {
+    // Returns an empty webpage
+    response.write("");
+  });
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -777,7 +777,9 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
           iframe.removeEventListener("load", onload, true);
           try {
             // Try accessing iframe's content that is made of COW wrappers
-            assert(iframe.contentWindow == "[object Window]", "COW works properly")
+            // Take care of debug builds that add object address after `Window`
+            assert(String(iframe.contentWindow).match(/\[object Window.*\]/),
+                   "COW works properly");
           } catch(e) {
             assert(false, "COW fails : "+e.message);
           }
