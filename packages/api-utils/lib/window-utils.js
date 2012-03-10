@@ -8,6 +8,7 @@ const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events'),
       { Trait } = require('./traits');
 const { when } = require('./unload');
+const { getInnerId, getOuterId } = require('./window-utils');
 const errors = require("./errors");
 
 const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -175,20 +176,17 @@ Object.defineProperties(exports, {
 /**
  * Returns the ID of the window's current inner window.
  */
-function getInnerId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+exports.getInnerId = function(window) {
+  console.warn('require("window-utils").getInnerId is deprecated, ' +
+               'please use require("window/utils").getInnerId instead');
+  return getInnerId(window);
 };
-exports.getInnerId = getInnerId;
 
-/**
- * Returns the ID of the window's outer window.
- */
-function getOuterId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+exports.getOuterId = function(window) {
+  console.warn('require("window-utils").getOuterId is deprecated, ' +
+               'please use require("window/utils").getOuterId instead');
+  return getOuterId(window);
 };
-exports.getOuterId = getOuterId;
 
 function isBrowser(window) {
   return window.document.documentElement.getAttribute("windowtype") ===
@@ -272,137 +270,6 @@ function createRemoteBrowser(remote) {
   };
 };
 exports.createRemoteBrowser = createRemoteBrowser;
-
-/**
- * Returns `nsIXULWindow` for the given `nsIDOMWindow`.
- */
-function getXULWindow(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIWebNavigation).
-    QueryInterface(Ci.nsIDocShellTreeItem).
-    treeOwner.QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIXULWindow);
-};
-exports.getXULWindow = getXULWindow;
-
-/**
- * Returns `nsIBaseWindow` for the given `nsIDOMWindow`.
- */
-function getBaseWindow(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIWebNavigation).
-    QueryInterface(Ci.nsIDocShell).
-    QueryInterface(Ci.nsIDocShellTreeItem).
-    treeOwner.
-    QueryInterface(Ci.nsIBaseWindow);
-}
-exports.getBaseWindow = getBaseWindow;
-
-/**
- * Takes hash of options and serializes it to a features string that
- * can be used passed to `window.open`. For more details on features string see:
- * https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features
- */
-function serializeFeatures(options) {
-  return Object.keys(options).reduce(function(result, name) {
-    let value = options[name]
-    return result + ',' + name + '=' +
-           (value === true ? 'yes' : value === false ? 'no' : value)
-  }, '').substr(1)
-}
-
-/**
- * Removes given window from the application's window registry. Unless
- * `options.close` is `false` window is automatically closed on application
- * quit.
- * @params {nsIDOMWindow} window
- * @params {Boolean} options.close
- */
-function backgroundify(window, options) {
-  let base = getBaseWindow(window);
-  base.visibility = false;
-  base.enabled = false;
-  appShellService.unregisterTopLevelWindow(getXULWindow(window));
-  if (!options || options.close !== false)
-    observers.add('quit-application-granted', window.close.bind(window));
-
-  return window;
-}
-exports.backgroundify = backgroundify;
-
-/**
- * Opens a top level window and returns it's `nsIDOMWindow` representation.
- * @params {String} uri
- *    URI of the document to be loaded into window.
- * @params {nsIDOMWindow} options.parent
- *    Used as parent for the created window.
- * @params {String} options.name
- *    Optional name that is assigned to the window.
- * @params {Object} options.features
- *    Map of key, values like: `{ width: 10, height: 15, chrome: true }`.
- */
-function open(uri, options) {
-  options = options || {};
-  return windowWatcher.
-    openWindow(options.parent || null,
-               uri,
-               options.name || null,
-               serializeFeatures(options.features || {}),
-               null);
-}
-exports.open = open;
-
-/**
- * Creates a XUL `browser` element in a privileged document.
- * @params {nsIDOMDocument} document
- * @params {String} options.type
- *    By default is 'content' for possible values see:
- *    https://developer.mozilla.org/en/XUL/iframe#a-browser.type
- * @params {String} options.uri
- *    URI of the document to be loaded into created frame.
- * @params {Boolean} options.remote
- *    If `true` separate process will be used for this frame, also in such
- *    case all the following options are ignored.
- * @params {Boolean} options.allowAuth
- *    Whether to allow auth dialogs. Defaults to `false`.
- * @params {Boolean} options.allowJavascript
- *    Whether to allow Javascript execution. Defaults to `false`.
- * @params {Boolean} options.allowPlugins
- *    Whether to allow plugin execution. Defaults to `false`.
- */
-function newFrame(document, options) {
-  options = options || {};
-  let remote = 'remote' in options && options.remote === true;
-
-  let frame = document.createElementNS(XUL, 'browser');
-  // Type="content" is mandatory to enable stuff here:
-  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
-  frame.setAttribute('type', options.type || 'content');
-  frame.setAttribute('src', options.uri || 'about:blank');
-
-  // Load in separate process if `options.remote` is `true`.
-  // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
-  if (remote) {
-    // We remove XBL binding to avoid execution of code that is not going to
-    // work because browser has no docShell attribute in remote mode
-    // (for example)
-    frame.setAttribute('style', '-moz-binding: none;');
-    frame.setAttribute('remote', 'true');
-  }
-
-  document.documentElement.appendChild(frame);
-
-  // If browser is remote it won't have a `docShell`.
-  if (!remote) {
-    let docShell = frame.docShell;
-    docShell.allowAuth = options.allowAuth || false;
-    docShell.allowJavascript = options.allowJavascript || false;
-    docShell.allowPlugins = options.allowPlugins || false;
-  }
-
-  return frame;
-}
-exports.newFrame = newFrame;
 
 require("./unload").when(
   function() {
