@@ -133,11 +133,12 @@ exports['test memoize'] = function(assert) {
 };
 
 exports['test delay'] = function(assert, done) {
-  let start = Date.now();
+  let delayed = false;
   delay(function() {
-    assert.ok(Date.now() - start, 'delayed the function');
+    assert.ok(delayed, 'delayed the function');
     done();
-  }, 50);
+  }, 1);
+  delayed = true;
 };
 
 exports['test delay with this'] = function(assert, done) {
