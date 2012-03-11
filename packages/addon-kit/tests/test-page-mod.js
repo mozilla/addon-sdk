@@ -499,7 +499,7 @@ exports.testPageModCssDestroy = function(test) {
   let [pageMod] = testPageMod(test,
     'data:text/html,<div style="width:200px">css test</div>', [{
       include: "data:*",
-      contentStyle: "div { width: 100px!important; }",
+      contentStyle: "div { width: 100px!important; }"
     }],
 
     function(win, done) {
