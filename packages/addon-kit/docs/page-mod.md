@@ -117,7 +117,8 @@ them. `PageMod` provides an easy way to do that through options' properties
       ]
     })
 
-It's important to note that `PageMod` will add these styles as [user style sheet](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+It's important to note that `PageMod` will add these styles as
+[user style sheet](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
 
 ## Communicating With Content Scripts ##
 
@@ -383,7 +384,8 @@ description of match patterns. Rules can be added to the list by calling its
 @method
 Stops the page mod from making any more modifications.  Once destroyed the page
 mod can no longer be used.  Note that modifications already made to open pages
-will not be undone, except for any stylesheet added by `contentStyle` or `contentStyleFile`, that are unregistered immediately.
+will not be undone, except for any stylesheet added by `contentStyle` or
+`contentStyleFile`, that are unregistered immediately.
 </api>
 
 <api name="attach">
