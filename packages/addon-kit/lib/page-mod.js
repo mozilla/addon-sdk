@@ -12,7 +12,10 @@ const { List } = require('api-utils/list');
 const { Registry } = require('api-utils/utils/registry');
 const xulApp = require("api-utils/xul-app");
 const { MatchPattern } = require('api-utils/match-pattern');
+const { validateOptions : validate } = require('api-utils/api-utils');
+const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
+const { merge } = require('api-utils/utils/object');
 
 // Whether or not the host application dispatches a document-element-inserted
 // notification when the document element is inserted into the DOM of a page.
@@ -33,8 +36,21 @@ const HAS_BUG_642145_FIXED =
 const styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].
                             getService(Ci.nsIStyleSheetService);
 
+const USER_SHEET = styleSheetService.USER_SHEET;
+
 const io = Cc['@mozilla.org/network/io-service;1'].
               getService(Ci.nsIIOService);
+
+// contentStyle* / contentScript* are sharing the same validation constraints,
+// so they can be mostly reused, except for the messages.
+const validStyleOptions = {
+  contentStyle: merge(Object.create(validationAttributes.contentScript), {
+    msg: 'The `contentStyle` option must be a string or an array of strings.'
+  }),
+  contentStyleFile: merge(Object.create(validationAttributes.contentScriptFile), {
+    msg: 'The `contentStyleFile` option must be a local URL or an array of URLs'
+  })
+};
 
 // rules registry
 const RULES = {};
@@ -60,7 +76,7 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
 /**
  * Returns the content of the uri given
  */
-function read(uri) {
+function readURI(uri) {
   let channel = io.newChannel(uri, null, null);
 
   let stream = Cc["@mozilla.org/scriptableinputstream;1"].
@@ -90,7 +106,7 @@ const PageMod = Loader.compose(EventEmitter, {
     this._onContent = this._onContent.bind(this);
     options = options || {};
 
-    let contentStyle, contentStyleFile;
+    let { contentStyle, contentStyleFile } = validate(options, validStyleOptions);
 
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
@@ -98,10 +114,6 @@ const PageMod = Loader.compose(EventEmitter, {
       this.contentScriptFile = options.contentScriptFile;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
-    if ('contentStyle' in options)
-      contentStyle = [].concat(options.contentStyle);
-    if ('contentStyleFile' in options)
-      contentStyleFile = [].concat(options.contentStyleFile);
     if ('onAttach' in options)
       this.on('attach', options.onAttach);
     if ('onError' in options)
@@ -120,12 +132,10 @@ const PageMod = Loader.compose(EventEmitter, {
     let styleRules = "";
 
     if (contentStyleFile)
-      for (let i = 0, l = contentStyleFile.length; i < l; i++)
-        styleRules += read(contentStyleFile[i])
+      styleRules = [].concat(contentStyleFile).map(readURI).join("");
 
     if (contentStyle)
-      for (let i = 0, l = contentStyle.length; i < l; i++)
-        styleRules += contentStyle[i]
+      styleRules += [].concat(contentStyle).join("");
 
     if (styleRules) {
       this._onRuleUpdate = this._onRuleUpdate.bind(this);
@@ -257,18 +267,15 @@ const PageMod = Loader.compose(EventEmitter, {
 
     styleSheetService.loadAndRegisterSheet(
       this._registeredStyleURI,
-      styleSheetService.USER_SHEET
+      USER_SHEET
     );
   },
 
   _unregisterStyleSheet : function () {
     let uri = this._registeredStyleURI;
 
-    if (!uri  ||
-      !styleSheetService.sheetRegistered(uri, styleSheetService.USER_SHEET))
-      return;
-
-    styleSheetService.unregisterSheet(uri, styleSheetService.USER_SHEET);
+    if (uri  && styleSheetService.sheetRegistered(uri, USER_SHEET))
+      styleSheetService.unregisterSheet(uri, USER_SHEET);
 
     this._registeredStyleURI = null;
   }
