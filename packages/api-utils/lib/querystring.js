@@ -12,7 +12,7 @@ exports.unescape = unescape;
 // see https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/encodeURIComponent
 function escape(query) {
   return encodeURIComponent(query).
-    replace(/\+/g, '%20').
+    replace(/%20/g, '+').
     replace(/!/g, '%21').
     replace(/'/g, '%27').
     replace(/\(/g, '%28').
