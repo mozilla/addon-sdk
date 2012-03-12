@@ -6,7 +6,7 @@
 
 const { Base, Class } = require("api-utils/base");
 const { ns } = require("api-utils/namespace");
-const { emit, off } = require("api-utils/event/core");
+const { emit } = require("api-utils/event/core");
 const { merge } = require("api-utils/utils/object");
 const { stringify } = require("api-utils/querystring");
 const { EventTarget } = require("api-utils/event/target");
@@ -94,11 +94,15 @@ function runRequest(mode, target) {
 
 const Request = EventTarget.extend({
   initialize: function initialize(options) {
-    // set up event listeners.
+    options = validateOptions(options);
+
+    // `EventTarget.initialize` will set event listeners that are named
+    // like `onEvent` in this case `onComplete` listener will be set to
+    // `complete` event.
     EventTarget.initialize.call(this, options);
 
     // copy options.
-    merge(request(this), validateOptions(options));
+    merge(request(this), options);
   },
   get url() { return request(this).url; },
   set url(value) { request(this).url = validateSingleOption('url', value); },
@@ -182,7 +186,7 @@ const Response = Base.extend({
 // options, so this is a wrapper that provides that ability.
 function OptionsValidator(rules) {
   return {
-      validateOptions: function (options) {
+    validateOptions: function (options) {
       return apiUtils.validateOptions(options, rules);
     },
     validateSingleOption: function (field, value) {
