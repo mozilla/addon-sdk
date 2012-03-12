@@ -94,15 +94,13 @@ function runRequest(mode, target) {
 
 const Request = EventTarget.extend({
   initialize: function initialize(options) {
-    options = validateOptions(options);
-
     // `EventTarget.initialize` will set event listeners that are named
     // like `onEvent` in this case `onComplete` listener will be set to
     // `complete` event.
     EventTarget.initialize.call(this, options);
 
-    // copy options.
-    merge(request(this), options);
+    // Copy normalized options.
+    merge(request(this), validateOptions(options));
   },
   get url() { return request(this).url; },
   set url(value) { request(this).url = validateSingleOption('url', value); },
