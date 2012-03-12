@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { jetpackID } = require('@packaging');
+const { when } = require('./unload');
 
 // TODO: Create a bug report and remove this workaround once it's fixed.
 // Only function needs defined in the context of the message manager window
@@ -19,10 +20,20 @@ exports.channel = function channel(scope, messageManager, address, raw) {
   return {
     input: function input(next, stop) {
       let listener = messageListener(scope, function onMessage(message) {
-        if (false === next(raw ? message : message.json))
+        if (false === next(raw ? message : message.json) && listener) {
           messageManager.removeMessageListener(address, listener);
+          listener = null;
+        }
       });
       messageManager.addMessageListener(address, listener);
+
+      // Bug 724433: do not leak `listener` on addon disabling
+      when(function () {
+        if (listener) {
+          messageManager.removeMessageListener(address, listener);
+          listener = null;
+        }
+      });
     },
     output: function output(data) {
       messageManager.sendAsyncMessage(address, data);

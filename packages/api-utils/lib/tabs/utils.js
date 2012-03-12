@@ -43,6 +43,11 @@ function openTab(window, url) {
 }
 exports.openTab = openTab;
 
+function isTabOpen(tab) {
+  return !!tab.linkedBrowser;
+}
+exports.isTabOpen = isTabOpen;
+
 function closeTab(tab) {
   return getOwnerWindow(tab).gBrowser.removeTab(tab);
 }

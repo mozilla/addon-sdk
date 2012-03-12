@@ -83,7 +83,7 @@ They contain the following properties:
     automatically generated for you. However, you can use it to work out
     which stored credentials belong to your add-on by comparing it with the
     <code>uri</code> property of the
-    <a href="packages/addon-kit/docs/self.html"><code>self</code></a>
+    <a href="packages/addon-kit/self.html"><code>self</code></a>
     module.</p>
   </td>
 </tr>

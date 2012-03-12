@@ -264,7 +264,7 @@ Makes this tab active, which will bring this tab to the foreground.
 @prop [onMessage] {function}
     A function called when the page mod receives a message from content scripts.
     Listeners are passed a single argument, the message posted from the
-    content script.
+    content script. Optional.
 
 @returns {Worker}
   See [Content Scripts guide](dev-guide/addon-development/web-content.html)

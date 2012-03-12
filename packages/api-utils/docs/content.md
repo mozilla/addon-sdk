@@ -9,7 +9,7 @@ The `content` module exports three different traits [Loader][], [Worker][] and
 Rather, they are intended to be used by other modules that provide high
 level APIs to programs or libraries.
 
-[Loader]:packages/api-utils/docs/content/loader.html
-[Worker]:packages/api-utils/docs/content/worker.html
-[Symbiont]:packages/api-utils/docs/content/symbiont.html
+[Loader]:packages/api-utils/content/loader.html
+[Worker]:packages/api-utils/content/worker.html
+[Symbiont]:packages/api-utils/content/symbiont.html
 

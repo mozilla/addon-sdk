@@ -25,6 +25,7 @@ const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
+let loaderUri = null;
 
 const URI = __SCRIPT_URI_SPEC__.replace(/bootstrap\.js$/, "");
 
@@ -169,7 +170,7 @@ function startup(data, reason) {
   options.uriPrefix = "resource://" + domain + "/";
 
   // Import loader module using `Cu.imports` and bootstrap module loader.
-  let loaderUri = options.uriPrefix + options.loader;
+  loaderUri = options.uriPrefix + options.loader;
   loader = Cu.import(loaderUri).Loader.new(options);
 
   // Creating a promise, that will be delivered once application is ready.
@@ -191,6 +192,7 @@ function startup(data, reason) {
       throw error;
     }
   });
+
 };
 
 function shutdown(data, reason) {
@@ -199,6 +201,12 @@ function shutdown(data, reason) {
     reason = REASON[reason];
     let system = loader.require('api-utils/system');
     loader.unload(reason);
+
+    // Bug 724433: We need to unload JSM otherwise it will stay alive
+    // and keep a reference to this compartment.
+    Cu.unload(loaderUri);
+    loader = null;
+
     // If add-on is lunched via `cfx run` we need to use `system.exit` to let
     // cfx know we're done (`cfx test` will take care of exit so we don't do
     // anything here).

@@ -60,3 +60,4 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Henri Wiechers](https://github.com/hwiechers)
 * Drew Willcoxon
 * Piotr Zalewa
+* [David Guo](https://github.com/dglol)

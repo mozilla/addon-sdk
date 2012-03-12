@@ -24,7 +24,7 @@ the process of developing, testing, and packaging an add-on.</p>
 <tr>
 <td> <strong><a name="compatibility">Compatibility</a></strong></td>
 <td><p>Although we can't promise we'll never break a
-<a href="packages/addon-kit/addon-kit.html">supported API</a>,
+<a href="packages/addon-kit/index.html">supported API</a>,
 maintaining compatibility across Firefox versions is a top priority for us.</p>
 <p>We've designed the APIs to be forward-compatible with the new
 <a href="https://wiki.mozilla.org/Electrolysis/Firefox">multiple process architecture</a>
@@ -57,6 +57,13 @@ anyway.</p></td>
 <td> <strong><a name="ux_best_practice">User Experience Best Practices</a></strong></td>
 <td><p>The UI components available in the SDK are designed to align with the usability
 guidelines for Firefox, giving your users a better, more consistent experience.</p></td>
+</tr>
+
+<tr>
+<td> <strong><a name="mobile_support">Mobile Support</a></strong></td>
+<td><p>Starting in SDK 1.5, we've added experimental support for developing
+add-ons on the new native version of Firefox Mobile. See the
+<a href="dev-guide/addon-development/mobile.html">tutorial on mobile development<a>.</p></td>
 </tr>
 
 </table>
@@ -93,8 +100,8 @@ small set of this functionality.</p></td>
 ### Low-level APIs and Third-party Modules ###
 
 That's not the whole story. If you need more flexibility than the SDK's
-["supported" APIs](packages/addon-kit/addon-kit.html) provide, you can
-use its ["low-level" APIs](packages/api-utils/api-utils.html) to load
+["supported" APIs](packages/addon-kit/index.html) provide, you can
+use its ["low-level" APIs](packages/api-utils/index.html) to load
 XPCOM objects directly or to manipulate the DOM directly as in a
 traditional
 <a href="https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions">bootstrapped extension</a>.

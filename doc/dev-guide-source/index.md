@@ -18,11 +18,11 @@ continues to work as new versions of Firefox are released.
 
 We've divided the SDK documentation into two parts:
 
-* The [Developer Guide](dev-guide/addon-development/about.html) explains how to
+* The [Developer Guide](dev-guide/addon-development/index.html) explains how to
 [install the SDK](dev-guide/addon-development/installation.html) and how to
 use it to build add-ons. If you're new to the SDK start with the
 [Getting Started](dev-guide/addon-development/getting-started.html) tutorial.
 
-* The [Internals Guide](dev-guide/module-development/about.html) explains how you can
+* The [Internals Guide](dev-guide/module-development/index.html) explains how you can
 use the low-level modules in the SDK to extend the APIs. It's intended for
 advanced developers and people working on the SDK itself.

@@ -7,7 +7,7 @@ const { Ci } = require('chrome');
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");
 const { validateOptions } = require("../api-utils");
-const { Enqueued } = require("../utils/function");
+const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
@@ -114,7 +114,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   // changing `location` property of the `contentDocument` has no effect since
   // seems to be either ignored or overridden by internal listener, there for
   // location change is enqueued for the next turn of event loop.
-  _changeLocation: Enqueued(function(url) this._browser.loadURI(url)),
+  _changeLocation: defer(function(url) this._browser.loadURI(url)),
   /**
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
@@ -170,7 +170,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * will be the case. Besides this function is called from a constructor where
    * we would like to return instance before firing a 'TabActivated' event.
    */
-  activate: Enqueued(function activate() {
+  activate: defer(function activate() {
     if (this._window) // Ignore if window is closed by the time this is invoked.
       this._window.gBrowser.selectedTab = this._tab;
   }),

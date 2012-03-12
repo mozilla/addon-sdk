@@ -88,6 +88,8 @@ directory. But note that the version must be 4.0b7 or later.
 existing profile using the `--profiledir` option, and this gives you access to
 that profile's history, bookmarks, and other add-ons. This enables you to run
 your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
+See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+"Using --profiledir"</a> for more information.
 
 <table>
 <colgroup>
@@ -152,14 +154,8 @@ your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
     located in PROFILEDIR. PROFILEDIR may be specified as
     a full path or as a path relative to the current directory.</p>
 
-    <p>You can use this option to create a new profile. Calling:</p>
-    <pre>mkdir /path/to/dir
-cfx run --profiledir /path/to/dir</pre>
-    <p>will create a new profile at <code>/path/to/dir</code>, which would be
-    reused in any subsequent calls to
-    <code>cfx run --profiledir /path/to/dir</code>.</p>
-    <p>The directory must exist, and the path must contain at least one "/"
-    (although you may specify just "./dir").</p>
+    <p>See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+    "Using --profiledir"</a> for more information.
   </td>
 </tr>
 
@@ -298,7 +294,7 @@ Called with no options this command will look for a file called `package.json`
 in the current directory. If `package.json` exists, `cfx` will load the
 corresponding add-on and run its tests by loading from the `tests` directory
 any modules that start with the word `test-` and calling each of their exported
-functions, passing them a [test runner](packages/api-utils/docs/unit-test.html)
+functions, passing them a [test runner](packages/api-utils/unit-test.html)
 object as an argument.
 
 #### Supported Options #####
@@ -386,19 +382,13 @@ times.
     <code>-p PROFILEDIR, --profiledir=PROFILEDIR</code>
   </td>
   <td>
-    Use an existing
+    <p>Use an existing
     <a href="http://support.mozilla.com/en-US/kb/profiles">profile</a>
     located in PROFILEDIR. PROFILEDIR may be specified as
-    a full path or as a path relative to the current directory.
+    a full path or as a path relative to the current directory.</p>
 
-    <p>You can use this option to create a new profile. Calling:</p>
-    <pre>mkdir /path/to/dir
-cfx run --profiledir /path/to/dir</pre>
-    <p>will create a new profile at <code>/path/to/dir</code>, which would be
-    reused in any subsequent calls to
-    <code>cfx run --profiledir /path/to/dir</code>.</p>
-    <p>The directory must exist, and the path must contain at least one "/"
-    (although you may specify just "./dir").</p>
+    <p>See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+    "Using --profiledir"</a> for more information.
   </td>
 </tr>
 
@@ -807,6 +797,30 @@ This will test *everything*: the cfx tool, all available CommonJS packages,
 and all examples.
 
 This accepts the same options as `cfx test`.
+
+## <a name="profiledir">Using --profiledir</a> ##
+
+By default, `cfx run` and `cfx test` use a new profile each time they
+are executed. This means that any profile-specific data entered from
+one run of `cfx` will not, by default, be available in the next run.
+
+This includes, for example, any extra add-ons you installed, or your
+history, or any data stored using the
+[simple-storage](packages/addon-kit/simple-storage.html) API.
+
+To make `cfx` use a specific profile, pass the `--profiledir` option,
+specifying the path to the profile you wish to use.
+
+If you give `--profiledir` a path to a nonexistent profile, `cfx`
+will create a profile there for you. So you just have to make up
+a path and name the first time, and keep using it:
+
+<pre>
+cfx run --profile-dir="~/addon-dev/profiles/boogaloo"
+</pre>
+
+The path must contain at least one "/" (although you may specify
+just "./dir").
 
 ## <a name="configurations">Using Configurations</a> ##
 

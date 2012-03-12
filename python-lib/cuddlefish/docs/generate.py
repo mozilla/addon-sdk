@@ -145,7 +145,7 @@ def generate_docs_from_scratch(env_root, base_url):
                             os.path.join(dest_dir, "README.md"))
 
         # create the package page
-        package_filename = os.path.join(dest_dir, pkg_name + ".html")
+        package_filename = os.path.join(dest_dir, "index.html")
         if not os.path.exists(package_filename):
             package_doc_html = web_docs.create_package_page(pkg_name)
             replace_file(env_root, package_filename, package_doc_html, must_rewrite_links)
@@ -161,7 +161,7 @@ def generate_docs_from_scratch(env_root, base_url):
     generate_file_tree(env_root, dev_guide_src, web_docs, generate_guide_doc, must_rewrite_links)
 
     # make /md/dev-guide/welcome.html the top level index file
-    doc_html, dest_dir, filename = generate_guide_doc(env_root, os.path.join(docs_dir, 'dev-guide-source', 'welcome.md'), web_docs)
+    doc_html, dest_dir, filename = generate_guide_doc(env_root, os.path.join(docs_dir, 'dev-guide-source', 'index.md'), web_docs)
     write_file(env_root, doc_html, docs_dir, 'index', False)
 
 def generate_file_tree(env_root, src_dir, web_docs, generate_file, must_rewrite_links):
@@ -223,6 +223,9 @@ def get_guide_doc_dest_path(env_root, src_dir):
 # 2) the filename without the extension
 def get_api_doc_dest_path(env_root, src_dir):
     src_dir_relative = src_dir[len(env_root) + 1:]
+    src_dir_relative_pieces = src_dir_relative.split(os.sep)
+    del src_dir_relative_pieces[2]
+    src_dir_relative = os.sep.join(src_dir_relative_pieces)
     return os.path.split(os.path.join(get_sdk_docs_path(env_root), src_dir_relative)[:-3])
 
 class LinkRewriter(HTMLParser.HTMLParser):
@@ -245,6 +248,18 @@ class LinkRewriter(HTMLParser.HTMLParser):
         self.stack.append("<!--" + decl + "-->")
 
     def handle_starttag(self, tag, attrs):
+        self.stack.append(self.__html_start_tag(tag, self._rewrite_link(attrs)))
+
+    def handle_entityref(self, name):
+        self.stack.append("&" + name + ";")
+
+    def handle_endtag(self, tag):
+        self.stack.append(self.__html_end_tag(tag))
+
+    def handle_startendtag(self, tag, attrs):
+        self.stack.append(self.__html_startend_tag(tag, self._rewrite_link(attrs)))
+
+    def _rewrite_link(self, attrs):
         attrs = dict(attrs)
         href = attrs.get('href', '')
         if href:
@@ -256,13 +271,7 @@ class LinkRewriter(HTMLParser.HTMLParser):
             parsed = urlparse.urlparse(src)
             if not parsed.scheme:
                 attrs['src'] = self.link_prefix + src
-        self.stack.append(self.__html_start_tag(tag, attrs))
-
-    def handle_endtag(self, tag):
-        self.stack.append(self.__html_end_tag(tag))
-
-    def handle_startendtag(self, tag, attrs):
-        self.stack.append(self.__html_startend_tag(tag, attrs))
+        return attrs
 
     def handle_data(self, data):
         self.stack.append(data)
