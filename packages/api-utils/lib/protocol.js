@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-"use strict";
+'use strict';
 
 const { Cc, Ci, CC } = require('chrome');
 const { Service } = require('./xpcom');
@@ -56,7 +56,7 @@ const Response = Base.extend({
 });
 
 const AbstractHandler = {
-  onRequest: function onRequest() { throw Error('Not implemented') },
+  onRequest: function onRequest() { throw Error('Not implemented'); },
   newChannel: function newChannel(uri) {
     let channel, pipe, response, request;
 
@@ -123,12 +123,18 @@ const AboutHandler = Service.extend(AbstractHandler, {
   // A flag that indicates whether this about: URI doesn't want to be listed
   // in about:about, especially if it's not useful without a query string.
   allowListing: true,
-  get classDescription() 'Protocol handler for "about:' + this.what + '"',
-  get contractID() '@mozilla.org/network/protocol/about;1?what=' + this.what,
-  getURIFlags: function(uri)
-    this.allowScript ? ALLOW_SCRIPT : 0 |
-    this.allowUnsafeLinks ? URI_SAFE_FOR_UNTRUSTED_CONTENT : 0 |
-    this.allowListing ? HIDE_FROM_ABOUTABOUT : 0
+  get classDescription() {
+    return 'Protocol handler for "about:' + this.what + '"';
+  },
+  get contractID() {
+    return '@mozilla.org/network/protocol/about;1?what=' + this.what;
+  },
+  getURIFlags: function(uri) {
+    return (
+      this.allowScript ? ALLOW_SCRIPT : 0 |
+      this.allowUnsafeLinks ? URI_SAFE_FOR_UNTRUSTED_CONTENT : 0 |
+      this.allowListing ? HIDE_FROM_ABOUTABOUT : 0);
+  }
 });
 exports.AboutHandler = AboutHandler;
 
@@ -146,10 +152,14 @@ const URITypes = supplement({ URITYPE_NON_STANDARD: 0 }, pick([
 const ProtocolHandler = Service.extend(AbstractHandler, Flags, URITypes, {
   onResolve: function onResolve() { throw Error('Not implemented') },
   interfaces: [ 'nsIProtocolHandler' ],
-  get classDescription() 'Protocol handler for "' + this.scheme + ':*"',
-  get contractID() '@mozilla.org/network/protocol;1?name=' + this.scheme,
+  get classDescription() {
+    return 'Protocol handler for "' + this.scheme + ':*"';
+  },
+  get contractID() {
+    return '@mozilla.org/network/protocol;1?name=' + this.scheme;
+  },
   // Feel free to override.
-  allowPort: function(port, scheme) false,
+  allowPort: function(port, scheme) { return false },
   defaultPort: -1,
   // For more information on what these flags mean,
   // https://developer.mozilla.org/en/nsIProtocolHandler#Constants
