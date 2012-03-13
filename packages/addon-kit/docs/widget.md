@@ -120,16 +120,15 @@ implement the media player functions using the SDK.
 
 The widget's content is specified using HTML like this:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<html>
-  <body>
-    <img src="play.png" id="play-button"></img>
-    <img src="pause.png" id="pause-button"></img>
-    <img src="stop.png" id="stop-button"></img>
-  </body>
-</html>
-]]>
-</script>
+<pre class="brush: html">
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;img src="play.png" id="play-button"&gt;
+    &lt;img src="pause.png" id="pause-button"&gt;
+    &lt;img src="stop.png" id="stop-button"&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
 
 We just include three icons, and assign an ID to each one. This HTML file,
 and the icon files it references, are saved in the add-on's `data`
@@ -198,7 +197,7 @@ directory and use them to define the widget's content. We can call this
 add-on, the add-on author knows exactly what it's doing. To
 interact with trusted content you don't need to use content scripts:
 you can just include a script from the HTML file in the normal way, using
-`<script>` tags.
+`script` tags.
 
 Like a content script, these scripts can communicate with the add-on code
 using the
@@ -209,7 +208,7 @@ The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
 
-To show the difference, let's convert the `player` add-on above
+To show the difference, convert the `player` add-on above
 to use normal page scripts instead of content scripts.
 
 First, in the content script, change `self` to `addon`, and wrap it in a
@@ -232,22 +231,21 @@ function:
       }
     }
 
-Next, add a `<script>` tag to reference "button-script.js", and
+Next, add a `script` tag to reference "button-script.js", and
 call its `init()` function on load:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<html>
-  <head>
-    <script src="button-script.js">&lt;/script>
-  </head>
-  <body onLoad="init()">
-    <img src="play.png" id="play-button"></img>
-    <img src="pause.png" id="pause-button"></img>
-    <img src="stop.png" id="stop-button"></img>
-  </body>
-</html>
-]]>
-</script>
+<pre class="brush: html">
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;script src="button-script.js">&lt;/script&gt;
+  &lt;/head&gt;
+  &lt;body onLoad="init()"&gt;
+    &lt;img src="play.png" id="play-button"&gt;
+    &lt;img src="pause.png" id="pause-button"&gt;
+    &lt;img src="stop.png" id="stop-button"&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
 
 Finally, remove the line attaching the content script from "main.js":
 

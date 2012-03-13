@@ -248,6 +248,18 @@ class LinkRewriter(HTMLParser.HTMLParser):
         self.stack.append("<!--" + decl + "-->")
 
     def handle_starttag(self, tag, attrs):
+        self.stack.append(self.__html_start_tag(tag, self._rewrite_link(attrs)))
+
+    def handle_entityref(self, name):
+        self.stack.append("&" + name + ";")
+
+    def handle_endtag(self, tag):
+        self.stack.append(self.__html_end_tag(tag))
+
+    def handle_startendtag(self, tag, attrs):
+        self.stack.append(self.__html_startend_tag(tag, self._rewrite_link(attrs)))
+
+    def _rewrite_link(self, attrs):
         attrs = dict(attrs)
         href = attrs.get('href', '')
         if href:
@@ -259,13 +271,7 @@ class LinkRewriter(HTMLParser.HTMLParser):
             parsed = urlparse.urlparse(src)
             if not parsed.scheme:
                 attrs['src'] = self.link_prefix + src
-        self.stack.append(self.__html_start_tag(tag, attrs))
-
-    def handle_endtag(self, tag):
-        self.stack.append(self.__html_end_tag(tag))
-
-    def handle_startendtag(self, tag, attrs):
-        self.stack.append(self.__html_startend_tag(tag, attrs))
+        return attrs
 
     def handle_data(self, data):
         self.stack.append(data)
