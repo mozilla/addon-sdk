@@ -1,7 +1,13 @@
-"use strict";
+/* vim:set ts=2 sw=2 sts=2 expandtab */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
-const { AboutHandler, ProtocolHandler } = require('api-utils/protocol');
-const { register, unregister } = require('api-utils/xpcom');
+'use strict';
+
+const { Protocol } = require('api-utils/protocol/url');
+const { Service, register, unregister } = require('api-utils/xpcom');
 const { setTimeout } = require('api-utils/timer');
 const tabs = require('addon-kit/tabs');
 const { PageMod } = require('addon-kit/page-mod');
@@ -42,16 +48,16 @@ exports['test protocol handler dirs'] = function(assert, done) {
     md: 'hello world'
   };
 
-  let protocol = ProtocolHandler.extend({
+  let protocol = Protocol.extend({
     scheme: 'map' + new Date().getTime().toString(36),
     onRequest: function onRequest(request, response) {
       requested ++;
       if (request.uri === this.scheme + '://foo/index.html') {
-        assert.pass('html page is loaded')
+        assert.pass('html page is loaded');
         response.end(content.html);
       }
       if (response.uri === this.scheme + '://foo/about.css') {
-        assert.pass('css page was loaded')
+        assert.pass('css page was loaded');
         response.end(content.css);
       }
       if (response.uri === this.scheme + '://foo/about.js') {
@@ -66,7 +72,12 @@ exports['test protocol handler dirs'] = function(assert, done) {
       }
     }
   });
-  register(protocol);
+
+  let service = Service.new({
+    component: protocol,
+    contract: protocol.contract,
+    description: protocol.description
+  })
 
   let mod = PageMod({
     include: protocol.scheme + '://foo/index.html',
@@ -78,10 +89,14 @@ exports['test protocol handler dirs'] = function(assert, done) {
     onAttach: function onAttach(worker) {
       worker.on('message', function(data) {
         assert.equal(data, content.md, 'script changed a body');
+        tabs.activeTab.close();
+        mod.destroy();
+        unregister(service);
         done();
       })
     }
   });
+
   tabs.open(protocol.scheme + '://foo/index.html');
 };
 

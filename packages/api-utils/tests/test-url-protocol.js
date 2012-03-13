@@ -1,9 +1,17 @@
 "use strict";
 
-const { AboutHandler, ProtocolHandler } = require('api-utils/protocol');
-const { register, unregister } = require('api-utils/xpcom');
+const { Protocol } = require('api-utils/protocol/url');
+const { Service, unregister } = require('api-utils/xpcom');
 const { setTimeout } = require('api-utils/timer');
 const { XMLHttpRequest } = require('api-utils/xhr');
+
+function register(protocol) {
+  return Service.new({
+    contract: protocol.contract,
+    description: protocol.description,
+    component: protocol
+  });
+}
 
 function readURI(uri) {
   return function promise(deliver) {
@@ -27,86 +35,9 @@ function run() {
   }, function promise(deliver) { deliver() })
 }
 
-exports['test about handler must be registered'] = function (assert, done) {
-  let requested = 0;
-  let protocol = AboutHandler.extend({
-    what: 'register' + new Date().getTime().toString(36),
-    onRequest: function onRequest(request, response) {
-      response.uri = 'data:text/html,hello ' + this.what
-      requested ++;
-    }
-  });
-
-  assert.throws(function() {
-    readURI('about:' + protocol.what)();
-  }, 'protocol is not register');
-  register(protocol);
-
-  readURI('about:' + protocol.what)(function ({ responseText, status }) {
-    assert.equal(status, 0, 'request was sucessful');
-
-    unregister(protocol);
-
-    assert.throws(function() {
-      readURI('about:' + protocol.what)();
-    }, 'protocol is unregistered');
-
-    assert.equal(requested, 1, 'request was handled');
-    done();
-  });
-};
-
-exports["test about handler - redirect"] = function(assert, done) {
-  let requested = 0;
-  let protocol = AboutHandler.extend({
-    what: 'redirect' + new Date().getTime().toString(36),
-    onRequest: function onRequest(request, response) {
-      response.uri = 'data:text/html,hello ' + this.what
-      requested ++;
-    }
-  });
-  register(protocol);
-
-  readURI('about:' + protocol.what)(function ({ responseText, status }) {
-    assert.equal(status, 0, 'request was sucessful');
-    assert.equal(responseText, 'hello ' + protocol.what,
-                 'response content is correct');
-
-    unregister(protocol);
-    assert.equal(requested, 1, 'request was handled');
-    done();
-  });
-};
-
-exports["test about handler - async"] = function(assert, done) {
-  let requested = 0;
-  let protocol = AboutHandler.extend({
-    what: 'async' + new Date().getTime().toString(36),
-    onRequest: function onRequest(request, response) {
-      response.contentType = 'text/html';
-      response.write('hello\n')
-      setTimeout(function() {
-        requested ++;
-        response.end(protocol.what);
-      }, 100);
-    }
-  });
-
-  register(protocol);
-  readURI('about:' + protocol.what)(function({ responseText, status }) {
-    assert.equal(status, 0, 'request was sucessful');
-    assert.equal(responseText, 'hello\n' + protocol.what,
-                 'response content is correct');
-    assert.equal(requested, 1, 'request was handled');
-
-    unregister(protocol);
-    done();
-  });
-};
-
 exports['test uri handler must be registered'] = function(assert, done) {
   let requested = 0;
-  let protocol = ProtocolHandler.extend({
+  let protocol = Protocol.extend({
     scheme: 'register' + new Date().getTime().toString(36),
     onRequest: function onRequest(request, response) {
       requested ++;
@@ -119,12 +50,12 @@ exports['test uri handler must be registered'] = function(assert, done) {
   assert.throws(function() {
     readURI(url)();
   }, 'protocol is not register');
-  register(protocol);
+  let service = register(protocol);
 
   readURI(uri)(function ({ responseText, status }) {
     assert.equal(status, 0, 'request was sucessful');
 
-    unregister(protocol);
+    unregister(service);
 
     assert.throws(function() {
       readURI(url)();
@@ -137,7 +68,7 @@ exports['test uri handler must be registered'] = function(assert, done) {
 
 exports['test uri redirect'] = function(assert, done) {
   let requested = 0;
-  let protocol = ProtocolHandler.extend({
+  let protocol = Protocol.extend({
     scheme: 'register' + new Date().getTime().toString(36),
     onRequest: function onRequest(request, response) {
       requested ++;
@@ -147,20 +78,20 @@ exports['test uri redirect'] = function(assert, done) {
   });
   let uri = protocol.scheme + '://root/index.html';
 
-  register(protocol);
+  let service = register(protocol);
   readURI(uri)(function ({ responseText, status }) {
     assert.equal(status, 0, 'request was sucessful');
     assert.equal(responseText, 'done', 'expected response text');
     assert.equal(requested, 1, 'request was handled');
 
-    unregister(protocol);
+    unregister(service);
     done();
   });
 };
 
 exports['test uri async'] = function(assert, done) {
   let requested = 0;
-  let protocol = ProtocolHandler.extend({
+  let protocol = Protocol.extend({
     scheme: 'async' + new Date().getTime().toString(36),
     onRequest: function onRequest(request, response) {
       assert.equal(request.uri, uri, 'expected request uri');
@@ -173,7 +104,7 @@ exports['test uri async'] = function(assert, done) {
       }, 10);
     }
   });
-  register(protocol);
+  let service = register(protocol);
 
   let uri = protocol.scheme + '://root/index.html'
   readURI(uri)(function ({ responseText, status }) {
@@ -181,7 +112,7 @@ exports['test uri async'] = function(assert, done) {
     assert.equal(requested, 1, 'request was handled');
     assert.equal(responseText, 'hello\nasync', 'expected response text');
 
-    unregister(protocol);
+    unregister(service);
     done();
   });
 };
