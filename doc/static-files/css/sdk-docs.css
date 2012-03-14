@@ -12,11 +12,6 @@ pre {
   background-color: whitesmoke;
   padding: 10px;
   overflow: auto;
-  clear: both;
-}
-
-div .syntaxhighlighter {
-  clear: both;
 }
 
 h1 {
@@ -349,6 +344,10 @@ div.buttonarray a:hover {
   display: block;
   text-decoration: none;
   padding: 1px 15px;
+}
+
+.modules a {
+  display: block;
 }
 
 .sidebar-subsection-contents a:hover {

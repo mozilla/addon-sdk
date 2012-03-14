@@ -32,6 +32,8 @@ The add-on consists of three files:
 * **`get-text.js`**: the content script that interacts with the panel content
 * **`text-entry.html`**: the panel content itself, specified as HTML
 
+<div style="clear:both"></div>
+
 The "main.js" looks like this:
 
     var data = require("self").data;
