@@ -12,7 +12,7 @@ and learned the
 </span>
 
 To add a button to the toolbar, use the
-[`widget`](packages/addon-kit/docs/widget.html) module.
+[`widget`](packages/addon-kit/widget.html) module.
 
 The default add-on created by `cfx init`
 uses a widget, so we'll start with that as an example. If you haven't already
@@ -169,7 +169,7 @@ To learn more about working with panels, see the tutorial on
 ## Learning More ##
 
 To learn more about the widget module, see its
-[API reference documentation](packages/addon-kit/docs/widget.html).
+[API reference documentation](packages/addon-kit/widget.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/addon-development/web-content.html).

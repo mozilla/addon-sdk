@@ -13,7 +13,7 @@ and learned the
 
 To modify the page hosted by a particular tab, load a script into it
 using the `attach()` method of the
-[tab](packages/addon-kit/docs/tabs.html) object. Because their job is
+[tab](packages/addon-kit/tabs.html) object. Because their job is
 to interact with web content, these scripts are called *content scripts*.
 
 Here's a simple example:
@@ -139,7 +139,7 @@ To learn more about working with tabs in the SDK, see the
 [Open a Web Page](dev-guide/addon-development/tutorials/open-a-web-page.html)
 tutorial, the
 [List Open Tabs](dev-guide/addon-development/tutorials/list-open-tabs.html)
-tutorial, and the [`tabs` API reference](packages/addon-kit/docs/tabs.html).
+tutorial, and the [`tabs` API reference](packages/addon-kit/tabs.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/addon-development/web-content.html).

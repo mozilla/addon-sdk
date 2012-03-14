@@ -166,8 +166,8 @@ continue to work as new versions of Firefox are released.
 
 In addition to the High-Level APIs, the SDK includes a number of
 Low-Level APIs some of which, such
-as [`tab-browser`](packages/api-utils/docs/tab-browser.html), [`xhr`](packages/api-utils/docs/xhr.html), and
-[`window-utils`](packages/api-utils/docs/window-utils.html), expose powerful
+as [`tab-browser`](packages/api-utils/tab-browser.html), [`xhr`](packages/api-utils/xhr.html), and
+[`window-utils`](packages/api-utils/window-utils.html), expose powerful
 browser capabilities.
 
 In this section we'll use low-level modules how to:

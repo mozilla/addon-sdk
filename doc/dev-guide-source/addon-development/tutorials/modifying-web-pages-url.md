@@ -13,7 +13,7 @@ and learned the
 
 To modify any pages that match a particular pattern
 (for example, "http://example.org/") as they are loaded, use the
-[`page-mod`](packages/addon-kit/docs/page-mod.html) module.
+[`page-mod`](packages/addon-kit/page-mod.html) module.
 
 To create a page-mod you need to specify two things:
 
@@ -52,7 +52,7 @@ alt="ietf.org eaten by page-mod" />
 ## Specifying the Match Pattern ##
 
 The match pattern uses the
-[`match-pattern`](packages/api-utils/docs/match-pattern.html)
+[`match-pattern`](packages/api-utils/match-pattern.html)
 syntax. You can pass a single match-pattern string, or an array.
 
 ## Keeping the Content Script in a Separate File ##
@@ -184,7 +184,7 @@ the add-on in the `port.emit()` call.
 ## Learning More ##
 
 To learn more about page-mod, see its
-[API reference page](packages/addon-kit/docs/page-mod.html).
+[API reference page](packages/addon-kit/page-mod.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/addon-development/web-content.html).

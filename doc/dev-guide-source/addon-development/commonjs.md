@@ -109,27 +109,27 @@ Modules in the `api-utils` package implement low-level APIs. These
 modules fall roughly into three categories:
 
 * fundamental utilities such as
-[collection](packages/api-utils/docs/collection.html) and
-[url](packages/api-utils/docs/url.html). Many add-ons are likely to
+[collection](packages/api-utils/collection.html) and
+[url](packages/api-utils/url.html). Many add-ons are likely to
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[event/core](packages/api-utils/docs/event/core.html),
-[event/target](packages/api-utils/docs/event/target.html),
-[base](packages/api-utils/docs/base.html), and
-[namespace](packages/api-utils/docs/namespace.html). You're more
+[event/core](packages/api-utils/event/core.html),
+[event/target](packages/api-utils/event/target.html),
+[base](packages/api-utils/base.html), and
+[namespace](packages/api-utils/namespace.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.
 
 * privileged modules that expose powerful low-level capabilities
-such as [xhr](packages/api-utils/docs/xhr.html) and
-[xpcom](packages/api-utils/docs/xpcom.html). You can use these
+such as [xhr](packages/api-utils/xhr.html) and
+[xpcom](packages/api-utils/xpcom.html). You can use these
 modules in your add-on if you need to, but should be aware that
 the cost of privileged access is the need to take more elaborate
 security precautions. In many cases these modules have simpler,
 more restricted analogs in the high-level addon-kit package (for
-example, [tabs](packages/addon-kit/docs/tabs.html) or
-[request](packages/addon-kit/docs/request.html)).
+example, [tabs](packages/addon-kit/tabs.html) or
+[request](packages/addon-kit/request.html)).
 
 <div class="warning">
 <p>These modules are still in active development,

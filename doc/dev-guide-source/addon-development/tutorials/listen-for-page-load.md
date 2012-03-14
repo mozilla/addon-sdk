@@ -12,7 +12,7 @@ and learned the
 </span>
 
 You can get notifications about new pages loading using the
-[`tabs`](packages/addon-kit/docs/tabs.html) module. The following add-on
+[`tabs`](packages/addon-kit/tabs.html) module. The following add-on
 listens to the tab's built-in `ready` event and just logs the URL of each
 tab as the user loads it:
 
@@ -48,7 +48,7 @@ and specify "*" as the match-pattern.)
 ## Learning More ##
 
 To learn more about working with tabs in the SDK, see the
-[`tabs` API reference](packages/addon-kit/docs/tabs.html). You can listen
+[`tabs` API reference](packages/addon-kit/tabs.html). You can listen
 for a number of other tab events, including `open`, `close`, and `activate`.
 
 To learn more about running scripts in tabs, see the

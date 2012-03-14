@@ -16,8 +16,8 @@ file. You can split your code into separate modules with clearly defined
 interfaces between them. You then import and use these modules from other
 parts of your add-on using the `require()` statement, in exactly that same
 way that you import core SDK modules like
-[`widget`](packages/addon-kit/docs/widget.html) or
-[`panel`](packages/addon-kit/docs/panel.html).
+[`widget`](packages/addon-kit/widget.html) or
+[`panel`](packages/addon-kit/panel.html).
 
 It can often make sense to structure a larger or more complex add-on as a
 collection of modules. This makes the design of the add-on easier to

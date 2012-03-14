@@ -12,7 +12,7 @@ and learned the
 </span>
 
 To add items and submenus to the Firefox context menu, use the
-[`context-menu`](packages/addon-kit/docs/context-menu.html) module.
+[`context-menu`](packages/addon-kit/context-menu.html) module.
 
 Here's an add-on that adds a new context menu item. The item is
 displayed whenever something in the page is selected. When it's
@@ -85,4 +85,4 @@ is passed the selected text, which it logs
 ## Learning More ##
 
 To learn more about the `context-menu` module, see the
-[`context-menu` API reference](packages/addon-kit/docs/context-menu.html).
+[`context-menu` API reference](packages/addon-kit/context-menu.html).

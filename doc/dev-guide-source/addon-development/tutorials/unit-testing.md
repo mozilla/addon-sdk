@@ -24,7 +24,7 @@ In a web page, you can perform Base64 encoding and decoding using the
 to the `window` object: since this object is not available in your
 main add-on code, `atob()` and `btoa()` aren't available either. Using the
 low-level
-[window-utils](packages/api-utils/docs/window-utils.html) module you
+[window-utils](packages/api-utils/window-utils.html) module you
 can access `window`, enabling you to call these functions.
 
 However, it's good practice to encapsulate the code that directly accesses
@@ -107,7 +107,7 @@ exports.test_empty_string = test_empty_string;
 
 This file: exports three functions, each of which expects to receive a single
 argument which is a `test` object. `test` is supplied by the
-[`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
+[`unit-test`](packages/api-utils/unit-test.html) module and provides
 functions to simplify unit testing.
 
 * The first two functions call `atob()` and `btoa()` and use [`test.assertEqual()`](packages/api-utils/unit-test.html#assertEqual(a, b, message))

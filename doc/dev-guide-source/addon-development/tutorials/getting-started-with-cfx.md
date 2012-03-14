@@ -101,9 +101,9 @@ add-on's `lib` directory. Open the `main.js` for this add-on:
     });
 
 This add-on uses two SDK modules: the
-[`widget`](packages/addon-kit/docs/widget.html) module, which enables you
+[`widget`](packages/addon-kit/widget.html) module, which enables you
 to add buttons to the browser, and the
-[`tabs`](packages/addon-kit/docs/tabs.html) module, which enables you to
+[`tabs`](packages/addon-kit/tabs.html) module, which enables you to
 perform basic operations with tabs. In this case, we've created a widget
 whose icon is the Mozilla favicon, and added a click handler that loads
 the Mozilla home page in a new tab.
