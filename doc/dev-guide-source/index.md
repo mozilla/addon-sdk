@@ -34,7 +34,6 @@ tools and APIs.
  <a href="dev-guide/addon-development/tutorials/list-open-tabs.html">Get the List of Open Tabs</a>
  <a href="dev-guide/addon-development/tutorials/listen-for-page-load.html">Listen for Pages Loading</a>
  <a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">Add a Toolbar Button</a>
- <a href="dev-guide/addon-development/tutorials/adding-toolbar-content.html">Create a Toolbar</a>
  <a href="dev-guide/addon-development/tutorials/display-a-popup.html">Display a Popup</a>
  <a href="dev-guide/addon-development/tutorials/adding-menus.html">Add a Menu Item to Firefox</a>
  <a href="dev-guide/addon-development/tutorials/add-a-context-menu-item.html">Add a Context Menu Item</a>

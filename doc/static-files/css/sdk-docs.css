@@ -11,7 +11,12 @@ pre {
   color: black;
   background-color: whitesmoke;
   padding: 10px;
-  overflow:auto;
+  overflow: auto;
+  clear: both;
+}
+
+div .syntaxhighlighter {
+  clear: both;
 }
 
 h1 {

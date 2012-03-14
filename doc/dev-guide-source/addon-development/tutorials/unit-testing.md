@@ -110,12 +110,12 @@ argument which is a `test` object. `test` is supplied by the
 [`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
 functions to simplify unit testing.
 
-* The first two functions call `atob()` and `btoa()` and use [`test.assertEqual()`](packages/api-utils/docs/unit-test.html#assertEqual(a, b, message))
+* The first two functions call `atob()` and `btoa()` and use [`test.assertEqual()`](packages/api-utils/unit-test.html#assertEqual(a, b, message))
 to check that the output is as expected.
 
 * The second function tests the module's error-handling code by passing an
 empty string into `atob()` and using
-[`test.assertRaises()`](packages/api-utils/docs/unit-test.html#assertRaises(func%2C predicate%2C message))
+[`test.assertRaises()`](packages/api-utils/unit-test.html#assertRaises(func, predicate, message))
 to check that the expected exception is raised.
 
 At this point your add-on ought to look like this:

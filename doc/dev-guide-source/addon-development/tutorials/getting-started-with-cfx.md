@@ -4,8 +4,7 @@
 
 <span class="aside">This tutorial assumes that you've read and followed the instructions in
 the [installation guide](dev-guide/addon-development/installation.html), to
-install and activate the SDK. If you haven't, go back and do that now, then
-come back here.</span>
+install and activate the SDK.</span>
 
 # Getting Started With cfx #
 
@@ -82,7 +81,7 @@ package.json modified: please re-run 'cfx run'
 alt="Mozilla icon widget" />
 
 Run `cfx run` again, and it will run an instance of Firefox. In the
-bottom-left corner of the browser you'll see an icon with the Firefox
+bottom-right corner of the browser you'll see an icon with the Firefox
 logo. Click the icon, and a new tab will open with
 [http://www.mozilla.org/](http://www.mozilla.org/) loaded into it.
 

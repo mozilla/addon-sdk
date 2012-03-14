@@ -87,10 +87,35 @@ We can load this script by changing the page-mod code like this:
       contentScriptFile: self.data.url("my-script.js")
     });
 
+## Loading Multiple Content Scripts ##
+
 You can load more than one script, and the scripts can interact
-directly with each other. So, for example, if you save jQuery in your
-`data` directory and load it alongside your script, then your script
-can make use of jQuery:
+directly with each other. So, for example, you could rewrite
+`my-script.js` to use jQuery:
+
+    $("body").html("<h1>Page matches ruleset</h1>");
+
+Then download jQuery to your add-on's `data` directory, and
+load the script and jQuery together (making sure to load jQuery
+first):
+
+    // Import the page-mod API
+    var pageMod = require("page-mod");
+    // Import the self API
+    var self = require("self");
+
+    // Create a page mod
+    // It will run a script whenever a ".org" URL is loaded
+    // The script replaces the page contents with a message
+    pageMod.PageMod({
+      include: "*.org",
+      contentScriptFile: [self.data.url("jquery-1.7.min.js"),
+                          self.data.url("my-script.js")]
+    });
+
+You can use both `contentScript` and `contentScriptFile`
+in the same page-mod: if you do this, scripts loaded using
+`contentScript` are loaded first:
 
     // Import the page-mod API
     var pageMod = require("page-mod");
@@ -109,7 +134,7 @@ can make use of jQuery:
 Note, though, that you can't load a script from a web site. The script
 must be loaded from `data`.
 
-### Communicating With the Content Script ###
+## Communicating With the Content Script ##
 
 Your add-on script and the content script can't directly
 access each other's variables or call each other's functions, but they

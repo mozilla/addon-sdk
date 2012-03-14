@@ -37,7 +37,7 @@ This add-on creates a widget which contains the Mozilla favicon as an icon.
 It has a click handler which fetches the active tab and loads a
 script into the page hosted by the active tab. The script is specified using
 `contentScript` option, and just draws
-a red border round the page. Try it out:
+a red border around the page. Try it out:
 
 * create a new directory and navigate to it
 * run `cfx init`
@@ -50,7 +50,7 @@ browser:
 <img class="image-center" src="static-files/media/screenshots/widget-mozilla.png"
 alt="Mozilla icon widget" />
 
-Next open any web page in the browser window that opens, and click the
+Then open any web page in the browser window that opens, and click the
 Mozilla icon. You should see a red border appear around the page, like this:
 
 <img class="image-center" src="static-files/media/screenshots/tabattach-bbc.png"
@@ -80,8 +80,8 @@ We can load this script by changing the add-on code like this:
       onClick: function() {
         tabs.activeTab.attach({
           contentScriptFile: self.data.url("my-script.js")
-          })
-        }
+        });
+      }
     });
 
 You can load more than one script, and the scripts can interact
@@ -108,7 +108,7 @@ the content script. The content script now needs to look like this:
     // "self" is a global object in content scripts
     // Listen for a "drawBorder"
     self.port.on("drawBorder", function(color) {
-      document.body.style.border = "5px solid" + color;
+      document.body.style.border = "5px solid " + color;
     });
 
 In the add-on script, we'll send the content script a "drawBorder" message
@@ -125,9 +125,9 @@ using the object returned from `attach()`:
       onClick: function() {
         worker = tabs.activeTab.attach({
           contentScriptFile: self.data.url("my-script.js")
-          })
+        });
         worker.port.emit("drawBorder", "red");
-        }
+      }
     });
 
 The "drawBorder" message isn't a built-in message, it's one that this

@@ -96,9 +96,9 @@ building add-ons:
 * interacting with the web
 * interacting with the browser
 
-These modules are "supported": meaning that they are relatively
-stable, and that we'll avoid making incompatible changes to them
-unless absolutely necessary.
+These modules are "supported": meaning that they are stable, and that
+we'll avoid making incompatible changes to them unless absolutely
+necessary.
 
 They are documented in the "High-Level APIs" section
 of the sidebar.
@@ -114,15 +114,15 @@ modules fall roughly into three categories:
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[events](packages/api-utils/docs/events.html),
-[worker](packages/api-utils/docs/content/worker.html), and
-[api-utils](packages/api-utils/docs/api-utils.html). You're more
+[event/core](packages/api-utils/docs/event/core.html),
+[event/target](packages/api-utils/docs/event/target.html),
+[base](packages/api-utils/docs/base.html), and
+[namespace](packages/api-utils/docs/namespace.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.
 
 * privileged modules that expose powerful low-level capabilities
-such as [tab-browser](packages/api-utils/docs/tab-browser.html),
-[xhr](packages/api-utils/docs/xhr.html), and
+such as [xhr](packages/api-utils/docs/xhr.html) and
 [xpcom](packages/api-utils/docs/xpcom.html). You can use these
 modules in your add-on if you need to, but should be aware that
 the cost of privileged access is the need to take more elaborate
@@ -131,8 +131,13 @@ more restricted analogs in the high-level addon-kit package (for
 example, [tabs](packages/addon-kit/docs/tabs.html) or
 [request](packages/addon-kit/docs/request.html)).
 
-These modules are still in active development, and we expect to
-make incompatible changes to them in future releases.
+<div class="warning">
+<p>These modules are still in active development,
+and we expect to make incompatible changes to them in future releases.
+</p>
+If you use these modules in your add-on you may need to rewrite your
+code when upgrading to a newer release of the SDK.
+</div>
 
 They are documented in the "Low-Level APIs" section of the sidebar.
 

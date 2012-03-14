@@ -12,7 +12,7 @@ and learned the
 </span>
 
 With the SDK you don't have to keep all your add-on in a single "main.js"
-file. You can factor your code into separate modules with clearly defined
+file. You can split your code into separate modules with clearly defined
 interfaces between them. You then import and use these modules from other
 parts of your add-on using the `require()` statement, in exactly that same
 way that you import core SDK modules like
@@ -197,7 +197,7 @@ asking for permission, and depending on our choice the add-on logs either
 the position or an error message.
 
 But the code is now somewhat long and complex, and if we want to do much
-more in the add-on, it will be hard to maintain. So let's factor the
+more in the add-on, it will be hard to maintain. So let's split the
 geolocation code into a separate module.
 
 ## Creating a Separate Module ##
@@ -303,7 +303,11 @@ exports.getCurrentPosition = getCurrentPositionWithCheck;
 
 Finally, update "main.js". First add a line to import the new module:
 
-    var geolocation = require("geolocation");
+    var geolocation = require("./geolocation");
+
+When importing modules that are not SDK built in modules, it's a good
+idea to specify the path to the module explicitly like this, rather than
+relying on the module loader to find the module you intended.
 
 Edit the widget's call to `getCurrentPositionWithCheck()` so it calls
 the geolocation module's `getCurrentPosition()` function instead:
@@ -314,7 +318,7 @@ the geolocation module's `getCurrentPosition()` function instead:
 Now "main.js" should look like this:
 
 <pre><code>
-var geolocation = require("geolocation");
+var geolocation = require("./geolocation");
 
 var widget = require("widget").Widget({
   id: "whereami",

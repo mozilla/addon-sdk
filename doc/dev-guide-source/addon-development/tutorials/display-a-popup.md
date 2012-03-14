@@ -11,14 +11,14 @@ and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 </span>
 
-<img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
-alt="Text entry panel">
-
 To display a popup dialog, use the
 [`panel`](packages/addon-kit/docs/panel.html) module. A panel's content is
 defined using HTML. You can run content scripts in the panel: although the
 script running in the panel can't directly access your main add-on code,
 you can exchange messages between the panel script and the add-on code.
+
+<img class="image-right" src="static-files/media/screenshots/text-entry-panel.png"
+alt="Text entry panel">
 
 In this tutorial we'll create an add-on that
 [adds a widget to the toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html)
@@ -74,50 +74,50 @@ The "main.js" looks like this:
 
 The content script "get-text.js" looks like this:
 
+    // When the user hits return, send the "text-entered"
+    // message to main.js.
+    // The message payload is the contents of the edit box.
+    var textArea = document.getElementById("edit-box");
+    textArea.addEventListener('keyup', function onkeyup(event) {
+      if (event.keyCode == 13) {
+        // Remove the newline.
+        text = textArea.value.replace(/(\r\n|\n|\r)/gm,"");
+        self.port.emit("text-entered", text);
+        textArea.value = '';
+      }
+    }, false);
+
     // Listen for the "show" event being sent from the
     // main add-on code. It means that the panel's about
     // to be shown.
-    self.port.on("show", function (arg) {
-      // Set the focus to the text area so the user can
-      // just start typing.
-      var textArea = document.getElementById("edit-box");
+    //
+    // Set the focus to the text area so the user can
+    // just start typing.
+    self.port.on("show", function onShow() {
       textArea.focus();
-      // When the user hits return, send the "text-entered"
-      // message to main.js.
-      // The message payload is the contents of the edit box.
-      textArea.onkeyup = function(event) {
-        if (event.keyCode == 13) {
-          // Remove the newline.
-          text = textArea.value.replace(/(\r\n|\n|\r)/gm,"");
-          self.port.emit("text-entered", text);
-          textArea.value = '';
-        }
-      };
     });
 
 Finally, the "text-entry.html" file defines the `<textarea>` element:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<pre class="brush: html">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+&lt;html&gt;
 
-<head>
-  <style type="text/css" media="all">
-    textarea {
-      margin: 10px;
-    }
-  </style>
-</head>
+  &lt;head&gt;
+    &lt;style type="text/css" media="all"&gt;
+      textarea {
+        margin: 10px;
+      }
+    &lt;/style&gt;
+  &lt;/head&gt;
 
-<body>
-  <textarea rows="10" cols="20" id="edit-box"></textarea>
-</body>
+  &lt;body&gt;
+    &lt;textarea rows="10" cols="20" id="edit-box">&lt;/textarea&gt;
+  &lt;/body&gt;
 
-</html>
-]]>
-</script>
+&lt;/html&gt;
+
+</pre>
 
 Try it out: "main.js" is saved in your add-on's `lib` directory,
 and the other two files go in your add-on's `data` directory:
@@ -138,4 +138,7 @@ in the console.
 ## Learning More ##
 
 To learn more about the `panel` module, see the
-[`panel` API reference](packages/addon-kit/docs/panel.html).
+[`panel` API reference](packages/addon-kit/panel.html).
+
+To learn more about attaching panels to widgets, see the
+[`widget` API reference](packages/addon-kit/widget.html).

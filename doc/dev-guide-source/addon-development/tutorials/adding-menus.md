@@ -46,7 +46,7 @@ Dependencies             api-utils, vold-utils
 
 This tells us that we need to install the `vold-utils` package,
 which we can do by downloading it from
-[its source repository](https://github.com/erikvold/vold-utils-jplib)
+[https://github.com/erikvold/vold-utils-jplib](https://github.com/voldsoftware/vold-utils-jplib/zipball/1b2ad874c2d3b2070a1b0d43301aa3731233e84f)
 and adding it under the `packages` directory alongside `menuitems`.
 
 ## Using `menuitems` ##

@@ -13,7 +13,9 @@ Your add-on's `main.js` code is executed as soon as it is loaded. It is loaded
 when it is installed, when it is enabled, or when Firefox starts.
 
 If your add-on exports a function called `main()`, that function will be
-called when the add-on is loaded.
+called immediately after main() will be invoked a moment after the overall
+`main.js` is evaluated, and after all top-level require() statements have
+run (so generally after all dependent modules have been loaded).
 
     exports.main = function (options, callbacks) {};
 

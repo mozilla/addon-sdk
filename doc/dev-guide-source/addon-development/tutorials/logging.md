@@ -11,17 +11,13 @@ and learned the
 [basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
 </span>
 
-To help debug your add-on you can use the SDK's global `console` object
-to log error, warning, or informational messages. You don't have to
+The [DOM `console` object](https://developer.mozilla.org/en/DOM/console)
+is useful for debugging JavaScript. Because DOM objects aren't available
+to the main add-on code, the SDK provides its own global `console` object
+with most of the same methods as the DOM `console`, including methods to
+log error, warning, or informational messages. You don't have to
 `require()` anything to get access to the console: it is automatically
 made available to you.
-
-<span class="aside">
-Because `window.alert()` isn't available to your main add-on code,
-if you use it for diagnostics then the console is a
-useful replacement.
-</span>
-
 
 The `console.log()` method prints an informational message:
 
