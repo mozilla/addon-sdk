@@ -47,6 +47,8 @@ versions of the add-on.
 
 Clicking the button opens [http://www.mozilla.org](http://www.mozilla.org).
 
+<div style="clear:both"></div>
+
 ## Specifying the Icon ##
 
 If you're using the widget to make a toolbar button, specify the icon to
@@ -171,4 +173,3 @@ To learn more about the widget module, see its
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/addon-development/web-content.html).
-	

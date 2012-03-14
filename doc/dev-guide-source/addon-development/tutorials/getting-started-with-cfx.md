@@ -130,6 +130,8 @@ At the command prompt, execute `cfx run` again, and this time the icon is the
 jQuery favicon, and clicking it takes you to
 [http://www.jquery.com](http://www.jquery.com).
 
+<div style="clear:both"></div>
+
 ## <a name="cfx-xpi">cfx xpi</a> ##
 
 You'll use `cfx run` while developing your add-on, but once you're done with
