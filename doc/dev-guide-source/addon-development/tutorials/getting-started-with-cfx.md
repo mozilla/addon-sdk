@@ -167,4 +167,4 @@ This will bring up a file selection dialog: navigate to the
 add-on.
 
 Now you have the basic `cfx` commands, you can try out the
-[SDK's features](dev-guide/addon-development/tutorials/tutorials.html).
+[SDK's features](dev-guide/addon-development/tutorials/index.html).

@@ -105,7 +105,7 @@ These are collected together in the
 package. Because we expect to keep these APIs compatible as new versions
 of Firefox are released, we call them the "supported" APIs.
 
-See the [tutorials](dev-guide/addon-development/tutorials/tutorials.html)
+See the [tutorials](dev-guide/addon-development/tutorials/index.html)
 and the "High-Level API" reference in the "Developer Guide" sidebar.
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
