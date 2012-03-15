@@ -22,9 +22,14 @@ alt="Text entry panel">
 
 In this tutorial we'll create an add-on that
 [adds a widget to the toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html)
-which displays a panel when clicked. The panel just contains a
+which displays a panel when clicked.
+
+The panel just contains a
 `<textarea>` element: when the user presses the `return` key, the contents
 of the `<textarea>` is sent to the main add-on code.
+
+The main add-on code
+[logs the message to the console](dev-guide/addon-development/tutorials/logging.html).
 
 The add-on consists of three files:
 
