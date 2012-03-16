@@ -3,21 +3,21 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 def parse_options_defaults(options, jetpack_id):
+    # this returns a unicode string
     pref_list = []
 
     for pref in options:
         if ('value' in pref):
             value = pref["value"]
-            vtype = str(type(value))
 
-            if ("<type 'float'>" == vtype):
+            if isinstance(value, float):
                 continue
-            elif ("<type 'bool'>" == vtype):
+            elif isinstance(value, bool):
                 value = str(pref["value"]).lower()
-            elif ("<type 'str'>" == vtype):
-                value = "\"" + str(pref["value"]) + "\""
-            elif ("<type 'unicode'>" == vtype):
-                value = "\"" + str(pref["value"]) + "\""
+            elif isinstance(value, str): # presumably ASCII
+                value = "\"" + unicode(pref["value"]) + "\""
+            elif isinstance(value, unicode):
+                value = "\"" + pref["value"] + "\""
             else:
                 value = str(pref["value"])
 
