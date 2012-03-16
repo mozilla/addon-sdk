@@ -113,32 +113,32 @@ Save this file in `data/list` as `annotation-list.js`.
 
 Here's the HTML for the annotation list:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<html>
-<head>
-  <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-  <title>Saved annotations</title>
-  <link rel="stylesheet" type="text/css" href="annotation-list.css" />
-</head>
-<body>
+<pre class="brush: html">
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta http-equiv="Content-type" content="text/html; charset=utf-8" /&gt;
+  &lt;title&gt;Saved annotations&lt;/title&gt;
+  &lt;link rel="stylesheet" type="text/css" href="annotation-list.css" /&gt;
+&lt;/head&gt;
 
-<div id="annotation-list">
-</div>
+&lt;body&gt;
 
-<div id="template">
-  <div class="annotation-details">
-    <a class="url"></a>
-    <div class="selection-text"></div>
-    <div class="annotation-text"></div>
-  </div>
-</div>
+&lt;div id="annotation-list"&gt;
+&lt;/div&gt;
 
-</body>
+&lt;div id="template"&gt;
+  &lt;div class="annotation-details"&gt;
+    &lt;a class="url"&gt;&lt;/a&gt;
+    &lt;div class="selection-text"&gt;&lt;/div&gt;
+    &lt;div class="annotation-text"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
 
-</html>
+&lt;/body&gt;
 
-]]>
-</script>
+&lt;/html&gt;
+
+</pre>
 
 Here's the corresponding CSS:
 
