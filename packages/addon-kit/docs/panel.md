@@ -400,10 +400,9 @@ Creates a panel.
 
     This property is optional and defaults to "end".
   @prop [contentScriptOptions] {object}
-    Read-only value available from the content scripts as `self.options`.
+    Read-only value exposed to content scripts under `self.options` property.
 
     Any kind of jsonable value (object, array, string, etc.) can be used here.
-
     Optional.
 
   @prop [onMessage] {function}
@@ -488,10 +487,9 @@ fires
 
 <api name="contentScriptOptions">
 @property {object}
-Read-only value available from the content scripts as `self.options`.
+Read-only value exposed to content scripts under `self.options` property.
 
 Any kind of jsonable value (object, array, string, etc.) can be used here.
-
 Optional.
 </api>
 

@@ -73,7 +73,7 @@ fires.
 
 The default value is "end".
 
-The `contentScriptOptions` option creates a read-only value available from the
-content scripts as `self.options`.
+The `contentScriptOptions` is a json that is exposed to content scripts as a read
+only value under `self.options` property.
 
 Any kind of jsonable value (object, array, string, etc.) can be used here.
