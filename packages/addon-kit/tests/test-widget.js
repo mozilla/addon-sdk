@@ -925,6 +925,28 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
   });
 };
 
+exports.testContentScriptOptionsOption = function(test) {
+	test.waitUntilDone();
+
+  let widget = require("widget").Widget({
+      id: "fooz",
+      label: "fooz",
+      content: "fooz",
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+      	test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        widget.destroy();
+        test.done();
+      }
+    });
+};
+
 /******************* helpers *********************/
 
 // Helper for calling code at window close
