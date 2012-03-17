@@ -59,7 +59,7 @@ cd addon-sdk
 Then run:
 
 <pre>
-  bin\activate
+bin\activate
 </pre>
 
 Your command prompt should now have a new prefix containing the full path to
@@ -115,7 +115,7 @@ As an alternative to this, you can create a symbolic link to the `cfx`
 program in your `~/bin` directory:
 
 <pre>
-  ln -s PATH_TO_SDK/bin/cfx ~/bin/cfx
+ln -s PATH_TO_SDK/bin/cfx ~/bin/cfx
 </pre>
 
 ## Sanity Check ##
@@ -123,14 +123,14 @@ program in your `~/bin` directory:
 Run this at your shell prompt:
 
 <pre>
-~/mozilla/addon-sdk > cfx
+cfx
 </pre>
 
 It should produce output whose first line looks something like this, followed by
 many lines of usage information:
 
 <pre>
-  Usage: cfx [options] [command]
+Usage: cfx [options] [command]
 </pre>
 
 This is the `cfx` command-line program.  It's your primary interface to the

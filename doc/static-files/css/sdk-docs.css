@@ -20,12 +20,9 @@ h1 {
 
 h2 {
   color: black;
-  background-color: #F0F8FF;
-  padding: 10px;
   overflow:auto;
   font-style: normal;
-  border: solid 1px;
-  border-color: #a0d0fb;
+  padding: 5px 0px;
 }
 
 h2.top {
@@ -43,9 +40,11 @@ h2.top {
 
 hr {
   border-style: solid;
-  border-width: 1px;
-  color: #003595;
-  width: 75%;
+  border-bottom-width: 1px;
+  color: #a0d0fb;
+  margin-left: auto;
+  margin-right: auto;
+  width: 90%;
   margin-top: 1em;
   margin-bottom: 1em;
 }
@@ -223,9 +222,6 @@ hr {
 #main-content h2 {
   font-size: 1.7em;
   color: black;
-  background-color: #F0F8FF;
-  padding: 10px;
-  border-style:groove;
 }
 
 .image-center {
@@ -242,7 +238,12 @@ hr {
 div.buttonarray {
   -moz-column-count: 3;
   -moz-column-width: 33%;
-  -moz-column-rule: 1px solid #a0d0fb;
+  -moz-column-gap: 2em;
+}
+
+div.columns {
+  -moz-column-count: 3;
+  -moz-column-width: 33%;
   -moz-column-gap: 2em;
 }
 
@@ -253,7 +254,7 @@ div.buttonarray {
 }
 
 div.buttonarray a {
-  padding: 6px;
+  padding: 3px;
   display: block;
   text-decoration:none;
 }
@@ -264,7 +265,7 @@ div.buttonarray p {
 
 div.buttonarray a:hover {
   background-color: #F0F8FF;
-  padding: 5px;
+  padding: 2px;
   border: solid 1px;
   border-color: #a0d0fb;
 }
