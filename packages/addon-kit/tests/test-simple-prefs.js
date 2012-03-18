@@ -147,7 +147,7 @@ exports.testPrefRemoveListener = function(test) {
   sp.prefs["test-listen2"] = true;
 };
 
-// Bug 710117
+// Bug 710117: Test that simple-pref listeners are removed on unload
 exports.testPrefUnloadListener = function(test) {
   test.waitUntilDone();
 
