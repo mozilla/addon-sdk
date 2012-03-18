@@ -163,15 +163,14 @@ exports.testPrefUnloadListener = function(test) {
       return;
     }
 
-    let emit = loader.sandbox("simple-prefs").events.emit;
+    let events = loader.sandbox("simple-prefs").events;
+    let emit = events.emit;
     loader.unload();
 
+    test.assertEqual(events._events, null, "pref listeners should be removed");
     emit("test-listen3");
 
-    setTimeout(function() {
-      test.pass("The prefs listener was removed");
-      test.done();
-    }, 250);
+    test.done();
   };
 
   sp.on("test-listen3", listener);
