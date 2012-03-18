@@ -5,64 +5,148 @@
 <h2 class="top">Welcome to the Add-on SDK!</h2>
 
 Using the Add-on SDK you can create Firefox add-ons using standard Web
-technologies: JavaScript, HTML, and CSS. The SDK includes:
-
-* JavaScript APIs which you can use to create add-ons
-
-* tools for creating, running, testing, and packaging add-ons.
+technologies: JavaScript, HTML, and CSS. The SDK includes JavaScript APIs which you can use to create add-ons, and tools for creating, running, testing, and packaging add-ons.
 
 <hr>
 
 ## <a href="dev-guide/addon-development/tutorials/index.html">Tutorials</a> ##
 
-<div class="columns">
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#getting-started">Getting started</a></h4>
+      How to
+      <a href="dev-guide/addon-development/installation.html">install the SDK</a> and
+      <a href="dev-guide/addon-development/tutorials/getting-started-with-cfx.html">use the cfx
+      tool</a> to develop, test, and package add-ons.
+    </td>
 
-### Getting Started ###
-Tutorials explaining how to
-[install the SDK](dev-guide/addon-development/installation.html) and
-[use the cfx tool](dev-guide/addon-development/getting-started-with-cfx.html)
-to develop, test, and package add-ons.
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#create-user-interfaces">Create user interface components</a></h4>
+      Create user interface components such as
+        <a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">toolbar buttons</a>,
+        <a href="dev-guide/addon-development/tutorials/adding-menus.html">menu items</a>, and
+        <a href="dev-guide/addon-development/tutorials/display-a-popup.html">dialogs</a>
+    </td>
+  </tr>
 
-### Using the High-Level APIs ###
-Using the SDK APIs to:
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#interact-with-the-browser">Interact with the browser</a></h4>
+      <a href="dev-guide/addon-development/tutorials/open-a-web-page.html">Open web pages</a>,
+      <a href="dev-guide/addon-development/tutorials/listen-for-page-load.html">listen for pages loading</a>, and
+      <a href="dev-guide/addon-development/tutorials/list-open-tabs.html">list open pages</a>.
+    </td>
 
-* Create user interface components, such as
-    [toolbar buttons](dev-guide/addon-development/tutorials/adding-toolbar-button.html),
-    [menu items](dev-guide/addon-development/tutorials/adding-menus.html),
-    and [dialogs](dev-guide/addon-development/tutorials/display-a-popup.html)
-* Interact with the browser:
-    [opening web pages](dev-guide/addon-development/tutorials/open-a-web page.html),
-    [listen for pages loading](dev-guide/addon-development/tutorials/listen-for-page-load.html), and
-    [list open pages](dev-guide/addon-development/tutorials/list-open-tabs.html)
-* Modify web pages, either
-    [modifying pages matching a URL pattern](dev-guide/addon-development/tutorials/modifying-web-pages-url.html)
-    or [dynamically modifying a particular tab](dev-guide/addon-development/tutorials/modifying-web-pages-tab.html).
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#modify-web-pages">Modify web pages</a></h4>
+      <a href="dev-guide/addon-development/tutorials/modifying-web-pages-url.html">Modify pages matching a URL pattern</a>
+      or <a href="dev-guide/addon-development/tutorials/modifying-web-pages-tab.html">dynamically modify a particular tab</a>.
+    </td>
+  </tr>
 
-### Development Techniques ###
-Common development techniques, such as
-[unit testing](dev-guide/addon-development/tutorials/unit-testing.html),
-[logging](dev-guide/addon-development/tutorials/logging.html), and
-[creating reusable modules](dev-guide/addon-development/tutorials/reusable-modules.html).
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#development-techniques">Development techniques</a></h4>
+Learn about common development techniques, such as
+<a href="dev-guide/addon-development/tutorials/unit-testing.html">unit testing</a>,
+<a href="dev-guide/addon-development/tutorials/logging.html">logging</a>,
+<a href="dev-guide/addon-development/tutorials/reusable-modules.html">creating reusable modules</a>,
+<a href="dev-guide/addon-development/l10n.html">localization</a>, and
+<a href="dev-guide/addon-development/mobile.html">mobile development</a>.
+    </td>
 
-### Putting It All Together ###
-Walkthroughs of more complex SDK add-ons.
+    <td>
+      <h4><a href="dev-guide/addon-development/tutorials/index.html#putting-it-together">Putting it together</a></h4>
+      Walkthrough of the <a href="dev-guide/addon-development/annotator/annotator.html">Annotator</a> example add-on.
+    </td>
+  </tr>
 
-</div>
+</table>
 
 <hr>
 
 ## <a href="dev-guide/addon-development/guides.html">Guides</a> ##
 
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/guides.html#sdk-infrastructure">SDK Infrastructure</a></h4>
+      Aspects of the SDK's underlying technology:
+      <a href="dev-guide/addon-development/commonjs.html">CommonJS</a>, the
+      <a href="dev-guide/addon-development/program-id.html">Program ID</a>, the
+      <a href="dev-guide/addon-development/module-search.html">module search algorithm</a>
+      and the rules defining
+      <a href="dev-guide/addon-development/firefox-compatibility.html">Firefox compatibility</a>.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/guides.html#sdk-idioms">SDK Idioms</a></h4>
+      The SDK's
+      <a href="dev-guide/addon-development/events.html">event framework</a> and the
+      <a href="dev-guide/addon-development/two-types-of-scripts.html">distinction between add-on scripts and content scripts</a>.
+    </td>
+
+  </tr>
+
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/guides.html#content-scripts">Content scripts</a></h4>
+      A <a href="dev-guide/addon-development/web-content.html">detailed guide to working with content scripts</a>,
+      including: how to load content scripts, which objects
+      content scripts can access, and how to communicate
+      between content scripts and the rest of your add-on.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/guides.html#xul-migration">XUL migration</a></h4>
+      A guide to <a href="dev-guide/addon-development/xul-migration.html">migrating XUL add-ons to the SDK</a>.
+      This guide includes a
+      <a href="dev-guide/addon-development/sdk-vs-xul.html">comparison of XUL and the SDK</a>, and a
+      <a href="dev-guide/addon-development/library-detector.html">worked example</a> of porting a XUL add-on to the SDK.
+    </td>
+
+  </tr>
+  <tr>
+
+</table>
+
 <hr>
 
-### Tools Reference ###
+## Reference ##
 
-<hr>
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4>API reference</h4>
+      Reference documentation for the high-level SDK APIs found in the
+      <a href="packages/addon-kit/index.html">addon-kit</a>
+      package, and the low-level APIs found in the
+      <a href="packages/api-utils/index.html">api-utils</a> package.
+    </td>
 
-### High-Level APIs ###
+    <td>
+      <h4>Tools reference</h4>
+      Reference documentation for the
+      <a href="dev-guide/addon-development/cfx-tool.html">cfx tool</a>
+      used to develop, test, and package add-ons, the
+      <a href="dev-guide/addon-development/console.html">console</a>
+      global used for logging, and the
+      <a href="dev-guide/addon-development/package-spec.html">package.json</a> file.
+    </td>
 
-<hr>
+  </tr>
 
-### Low-Level APIs ###
-
-
+</table>

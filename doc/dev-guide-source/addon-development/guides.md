@@ -4,45 +4,169 @@
 
 # Guides #
 
-## SDK Infrastructure ##
+This page lists more theoretical in-depth articles about the SDK.
 
-<div class="buttonarray">
+<hr>
 
-<a href="dev-guide/addon-development/commonjs.html">CommonJS, Packages, and the SDK</a>
-<a href="dev-guide/addon-development/program-id.html">Program ID</a>
-<a href="dev-guide/addon-development/module-search.html">Module Search</a>
-<a href="dev-guide/addon-development/firefox-compatibility.html">Firefox Compatibility</a>
+<h2><a name="sdk-infrastructure">SDK Infrastructure</a></h2>
 
-</div>
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/commonjs.html">CommonJS, packages, and the SDK</a></h4>
+      <a href="http://www.commonjs.org/">CommonJS</a> includes a specification
+      for JavaScript modules: reusable pieces of JavaScript code. This guide
+      provides an introduction to the CommonJS module specification and
+      explains its relationship to the SDK.
+    </td>
 
-## SDK Idioms ##
+    <td>
+      <h4><a href="dev-guide/addon-development/program-id.html">Program ID</a></h4>
+      The Program ID is a unique identifier for your add-on. This guide
+      explains how it's created, what it's used for and how to define your
+      own.
+    </td>
 
-<div class="buttonarray">
+  </tr>
+  <tr>
 
- <a href="dev-guide/addon-development/events.html">Working With Events</a>
- <a href="dev-guide/addon-development/two-types-of-scripts.html">Two Types of Scripts</a>
+    <td>
+      <h4><a href="dev-guide/addon-development/module-search.html">Module search</a></h4>
+      The algorithm used to find and load modules imported using the
+      <code>require()</code> statement.
+    </td>
 
-</div>
+    <td>
+      <h4><a href="dev-guide/addon-development/firefox-compatibility.html">Firefox compatibility</a></h4>
+      The rules which define which Firefox releases a given SDK release is
+      compatible with, and how to deal with compatibility problems.
+    </td>
 
-## Content Scripts ##
+  </tr>
 
-<div class="buttonarray">
+</table>
 
- <a href="dev-guide/addon-development/web-content.html">Introducing Content Scripts</a>
- <a href="dev-guide/addon-development/content-scripts/loading.html">Loading Content Scripts</a>
- <a href="dev-guide/addon-development/content-scripts/access.html">Content Script Access</a>
- <a href="dev-guide/addon-development/content-scripts/using-port.html">Using "port"</a>
- <a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using "postMessage()"</a>
- <a href="dev-guide/addon-development/content-scripts/reddit-example.html">Reddit Example</a>
+<hr>
 
-</div>
+<h2><a name="sdk-idioms">SDK Idioms</a></h2>
 
-## XUL Migration ##
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/events.html">Working With Events</a></h4>
+      How to write event-driven code using the the SDK's event emitting framework.
+    </td>
 
-<div class="buttonarray">
+    <td>
+      <h4><a href="dev-guide/addon-development/two-types-of-scripts.html">Two Types of Scripts</a></h4>
+      This article explains the differences between the APIs
+      available to your main add-on code and those available
+      to content scripts.
+    </td>
 
- <a href="dev-guide/addon-development/xul-migration.html">XUL Migration Guide</a>
- <a href="dev-guide/addon-development/sdk-vs-xul.html">XUL versus the SDK</a>
- <a href="dev-guide/addon-development/library-detector.html">Porting Example</a>
- 
-</div>
+  </tr>
+
+</table>
+
+<hr>
+
+<h2><a name="content-scripts">Content Scripts</a></h2>
+
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/web-content.html">Introducing content scripts</a></h4>
+      An overview of content scripts.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/content-scripts/loading.html">Loading content scripts</a></h4>
+      How to load content scripts into web pages, specified either as strings
+      or in separate files, and how to control the point at which they are
+      executed.
+    </td>
+
+  </tr>
+
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/content-scripts/access.html">Content script access</a></h4>
+      Detailed information on the objects available to content scripts,
+      the differences between content scripts and normal page scripts,
+      and how to communicate between content scripts and page scripts.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/content-scripts/using-port.html">Using "port"</a></h4>
+      Communicating between a content script and the rest of your add-on
+      using the <code>port</code> object. This is usually preferable to
+      the <code>postMessage()</code> API.
+    </td>
+
+  </tr>
+
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using "postMessage()"</a></h4>
+      Communicating between a content script and the rest of your add-on
+      using the <code>postMessage()</code> API, and a comparison between
+      this technique and the alternative technique using <code>port</code>.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/content-scripts/reddit-example.html">Reddit example</a></h4>
+      A simple add-on which uses content scripts.
+    </td>
+
+  </tr>
+
+</table>
+
+<hr>
+
+<h2><a name="xul-migration">XUL Migration</a></h2>
+
+<table class="catalog">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+  <tr>
+    <td>
+      <h4><a href="dev-guide/addon-development/xul-migration.html">XUL Migration Guide</a></h4>
+      Techniques to help port a XUL add-on to the SDK.
+    </td>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/sdk-vs-xul.html">XUL versus the SDK</a></h4>
+      A comparison of the strengths and weaknesses of the SDK,
+      compared to traditional XUL-based add-ons.
+    </td>
+
+  </tr>
+  <tr>
+
+    <td>
+      <h4><a href="dev-guide/addon-development/library-detector.html">Porting Example</a></h4>
+      A walkthrough of porting a relatively simple XUL-based
+      add-on to the SDK.
+    </td>
+
+    <td>
+    </td>
+
+  </tr>
+
+</table>

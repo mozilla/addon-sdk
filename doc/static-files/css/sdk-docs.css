@@ -373,3 +373,12 @@ div.buttonarray a:hover {
 #third-party-packages-subsection {
   display: none;
 }
+
+
+table.catalog, table.catalog tr, table.catalog td {
+  border: none;
+}
+
+table.catalog td {
+  padding: 1em;
+}
