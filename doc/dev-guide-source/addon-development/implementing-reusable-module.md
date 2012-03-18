@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Implementing Reusable Modules #
 
 So far we've seen how you can use the SDK to build a simple add-on. But you
@@ -117,13 +121,13 @@ This file:
 
 * exports two functions, each of which expects to receive a single
 argument which is a `test` object. `test` is supplied by the
-[`unit-test`](packages/api-utils/docs/unit-test.html) module and provides
+[`unit-test`](packages/api-utils/unit-test.html) module and provides
 functions to simplify unit testing.
-The first function calls `getURL()` and uses [`test.assertEqual()`](packages/api-utils/docs/unit-test.html#assertEqual(a, b, message))
+The first function calls `getURL()` and uses [`test.assertEqual()`](packages/api-utils/unit-test.html#assertEqual(a, b, message))
 to check that the URL is as expected.
 The second function tests the wikipanel's error-handling code by passing an
 empty string into `getURL()` and using
-[`test.assertRaises()`](packages/api-utils/docs/unit-test.html#assertRaises(func%2C predicate%2C message))
+[`test.assertRaises()`](packages/api-utils/unit-test.html#assertRaises(func%2C predicate%2C message))
 to check that the expected exception is raised.
 
 * imports one module, the `wikipanel` module that lives in our

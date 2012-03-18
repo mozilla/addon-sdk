@@ -1,106 +1,169 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
- *   Drew Willcoxon <adw@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-const {Cc,Ci,Cm,Cr,Cu} = require("chrome");
+const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
+const { registerFactory, unregisterFactory, isCIDRegistered } =
+      Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
-var jsm = {};
-Cu.import("resource://gre/modules/XPCOMUtils.jsm", jsm);
-var utils = exports.utils = jsm.XPCOMUtils;
+const { when: unload } = require('./unload');
+const { Base } = require('./base');
+const { uuid } = require('./uuid');
 
-Cm.QueryInterface(Ci.nsIComponentRegistrar);
+// This is a base prototype, that provides bare bones of XPCOM. JS based
+// components can be easily implement by extending it.
+const Unknown = Base.extend({
+  // Method `extend` is overridden so that resulting object will contain
+  // `interfaces` array property, containing elements from ancestor and all
+  // provided sources.
+  extend: function extend() {
+    let args = Array.slice(arguments);
+    return Base.extend.apply(this, args.concat([{
+      interfaces: args.reduce(function(interfaces, source) {
+        // If given source has `interfaces` property concatenate it's elements
+        // them resulting `interfaces` array, otherwise return resulting
+        // `interfaces` array.
+        return 'interfaces' in source ? source.interfaces.concat(interfaces)
+                                      : interfaces;
+      }, this.interfaces)
+    }]));
+  },
+  /**
+   * The `QueryInterface` method provides runtime type discovery used by XPCOM.
+   * This method return quired instance of `this` if given `iid` is listed in
+   * the `interfaces` property.
+   */
+  QueryInterface: function QueryInterface(iid) {
+    // For some reason there are cases when `iid` is `null`. In such cases we
+    // just return `this`. Otherwise we verify that component implements given
+    // `iid` interface.
+    if (iid && !this.interfaces.some(function(id) iid.equals(Ci[id])))
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    return this;
+  },
+  /**
+   * Array of `XPCOM` interfaces (as strings) implemented by this component. All
+   * components implement `nsISupports` by default which is default value here.
+   * Provide array of interfaces implemented by an object when extending, to
+   * append them to this list (Please note that there is no need to repeat
+   * interfaces implemented by super as they will be added automatically).
+   */
+  interfaces: [ 'nsISupports' ]
+});
+exports.Unknown = Unknown;
 
-var factories = [];
+// Base exemplar for creating instances implementing `nsIFactory` interface,
+// that maybe registered into runtime via `register` function. Instances of
+// this factory create instances of enclosed component on `createInstance`.
+const Factory = Unknown.extend({
+  interfaces: [ 'nsIFactory' ],
+  /**
+   * All the descendants will get auto generated `id` (also known as `classID`
+   * in XPCOM world) unless one is manually provided.
+   */
+  get id() { throw Error('Factory must implement `id` property') },
+  /**
+   * XPCOM `contractID` may optionally  be provided to associate this factory
+   * with it. `contract` is a unique string that has a following format:
+   * '@vendor.com/unique/id;1'.
+   */
+  contract: null,
+  /**
+   * Class description that is being registered. This value is intended as a
+   * human-readable description for the given class and does not needs to be
+   * globally unique.
+   */
+  description: 'Jetpack generated factory',
+  /**
+   * This method is required by `nsIFactory` interfaces, but as in most
+   * implementations it does nothing interesting.
+   */
+  lockFactory: function lockFactory(lock) undefined,
+  /**
+   * If property is `true` XPCOM service / factory will be registered
+   * automatically on creation.
+   */
+  register: true,
+  /**
+   * If property is `true` XPCOM factory will be unregistered prior to add-on
+   * unload.
+   */
+  unregister: true,
+  /**
+   * Method is called on `Service.new(options)` passing given `options` to
+   * it. Options is expected to have `component` property holding XPCOM
+   * component implementation typically decedent of `Unknown` or any custom
+   * implementation with a `new` method and optional `register`, `unregister`
+   * flags. Unless `register` is `false` Service / Factory will be
+   * automatically registered. Unless `unregister` is `false` component will
+   * be automatically unregistered on add-on unload.
+   */
+  initialize: function initialize(options) {
+    options = options || {}
+    this.merge(options, { id: 'id' in options && options.id || uuid() });
 
-function Factory(options) {
-  memory.track(this);
-
-  this.wrappedJSObject = this;
-  this.create = options.create;
-  this.uuid = options.uuid;
-  this.name = options.name;
-  this.contractID = options.contractID;
-
-  Cm.registerFactory(this.uuid,
-                     this.name,
-                     this.contractID,
-                     this);
-
-  var self = this;
-
-  factories.push(this);
-}
-
-Factory.prototype = {
-  createInstance: function(outer, iid) {
+    // If service / factory has auto registration enabled then register.
+    if (this.register)
+      register(this);
+  },
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  createInstance: function createInstance(outer, iid) {
     try {
       if (outer)
         throw Cr.NS_ERROR_NO_AGGREGATION;
-      return (new this.create()).QueryInterface(iid);
-    } catch (e) {
-      console.exception(e);
-      if (e instanceof Ci.nsIException)
-        throw e;
-      else
-        throw Cr.NS_ERROR_FAILURE;
+      return this.create().QueryInterface(iid);
+    }
+    catch (error) {
+      throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  unregister: function() {
-    var index = factories.indexOf(this);
-    if (index == -1)
-      throw new Error("factory already unregistered");
+  create: function create() this.component.new()
+});
+exports.Factory = Factory;
 
-    var self = this;
+// Exemplar for creating services that implement `nsIFactory` interface, that
+// can be registered into runtime via call to `register`. This services return
+// enclosed `component` on `getService`.
+const Service = Factory.extend({
+  description: 'Jetpack generated service',
+  /**
+   * Creates an instance of the class associated with this factory.
+   */
+  create: function create() this.component
+});
+exports.Service = Service;
 
-    factories.splice(index, 1);
-    Cm.unregisterFactory(this.uuid, this);
-  },
-  QueryInterface: utils.generateQI([Ci.nsIFactory])
-};
+function isRegistered({ id }) isCIDRegistered(id)
+exports.isRegistered = isRegistered;
 
-var makeUuid = exports.makeUuid = function makeUuid() {
-  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"]
-                      .getService(Ci.nsIUUIDGenerator);
-  var uuid = uuidGenerator.generateUUID();
-  return uuid;
-};
+/**
+ * Registers given `component` object to be used to instantiate a particular
+ * class identified by `component.id`, and creates an association of class
+ * name and `component.contract` with the class.
+ */
+function register(factory) {
+  registerFactory(factory.id, factory.description, factory.contract, factory);
 
-var autoRegister = exports.autoRegister = function autoRegister(path) {
+  if (factory.unregister)
+    unload(unregister.bind(null, factory));
+}
+exports.register = register;
+
+/**
+ * Unregister a factory associated with a particular class identified by
+ * `factory.classID`.
+ */
+function unregister(factory) {
+  if (isRegistered(factory))
+    unregisterFactory(factory.id, factory);
+}
+exports.unregister = unregister;
+
+function autoRegister(path) {
   // TODO: This assumes that the url points to a directory
   // that contains subdirectories corresponding to OS/ABI and then
   // further subdirectories corresponding to Gecko platform version.
@@ -109,13 +172,9 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
   // Gecko-specific binaries for a component (which will be the case
   // if only frozen interfaces are used).
 
-  var appInfo = Cc["@mozilla.org/xre/app-info;1"]
-                .getService(Ci.nsIXULAppInfo);
-  var runtime = Cc["@mozilla.org/xre/app-info;1"]
-                .getService(Ci.nsIXULRuntime);
-
+  var runtime = require("./runtime");
   var osDirName = runtime.OS + "_" + runtime.XPCOMABI;
-  var platformVersion = appInfo.platformVersion.substring(0, 5);
+  var platformVersion = require("./xul-app").platformVersion.substring(0, 5);
 
   var file = Cc['@mozilla.org/file/local;1']
              .createInstance(Ci.nsILocalFile);
@@ -129,24 +188,20 @@ var autoRegister = exports.autoRegister = function autoRegister(path) {
 
   Cm.QueryInterface(Ci.nsIComponentRegistrar);
   Cm.autoRegister(file);
-};
+}
+exports.autoRegister = autoRegister;
 
-var register = exports.register = function register(options) {
-  options = {__proto__: options};
-  if (!options.uuid)
-    options.uuid = makeUuid();
-  return new Factory(options);
-};
+/**
+ * Returns registered factory that has a given `id` or `null` if not found.
+ */
+function factoryByID(id) classesByID[id] || null
+exports.factoryByID = factoryByID;
 
-var getClass = exports.getClass = function getClass(contractID, iid) {
-  if (!iid)
-    iid = Ci.nsISupports;
-  return Cm.getClassObjectByContractID(contractID, iid);
-};
-
-require("./unload").when(
-  function() {
-    var copy = factories.slice();
-    copy.reverse();
-    copy.forEach(function(factory) { factory.unregister(); });
-  });
+/**
+ * Returns factory registered with a given `contract` or `null` if not found.
+ * In contrast to `Cc[contract]` that does ignores new factory registration
+ * with a given `contract` this will return a factory currently associated
+ * with a `contract`.
+ */
+function factoryByContract(contract) factoryByID(Cm.contractIDToCID(contract))
+exports.factoryByContract = factoryByContract;

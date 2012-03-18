@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 
 import os, sys, re, hashlib
 import simplejson as json
@@ -179,7 +183,7 @@ class ManifestBuilder:
         self.files = [] # maps manifest index to (absfn,absfn) js/docs pair
         self.test_modules = [] # for runtime
 
-    def build(self, scan_tests):
+    def build(self, scan_tests, test_filter_re):
         # process the top module, which recurses to process everything it
         # reaches
         if "main" in self.target_cfg:
@@ -204,7 +208,9 @@ class ManifestBuilder:
                 for filename in os.listdir(d):
                     if filename.startswith("test-") and filename.endswith(".js"):
                         testname = filename[:-3] # require(testname)
-                        #re.search(r'^test-.*\.js$', filename):
+                        if test_filter_re:
+                            if not re.search(test_filter_re, testname):
+                                continue
                         tmi = ModuleInfo(self.target_cfg, "tests", testname,
                                          os.path.join(d, filename), None)
                         # scan the test's dependencies
@@ -571,7 +577,7 @@ class ManifestBuilder:
         return None
 
 def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
-                   extra_modules=[]):
+                   test_filter_re=None, extra_modules=[]):
     """
     Perform recursive dependency analysis starting from entry_point,
     building up a manifest of modules that need to be included in the XPI.
@@ -598,7 +604,7 @@ def build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
     """
 
     mxt = ManifestBuilder(target_cfg, pkg_cfg, deps, extra_modules)
-    mxt.build(scan_tests)
+    mxt.build(scan_tests, test_filter_re)
     return mxt
 
 

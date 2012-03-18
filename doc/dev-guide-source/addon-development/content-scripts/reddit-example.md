@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Reddit Example #
 
 This example add-on creates a panel containing the mobile version of Reddit.
@@ -38,7 +42,7 @@ link clicks.
 
 Finally, it registers a listener to the user-defined `click` event which in
 turn passes the URL into the `open` function of the
-[tabs](packages/addon-kit/docs/tabs.html) module.
+[tabs](packages/addon-kit/tabs.html) module.
 
 This is the `panel.js` content script that intercepts link clicks:
 

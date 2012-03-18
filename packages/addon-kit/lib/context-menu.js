@@ -1,43 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Drew Willcoxon <adw@mozilla.com> (Original Author)
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *   Matteo Ferretti <zer0@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -54,7 +19,7 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 const apiUtils = require("api-utils/api-utils");
 const collection = require("api-utils/collection");
 const { Worker } = require("api-utils/content");
-const url = require("api-utils/url");
+const { URL } = require("api-utils/url");
 const { MatchPattern } = require("api-utils/match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
@@ -609,7 +574,8 @@ function optionsRules() {
         let arr = apiUtils.getTypeOf(v) === "array" ? v : [v];
         try {
           return arr.every(function (s) {
-            return apiUtils.getTypeOf(s) === "string" && url.toFilename(s);
+            return apiUtils.getTypeOf(s) === "string" &&
+                   URL(s).scheme === 'resource';
           });
         }
         catch (err) {}
@@ -672,7 +638,7 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._contentWorker._listeners("context").length > 0;
+    return this._contentWorker.hasListenerFor("context");
   },
 
   // Returns the first string or truthy value returned by a context listener in
@@ -680,16 +646,11 @@ const ContextMenuWorker = Worker.compose({
   // no context listeners, returns false.  popupNode is the node that was
   // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._contentWorker._listeners("context");
-    for (let i = 0; i < listeners.length; i++) {
-      try {
-        let val = listeners[i].call(this._contentWorker._sandbox, popupNode);
-        if (typeof(val) === "string" || val)
-          return val;
-      }
-      catch (err) {
-        console.exception(err);
-      }
+    let results = this._contentWorker.emitSync("context", popupNode);
+    for (let i = 0; i < results.length; i++) {
+      let val = results[i];
+      if (typeof val === "string" || val)
+        return val;
     }
     return false;
   },
@@ -698,7 +659,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
+    this._contentWorker.emitSync("click", popupNode, clickedItemData);
   }
 });
 
@@ -875,7 +836,7 @@ let browserManager = {
   // for each currently open browser window.
   init: function BM_init() {
     require("api-utils/unload").ensure(this);
-    let windowTracker = new winUtils.WindowTracker(this);
+    let windowTracker = winUtils.WindowTracker(this);
 
     // Register content windows on content-document-global-created and
     // unregister them on inner-window-destroyed.  For rationale, see bug 667957

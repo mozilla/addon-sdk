@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Common Idioms #
 
 ## Constructors ##
@@ -31,9 +35,9 @@ To learn more about events, see the
 ## Content Scripting ##
 
 Several modules need to interact directly with web content, either web content
-they host themselves (such as the [`panel`](packages/addon-kit/docs/panel.html) module) or
+they host themselves (such as the [`panel`](packages/addon-kit/panel.html) module) or
 web content hosted by the browser (such as the
-[`page-mod`](packages/addon-kit/docs/page-mod.html)).
+[`page-mod`](packages/addon-kit/page-mod.html)).
 
 These modules follow a common pattern in which the code
 that actually interacts with the content is executed as a separate script

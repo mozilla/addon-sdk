@@ -1,8 +1,12 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Third Party Packages #
 
 The SDK APIs are implemented by modules, which are collected into packages
-such as [`addon-kit`](packages/addon-kit/addon-kit.html) and
-[`api-utils`](packages/api-utils/api-utils.html). The packages are kept
+such as [`addon-kit`](packages/addon-kit/index.html) and
+[`api-utils`](packages/api-utils/index.html). The packages are kept
 in the "packages" directory under the SDK root:
 
 <pre>
@@ -37,8 +41,8 @@ menu item to Firefox's Tools menu.
 
 First we'll download `menuitems` from
 [https://github.com/erikvold/menuitems-jplib](https://github.com/erikvold/menuitems-jplib/zipball/51080383cbb0fe2a05f8992a8aae890f4c014176).
-Like [`addon-kit`](packages/addon-kit/addon-kit.html) and
-[`api-utils`](packages/api-utils/api-utils.html), it's a
+Like [`addon-kit`](packages/addon-kit/index.html) and
+[`api-utils`](packages/api-utils/index.html), it's a
 [CommonJS package](dev-guide/addon-development/commonjs.html),
 so we'll extract it under the SDK's `packages` directory:
 
@@ -105,7 +109,7 @@ In your add-on's `package.json` add the line:
 Note that due to
 [bug 663480](https://bugzilla.mozilla.org/show_bug.cgi?id=663480), if you
 add a `dependencies` line to `package.json`, and you use any modules from
-built-in packages like [`addon-kit`](packages/addon-kit/addon-kit.html), then
+built-in packages like [`addon-kit`](packages/addon-kit/index.html), then
 you must also declare your dependency on that built-in package, like this:
 
 <pre>

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 html, body {
   min-width: 570px;         /* 2 x sidebar fullwidth + main-content padding */
   height: 100%;
@@ -5,14 +9,16 @@ html, body {
 
 pre {
   color: black;
-  background-color: #e0effd;
+  background-color: whitesmoke;
   padding: 10px;
+  overflow:auto;
 }
 
 h2 {
   color: black;
   background-color: #F0F8FF;
   padding: 10px;
+  overflow:auto;
 }
 
 #columns {
@@ -152,8 +158,8 @@ h2 {
   padding: 1em;
   border: solid 2px black;
   width: 75%;
-  background-color: #c63717;
-  color: white;
+  background-color: #FBEDED;
+  border: 1px solid #AC6262;
 }
 
 .logo {
@@ -313,4 +319,10 @@ h2 {
 .image-right {
   margin-left: 1.0em;
   float:right;
+}
+
+.experimental {
+  background-color: #FFFAAE;
+  color: black;
+  padding: 1px 10px;
 }

@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com]  -->
 
 The `passwords` module allows add-ons to interact with Firefox's
@@ -79,7 +83,7 @@ They contain the following properties:
     automatically generated for you. However, you can use it to work out
     which stored credentials belong to your add-on by comparing it with the
     <code>uri</code> property of the
-    <a href="packages/addon-kit/docs/self.html"><code>self</code></a>
+    <a href="packages/addon-kit/self.html"><code>self</code></a>
     module.</p>
   </td>
 </tr>

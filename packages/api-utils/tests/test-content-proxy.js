@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 const hiddenFrames = require("hidden-frame");
 const xulApp = require("xul-app");
 
@@ -137,6 +141,29 @@ exports.testKeyAccess = createProxyTest("", function(helper) {
     }
   );
 
+});
+
+
+// Bug 714778: There was some issue around `toString` functions
+//             that ended up being shared between content scripts
+exports.testSharedToStringProxies = createProxyTest("", function(helper) {
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      assert(document.location.toString() == "data:text/html,",
+             "document.location.toString()");
+      self.postMessage("next");
+    }
+  );
+  worker.on("message", function () {
+    helper.createWorker(
+      'new ' + function ContentScriptScope2() {
+        assert(document.location.toString() == "data:text/html,",
+               "document.location.toString()");
+        done();
+      }
+    );
+  });
 });
 
 
@@ -727,5 +754,47 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
       done();
     }
   );
+
+});
+
+// Bug 715755: proxy code throw an exception on COW
+// Create an http server in order to simulate real cross domain documents
+exports.testCrossDomainIframe = createProxyTest("", function (helper) {
+  let serverPort = 8099;
+  let server = require("httpd").startServerAsync(serverPort);
+  server.registerPathHandler("/", function handle(request, response) {
+    // Returns an empty webpage
+    response.write("");
+  });
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      // Waits for the server page url
+      self.on("message", function (url) {
+        // Creates an iframe with this page
+        let iframe = document.createElement("iframe");
+        iframe.addEventListener("load", function onload() {
+          iframe.removeEventListener("load", onload, true);
+          try {
+            // Try accessing iframe's content that is made of COW wrappers
+            // Take care of debug builds that add object address after `Window`
+            assert(String(iframe.contentWindow).match(/\[object Window.*\]/),
+                   "COW works properly");
+          } catch(e) {
+            assert(false, "COW fails : "+e.message);
+          }
+          self.port.emit("end");
+        }, true);
+        iframe.setAttribute("src", url);
+        document.body.appendChild(iframe);
+      });
+    }
+  );
+
+  worker.port.on("end", function () {
+    server.stop(helper.done);
+  });
+
+  worker.postMessage("http://localhost:" + serverPort + "/");
 
 });

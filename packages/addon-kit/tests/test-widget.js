@@ -1,3 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+"use strict";
+
 const {Cc,Ci} = require("chrome");
 const { Loader } = require('./helpers');
 
@@ -86,7 +92,7 @@ exports.testConstructor = function(test) {
     function() widgets.Widget({id:"fooID", label: "foo", content: "", image: ""}),
     "No content or contentURL property found. Widgets must have one or the other.",
     "throws on empty content");
-  
+
   // Test duplicated ID
   let duplicateID = widgets.Widget({id: "foo", label: "foo", content: "bar"});
   test.assertRaises(
@@ -94,7 +100,13 @@ exports.testConstructor = function(test) {
     /This widget ID is already used:/,
     "throws on duplicated id");
   duplicateID.destroy();
-  
+
+  // Test Bug 652527
+  test.assertRaises(
+    function() widgets.Widget({id: "", label: "bar", content: "bar"}),
+    /You have to specify a unique value for the id property of/,
+    "throws on falsey id");
+
   // Test duplicate label, different ID
   let w1 = widgets.Widget({id: "id1", label: "foo", content: "bar"});
   let w2 = widgets.Widget({id: "id2", label: "foo", content: "bar"});
@@ -435,6 +447,46 @@ exports.testConstructor = function(test) {
     onMessage: function(message) {
       this.tooltip = "bar";
       test.assertEqual(this.tooltip, "bar", "tooltip gets updated");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  // test allow attribute
+  tests.push(function testDefaultAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated by default");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitAllow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    allow: {script: true},
+    content: "<script>document.title = 'ok';</script>",
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertEqual(message, "ok", "scripts are evaluated when we want to");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  tests.push(function testExplicitDisallow() testSingleWidget({
+    id: "allow",
+    label: "allow.script attribute",
+    content: "<script>document.title = 'ok';</script>",
+    allow: {script: false},
+    contentScript: "self.postMessage(document.title)",
+    onMessage: function(message) {
+      test.assertNotEqual(message, "ok", "scripts aren't evaluated when " +
+                                         "explicitly blocked it");
       this.destroy();
       doneTest();
     }

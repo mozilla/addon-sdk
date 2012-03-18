@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 
 # Communicating using "port" #
 
@@ -47,7 +51,7 @@ the recipient but just emits the event and continues processing.
 ## Accessing `port` in the Content Script ##
 
 <span class="aside">Note that the global `self` object is completely
-different from the [`self` module](packages/addon-kit/docs/self.html), which
+different from the [`self` module](packages/addon-kit/self.html), which
 provides an API for an add-on to access its data files and ID.</span>
 
 In the content script the `port` object is available as a property of the
@@ -63,7 +67,7 @@ To receive an event from the add-on code:
 
 Compare this to the technique used to receive _built-in_ events in the
 content script. For example, to receive the `context` event in a content script
-associated with a [context menu](packages/addon-kit/docs/context-menu.html)
+associated with a [context menu](packages/addon-kit/context-menu.html)
 object, you would call the `on` function attached to the global `self` object:
 
     self.on("context", function() {

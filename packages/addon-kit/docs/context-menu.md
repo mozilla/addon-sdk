@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
@@ -113,9 +117,9 @@ exported by the `context-menu` module.
       match pattern strings.  When <code>matchPattern</code> is an array, the
       context occurs when the menu is invoked on a page whose URL matches any of
       the patterns.  These are the same match pattern strings that you use with
-      the <a href="packages/addon-kit/docs/page-mod.html"><code>page-mod</code></a>
+      the <a href="packages/addon-kit/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="packages/api-utils/docs/match-pattern.html">Read more about patterns</a>.
+      <a href="packages/api-utils/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -304,6 +308,15 @@ create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
 [Working with Content Scripts](dev-guide/addon-development/web-content.html)
 for more information.
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
 
 Show an "Edit Page Source" item when the user right-clicks a non-interactive
 part of the page:
@@ -696,7 +709,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](packages/api-utils/docs/match-pattern.html) string or an array of
+  A [match pattern](packages/api-utils/match-pattern.html) string or an array of
   match pattern strings.
 </api>
 </api>

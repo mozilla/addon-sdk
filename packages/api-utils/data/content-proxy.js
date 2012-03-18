@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 let Ci = Components.interfaces;
@@ -253,6 +257,17 @@ function wrap(value, obj, name, debug) {
     if (!Object.isExtensible(value) &&
         typedArraysCtor.indexOf(value.constructor) !== -1)
       return value;
+
+    // Bug 715755: do not proxify COW wrappers
+    // These wrappers throw an exception when trying to access
+    // any attribute that is not in a white list
+    try {
+      ("nonExistantAttribute" in value);
+    }
+    catch(e) {
+      if (e.message.indexOf("Permission denied to access property") !== -1)
+        return value;
+    }
 
     // We may have a XrayWrapper proxy.
     // For example:
@@ -591,7 +606,10 @@ const xRayWrappersMethodsFixes = {
   mozMatchesSelector: function (obj) {
     // Ensure that we are on an object to expose this buggy method
     try {
-      obj.QueryInterface(Ci.nsIDOMNSElement);
+      // Bug 707576 removed nsIDOMNSElement.
+      // Can be simplified as soon as Firefox 11 become the minversion
+      obj.QueryInterface("nsIDOMElement" in Ci ? Ci.nsIDOMElement :
+                                                 Ci.nsIDOMNSElement);
     }
     catch(e) {
       return null;
@@ -689,11 +707,20 @@ function handlerMaker(obj) {
       
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
-      if (name == "toString")
-        return wrap(obj.wrappedJSObject ? obj.wrappedJSObject.toString
-                                        : obj.toString,
-                    obj, name);
-      
+      if (name == "toString") {
+        if ("wrappedJSObject" in obj) {
+          // Bug 714778: we should not pass obj.wrappedJSObject.toString
+          // in order to avoid sharing its proxy over contents scripts:
+          return wrap(function () {
+            return obj.wrappedJSObject.toString.call(
+                     this.valueOf(UNWRAP_ACCESS_KEY), arguments);
+          }, obj, name);
+        }
+        else {
+          return wrap(obj.toString, obj, name);
+        }
+      }
+
       // Offer a way to retrieve XrayWrapper from a proxified node through `valueOf`
       if (name == "valueOf")
         return function (key) {

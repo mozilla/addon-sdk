@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # Credits #
 
 We'd like to thank our many Jetpack project contributors!  They include:
@@ -19,6 +23,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Matteo Ferretti (ZER0)](https://github.com/ZER0)
 * fuzzykiller
 * [Marcio Galli](https://github.com/taboca)
+* [Ben Gillbanks](http://www.iconfinder.com/browse/iconset/circular_icons/)
 * Felipe Gomes
 * Irakli Gozalishvili
 * Luca Greco
@@ -55,3 +60,4 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Henri Wiechers](https://github.com/hwiechers)
 * Drew Willcoxon
 * Piotr Zalewa
+* [David Guo](https://github.com/dglol)
