@@ -24,7 +24,7 @@ scripts".
 This is the place where the main logic of your add-on is implemented.
 
 Your add-on is implemented as a collection of one or more
-[CommonJS modules](dev-guide/addon-development/commonjs.html). Each module
+[CommonJS modules](dev-guide/guides/commonjs.html). Each module
 is supplied as a script stored under the `lib` directory under your add-on's
 root directory.
 
@@ -46,7 +46,7 @@ files and referenced by filename. If they are stored in separate files you
 should store them under the `data` directory under your add-on's root.
 
 To learn all about content scripts read the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 ## API Access for Add-on Code and Content Scripts ##
@@ -89,7 +89,7 @@ SDK.
   </tr>
 
   <tr>
-    <td>The <a href="dev-guide/addon-development/console.html">console</a>
+    <td>The <a href="dev-guide/console.html">console</a>
 global supplied by the SDK.
     </td>
     <td class="check">✔</td>
@@ -109,7 +109,7 @@ such as <code>window</code>, <code>document</code>, and
   <tr>
     <td>The <code>self</code> global, used for communicating between content
 scripts and add-on code. See the guide to
-<a href="dev-guide/tutorials/content-scripts/using-port.html">communicating with content scripts</a>
+<a href="dev-guide/guides/content-scripts/using-port.html">communicating with content scripts</a>
 for more details.
     </td>
     <td class="cross">✘</td>

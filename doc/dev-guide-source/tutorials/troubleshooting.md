@@ -37,7 +37,7 @@ When you run `cfx` to test your add-on or run unit tests, it prints out the
 location of the Firefox or XULRunner binary that it found, so you can check its
 output to be sure.
 
-[cfx Tool]: dev-guide/addon-development/cfx-tool.html
+[cfx Tool]: dev-guide/cfx-tool.html
 
 
 Check Your Text Console

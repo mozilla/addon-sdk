@@ -26,7 +26,7 @@ To ensure your add-on works for everyone, generate paths using the
 [`join`](packages/api-utils/file.html#join(...)) function.  Unfortunately
 this API does not currently provide a way to obtain an absolute base path which
 you could then use with `join`.  For now, you need to
-[`require("chrome")`](dev-guide/tutorials/chrome.html) and use the
+[`require("chrome")`](dev-guide/module-development/chrome.html) and use the
 XPCOM directory service as described at
 [MDN](https://developer.mozilla.org/en/Code_snippets/File_I%2F%2FO#Getting_special_files).
 

@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html),
+[installed the SDK](dev-guide/tutorials/installation.html),
 learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html),
 and followed the tutorial on

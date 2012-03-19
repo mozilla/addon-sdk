@@ -152,7 +152,7 @@ but declarative contexts won't help you there.
 When you need more control control over the context in which your menu items are
 shown, you can use content scripts.  Like other APIs in the SDK, the
 `context-menu` API uses
-[content scripts](dev-guide/addon-development/web-content.html) to let your
+[content scripts](dev-guide/guides/content-scripts/index.html) to let your
 add-on interact with pages in the browser.  Each menu item you create in the
 top-level context menu can have a content script.
 
@@ -306,7 +306,7 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-on, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 for more information.
 
 <div class="warning">
@@ -514,7 +514,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -643,7 +643,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>

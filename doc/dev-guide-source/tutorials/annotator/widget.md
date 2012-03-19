@@ -112,4 +112,4 @@ Left- and right-clicks should produce the appropriate debug output, and a
 left-click should also change the widget icon to signal that it is active.
 
 Next we'll add the code to
-[create annotations](dev-guide/addon-development/annotator/creating.html).
+[create annotations](dev-guide/tutorials/annotator/creating.html).

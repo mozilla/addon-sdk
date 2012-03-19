@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html)
+[installed the SDK](dev-guide/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
@@ -40,7 +40,7 @@ info: Hello World!
 ## `console` in Content Scripts ##
 
 You can use the console in
-[content scripts](dev-guide/addon-development/web-content.html) as well
+[content scripts](dev-guide/guides/content-scripts/index.html) as well
 as in your main add-on code. The following add-on logs the HTML content
 of every tab the user loads, by calling `console.log()` inside a content
 script:
@@ -64,4 +64,4 @@ add-on in the Add-on Builder, then the messages appear in Firefox's
 ## Learning More ##
 
 For the complete `console` API, see its
-[API reference](dev-guide/addon-development/console.html).
+[API reference](dev-guide/console.html).

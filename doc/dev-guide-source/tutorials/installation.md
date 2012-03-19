@@ -11,7 +11,7 @@ To develop with the Add-on SDK, you'll need:
 * [Python](http://www.python.org/) 2.5 or 2.6. Note that versions 3.0 and 3.1
   of Python are not supported. Make sure that Python is in your path.
 
-* A [compatible version of Firefox](dev-guide/addon-development/firefox-compatibility.html).
+* A [compatible version of Firefox](dev-guide/guides/firefox-compatibility.html).
 That's either: the version of Firefox shipping at the time the SDK shipped,
 or the Beta version of Firefox at the time the SDK shipped. See the
 [SDK Release Schedule](https://wiki.mozilla.org/Jetpack/SDK_2012_Release_Schedule)
@@ -144,7 +144,7 @@ build the documentation for the SDK and display it in a browser.
 
 ## Problems? ##
 
-Try the [Troubleshooting](dev-guide/addon-development/troubleshooting.html)
+Try the [Troubleshooting](dev-guide/tutorials/troubleshooting.html)
 page.
 
 ## Next Steps ##

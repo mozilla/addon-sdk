@@ -43,7 +43,7 @@ This data lives in the main package's `data/` directory, immediately below
 the `package.json` file. All files in this directory will be copied into the
 XPI and made available through the `data` object.
 
-The [Package Specification](dev-guide/package-spec.html)
+The [Package Specification](dev-guide/addon-development/package-spec.html)
 section explains the `package.json` file.
 
 <api name="data.load">

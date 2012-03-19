@@ -8,7 +8,7 @@ to be of interest to SDK module developers, rather than add-on developers.
 ## Components ##
 
 To access the infamous and powerful `Components` object, see the
-[Chrome Authority](dev-guide/tutorials/chrome.html) documentation.
+[Chrome Authority](dev-guide/module-development/chrome.html) documentation.
 
 ## \_\_url\_\_ ##
 

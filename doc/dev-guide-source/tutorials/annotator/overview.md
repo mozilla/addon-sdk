@@ -60,4 +60,4 @@ Let's get started by creating a directory called "annotator". Navigate to it
 and type `cfx init`.
 
 Next, we will implement the
-[widget](dev-guide/addon-development/annotator/widget.html).
+[widget](dev-guide/tutorials/annotator/widget.html).

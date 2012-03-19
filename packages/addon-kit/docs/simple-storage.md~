@@ -40,7 +40,7 @@ simple storage won't work with add-ons executed using `cfx run` - that
 is, stored data will not persist from one run to the next.
 
 The easiest solution to this problem is to use the
-[`--profiledir` option to `cfx run`](dev-guide/cfx-tool.html#profiledir).
+[`--profiledir` option to `cfx run`](dev-guide/addon-development/cfx-tool.html#profiledir).
 
 If you use this method, you must end your debugging session by
 quitting Firefox normally, not by cancelling the shell command.

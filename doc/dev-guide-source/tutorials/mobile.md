@@ -11,7 +11,7 @@ stable, the setup instructions and cfx commands are likely to change.
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html)
+[installed the SDK](dev-guide/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
@@ -106,7 +106,7 @@ on the device. Then execute `cfx run` with some extra options:
 cfx run -a fennec-on-device -b /path/to/adb --mobile-app fennec --force-mobile
 </pre>
 
-See ["cfx Options for Mobile Development"](dev-guide/addon-development/mobile.html#cfx-options)
+See ["cfx Options for Mobile Development"](dev-guide/tutorials/mobile.html#cfx-options)
 for the details of this command.
 
 In the command shell, you should see something like:

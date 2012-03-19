@@ -20,7 +20,7 @@ technologies: JavaScript, HTML, and CSS. The SDK includes JavaScript APIs which 
     <td>
       <h4><a href="dev-guide/tutorials/index.html#getting-started">Getting started</a></h4>
       How to
-      <a href="dev-guide/addon-development/installation.html">install the SDK</a> and
+      <a href="dev-guide/tutorials/installation.html">install the SDK</a> and
       <a href="dev-guide/tutorials/getting-started-with-cfx.html">use the cfx
       tool</a> to develop, test, and package add-ons.
     </td>
@@ -56,13 +56,13 @@ Learn about common development techniques, such as
 <a href="dev-guide/tutorials/unit-testing.html">unit testing</a>,
 <a href="dev-guide/tutorials/logging.html">logging</a>,
 <a href="dev-guide/tutorials/reusable-modules.html">creating reusable modules</a>,
-<a href="dev-guide/addon-development/l10n.html">localization</a>, and
-<a href="dev-guide/addon-development/mobile.html">mobile development</a>.
+<a href="dev-guide/tutorials/l10n.html">localization</a>, and
+<a href="dev-guide/tutorials/mobile.html">mobile development</a>.
     </td>
 
     <td>
       <h4><a href="dev-guide/tutorials/index.html#putting-it-together">Putting it together</a></h4>
-      Walkthrough of the <a href="dev-guide/addon-development/annotator/annotator.html">Annotator</a> example add-on.
+      Walkthrough of the <a href="dev-guide/tutorials/annotator/index.html">Annotator</a> example add-on.
     </td>
   </tr>
 
@@ -70,7 +70,7 @@ Learn about common development techniques, such as
 
 <hr>
 
-## <a href="dev-guide/addon-development/guides.html">Guides</a> ##
+## <a href="dev-guide/guides/index.html">Guides</a> ##
 
 <table class="catalog">
 <colgroup>
@@ -79,39 +79,39 @@ Learn about common development techniques, such as
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#sdk-infrastructure">SDK infrastructure</a></h4>
+      <h4><a href="dev-guide/guides/index.html#sdk-infrastructure">SDK infrastructure</a></h4>
       Aspects of the SDK's underlying technology:
-      <a href="dev-guide/addon-development/commonjs.html">CommonJS</a>, the
-      <a href="dev-guide/addon-development/program-id.html">Program ID</a>, the
-      <a href="dev-guide/addon-development/module-search.html">module search algorithm</a>
+      <a href="dev-guide/guides/commonjs.html">CommonJS</a>, the
+      <a href="dev-guide/guides/program-id.html">Program ID</a>, the
+      <a href="dev-guide/guides/module-search.html">module search algorithm</a>
       and the rules defining
-      <a href="dev-guide/addon-development/firefox-compatibility.html">Firefox compatibility</a>.
+      <a href="dev-guide/guides/firefox-compatibility.html">Firefox compatibility</a>.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#sdk-idioms">SDK idioms</a></h4>
+      <h4><a href="dev-guide/guides/index.html#sdk-idioms">SDK idioms</a></h4>
       The SDK's
-      <a href="dev-guide/addon-development/events.html">event framework</a> and the
-      <a href="dev-guide/addon-development/two-types-of-scripts.html">distinction between add-on scripts and content scripts</a>.
+      <a href="dev-guide/guides/events.html">event framework</a> and the
+      <a href="dev-guide/guides/two-types-of-scripts.html">distinction between add-on scripts and content scripts</a>.
     </td>
 
   </tr>
 
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#content-scripts">Content scripts</a></h4>
-      A <a href="dev-guide/addon-development/web-content.html">detailed guide to working with content scripts</a>,
+      <h4><a href="dev-guide/guides/index.html#content-scripts">Content scripts</a></h4>
+      A <a href="dev-guide/guides/content-scripts/index.html">detailed guide to working with content scripts</a>,
       including: how to load content scripts, which objects
       content scripts can access, and how to communicate
       between content scripts and the rest of your add-on.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#xul-migration">XUL migration</a></h4>
-      A guide to <a href="dev-guide/addon-development/xul-migration.html">porting XUL add-ons to the SDK</a>.
+      <h4><a href="dev-guide/guides/index.html#xul-migration">XUL migration</a></h4>
+      A guide to <a href="dev-guide/guides/xul-migration.html">porting XUL add-ons to the SDK</a>.
       This guide includes a
-      <a href="dev-guide/addon-development/sdk-vs-xul.html">comparison of the two toolsets</a> and a
-      <a href="dev-guide/addon-development/library-detector.html">worked example</a> of porting a XUL add-on.
+      <a href="dev-guide/guides/sdk-vs-xul.html">comparison of the two toolsets</a> and a
+      <a href="dev-guide/guides/library-detector.html">worked example</a> of porting a XUL add-on.
     </td>
 
   </tr>
@@ -139,11 +139,11 @@ Learn about common development techniques, such as
     <td>
       <h4>Tools reference</h4>
       Reference documentation for the
-      <a href="dev-guide/addon-development/cfx-tool.html">cfx tool</a>
+      <a href="dev-guide/cfx-tool.html">cfx tool</a>
       used to develop, test, and package add-ons, the
-      <a href="dev-guide/addon-development/console.html">console</a>
+      <a href="dev-guide/console.html">console</a>
       global used for logging, and the
-      <a href="dev-guide/addon-development/package-spec.html">package.json</a> file.
+      <a href="dev-guide/package-spec.html">package.json</a> file.
     </td>
 
   </tr>

@@ -41,14 +41,14 @@ _content scripts_.
 A single add-on may use multiple content scripts, and content scripts loaded
 into the same context can interact directly with each other as well as with
 the web content itself. See the chapter on
-<a href="dev-guide/tutorials/content-scripts/access.html">
+<a href="dev-guide/guides/content-scripts/access.html">
 content script access</a>.
 
 The add-on script and content script can't directly access each other's state.
 Instead, you can define your own events which each side can emit, and the
 other side can register listeners to handle them. The interfaces are similar
 to the event-handling interfaces described in the
-[Working with Events](dev-guide/addon-development/events.html) guide.
+[Working with Events](dev-guide/guides/events.html) guide.
 
 The diagram below shows an overview of the main components and their
 relationships. The gray fill represents code written by the add-on developer.
@@ -75,17 +75,17 @@ maintained as a separate file at all.
 
 The next few chapters explain content scripts in detail:
 
-* [Loading Content Scripts](dev-guide/tutorials/content-scripts/loading.html):
+* [Loading Content Scripts](dev-guide/guides/content-scripts/loading.html):
 how to attach content scripts to web pages, and how to control the point at
 which they are executed
-* [Content Script Access](dev-guide/tutorials/content-scripts/access.html):
+* [Content Script Access](dev-guide/guides/content-scripts/access.html):
 detail about the access content scripts get to the DOM, to other content scripts,
 and to scripts loaded by the page itself
-* [Communicating Using <code>port</code>](dev-guide/tutorials/content-scripts/using-port.html):
+* [Communicating Using <code>port</code>](dev-guide/guides/content-scripts/using-port.html):
 how to communicate between your add-on and its content scripts using the
 <code>port</code> object
-* [Communicating using <code>postMessage()</code>](dev-guide/tutorials/content-scripts/using-postmessage.html):
+* [Communicating using <code>postMessage()</code>](dev-guide/guides/content-scripts/using-postmessage.html):
 how to communicate between your add-on and its content scripts using the
 <code>postMessage()</code> API
-* [Example](dev-guide/tutorials/content-scripts/reddit-example.html):
+* [Example](dev-guide/guides/content-scripts/reddit-example.html):
 a simple example add-on using content scripts

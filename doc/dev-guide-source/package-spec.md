@@ -64,7 +64,7 @@ called `package.json`. This file is also referred to as the
 * `id` - a globally unique identifier for the package. When the package is
    built as an XPI, this is used as the add-on's `em:id` element in its
   `install.rdf`. See the
-  [Program ID page](dev-guide/addon-development/program-id.html).
+  [Program ID page](dev-guide/guides/program-id.html).
 
 * `version` - a String representing the version of the package. If the
   package is ever built as an XPI, this is used as the add-on's

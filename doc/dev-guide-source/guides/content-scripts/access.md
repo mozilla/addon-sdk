@@ -75,7 +75,7 @@ things that you might expect to work, won't. For example, if the page includes
 a library like [jQuery](http://www.jquery.com), or any other page script
 adds other objects to any DOM nodes, they won't be visible to the content
 script. So to use jQuery you'll typically have to add it as a content script,
-as in [this example](dev-guide/addon-development/content-scripts/reddit-example.html).
+as in [this example](dev-guide/guides/content-scripts/reddit-example.html).
 
 ### Adding Event Listeners ###
 

@@ -15,7 +15,7 @@ add-on can receive notifications of these events.
 <span class="aside">
 We talk about content
 scripts in more detail in the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.</span>
 Additionally, if you're using content scripts to interact with web content,
 you can define your own events and use them to communicate between the main
@@ -32,7 +32,7 @@ opening, pages loading, mouse clicks
 add-on code
 
 This guide only covers the first of these; the second is explained in the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 ## Adding Listeners ##

@@ -9,7 +9,7 @@ implementing the [Worker][] interface defined by the W3C, with minor
 differences.
 
 Content workers are message-passing facilities for communication between
-[content scripts](dev-guide/addon-development/web-content.html) and the main
+[content scripts](dev-guide/guides/content-scripts/index.html) and the main
 add-on code.
 
 It is important to note that unlike "web workers," these workers run in the
@@ -106,7 +106,7 @@ worker.
 
 @argument {value}
 The event listener is passed the message, which must be a
-<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">

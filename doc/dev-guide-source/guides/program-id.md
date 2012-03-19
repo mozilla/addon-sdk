@@ -14,7 +14,7 @@ it to distinguish between new add-ons and updates to existing add-ons, and the
 [`simple-storage`](packages/addon-kit/simple-storage.html) module uses it
 to figure out which stored data belongs to which add-on.
 
-It is read from the `id` key in your add-on's [`package.json`](dev-guide/addon-development/package-spec.html) file.
+It is read from the `id` key in your add-on's [`package.json`](dev-guide/package-spec.html) file.
 `cfx init` does not create this key, so if you don't set it yourself, the
 first time you execute `cfx run` or `cfx xpi`, then `cfx` will create an
 ID for you, and will show a message like this:

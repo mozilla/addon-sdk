@@ -366,4 +366,4 @@ off while in and out of Private Browsing mode.
 
 Now we can create and store annotations, the last piece is to
 [display them when the user loads the
-page](dev-guide/addon-development/annotator/displaying.html).
+page](dev-guide/tutorials/annotator/displaying.html).

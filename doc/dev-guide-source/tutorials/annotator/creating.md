@@ -341,4 +341,4 @@ this:
 </pre>
 
 That's a complete annotation, and in the next section we'll deal with
-[storing it](dev-guide/addon-development/annotator/storing.html).
+[storing it](dev-guide/tutorials/annotator/storing.html).

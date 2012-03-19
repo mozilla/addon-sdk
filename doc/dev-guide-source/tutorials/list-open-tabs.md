@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html)
+[installed the SDK](dev-guide/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
@@ -33,7 +33,7 @@ the URLs of open tabs when the user clicks it:
 
 If you run the add-on, load a couple of tabs, and click the
 widget, you'll see output in the
-[console](dev-guide/addon-development/console.html) that looks like this:
+[console](dev-guide/console.html) that looks like this:
 
 <pre>
 info: http://www.mozilla.org/en-US/about/

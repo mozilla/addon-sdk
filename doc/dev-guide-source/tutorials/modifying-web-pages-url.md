@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html)
+[installed the SDK](dev-guide/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
@@ -187,4 +187,4 @@ To learn more about page-mod, see its
 [API reference page](packages/addon-kit/page-mod.html).
 
 To learn more about content scripts, see the
-[content scripts guide](dev-guide/addon-development/web-content.html).
+[content scripts guide](dev-guide/guides/content-scripts/index.html).

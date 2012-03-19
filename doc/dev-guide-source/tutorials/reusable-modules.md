@@ -6,7 +6,7 @@
 
 <span class="aside">
 To follow this tutorial you'll need to have
-[installed the SDK](dev-guide/addon-development/installation.html)
+[installed the SDK](dev-guide/tutorials/installation.html)
 and learned the
 [basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
@@ -37,7 +37,7 @@ geolocation API in Firefox.
 Suppose we want to use the
 [geolocation API built into Firefox](https://developer.mozilla.org/en/using_geolocation).
 The SDK doesn't provide an API to access geolocation, but we can
-[access the underlying XPCOM API using `require("chrome")`](dev-guide/addon-development/xul-migration.html#xpcom).
+[access the underlying XPCOM API using `require("chrome")`](dev-guide/guides/xul-migration.html#xpcom).
 
 The following add-on adds a [button to the toolbar](dev-guide/tutorials/adding-toolbar-button.html):
 when the user clicks the button, it loads the
@@ -401,7 +401,7 @@ and the module it contains.
 
 The "package.json" file in your package's root directory contains metadata
 for your package. See the
-[package specification](dev-guide/addon-development/package-spec.html) for
+[package specification](dev-guide/package-spec.html) for
 full details. If you intend to distribute the package, this is a good place
 to add your name as the author, choose a distribution license, and so on.
 

@@ -78,7 +78,7 @@ You can point `cfx run` at a different `package.json` file using the
 `--static-args` option.
 
 You can specify a different version of the
-<a href="dev-guide/appendices/glossary.html#host-application">host application</a>
+<a href="dev-guide/glossary.html#host-application">host application</a>
 using the `--binary` option, passing in the path to the application binary to
 run. The path may be specified as a full path or may be relative to the current
 directory. But note that the version must be 4.0b7 or later.
@@ -88,7 +88,7 @@ directory. But note that the version must be 4.0b7 or later.
 existing profile using the `--profiledir` option, and this gives you access to
 that profile's history, bookmarks, and other add-ons. This enables you to run
 your add-on alongside debuggers like [Firebug](http://getfirebug.com/).
-See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+See <a href="dev-guide/cfx-tool.html#profiledir">
 "Using --profiledir"</a> for more information.
 
 <table>
@@ -140,7 +140,7 @@ See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
   </td>
   <td>
     Pass a set of options by
-    <a href="dev-guide/addon-development/cfx-tool.html#configurations">referencing a named configuration</a>.
+    <a href="dev-guide/cfx-tool.html#configurations">referencing a named configuration</a>.
   </td>
 </tr>
 
@@ -154,7 +154,7 @@ See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
     located in PROFILEDIR. PROFILEDIR may be specified as
     a full path or as a path relative to the current directory.</p>
 
-    <p>See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+    <p>See <a href="dev-guide/cfx-tool.html#profiledir">
     "Using --profiledir"</a> for more information.
   </td>
 </tr>
@@ -174,7 +174,7 @@ See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
     <code>--static-args=STATIC_ARGS</code>
   </td>
   <td>
-    <a href="dev-guide/addon-development/cfx-tool.html#arguments">Pass arguments to your add-on</a>,
+    <a href="dev-guide/cfx-tool.html#arguments">Pass arguments to your add-on</a>,
     in JSON format.
   </td>
 </tr>
@@ -195,7 +195,7 @@ See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
   </td>
   <td>
     By default, <code>cfx run</code> uses Firefox as the
-    <a href="dev-guide/appendices/glossary.html#host-application">host application</a>.
+    <a href="dev-guide/glossary.html#host-application">host application</a>.
     This option enables you to select a different host. You can specify
     "firefox", "xulrunner", "fennec", or "thunderbird". But note that at
     present only Firefox is supported.
@@ -274,7 +274,7 @@ To launch the application, enter the following command:
   </td>
   <td>
     Supply a different location for
-    <a href="dev-guide/addon-development/program-id.html">signing keys</a>.
+    <a href="dev-guide/guides/program-id.html">signing keys</a>.
     KEYDIR may be specified as a full path or as a path relative to the
     current directory.
   </td>
@@ -373,7 +373,7 @@ times.
   </td>
   <td>
     Pass a set of options by
-    <a href="dev-guide/addon-development/cfx-tool.html#configurations">referencing a named configuration</a>.
+    <a href="dev-guide/cfx-tool.html#configurations">referencing a named configuration</a>.
   </td>
 </tr>
 
@@ -387,7 +387,7 @@ times.
     located in PROFILEDIR. PROFILEDIR may be specified as
     a full path or as a path relative to the current directory.</p>
 
-    <p>See <a href="dev-guide/addon-development/cfx-tool.html#profiledir">
+    <p>See <a href="dev-guide/cfx-tool.html#profiledir">
     "Using --profiledir"</a> for more information.
   </td>
 </tr>
@@ -417,7 +417,7 @@ times.
   </td>
   <td>
     By default, <code>cfx test</code> uses Firefox as the
-    <a href="dev-guide/appendices/glossary.html#host-application">host application</a>.
+    <a href="dev-guide/glossary.html#host-application">host application</a>.
     This option enables you to select a different host. You can specify
     "firefox", "xulrunner", "fennec", or "thunderbird". But note that at
     present only Firefox is supported.
@@ -492,7 +492,7 @@ To launch the application, enter the following command:
   </td>
   <td>
     Supply a different location for
-    <a href="dev-guide/addon-development/program-id.html">signing keys</a>.
+    <a href="dev-guide/guides/program-id.html">signing keys</a>.
     KEYDIR may be specified as a full path or as a path relative to the
     current directory.
   </td>
@@ -613,7 +613,7 @@ add-on whenever it is run.
   </td>
   <td>
     Pass a set of options by
-    <a href="dev-guide/addon-development/cfx-tool.html#configurations">referencing a named configuration</a>.
+    <a href="dev-guide/cfx-tool.html#configurations">referencing a named configuration</a>.
   </td>
 </tr>
 
@@ -633,7 +633,7 @@ add-on whenever it is run.
     <code>--static-args=STATIC_ARGS</code>
   </td>
   <td>
-    <a href="dev-guide/addon-development/cfx-tool.html#arguments">Pass arguments to your add-on</a>,
+    <a href="dev-guide/cfx-tool.html#arguments">Pass arguments to your add-on</a>,
     in JSON format.
   </td>
 </tr>
@@ -700,7 +700,7 @@ add-on whenever it is run.
   </td>
   <td>
     Supply a different location for
-    <a href="dev-guide/addon-development/program-id.html">signing keys</a>.
+    <a href="dev-guide/guides/program-id.html">signing keys</a>.
     KEYDIR may be specified as a full path or as a path relative to the
     current directory.
   </td>

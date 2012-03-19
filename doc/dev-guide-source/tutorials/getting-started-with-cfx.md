@@ -3,7 +3,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <span class="aside">This tutorial assumes that you've read and followed the instructions in
-the [installation guide](dev-guide/addon-development/installation.html), to
+the [installation guide](dev-guide/tutorials/installation.html), to
 install and activate the SDK.</span>
 
 # Getting Started With cfx #
@@ -12,7 +12,7 @@ To create add-ons using the SDK you'll have to get to know the `cfx`
 command-line tool. It's what you'll use for testing and packaging add-ons.
 
 There's comprehensive
-[reference documentation](dev-guide/addon-development/cfx-tool.html) covering
+[reference documentation](dev-guide/cfx-tool.html) covering
 everything you can do using `cfx`, but in this tutorial we'll introduce the
 three commands you need to get going:
 

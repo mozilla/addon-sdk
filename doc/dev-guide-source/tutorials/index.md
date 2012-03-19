@@ -19,7 +19,7 @@ on the left for the full list of APIs.
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/installation.html">Installation</a></h4>
+      <h4><a href="dev-guide/tutorials/installation.html">Installation</a></h4>
       Download, install, and initialize the SDK on Windows, OS X and Linux.
     </td>
 
@@ -32,7 +32,7 @@ on the left for the full list of APIs.
   <tr>
 
     <td>
-      <h4><a href="dev-guide/addon-development/troubleshooting.html">Troubleshooting</a></h4>
+      <h4><a href="dev-guide/tutorials/troubleshooting.html">Troubleshooting</a></h4>
       Some pointers for fixing common problems and getting more help.
     </td>
 
@@ -187,7 +187,7 @@ on the left for the full list of APIs.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/l10n.html">Localization</a></h4>
+      <h4><a href="dev-guide/tutorials/l10n.html">Localization</a></h4>
       Writing localizable code.
     </td>
 
@@ -195,13 +195,13 @@ on the left for the full list of APIs.
 
   <tr>
     <td>
-      <h4><a href="dev-guide/module-development/chrome.html">Chrome authority</a></h4>
+      <h4><a href="dev-guide/tutorials/chrome.html">Chrome authority</a></h4>
       Get access to the <a href="https://developer.mozilla.org/en/Components_object">Components</a>
       object, enabling your add-on to load and use any XPCOM object.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/mobile.html">Mobile development</a></h4>
+      <h4><a href="dev-guide/tutorials/mobile.html">Mobile development</a></h4>
       Get set up to develop add-ons for Firefox Mobile on Android.
     </td>
 
@@ -220,7 +220,7 @@ on the left for the full list of APIs.
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/annotator/annotator.html">Annotator add-on</a></h4>
+      <h4><a href="dev-guide/tutorials/annotator/index.html">Annotator add-on</a></h4>
       A walkthrough of a relatively complex add-on.
     </td>
 

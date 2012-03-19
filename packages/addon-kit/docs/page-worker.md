@@ -53,9 +53,9 @@ For example, the content script might read some content and send it back to
 the main add-on, which could store it using the
 [`simple-storage`](packages/addon-kit/simple-storage.html) API. You can
 communicate with the script using either the
-[`postMessage()`](dev-guide/tutorials/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/tutorials/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 
 For example, this add-on loads a page from Wikipedia, and runs a content script
 in it to send all the headers back to the main add-on code:
@@ -93,7 +93,7 @@ secure, debug and review.</p>
 </div>
 
 To learn much more about content scripts, see the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 <div class="experimental">
@@ -113,9 +113,9 @@ you can just include a script from the HTML file in the normal way, using
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/tutorials/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/tutorials/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
@@ -164,7 +164,7 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     A local file URL or an array of local file URLs of content scripts to load.
     Content scripts specified by this option are loaded *before* those specified
     by the `contentScript` option.  See
-    [Working with Content Scripts](dev-guide/addon-development/web-content.html)
+    [Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
     for help on setting this property.
   @prop [contentScript] {string,array}
     A string or an array of strings containing the texts of content scripts to
@@ -200,7 +200,7 @@ loaded until its `destroy` method is called or the add-on is unloaded.
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/tutorials/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -262,7 +262,7 @@ The message to send.  Must be JSON-able.
 <api name="on">
 @method
 Registers an event listener with the page worker.  See
-[Working with Events](dev-guide/addon-development/events.html) for help with
+[Working with Events](dev-guide/guides/events.html) for help with
 events.
 @param type {string}
 The type of event to listen for.
@@ -289,7 +289,7 @@ code in the page worker's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>
 </api>
 
 <api name="error">

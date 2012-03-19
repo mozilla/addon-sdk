@@ -18,7 +18,7 @@ the global `self` object:
     self.postMessage(contentScriptMessage);
 
 This takes a single parameter, the message payload, which may be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 
 To receive a message from the add-on script, use `self`'s `on` function:
 

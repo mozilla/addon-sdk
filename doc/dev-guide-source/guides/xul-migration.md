@@ -8,37 +8,37 @@
 This guide aims to help you migrate a XUL-based add-on to the SDK.
 
 First we'll outline how to decide whether
-<a href="dev-guide/addon-development/xul-migration.html#should-you-migrate">
+<a href="dev-guide/guides/xul-migration.html#should-you-migrate">
 your add-on is a good candidate for migration</a> via a
-[comparison of the benefits and limitations of the SDK versus XUL development](dev-guide/addon-development/sdk-vs-xul.html).
+[comparison of the benefits and limitations of the SDK versus XUL development](dev-guide/guides/sdk-vs-xul.html).
 
 Next, we'll look at some of the main tasks involved in migrating:
 
-* <a href="dev-guide/addon-development/xul-migration.html#content-scripts">
+* <a href="dev-guide/guides/xul-migration.html#content-scripts">
 working with content scripts</a>
-* <a href="dev-guide/addon-development/xul-migration.html#supported-apis">
+* <a href="dev-guide/guides/xul-migration.html#supported-apis">
 using the SDK's supported APIs</a>
 * how to
 go beyond the supported APIs when necessary, by:
-    * <a href="dev-guide/addon-development/xul-migration.html#third-party-packages">
+    * <a href="dev-guide/guides/xul-migration.html#third-party-packages">
 using third party modules</a>
-    * <a href="dev-guide/addon-development/xul-migration.html#low-level-apis">
+    * <a href="dev-guide/guides/xul-migration.html#low-level-apis">
 using the SDK's low-level APIs</a>
-    * <a href="dev-guide/addon-development/xul-migration.html#xpcom">
+    * <a href="dev-guide/guides/xul-migration.html#xpcom">
 getting direct access to XPCOM</a>
 
 Finally, we'll walk through a
-<a href="dev-guide/addon-development/xul-migration.html#library-detector">
+<a href="dev-guide/guides/xul-migration.html#library-detector">
 simple example</a>.
 
 ## <a name="should-you-migrate">Should You Migrate?</a> ##
 
 See this [comparison of the benefits and limitations of SDK development
-and XUL development](dev-guide/addon-development/sdk-vs-xul.html).
+and XUL development](dev-guide/guides/sdk-vs-xul.html).
 
 Whether you should migrate a particular add-on is largely a matter of
 how well the SDK's
-<a href="dev-guide/addon-development/xul-migration.html#supported-apis">
+<a href="dev-guide/guides/xul-migration.html#supported-apis">
 supported APIs</a> meet its needs.
 
 * If your add-on can accomplish everything it needs using only the
@@ -94,7 +94,7 @@ need to use a similar pattern, so it's likely that a XUL-based add-on will
 need to be rewritten anyway.
 
 There's much more information on content scripts in the
-[Working With Content Scripts](dev-guide/addon-development/web-content.html) guide.
+[Working With Content Scripts](dev-guide/guides/content-scripts/index.html) guide.
 
 ## <a name="supported-apis">Using the Supported APIs</a> ##
 
@@ -316,7 +316,7 @@ capabilities.
 
 ## <a name="library-detector">Example: Porting the Library Detector</a> ##
 
-[Porting the Library Detector](dev-guide/addon-development/library-detector.html)
+[Porting the Library Detector](dev-guide/guides/library-detector.html)
 walks through the process of porting a XUL-based add-on to the
 SDK. It's a very simple add-on and a good candidate for porting because
 there are suitable SDK APIs for all its features.

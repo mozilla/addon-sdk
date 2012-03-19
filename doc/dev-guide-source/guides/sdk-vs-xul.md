@@ -63,7 +63,7 @@ guidelines for Firefox, giving your users a better, more consistent experience.<
 <td> <strong><a name="mobile_support">Mobile Support</a></strong></td>
 <td><p>Starting in SDK 1.5, we've added experimental support for developing
 add-ons on the new native version of Firefox Mobile. See the
-<a href="dev-guide/addon-development/mobile.html">tutorial on mobile development<a>.</p></td>
+<a href="dev-guide/tutorials/mobile.html">tutorial on mobile development<a>.</p></td>
 </tr>
 
 </table>
@@ -91,7 +91,7 @@ small set of this functionality.</p></td>
 
 <tr>
 <td><strong><a name="localization">Localization Support</a></strong></td>
-<td><p>The SDK currently only has fairly basic <a href="dev-guide/addon-development/l10n.html">localization support</a>.
+<td><p>The SDK currently only has fairly basic <a href="dev-guide/tutorials/l10n.html">localization support</a>.
 </p></td>
 </tr>
 
