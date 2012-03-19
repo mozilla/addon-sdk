@@ -4,7 +4,8 @@
 
 "use strict";
 
-const {Cc,Ci,Cr} = require("chrome");
+const { Cc, Ci, Cr, atob, btoa } = require("chrome");
+const { Base, Class } = require('./base');
 
 var ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
@@ -111,3 +112,124 @@ function URL(url, base) {
 
 URL.prototype = Object.create(String.prototype);
 exports.URL = URL;
+
+/**
+ * Parse and serialize a Data URL.
+ *
+ * See: http://tools.ietf.org/html/rfc2397
+ *
+ * Note: Could be extended in the future to decode / encode automatically binary
+ * data.
+ */
+const DataURL = Base.extend({
+
+  /**
+   * The MIME type of the data. By default is empty, that accordingly to RFC
+   * is equivalent to "text/plain"
+   */
+  mimeType: "",
+
+  /**
+   * An hashmap that contains the parameters of the Data URL. By default is
+   * empty, that accordingly to RFC is equivalent to {"charset" : "US-ASCII"}
+   */
+  parameters: null,
+
+  /**
+   * The string that represent the data in the Data URL
+   */
+  data: "",
+
+  /**
+   *
+   */
+  get base64 () {
+    return "base64" in this.parameters;
+  },
+
+  set base64 (value) {
+    if (value)
+      this.parameters["base64"] = "";
+    else
+      delete this.parameters["base64"];
+  },
+  /**
+  * Initialize the Data URL object. If a uri is give, it will be parsed.
+  *
+  * @param {String} [uri] The uri to parse
+  *
+  * @throws {URIError} if the Data URL is malformed
+   */
+  initialize: function(uri) {
+    this.merge({
+      parameters: {},
+      mimeType: this.mimeType,
+      data: this.data
+    })
+
+    if (!uri)
+      return;
+
+    uri = String(uri);
+
+    let matches = uri.match(/^data:([^,]*),([\s\S]*)/i);
+
+    if (!matches)
+      throw new URIError("Malformed Data URL: " + uri);
+
+    let mediaType = matches[1].trim();
+
+    this.data = decodeURIComponent(matches[2].trim());
+
+    if (!mediaType)
+      return;
+
+    let parametersList = mediaType.split(";");
+
+    this.mimeType = parametersList.shift().trim();
+
+    for (let parameter, i = 0; parameter = parametersList[i++];) {
+      let pairs = parameter.split("=");
+      let name = pairs[0].trim();
+      let value = pairs.length > 1 ? decodeURIComponent(pairs[1].trim()) : "";
+
+      this.parameters[name] = value;
+    }
+
+    if (this.base64)
+      this.data = atob(this.data);
+
+  },
+
+  /**
+   * Returns the object as a valid Data URL string
+   *
+   * @returns {String} The Data URL
+   */
+  toString : function() {
+    let parametersList = [];
+
+    for (let name in this.parameters) {
+      let encodedParameter = encodeURIComponent(name);
+      let value = this.parameters[name];
+
+      if (value)
+        encodedParameter += "=" + encodeURIComponent(value);
+
+      parametersList.push(encodedParameter);
+    }
+
+    if (parametersList.length > 0)
+      parametersList.unshift("");
+
+
+    let data = this.base64 ? btoa(this.data) : this.data;
+
+    return "data:" +
+      this.mimeType +
+      parametersList.join(";") + "," +
+      encodeURIComponent(data);
+  }
+});
+
+exports.DataURL = Class(DataURL);
