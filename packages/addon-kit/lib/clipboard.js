@@ -6,22 +6,23 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
+const { Cc, Ci, btoa } = require("chrome");
+const { DataURL } = require("api-utils/url");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
- 
 /*
 While these data flavors resemble Internet media types, they do
 no directly map to them.
 */
 const kAllowableFlavors = [
   "text/unicode",
-  "text/html"
+  "text/html",
+  "image/png"
   /* CURRENTLY UNSUPPORTED FLAVORS
   "text/plain",
-  "image/png",
   "image/jpg",
-  "image/gif"
+  "image/jpeg",
+  "image/gif",
   "text/x-moz-text-internal",
   "AOLMAIL",
   "application/x-moz-file",
@@ -45,9 +46,8 @@ Jetpack API druid.
 */
 const kFlavorMap = [
   { short: "text", long: "text/unicode" },
-  { short: "html", long: "text/html" }
-  // Images are currently unsupported.
-  //{ short: "image", long: "image/png" },
+  { short: "html", long: "text/html" },
+  { short: "image", long: "image/png" }
 ];
 
 let clipboardService = Cc["@mozilla.org/widget/clipboard;1"].
@@ -56,12 +56,30 @@ let clipboardService = Cc["@mozilla.org/widget/clipboard;1"].
 let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].
                       getService(Ci.nsIClipboardHelper);
 
+let imageTools = Cc["@mozilla.org/image/tools;1"].
+               getService(Ci.imgITools);
 
 exports.set = function(aData, aDataType) {
+
   let options = {
     data: aData,
     datatype: aDataType || "text"
   };
+
+  // If `aDataType` is not given or if it's "image", the data is parsed as
+  // data URL to detect a better datatype
+  if (!aDataType || aDataType === "image") {
+    try {
+      let dataURL = new DataURL(aData);
+
+      options.datatype = dataURL.mimeType;
+      options.data = dataURL.data;
+    }
+    catch (e if e.name === "URIError") {
+      // Not a valid Data URL
+    }
+  }
+
   options = apiUtils.validateOptions(options, {
     data: {
       is: ["string"]
@@ -71,10 +89,10 @@ exports.set = function(aData, aDataType) {
     }
   });
 
-  var flavor = fromJetpackFlavor(options.datatype);
+  let flavor = fromJetpackFlavor(options.datatype);
 
   if (!flavor)
-    throw new Error("Invalid flavor");
+    throw new Error("Invalid flavor for " + options.datatype);
 
   // Additional checks for using the simple case
   if (flavor == "text/unicode") {
@@ -87,7 +105,7 @@ exports.set = function(aData, aDataType) {
   var xferable = Cc["@mozilla.org/widget/transferable;1"].
                  createInstance(Ci.nsITransferable);
   if (!xferable)
-    throw new Error("Couldn't set the clipboard due to an internal error " + 
+    throw new Error("Couldn't set the clipboard due to an internal error " +
                     "(couldn't create a Transferable object).");
 
   switch (flavor) {
@@ -114,7 +132,37 @@ exports.set = function(aData, aDataType) {
         xferable.setTransferData("text/unicode", str, str.data.length * 2);
       }
       break;
-    // TODO: images!
+
+    case "image/png":
+      let image = options.data;
+
+      let container = {};
+
+      try {
+        let input = Cc["@mozilla.org/io/string-input-stream;1"].
+                      createInstance(Ci.nsIStringInputStream);
+
+        input.setData(image, image.length);
+
+        imageTools.decodeImageData(input, flavor, container);
+      }
+      catch (e) {
+        throw new Error("Unable to decode data given in a valid image.");
+      }
+
+      // Store directly the input stream makes the cliboard's data available
+      // for Firefox but not to the others application or to the OS. Therefore,
+      // a `nsISupportsInterfacePointer` object that reference an `imgIContainer`
+      // with the image is needed.
+      var imgPtr = Cc["@mozilla.org/supports-interface-pointer;1"].
+                     createInstance(Ci.nsISupportsInterfacePointer);
+
+      imgPtr.data = container.value;
+
+      xferable.addDataFlavor(flavor);
+      xferable.setTransferData(flavor, imgPtr, -1);
+
+      break;
     default:
       throw new Error("Unable to handle the flavor " + flavor + ".");
   }
@@ -135,8 +183,17 @@ exports.set = function(aData, aDataType) {
 
 exports.get = function(aDataType) {
   let options = {
-    datatype: aDataType || "text"
+    datatype: aDataType
   };
+
+  // Figure out the best data type for the clipboard's data, if omitted
+  if (!aDataType) {
+    if (~currentFlavors().indexOf("image"))
+      options.datatype = "image";
+    else
+      options.datatype = "text";
+  }
+
   options = apiUtils.validateOptions(options, {
     datatype: {
       is: ["string"]
@@ -146,7 +203,7 @@ exports.get = function(aDataType) {
   var xferable = Cc["@mozilla.org/widget/transferable;1"].
                  createInstance(Ci.nsITransferable);
   if (!xferable)
-    throw new Error("Couldn't set the clipboard due to an internal error " + 
+    throw new Error("Couldn't set the clipboard due to an internal error " +
                     "(couldn't create a Transferable object).");
 
   var flavor = fromJetpackFlavor(options.datatype);
@@ -154,12 +211,11 @@ exports.get = function(aDataType) {
   // Ensure that the user hasn't requested a flavor that we don't support.
   if (!flavor)
     throw new Error("Getting the clipboard with the flavor '" + flavor +
-                    "' is > not supported.");
+                    "' is not supported.");
 
   // TODO: Check for matching flavor first? Probably not worth it.
 
   xferable.addDataFlavor(flavor);
-
   // Get the data into our transferable.
   clipboardService.getData(
     xferable,
@@ -185,6 +241,38 @@ exports.get = function(aDataType) {
     case "text/html":
       data = data.value.QueryInterface(Ci.nsISupportsString).data;
       break;
+    case "image/png":
+      let dataURL = new DataURL();
+
+      dataURL.mimeType = flavor;
+      dataURL.base64 = true;
+
+      let image = data.value;
+
+      // Due to the differences in how the images in the clipboard could be
+      // stored, the checks below are needed. The clipboard could be already
+      // provide the image as byte streams, but also  as pointer, or as
+      // image container.
+      // If it's not possible obtain a byte stream, the function returns `null`.
+      if (image instanceof Ci.nsISupportsInterfacePointer)
+        image = image.data;
+
+      if (image instanceof Ci.imgIContainer)
+        image = imageTools.encodeImage(image, flavor);
+
+      if (image instanceof Ci.nsIInputStream) {
+        let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].
+                              createInstance(Ci.nsIBinaryInputStream);
+
+        binaryStream.setInputStream(image);
+
+        dataURL.data = binaryStream.readBytes(binaryStream.available());
+
+        data = dataURL.toString();
+      } else
+        data = null;
+
+      break;
     default:
       data = null;
   }
@@ -192,7 +280,7 @@ exports.get = function(aDataType) {
   return data;
 };
 
-exports.__defineGetter__("currentFlavors", function() {
+function currentFlavors() {
   // Loop over kAllowableFlavors, calling hasDataMatchingFlavors for each.
   // This doesn't seem like the most efficient way, but we can't get
   // confirmation for specific flavors any other way. This is supposed to be
@@ -208,7 +296,9 @@ exports.__defineGetter__("currentFlavors", function() {
       currentFlavors.push(toJetpackFlavor(flavor));
   }
   return currentFlavors;
-});
+};
+
+Object.defineProperty(exports, "currentFlavors", { get : currentFlavors })
 
 // SUPPORT FUNCTIONS ////////////////////////////////////////////////////////
 
