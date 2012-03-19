@@ -32,7 +32,7 @@ Minimally you'll have a single module implemented by a script called
 "main.js", but you can include additional modules in `lib`, and import them
 using the `require()` function. To learn how to implement and import your own
 modules, see the tutorial on
-[Implementing Reusable Modules](dev-guide/addon-development/tutorials/reusable-modules.html).
+[Implementing Reusable Modules](dev-guide/tutorials/reusable-modules.html).
 
 ## Content Scripts ##
 

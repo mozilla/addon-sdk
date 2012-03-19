@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 To open a new web page, you can use the
@@ -54,4 +54,4 @@ To learn more about working with tabs in the SDK, see the
 [`tabs` API reference](packages/addon-kit/tabs.html).
 
 To learn more about running scripts in tabs, see the
-[tutorial on using `tab.attach()`](dev-guide/addon-development/tutorials/modifying-web-pages-tab.html).
+[tutorial on using `tab.attach()`](dev-guide/tutorials/modifying-web-pages-tab.html).

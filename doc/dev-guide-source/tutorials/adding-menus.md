@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 The SDK doesn't yet provide an API to add new menu items to Firefox.

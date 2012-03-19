@@ -4,7 +4,7 @@
 
 <span class="aside">
 For more information on testing in the Add-on SDK, see the
-[Unit Testing](dev-guide/addon-development/tutorials/unit-testing.html)
+[Unit Testing](dev-guide/tutorials/unit-testing.html)
 tutorial.
 </span>
 

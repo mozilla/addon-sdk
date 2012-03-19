@@ -9,7 +9,7 @@ technologies: JavaScript, HTML, and CSS. The SDK includes JavaScript APIs which 
 
 <hr>
 
-## <a href="dev-guide/addon-development/tutorials/index.html">Tutorials</a> ##
+## <a href="dev-guide/tutorials/index.html">Tutorials</a> ##
 
 <table class="catalog">
 <colgroup>
@@ -18,50 +18,50 @@ technologies: JavaScript, HTML, and CSS. The SDK includes JavaScript APIs which 
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#getting-started">Getting started</a></h4>
+      <h4><a href="dev-guide/tutorials/index.html#getting-started">Getting started</a></h4>
       How to
       <a href="dev-guide/addon-development/installation.html">install the SDK</a> and
-      <a href="dev-guide/addon-development/tutorials/getting-started-with-cfx.html">use the cfx
+      <a href="dev-guide/tutorials/getting-started-with-cfx.html">use the cfx
       tool</a> to develop, test, and package add-ons.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#create-user-interfaces">Create user interface components</a></h4>
+      <h4><a href="dev-guide/tutorials/index.html#create-user-interfaces">Create user interface components</a></h4>
       Create user interface components such as
-        <a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">toolbar buttons</a>,
-        <a href="dev-guide/addon-development/tutorials/adding-menus.html">menu items</a>, and
-        <a href="dev-guide/addon-development/tutorials/display-a-popup.html">dialogs</a>
+        <a href="dev-guide/tutorials/adding-toolbar-button.html">toolbar buttons</a>,
+        <a href="dev-guide/tutorials/adding-menus.html">menu items</a>, and
+        <a href="dev-guide/tutorials/display-a-popup.html">dialogs</a>
     </td>
   </tr>
 
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#interact-with-the-browser">Interact with the browser</a></h4>
-      <a href="dev-guide/addon-development/tutorials/open-a-web-page.html">Open web pages</a>,
-      <a href="dev-guide/addon-development/tutorials/listen-for-page-load.html">listen for pages loading</a>, and
-      <a href="dev-guide/addon-development/tutorials/list-open-tabs.html">list open pages</a>.
+      <h4><a href="dev-guide/tutorials/index.html#interact-with-the-browser">Interact with the browser</a></h4>
+      <a href="dev-guide/tutorials/open-a-web-page.html">Open web pages</a>,
+      <a href="dev-guide/tutorials/listen-for-page-load.html">listen for pages loading</a>, and
+      <a href="dev-guide/tutorials/list-open-tabs.html">list open pages</a>.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#modify-web-pages">Modify web pages</a></h4>
-      <a href="dev-guide/addon-development/tutorials/modifying-web-pages-url.html">Modify pages matching a URL pattern</a>
-      or <a href="dev-guide/addon-development/tutorials/modifying-web-pages-tab.html">dynamically modify a particular tab</a>.
+      <h4><a href="dev-guide/tutorials/index.html#modify-web-pages">Modify web pages</a></h4>
+      <a href="dev-guide/tutorials/modifying-web-pages-url.html">Modify pages matching a URL pattern</a>
+      or <a href="dev-guide/tutorials/modifying-web-pages-tab.html">dynamically modify a particular tab</a>.
     </td>
   </tr>
 
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#development-techniques">Development techniques</a></h4>
+      <h4><a href="dev-guide/tutorials/index.html#development-techniques">Development techniques</a></h4>
 Learn about common development techniques, such as
-<a href="dev-guide/addon-development/tutorials/unit-testing.html">unit testing</a>,
-<a href="dev-guide/addon-development/tutorials/logging.html">logging</a>,
-<a href="dev-guide/addon-development/tutorials/reusable-modules.html">creating reusable modules</a>,
+<a href="dev-guide/tutorials/unit-testing.html">unit testing</a>,
+<a href="dev-guide/tutorials/logging.html">logging</a>,
+<a href="dev-guide/tutorials/reusable-modules.html">creating reusable modules</a>,
 <a href="dev-guide/addon-development/l10n.html">localization</a>, and
 <a href="dev-guide/addon-development/mobile.html">mobile development</a>.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/tutorials/index.html#putting-it-together">Putting it together</a></h4>
+      <h4><a href="dev-guide/tutorials/index.html#putting-it-together">Putting it together</a></h4>
       Walkthrough of the <a href="dev-guide/addon-development/annotator/annotator.html">Annotator</a> example add-on.
     </td>
   </tr>

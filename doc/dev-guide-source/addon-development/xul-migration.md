@@ -105,7 +105,7 @@ These are collected together in the
 package. Because we expect to keep these APIs compatible as new versions
 of Firefox are released, we call them the "supported" APIs.
 
-See the [tutorials](dev-guide/addon-development/tutorials/index.html)
+See the [tutorials](dev-guide/tutorials/index.html)
 and the "High-Level API" reference in the "Developer Guide" sidebar.
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
@@ -149,7 +149,7 @@ way to use features not supported in the SDK without having to use the
 low-level APIs.
 
 See the
-[guide to adding Firefox menu items](dev-guide/addon-development/tutorials/adding-menus.html).
+[guide to adding Firefox menu items](dev-guide/tutorials/adding-menus.html).
 Some useful third party packages are
 [collected in the Jetpack Wiki](https://wiki.mozilla.org/Jetpack/Modules).
 
@@ -278,7 +278,7 @@ to display an alert dialog:
     });
 
 It's good practice to encapsulate code which uses XPCOM by
-[packaging it in its own module](dev-guide/addon-development/tutorials/reusable-modules.html).
+[packaging it in its own module](dev-guide/tutorials/reusable-modules.html).
 For example, we could package the alert feature implemented above using a
 script like:
 

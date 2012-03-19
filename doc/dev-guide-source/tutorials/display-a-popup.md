@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 To display a popup dialog, use the
@@ -21,7 +21,7 @@ you can exchange messages between the panel script and the add-on code.
 alt="Text entry panel">
 
 In this tutorial we'll create an add-on that
-[adds a widget to the toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html)
+[adds a widget to the toolbar](dev-guide/tutorials/adding-toolbar-button.html)
 which displays a panel when clicked.
 
 The panel just contains a
@@ -29,7 +29,7 @@ The panel just contains a
 of the `<textarea>` is sent to the main add-on code.
 
 The main add-on code
-[logs the message to the console](dev-guide/addon-development/tutorials/logging.html).
+[logs the message to the console](dev-guide/tutorials/logging.html).
 
 The add-on consists of three files:
 

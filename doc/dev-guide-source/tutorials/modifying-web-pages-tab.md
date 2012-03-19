@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 To modify the page hosted by a particular tab, load a script into it
@@ -136,9 +136,9 @@ add-on defines in the `port.emit()` call.
 ## Learning More ##
 
 To learn more about working with tabs in the SDK, see the
-[Open a Web Page](dev-guide/addon-development/tutorials/open-a-web-page.html)
+[Open a Web Page](dev-guide/tutorials/open-a-web-page.html)
 tutorial, the
-[List Open Tabs](dev-guide/addon-development/tutorials/list-open-tabs.html)
+[List Open Tabs](dev-guide/tutorials/list-open-tabs.html)
 tutorial, and the [`tabs` API reference](packages/addon-kit/tabs.html).
 
 To learn more about content scripts, see the

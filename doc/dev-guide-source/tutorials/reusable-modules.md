@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 With the SDK you don't have to keep all your add-on in a single "main.js"
@@ -39,7 +39,7 @@ Suppose we want to use the
 The SDK doesn't provide an API to access geolocation, but we can
 [access the underlying XPCOM API using `require("chrome")`](dev-guide/addon-development/xul-migration.html#xpcom).
 
-The following add-on adds a [button to the toolbar](dev-guide/addon-development/tutorials/adding-toolbar-button.html):
+The following add-on adds a [button to the toolbar](dev-guide/tutorials/adding-toolbar-button.html):
 when the user clicks the button, it loads the
 [XPCOM nsIDOMGeoGeolocation](https://developer.mozilla.org/en/XPCOM_Interface_Reference/NsIDOMGeoGeolocation)
 object, and retrieves the user's current position:
@@ -410,4 +410,4 @@ to add your name as the author, choose a distribution license, and so on.
 To see some of the modules people have already developed, see the page of
 [community-developed modules](https://github.com/mozilla/addon-sdk/wiki/Community-developed-modules).
 To learn how to use third-party modules in your own code, see the
-[tutorial on adding menu items](dev-guide/addon-development/tutorials/adding-menus.html).
+[tutorial on adding menu items](dev-guide/tutorials/adding-menus.html).

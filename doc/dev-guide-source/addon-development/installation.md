@@ -150,5 +150,5 @@ page.
 ## Next Steps ##
 
 Next, take a look at the
-[Getting Started With cfx](dev-guide/addon-development/tutorials/getting-started-with-cfx.html)
+[Getting Started With cfx](dev-guide/tutorials/getting-started-with-cfx.html)
 tutorial, which explains how to create add-ons using the `cfx` tool.

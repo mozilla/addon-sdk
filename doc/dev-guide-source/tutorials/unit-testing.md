@@ -8,9 +8,9 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html),
 learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html),
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html),
 and followed the tutorial on
-[writing reusable modules](dev-guide/addon-development/tutorials/reusable-modules.html).
+[writing reusable modules](dev-guide/tutorials/reusable-modules.html).
 </span>
 
 The SDK provides a framework to help creates and run unit tests for

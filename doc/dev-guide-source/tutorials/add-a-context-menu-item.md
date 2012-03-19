@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 To add items and submenus to the Firefox context menu, use the
@@ -37,7 +37,7 @@ You should see the new item appear:
 <img class="image-center" src="static-files/media/screenshots/context-menu-selection.png"></img>
 
 Click it, and the selection is
-[logged to the console](dev-guide/addon-development/tutorials/logging.html):
+[logged to the console](dev-guide/tutorials/logging.html):
 
 <pre>
 info: elephantine lizard

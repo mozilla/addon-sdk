@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 To add a button to the toolbar, use the
@@ -17,7 +17,7 @@ To add a button to the toolbar, use the
 The default add-on created by `cfx init`
 uses a widget, so we'll start with that as an example. If you haven't already
 followed the tutorial introducing
-[`cfx init`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html#cfx-init),
+[`cfx init`](dev-guide/tutorials/getting-started-with-cfx.html#cfx-init),
 do that now, then come back here.
 
 Create a new directory, navigate to it, and execute `cfx init`. Then open the file called
@@ -164,7 +164,7 @@ will be shown when the user clicks the widget:
     });
 
 To learn more about working with panels, see the tutorial on
-[displaying a popup](dev-guide/addon-development/tutorials/display-a-popup.html).
+[displaying a popup](dev-guide/tutorials/display-a-popup.html).
 
 ## Learning More ##
 

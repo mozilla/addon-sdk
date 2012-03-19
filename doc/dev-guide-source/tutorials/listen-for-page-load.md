@@ -8,7 +8,7 @@
 To follow this tutorial you'll need to have
 [installed the SDK](dev-guide/addon-development/installation.html)
 and learned the
-[basics of `cfx`](dev-guide/addon-development/tutorials/getting-started-with-cfx.html).
+[basics of `cfx`](dev-guide/tutorials/getting-started-with-cfx.html).
 </span>
 
 You can get notifications about new pages loading using the
@@ -42,7 +42,7 @@ tabs. The script adds a red border to the tab's document:
 
 (This example is only to show the idea: to implement something like this,
 you should instead use
-[`page-mod`](dev-guide/addon-development/tutorials/modifying-web-pages-url.html),
+[`page-mod`](dev-guide/tutorials/modifying-web-pages-url.html),
 and specify "*" as the match-pattern.)
 
 ## Learning More ##
@@ -52,4 +52,4 @@ To learn more about working with tabs in the SDK, see the
 for a number of other tab events, including `open`, `close`, and `activate`.
 
 To learn more about running scripts in tabs, see the
-[tutorial on using `tab.attach()`](dev-guide/addon-development/tutorials/modifying-web-pages-tab.html).
+[tutorial on using `tab.attach()`](dev-guide/tutorials/modifying-web-pages-tab.html).
