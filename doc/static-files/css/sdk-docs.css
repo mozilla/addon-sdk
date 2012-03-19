@@ -235,39 +235,10 @@ hr {
   float:right;
 }
 
-div.buttonarray {
-  -moz-column-count: 3;
-  -moz-column-width: 33%;
-  -moz-column-gap: 2em;
-}
-
-div.columns {
-  -moz-column-count: 3;
-  -moz-column-width: 33%;
-  -moz-column-gap: 2em;
-}
-
 .experimental {
   background-color: #FFFAAE;
   color: black;
   padding: 1px 10px;
-}
-
-div.buttonarray a {
-  padding: 3px;
-  display: block;
-  text-decoration:none;
-}
-
-div.buttonarray p {
-  margin-bottom: 0px;
-}
-
-div.buttonarray a:hover {
-  background-color: #F0F8FF;
-  padding: 2px;
-  border: solid 1px;
-  border-color: #a0d0fb;
 }
 
 .sidebar-section h2 {
