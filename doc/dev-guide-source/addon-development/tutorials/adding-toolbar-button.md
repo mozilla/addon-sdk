@@ -21,10 +21,10 @@ followed the tutorial introducing
 do that now, then come back here.
 
 Create a new directory, navigate to it, and execute `cfx init`. Then open the file called
-"main.js" in the "lib" directory, and add the following to it:
+"main.js" in the "lib" directory:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    const widgets = require("widget");
+    const tabs = require("tabs");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
