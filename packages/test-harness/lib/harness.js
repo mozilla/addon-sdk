@@ -6,6 +6,7 @@
 
 const { Cc,Ci } = require("chrome");
 const { Loader } = require("@loader")
+const memory = require('api-utils/memory');
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
@@ -123,7 +124,6 @@ function dictDiff(last, curr) {
 
 function reportMemoryUsage() {
   memory.gc();
-  sandbox.memory.gc();
 
   var mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
             .getService(Ci.nsIMemoryReporterManager);
@@ -137,7 +137,7 @@ function reportMemoryUsage() {
   }
 
   var weakrefs = [info.weakref.get()
-                  for each (info in sandbox.memory.getObjects())];
+                  for each (info in memory.getObjects())];
   weakrefs = [weakref for each (weakref in weakrefs) if (weakref)];
   print("Tracked memory objects in testing sandbox: " +
         weakrefs.length + "\n");
@@ -173,13 +173,13 @@ function showResults() {
 function cleanup() {
   try {
     for (let name in sandbox.modules)
-      sandbox.globals.memory.track(sandbox.modules[name],
+      memory.track(sandbox.modules[name],
                            "module global scope: " + name);
-    sandbox.globals.memory.track(sandbox, "Cuddlefish Loader");
+      memory.track(sandbox, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
-                      for each (info in sandbox.globals.memory.getObjects())];
+                      for each (info in memory.getObjects())];
     }
 
     sandbox.unload();

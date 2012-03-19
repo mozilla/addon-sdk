@@ -6,6 +6,7 @@
 
 "use strict";
 
+const memory = require("api-utils/memory");
 // The possible return values of getTypeOf.
 const VALID_TYPES = [
   "array",
