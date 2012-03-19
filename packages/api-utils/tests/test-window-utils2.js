@@ -4,15 +4,35 @@
 
 'use strict';
 
-const { open, backgroundify } = require('api-utils/window/utils');
-const { windowIterator } = require('api-utils/window-utils');
+const { Ci } = require('chrome');
+const { open, backgroundify,
+        getXULWindow, getBaseWindow } = require('api-utils/window/utils');
+const windowUtils = require('api-utils/window-utils');
 
 function windows(iterator) {
   let array = [];
-  for each (let item in windowIterator())
+  for each (let item in windowUtils.windowIterator())
     array.push(item);
   return array;
 }
+
+exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
+  let active = windowUtils.activeBrowserWindow;
+
+  assert.ok(!(active instanceof Ci.nsIBaseWindow),
+            'active window is not nsIBaseWindow');
+
+  assert.ok(getBaseWindow(active) instanceof Ci.nsIBaseWindow,
+            'base returns nsIBaseWindow');
+};
+
+exports['test get nsIXULWindow from nsIDomWindow'] = function(assert) {
+  let active = windowUtils.activeBrowserWindow;
+  assert.ok(!(active instanceof Ci.nsIXULWindow),
+            'active window is not nsIXULWindow');
+  assert.ok(getXULWindow(active) instanceof Ci.nsIXULWindow,
+            'base returns nsIXULWindow');
+};
 
 exports['test top window creation'] = function(assert) {
   let window = open('data:text/html,Hello top window');
