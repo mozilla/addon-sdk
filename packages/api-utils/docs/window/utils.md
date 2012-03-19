@@ -7,7 +7,7 @@ application windows.
 
 ### getInnerId
 
-The ID of the given window's current inner window.
+Returns the ID of the given window's current inner window.
 
 ### getOuterId
 
@@ -16,9 +16,8 @@ Returns the ID of the given window's outer window.
 ### getXULWindow
 
 Module provides `getXULWindow` function that can be used get access
-[nsIXULWindow] for the given [nsIDOMWindow]\:
-[nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
-[nsIXULWindow]:https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow
+[nsIXULWindow](https://developer.mozilla.org/en/nsIDOMWindow) for the given
+[nsIDOMWindow](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow):
 
     let { Ci } = require('chrome');
     let utils = require('api-utils/window-utils');
@@ -29,9 +28,8 @@ Module provides `getXULWindow` function that can be used get access
 ### getBaseWindow
 
 Module provides `getBaseWindow` function that can be used get access
-[nsIBaseWindow] for the given [nsIDOMWindow]\:
-[nsIDOMWindow]:https://developer.mozilla.org/en/nsIDOMWindow
-[nsIBaseWindow]:http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl
+[nsIBaseWindow](http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl)
+for the given [nsIDOMWindow](https://developer.mozilla.org/en/nsIDOMWindow):
 
     let { Ci } = require('chrome');
     let utils = require('api-utils/window-utils');
@@ -48,17 +46,17 @@ argument and optional hash of `options` as second argument.
     let { open } = require('api-utils/window-utils');
     let window = open('data:text/html,Hello Window');
 
-Following options may be provided to used to configure created window behavior:
+Following options may be provided to configure created window behavior:
 
 - `parent`
 If provided must be `nsIDOMWindow` and will be used as parent for the created
 window.
 
 - `name`
-Optional name that will assigned to the window.
+Optional name that will be assigned to the window.
 
 - `features`
-Hash of option that will be serialized to features string. See
+Hash of options that will be serialized to features string. See
 [features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
 for more details.
 
@@ -84,7 +82,7 @@ in the OS specific window lists for the application.
 
 Optionally more configuration options via second `options` argument. If
 `options.close` is `false` unregistered window won't automatically
-be closed on application quit, preventing application from quiting. While this
+be closed on application quit, preventing application from quitting. While this
 is possible you should make sure to close all such windows manually:
 
     let { backgroundify, open } = require('api-utils/window-utils');

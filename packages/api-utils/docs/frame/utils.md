@@ -3,16 +3,14 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 The `frame/utils` module provides helper functions for working with platform
-internals like [frames] and [browsers].
-[frames]:https://developer.mozilla.org/en/XUL/iframe
-[browsers]:https://developer.mozilla.org/en/XUL/browser
+internals like [frames](https://developer.mozilla.org/en/XUL/iframe) and
+[browsers](https://developer.mozilla.org/en/XUL/browser).
 
 ### create
 
 Module exports `create` function that takes `nsIDOMDocument` of the
-[privileged document] and creates a `browser` element in it's `documentElement`
-\:
-[privileged document]:https://developer.mozilla.org/en/Working_with_windows_in_chrome_code
+[privileged document](https://developer.mozilla.org/en/Working_with_windows_in_chrome_code)
+and creates a `browser` element in it's `documentElement`:
 
     let { open } = require('api-utils/window/utils');
     let { create } = require('api-utils/frame/utils');
@@ -20,7 +18,7 @@ Module exports `create` function that takes `nsIDOMDocument` of the
     let frame = create(window.document);
 
 Optionally `create` can be passed set of `options` to configure created frame
-even further. Following option are supported:
+even further. Following options are supported:
 
 - `type`
 String that defines access type of the document loaded into it. Defaults to
