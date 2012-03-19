@@ -88,9 +88,9 @@ have to send messages between the content script and the main add-on code.
 [`Widget()` constructor](packages/addon-kit/widget.html#Widget(options)).
 
 * You can communicate with the script using either the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/tutorials/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/tutorials/content-scripts/using-port.html) API.
 
 <div class="warning">
 <p>Unless your content script is extremely simple and consists only of a
@@ -201,9 +201,9 @@ you can just include a script from the HTML file in the normal way, using
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/tutorials/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/tutorials/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
@@ -557,7 +557,7 @@ Represents a widget object.
 @param data {value}
   The message to send.
   The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -673,7 +673,7 @@ Represents a widget object.
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/tutorials/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -698,7 +698,7 @@ code in the widget's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -760,7 +760,7 @@ In this example `WidgetView` is used to display different content for
   Sends a message to the widget view's content scripts.
 @param data {value}
   The message to send. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -866,7 +866,7 @@ In this example `WidgetView` is used to display different content for
 * receive events from the content script using the `port.on`
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/tutorials/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -893,7 +893,7 @@ code in the widget view's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">

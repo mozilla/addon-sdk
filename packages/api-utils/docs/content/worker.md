@@ -106,7 +106,7 @@ worker.
 
 @argument {value}
 The event listener is passed the message, which must be a
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/tutorials/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">

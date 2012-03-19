@@ -92,7 +92,7 @@ This page lists more theoretical in-depth articles about the SDK.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/content-scripts/loading.html">Loading content scripts</a></h4>
+      <h4><a href="dev-guide/tutorials/content-scripts/loading.html">Loading content scripts</a></h4>
       Load content scripts into web pages, specified either as strings
       or in separate files, and how to control the point at which they are
       executed.
@@ -102,14 +102,14 @@ This page lists more theoretical in-depth articles about the SDK.
 
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/content-scripts/access.html">Content script access</a></h4>
+      <h4><a href="dev-guide/tutorials/content-scripts/access.html">Content script access</a></h4>
       Detailed information on the objects available to content scripts,
       the differences between content scripts and normal page scripts,
       and how to communicate between content scripts and page scripts.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/content-scripts/using-port.html">Using "port"</a></h4>
+      <h4><a href="dev-guide/tutorials/content-scripts/using-port.html">Using "port"</a></h4>
       Communicating between a content script and the rest of your add-on
       using the <code>port</code> object.
     </td>
@@ -118,14 +118,14 @@ This page lists more theoretical in-depth articles about the SDK.
 
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using "postMessage()"</a></h4>
+      <h4><a href="dev-guide/tutorials/content-scripts/using-postmessage.html">Using "postMessage()"</a></h4>
       Communicating between a content script and the rest of your add-on
       using the <code>postMessage()</code> API, and a comparison between
       this technique and the <code>port</code> object.
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/content-scripts/reddit-example.html">Reddit example</a></h4>
+      <h4><a href="dev-guide/tutorials/content-scripts/reddit-example.html">Reddit example</a></h4>
       A simple add-on which uses content scripts.
     </td>
 

@@ -109,7 +109,7 @@ such as <code>window</code>, <code>document</code>, and
   <tr>
     <td>The <code>self</code> global, used for communicating between content
 scripts and add-on code. See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">communicating with content scripts</a>
+<a href="dev-guide/tutorials/content-scripts/using-port.html">communicating with content scripts</a>
 for more details.
     </td>
     <td class="cross">✘</td>
