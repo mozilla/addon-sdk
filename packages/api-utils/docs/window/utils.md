@@ -60,16 +60,15 @@ Hash of options that will be serialized to features string. See
 [features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
 for more details.
 
-    let { open } = require('api-utils/window/utils');
-    let window = open('data:text/html,Hello Window', {
-      name: 'jetpack window',
-      features: {
-        width: 200,
-        height: 50,
-        popup: true
-      }
-    });
-
+        let { open } = require('api-utils/window/utils');
+        let window = open('data:text/html,Hello Window', {
+          name: 'jetpack window',
+          features: {
+            width: 200,
+            height: 50,
+            popup: true
+          }
+        });
 
 ### backgroundify
 
