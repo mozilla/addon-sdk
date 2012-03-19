@@ -136,7 +136,9 @@ const Loader = {
         Cr: Cr,
         Cm: Cm,
         components: Components,
-        messageManager: 'addMessageListener' in exports ? exports : null
+        messageManager: 'addMessageListener' in exports ? exports : null,
+        btoa : btoa,
+        atob : atob
       }),
       id: 'chrome'
     }),
