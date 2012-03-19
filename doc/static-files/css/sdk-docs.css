@@ -374,11 +374,18 @@ div.buttonarray a:hover {
   display: none;
 }
 
-
 table.catalog, table.catalog tr, table.catalog td {
   border: none;
 }
 
 table.catalog td {
   padding: 1em;
+}
+
+table.catalog>tbody tr:first-child td {
+  padding-top: 0em;
+}
+
+table.catalog>tbody tr:last-child td {
+  padding-bottom: 0em;
 }

@@ -42,8 +42,8 @@ This page lists more theoretical in-depth articles about the SDK.
 
     <td>
       <h4><a href="dev-guide/addon-development/firefox-compatibility.html">Firefox compatibility</a></h4>
-      The rules which define which Firefox releases a given SDK release is
-      compatible with, and how to deal with compatibility problems.
+      Working out which Firefox releases a given SDK release is
+      compatible with, and dealing with compatibility problems.
     </td>
 
   </tr>
@@ -62,7 +62,7 @@ This page lists more theoretical in-depth articles about the SDK.
   <tr>
     <td>
       <h4><a href="dev-guide/addon-development/events.html">Working With Events</a></h4>
-      How to write event-driven code using the the SDK's event emitting framework.
+      Write event-driven code using the the SDK's event emitting framework.
     </td>
 
     <td>
@@ -93,7 +93,7 @@ This page lists more theoretical in-depth articles about the SDK.
 
     <td>
       <h4><a href="dev-guide/addon-development/content-scripts/loading.html">Loading content scripts</a></h4>
-      How to load content scripts into web pages, specified either as strings
+      Load content scripts into web pages, specified either as strings
       or in separate files, and how to control the point at which they are
       executed.
     </td>
@@ -111,8 +111,7 @@ This page lists more theoretical in-depth articles about the SDK.
     <td>
       <h4><a href="dev-guide/addon-development/content-scripts/using-port.html">Using "port"</a></h4>
       Communicating between a content script and the rest of your add-on
-      using the <code>port</code> object. This is usually preferable to
-      the <code>postMessage()</code> API.
+      using the <code>port</code> object.
     </td>
 
   </tr>
@@ -122,7 +121,7 @@ This page lists more theoretical in-depth articles about the SDK.
       <h4><a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using "postMessage()"</a></h4>
       Communicating between a content script and the rest of your add-on
       using the <code>postMessage()</code> API, and a comparison between
-      this technique and the alternative technique using <code>port</code>.
+      this technique and the <code>port</code> object.
     </td>
 
     <td>

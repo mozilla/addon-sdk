@@ -79,7 +79,7 @@ Learn about common development techniques, such as
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#sdk-infrastructure">SDK Infrastructure</a></h4>
+      <h4><a href="dev-guide/addon-development/guides.html#sdk-infrastructure">SDK infrastructure</a></h4>
       Aspects of the SDK's underlying technology:
       <a href="dev-guide/addon-development/commonjs.html">CommonJS</a>, the
       <a href="dev-guide/addon-development/program-id.html">Program ID</a>, the
@@ -89,7 +89,7 @@ Learn about common development techniques, such as
     </td>
 
     <td>
-      <h4><a href="dev-guide/addon-development/guides.html#sdk-idioms">SDK Idioms</a></h4>
+      <h4><a href="dev-guide/addon-development/guides.html#sdk-idioms">SDK idioms</a></h4>
       The SDK's
       <a href="dev-guide/addon-development/events.html">event framework</a> and the
       <a href="dev-guide/addon-development/two-types-of-scripts.html">distinction between add-on scripts and content scripts</a>.
@@ -108,14 +108,13 @@ Learn about common development techniques, such as
 
     <td>
       <h4><a href="dev-guide/addon-development/guides.html#xul-migration">XUL migration</a></h4>
-      A guide to <a href="dev-guide/addon-development/xul-migration.html">migrating XUL add-ons to the SDK</a>.
+      A guide to <a href="dev-guide/addon-development/xul-migration.html">porting XUL add-ons to the SDK</a>.
       This guide includes a
-      <a href="dev-guide/addon-development/sdk-vs-xul.html">comparison of XUL and the SDK</a>, and a
-      <a href="dev-guide/addon-development/library-detector.html">worked example</a> of porting a XUL add-on to the SDK.
+      <a href="dev-guide/addon-development/sdk-vs-xul.html">comparison of the two toolsets</a> and a
+      <a href="dev-guide/addon-development/library-detector.html">worked example</a> of porting a XUL add-on.
     </td>
 
   </tr>
-  <tr>
 
 </table>
 

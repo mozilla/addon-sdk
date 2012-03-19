@@ -20,7 +20,7 @@ on the left for the full list of APIs.
   <tr>
     <td>
       <h4><a href="dev-guide/addon-development/installation.html">Installation</a></h4>
-      How to download, install, and initialize the SDK on Windows, Os X and Linux.
+      Download, install, and initialize the SDK on Windows, OS X and Linux.
     </td>
 
     <td>
@@ -55,7 +55,7 @@ on the left for the full list of APIs.
   <tr>
     <td>
       <h4><a href="dev-guide/addon-development/tutorials/adding-toolbar-button.html">Add a toolbar button</a></h4>
-      Attach a button to the Firefox Add-on toolbar, and how to run scripts in it.
+      Attach a button to the Firefox Add-on toolbar.
     </td>
 
     <td>
@@ -68,12 +68,12 @@ on the left for the full list of APIs.
   <tr>
     <td>
       <h4><a href="dev-guide/addon-development/tutorials/adding-menus.html">Add a menu item to Firefox</a></h4>
-      How to add items to Firefox's main menus.
+      Add items to Firefox's main menus.
     </td>
 
     <td>
       <h4><a href="dev-guide/addon-development/tutorials/add-a-context-menu-item.html">Add a context menu item</a></h4>
-      How to add items to Firefox's context menu.
+      Add items to Firefox's context menu.
     </td>
 
   </tr>
@@ -175,7 +175,7 @@ on the left for the full list of APIs.
 
     <td>
       <h4><a href="dev-guide/addon-development/tutorials/adding-menus.html">Using third-party modules</a></h4>
-      How to install and use additional modules which don't ship with the SDK itself.
+      Install and use additional modules which don't ship with the SDK itself.
     </td>
 
   </tr>
@@ -202,7 +202,7 @@ on the left for the full list of APIs.
 
     <td>
       <h4><a href="dev-guide/addon-development/mobile.html">Mobile development</a></h4>
-      Getting set up to develop add-ons for Firefox Mobile on Android.
+      Get set up to develop add-ons for Firefox Mobile on Android.
     </td>
 
   </tr>
