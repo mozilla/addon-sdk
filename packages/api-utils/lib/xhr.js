@@ -5,6 +5,7 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
+const memory = require('api-utils/memory');
 
 // ## Implementation Notes ##
 // 

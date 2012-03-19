@@ -7,7 +7,7 @@
 const { Cc, Ci } = require("chrome");
 const { Unknown } = require("./xpcom");
 const { when: unload } = require("./unload");
-let memory = require("./memory");
+const memory = require("./memory");
 
 
 /**
