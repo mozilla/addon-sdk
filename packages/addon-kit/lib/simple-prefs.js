@@ -22,11 +22,6 @@ const branch = Cc["@mozilla.org/preferences-service;1"].
              getBranch(ADDON_BRANCH).
              QueryInterface(Ci.nsIPrefBranch2);
 
-// Event target we will expose as module exports in order to be able to
-// emit events on it.
-const target = EventTarget.extend({ prefs: prefs }).new();
-module.exports = target;
-
 // Listen to changes in the preferences
 function preferenceChange(subject, topic, name) {
   if (topic === 'nsPref:changed')
@@ -62,6 +57,11 @@ const prefs = Proxy.create({
     return prefService.has(ADDON_BRANCH + pref);
   }
 });
+
+// Event target we will expose as module exports in order to be able to
+// emit events on it.
+const target = EventTarget.extend({ prefs: prefs }).new();
+module.exports = target;
 
 // This is workaround making sure that exports is wrapped before it's
 // frozen, which needs to happen in order to workaround Bug 673468.
