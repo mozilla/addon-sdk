@@ -77,7 +77,7 @@ They contain the following properties:
     <p>For an add-on credential, this property is of the form:<br><code>
     addon:&lt;addon-id&gt;</code>, where <code>&lt;addon-id&gt;</code>
     is the add-on's
-    <a href="dev-guide/addon-development/program-id.html">
+    <a href="dev-guide/guides/program-id.html">
     Program ID</a>.</p>
     <p>You don't supply this value when storing an add-on credential: it is
     automatically generated for you. However, you can use it to work out

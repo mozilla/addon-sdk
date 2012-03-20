@@ -116,7 +116,7 @@ class Generate_Docs_Tests(unittest.TestCase):
             print "The following links are broken:"
             for broken_link in sorted(broken_links):
                 print " "+ broken_link
-            self.fail("%d links are broken" % len(broken_link))
+            self.fail("%d links are broken" % len(broken_links))
         # clean up
         shutil.rmtree(get_base_url_path())
         tgz.close()

@@ -27,7 +27,7 @@ Like all modules that interact with web content, page-mod uses content
 scripts that execute in the content process and defines a messaging API to
 communicate between the content scripts and the main add-on script. For more
 details on content scripting see the tutorial on [interacting with web
-content](dev-guide/addon-development/web-content.html).
+content](dev-guide/guides/content-scripts/index.html).
 
 To create a PageMod the add-on developer supplies:
 

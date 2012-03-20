@@ -6,12 +6,12 @@
 
 The `self` module provides access to data that is bundled with the add-on
 as a whole. It also provides access to the
-[Program ID](dev-guide/addon-development/program-id.html), a value which is
+[Program ID](dev-guide/guides/program-id.html), a value which is
 unique for each add-on.
 
 Note that the `self` module is completely different from the global `self`
 object accessible to content scripts, which is used by a content script to
-[communicate with the add-on code](dev-guide/addon-development/content-scripts/using-port.html).
+[communicate with the add-on code](dev-guide/guides/content-scripts/using-port.html).
 
 <api name="id">
 @property {string}
@@ -43,7 +43,7 @@ This data lives in the main package's `data/` directory, immediately below
 the `package.json` file. All files in this directory will be copied into the
 XPI and made available through the `data` object.
 
-The [Package Specification](dev-guide/addon-development/package-spec.html)
+The [Package Specification](dev-guide/package-spec.html)
 section explains the `package.json` file.
 
 <api name="data.load">

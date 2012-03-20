@@ -84,9 +84,9 @@ have to send messages between the content script and the main add-on code.
 [`Widget()` constructor](packages/addon-kit/widget.html#Widget(options)).
 
 * You can communicate with the script using either the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 
 <div class="warning">
 <p>Unless your content script is extremely simple and consists only of a
@@ -177,7 +177,7 @@ script:
     });
 
 To learn much more about content scripts, see the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 <div class="experimental">
@@ -197,9 +197,9 @@ you can just include a script from the HTML file in the normal way, using
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
@@ -354,7 +354,7 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html) for more
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html) for more
 information.
 
     var widgets = require("widget");
@@ -472,7 +472,7 @@ Represents a widget object.
 
   @prop [contentURL] {string}
     An optional string URL to content to load into the widget. This can be
-    [local content](dev-guide/addon-development/web-content.html) or remote
+    [local content](dev-guide/guides/content-scripts/index.html) or remote
     content, an image or web content. Widgets must have either the `content`
     property or the `contentURL` property set.
 
@@ -553,7 +553,7 @@ Represents a widget object.
 @param data {value}
   The message to send.
   The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -601,7 +601,7 @@ Represents a widget object.
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget.  This can be
-  [local content](dev-guide/addon-development/web-content.html) or remote
+  [local content](dev-guide/guides/content-scripts/index.html) or remote
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
@@ -669,7 +669,7 @@ Represents a widget object.
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -694,7 +694,7 @@ code in the widget's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -756,7 +756,7 @@ In this example `WidgetView` is used to display different content for
   Sends a message to the widget view's content scripts.
 @param data {value}
   The message to send. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -793,7 +793,7 @@ In this example `WidgetView` is used to display different content for
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget view.  This can be
-  [local content](dev-guide/addon-development/web-content.html) or remote
+  [local content](dev-guide/guides/content-scripts/index.html) or remote
   content, an image or web content.  Setting it updates the widget view's
   appearance immediately.  However, if the widget view was created using
   `content`, then this property is meaningless, and setting it has no effect.
@@ -862,7 +862,7 @@ In this example `WidgetView` is used to display different content for
 * receive events from the content script using the `port.on`
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -889,7 +889,7 @@ code in the widget view's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
