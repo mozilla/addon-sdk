@@ -394,6 +394,8 @@ let SelectionListenerManager = Unknown.extend({
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
+// Note: We use `Object.create` form just in order to define `__iterator__`
+// as non-enumerable, to ensure that it won't be returned by an `Object.keys`.
 var SelectionIterator = Object.create(Object.prototype, {
   /**
    * Exports an iterator so that discontiguous selections can be iterated.
@@ -402,8 +404,6 @@ var SelectionIterator = Object.create(Object.prototype, {
    * is returned because the text field selection APIs doesn't support
    * multiple selections.
    */
-  // We make `__iterator__` explicitly non-enumerable to ensure that it won't
-  // show be returned by `Object.keys`.
   __iterator__: { enumerable: false, value: function() {
     let selection = getSelection(DOM);
     let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
