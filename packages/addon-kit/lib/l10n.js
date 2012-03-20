@@ -3,10 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-let prefs = require("preferences-service");
-let { Cc, Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
+const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
+const { getRulesForLocale } = require("api-utils/l10n/plural-rules");
+
+// Get URI for the addon root folder:
+const { rootURI } = require("@packaging");
 
 let globalHash = {};
+let pluralMappingFunction = getRulesForLocale("en");
 
 exports.get = function get(k) {
 
@@ -35,11 +40,26 @@ exports.get = function get(k) {
     //   // Identifier of a key stored in properties file
     //   _("downloadNumber", 0);
     let n = arguments[1];
-    let pluralForm = "other";
-    // TODO: Make this rule specific to each language
-    if (n <= 1)
-      pluralForm = "one";
-    localized = localized[pluralForm];
+
+    // First handle simple universal forms that may not be mandatory
+    // for each language, (i.e. not different than 'other' form,
+    // but still usefull for better phrasing)
+    // For example 0 in english is the same form than 'other'
+    // but we accept 'zero' form if specified in localization file
+    if (n === 0 && "zero" in localized)
+      localized = localized["zero"];
+    else if (n === 1 && "one" in localized)
+      localized = localized["one"];
+    else if (n === 2 && "two" in localized)
+      localized = localized["two"];
+    else {
+      let pluralForm = pluralMappingFunction(n);
+      if (pluralForm in localized)
+        localized = localized[pluralForm];
+      else // Fallback in case of error: missing plural form
+        localized = localized["other"];
+    }
+
     // Simulate a string with one placeholder:
     args = [null, n];
   }
@@ -71,56 +91,59 @@ function readURI(uri) {
   return request.responseText;
 }
 
+function readJsonUri(uri) {
+  try {
+    return JSON.parse(readURI(uri));
+  }
+  catch(e) {
+    console.error("Error while reading locale file:\n" + uri + "\n" + e);
+  }
+  return {};
+}
+
+// Returns the array stored in `locales.json` manifest that list available
+// locales files
+function getAvailableLocales() {
+  let uri = rootURI + "locales.json";
+  let manifest = readJsonUri(uri);
+
+  return "locales" in manifest && Array.isArray(manifest.locales) ?
+         manifest.locales : [];
+}
+
 // Returns URI of the best locales file to use from the XPI
-//   Reproduce platform algorithm, see `LanguagesMatch` and
-//   `nsChromeRegistryChrome::nsProviderArray::GetProvider` functions:
-//   http://mxr.mozilla.org/mozilla-central/source/chrome/src/nsChromeRegistryChrome.cpp#93
-// TODO: Implement a better matching algorithm using "intl.accept_languages"
-// and following: http://tools.ietf.org/html/rfc4647#page-14
-function searchAddonLocaleFile(preferred) {
-  // Get URI for the addon root folder:
-  let rootURI = require("@packaging").rootURI;
+function getBestLocaleFile() {
 
   // Read localization manifest file that contains list of available languages
-  let localesManifest = JSON.parse(readURI(rootURI + "locales.json"));
-  let locales = localesManifest.locales;
+  let availableLocales = getAvailableLocales();
 
-  let localeFile = null;
-  // Select exact matching first
-  if (locales.indexOf(preferred) != -1) {
-    localeFile = preferred;
-  }
-  // Then ignore yy in "xx-yy" pattern.
-  // Ex: accept "fr-FR", if `preferred` is "fr"
-  else {
-    let prefix = preferred.replace(/-.*$/, "");
-    for each(let filename in locales) {
-      if (filename.indexOf(prefix + "-") == 0) {
-        localeFile = filename;
-        break;
-      }
-    }
-  }
-  if (!localeFile)
+  // Retrieve list of prefered locales to use
+  let preferedLocales = getPreferedLocales();
+
+  // Compute the most preferable locale to use by using these two lists
+  let bestMatchingLocale = findClosestLocale(availableLocales, preferedLocales);
+
+  // It may be null if the addon doesn't have any locale file
+  if (!bestMatchingLocale)
     return null;
 
-  return rootURI + "locale/" + localeFile + ".json";
+  // Retrieve the related plural mapping function
+  let shortLocaleCode = bestMatchingLocale.split("-")[0].toLowerCase();
+  pluralMappingFunction = getRulesForLocale(shortLocaleCode);
+
+  return rootURI + "locale/" + bestMatchingLocale + ".json";
 }
 
 function init() {
   // First, search for a locale file:
-  let preferred = prefs.get("general.useragent.locale", "en-US");
-  let localeURI = searchAddonLocaleFile(preferred);
+  let localeURI = getBestLocaleFile();
   if (!localeURI)
     return;
-
-  let manifestJSON = readURI(localeURI);
-  let manifest = JSON.parse(manifestJSON);
 
   // Locale files only contains one big JSON object that is used as
   // an hashtable of: "key to translate" => "translated key"
   // TODO: We are likely to change this in order to be able to overload
   //       a specific key translation. For a specific package, module or line?
-  globalHash = manifest;
+  globalHash = readJsonUri(localeURI);
 }
 init();

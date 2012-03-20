@@ -4,9 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-const { Trait } = require("api-utils/light-traits");
-const utils = require("api-utils/passwords/utils");
-const defer = require("api-utils/utils/function").Enqueued;
+
+const { search, remove, store } = require("api-utils/passwords/utils");
+const { defer, delay } = require("api-utils/functional");
 
 /**
  * Utility function that returns `onComplete` and `onError` callbacks form the
@@ -40,13 +40,13 @@ function createWrapperMethod(wrapped) {
     try {
       let value = wrapped(options);
       if (onComplete) {
-        defer(function() {
+        delay(function() {
           try {
             onComplete(value);
           } catch (exception) {
             onError(exception);
           }
-        })();
+        });
       }
     } catch (exception) {
       onError(exception);
@@ -54,6 +54,6 @@ function createWrapperMethod(wrapped) {
   };
 }
 
-exports.search = createWrapperMethod(utils.search);
-exports.store = createWrapperMethod(utils.store);
-exports.remove = createWrapperMethod(utils.remove);
+exports.search = createWrapperMethod(search);
+exports.store = createWrapperMethod(store);
+exports.remove = createWrapperMethod(remove);

@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
@@ -8,7 +12,7 @@ consistent with other add-ons and blends in well with Firefox.
 "Widgets" are small pieces of content that live in the Firefox 4
 [add-on bar](https://developer.mozilla.org/en/The_add-on_bar).
 They can be simple icons or complex web pages.  You can attach
-[panels](packages/addon-kit/docs/panel.html) to them that open when they're
+[panels](packages/addon-kit/panel.html) to them that open when they're
 clicked, or you can define a custom click handler to perform some other action,
 like opening a web page in a tab.
 
@@ -44,7 +48,7 @@ alt="Widget displaying an icon">
 You can make `contentURL` point to an HTML or icon file which you have
 packaged inside your add-on. Just save the file in your add-on's `data`
 directory, and reference it using the `data.url()` method of the
-[`self`](packages/addon-kit/docs/self.html) module:
+[`self`](packages/addon-kit/self.html) module:
 
     var data = require("self").data;
 
@@ -81,12 +85,12 @@ have to send messages between the content script and the main add-on code.
 
 * You can specify one or more content scripts to load into the widget using the
 `contentScript` or `contentScriptFile` options to the
-[`Widget()` constructor](packages/addon-kit/docs/widget.html#Widget(options)).
+[`Widget()` constructor](packages/addon-kit/widget.html#Widget(options)).
 
 * You can communicate with the script using either the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 
 <div class="warning">
 <p>Unless your content script is extremely simple and consists only of a
@@ -116,16 +120,15 @@ implement the media player functions using the SDK.
 
 The widget's content is specified using HTML like this:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<html>
-  <body>
-    <img src="play.png" id="play-button"></img>
-    <img src="pause.png" id="pause-button"></img>
-    <img src="stop.png" id="stop-button"></img>
-  </body>
-</html>
-]]>
-</script>
+<pre class="brush: html">
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;img src="play.png" id="play-button"&gt;
+    &lt;img src="pause.png" id="pause-button"&gt;
+    &lt;img src="stop.png" id="stop-button"&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
 
 We just include three icons, and assign an ID to each one. This HTML file,
 and the icon files it references, are saved in the add-on's `data`
@@ -178,7 +181,7 @@ script:
     });
 
 To learn much more about content scripts, see the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 <div class="experimental">
@@ -194,18 +197,18 @@ directory and use them to define the widget's content. We can call this
 add-on, the add-on author knows exactly what it's doing. To
 interact with trusted content you don't need to use content scripts:
 you can just include a script from the HTML file in the normal way, using
-`<script>` tags.
+`script` tags.
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
 
-To show the difference, let's convert the `player` add-on above
+To show the difference, convert the `player` add-on above
 to use normal page scripts instead of content scripts.
 
 First, in the content script, change `self` to `addon`, and wrap it in a
@@ -228,22 +231,21 @@ function:
       }
     }
 
-Next, add a `<script>` tag to reference "button-script.js", and
+Next, add a `script` tag to reference "button-script.js", and
 call its `init()` function on load:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<html>
-  <head>
-    <script src="button-script.js">&lt;/script>
-  </head>
-  <body onLoad="init()">
-    <img src="play.png" id="play-button"></img>
-    <img src="pause.png" id="pause-button"></img>
-    <img src="stop.png" id="stop-button"></img>
-  </body>
-</html>
-]]>
-</script>
+<pre class="brush: html">
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;script src="button-script.js">&lt;/script&gt;
+  &lt;/head&gt;
+  &lt;body onLoad="init()"&gt;
+    &lt;img src="play.png" id="play-button"&gt;
+    &lt;img src="pause.png" id="pause-button"&gt;
+    &lt;img src="stop.png" id="stop-button"&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
 
 Finally, remove the line attaching the content script from "main.js":
 
@@ -274,7 +276,7 @@ Finally, remove the line attaching the content script from "main.js":
 
 ## Attaching Panels to Widgets ##
 
-You can supply a [panel](packages/addon-kit/docs/panel.html) to the widget's
+You can supply a [panel](packages/addon-kit/panel.html) to the widget's
 constructor: if you do this, the panel is automatically displayed when the
 user clicks the widget.
 
@@ -356,7 +358,7 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-ons, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html) for more
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html) for more
 information.
 
     var widgets = require("widget");
@@ -474,14 +476,14 @@ Represents a widget object.
 
   @prop [contentURL] {string}
     An optional string URL to content to load into the widget. This can be
-    [local content](dev-guide/addon-development/web-content.html) or remote
+    [local content](dev-guide/guides/content-scripts/index.html) or remote
     content, an image or web content. Widgets must have either the `content`
     property or the `contentURL` property set.
 
     If the content is an image, it is automatically scaled to be 16x16 pixels.
 
   @prop [panel] {Panel}
-    An optional [panel](packages/addon-kit/docs/panel.html) to open when the
+    An optional [panel](packages/addon-kit/panel.html) to open when the
     user clicks on the widget. Note: If you also register a "click" listener,
     it will be called instead of the panel being opened.  However, you can show
     the panel from the listener by calling `this.panel.show()`.
@@ -555,7 +557,7 @@ Represents a widget object.
 @param data {value}
   The message to send.
   The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -580,7 +582,7 @@ Represents a widget object.
 @method
   Retrieve a `WidgetView` instance of this widget relative to a browser window.
 @param window {BrowserWindow}
-  The [BrowserWindow](packages/addon-kit/docs/windows.html) instance to match.
+  The [BrowserWindow](packages/addon-kit/windows.html) instance to match.
 @returns {WidgetView}
   A `WidgetView` instance associated with the browser window. Any changes
   subsequently applied to this object will only be applied to the widget
@@ -603,7 +605,7 @@ Represents a widget object.
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget.  This can be
-  [local content](dev-guide/addon-development/web-content.html) or remote
+  [local content](dev-guide/guides/content-scripts/index.html) or remote
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
@@ -611,7 +613,7 @@ Represents a widget object.
 
 <api name="panel">
 @property {Panel}
-  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  A [panel](packages/addon-kit/panel.html) to open when the user clicks on
   the widget.
 </api>
 
@@ -665,13 +667,13 @@ Represents a widget object.
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -696,7 +698,7 @@ code in the widget's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">
@@ -758,7 +760,7 @@ In this example `WidgetView` is used to display different content for
   Sends a message to the widget view's content scripts.
 @param data {value}
   The message to send. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="on">
@@ -795,7 +797,7 @@ In this example `WidgetView` is used to display different content for
 <api name="contentURL">
 @property {string}
   The URL of content to load into the widget view.  This can be
-  [local content](dev-guide/addon-development/web-content.html) or remote
+  [local content](dev-guide/guides/content-scripts/index.html) or remote
   content, an image or web content.  Setting it updates the widget view's
   appearance immediately.  However, if the widget view was created using
   `content`, then this property is meaningless, and setting it has no effect.
@@ -803,7 +805,7 @@ In this example `WidgetView` is used to display different content for
 
 <api name="panel">
 @property {Panel}
-  A [panel](packages/addon-kit/docs/panel.html) to open when the user clicks on
+  A [panel](packages/addon-kit/panel.html) to open when the user clicks on
   the widget view.
 </api>
 
@@ -858,13 +860,13 @@ In this example `WidgetView` is used to display different content for
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on`
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -891,7 +893,7 @@ code in the widget view's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="mouseover">

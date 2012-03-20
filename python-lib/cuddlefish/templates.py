@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #Template used by main.js
 MAIN_JS = '''\
 const widgets = require("widget");
@@ -73,7 +77,7 @@ PACKAGE_JSON = '''\
   "fullName": "%(fullName)s",
   "description": "a basic add-on",
   "author": "",
-  "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+  "license": "MPL 2.0",
   "version": "0.1"
 }
 '''

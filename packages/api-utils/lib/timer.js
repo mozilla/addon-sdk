@@ -4,103 +4,75 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
-var xpcom = require("./xpcom");
+const { CC } = require("chrome");
+const { Unknown } = require("./xpcom");
+const { when: unload } = require("./unload");
 
-var timerClass = Cc["@mozilla.org/timer;1"];
-var nextID = 1;
-var timers = {};
+const Timer = CC('@mozilla.org/timer;1', 'nsITimer');
 
-function TimerCallback(timerID, callback, params) {
-  this._callback = callback;
-  this._params = params;
-};
-TimerCallback.prototype = {
-  QueryInterface : xpcom.utils.generateQI([Ci.nsITimerCallback])
-};
-
-function TimeoutCallback(timerID, callback, params) {
-  memory.track(this);
-  TimerCallback.apply(this, arguments)
-  this._timerID = timerID;
-};
-TimeoutCallback.prototype = new TimerCallback();
-TimeoutCallback.prototype.notify = function notifyOnTimeout(timer) {
-  try {
-    delete timers[this._timerID];
-    this._callback.apply(null, this._params);
-  } catch (e) {
-    console.exception(e);
-  }
-};
-
-function IntervalCallback(timerID, callback, params) {
-  memory.track(this);
-  TimerCallback.apply(this, arguments)
-};
-IntervalCallback.prototype = new TimerCallback();
-IntervalCallback.prototype.notify = function notifyOnInterval() {
-  try {
-    this._callback.apply(null, this._params);
-  } catch (e) {
-    console.exception(e);
-  }
-};
-
-
-var setTimeout = exports.setTimeout = function setTimeout(callback, delay) {
-  return makeTimer(
-    Ci.nsITimer.TYPE_ONE_SHOT,
-    callback,
-    TimeoutCallback,
-    delay,
-    Array.slice(arguments, 2));
-};
-
-var clearTimeout = exports.clearTimeout = function clearTimeout(timerID) {
-  cancelTimer(timerID);
-};
-
-var setInterval = exports.setInterval = function setInterval(callback, delay) {
-  return makeTimer(
-    Ci.nsITimer.TYPE_REPEATING_SLACK,
-    callback,
-    IntervalCallback,
-    delay,
-    Array.slice(arguments, 2));
-};
-
-var clearInterval = exports.clearInterval = function clearInterval(timerID) {
-  cancelTimer(timerID);
-};
-
-function makeTimer(type, callback, callbackType, delay, params) {
-  var timer = timerClass.createInstance(Ci.nsITimer);
-
-  memory.track(timer, "nsITimer");
-
-  var timerID = nextID++;
-  timers[timerID] = timer;
-
-  timer.initWithCallback(
-    new callbackType(timerID, callback, params),
-    delay || 0,
-    type
-  );
-  return timerID;
-}
-
-function cancelTimer(timerID) {
-  var timer = timers[timerID];
-  if (timer) {
-    timer.cancel();
-    delete timers[timerID];
-  }
-}
-
-require("./unload").when(
-  function cancelAllPendingTimers() {
-    var timerIDs = [timerID for (timerID in timers)];
-    timerIDs.forEach(function(timerID) { cancelTimer(timerID); });
+// Registry for all timers.
+const timers = (function(map, id) {
+  return Object.defineProperties(function registry(key, fallback) {
+    return key in map ? map[key] : fallback;
+  }, {
+    register: { value: function(value) (map[++id] = value, id) },
+    unregister: { value: function(key) delete map[key] },
+    forEach: { value: function(callback) Object.keys(map).forEach(callback) }
   });
+})(Object.create(null), 0);
 
+const TimerCallback = Unknown.extend({
+  interfaces: [ 'nsITimerCallback' ],
+  initialize: function initialize(id, callback, rest) {
+    this.id = id;
+    this.callback = callback;
+    this.arguments = rest;
+  }
+});
+
+const TimeoutCallback = TimerCallback.extend({
+  type: 0, // nsITimer.TYPE_ONE_SHOT
+  notify: function notify() {
+    try {
+      timers.unregister(this.id);
+      this.callback.apply(null, this.arguments);
+    }
+    catch (error) {
+      console.exception(error);
+    }
+  }
+});
+
+const IntervalCallback = TimerCallback.extend({
+  type: 1, // nsITimer.TYPE_REPEATING_SLACK
+  notify: function notify() {
+    try {
+      this.callback.apply(null, this.arguments);
+    }
+    catch (error) {
+      console.exception(error);
+    }
+  }
+});
+
+function setTimer(TimerCallback, listener, delay) {
+  let timer = Timer();
+  let id = timers.register(timer);
+  let callback = TimerCallback.new(id, listener, Array.slice(arguments, 3));
+  timer.initWithCallback(callback, delay || 0, TimerCallback.type);
+  return id;
+}
+
+function unsetTimer(id) {
+  let timer = timers(id);
+  timers.unregister(id);
+  if (timer)
+    timer.cancel();
+}
+
+exports.setTimeout = setTimer.bind(null, TimeoutCallback);
+exports.setInterval = setTimer.bind(null, IntervalCallback);
+exports.clearTimeout = unsetTimer;
+exports.clearInterval = unsetTimer;
+
+unload(function() { timers.forEach(unsetTimer); });

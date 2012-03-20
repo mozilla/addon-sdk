@@ -15,10 +15,7 @@ exports.testGlobals = function(test) {
 
   // in particular, these old globals should no longer be present
   test.assert(!('packaging' in global), "no 'packaging', good");
-  // this will be fixed by bug 620559
-  test.expectFail(function() {
-    test.assert(!('memory' in global), "no 'memory', good");
-  });
+  test.assert(!('memory' in global), "no 'memory', good");
 
   test.assertMatches(module.uri, /test-globals\.js$/,
                      'should contain filename');

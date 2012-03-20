@@ -6,19 +6,20 @@ The `request` module lets you make simple yet powerful network requests.
 
 <api name="Request">
 @class
-The `Request` object is used to make `GET` or `POST` network requests. It is
-constructed with a URL to which the request is sent. Optionally the user may
-specify a collection of headers and content to send alongside the request and
-a callback which will be executed once the request completes.
+The `Request` object is used to make `GET`, `POST` or `PUT` network requests.
+It is constructed with a URL to which the request is sent. Optionally the user
+may specify a collection of headers and content to send alongside the request
+and a callback which will be executed once the request completes.
 
 Once a `Request` object has been created a `GET` request can be executed by
-calling its `get()` method, or a `POST` request by calling its `post()` method.
+calling its `get()` method, a `POST` request by calling its `post()` method,
+or a `PUT` request by calling its `put()` method.
 
 When the server completes the request, the `Request` object emits a "complete"
 event.  Registered event listeners are passed a `Response` object.
 
-Each `Request` object is designed to be used once. Once `GET` or `POST` are
-called, attempting to call either will throw an error.
+Each `Request` object is designed to be used once. Once `GET`, `POST` or `PUT`
+are called, attempting to call either will throw an error.
 
 Since the request is not being made by any particular website, requests made
 here are not subject to the same-domain restriction that requests made in web
@@ -79,8 +80,8 @@ set several properties on the resulting `Request`.
     encode safely.
 
     For `GET` requests, the query string (`content`) will be appended to the
-    URL. For `POST` requests, the query string will be sent as the body of the
-    request.
+    URL. For `POST` and `PUT` requests, the query string will be sent as the body
+    of the request.
 
     @prop [contentType] {string}
     The type of content to send to the server. This explicitly sets the
@@ -142,6 +143,12 @@ Make a `POST` request.
 @returns {Request}
 </api>
 
+<api name="put">
+@method
+Make a `PUT` request.
+@returns {Request}
+</api>
+
 <api name="complete">
 @event
 The `Request` object emits this event when the request has completed and a
@@ -157,7 +164,7 @@ Listener functions are passed the response to the request as a `Response` object
 <api name="Response">
 @class
 The Response object contains the response to a network request issued using a
-`Request` object. It is returned by the `get()` or `post()` method of a
+`Request` object. It is returned by the `get()`, `post()` or `put()` method of a
 `Request` object.
 
 All members of a `Response` object are read-only.

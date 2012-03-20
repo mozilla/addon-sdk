@@ -176,7 +176,8 @@ parser_groups = (
         (("", "--mobile-app",), dict(dest="mobile_app_name",
                                     help=("Name of your Android application to "
                                           "use. Possible values: 'firefox', "
-                                          "'firefox_beta', 'firefox_nightly'."),
+                                          "'firefox_beta', 'fennec_aurora', "
+                                          "'fennec' (for nightly)."),
                                     metavar=None,
                                     default=None,
                                     cmds=['run', 'test', 'testall'])),
@@ -469,6 +470,16 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     return 0
 
+def buildJID(target_cfg):
+    if "id" in target_cfg:
+        jid = target_cfg["id"]
+    else:
+        import uuid
+        jid = str(uuid.uuid4())
+    if not ("@" in jid or jid.startswith("{")):
+        jid = jid + "@jetpack"
+    return jid
+
 def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         defaults=None, env_root=os.environ.get('CUDDLEFISH_ROOT'),
         stdout=sys.stdout):
@@ -521,6 +532,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
+    elif command not in ["xpi", "test", "run"]:
+        print >>sys.stderr, "Unknown command: %s" % command
+        print >>sys.stderr, "Try using '--help' for assistance."
+        sys.exit(1)
 
     target_cfg_json = None
     if not target_cfg:
@@ -558,9 +573,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "run":
         use_main = True
     else:
-        print >>sys.stderr, "Unknown command: %s" % command
-        print >>sys.stderr, "Try using '--help' for assistance."
-        sys.exit(1)
+        assert 0, "shouldn't get here"
 
     if use_main and 'main' not in target_cfg:
         # If the user supplies a template dir, then the main
@@ -597,14 +610,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     else:
         assert command == "test"
 
-    if "id" in target_cfg:
-        jid = target_cfg["id"]
-    else:
-        import uuid
-        jid = str(uuid.uuid4())
-    if not ("@" in jid or jid.startswith("{")):
-        jid = jid + "@jetpack"
-
+    jid = buildJID(target_cfg)
 
     targets = [target]
     if command == "test":
@@ -638,8 +644,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                       "lib", "cuddlefish.js")
     loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
+    test_filter_re = None
+    if scan_tests and options.filter:
+        test_filter_re = options.filter
+        if ":" in options.filter:
+            test_filter_re = options.filter.split(":")[0]
     try:
-        manifest = build_manifest(target_cfg, pkg_cfg, deps, scan_tests,
+        manifest = build_manifest(target_cfg, pkg_cfg, deps,
+                                  scan_tests, test_filter_re,
                                   loader_modules)
     except ModuleNotFoundError, e:
         print str(e)

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import sys
 import re
@@ -366,9 +370,6 @@ def generate_build_for_target(pkg_cfg, target, deps,
 
     if ('preferences' in target_cfg):
         build['preferences'] = target_cfg.preferences
-
-    if ('id' in target_cfg):
-        build['jetpackID'] = target_cfg.id
 
     return build
 

@@ -5,6 +5,7 @@
 var xhr = require("xhr");
 var timer = require("timer");
 var { Loader } = require("./helpers");
+var xulApp = require("xul-app");
 
 /* Test is intentionally disabled until platform bug 707256 is fixed.
 exports.testAbortedXhr = function(test) {
@@ -48,22 +49,22 @@ exports.testUnload = function(test) {
   test.assertEqual(sbxhr.getRequestCount(), 0);
 };
 
-exports.testDelegatedReturns = function(test) {
+exports.testResponseHeaders = function(test) {
   var req = new xhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
-      // This response isn't going to have any headers, so the return value
-      // should be null. Previously it wasn't returning anything, and thus was
-      // undefined.
-      
-      // Depending on whether Bug 608939 has been applied
-      // to the platform, getAllResponseHeaders() may return
-      // null or the empty string; accept either.
       var headers = req.getAllResponseHeaders();
-      test.assert(headers === null || headers === "",
-                  "XHR's delegated methods should return");
+      if (xulApp.versionInRange(xulApp.platformVersion, "13.0a1", "*")) {
+        // Now that bug 608939 is FIXED, headers works correctly on files:
+        test.assertEqual(headers, "Content-Type: text/plain\n",
+                         "XHR's headers are valid");
+      }
+      else {
+        test.assert(headers === null || headers === "",
+                    "XHR's headers are empty");
+      }
       test.done();
     }
   };

@@ -248,3 +248,20 @@ exports["test:removing once"] = function(test) {
   e.once("error", function() { test.fail("error event was emitted"); });
   e._emit("foo", "bug-656684");
 };
+
+// Bug 726967: Ensure that `emit` doesn't do an infinite loop when `error`
+// listener throws an exception
+exports['test:emitLoop'] = function(test) {
+  let e = new EventEmitter();
+
+  e.on("foo", function() {
+    throw new Error("foo");
+  });
+
+  e.on("error", function() {
+    throw new Error("error");
+  });
+  e.emit("foo");
+
+  test.pass("emit didn't looped");
+};

@@ -53,7 +53,7 @@ You can also load HTML that's been packaged with your add-on, and this is
 most probably how you will create dialogs. To do this, save
 the HTML in your add-on's `data` directory and load it using the `data.url()`
 method exported by the
-[`self`](packages/addon-kit/docs/self.html) module, like this:
+[`self`](packages/addon-kit/self.html) module, like this:
 
     var panel = require("panel").Panel({
       contentURL: require("self").data.url("myFile.html")
@@ -74,12 +74,12 @@ have to send messages between the content script and the main add-on code.
 
 * You can specify one or more content scripts to load into a panel using the
 `contentScript` or `contentScriptFile` options to the
-[`Panel()` constructor](packages/addon-kit/docs/panel.html#Panel%28options%29).
+[`Panel()` constructor](packages/addon-kit/panel.html#Panel%28options%29).
 
 * You can communicate with the script using either the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 
 For example, here's an add-on whose content script intercepts mouse clicks
 on links inside the panel, and sends the target URL to the main add-on
@@ -200,30 +200,27 @@ The content script "get-text.js" looks like this:
 
 Finally, the "text-entry.html" file defines the `<textarea>` element:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<pre class="brush: html">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+&lt;html&gt;
 
-<head>
-  <style type="text/css" media="all">
+&lt;head&gt;
+  &lt;style type="text/css" media="all"&gt;
     textarea {
       margin: 10px;
     }
-  </style>
-</head>
+  &lt;/style&gt;
+&lt;/head&gt;
 
-<body>
-  <textarea rows="10" cols="20" id="edit-box"></textarea>
-</body>
+&lt;body&gt;
+  &lt;textarea rows="10" cols="20" id="edit-box">&lt;/textarea&gt;
+&lt;/body&gt;
 
-</html>
-]]>
-</script>
+&lt;/html&gt;
+</pre>
 
 To learn much more about content scripts, see the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 <div class="experimental">
@@ -239,13 +236,13 @@ directory and use them to define the panel's content. We can call this
 add-on, the add-on author knows exactly what it's doing. To
 interact with trusted content you don't need to use content scripts:
 you can just include a script from the HTML file in the normal way, using
-`<script>` tags.
+`script` tags.
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
@@ -307,31 +304,27 @@ that instead of `self`, we use `addon` to access the messaging APIs:
       };
     });
 
-Finally, the HTML file now references "get-text.js" inside a `<script>` tag:
+Finally, the HTML file now references "get-text.js" inside a `script` tag:
 
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<pre class="brush: html">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+&lt;html&gt;
 
-<head>
-  <style type="text/css" media="all">
+&lt;head&gt;
+  &lt;style type="text/css" media="all"&gt;
     textarea {
       margin: 10px;
     }
-  </style>
-  <script src="get-text.js">&lt;/script>
-</head>
+  &lt;/style&gt;
+  &lt;script src="get-text.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
 
-<body>
-  <textarea rows="10" cols="20" id="edit-box"></textarea>
-</body>
+&lt;body&gt;
+  &lt;textarea rows="10" cols="20" id="edit-box">&lt;/textarea&gt;
+&lt;/body&gt;
 
-</html>
-]]>
-</script>
-
+&lt;/html&gt;
+</pre>
 </div>
 
 ## Styling Trusted Panel Content ##
@@ -417,13 +410,13 @@ Creates a panel.
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send events to the content script using the `port.emit` function
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -558,7 +551,7 @@ code in the panel's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">

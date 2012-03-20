@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os, re, errno
 import markdown
 import cgi
@@ -9,42 +13,23 @@ from cuddlefish._version import get_versions
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
-HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
-LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
+THIRD_PARTY_PACKAGE_SUMMARIES = '<ul id="third-party-package-summaries">'
+HIGH_LEVEL_PACKAGE_SUMMARIES = '<ul id="high-level-package-summaries">'
+LOW_LEVEL_PACKAGE_SUMMARIES = '<ul id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
 DEFAULT_TITLE = 'Add-on SDK Documentation'
 
-def get_modules(modules_json):
-    modules = []
-    for name in modules_json:
-        typ = modules_json[name][0]
-        if typ == "directory":
-            sub_modules = get_modules(modules_json[name][1])
-            for sub_module in sub_modules:
-                modules.append([name, sub_module[0]])
-        elif typ == "file":
-            if not name.startswith(".") and name.endswith('.js'):
-                modules.append([name[:-3]])
-    return modules
-
-def get_documented_modules(package_name, modules_json, doc_path):
-    modules = get_modules(modules_json)
+def get_documentation(package_name, modules_json, doc_path):
     documented_modules = []
-    for module in modules:
-        path = os.path.join(*module)
-        if module_md_exists(doc_path, path):
-            documented_modules.append(module)
-    if package_name == "addon-kit":
-        # hack for bug 664001, self-maker.js is in api-utils, self.md is in
-        # addon-kit. Real fix is for this function to look for all .md files,
-        # not for .js files with matching .md file in the same package.
-        documented_modules.append(["self"])
+    for root, dirs, files in os.walk(doc_path):
+        subdir_path = root.split(os.sep)[len(doc_path.split(os.sep)):]
+        for filename in files:
+            if filename.endswith(".md"):
+                modname = filename[:-len(".md")]
+                modpath = subdir_path + [modname]
+                documented_modules.append(modpath)
     return documented_modules
-
-def module_md_exists(root, module_name):
-    module_md_path = os.path.join(root, module_name + '.md')
-    return os.path.exists(module_md_path)
 
 def tag_wrap(text, tag, attributes={}):
     result = '\n<' + tag
@@ -53,8 +38,12 @@ def tag_wrap(text, tag, attributes={}):
     result +='>' + text + '</'+ tag + '>\n'
     return result
 
+def is_third_party(package_json):
+    return (not is_high_level(package_json)) and \
+           (not(is_low_level(package_json)))
+
 def is_high_level(package_json):
-    return not is_low_level(package_json)
+    return 'jetpack-high-level' in package_json.get('keywords', [])
 
 def is_low_level(package_json):
     return 'jetpack-low-level' in package_json.get('keywords', [])
@@ -98,16 +87,18 @@ class WebDocs(object):
         doc_path = package_json.get('doc', None)
         if not doc_path:
             return ''
-        modules = get_documented_modules(package_name, libs, doc_path)
+        modules = get_documentation(package_name, libs, doc_path)
         modules.sort()
         module_items = ''
         relative_doc_path = doc_path[len(self.root) + 1:]
-        relative_doc_URL = "/".join(relative_doc_path.split(os.sep))
+        relative_doc_path_pieces = relative_doc_path.split(os.sep)
+        del relative_doc_path_pieces[-1]
+        relative_doc_URL = "/".join(relative_doc_path_pieces)
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
                 {'href': relative_doc_URL + '/' + '/'.join(module) + '.html'})
-            module_items += tag_wrap(module_link, 'li', {'class':'module'})
-        return tag_wrap(module_items, 'ul', {'class':'modules'})
+            module_items += module_link
+        return module_items
 
     def _create_package_summaries(self, packages_json, include):
         packages = ''
@@ -120,10 +111,10 @@ class WebDocs(object):
             package_directory = "/".join(package_directory.split(os.sep))
             package_link = tag_wrap(package_name, 'a', {'href': \
                                     package_directory + "/" \
-                                    + package_name + '.html'})
+                                    + 'index.html'})
             text = tag_wrap(package_link, 'h4')
             text += self._create_module_list(package_json)
-            packages += tag_wrap(text, 'div', {'class':'package-summary', \
+            packages += tag_wrap(text, 'li', {'class':'package-summary', \
               'style':'display: block;'})
         return packages
 
@@ -134,6 +125,10 @@ class WebDocs(object):
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         sdk_version = get_versions()["version"]
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
+        third_party_summaries = \
+            self._create_package_summaries(self.packages_json, is_third_party)
+        base_page = insert_after(base_page, \
+            THIRD_PARTY_PACKAGE_SUMMARIES, third_party_summaries)
         high_level_summaries = \
             self._create_package_summaries(self.packages_json, is_high_level)
         base_page = insert_after(base_page, \

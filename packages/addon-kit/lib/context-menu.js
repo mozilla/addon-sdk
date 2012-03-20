@@ -25,6 +25,7 @@ const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
+const { getInnerId } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
 const timer = require("timer");
@@ -638,7 +639,7 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._contentWorker._listeners("context").length > 0;
+    return this._contentWorker.hasListenerFor("context");
   },
 
   // Returns the first string or truthy value returned by a context listener in
@@ -646,16 +647,11 @@ const ContextMenuWorker = Worker.compose({
   // no context listeners, returns false.  popupNode is the node that was
   // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._contentWorker._listeners("context");
-    for (let i = 0; i < listeners.length; i++) {
-      try {
-        let val = listeners[i].call(this._contentWorker._sandbox, popupNode);
-        if (typeof(val) === "string" || val)
-          return val;
-      }
-      catch (err) {
-        console.exception(err);
-      }
+    let results = this._contentWorker.emitSync("context", popupNode);
+    for (let i = 0; i < results.length; i++) {
+      let val = results[i];
+      if (typeof val === "string" || val)
+        return val;
     }
     return false;
   },
@@ -664,7 +660,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
+    this._contentWorker.emitSync("click", popupNode, clickedItemData);
   }
 });
 
@@ -687,7 +683,7 @@ WorkerRegistry.prototype = {
 
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let innerWinID = winUtils.getInnerId(win);
+    let innerWinID = getInnerId(win);
     if ((innerWinID in this.winWorkers) ||
         (innerWinID in this.winsWithoutWorkers))
       return;
@@ -730,7 +726,7 @@ WorkerRegistry.prototype = {
 
   // Returns the worker for the item-window pair or null if none exists.
   find: function WR_find(contentWin) {
-    let innerWinID = winUtils.getInnerId(contentWin);
+    let innerWinID = getInnerId(contentWin);
     return (innerWinID in this.winWorkers) ?
            this.winWorkers[innerWinID].worker :
            null;
@@ -875,7 +871,7 @@ let browserManager = {
   // Stores the given content window with the manager and registers it with each
   // top-level item's worker registry.
   _registerContentWin: function BM__registerContentWin(win) {
-    let innerID = winUtils.getInnerId(win);
+    let innerID = getInnerId(win);
 
     // It's an error to call this method for the same window more than once, but
     // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See

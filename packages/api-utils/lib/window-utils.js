@@ -7,12 +7,16 @@
 const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events'),
       { Trait } = require('./traits');
+const { when } = require('./unload');
+const { getInnerId, getOuterId } = require('./window-utils');
 const errors = require("./errors");
 
-const gWindowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                        getService(Ci.nsIWindowWatcher);
 const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
                         getService(Ci.nsIAppShellService);
+const observers = require('api-utils/observer-service');
+
 
 const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
@@ -22,11 +26,12 @@ const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
  * @return A generator that yields XUL windows exposing the
  *         nsIDOMWindow interface.
  */
-var windowIterator = exports.windowIterator = function windowIterator() {
-  let winEnum = gWindowWatcher.getWindowEnumerator();
+function windowIterator() {
+  let winEnum = windowWatcher.getWindowEnumerator();
   while (winEnum.hasMoreElements())
     yield winEnum.getNext().QueryInterface(Ci.nsIDOMWindow);
 };
+exports.windowIterator = windowIterator;
 
 /**
  * An iterator for browser windows currently open in the application.
@@ -42,7 +47,7 @@ function browserWindowIterator() {
 }
 exports.browserWindowIterator = browserWindowIterator;
 
-var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
+function WindowTracker(delegate) {
    if (!(this instanceof WindowTracker)) {
      return new WindowTracker(delegate);
    }
@@ -52,7 +57,7 @@ var WindowTracker = exports.WindowTracker = function WindowTracker(delegate) {
 
   for (let window in windowIterator())
     this._regWindow(window);
-  gWindowWatcher.registerNotification(this);
+  windowWatcher.registerNotification(this);
 
   require("./unload").ensure(this);
 
@@ -92,7 +97,7 @@ WindowTracker.prototype = {
   },
 
   unload: function unload() {
-    gWindowWatcher.unregisterNotification(this);
+    windowWatcher.unregisterNotification(this);
     for (let window in windowIterator())
       this._unregWindow(window);
   },
@@ -113,6 +118,7 @@ WindowTracker.prototype = {
       this._unregWindow(window);
   })
 };
+exports.WindowTracker = WindowTracker;
 
 const WindowTrackerTrait = Trait.compose({
   _onTrack: Trait.required,
@@ -144,38 +150,42 @@ exports.closeOnUnload = function closeOnUnload(window) {
   gDocsToClose.push(window.document);
 };
 
-exports.__defineGetter__("activeWindow", function() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"]
-         .getService(Ci.nsIWindowMediator)
-         .getMostRecentWindow(null);
-});
-exports.__defineSetter__("activeWindow", function(window) {
-  try {
-    window.focus();
+Object.defineProperties(exports, {
+  activeWindow: {
+    enumerable: true,
+    get: function() {
+      return Cc["@mozilla.org/appshell/window-mediator;1"]
+        .getService(Ci.nsIWindowMediator)
+        .getMostRecentWindow(null);
+    },
+    set: function(window) {
+      try { window.focus(); } catch (e) { }
+    }
+  },
+  activeBrowserWindow: {
+    enumerable: true,
+    get: function() {
+      return Cc["@mozilla.org/appshell/window-mediator;1"]
+        .getService(Ci.nsIWindowMediator)
+        .getMostRecentWindow("navigator:browser");
+    }
   }
-  catch (e) { }
 });
 
-exports.__defineGetter__("activeBrowserWindow", function() {
-  return Cc["@mozilla.org/appshell/window-mediator;1"]
-         .getService(Ci.nsIWindowMediator)
-         .getMostRecentWindow("navigator:browser");
-});
 
 /**
  * Returns the ID of the window's current inner window.
  */
-exports.getInnerId = function getInnerId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+exports.getInnerId = function(window) {
+  console.warn('require("window-utils").getInnerId is deprecated, ' +
+               'please use require("window/utils").getInnerId instead');
+  return getInnerId(window);
 };
 
-/**
- * Returns the ID of the window's outer window.
- */
-exports.getOuterId = function getOuterId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+exports.getOuterId = function(window) {
+  console.warn('require("window-utils").getOuterId is deprecated, ' +
+               'please use require("window/utils").getOuterId instead');
+  return getOuterId(window);
 };
 
 function isBrowser(window) {
@@ -189,6 +199,18 @@ exports.hiddenWindow = appShellService.hiddenDOMWindow;
 function createHiddenXULFrame() {
   return function promise(deliver) {
     let window = appShellService.hiddenDOMWindow;
+
+    // Ensuring waiting for hidden window end of loading
+    // (The hidden window is still loading on windows/thunderbird)
+    if (window.document.readyState != "complete") {
+      window.addEventListener("load", function onload() {
+        window.removeEventListener("load", onload, false);
+        // We recurse with same arguments, when the window is ready
+        promise(deliver);
+      }, false);
+      return;
+    }
+
     let document = window.document;
     let isXMLDoc = (document.contentType == "application/xhtml+xml" ||
                     document.contentType == "application/vnd.mozilla.xul+xml")
@@ -200,7 +222,14 @@ function createHiddenXULFrame() {
       let frame = document.createElement('iframe');
       // This is ugly but we need window for XUL document in order to create
       // browser elements.
-      frame.setAttribute('src', 'chrome://browser/content/hiddenWindow.xul');
+
+      // See bug 725323: hiddenWindow URL is different on each mozilla product
+      let prefs = Cc["@mozilla.org/preferences-service;1"].
+                  getService(Ci.nsIPrefBranch);
+      let hiddenWindowURL = prefs.getCharPref("browser.hiddenWindowChromeURL", "");
+
+      frame.src = hiddenWindowURL;
+      frame.setAttribute('src', hiddenWindowURL);
       frame.addEventListener('DOMContentLoaded', function onLoad(event) {
         frame.removeEventListener('DOMContentLoaded', onLoad, false);
         deliver(frame.contentWindow);
@@ -211,7 +240,7 @@ function createHiddenXULFrame() {
 };
 exports.createHiddenXULFrame = createHiddenXULFrame;
 
-exports.createRemoteBrowser = function createRemoteBrowser(remote) {
+function createRemoteBrowser(remote) {
   return function promise(deliver) {
     createHiddenXULFrame()(function(hiddenWindow) {
       let document = hiddenWindow.document;
@@ -230,11 +259,17 @@ exports.createRemoteBrowser = function createRemoteBrowser(remote) {
       browser.setAttribute("flex", "1");
       document.documentElement.appendChild(browser);
 
+      // Bug 724433: do not leak this <browser> DOM node
+      when(function () {
+        document.documentElement.removeChild(browser);
+      });
+
       // Return browser
       deliver(browser);
     });
   };
 };
+exports.createRemoteBrowser = createRemoteBrowser;
 
 require("./unload").when(
   function() {

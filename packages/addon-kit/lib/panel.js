@@ -43,7 +43,6 @@ const Panel = Symbiont.resolve({
   _onSymbiontInit: Symbiont.required,
   _symbiontDestructor: Symbiont.required,
   _emit: Symbiont.required,
-  _asyncEmit: Symbiont.required,
   on: Symbiont.required,
   removeListener: Symbiont.required,
 
@@ -67,6 +66,7 @@ const Panel = Symbiont.resolve({
     this._onShow = this._onShow.bind(this);
     this._onHide = this._onHide.bind(this);
     this.on('inited', this._onSymbiontInit.bind(this));
+    this.on('propertyChange', this._onChange.bind(this));
 
     options = options || {};
     if ('onShow' in options)
@@ -85,6 +85,9 @@ const Panel = Symbiont.resolve({
   _destructor: function _destructor() {
     this.hide();
     this._removeAllListeners('show');
+    this._removeAllListeners('hide');
+    this._removeAllListeners('propertyChange');
+    this._removeAllListeners('inited');
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;
     this._symbiontDestructor(this);
@@ -326,6 +329,15 @@ const Panel = Symbiont.resolve({
       return true;
     }
     return false;
+  },
+
+  _onChange: function _onChange(e) {
+    if ('contentURL' in e && this._frame) {
+      // Cleanup the worker before injecting the content script in the new
+      // document
+      this._workerCleanup();
+      this._initFrame(this._frame);
+    }
   }
 });
 exports.Panel = function(options) Panel(options)

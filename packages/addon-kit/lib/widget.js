@@ -40,10 +40,11 @@ const { EventEmitter, EventEmitterTrait } = require("api-utils/events");
 const { Trait } = require("api-utils/traits");
 const LightTrait = require('api-utils/light-traits').Trait;
 const { Loader, Symbiont } = require("api-utils/content");
-const timer = require("api-utils/timer");
 const { Cortex } = require('api-utils/cortex');
 const windowsAPI = require("./windows");
+const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
+const { uuid } = require("api-utils/uuid");
 
 // Data types definition
 const valid = {
@@ -692,7 +693,7 @@ WidgetChrome.prototype.update = function WC_update(updatedItem, property, value)
 WidgetChrome.prototype._createNode = function WC__createNode() {
   // XUL element container for widget
   let node = this._doc.createElement("toolbaritem");
-  let guid = require("api-utils/xpcom").makeUuid().toString();
+  let guid = String(uuid());
   
   // Temporary work around require("self") failing on unit-test execution ...
   let jetpackID = "testID";
@@ -706,6 +707,8 @@ WidgetChrome.prototype._createNode = function WC__createNode() {
   node.setAttribute("label", this._widget.label);
   node.setAttribute("tooltiptext", this._widget.tooltip);
   node.setAttribute("align", "center");
+  // Bug 626326: Prevent customize toolbar context menu to appear
+  node.setAttribute("context", "");
 
   // TODO move into a stylesheet, configurable by consumers.
   // Either widget.style, exposing the style object, or a URL
@@ -796,7 +799,7 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
     contentScriptWhen: this._widget.contentScriptWhen,
     allow: this._widget.allow,
     onMessage: function(message) {
-      timer.setTimeout(function() {
+      setTimeout(function() {
         self._widget._onEvent("message", message);
       }, 0);
     }
@@ -826,7 +829,7 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       return;
 
     // Proxy event to the widget
-    timer.setTimeout(function() {
+    setTimeout(function() {
       self._widget._onEvent(EVENTS[e.type], null, self.node);
     }, 0);
   };
@@ -842,8 +845,8 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   
   // On document load, make modifications required for nice default
   // presentation.
-  let self = this;
   function loadListener(e) {
+    let containerStyle = self.window.getComputedStyle(self.node.parentNode);
     // Ignore event firings that target the iframe
     if (e.target == iframe)
       return;
@@ -863,6 +866,12 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       doc.body.firstElementChild.style.height = "16px";
     }
 
+    // Extend the add-on bar's default text styles to the widget.
+    doc.body.style.color = containerStyle.color;
+    doc.body.style.fontFamily = containerStyle.fontFamily;
+    doc.body.style.fontSize = containerStyle.fontSize;
+    doc.body.style.fontWeight = containerStyle.fontWeight;
+    doc.body.style.textShadow = containerStyle.textShadow;
     // Allow all content to fill the box by default.
     doc.body.style.margin = "0";
   }
