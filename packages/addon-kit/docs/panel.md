@@ -77,9 +77,9 @@ have to send messages between the content script and the main add-on code.
 [`Panel()` constructor](packages/addon-kit/panel.html#Panel%28options%29).
 
 * You can communicate with the script using either the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or (preferably, usually) the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 
 For example, here's an add-on whose content script intercepts mouse clicks
 on links inside the panel, and sends the target URL to the main add-on
@@ -220,7 +220,7 @@ Finally, the "text-entry.html" file defines the `<textarea>` element:
 </pre>
 
 To learn much more about content scripts, see the
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
 <div class="experimental">
@@ -240,9 +240,9 @@ you can just include a script from the HTML file in the normal way, using
 
 Like a content script, these scripts can communicate with the add-on code
 using the
-[`postMessage()`](dev-guide/addon-development/content-scripts/using-postmessage.html)
+[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 API or the
-[`port`](dev-guide/addon-development/content-scripts/using-port.html) API.
+[`port`](dev-guide/guides/content-scripts/using-port.html) API.
 The crucial difference is that these scripts access the `postMessage`
 and `port` objects through the `addon` object, whereas content scripts
 access them through the `self` object.
@@ -416,7 +416,7 @@ Creates a panel.
 * receive events from the content script using the `port.on` function
 
 See the guide to
-<a href="dev-guide/addon-development/content-scripts/using-port.html">
+<a href="dev-guide/guides/content-scripts/using-port.html">
 communicating using <code>port</code></a> for details.
 </api>
 
@@ -551,7 +551,7 @@ code in the panel's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">
