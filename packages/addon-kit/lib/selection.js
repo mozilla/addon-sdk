@@ -14,8 +14,11 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 
 let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
-    { emit, on, off } = require("api-utils/event/core"),
-    { Unknown } = require("api-utils/xpcom");
+    { emit, off } = require("api-utils/event/core"),
+    { Unknown } = require("api-utils/xpcom"),
+    { Base } = require("api-utils/base"),
+    { EventTarget } = require("api-utils/event/target");
+
 
 const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
                        getService(Ci.nsIWindowMediator);
@@ -35,60 +38,48 @@ const DOM  = 0x03;
 const ERR_CANNOT_CHANGE_SELECTION =
   "It isn't possible to change the selection, as there isn't currently a selection";
 
-var SelectionAPI = {
-  text: {
-    enumerable: true,
-    get: function () getSelection(TEXT, this.rangeNumber),
-    set: function (value) setSelection(value, this.rangeNumber)
+const Selection = Base.extend({
+  /**
+   * Creates an object from which a selection can be set, get, etc. Each
+   * object has an associated with a range number. Range numbers are the
+   * 0-indexed counter of selection ranges as explained at
+   * https://developer.mozilla.org/en/DOM/Selection.
+   *
+   * @param rangeNumber
+   *        The zero-based range index into the selection
+   */
+  initialize: function initialize(rangeNumber) {
+    // In order to hide the private `rangeNumber` argument from API consumers
+    // while still enabling Selection getters/setters to access it, we define
+    // it as non enumerable, non configurable property. While consumers still
+    // may discover it they won't be able to do any harm which is good enough
+    // in this case.
+    Object.defineProperties(this, {
+      rangeNumber: {
+        enumerable: false,
+        configurable: false,
+        value: rangeNumber
+      }
+    });
   },
-  html: {
-    enumerable: true,
-    get: function () getSelection(HTML, this.rangeNumber),
-    set: function (value) setSelection(value, this.rangeNumber)
-  },
-  isContiguous: {
-    enumerable: true,
-    get: function () {
-      let selection = getSelection(DOM);
+  get text() { return getSelection(TEXT, this.rangeNumber); },
+  set text(value) { setSelection(value, this.rangeNumber); },
+  get html() { return getSelection(HTML, this.rangeNumber); },
+  set html(value) { setSelection(value, this.rangeNumber); },
+  get isContiguous() {
+    let selection = getSelection(DOM);
 
-      // If there are multiple ranges, the selection is definitely discontiguous.
-      // It returns `false` also if there are no selection; and `true` if there is
-      // a single non empty range, or a selection in a text field - contiguous or
-      // not (text field selection APIs doesn't support multiple selections).
+    // If there are multiple ranges, the selection is definitely discontiguous.
+    // It returns `false` also if there are no selection; and `true` if there is
+    // a single non empty range, or a selection in a text field - contiguous or
+    // not (text field selection APIs doesn't support multiple selections).
 
-      if (selection.rangeCount > 1)
-        return false;
+    if (selection.rangeCount > 1)
+      return false;
 
-      return !!(safeGetRange(selection, 0) || getElementWithSelection());
-    }
+    return !!(safeGetRange(selection, 0) || getElementWithSelection());
   }
-};
-
-/**
- * Creates an object from which a selection can be set, get, etc. Each
- * object has an associated with a range number. Range numbers are the
- * 0-indexed counter of selection ranges as explained at
- * https://developer.mozilla.org/en/DOM/Selection.
- *
- * @param rangeNumber
- *        The zero-based range index into the selection
- */
-function Selection(rangeNumber) {
-
-  // In order to hide the private `rangeNumber` argument from API consumers
-  // while still enabling Selection getters/setters to access it, we define
-  // it as non enumerable, non configurable property. While consumers still
-  // may discover it they won't be able to do any harm which is good enough
-  // in this case.
-  Object.defineProperties(this, {
-    rangeNumber: {
-      enumerable: false,
-      configurable: false,
-      value: rangeNumber
-    }
-  });
-}
-Object.freeze(Object.defineProperties(Selection.prototype, SelectionAPI));
+});
 
 /**
  * Returns the most recent content window
@@ -403,8 +394,7 @@ let SelectionListenerManager = Unknown.extend({
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
-var selection = new Selection();
-Object.defineProperties(selection, {
+var SelectionIterator = Object.create(Object.prototype, {
   /**
    * Exports an iterator so that discontiguous selections can be iterated.
    *
@@ -412,18 +402,18 @@ Object.defineProperties(selection, {
    * is returned because the text field selection APIs doesn't support
    * multiple selections.
    */
+  // We make `__iterator__` explicitly non-enumerable to ensure that it won't
+  // show be returned by `Object.keys`.
   __iterator__: { enumerable: false, value: function() {
     let selection = getSelection(DOM);
     let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
 
     for (let i = 0; i < count; i++)
-      yield new Selection(i);
-  }},
-  on: { value: on.bind(null, selection) },
-  removeListener: { value: function(type, listener) {
-    off(this, type, listener);
+      yield Selection.new(i);
   }}
 });
+
+var selection = EventTarget.extend(Selection, SelectionIterator).new(0);
 
 // This is workaround making sure that exports is wrapped before it's
 // frozen, which needs to happen in order to workaround Bug 673468.
