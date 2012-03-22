@@ -81,7 +81,7 @@ file in your `data` directory as "myScript.js", you would assign it using
 code like:
 
     var data = require("self").data;
-    
+
     var pageMod = require("page-mod");
     pageMod.PageMod({
       include: "*.org",
@@ -97,6 +97,28 @@ have problems getting your add-on approved on AMO.</p>
 <code>contentScriptFile</code>. This makes your code easier to maintain,
 secure, debug and review.</p>
 </div>
+
+### Styling web pages ###
+
+Sometimes adding a script to web pages is not enough, you also want to styling
+them. `PageMod` provides an easy way to do that through options' `contentStyle`
+and `contentStyleFile` properties:
+
+    var data = require("self").data;
+    var pageMod = require("page-mod");
+
+    pageMod.PageMod({
+      include: "*.org",
+
+      contentStyleFile: data.url("my-page-mod.css"),
+      contentStyle: [
+        "div { padding: 10px; border: 1px solid silver}",
+        "img { display: none}"
+      ]
+    })
+
+It's important to note that `PageMod` will add these styles as
+[user style sheet](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
 
 ## Communicating With Content Scripts ##
 
@@ -331,6 +353,15 @@ Creates a PageMod.
 
     This property is optional and defaults to "end".
 
+  @prop [contentStyleFile] {string,array}
+    The local file URLs of stylesheet to load. Content style specified by this
+    option are loaded *before* those specified by the `contentStyle` option.
+    Optional.
+  @prop [contentStyle] {string,array}
+    The texts of stylesheet rules to add. Content styles specified by this
+    option are loaded *after* those specified by the `contentStyleFile` option.
+    Optional.
+
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`
@@ -353,7 +384,8 @@ description of match patterns. Rules can be added to the list by calling its
 @method
 Stops the page mod from making any more modifications.  Once destroyed the page
 mod can no longer be used.  Note that modifications already made to open pages
-will not be undone.
+will not be undone, except for any stylesheet added by `contentStyle` or
+`contentStyleFile`, that are unregistered immediately.
 </api>
 
 <api name="attach">
