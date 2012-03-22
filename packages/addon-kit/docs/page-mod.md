@@ -101,8 +101,8 @@ secure, debug and review.</p>
 ### Styling web pages ###
 
 Sometimes adding a script to web pages is not enough, you also want to styling
-them. `PageMod` provides an easy way to do that through options' properties
-`contentStyle` and `contentStyleFile`:
+them. `PageMod` provides an easy way to do that through options' `contentStyle`
+and `contentStyleFile` properties:
 
     var data = require("self").data;
     var pageMod = require("page-mod");
