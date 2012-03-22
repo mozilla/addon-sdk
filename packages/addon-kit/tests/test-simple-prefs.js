@@ -90,10 +90,20 @@ exports.testPrefListener = function(test) {
 
   let loader = Loader(module);
   let sp = loader.require("simple-prefs");
+  let count = 0;
 
   let listener = function(prefName) {
+    count++; // 1, 2 <= Expected
+    test.assert((count < 3), "pref listener count should be less than 3");
     test.assertEqual(prefName, "test-listen", "The prefs listener heard the right event");
-    test.done();
+    if (count >= 2) {
+      test.done();
+    }
+    else {
+      setTimeout(function() {
+        sp.prefs["test-listen"] = false;
+      }, 0);
+    }
   };
 
   sp.on("test-listen", listener);
