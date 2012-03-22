@@ -741,6 +741,7 @@ exports.testGlobalScope = createProxyTest("", function (helper) {
 });
 
 // Bug 671016: Typed arrays should not be proxified
+/* Disable until platform bug 736752 is fixed.
 exports.testTypedArrays = createProxyTest("", function (helper) {
 
   helper.createWorker(
@@ -756,6 +757,7 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
   );
 
 });
+*/
 
 // Bug 715755: proxy code throw an exception on COW
 // Create an http server in order to simulate real cross domain documents
