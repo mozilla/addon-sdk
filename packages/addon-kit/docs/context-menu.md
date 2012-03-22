@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
@@ -113,9 +117,9 @@ exported by the `context-menu` module.
       match pattern strings.  When <code>matchPattern</code> is an array, the
       context occurs when the menu is invoked on a page whose URL matches any of
       the patterns.  These are the same match pattern strings that you use with
-      the <a href="packages/addon-kit/docs/page-mod.html"><code>page-mod</code></a>
+      the <a href="packages/addon-kit/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="packages/api-utils/docs/match-pattern.html">Read more about patterns</a>.
+      <a href="packages/api-utils/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -148,7 +152,7 @@ but declarative contexts won't help you there.
 When you need more control control over the context in which your menu items are
 shown, you can use content scripts.  Like other APIs in the SDK, the
 `context-menu` API uses
-[content scripts](dev-guide/addon-development/web-content.html) to let your
+[content scripts](dev-guide/guides/content-scripts/index.html) to let your
 add-on interact with pages in the browser.  Each menu item you create in the
 top-level context menu can have a content script.
 
@@ -302,8 +306,17 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-on, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 for more information.
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
 
 Show an "Edit Page Source" item when the user right-clicks a non-interactive
 part of the page:
@@ -501,7 +514,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -630,7 +643,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -696,7 +709,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](packages/api-utils/docs/match-pattern.html) string or an array of
+  A [match pattern](packages/api-utils/match-pattern.html) string or an array of
   match pattern strings.
 </api>
 </api>

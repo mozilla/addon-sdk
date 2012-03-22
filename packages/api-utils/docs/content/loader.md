@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
 Loader is base trait and it provides set of core properties and associated
@@ -5,7 +9,7 @@ validations. Trait is useful for all the compositions providing high level
 APIs for creating JavaScript contexts that can access web content.
 
 Loader is composed from the
-[EventEmitter](packages/api-utils/docs/events.html) trait, therefore
+[EventEmitter](packages/api-utils/events.html) trait, therefore
 instances of Loader and their descendants expose all the public properties
 exposed by EventEmitter along with additional public properties:
 

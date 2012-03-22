@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import zipfile
 import simplejson as json
@@ -38,15 +42,19 @@ def build_xpi(template_root_dir, manifest, xpi_path,
 
         validate_prefs(harness_options["preferences"])
 
-        open('.options.xul', 'w').write(parse_options(harness_options["preferences"], harness_options["jetpackID"]))
+        opts_xul = parse_options(harness_options["preferences"],
+                                 harness_options["jetpackID"])
+        open('.options.xul', 'wb').write(opts_xul.encode("utf-8"))
         zf.write('.options.xul', 'options.xul')
         os.remove('.options.xul')
 
         from options_defaults import parse_options_defaults
-        open('.prefs.js', 'w').write(parse_options_defaults(harness_options["preferences"], harness_options["jetpackID"]))
+        prefs_js = parse_options_defaults(harness_options["preferences"],
+                                          harness_options["jetpackID"])
+        open('.prefs.js', 'wb').write(prefs_js.encode("utf-8"))
 
     else:
-        open('.prefs.js', 'w').write("")
+        open('.prefs.js', 'wb').write("")
 
     zf.write('.prefs.js', 'defaults/preferences/prefs.js')
     os.remove('.prefs.js')
@@ -100,6 +108,23 @@ def build_xpi(template_root_dir, manifest, xpi_path,
                      ])
                 files_to_copy[str(arcpath)] = str(abspath)
     del harness_options['packages']
+
+    locales_json_data = {"locales": []}
+    mkzipdir(zf, "locale/")
+    for language in sorted(harness_options['locale']):
+        locales_json_data["locales"].append(language)
+        locale = harness_options['locale'][language]
+        # Be carefull about strings, we need to always ensure working with UTF-8
+        jsonStr = json.dumps(locale, indent=1, sort_keys=True, ensure_ascii=False)
+        info = zipfile.ZipInfo('locale/' + language + '.json')
+        info.external_attr = 0444 << 16L
+        zf.writestr(info, jsonStr.encode( "utf-8" ))
+    del harness_options['locale']
+
+    jsonStr = json.dumps(locales_json_data, ensure_ascii=True) +"\n"
+    info = zipfile.ZipInfo('locales.json')
+    info.external_attr = 0444 << 16L
+    zf.writestr(info, jsonStr.encode("utf-8"))
 
     # now figure out which directories we need: all retained files parents
     for arcpath in files_to_copy:

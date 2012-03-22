@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Myk Melez [myk@mozilla.org]  -->
 <!-- contributed by Daniel Aquino [mr.danielaquino@gmail.com]  -->
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
@@ -84,4 +88,36 @@ does nothing.
 
     var name = "extensions.checkCompatibility.nightly";
     require("preferences-service").reset(name);
+</api>
+
+<api name="getLocalized">
+@function
+Gets the localized value for an application preference `name`.
+@param name {string}
+@param defaultValue {string} Preference value.
+@returns {string} Localized preference value, returns a default value if no
+preference is set. Some preferences refer to a properties file.
+So that `prefs.get` returns the properties file URL whereas
+`prefs.getLocalized` returns the value defined in the properties file.
+
+**Example:**
+
+    var prefs = require("preferences-service");
+    var name = "general.useragent.locale";
+    prefs.get(name); // is equal to "chrome://global/locale/intl.properties"
+    prefs.getLocalized(name) // is equal to "en-US"
+
+</api>
+
+<api name="setLocalized">
+@function
+Sets the localized application preference `name` to `value`.
+@param name {string} Preference name.
+@param value {string} Preference value, a URL to a properties file
+
+**Example:**
+
+    require("preferences-service").set("general.useragent.locale",
+                                       "chrome://global/locale/intl.properties");
+
 </api>

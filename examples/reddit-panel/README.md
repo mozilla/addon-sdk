@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 The Reddit Panel example add-on displays Reddit in a panel you open
 by clicking a widget in the add-on bar.  When you click a Reddit story
 in the panel, the story opens in a new tab.

@@ -1,4 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 function run(jQuery) {
+
+  function showThirdPartyModules() {
+    if ($("#third-party-package-summaries").html() != "") {
+      $("#third-party-packages-subsection").show();
+    }
+  }
 
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
@@ -8,36 +18,6 @@ function run(jQuery) {
       $(this).replaceWith(inner);
     })
     SyntaxHighlighter.highlight();
-  }
-
-  function highlightCurrentPage() {
-    var base_url = $("base").attr("href");
-    $(".current-page").removeClass('current-page');
-    $(".current-section").removeClass('current-section');
-
-    if (base_url == '/')
-      currentPage = window.location.pathname;
-    else
-      currentPage = window.location.toString();
-
-    currentPage = currentPage.slice(base_url.length);
-    $('a[href="' + currentPage + '"]').parent().addClass('current-page');
-
-    currentSideBarSection = null;
-    if ( $('.current-page').hasClass('sidebar-subsection-header') ) {
-      currentSideBarSection = $('.current-page').next();
-    }
-    else {
-      currentSideBarSection =
-        $('.current-page').closest('.sidebar-subsection-contents');
-    }
-    if ($(currentSideBarSection).length == 0)
-      currentSideBarSection = $('#default-section-contents');
-
-    $('.sidebar-subsection-contents').hide();
-    $('.always-show').show();
-    $(currentSideBarSection).parent().addClass('current-section');
-    $(currentSideBarSection).show();
   }
 
   function generateToC() {
@@ -94,7 +74,7 @@ function run(jQuery) {
     }
   }
 
-  highlightCurrentPage();
+  showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateToC();

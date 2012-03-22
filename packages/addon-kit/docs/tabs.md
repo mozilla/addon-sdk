@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
@@ -49,7 +53,7 @@ property you can load a new page in the tab:
       tab.url = "http://www.example.com";
     });
 
-You can attach a [content script](dev-guide/addon-development/web-content.html)
+You can attach a [content script](dev-guide/guides/content-scripts/index.html)
 to the page hosted in a tab, and use that to access and manipulate the page's
 content:
 
@@ -260,10 +264,10 @@ Makes this tab active, which will bring this tab to the foreground.
 @prop [onMessage] {function}
     A function called when the page mod receives a message from content scripts.
     Listeners are passed a single argument, the message posted from the
-    content script.
+    content script. Optional.
 
 @returns {Worker}
-  See [Content Scripts guide](dev-guide/addon-development/web-content.html)
+  See [Content Scripts guide](dev-guide/guides/content-scripts/index.html)
   to learn how to use the `Worker` object to communicate with the content script.
 
 </api>

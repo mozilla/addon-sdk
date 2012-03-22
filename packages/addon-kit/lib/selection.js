@@ -1,40 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Eric H. Jung <eric.jung@yahoo.com>
- *   Irakli Gozalishivili <gozala@mozilla.com>
- *   Matteo Ferretti <zer0@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -46,9 +12,17 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-let { Ci } = require("chrome"),
+let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
-    { EventEmitter } = require("api-utils/events");
+    { emit, off } = require("api-utils/event/core"),
+    { Unknown } = require("api-utils/xpcom"),
+    { Base } = require("api-utils/base"),
+    { EventTarget } = require("api-utils/event/target");
+
+
+const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
+                       getService(Ci.nsIWindowMediator);
+
 
 // The selection type HTML
 const HTML = 0x01;
@@ -64,44 +38,48 @@ const DOM  = 0x03;
 const ERR_CANNOT_CHANGE_SELECTION =
   "It isn't possible to change the selection, as there isn't currently a selection";
 
-/**
- * Creates an object from which a selection can be set, get, etc. Each
- * object has an associated with a range number. Range numbers are the
- * 0-indexed counter of selection ranges as explained at
- * https://developer.mozilla.org/en/DOM/Selection.
- *
- * @param rangeNumber
- *        The zero-based range index into the selection
- */
-function Selection(rangeNumber) {
-
-  // In order to hide the private rangeNumber argument from API consumers while
-  // still enabling Selection getters/setters to access it, the getters/setters
-  // are defined as lexical closures in the Selector constructor.
-
-  this.__defineGetter__("text", function () getSelection(TEXT, rangeNumber));
-  this.__defineSetter__("text", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("html", function () getSelection(HTML, rangeNumber));
-  this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
-
-  this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM);
+const Selection = Base.extend({
+  /**
+   * Creates an object from which a selection can be set, get, etc. Each
+   * object has an associated with a range number. Range numbers are the
+   * 0-indexed counter of selection ranges as explained at
+   * https://developer.mozilla.org/en/DOM/Selection.
+   *
+   * @param rangeNumber
+   *        The zero-based range index into the selection
+   */
+  initialize: function initialize(rangeNumber) {
+    // In order to hide the private `rangeNumber` argument from API consumers
+    // while still enabling Selection getters/setters to access it, we define
+    // it as non enumerable, non configurable property. While consumers still
+    // may discover it they won't be able to do any harm which is good enough
+    // in this case.
+    Object.defineProperties(this, {
+      rangeNumber: {
+        enumerable: false,
+        configurable: false,
+        value: rangeNumber
+      }
+    });
+  },
+  get text() { return getSelection(TEXT, this.rangeNumber); },
+  set text(value) { setSelection(value, this.rangeNumber); },
+  get html() { return getSelection(HTML, this.rangeNumber); },
+  set html(value) { setSelection(value, this.rangeNumber); },
+  get isContiguous() {
+    let selection = getSelection(DOM);
 
     // If there are multiple ranges, the selection is definitely discontiguous.
     // It returns `false` also if there are no selection; and `true` if there is
     // a single non empty range, or a selection in a text field - contiguous or
     // not (text field selection APIs doesn't support multiple selections).
 
-    if (sel.rangeCount > 1)
+    if (selection.rangeCount > 1)
       return false;
 
-    return !!(safeGetRange(sel, 0) || getElementWithSelection());
-  });
-}
-
-require("api-utils/xpcom").utils.defineLazyServiceGetter(this, "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1", "nsIWindowMediator");
+    return !!(safeGetRange(selection, 0) || getElementWithSelection());
+  }
+});
 
 /**
  * Returns the most recent content window
@@ -296,15 +274,8 @@ function onSelect() {
   SelectionListenerManager.onSelect();
 }
 
-let SelectionListenerManager = {
-  QueryInterface: require("api-utils/xpcom").utils.
-                  generateQI([Ci.nsISelectionListener]),
-
-  // The collection of listeners wanting to be notified of selection changes
-  listeners: EventEmitter.compose({
-    emit: function emit(type) this._emitOnObject(exports, type),
-    off: function() this._removeAllListeners.apply(this, arguments)
-  })(),
+let SelectionListenerManager = Unknown.extend({
+  interfaces: [ 'nsISelectionListener' ],
   /**
    * This is the nsISelectionListener implementation. This function is called
    * by Gecko when a selection is changed interactively.
@@ -328,7 +299,7 @@ let SelectionListenerManager = {
   },
 
   onSelect : function onSelect() {
-    setTimeout(this.listeners.emit, 0, "select");
+    setTimeout(emit, 0, exports, "select");
   },
 
   /**
@@ -359,7 +330,7 @@ let SelectionListenerManager = {
     let self = this;
     function wrap(count, func) {
       if (count-- > 0)
-        require("api-utils/timer").setTimeout(wrap, 0);
+        setTimeout(wrap, 0);
       else
         self.addSelectionListener(window);
     }
@@ -388,8 +359,7 @@ let SelectionListenerManager = {
     if (!window)
       return;
     this.removeSelectionListener(window);
-    this.listeners.off('error');
-    this.listeners.off('selection');
+    off(exports);
   },
 
   removeSelectionListener: function removeSelectionListener(window) {
@@ -416,8 +386,7 @@ let SelectionListenerManager = {
     browser.removeEventListener("load", onLoad, true);
     browser.removeEventListener("unload", onUnload, true);
   }
-};
-SelectionListenerManager.listeners.on('error', console.error);
+});
 
 /**
  * Install |SelectionListenerManager| as tab tracker in order to watch
@@ -425,24 +394,28 @@ SelectionListenerManager.listeners.on('error', console.error);
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
-/**
- * Exports an iterator so that discontiguous selections can be iterated.
- *
- * If discontiguous selections are in a text field, only the first one
- * is returned because the text field selection APIs doesn't support
- * multiple selections.
- */
-exports.__iterator__ = function __iterator__() {
-  let sel = getSelection(DOM);
-  let rangeCount = sel.rangeCount || (getElementWithSelection() ? 1 : 0);
+// Note: We use `Object.create` form just in order to define `__iterator__`
+// as non-enumerable, to ensure that it won't be returned by an `Object.keys`.
+var SelectionIterator = Object.create(Object.prototype, {
+  /**
+   * Exports an iterator so that discontiguous selections can be iterated.
+   *
+   * If discontiguous selections are in a text field, only the first one
+   * is returned because the text field selection APIs doesn't support
+   * multiple selections.
+   */
+  __iterator__: { enumerable: false, value: function() {
+    let selection = getSelection(DOM);
+    let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
 
-  for (let i = 0; i < rangeCount; i++)
-    yield new Selection(i);
-};
+    for (let i = 0; i < count; i++)
+      yield Selection.new(i);
+  }}
+});
 
-exports.on = SelectionListenerManager.listeners.on;
-exports.removeListener = SelectionListenerManager.listeners.removeListener;
+var selection = EventTarget.extend(Selection, SelectionIterator).new(0);
 
-// Export the Selection singleton. Its rangeNumber is always zero.
-Selection.call(exports, 0);
-
+// This is workaround making sure that exports is wrapped before it's
+// frozen, which needs to happen in order to workaround Bug 673468.
+off(selection, 'workaround-bug-673468');
+module.exports = selection;

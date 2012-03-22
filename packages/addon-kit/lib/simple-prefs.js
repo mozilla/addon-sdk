@@ -1,91 +1,54 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Hernan Rodriguez Colmeiro <colmeiro@gmail.com> (Original Author)
- *  Erik Vold <erikvvold@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const { Cc, Ci } = require("chrome");
+const { emit, off } = require("api-utils/event/core");
+const { EventTarget } = require("api-utils/event/target");
+const { when: unload } = require("api-utils/unload");
+const { jetpackID } = require("@packaging");
+const prefService = require("api-utils/preferences-service");
+const observers = require("api-utils/observer-service");
+
+const ADDON_BRANCH = "extensions." + jetpackID + ".";
+const BUTTON_PRESSED = jetpackID + "-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
 if (!require("xul-app").is("Firefox"))
   throw Error("This API is only supported in Firefox");
 
-const observers = require("observer-service");
-const prefService = require("preferences-service");
+const branch = Cc["@mozilla.org/preferences-service;1"].
+             getService(Ci.nsIPrefService).
+             getBranch(ADDON_BRANCH).
+             QueryInterface(Ci.nsIPrefBranch2);
 
-let ({ jetpackID } = require("@packaging")) {
-  const ADDON_BRANCH = "extensions." + jetpackID + ".";
-  const BUTTON_PRESSED = jetpackID + "-cmdPressed";
+// Listen to changes in the preferences
+function preferenceChange(subject, topic, name) {
+  if (topic === 'nsPref:changed')
+    emit(target, name, name);
 }
+branch.addObserver('', preferenceChange, false);
 
-let ({ Cc, Ci } = require("chrome")) {
-  const branch = Cc["@mozilla.org/preferences-service;1"].
-               getService(Ci.nsIPrefService).
-               getBranch(ADDON_BRANCH).
-               QueryInterface(Ci.nsIPrefBranch2);
+// Listen to clicks on buttons
+function buttonClick(subject, data) {
+  emit(target, data);
 }
+observers.add(BUTTON_PRESSED, buttonClick);
 
-const events = require("events").EventEmitter.compose({
-  constructor: function Prefs() {
-    // Log unhandled errors.
-    this.on("error", console.exception.bind(console));
+// Make sure we cleanup listeners on unload.
+unload(function() {
+  off(exports);
+  branch.removeObserver('', preferenceChange, false);
+  observers.remove(BUTTON_PRESSED, buttonClick);
+});
 
-    // Make sure we remove all the listeners
-    require("unload").ensure(this);
+const prefs = prefService(ADDON_BRANCH);
 
-    this._prefObserver = this._prefObserver.bind(this);
-    this._buttonObserver = this._buttonObserver.bind(this);
+// Event target we will expose as module exports in order to be able to
+// emit events on it.
+const target = EventTarget.extend({ prefs: prefs }).new();
+module.exports = target;
 
-    // Listen to changes in the preferences
-    branch.addObserver("", this._prefObserver, false);
-
-    // Listen to clicks on buttons
-    observers.add(BUTTON_PRESSED, this._buttonObserver, this);
-  },
-  _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
-    if (topic == "nsPref:changed") {
-      this._emit(prefName, prefName);
-    }
-  },
-  _buttonObserver: function PrefsButtonObserver(subject, data) {
-    this._emit(data);
-  },
-  unload: function manager_unload() {
-    this._removeAllListeners();
-    branch.removeObserver("", this._prefObserver);
- },
-})();
-
-exports.on = events.on;
-exports.removeListener = events.removeListener;
-exports.prefs = prefService(ADDON_BRANCH);
+// This is workaround making sure that exports is wrapped before it's
+// frozen, which needs to happen in order to workaround Bug 673468.
+off(target, 'workaround-bug-673468');

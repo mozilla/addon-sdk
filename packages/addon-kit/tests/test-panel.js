@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
@@ -320,6 +324,31 @@ tests.testPanelTextColor = function(test) {
       "The panel text color style is preserved when a style exists.");
     panel.destroy();
     test.done();
+  });
+};
+
+// Bug 696552: Ensure panel.contentURL modification support
+tests.testChangeContentURL = function(test) {
+  test.waitUntilDone();
+
+  let panel = Panel({
+    contentURL: "about:blank",
+    contentScript: "self.port.emit('ready', document.location.href);"
+  });
+  let count = 0;
+  panel.port.on("ready", function (location) {
+    count++;
+    if (count == 1) {
+      test.assertEqual(location, "about:blank");
+      test.assertEqual(panel.contentURL, "about:blank");
+      panel.contentURL = "about:buildconfig";
+    }
+    else {
+      test.assertEqual(location, "about:buildconfig");
+      test.assertEqual(panel.contentURL, "about:buildconfig");
+      panel.destroy();
+      test.done();
+    }
   });
 };
 

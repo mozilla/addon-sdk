@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 var pageMod = require("page-mod");
@@ -176,7 +180,7 @@ exports.testCommunication2 = function(test) {
   let callbackDone = null,
       window;
 
-  testPageMod(test, "about:", [{
+  testPageMod(test, "about:credits", [{
       include: "about:*",
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
