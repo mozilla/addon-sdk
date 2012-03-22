@@ -156,19 +156,11 @@ exports.testPrefUnloadListener = function(test) {
   let counter = 0;
 
   let listener = function() {
-    test.pass("The prefs listener was not removed yet");
+    test.assertEqual(++counter, 1, "This listener should only be called once");
 
-    if (++counter > 1) {
-      test.fail("The prefs listener was not removed on unload");
-      return;
-    }
-
-    let events = loader.sandbox("simple-prefs").events;
-    let emit = events.emit;
     loader.unload();
 
-    test.assertEqual(events._events, null, "pref listeners should be removed");
-    emit("test-listen3");
+    sp.prefs["test-listen3"] = false;
 
     test.done();
   };
