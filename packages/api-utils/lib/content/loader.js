@@ -11,6 +11,8 @@ const { validateOptions } = require('../api-utils');
 const { URL } = require('../url');
 const file = require('../file');
 
+const LOCAL_URI_SCHEMES = ['resource', 'data'];
+
 // Returns `null` if `value` is `null` or `undefined`, otherwise `value`.
 function ensureNull(value) {
   return value == null ? null : value;
@@ -42,7 +44,7 @@ const valid = {
       // Make sure every item is a local file URL.
       return value.every(function (item) {
         try {
-          return ~['resource', 'data'].indexOf(URL(item).scheme);
+          return ~LOCAL_URI_SCHEMES.indexOf(URL(item).scheme);
         }
         catch(e) {
           return false;
@@ -55,8 +57,10 @@ const valid = {
   contentScript: {
     is: ['undefined', 'null', 'string', 'array'],
     map: ensureNull,
-    ok: function(value) { return !Array.isArray(value) ||
-      value.every(function(item) { return typeof item === 'string' });
+    ok: function(value) {
+      return !Array.isArray(value) || value.every(
+        function(item) { return typeof item === 'string' }
+      );
     },
     msg: 'The `contentScript` option must be a string or an array of strings.'
   },
