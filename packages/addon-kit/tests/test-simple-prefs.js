@@ -102,6 +102,7 @@ exports.testPrefListener = function(test) {
     else {
       setTimeout(function() {
         sp.prefs["test-listen"] = false;
+        loader.unload();
       }, 0);
     }
   };
@@ -109,7 +110,6 @@ exports.testPrefListener = function(test) {
   sp.on("test-listen", listener);
 
   sp.prefs["test-listen"] = true;
-  loader.unload();
 };
 
 exports.testBtnListener = function(test) {
