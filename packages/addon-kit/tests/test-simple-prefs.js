@@ -160,7 +160,10 @@ exports.testPrefUnloadListener = function(test) {
 
     loader.unload();
 
+    // this may not execute after unload, but definitely shouldn't fire listener
     sp.prefs["test-listen3"] = false;
+    // this should execute, but also definitely shouldn't fire listener
+    require("simple-prefs").prefs["test-listen3"] = false; // 
 
     test.done();
   };
