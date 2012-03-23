@@ -203,3 +203,12 @@ exports.testPrefUnloadListener = function(test) {
   // emit change
   sp.prefs["test-listen3"] = true;
 };
+
+// Bug 732919 - JSON.stringify() fails on simple-prefs.prefs
+exports.testPrefJSONStringification = function(test) {
+  var sp = require("simple-prefs").prefs;
+  test.assertEqual(
+      Object.keys(sp).join(),
+      Object.keys(JSON.parse(JSON.stringify(sp))).join(),
+      "JSON stringification should work.");
+};
