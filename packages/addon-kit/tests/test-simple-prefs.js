@@ -4,8 +4,8 @@
 
 
 const { Loader } = require("./helpers");
-const setTimeout = require("timers").setTimeout;
-const notify = require("observer-service").notify;
+const { setTimeout } = require("timers");
+const { notify } = require("observer-service");
 const { jetpackID } = require("@packaging");
 
 exports.testSetGetBool = function(test) {
@@ -143,5 +143,33 @@ exports.testPrefRemoveListener = function(test) {
 
   sp.on("test-listen2", listener);
 
+  // emit change
   sp.prefs["test-listen2"] = true;
+};
+
+// Bug 710117: Test that simple-pref listeners are removed on unload
+exports.testPrefUnloadListener = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+  let counter = 0;
+
+  let listener = function() {
+    test.assertEqual(++counter, 1, "This listener should only be called once");
+
+    loader.unload();
+
+    // this may not execute after unload, but definitely shouldn't fire listener
+    sp.prefs["test-listen3"] = false;
+    // this should execute, but also definitely shouldn't fire listener
+    require("simple-prefs").prefs["test-listen3"] = false; // 
+
+    test.done();
+  };
+
+  sp.on("test-listen3", listener);
+
+  // emit change
+  sp.prefs["test-listen3"] = true;
 };
