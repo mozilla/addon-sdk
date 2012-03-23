@@ -182,9 +182,10 @@ are not current, then your context listener is never called.
 This example takes advantage of that fact.  The listener can be assured that
 `node` will always be an image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "A Mozilla Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
                      '});'
@@ -238,9 +239,10 @@ associated with the content script, the content script can call the
 JSON-able data.  The menu item's `"message"` event listener will be called with
 that data.
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(node.src);' +
                      '});',
@@ -333,9 +335,10 @@ part of the page:
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(node.src);' +
                      '});',
@@ -364,10 +367,11 @@ mozilla.org or mozilla.com page:
 
 Show an "Edit Page Images" item when the page contains at least one image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
-      context: contextMenu.PageContext(),
+      context: cm.PageContext(),
       contentScript: 'self.on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
@@ -398,7 +402,7 @@ Google or Wikipedia with the text contained in the anchor:
     });
     var searchMenu = cm.Menu({
       label: "Search With",
-      context: contextMenu.SelectorContext("a[href]"),
+      context: cm.SelectorContext("a[href]"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
