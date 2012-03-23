@@ -85,7 +85,7 @@ exports['test:contentURL'] = function(test) {
     emitted,
     'must not emit `propertyChange` if same value is set'
   );
-  
+
   loader.removeListener('propertyChange', listener);
   loader.contentURL = value = 'about:blank';
   test.assertEqual(
@@ -198,8 +198,7 @@ exports['test:contentScriptFile'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptFile` option must be a local URL or an array of'
-          + 'URLs.',
+      'The `contentScriptFile` option must be a local URL or an array of URLs.',
       e.message
     );
   }
@@ -209,8 +208,7 @@ exports['test:contentScriptFile'] = function(test) {
     test.fail('must throw when wrong value is set');
   } catch(e) {
     test.assertEqual(
-      'The `contentScriptFile` option must be a local URL or an array of'
-          + 'URLs.',
+      'The `contentScriptFile` option must be a local URL or an array of URLs.',
       e.message
     );
   }
@@ -226,4 +224,3 @@ exports['test:contentScriptFile'] = function(test) {
     loader.contentScriptFile
   );
 };
-

@@ -13,8 +13,9 @@ from cuddlefish._version import get_versions
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
-HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
-LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
+THIRD_PARTY_PACKAGE_SUMMARIES = '<ul id="third-party-package-summaries">'
+HIGH_LEVEL_PACKAGE_SUMMARIES = '<ul id="high-level-package-summaries">'
+LOW_LEVEL_PACKAGE_SUMMARIES = '<ul id="low-level-package-summaries">'
 CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
 DEFAULT_TITLE = 'Add-on SDK Documentation'
@@ -37,8 +38,12 @@ def tag_wrap(text, tag, attributes={}):
     result +='>' + text + '</'+ tag + '>\n'
     return result
 
+def is_third_party(package_json):
+    return (not is_high_level(package_json)) and \
+           (not(is_low_level(package_json)))
+
 def is_high_level(package_json):
-    return not is_low_level(package_json)
+    return 'jetpack-high-level' in package_json.get('keywords', [])
 
 def is_low_level(package_json):
     return 'jetpack-low-level' in package_json.get('keywords', [])
@@ -92,8 +97,8 @@ class WebDocs(object):
         for module in modules:
             module_link = tag_wrap('/'.join(module), 'a', \
                 {'href': relative_doc_URL + '/' + '/'.join(module) + '.html'})
-            module_items += tag_wrap(module_link, 'li', {'class':'module'})
-        return tag_wrap(module_items, 'ul', {'class':'modules'})
+            module_items += module_link
+        return module_items
 
     def _create_package_summaries(self, packages_json, include):
         packages = ''
@@ -109,7 +114,7 @@ class WebDocs(object):
                                     + 'index.html'})
             text = tag_wrap(package_link, 'h4')
             text += self._create_module_list(package_json)
-            packages += tag_wrap(text, 'div', {'class':'package-summary', \
+            packages += tag_wrap(text, 'li', {'class':'package-summary', \
               'style':'display: block;'})
         return packages
 
@@ -120,6 +125,10 @@ class WebDocs(object):
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         sdk_version = get_versions()["version"]
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
+        third_party_summaries = \
+            self._create_package_summaries(self.packages_json, is_third_party)
+        base_page = insert_after(base_page, \
+            THIRD_PARTY_PACKAGE_SUMMARIES, third_party_summaries)
         high_level_summaries = \
             self._create_package_summaries(self.packages_json, is_high_level)
         base_page = insert_after(base_page, \

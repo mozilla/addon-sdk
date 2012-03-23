@@ -5,11 +5,13 @@
 
 const { Cc, Ci } = require("chrome");
 const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
+const { getRulesForLocale } = require("api-utils/l10n/plural-rules");
 
 // Get URI for the addon root folder:
 const { rootURI } = require("@packaging");
 
 let globalHash = {};
+let pluralMappingFunction = getRulesForLocale("en");
 
 exports.get = function get(k) {
 
@@ -38,11 +40,26 @@ exports.get = function get(k) {
     //   // Identifier of a key stored in properties file
     //   _("downloadNumber", 0);
     let n = arguments[1];
-    let pluralForm = "other";
-    // TODO: Make this rule specific to each language
-    if (n <= 1)
-      pluralForm = "one";
-    localized = localized[pluralForm];
+
+    // First handle simple universal forms that may not be mandatory
+    // for each language, (i.e. not different than 'other' form,
+    // but still usefull for better phrasing)
+    // For example 0 in english is the same form than 'other'
+    // but we accept 'zero' form if specified in localization file
+    if (n === 0 && "zero" in localized)
+      localized = localized["zero"];
+    else if (n === 1 && "one" in localized)
+      localized = localized["one"];
+    else if (n === 2 && "two" in localized)
+      localized = localized["two"];
+    else {
+      let pluralForm = pluralMappingFunction(n);
+      if (pluralForm in localized)
+        localized = localized[pluralForm];
+      else // Fallback in case of error: missing plural form
+        localized = localized["other"];
+    }
+
     // Simulate a string with one placeholder:
     args = [null, n];
   }
@@ -109,6 +126,10 @@ function getBestLocaleFile() {
   // It may be null if the addon doesn't have any locale file
   if (!bestMatchingLocale)
     return null;
+
+  // Retrieve the related plural mapping function
+  let shortLocaleCode = bestMatchingLocale.split("-")[0].toLowerCase();
+  pluralMappingFunction = getRulesForLocale(shortLocaleCode);
 
   return rootURI + "locale/" + bestMatchingLocale + ".json";
 }
