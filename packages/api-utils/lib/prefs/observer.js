@@ -14,7 +14,7 @@ exports.PrefsObserver = function PrefsObserver(options) {
   }
   // if no target is defined, then there is nothing to do.
   else if (!options.target) {
-    return;
+    return this;
   }
 
   const branchName = options.branchName || '';
