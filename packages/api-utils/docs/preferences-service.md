@@ -74,7 +74,7 @@ acting on the user's behalf).
 @function
 Clears a non-default, user-set value from the application preference
 `name`. If no user-set value is defined on `name`, the function
-does nothing.
+does nothing. If no default value exists the preference will cease to exist.
 @param name {string} Preference name.
 
 **Example:**
