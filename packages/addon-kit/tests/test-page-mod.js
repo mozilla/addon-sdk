@@ -394,7 +394,7 @@ exports['test tab worker on message'] = function(test) {
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
   let loader = Loader(module);
-  
+
   let pageMod = loader.require("page-mod").PageMod({
     include: "about:*",
     contentScriptWhen: "start",
@@ -402,10 +402,10 @@ exports.testAutomaticDestroy = function(test) {
       test.fail("Page-mod should have been detroyed during module unload");
     }
   });
-  
+
   // Unload the page-mod module so that our page mod is destroyed
   loader.unload();
- 
+
   // Then create a second tab to ensure that it is correctly destroyed
   let tabs = require("tabs");
   tabs.open({
@@ -416,5 +416,111 @@ exports.testAutomaticDestroy = function(test) {
       test.done();
     }
   });
-  
+
 }
+
+exports.testPageModCss = function(test) {
+  let [pageMod] = testPageMod(test,
+    'data:text/html,<div style="background: silver">css test</div>', [{
+      include: "data:*",
+      contentStyle: "div { height: 100px; }",
+      contentStyleFile:
+        require("self").data.url("pagemod-css-include-file.css")
+    }],
+    function(win, done) {
+      let div = win.document.querySelector("div");
+      test.assertEqual(
+        div.clientHeight,
+        100,
+        "PageMod contentStyle worked"
+      );
+      test.assertEqual(
+       div.offsetHeight,
+        120,
+        "PageMod contentStyleFile worked"
+      );
+      done();
+    }
+  );
+};
+
+exports.testPageModCssList = function(test) {
+  let [pageMod] = testPageMod(test,
+    'data:text/html,<div style="width:320px; max-width: 480px!important">css test</div>', [{
+      include: "data:*",
+      contentStyleFile: [
+        // Highlight evaluation order in this list
+        "data:text/css,div { border: 1px solid black; }",
+        "data:text/css,div { border: 10px solid black; }",
+        // Highlight evaluation order between contentStylesheet & contentStylesheetFile
+        "data:text/css,div { height: 1000px; }",
+        // Highlight precedence between the author and user style sheet
+        "data:text/css,div { width: 200px; max-width: 640px!important}",
+      ],
+      contentStyle: [
+        "div { height: 10px; }",
+        "div { height: 100px; }"
+      ]
+    }],
+    function(win, done) {
+      let div = win.document.querySelector("div"),
+          style = win.getComputedStyle(div);
+
+      test.assertEqual(
+       div.clientHeight,
+        100,
+        "PageMod contentStyle list works and is evaluated after contentStyleFile"
+      );
+
+      test.assertEqual(
+        div.offsetHeight,
+        120,
+        "PageMod contentStyleFile list works"
+      );
+
+      test.assertEqual(
+        style.width,
+        "320px",
+        "PageMod author/user style sheet precedence works"
+      );
+
+      test.assertEqual(
+        style.maxWidth,
+        "640px",
+        "PageMod author/user style sheet precedence with !important works"
+      );
+
+      done();
+    }
+  );
+};
+
+exports.testPageModCssDestroy = function(test) {
+  let [pageMod] = testPageMod(test,
+    'data:text/html,<div style="width:200px">css test</div>', [{
+      include: "data:*",
+      contentStyle: "div { width: 100px!important; }"
+    }],
+
+    function(win, done) {
+      let div = win.document.querySelector("div"),
+          style = win.getComputedStyle(div);
+
+      test.assertEqual(
+        style.width,
+        "100px",
+        "PageMod contentStyle worked"
+      );
+
+      pageMod.destroy();
+      test.assertEqual(
+        style.width,
+        "200px",
+        "PageMod contentStyle is removed after destroy"
+      );
+
+      done();
+
+    }
+  );
+};
