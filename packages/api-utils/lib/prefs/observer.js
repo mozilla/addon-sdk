@@ -1,70 +1,42 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Preferences.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2011
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Erik Vold <erikvvold@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
 const { Cc, Ci } = require("chrome");
+const { emit, off } = require("api-utils/event/core");
+const { when: unload } = require("api-utils/unload");
 
-var PrefsObserver = exports.PrefsObserver = require("events").EventEmitter.compose({
-  _branch: null,
-  constructor: function PrefsObserver(options) {
-    // Log unhandled errors.
-    this.on("error", console.exception.bind(console));
-
-    var branchName = options.name || null;
-    this._branch = Cc["@mozilla.org/preferences-service;1"]
-        .getService(Ci.nsIPrefService)
-        .getBranch(branchName)
-        .QueryInterface(Ci.nsIPrefBranch2);
-
-    // Make sure we remove all the listeners
-    require("../unload").ensure(this);
-
-    this._prefObserver = this._prefObserver.bind(this);
-
-    // Listen to changes in the preferences
-    this._branch.addObserver("", this._prefObserver, false);
-  },
-  _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
-    if (topic == "nsPref:changed") {
-      this._emit(prefName, prefName);
-    }
-  },
-  unload: function manager_unload() {
-    this._removeAllListeners();
-    this._branch.removeObserver("", this._prefObserver);
+exports.PrefsObserver = function PrefsObserver(options) {
+  if (!(this instanceof PrefsObserver)) {
+    return new PrefsObserver(options);
   }
-});
+  // if no target is defined, then there is nothing to do.
+  else if (!options.target) {
+    return;
+  }
+
+  const branchName = options.branchName || '';
+  const target = options.target;
+
+  const branch = Cc["@mozilla.org/preferences-service;1"].
+               getService(Ci.nsIPrefService).
+               getBranch(branchName).
+               QueryInterface(Ci.nsIPrefBranch2);
+
+  // Listen to changes in the preferences
+  function preferenceChange(subject, topic, name) {
+   if (topic === 'nsPref:changed')
+     emit(target, name, name);
+  }
+  branch.addObserver('', preferenceChange, false);
+
+
+  // Make sure we cleanup listeners on unload.
+  unload(function() {
+    branch.removeObserver('', preferenceChange, false);
+  });
+  
+  return this;
+};
