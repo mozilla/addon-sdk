@@ -10,33 +10,6 @@ const imageTools = Cc["@mozilla.org/image/tools;1"].
 const io = Cc["@mozilla.org/network/io-service;1"].
                     getService(Ci.nsIIOService);
 
-function ff(dataURI, mimeType) {
-  mimeType = mimeType || "image/png";
-
-  let channel = io.newChannel(dataURI, null, null);
-  let input = channel.open();
-  let container = {};
-
-  imageTools.decodeImageData(input, mimeType, container);
-
-  let img = container.value;
-
-  console.log(img.frame)
-/*
-  input = imageTools.encodeImage(container.value, mimeType);
-
-  input.QueryInterface(Ci.nsIInputStream);
-
-  let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].
-                        createInstance(Ci.nsIBinaryInputStream);
-
-  binaryStream.setInputStream(input);
-
-  return btoa(binaryStream.readBytes(binaryStream.available()));
-*/
-}
-
-
 // Test the typical use case, setting & getting with no flavors specified
 exports.testWithNoFlavor = function(test) {
   var contents = "hello there";
@@ -106,16 +79,7 @@ exports.testSetImage = function(test) {
   test.assert(clip.set(contents, flavor), "clipboard set");
   test.assertEqual(clip.currentFlavors[0], flavor, "flavor is set");
 
-  console.log("")
-  console.log(contents)
-  console.log(clip.get())
-
-  ff(contents)
-/*
-  test.assert(isValidImage(clip.get(), fullFlavor), "get clipboard contents without a flavor given")
-  test.assert(isValidImage(clip.get(flavor), fullFlavor), "get clipboard content with a flavor given")
-  test.assert(isValidImage(clip.get(fullFlavor), fullFlavor), "get clipboard content with mime type given")
-*/
+  test.assertEqual(clip.get(), contents, "image data equals");
 };
 
 /*
