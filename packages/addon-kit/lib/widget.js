@@ -640,11 +640,16 @@ BrowserWindow.prototype = {
     
     // Finally insert our widget in the right toolbar and in the right position
     container.insertItem(id, nextNode, null, false);
-    
-    // Update DOM in order to save position if we remove/readd the widget
-    container.setAttribute("currentset", container.currentSet);
-    // Save DOM attribute in order to save position on new window opened
-    this.window.document.persist(container.id, "currentset");
+
+    // Update DOM in order to save position: which toolbar, and which position 
+    // in this toolbar. But only do this the first time we add it to the toolbar
+    // Otherwise, this code will collide with other instance of Widget module
+    // during Firefox startup. See bug 685929.
+    if (ids.indexOf(id) == -1) {
+      container.setAttribute("currentset", container.currentSet);
+      // Save DOM attribute in order to save position on new window opened
+      this.window.document.persist(container.id, "currentset");
+    }
   }
 }
 
