@@ -6,16 +6,13 @@
 
 const {Cc,Ci} = require("chrome");
 const { Loader } = require('./helpers');
+const widgets = require("widget");
+const url = require("url");
+const windowUtils = require("window-utils");
+const tabBrowser = require("tab-browser");
 
 exports.testConstructor = function(test) {
-
-  const tabBrowser = require("tab-browser");
-
   test.waitUntilDone(30000);
-  
-  const widgets = require("widget");
-  const url = require("url");
-  const windowUtils = require("window-utils");
 
   let browserWindow = windowUtils.activeBrowserWindow;
   let doc = browserWindow.document;
@@ -923,6 +920,57 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
       }
     }
   });
+};
+
+exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
+  test.waitUntilDone();
+
+  let w1 = widgets.Widget({id: "1st", label: "1st widget", content: "1"});
+  let w2 = widgets.Widget({id: "2nd", label: "2nd widget", content: "2"});
+  let w3 = widgets.Widget({id: "3rd", label: "3rd widget", content: "3"});
+
+  // Hack to move 2nd and 3rd widgets manually to the navigation bar, in 5th
+  // position, i.e. after search box. 3rd widget will be in 5th and 2nd in 6th.
+  function getWidgetNode(toolbar, position) {
+    return toolbar.getElementsByTagName("toolbaritem")[position];
+  }
+  let browserWindow = windowUtils.activeBrowserWindow;
+  let doc = browserWindow.document;
+  let addonBar = doc.getElementById("addon-bar");
+  let w2Toolbaritem = getWidgetNode(addonBar, 1);
+  let w3ToolbarItem = getWidgetNode(addonBar, 2);
+  let navBar = doc.getElementById("nav-bar");
+  navBar.insertItem(w2Toolbaritem.id, navBar.childNodes[6], null, false);
+  navBar.insertItem(w3ToolbarItem.id, navBar.childNodes[6], null, false);
+  // Widget and Firefox codes rely on this `currentset` attribute,
+  // so ensure it is correctly saved
+  navBar.setAttribute("currentset", navBar.currentSet);
+  doc.persist(navBar.id, "currentset");
+  // Update addonbar too as we removed widget from there.
+  // Otherwise, widgets may still be added to this toolbar.
+  addonBar.setAttribute("currentset", addonBar.currentSet);
+  doc.persist(addonBar.id, "currentset");
+
+  tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
+    let browserWindow = e.target.defaultView;
+    let doc = browserWindow.document;
+    let navBar = doc.getElementById("nav-bar");
+    let addonBar = doc.getElementById("addon-bar");
+
+    // Ensure that 1st is in addon bar
+    test.assertEqual(getWidgetNode(addonBar, 0).getAttribute("label"), w1.label);
+    // And that 2nd and 3rd keep their original positions in navigation bar
+    test.assertEqual(navBar.childNodes[5].getAttribute("label"), w3.label);
+    test.assertEqual(navBar.childNodes[6].getAttribute("label"), w2.label);
+
+    w1.destroy();
+    w2.destroy();
+    w3.destroy();
+
+    closeBrowserWindow(browserWindow, function() {
+      test.done();
+    });
+  }});
 };
 
 /******************* helpers *********************/
