@@ -60,6 +60,12 @@ const valid = {
       return value || 'end';
     },
     msg: 'The `contentScriptWhen` option must be either "start", "ready" or "end".'
+  },
+  contentScriptOptions: {
+    is: ['undefined', 'null', 'object', 'array', 'string', 'number'],
+    ok: function(value) true,
+    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
+    msg: 'The contentScriptOptions should be a jsonable value.'
   }
 };
 exports.validationAttributes = valid;
