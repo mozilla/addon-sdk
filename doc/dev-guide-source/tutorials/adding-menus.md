@@ -110,8 +110,9 @@ be aware of:
 
 * our support for third party packages is still fairly immature. One
 consequence of this is that it's not always obvious where to find third-party
-packages, although some are collected in the
-[Jetpack Wiki](https://wiki.mozilla.org/Jetpack/Modules)
+packages, although the
+[Community Developed Modules](https://github.com/mozilla/addon-sdk/wiki/Community-developed-modules)
+page in the SDK's GitHub Wiki lists a number of packages.
 
 * because third party modules typically use low-level APIs, they may be broken
 by new releases of Firefox.
