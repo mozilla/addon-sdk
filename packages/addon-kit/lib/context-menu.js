@@ -1133,14 +1133,14 @@ BrowserWindow.prototype = {
     return !hasContentContext || worker.isAnyContextCurrent(popupNode);
   },
 
-  // Sets this.popupNode to the node the user context-clicked to invoke the
-  // context menu.  For Gecko 2.0 and later, triggerNode is this node; if it's
-  // falsey, document.popupNode is used.  Returns the popupNode.
+  // Returns the node the user context-clicked to invoke the context menu.
+  // For Gecko 2.0 and later, triggerNode is this node;
+  // if it's falsey, document.popupNode is used.
   capturePopupNode: function BW_capturePopupNode(triggerNode) {
-    this.popupNode = triggerNode || this.doc.popupNode;
-    if (!this.popupNode)
+    var popupNode = triggerNode || this.doc.popupNode;
+    if (!popupNode)
       console.warn("popupNode is null.");
-    return this.popupNode;
+    return popupNode;
   },
 
   destroy: function BW_destroy() {
@@ -1332,15 +1332,23 @@ ContextMenuPopup.prototype = {
       return;
 
     let topLevelItem = privateItem(item)._topLevelItem;
-    let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
+    let popupNode = this.browserWin.adjustPopupNode(this._getPopupNode(),
                                                     topLevelItem);
     this.browserWin.fireClick(topLevelItem, popupNode, item.data);
+  },
+
+  _getPopupNode: function CMP__getPopupNode() {
+    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
+    // to avoid a Spidermonkey strict warning on earlier versions.
+    let triggerNode = this.popupDOMElt.triggerNode || undefined;
+    return this.browserWin.capturePopupNode(triggerNode);
   },
 
   // popupshowing is used to show top-level items that match the browser
   // window's current context and hide items that don't.  Each module instance
   // is responsible for showing and hiding the items it owns.
   _handlePopupShowing: function CMP__handlePopupShowing() {
+
     // If there are items queued up to finish initializing, let them go first.
     // Otherwise the overflow submenu and menu separator may end up in an
     // inappropriate state when those items are later added to the menu.
@@ -1352,11 +1360,7 @@ ContextMenuPopup.prototype = {
       return;
     }
 
-    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
-    // to avoid a Spidermonkey strict warning on earlier versions.
-    let triggerNode = this.popupDOMElt.triggerNode || undefined;
-    let popupNode = this.browserWin.capturePopupNode(triggerNode);
-
+    let popupNode = this._getPopupNode();
     // Show and hide items.  Set a "jetpackContextCurrent" property on the
     // DOM elements to signal which of our items match the current context.
     for (let [itemID, item] in Iterator(this.topLevelItems)) {
