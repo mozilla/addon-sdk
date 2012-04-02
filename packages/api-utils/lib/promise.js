@@ -14,8 +14,6 @@
     factory(undefined, (this.promise = {}))
   }
 }.call(this, function(require, exports) {
-// Fork of https://github.com/Gozala/micro-promise
-// Freely distributable under the MIT license.
 
 'use strict';
 
