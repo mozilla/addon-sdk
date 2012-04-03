@@ -26,8 +26,6 @@
     <em:name>Test App</em:name>
     <em:description>Harness for tests.</em:description>
     <em:creator>Mozilla Corporation</em:creator>
-    <em:iconURL></em:iconURL>
-    <em:icon64URL></em:icon64URL>
     <em:homepageURL></em:homepageURL>
     <em:optionsType></em:optionsType>
     <em:updateURL></em:updateURL>
