@@ -243,15 +243,15 @@ const PageMod = Loader.compose(EventEmitter, {
         continue;
 
       if (pattern.regexp)
-        documentRules.push("regexp(\"" + pattern.regexp.source + "\")")
+        documentRules.push("regexp(\"" + pattern.regexp.source + "\")");
       else if (pattern.exactURL)
-        documentRules.push("url(" + pattern.exactURL + ")")
+        documentRules.push("url(" + pattern.exactURL + ")");
       else if (pattern.domain)
-        documentRules.push("domain(" + pattern.domain + ")")
+        documentRules.push("domain(" + pattern.domain + ")");
       else if (pattern.urlPrefix)
-        documentRules.push("url-prefix(" + pattern.urlPrefix + ")")
+        documentRules.push("url-prefix(" + pattern.urlPrefix + ")");
       else if (pattern.anyWebPage) {
-        documentRules.length = 0;
+        documentRules.push("regexp(\"^(https?|ftp)://.*?\")");
         break;
       }
     }
