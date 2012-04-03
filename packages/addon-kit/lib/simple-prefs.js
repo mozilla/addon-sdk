@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Cc, Ci } = require("chrome");
-const observers = require("observer-service");
-const { EventEmitter } = require("events");
-const unload = require("unload");
-const prefService = require("preferences-service");
+const { emit, off } = require("api-utils/event/core");
+const { EventTarget } = require("api-utils/event/target");
+const { when: unload } = require("api-utils/unload");
 const { jetpackID } = require("@packaging");
+const prefService = require("api-utils/preferences-service");
+const observers = require("api-utils/observer-service");
 
 const ADDON_BRANCH = "extensions." + jetpackID + ".";
 const BUTTON_PRESSED = jetpackID + "-cmdPressed";
@@ -16,43 +17,32 @@ const BUTTON_PRESSED = jetpackID + "-cmdPressed";
 if (!require("xul-app").is("Firefox"))
   throw Error("This API is only supported in Firefox");
 
-let branch = Cc["@mozilla.org/preferences-service;1"].
+const branch = Cc["@mozilla.org/preferences-service;1"].
              getService(Ci.nsIPrefService).
              getBranch(ADDON_BRANCH).
              QueryInterface(Ci.nsIPrefBranch2);
 
-const events = EventEmitter.compose({
-  constructor: function Prefs() {
-    // Log unhandled errors.
-    this.on("error", console.exception.bind(console));
+// Listen to changes in the preferences
+function preferenceChange(subject, topic, name) {
+  if (topic === 'nsPref:changed')
+    emit(target, name, name);
+}
+branch.addObserver('', preferenceChange, false);
 
-    // Make sure we remove all the listeners
-    unload.ensure(this);
+// Listen to clicks on buttons
+function buttonClick(subject, data) {
+  emit(target, data);
+}
+observers.add(BUTTON_PRESSED, buttonClick);
 
-    this._prefObserver = this._prefObserver.bind(this);
-    this._buttonObserver = this._buttonObserver.bind(this);
+// Make sure we cleanup listeners on unload.
+unload(function() {
+  off(exports);
+  branch.removeObserver('', preferenceChange, false);
+  observers.remove(BUTTON_PRESSED, buttonClick);
+});
 
-    // Listen to changes in the preferences
-    branch.addObserver("", this._prefObserver, false);
-
-    // Listen to clicks on buttons
-    observers.add(BUTTON_PRESSED, this._buttonObserver, this);
-  },
-  _prefObserver: function PrefsPrefObserver(subject, topic, prefName) {
-    if (topic == "nsPref:changed") {
-      this._emit(prefName, prefName);
-    }
-  },
-  _buttonObserver: function PrefsButtonObserver(subject, data) {
-    this._emit(data);
-  },
-  unload: function manager_unload() {
-    this._removeAllListeners();
-    branch.removeObserver("", this._prefObserver);
- },
-})();
-
-const simple = Proxy.create({
+const prefs = Proxy.create({
   get: function(receiver, pref) {
     return prefService.get(ADDON_BRANCH + pref);
   },
@@ -68,6 +58,11 @@ const simple = Proxy.create({
   }
 });
 
-exports.on = events.on;
-exports.removeListener = events.removeListener;
-exports.prefs = simple;
+// Event target we will expose as module exports in order to be able to
+// emit events on it.
+const target = EventTarget.extend({ prefs: prefs }).new();
+module.exports = target;
+
+// This is workaround making sure that exports is wrapped before it's
+// frozen, which needs to happen in order to workaround Bug 673468.
+off(target, 'workaround-bug-673468');

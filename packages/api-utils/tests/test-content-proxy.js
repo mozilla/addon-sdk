@@ -150,16 +150,23 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
+      // We ensure that `toString` can't be modified so that nothing could
+      // leak to/from the document and between content scripts
+      //document.location.toString = function foo() {};
+      document.location.toString.foo = "bar";
+      assert(!("foo" in document.location.toString), "document.location.toString can't be modified");
       assert(document.location.toString() == "data:text/html,",
-             "document.location.toString()");
+             "First document.location.toString()");
       self.postMessage("next");
     }
   );
   worker.on("message", function () {
     helper.createWorker(
       'new ' + function ContentScriptScope2() {
+        assert(!("foo" in document.location.toString),
+               "document.location.toString is different for each content script");
         assert(document.location.toString() == "data:text/html,",
-               "document.location.toString()");
+               "Second document.location.toString()");
         done();
       }
     );

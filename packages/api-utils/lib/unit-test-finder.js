@@ -6,7 +6,9 @@
 
 const file = require("./file");
 const packaging = require('@packaging');
+const memory = require('api-utils/memory');
 const suites = packaging.allTestModules;
+
 
 const NOT_TESTS = ['setup', 'teardown'];
 

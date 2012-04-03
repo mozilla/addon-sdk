@@ -114,7 +114,9 @@ modules fall roughly into three categories:
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[base](packages/api-utils/base.html) and
+[event/core](packages/api-utils/event/core.html),
+[event/target](packages/api-utils/event/target.html),
+[base](packages/api-utils/base.html), and
 [namespace](packages/api-utils/namespace.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.

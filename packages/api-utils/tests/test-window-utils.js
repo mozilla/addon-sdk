@@ -2,10 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var windowUtils = require("window-utils");
-var timer = require("timer");
-var {Cc,Ci} = require("chrome");
+"use strict";
+
+var windowUtils = require("api-utils/window-utils");
+var timer = require("api-utils/timer");
+var { Cc, Ci } = require("chrome");
 var { Loader } = require("./helpers");
+
+function toArray(iterator) {
+  let array = [];
+  for each (let item in iterator())
+    array.push(item);
+  return array;
+}
 
 function makeEmptyWindow() {
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -22,7 +31,7 @@ function makeEmptyWindow() {
   return ww.openWindow(null, url, null, features.join(","), null);
 }
 
-exports.testCloseOnUnload = function(test) {
+exports['test close on unload'] = function(assert) {
   var timesClosed = 0;
   var fakeWindow = {
     _listeners: [],
@@ -49,53 +58,53 @@ exports.testCloseOnUnload = function(test) {
 
   let loader = Loader(module);
   loader.require("window-utils").closeOnUnload(fakeWindow);
-  test.assertEqual(fakeWindow._listeners.length, 1,
+  assert.equal(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");
-  test.assertEqual(timesClosed, 0,
+  assert.equal(timesClosed, 0,
                    "window not closed when registered.");
   loader.require("unload").send();
-  test.assertEqual(timesClosed, 1,
+  assert.equal(timesClosed, 1,
                    "window closed on module unload.");
-  test.assertEqual(fakeWindow._listeners.length, 0,
+  assert.equal(fakeWindow._listeners.length, 0,
                    "unload event listener removed on module unload");
 
   timesClosed = 0;
   loader.require("window-utils").closeOnUnload(fakeWindow);
-  test.assertEqual(timesClosed, 0,
+  assert.equal(timesClosed, 0,
                    "window not closed when registered.");
   fakeWindow.close();
-  test.assertEqual(timesClosed, 1,
+  assert.equal(timesClosed, 1,
                    "window closed when close() called.");
-  test.assertEqual(fakeWindow._listeners.length, 0,
+  assert.equal(fakeWindow._listeners.length, 0,
                    "unload event listener removed on window close");
   loader.require("unload").send();
-  test.assertEqual(timesClosed, 1,
+  assert.equal(timesClosed, 1,
                    "window not closed again on module unload.");
   loader.unload();  
 };
 
-exports.testWindowWatcher = function(test) {
+exports['test window watcher'] = function(assert, done) {
   var myWindow;
   var finished = false;
 
   var delegate = {
     onTrack: function(window) {
       if (window == myWindow) {
-        test.pass("onTrack() called with our test window");
+        assert.pass("onTrack() called with our test window");
         timer.setTimeout(function() { myWindow.close(); }, 1);
       }
     },
     onUntrack: function(window) {
       if (window == myWindow) {
-        test.pass("onUntrack() called with our test window");
+        assert.pass("onUntrack() called with our test window");
         timer.setTimeout(function() {
                            if (!finished) {
                              finished = true;
                              myWindow = null;
                              wt.unload();
-                             test.done();
+                             done();
                            } else
-                             test.fail("finishTest() called multiple times.");
+                             assert.fail("finishTest() called multiple times.");
                          }, 1);
       }
     }
@@ -104,10 +113,9 @@ exports.testWindowWatcher = function(test) {
   // test bug 638007 (new is optional), using new
   var wt = new windowUtils.WindowTracker(delegate);
   myWindow = makeEmptyWindow();
-  test.waitUntilDone(5000);
 };
 
-exports.testWindowWatcherUntracker = function(test) {
+exports['test window watcher untracker'] = function(assert, done) {
   var myWindow;
   var tracks = 0;
   var unloadCalled = false;
@@ -116,7 +124,7 @@ exports.testWindowWatcherUntracker = function(test) {
     onTrack: function(window) {
       tracks = tracks + 1;
       if (window == myWindow) {
-        test.pass("onTrack() called with our test window");
+        assert.pass("onTrack() called with our test window");
         timer.setTimeout(function() {
           myWindow.close();
         }, 1);
@@ -131,12 +139,12 @@ exports.testWindowWatcherUntracker = function(test) {
         }, 1);
       }
       if (0 > tracks) {
-        test.fail("WindowTracker onUntrack was called more times than onTrack..");
+        assert.fail("WindowTracker onUntrack was called more times than onTrack..");
       }
       else if (0 == tracks) {
         timer.setTimeout(function() {
             myWindow = null;
-            test.done();
+            done();
         }, 1);
       }
     }
@@ -145,11 +153,10 @@ exports.testWindowWatcherUntracker = function(test) {
   // test bug 638007 (new is optional), not using new
   var wt = windowUtils.WindowTracker(delegate);
   myWindow = makeEmptyWindow();
-  test.waitUntilDone(5000);
 };
 
 // test that _unregWindow calls _unregLoadingWindow
-exports.testWindowWatcherUnregs4LoadingWindows = function(test) {
+exports['test window watcher unregs 4 loading wins'] = function(assert, done) {
   var myWindow;
   var finished = false;
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
@@ -161,7 +168,7 @@ exports.testWindowWatcherUnregs4LoadingWindows = function(test) {
     onTrack: function(window) {
       var type = window.document.documentElement.getAttribute("windowtype");
       if (type == "test:window")
-        test.fail("onTrack shouldn't have been executed.");
+        assert.fail("onTrack shouldn't have been executed.");
     }
   };
   var wt = new windowUtils.WindowTracker(delegate);
@@ -170,7 +177,7 @@ exports.testWindowWatcherUnregs4LoadingWindows = function(test) {
   myWindow = makeEmptyWindow();
 
   // make sure that the window hasn't loaded yet
-  test.assertNotEqual(
+  assert.notEqual(
       myWindow.document.readyState,
       "complete",
       "window hasn't loaded yet.");
@@ -180,7 +187,7 @@ exports.testWindowWatcherUnregs4LoadingWindows = function(test) {
 
   // make sure that the window still hasn't loaded, which means that the onTrack
   // would have been removed successfully assuming that it doesn't execute.
-  test.assertNotEqual(
+  assert.notEqual(
       myWindow.document.readyState,
       "complete",
       "window still hasn't loaded yet.");
@@ -193,23 +200,21 @@ exports.testWindowWatcherUnregs4LoadingWindows = function(test) {
     myWindow.setTimeout(function() {
       myWindow.addEventListener("unload", function() {
         // once the window unloads test is done
-        test.done();
+        done();
       }, false);
       myWindow.close();
     }, 0);
   }, false);
-
-  test.waitUntilDone(5000);
 }
 
-exports.testWindowWatcherWithoutUntracker = function(test) {
+exports['test window watcher without untracker'] = function(assert, done) {
   var myWindow;
   var finished = false;
 
   var delegate = {
     onTrack: function(window) {
       if (window == myWindow) {
-        test.pass("onTrack() called with our test window");
+        assert.pass("onTrack() called with our test window");
         timer.setTimeout(function() {
           myWindow.close();
 
@@ -217,9 +222,9 @@ exports.testWindowWatcherWithoutUntracker = function(test) {
               finished = true;
               myWindow = null;
               wt.unload();
-              test.done();
+              done();
             } else {
-              test.fail("onTrack() called multiple times.");
+              assert.fail("onTrack() called multiple times.");
             }
         }, 1);
       }
@@ -228,12 +233,9 @@ exports.testWindowWatcherWithoutUntracker = function(test) {
 
   var wt = new windowUtils.WindowTracker(delegate);
   myWindow = makeEmptyWindow();
-  test.waitUntilDone(5000);
 };
 
-exports.testActiveWindow = function(test) {
-  test.waitUntilDone(5000);
-
+exports['test active window'] = function(assert, done) {
   let testRunnerWindow = Cc["@mozilla.org/appshell/window-mediator;1"]
                          .getService(Ci.nsIWindowMediator)
                          .getMostRecentWindow("test:runner");
@@ -241,8 +243,8 @@ exports.testActiveWindow = function(test) {
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
 
-  test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
-                    "Browser window is the active browser window.");
+  assert.equal(windowUtils.activeBrowserWindow, browserWindow,
+               "Browser window is the active browser window.");
 
 
   let testSteps = [
@@ -251,30 +253,30 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(browserWindow);
     },
     function() {
-      test.assertEqual(windowUtils.activeWindow, browserWindow,
+      assert.equal(windowUtils.activeWindow, browserWindow,
                        "Correct active window [1]");
       continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
-      test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
+      assert.equal(windowUtils.activeWindow, testRunnerWindow,
                        "Correct active window [2]");
-      test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
+      assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [3]");
       continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
-      test.assertEqual(windowUtils.activeWindow, browserWindow,
+      assert.equal(windowUtils.activeWindow, browserWindow,
                        "Correct active window [4]");
       continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
-      test.assertEqual(windowUtils.activeWindow, testRunnerWindow,
+      assert.equal(windowUtils.activeWindow, testRunnerWindow,
                        "Correct active window [5]");
-      test.assertEqual(windowUtils.activeBrowserWindow, browserWindow,
+      assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [6]");
       testRunnerWindow = null;
       browserWindow = null;
-      test.done()
+      done();
     }
   ];
 
@@ -314,4 +316,6 @@ exports.testActiveWindow = function(test) {
   }
 
   nextTest();
-}
+};
+
+require("test").run(exports);

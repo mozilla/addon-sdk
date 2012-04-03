@@ -25,6 +25,7 @@ const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
+const { getInnerId } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
 const timer = require("timer");
@@ -682,7 +683,7 @@ WorkerRegistry.prototype = {
 
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let innerWinID = winUtils.getInnerId(win);
+    let innerWinID = getInnerId(win);
     if ((innerWinID in this.winWorkers) ||
         (innerWinID in this.winsWithoutWorkers))
       return;
@@ -725,7 +726,7 @@ WorkerRegistry.prototype = {
 
   // Returns the worker for the item-window pair or null if none exists.
   find: function WR_find(contentWin) {
-    let innerWinID = winUtils.getInnerId(contentWin);
+    let innerWinID = getInnerId(contentWin);
     return (innerWinID in this.winWorkers) ?
            this.winWorkers[innerWinID].worker :
            null;
@@ -870,7 +871,7 @@ let browserManager = {
   // Stores the given content window with the manager and registers it with each
   // top-level item's worker registry.
   _registerContentWin: function BM__registerContentWin(win) {
-    let innerID = winUtils.getInnerId(win);
+    let innerID = getInnerId(win);
 
     // It's an error to call this method for the same window more than once, but
     // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See

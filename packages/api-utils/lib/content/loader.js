@@ -7,9 +7,16 @@
 "use strict";
 
 const { EventEmitter } = require('../events');
-const { validateOptions, getTypeOf } = require('../api-utils');
+const { validateOptions } = require('../api-utils');
 const { URL } = require('../url');
 const file = require('../file');
+
+const LOCAL_URI_SCHEMES = ['resource', 'data'];
+
+// Returns `null` if `value` is `null` or `undefined`, otherwise `value`.
+function ensureNull(value) {
+  return value == null ? null : value;
+}
 
 // map of property validations
 const valid = {
@@ -27,36 +34,40 @@ const valid = {
   },
   contentScriptFile: {
     is: ['undefined', 'null', 'string', 'array'],
-    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
+    map: ensureNull,
     ok: function(value) {
-      if (getTypeOf(value) === 'array') {
-        // Make sure every item is a local file URL.
-        return value.every(function (item) {
-          try {
-            return URL(item).scheme === 'resource'
-          }
-          catch(e) {
-            return false;
-          }
-        });
-      }
-      return true;
+      if (value === null)
+        return true;
+
+      value = [].concat(value);
+
+      // Make sure every item is a local file URL.
+      return value.every(function (item) {
+        try {
+          return ~LOCAL_URI_SCHEMES.indexOf(URL(item).scheme);
+        }
+        catch(e) {
+          return false;
+        }
+      });
+
     },
-    msg: 'The `contentScriptFile` option must be a local URL or an array of'
-          + 'URLs.'
+    msg: 'The `contentScriptFile` option must be a local URL or an array of URLs.'
   },
   contentScript: {
     is: ['undefined', 'null', 'string', 'array'],
-    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
-    ok: function(value) 'array' !== getTypeOf(value) ? true :
-      value.every(function(item) 'string' === getTypeOf(item))
-    ,
+    map: ensureNull,
+    ok: function(value) {
+      return !Array.isArray(value) || value.every(
+        function(item) { return typeof item === 'string' }
+      );
+    },
     msg: 'The `contentScript` option must be a string or an array of strings.'
   },
   contentScriptWhen: {
     is: ['string'],
-    ok: function(value) ['start', 'ready', 'end'].indexOf(value) >= 0,
-    map: function(value) { 
+    ok: function(value) { return ~['start', 'ready', 'end'].indexOf(value) },
+    map: function(value) {
       return value || 'end';
     },
     msg: 'The `contentScriptWhen` option must be either "start", "ready" or "end".'
@@ -113,10 +124,10 @@ const Loader = EventEmitter.compose({
   _contentURL: null,
   /**
    * When to load the content scripts.
-   * Possible values are "end" (default), which loads them once all page 
-   * contents have been loaded, "ready", which loads them once DOM nodes are 
-   * ready (ie like DOMContentLoaded event), and "start", which loads them once 
-   * the `window` object for the page has been created, but before any scripts 
+   * Possible values are "end" (default), which loads them once all page
+   * contents have been loaded, "ready", which loads them once DOM nodes are
+   * ready (ie like DOMContentLoaded event), and "start", which loads them once
+   * the `window` object for the page has been created, but before any scripts
    * specified by the page have been loaded.
    * Property change emits `propertyChange` event on instance with this key
    * and new value.
@@ -126,8 +137,8 @@ const Loader = EventEmitter.compose({
   set contentScriptWhen(value) {
     value = validate(value, valid.contentScriptWhen);
     if (value !== this._contentScriptWhen) {
-      this._emit('propertyChange', { 
-        contentScriptWhen: this._contentScriptWhen = value 
+      this._emit('propertyChange', {
+        contentScriptWhen: this._contentScriptWhen = value
       });
     }
   },
@@ -142,7 +153,7 @@ const Loader = EventEmitter.compose({
   set contentScriptFile(value) {
     value = validate(value, valid.contentScriptFile);
     if (value != this._contentScriptFile) {
-      this._emit('propertyChange', { 
+      this._emit('propertyChange', {
         contentScriptFile: this._contentScriptFile = value
       });
     }
@@ -159,11 +170,10 @@ const Loader = EventEmitter.compose({
     value = validate(value, valid.contentScript);
     if (value != this._contentScript) {
       this._emit('propertyChange', {
-        contentScript: this._contentScript = value 
+        contentScript: this._contentScript = value
       });
     }
   },
   _contentScript: null
 });
 exports.Loader = Loader;
-

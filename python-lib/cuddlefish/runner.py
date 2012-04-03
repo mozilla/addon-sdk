@@ -19,6 +19,8 @@ from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 
 # Used to remove noise from ADB output
 CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
+# Used to filter only messages send by `console` module
+FILTER_ONLY_CONSOLE_FROM_ADB = re.compile(r'^I/(stderr)\s*\(\s*\d+\):\s*((info|warning|error|debug): .*)$')
 
 # Maximum time we'll wait for tests to finish, in seconds.
 # The purpose of this timeout is to recover from infinite loops.  It should be
@@ -559,11 +561,21 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             # that will print this string:
             if "APPLICATION-QUIT" in line:
                 break
-            m = CLEANUP_ADB.match(line)
-            if not m:
-                print line.rstrip()
-                continue
-            print m.group(3)
+
+            if verbose:
+                # if --verbose is given, we display everything:
+                # All JS Console messages, stdout and stderr.
+                m = CLEANUP_ADB.match(line)
+                if not m:
+                    print line.rstrip()
+                    continue
+                print m.group(3)
+            else:
+                # Otherwise, display addons messages dispatched through
+                # console.[info, log, debug, warning, error](msg)
+                m = FILTER_ONLY_CONSOLE_FROM_ADB.match(line)
+                if m:
+                    print m.group(2)
 
         print >>sys.stderr, "Program terminated successfully."
         return 0
