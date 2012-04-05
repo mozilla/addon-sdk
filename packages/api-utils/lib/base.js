@@ -5,10 +5,24 @@
 
 "use strict";
 
+// Converts all properties of the given `source` object
+// to non-configurable and non-writable.
+function ossify(source) {
+  let descriptors = {};
+  Object.getOwnPropertyNames(source).forEach(function onEach(name) {
+    let descriptor = Object.getOwnPropertyDescriptor(source, name);
+    if ('value' in descriptor)
+      descriptor.writable = false;
+    descriptor.configurable = false;
+    descriptors[name] = descriptor;
+  });
+  return Object.defineProperties(source, descriptors);
+}
+
 // Instead of inheriting from `Object.prototype` we copy all interesting
 // properties from it and then freeze. This way we can guarantee integrity
 // of components build on top.
-exports.Base = Object.freeze(Object.create(null, {
+exports.Base = Object.create(null, {
   toString: { value: Object.prototype.toString },
   toLocaleString: { value: Object.prototype.toLocaleString },
   toSource: { value: Object.prototype.toSource },
@@ -155,22 +169,22 @@ exports.Base = Object.freeze(Object.create(null, {
    *
    */
    extend: { value: function extend() {
-    return Object.freeze(this.merge.apply(Object.create(this), arguments));
+    return ossify(this.merge.apply(Object.create(this), arguments));
   }}
-}));
+});
 
 /**
  * Function takes prototype object that implements `initialize` method, and
  * returns `constructor` function (with correct prototype property), that can
  * be used for simulating classes for given prototypes.
  */
-exports.Class = Object.freeze(function Class(prototype) {
+exports.Class = ossify(function Class(prototype) {
   function constructor() {
     var instance = Object.create(prototype);
     prototype.initialize.apply(instance, arguments);
     return instance;
   }
-  return Object.freeze(Object.defineProperties(constructor, {
+  return ossify(Object.defineProperties(constructor, {
     prototype: { value: prototype },
     new: { value: constructor }
   }));

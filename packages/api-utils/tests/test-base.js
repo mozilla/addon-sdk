@@ -64,13 +64,11 @@ exports["test prototype immutability"] = function(assert) {
     Base.extend = override;
     if (Base.extend !== override)
       throw Error("Property was not set");
-  }, "Base prototype is imutable");
+  }, "Base prototype properties are imutable");
 
-  assert.throws(function() {
-    Base.foo = "bar";
-    if (Base.foo !== "bar")
-      throw Error("Property was not set");
-  }, "Base prototype is non-configurabel");
+  Base.foo = "bar";
+  assert.equal(Base.foo, "bar",
+               "Base prototype's non-existing properties may be defined");
 
   assert.throws(function() {
     delete Base.new;
@@ -92,11 +90,10 @@ exports["test prototype immutability"] = function(assert) {
       throw Error("Property was not set");
   }, "Can't change prototype properties");
 
-  assert.throws(function() {
-    Foo.foo = "bar";
-    if (Foo.foo !== "bar")
-      throw Error("Property was not set");
-  }, "Can't add prototype properties");
+  Foo.baz = "foo";
+  Foo.trax = 2
+  assert.equal(Foo.baz, "foo",
+               "Non existing prototype properties may be defined");
 
   assert.throws(function() {
     delete Foo.name;
@@ -234,6 +231,17 @@ exports['test class'] = function(assert) {
   assert.equal(b4.name, 'b4', 'property initialized');
   assert.equal(b4.size, 4, 'property initialized');
   assert.equal(b4.serialize(), '<b4:Bar>', 'method works');
+};
+
+exports['test against __proto__'] = function(assert) {
+  let Fixture = Base.extend({});
+  Fixture.__proto__ = { foo: 'foo' };
+
+  assert.equal(Object.getPrototypeOf(Fixture), Base,
+               "prototype can't be modified");
+
+  assert.equal(Object.getPrototypeOf(Base.extend({ __proto__: {} })),
+               Base, "prototype can't be passed in");
 };
 
 require("test").run(exports);
