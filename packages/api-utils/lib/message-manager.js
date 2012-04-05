@@ -6,7 +6,7 @@
 
 const BAD_LISTENER = "The event listener must be a function.";
 
-const { Cc, Ci, Cu, CC } = require("chrome");
+const { Cc, Ci, Cu, CC, atob, btoa } = require("chrome");
 const { setTimeout } = require("./timer");
 
 const { ns } = require("./namespace");
@@ -149,6 +149,10 @@ function MessageManager() {
   let sandbox = Sandbox.sandbox(null, { wantXrays : false });
 
   Object.defineProperties(sandbox, {
+    atob: {value: atob},
+
+    btoa: {value: btoa},
+
     addMessageListener: {value: addMessageListener.bind(sandbox)},
 
     removeMessageListener: { value: removeMessageListener.bind(sandbox)},
