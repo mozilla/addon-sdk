@@ -2,77 +2,49 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
+'use strict';
 
-const { CC } = require("chrome");
-const { Unknown } = require("./xpcom");
-const { when: unload } = require("./unload");
+const { CC, Ci } = require('chrome');
+const { when: unload } = require('./unload');
 
+const { TYPE_ONE_SHOT, TYPE_REPEATING_SLACK } = Ci.nsITimer;
 const Timer = CC('@mozilla.org/timer;1', 'nsITimer');
+const timers = Object.create(null);
 
-// Registry for all timers.
-const timers = (function(map, id) {
-  return Object.defineProperties(function registry(key, fallback) {
-    return key in map ? map[key] : fallback;
-  }, {
-    register: { value: function(value) (map[++id] = value, id) },
-    unregister: { value: function(key) delete map[key] },
-    forEach: { value: function(callback) Object.keys(map).forEach(callback) }
-  });
-})(Object.create(null), 0);
+// Last timer id.
+let lastID = 0;
 
-const TimerCallback = Unknown.extend({
-  interfaces: [ 'nsITimerCallback' ],
-  initialize: function initialize(id, callback, rest) {
-    this.id = id;
-    this.callback = callback;
-    this.arguments = rest;
-  }
-});
-
-const TimeoutCallback = TimerCallback.extend({
-  type: 0, // nsITimer.TYPE_ONE_SHOT
-  notify: function notify() {
-    try {
-      timers.unregister(this.id);
-      this.callback.apply(null, this.arguments);
+// Sets typer either by timeout or by interval
+// depending on a given type.
+function setTimer(type, callback, delay) {
+  let id = ++ lastID;
+  let timer = timers[id] = Timer();
+  let args = Array.slice(arguments, 3);
+  timer.initWithCallback({
+    notify: function notify() {
+      try {
+        if (type === TYPE_ONE_SHOT)
+          delete timers[id];
+        callback.apply(null, args);
+      }
+      catch(error) {
+        console.exception(error);
+      }
     }
-    catch (error) {
-      console.exception(error);
-    }
-  }
-});
-
-const IntervalCallback = TimerCallback.extend({
-  type: 1, // nsITimer.TYPE_REPEATING_SLACK
-  notify: function notify() {
-    try {
-      this.callback.apply(null, this.arguments);
-    }
-    catch (error) {
-      console.exception(error);
-    }
-  }
-});
-
-function setTimer(TimerCallback, listener, delay) {
-  let timer = Timer();
-  let id = timers.register(timer);
-  let callback = TimerCallback.new(id, listener, Array.slice(arguments, 3));
-  timer.initWithCallback(callback, delay || 0, TimerCallback.type);
+  }, delay || 0, type);
   return id;
 }
 
 function unsetTimer(id) {
-  let timer = timers(id);
-  timers.unregister(id);
+  let timer = timers[id];
+  delete timers[id];
   if (timer)
     timer.cancel();
 }
 
-exports.setTimeout = setTimer.bind(null, TimeoutCallback);
-exports.setInterval = setTimer.bind(null, IntervalCallback);
-exports.clearTimeout = unsetTimer;
-exports.clearInterval = unsetTimer;
+exports.setTimeout = setTimer.bind(null, TYPE_ONE_SHOT);
+exports.setInterval = setTimer.bind(null, TYPE_REPEATING_SLACK);
+exports.clearTimeout = unsetTimer.bind(null);
+exports.clearInterval = unsetTimer.bind(null);
 
-unload(function() { timers.forEach(unsetTimer); });
+unload(function() { Object.keys(timers).forEach(unsetTimer) });
