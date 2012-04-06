@@ -2,13 +2,103 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Cc, Ci, btoa } = require("chrome");
+"use strict";
+
+const { Cc, Ci } = require("chrome");
 
 const imageTools = Cc["@mozilla.org/image/tools;1"].
                     getService(Ci.imgITools);
 
 const io = Cc["@mozilla.org/network/io-service;1"].
                     getService(Ci.nsIIOService);
+
+const base64png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D";
+
+const base64jpeg = "data:image/jpeg;base64,%2F9j%2F4AAQSkZJRgABAQAAAQABAAD%2F" +
+                  "2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCg" +
+                  "sOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD%2F2wBDAQMDAwQDBAgEBAgQCw" +
+                  "kLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ" +
+                  "EBAQEBAQEBD%2FwAARCAAgACADAREAAhEBAxEB%2F8QAHwAAAQUBAQEBAQ" +
+                  "EAAAAAAAAAAAECAwQFBgcICQoL%2F8QAtRAAAgEDAwIEAwUFBAQAAAF9AQ" +
+                  "IDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRol" +
+                  "JicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eX" +
+                  "qDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJ" +
+                  "ytLT1NXW19jZ2uHi4%2BTl5ufo6erx8vP09fb3%2BPn6%2F8QAHwEAAwEB" +
+                  "AQEBAQEBAQAAAAAAAAECAwQFBgcICQoL%2F8QAtREAAgECBAQDBAcFBAQA" +
+                  "AQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNO" +
+                  "El8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0" +
+                  "dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6ws" +
+                  "PExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3%2BPn6%2F9oADAMB" +
+                  "AAIRAxEAPwD5Kr8kP9CwoA5f4m%2F8iRqX%2FbH%2FANHJXr5F%2FwAjCn" +
+                  "8%2F%2FSWfnnir%2FwAkji%2F%2B4f8A6dgeD1%2BiH8bn1BX5If6FmFqW" +
+                  "pXtveyQwzbUXGBtB7D2r9l4U4UyjMsoo4rFUeacua75pLaUktFJLZH5NxN" +
+                  "xNmmX5pVw2Gq8sI8tlyxe8U3q03uzD8S3dxqOi3NneSeZDJs3LgDOHBHI5" +
+                  "6gV%2BkcG%2BH%2FDmJzuhSq4e8XzfbqfyS%2FvH5rx1xTm2MyDEUa1W8X" +
+                  "yXXLFbTi%2BkThv7B0r%2FAJ9f%2FH2%2Fxr90%2FwCIVcI%2F9An%2FAJ" +
+                  "Uq%2FwDyZ%2FO%2F16v%2FADfgv8j0r%2FhZvgj%2FAKDf%2FktN%2FwDE" +
+                  "V%2Fnr%2FYWYf8%2B%2Fxj%2Fmf3R%2FxFXhH%2FoL%2FwDKdX%2F5Azrv" +
+                  "xLouo3D3lne%2BZDJja3luM4GDwRnqDX9LeH%2FBud4nhzD1aVC8Xz%2Fa" +
+                  "h%2Fz8l%2FePx%2FinjrIMZm1WtRxF4vls%2BSa2jFdYlDUdRsp7OSKKbc" +
+                  "7YwNpHce1fqfCvCub5bm9HFYqjywjzXfNF7xklopN7s%2BC4l4lyvMMrq4" +
+                  "fD1bzfLZcsltJPqktkYlfsZ%2BUnBV%2FnufVnXaD%2FAMgqD%2FgX%2Fo" +
+                  "Rr%2BxvCr%2FkkcJ%2F3E%2F8ATsz5%2FHfx5fL8kX6%2FQjkCgD%2F%2F" +
+                  "2Q%3D%3D";
+
+const canvasHTML = "data:text/html," + encodeURIComponent(
+  "<html>\
+    <body>\
+      <canvas width='32' height='32'></canvas>\
+    </body>\
+  </html>"
+);
+
+function comparePixelImages(imageA, imageB, callback) {
+  let tabs = require("tabs");
+
+  tabs.open({
+    url: canvasHTML,
+
+    onReady: function onReady(tab) {
+      let worker = tab.attach({
+        contentScript: "new " + function() {
+          let canvas = document.querySelector("canvas");
+          let context = canvas.getContext("2d");
+
+          self.port.on("draw-image", function(imageURI) {
+            let img = new Image();
+
+            img.onload = function() {
+              context.drawImage(this, 0, 0);
+
+              let pixels = Array.join(context.getImageData(0, 0, 32, 32).data);
+              self.port.emit("image-pixels", pixels);
+            }
+
+            img.src = imageURI;
+          });
+        }
+      });
+
+      let compared = "";
+
+      worker.port.on("image-pixels", function (pixels) {
+        if (!compared) {
+          compared = pixels;
+          this.emit("draw-image", imageB);
+        } else {
+          callback(compared === pixels);
+          tab.close()
+        }
+      });
+
+      worker.port.emit("draw-image", imageA);
+    }
+  });
+}
+
 
 // Test the typical use case, setting & getting with no flavors specified
 exports.testWithNoFlavor = function(test) {
@@ -74,37 +164,51 @@ exports.testSetImage = function(test) {
   var flavor = "image";
   var fullFlavor = "image/png";
 
-  var base64Data = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTyN5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FGbWRR9AAAAABJRU5ErkJggg==";
-  var contents = "data:image/png;base64," + encodeURIComponent(base64Data);
-  test.assert(clip.set(contents, flavor), "clipboard set");
+  test.assert(clip.set(base64png, flavor), "clipboard set");
   test.assertEqual(clip.currentFlavors[0], flavor, "flavor is set");
-
-  test.assertEqual(clip.get(), contents, "image data equals");
 };
 
-/*
+exports.testGetImage = function(test) {
+  test.waitUntilDone();
+
+  var clip = require("clipboard");
+
+  clip.set(base64png, "image");
+
+  var contents = clip.get();
+
+  comparePixelImages(base64png, contents, function (areEquals) {
+    test.assert(areEquals,
+      "Image gets from clipboard equals to image sets to the clipboard");
+
+    test.done();
+  });
+}
+
 exports.testSetImageTypeNotSupported = function(test) {
   var clip = require("clipboard");
   var flavor = "image";
 
-  var base64Data = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAAgACADAREAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5Kr8kP9CwoA5f4m/8iRqX/bH/ANHJXr5F/wAjCn8//SWfnnir/wAkji/+4f8A6dgeD1+iH8bn1BX5If6FmFqWpXtveyQwzbUXGBtB7D2r9l4U4UyjMsoo4rFUeacua75pLaUktFJLZH5NxNxNmmX5pVw2Gq8sI8tlyxe8U3q03uzD8S3dxqOi3NneSeZDJs3LgDOHBHI56gV+kcG+H/DmJzuhSq4e8XzfbqfyS/vH5rx1xTm2MyDEUa1W8XyXXLFbTi+kThv7B0r/AJ9f/H2/xr90/wCIVcI/9An/AJUq/wDyZ/O/16v/ADfgv8j0r/hZvgj/AKDf/ktN/wDEV/nr/YWYf8+/xj/mf3R/xFXhH/oL/wDKdX/5AzrvxLouo3D3lne+ZDJja3luM4GDwRnqDX9LeH/Bud4nhzD1aVC8Xz/ah/z8l/ePx/injrIMZm1WtRxF4vls+Sa2jFdYlDUdRsp7OSKKbc7YwNpHce1fqfCvCub5bm9HFYqjywjzXfNF7xklopN7s+C4l4lyvMMrq4fD1bzfLZcsltJPqktkYlfsZ+UnBV/nufVnXaD/AMgqD/gX/oRr+xvCr/kkcJ/3E/8ATsz5/Hfx5fL8kX6/QjkCgD//2Q==";
-  var contents = "data:image/jpeg;base64," + encodeURIComponent(base64Data);
-
-  test.assert(clip.set(contents, flavor), "clipboard set");
-
-};
-
-exports.AtestSetImageTypeWrongData = function(test) {
-  let base64Data = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAAgACADAREAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5Kr8kP9CwoA5f4m/8iRqX/bH/ANHJXr5F/wAjCn8//SWfnnir/wAkji/+4f8A6dgeD1+iH8bn1BX5If6FmFqWpXtveyQwzbUXGBtB7D2r9l4U4UyjMsoo4rFUeacua75pLaUktFJLZH5NxNxNmmX5pVw2Gq8sI8tlyxe8U3q03uzD8S3dxqOi3NneSeZDJs3LgDOHBHI56gV+kcG+H/DmJzuhSq4e8XzfbqfyS/vH5rx1xTm2MyDEUa1W8XyXXLFbTi+kThv7B0r/AJ9f/H2/xr90/wCIVcI/9An/AJUq/wDyZ/O/16v/ADfgv8j0r/hZvgj/AKDf/ktN/wDEV/nr/YWYf8+/xj/mf3R/xFXhH/oL/wDKdX/5AzrvxLouo3D3lne+ZDJja3luM4GDwRnqDX9LeH/Bud4nhzD1aVC8Xz/ah/z8l/ePx/injrIMZm1WtRxF4vls+Sa2jFdYlDUdRsp7OSKKbc7YwNpHce1fqfCvCub5bm9HFYqjywjzXfNF7xklopN7s+C4l4lyvMMrq4fD1bzfLZcsltJPqktkYlfsZ+UnBV/nufVnXaD/AMgqD/gX/oRr+xvCr/kkcJ/3E/8ATsz5/Hfx5fL8kX6/QjkCgD//2Q==";
-
-  var contents = "data:image/png;base64," + encodeURIComponent(base64Data);
+  test.assertRaises(function () {
+    clip.set(base64jpeg, flavor);
+  }, "Invalid flavor for image/jpeg");
 
 };
 
-exports.AtestGetImage = function(test) {
+// Notice that `imageTools.decodeImageData`, used by `clipboard.set` method for
+// images, write directly to the javascript console the error in case the image
+// is corrupt, even if the error is catched.
+//
+// See: http://mxr.mozilla.org/mozilla-central/source/image/src/Decoder.cpp#136
+exports.testSetImageTypeWrongData = function(test) {
+  var clip = require("clipboard");
+  var flavor = "image";
 
+  var wrongPNG = "data:image/png" + base64jpeg.substr(15);
+
+  test.assertRaises(function () {
+    clip.set(wrongPNG, flavor);
+  }, "Unable to decode data given in a valid image.");
 };
-
-*/
 
 // TODO: Test error cases.
