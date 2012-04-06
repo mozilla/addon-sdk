@@ -6,6 +6,7 @@
 
 const { Cc, Ci } = require("chrome");
 const { Unknown } = require("./xpcom");
+const { Class } = require("./heritage");
 const { when: unload } = require("./unload");
 const memory = require("./memory");
 
@@ -60,7 +61,7 @@ exports.topics = {
  * @returns the observer
  */
 var add = exports.add = function add(topic, callback, target) {
-  var observer = Observer.new(topic, callback, target);
+  var observer = Observer(topic, callback, target);
   service.addObserver(observer, topic, true);
   cache.push(observer);
 
@@ -113,14 +114,15 @@ var remove = exports.remove = function remove(topic, callback, target) {
  *        parameter (i.e.: { foo: 1, bar: "some string", baz: myObject })
  */
 var notify = exports.notify = function notify(topic, subject, data) {
-  subject = (typeof subject == "undefined") ? null : Subject.new(subject);
+  subject = (typeof subject == "undefined") ? null : Subject(subject);
   data = (typeof    data == "undefined") ? null : data;
   service.notifyObservers(subject, topic, data);
 };
 
-const Observer = Unknown.extend({
+const Observer = Class({
+  extends: Unknown,
   initialize: function initialize(topic, callback, target) {
-    memory.track(this);
+    memory.track(this, 'Observer');
     this.topic = topic;
     this.callback = callback;
     this.target = target;
@@ -150,7 +152,8 @@ const Observer = Unknown.extend({
   }
 });
 
-const Subject = Unknown.extend({
+const Subject = Class({
+  extends: Unknown,
   initialize: function initialize(object) {
     // Double-wrap the object and set a property identifying the
     // wrappedJSObject as one of our wrappers to distinguish between

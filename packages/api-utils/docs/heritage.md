@@ -50,12 +50,12 @@ to be the case. Prototype (object) can form far more simpler exemplars. After
 all what could be more object oriented than objects that inherit from objects.
 
     var Dog = {
-      new: function(name) {
-        var instance = Object.create(this);
-        this.initialize.apply(instance, arguments);
+      constructor: function(name) {
+        var instance = Object.create(Dog);
+        this.setup.apply(instance, arguments);
         return instance;
       },
-      initialize: function initialize(name) {
+      setup: function setup(name) {
         this.name = name;
       },
       type: 'dog',
@@ -63,23 +63,25 @@ all what could be more object oriented than objects that inherit from objects.
         return 'Ruff! Ruff!'
       }
     };
-    var fluffy = Dog.new('fluffy');
+    var fluffy = Dog.constructor('fluffy');
 
 
     var Pet = Object.create(Dog);
-    Pet.initialize = function initialize(name, breed) {
-      Dog.initialize.call(this, name);
+    Pet.setup = function setup(name, breed) {
+      Dog.setup.call(this, name);
       this.breed = breed;
     };
     Pet.call = function call(name) {
       return this.name === name ? this.bark() : '';
     };
 
-While this small trick solves some readability issues, there are still more. To
-address them this module exports `Base` exemplar with few methods predefined:
+While this small trick solves some readability issues, there are still more
+details than necessary. To address them this module exports `Base` exemplar
+and helper some functions:
 
-    var Dog = Base.extend({
-      initialize: function initialize(name) {
+    var { Base, extend, make } = require('api-utils/heritage');
+    var Dog = extend(Base, {
+      setup: function setup(name) {
         this.name = name;
       },
       type: 'dog',
@@ -88,9 +90,9 @@ address them this module exports `Base` exemplar with few methods predefined:
       }
     });
 
-    var Pet = Dog.extend({
-      initialize: function initialize(name, breed) {
-        Dog.initialize.call(this, name);
+    var Pet = extend(Dog, {
+      setup: function setup(name, breed) {
+        Dog.setup.call(this, name);
         this.breed = breed;
       },
       function call(name) {
@@ -98,10 +100,10 @@ address them this module exports `Base` exemplar with few methods predefined:
       }
     });
 
-    var fluffy = Dog.new('fluffy');
-    dog.bark();                       // 'Ruff! Ruff!'
-    Dog.isPrototypeOf(fluffy);        // true
-    Pet.isPrototypeOf(fluffy);        // true
+    var fluffy = make(Dog, 'fluffy');
+    dog.bark();                               // 'Ruff! Ruff!'
+    Dog.isPrototypeOf(fluffy);       // true
+    Pet.isPrototypeOf(fluffy);         // true
 
 ### Composition ###
 
@@ -109,13 +111,13 @@ Even though (single) inheritance is very powerful it's not always enough.
 Sometimes it's more useful suitable to define reusable pieces of functionality
 and then compose bigger pieces out of them:
 
-    var HEX = Base.extend({
+    var HEX = extend(Base, {
       hex: function hex() {
         return '#' + this.color
       }
     })
 
-    var RGB = Base.extend({
+    var RGB = extend(Base, {
       red: function red() {
         return parseInt(this.color.substr(0, 2), 16)
       },
@@ -127,7 +129,7 @@ and then compose bigger pieces out of them:
       }
     })
 
-    var CMYK = Base.extend(RGB, {
+    var CMYK = extend(RGB, {
       black: function black() {
         var color = Math.max(Math.max(this.red(), this.green()), this.blue())
         return (1 - color / 255).toFixed(4)
@@ -147,13 +149,13 @@ and then compose bigger pieces out of them:
     })
 
     // Composing `Color` prototype out of reusable components:
-    var Color = Base.extend(HEX, RGB, CMYK, {
-      initialize: function initialize(color) {
+    var Color = extend(Base, mix(HEX, RGB, CMYK, {
+      setup: function setup(color) {
         this.color = color
       }
     })
 
-    var pink = Color.new('FFC0CB')
+    var pink = make(Color, 'FFC0CB')
     // RGB
     pink.red()        // 255
     pink.green()      // 192
@@ -168,9 +170,9 @@ and then compose bigger pieces out of them:
 
 Also it's easy to mix composition with inheritance:
 
-    var Pixel = Color.extend({
-      initialize: function initialize(x, y, color) {
-        Color.initialize.call(this, color)
+    var Pixel = extend(Color, {
+      setup: function setup(x, y, color) {
+        Color.setup.call(this, color)
         this.x = x
         this.y = y
       },
@@ -179,9 +181,9 @@ Also it's easy to mix composition with inheritance:
       }
     });
 
-    var pixel = Pixel.new(11, 23, 'CC3399');
-    pixel.toString()              // 11:23@#CC3399
-    Pixel.isPrototypeOf(pixel)    // true
+    var pixel = make(Pixel, 11, 23, 'CC3399');
+    pixel.toString();                     // 11:23@#CC3399
+    Pixel.isPrototypeOf(pixel);    // true
 
     // Pixel instances inhertis from `Color`
     Color.isPrototypeOf(pixel);   // true
@@ -205,3 +207,4 @@ simulating classes defined by given exemplar.
     var p2 = CPixel(17, 2, 'cccccc');
     p2 instanceof CPixel      // true
     p2.prototypeOf(pixel);    // true
+
