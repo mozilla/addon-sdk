@@ -32,7 +32,7 @@ exports.getFaviconURIForLocation = function getFaviconURIForLocation(uri) {
   catch(e) {
     if (!DEF_FAVICON) {
       DEF_FAVICON = PNG_B64 +
-                    base64Encode(getChromeURIContent(DEF_FAVICON_URI));
+                    btoa(getChromeURIContent(DEF_FAVICON_URI));
     }
     return DEF_FAVICON;
   }
