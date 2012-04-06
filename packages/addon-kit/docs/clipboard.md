@@ -16,6 +16,8 @@ The following types are supported:
 
 If no data type is provided, then the module will detect it for you.
 
+Currently `image`'s type doesn't support transparency on Windows.
+
 Examples
 --------
 
@@ -40,7 +42,10 @@ If the clipboard contains HTML content, open it in a new tab.
 Set the clipboard contents to an image.
 
     var clipboard = require("clipboard");
-    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAQ0lEQVRYhe3OwQkAIBTD0Oyqg7idbqUr9B9EhBRyLY8F+0akEyBAgIBvAI1eCuaIEiBAgAABzwH50sNqAgQIEPAYcABJQw5EXdmcNgAAAABJRU5ErkJggg==");
+    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D");
 
 If the clipboard contains an image, open it in a new tab.
 
@@ -51,10 +56,14 @@ If the clipboard contains an image, open it in a new tab.
 As noted before, data type can be easily omitted for images.
 
 If the intention is set the clipboard to a data URL as string and not as image,
-it can be easily done using "text" as data type.
+it can be easily done specifying a different flavor, like `text`.
 
     var clipboard = require("clipboard");
-    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAQ0lEQVRYhe3OwQkAIBTD0Oyqg7idbqUr9B9EhBRyLY8F+0akEyBAgIBvAI1eCuaIEiBAgAABzwH50sNqAgQIEPAYcABJQw5EXdmcNgAAAABJRU5ErkJggg==", "text");
+
+    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D", "text");
 
 <api name="set">
 @function
