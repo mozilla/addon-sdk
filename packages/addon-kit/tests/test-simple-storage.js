@@ -81,12 +81,12 @@ exports.testSetGetRootNumber = function (test) {
 
 exports.testSetGetRootObject = function (test) {
   setGetRoot(test, { foo: 1, bar: 2 }, function (obj1, obj2) {
-    for (let [prop, val] in Iterator(obj1)) {
-      if (!(prop in obj2) || obj2[prop] !== val)
+    for (let prop in obj1) {
+      if (!(prop in obj2) || obj2[prop] !== obj1[prop])
         return false;
     }
-    for (let [prop, val] in Iterator(obj2)) {
-      if (!(prop in obj1) || obj1[prop] !== val)
+    for (let prop in obj2) {
+      if (!(prop in obj1) || obj1[prop] !== obj2[prop])
         return false;
     }
     return true;

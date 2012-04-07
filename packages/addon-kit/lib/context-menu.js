@@ -708,7 +708,8 @@ WorkerRegistry.prototype = {
 
   // Creates a worker for each window that needs a worker but doesn't have one.
   createNeededWorkers: function WR_createNeededWorkers() {
-    for (let [innerWinID, win] in Iterator(this.winsWithoutWorkers)) {
+    for (let innerWinID in this.winsWithoutWorkers) {
+      let win = this.winsWithoutWorkers[innerWinID]
       delete this.winsWithoutWorkers[innerWinID];
       this.registerContentWin(win);
     }
@@ -716,7 +717,8 @@ WorkerRegistry.prototype = {
 
   // Destroys the worker for each window that has a worker but doesn't need it.
   destroyUnneededWorkers: function WR_destroyUnneededWorkers() {
-    for (let [innerWinID, winWorker] in Iterator(this.winWorkers)) {
+    for (let innerWinID in this.winWorkers) {
+      let winWorker = this.winWorkers[innerWinID];
       if (!this._doesURLNeedWorker(winWorker.win.document.URL)) {
         this.unregisterContentWin(innerWinID);
         this.winsWithoutWorkers[innerWinID] = winWorker.win;
@@ -1363,7 +1365,8 @@ ContextMenuPopup.prototype = {
     let popupNode = this._getPopupNode();
     // Show and hide items.  Set a "jetpackContextCurrent" property on the
     // DOM elements to signal which of our items match the current context.
-    for (let [itemID, item] in Iterator(this.topLevelItems)) {
+    for (let itemID in this.topLevelItems) {
+      let item = this.topLevelItems[itemID]
       let areContextsCurr =
         this.browserWin.areAllContextsCurrent(item, popupNode);
 

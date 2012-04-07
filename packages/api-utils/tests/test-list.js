@@ -50,17 +50,6 @@ exports['test:test for each'] = function(test) {
   }
 };
 
-exports['test: for each using Iterator'] = function(test) {
-  let fixture = new List(3, 2, 1);
-
-  test.assertEqual(3, fixture.length, 'length is 3');
-  let v = 3, k = 0;
-  for each (let [key, value] in Iterator(fixture)) {
-    test.assertEqual(k++, key, 'key should match');
-    test.assertEqual(v--, value, 'value should match');
-  }
-};
-
 exports['test:test toString'] = function(test) {
   let fixture = List(3, 2, 1);
 

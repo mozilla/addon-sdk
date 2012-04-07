@@ -62,8 +62,7 @@ exports.HiddenFrame = apiUtils.publicConstructor(HiddenFrame);
 function HiddenFrame(options) {
   options = options || {};
   let self = this;
-
-  for each (let [key, val] in Iterator(apiUtils.validateOptions(options, {
+  let validOptions = apiUtils.validateOptions(options, {
     onReady: {
       is: ["undefined", "function", "array"],
       ok: function(v) {
@@ -74,7 +73,10 @@ function HiddenFrame(options) {
         return true;
       }
     }
-  }))) {
+  });
+
+  for (let key in validOptions) {
+    let val = validOptions[key];
     if (typeof(val) != "undefined")
       options[key] = val;
   }

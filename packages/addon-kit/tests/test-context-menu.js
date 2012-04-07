@@ -1620,11 +1620,10 @@ exports.testMenuDestroy = function (test) {
 
 // Run only a dummy test if context-menu doesn't support the host app.
 if (!require("xul-app").is("Firefox")) {
-  for (let [prop, val] in Iterator(exports))
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
-  exports.testAppNotSupported = function (test) {
-    test.pass("context-menu does not support this application.");
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("context-menu does not support this application.");
+    }
   };
 }
 

@@ -37,19 +37,6 @@ exports.dump = (function define(global) {
   return dump;
 })(this);
 
-// Override the default Iterator function with one that passes
-// a second argument to custom iterator methods that identifies
-// the call as originating from an Iterator function so the custom
-// iterator method can return [key, value] pairs just like default
-// iterators called via the default Iterator function.
-exports.Iterator = (function(DefaultIterator) {
-  return function Iterator(obj, keysOnly) {
-    if ("__iterator__" in obj && !keysOnly)
-      return obj.__iterator__.call(obj, false, true);
-    return DefaultIterator(obj, keysOnly);
-  };
-})(Iterator);
-
 // Bug 718230: We need to send console messages to stdout and JS Console
 function forsakenConsoleDump(msg, level) {
   exports.dump(msg);
