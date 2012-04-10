@@ -17,6 +17,10 @@ modules for add-on developers to use. Luckily, Erik Vold has written
 a [`menuitems`](https://github.com/erikvold/menuitems-jplib) package
 that enables us to add menu items.
 
+This tutorial does double-duty. It describes the general method for
+using an external, third-party package in your add-on, and it
+describes how to add a menu item using the `menuitems` package in particular.
+
 ## Installing `menuitems` ##
 
 First we'll download `menuitems` from
