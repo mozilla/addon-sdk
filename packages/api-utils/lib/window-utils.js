@@ -5,8 +5,8 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const { EventEmitter } = require('./events'),
-      { Trait } = require('./traits');
+const { EventEmitter } = require('./events');
+const { Trait } = require('./traits');
 const { when } = require('./unload');
 const { getInnerId, getOuterId } = require('./window-utils');
 const errors = require("./errors");
@@ -15,10 +15,6 @@ const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                        getService(Ci.nsIWindowWatcher);
 const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
                         getService(Ci.nsIAppShellService);
-const observers = require('api-utils/observer-service');
-
-
-const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 /**
  * An iterator for XUL windows currently in the application.
@@ -196,82 +192,7 @@ exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 
-function createHiddenXULFrame() {
-  return function promise(deliver) {
-    let window = appShellService.hiddenDOMWindow;
-
-    // Ensuring waiting for hidden window end of loading
-    // (The hidden window is still loading on windows/thunderbird)
-    if (window.document.readyState != "complete") {
-      window.addEventListener("load", function onload() {
-        window.removeEventListener("load", onload, false);
-        // We recurse with same arguments, when the window is ready
-        promise(deliver);
-      }, false);
-      return;
-    }
-
-    let document = window.document;
-    let isXMLDoc = (document.contentType == "application/xhtml+xml" ||
-                    document.contentType == "application/vnd.mozilla.xul+xml")
-
-    if (isXMLDoc) {
-      deliver(window)
-    }
-    else {
-      let frame = document.createElement('iframe');
-      // This is ugly but we need window for XUL document in order to create
-      // browser elements.
-
-      // See bug 725323: hiddenWindow URL is different on each mozilla product
-      let prefs = Cc["@mozilla.org/preferences-service;1"].
-                  getService(Ci.nsIPrefBranch);
-      let hiddenWindowURL = prefs.getCharPref("browser.hiddenWindowChromeURL", "");
-
-      frame.src = hiddenWindowURL;
-      frame.setAttribute('src', hiddenWindowURL);
-      frame.addEventListener('DOMContentLoaded', function onLoad(event) {
-        frame.removeEventListener('DOMContentLoaded', onLoad, false);
-        deliver(frame.contentWindow);
-      }, false);
-      document.documentElement.appendChild(frame);
-    }
-  }
-};
-exports.createHiddenXULFrame = createHiddenXULFrame;
-
-function createRemoteBrowser(remote) {
-  return function promise(deliver) {
-    createHiddenXULFrame()(function(hiddenWindow) {
-      let document = hiddenWindow.document;
-      let browser = document.createElementNS(XUL, "browser");
-      // Remote="true" enable everything here:
-      // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1347
-      if (remote !== false)
-        browser.setAttribute("remote","true");
-      // Type="content" is mandatory to enable stuff here:
-      // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsFrameLoader.cpp#1776
-      browser.setAttribute("type","content");
-      // We remove XBL binding to avoid execution of code that is not going to work
-      // because browser has no docShell attribute in remote mode (for example)
-      browser.setAttribute("style","-moz-binding: none;");
-      // Flex it in order to be visible (optional, for debug purpose)
-      browser.setAttribute("flex", "1");
-      document.documentElement.appendChild(browser);
-
-      // Bug 724433: do not leak this <browser> DOM node
-      when(function () {
-        document.documentElement.removeChild(browser);
-      });
-
-      // Return browser
-      deliver(browser);
-    });
-  };
-};
-exports.createRemoteBrowser = createRemoteBrowser;
-
-require("./unload").when(
+when(
   function() {
     gDocsToClose.slice().forEach(
       function(doc) { doc.defaultView.close(); });
