@@ -13,8 +13,6 @@ const ioService = Cc['@mozilla.org/network/io-service;1'].
                   getService(Ci.nsIIOService);
 const resourceHandler = ioService.getProtocolHandler('resource')
                         .QueryInterface(Ci.nsIResProtocolHandler);
-const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
-                          'nsIXMLHttpRequest');
 const prefs = Cc["@mozilla.org/preferences-service;1"].
               getService(Ci.nsIPrefService).
               QueryInterface(Ci.nsIPrefBranch2);
@@ -183,7 +181,7 @@ function startup(data, reason) {
   // on add-on.
   promise(function() {
     try {
-      loader.spawn(options.main, options.mainPath);
+      loader.main(options.main, options.mainPath);
     } catch (error) {
       // If at this stage we have an error only thing we can do is report about
       // it via error console. Keep in mind that error won't automatically show
