@@ -5,7 +5,8 @@
 "use strict";
 
 const { Cc,Ci } = require("chrome");
-const { Loader } = require("@loader")
+const { Loader, Require, override, unload } = require("@loader");
+const globals = require('api-utils/globals!');
 const memory = require('api-utils/memory');
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
@@ -182,7 +183,7 @@ function cleanup() {
                       for each (info in memory.getObjects())];
     }
 
-    sandbox.unload();
+    unload(sandbox);
 
     if (sandbox.globals.console.errorsLogged && !results.failed) {
       results.failed++;
@@ -232,7 +233,7 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
-    let require = Loader.require.bind(sandbox, module.path);
+    let require = Require(sandbox, module);
     require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,
@@ -307,10 +308,14 @@ var runTests = exports.runTests = function runTests(options) {
           system.id + ") under " +
           system.platform + "/" + system.architecture + ".\n");
 
-    sandbox = Loader.new(require("@packaging"));
-    Object.defineProperty(sandbox.globals, 'console', {
-      value: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
-    });
+    var options = JSON.parse(JSON.stringify(require("@packaging")));
+
+    sandbox = Loader(override(options, {
+      id: Math.random().toString(36).slice(2),
+      globals: override(override({}, globals), {
+        console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+      })
+    }));
 
     nextIteration();
   } catch (e) {

@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { uriPrefix, name } = require('@packaging');
+const { prefixURI, name } = require('@packaging');
 const { WindowTracker, isBrowser } = require('api-utils/window-utils');
 const { add, remove } = require('api-utils/array');
 const { getTabs, closeTab } = require('api-utils/tabs/utils');
@@ -13,7 +13,7 @@ const { getTabs, closeTab } = require('api-utils/tabs/utils');
 // `require('self').data.url('index.html')` from the add-on modules.
 // We could not use this expression as in this module it would have
 // returned "addon-kit/data/index.html" instead.
-const addonURL = uriPrefix + name + '/data/index.html';
+const addonURL = prefixURI + name + '/data/index.html';
 
 WindowTracker({
   onTrack: function onTrack(window) {

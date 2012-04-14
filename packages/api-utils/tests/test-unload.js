@@ -8,7 +8,12 @@ var unload = require("unload");
 var { Loader } = require("./helpers");
 
 exports.testUnloading = function(test) {
-  var loader = Loader(module);
+  var loader = Loader(module, {
+    // ignore reported exceptions
+    console: Object.create(console, {
+      exception: { value: function() {} }
+    })
+  });
   var ul = loader.require("unload");
   var unloadCalled = 0;
   var errorsReported = 0;
