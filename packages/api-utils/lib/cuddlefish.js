@@ -51,6 +51,17 @@ function freeze(object) {
   return object;
 }
 
+// This function takes `f` function and optional `prototype` that is set as
+// `f.prototype`. If `prototype` is not passed then `undefined` is used. Both
+// `prototype` and `f` gets frozen and `f` is returned back. We need to do
+// this kind of deep freeze with all the exposed functions so that untrusted
+// code won't be able to use functions or their prototypes as a message channel.
+function iced(f, prototype) {
+  f.prototype = prototype && freeze(prototype);
+  return freeze(f);
+}
+
+// Returns map of given `object`-s own property descriptors.
 function getOwnPropertiesDescriptor(object) {
   let descriptor = {};
   getOwnPropertyNames(object).forEach(function(name) {
@@ -59,47 +70,73 @@ function getOwnPropertiesDescriptor(object) {
   return descriptor;
 }
 
-const override = lambda(function override(target, properties) {
+// Defines own properties of given `properties` object on the given
+// target object overriding any existing property with a conflicting name.
+// Returns `target` object. Note we only export this function because it's
+// useful during loader bootstrap when other util modules can't be used &
+// thats only case where this export should be used.
+const override = iced(function override(target, properties) {
   return defineProperties(target, getOwnPropertiesDescriptor(properties));
 });
 exports.override = override;
 
-function lambda(f, prototype) {
-  f.prototype = prototype && freeze(prototype);
-  return freeze(f);
-}
-
-// Freeze important built-ins so they can't be used for message passing.
+// Freeze important built-ins so they can't be used by untrusted code as a
+// message passing channel.
+freeze(Object);
 freeze(Object.prototype);
+freeze(Function);
 freeze(Function.prototype);
+freeze(Array);
 freeze(Array.prototype);
 
-const Sandbox = lambda(function Sandbox(options) {
-  let { principal, prototype, name, sandbox, wantXrays } = override({
+// Function takes set of options and returns a JS sandbox. Function may be
+// passed set of options:
+//  - `name`: A string value which identifies the sandbox in about:memory. Will
+//    throw exception if omitted.
+// - `principal`: String URI or `nsIPrincipal` for the sandbox. Defaults to
+//    system principal.
+// - `prototype`: Ancestor for the sandbox that will be created. Defaults to
+//    `{}`.
+// - `wantXrays`: A Boolean value indicating whether code outside the sandbox
+//    wants X-ray vision with respect to objects inside the sandbox. Defaults
+//    to `true`.
+// - `sandbox`: A sandbox to share JS compartment with. If omitted new
+//    compartment will be created.
+// For more details see:
+// https://developer.mozilla.org/en/Components.utils.Sandbox
+const Sandbox = iced(function Sandbox(options) {
+  let defaults = {
     principal: systemPrincipal,
-    prototype: {},
-    wantXrays: false,
+    prototype: null,
+    wantXrays: true,
     sandbox: null
-  }, options);
-
-  options = {
-    sandboxPrototype: prototype,
-    wantXrays: wantXrays,
-    sandboxName: name,
-    sameGroupAs: sandbox
   };
 
-  // Need to make sure we don't have a sandbox here.
-  if (!sandbox)
-    delete options.sameGroupAs;
+  // Shadow default options with actual ones that were passed.
+  options = override(defaults, options);
+  // Translate property names.
+  override(options, {
+    sandboxPrototype: options.prototype || {},
+    sandboxName: options.name,
+  })
 
-  return Cu.Sandbox(principal, options);
+  // Make `options.sameGroupAs` only if `sandbox` property is passed,
+  // otherwise `Cu.Sandbox` will throw.
+  if (options.sandbox)
+    options.sameGroupAs = options.sandbox;
+
+  return Cu.Sandbox(options.principal, options);
 });
 exports.Sandbox = Sandbox;
 
-// Evaluates code from the given `uri` into given sandbox. If `options.source`
-// is passed, then that `source` is evaluated instead.
-const evaluate = lambda(function evaluate(sandbox, uri, options) {
+// Evaluates code from the given `uri` into given `sandbox`. If
+// `options.source` is passed, then that code is evaluated instead.
+// Optionally following options may be given:
+// - `options.encoding`: Source encoding, defaults to 'UTF-8'.
+// - `options.line`: Line number to start count from for stack traces.
+//    Defaults to 1.
+// - `options.version`: Version of JS used, defaults to '1.8'.
+const evaluate = iced(function evaluate(sandbox, uri, options) {
   let { source, line, version, encoding } = override({
     encoding: 'UTF-8',
     line: 1,
@@ -112,8 +149,9 @@ const evaluate = lambda(function evaluate(sandbox, uri, options) {
 });
 exports.evaluate = evaluate;
 
-// populate a Module by evaluating the CommonJS module code in the sandbox
-const load = lambda(function load(loader, module) {
+// Populates `exports` of the given CommonJS `module` object, in the context
+// of the given `loader` by evaluating code associated with it.
+const load = iced(function load(loader, module) {
   let { sandboxes, globals } = loader;
   let require = Require(loader, module);
 
@@ -122,10 +160,20 @@ const load = lambda(function load(loader, module) {
     // Get an existing module sandbox, if any, so we can reuse its compartment
     // when creating the new one to reduce memory consumption.
     sandbox: sandboxes[Object.keys(sandboxes).shift()],
-    prototype: globals
+    // We use `loader.globals` as prototype for the sandbox to provide module
+    // with globals defined by a loader.
+    prototype: globals,
+    wantXrays: false
   });
 
+  // Each sandbox at creation gets set of own properties that may be shadowing
+  // ones defined by loader `globals` (For example `dump`). We override
+  // `sandbox` properties with globals to make sure they aren't shadowed. Also,
+  // not that we still need to use `globals` as prototype for sandboxes as some
+  // globals maybe defined after loader is created and they should be accessible
+  // by all modules.
   override(sandbox, globals);
+  // Finally we expose set of properties defined by `CommonJS` specification.
   override(sandbox, {
     require: require,
     module: module,
@@ -141,11 +189,16 @@ const load = lambda(function load(loader, module) {
 });
 exports.load = load;
 
-const Require = lambda(function Require(loader, { path: base }) {
+// Creates version of `require` that will be exposed to the given `module`
+// in the context of the given `loader`. Each module gets own limited copy
+// of `require` that is allowed to load only a modules that are associated
+// with it during link time.
+const Require = iced(function Require(loader, module) {
   let { prefixURI, modules } = loader;
-  let manifest = loader.manifest[base];
-  let requirer = modules[base];
-  return lambda(override(function require(id) {
+  let base = module.path;                 // base module path.
+  let manifest = loader.manifest[base];   // manifest of base module.
+  let requirer = modules[base];           // same module, but from loader cache.
+  return iced(override(function require(id) {
     if (!id)
       throw Error("you must provide a module name when calling require() from "
                   + (requirer && requirer.id), base, id);
@@ -153,17 +206,19 @@ const Require = lambda(function Require(loader, { path: base }) {
     // If we have a manifest for requirer, then all it's requirements have been
     // registered by linker and we should have a `path` to the required module.
     // Even pseudo-modules like 'chrome', 'self', '@packaging', and '@loader'
-    // have pseudo-paths: exactly those same names.
-    // details see: Bug-697422.
+    // have pseudo-paths: exactly those same names. For details see: Bug-697422.
     let module, requirement = manifest && manifest.requirements[id];
     if (!requirement)
         throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
                     base + " has no authority to load: " + id);
     let path = requirement.path;
 
+    // If module was already loaded than it's cached by loader & we grab it.
     if (path in modules) {
       module = modules[path];
     }
+    // If module is not in cache, we create it and then load it. Once loaded
+    // we freeze to prevent further mutations.
     else {
       let uri = prefixURI + path;
       module = modules[path] = Module(id, path, uri);
@@ -182,30 +237,48 @@ const Require = lambda(function Require(loader, { path: base }) {
       module = module(loader, requirer);
 
     return module.exports;
-  }, { main: loader.main }));
+  }, { main: loader.main })); // `require.main` is main `module`.
 });
 exports.Require = Require;
 
 // Makes module object that is made available to CommonJS modules when they
-// are evaluated, along with 'exports' and 'uri'.
-const Module = lambda(function Module(id, path, uri) {
+// are evaluated, along with `exports` and `require`.
+const Module = iced(function Module(id, path, uri) {
   return create(Object.prototype, {
     id: { enumerable: true, value: id },
     exports: { enumerable: true, writable: true, value: create(null) },
     // Keep non-standard properties non-enumerable.
     path: { value: path },
     uri: { value: uri }
-  })
+  });
 });
 exports.Module = Module;
 
-const unload = lambda(function unload(loader, reason, callback) {
+// Takes `loader`, and unload `reason` string and notifies all observers that
+// they should cleanup after them-self.
+const unload = iced(function unload(loader, reason) {
   observerService.notifyObservers(null, loader.unloadTopic, reason);
-  if (typeof(callback) === 'function') callback();
 });
 exports.unload = unload;
 
-const Loader = lambda(function Loader(options) {
+// Function makes new loader that can be used to load CommonJS modules
+// described by a given `options.manifest`. Loader takes following options:
+// - `manifest`: Map describing module dependency graph that created loader
+//   will follow. This is required property.
+// - `id`: Unique identifier string for the created loader instance. On loader
+//   unload observer service notification for `'sdk:destroy:loader:' + id` will
+//   be dispatched (required).
+// - `mainID`: Id of the main module (required).
+// - `mainPath`: Path of the main module (required).
+// - `prefixURI`: Root URI for the modules. Module paths resolve to this URI
+//    (required).
+// - `globals`: Optional map of globals, that all module scopes will inherit
+//   from. Map is also exposed under `globals` property of the returned loader
+//   so it can be extended further later. Defaults to `{}`.
+// - `modules` Optional map of modules that will be used by this loader as
+//   a module cache. This is also exposed as `modules` property of the returned
+//   loader. Defaults to `{}`.
+const Loader = iced(function Loader(options) {
   let { mainID, mainPath, prefixURI, manifest, modules, globals } = override({
     manifest: {},
     modules: Object.prototype,
@@ -214,8 +287,12 @@ const Loader = lambda(function Loader(options) {
   }, options);
   options.unloadTopic = 'sdk:destroy:loader:' + options.id;
 
-  let main = Module(mainID, mainPath, prefixURI + mainPath);
+  // Create a module cache.
   modules = create(modules);
+
+  // create main module & store it in a cache.
+  let main = Module(mainID, mainPath, prefixURI + mainPath);
+  modules[mainPath] = main;
 
   let loader = freeze({
     main: main,
@@ -223,16 +300,12 @@ const Loader = lambda(function Loader(options) {
     // Manifest generated by a linker, containing map of module url's mapped
     // to it's requirements, comes from harness-options.json
     manifest: manifest,
-    // Following property may be passed in (usually for mocking purposes) in
-    // order to override default modules cache.
     modules: modules,
     globals: globals,
     prefixURI: prefixURI,
-    sandboxes: {}
+    sandboxes: {}           // Map of module sandboxes.
   });
 
-  // set up default modules
-  modules[mainPath] = main;
   override(modules, {
     '@packaging': freeze({
       id: '@packaging',

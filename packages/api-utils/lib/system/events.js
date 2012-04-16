@@ -79,6 +79,10 @@ function on(type, listener, weak) {
 exports.on = on;
 
 function once(type, listener) {
+  // Note: this code assumes order in which listeners are called, which is fine
+  // as long as dispatch happens in same order as listener registration which
+  // is the case now. That being said we should be aware that this may break
+  // in a future if order will change.
   on(type, listener);
   on(type, function cleanup() {
     off(type, listener);

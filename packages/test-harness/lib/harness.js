@@ -12,9 +12,8 @@ const memory = require('api-utils/memory');
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
 
-// Cuddlefish loader for the sandbox in which we load and
-// execute tests.
-var sandbox;
+// Cuddlefish loader in which we load and execute tests.
+var loader;
 
 // Function to call when we're done running tests.
 var onDone;
@@ -173,19 +172,19 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (let name in sandbox.modules)
-      memory.track(sandbox.modules[name],
+    for (let name in loader.modules)
+      memory.track(loader.modules[name],
                            "module global scope: " + name);
-      memory.track(sandbox, "Cuddlefish Loader");
+      memory.track(loader, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
                       for each (info in memory.getObjects())];
     }
 
-    unload(sandbox);
+    unload(loader);
 
-    if (sandbox.globals.console.errorsLogged && !results.failed) {
+    if (loader.globals.console.errorsLogged && !results.failed) {
       results.failed++;
       console.error("warnings and/or errors were logged.");
     }
@@ -199,7 +198,7 @@ function cleanup() {
     }
 
     consoleListener.errorsLogged = 0;
-    sandbox = null;
+    loader = null;
 
     memory.gc();
   } catch (e) {
@@ -233,7 +232,7 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
-    let require = Require(sandbox, module);
+    let require = Require(loader, module);
     require("api-utils/unit-test").findAndRunTests({
       testOutOfProcess: require('@packaging').enableE10s,
       testInProcess: true,
@@ -308,10 +307,12 @@ var runTests = exports.runTests = function runTests(options) {
           system.id + ") under " +
           system.platform + "/" + system.architecture + ".\n");
 
-    var options = JSON.parse(JSON.stringify(require("@packaging")));
 
-    sandbox = Loader(override(options, {
+    loader = Loader(override(JSON.parse(JSON.stringify(require("@packaging"))), {
       id: Math.random().toString(36).slice(2),
+      // Copy globals to fresh object (as globals will be frozen and can't be
+      // overridden. And then we override, global console to expose one designed
+      // for tests.
       globals: override(override({}, globals), {
         console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
       })

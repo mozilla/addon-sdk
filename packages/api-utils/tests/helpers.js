@@ -22,8 +22,8 @@ exports.Loader = function(module, globals, packaging) {
       let path = options.manifest[module.path].requirements[id].path;
       return loader.sandboxes[path];
     },
-    unload: function(reason, callback) {
-      unload(loader, reason, callback);
+    unload: function(reason) {
+      unload(loader, reason);
     }
   });
 };

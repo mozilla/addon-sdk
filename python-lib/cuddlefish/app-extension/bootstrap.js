@@ -93,7 +93,7 @@ function startup(data, reasonCode) {
   // Adding `uriPrefix` for backwards compatibility.
   options.uriPrefix = prefixURI;
 
-  // Import loader module using `Cu.imports` and bootstrap module loader.
+  // Import loader module using `Cu.import` and bootstrap module loader.
   try {
     let module = Cu.import(prefixURI + loaderURI);
     unload = module.unload;
