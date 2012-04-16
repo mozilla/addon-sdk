@@ -7,6 +7,9 @@
 
 'use strict';
 
+// IMPORTANT: Avoid adding any initialization tasks here, if you need to do
+// something before add-on is loaded consider addon/runner module instead!
+
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
 const ioService = Cc['@mozilla.org/network/io-service;1'].
