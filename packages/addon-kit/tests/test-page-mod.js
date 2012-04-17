@@ -347,6 +347,29 @@ exports.testRelatedTab = function(test) {
 
 };
 
+exports.testWorksWithExistingTabs = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html," + encodeURI("Test unique document");
+  let { PageMod } = require("page-mod");
+  tabs.open({
+    url: url,
+    onReady: function onReady(tab) {
+      let pageMod = new PageMod({
+        include: url,
+        target: ["existing"],
+        onAttach: function(worker) {
+          test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
+          pageMod.destroy();
+          tab.close();
+          test.done();
+        }
+      });
+    }
+  });
+
+};
+
 exports['test tab worker on message'] = function(test) {
   test.waitUntilDone();
 

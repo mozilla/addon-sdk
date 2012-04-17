@@ -16,6 +16,7 @@ const { validateOptions : validate } = require('api-utils/api-utils');
 const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
+const { windowIterator } = require("window-utils");
 
 // Whether or not the host application dispatches a document-element-inserted
 // notification when the document element is inserted into the DOM of a page.
@@ -98,6 +99,7 @@ function readURI(uri) {
 const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
   _listeners: EventEmitter.required,
+  target: [],
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
@@ -121,6 +123,8 @@ const PageMod = Loader.compose(EventEmitter, {
       this.on('attach', options.onAttach);
     if ('onError' in options)
       this.on('error', options.onError);
+    if ('target' in options)
+      this.target = options.target;
 
     let include = options.include;
     let rules = this.include = Rules();
@@ -154,6 +158,11 @@ const PageMod = Loader.compose(EventEmitter, {
     pageModManager.add(this._public);
 
     this._loadingWindows = [];
+
+    // `_applyOnExistingDocuments` has to be called after `pageModManager.add()`
+    // otherwise its calls to `_onContent` method won't do anything.
+    if ('target' in options && options.target.indexOf('existing') !== -1)
+      this._applyOnExistingDocuments();
   },
 
   destroy: function destroy() {
@@ -172,6 +181,19 @@ const PageMod = Loader.compose(EventEmitter, {
 
   _loadingWindows: [],
 
+  _applyOnExistingDocuments: function _applyOnExistingDocuments() {
+    for each(let tab in allTabsIterator()) {
+      for each(let rule in this.include) {
+        if (RULES[rule].test(tab.uri)) {
+          // Fake a newly created document
+          this._onContent(tab.content);
+          // Break in order to avoid applying same content script multiple times
+          break;
+        }
+      }
+    }
+  },
+
   _onContent: function _onContent(window) {
     // not registered yet
     if (!pageModManager.has(this))
@@ -183,7 +205,12 @@ const PageMod = Loader.compose(EventEmitter, {
       this._loadingWindows.push(window);
     }
 
-    if ('start' == this.contentScriptWhen) {
+    // Immediatly evaluate content script if the document state is already
+    // matching contentScriptWhen expectations
+    let state = window.document.readyState;
+    if ('start' == this.contentScriptWhen ||
+        'complete' == state ||
+        ('ready' == this.contentScriptWhen && state == 'interactive') ) {
       this._createWorker(window);
       return;
     }
@@ -321,3 +348,29 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
+
+// Iterate over all tabs on all currently opened windows
+function allTabsIterator() {
+  // Iterate over all chrome windows
+  for (let window in windowIterator()) {
+    // Get a reference to the main <xul:tabbrowser> node
+    let tabbrowser = window.document.getElementById("content");
+    // It may not be a browser window but a jsconsole ...
+    if (!tabbrowser)
+      continue;
+    let tabs = tabbrowser.tabContainer;
+    if (!tabs)
+      continue;
+    // Iterate over its tabs
+    for(let i = 0; i < tabs.children.length; i++) {
+      let tab = tabs.children[i];
+      let browser = tab.linkedBrowser;
+      yield {
+        tab: tab,
+        browser: browser,
+        get uri() browser.currentURI.spec,
+        get content() browser.contentWindow
+      };
+    }
+  }
+}
