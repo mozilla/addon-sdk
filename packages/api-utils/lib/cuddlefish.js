@@ -56,8 +56,8 @@ function freeze(object) {
 // `prototype` and `f` gets frozen and `f` is returned back. We need to do
 // this kind of deep freeze with all the exposed functions so that untrusted
 // code won't be able to use functions or their prototypes as a message channel.
-function iced(f, prototype) {
-  f.prototype = prototype && freeze(prototype);
+function iced(f) {
+  f.prototype = undefined;
   return freeze(f);
 }
 
@@ -105,25 +105,19 @@ freeze(Array.prototype);
 // For more details see:
 // https://developer.mozilla.org/en/Components.utils.Sandbox
 const Sandbox = iced(function Sandbox(options) {
-  let defaults = {
-    principal: systemPrincipal,
-    prototype: null,
-    wantXrays: true,
-    sandbox: null
-  };
-
-  // Shadow default options with actual ones that were passed.
-  options = override(defaults, options);
-  // Translate property names.
-  override(options, {
-    sandboxPrototype: options.prototype || {},
+  // Normalize options and rename to match `Cu.Sandbox` expectations.
+  options = {
     sandboxName: options.name,
-  })
+    principal: 'principal' in options ? options.principal : systemPrincipal,
+    wantXrays: 'wantXrays' in options ? options.wantXrays : true,
+    sandboxPrototype: 'prototype' in options ? options.prototype : {},
+    sameGroupAs: 'sandbox' in options ? options.sandbox : null
+  };
 
   // Make `options.sameGroupAs` only if `sandbox` property is passed,
   // otherwise `Cu.Sandbox` will throw.
-  if (options.sandbox)
-    options.sameGroupAs = options.sandbox;
+  if (!options.sameGroupAs)
+    delete options.sameGroupAs;
 
   return Cu.Sandbox(options.principal, options);
 });
