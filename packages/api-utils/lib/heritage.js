@@ -48,12 +48,12 @@ function obscure(source) {
 exports.obscure = obscure;
 
 /**
- * Takes arbitrary number of source objects a fresh object that inherits from
- * the same prototype as a first argument and implements all own properties of
- * all argument objects. If two or more argument objects have own properties
- * with the same name, the property is overridden, with precedence from right
- * to left, implying, that properties of the object on the left are overridden
- * by a same named property of the object on the right.
+ * Takes arbitrary number of source objects and returns fresh one, that
+ * inherits from the same prototype as a first argument and implements all
+ * own properties of all argument objects. If two or more argument objects
+ * have own properties with the same name, the property is overridden, with
+ * precedence from right to left, implying, that properties of the object on
+ * the left are overridden by a same named property of the object on the right.
  */
 var mix = function(source) {
   var descriptor = reduce(slice(arguments), function(descriptor, source) {
@@ -76,6 +76,17 @@ function extend(prototype, properties) {
 }
 exports.extend = extend;
 
+/**
+ * Returns a constructor function with a proper `prototype` setup. Returned
+ * constructor's `prototype` inherits from a given `options.extends` or
+ * `Class.prototype` if omitted and implements all the properties of the
+ * given `option`. If `options.implemens` array is passed, it's elements
+ * will be mixed into prototype as well. Also, `options.extends` can be
+ * a function or a prototype. If function than it's prototype is used as
+ * an ancestor of the prototype, if it's an object that it's used directly.
+ * Also `options.implements` may contain functions or objects, in case of
+ * functions their prototypes are used for mixing.
+ */
 var Class = new function() {
   function prototypeOf(input) {
     return isFunciton(input) ? input.prototype : input;
