@@ -2,34 +2,47 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Loader } = require("./helpers");
+const { Loader, Require, unload, override } = require('@loader');
+const packaging = require('@packaging');
 
-exports.testLoader = function(test) {
+exports['test loader'] = function(assert) {
   var prints = [];
   function print(message) {
     prints.push(message);
   }
 
-  var loader = Loader(module, { dump: print, foo: 1 });
+  let options = JSON.parse(JSON.stringify(packaging));
 
-  var fixture = loader.require('./loader/fixture');
+  let loader = Loader(override(options, {
+    id: Math.random().toString(36).slice(2),
+    globals: {
+      print: print,
+      foo: 1
+    }
+  }));
+  let require = Require(loader, module);
 
-  test.assertEqual(fixture.foo, 1, "custom globals must work.");
+  var fixture = require('./loader/fixture');
 
-  test.assertEqual(prints[0], "info: testing 1 2,3,4\n",
-                   "global console must work.");
+  assert.equal(fixture.foo, 1, 'custom globals must work.');
+  assert.equal(fixture.bar, 2, 'exports are set');
+
+  assert.equal(prints[0], 'testing', 'global print must be injected.');
 
   var unloadsCalled = '';
 
-  loader.require("unload").when(function() {
+  require("api-utils/unload").when(function(reason) {
+    assert.equal(reason, 'test', 'unload reason is passed');
     unloadsCalled += 'a';
   });
-  loader.require("unload.js").when(function() {
+  require('unload.js').when(function() {
     unloadsCalled += 'b';
   });
 
-  loader.unload();
+  unload(loader, 'test');
 
-  test.assertEqual(unloadsCalled, 'ba',
-                   "loader.unload() must call cb's in LIFO order.");
+  assert.equal(unloadsCalled, 'ba',
+               'loader.unload() must call listeners in LIFO order.');
 };
+
+require('test').run(exports);

@@ -8,10 +8,16 @@ var unload = require("unload");
 var { Loader } = require("./helpers");
 
 exports.testUnloading = function(test) {
-  var loader = Loader(module);
+  var loader = Loader(module, {
+    console: Object.create(console, {
+      exception: { value: function(error) {
+        exceptions.push(error);
+      }}
+    })
+  });
+  var exceptions = [];
   var ul = loader.require("unload");
   var unloadCalled = 0;
-  var errorsReported = 0;
   function unload() {
     unloadCalled++;
     throw new Error("error");
@@ -23,10 +29,10 @@ exports.testUnloading = function(test) {
 
   function unload2() { unloadCalled++; }
   ul.when(unload2);
-  loader.unload(undefined, function onError() { errorsReported++; });
+  loader.unload();
   test.assertEqual(unloadCalled, 2,
                    "Unloader functions are called on unload.");
-  test.assertEqual(errorsReported, 1,
+  test.assertEqual(exceptions.length, 1,
                    "One unload handler threw exception");
 };
 
