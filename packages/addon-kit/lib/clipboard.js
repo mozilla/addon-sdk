@@ -192,7 +192,7 @@ exports.get = function(aDataType) {
   return data;
 };
 
-exports.__defineGetter__("currentFlavors", function() {
+Object.defineProperty(exports, "currentFlavors", { get: function() {
   // Loop over kAllowableFlavors, calling hasDataMatchingFlavors for each.
   // This doesn't seem like the most efficient way, but we can't get
   // confirmation for specific flavors any other way. This is supposed to be
@@ -208,7 +208,7 @@ exports.__defineGetter__("currentFlavors", function() {
       currentFlavors.push(toJetpackFlavor(flavor));
   }
   return currentFlavors;
-});
+}});
 
 // SUPPORT FUNCTIONS ////////////////////////////////////////////////////////
 

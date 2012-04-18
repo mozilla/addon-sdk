@@ -4,21 +4,26 @@
 
 "use strict";
 
-const { Loader } = require("@loader");
+const { Loader, Require, unload, override } = require('@loader');
 
 exports.Loader = function(module, globals, packaging) {
   var options = packaging || JSON.parse(JSON.stringify(require("@packaging")));
-  options.globals = globals;
+  // Generate random ID for the loader unloads.
+  options.id = Math.random().toString(36).slice(2);
+  options.globals = globals || {
+    console: console,
+    dump: dump
+  };
 
-  let loader = Loader.new(options);
-  return Object.create(loader, {
-    require: { value: Loader.require.bind(loader, module.path) },
-    sandbox: { value: function sandbox(id) {
+  let loader = Loader(options);
+  return override(Object.create(loader), {
+    require: Require(loader, module),
+    sandbox: function(id) {
       let path = options.manifest[module.path].requirements[id].path;
-      return loader.sandboxes[path].sandbox;
-    }},
-    unload: { value: function unload(reason, callback) {
-      loader.unload(reason, callback);
-    }}
-  })
+      return loader.sandboxes[path];
+    },
+    unload: function(reason) {
+      unload(loader, reason);
+    }
+  });
 };
