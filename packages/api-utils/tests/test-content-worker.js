@@ -4,9 +4,10 @@
 
 "use stirct";
 
-const { Cc, Ci } = require('chrome');
-const timer = require('timer');
-const { Loader } = require("@loader");
+const { Cc, Ci } = require("chrome");
+const { setTimeout } = require("timer");
+const { Loader, Require, override } = require("@loader");
+const options = require("@packaging");
 
 function makeWindow(contentURL) {
   let content =
@@ -338,18 +339,19 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
   // Create a new module loader in order to be able to create a `console`
   // module mockup:
-  let sandbox = Loader.new(require("@packaging"));
-  let sandboxRequire = Loader.require.bind(sandbox, module.path);
-  Object.defineProperty(sandbox.globals, 'console', {
-    value: {
-      log: hook.bind("log"),
-      info: hook.bind("info"),
-      warn: hook.bind("warn"),
-      error: hook.bind("error"),
-      debug: hook.bind("debug"),
-      exception: hook.bind("exception")
+  let loader = Loader(override(JSON.parse(JSON.stringify(options)), {
+    globals: {
+      console: {
+        log: hook.bind("log"),
+        info: hook.bind("info"),
+        warn: hook.bind("warn"),
+        error: hook.bind("error"),
+        debug: hook.bind("debug"),
+        exception: hook.bind("exception")
+      }
     }
-  });
+  }));
+  let require = Require(loader, module);
 
   // Intercept all console method calls
   let calls = [];
@@ -365,7 +367,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
   window.addEventListener("load", function onload() {
     window.removeEventListener("load", onload, true);
 
-    let worker =  sandboxRequire('content/worker').Worker({
+    let worker =  require('content/worker').Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
         console.log("log");
@@ -442,14 +444,14 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     // Change location so that content script is destroyed,
     // and all setTimeout/setInterval should be unregistered.
     // Wait some cycles in order to execute some intervals.
-    timer.setTimeout(function () {
+    setTimeout(function () {
       // Bug 689621: Wait for the new document load so that we are sure that
       // previous document cancelled its intervals
       iframe.addEventListener("load", function onload() {
         iframe.removeEventListener("load", onload, true);
         let titleAfterLoad = originalDocument.title;
         // Wait additional cycles to verify that intervals are really cancelled
-        timer.setTimeout(function () {
+        setTimeout(function () {
           test.assertEqual(iframe.contentDocument.title, "final",
                            "New document has not been modified");
           test.assertEqual(originalDocument.title, titleAfterLoad,

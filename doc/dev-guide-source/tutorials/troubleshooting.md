@@ -8,6 +8,24 @@ If you're having trouble getting the Add-on SDK up and running, don't panic!
 This page lists some starting points that might help you track down your
 problem.
 
+Quarantine Problem on Mac OS X
+------------------------------
+On Mac OS X, you might see the following error when you try to run `cfx`:
+
+<pre>
+/path/to/sdk/bin/cfx: /usr/bin/env: bad interpreter: Operation not permitted
+</pre>
+
+This might be because the `cfx` executable file has been placed in quarantine
+during download from the Internet.
+
+To get it out of quarantine, use the `xattr -d` command, specifying
+`com.apple.quarantine` as the name of the attribute to delete, and `cfx` as
+the file from which to delete that attribute:
+
+<pre>
+xattr -d com.apple.quarantine /path/to/sdk/bin/cfx
+</pre>
 
 Check Your Python
 -----------------

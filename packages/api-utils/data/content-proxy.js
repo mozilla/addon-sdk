@@ -708,17 +708,15 @@ function handlerMaker(obj) {
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
       if (name == "toString") {
-        if ("wrappedJSObject" in obj) {
-          // Bug 714778: we should not pass obj.wrappedJSObject.toString
-          // in order to avoid sharing its proxy over contents scripts:
-          return wrap(function () {
-            return obj.wrappedJSObject.toString.call(
-                     this.valueOf(UNWRAP_ACCESS_KEY), arguments);
-          }, obj, name);
-        }
-        else {
-          return wrap(obj.toString, obj, name);
-        }
+        // Bug 714778: we should not pass obj.wrappedJSObject.toString
+        // in order to avoid sharing its proxy between two contents scripts.
+        // (not that `unwrappedObj` can be equal to `obj` when `obj` isn't
+        // an xraywrapper)
+        let unwrappedObj = XPCNativeWrapper.unwrap(obj);
+        return wrap(function () {
+          return unwrappedObj.toString.call(
+                   this.valueOf(UNWRAP_ACCESS_KEY), arguments);
+        }, obj, name);
       }
 
       // Offer a way to retrieve XrayWrapper from a proxified node through `valueOf`

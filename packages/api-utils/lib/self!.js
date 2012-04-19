@@ -6,7 +6,7 @@
 "use strict";
 
 const { CC } = require('chrome');
-const { jetpackID, name, manifest, metadata, uriPrefix } = require('@packaging');
+const { jetpackID, name, manifest, metadata, prefixURI } = require('@packaging');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
@@ -31,7 +31,7 @@ function read(root, path) readURI(url(root, path))
 
 exports.create = function create(base) {
   let moduleData = manifest[base] && manifest[base].requirements['self'];
-  let root = uriPrefix + moduleData.dataURIPrefix;
+  let root = prefixURI + moduleData.dataURIPrefix;
   return Object.freeze({
     id: 'self',
     exports: Object.freeze({

@@ -23,6 +23,11 @@ Object.defineProperties(tabs, {
     return browserWindows.activeWindow.tabs.open(options);
   }}
 });
-// It's a hack but we will be able to remove it once will implement CommonJS
-// feature that would allow us to override exports.
-exports.__proto__ = tabs;
+
+// Workaround for bug 674195. Freezing objects from other compartments fail,
+// so we use `Object.freeze` from the same component as objects
+// `hasOwnProperty`. Since `hasOwnProperty` here will be from other component
+// we override it to support our workaround.
+module.exports = Object.create(tabs, {
+  isPrototypeOf: { value: Object.prototype.isPrototypeOf }
+});

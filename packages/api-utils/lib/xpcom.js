@@ -8,7 +8,6 @@ const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
-const { when: unload } = require('./unload');
 const { merge } = require('./utils/object');
 const { Class, extend, mix } = require('./heritage');
 const { uuid } = require('./uuid');
@@ -164,7 +163,7 @@ function register(factory) {
   registerFactory(factory.id, factory.description, factory.contract, factory);
 
   if (factory.unregister)
-    unload(unregister.bind(null, factory));
+    require('./unload').when(unregister.bind(null, factory));
 }
 exports.register = register;
 
