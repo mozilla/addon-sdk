@@ -6,11 +6,13 @@
 
 const { Cc, Ci } = require('chrome');
 const { Unknown } = require('../xpcom');
+const { Class } = require('../heritage');
 const { ns } = require('../namespace');
 const { addObserver, removeObserver, notifyObservers } = 
   Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
 
-const Subject = Unknown.extend({
+const Subject = Class({
+  extends: Unknown,
   initialize: function initialize(object) {
     // Double-wrap the object and set a property identifying the
     // wrappedJSObject as one of our wrappers to distinguish between
@@ -27,13 +29,14 @@ const Subject = Unknown.extend({
 });
 
 function emit(type, event) {
-  let subject = 'subject' in event ? Subject.new(event.subject) : null;
+  let subject = 'subject' in event ? Subject(event.subject) : null;
   let data = 'data' in event ? event.data : null;
   notifyObservers(subject, type, data);
 }
 exports.emit = emit;
 
-const Observer = Unknown.extend({
+const Observer = Class({
+  extends: Unknown,
   initialize: function initialize(listener) {
     this.listener = listener;
   },
@@ -71,7 +74,7 @@ function on(type, listener, weak) {
   // If `observer` for the given `type` is not registered yet, then
   // associate an `observer` and register it.
   if (!(type in observers)) {
-    let observer = Observer.new(listener);
+    let observer = Observer(listener);
     observers[type] = observer;
     addObserver(observer, type, weak);
   }
