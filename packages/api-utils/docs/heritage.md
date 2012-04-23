@@ -5,9 +5,9 @@
 # Inheritance
 
 Doing [inheritance in JavaScript](https://developer.mozilla.org/en/Introduction_to_Object-Oriented_JavaScript)
-is both verbose and painful. Reading or writing such code requires requires
-sharp eye and lot's of discipline, mainly due to code fragmentation and lots of
-machinery being exposed:
+is both verbose and painful. Reading or writing such code requires sharp eye
+and lot's of discipline, mainly due to code fragmentation and lots of machinery
+being exposed:
 
     // Defining a simple Class
     function Dog(name) {
@@ -75,7 +75,7 @@ with a proper `prototype` chain setup in declarative manner:
       }
     });
 
-Note: We use term `Class` to refer an exemplar constructs in a from of
+Note: We use term `Class` to refer an exemplar constructs in a form of
 constructor functions with a proper prototype chain setup. Constructors
 created using `Class` function don't require `new` keyword (even though
 it can be used) for instantiation. Also, idiomatic SDK code does not uses
@@ -86,7 +86,7 @@ optional `new` keywords, but you're free to use it in your add-on code:
     fluffy instanceof Class       // => true
 
 As you could notice from example above classes created via `Class` function
-by default inherits form a `Class` itself. Also you could specify which class
+by default inherits from a `Class` itself. Also you could specify which class
 you want to inherit from by passing special `extends` property:
 
     var Pet = Class({
@@ -107,8 +107,8 @@ you want to inherit from by passing special `extends` property:
     tsuga instanceof Dog                    // => true
     tsuga.call('Tsuga')                     // => 'Ruff! Ruff!'
 
-Please not that `Class` is just an utility function which we use in SDK, and
-recommend our users to use it, but it's no way enforced. As a matter of fact
+Please note that `Class` is just an utility function which we use in SDK, and
+recommend our users to use it, but it's in no way enforced. As a matter of fact
 since result is just a plain constructor function with proper prototype chain
 setup you could sub-class it as any other constructor:
 
@@ -235,11 +235,11 @@ Also you can mix inheritance and composition together if necessary:
 
 ## extend
 
-Module exports `extend` utility function that is useful for creating objects
-that inherit from other objects without creating classes. It's very similar to
-`Object.create` only difference is that second argument an object containing
-properties to be defined instead of property descriptor map and returned value
-is frozen.
+Module exports `extend` utility function, that is useful for creating objects
+that inherit from other objects, without associated classes. It's very similar
+to `Object.create`, only difference is that second argument is an object
+containing properties to be defined, instead of property descriptor map. Also,
+keep in mind that returned object will be frozen.
 
     var { extend } = require('api-utils/heritage');
     var base = { a: 1 };

@@ -96,10 +96,13 @@ exports['test implement xpcom service'] = function(assert) {
   let actual = xpcom.Service({
     contract: '@jetpack/test/service;1',
     register: false,
-    get wrappedJSObject() this,
-    interfaces: [ 'nsIObserver'],
-    observe: function() {},
-    name: 'my-service'
+    Component: Class({
+      extends: xpcom.Unknown,
+      interfaces: [ 'nsIObserver'],
+      get wrappedJSObject() this,
+      observe: function() {},
+      name: 'my-service'
+    })
   });
 
   assert.ok(!isCIDRegistered(actual.id), 'component is not registered');
@@ -121,24 +124,27 @@ function testRegister(assert, text) {
     description: 'test about:boop page',
     contract: '@mozilla.org/network/protocol/about;1?what=boop',
     register: false,
-    get wrappedJSObject() this,
-    interfaces: [ 'nsIAboutModule' ],
-    newChannel : function(aURI) {
-      var ios = Cc["@mozilla.org/network/io-service;1"].
-                getService(Ci.nsIIOService);
+    Component: Class({
+      extends: xpcom.Unknown,
+      get wrappedJSObject() this,
+      interfaces: [ 'nsIAboutModule' ],
+      newChannel : function(aURI) {
+        var ios = Cc["@mozilla.org/network/io-service;1"].
+                  getService(Ci.nsIIOService);
 
-      var channel = ios.newChannel(
-        "data:text/plain," + text,
-        null,
-        null
-      );
+        var channel = ios.newChannel(
+          "data:text/plain," + text,
+          null,
+          null
+        );
 
-      channel.originalURI = aURI;
-      return channel;
-    },
-    getURIFlags: function(aURI) {
-      return Ci.nsIAboutModule.ALLOW_SCRIPT;
-    }
+        channel.originalURI = aURI;
+        return channel;
+      },
+      getURIFlags: function(aURI) {
+        return Ci.nsIAboutModule.ALLOW_SCRIPT;
+      }
+    })
   });
 
   xpcom.register(service);

@@ -25,13 +25,17 @@ const Unknown = new function() {
   return Class({
     /**
      * The `QueryInterface` method provides runtime type discovery used by XPCOM.
-     * This method return quired instance of `this` if given `iid` is listed in
-     * the `interfaces` property.
+     * This method return queried instance of `this` if given `iid` is listed in
+     * the `interfaces` property or in equivalent properties of objects in it's
+     * prototype chain. In addition it will look up in the prototypes under
+     * `implements` array property, this ways compositions made via `Class`
+     * utility will carry interfaces implemented by composition components.
      */
     QueryInterface: function QueryInterface(iid) {
       // For some reason there are cases when `iid` is `null`. In such cases we
       // just return `this`. Otherwise we verify that component implements given
-      // `iid` interface.
+      // `iid` interface. This will be no longer necessary once Bug 748003 is
+      // fixed.
       if (iid && !hasInterface(this, iid))
         throw Cr.NS_ERROR_NO_INTERFACE;
 
@@ -103,9 +107,7 @@ const Factory = Class({
       register: 'register' in options ? options.register : this.register,
       unregister: 'unregister' in options ? options.unregister : this.unregister,
       contract: 'contract' in options ? options.contract : null,
-      Component: 'Component' in options ? options.Component : Class(merge({
-        extends: Unknown
-      }, options))
+      Component: options.Component
     });
 
     // If service / factory has auto registration enabled then register.
@@ -135,13 +137,8 @@ exports.Factory = Factory;
 const Service = Class({
   extends: Factory,
   initialize: function initialize(options) {
-    let Component = !('Component' in options) ? Class(mix({
-      extends: Unknown
-    }, options)) : options.Component;
-    this.component = Component();
-    Factory.prototype.initialize.call(this, merge({
-      Component: Component
-    }, options));
+    this.component = options.Component();
+    Factory.prototype.initialize.call(this, options);
   },
   description: 'Jetpack generated service',
   /**

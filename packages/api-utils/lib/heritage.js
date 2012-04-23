@@ -19,10 +19,8 @@ var owns = unbind(Object.prototype.hasOwnProperty);
 var apply = unbind(Function.prototype.apply);
 var slice = Array.slice || unbind(Array.prototype.slice);
 var reduce = Array.reduce || unbind(Array.prototype.reduce);
-var map = Array.may || unbind(Array.prototype.map);
+var map = Array.map || unbind(Array.prototype.map);
 var concat = Array.concat || unbind(Array.prototype.concat);
-
-function isFunciton(value) { return typeof(value) === 'function'; }
 
 // Utility function to get own properties descriptor map.
 function getOwnPropertiesDescriptor(object) {
@@ -89,24 +87,36 @@ exports.extend = extend;
  */
 var Class = new function() {
   function prototypeOf(input) {
-    return isFunciton(input) ? input.prototype : input;
+    return typeof(input) === 'function' ? input.prototype : input;
   }
   var none = freeze([]);
 
   return function Class(options) {
-    var ancestor = owns(options, 'extends') ? prototypeOf(options.extends) :
-                    Class.prototype;
-    var sources = !owns(options, 'implements') ? none :
-                    freeze(map(options.implements, prototypeOf));
+    // Create descriptor with normalized `options.extends` and
+    // `options.implements`.
+    var descriptor = {
+      // Normalize extends property of `options.extends` to a prototype object
+      // in case it's constructor. If property is missing that fallback to
+      // `Type.prototype`.
+      extends: owns(options, 'extends') ?
+               prototypeOf(options.extends) : Class.prototype,
+      // Normalize `options.implements` to make sure that it's array of
+      // prototype objects instead of constructor functions.
+      implements: owns(options, 'implements') ?
+                  freeze(map(options.implements, prototypeOf)) : none
+    };
 
-    // Create prototype that inherits from given ancestor passed as
+    // Create array of property descriptors who's properties will be defined
+    // on the resulting prototype. Note: Using reflection `concat` instead of
+    // method as it may be overridden.
+    var descriptors = concat(descriptor.implements, options, descriptor);
+    // Create `prototype` that inherits from given ancestor passed as
     // `options.extends`, falling back to `Type.prototype`, implementing all
     // properties of given `options.implements` and `options` itself.
-    var prototype = extend(ancestor, apply(mix, mix, concat(sources, options, {
-      extends: ancestor,
-      implements: sources
-    })));
+    var prototype = extend(descriptor.extends, mix.apply(mix, descriptors));
 
+    // Note: we use reflection `apply` in the constructor instead of method
+    // call since later may be overridden.
     function constructor() {
       return apply(prototype.constructor, create(prototype), arguments);
     }
