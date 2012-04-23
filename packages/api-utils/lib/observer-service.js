@@ -5,7 +5,6 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const { Unknown } = require("./xpcom");
 const { when: unload } = require("./unload");
 const { ns } = require("./namespace");
 const { on, off, emit, once } = require("./system/events");
