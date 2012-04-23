@@ -62,6 +62,17 @@ function startup(reason, options) {
   if (reason === 'startup')
     return wait(reason, options);
 
+  // Try initializing localization module before running main module. Just print
+  // an exception in case of error, instead of preventing addon to be run.
+  try {
+    // Do not enable HTML localization while running test as it is hard to
+    // disable. Because unit tests are evaluated in a another Loader who
+    // doesn't have access to this current loader.
+    if (options.loader.main.id !== "test-harness/run-tests")
+      require("api-utils/l10n/html").enable();
+  } catch(error) {
+    console.exception(error);
+  }
   try {
     // TODO: When bug 564675 is implemented this will no longer be needed
     // Always set the default prefs, because they disappear on restart
