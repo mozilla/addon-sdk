@@ -440,6 +440,25 @@ tests.testContentURLOption = function(test) {
                     "Panel throws an exception if contentURL is not a URL.");
 };
 
+exports.testContentScriptOptionsOption = function(test) {
+	test.waitUntilDone();
+
+  let loader = Loader(module);
+  let panel = loader.require("panel").Panel({
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+      	test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        test.done();
+      }
+    });
+};
+
 let panelSupported = true;
 
 try {
