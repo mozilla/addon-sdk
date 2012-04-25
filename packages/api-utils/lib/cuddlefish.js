@@ -191,7 +191,7 @@ const Require = iced(function Require(loader, module) {
   let { prefixURI, modules } = loader;
   let base = module.path;                 // base module path.
   let manifest = loader.manifest[base];   // manifest of base module.
-  let requirer = modules[base];           // same module, but from loader cache.
+  let requirer = base in modules ? modules[base] : null; // same module, but from loader cache.
   return iced(override(function require(id) {
     if (!id)
       throw Error("you must provide a module name when calling require() from "
