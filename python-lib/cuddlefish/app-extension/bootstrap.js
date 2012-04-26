@@ -82,7 +82,7 @@ function startup(data, reasonCode) {
 
   let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
   let prefixURI = 'resource://' + domain + '/';
-  let loaderURI = options.loader;
+  loaderURI = prefixURI + options.loader;
   let mainID = options.main;
 
   resourceHandler.setSubstitution(domain, resourcesURI);
@@ -91,17 +91,17 @@ function startup(data, reasonCode) {
   options.prefixURI = prefixURI;
   options.mainID = mainID;
   options.id = options.jetpackID;
-  options.loaderURI = loaderURI;
+  options.loaderURI = options.loader;
 
   // Adding `uriPrefix` for backwards compatibility.
   options.uriPrefix = prefixURI;
 
   // Import loader module using `Cu.import` and bootstrap module loader.
   try {
-    let module = Cu.import(prefixURI + loaderURI);
+    let module = Cu.import(loaderURI);
     unload = module.unload;
     loader = module.Loader(options);
-    let require = Require(loader, { path: loaderURI });
+    let require = Require(loader, { path: options.loaderURI });
     require('api-utils/addon/runner').startup(reason, { loader: loader });
   } catch (error) {
     dump('Error: ' + error.message + '\n' + (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
