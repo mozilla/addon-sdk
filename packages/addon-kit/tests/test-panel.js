@@ -5,7 +5,7 @@
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 tests.testPanel = function(test) {
   test.waitUntilDone();

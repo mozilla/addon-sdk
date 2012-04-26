@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var unload = require("unload");
-var { Loader } = require("./helpers");
+var { Loader } = require("test-harness/loader");
 
 exports.testUnloading = function(test) {
   var loader = Loader(module, {

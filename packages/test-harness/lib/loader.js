@@ -8,6 +8,7 @@ const { Loader, Require, unload, override } = require('@loader');
 
 exports.Loader = function(module, globals, packaging) {
   var options = packaging || JSON.parse(JSON.stringify(require("@packaging")));
+  var prefixURI = options.prefixURI;
   // Generate random ID for the loader unloads.
   options.id = Math.random().toString(36).slice(2);
   options.globals = globals || {
@@ -19,8 +20,9 @@ exports.Loader = function(module, globals, packaging) {
   return override(Object.create(loader), {
     require: Require(loader, module),
     sandbox: function(id) {
-      let path = options.manifest[module.path].requirements[id].path;
-      return loader.sandboxes[path];
+      let requirerPath = module.uri.split(prefixURI).pop();
+      let path = options.manifest[requirerPath].requirements[id].path;
+      return loader.sandboxes[options.prefixURI + path];
     },
     unload: function(reason) {
       unload(loader, reason);

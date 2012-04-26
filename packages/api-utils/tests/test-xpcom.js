@@ -6,7 +6,7 @@ const xpcom = require("api-utils/xpcom");
 const { Cc, Ci, Cm, Cr } = require("chrome");
 const { isCIDRegistered } = Cm.QueryInterface(Ci.nsIComponentRegistrar);
 const { Class } = require("api-utils/heritage");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 exports['test Unknown implements nsISupports'] = function(assert) {
   let actual = xpcom.Unknown();

@@ -30,8 +30,9 @@ const uri = 'addon:' + jetpackID
 function url(root, path) root + (path || "")
 function read(root, path) readURI(url(root, path))
 
-exports.create = function create(base) {
-  let moduleData = manifest[base] && manifest[base].requirements['self'];
+exports.create = function create(module) {
+  let path = module.uri.split(prefixURI).pop();
+  let moduleData = manifest[path] && manifest[path].requirements['self'];
   let root = prefixURI + moduleData.dataURIPrefix;
   return Object.freeze({
     id: 'self',

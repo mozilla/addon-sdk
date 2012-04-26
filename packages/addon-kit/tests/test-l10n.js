@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const prefs = require("preferences-service");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 const PREF_MATCH_OS_LOCALE  = "intl.locale.matchOS";
 const PREF_SELECTED_LOCALE  = "general.useragent.locale";

@@ -6,7 +6,7 @@
 
 const { isTabOpen, activateTab, openTab, closeTab } = require('api-utils/tabs/utils');
 const windows = require('api-utils/window-utils');
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const { setTimeout } = require('api-utils/timer');
 
 let uri = require('self').data.url('index.html');

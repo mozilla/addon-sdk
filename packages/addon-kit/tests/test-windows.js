@@ -4,7 +4,7 @@
 
 const {Cc, Ci} = require("chrome");
 const { setTimeout } = require("timer");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
