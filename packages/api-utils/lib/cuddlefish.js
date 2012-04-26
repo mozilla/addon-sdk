@@ -204,29 +204,49 @@ function normalize(id) {
 }
 
 function resolveURI(uri, base) {
-  return ioService.newURI(relative, null, base).spec;
+  return ioService.newURI(relative, null, ioService.newURI(base)).spec;
 }
 
 function Resolve({ prefixURI, modules }) {
   return iced(function resolve(id, requirer, manifest) {
     let uri = null;
-    let path = 'uri' in requirer ? requirer.uri.split(prefixURI).pop()
-                                 : requirer.id;
-    manifest = path in manifest && manifest[path];
+    let path = requirer.uri.split(prefixURI).pop();
+    let entry = path in manifest && manifest[path];
 
-    let requirement = manifest && manifest.requirements[id];
+    let requirement = entry && entry.requirements[id];
+    // If manifest entry for this requirement is present we follow manifest.
+    // Note: Standard library modules like '@panel' will be present in manifest
+    // unless they were moved to platform.
     if (requirement) {
+      // If cached modules contains entry with that ID that's one of the
+      // predefined modules like 'chrome', '@loader', ... so we just grab
+      // from there.
       if (requirement.path in modules)
         uri = requirement.path;
+      // Otherwise we get URI by resolving path to the `prefixURI`.
       else
         uri = prefixURI + requirement.path;
     }
     // If requirer is system module allow it to go off manifest.
     else if (isSystem(requirer.id)) {
+      // If module is relative we resolve it the requirer
       if (isRelative(id))
         uri = resolveURI(normalize(id), requirer.uri);
+      // If module is system one we resolve it to system modules root.
       else if (isSystem(id))
-        uri = resolveURI(normalize(id).slice(1), SYSTEM_ROOT);
+        uri = resolveURI(normalize(id).substr(1), SYSTEM_ROOT);
+      else if (id in modules)
+        uri = id
+      // The only case left is external modules like `foo/bar` which do not
+      // exists for system modules, so we can't resolve it. Note: require
+      // will throw can't resolve if no URI is returned.
+    }
+    // If module entry is not in manifest and requirer is not a system module
+    // than it has no authority to load since linker was not able to find it.
+    else {
+      throw Error('Module: ' + (requirer.id) + ' located at ' + requirer.uri +
+                  ' has no authority to load: ' + id, requirer.uri);
+
     }
 
     return uri;
@@ -241,10 +261,9 @@ const Require = iced(function Require(loader, requirer) {
   let { prefixURI, modules, manifest, resolve } = loader;
 
   return iced(override(function require(id) {
-    let module = null;
     if (!id)
-      throw Error("you must provide a module name when calling require() from "
-                  + (requirer && requirer.id), id);
+      throw Error('you must provide a module name when calling require() from '
+                  + requirer.id, requirer.uri);
 
     // Resolves `uri` of module using resolver function of a loader.
     let uri = resolve(id, requirer, manifest, prefixURI);
@@ -252,9 +271,10 @@ const Require = iced(function Require(loader, requirer) {
     // If `uri` was not resolved than requirer has no authority to load it so
     // we throw.
     if (uri === null)
-      throw Error('Module: ' + (module.id) + ' located at ' +
-                  module.uri + ' has no authority to load: ' + id);
+      throw Error('Module: Can not resolve "' + id + '" module required by ' +
+                  requirer.id + ' located at ' + requirer.uri, requirer.uri);
 
+    let module = null;
     // If module was already loaded than it's cached by loader & we grab it.
     if (uri in modules) {
       module = modules[uri];
