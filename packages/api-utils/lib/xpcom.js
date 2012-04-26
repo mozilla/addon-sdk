@@ -16,7 +16,7 @@ const { uuid } = require('./uuid');
 // components can be easily implement by extending it.
 const Unknown = new function() {
   function hasInterface(component, iid) {
-    return component &&
+    return component && component.interfaces &&
       ( component.interfaces.some(function(id) iid.equals(Ci[id])) ||
         component.implements.some(function($) hasInterface($, iid)) ||
         hasInterface(Object.getPrototypeOf(component), iid));
