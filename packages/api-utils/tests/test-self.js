@@ -29,6 +29,10 @@ exports.testSelf = function(test) {
   // api-utils. When they're run as 'cfx testall', self.name is testpkgs.
   test.assert((self.name == "api-utils") || (self.name == "testpkgs"),
               "self.name is api-utils or testpkgs");
+
+  // loadReason may change here, as we change the way tests addons are installed
+  test.assertEqual(self.loadReason, "startup",
+                   "self.loadReason is always `startup` on test runs");
 };
 
 exports.testSelfID = function(test) {
