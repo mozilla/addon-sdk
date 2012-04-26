@@ -210,8 +210,9 @@ function resolveURI(uri, base) {
 function Resolve({ prefixURI, modules }) {
   return iced(function resolve(id, requirer, manifest) {
     let uri = null;
-    let path = requirer.uri ? requirer.uri.split(prefixURI).pop() : requirer.id;
-    let manifest = manifest[path];
+    let path = 'uri' in requirer ? requirer.uri.split(prefixURI).pop()
+                                 : requirer.id;
+    manifest = path in manifest && manifest[path];
 
     let requirement = manifest && manifest.requirements[id];
     if (requirement) {

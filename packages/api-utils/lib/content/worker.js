@@ -139,6 +139,11 @@ const WorkerSandbox = EventEmitter.compose({
     // avoid having any kind of wrapper.
     load(apiSanbox, CONTENT_WORKER_URL);
 
+    // prepare a clean `self.options`
+    let options = 'contentScriptOptions' in worker ?
+      JSON.stringify( worker.contentScriptOptions ) :
+      undefined;
+
     // Then call `inject` method and communicate with this script
     // by trading two methods that allow to send events to the other side:
     //   - `onEvent` called by content script
@@ -153,7 +158,7 @@ const WorkerSandbox = EventEmitter.compose({
     };
     let onEvent = this._onContentEvent.bind(this);
     // `ContentWorker` is defined in CONTENT_WORKER_URL file
-    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent);
+    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent, options);
     this._emitToContent = result.emitToContent;
     this._hasListenerFor = result.hasListenerFor;
 
@@ -368,6 +373,8 @@ const Worker = EventEmitter.compose({
       this._window = options.window;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
+    if ('contentScriptOptions' in options)
+      this.contentScriptOptions = options.contentScriptOptions;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)

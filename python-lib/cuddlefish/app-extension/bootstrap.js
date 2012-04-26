@@ -82,7 +82,7 @@ function startup(data, reasonCode) {
 
   let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
   let prefixURI = 'resource://' + domain + '/';
-  loaderURI = options.loader;
+  loaderURI = prefixURI + options.loader;
 
   resourceHandler.setSubstitution(domain, resourcesURI);
 
@@ -97,7 +97,7 @@ function startup(data, reasonCode) {
 
   // Import loader module using `Cu.import` and bootstrap module loader.
   try {
-    let module = Cu.import(prefixURI + loaderURI);
+    let module = Cu.import(loaderURI);
     unload = module.unload;
     loader = module.Loader(options);
     let require = Require(loader, { uri: loaderURI });

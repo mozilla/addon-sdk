@@ -6,7 +6,8 @@
 "use strict";
 
 const { CC } = require('chrome');
-const { jetpackID, name, manifest, metadata, prefixURI } = require('@packaging');
+const { jetpackID, name, manifest, metadata, prefixURI,
+        loadReason } = require('@packaging');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
@@ -39,6 +40,7 @@ exports.create = function create(module) {
       id: jetpackID,
       uri: uri,
       name: name,
+      loadReason: loadReason,
       version: metadata[name].version,
       data: {
         url: url.bind(null, root),
