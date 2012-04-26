@@ -82,7 +82,7 @@ function startup(data, reasonCode) {
 
   let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
   let prefixURI = 'resource://' + domain + '/';
-  let loaderURI = options.loader;
+  loaderURI = options.loader;
 
   resourceHandler.setSubstitution(domain, resourcesURI);
 

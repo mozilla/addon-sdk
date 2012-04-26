@@ -243,7 +243,7 @@ const Require = iced(function Require(loader, requirer) {
     let module = null;
     if (!id)
       throw Error("you must provide a module name when calling require() from "
-                  + (requirer && requirer.id), base, id);
+                  + (requirer && requirer.id), id);
 
     // Resolves `uri` of module using resolver function of a loader.
     let uri = resolve(id, requirer, manifest, prefixURI);

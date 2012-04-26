@@ -30,8 +30,7 @@ function url(root, path) root + (path || "")
 function read(root, path) readURI(url(root, path))
 
 exports.create = function create(module) {
-  let uri = module.uri;
-  let path = uri.split(prefixURI).pop();
+  let path = module.uri.split(prefixURI).pop();
   let moduleData = manifest[path] && manifest[path].requirements['self'];
   let root = prefixURI + moduleData.dataURIPrefix;
   return Object.freeze({
