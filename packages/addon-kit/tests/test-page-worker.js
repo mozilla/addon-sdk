@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let tests = {}, Pages, Page;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";

@@ -4,7 +4,7 @@
 
 const observers = require("api-utils/observer-service");
 const { Cc, Ci } = require("chrome");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 const { PlainTextConsole } = require("api-utils/plain-text-console");
 
 exports.testUnloadAndErrorLogging = function(test) {

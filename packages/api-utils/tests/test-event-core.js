@@ -5,7 +5,7 @@
 'use strict';
 
 const { on, once, off, emit, count, amass } = require('api-utils/event/core');
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];

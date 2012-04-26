@@ -19,8 +19,8 @@ exports.Loader = function(module, globals, packaging) {
   return override(Object.create(loader), {
     require: Require(loader, module),
     sandbox: function(id) {
-      let path = options.manifest[module.path].requirements[id].path;
-      return loader.sandboxes[path];
+      let path = options.manifest[module.uri].requirements[id].path;
+      return loader.sandboxes[options.prefixURI + path];
     },
     unload: function(reason) {
       unload(loader, reason);

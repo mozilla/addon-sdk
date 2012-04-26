@@ -5,7 +5,7 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const widgets = require("widget");
 const url = require("url");
 const windowUtils = require("window-utils");

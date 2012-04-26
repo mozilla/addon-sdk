@@ -7,7 +7,7 @@
 var windowUtils = require("api-utils/window-utils");
 var timer = require("api-utils/timer");
 var { Cc, Ci } = require("chrome");
-var { Loader, unload } = require("./helpers");
+var { Loader, unload } = require("test-harness/loader");
 
 function toArray(iterator) {
   let array = [];

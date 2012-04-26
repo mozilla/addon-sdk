@@ -6,7 +6,7 @@
 
 var pageMod = require("page-mod");
 var testPageMod = require("pagemod-test-helpers").testPageMod;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const tabs = require("tabs");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive

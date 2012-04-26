@@ -4,7 +4,7 @@
 "use strict";
 
 var {Cc,Ci} = require("chrome");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 // test tab.activeTab getter
 exports.testActiveTab_getter = function(test) {
