@@ -5,7 +5,7 @@
 const hiddenFrames = require("hidden-frame");
 const xulApp = require("xul-app");
 
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 /*
  * Utility function that allow to easily run a proxy test with a clean

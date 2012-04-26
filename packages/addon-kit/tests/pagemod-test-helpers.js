@@ -7,7 +7,7 @@
 const {Cc,Ci} = require("chrome");
 const timer = require("timer");
 const xulApp = require("xul-app");
-const { Loader } = require('./helpers');
+const { Loader } = require("test-harness/loader");
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL

@@ -6,7 +6,7 @@
 
 const { Hotkey } = require("hotkeys");
 const { keyDown } = require("dom/events/keys");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 exports["test hotkey: function key"] = function(assert, done) {
   var element = require("window-utils").activeBrowserWindow.document.documentElement;

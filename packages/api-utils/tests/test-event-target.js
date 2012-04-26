@@ -6,7 +6,7 @@
 
 const { emit } = require('api-utils/event/core');
 const { EventTarget } = require('api-utils/event/target');
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];

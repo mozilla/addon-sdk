@@ -11,7 +11,7 @@ const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 
 let {Cc,Ci} = require("chrome");
 
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 const options = require("@packaging");
 
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
