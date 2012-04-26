@@ -25,6 +25,10 @@ const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
                      getService(Ci.mozIJSSubScriptLoader);
 const observerService = Cc['@mozilla.org/observer-service;1'].
                         getService(Ci.nsIObserverService);
+const ioService = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
+const SYSTEM_ROOT = 'resource:///modules/'
+const SYSTEM_DEFAULT = 'sdk'
 
 /* hack to declare dependency on:
 require('api-utils/addon/runner')
@@ -149,7 +153,7 @@ const load = iced(function load(loader, module) {
   let { sandboxes, globals } = loader;
   let require = Require(loader, module);
 
-  let sandbox = sandboxes[module.path] = Sandbox({
+  let sandbox = sandboxes[module.uri] = Sandbox({
     name: module.uri,
     // Get an existing module sandbox, if any, so we can reuse its compartment
     // when creating the new one to reduce memory consumption.
@@ -183,39 +187,81 @@ const load = iced(function load(loader, module) {
 });
 exports.load = load;
 
+function isRelative(id) { return id[0] === '.'; }
+function isSystem(id) {
+  return id[0] === '@' || id === 'chrome' || id === 'self';
+}
+function normalize(id) {
+  // If module has a form like '@panel' it means '@sdk/panel', so we
+  // normalize it.
+  if (isSystem(id) && ~id.indexOf('/'))
+    id = '@' + SYSTEM_DEFAULT + '/' + id.substr(1)
+  // If module does not has file extension it's normalized to include one.
+  if (id.substr(-3) !== '.js')
+    id = id + '.js'
+
+  return id
+}
+
+function resolveURI(uri, base) {
+  return ioService.newURI(relative, null, base).spec;
+}
+
+function Resolve({ prefixURI, modules }) {
+  return iced(function resolve(id, requirer, manifest) {
+    let uri = null;
+    let path = requirer.uri ? requirer.uri.split(prefixURI).pop() : requirer.id;
+    let manifest = manifest[path];
+
+    let requirement = manifest && manifest.requirements[id];
+    if (requirement) {
+      if (requirement.path in modules)
+        uri = requirement.path;
+      else
+        uri = prefixURI + requirement.path;
+    }
+    // If requirer is system module allow it to go off manifest.
+    else if (isSystem(requirer.id)) {
+      if (isRelative(id))
+        uri = resolveURI(normalize(id), requirer.uri);
+      else if (isSystem(id))
+        uri = resolveURI(normalize(id).slice(1), SYSTEM_ROOT);
+    }
+
+    return uri;
+  })
+}
+
 // Creates version of `require` that will be exposed to the given `module`
 // in the context of the given `loader`. Each module gets own limited copy
 // of `require` that is allowed to load only a modules that are associated
 // with it during link time.
-const Require = iced(function Require(loader, module) {
-  let { prefixURI, modules } = loader;
-  let base = module.path;                 // base module path.
-  let manifest = loader.manifest[base];   // manifest of base module.
-  let requirer = modules[base];           // same module, but from loader cache.
+const Require = iced(function Require(loader, requirer) {
+  let { prefixURI, modules, manifest, resolve } = loader;
+
   return iced(override(function require(id) {
+    let module = null;
     if (!id)
       throw Error("you must provide a module name when calling require() from "
                   + (requirer && requirer.id), base, id);
 
-    // If we have a manifest for requirer, then all it's requirements have been
-    // registered by linker and we should have a `path` to the required module.
-    // Even pseudo-modules like 'chrome', 'self', '@packaging', and '@loader'
-    // have pseudo-paths: exactly those same names. For details see: Bug-697422.
-    let module, requirement = manifest && manifest.requirements[id];
-    if (!requirement)
-        throw Error("Module: " + (requirer && requirer.id) + ' located at ' +
-                    base + " has no authority to load: " + id);
-    let path = requirement.path;
+    // Resolves `uri` of module using resolver function of a loader.
+    let uri = resolve(id, requirer, manifest, prefixURI);
+
+    // If `uri` was not resolved than requirer has no authority to load it so
+    // we throw.
+    if (uri === null)
+      throw Error('Module: ' + (module.id) + ' located at ' +
+                  module.uri + ' has no authority to load: ' + id);
 
     // If module was already loaded than it's cached by loader & we grab it.
-    if (path in modules) {
-      module = modules[path];
+    if (uri in modules) {
+      module = modules[uri];
     }
     // If module is not in cache, we create it and then load it. Once loaded
     // we freeze to prevent further mutations.
     else {
-      let uri = prefixURI + path;
-      module = modules[path] = Module(id, path, uri);
+      module = modules[uri] = Module(id, uri);
       load(loader, module);
       freeze(module);
     }
@@ -237,12 +283,10 @@ exports.Require = Require;
 
 // Makes module object that is made available to CommonJS modules when they
 // are evaluated, along with `exports` and `require`.
-const Module = iced(function Module(id, path, uri) {
+const Module = iced(function Module(id, uri) {
   return create(Object.prototype, {
     id: { enumerable: true, value: id },
     exports: { enumerable: true, writable: true, value: create(null) },
-    // Keep non-standard properties non-enumerable.
-    path: { value: path },
     uri: { value: uri }
   });
 });
@@ -273,23 +317,24 @@ exports.unload = unload;
 //   a module cache. This is also exposed as `modules` property of the returned
 //   loader. Defaults to `{}`.
 const Loader = iced(function Loader(options) {
-  let { mainID, mainPath, prefixURI, manifest, modules, globals } = override({
+  let { main, prefixURI, manifest, modules, globals, resolve } = override({
+    main: {},
     manifest: {},
     modules: Object.prototype,
     globals: {},
     print: dump,
+    resolve: null,
   }, options);
   options.unloadTopic = 'sdk:destroy:loader:' + options.id;
 
   // Create a module cache.
   modules = create(modules);
 
-  // create main module & store it in a cache.
-  let main = Module(mainID, mainPath, prefixURI + mainPath);
-  modules[mainPath] = main;
+  modules[main.uri] = Module(main.id, main.uri);
 
   let loader = freeze({
-    main: main,
+    main: modules[main.uri],
+    resolve: resolve || Resolve({ prefixURI: prefixURI, modules: modules }),
     unloadTopic: options.unloadTopic,
     // Manifest generated by a linker, containing map of module url's mapped
     // to it's requirements, comes from harness-options.json
@@ -331,8 +376,8 @@ const Loader = iced(function Loader(options) {
     // TODO: Deprecate this `self` and switch to non-magic self.
     'self': function self(loader, requirer) {
       let loaderURI = loader.modules['@packaging'].exports.loader;
-      let require = Require(loader, { path: loaderURI });
-      return require('api-utils/self!').create(requirer.path);
+      let require = Require(loader, { uri: loaderURI });
+      return require('api-utils/self!').create(requirer);
     }
   });
 

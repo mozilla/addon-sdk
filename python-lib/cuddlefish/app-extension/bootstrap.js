@@ -83,13 +83,12 @@ function startup(data, reasonCode) {
   let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
   let prefixURI = 'resource://' + domain + '/';
   let loaderURI = options.loader;
-  let mainID = options.main;
 
   resourceHandler.setSubstitution(domain, resourcesURI);
 
   options.prefsURI = URI + 'defaults/preferences/prefs.js';
   options.prefixURI = prefixURI;
-  options.mainID = mainID;
+  options.main = { id: options.main, uri: prefixURI + options.mainPath };
   options.id = options.jetpackID;
   options.loaderURI = loaderURI;
 
@@ -101,7 +100,7 @@ function startup(data, reasonCode) {
     let module = Cu.import(prefixURI + loaderURI);
     unload = module.unload;
     loader = module.Loader(options);
-    let require = Require(loader, { path: loaderURI });
+    let require = Require(loader, { uri: loaderURI });
     require('api-utils/addon/runner').startup(reason, { loader: loader });
   } catch (error) {
     dump('Error: ' + error.message + '\n' + (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
