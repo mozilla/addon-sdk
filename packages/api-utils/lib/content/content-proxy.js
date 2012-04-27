@@ -4,6 +4,13 @@
 
 "use strict";
 
+/* Trick the linker in order to avoid error on `Components.interfaces` usage.
+   We are tricking the linking with `require('./content-proxy.js')` in order
+   to ensure shipping it! But then the linker think that this file is going
+   to be used as a CommonJS module where we forbid usage of `Components`.
+   We only allow usage of it through `require('chrome')`:
+  require("chrome");
+*/
 let Ci = Components.interfaces;
 
 /**
