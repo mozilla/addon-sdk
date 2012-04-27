@@ -6,11 +6,12 @@
 "use strict";
 
 const { CC } = require('chrome');
-const { jetpackID, name, manifest, metadata, prefixURI, version,
-        loadReason } = require('@packaging');
+const { jetpackID, name, prefixURI, version, loadReason } = require('@packaging');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
+
+const addonDataURI = prefixURI + name + '/data/';
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -26,7 +27,6 @@ function uri(path) {
   return addonDataURI + (path || '');
 }
 
-const addonDataURI = prefixURI + name + '/data/';
 
 // Some XPCOM APIs require valid URIs as an argument for certain operations
 // (see `nsILoginManager` for example). This property represents add-on
@@ -35,7 +35,7 @@ exports.uri = 'addon:' + jetpackID;
 exports.id = jetpackID;
 exports.name = name;
 exports.loadReason = loadReason;
-exports.version = metadata[name].version;
+exports.version = version;
 exports.data = Object.freeze({
   url: uri,
   load: function read(path) {
