@@ -13,12 +13,17 @@ const { URL } = require('../url');
 const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
-const self = require("self");
 const { sandbox, evaluate, load } = require("../sandbox");
 const { merge } = require('../utils/object');
 
-const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
-const CONTENT_WORKER_URL = self.data.url("worker.js");
+/* Trick the linker in order to ensure shipping these files in the XPI.
+  require('./content-proxy.js');
+  require('./content-worker.js');
+  Then, retrieve URL of these files in the XPI:
+*/
+let prefix = module.uri.split('worker.js')[0];
+const CONTENT_PROXY_URL = prefix + 'content-proxy.js';
+const CONTENT_WORKER_URL = prefix + 'content-worker.js';
 
 const JS_VERSION = '1.8';
 
