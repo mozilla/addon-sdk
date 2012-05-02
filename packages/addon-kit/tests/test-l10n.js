@@ -126,6 +126,16 @@ exports.testEnUsLocaleName = function(test) {
                    "fallback to other",
                    "If the specific plural form is missing, we fallback to 'other'");
 
+  // Ensure that we can omit specifying the generic key without [other]
+  // key[one] = ...
+  // key[other] = ...  # Instead of `key = ...`
+  test.assertEqual(_("explicitPlural", 1),
+                   "one",
+                   "PluralForm form can be omitting generic key [i.e. without ...[other] at end of key)");
+  test.assertEqual(_("explicitPlural", 10),
+                   "other",
+                   "PluralForm form can be omitting generic key [i.e. without ...[other] at end of key)");
+
   loader.unload();
   resetLocale();
 }
