@@ -37,10 +37,19 @@ class TestParser(unittest.TestCase):
           # With multiline string, left spaces are stripped ...
           "some= spaces\\", " are\\  ", " stripped ",
           # ... but not right spaces, except the last line!
-          "but=not \\", "all of \\", " them "
+          "but=not \\", "all of \\", " them ",
+
+          # Explicit [other] plural definition
+          "explicitPlural[one] = one",
+          "explicitPlural[other] = other",
+
+          # Implicit [other] plural definition
+          "implicitPlural[one] = one",
+          "implicitPlural = other", # This key is the [other] one
         ]
-        # Ensure that lines end with a `\n`
-        lines = [l + "\n" for l in lines]
+        # Ensure that all lines end with a `\n`
+        # And that strings are unicode ones (parser code relies on it)
+        lines = [unicode(l + "\n") for l in lines]
         pairs = parse(lines)
         expected = {
           "sharp": "#can be in value",
@@ -55,7 +64,16 @@ class TestParser(unittest.TestCase):
 
           "multi": "linevalue",
           "some": "spacesarestripped",
-          "but": "not all of them"
+          "but": "not all of them",
+
+          "implicitPlural": {
+            "one": "one",
+            "other": "other"
+          },
+          "explicitPlural": {
+            "one": "one",
+            "other": "other"
+          },
         }
         self.assertEqual(pairs, expected)
 
@@ -63,7 +81,7 @@ class TestParser(unittest.TestCase):
         self.failUnlessRaises(MalformedLocaleFileError, parse,
                               ["invalid line with no key value"])
         self.failUnlessRaises(MalformedLocaleFileError, parse,
-                              ["plural[one]=plural with no generic value"])
+                              ["plural[one]=plural with no [other] value"])
         self.failUnlessRaises(MalformedLocaleFileError, parse,
                               ["multiline with no last empty line=\\"])
         self.failUnlessRaises(MalformedLocaleFileError, parse,

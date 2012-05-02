@@ -91,13 +91,17 @@ def normalize_plural(path, pairs):
             continue
         main_key = m.group(1)
         plural_form = m.group(2)
+        # Allows not specifying a generic key (i.e a key without [form])
         if not main_key in pairs:
-            raise MalformedLocaleFileError(
-                  'Following locale file is not a valid UTF-8 file: %s\n'
-                  'This plural form doesn\'t have a matching generic form:\n'
-                  '%s\n'
-                  'You have to defined following key:\n%s'
-                  % (path, key, main_key))
+            pairs[main_key] = {}
+            # Ensure that we always have the [other] form
+            if not main_key + "[other]" in pairs:
+                raise MalformedLocaleFileError(
+                      'Following locale file is not a valid UTF-8 file: %s\n'
+                      'This plural form doesn\'t have a matching `%s[other]` form:\n'
+                      '%s\n'
+                      'You have to defined following key:\n%s'
+                      % (path, main_key, key, main_key))
         # convert generic form into an object if it is still a string
         if isinstance(pairs[main_key], unicode):
             pairs[main_key] = {"other": pairs[main_key]}
