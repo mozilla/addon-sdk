@@ -5,6 +5,7 @@
 const { Cc, Ci, Cu } = require("chrome");
 const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
 const { defer } = require("api-utils/promise");
+const { setTimeout } = require("api-utils/timer");
 
 /**
  * `install` method error codes:
@@ -42,7 +43,11 @@ exports.install = function install(xpiPath) {
   let listener = {
     onInstallEnded: function(aInstall, aAddon) {
       aInstall.removeListener(listener);
-      resolve(aAddon.id);
+      // Bug 749745: on FF14+, onInstallEnded is called just before `startup()`
+      // is called, but we expect to resolve the promise only after it.
+      // As startup is called synchronously just after onInstallEnded,
+      // a simple setTimeout(0) is enough
+      setTimeout(resolve, 0, aAddon.id);
     },
     onInstallFailed: function (aInstall) {
       console.log("failed");
