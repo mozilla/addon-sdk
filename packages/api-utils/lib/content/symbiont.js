@@ -60,6 +60,12 @@ const Symbiont = Worker.resolve({
       this._hiddenFrame = hiddenFrames.HiddenFrame({
         onReady: function onFrame() {
           self._initFrame(this.element);
+        },
+        onUnload: function onUnload() {
+          // Bug 751211: Remove reference to _frame when hidden frame is
+          // automatically removed on unload, otherwise we are going to face
+          // "dead object" exception
+          self.destroy();
         }
       });
       hiddenFrames.add(this._hiddenFrame);
