@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { sandbox, load, evaluate } = require('api-utils/sandbox');
+const xulApp = require("xul-app");
 const fixturesURI = module.uri.split('test-sandbox.js')[0] + 'fixtures/';
 
 
@@ -19,9 +20,16 @@ exports['test basics'] = function(assert) {
 
 exports['test non-privileged'] = function(assert) {
   let fixture = sandbox('http://example.com');
-  assert.throws(function() {
-    evaluate(fixture, 'Compo' + 'nents.utils');
-  }, 'Access to components is restricted');
+  if (xulApp.versionInRange(xulApp.platformVersion, "15.0a1", "*")) {
+    let rv = evaluate(fixture, 'Compo' + 'nents.utils');
+    assert.equal(rv, undefined,
+                 "Components's attributes are undefined in content sandboxes");
+  }
+  else {
+    assert.throws(function() {
+      evaluate(fixture, 'Compo' + 'nents.utils');
+    }, 'Access to components is restricted');
+  }
   fixture.sandbox = sandbox;
   assert.throws(function() {
     evaluate(fixture, sandbox('http://foo.com'));
