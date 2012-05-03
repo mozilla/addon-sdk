@@ -25,6 +25,7 @@ const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
 const winUtils = require("api-utils/window-utils");
+const { getInnerId } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
 const timer = require("timer");
@@ -682,7 +683,7 @@ WorkerRegistry.prototype = {
 
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let innerWinID = winUtils.getInnerId(win);
+    let innerWinID = getInnerId(win);
     if ((innerWinID in this.winWorkers) ||
         (innerWinID in this.winsWithoutWorkers))
       return;
@@ -707,7 +708,8 @@ WorkerRegistry.prototype = {
 
   // Creates a worker for each window that needs a worker but doesn't have one.
   createNeededWorkers: function WR_createNeededWorkers() {
-    for (let [innerWinID, win] in Iterator(this.winsWithoutWorkers)) {
+    for (let innerWinID in this.winsWithoutWorkers) {
+      let win = this.winsWithoutWorkers[innerWinID]
       delete this.winsWithoutWorkers[innerWinID];
       this.registerContentWin(win);
     }
@@ -715,7 +717,8 @@ WorkerRegistry.prototype = {
 
   // Destroys the worker for each window that has a worker but doesn't need it.
   destroyUnneededWorkers: function WR_destroyUnneededWorkers() {
-    for (let [innerWinID, winWorker] in Iterator(this.winWorkers)) {
+    for (let innerWinID in this.winWorkers) {
+      let winWorker = this.winWorkers[innerWinID];
       if (!this._doesURLNeedWorker(winWorker.win.document.URL)) {
         this.unregisterContentWin(innerWinID);
         this.winsWithoutWorkers[innerWinID] = winWorker.win;
@@ -725,7 +728,7 @@ WorkerRegistry.prototype = {
 
   // Returns the worker for the item-window pair or null if none exists.
   find: function WR_find(contentWin) {
-    let innerWinID = winUtils.getInnerId(contentWin);
+    let innerWinID = getInnerId(contentWin);
     return (innerWinID in this.winWorkers) ?
            this.winWorkers[innerWinID].worker :
            null;
@@ -870,7 +873,7 @@ let browserManager = {
   // Stores the given content window with the manager and registers it with each
   // top-level item's worker registry.
   _registerContentWin: function BM__registerContentWin(win) {
-    let innerID = winUtils.getInnerId(win);
+    let innerID = getInnerId(win);
 
     // It's an error to call this method for the same window more than once, but
     // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See
@@ -1132,14 +1135,14 @@ BrowserWindow.prototype = {
     return !hasContentContext || worker.isAnyContextCurrent(popupNode);
   },
 
-  // Sets this.popupNode to the node the user context-clicked to invoke the
-  // context menu.  For Gecko 2.0 and later, triggerNode is this node; if it's
-  // falsey, document.popupNode is used.  Returns the popupNode.
+  // Returns the node the user context-clicked to invoke the context menu.
+  // For Gecko 2.0 and later, triggerNode is this node;
+  // if it's falsey, document.popupNode is used.
   capturePopupNode: function BW_capturePopupNode(triggerNode) {
-    this.popupNode = triggerNode || this.doc.popupNode;
-    if (!this.popupNode)
+    var popupNode = triggerNode || this.doc.popupNode;
+    if (!popupNode)
       console.warn("popupNode is null.");
-    return this.popupNode;
+    return popupNode;
   },
 
   destroy: function BW_destroy() {
@@ -1331,15 +1334,23 @@ ContextMenuPopup.prototype = {
       return;
 
     let topLevelItem = privateItem(item)._topLevelItem;
-    let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
+    let popupNode = this.browserWin.adjustPopupNode(this._getPopupNode(),
                                                     topLevelItem);
     this.browserWin.fireClick(topLevelItem, popupNode, item.data);
+  },
+
+  _getPopupNode: function CMP__getPopupNode() {
+    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
+    // to avoid a Spidermonkey strict warning on earlier versions.
+    let triggerNode = this.popupDOMElt.triggerNode || undefined;
+    return this.browserWin.capturePopupNode(triggerNode);
   },
 
   // popupshowing is used to show top-level items that match the browser
   // window's current context and hide items that don't.  Each module instance
   // is responsible for showing and hiding the items it owns.
   _handlePopupShowing: function CMP__handlePopupShowing() {
+
     // If there are items queued up to finish initializing, let them go first.
     // Otherwise the overflow submenu and menu separator may end up in an
     // inappropriate state when those items are later added to the menu.
@@ -1351,14 +1362,11 @@ ContextMenuPopup.prototype = {
       return;
     }
 
-    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
-    // to avoid a Spidermonkey strict warning on earlier versions.
-    let triggerNode = this.popupDOMElt.triggerNode || undefined;
-    let popupNode = this.browserWin.capturePopupNode(triggerNode);
-
+    let popupNode = this._getPopupNode();
     // Show and hide items.  Set a "jetpackContextCurrent" property on the
     // DOM elements to signal which of our items match the current context.
-    for (let [itemID, item] in Iterator(this.topLevelItems)) {
+    for (let itemID in this.topLevelItems) {
+      let item = this.topLevelItems[itemID]
       let areContextsCurr =
         this.browserWin.areAllContextsCurrent(item, popupNode);
 

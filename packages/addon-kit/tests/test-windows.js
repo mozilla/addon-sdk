@@ -4,7 +4,7 @@
 
 const {Cc, Ci} = require("chrome");
 const { setTimeout } = require("timer");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
@@ -299,11 +299,10 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=571449";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the windows module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("the windows module does not support this application.");
-  };
 }

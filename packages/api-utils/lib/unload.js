@@ -6,24 +6,17 @@
 //
 // http://narwhaljs.org
 
-var observers = [];
-var unloaders = [];
+const { Cc, Ci } = require('chrome');
+const { unloadTopic } = require('@packaging');
+const { once } = require('./system/events');
+
+const observers = [];
+const unloaders = [];
 
 var when = exports.when = function when(observer) {
   if (observers.indexOf(observer) != -1)
     return;
   observers.unshift(observer);
-};
-
-var send = exports.send = function send(reason, onError) {
-  onError = onError || console.exception;
-  observers.forEach(function (observer) {
-    try {
-      observer(reason);
-    } catch (e) {
-      onError(e);
-    }
-  });
 };
 
 var ensure = exports.ensure = function ensure(obj, destructorName) {
@@ -49,15 +42,26 @@ var ensure = exports.ensure = function ensure(obj, destructorName) {
     }
   };
 
+  // TODO: Find out why the order is inverted here. It seems that
+  // it may be causing issues!
   unloaders.push(unloadWrapper);
 
   obj[destructorName] = unloadWrapper;
 };
 
-when(
-  function(reason) {
-    unloaders.slice().forEach(
-      function(unloadWrapper) {
-        unloadWrapper(reason);
-      });
+when(function(reason) {
+  unloaders.slice().forEach(function(unloadWrapper) {
+    unloadWrapper(reason);
   });
+});
+
+once(unloadTopic, function unload({ data: reason }) {
+  observers.forEach(function(observer) {
+    try {
+      observer(reason);
+    }
+    catch (error) {
+      console.exception(error);
+    }
+  });
+});

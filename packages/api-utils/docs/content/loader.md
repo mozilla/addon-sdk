@@ -9,7 +9,7 @@ validations. Trait is useful for all the compositions providing high level
 APIs for creating JavaScript contexts that can access web content.
 
 Loader is composed from the
-[EventEmitter](packages/api-utils/docs/events.html) trait, therefore
+[EventEmitter](packages/api-utils/events.html) trait, therefore
 instances of Loader and their descendants expose all the public properties
 exposed by EventEmitter along with additional public properties:
 
@@ -75,6 +75,14 @@ images) for the page has been loaded, at the time the
 [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
 fires
 
+</api>
+
+<api name="contentScriptOptions">
+@property {object}
+Read-only value exposed to content scripts under `self.options` property.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+Optional.
 </api>
 
 <api name="contentURL">

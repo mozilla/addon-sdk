@@ -6,6 +6,7 @@
 
 "use strict";
 
+const memory = require("api-utils/memory");
 // The possible return values of getTypeOf.
 const VALID_TYPES = [
   "array",
@@ -81,7 +82,8 @@ exports.validateOptions = function validateOptions(options, requirements) {
   let validatedOptions = {};
   let mapThrew = false;
 
-  for (let [key, req] in Iterator(requirements)) {
+  for (let key in requirements) {
+    let req = requirements[key];
     let [optsVal, keyInOpts] = (key in options) ?
                                [options[key], true] :
                                [undefined, false];

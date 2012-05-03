@@ -323,8 +323,12 @@ def generate_build_for_target(pkg_cfg, target, deps,
             if os.path.isfile(fullpath) and filename.endswith('.properties'):
                 language = filename[:-len('.properties')]
 
-                from property_parser import parse_file
-                content = parse_file(fullpath)
+                from property_parser import parse_file, MalformedLocaleFileError
+                try:
+                    content = parse_file(fullpath)
+                except MalformedLocaleFileError, msg:
+                    print msg[0]
+                    sys.exit(1)
 
                 # Merge current locales into global locale hashtable.
                 # Locale files only contains one big JSON object

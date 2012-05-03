@@ -9,7 +9,7 @@ implementing the [Worker][] interface defined by the W3C, with minor
 differences.
 
 Content workers are message-passing facilities for communication between
-[content scripts](dev-guide/addon-development/web-content.html) and the main
+[content scripts](dev-guide/guides/content-scripts/index.html) and the main
 add-on code.
 
 It is important to note that unlike "web workers," these workers run in the
@@ -40,7 +40,7 @@ are listed below.
       console.log(location);
     });
 
-[EventEmitter]:packages/api-utils/docs/events.html
+[EventEmitter]:packages/api-utils/events.html
 
 <api name="Worker">
 @constructor
@@ -65,7 +65,7 @@ Options for the constructor, with the following keys:
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/docs/events.html) object that allows you to:
+[EventEmitter](packages/api-utils/events.html) object that allows you to:
 
 * send customized messages to the worker using the `port.emit` function
 * receive events from the worker using the `port.on` function
@@ -94,7 +94,7 @@ The URL of the content.
 <api name="tab">
 @property {object}
 If this worker is attached to a content document, returns the related 
-[tab](packages/addon-kit/docs/tabs.html).
+[tab](packages/addon-kit/tabs.html).
 </api>
 
 <api name="message">
@@ -106,7 +106,7 @@ worker.
 
 @argument {value}
 The event listener is passed the message, which must be a
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 <api name="error">

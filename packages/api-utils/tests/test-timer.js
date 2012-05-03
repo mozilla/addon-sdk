@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var timer = require("timer");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 exports.testSetTimeout = function(test) {
   timer.setTimeout(function() {

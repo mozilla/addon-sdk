@@ -30,6 +30,7 @@ define the preferences in your `package.json`, like so:
         "preferences": [{
             "name": "somePreference",
             "title": "Some preference title",
+            "description": "Some short description for the preference",
             "type": "string",
             "value": "this is the default string value"
         }]

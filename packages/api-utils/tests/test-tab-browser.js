@@ -483,11 +483,10 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
-  }
-  exports.testAppNotSupported = function (test) {
-    test.pass("the tab-browser module does not support this application.");
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the tab-browser module does not support this application.");
+    }
   };
 }

@@ -24,6 +24,9 @@ skip = [
     "examples/library-detector/data/library-detector.js", # MIT
     "python-lib/mozrunner/killableprocess.py", # MIT? BSDish?
     "python-lib/mozrunner/winprocess.py", # MIT
+    "packages/api-utils/tests/test-querystring.js", # MIT
+    "packages/api-utils/lib/promise.js", # MIT
+    "packages/api-utils/tests/test-promise.js", # MIT
     ]
 absskip = [from_sdk_top(os.path.join(*fn.split("/"))) for fn in skip]
 
@@ -34,7 +37,9 @@ class Licenses(unittest.TestCase):
         # licenses.
         self.missing = []
         self.scan_file(from_sdk_top(os.path.join("python-lib", "jetpack_sdk_env.py")))
-        self.scan(os.path.join("python-lib", "cuddlefish"), [".js", ".py"])
+        self.scan(os.path.join("python-lib", "cuddlefish"), [".js", ".py"],
+                  skipdirs=["sdk-docs"], # test_generate.py makes this
+                  )
         self.scan(os.path.join("python-lib", "mozrunner"), [".py"])
 
         for sdk_package in ["addon-kit", "api-utils", "test-harness"]:

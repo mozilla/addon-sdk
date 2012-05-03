@@ -260,11 +260,13 @@ exports.whenContentLoaded = function whenContentLoaded(callback) {
   return tracker;
 };
 
-exports.__defineGetter__("activeTab", function() {
-  const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
-             getService(Ci.nsIWindowMediator);
-  let mainWindow = wm.getMostRecentWindow("navigator:browser");
-  return mainWindow.gBrowser.selectedTab;
+Object.defineProperty(exports, 'activeTab', {
+  get: function() {
+    const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
+                getService(Ci.nsIWindowMediator);
+    let mainWindow = wm.getMostRecentWindow("navigator:browser");
+    return mainWindow.gBrowser.selectedTab;
+  }
 });
 
 /******************* TabModule *********************/

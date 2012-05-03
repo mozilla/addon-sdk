@@ -5,7 +5,7 @@
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -327,6 +327,31 @@ tests.testPanelTextColor = function(test) {
   });
 };
 
+// Bug 696552: Ensure panel.contentURL modification support
+tests.testChangeContentURL = function(test) {
+  test.waitUntilDone();
+
+  let panel = Panel({
+    contentURL: "about:blank",
+    contentScript: "self.port.emit('ready', document.location.href);"
+  });
+  let count = 0;
+  panel.port.on("ready", function (location) {
+    count++;
+    if (count == 1) {
+      test.assertEqual(location, "about:blank");
+      test.assertEqual(panel.contentURL, "about:blank");
+      panel.contentURL = "about:buildconfig";
+    }
+    else {
+      test.assertEqual(location, "about:buildconfig");
+      test.assertEqual(panel.contentURL, "about:buildconfig");
+      panel.destroy();
+      test.done();
+    }
+  });
+};
+
 function makeEventOrderTest(options) {
   let expectedEvents = [];
 
@@ -413,6 +438,25 @@ tests.testContentURLOption = function(test) {
   test.assertRaises(function () Panel({ contentURL: "foo" }),
                     "The `contentURL` option must be a valid URL.",
                     "Panel throws an exception if contentURL is not a URL.");
+};
+
+exports.testContentScriptOptionsOption = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let panel = loader.require("panel").Panel({
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+        test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        test.done();
+      }
+    });
 };
 
 let panelSupported = true;

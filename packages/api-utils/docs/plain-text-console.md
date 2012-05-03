@@ -3,5 +3,5 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 The `plain-text-console` module provides a minimalist implementation
-of the [console](dev-guide/addon-development/console.html) global,
+of the [console](dev-guide/console.html) global,
 which simply logs all messages to standard output.

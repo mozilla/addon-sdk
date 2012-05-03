@@ -43,8 +43,8 @@ exports.testStringBundle = function(test) {
     let elem = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
     a.push([elem.key, elem.value]);
   }
-  for (let keyVal in Iterator(strings))
-    b.push(keyVal);
+  for (let key in strings)
+    b.push([ key, strings.get(key) ]);
 
   // Sort the arrays, because we don't assume enumeration has a set order.
   // Sort compares [key, val] as string "key,val", which sorts the way we want

@@ -5,7 +5,7 @@
 "use strict";
 
 const { openTab, closeTab } = require("api-utils/tabs/utils");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timer");
 
 exports["test unload tab observer"] = function(assert, done) {

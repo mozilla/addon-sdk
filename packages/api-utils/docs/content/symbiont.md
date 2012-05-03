@@ -40,7 +40,7 @@ Examples
 
 See the [panel][] module for a real-world example of usage of this module.
 
-[panel]:packages/addon-kit/docs/panel.html
+[panel]:packages/addon-kit/panel.html
 
 Reference
 ---------
@@ -52,14 +52,14 @@ of Symbiont and their descendants expose all the public properties
 exposed by [Worker][] along with additional public properties that
 are listed below:
 
-[Worker]:packages/api-utils/docs/content/worker.html
+[Worker]:packages/api-utils/content/worker.html
 
 <api name="Symbiont">
 @constructor
 Creates a content symbiont.
 @param options {object}
   Options for the constructor. Includes all the keys that
-the [Worker](packages/api-utils/docs/content/worker.html)
+the [Worker](packages/api-utils/content/worker.html)
 constructor accepts and a few more:
 
   @prop [frame] {object}
@@ -82,6 +82,11 @@ constructor accepts and a few more:
     fires
 
     This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value exposed to content scripts under `self.options` property.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+    Optional.
 
   @prop [allow] {object}
     Permissions for the content, with the following keys:
@@ -121,6 +126,14 @@ images) for the page has been loaded, at the time the
 [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
 fires
 
+</api>
+
+<api name="contentScriptOptions">
+@property {object}
+Read-only value exposed to content scripts under `self.options` property.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+Optional.
 </api>
 
 <api name="contentURL">

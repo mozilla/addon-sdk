@@ -5,7 +5,7 @@
 const hiddenFrames = require("hidden-frame");
 const xulApp = require("xul-app");
 
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 /*
  * Utility function that allow to easily run a proxy test with a clean
@@ -150,16 +150,23 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
+      // We ensure that `toString` can't be modified so that nothing could
+      // leak to/from the document and between content scripts
+      //document.location.toString = function foo() {};
+      document.location.toString.foo = "bar";
+      assert(!("foo" in document.location.toString), "document.location.toString can't be modified");
       assert(document.location.toString() == "data:text/html,",
-             "document.location.toString()");
+             "First document.location.toString()");
       self.postMessage("next");
     }
   );
   worker.on("message", function () {
     helper.createWorker(
       'new ' + function ContentScriptScope2() {
+        assert(!("foo" in document.location.toString),
+               "document.location.toString is different for each content script");
         assert(document.location.toString() == "data:text/html,",
-               "document.location.toString()");
+               "Second document.location.toString()");
         done();
       }
     );
@@ -754,5 +761,47 @@ exports.testTypedArrays = createProxyTest("", function (helper) {
       done();
     }
   );
+
+});
+
+// Bug 715755: proxy code throw an exception on COW
+// Create an http server in order to simulate real cross domain documents
+exports.testCrossDomainIframe = createProxyTest("", function (helper) {
+  let serverPort = 8099;
+  let server = require("httpd").startServerAsync(serverPort);
+  server.registerPathHandler("/", function handle(request, response) {
+    // Returns an empty webpage
+    response.write("");
+  });
+
+  let worker = helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      // Waits for the server page url
+      self.on("message", function (url) {
+        // Creates an iframe with this page
+        let iframe = document.createElement("iframe");
+        iframe.addEventListener("load", function onload() {
+          iframe.removeEventListener("load", onload, true);
+          try {
+            // Try accessing iframe's content that is made of COW wrappers
+            // Take care of debug builds that add object address after `Window`
+            assert(String(iframe.contentWindow).match(/\[object Window.*\]/),
+                   "COW works properly");
+          } catch(e) {
+            assert(false, "COW fails : "+e.message);
+          }
+          self.port.emit("end");
+        }, true);
+        iframe.setAttribute("src", url);
+        document.body.appendChild(iframe);
+      });
+    }
+  );
+
+  worker.port.on("end", function () {
+    server.stop(helper.done);
+  });
+
+  worker.postMessage("http://localhost:" + serverPort + "/");
 
 });

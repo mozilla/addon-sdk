@@ -39,19 +39,26 @@ class PrefsTests(unittest.TestCase):
     def testPackageWithSimplePrefs(self):
         self.makexpi('simple-prefs')
         self.failUnless('options.xul' in self.xpi.namelist())
-        prefs = self.xpi.read('options.xul')
+        optsxul = self.xpi.read('options.xul').decode("utf-8")
         self.failUnless('pref="extensions.jid1-fZHqN9JfrDBa8A@jetpack.test"'
-                        in prefs, prefs)
-        self.failUnless('type="bool"' in prefs, prefs)
-        self.failUnless('title="test"' in prefs, prefs)
+                        in optsxul, optsxul)
+        self.failUnless('type="bool"' in optsxul, optsxul)
+        self.failUnless(u'title="t\u00EBst"' in optsxul, repr(optsxul))
         self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
                              "jid1-fZHqN9JfrDBa8A@jetpack")
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        exp = [u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test", false);',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test2", "\u00FCnic\u00F8d\u00E9");',
+               ]
+        self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
         self.failIf('options.xul' in self.xpi.namelist())
         self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
                              "jid1-fZHqN9JfrDBa8A@jetpack")
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        self.failUnlessEqual(prefsjs, "")
 
 
 class Bug588119Tests(unittest.TestCase):

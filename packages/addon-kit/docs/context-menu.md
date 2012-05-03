@@ -117,9 +117,9 @@ exported by the `context-menu` module.
       match pattern strings.  When <code>matchPattern</code> is an array, the
       context occurs when the menu is invoked on a page whose URL matches any of
       the patterns.  These are the same match pattern strings that you use with
-      the <a href="packages/addon-kit/docs/page-mod.html"><code>page-mod</code></a>
+      the <a href="packages/addon-kit/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="packages/api-utils/docs/match-pattern.html">Read more about patterns</a>.
+      <a href="packages/api-utils/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -152,7 +152,7 @@ but declarative contexts won't help you there.
 When you need more control control over the context in which your menu items are
 shown, you can use content scripts.  Like other APIs in the SDK, the
 `context-menu` API uses
-[content scripts](dev-guide/addon-development/web-content.html) to let your
+[content scripts](dev-guide/guides/content-scripts/index.html) to let your
 add-on interact with pages in the browser.  Each menu item you create in the
 top-level context menu can have a content script.
 
@@ -182,9 +182,10 @@ are not current, then your context listener is never called.
 This example takes advantage of that fact.  The listener can be assured that
 `node` will always be an image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "A Mozilla Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("context", function (node) {' +
                      '  return /mozilla/.test(node.src);' +
                      '});'
@@ -238,9 +239,10 @@ associated with the content script, the content script can call the
 JSON-able data.  The menu item's `"message"` event listener will be called with
 that data.
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(node.src);' +
                      '});',
@@ -306,7 +308,7 @@ For conciseness, these examples create their content scripts as strings and use
 the `contentScript` property.  In your own add-on, you will probably want to
 create your content scripts in separate files and pass their URLs using the
 `contentScriptFile` property.  See
-[Working with Content Scripts](dev-guide/addon-development/web-content.html)
+[Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 for more information.
 
 <div class="warning">
@@ -333,9 +335,10 @@ part of the page:
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Image",
-      context: contextMenu.SelectorContext("img"),
+      context: cm.SelectorContext("img"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(node.src);' +
                      '});',
@@ -364,10 +367,11 @@ mozilla.org or mozilla.com page:
 
 Show an "Edit Page Images" item when the page contains at least one image:
 
-    require("context-menu").Item({
+    var cm = require("context-menu");
+    cm.Item({
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
-      context: contextMenu.PageContext(),
+      context: cm.PageContext(),
       contentScript: 'self.on("context", function (node) {' +
                      '  var pageHasImgs = !!document.querySelector("img");' +
                      '  return pageHasImgs;' +
@@ -398,7 +402,7 @@ Google or Wikipedia with the text contained in the anchor:
     });
     var searchMenu = cm.Menu({
       label: "Search With",
-      context: contextMenu.SelectorContext("a[href]"),
+      context: cm.SelectorContext("a[href]"),
       contentScript: 'self.on("click", function (node, data) {' +
                      '  var searchURL = data + node.textContent;' +
                      '  window.location.href = searchURL;' +
@@ -514,7 +518,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -643,7 +647,7 @@ code in the menu item's `message` event.
 @argument {value}
 Listeners are passed a single argument which is the message posted
 from the content script. The message can be any
-<a href = "dev-guide/addon-development/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
+<a href = "dev-guide/guides/content-scripts/using-port.html#json_serializable">JSON-serializable value</a>.
 </api>
 
 </api>
@@ -709,7 +713,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](packages/api-utils/docs/match-pattern.html) string or an array of
+  A [match pattern](packages/api-utils/match-pattern.html) string or an array of
   match pattern strings.
 </api>
 </api>

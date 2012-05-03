@@ -4,6 +4,12 @@
 
 function run(jQuery) {
 
+  function showThirdPartyModules() {
+    if ($("#third-party-package-summaries").html() != "") {
+      $("#third-party-packages-subsection").show();
+    }
+  }
+
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
@@ -14,49 +20,10 @@ function run(jQuery) {
     SyntaxHighlighter.highlight();
   }
 
-  function highlightCurrentPage() {
-    $(".current-page").removeClass('current-page');
-    $(".current-section").removeClass('current-section');
-    var currentPage = "";
-    var base_url = $("base").attr("href");
-    if (base_url) {
-      currentPage = window.location.toString();
-      currentPage = currentPage.slice(base_url.length);
-    }
-    else {
-      // figure out the relative link for this page
-      var re = /(\.\.\/)*/;
-      var link_prefix = $("h1 a").attr("href").match(re)[0];
-      var url_pieces = window.location.pathname.split("/");
-      var relative_url_pieces_count = (link_prefix.length/3) + 1;
-      var relative_url_count = url_pieces.length - (relative_url_pieces_count);
-      var relative_url_pieces = url_pieces.slice(relative_url_count);
-      currentPage = link_prefix + (relative_url_pieces.join("/"));
-    }
-
-    $('a[href="' + currentPage + '"]').parent().addClass('current-page');
-
-    currentSideBarSection = null;
-    if ( $('.current-page').hasClass('sidebar-subsection-header') ) {
-      currentSideBarSection = $('.current-page').next();
-    }
-    else {
-      currentSideBarSection =
-        $('.current-page').closest('.sidebar-subsection-contents');
-    }
-    if ($(currentSideBarSection).length == 0)
-      currentSideBarSection = $('#default-section-contents');
-
-    $('.sidebar-subsection-contents').hide();
-    $('.always-show').show();
-    $(currentSideBarSection).parent().addClass('current-section');
-    $(currentSideBarSection).show();
-  }
-
-  function generateToC() {
-    var headings = '.api_reference h2, .api_reference h3, ' +
-                   '.api_reference h4, .api_reference h5, ' +
-                   '.api_reference h6';
+  function generateAnchors() {
+    var headings = '#main-content h2, #main-content h3, ' +
+                   '#main-content h4, #main-content h5, ' +
+                   '#main-content h6';
 
     if ($(headings).length == 0) {
       $("#toc").hide();
@@ -65,13 +32,9 @@ function run(jQuery) {
 
     var suffix = 1;
     var headingIDs = new Array();
-    var pageURL = document.location.protocol + "//" +
-                  document.location.host +
-                  document.location.pathname +
-                  document.location.search;
 
     $(headings).each(function(i) {
-      var baseName = $(this).html();
+      var baseName = $(this).text();
       // Remove the datatype portion of properties
       var dataTypeStart = baseName.indexOf(" : ");
       if (dataTypeStart != -1)
@@ -85,21 +48,47 @@ function run(jQuery) {
         headingIDExists = headingIDs.indexOf(suffixedName) != -1;
       }
       headingIDs.push(suffixedName);
+      suffixedName = suffixedName.replace(/ /g, '_');
       var encodedName = encodeURIComponent(suffixedName);
       // Now add the ID attribute and ToC entry
-      $(this).attr("id", suffixedName);
-      var url = pageURL + "#" + encodedName;
+      $(this).attr("id", encodedName);
+   });
+  }
+
+  function generateToC() {
+    var headings = '.api_reference h2, .api_reference h3, ' +
+                   '.api_reference h4, .api_reference h5, ' +
+                   '.api_reference h6';
+
+    if ($(headings).length == 0) {
+      $("#toc").hide();
+      return;
+    }
+
+    var pageURL = document.location.protocol + "//" +
+                  document.location.host +
+                  document.location.pathname +
+                  document.location.search;
+
+    $(headings).each(function(i) {
+      var url = pageURL + "#" + $(this).attr("id");
       var tocEntry = $("<a></a>").attr({
         href: url,
-        "class": $(this).attr("tagName"),
-        title: baseName
+        "class": $(this).attr("tagName")
       });
-      tocEntry.text(baseName);
+      tocEntry.text($(this).text());
       $("#toc").append(tocEntry);
     });
 
+  }
+
+  function jumpToAnchor() {
     // Make Firefox jump to the anchor even though we created it after it
     // parsed the page.
+    var pageURL = document.location.protocol + "//" +
+                  document.location.host +
+                  document.location.pathname +
+                  document.location.search;
     if (document.location.hash) {
       var hash = document.location.hash;
       document.location.replace(pageURL + "#");
@@ -107,10 +96,12 @@ function run(jQuery) {
     }
   }
 
-  highlightCurrentPage();
+  showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
+  generateAnchors();
   generateToC();
+  jumpToAnchor();
 }
 
 $(window).ready(function() {

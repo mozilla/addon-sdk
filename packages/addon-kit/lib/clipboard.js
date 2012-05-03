@@ -298,7 +298,7 @@ function currentFlavors() {
   return currentFlavors;
 };
 
-Object.defineProperty(exports, "currentFlavors", { get : currentFlavors })
+Object.defineProperty(exports, "currentFlavors", { get : currentFlavors });
 
 // SUPPORT FUNCTIONS ////////////////////////////////////////////////////////
 

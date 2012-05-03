@@ -4,7 +4,7 @@
 
 <span class="aside">
 For more information on testing in the Add-on SDK, see the
-[Reusable Modules](dev-guide/addon-development/implementing-reusable-module.html)
+[Unit Testing](dev-guide/tutorials/unit-testing.html)
 tutorial.
 </span>
 

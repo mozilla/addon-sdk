@@ -40,7 +40,7 @@ simple storage won't work with add-ons executed using `cfx run` - that
 is, stored data will not persist from one run to the next.
 
 The easiest solution to this problem is to use the
-[`--profiledir` option to `cfx run`](dev-guide/addon-development/cfx-tool.html#profiledir).
+[`--profiledir` option to `cfx run`](dev-guide/cfx-tool.html#profiledir).
 
 If you use this method, you must end your debugging session by
 quitting Firefox normally, not by cancelling the shell command.
@@ -177,7 +177,7 @@ While private browsing mode is active, you should not store any sensitive data.
 
 Because any kind of data can be placed into simple storage, support for private
 browsing is not built into the module.  Instead, use the
-[`private-browsing`](packages/addon-kit/docs/private-browsing.html) module to
+[`private-browsing`](packages/addon-kit/private-browsing.html) module to
 check private browsing status and respond accordingly.
 
 For example, the URLs your users visit should not be stored during private
