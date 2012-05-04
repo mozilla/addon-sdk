@@ -74,4 +74,4 @@ on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
     off('sdk:loader:destroy', onunload);
     unload(reason);
   }
-});
+}, true); // Use strong reference to listener to make sure it's not GC-ed.
