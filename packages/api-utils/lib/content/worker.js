@@ -113,7 +113,7 @@ const WorkerSandbox = EventEmitter.compose({
     let apiSanbox = sandbox(window, { wantXrays: true });
 
     // Build content proxies only if the document has a non-system principal
-    if (window.wrappedJSObject) {
+    if (XPCNativeWrapper.unwrap(window) !== window) {
       apiSanbox.console = console;
       // Execute the proxy code
       load(apiSanbox, CONTENT_PROXY_URL);
