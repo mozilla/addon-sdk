@@ -267,7 +267,12 @@ exports.Module = Module;
 // Takes `loader`, and unload `reason` string and notifies all observers that
 // they should cleanup after them-self.
 const unload = iced(function unload(loader, reason) {
-  notifyObservers(null, loader.unloadTopic, reason);
+  // subject is a unique object created per loader instance.
+  // This allows any code to cleanup on loader unload regardless of how
+  // it was loaded. To handle unload for specific loader subject may be
+  // asserted against loader.destructor or require('@packaging').destructor.
+  let subject = { wrappedJSObject: loader.destructor };
+  notifyObservers(subject, 'sdk:loader:destroy', reason);
 });
 exports.unload = unload;
 
@@ -294,11 +299,17 @@ const Loader = iced(function Loader(options) {
     baseURI: 'resource:///modules/',
     resolve: resolveID,
   }, options);
-  options.unloadTopic = 'sdk:destroy:loader:' + options.id;
+
+  // We create an identity object that will be dispatched on an unload
+  // event as subject. This way unload listeners will be able to assert
+  // which loader is unloaded.
+  let destructor = freeze(create(null));
 
   // Define pseudo modules.
   modules = override({
-    '@packaging': JSON.parse(JSON.stringify(options)),
+    '@packaging': override(JSON.parse(JSON.stringify(options)), {
+      destructor: destructor
+    }),
     'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
                 components: Components }
   }, modules);
@@ -316,9 +327,9 @@ const Loader = iced(function Loader(options) {
 
   return freeze({
     main: modules[main.uri],
+    destructor: destructor,
     baseURI: baseURI,
     resolve: resolve,
-    unloadTopic: options.unloadTopic,
     modules: modules,
     globals: globals,
     sandboxes: {}           // Map of module sandboxes.

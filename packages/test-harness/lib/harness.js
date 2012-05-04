@@ -309,8 +309,7 @@ var runTests = exports.runTests = function runTests(options) {
           system.platform + "/" + system.architecture + ".\n");
 
 
-    loader = Loader(override(JSON.parse(JSON.stringify(require("@packaging"))), {
-      id: Math.random().toString(36).slice(2),
+    loader = Loader(override(override({}, require("@packaging")), {
       // Copy globals to fresh object (as globals will be frozen and can't be
       // overridden. And then we override, global console to expose one designed
       // for tests.
