@@ -5,7 +5,7 @@
 "use strict";
 
 const { Cc, Ci, Cr, atob, btoa } = require("chrome");
-const { Base, Class } = require('./base');
+const { Class } = require('api-utils/heritage');
 
 var ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
@@ -121,28 +121,8 @@ exports.URL = URL;
  * Note: Could be extended in the future to decode / encode automatically binary
  * data.
  */
-const DataURL = Base.extend({
+const DataURL = Class({
 
-  /**
-   * The MIME type of the data. By default is empty, that accordingly to RFC
-   * is equivalent to "text/plain"
-   */
-  mimeType: "",
-
-  /**
-   * An hashmap that contains the parameters of the Data URL. By default is
-   * empty, that accordingly to RFC is equivalent to {"charset" : "US-ASCII"}
-   */
-  parameters: null,
-
-  /**
-   * The string that represent the data in the Data URL
-   */
-  data: "",
-
-  /**
-   *
-   */
   get base64 () {
     return "base64" in this.parameters;
   },
@@ -161,11 +141,25 @@ const DataURL = Base.extend({
   * @throws {URIError} if the Data URL is malformed
    */
   initialize: function(uri) {
-    this.merge({
-      parameters: {},
-      mimeType: this.mimeType,
-      data: this.data
-    })
+    // Due to the bug 751834 is not possible document and define these
+    // properties in the prototype.
+
+    /**
+     * An hashmap that contains the parameters of the Data URL. By default is
+     * empty, that accordingly to RFC is equivalent to {"charset" : "US-ASCII"}
+     */
+    this.parameters = {};
+
+    /**
+     * The MIME type of the data. By default is empty, that accordingly to RFC
+     * is equivalent to "text/plain"
+     */
+    this.mimeType = "";
+
+    /**
+     * The string that represent the data in the Data URL
+     */
+    this.data = "";
 
     if (!uri)
       return;
@@ -232,4 +226,4 @@ const DataURL = Base.extend({
   }
 });
 
-exports.DataURL = Class(DataURL);
+exports.DataURL = DataURL;
