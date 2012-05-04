@@ -76,8 +76,8 @@ exports.once = once;
  *    More arguments that will be passed to listeners.
  */
 function emit(target, type, message /*, ...*/) {
-  for each (let item in emit.lazy.apply(emit.lazy, arguments))
-    item;
+  // We just iterate, iterator take care of emitting events.
+  for each (let item in emit.lazy.apply(emit.lazy, arguments));
 }
 
 /**
