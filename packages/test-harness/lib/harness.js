@@ -5,7 +5,8 @@
 "use strict";
 
 const { Cc,Ci } = require("chrome");
-const { Loader, Require, override, unload } = require("@loader");
+const { Loader, Require, override, unload } = require("api-utils/cuddlefish");
+
 const globals = require('api-utils/globals!');
 const memory = require('api-utils/memory');
 

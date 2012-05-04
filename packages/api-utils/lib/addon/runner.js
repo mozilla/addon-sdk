@@ -5,12 +5,12 @@
  */
 
 const { Cc, Ci } = require('chrome');
-const { load, override, Sandbox, evaluate } = require('@loader');
+const { override, Sandbox, evaluate, load } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
+const { loadReason, prefsURI } = require('@packaging');
 const globals = require('../globals!');
-const options = require('@packaging');
 
 const NAME2TOPIC = {
   'Firefox': 'sessionstore-windows-restored',
@@ -30,7 +30,7 @@ function setDefaultPrefs() {
                 QueryInterface(Ci.nsIPrefBranch2);
   const branch = prefs.getDefaultBranch("");
   const sandbox = Sandbox({
-    name: options.prefsURI,
+    name: prefsURI,
     prototype: {
       pref: function(key, val) {
         switch (typeof val) {
@@ -49,7 +49,7 @@ function setDefaultPrefs() {
     }
   });
   // load preferences.
-  evaluate(sandbox, options.prefsURI);
+  evaluate(sandbox, prefsURI);
 }
 
 function wait(reason, options) {
@@ -64,6 +64,10 @@ function startup(reason, options) {
 
   // Inject globals ASAP in order to have console API working ASAP
   let loader = options.loader;
+  // To workaround bug 674195 we pass in load from the same context as
+  // loader this way freeze in load won't throw. Once bug is fixed we
+  // should be able to just use load from the upper context.
+  let load = options.load;
   override(loader.globals, globals);
 
   // Try initializing localization module before running main module. Just print
@@ -72,7 +76,7 @@ function startup(reason, options) {
     // Do not enable HTML localization while running test as it is hard to
     // disable. Because unit tests are evaluated in a another Loader who
     // doesn't have access to this current loader.
-    if (options.loader.main.id !== "test-harness/run-tests")
+    if (loader.main.id !== "test-harness/run-tests")
       require("api-utils/l10n/html").enable();
   } catch(error) {
     console.exception(error);
@@ -91,7 +95,7 @@ function startup(reason, options) {
     if (typeof(program.main) === 'function') {
 
       program.main({
-        loadReason: options.loadReason,
+        loadReason: loadReason,
         staticArgs: staticArgs 
       }, { 
         print: function print(_) { dump(_ + '\n') },

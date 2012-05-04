@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Loader, Require, unload, override } = require('@loader');
+const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
 
 exports.Loader = function(module, globals, packaging) {
   var options = packaging || JSON.parse(JSON.stringify(require("@packaging")));

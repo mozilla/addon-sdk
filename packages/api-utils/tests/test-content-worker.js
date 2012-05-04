@@ -6,8 +6,7 @@
 
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("timer");
-const { Loader, Require, override } = require("@loader");
-const options = require("@packaging");
+const { Loader } = require("test-harness/loader");
 
 function makeWindow(contentURL) {
   let content =
@@ -339,19 +338,17 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
   // Create a new module loader in order to be able to create a `console`
   // module mockup:
-  let loader = Loader(override(JSON.parse(JSON.stringify(options)), {
-    globals: {
-      console: {
-        log: hook.bind("log"),
-        info: hook.bind("info"),
-        warn: hook.bind("warn"),
-        error: hook.bind("error"),
-        debug: hook.bind("debug"),
-        exception: hook.bind("exception")
-      }
+  let loader = Loader(module, {
+    console: {
+      log: hook.bind("log"),
+      info: hook.bind("info"),
+      warn: hook.bind("warn"),
+      error: hook.bind("error"),
+      debug: hook.bind("debug"),
+      exception: hook.bind("exception")
     }
-  }));
-  let require = Require(loader, module);
+  });
+  let require = loader.require;
 
   // Intercept all console method calls
   let calls = [];

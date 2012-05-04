@@ -57,54 +57,65 @@ function install(data, reason) {}
 function uninstall(data, reason) {}
 
 function startup(data, reasonCode) {
-  let reason = REASON[reasonCode];
-  // TODO: Maybe we should perform read harness-options.json asynchronously,
-  // since we can't do anything until 'sessionstore-windows-restored' anyway.
-  let options = JSON.parse(readURI(URI + './harness-options.json'));
-  options.loadReason = reason;
-
-  // URI for the root of the XPI file.
-  // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
-  // (Used by l10n module in order to fetch `locale` folder)
-  options.rootURI = data.resourceURI.spec;
-
-  // Register a new resource 'domain' for this addon which is mapping to
-  // XPI's `resources` folder.
-  // Generate the domain name by using jetpack ID, which is the extension ID
-  // by stripping common characters that doesn't work as a domain name:
-  let uuidRe =
-    /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
-  let domain = options.
-    jetpackID.toLowerCase().
-    replace(/@/g, '-at-').
-    replace(/\./g, '-dot-').
-    replace(uuidRe, '$1');
-
-  let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
-  let prefixURI = 'resource://' + domain + '/';
-  loaderURI = prefixURI + options.loader;
-
-  resourceHandler.setSubstitution(domain, resourcesURI);
-
-  options.prefsURI = URI + 'defaults/preferences/prefs.js';
-  options.prefixURI = prefixURI;
-  options.main = { id: options.main, uri: prefixURI + options.mainPath };
-  options.id = options.jetpackID;
-  options.loaderURI = loaderURI;
-  options.version = options.metadata[options.name].version
-
-  // Adding `uriPrefix` for backwards compatibility.
-  options.uriPrefix = prefixURI;
-
-  // Import loader module using `Cu.import` and bootstrap module loader.
   try {
+    let reason = REASON[reasonCode];
+    // TODO: Maybe we should perform read harness-options.json asynchronously,
+    // since we can't do anything until 'sessionstore-windows-restored' anyway.
+    let options = JSON.parse(readURI(URI + './harness-options.json'));
+
+    options.loadReason = reason;
+    // URI for the root of the XPI file.
+    // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
+    // (Used by l10n module in order to fetch `locale` folder)
+    options.rootURI = data.resourceURI.spec;
+
+    // Register a new resource 'domain' for this addon which is mapping to
+    // XPI's `resources` folder.
+    // Generate the domain name by using jetpack ID, which is the extension ID
+    // by stripping common characters that doesn't work as a domain name:
+    let uuidRe =
+      /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
+
+    let domain = options.
+      jetpackID.toLowerCase().
+      replace(/@/g, '-at-').
+      replace(/\./g, '-dot-').
+      replace(uuidRe, '$1');
+
+    let resourcesURI = ioService.newURI(URI + '/resources/', null, null);
+    resourceHandler.setSubstitution(domain, resourcesURI);
+
+    let prefixURI = 'resource://' + domain + '/';
+    let manifest = options.manifest;
+    loaderURI = prefixURI + options.loader;
+
+    options.prefsURI = URI + 'defaults/preferences/prefs.js';
+    options.prefixURI = prefixURI;
+    // Adding `uriPrefix` for backwards compatibility.
+    options.uriPrefix = prefixURI;
+    options.main = { id: options.main, uri: prefixURI + options.mainPath };
+    options.id = options.jetpackID;
+    options.loaderURI = loaderURI;
+    options.version = options.metadata[options.name].version;
+    options.baseURI = 'resource:///modules/';
+
+    // Import loader module using `Cu.import` and bootstrap module loader.
     let module = Cu.import(loaderURI);
+    let resolve = module.resolve;
     unload = module.unload;
     loader = module.Loader(options);
     let require = Require(loader, { uri: loaderURI });
-    require('api-utils/addon/runner').startup(reason, { loader: loader });
+    require('api-utils/addon/runner').startup(reason, {
+      loader: loader,
+      // To workaround bug 674195 we pass in load from the same context as
+      // loader this way freeze in load won't throw.
+      load: module.load
+    });
   } catch (error) {
-    dump('Error: ' + error.message + '\n' + (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
+    dump(error + '\n');
+    dump(error.fileName + '\n')
+    dump('Error: ' + error.message + '\n' + (error.stack || error.fileName +
+         ': ' + error.lineNumber) + '\n');
   }
 };
 
