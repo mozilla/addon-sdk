@@ -52,7 +52,13 @@ function errorStackToJSON(stack) {
       var filename = deParentifyURL(line.slice(atIndex + 1, colonIndex));
       var lineNo = parseInt(line.slice(colonIndex + 1));
       var funcSig = line.slice(0, atIndex);
-      var funcName = funcSig.slice(0, funcSig.indexOf("("));
+      var endFuncName = funcSig.indexOf("(");
+      // Bug 751149: FF15 changed function signature
+      // Instead of: runTest([object Object])
+      // We now have: runTest
+      var funcName = endFuncName != -1
+                     ? funcSig.slice(0, endFuncName)
+                     : funcSig;
       frames.unshift({filename: filename,
                       funcName: funcName,
                       lineNo: lineNo});

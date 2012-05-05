@@ -88,7 +88,7 @@ function printFailedTests(tests, verbose, print) {
   }
 }
 
-exports.main = function main() {
+function main() {
   var testsStarted = false;
 
   if (!testsStarted) {
@@ -99,3 +99,6 @@ exports.main = function main() {
              dump);
   }
 };
+
+if (require.main === module)
+  main();

@@ -178,8 +178,38 @@ In the add-on script, we'll send the content script a message inside `onAttach`:
       }
     });
 
-The "replacePage" message isn't a built-in message: it's a message defined by
+The `replacePage` message isn't a built-in message: it's a message defined by
 the add-on in the `port.emit()` call.
+
+<div class="experimental">
+
+## Injecting CSS ##
+
+**Note that the feature described in this section is experimental
+at the moment: we'll very probably continue to support the feature,
+but details of the API might need to change.**
+
+Rather than injecting JavaScript into a page, you can inject CSS by
+setting the page-mod's `contentStyle` option:
+
+    var pageMod = require("page-mod").PageMod({
+      include: "*",
+      contentStyle: "body {" +
+                    "  border: 5px solid green;" +
+                    "}"
+    });
+
+As with `contentScript`, there's a corresponding `contentStyleFile` option
+that's given the URL of a CSS file in your "data" directory, and it is
+good practice to use this option in preference to `contentStyle` if the
+CSS is at all complex:
+
+    var pageMod = require("page-mod").PageMod({
+      include: "*",
+      contentStyleFile: require("self").data.url("my-style.css")
+    });
+
+</div>
 
 ## Learning More ##
 

@@ -71,6 +71,12 @@ windowObserver.on("open", onWindowOpen);
 
 function onWindowClose(chromeWindow) {
   if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
+  // Bug 751546: Emit `deactivate` event on window close immediatly
+  // Otherwise we are going to face "dead object" exception on `select` event
+  if (getActiveTab(chromeWindow) == selectedTab) {
+    observer._emit("deactivate", selectedTab);
+    selectedTab = null;
+  }
   getTabContainers(chromeWindow).forEach(function (container) {
     observer.ignore(container);
   });

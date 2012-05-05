@@ -37,6 +37,8 @@ const Page = Trait.compose(
         this.contentScriptWhen = options.contentScriptWhen;
       if ('contentScriptFile' in options)
         this.contentScriptFile = options.contentScriptFile;
+      if ('contentScriptOptions' in options)
+        this.contentScriptOptions = options.contentScriptOptions;
       if ('contentScript' in options)
         this.contentScript = options.contentScript;
       if ('allow' in options)

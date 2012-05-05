@@ -6,7 +6,7 @@
 
 const file = require("file");
 const { pathFor } = require("api-utils/system");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
 

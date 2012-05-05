@@ -17,9 +17,9 @@ Your add-on's `main.js` code is executed as soon as it is loaded. It is loaded
 when it is installed, when it is enabled, or when Firefox starts.
 
 If your add-on exports a function called `main()`, that function will be
-called immediately after main() will be invoked a moment after the overall
-`main.js` is evaluated, and after all top-level require() statements have
-run (so generally after all dependent modules have been loaded).
+called immediately after the overall `main.js` is evaluated, and after all
+top-level `require()` statements have run (so generally after all dependent
+modules have been loaded).
 
     exports.main = function (options, callbacks) {};
 
@@ -80,14 +80,14 @@ will be called when the add-on is unloaded.
 
     exports.onUnload = function (reason) {};
 
-<span class="aside">
-Note that if your add-on is unloaded with reason `disable`, it will not be
-notified about `uninstall` while it is disabled: see
-bug [571049](https://bugzilla.mozilla.org/show_bug.cgi?id=571049).
-</span>
-
 `reason` is one of the following strings describing the reason your add-on was
 unloaded:
+
+<span class="aside">But note that due to
+[bug 627432](https://bugzilla.mozilla.org/show_bug.cgi?id=627432),
+your `onUnload` listener will never be called with `uninstall`: it
+will only be called with `disable`. See in particular
+[comment 12 on that bug](https://bugzilla.mozilla.org/show_bug.cgi?id=627432#c12).</span>
 
 <pre>
 uninstall

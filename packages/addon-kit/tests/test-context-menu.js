@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let {Cc,Ci} = require("chrome");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";

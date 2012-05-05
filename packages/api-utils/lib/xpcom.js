@@ -8,56 +8,57 @@ const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);
 
-const { when: unload } = require('./unload');
-const { Base } = require('./base');
+const { merge } = require('./utils/object');
+const { Class, extend, mix } = require('./heritage');
 const { uuid } = require('./uuid');
 
 // This is a base prototype, that provides bare bones of XPCOM. JS based
 // components can be easily implement by extending it.
-const Unknown = Base.extend({
-  // Method `extend` is overridden so that resulting object will contain
-  // `interfaces` array property, containing elements from ancestor and all
-  // provided sources.
-  extend: function extend() {
-    let args = Array.slice(arguments);
-    return Base.extend.apply(this, args.concat([{
-      interfaces: args.reduce(function(interfaces, source) {
-        // If given source has `interfaces` property concatenate it's elements
-        // them resulting `interfaces` array, otherwise return resulting
-        // `interfaces` array.
-        return 'interfaces' in source ? source.interfaces.concat(interfaces)
-                                      : interfaces;
-      }, this.interfaces)
-    }]));
-  },
-  /**
-   * The `QueryInterface` method provides runtime type discovery used by XPCOM.
-   * This method return quired instance of `this` if given `iid` is listed in
-   * the `interfaces` property.
-   */
-  QueryInterface: function QueryInterface(iid) {
-    // For some reason there are cases when `iid` is `null`. In such cases we
-    // just return `this`. Otherwise we verify that component implements given
-    // `iid` interface.
-    if (iid && !this.interfaces.some(function(id) iid.equals(Ci[id])))
-      throw Cr.NS_ERROR_NO_INTERFACE;
-    return this;
-  },
-  /**
-   * Array of `XPCOM` interfaces (as strings) implemented by this component. All
-   * components implement `nsISupports` by default which is default value here.
-   * Provide array of interfaces implemented by an object when extending, to
-   * append them to this list (Please note that there is no need to repeat
-   * interfaces implemented by super as they will be added automatically).
-   */
-  interfaces: [ 'nsISupports' ]
-});
+const Unknown = new function() {
+  function hasInterface(component, iid) {
+    return component && component.interfaces &&
+      ( component.interfaces.some(function(id) iid.equals(Ci[id])) ||
+        component.implements.some(function($) hasInterface($, iid)) ||
+        hasInterface(Object.getPrototypeOf(component), iid));
+  }
+
+  return Class({
+    /**
+     * The `QueryInterface` method provides runtime type discovery used by XPCOM.
+     * This method return queried instance of `this` if given `iid` is listed in
+     * the `interfaces` property or in equivalent properties of objects in it's
+     * prototype chain. In addition it will look up in the prototypes under
+     * `implements` array property, this ways compositions made via `Class`
+     * utility will carry interfaces implemented by composition components.
+     */
+    QueryInterface: function QueryInterface(iid) {
+      // For some reason there are cases when `iid` is `null`. In such cases we
+      // just return `this`. Otherwise we verify that component implements given
+      // `iid` interface. This will be no longer necessary once Bug 748003 is
+      // fixed.
+      if (iid && !hasInterface(this, iid))
+        throw Cr.NS_ERROR_NO_INTERFACE;
+
+      return this;
+    },
+    /**
+     * Array of `XPCOM` interfaces (as strings) implemented by this component.
+     * All components implement `nsISupports` by default which is default value
+     * here. Provide array of interfaces implemented by an object when
+     * extending, to append them to this list (Please note that there is no
+     * need to repeat interfaces implemented by super as they will be added
+     * automatically).
+     */
+    interfaces: Object.freeze([ 'nsISupports' ])
+  });
+}
 exports.Unknown = Unknown;
 
 // Base exemplar for creating instances implementing `nsIFactory` interface,
 // that maybe registered into runtime via `register` function. Instances of
 // this factory create instances of enclosed component on `createInstance`.
-const Factory = Unknown.extend({
+const Factory = Class({
+  extends: Unknown,
   interfaces: [ 'nsIFactory' ],
   /**
    * All the descendants will get auto generated `id` (also known as `classID`
@@ -101,8 +102,13 @@ const Factory = Unknown.extend({
    * be automatically unregistered on add-on unload.
    */
   initialize: function initialize(options) {
-    options = options || {}
-    this.merge(options, { id: 'id' in options && options.id || uuid() });
+    merge(this, {
+      id: 'id' in options ? options.id : uuid(),
+      register: 'register' in options ? options.register : this.register,
+      unregister: 'unregister' in options ? options.unregister : this.unregister,
+      contract: 'contract' in options ? options.contract : null,
+      Component: options.Component
+    });
 
     // If service / factory has auto registration enabled then register.
     if (this.register)
@@ -121,14 +127,19 @@ const Factory = Unknown.extend({
       throw error instanceof Ci.nsIException ? error : Cr.NS_ERROR_FAILURE;
     }
   },
-  create: function create() this.component.new()
+  create: function create() this.Component()
 });
 exports.Factory = Factory;
 
 // Exemplar for creating services that implement `nsIFactory` interface, that
 // can be registered into runtime via call to `register`. This services return
 // enclosed `component` on `getService`.
-const Service = Factory.extend({
+const Service = Class({
+  extends: Factory,
+  initialize: function initialize(options) {
+    this.component = options.Component();
+    Factory.prototype.initialize.call(this, options);
+  },
   description: 'Jetpack generated service',
   /**
    * Creates an instance of the class associated with this factory.
@@ -149,7 +160,7 @@ function register(factory) {
   registerFactory(factory.id, factory.description, factory.contract, factory);
 
   if (factory.unregister)
-    unload(unregister.bind(null, factory));
+    require('./unload').when(unregister.bind(null, factory));
 }
 exports.register = register;
 
