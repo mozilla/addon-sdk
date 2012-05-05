@@ -56,6 +56,9 @@ define the preferences in your `package.json`, like so:
     require("simple-prefs").on("somePreference", onPrefChange);
     require("simple-prefs").on("someOtherPreference", onPrefChange);
 
+A special `"*"` listens to all pref changes (in the extension's branch).
+
+    require("simple-prefs").on("*", onPrefChange);
 
 @param prefName {String}
   The name of the preference to watch for changes.

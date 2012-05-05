@@ -7,6 +7,7 @@ const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
 const { jetpackID } = require("@packaging");
+const { off } = require('api-utils/event/core');
 
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
@@ -97,10 +98,21 @@ exports.testPrefListener = function(test) {
   };
 
   sp.on("test-listen", listener);
-
   sp.prefs["test-listen"] = true;
+
+  // Wildcard listen
+  let toSet = ['wildcard1','wildcard.pref2','wildcard.even.longer.test'];
+  let observed = [];
+  sp.on('*',function(prefName) { observed.push(prefName); });
+  toSet.forEach(function(pref) {
+    sp.prefs[pref] = true;
+  });
+  toSet.forEach(function(pref) {
+    test.assert(observed.indexOf(pref) > -1, "Wildcard observed " + pref);
+  });
   loader.unload();
 };
+
 
 exports.testBtnListener = function(test) {
   test.waitUntilDone();

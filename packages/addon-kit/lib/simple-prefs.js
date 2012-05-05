@@ -27,6 +27,7 @@ const branch = Cc["@mozilla.org/preferences-service;1"].
 function preferenceChange(subject, topic, name) {
   if (topic === 'nsPref:changed')
     emit(target, name, name);
+    emit(target, '*', name);
 }
 branch.addObserver('', preferenceChange, false);
 
