@@ -300,7 +300,7 @@ let SelectionListenerManager = Class({
   },
 
   onSelect : function onSelect() {
-    setTimeout(emit, 0, exports, "select");
+    setTimeout(emit, 0, module.exports, "select");
   },
 
   /**
