@@ -66,7 +66,3 @@ const target = Class({
   prefs: prefs
 })();
 module.exports = target;
-
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(target, 'workaround-bug-673468');

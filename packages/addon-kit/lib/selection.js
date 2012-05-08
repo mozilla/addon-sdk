@@ -417,7 +417,4 @@ var selection = Class({
   implements: [ Selection, SelectionIterator ]
 })(0);
 
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(selection, 'workaround-bug-673468');
 module.exports = selection;
