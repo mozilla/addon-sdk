@@ -55,7 +55,3 @@ exports.removeListener = function removeListener(type, listener) {
   // causing misbehavior. This way we make sure all arguments are passed.
   off(exports, type, listener);
 };
-
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(exports, 'workaround-bug-673468');
