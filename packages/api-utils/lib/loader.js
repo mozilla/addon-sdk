@@ -48,7 +48,7 @@ function freeze(object) {
 }
 
 // Returns map of given `object`-s own property descriptors.
-function getOwnPropertiesDescriptor(object) {
+function getOwnPropertyDescriptors(object) {
   let descriptor = {};
   getOwnPropertyNames(object).forEach(function(name) {
     descriptor[name] = getOwnPropertyDescriptor(object, name)
@@ -82,7 +82,7 @@ function iced(f) {
 // useful during loader bootstrap when other util modules can't be used &
 // thats only case where this export should be used.
 const override = iced(function override(target, properties) {
-  return defineProperties(target, getOwnPropertiesDescriptor(properties));
+  return defineProperties(target, getOwnPropertyDescriptors(properties));
 });
 exports.override = override;
 

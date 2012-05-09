@@ -94,7 +94,6 @@ function startup(data, reasonCode) {
     // Adding `uriPrefix` for backwards compatibility.
     options.uriPrefix = prefixURI;
     options.main = { id: options.main, uri: prefixURI + options.mainPath };
-    options.loaderURI = loaderURI;
     options.version = options.metadata[options.name].version;
     options.baseURI = 'resource:///modules/';
 

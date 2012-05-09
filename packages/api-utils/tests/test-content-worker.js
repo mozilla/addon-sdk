@@ -8,7 +8,6 @@ const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("api-utils/timer");
 const { Loader, Require, override } = require("test-harness/loader");
 const { Worker } = require('api-utils/content/worker');
-const options = require("@packaging");
 const xulApp = require("api-utils/xul-app");
 
 function makeWindow(contentURL) {
