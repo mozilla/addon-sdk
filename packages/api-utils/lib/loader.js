@@ -191,7 +191,8 @@ const resolve = iced(function resolve(id, baseID) {
   let base = baseID ? baseID.split('/') : [ '.' ];
   if (base.length > 1)
     base.pop();
-  while (let path = paths.shift()) {
+  while (paths.length) {
+    let path = paths.shift();
     if (path === '..') {
       if (base.length && base[base.length - 1] !== '..') {
         if (base.pop() === '.')
