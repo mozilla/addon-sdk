@@ -14,7 +14,7 @@ const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { sandbox, evaluate, load } = require("../sandbox");
-const { merge } = require('../utils/object');
+const { override } = require('../utils/object');
 
 /* Trick the linker in order to ensure shipping these files in the XPI.
   require('./content-proxy.js');
@@ -127,7 +127,7 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
-    merge(content, {
+    override(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
       get top() content,
