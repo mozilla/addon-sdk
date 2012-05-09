@@ -64,12 +64,13 @@ freeze(Function);
 freeze(Function.prototype);
 freeze(Array);
 freeze(Array.prototype);
+freeze(String);
+freeze(String.prototype);
 
-// This function takes `f` function and optional `prototype` that is set as
-// `f.prototype`. If `prototype` is not passed then `undefined` is used. Both
-// `prototype` and `f` gets frozen and `f` is returned back. We need to do
-// this kind of deep freeze with all the exposed functions so that untrusted
-// code won't be able to use functions or their prototypes as a message channel.
+// This function takes `f` function sets it's `prototype` to undefined and
+// freezes it. We need to do this kind of deep freeze with all the exposed
+// functions so that untrusted code won't be able to use them a message
+// passing channel.
 function iced(f) {
   f.prototype = undefined;
   return freeze(f);
@@ -185,29 +186,28 @@ function isRelative(id) { return id[0] === '.'; }
 // Utility function to normalize module `uri`s so they have `.js` extension.
 function normalize(uri) { return uri.substr(-3) === '.js' ? uri : uri + '.js'; }
 // Utility function to join paths.
-const resolve = iced(function resolve(id, base) {
-  var path, paths, last
-  paths = id.split('/')
-  base = base ? base.split('/') : [ '.' ]
+const resolve = iced(function resolve(id, baseID) {
+  let paths = id.split('/');
+  let base = baseID ? baseID.split('/') : [ '.' ];
   if (base.length > 1)
-    base.pop()
-  while ((path = paths.shift())) {
+    base.pop();
+  while (let path = paths.shift()) {
     if (path === '..') {
       if (base.length && base[base.length - 1] !== '..') {
         if (base.pop() === '.')
-          base.push(path)
+          base.push(path);
       }
       else {
-        base.push(path)
+        base.push(path);
       }
     }
     else if (path !== '.') {
-      base.push(path)
+      base.push(path);
     }
   }
   if (base[base.length - 1].substr(-1) === '.')
-    base.push('')
-  return base.join('/')
+    base.push('');
+  return base.join('/');
 });
 exports.resolve = resolve;
 
@@ -225,7 +225,7 @@ exports.resolveID = resolveID;
 const Require = iced(function Require(loader, requirer) {
   let { baseURI, modules, resolve } = loader;
 
-  return iced(override(function require(id) {
+  function require(id) {
     if (!id) // Throw if `id` is not passed.
       throw Error('you must provide a module name when calling require() from '
                   + requirer.id, requirer.uri);
@@ -233,7 +233,7 @@ const Require = iced(function Require(loader, requirer) {
     // Resolves `uri` of module using loaders resolver function.
     let uri = resolve(id, requirer, baseURI);
 
-    if (uri === null) // Throw if `uri` can not be resolved.
+    if (!uri) // Throw if `uri` can not be resolved.
       throw Error('Module: Can not resolve "' + id + '" module required by ' +
                   requirer.id + ' located at ' + requirer.uri, requirer.uri);
 
@@ -242,14 +242,17 @@ const Require = iced(function Require(loader, requirer) {
     if (uri in modules) {
       module = modules[uri];
     }
-    // Otherwise load and cache it. We also freeze module to prevent surprises.
+    // Otherwise load and cache it. We also freeze module to prevent it from
+    // further changes at runtime.
     else {
       module = modules[uri] = Module(id, uri);
       freeze(load(loader, module));
     }
 
     return module.exports;
-  }, { main: loader.main })); // `require.main` is main `module`.
+  }
+  require.main = loader.main; // `require.main` is main `module`.
+  return iced(require);
 });
 exports.Require = Require;
 
@@ -271,6 +274,9 @@ const unload = iced(function unload(loader, reason) {
   // This allows any code to cleanup on loader unload regardless of how
   // it was loaded. To handle unload for specific loader subject may be
   // asserted against loader.destructor or require('@packaging').destructor.
+  // Note: We don not destroy loader's module cache or sandboxes map as
+  // some modules may do cleanup in subsequent turns of event loop. Destroying
+  // cache may cause module identity problems in such cases.
   let subject = { wrappedJSObject: loader.destructor };
   notifyObservers(subject, 'sdk:loader:destroy', reason);
 });
@@ -278,19 +284,22 @@ exports.unload = unload;
 
 // Function makes new loader that can be used to load CommonJS modules
 // described by a given `options.manifest`. Loader takes following options:
-// - `manifest`: Map describing module dependency graph that created loader
-//   will follow. This is required property.
-// - `id`: Unique identifier string for the created loader instance. On loader
-//   unload observer service notification for `'sdk:destroy:loader:' + id` will
-//   be dispatched (required).
-// - `mainID`: Id of the main module (required).
-// - `mainPath`: Path of the main module (required).
+// - `baseURI`: All the module require terms are resolved relative to it,
+//    unless custom `resolve` function is used. Also in that case `baseURI`
+//    is passed to it a third argument.
+// - `main.id`: Id of the main module.
+// - `main.uri`: URI of the main module.
 // - `globals`: Optional map of globals, that all module scopes will inherit
 //   from. Map is also exposed under `globals` property of the returned loader
 //   so it can be extended further later. Defaults to `{}`.
-// - `modules` Optional map of modules that will be used by this loader as
-//   a module cache. This is also exposed as `modules` property of the returned
-//   loader. Defaults to `{}`.
+// - `modules` Optional map of built-in module exports mapped by module id.
+//   These modules will incorporated into module cache. Each module will be
+//   frozen.
+// - `resolve` Optional module `id` resolution function. If given it will be
+//   used to resolve module URIs, by calling it with require term, requirer
+//   module object (that has `uri` property) and `baseURI` of the loader.
+//   If `resolve` does not returns `uri` string exception will be thrown by
+//   an associated `require` call.
 const Loader = iced(function Loader(options) {
   let { main, baseURI, modules, globals, resolve } = override({
     main: {},
@@ -302,7 +311,9 @@ const Loader = iced(function Loader(options) {
 
   // We create an identity object that will be dispatched on an unload
   // event as subject. This way unload listeners will be able to assert
-  // which loader is unloaded.
+  // which loader is unloaded. Please note that we intentionally don't
+  // use `loader` as subject to prevent a loader access leakage through
+  // observer notifications.
   let destructor = freeze(create(null));
 
   // Define pseudo modules.
@@ -330,9 +341,9 @@ const Loader = iced(function Loader(options) {
     destructor: destructor,
     baseURI: baseURI,
     resolve: resolve,
-    modules: modules,
     globals: globals,
-    sandboxes: {}           // Map of module sandboxes.
+    modules: modules,   // Map of module objects indexed by module URIs.
+    sandboxes: {}       // Map of module sandboxes indexed by module URIs.
   });
 });
 exports.Loader = Loader;

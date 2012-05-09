@@ -19,9 +19,9 @@
 'use strict';
 
 /* Workarounds to include dependencies in the manifest
-require('chrome')
-require('api-utils/loader')
-require('api-utils/addon/runner')
+require('chrome')                 // Otherwise CFX will complain about Components
+require('api-utils/loader')       // Otherwise CFX will stip out loader.js
+require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 */
 
 // Load using import as at this point we don't have require.
@@ -39,17 +39,17 @@ exports.Module = Module;
 exports.unload = unload;
 exports.override = override;
 
-// Normalizes single term module ids by adding `sdk/` prefix to them.
-function normalize(id) { return isBuiltin(id) ? 'sdk/' + id : id; }
 // Returns true for single term module ids.
 function isBuiltin(id) { return !~id.indexOf('/'); }
+// Normalizes single term module ids by adding `sdk/` prefix to them.
+function normalize(id) { return isBuiltin(id) ? 'sdk/' + id : id; }
 
 function Loader(options) {
   let { prefixURI, manifest } = options;
   options = override(override({}, options), {
     resolve: function resolve(id, requirer, baseURI) {
-      let path = requirer.uri.split(prefixURI).pop();
-      let entry = path in manifest && manifest[path];
+      let requirerPath = requirer.uri.split(prefixURI).pop();
+      let entry = requirerPath in manifest && manifest[requirerPath];
       let uri = null;
 
 
@@ -57,14 +57,16 @@ function Loader(options) {
       // Note: Standard library modules like '@panel' will be present in
       // manifest unless they were moved to platform.
       if (entry) {
-        let requirement = entry && entry.requirements[id];
+        let requirement = entry.requirements[id];
         // If requirer entry is in manifest and it's requirement is not, than
         // it has no authority to load since linker was not able to find it.
         if (!requirement)
-          throw Error('Module: ' + (requirer.id) + ' located at ' + requirer.uri
+          throw Error('Module: ' + requirer.id + ' located at ' + requirer.uri
                       + ' has no authority to load: ' + id, requirer.uri);
 
-        let path = requirement.path
+        let path = requirement.path;
+        // We normalize SDK core module paths like `panel` to `sdk/panel` to
+        // allow single term require statements.
         uri = isBuiltin(path) ? resolveID(normalize(path), requirer, baseURI) :
                                 prefixURI + path;
       }

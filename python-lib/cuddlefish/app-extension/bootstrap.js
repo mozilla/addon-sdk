@@ -98,9 +98,8 @@ function startup(data, reasonCode) {
     options.version = options.metadata[options.name].version;
     options.baseURI = 'resource:///modules/';
 
-    // Import loader module using `Cu.import` and bootstrap module loader.
+    // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
     let module = Cu.import(loaderURI);
-    let resolve = module.resolve;
     unload = module.unload;
     loader = module.Loader(options);
     let require = Require(loader, { uri: loaderURI });
@@ -111,8 +110,6 @@ function startup(data, reasonCode) {
       load: module.load
     });
   } catch (error) {
-    dump(error + '\n');
-    dump(error.fileName + '\n')
     dump('Error: ' + error.message + '\n' + (error.stack || error.fileName +
          ': ' + error.lineNumber) + '\n');
   }
