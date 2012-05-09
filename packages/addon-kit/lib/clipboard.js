@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { Cc, Ci, btoa } = require("chrome");
+const { Cc, Ci } = require("chrome");
 const { DataURL } = require("api-utils/url");
 const errors = require("api-utils/errors");
 const apiUtils = require("api-utils/api-utils");
@@ -249,10 +249,9 @@ exports.get = function(aDataType) {
 
       let image = data.value;
 
-      // Due to the differences in how the images in the clipboard could be
-      // stored, the checks below are needed. The clipboard could be already
-      // provide the image as byte streams, but also  as pointer, or as
-      // image container.
+      // Due to the differences in how images could be stored in the clipboard
+      // the checks below are needed. The clipboard could already provide the
+      // image as byte streams, but also as pointer, or as image container.
       // If it's not possible obtain a byte stream, the function returns `null`.
       if (image instanceof Ci.nsISupportsInterfacePointer)
         image = image.data;
@@ -269,7 +268,8 @@ exports.get = function(aDataType) {
         dataURL.data = binaryStream.readBytes(binaryStream.available());
 
         data = dataURL.toString();
-      } else
+      }
+      else
         data = null;
 
       break;

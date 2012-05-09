@@ -243,13 +243,13 @@ exports.testDataURLparse = function (test) {
 
 exports.testDataURLparseBase64 = function (test) {
   const { DataURL } = url;
-  const { base64Decode } = require("api-utils/utils/data");
+  const { decode } = require("./base64");
 
   let base64Data = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAQ0lEQVRYhe3OwQkAIBTD0Oyqg7idbqUr9B9EhBRyLY8F+0akEyBAgIBvAI1eCuaIEiBAgAABzwH50sNqAgQIEPAYcABJQw5EXdmcNgAAAABJRU5ErkJggg==";
   let dataURL = new DataURL("data:image/png;base64," + base64Data);
 
   test.assertEqual(dataURL.base64, true, "base64 is true for base64 encoded data uri")
-  test.assertEqual(dataURL.data, base64Decode(base64Data), "data is properly decoded")
+  test.assertEqual(dataURL.data, decode(base64Data), "data is properly decoded")
   test.assertEqual(dataURL.mimeType, "image/png", "mimeType is set properly")
   test.assertEqual(Object.keys(dataURL.parameters).length, 1, "one parameters specified");
 

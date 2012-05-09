@@ -384,8 +384,6 @@ const Loader = iced(function Loader(options) {
         Cu: Cu,
         Cr: Cr,
         Cm: Cm,
-        atob: atob,
-        btoa: btoa,
         components: Components
       }),
     }),

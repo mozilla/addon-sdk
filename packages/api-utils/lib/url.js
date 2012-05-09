@@ -4,8 +4,10 @@
 
 "use strict";
 
-const { Cc, Ci, Cr, atob, btoa } = require("chrome");
-const { Class } = require('api-utils/heritage');
+const { Cc, Ci, Cr } = require("chrome");
+
+const { Class } = require("./heritage");
+const base64 = require("./base64");
 
 var ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
@@ -134,14 +136,14 @@ const DataURL = Class({
       delete this.parameters["base64"];
   },
   /**
-  * Initialize the Data URL object. If a uri is give, it will be parsed.
+  * Initialize the Data URL object. If a uri is given, it will be parsed.
   *
   * @param {String} [uri] The uri to parse
   *
   * @throws {URIError} if the Data URL is malformed
    */
   initialize: function(uri) {
-    // Due to the bug 751834 is not possible document and define these
+    // Due to bug 751834 it is not possible document and define these
     // properties in the prototype.
 
     /**
@@ -166,7 +168,7 @@ const DataURL = Class({
 
     uri = String(uri);
 
-    let matches = uri.match(/^data:([^,]*),([\s\S]*)/i);
+    let matches = uri.match(/^data:([^,]*),(.*)$/i);
 
     if (!matches)
       throw new URIError("Malformed Data URL: " + uri);
@@ -191,7 +193,7 @@ const DataURL = Class({
     }
 
     if (this.base64)
-      this.data = atob(this.data);
+      this.data = base64.decode(this.data);
 
   },
 
@@ -213,11 +215,12 @@ const DataURL = Class({
       parametersList.push(encodedParameter);
     }
 
+    // If there is at least a parameter, add an empty string in order
+    // to start with a `;` on join call.
     if (parametersList.length > 0)
       parametersList.unshift("");
 
-
-    let data = this.base64 ? btoa(this.data) : this.data;
+    let data = this.base64 ? base64.encode(this.data) : this.data;
 
     return "data:" +
       this.mimeType +

@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, btoa, atob } = require("chrome");
+const { Cc, Ci, Cu } = require("chrome");
+const base64 = require("../base64");
+
 const IOService = Cc["@mozilla.org/network/io-service;1"].
   getService(Ci.nsIIOService);
 
@@ -32,7 +34,7 @@ exports.getFaviconURIForLocation = function getFaviconURIForLocation(uri) {
   catch(e) {
     if (!DEF_FAVICON) {
       DEF_FAVICON = PNG_B64 +
-                    btoa(getChromeURIContent(DEF_FAVICON_URI));
+                    base64.encode(getChromeURIContent(DEF_FAVICON_URI));
     }
     return DEF_FAVICON;
   }
@@ -59,9 +61,18 @@ exports.getChromeURIContent = getChromeURIContent;
 /**
  * Creates a base-64 encoded ASCII string from a string of binary data.
  */
-exports.base64Encode = btoa;
+exports.base64Encode = function base64Encode(data) {
+  console.warn('require("api-utils/utils/data").base64Encode is deprecated, ' +
+               'please use require("api-utils/base64").encode instead');
 
+  return base64.encode(data);
+}
 /**
  * Decodes a string of data which has been encoded using base-64 encoding.
  */
-exports.base64Decode = atob;
+exports.base64Decode = function base64Decode(data) {
+  console.warn('require("api-utils/utils/data").base64Dencode is deprecated, ' +
+               'please use require("api-utils/base64").decode instead');
+
+  return base64.decode(data);
+}
