@@ -16,7 +16,6 @@ exports['test loader'] = function(assert) {
   let options = JSON.parse(JSON.stringify(packaging));
 
   let loader = Loader(override(options, {
-    id: Math.random().toString(36).slice(2),
     globals: {
       print: print,
       foo: 1

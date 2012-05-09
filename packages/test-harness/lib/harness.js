@@ -235,7 +235,7 @@ function nextIteration(tests) {
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
     let require = Require(loader, module);
     require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: require('@packaging').enableE10s,
+      testOutOfProcess: false,
       testInProcess: true,
       stopOnError: stopOnError,
       filter: filter,

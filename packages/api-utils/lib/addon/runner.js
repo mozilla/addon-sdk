@@ -9,7 +9,7 @@ const { override, Sandbox, evaluate, load } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
-const { loadReason, prefsURI } = require('@packaging');
+const { loadReason } = require('self').loadReason;
 const globals = require('../globals!');
 
 const NAME2TOPIC = {
@@ -24,7 +24,7 @@ const NAME2TOPIC = {
 const APP_STARTUP = NAME2TOPIC[name] || NAME2TOPIC['*'];
 
 // Initializes default preferences
-function setDefaultPrefs() {
+function setDefaultPrefs(prefsURI) {
   const prefs = Cc["@mozilla.org/preferences-service;1"].
                 getService(Ci.nsIPrefService).
                 QueryInterface(Ci.nsIPrefBranch2);
@@ -84,7 +84,7 @@ function startup(reason, options) {
   try {
     // TODO: When bug 564675 is implemented this will no longer be needed
     // Always set the default prefs, because they disappear on restart
-    setDefaultPrefs();
+    setDefaultPrefs(options.prefsURI);
 
     // this is where the addon's main.js finally run.
     let program = load(loader, loader.main).exports;

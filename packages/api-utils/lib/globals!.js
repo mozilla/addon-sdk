@@ -5,9 +5,10 @@
 
 "use strict";
 
-let { Cc, Ci } = require('chrome');
+let { Cc, Ci, CC } = require('chrome');
 let { PlainTextConsole } = require('./plain-text-console');
-let options = require('@packaging');
+let { stdout } = require('api-utils/system');
+let ScriptError = CC('@mozilla.org/scripterror;1', 'nsIScriptError');
 let consoleService = Cc['@mozilla.org/consoleservice;1'].getService().
                      QueryInterface(Ci.nsIConsoleService);
 
@@ -15,38 +16,17 @@ let consoleService = Cc['@mozilla.org/consoleservice;1'].getService().
 // To workaround this issue we write to a special file from which cfx will
 // read and print to the console.
 // For more details see: bug-673383
-exports.dump = (function define(global) {
-  const PR_WRONLY = 0x02;
-  const PR_CREATE_FILE = 0x08;
-  const PR_APPEND = 0x10;
-  let print = Object.getPrototypeOf(global).dump
-  if (print) return print;
-  if ('logFile' in options) {
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
-    file.initWithPath(options.logFile);
-    let stream = Cc["@mozilla.org/network/file-output-stream;1"].
-                 createInstance(Ci.nsIFileOutputStream);
-    stream.init(file, PR_WRONLY|PR_CREATE_FILE|PR_APPEND, -1, 0);
-
-    return function print(message) {
-      message = String(message);
-      stream.write(message, message.length);
-      stream.flush();
-    };
-  }
-  return dump;
-})(this);
+exports.dump = stdout.write;
 
 // Bug 718230: We need to send console messages to stdout and JS Console
 function forsakenConsoleDump(msg, level) {
-  exports.dump(msg);
+  stdout.write(msg);
 
-  if (level === "error") {
-    let err = Cc["@mozilla.org/scripterror;1"].
-              createInstance(Ci.nsIScriptError);
-    msg = msg.replace(/^error: /, "");
-    err.init(msg, null, null, 0, 0, 0, "Add-on SDK");
-    consoleService.logMessage(err);
+  if (level === 'error') {
+    let error = ScriptError();
+    msg = msg.replace(/^error: /, '');
+    error.init(msg, null, null, 0, 0, 0, 'Add-on SDK');
+    consoleService.logMessage(error);
   }
   else
     consoleService.logStringMessage(msg);

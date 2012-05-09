@@ -5,9 +5,9 @@
 "use strict";
 
 var obsvc = require("api-utils/observer-service");
-var system = require("api-utils/system");
-var options = require('@packaging');
-var {Cc,Ci} = require("chrome");
+var { exit, stdout } = require("api-utils/system");
+var { cfxArgs } = require("api-utils/system");
+var { Cc, Ci}  = require("chrome");
 
 function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit, print) {
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
@@ -93,10 +93,8 @@ function main() {
 
   if (!testsStarted) {
     testsStarted = true;
-    runTests(options.iterations, options.filter,
-             options.profileMemory, options.stopOnError, options.verbose,
-             system.exit,
-             dump);
+    runTests(cfxArgs.iterations, cfxArgs.filter, cfxArgs.profileMemory,
+             cfxArgs.stopOnError, cfxArgs.verbose, exit, stdout.write);
   }
 };
 

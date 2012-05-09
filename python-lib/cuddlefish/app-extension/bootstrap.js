@@ -89,13 +89,22 @@ function startup(data, reasonCode) {
     let manifest = options.manifest;
     loaderURI = prefixURI + options.loader;
 
-    options.prefsURI = URI + 'defaults/preferences/prefs.js';
     options.prefixURI = prefixURI;
+    options.id = options.jetpackID;
     // Adding `uriPrefix` for backwards compatibility.
     options.uriPrefix = prefixURI;
     options.main = { id: options.main, uri: prefixURI + options.mainPath };
     options.version = options.metadata[options.name].version;
     options.baseURI = 'resource:///modules/';
+    options.cfxArgs = {
+      allTestModules: options.allTestModules,
+      iterations: options.iterations,
+      filter: options.filter,
+      profileMemory: options.profileMemory,
+      stopOnError: options.stopOnError,
+      verbose: options.verbose,
+
+    };
 
     // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
     let module = Cu.import(loaderURI);
@@ -106,7 +115,8 @@ function startup(data, reasonCode) {
       loader: loader,
       // To workaround bug 674195 we pass in load from the same context as
       // loader this way freeze in load won't throw.
-      load: module.load
+      load: module.load,
+      prefsURI: URI + 'defaults/preferences/prefs.js'
     });
   } catch (error) {
     dump('Error: ' + error.message + '\n' + (error.stack || error.fileName +

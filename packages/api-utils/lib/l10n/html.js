@@ -5,7 +5,8 @@
 const { Ci } = require("chrome");
 const events = require("api-utils/system/events");
 const core = require("api-utils/l10n/core");
-const { prefixURI } = require("@packaging");
+
+const assetsURI = require('self').data.url();
 
 // Taken from Gaia:
 // https://github.com/andreasgal/gaia/blob/04fde2640a7f40314643016a5a6c98bf3755f5fd/webapi.js#L1470
@@ -46,7 +47,7 @@ function onContentWindow(event) {
     return;
 
   // Accept only document from this addon
-  if (document.location.href.indexOf(prefixURI) !== 0)
+  if (document.location.href.indexOf(assetsURI) !== 0)
     return;
 
   // First hide content of the document in order to have content blinking
