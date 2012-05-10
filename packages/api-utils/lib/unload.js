@@ -8,7 +8,7 @@
 
 
 const { on, off } = require('./system/events');
-const destructor = require('@destructor');
+const unloadSubject = require('@loader-unload');
 
 const observers = [];
 const unloaders = [];
@@ -69,7 +69,7 @@ when(function(reason) {
 on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
   // If this loader is unload then `subject.wrappedJSObject` will be
   // `destructor`.
-  if (subject.wrappedJSObject === destructor) {
+  if (subject.wrappedJSObject === unloadSubject) {
     off('sdk:loader:destroy', onunload);
     unload(reason);
   }

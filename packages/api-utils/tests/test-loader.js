@@ -5,7 +5,7 @@
 'use strict';
 
 const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
-const packaging = require('@packaging');
+const packaging = require('@loader-options');
 
 exports['test loader'] = function(assert) {
   var prints = [];

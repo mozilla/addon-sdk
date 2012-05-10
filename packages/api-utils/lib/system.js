@@ -6,7 +6,7 @@
 'use strict';
 
 const { Cc, Ci, CC } = require('chrome');
-const options = require('@packaging');
+const options = require('@loader-options');
 const file = require('./file');
 const runtime = require("./runtime.js");
 
@@ -38,8 +38,6 @@ const { eAttemptQuit: E_ATTEMPT, eForceQuit: E_FORCE } = appStartup;
  * Parsed JSON object that was passed via `cfx --static-args "{ foo: 'bar' }"`
  */
 exports.staticArgs = options.staticArgs;
-
-exports.cfxArgs = options.cfxArgs;
 
 /**
  * Environment variables. Environment variables are non-enumerable properties

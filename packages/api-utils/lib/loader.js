@@ -274,7 +274,7 @@ const unload = iced(function unload(loader, reason) {
   // subject is a unique object created per loader instance.
   // This allows any code to cleanup on loader unload regardless of how
   // it was loaded. To handle unload for specific loader subject may be
-  // asserted against loader.destructor or require('@packaging').destructor.
+  // asserted against loader.destructor or require('@loader-unload')
   // Note: We don not destroy loader's module cache or sandboxes map as
   // some modules may do cleanup in subsequent turns of event loop. Destroying
   // cache may cause module identity problems in such cases.
@@ -319,8 +319,8 @@ const Loader = iced(function Loader(options) {
 
   // Define pseudo modules.
   modules = override({
-    '@destructor': destructor,
-    '@packaging': JSON.parse(JSON.stringify(options)),
+    '@loader-unload': destructor,
+    '@loader-options': JSON.parse(JSON.stringify(options)),
     'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
                 components: Components }
   }, modules);

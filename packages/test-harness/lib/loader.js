@@ -7,7 +7,7 @@
 const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
 
 exports.Loader = function(module, globals, packaging) {
-  let options = override({}, packaging || require("@packaging"));
+  let options = override({}, packaging || require("@loader-options"));
   let prefixURI = options.prefixURI;
   globals = override(override({}, require('api-utils/globals!')), globals || {});
   override(options, { globals: globals });

@@ -6,7 +6,7 @@
 
 var obsvc = require("api-utils/observer-service");
 var { exit, stdout } = require("api-utils/system");
-var { cfxArgs } = require("api-utils/system");
+var cfxArgs = require("@test-options");
 var { Cc, Ci}  = require("chrome");
 
 function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit, print) {
