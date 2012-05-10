@@ -186,29 +186,18 @@ function isRelative(id) { return id[0] === '.'; }
 // Utility function to normalize module `uri`s so they have `.js` extension.
 function normalize(uri) { return uri.substr(-3) === '.js' ? uri : uri + '.js'; }
 // Utility function to join paths.
-const resolve = iced(function resolve(id, baseID) {
+const resolve = iced(function resolve(id, base) {
   let paths = id.split('/');
-  let base = baseID ? baseID.split('/') : [ '.' ];
-  if (base.length > 1)
-    base.pop();
+  let result = base.split('/');
+  result.pop();
   while (paths.length) {
     let path = paths.shift();
-    if (path === '..') {
-      if (base.length && base[base.length - 1] !== '..') {
-        if (base.pop() === '.')
-          base.push(path);
-      }
-      else {
-        base.push(path);
-      }
-    }
-    else if (path !== '.') {
-      base.push(path);
-    }
+    if (path === '..')
+      result.pop();
+    else if (path !== '.')
+      result.push(path);
   }
-  if (base[base.length - 1].substr(-1) === '.')
-    base.push('');
-  return base.join('/');
+  return result.join('/');
 });
 exports.resolve = resolve;
 
