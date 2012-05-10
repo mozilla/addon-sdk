@@ -10,7 +10,7 @@ const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
 const { loadReason } = require('self').loadReason;
-const globals = require('../globals!');
+const globals = require('../globals');
 
 const NAME2TOPIC = {
   'Firefox': 'sessionstore-windows-restored',
