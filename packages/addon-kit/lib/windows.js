@@ -125,7 +125,10 @@ function getRegisteredWindow(chromeWindow) {
  * @see BrowserWindowTrait
  */
 function BrowserWindow(options) {
-  let window = getRegisteredWindow(options.window);
+  let window = null;
+
+  if ("window" in options)
+    window = getRegisteredWindow(options.window);
 
   return (window || BrowserWindowTrait(options))._public;
 }
@@ -197,7 +200,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     get activeWindow() {
       let window = windowUtils.activeBrowserWindow;
 
-      return window ? Browser({window: window}) : null;
+      return window ? BrowserWindow({window: window}) : null;
     },
     open: function open(options) {
       if (typeof options === "string")
