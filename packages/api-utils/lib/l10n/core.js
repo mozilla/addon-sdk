@@ -7,7 +7,7 @@ const { Cc, Ci } = require("chrome");
 const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
 
 // Get URI for the addon root folder:
-const { rootURI } = require("@loader-options");
+const { rootURI } = require("@loader/options");
 
 let globalHash = {};
 let bestMatchingLocale = null;

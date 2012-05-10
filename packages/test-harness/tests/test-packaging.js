@@ -5,7 +5,7 @@
 var url = require("url");
 var file = require("file");
 var {Cm,Ci} = require("chrome");
-var options = require("@loader-options");
+var options = require("@loader/options");
 
 exports.testPackaging = function(test) {
   test.assertEqual(options.main.id,

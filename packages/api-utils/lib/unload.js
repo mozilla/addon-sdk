@@ -8,7 +8,7 @@
 
 
 const { on, off } = require('./system/events');
-const unloadSubject = require('@loader-unload');
+const unloadSubject = require('@loader/unload');
 
 const observers = [];
 const unloaders = [];

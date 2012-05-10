@@ -41,6 +41,8 @@ exports.override = override;
 
 // Returns true for single term module ids.
 function isBuiltin(id) { return !~id.indexOf('/'); }
+// Returns true if module contains `@` character.
+function isPseudo(id) { return ~id.indexOf('@'); }
 // Normalizes single term module ids by adding `sdk/` prefix to them.
 function normalize(id) { return isBuiltin(id) ? 'sdk/' + id : id; }
 
@@ -54,7 +56,7 @@ function Loader(options) {
 
 
       // If manifest entry for this requirement is present we follow manifest.
-      // Note: Standard library modules like '@panel' will be present in
+      // Note: Standard library modules like 'panel' will be present in
       // manifest unless they were moved to platform.
       if (entry) {
         let requirement = entry.requirements[id];
@@ -66,9 +68,11 @@ function Loader(options) {
 
         let path = requirement.path;
         // We normalize SDK core module paths like `panel` to `sdk/panel` to
-        // allow single term require statements.
+        // allow single term require statements. If it's a pseudo module just
+        // resolve it to `baseURI`.
         uri = isBuiltin(path) ? resolveID(normalize(path), requirer, baseURI) :
-                                prefixURI + path;
+              isPseudo(path) ? resolveID(path, null, baseURI) :
+              prefixURI + path;
       }
       // If requirer is off manifest than it's a system module and we allow it
       // to go off manifest.

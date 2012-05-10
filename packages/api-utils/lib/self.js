@@ -7,7 +7,7 @@
 
 const { CC } = require('chrome');
 const { id, name, prefixURI, rootURI,
-        version, loadReason } = require('@loader-options');
+        version, loadReason } = require('@loader/options');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');

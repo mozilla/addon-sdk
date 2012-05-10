@@ -6,7 +6,7 @@
 'use strict';
 
 const { Cc, Ci, CC } = require('chrome');
-const options = require('@loader-options');
+const options = require('@loader/options');
 const file = require('./file');
 const runtime = require("./runtime.js");
 
