@@ -67,11 +67,13 @@ function Loader(options) {
                       + ' has no authority to load: ' + id, requirer.uri);
 
         let path = requirement.path;
-        // We normalize SDK core module paths like `panel` to `sdk/panel` to
-        // allow single term require statements. If it's a pseudo module just
-        // resolve it to `baseURI`.
-        uri = isBuiltin(path) ? resolveID(normalize(path), requirer, baseURI) :
-              isPseudo(path) ? resolveID(path, null, baseURI) :
+        // If this is a pseudo module we resolve it to `baseURI`
+        uri = isPseudo(path) ? resolveID(path, null, baseURI) :
+              // If it's core module we normalize it (from `panel` to
+              // `sdk/panel`) and resolve it to requirer if it's relative
+              // otherwise to `baseURI`.
+              isBuiltin(path) ? resolveID(normalize(path), requirer, baseURI) :
+              // Otherwise we just prefix it with `prefixURI`.
               prefixURI + path;
       }
       // If requirer is off manifest than it's a system module and we allow it
