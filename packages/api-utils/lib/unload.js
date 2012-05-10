@@ -7,9 +7,8 @@
 // http://narwhaljs.org
 
 
-const { Cc, Ci } = require('chrome');
-const { destructor } = require('@packaging');
 const { on, off } = require('./system/events');
+const destructor = require('@destructor');
 
 const observers = [];
 const unloaders = [];

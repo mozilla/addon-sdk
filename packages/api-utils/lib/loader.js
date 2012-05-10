@@ -319,9 +319,8 @@ const Loader = iced(function Loader(options) {
 
   // Define pseudo modules.
   modules = override({
-    '@packaging': override(JSON.parse(JSON.stringify(options)), {
-      destructor: destructor
-    }),
+    '@destructor': destructor,
+    '@packaging': JSON.parse(JSON.stringify(options)),
     'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
                 components: Components }
   }, modules);
