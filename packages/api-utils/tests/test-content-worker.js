@@ -469,14 +469,6 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
                            "Nor previous one");
 
           window.close();
-          // Ensure that the document is released after outer window close
-          if (xulApp.versionInRange(xulApp.platformVersion, "15.0a1", "*")) {
-            test.assertRaises(function () {
-              // `originalWindow` will be destroyed only when the outer window
-              // is going to be released. See bug 695480
-              originalWindow.document.title;
-            }, "can't access dead object");
-          }
           test.done();
         }, 100);
       }, true);
