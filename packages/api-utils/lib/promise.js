@@ -88,7 +88,19 @@ function defer(prototype) {
   deferred.resolve({ name: 'Foo' })
   //=> 'Foo'
   */
-  var pending = [], result;
+  var pending = [];
+
+  // Placeholder for a promise holding the result of resolving/rejecting
+  // |promise|. Note that this result is *not* a value. Rather, if
+  // |promise| has been |resolve|d with value |v|, |evaluated| is a
+  // trivial promise in which |then| always succeeds with |v|.
+  // If |promise| has been |rejected| with value |v|, |evaluated| is
+  // a trivial promise in which |then| always fails with |v|. Finally,
+  // if |promise| has been |resolve|d with a promise |p|, |evaluated| is
+  // |p| itself.
+  // Performance note: Shape of |evaluated| changes depending on case.
+  // There may be ways to improve this.
+  var evaluated;
   prototype = (prototype || prototype === null) ? prototype : Object.prototype;
 
   // Create an object implementing promise API.
@@ -108,7 +120,7 @@ function defer(prototype) {
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
       if (pending) pending.push([ resolved, rejected ]);
-      else result.then(resolved, rejected);
+      else evaluated.then(resolved, rejected);
 
       return deferred.promise;
     }}
@@ -126,9 +138,9 @@ function defer(prototype) {
         // promise), so that all subsequent listeners can be forwarded to it,
         // which either resolves immediately or forwards if `value` is
         // a promise.
-        result = isPromise(value) ? value : resolution(value);
+        evaluated = isPromise(value) ? value : resolution(value);
         // forward all pending observers.
-        while (pending.length) result.then.apply(result, pending.shift());
+        while (pending.length) evaluated.then.apply(evaluated, pending.shift());
         // mark promise as resolved.
         pending = null;
       }
