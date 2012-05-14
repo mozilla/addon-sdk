@@ -93,17 +93,17 @@ function defer(prototype) {
 
   // Create an object implementing promise API.
   var promise = Object.create(prototype, {
-    then: { value: function then(resolve, reject) {
+    then: { value: function then(onResolve, onReject) {
       // create a new deferred using a same `prototype`.
       var deferred = defer(prototype);
-      // If `resolve / reject` callbacks are not provided.
-      resolve = resolve ? attempt(resolve) : resolution;
-      reject = reject ? attempt(reject) : rejection;
+      // If `onResolve / onReject` callbacks are not provided.
+      onResolve = onResolve ? attempt(onResolve) : resolution;
+      onReject = onReject ? attempt(onReject) : rejection;
 
       // Create a listeners for a enclosed promise resolution / rejection that
-      // delegate to an actual callbacks and resolve / reject returned promise.
-      function resolved(value) { deferred.resolve(resolve(value)); }
-      function rejected(reason) { deferred.resolve(reject(reason)); }
+      // delegate to an actual callbacks and onResolve / reject returned promise.
+      function resolved(value) { deferred.resolve(onResolve(value)); }
+      function rejected(reason) { deferred.resolve(onReject(reason)); }
 
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
