@@ -276,7 +276,8 @@ exports.unload = unload;
 // described by a given `options.manifest`. Loader takes following options:
 // - `baseURI`: All the module require terms are resolved relative to it,
 //    unless custom `resolve` function is used. Also in that case `baseURI`
-//    is passed to it a third argument.
+//    is passed to it a third argument. Please not that built-in resolve
+//    expects `baseURI` with a trailing `/`.
 // - `main.id`: Id of the main module.
 // - `main.uri`: URI of the main module.
 // - `globals`: Optional map of globals, that all module scopes will inherit
