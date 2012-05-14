@@ -119,16 +119,16 @@ function defer(prototype) {
   // - during a call to |then|
   //   - create promise |deferred|;
   //   - create two closures |effort| for |boxedOnResolve| and |boxedOnReject|;
-  //   - create closure |resolved|;
-  //   - create closure |rejected|;
-  //   - possibly create array |[ resolved, rejected ]|;
-  //   - otherwise, gc |resolved|, |rejected|, |boxedOnResolve|,
-  //      |boxedOnReject|;
+  //   - create closure |onRejectPropagate|;
+  //   - create closure |onResolvePropagate|;
+  //   - possibly create array |[ onResolvePropagate, onRejectPropagate ]|;
+  //   - otherwise, gc |onResolvePropagate|, |onRejectPropagate|,
+  //     |boxedOnResolve|, |boxedOnReject|;
   // - during a call to |resolve|
   //   - possibly create a closure |then| through a call to |resolution(value)|;
   //   - for each observer, one call to |then| with several possible shapes;
-  //   - possibly, gc previously allocated |resolved|, |rejected|,
-  //        |boxedOnResolve|, |boxedOnReject|.
+  //   - possibly, gc previously allocated |onResolvePropagate|,
+  //        |onRejectPropagate|, |boxedOnResolve|, |boxedOnReject|.
   // - during a call to |reject|
   //   - create a closure |then| through a call to |rejection(value)|;
   //   - call |resolve| without the cost of |resolution(value)|
@@ -150,14 +150,18 @@ function defer(prototype) {
       // Create a pair of listeners for a enclosed promise resolution
       // / rejection that delegate to an actual callbacks and
       // resolve / reject returned promise.
-      function resolved(value) { deferred.resolve(boxedOnResolve(value)); }
-      function rejected(reason) { deferred.resolve(boxedOnReject(reason)); }
+      function onResolvePropagate(value) {
+        deferred.resolve(boxedOnResolve(value));
+      }
+      function onRejectPropagate(reason) {
+        deferred.resolve(boxedOnReject(reason));
+      }
 
       // Algorithm detail:
       // From this point, the first time |this| |promise| is resolved with
       // a result |v|, the following happens:
       //
-      // - |resolved| is called with |v|;
+      // - |onResolvePropagate| is called with |v|;
       // - |boxedOnResolve| is called with |v|;
       // - (if |onResolve| was not provided),
       //    - |resolution| builds a new promise |p| holding |v|;
@@ -173,8 +177,8 @@ function defer(prototype) {
 
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
-      if (observers) observers.push([ resolved, rejected ]);
-      else evaluated.then(resolved, rejected);
+      if (observers) observers.push([ onResolvePropagate, onRejectPropagate ]);
+      else evaluated.then(onResolvePropagate, onRejectPropagate);
 
       return deferred.promise;
     }}
