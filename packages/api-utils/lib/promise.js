@@ -112,15 +112,19 @@ function defer(prototype) {
     then: { value: function then(onResolve, onReject) {
       // Create a new deferred using a same `prototype`.
       var deferred = defer(prototype);
-      // If `onResolve / onReject` callbacks are not provided.
-      onResolve = onResolve ? attempt(onResolve) : resolution;
-      onReject = onReject ? attempt(onReject) : rejection;
+
+      // Box |onResolve|/|onReject|:
+      // - in case of success, the result is propagated as a resolution
+      // - in case of error, the error is propagated as a rejection
+      // - also handle the case in which |onResolve|/|onReject| is undefined.
+      var boxedOnResolve = onResolve ? attempt(onResolve) : resolution;
+      var boxedOnReject = onReject ? attempt(onReject) : rejection;
 
       // Create a pair of listeners for a enclosed promise resolution
       // / rejection that delegate to an actual callbacks and
       // resolve / reject returned promise.
-      function resolved(value) { deferred.resolve(onResolve(value)); }
-      function rejected(reason) { deferred.resolve(onReject(reason)); }
+      function resolved(value) { deferred.resolve(boxedOnResolve(value)); }
+      function rejected(reason) { deferred.resolve(boxedOnReject(reason)); }
 
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
