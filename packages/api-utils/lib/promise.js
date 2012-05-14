@@ -2,18 +2,18 @@
 /*jshint asi: true undef: true es5: true node: true devel: true
          forin: true latedef: false supernew: true */
 /*global define: true */
-!function(factory) {
+(function(factory) {
   if (typeof(define) === 'function') { // RequireJS
     define(factory);
   } else if (typeof(exports) === 'object') { // CommonJS
     factory(require, exports);
-  } else if (~String(this).indexOf('BackstagePass')) { // JSM
+  } else if (String(this).indexOf('BackstagePass') != -1) { // JSM
     factory(undefined, this);
     this.EXPORTED_SYMBOLS = Object.keys(this);
   } else {
     factory(undefined, (this.promise = {}));
   }
-}.call(this, function(require, exports) {
+})(function(require, exports) {
 
 'use strict';
 
