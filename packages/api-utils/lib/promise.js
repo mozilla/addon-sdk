@@ -4,14 +4,14 @@
 /*global define: true */
 !function(factory) {
   if (typeof(define) === 'function') { // RequireJS
-    define(factory)
+    define(factory);
   } else if (typeof(exports) === 'object') { // CommonJS
-    factory(require, exports)
+    factory(require, exports);
   } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(undefined, this)
-    this.EXPORTED_SYMBOLS = Object.keys(this)
+    factory(undefined, this);
+    this.EXPORTED_SYMBOLS = Object.keys(this);
   } else {
-    factory(undefined, (this.promise = {}))
+    factory(undefined, (this.promise = {}));
   }
 }.call(this, function(require, exports) {
 
@@ -22,7 +22,7 @@ function resolution(value) {
   Returns non-standard compliant (`then` does not returns a promise) promise
   that resolves to a given `value`. Used just internally only.
   **/
-  return { then: function then(resolve) { resolve(value) } }
+  return { then: function then(resolve) { resolve(value); } };
 }
 
 function rejection(reason) {
@@ -30,7 +30,7 @@ function rejection(reason) {
   Returns non-standard compliant promise (`then` does not returns a promise)
   that rejects with a given `reason`. This is used internally only.
   **/
-  return { then: function then(resolve, reject) { reject(reason) } }
+  return { then: function then(resolve, reject) { reject(reason); } };
 }
 
 function attempt(f) {
@@ -40,9 +40,9 @@ function attempt(f) {
   return value. (Internal utility)
   **/
   return function effort(options) {
-    try { return f(options) }
-    catch(error) { return rejection(error) }
-  }
+    try { return f(options); }
+    catch(error) { return rejection(error); }
+  };
 }
 
 function isPromise(value) {
@@ -50,7 +50,7 @@ function isPromise(value) {
   Returns true if given `value` is promise. Value is assumed to be promise if
   it implements `then` method.
   **/
-  return value && typeof(value.then) === 'function'
+  return value && typeof(value.then) === 'function';
 }
 
 function defer(prototype) {
@@ -88,31 +88,31 @@ function defer(prototype) {
   deferred.resolve({ name: 'Foo' })
   //=> 'Foo'
   */
-  var pending = [], result
-  prototype = (prototype || prototype === null) ? prototype : Object.prototype
+  var pending = [], result;
+  prototype = (prototype || prototype === null) ? prototype : Object.prototype;
 
   // Create an object implementing promise API.
   var promise = Object.create(prototype, {
     then: { value: function then(resolve, reject) {
       // create a new deferred using a same `prototype`.
-      var deferred = defer(prototype)
+      var deferred = defer(prototype);
       // If `resolve / reject` callbacks are not provided.
-      resolve = resolve ? attempt(resolve) : resolution
-      reject = reject ? attempt(reject) : rejection
+      resolve = resolve ? attempt(resolve) : resolution;
+      reject = reject ? attempt(reject) : rejection;
 
       // Create a listeners for a enclosed promise resolution / rejection that
       // delegate to an actual callbacks and resolve / reject returned promise.
-      function resolved(value) { deferred.resolve(resolve(value)) }
-      function rejected(reason) { deferred.resolve(reject(reason)) }
+      function resolved(value) { deferred.resolve(resolve(value)); }
+      function rejected(reason) { deferred.resolve(reject(reason)); }
 
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
-      if (pending) pending.push([ resolved, rejected ])
-      else result.then(resolved, rejected)
+      if (pending) pending.push([ resolved, rejected ]);
+      else result.then(resolved, rejected);
 
-      return deferred.promise
+      return deferred.promise;
     }}
-  })
+  });
 
   var deferred = {
     promise: promise,
@@ -126,11 +126,11 @@ function defer(prototype) {
         // promise), so that all subsequent listeners can be forwarded to it,
         // which either resolves immediately or forwards if `value` is
         // a promise.
-        result = isPromise(value) ? value : resolution(value)
+        result = isPromise(value) ? value : resolution(value);
         // forward all pending observers.
-        while (pending.length) result.then.apply(result, pending.shift())
+        while (pending.length) result.then.apply(result, pending.shift());
         // mark promise as resolved.
-        pending = null
+        pending = null;
       }
     },
     reject: function reject(reason) {
@@ -138,24 +138,24 @@ function defer(prototype) {
       Rejects associated `promise` with a given `reason`, unless it's already
       resolved / rejected.
       **/
-      deferred.resolve(rejection(reason))
+      deferred.resolve(rejection(reason));
     }
-  }
+  };
 
-  return deferred
+  return deferred;
 }
-exports.defer = defer
+exports.defer = defer;
 
 function resolve(value, prototype) {
   /**
   Returns a promise resolved to a given `value`. Optionally second `prototype`
   arguments my be provided to be used as a prototype for a returned promise.
   **/
-  var deferred = defer(prototype)
-  deferred.resolve(value)
-  return deferred.promise
+  var deferred = defer(prototype);
+  deferred.resolve(value);
+  return deferred.promise;
 }
-exports.resolve = resolve
+exports.resolve = resolve;
 
 function reject(reason, prototype) {
   /**
@@ -163,32 +163,32 @@ function reject(reason, prototype) {
   `prototype` arguments my be provided to be used as a prototype for a returned
   promise.
   **/
-  var deferred = defer(prototype)
-  deferred.reject(reason)
-  return deferred.promise
+  var deferred = defer(prototype);
+  deferred.reject(reason);
+  return deferred.promise;
 }
-exports.reject = reject
+exports.reject = reject;
 
 var promised = (function() {
   // Note: Define shortcuts and utility functions here in order to avoid
   // slower property accesses and unnecessary closure creations on each
   // call of this popular function.
 
-  var call = Function.call
-  var concat = Array.prototype.concat
+  var call = Function.call;
+  var concat = Array.prototype.concat;
 
   // Utility function that does following:
   // execute([ f, self, args...]) => f.apply(self, args)
-  function execute(args) { return call.apply(call, args) }
+  function execute(args) { return call.apply(call, args); }
 
   // Utility function that takes promise of `a` array and maybe promise `b`
   // as arguments and returns promise for `a.concat(b)`.
   function promisedConcat(promises, unknown) {
     return promises.then(function(values) {
       return resolve(unknown).then(function(value) {
-        return values.concat(value)
-      })
-    })
+        return values.concat(value);
+      });
+    });
   }
 
   return function promised(f, prototype) {
@@ -210,10 +210,10 @@ var promised = (function() {
         // reduce it via `promisedConcat` to get promised array of fulfillments
         reduce(promisedConcat, resolve([], prototype)).
         // finally map that to promise of `f.apply(this, args...)`
-        then(execute)
-    }
-  }
-})()
-exports.promised = promised
+        then(execute);
+    };
+  };
+})();
+exports.promised = promised;
 
-})
+});
