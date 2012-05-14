@@ -20,7 +20,7 @@
 function resolution(value) {
   /**
   Returns non-standard compliant (`then` does not returns a promise) promise
-  that resolves to a given `value`. Used just internally only.
+  that resolves to a given `value`. For internal use.
   **/
   return { then: function then(resolve) { resolve(value); } };
 }
@@ -28,7 +28,7 @@ function resolution(value) {
 function rejection(reason) {
   /**
   Returns non-standard compliant promise (`then` does not returns a promise)
-  that rejects with a given `reason`. This is used internally only.
+  that rejects with a given `reason`. For internal use.
   **/
   return { then: function then(resolve, reject) { reject(reason); } };
 }
@@ -88,7 +88,10 @@ function defer(prototype) {
   deferred.resolve({ name: 'Foo' })
   //=> 'Foo'
   */
-  var pending = [];
+
+  // Either an array of pairs of functions registered to be called
+  // once we have a result, or |null|, if we already have a result.
+  var observers = [];
 
   // Placeholder for a promise holding the result of resolving/rejecting
   // |promise|. Note that this result is *not* a value. Rather, if
@@ -103,23 +106,25 @@ function defer(prototype) {
   var evaluated;
   prototype = (prototype || prototype === null) ? prototype : Object.prototype;
 
-  // Create an object implementing promise API.
+  // Create an object implementing promise API, i.e. the capability to
+  // observe the result of the promise through method |then|.
   var promise = Object.create(prototype, {
     then: { value: function then(onResolve, onReject) {
-      // create a new deferred using a same `prototype`.
+      // Create a new deferred using a same `prototype`.
       var deferred = defer(prototype);
       // If `onResolve / onReject` callbacks are not provided.
       onResolve = onResolve ? attempt(onResolve) : resolution;
       onReject = onReject ? attempt(onReject) : rejection;
 
-      // Create a listeners for a enclosed promise resolution / rejection that
-      // delegate to an actual callbacks and onResolve / reject returned promise.
+      // Create a pair of listeners for a enclosed promise resolution
+      // / rejection that delegate to an actual callbacks and
+      // resolve / reject returned promise.
       function resolved(value) { deferred.resolve(onResolve(value)); }
       function rejected(reason) { deferred.resolve(onReject(reason)); }
 
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
-      if (pending) pending.push([ resolved, rejected ]);
+      if (observers) observers.push([ resolved, rejected ]);
       else evaluated.then(resolved, rejected);
 
       return deferred.promise;
@@ -133,16 +138,26 @@ function defer(prototype) {
       Resolves associated `promise` to a given `value`, unless it's already
       resolved or rejected.
       **/
-      if (pending) {
+      if (observers) {
+        // Mark promise as resolved.
+        var observersCopy = observers;
+        observers = null;
+
         // store resolution `value` as a promise (`value` itself may be a
         // promise), so that all subsequent listeners can be forwarded to it,
         // which either resolves immediately or forwards if `value` is
         // a promise.
         evaluated = isPromise(value) ? value : resolution(value);
-        // forward all pending observers.
-        while (pending.length) evaluated.then.apply(evaluated, pending.shift());
-        // mark promise as resolved.
-        pending = null;
+
+        // Forward to all pending observers.
+        // Note that executing these observers can in turn trigger calls to
+        // |this.resolve|, |this.reject| or |this.then|. Calls to |this.resolve|
+        // or |this.reject| are ignored (re-resolving/re-rejecting a promise
+        // is a meaningless operation), while calls to |this.then| are taken
+        // into account immediately.
+        observersCopy.forEach(function forEachObserver(obs) {
+          evaluated.then(obs[0]/*onResolve*/, obs[1]/*onReject*/);
+        });
       }
     },
     reject: function reject(reason) {
