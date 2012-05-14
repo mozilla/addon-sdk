@@ -39,12 +39,8 @@ exports.Module = Module;
 exports.unload = unload;
 exports.override = override;
 
-// Returns true for single term module ids.
-function isBuiltin(id) { return !~id.indexOf('/'); }
-// Returns true if module contains `@` character.
-function isPseudo(id) { return ~id.indexOf('@'); }
-// Normalizes single term module ids by adding `sdk/` prefix to them.
-function normalize(id) { return isBuiltin(id) ? 'sdk/' + id : id; }
+// Returns true if module id is 'chrome' or contains `@` character.
+function isPseudo(id) { return id === 'chrome' || ~id.indexOf('@'); }
 
 function Loader(options) {
   let { prefixURI, manifest } = options;
@@ -68,18 +64,14 @@ function Loader(options) {
 
         let path = requirement.path;
         // If this is a pseudo module we resolve it to `baseURI`
-        uri = isPseudo(path) ? resolveID(path, null, baseURI) :
-              // If it's core module we normalize it (from `panel` to
-              // `sdk/panel`) and resolve it to requirer if it's relative
-              // otherwise to `baseURI`.
-              isBuiltin(path) ? resolveID(normalize(path), requirer, baseURI) :
+        uri = isPseudo(path) ? resolveID(path, requirer, baseURI) :
               // Otherwise we just prefix it with `prefixURI`.
               prefixURI + path;
       }
       // If requirer is off manifest than it's a system module and we allow it
       // to go off manifest.
       else {
-        uri = resolveID(normalize(id), requirer, baseURI);
+        uri = resolveID(id, requirer, baseURI);
       }
 
       return uri;
