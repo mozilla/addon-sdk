@@ -64,10 +64,6 @@ function startup(reason, options) {
 
   // Inject globals ASAP in order to have console API working ASAP
   let loader = options.loader;
-  // To workaround bug 674195 we pass in load from the same context as
-  // loader this way freeze in load won't throw. Once bug is fixed we
-  // should be able to just use load from the upper context.
-  let load = options.load;
   override(loader.globals, globals);
 
   // Try initializing localization module before running main module. Just print

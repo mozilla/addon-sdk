@@ -21,7 +21,7 @@ const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
 
 let loader = null;
 let unload = null;
-let loaderURI = null;
+let cuddlefishURI = null;
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -84,10 +84,10 @@ function startup(data, reasonCode) {
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     // We use global `loaderURI` to allow unload.
-    loaderURI = prefixURI + options.loader;
+    cuddlefishURI = prefixURI + options.loader;
 
     // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
-    let module = Cu.import(loaderURI);
+    let module = Cu.import(cuddlefishURI);
     unload = module.unload;
     loader = module.Loader({
       // Add-on ID used by different APIs as a unique identifier.
@@ -132,7 +132,16 @@ function startup(data, reasonCode) {
       }
     });
 
-    let require = Require(loader, { uri: loaderURI });
+    // Put `api-utils/loader` loaded as JSM to module cache to avoid subsequent
+    // loads via `require`.
+    let cuddlefish = { uri: cuddlefishURI };
+    let loaderURI = loader.resolve('api-utils/loader', cuddlefish);
+    loader.modules[loaderURI] = {
+      id: 'api-utils/loader',
+      uri: loaderURI,
+      exports: module
+    };
+    let require = Require(loader, cuddlefish);
     require('api-utils/addon/runner').startup(reason, {
       loader: loader,
       // To workaround bug 674195 we pass in load from the same context as
@@ -152,7 +161,7 @@ function shutdown(data, reasonCode) {
     unload(loader, reason);
     // Bug 724433: We need to unload JSM otherwise it will stay alive
     // and keep a reference to this compartment.
-    Cu.unload(loaderURI);
+    Cu.unload(cuddlefishURI);
     loader = unload = null;
   }
 };
