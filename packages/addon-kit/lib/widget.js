@@ -42,6 +42,8 @@ const LightTrait = require('api-utils/light-traits').Trait;
 const { Loader, Symbiont } = require("api-utils/content");
 const { Cortex } = require('api-utils/cortex');
 const windowsAPI = require("./windows");
+const { WindowTracker } = require("api-utils/window-utils");
+const { isBrowser } = require("api-utils/window/utils");
 const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
 const { uuid } = require("api-utils/uuid");
@@ -487,13 +489,13 @@ let browserManager = {
   // that calling this method can cause onTrack to be called immediately if
   // there are open windows.
   init: function () {
-    let windowTracker = new (require("api-utils/window-utils").WindowTracker)(this);
+    let windowTracker = new WindowTracker(this);
     unload.ensure(windowTracker);
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.
   onTrack: function browserManager_onTrack(window) {
-    if (this._isBrowserWindow(window)) {
+    if (isBrowser(window)) {
       let win = new BrowserWindow(window);
       win.addItems(this.items);
       this.windows.push(win);
@@ -507,7 +509,7 @@ let browserManager = {
   // unload itself, since unloading the browserManager means untracking all
   // currently opened windows.
   onUntrack: function browserManager_onUntrack(window) {
-    if (this._isBrowserWindow(window)) {
+    if (isBrowser(window)) {
       this.items.forEach(function(i) i._onWindowClosed(window));
       for (let i = 0; i < this.windows.length; i++) {
         if (this.windows[i].window == window) {
@@ -547,11 +549,6 @@ let browserManager = {
     let idx = this.items.indexOf(item);
     if (idx > -1)
       this.items.splice(idx, 1);
-  },
-
-  _isBrowserWindow: function browserManager__isBrowserWindow(win) {
-    let winType = win.document.documentElement.getAttribute("windowtype");
-    return winType === "navigator:browser";
   }
 };
 

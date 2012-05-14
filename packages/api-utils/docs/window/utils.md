@@ -88,3 +88,8 @@ is possible you should make sure to close all such windows manually:
     let bgwin = backgroundify(open('data:text/html,Foo'), {
       close: false
     });
+
+### isBrowser
+
+Returns true if the given window is a Firefox browser window.
+(i.e windows with chrome://browser/content/browser.xul document)
