@@ -106,6 +106,33 @@ function defer(prototype) {
   var evaluated;
   prototype = (prototype || prototype === null) ? prototype : Object.prototype;
 
+  // Performance note:
+  // During the lifetime of a promise, we have the following costs:
+  // - at initialization
+  //   - create array |observers|;
+  //   - create closures |then|;
+  //   - create object |{ value: function then ... }|;
+  //   - create object |promise|;
+  //   - create object |deferred| with |Object.create|;
+  //   - create closure |resolve|;
+  //   - create closure |reject|;
+  // - during a call to |then|
+  //   - create promise |deferred|;
+  //   - create two closures |effort| for |boxedOnResolve| and |boxedOnReject|;
+  //   - create closure |resolved|;
+  //   - create closure |rejected|;
+  //   - possibly create array |[ resolved, rejected ]|;
+  //   - otherwise, gc |resolved|, |rejected|, |boxedOnResolve|,
+  //      |boxedOnReject|;
+  // - during a call to |resolve|
+  //   - possibly create a closure |then| through a call to |resolution(value)|;
+  //   - for each observer, one call to |then| with several possible shapes;
+  //   - possibly, gc previously allocated |resolved|, |rejected|,
+  //        |boxedOnResolve|, |boxedOnReject|.
+  // - during a call to |reject|
+  //   - create a closure |then| through a call to |rejection(value)|;
+  //   - call |resolve| without the cost of |resolution(value)|
+
   // Create an object implementing promise API, i.e. the capability to
   // observe the result of the promise through method |then|.
   var promise = Object.create(prototype, {
