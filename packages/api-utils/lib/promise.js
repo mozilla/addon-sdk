@@ -153,6 +153,24 @@ function defer(prototype) {
       function resolved(value) { deferred.resolve(boxedOnResolve(value)); }
       function rejected(reason) { deferred.resolve(boxedOnReject(reason)); }
 
+      // Algorithm detail:
+      // From this point, the first time |this| |promise| is resolved with
+      // a result |v|, the following happens:
+      //
+      // - |resolved| is called with |v|;
+      // - |boxedOnResolve| is called with |v|;
+      // - (if |onResolve| was not provided),
+      //    - |resolution| builds a new promise |p| holding |v|;
+      // - (else, if |onResolve| was provided).
+      //    - |attempt(onResolve)| is called with |v|;
+      //    - |onResolve(v)| is computed;
+      //    - (if |onResolve(v)| did not raise an error):
+      //        - |resolution| builds a new promise |p|
+      //          holding the result
+      // - |deferred.resolve| is called with |p|;
+      // - in turn, this causes |p.then| to be called, propagating the result
+      // etc.
+
       // If promise is pending register listeners. Otherwise forward them to
       // resulting resolution.
       if (observers) observers.push([ resolved, rejected ]);
