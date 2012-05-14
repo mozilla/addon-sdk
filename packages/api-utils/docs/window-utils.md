@@ -70,7 +70,8 @@ uninstalled, whichever comes first.)
 
 <api name="windowIterator">
 @function
-  An iterator for windows currently open in the application.
+  An iterator for windows currently open in the application. Only windows whose
+  document is already loaded will be dispatched.
 
 **Example**
 
