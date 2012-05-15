@@ -13,12 +13,17 @@ const { URL } = require('../url');
 const unload = require('../unload');
 const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
-const self = require("self");
 const { sandbox, evaluate, load } = require("../sandbox");
 const { merge } = require('../utils/object');
 
-const CONTENT_PROXY_URL = self.data.url("content-proxy.js");
-const CONTENT_WORKER_URL = self.data.url("worker.js");
+/* Trick the linker in order to ensure shipping these files in the XPI.
+  require('./content-proxy.js');
+  require('./content-worker.js');
+  Then, retrieve URL of these files in the XPI:
+*/
+let prefix = module.uri.split('worker.js')[0];
+const CONTENT_PROXY_URL = prefix + 'content-proxy.js';
+const CONTENT_WORKER_URL = prefix + 'content-worker.js';
 
 const JS_VERSION = '1.8';
 
@@ -108,7 +113,7 @@ const WorkerSandbox = EventEmitter.compose({
     let apiSanbox = sandbox(window, { wantXrays: true });
 
     // Build content proxies only if the document has a non-system principal
-    if (window.wrappedJSObject) {
+    if (XPCNativeWrapper.unwrap(window) !== window) {
       apiSanbox.console = console;
       // Execute the proxy code
       load(apiSanbox, CONTENT_PROXY_URL);
@@ -139,6 +144,11 @@ const WorkerSandbox = EventEmitter.compose({
     // avoid having any kind of wrapper.
     load(apiSanbox, CONTENT_WORKER_URL);
 
+    // prepare a clean `self.options`
+    let options = 'contentScriptOptions' in worker ?
+      JSON.stringify( worker.contentScriptOptions ) :
+      undefined;
+
     // Then call `inject` method and communicate with this script
     // by trading two methods that allow to send events to the other side:
     //   - `onEvent` called by content script
@@ -153,7 +163,7 @@ const WorkerSandbox = EventEmitter.compose({
     };
     let onEvent = this._onContentEvent.bind(this);
     // `ContentWorker` is defined in CONTENT_WORKER_URL file
-    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent);
+    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent, options);
     this._emitToContent = result.emitToContent;
     this._hasListenerFor = result.hasListenerFor;
 
@@ -368,6 +378,8 @@ const Worker = EventEmitter.compose({
       this._window = options.window;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
+    if ('contentScriptOptions' in options)
+      this.contentScriptOptions = options.contentScriptOptions;
     if ('contentScript' in options)
       this.contentScript = options.contentScript;
     if ('onError' in options)

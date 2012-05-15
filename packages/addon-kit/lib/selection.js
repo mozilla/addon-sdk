@@ -16,7 +16,7 @@ let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
     { emit, off } = require("api-utils/event/core"),
     { Unknown } = require("api-utils/xpcom"),
-    { Base } = require("api-utils/base"),
+    { Class, obscure } = require("api-utils/heritage"),
     { EventTarget } = require("api-utils/event/target");
 
 
@@ -38,7 +38,7 @@ const DOM  = 0x03;
 const ERR_CANNOT_CHANGE_SELECTION =
   "It isn't possible to change the selection, as there isn't currently a selection";
 
-const Selection = Base.extend({
+const Selection = Class({
   /**
    * Creates an object from which a selection can be set, get, etc. Each
    * object has an associated with a range number. Range numbers are the
@@ -274,7 +274,8 @@ function onSelect() {
   SelectionListenerManager.onSelect();
 }
 
-let SelectionListenerManager = Unknown.extend({
+let SelectionListenerManager = Class({
+  extends: Unknown,
   interfaces: [ 'nsISelectionListener' ],
   /**
    * This is the nsISelectionListener implementation. This function is called
@@ -386,7 +387,7 @@ let SelectionListenerManager = Unknown.extend({
     browser.removeEventListener("load", onLoad, true);
     browser.removeEventListener("unload", onUnload, true);
   }
-});
+})();
 
 /**
  * Install |SelectionListenerManager| as tab tracker in order to watch
@@ -394,9 +395,7 @@ let SelectionListenerManager = Unknown.extend({
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
-// Note: We use `Object.create` form just in order to define `__iterator__`
-// as non-enumerable, to ensure that it won't be returned by an `Object.keys`.
-var SelectionIterator = Object.create(Object.prototype, {
+var SelectionIterator = Class(obscure({
   /**
    * Exports an iterator so that discontiguous selections can be iterated.
    *
@@ -404,18 +403,18 @@ var SelectionIterator = Object.create(Object.prototype, {
    * is returned because the text field selection APIs doesn't support
    * multiple selections.
    */
-  __iterator__: { enumerable: false, value: function() {
+  __iterator__: function() {
     let selection = getSelection(DOM);
     let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
 
     for (let i = 0; i < count; i++)
-      yield Selection.new(i);
-  }}
-});
+      yield Selection(i);
+  }
+}));
 
-var selection = EventTarget.extend(Selection, SelectionIterator).new(0);
+var selection = Class({
+  extends: EventTarget,
+  implements: [ Selection, SelectionIterator ]
+})(0);
 
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(selection, 'workaround-bug-673468');
 module.exports = selection;

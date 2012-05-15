@@ -5,27 +5,13 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const { Unknown } = require("./xpcom");
 const { when: unload } = require("./unload");
-const memory = require("./memory");
+const { ns } = require("./namespace");
+const { on, off, emit, once } = require("./system/events");
+const { jetpackID } = require("@packaging");
 
-
-/**
- * A service for adding, removing and notifying observers of notifications.
- * Wraps the nsIObserverService interface.
- *
- * @version 0.2
- */
-
-var service = Cc["@mozilla.org/observer-service;1"].
-              getService(Ci.nsIObserverService);
-
-/**
- * A cache of observers that have been added.
- *
- * We use this to remove observers when a caller calls |Observers.remove|.
- */
-var cache = [];
+const subscribers = ns();
+const cache = [];
 
 /**
  * Topics specifically available to Jetpack-generated extensions.
@@ -41,8 +27,14 @@ exports.topics = {
    * A topic indicating that the application is in a state usable
    * by add-ons.
    */
-  get APPLICATION_READY() packaging.jetpackID + "_APPLICATION_READY"
+  APPLICATION_READY: jetpackID + "_APPLICATION_READY"
 };
+
+function Listener(callback, target) {
+  return function listener({ subject, data }) {
+    callback.call(target || callback, subject, data);
+  }
+}
 
 /**
  * Register the given callback as an observer of the given topic.
@@ -59,13 +51,20 @@ exports.topics = {
  *
  * @returns the observer
  */
-var add = exports.add = function add(topic, callback, target) {
-  var observer = Observer.new(topic, callback, target);
-  service.addObserver(observer, topic, true);
-  cache.push(observer);
+function add(topic, callback, target) {
+  let listeners = subscribers(callback);
+  if (!(topic in listeners)) {
+    let listener = Listener(callback, target);
+    listeners[topic] = listener;
 
-  return observer;
+    // Cache callback unless it's already cached.
+    if (!~cache.indexOf(callback))
+      cache.push(callback);
+
+    on(topic, listener);
+  }
 };
+exports.add = add;
 
 /**
  * Unregister the given callback as an observer of the given topic.
@@ -79,22 +78,22 @@ var add = exports.add = function add(topic, callback, target) {
  * @param   target  {Object}  [optional]
  *          the object being used as |this| when calling a Function callback
  */
-var remove = exports.remove = function remove(topic, callback, target) {
-  // This seems fairly inefficient, but I'm not sure how much better
-  // we can make it.  We could index by topic, but we can't index by callback
-  // or target, as far as I know, since the keys to JavaScript hashes
-  // (a.k.a. objects) can apparently only be primitive values.
-  let observers = cache.filter(function(v) {
-    return (v.topic == topic &&
-            v.callback == callback &&
-            v.target == target);
-  });
+function remove(topic, callback, target) {
+  let listeners = subscribers(callback);
+  if (topic in listeners) {
+    let listener = listeners[topic];
+    delete listeners[topic];
 
-  if (observers.length) {
-    service.removeObserver(observers[0], topic);
-    cache.splice(cache.indexOf(observers[0]), 1);
+    // If no more observers are registered and callback is still in cache
+    // then remove it.
+    let index = cache.indexOf(callback);
+    if (~index && !Object.keys(listeners).length)
+      cache.splice(index, 1)
+
+    off(topic, listener);
   }
 };
+exports.remove = remove;
 
 /**
  * Notify observers about something.
@@ -112,64 +111,20 @@ var remove = exports.remove = function remove(topic, callback, target) {
  *        the observer, wrap them in an object and pass them via the subject
  *        parameter (i.e.: { foo: 1, bar: "some string", baz: myObject })
  */
-var notify = exports.notify = function notify(topic, subject, data) {
-  subject = (typeof subject == "undefined") ? null : Subject.new(subject);
-  data = (typeof    data == "undefined") ? null : data;
-  service.notifyObservers(subject, topic, data);
-};
-
-const Observer = Unknown.extend({
-  initialize: function initialize(topic, callback, target) {
-    memory.track(this);
-    this.topic = topic;
-    this.callback = callback;
-    this.target = target;
-  },
-  interfaces: [ 'nsIObserver', 'nsISupportsWeakReference' ],
-  observe: function(subject, topic, data) {
-    // Extract the wrapped object for subjects that are one of our
-    // wrappers around a JS object.  This way we support both wrapped
-    // subjects created using this module and those that are real
-    // XPCOM components.
-    if (subject && typeof subject == "object" &&
-        ("wrappedJSObject" in subject) &&
-        ("observersModuleSubjectWrapper" in subject.wrappedJSObject))
-      subject = subject.wrappedJSObject.object;
-
-    try {
-      if (typeof this.callback == "function") {
-        if (this.target)
-          this.callback.call(this.target, subject, data);
-        else
-          this.callback(subject, data);
-      } else // typeof this.callback == "object" (nsIObserver)
-        this.callback.observe(subject, topic, data);
-    } catch (e) {
-      console.exception(e);
-    }
-  }
-});
-
-const Subject = Unknown.extend({
-  initialize: function initialize(object) {
-    // Double-wrap the object and set a property identifying the
-    // wrappedJSObject as one of our wrappers to distinguish between
-    // subjects that are one of our wrappers (which we should unwrap
-    // when notifying our observers) and those that are real JS XPCOM
-    // components (which we should pass through unaltered).
-    this.wrappedJSObject = {
-      observersModuleSubjectWrapper: true,
-      object: object
-    };
-  },
-  getHelperForLanguage: function() {},
-  getInterfaces: function() {}
-});
+function notify(topic, subject, data) {
+  emit(topic, {
+    subject: subject === undefined ? null : subject,
+    data: data === undefined ? null : data
+  });
+}
+exports.notify = notify;
 
 unload(function() {
   // Make a copy of cache first, since cache will be changing as we
   // iterate through it.
-  cache.slice().forEach(function({ topic, callback, target }) {
-    remove(topic, callback, target);
+  cache.slice().forEach(function(callback) {
+    Object.keys(subscribers(callback)).forEach(function(topic) {
+      remove(topic, callback);
+    });
   });
 })

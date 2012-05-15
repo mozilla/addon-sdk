@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let tests = {}, Pages, Page;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
@@ -328,6 +328,23 @@ tests.testMultipleDestroys = function(test) {
   test.pass("Multiple destroys should not cause an error");
 };
 
+exports.testContentScriptOptionsOption = function(test) {
+  test.waitUntilDone();
+
+  let page = new Page({
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+        test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        test.done();
+      }
+    });
+};
 
 function isDestroyed(page) {
   try {

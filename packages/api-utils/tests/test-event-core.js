@@ -5,7 +5,7 @@
 'use strict';
 
 const { on, once, off, emit, count, amass } = require('api-utils/event/core');
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];
@@ -159,15 +159,14 @@ exports['test error handling'] = function(assert) {
 
 exports['test unhandled errors'] = function(assert) {
   let exceptions = [];
-  let loader = Loader(module);
-  let { emit, on } = loader.require('api-utils/event/core');
-  Object.defineProperties(loader.sandbox('api-utils/event/core'), {
-    console: { value: {
-      exception: function(e) {
-        exceptions.push(e)
-      }
-    }}
+  let loader = Loader(module, {
+    console: Object.create(console, {
+      exception: { value: function(e) {
+        exceptions.push(e);
+      }}
+    })
   });
+  let { emit, on } = loader.require('api-utils/event/core');
   let target = {};
   let boom = Error('Boom!');
   let drax = Error('Draax!!');

@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 exports["test unload window observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.

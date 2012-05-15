@@ -4,6 +4,7 @@
 
 const { Cc, Ci } = require("chrome");
 const { emit, off } = require("api-utils/event/core");
+const { Class } = require("api-utils/heritage");
 const { EventTarget } = require("api-utils/event/target");
 const { when: unload } = require("api-utils/unload");
 const { jetpackID } = require("@packaging");
@@ -60,9 +61,8 @@ const prefs = Proxy.create({
 
 // Event target we will expose as module exports in order to be able to
 // emit events on it.
-const target = EventTarget.extend({ prefs: prefs }).new();
+const target = Class({
+  extends: EventTarget,
+  prefs: prefs
+})();
 module.exports = target;
-
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(target, 'workaround-bug-673468');

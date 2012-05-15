@@ -527,22 +527,27 @@ Represents a widget object.
     specified by the `contentScriptFile` property.
 
   @prop [contentScriptWhen="end"] {string}
-  When to load the content scripts. This may take one of the following
-  values:
+    When to load the content scripts. This may take one of the following
+    values:
 
-  * "start": load content scripts immediately after the document
-  element for the widget is inserted into the DOM, but before the DOM content
-  itself has been loaded
-  * "ready": load content scripts once DOM content has been loaded,
-  corresponding to the
-  [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
-  event
-  * "end": load content scripts once all the content (DOM, JS, CSS,
-  images) for the widget has been loaded, at the time the
-  [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
-  fires
+    * "start": load content scripts immediately after the document
+    element for the widget is inserted into the DOM, but before the DOM content
+    itself has been loaded
+    * "ready": load content scripts once DOM content has been loaded,
+    corresponding to the
+    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+    event
+    * "end": load content scripts once all the content (DOM, JS, CSS,
+    images) for the widget has been loaded, at the time the
+    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+    fires
 
-  This property is optional and defaults to "end".
+    This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value exposed to content scripts under `self.options` property.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+    Optional.
 
 </api>
 
@@ -663,6 +668,14 @@ Represents a widget object.
   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
   fires
 
+</api>
+
+<api name="contentScriptOptions">
+@property {object}
+Read-only value exposed to content scripts under `self.options` property.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+Optional.
 </api>
 
 <api name="port">
@@ -856,6 +869,14 @@ In this example `WidgetView` is used to display different content for
   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
   fires
 
+</api>
+
+<api name="contentScriptOptions">
+@property {object}
+Read-only value exposed to content scripts under `self.options` property.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+Optional.
 </api>
 
 <api name="port">

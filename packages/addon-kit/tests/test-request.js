@@ -315,12 +315,14 @@ function assertDeepEqual(test, obj1, obj2, msg) {
       return o1 == o2;
 
     let e = true;
-    for (let [key, val] in Iterator(o1)) {
+    for (let key in o1) {
+      let val = o1[key];
       e = e && key in o2 && equal(o2[key], val);
       if (!e)
         break;
     }
-    for (let [key, val] in Iterator(o2)) {
+    for (let key in o2) {
+      let val = o2[key]
       e = e && key in o1 && equal(o1[key], val);
       if (!e)
         break;

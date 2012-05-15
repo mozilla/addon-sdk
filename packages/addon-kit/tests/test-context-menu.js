@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let {Cc,Ci} = require("chrome");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -1620,11 +1620,10 @@ exports.testMenuDestroy = function (test) {
 
 // Run only a dummy test if context-menu doesn't support the host app.
 if (!require("xul-app").is("Firefox")) {
-  for (let [prop, val] in Iterator(exports))
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
-  exports.testAppNotSupported = function (test) {
-    test.pass("context-menu does not support this application.");
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("context-menu does not support this application.");
+    }
   };
 }
 

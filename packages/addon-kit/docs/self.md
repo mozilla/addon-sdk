@@ -36,6 +36,21 @@ This property contains the add-on's version string. It comes from the
 `version` property set in the `package.json` file in the main package.
 </api>
 
+<api name="loadReason">
+@property {string}
+This property contains of the following strings describing the reason
+your add-on was loaded:
+
+<pre>
+install
+enable
+startup
+upgrade
+downgrade
+</pre>
+
+</api>
+
 <api name="data">
 @property {object}
 The `data` object is used to access data that was bundled with the add-on.

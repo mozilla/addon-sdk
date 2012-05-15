@@ -7,7 +7,7 @@
 const {Cc,Ci} = require("chrome");
 const timer = require("timer");
 const xulApp = require("xul-app");
-const { Loader } = require('./helpers');
+const { Loader } = require("test-harness/loader");
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL
@@ -59,7 +59,8 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
         tabBrowser.removeTab(newTab);
         loader.unload();
         test.done();
-      });
+      }
+    );
   }
   b.addEventListener("load", onPageLoad, true);
 

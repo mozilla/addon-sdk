@@ -4,12 +4,12 @@
 
 "use strict";
 
-const { Base, Class } = require("api-utils/base");
 const { ns } = require("api-utils/namespace");
 const { emit } = require("api-utils/event/core");
 const { merge } = require("api-utils/utils/object");
 const { stringify } = require("api-utils/querystring");
 const { EventTarget } = require("api-utils/event/target");
+const { Class } = require("api-utils/heritage");
 const { XMLHttpRequest } = require("api-utils/xhr");
 const apiUtils = require("api-utils/api-utils");
 
@@ -82,7 +82,7 @@ function runRequest(mode, target) {
   // handle the readystate, create the response, and call the callback
   xhr.onreadystatechange = function onreadystatechange() {
     if (xhr.readyState === 4) {
-      let response = Response.new(xhr);
+      let response = Response(xhr);
       source.response = response;
       emit(target, 'complete', response);
     }
@@ -93,12 +93,13 @@ function runRequest(mode, target) {
   xhr.send(mode !== "GET" ? data : null);
 }
 
-const Request = EventTarget.extend({
+const Request = Class({
+  extends: EventTarget,
   initialize: function initialize(options) {
     // `EventTarget.initialize` will set event listeners that are named
     // like `onEvent` in this case `onComplete` listener will be set to
     // `complete` event.
-    EventTarget.initialize.call(this, options);
+    EventTarget.prototype.initialize.call(this, options);
 
     // Copy normalized options.
     merge(request(this), validateOptions(options));
@@ -131,9 +132,9 @@ const Request = EventTarget.extend({
     return this;
   }
 });
-exports.Request = Class(Request);
+exports.Request = Request;
 
-const Response = Base.extend({
+const Response = Class({
   initialize: function initialize(request) {
     response(this).request = request;
   },

@@ -40,6 +40,8 @@ const Symbiont = Worker.resolve({
         this.contentURL = options.contentURL;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
+    if ('contentScriptOptions' in options)
+      this.contentScriptOptions = options.contentScriptOptions;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
     if ('contentScript' in options)
@@ -58,6 +60,12 @@ const Symbiont = Worker.resolve({
       this._hiddenFrame = hiddenFrames.HiddenFrame({
         onReady: function onFrame() {
           self._initFrame(this.element);
+        },
+        onUnload: function onUnload() {
+          // Bug 751211: Remove reference to _frame when hidden frame is
+          // automatically removed on unload, otherwise we are going to face
+          // "dead object" exception
+          self.destroy();
         }
       });
       hiddenFrames.add(this._hiddenFrame);
@@ -99,7 +107,7 @@ const Symbiont = Worker.resolve({
     // one of our addon folder and if no content script are defined. bug 612726
     let isDataResource =
       typeof this._contentURL == "string" &&
-      this._contentURL.indexOf(require("@packaging").uriPrefix) == 0;
+      this._contentURL.indexOf(require("@packaging").prefixURI) == 0;
     let hasContentScript =
       (Array.isArray(this.contentScript) ? this.contentScript.length > 0
                                              : !!this.contentScript) ||

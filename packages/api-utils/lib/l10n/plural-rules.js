@@ -7,176 +7,176 @@
 
 // Mapping of short locale name == to == > rule index in following list
 const LOCALES_TO_RULES = {
-  "af": 2, 
-  "ak": 3, 
-  "am": 3, 
+  "af": 3, 
+  "ak": 4, 
+  "am": 4, 
   "ar": 1, 
-  "asa": 2, 
+  "asa": 3, 
   "az": 0, 
-  "be": 10, 
-  "bem": 2, 
-  "bez": 2, 
-  "bg": 2, 
-  "bh": 3, 
+  "be": 11, 
+  "bem": 3, 
+  "bez": 3, 
+  "bg": 3, 
+  "bh": 4, 
   "bm": 0, 
-  "bn": 2, 
+  "bn": 3, 
   "bo": 0, 
-  "br": 19, 
-  "brx": 2, 
-  "bs": 10, 
-  "ca": 2, 
-  "cgg": 2, 
-  "chr": 2, 
-  "cs": 11, 
-  "cy": 16, 
-  "da": 2, 
-  "de": 2, 
-  "dv": 2, 
+  "br": 20, 
+  "brx": 3, 
+  "bs": 11, 
+  "ca": 3, 
+  "cgg": 3, 
+  "chr": 3, 
+  "cs": 12, 
+  "cy": 17, 
+  "da": 3, 
+  "de": 3, 
+  "dv": 3, 
   "dz": 0, 
-  "ee": 2, 
-  "el": 2, 
-  "en": 2, 
-  "eo": 2, 
-  "es": 2, 
-  "et": 2, 
-  "eu": 2, 
+  "ee": 3, 
+  "el": 3, 
+  "en": 3, 
+  "eo": 3, 
+  "es": 3, 
+  "et": 3, 
+  "eu": 3, 
   "fa": 0, 
-  "ff": 4, 
-  "fi": 2, 
-  "fil": 3, 
-  "fo": 2, 
-  "fr": 4, 
-  "fur": 2, 
-  "fy": 2, 
-  "ga": 7, 
-  "gd": 23, 
-  "gl": 2, 
-  "gsw": 2, 
-  "gu": 2, 
-  "guw": 3, 
-  "gv": 22, 
-  "ha": 2, 
-  "haw": 2, 
+  "ff": 5, 
+  "fi": 3, 
+  "fil": 4, 
+  "fo": 3, 
+  "fr": 5, 
+  "fur": 3, 
+  "fy": 3, 
+  "ga": 8, 
+  "gd": 24, 
+  "gl": 3, 
+  "gsw": 3, 
+  "gu": 3, 
+  "guw": 4, 
+  "gv": 23, 
+  "ha": 3, 
+  "haw": 3, 
   "he": 2, 
-  "hi": 3, 
-  "hr": 10, 
+  "hi": 4, 
+  "hr": 11, 
   "hu": 0, 
   "id": 0, 
   "ig": 0, 
   "ii": 0, 
-  "is": 2, 
-  "it": 2, 
-  "iu": 6, 
+  "is": 3, 
+  "it": 3, 
+  "iu": 7, 
   "ja": 0, 
-  "jmc": 2, 
+  "jmc": 3, 
   "jv": 0, 
   "ka": 0, 
-  "kab": 4, 
-  "kaj": 2, 
-  "kcg": 2, 
+  "kab": 5, 
+  "kaj": 3, 
+  "kcg": 3, 
   "kde": 0, 
   "kea": 0, 
-  "kk": 2, 
-  "kl": 2, 
+  "kk": 3, 
+  "kl": 3, 
   "km": 0, 
   "kn": 0, 
   "ko": 0, 
-  "ksb": 2, 
-  "ksh": 20, 
-  "ku": 2, 
-  "kw": 6, 
-  "lag": 17, 
-  "lb": 2, 
-  "lg": 2, 
-  "ln": 3, 
+  "ksb": 3, 
+  "ksh": 21, 
+  "ku": 3, 
+  "kw": 7, 
+  "lag": 18, 
+  "lb": 3, 
+  "lg": 3, 
+  "ln": 4, 
   "lo": 0, 
-  "lt": 9, 
-  "lv": 5, 
-  "mas": 2, 
-  "mg": 3, 
-  "mk": 15, 
-  "ml": 2, 
-  "mn": 2, 
-  "mo": 8, 
-  "mr": 2, 
+  "lt": 10, 
+  "lv": 6, 
+  "mas": 3, 
+  "mg": 4, 
+  "mk": 16, 
+  "ml": 3, 
+  "mn": 3, 
+  "mo": 9, 
+  "mr": 3, 
   "ms": 0, 
-  "mt": 14, 
+  "mt": 15, 
   "my": 0, 
-  "nah": 2, 
-  "naq": 6, 
-  "nb": 2, 
-  "nd": 2, 
-  "ne": 2, 
-  "nl": 2, 
-  "nn": 2, 
-  "no": 2, 
-  "nr": 2, 
-  "nso": 3, 
-  "ny": 2, 
-  "nyn": 2, 
-  "om": 2, 
-  "or": 2, 
-  "pa": 2, 
-  "pap": 2, 
-  "pl": 12, 
-  "ps": 2, 
-  "pt": 2, 
-  "rm": 2, 
-  "ro": 8, 
-  "rof": 2, 
-  "ru": 10, 
-  "rwk": 2, 
+  "nah": 3, 
+  "naq": 7, 
+  "nb": 3, 
+  "nd": 3, 
+  "ne": 3, 
+  "nl": 3, 
+  "nn": 3, 
+  "no": 3, 
+  "nr": 3, 
+  "nso": 4, 
+  "ny": 3, 
+  "nyn": 3, 
+  "om": 3, 
+  "or": 3, 
+  "pa": 3, 
+  "pap": 3, 
+  "pl": 13, 
+  "ps": 3, 
+  "pt": 3, 
+  "rm": 3, 
+  "ro": 9, 
+  "rof": 3, 
+  "ru": 11, 
+  "rwk": 3, 
   "sah": 0, 
-  "saq": 2, 
-  "se": 6, 
-  "seh": 2, 
+  "saq": 3, 
+  "se": 7, 
+  "seh": 3, 
   "ses": 0, 
   "sg": 0, 
-  "sh": 10, 
-  "shi": 18, 
-  "sk": 11, 
-  "sl": 13, 
-  "sma": 6, 
-  "smi": 6, 
-  "smj": 6, 
-  "smn": 6, 
-  "sms": 6, 
-  "sn": 2, 
-  "so": 2, 
-  "sq": 2, 
-  "sr": 10, 
-  "ss": 2, 
-  "ssy": 2, 
-  "st": 2, 
-  "sv": 2, 
-  "sw": 2, 
-  "syr": 2, 
-  "ta": 2, 
-  "te": 2, 
-  "teo": 2, 
+  "sh": 11, 
+  "shi": 19, 
+  "sk": 12, 
+  "sl": 14, 
+  "sma": 7, 
+  "smi": 7, 
+  "smj": 7, 
+  "smn": 7, 
+  "sms": 7, 
+  "sn": 3, 
+  "so": 3, 
+  "sq": 3, 
+  "sr": 11, 
+  "ss": 3, 
+  "ssy": 3, 
+  "st": 3, 
+  "sv": 3, 
+  "sw": 3, 
+  "syr": 3, 
+  "ta": 3, 
+  "te": 3, 
+  "teo": 3, 
   "th": 0, 
-  "ti": 3, 
-  "tig": 2, 
-  "tk": 2, 
-  "tl": 3, 
-  "tn": 2, 
+  "ti": 4, 
+  "tig": 3, 
+  "tk": 3, 
+  "tl": 4, 
+  "tn": 3, 
   "to": 0, 
   "tr": 0, 
-  "ts": 2, 
-  "tzm": 21, 
-  "uk": 10, 
-  "ur": 2, 
-  "ve": 2, 
+  "ts": 3, 
+  "tzm": 22, 
+  "uk": 11, 
+  "ur": 3, 
+  "ve": 3, 
   "vi": 0, 
-  "vun": 2, 
-  "wa": 3, 
-  "wae": 2, 
+  "vun": 3, 
+  "wa": 4, 
+  "wae": 3, 
   "wo": 0, 
-  "xh": 2, 
-  "xog": 2, 
+  "xh": 3, 
+  "xog": 3, 
   "yo": 0, 
   "zh": 0, 
-  "zu": 2
+  "zu": 3
 };
 
 // Utility functions for plural rules methods
@@ -203,35 +203,44 @@ const RULES = {
     return "other"
   },
   "2": function (n) {
-    if (n == 1)
-      return "one";
-    return "other"
-  },
-  "3": function (n) {
-    if ((isBetween(n, 0, 1)))
-      return "one";
-    return "other"
-  },
-  "4": function (n) {
-    if ((isBetween(n, 0, 2)) && n != 2)
-      return "one";
-    return "other"
-  },
-  "5": function (n) {
-    if (n == 0)
-      return "zero";
-    if ((n % 10) == 1 && (n % 100) != 11)
-      return "one";
-    return "other"
-  },
-  "6": function (n) {
+    if (n != 0 && (n % 10) == 0)
+      return "many";
     if (n == 2)
       return "two";
     if (n == 1)
       return "one";
     return "other"
   },
+  "3": function (n) {
+    if (n == 1)
+      return "one";
+    return "other"
+  },
+  "4": function (n) {
+    if ((isBetween(n, 0, 1)))
+      return "one";
+    return "other"
+  },
+  "5": function (n) {
+    if ((isBetween(n, 0, 2)) && n != 2)
+      return "one";
+    return "other"
+  },
+  "6": function (n) {
+    if (n == 0)
+      return "zero";
+    if ((n % 10) == 1 && (n % 100) != 11)
+      return "one";
+    return "other"
+  },
   "7": function (n) {
+    if (n == 2)
+      return "two";
+    if (n == 1)
+      return "one";
+    return "other"
+  },
+  "8": function (n) {
     if ((isBetween(n, 3, 6)))
       return "few";
     if ((isBetween(n, 7, 10)))
@@ -242,21 +251,21 @@ const RULES = {
       return "one";
     return "other"
   },
-  "8": function (n) {
+  "9": function (n) {
     if (n == 0 || n != 1 && (isBetween((n % 100), 1, 19)))
       return "few";
     if (n == 1)
       return "one";
     return "other"
   },
-  "9": function (n) {
+  "10": function (n) {
     if ((isBetween((n % 10), 2, 9)) && !(isBetween((n % 100), 11, 19)))
       return "few";
     if ((n % 10) == 1 && !(isBetween((n % 100), 11, 19)))
       return "one";
     return "other"
   },
-  "10": function (n) {
+  "11": function (n) {
     if ((isBetween((n % 10), 2, 4)) && !(isBetween((n % 100), 12, 14)))
       return "few";
     if ((n % 10) == 0 || (isBetween((n % 10), 5, 9)) || (isBetween((n % 100), 11, 14)))
@@ -265,14 +274,14 @@ const RULES = {
       return "one";
     return "other"
   },
-  "11": function (n) {
+  "12": function (n) {
     if ((isBetween(n, 2, 4)))
       return "few";
     if (n == 1)
       return "one";
     return "other"
   },
-  "12": function (n) {
+  "13": function (n) {
     if ((isBetween((n % 10), 2, 4)) && !(isBetween((n % 100), 12, 14)))
       return "few";
     if (n != 1 && (isBetween((n % 10), 0, 1)) || (isBetween((n % 10), 5, 9)) || (isBetween((n % 100), 12, 14)))
@@ -281,7 +290,7 @@ const RULES = {
       return "one";
     return "other"
   },
-  "13": function (n) {
+  "14": function (n) {
     if ((isBetween((n % 100), 3, 4)))
       return "few";
     if ((n % 100) == 2)
@@ -290,7 +299,7 @@ const RULES = {
       return "one";
     return "other"
   },
-  "14": function (n) {
+  "15": function (n) {
     if (n == 0 || (isBetween((n % 100), 2, 10)))
       return "few";
     if ((isBetween((n % 100), 11, 19)))
@@ -299,12 +308,12 @@ const RULES = {
       return "one";
     return "other"
   },
-  "15": function (n) {
+  "16": function (n) {
     if ((n % 10) == 1 && n != 11)
       return "one";
     return "other"
   },
-  "16": function (n) {
+  "17": function (n) {
     if (n == 3)
       return "few";
     if (n == 0)
@@ -317,21 +326,21 @@ const RULES = {
       return "one";
     return "other"
   },
-  "17": function (n) {
+  "18": function (n) {
     if (n == 0)
       return "zero";
     if ((isBetween(n, 0, 2)) && n != 0 && n != 2)
       return "one";
     return "other"
   },
-  "18": function (n) {
+  "19": function (n) {
     if ((isBetween(n, 2, 10)))
       return "few";
     if ((isBetween(n, 0, 1)))
       return "one";
     return "other"
   },
-  "19": function (n) {
+  "20": function (n) {
     if ((isBetween((n % 10), 3, 4) || ((n % 10) == 9)) && !(isBetween((n % 100), 10, 19) || isBetween((n % 100), 70, 79) || isBetween((n % 100), 90, 99)))
       return "few";
     if ((n % 1000000) == 0 && n != 0)
@@ -342,24 +351,24 @@ const RULES = {
       return "one";
     return "other"
   },
-  "20": function (n) {
+  "21": function (n) {
     if (n == 0)
       return "zero";
     if (n == 1)
       return "one";
     return "other"
   },
-  "21": function (n) {
+  "22": function (n) {
     if ((isBetween(n, 0, 1)) || (isBetween(n, 11, 99)))
       return "one";
     return "other"
   },
-  "22": function (n) {
+  "23": function (n) {
     if ((isBetween((n % 10), 1, 2)) || (n % 20) == 0)
       return "one";
     return "other"
   },
-  "23": function (n) {
+  "24": function (n) {
     if ((isBetween(n, 3, 10) || isBetween(n, 13, 19)))
       return "few";
     if (isIn(n, [2, 12]))
@@ -380,8 +389,10 @@ const RULES = {
   */
 exports.getRulesForLocale = function getRulesForLocale(locale) {
   let index = LOCALES_TO_RULES[locale];
-  if (!(index in RULES))
-    throw new Error('Plural form unknown for locale "' + locale + '"');
+  if (!(index in RULES)) {
+    console.warn('Plural form unknown for locale "' + locale + '"');
+    return function () { return "other"; };
+  }
   return RULES[index];
 }
 

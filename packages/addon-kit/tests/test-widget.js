@@ -5,7 +5,7 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const widgets = require("widget");
 const url = require("url");
 const windowUtils = require("window-utils");
@@ -922,6 +922,28 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
   });
 };
 
+exports.testContentScriptOptionsOption = function(test) {
+  test.waitUntilDone();
+
+  let widget = require("widget").Widget({
+      id: "fooz",
+      label: "fooz",
+      content: "fooz",
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+        test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        widget.destroy();
+        test.done();
+      }
+    });
+};
+
 exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
   test.waitUntilDone();
 
@@ -999,12 +1021,11 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the widget module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("widget does not support this application.");
-  };
 }
 

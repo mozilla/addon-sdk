@@ -4,7 +4,7 @@
 
 let pb = require("private-browsing");
 let {Cc,Ci} = require("chrome");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.

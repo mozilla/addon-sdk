@@ -8,7 +8,7 @@
 
 const { on, once, off } = require('./core');
 const { method } = require('../functional');
-const { Base } = require('../base');
+const { Class } = require('../heritage');
 
 const EVENT_TYPE_PATTERN = /^on([A-Z]\w+$)/;
 
@@ -17,7 +17,7 @@ const EVENT_TYPE_PATTERN = /^on([A-Z]\w+$)/;
  * add / remove event listeners on them. Events on these objects may be emitted
  * via `emit` function exported by 'event/core' module.
  */
-const EventTarget = Base.extend({
+const EventTarget = Class({
   /**
    * Method initializes `this` event source. It goes through properties of a
    * given `options` and registers listeners for the ones that look like an

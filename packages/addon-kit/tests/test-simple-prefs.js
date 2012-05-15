@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
 const { jetpackID } = require("@packaging");
