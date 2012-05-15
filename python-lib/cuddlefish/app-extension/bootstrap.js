@@ -91,6 +91,7 @@ function startup(data, reasonCode) {
   options.main = { id: options.main, uri: prefixURI + options.mainPath };
   options.id = options.jetpackID;
   options.loaderURI = loaderURI;
+  options.version = options.metadata[options.name].version
 
   // Adding `uriPrefix` for backwards compatibility.
   options.uriPrefix = prefixURI;

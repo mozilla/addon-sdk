@@ -287,16 +287,6 @@ const Require = iced(function Require(loader, requirer) {
       freeze(module);
     }
 
-    // "magic" modules which have contents that depend upon who imports them
-    // (like "self") are expressed in the Loader's pre-populated 'modules'
-    // table as callable functions, which are given the reference to this
-    // Loader and a copy of the importer's URI
-    //
-    // TODO: Find a better way to implement `self`.
-    // Maybe something like require('self!path/to/data')
-    if (typeof(module) === 'function')
-      module = module(loader, requirer);
-
     return module.exports;
   }, { main: loader.main })); // `require.main` is main `module`.
 });
@@ -393,13 +383,7 @@ const Loader = iced(function Loader(options) {
         // TODO: Add deprecation warnings here!
         return loader.modules['@chrome'].exports;
       }
-    }),
-    // TODO: Deprecate this `self` and switch to non-magic self.
-    'self': function self(loader, requirer) {
-      let loaderURI = loader.modules['@packaging'].exports.loader;
-      let require = Require(loader, { uri: loaderURI });
-      return require('api-utils/self!').create(requirer);
-    }
+    })
   });
 
   return loader;
