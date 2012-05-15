@@ -185,7 +185,9 @@ exports.load = load;
 function isRelative(id) { return id[0] === '.'; }
 // Utility function to normalize module `uri`s so they have `.js` extension.
 function normalize(uri) { return uri.substr(-3) === '.js' ? uri : uri + '.js'; }
-// Utility function to join paths.
+// Utility function to join paths. In common case `base` is a
+// `requirer.uri` but in some cases it may be `baseURI`. In order to
+// avoid complexity we require `baseURI` with a trailing `/`.
 const resolve = iced(function resolve(id, base) {
   let paths = id.split('/');
   let result = base.split('/');
