@@ -370,7 +370,9 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "@packaging", "@loader"):
+            # If requirement is chrome or a pseudo-module (starts with @) make
+            # path a requirement name.
+            if reqname == "chrome" or reqname.startswith("@"):
                 me.add_requirement(reqname, {"path": reqname})
             else:
                 # when two modules require() the same name, do they get a

@@ -7,12 +7,12 @@ const { emit, off } = require("api-utils/event/core");
 const { Class } = require("api-utils/heritage");
 const { EventTarget } = require("api-utils/event/target");
 const { when: unload } = require("api-utils/unload");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
 const prefService = require("api-utils/preferences-service");
 const observers = require("api-utils/observer-service");
 
-const ADDON_BRANCH = "extensions." + jetpackID + ".";
-const BUTTON_PRESSED = jetpackID + "-cmdPressed";
+const ADDON_BRANCH = "extensions." + id + ".";
+const BUTTON_PRESSED = id + "-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
 if (!require("xul-app").is("Firefox"))

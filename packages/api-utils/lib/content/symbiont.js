@@ -11,6 +11,8 @@ const hiddenFrames = require('../hidden-frame');
 const observers = require('../observer-service');
 const unload = require('../unload');
 
+const assetsURI = require('self').data.url();
+
 /**
  * This trait is layered on top of `Worker` and in contrast to symbiont
  * Worker constructor requires `content` option that represents content
@@ -107,7 +109,7 @@ const Symbiont = Worker.resolve({
     // one of our addon folder and if no content script are defined. bug 612726
     let isDataResource =
       typeof this._contentURL == "string" &&
-      this._contentURL.indexOf(require("@packaging").prefixURI) == 0;
+      this._contentURL.indexOf(assetsURI) == 0;
     let hasContentScript =
       (Array.isArray(this.contentScript) ? this.contentScript.length > 0
                                              : !!this.contentScript) ||

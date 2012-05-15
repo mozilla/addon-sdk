@@ -6,7 +6,7 @@
 const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
 
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
@@ -112,7 +112,7 @@ exports.testBtnListener = function(test) {
     test.pass("Button press event was heard");
     test.done();
   });
-  notify((jetpackID + "-cmdPressed"), "", "test-btn-listen");
+  notify((id + "-cmdPressed"), "", "test-btn-listen");
 
   loader.unload();
 };

@@ -23,7 +23,7 @@ var map = Array.map || unbind(Array.prototype.map);
 var concat = Array.concat || unbind(Array.prototype.concat);
 
 // Utility function to get own properties descriptor map.
-function getOwnPropertiesDescriptor(object) {
+function getOwnPropertyDescriptors(object) {
   return reduce(getNames(object), function(descriptor, name) {
     descriptor[name] = getOwnPropertyDescriptor(object, name);
     return descriptor;
@@ -70,7 +70,7 @@ exports.mix = mix;
  * implements all own properties of the given `properties` object.
  */
 function extend(prototype, properties) {
-  return freeze(create(prototype, getOwnPropertiesDescriptor(properties)));
+  return freeze(create(prototype, getOwnPropertyDescriptors(properties)));
 }
 exports.extend = extend;
 

@@ -6,7 +6,8 @@
 "use strict";
 
 const { CC } = require('chrome');
-const { jetpackID, name, prefixURI, version, loadReason } = require('@packaging');
+const { id, name, prefixURI, rootURI,
+        version, loadReason } = require('@loader/options');
 
 const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
                           'nsIXMLHttpRequest');
@@ -31,11 +32,13 @@ function uri(path) {
 // Some XPCOM APIs require valid URIs as an argument for certain operations
 // (see `nsILoginManager` for example). This property represents add-on
 // associated unique URI string that can be used for that.
-exports.uri = 'addon:' + jetpackID;
-exports.id = jetpackID;
+exports.uri = 'addon:' + id;
+exports.id = id;
 exports.name = name;
 exports.loadReason = loadReason;
 exports.version = version;
+// If `rootURI` is jar:file://...!/ than add-on is packed.
+exports.packed = rootURI.indexOf('jar:') === 0
 exports.data = Object.freeze({
   url: uri,
   load: function read(path) {
