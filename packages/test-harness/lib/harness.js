@@ -5,8 +5,7 @@
 "use strict";
 
 const { Cc,Ci } = require("chrome");
-const { Loader, Require, override, unload } = require("@loader");
-const globals = require('api-utils/globals!');
+const { Loader } = require('./loader');
 const memory = require('api-utils/memory');
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
@@ -182,7 +181,7 @@ function cleanup() {
                       for each (info in memory.getObjects())];
     }
 
-    unload(loader);
+    loader.unload();
 
     if (loader.globals.console.errorsLogged && !results.failed) {
       results.failed++;
@@ -232,9 +231,9 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
-    let require = Require(loader, module);
+    let require = loader.require;
     require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: require('@packaging').enableE10s,
+      testOutOfProcess: false,
       testInProcess: true,
       stopOnError: stopOnError,
       filter: filter,
@@ -308,15 +307,9 @@ var runTests = exports.runTests = function runTests(options) {
           system.platform + "/" + system.architecture + ".\n");
 
 
-    loader = Loader(override(JSON.parse(JSON.stringify(require("@packaging"))), {
-      id: Math.random().toString(36).slice(2),
-      // Copy globals to fresh object (as globals will be frozen and can't be
-      // overridden. And then we override, global console to expose one designed
-      // for tests.
-      globals: override(override({}, globals), {
-        console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
-      })
-    }));
+    loader = Loader(module, {
+      console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+    });
 
     nextIteration();
   } catch (e) {

@@ -4,16 +4,16 @@
 /*global define: true */
 !function(factory) {
   if (typeof(define) === 'function') { // RequireJS
-    define(factory)
+    define(factory);
   } else if (typeof(exports) === 'object') { // CommonJS
-    factory(require, exports)
+    factory(require, exports, module);
   } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(undefined, this)
-    this.EXPORTED_SYMBOLS = Object.keys(this)
+    factory(undefined, this, { uri: __URI__ });
+    this.EXPORTED_SYMBOLS = Object.keys(this);
   } else {
-    factory(undefined, (this.promise = {}))
+    factory(undefined, this, { uri: document.location.href });
   }
-}.call(this, function(require, exports) {
+}.call(this, function(require, exports, module) {
 
 'use strict';
 
