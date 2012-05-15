@@ -300,7 +300,7 @@ let SelectionListenerManager = Class({
   },
 
   onSelect : function onSelect() {
-    setTimeout(emit, 0, exports, "select");
+    setTimeout(emit, 0, module.exports, "select");
   },
 
   /**
@@ -417,7 +417,4 @@ var selection = Class({
   implements: [ Selection, SelectionIterator ]
 })(0);
 
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(selection, 'workaround-bug-673468');
 module.exports = selection;

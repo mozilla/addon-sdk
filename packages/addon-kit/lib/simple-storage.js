@@ -227,10 +227,6 @@ let manager = ({
   }
 }).new();
 
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(exports, 'workaround-bug-673468');
-
 exports.on = on.bind(null, exports);
 exports.removeListener = function(type, listener) {
   off(exports, type, listener);
