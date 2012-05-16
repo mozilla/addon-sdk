@@ -161,4 +161,3 @@ Prefs.setLocalized = function setLocalized(name, value) {
 }
 
 module.exports = Prefs;
-

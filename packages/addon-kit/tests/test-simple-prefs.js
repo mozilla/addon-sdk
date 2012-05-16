@@ -38,6 +38,36 @@ exports.testIterations = function(test) {
   test.done();
 }
 
+exports.testIterations = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  sp["test"] = true;
+  sp["test.test"] = true;
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assert("test" in sp);
+  test.assert(!sp.getPropertyDescriptor);
+  test.assert(Object.prototype.hasOwnProperty.call(sp, "test"));
+  test.assertEqual(["test", "test.test"].toString(), prefAry.sort().toString(), "for (x in y) part 1/2 works");
+  test.assertEqual(["test", "test.test"].toString(), Object.keys(sp).sort().toString(), "Object.keys works");
+
+  delete sp["test"];
+  delete sp["test.test"];
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assertEqual([].toString(), prefAry.toString(), "for (x in y) part 2/2 works");
+
+  loader.unload();
+  test.done();
+}
+
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
 

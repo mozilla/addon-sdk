@@ -4,8 +4,9 @@
 
 const { emit, off } = require("api-utils/event/core");
 const { when: unload } = require("api-utils/unload");
+const { id } = require("self");
+const prefService = require("api-utils/preferences-service");
 const { PrefsTarget } = require("api-utils/prefs/target");
-const { jetpackID } = require("@packaging");
 const observers = require("api-utils/observer-service");
 
 const ADDON_BRANCH = "extensions." + jetpackID + ".";

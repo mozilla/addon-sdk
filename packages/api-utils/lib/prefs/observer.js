@@ -37,6 +37,6 @@ exports.PrefsObserver = function PrefsObserver(options) {
   unload(function() {
     branch.removeObserver('', preferenceChange, false);
   });
-  
+
   return this;
 };
