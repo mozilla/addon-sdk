@@ -35,7 +35,55 @@ define the preferences in your `package.json`, like so:
             "value": "this is the default string value"
         }]
     }
+## Setting types
 
+<table>
+    <tr>
+        <th>type</th>
+        <th>displayed as</th>
+        <th>stored as</th>
+    </tr>
+		<tr>
+			<td>bool</td>
+			<td>checkbox</td>
+			<td>boolean</td>
+		</tr>
+		<tr>
+			<td>boolint</td>
+			<td>checkbox</td>
+			<td>integer</td>
+		</tr>
+		<tr>
+			<td>integer</td>
+			<td>textbox</td>
+			<td>integer</td>
+		</tr>
+		<tr>
+			<td>string</td>
+			<td>textbox</td>
+			<td>string</td>
+		</tr>
+		<tr>
+			<td>color</td>
+			<td>colorpicker</td>
+			<td>string</td>
+		</tr>
+		<tr>
+			<td>file</td>
+			<td>browse button and label</td>
+			<td>string</td>
+		</tr>
+		<tr>
+			<td>directory</td>
+			<td>browse button and label</td>
+			<td>string</td>
+		</tr>
+		<tr>
+			<td>control</td>
+			<td>button</td>
+			<td>no pref stored</td>
+		</tr>
+</table>
 
 <api name="prefs">
 @property {object}
