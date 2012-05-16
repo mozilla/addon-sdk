@@ -182,14 +182,18 @@ const PageMod = Loader.compose(EventEmitter, {
   _loadingWindows: [],
 
   _applyOnExistingDocuments: function _applyOnExistingDocuments() {
-    for each(let tab in allTabsIterator()) {
-      for each(let rule in this.include) {
-        if (RULES[rule].test(tab.uri)) {
-          // Fake a newly created document
-          this._onContent(tab.content);
-          // Break in order to avoid applying same content script multiple times
-          break;
-        }
+    // Returns true if the URL match one rule
+    function isMatchingURL(uri, rules) {
+      for each(let rule in rules) {
+        if (RULES[rule].test(uri))
+          return true;
+      }
+      return false;
+    };
+    for each (let tab in getAllTabs()) {
+      if (isMatchingURL(tab.uri, this.include)) {
+        // Fake a newly created document
+        this._onContent(tab.content);
       }
     }
   },
@@ -350,7 +354,8 @@ const PageModManager = Registry.resolve({
 const pageModManager = PageModManager();
 
 // Iterate over all tabs on all currently opened windows
-function allTabsIterator() {
+function getAllTabs() {
+  let tabList = [];
   // Iterate over all chrome windows
   for (let window in windowIterator()) {
     // Get a reference to the main <xul:tabbrowser> node
@@ -362,15 +367,14 @@ function allTabsIterator() {
     if (!tabs)
       continue;
     // Iterate over its tabs
-    for(let i = 0; i < tabs.children.length; i++) {
+    for (let i = 0; i < tabs.children.length; i++) {
       let tab = tabs.children[i];
       let browser = tab.linkedBrowser;
-      yield {
-        tab: tab,
-        browser: browser,
-        get uri() browser.currentURI.spec,
-        get content() browser.contentWindow
-      };
+      tabList.push({
+        uri: browser.currentURI.spec,
+        content: browser.contentWindow
+      });
     }
   }
+  return tabList;
 }

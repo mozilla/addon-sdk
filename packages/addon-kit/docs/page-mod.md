@@ -368,7 +368,7 @@ Creates a PageMod.
     Optional.
 
   @prop [target] {array}
-    Option to specify on which documents should apply the PageMod.
+    Option to specify on which documents PageMod should be applied.
     For now, it only accepts one value: "existing". If `target` contains
     "existing", the PageMod will be automatically applied on already opened
     tabs.
