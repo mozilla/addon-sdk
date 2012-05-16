@@ -87,9 +87,9 @@ function startup(data, reasonCode) {
     cuddlefishURI = prefixURI + options.loader;
 
     // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
-    let module = Cu.import(cuddlefishURI);
-    unload = module.unload;
-    loader = module.Loader({
+    let cuddlefish = Cu.import(cuddlefishURI);
+    unload = cuddlefish.unload;
+    loader = cuddlefish.Loader({
       // Add-on ID used by different APIs as a unique identifier.
       id: id,
       // Add-on name.
@@ -132,21 +132,10 @@ function startup(data, reasonCode) {
       }
     });
 
-    // Put `api-utils/loader` loaded as JSM to module cache to avoid subsequent
-    // loads via `require`.
-    let cuddlefish = { uri: cuddlefishURI };
-    let loaderURI = loader.resolve('api-utils/loader', cuddlefish);
-    loader.modules[loaderURI] = {
-      id: 'api-utils/loader',
-      uri: loaderURI,
-      exports: module
-    };
-    let require = Require(loader, cuddlefish);
+    let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
+    let require = Require(loader, module);
     require('api-utils/addon/runner').startup(reason, {
       loader: loader,
-      // To workaround bug 674195 we pass in load from the same context as
-      // loader this way freeze in load won't throw.
-      load: module.load,
       prefsURI: rootURI + 'defaults/preferences/prefs.js'
     });
   } catch (error) {
