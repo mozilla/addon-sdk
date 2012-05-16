@@ -25,6 +25,11 @@ h2 {
   padding: 5px 0px;
 }
 
+/* Enable image scaling */
+img {
+  max-width: 100%;
+}
+
 h2.top {
   margin-top: 0px;
 }

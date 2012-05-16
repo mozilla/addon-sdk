@@ -12,13 +12,13 @@ const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 let {Cc,Ci} = require("chrome");
 
 const { Loader } = require("test-harness/loader");
-const options = require("@packaging");
+const { id } = require("self");
 
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
                 getService(Ci.nsIProperties).
                 get("ProfD", Ci.nsIFile);
 storeFile.append("jetpack");
-storeFile.append(options.jetpackID);
+storeFile.append(id);
 storeFile.append("simple-storage");
 storeFile.append("store.json");
 let storeFilename = storeFile.path;
