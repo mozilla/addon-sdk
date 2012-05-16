@@ -78,7 +78,22 @@ function Loader(options) {
     }
   });
 
-  return BaseLoader(options);
+  let loader = BaseLoader(options);
+
+  // Put `api-utils/loader` and `api-utils/cuddlefish` loaded as JSM to module
+  // cache to avoid subsequent loads via `require`.
+  loader.modules[loaderURI] = {
+    id: 'api-utils/loader',
+    uri: loaderURI,
+    exports: loaderModule
+  };
+  loader.modules[module.uri] = {
+    id: module.id,
+    uri: module.uri,
+    exports: exports
+  };
+
+  return loader;
 }
 Loader.prototype = null;
 exports.Loader = Object.freeze(Loader);
