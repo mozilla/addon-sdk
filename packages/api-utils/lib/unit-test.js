@@ -43,6 +43,8 @@ TestRunner.prototype = {
   PAUSE_DELAY: 500,
 
   _logTestFailed: function _logTestFailed(why) {
+    if (!(why in this.test.errors))
+      this.test.errors[why] = 0;
     this.test.errors[why]++;
     if (!this.testFailureLogged) {
       this.console.error("TEST FAILED: " + this.test.name + " (" + why + ")");
