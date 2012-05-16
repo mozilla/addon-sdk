@@ -18,7 +18,40 @@ const prefService = Cc["@mozilla.org/preferences-service;1"].
 const prefSvc = prefService.getBranch(null);
 const defaultBranch = prefService.getDefaultBranch(null);
 
-var get = exports.get = function get(name, defaultValue) {
+function Prefs(branchName) {
+  if (!(this instanceof Prefs)) {
+    return new Prefs(branchName);
+  }
+
+  function getPrefKeys() {
+    return Prefs.getChildList(branchName).map(function(pref) {
+      return pref.replace(branchName, "");
+    });
+  }
+
+  return Proxy.create({
+    get: function(receiver, pref) {
+      return Prefs.get(branchName + pref);
+    },
+    set: function(receiver, pref, val) {
+      Prefs.set(branchName + pref, val);
+    },
+    delete: function(pref) {
+      Prefs.reset(branchName + pref);
+      return true;
+    },
+    has: function hasPrefKey(pref) Prefs.has(branchName + pref),
+    getPropertyDescriptor: function(name) {
+      return {
+        value: Prefs.get(branchName + name)
+      };
+    },
+    enumerate: getPrefKeys,
+    keys: getPrefKeys
+  }, Prefs.prototype);
+}
+
+Prefs.get = function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
   case Ci.nsIPrefBranch.PREF_STRING:
     return prefSvc.getComplexValue(name, Ci.nsISupportsString).data;
@@ -42,7 +75,7 @@ var get = exports.get = function get(name, defaultValue) {
   }
 };
 
-var set = exports.set = function set(name, value) {
+Prefs.set = function set(name, value) {
   var prefType;
   if (typeof value != "undefined" && value != null)
     prefType = value.constructor.name;
@@ -82,15 +115,19 @@ var set = exports.set = function set(name, value) {
   }
 };
 
-var has = exports.has = function has(name) {
+Prefs.has = function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
 };
 
-var isSet = exports.isSet = function isSet(name) {
-  return (has(name) && prefSvc.prefHasUserValue(name));
+Prefs.getChildList = function getChildList(aStartingAt) {
+  return prefSvc.getChildList(aStartingAt);
+}
+
+Prefs.isSet = function isSet(name) {
+  return (Prefs.has(name) && prefSvc.prefHasUserValue(name));
 };
 
-var reset = exports.reset = function reset(name) {
+Prefs.reset = function reset(name) {
   try {
     prefSvc.clearUserPref(name);
   } catch (e if e.result == Cr.NS_ERROR_UNEXPECTED) {
@@ -104,7 +141,7 @@ var reset = exports.reset = function reset(name) {
   }
 };
 
-exports.getLocalized = function getLocalized(name, defaultValue) {
+Prefs.getLocalized = function getLocalized(name, defaultValue) {
   let value = null;
   try {
     value = prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
@@ -114,7 +151,7 @@ exports.getLocalized = function getLocalized(name, defaultValue) {
   }
 }
 
-exports.setLocalized = function setLocalized(name, value) {
+Prefs.setLocalized = function setLocalized(name, value) {
   // We can't use `prefs.set` here as we have to use `getDefaultBranch`
   // (instead of `getBranch`) in order to have `mIsDefault` set to true, here:
   // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#233
@@ -122,3 +159,6 @@ exports.setLocalized = function setLocalized(name, value) {
   // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#244
   defaultBranch.setCharPref(name, value);
 }
+
+module.exports = Prefs;
+

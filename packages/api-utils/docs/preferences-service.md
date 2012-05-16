@@ -53,6 +53,17 @@ preference is set.
 </api>
 
 
+<api name="getChildList">
+@function
+@param aStartingAt {string} Preference name.
+@returns {array} Returns an array of strings representing the child preferences of the root of this branch.
+
+**Note**:  Technically, it will return any preference name *starting with* aStartingAt.
+see https://developer.mozilla.org/en/Code_snippets/Preferences for details.
+
+</api>
+
+
 <api name="isSet">
 @function
 @param name {string} Preference name.
@@ -74,7 +85,7 @@ acting on the user's behalf).
 @function
 Clears a non-default, user-set value from the application preference
 `name`. If no user-set value is defined on `name`, the function
-does nothing. If no default value exists the preference will cease to exist.
+does nothing.
 @param name {string} Preference name.
 
 **Example:**
