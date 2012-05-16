@@ -132,7 +132,7 @@ function startup(data, reasonCode) {
       }
     });
 
-    let module = { uri: cuddlefishURI, id: 'api-utils/cuddlefish' };
+    let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
     let require = Require(loader, module);
     require('api-utils/addon/runner').startup(reason, {
       loader: loader,

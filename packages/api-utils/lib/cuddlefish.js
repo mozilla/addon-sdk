@@ -88,7 +88,7 @@ function Loader(options) {
     exports: loaderModule
   };
   loader.modules[module.uri] = {
-    id: module.id,
+    id: 'api-utils/cuddlefish',
     uri: module.uri,
     exports: exports
   };
