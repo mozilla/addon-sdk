@@ -15,7 +15,7 @@ const ADDON_BRANCH = "extensions." + id + ".";
 const BUTTON_PRESSED = id + "-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
-if (!require("xul-app").is("Firefox"))
+if (!require("api-utils/xul-app").is("Firefox"))
   throw Error("This API is only supported in Firefox");
 
 const branch = Cc["@mozilla.org/preferences-service;1"].
