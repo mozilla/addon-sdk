@@ -9,7 +9,7 @@ const { override, Sandbox, evaluate, load } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
-const { loadReason } = require('self').loadReason;
+const { loadReason } = require('self');
 const globals = require('../globals');
 
 const NAME2TOPIC = {
