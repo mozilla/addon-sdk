@@ -4,24 +4,36 @@
 
 "use strict";
 
+const create = Object.create;
+const prototypeOf = Object.getPrototypeOf;
+
 /**
- * Function creates a new namespace. Optionally `prototype` object may be
- * passed, in which case namespace objects will inherit from it. Returned value
- * is a function that can be used to get access to the namespaced properties
- * for the passed object.
+ * Returns a new namespace, function that may can be used to access an
+ * namespaced object of the argument argument. Namespaced object are associated
+ * with owner objects via weak references. Namespaced objects inherit from the
+ * owners ancestor namespaced object. If owner's ancestor is `null` then
+ * namespaced object inherits from given `prototype`. Namespaces can be used
+ * to define internal APIs that can be shared via enclosing `namespace`
+ * function.
  * @examples
- *    const ns = Namespace();
- *    ns(myObject).secret = secret;
+ *    const internals = ns();
+ *    internals(object).secret = secret;
  */
-exports.Namespace = function Namespace(prototype) {
-  prototype = prototype || Object.prototype;
+function ns() {
   const map = new WeakMap();
   return function namespace(target) {
-    return map.get(target) ||
-           map.set(target, Object.create(prototype)), map.get(target);
+    if (!target)        // If `target` is not an object return `target` itself.
+      return target;
+    // If target has no namespaced object yet, create one that inherits from
+    // the target prototype's namespaced object.
+    if (!map.has(target))
+      map.set(target, create(namespace(prototypeOf(target) || null)));
+
+    return map.get(target);
   };
 };
 
 // `Namespace` is a e4x function in the scope, so we export the function also as
 // `ns` as alias to avoid clashing.
-exports.ns = exports.Namespace;
+exports.ns = ns;
+exports.Namespace = ns;
