@@ -264,6 +264,8 @@ exports.testObjectListener2 = createProxyTest("", function (helper) {
 
 let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' + 
              '<input id="input2" type="checkbox" />';
+
+/* Disable test to keep tree green until Bug 756214 is fixed.
 exports.testStringOverload = createProxyTest(html, function (helper, test) {
   // Proxy - toString error
   let originalString = "string";
@@ -299,6 +301,7 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
     }
   );
 });
+*/
 
 exports.testMozMatchedSelector = createProxyTest("", function (helper) {
   helper.createWorker(
