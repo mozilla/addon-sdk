@@ -102,21 +102,21 @@ exports["test ns inheritance"] = function(assert) {
   _(prototype).foo = {};
 
   assert.ok(!Object.prototype.hasOwnProperty.call(_(delegee), "foo"),
-            "namespaced property is not copied to decedents");
+            "namespaced property is not copied to descendants");
   assert.equal(_(delegee).foo, _(prototype).foo,
-               "namespaced properties are inherited by decedents");
+               "namespaced properties are inherited by descendants");
 
   _(object).foo = {};
   assert.notEqual(_(object).foo, _(prototype).foo,
                   "namespaced properties may be shadowed");
   assert.equal(_(object).foo, _(delegee).foo,
-               "shadwed properties are inherited by decedents");
+               "shadwed properties are inherited by descendants");
 
   _(object).bar = {};
   assert.ok(!("bar" in _(prototype)),
-            "decedents properties are not copied to ancestors");
+            "descendants properties are not copied to ancestors");
   assert.ok(_(object).bar, _(delegee).bar,
-            "decedents properties are inherited");
+            "descendants properties are inherited");
 };
 
 require("test").run(exports);
