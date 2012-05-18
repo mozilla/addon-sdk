@@ -42,7 +42,7 @@ table, td, tr {
   border: 1px black solid;
 }
 
-td {
+th, td {
   padding: 0.5em;
 }
 
