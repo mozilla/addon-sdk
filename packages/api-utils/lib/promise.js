@@ -17,33 +17,58 @@
 
 'use strict';
 
-function resolution(value) {
-  /**
-  Returns non-standard compliant (`then` does not returns a promise) promise
-  that resolves to a given `value`. For internal use.
-  **/
-  return { then: function then(resolve) { resolve(value); } };
+// Utility function: execute |f(value)|, transmit
+// success to |promise.resolve| or failure to
+// |promise.reject|.
+function box(f, value, promise) {
+  var result;
+  try {
+    result = f(value);
+  } catch (x) {
+    promise.reject(x);
+    return;
+  }
+  promise.resolve(value);
+};
+
+// Utility function: if |isResolve|, execute |onResolve(value)|,
+// otherwise execute |onReject(value)|, transmit success/failures
+// to |promise.resolve|/|promise.reject|. If |onResolve|/|onReject|
+// does not exist, simply resolve/reject |promise|.
+function box2(onResolve, onReject, isResolve, value, promise) {
+  if (isResolve) {
+    if (onResolve) {
+      box(onResolve, value, next);
+    } else {
+      next.resolve(value);
+    }
+  } else {
+    if (onReject) {
+      box(onReject, value, next);
+    } else {
+      next.reject(value);
+    }
 }
 
-function rejection(reason) {
-  /**
-  Returns non-standard compliant promise (`then` does not returns a promise)
-  that rejects with a given `reason`. For internal use.
-  **/
-  return { then: function then(resolve, reject) { reject(reason); } };
-}
-
-function attempt(f) {
-  /**
-  Returns wrapper function that delegates to `f`. If `f` throws then captures
-  error and returns promise that rejects with a thrown error. Otherwise returns
-  return value. (Internal utility)
-  **/
-  return function effort(options) {
-    try { return f(options); }
-    catch(error) { return rejection(error); }
-  };
-}
+var propagate = function propagate(state, isResolve, value) {
+  var observerCopy = state.observers;
+  state.observer = null;
+  if (!observerCopy) {
+    // FIXME: In debug mode, we may want to log this
+    return;
+  }
+  for (var i = 0; i < observerCopy.length; ++i) {
+    var obs = observerCopy[i];
+    var onResolve = obs[0];
+    var onReject = obs[1];
+    var next = obs[2];
+    box2(onResolve, onReject, isResolve, value, next);
+  }
+  // FIXME: In debug mode, we may want to notice if |isResolve == false|
+  // but there is not a single onReject. It may be a clue that there is
+  // something amiss. Perhaps we will want to log this, or perhaps we will
+  // want to launch a setTimeout to refine this claim.
+};
 
 function isPromise(value) {
   /**
@@ -89,140 +114,77 @@ function defer(prototype) {
   //=> 'Foo'
   */
 
-  // Either an array of pairs of functions registered to be called
-  // once we have a result, or |null|, if we already have a result.
-  var observers = [];
-
-  // Placeholder for a promise holding the result of resolving/rejecting
-  // |promise|. Note that this result is *not* a value. Rather, if
-  // |promise| has been |resolve|d with value |v|, |evaluated| is a
-  // trivial promise in which |then| always succeeds with |v|.
-  // If |promise| has been |rejected| with value |v|, |evaluated| is
-  // a trivial promise in which |then| always fails with |v|. Finally,
-  // if |promise| has been |resolve|d with a promise |p|, |evaluated| is
-  // |p| itself.
-  // Performance note: Shape of |evaluated| changes depending on case.
-  // There may be ways to improve this.
-  var evaluated;
-  prototype = (prototype || prototype === null) ? prototype : Object.prototype;
-
   // Performance note:
   // During the lifetime of a promise, we have the following costs:
   // - at initialization
   //   - create array |observers|;
-  //   - create closures |then|;
-  //   - create object |{ value: function then ... }|;
-  //   - create object |promise|;
-  //   - create object |deferred| with |Object.create|;
+  //   - create object |state|;
+  //   - create closure |then|;
   //   - create closure |resolve|;
   //   - create closure |reject|;
+  //   - either
+  //      - create object {then: then}; or
+  //      - create object {value: then}; and
+  //      - create object {then: {value: then}}; and
+  //      - create object |promise| with |Object.create|;
+  //   - create object |{promise: ...}|
   // - during a call to |then|
-  //   - create promise |deferred|;
-  //   - create two closures |effort| for |boxedOnResolve| and |boxedOnReject|;
-  //   - create closure |onRejectPropagate|;
-  //   - create closure |onResolvePropagate|;
-  //   - possibly create array |[ onResolvePropagate, onRejectPropagate ]|;
-  //   - otherwise, gc |onResolvePropagate|, |onRejectPropagate|,
-  //     |boxedOnResolve|, |boxedOnReject|;
+  //   - create promise |promise|;
+  //   - possibly create array |[ onResolve, onReject, promise]|;
+  //   - otherwise, gc |onResolve, onReject, promise|;
   // - during a call to |resolve|
-  //   - possibly create a closure |then| through a call to |resolution(value)|;
-  //   - for each observer, one call to |then| with several possible shapes;
-  //   - possibly, gc previously allocated |onResolvePropagate|,
-  //        |onRejectPropagate|, |boxedOnResolve|, |boxedOnReject|.
+  //   - for each observer, one call to |next.resolve| or to |next.reject|;
+  //   - possibly, gc previously allocated |onResolve, onReject|.
   // - during a call to |reject|
-  //   - create a closure |then| through a call to |rejection(value)|;
-  //   - call |resolve| without the cost of |resolution(value)|
+  //   - for each observer, one call to |next.resolve| or to |next.reject|;
+  //   - possibly, gc previously allocated |onResolve, onReject|.
 
-  // Create an object implementing promise API, i.e. the capability to
-  // observe the result of the promise through method |then|.
-  var promise = Object.create(prototype, {
-    then: { value: function then(onResolve, onReject) {
-      // Create a new deferred using a same `prototype`.
-      var deferred = defer(prototype);
-
-      // Box |onResolve|/|onReject|:
-      // - in case of success, the result is propagated as a resolution
-      // - in case of error, the error is propagated as a rejection
-      // - also handle the case in which |onResolve|/|onReject| is undefined.
-      var boxedOnResolve = onResolve ? attempt(onResolve) : resolution;
-      var boxedOnReject = onReject ? attempt(onReject) : rejection;
-
-      // Create a pair of listeners for a enclosed promise resolution
-      // / rejection that delegate to an actual callbacks and
-      // resolve / reject returned promise.
-      function onResolvePropagate(value) {
-        deferred.resolve(boxedOnResolve(value));
-      }
-      function onRejectPropagate(reason) {
-        deferred.resolve(boxedOnReject(reason));
-      }
-
-      // Algorithm detail:
-      // From this point, the first time |this| |promise| is resolved with
-      // a result |v|, the following happens:
-      //
-      // - |onResolvePropagate| is called with |v|;
-      // - |boxedOnResolve| is called with |v|;
-      // - (if |onResolve| was not provided),
-      //    - |resolution| builds a new promise |p| holding |v|;
-      // - (else, if |onResolve| was provided).
-      //    - |attempt(onResolve)| is called with |v|;
-      //    - |onResolve(v)| is computed;
-      //    - (if |onResolve(v)| did not raise an error):
-      //        - |resolution| builds a new promise |p|
-      //          holding the result
-      // - |deferred.resolve| is called with |p|;
-      // - in turn, this causes |p.then| to be called, propagating the result
-      // etc.
-
-      // If promise is pending register listeners. Otherwise forward them to
-      // resulting resolution.
-      if (observers) observers.push([ onResolvePropagate, onRejectPropagate ]);
-      else evaluated.then(onResolvePropagate, onRejectPropagate);
-
-      return deferred.promise;
-    }}
-  });
-
-  var deferred = {
-    promise: promise,
-    resolve: function resolve(value) {
-      /**
-      Resolves associated `promise` to a given `value`, unless it's already
-      resolved or rejected.
-      **/
-      if (observers) {
-        // Mark promise as resolved.
-        var observersCopy = observers;
-        observers = null;
-
-        // store resolution `value` as a promise (`value` itself may be a
-        // promise), so that all subsequent listeners can be forwarded to it,
-        // which either resolves immediately or forwards if `value` is
-        // a promise.
-        evaluated = isPromise(value) ? value : resolution(value);
-
-        // Forward to all pending observers.
-        // Note that executing these observers can in turn trigger calls to
-        // |this.resolve|, |this.reject| or |this.then|. Calls to |this.resolve|
-        // or |this.reject| are ignored (re-resolving/re-rejecting a promise
-        // is a meaningless operation), while calls to |this.then| are taken
-        // into account immediately.
-        observersCopy.forEach(function forEachObserver(obs) {
-          evaluated.then(obs[0]/*onResolve*/, obs[1]/*onReject*/);
-        });
-      }
-    },
-    reject: function reject(reason) {
-      /**
-      Rejects associated `promise` with a given `reason`, unless it's already
-      resolved / rejected.
-      **/
-      deferred.resolve(rejection(reason));
-    }
+  // The state of the promise
+  var state = {
+    observers: [],
+    result:    undefined,
+    status:    undefined// |true| if resolved, |false| if rejected
   };
 
-  return deferred;
+  var then = function then(onResolve, onReject) {
+    var promise = defer(prototype);
+    if (state.observers) {
+      state.observers.push([onResolve, onReject, promise]);
+    } else {
+      box2(onResolve, onReject, state.status, state.value, promise);
+    }
+    return promise;
+  };
+
+  var resolve = function resolve(value) {
+    if (isPromise(value)) {
+      value.then(resolve, reject);
+    } else {
+      propagate(state, true, value);
+    }
+  };
+  var reject = function reject(value) {
+    // FIXME: We cannot reject with a promise.
+    propagate(state, false, value);
+  };
+
+  /*
+   *  FIXME: Benchmark this vs.
+   * var resolve = propagate.bind(null, state, true);
+   * var reject  = propagate.bind(null, state, false);
+   */
+
+  var promise;
+  if (prototype) {
+    promise = Object.create(prototype, {then: {value: then}});
+  } else {
+    promise = {then: then};
+  }
+  return {
+    promise: promise,
+    resolve: resolve,
+    reject:  reject
+  };
 }
 exports.defer = defer;
 
@@ -270,6 +232,46 @@ var promised = (function() {
       });
     });
   }
+
+      return function promised(f, prototype) {
+        return function(/*...arguments*/) {
+          if (!arguments) {
+            return resolve (f(), prototype);
+          }
+          var pending = 0;                // Number of |arguments| that may still be promises
+          var resolvedArguments = [];     // The resolved value of |arguments|
+          var deferred = defer(prototype);// Our result
+          var rejected = false;           // If |true|, we have rejected once already, no need to re-reject
+          for (var i = 0; i < arguments.length; ++i) {
+            var arg = arguments[i];
+            if (!isPromise(arg)) {
+              resolvedArguments[i] = arg;
+              continue;
+            }
+            // If |arg| is a promise, wait for it to be resolved/rejected
+            pending++;
+            arg.then(
+              function onResolve(value) {
+                resolvedArguments[i] = value;
+                if (!rejected && --pending == 0) {// This is the last value.
+                  deferred.resolve(f.apply(null, resolvedArguments));
+                }
+              }, function onReject(reason) {
+                if (!rejected) {
+                  rejected = true;
+                  deferred.reject(reason);
+                }
+              }
+            );
+          }
+
+      // If no argument was a promise, resolve immediately
+      if (pending == 0) {
+        deferred.resolve(f(resolvedArguments));
+      }
+      return deferred;
+    };
+  };
 
   return function promised(f, prototype) {
     /**
