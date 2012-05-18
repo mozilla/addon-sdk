@@ -28,7 +28,7 @@ const winUtils = require("api-utils/window-utils");
 const { getInnerId } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
-const timer = require("timer");
+const timer = require("timers");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";

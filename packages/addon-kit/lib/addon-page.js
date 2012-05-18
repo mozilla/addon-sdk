@@ -6,7 +6,7 @@
 
 const { WindowTracker, isBrowser } = require('api-utils/window-utils');
 const { add, remove } = require('api-utils/array');
-const { getTabs, closeTab } = require('api-utils/tabs/utils');
+const { getTabs, closeTab, getURI } = require('api-utils/tabs/utils');
 const { data } = require('self');
 
 const addonURL = data.url('index.html');
@@ -18,7 +18,7 @@ WindowTracker({
   },
   onUntrack: function onUntrack(window) {
     getTabs(window).
-      filter(function(tab) tab.linkedBrowser.currentURI.spec === addonURL).
+      filter(function(tab) { return getURI(tab) === addonURL; }).
       forEach(function(tab) {
         // Note: `onUntrack` will be called for all windows on add-on unloads,
         // so we want to clean them up from these URLs.
