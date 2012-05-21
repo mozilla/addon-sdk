@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 const prefs = require("preferences-service");
+const Prefs = prefs;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
@@ -13,20 +16,25 @@ exports.testReset = function(test) {
   prefs.set("test_reset_pref", 5);
   test.assertEqual(prefs.has("test_reset_pref"), true);
   test.assertEqual(prefs.isSet("test_reset_pref"), true);
+  test.assertEqual(prefs.getChildList("test_reset_pref").toString(), "test_reset_pref");
 };
 
 exports.testGetAndSet = function(test) {
   let svc = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService).
             getBranch(null);
-  svc.setCharPref("test_get_string_pref", "a normal string");
-  test.assertEqual(prefs.get("test_get_string_pref"), "a normal string",
+  svc.setCharPref("test_set_get_pref", "a normal string");
+  test.assertEqual(prefs.get("test_set_get_pref"), "a normal string",
                    "preferences-service should read from " +
                    "application-wide preferences service");
 
   prefs.set("test_set_get_pref.integer", 1);
   test.assertEqual(prefs.get("test_set_get_pref.integer"), 1,
                    "set/get integer preference should work");
+
+  test.assertEqual(
+      prefs.getChildList("test_set_get_pref").toString(),
+      "test_set_get_pref.integer,test_set_get_pref");
 
   prefs.set("test_set_get_number_pref", 42);
   test.assertRaises(
@@ -91,6 +99,16 @@ exports.testGetAndSet = function(test) {
     });
 };
 
+exports.testPrefClass = function(test) {
+  var branch = Prefs("test_foo");
+
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
+  branch.test = true;
+  test.assertEqual(branch.test, true, "test_foo.test is true");
+  delete branch.test;
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
+};
+
 exports.testGetSetLocalized = function(test) {
   let prefName = "general.useragent.locale";
 
@@ -109,4 +127,29 @@ exports.testGetSetLocalized = function(test) {
 
   // Undo our modification
   prefs.reset(prefName);
+}
+
+exports.testGetChildList = function(test) {
+  // setup
+  let prefName = "test.test_getChildList.";
+  let keys = ['subkey1','subkey2','sub.key1','pref1','pref2'];
+  keys.forEach(function(key){prefs.set(prefName + key,true)})
+
+  test.assertEqual(
+        Object.keys(prefs.getChildList(prefName)).length,
+        keys.length,
+        "getall gets all inserted keys");
+
+  test.assertEqual(
+        Object.keys(prefs.getChildList(prefName+"subkey")).length,
+        2,
+        "getall right number of subkeys on partial match");
+
+  test.assertEqual(
+        Object.keys(prefs.getChildList(prefName+"notfound")).length,
+        0,
+        "getall right number of subkeys on no match");
+
+  // cleanup
+  keys.forEach(function(key){prefs.reset(prefName+key)});
 }
