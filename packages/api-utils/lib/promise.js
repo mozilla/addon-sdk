@@ -17,52 +17,57 @@
 
 'use strict';
 
+function executeOnResolve(onResolve, value, deferred) {
+  if (!onResolve) {
+    deferred.resolve(value);
+    return;
+  }
+  box(onResolve, value, deferred);
+}
+function executeOnReject(onReject, value, deferred) {
+  if (!onReject) {
+    deferred.reject(value);
+    return;
+  }
+  box(onReject, value, deferred);
+}
+
 // Utility function: execute |f(value)|, transmit
-// success to |promise.resolve| or failure to
-// |promise.reject|.
-function box(f, value, promise) {
+// success to |deferred.resolve| or failure to
+// |deferred.reject|.
+function box(f, value, deferred) {
   var result;
   try {
     result = f(value);
   } catch (x) {
-    promise.reject(x);
+    deferred.reject(x);
     return;
   }
-  promise.resolve(value);
+  // We separate this call from the try/catch to ensure that we do
+  // not capture unintended errors (such as internal errors).
+  deferred.resolve(result);
 };
 
-// Utility function: if |isResolve|, execute |onResolve(value)|,
-// otherwise execute |onReject(value)|, transmit success/failures
-// to |promise.resolve|/|promise.reject|. If |onResolve|/|onReject|
-// does not exist, simply resolve/reject |promise|.
-function box2(onResolve, onReject, isResolve, value, promise) {
-  if (isResolve) {
-    if (onResolve) {
-      box(onResolve, value, next);
-    } else {
-      next.resolve(value);
-    }
-  } else {
-    if (onReject) {
-      box(onReject, value, next);
-    } else {
-      next.reject(value);
-    }
-}
 
 var propagate = function propagate(state, isResolve, value) {
-  var observerCopy = state.observers;
-  state.observer = null;
-  if (!observerCopy) {
+  var observers = state.observers;
+  if (!observers) {
     // FIXME: In debug mode, we may want to log this
     return;
   }
-  for (var i = 0; i < observerCopy.length; ++i) {
-    var obs = observerCopy[i];
+  state.observers = null;
+  state.result = value;
+  state.status = isResolve;
+  for (var i = 0; i < observers.length; ++i) {
+    var obs = observers[i];
     var onResolve = obs[0];
     var onReject = obs[1];
-    var next = obs[2];
-    box2(onResolve, onReject, isResolve, value, next);
+    var deferred = obs[2];
+    if (isResolve) {
+      executeOnResolve(onResolve, value, deferred);
+    } else {
+      executeOnReject(onReject, value, deferred);
+    }
   }
   // FIXME: In debug mode, we may want to notice if |isResolve == false|
   // but there is not a single onReject. It may be a clue that there is
@@ -147,24 +152,27 @@ function defer(prototype) {
   };
 
   var then = function then(onResolve, onReject) {
-    var promise = defer(prototype);
-    if (state.observers) {
-      state.observers.push([onResolve, onReject, promise]);
-    } else {
-      box2(onResolve, onReject, state.status, state.value, promise);
+    var deferred = defer(prototype);
+    if (state.observers) /*result is not known yet*/{
+      state.observers.push([onResolve, onReject, deferred]);
+    } else if (state.status) /*resolution*/ {
+      executeOnResolve(onResolve, state.result, deferred);
+    } else /*rejection*/ {
+      executeOnReject(onReject, state.result, deferred);
     }
-    return promise;
+    return deferred.promise;
   };
 
   var resolve = function resolve(value) {
     if (isPromise(value)) {
+      // FIXME: 
       value.then(resolve, reject);
     } else {
       propagate(state, true, value);
     }
   };
   var reject = function reject(value) {
-    // FIXME: We cannot reject with a promise.
+    // FIXME: In a future version, we may want to reject with a promise.
     propagate(state, false, value);
   };
 
@@ -185,6 +193,19 @@ function defer(prototype) {
     resolve: resolve,
     reject:  reject
   };
+
+  /*
+   * FIXME: Benchmark this vs.
+   *
+   * var foo = new Promise();
+   * var then = foo.then.bind(then);
+   * // ...
+   * return {
+   *   resolve: foo.resolve.bind(foo),
+   *   reject:  foo.reject.bind(foo),
+   *   promise: ...
+   * };
+   */
 }
 exports.defer = defer;
 
@@ -233,46 +254,6 @@ var promised = (function() {
     });
   }
 
-      return function promised(f, prototype) {
-        return function(/*...arguments*/) {
-          if (!arguments) {
-            return resolve (f(), prototype);
-          }
-          var pending = 0;                // Number of |arguments| that may still be promises
-          var resolvedArguments = [];     // The resolved value of |arguments|
-          var deferred = defer(prototype);// Our result
-          var rejected = false;           // If |true|, we have rejected once already, no need to re-reject
-          for (var i = 0; i < arguments.length; ++i) {
-            var arg = arguments[i];
-            if (!isPromise(arg)) {
-              resolvedArguments[i] = arg;
-              continue;
-            }
-            // If |arg| is a promise, wait for it to be resolved/rejected
-            pending++;
-            arg.then(
-              function onResolve(value) {
-                resolvedArguments[i] = value;
-                if (!rejected && --pending == 0) {// This is the last value.
-                  deferred.resolve(f.apply(null, resolvedArguments));
-                }
-              }, function onReject(reason) {
-                if (!rejected) {
-                  rejected = true;
-                  deferred.reject(reason);
-                }
-              }
-            );
-          }
-
-      // If no argument was a promise, resolve immediately
-      if (pending == 0) {
-        deferred.resolve(f(resolvedArguments));
-      }
-      return deferred;
-    };
-  };
-
   return function promised(f, prototype) {
     /**
     Returns a wrapped `f`, which when called returns a promise that resolves to
@@ -297,5 +278,6 @@ var promised = (function() {
   };
 })();
 exports.promised = promised;
+
 
 });
