@@ -49,12 +49,12 @@ function box(f, value, deferred) {
 };
 
 
-var propagate = function propagate(state, isResolve, value) {
-  var observers = state.observers;
-  if (!observers) {
+var propagate = function propagate(inLock, state, isResolve, value) {
+  if (!inLock && state.status != undefined) {
     // FIXME: In debug mode, we may want to log this
     return;
   }
+  var observers = state.observers;
   state.observers = null;
   state.result = value;
   state.status = isResolve;
@@ -82,6 +82,10 @@ function isPromise(value) {
   **/
   return value && typeof(value.then) === 'function';
 }
+
+const STATE_PENDING = -1;
+const STATE_RESOLVED = 0;
+const STATE_REJECTED = 1;
 
 function defer(prototype) {
   /**
@@ -164,23 +168,35 @@ function defer(prototype) {
   };
 
   var resolve = function resolve(value) {
-    if (isPromise(value)) {
-      // FIXME: 
-      value.then(resolve, reject);
+    if (!isPromise(value)) {
+      // If |value| is not a promise, we just propagate to clients.
+      propagate(false, state, true, value);
     } else {
-      propagate(state, true, value);
+      // If |value| is a promise, things get a bit more complex:
+      // - lock state to ensure that no further |resolve|/|reject| is
+      //   accepted;
+      state.resolved = true;
+      // - propagate result once |value.then| is resolved/rejected;
+      // - ... unless it is again a promise, in which case we need
+      //   to do this recursively.
+      var resolve2 = function resolve2(value) {
+        if (!isPromise(value)) {
+          propagate(true, state, true, value);
+        } else {
+          value.then(resolve2, reject2);
+        }
+      };
+      var reject2 = function reject2(value) {
+        propagate(true, state, false, value);
+      };
+      value.then(resolve2, reject2);
     }
   };
   var reject = function reject(value) {
-    // FIXME: In a future version, we may want to reject with a promise.
-    propagate(state, false, value);
+    // FIXME: In a future version, we may want to handle the case
+    // in which |value| is a promise.
+    propagate(false, state, false, value);
   };
-
-  /*
-   *  FIXME: Benchmark this vs.
-   * var resolve = propagate.bind(null, state, true);
-   * var reject  = propagate.bind(null, state, false);
-   */
 
   var promise;
   if (prototype) {
@@ -193,19 +209,6 @@ function defer(prototype) {
     resolve: resolve,
     reject:  reject
   };
-
-  /*
-   * FIXME: Benchmark this vs.
-   *
-   * var foo = new Promise();
-   * var then = foo.then.bind(then);
-   * // ...
-   * return {
-   *   resolve: foo.resolve.bind(foo),
-   *   reject:  foo.reject.bind(foo),
-   *   promise: ...
-   * };
-   */
 }
 exports.defer = defer;
 
