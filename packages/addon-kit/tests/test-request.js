@@ -34,7 +34,7 @@ exports.testOptionsValidator = function(test) {
 exports.testContentValidator = function(test) {
   test.waitUntilDone();
   Request({
-    url: "data:text/html,response",
+    url: "data:text/html;charset=utf-8,response",
     content: { 'key1' : null, 'key2' : 'some value' },
     onComplete: function(response) {
       test.assertEqual(response.text, "response?key1=null&key2=some+value");

@@ -15,7 +15,7 @@ function createProxyTest(html, callback) {
   return function (test) {
     test.waitUntilDone();
 
-    let url = 'data:text/html,' + encodeURI(html);
+    let url = 'data:text/html;charset=utf-8,' + encodeURI(html);
 
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function () {
@@ -155,7 +155,7 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
       //document.location.toString = function foo() {};
       document.location.toString.foo = "bar";
       assert(!("foo" in document.location.toString), "document.location.toString can't be modified");
-      assert(document.location.toString() == "data:text/html,",
+      assert(document.location.toString() == "data:text/html;charset=utf-8,",
              "First document.location.toString()");
       self.postMessage("next");
     }
@@ -165,7 +165,7 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
       'new ' + function ContentScriptScope2() {
         assert(!("foo" in document.location.toString),
                "document.location.toString is different for each content script");
-        assert(document.location.toString() == "data:text/html,",
+        assert(document.location.toString() == "data:text/html;charset=utf-8,",
                "Second document.location.toString()");
         done();
       }
@@ -175,7 +175,7 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
 
 
 // Ensure that postMessage is working correctly across documents with an iframe
-let html = '<iframe id="iframe" name="test" src="data:text/html," />';
+let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
 exports.testPostMessage = createProxyTest(html, function (helper, test) {
   let ifWindow = helper.xrayWindow.document.getElementById("iframe").contentWindow;
   // Listen without proxies, to check that it will work in regular case
@@ -504,7 +504,7 @@ exports.testDocumentTagName = createProxyTest("", function (helper) {
 
 });
 
-let html = '<iframe id="iframe" name="test" src="data:text/html," />';
+let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
 exports.testWindowFrames = createProxyTest(html, function (helper) {
 
   helper.createWorker(
