@@ -17,7 +17,7 @@ exports.testOpenAndCloseWindow = function(test) {
   test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   browserWindows.open({
-    url: "data:text/html,<title>windows API test</title>",
+    url: "data:text/html;charset=utf-8,<title>windows API test</title>",
     onOpen: function(window) {
       test.assertEqual(this, browserWindows,
                        "The 'this' object is the windows object.");
@@ -55,7 +55,7 @@ exports.testAutomaticDestroy = function(test) {
   
   // Fire a windows event and check that this unloaded instance is inactive
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       setTimeout(function () {
         test.assert(!called, 
@@ -128,7 +128,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
 
 
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       window.close(verify);
     }
@@ -139,12 +139,12 @@ exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
 
   browserWindows.open({
-    url: "data:text/html,<title>tab 1</title>",
+    url: "data:text/html;charset=utf-8,<title>tab 1</title>",
     onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
 
       window.tabs.open({
-        url: "data:text/html,<title>tab 2</title>",
+        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
         inBackground: true,
         onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
@@ -228,13 +228,13 @@ exports.testActiveWindow = function(test) {
   ];
 
   windows.open({
-    url: "data:text/html,<title>window 2</title>",
+    url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
       windows.open({
-        url: "data:text/html,<title>window 3</title>",
+        url: "data:text/html;charset=utf-8,<title>window 3</title>",
         onOpen: function(window) {
           window.tabs.activeTab.on('ready', function onReady() {
             window3 = window;

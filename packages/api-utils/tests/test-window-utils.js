@@ -23,7 +23,7 @@ function makeEmptyWindow() {
                   '                 type="text/css"?>' +
                   '<window xmlns="' + xulNs + '" windowtype="test:window">' +
                   '</window>');
-  var url = "data:application/vnd.mozilla.xul+xml," + escape(blankXul);
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul);
   var features = ["chrome", "width=10", "height=10"];
 
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
