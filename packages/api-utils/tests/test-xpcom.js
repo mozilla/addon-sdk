@@ -133,7 +133,7 @@ function testRegister(assert, text) {
                   getService(Ci.nsIIOService);
 
         var channel = ios.newChannel(
-          "data:text/plain," + text,
+          "data:text/plain;charset=utf-8," + text,
           null,
           null
         );

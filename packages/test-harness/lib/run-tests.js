@@ -17,7 +17,7 @@ function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit,
   let msg = 'Running tests...';
   let markup = '<?xml version="1.0"?><window xmlns="' + ns +
                '" windowtype="test:runner"><label>' + msg + '</label></window>';
-  let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
+  let url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(markup);
 
 
   var window = ww.openWindow(null, url, "harness", "centerscreen", null);

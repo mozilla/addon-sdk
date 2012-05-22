@@ -260,7 +260,7 @@ const PageMod = Loader.compose(EventEmitter, {
       }
     }
 
-    let uri = "data:text/css,";
+    let uri = "data:text/css;charset=utf-8,";
     if (documentRules.length > 0)
       uri += encodeURIComponent("@-moz-document " +
         documentRules.join(",") + " {" + styleRules + "}");
