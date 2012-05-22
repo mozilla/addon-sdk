@@ -5,7 +5,7 @@
  */
 
 const { Cc, Ci } = require('chrome');
-const { override, Sandbox, evaluate, load } = require('api-utils/loader');
+const { override, descriptor, Sandbox, evaluate, load } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
@@ -64,7 +64,7 @@ function startup(reason, options) {
 
   // Inject globals ASAP in order to have console API working ASAP
   let loader = options.loader;
-  override(loader.globals, globals);
+  Object.defineProperties(loader.globals, descriptor(globals));
 
   // Try initializing localization module before running main module. Just print
   // an exception in case of error, instead of preventing addon to be run.
@@ -83,7 +83,7 @@ function startup(reason, options) {
     setDefaultPrefs(options.prefsURI);
 
     // this is where the addon's main.js finally run.
-    let program = load(loader, loader.main).exports;
+    let program = loader.main(options.main);
 
     if (typeof(program.onUnload) === 'function')
       unload(program.onUnload);

@@ -8,9 +8,6 @@ var {Cm,Ci} = require("chrome");
 var options = require("@loader/options");
 
 exports.testPackaging = function(test) {
-  test.assertEqual(options.main.id,
-                   'test-harness/run-tests',
-                   "main program should be the test harness");
 
   test.assertEqual(options.metadata.author,
                    'Atul Varma (http://toolness.com/)',
