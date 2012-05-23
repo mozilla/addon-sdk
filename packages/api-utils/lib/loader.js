@@ -265,10 +265,18 @@ const Require = iced(function Require(loader, requirer) {
 
     return module.exports;
   }
-  require.main = loader.main; // `require.main` is main `module`.
+  // Make `require.main === module` evaluate to true in main module scope.
+  require.main = loader.main === requirer ? requirer : undefined;
   return iced(require);
 });
 exports.Require = Require;
+
+const main = iced(function main(loader, id) {
+  let module = Module(id, resolveURI(id, loader.mapping));
+  loader.main = module;
+  return load(loader, module).exports;
+});
+exports.main = main;
 
 // Makes module object that is made available to CommonJS modules when they
 // are evaluated, along with `exports` and `require`.
@@ -347,22 +355,28 @@ const Loader = iced(function Loader(options) {
     return result;
   }, {});
 
-  let main = iced(function requireMain(id) {
-    main = Module(id, resolveURI(id, mapping));
-    return load(loader, main).exports;
-  })
-
-  let loader = freeze({
-    destructor: destructor,
-    globals: globals,
-    mapping: mapping,
-    modules: modules,     // Map of module objects indexed by module URIs.
-    sandboxes: {},        // Map of module sandboxes indexed by module URIs.
-    resolve: resolve,
-    get main() { return main; }
-  });
-
-  return loader;
+  // Loader object is just a representation of a environment
+  // state. We freeze it and mark make it's properties non-enumerable
+  // as they are pure implementation detail that no one should rely upon.
+  return freeze(create(null, {
+    destructor: { enumerable: false, value: destructor },
+    globals: { enumerable: false, value: globals },
+    mapping: { enumerable: false, value: mapping },
+    // Map of module objects indexed by module URIs.
+    modules: { enumerable: false, value: modules },
+    // Map of module sandboxes indexed by module URIs.
+    sandboxes: { enumerable: false, value: {} },
+    resolve: { enumerable: false, value: resolve },
+    // Main (entry point) module.
+    main: new function(main) {
+      return {
+        enumerable: false,
+        get: function() { return main; },
+        // Only set main if it has not being set yet!
+        set: function(module) { main = main || module; }
+      }
+    }
+  }));
 });
 exports.Loader = Loader;
 

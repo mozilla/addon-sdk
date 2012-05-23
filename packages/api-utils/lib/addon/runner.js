@@ -5,7 +5,7 @@
  */
 
 const { Cc, Ci } = require('chrome');
-const { override, descriptor, Sandbox, evaluate, load } = require('api-utils/loader');
+const { descriptor, Sandbox, evaluate, main } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
@@ -25,23 +25,23 @@ const APP_STARTUP = NAME2TOPIC[name] || NAME2TOPIC['*'];
 
 // Initializes default preferences
 function setDefaultPrefs(prefsURI) {
-  const prefs = Cc["@mozilla.org/preferences-service;1"].
+  const prefs = Cc['@mozilla.org/preferences-service;1'].
                 getService(Ci.nsIPrefService).
                 QueryInterface(Ci.nsIPrefBranch2);
-  const branch = prefs.getDefaultBranch("");
+  const branch = prefs.getDefaultBranch('');
   const sandbox = Sandbox({
     name: prefsURI,
     prototype: {
       pref: function(key, val) {
         switch (typeof val) {
-          case "boolean":
+          case 'boolean':
             branch.setBoolPref(key, val);
             break;
-          case "number":
+          case 'number':
             if (val % 1 == 0) // number must be a integer, otherwise ignore it
               branch.setIntPref(key, val);
             break;
-          case "string":
+          case 'string':
             branch.setCharPref(key, val);
             break;
         }
@@ -72,8 +72,8 @@ function startup(reason, options) {
     // Do not enable HTML localization while running test as it is hard to
     // disable. Because unit tests are evaluated in a another Loader who
     // doesn't have access to this current loader.
-    if (loader.main.id !== "test-harness/run-tests")
-      require("api-utils/l10n/html").enable();
+    if (options.main !== 'test-harness/run-tests')
+      require('api-utils/l10n/html').enable();
   } catch(error) {
     console.exception(error);
   }
@@ -83,7 +83,7 @@ function startup(reason, options) {
     setDefaultPrefs(options.prefsURI);
 
     // this is where the addon's main.js finally run.
-    let program = loader.main(options.main);
+    let program = main(loader, options.main);
 
     if (typeof(program.onUnload) === 'function')
       unload(program.onUnload);

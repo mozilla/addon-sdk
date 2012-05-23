@@ -35,7 +35,7 @@ require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
 const loaderModule = require(loaderURI);
 const { Loader: BaseLoader, Require, Sandbox, resolveURI, evaluate, load,
-        Module, unload, override, descriptor } = loaderModule;
+        Module, unload, override, descriptor, main } = loaderModule;
 
 exports.resolveURI = resolveURI;
 exports.Require = Require;
@@ -46,6 +46,7 @@ exports.Module = Module;
 exports.unload = unload;
 exports.override = override;
 exports.descriptor = descriptor;
+exports.main = main;
 
 function Loader(options) {
   let { manifest } = options;
