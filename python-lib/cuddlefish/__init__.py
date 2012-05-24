@@ -669,7 +669,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     build = packaging.generate_build_for_target(
         pkg_cfg, target, used_deps,
-        include_dep_tests=options.dep_tests
+        include_dep_tests=options.dep_tests,
+        is_running_tests=(command == "test")
         )
 
     harness_options = {
