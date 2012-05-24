@@ -5,9 +5,13 @@
 Module exposes low level API for creating [CommonJS module][CommonJS Modules]
 loaders. Code is intentionally authored such that it can be consumed in a several ways:
 
-1. It can be loaded as regular script tag in a documents that have [system principals][]:
+1. It can be loaded as regular script tag in a documents that have
+[system principals][]:
 
         <script type='application/javascript' src='resource://gre/modules/loader.js'></script>
+
+Note that script will expose single `loader` object containing all of the API
+functions described in this document.
 
 2. It can be loaded as [JSM style module][]:
 
@@ -53,10 +57,10 @@ different possibilities, but most common setup look like one below:
     let loader = Loader({
       paths: {
         // Resolve all modules starting with `toolkit/` as follows:
-        // toolkit/foo      ->  resource://gre/modules/toolkit/foo.js
+        // toolkit/foo      ->  resource://gre/modules/foo.js
         // toolkit/foo/bar  ->  resource://gre/modules/foo/bar.js
         'toolkit/': 'resource://gre/modules/',
-        // Resolev all other non-relative module requirements as follows:
+        // Resolve all other non-relative module requirements as follows:
         // devtools/gcli    ->  resource:///modules/devtools/gcli.js
         // panel            ->  resource:///modules/panel.js
         '': 'resource:///modules/',
@@ -67,7 +71,7 @@ Note that all relative URLs requirements (ones that start with `.` character)
 are first resolved relative to requirer module `id` and result of it is then
 resolved using given `paths` configuration. Although you still may end up with
 a relative module id (if entry point module id is relative itself). In those
-cases you have to decide want entry point module is relative to and provide
+cases you have to decide what entry point module is relative to and provide
 appropriate `./` mapping in `paths`:
 
     let { Loader } = require('toolkit/loader');
@@ -126,7 +130,7 @@ feature may be used in few different ways:
         });
 
    Use this feature with a great care though, while reusage may sound like
-   compellin idea, it comes with side effect of shared state, which is not
+   compelling idea, it comes with side effect of shared state, which is not
    that great for many reason. For example unload of a loader won't trigger
    unload hooks on pseudo-modules.
 
@@ -151,7 +155,7 @@ this feature to provide global `console` object:
       }
     });
 
-Be careful to not misuse this feature! In general it is not recommend
+Be careful to not misuse this feature! In general it is not recommended
 to provide features via globals, it's almost always better to use
 pseudo-modules or even better modules instead.
 
@@ -185,7 +189,7 @@ manifest is unauthorized and is rejected with an exception:
     };
     let loader = Loader({
       resolve: function(id, requirer) {
-        let requirements = manifest[requirer];
+        let requirements = manifest[requirer].requirements;
         if (id in manifest)
           return requirements[id];
         else
@@ -201,7 +205,7 @@ which later is resolved to URL using mapping provided via `paths` option.
 
 ### All together
 
-Now all of this options can be combined to configure loader to adjust to
+Now all of these options can be combined to configure loader to adjust to
 a specific use case. Don't get too excited about configuration options, keep
 in mind that modules are more useful if they interoperability can be used across
 loader instances. Unless you have any specific needs it's best to stick to a
@@ -301,24 +305,30 @@ Each loader exposes set of built-in pseudo modules:
   and doing cleanups:
 
         let unloadSubject = require('@loader/unload');
+        let observerService = Cc['@mozilla.org/observer-service;1'].
+                              getService(Ci.nsIObserverService);
+
         let observer = {
-          observe: function onunload({ subject, data: reason }) {
-          // If this loader is unload then `subject.wrappedJSObject` will be
-          // `destructor`.
-          if (subject.wrappedJSObject === unloadSubject)
+          observe: function onunload(subject, topic, data) {
+            // If this loader is unload then `subject.wrappedJSObject` will be
+            // `unloadSubject`. `topic` is `'sdk:loader:destroy'`. `data` is
+            // string describing unload reason.
+            let unloadReason = data;
+            if (subject.wrappedJSObject === unloadSubject)
               cleanup(reason)
           }
         };
-        
+        observerService.addObserver(observer, 'sdk:loader:destroy', false);
+
 # Unload
 
 Module exposes function `unload` that can be used to unload specific loader
 instance and undo changes made by modules loaded into it. `unload` takes
 `loader` as a first argument and optionally a `reason` string identifying
 reason why given loader was unloaded. For example in SDK reason may be:
-`shutdown`, `disable`, `uninstiall`. Call to this function will dispatch
+`shutdown`, `disable`, `uninstall`. Call to this function will dispatch
 [observer notification][] that modules are expected to listen for to perform
-cleunps. Notification subject will have `wrappedJSObject` property with
+cleanups. Notification subject will have `wrappedJSObject` property with
 a value exposed as `@loader/unload` pseudo module (which can be used to
 understand if enclosed loader is being unloaded). Notification `data` will
 be a `reason` that observers may use to act accordingly.
@@ -336,6 +346,9 @@ helpers and are recommended to be used only during loader bootstrap.
 object, that are exposed as `module` variable in the module scope.
 
     let module  = Module('foo/bar', 'resource:///modules/foo/bar.js');
+
+Note that this won't actually load module code, it just creates an entry
+for a module.
 
 ### load
 
@@ -378,7 +391,7 @@ set of configuration options:
 
 ## evaluate
 
-Evaluates code into given `sandbox`. If `options.source` is provided than it's
+Evaluates code into given `sandbox`. If `options.source` is provided then its
 value is evaluated otherwise source is read from a given `uri`. Either way any
 exceptions will be reported as from given `uri`. Optionally more options may be
 specified:
