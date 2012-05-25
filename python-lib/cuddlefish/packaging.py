@@ -282,6 +282,7 @@ def get_deps_for_targets(pkg_cfg, targets):
 def generate_build_for_target(pkg_cfg, target, deps,
                               include_tests=True,
                               include_dep_tests=False,
+                              is_running_tests=False,
                               default_loader=DEFAULT_LOADER):
 
     build = Bunch(# Contains section directories for all packages:
@@ -316,6 +317,10 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 build.packages[cfg.name][section] = dirname
 
     def add_locale_to_build(cfg):
+        # Bug 730776: Ignore locales for addon-kit, that are only for unit tests
+        if not is_running_tests and cfg.name == "addon-kit":
+            return
+
         path = resolve_dir(cfg, cfg['locale'])
         files = os.listdir(path)
         for filename in files:
