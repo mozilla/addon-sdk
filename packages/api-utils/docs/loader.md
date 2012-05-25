@@ -109,7 +109,7 @@ feature may be used in few different ways:
         let loader = Loader({
           modules: {
             // require('net/utils') will get NetUtil.jsm
-            'net/utils': Cu.import('resource:///modules/NetUtil.jsm')
+            'net/utils': Cu.import('resource:///modules/NetUtil.jsm', {})
           }
         });
 
@@ -131,13 +131,13 @@ feature may be used in few different ways:
 
    Use this feature with a great care though, while reusage may sound like
    compelling idea, it comes with side effect of shared state, which is not
-   that great for many reason. For example unload of a loader won't trigger
+   that great for many reasons. For example unload of a loader won't trigger
    unload hooks on pseudo-modules.
 
 ### Globals
 
 Each module loaded via loader instance is secured into own JS sandbox. These
-modules don't share scope and gets own set of built-ins
+modules don't share scope and gets its own set of built-ins
 (`Object, Array, String ..`). Although sometimes it's convenient to
 define a set of common globals that will be shared across them. This can be
 done via optional `globals` option passed to a `Loader`. For example SDK uses
@@ -165,11 +165,16 @@ Loader can be configured even further by providing optional `resolve` option.
 This allows to define completely customized module resolution logic. Option
 `resolve` is expected to be a function that takes module `id` that `require`
 was called with and an `id` of the requirer module, from which `require` was
-called. If this option is not provided loader will use plain path resolution.
-This feature may also be used to imply specific security constraints. For
-example SDK at build-time generates a manifest file representing a dependency
-graph of all modules used by an add-on. Any attempt to load module violating
-manifest is unauthorized and is rejected with an exception:
+called. When this option is provided on each `require` call, given `resolve`
+function is called with a required module `id` and a requirer module `id`.
+Return value should be a string representing resolved module `id`. If this
+option is not provided loader will use plain path resolution. Please note that
+returned value is still an `id` string which later is resolved to its location
+URL using mapping provided via `paths` option. This feature may also be used
+to imply specific security constraints. For example SDK at build-time generates
+a manifest file representing a dependency graph of all modules used by an
+add-on. Any attempt to load module violating manifest is unauthorized and is
+rejected with an exception:
 
     let { Loader } = require('toolkit/loader');
     let manifest = {
@@ -199,9 +204,8 @@ manifest is unauthorized and is rejected with an exception:
     });
 
 Note that thrown exceptions will propagate to caller of `require`. If `resolve`
-does not returns string value exception will be thrown as loader failed to
-resolve required module URI. Please note that returned value is still an `id`
-which later is resolved to URL using mapping provided via `paths` option.
+fails to return a string value, an exception will still be thrown as loader
+will be unable to resolve required module location.
 
 ### All together
 
@@ -213,6 +217,8 @@ following SDK compatible configuration:
 
     let { Loader } = require('toolkit/loader');
     let loader = Loader({
+      // Please note: Illustrated `paths` is expected to be a default base,
+      // but depending on your use case you may have more mappings.
       paths: {
         // Resolve all non-relative module requirements to
         // `resource:///modules/` base URI.
@@ -222,6 +228,8 @@ following SDK compatible configuration:
         // and resolve them to `resource://gre/modules/` URI.
         'toolkit/': 'resource://gre/modules/'
       },
+      // Please note: Both `globals` and `modules` are just for illustration
+      // purposes we don't suggest populating them with these values.
       globals: {
         // Provide developers with well known `console` object, hopefully
         // with a more advanced implementation.
@@ -235,8 +243,8 @@ following SDK compatible configuration:
       modules: {
         // Expose legacy API via pseudo modules that eventually may be
         // replaced with a real ones :)
-        'devtools/gcli': Cu.import('resource:///modules/gcli.jsm'),
-        'net/utils': Cu.import('resource:///modules/NetUtil.jsm')
+        'devtools/gcli': Cu.import('resource:///modules/gcli.jsm', {}),
+        'net/utils': Cu.import('resource:///modules/NetUtil.jsm', {})
       }
     });
 
@@ -244,7 +252,7 @@ following SDK compatible configuration:
 
 Loader produces instances that are nothing more than representation of
 environment state into which modules are loaded. It is intentionally made
-immutable and all it's properties are just an implementation details that
+immutable and all its properties are just an implementation details that
 no one should depend upon, they may change at any point without any further
 notice.
 
@@ -278,7 +286,8 @@ must be created first:
 
 # Built-in modules
 
-Each loader exposes set of built-in pseudo modules:
+Each loader instance exposes set of built-in pseudo modules in addition to ones
+being passed via `modules`:
 
 - `chrome` This module exposes everything that is typically available for JS
   contexts with [system principals] under [Components] global. This alternative
@@ -326,13 +335,8 @@ Module exposes function `unload` that can be used to unload specific loader
 instance and undo changes made by modules loaded into it. `unload` takes
 `loader` as a first argument and optionally a `reason` string identifying
 reason why given loader was unloaded. For example in SDK reason may be:
-`shutdown`, `disable`, `uninstall`. Call to this function will dispatch
-[observer notification][] that modules are expected to listen for to perform
-cleanups. Notification subject will have `wrappedJSObject` property with
-a value exposed as `@loader/unload` pseudo module (which can be used to
-understand if enclosed loader is being unloaded). Notification `data` will
-be a `reason` that observers may use to act accordingly.
-
+`shutdown`, `disable`, `uninstall`. Calls to this function will dispatch the
+unload [observer notification][] that modules can listen to as described above.
 
 # Other utilities exposed
 
@@ -347,8 +351,8 @@ object, that are exposed as `module` variable in the module scope.
 
     let module  = Module('foo/bar', 'resource:///modules/foo/bar.js');
 
-Note that this won't actually load module code, it just creates an entry
-for a module.
+Note that this won't actually load module code, it just creates a placeholder
+for it (Section below describes how module can be loaded).
 
 ### load
 
@@ -373,9 +377,7 @@ set of configuration options:
 - `wantXrays`: A Boolean value indicating whether code outside the sandbox
    wants X-ray vision with respect to objects inside the sandbox. Defaults
    to `true`.
-- `sandbox`: A sandbox to share JS compartment with. If omitted new compartment
-   will be created.
-   
+
        let sandbox = Sandbox({
          name: 'resource:///modules/foo/bar.js',
          wantXrays: false,
@@ -400,6 +402,16 @@ specified:
 - `options.line` Defining a line number to start count from in stack traces.
   Defaults to 1.
 - `options.version` Defining a version of JS used, defaults to '1.8'.
+
+    // Load script from the given location to a given sandbox:
+    evaluate(sandbox, 'resource://path/to/script.js')
+
+    // Evaluate `code` as if it was from `foo/bar.js`:
+    evaluate(sandbox, 'foo/bar.js', {
+      source: code,
+      version: '1.7'
+      // You could also use other optinos described above.
+    })
 
 ## Require
 
@@ -426,15 +438,15 @@ with a location it maps to:
       [ '',         'resource:///modules/'    ]
     ];
     resolveURI('./main', mapping);           // => resource://my-addon/main.js
-    resolveURI('devtools/gcli', mapping);    // => resource:///resources/devtools/gcli.js
-    resolveURI('toolkit/promise', mapping);  // => resource://gre/resources/promise.js    
+    resolveURI('devtools/gcli', mapping);    // => resource:///modules/devtools/gcli.js
+    resolveURI('toolkit/promise', mapping);  // => resource://gre/modules/promise.js
 
 ## override
 
 This function is used to create a fresh object that contains own properties of
 two arguments it takes. If arguments have properties with a conflicting names
-the right one gets to override property. This function is helpful for
-combining default and passed properties:
+the property from the second argument overrides that from the first. This
+function is helpful for combining default and passed properties:
 
     override({ a: 1, b: 1 }, { b: 2, c: 2 }) // => { a: 1, b: 2, c: 2 }
 
