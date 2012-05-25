@@ -8,14 +8,14 @@ loaders. Code is intentionally authored such that it can be consumed in a severa
 1. It can be loaded as a regular script tag in a documents that have
 [system principals][]:
 
-        <script type='application/javascript' src='resource://gre/modules/loader.js'></script>
+        <script type='application/javascript' src='resource://gre/modules/toolkit/loader.js'></script>
 
 Note that the script will expose a single `loader` object containing all of the
 API functions described in this document.
 
 2. It can be loaded as [JSM style module][]:
 
-        let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/loader.js');
+        let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/toolkit/loader.js');
 
 3. It can be required as a CommonJS module from a module loaded in loader
 itself:
@@ -58,9 +58,9 @@ different possibilities, but most common setup look like one below:
     let loader = Loader({
       paths: {
         // Resolve all modules starting with `toolkit/` as follows:
-        // toolkit/foo      ->  resource://gre/modules/foo.js
-        // toolkit/foo/bar  ->  resource://gre/modules/foo/bar.js
-        'toolkit/': 'resource://gre/modules/',
+        // toolkit/foo      ->  resource://gre/modules/toolkit/foo.js
+        // toolkit/foo/bar  ->  resource://gre/modules/toolkit/foo/bar.js
+        'toolkit/': 'resource://gre/modules/toolkit/',
         // Resolve all other non-relative module requirements as follows:
         // devtools/gcli    ->  resource:///modules/devtools/gcli.js
         // panel            ->  resource:///modules/panel.js
@@ -80,8 +80,8 @@ appropriate `./` mapping in `paths`:
       paths: {
         // Resolve all modules starting with `toolkit/` as follows:
         // toolkit/foo      ->  resource://gre/modules/toolkit/foo.js
-        // toolkit/foo/bar  ->  resource://gre/modules/foo/bar.js
-        'toolkit/': 'resource://gre/modules/',
+        // toolkit/foo/bar  ->  resource://gre/modules/toolkit/foo/bar.js
+        'toolkit/': 'resource://gre/modules/toolkit/',
         // Resolev all other non-relative module requirements as follows:
         // devtools/gcli    ->  resource:///modules/devtools/gcli.js
         // panel            ->  resource:///modules/panel.js
@@ -100,8 +100,7 @@ modules.
 ### Modules
 
 Loader may **optionally** be provided with a set of module exports. In SDK
-we call them **pseudo modules** and typically prefix with `@` character. This
-feature may be used in few different ways:
+we call them **pseudo modules**. This feature may be used in few different ways:
 
 1. To expose API that don't have a JS file with an implementation, or simply
    are authored in non compatible format (like JSM style module for example):
@@ -121,7 +120,7 @@ feature may be used in few different ways:
    For example in SDK loader is loaded at bootstrap as a JSM module, but then
    it is exposed as pseudo-module to avoid overhead of subsequent loads:
 
-        let loaderModule = Cu.import('resources://gre/modules/loader.js');
+        let loaderModule = Cu.import('resource://gre/modules/toolkit/loader.js');
         let loader = loaderModule.Loader({
           modules: {
             // Overlay `toolkit/loader` so that `require('toolkit/loader')`
@@ -226,8 +225,8 @@ following SDK compatible configuration:
         '': 'resource:///modules/',
 
         // Reserve `toolkit/` prefix for generic, mozilla toolkit modules
-        // and resolve them to `resource://gre/modules/` URI.
-        'toolkit/': 'resource://gre/modules/'
+        // and resolve them to `resource://gre/modules/toolkit/` URI.
+        'toolkit/': 'resource://gre/modules/toolkit/'
       },
       // Please note: Both `globals` and `modules` are just for illustration
       // purposes we don't suggest populating them with these values.
@@ -434,13 +433,13 @@ element until it finds matching prefix that `id` start with and replaces it
 with a location it maps to:
 
     let mapping = [
-      [ 'toolkit/', 'resource://gre/modules/' ],
+      [ 'toolkit/', 'resource://gre/modules/toolkit/' ],
       [ './',       'resource://my-addon/'    ], 
       [ '',         'resource:///modules/'    ]
     ];
     resolveURI('./main', mapping);           // => resource://my-addon/main.js
     resolveURI('devtools/gcli', mapping);    // => resource:///modules/devtools/gcli.js
-    resolveURI('toolkit/promise', mapping);  // => resource://gre/modules/promise.js
+    resolveURI('toolkit/promise', mapping);  // => resource://gre/modules/toolkit/promise.js
 
 ## override
 
