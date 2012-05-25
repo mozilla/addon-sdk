@@ -5,19 +5,20 @@
 Module exposes low level API for creating [CommonJS module][CommonJS Modules]
 loaders. Code is intentionally authored such that it can be consumed in a several ways:
 
-1. It can be loaded as regular script tag in a documents that have
+1. It can be loaded as a regular script tag in a documents that have
 [system principals][]:
 
         <script type='application/javascript' src='resource://gre/modules/loader.js'></script>
 
-Note that script will expose single `loader` object containing all of the API
-functions described in this document.
+Note that the script will expose a single `loader` object containing all of the
+API functions described in this document.
 
 2. It can be loaded as [JSM style module][]:
 
         let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/loader.js');
 
-3. It can be required as commonjs module from module loaded in loader itself:
+3. It can be required as a CommonJS module from a module loaded in loader
+itself:
 
         let { Loader, Require, unload } = require('toolkit/loader');
 
@@ -26,12 +27,12 @@ functions described in this document.
 - Loaders can be used to create somewhat standardized JS environments that
   people doing non-browser JS are familiar with.
 - Loader provides environment for loading
-  [CommonJS style modules][CommonJS modules], which makes possible to consume
+  [CommonJS style modules][CommonJS modules], which makes it possible to consume
   [lots of interesting code](http://search.npmjs.org/) that was already developed.
-- Loader secures each module into isolated JS sandbox and makes any capability
-  imports explicit via calls to provided `require` function.
+- Loader secures each module into an isolated JS sandbox and makes any
+  capability imports explicit via calls to provided `require` function.
 - Task specific loaders with restricted module access can be created.
-- Loaders provides unload hooks that may be used to undo changes made by
+- Loader provides unload hooks that may be used to undo changes made by
   anything loaded into it.
 
 ## Instantiation
@@ -43,7 +44,7 @@ loader instances:
 
 ## Configuration
 
-Desired loader behavior may vary depending on use case, there for `Loader`
+Desired loader behavior may vary depending on use case, therefor `Loader`
 may be provided with a set of options to configure it appropriately:
 
 ### paths
@@ -92,7 +93,7 @@ appropriate `./` mapping in `paths`:
     });
 
 Keep in mind that order of keys in `paths` is irrelevant, since they are sorted
-by keys from longest to shortest to allow overlaying mapping. BTW example above
+by keys from longest to shortest to allow overlapping mapping. BTW example above
 in fact overlays base path `''` with different mapping for `'toolkit/'` prefixed
 modules.
 
