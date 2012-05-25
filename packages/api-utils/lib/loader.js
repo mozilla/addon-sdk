@@ -339,7 +339,7 @@ const Loader = iced(function Loader(options) {
   // Make mapping array that is sorted from longest path to shortest path
   // to allow overlays.
   let mapping = keys(paths).
-    sort(function(a, b) { return a.length < b.length }).
+    sort(function(a, b) { return b.length - a.length }).
     map(function(path) { return [ path, paths[path] ] });
 
   // Define pseudo modules.
