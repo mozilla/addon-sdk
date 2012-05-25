@@ -31,7 +31,8 @@ require('api-utils/loader')       // Otherwise CFX will stip out loader.js
 require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 */
 
-// Load using import as at this point we don't have require.
+// Note require here in this context is just an alias for Cu.import which is
+// used since regular require is not available at loader bootstrap.
 const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
 const loaderModule = require(loaderURI);
 const { Loader: BaseLoader, Require, Sandbox, resolveURI, evaluate, load,
