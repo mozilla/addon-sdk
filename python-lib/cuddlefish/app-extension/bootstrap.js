@@ -115,7 +115,7 @@ function startup(data, reasonCode) {
     }, {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
-      'toolkit/': 'resource://gre/module/',
+      'toolkit/': 'resource://gre/modules/toolkit/',
       '': 'resources:///modules/'
     });
 
