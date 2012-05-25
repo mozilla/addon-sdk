@@ -371,8 +371,10 @@ const Loader = iced(function Loader(options) {
     // Map of module sandboxes indexed by module URIs.
     sandboxes: { enumerable: false, value: {} },
     resolve: { enumerable: false, value: resolve },
-    // Main (entry point) module.
-    main: new function(main) {
+    // Main (entry point) module, it can be set only once, since loader
+    // instance can have only one main module.
+    main: new function() {
+      let main;
       return {
         enumerable: false,
         get: function() { return main; },
