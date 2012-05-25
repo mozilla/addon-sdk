@@ -180,8 +180,9 @@ function startup(data, reasonCode) {
       prefsURI: rootURI + 'defaults/preferences/prefs.js'
     });
   } catch (error) {
-    dump('Error: ' + error.message + '\n' + (error.stack || error.fileName +
-         ': ' + error.lineNumber) + '\n');
+    dump('Bootstrap error: ' + error.message + '\n' +
+         (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
+    throw error;
   }
 };
 

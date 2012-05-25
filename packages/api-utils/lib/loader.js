@@ -34,6 +34,7 @@ const { notifyObservers } = Cc['@mozilla.org/observer-service;1'].
                         getService(Ci.nsIObserverService);
 
 // Define some shortcuts.
+const bind = Function.call.bind(Function.bind);
 const getOwnPropertyNames = Object.getOwnPropertyNames;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const define = Object.defineProperties;
@@ -118,6 +119,9 @@ exports.override = override;
 const Sandbox = iced(function Sandbox(options) {
   // Normalize options and rename to match `Cu.Sandbox` expectations.
   options = {
+    // Do not expose `Components` if you really need them (bad idea!) you
+    // still can expose via prototype.
+    wantComponents: false,
     sandboxName: options.name,
     principal: 'principal' in options ? options.principal : systemPrincipal,
     wantXrays: 'wantXrays' in options ? options.wantXrays : true,
@@ -239,7 +243,7 @@ const Require = iced(function Require(loader, requirer) {
       throw Error('you must provide a module name when calling require() from '
                   + requirer.id, requirer.uri);
 
-    // Resolve `id` to it's requirer if it's relative.
+    // Resolve `id` to its requirer if it's relative.
     let requirement = requirer ? resolve(id, requirer.id) : id;
 
 
@@ -335,15 +339,15 @@ const Loader = iced(function Loader(options) {
   // Make mapping array that is sorted from longest path to shortest path
   // to allow overlays.
   let mapping = keys(paths).
-    sort(function(a, b) { return a.length < b.length }).
+    sort(function(a, b) { return b.length - a.length }).
     map(function(path) { return [ path, paths[path] ] });
 
   // Define pseudo modules.
   modules = override({
     '@loader/unload': destructor,
     '@loader/options': options,
-    'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
-                components: Components }
+    'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                CC: bind(CC, Components), components: Components }
   }, modules);
 
   modules = keys(modules).reduce(function(result, id) {
@@ -367,8 +371,10 @@ const Loader = iced(function Loader(options) {
     // Map of module sandboxes indexed by module URIs.
     sandboxes: { enumerable: false, value: {} },
     resolve: { enumerable: false, value: resolve },
-    // Main (entry point) module.
-    main: new function(main) {
+    // Main (entry point) module, it can be set only once, since loader
+    // instance can have only one main module.
+    main: new function() {
+      let main;
       return {
         enumerable: false,
         get: function() { return main; },
