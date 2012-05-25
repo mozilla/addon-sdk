@@ -243,7 +243,7 @@ const Require = iced(function Require(loader, requirer) {
       throw Error('you must provide a module name when calling require() from '
                   + requirer.id, requirer.uri);
 
-    // Resolve `id` to it's requirer if it's relative.
+    // Resolve `id` to its requirer if it's relative.
     let requirement = requirer ? resolve(id, requirer.id) : id;
 
 
