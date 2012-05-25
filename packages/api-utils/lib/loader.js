@@ -34,6 +34,7 @@ const { notifyObservers } = Cc['@mozilla.org/observer-service;1'].
                         getService(Ci.nsIObserverService);
 
 // Define some shortcuts.
+const bind = Function.call.bind(Function.bind);
 const getOwnPropertyNames = Object.getOwnPropertyNames;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const define = Object.defineProperties;
@@ -118,6 +119,9 @@ exports.override = override;
 const Sandbox = iced(function Sandbox(options) {
   // Normalize options and rename to match `Cu.Sandbox` expectations.
   options = {
+    // Do not expose `Components` if you really need them (bad idea!) you
+    // still can expose via prototype.
+    wantComponents: false,
     sandboxName: options.name,
     principal: 'principal' in options ? options.principal : systemPrincipal,
     wantXrays: 'wantXrays' in options ? options.wantXrays : true,
@@ -342,8 +346,8 @@ const Loader = iced(function Loader(options) {
   modules = override({
     '@loader/unload': destructor,
     '@loader/options': options,
-    'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
-                components: Components }
+    'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                CC: bind(CC, Components), components: Components }
   }, modules);
 
   modules = keys(modules).reduce(function(result, id) {
