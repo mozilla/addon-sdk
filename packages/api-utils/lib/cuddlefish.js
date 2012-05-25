@@ -3,18 +3,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-!function(factory) {
+;(function(id, factory) { // Module boilerplate :(
   if (typeof(define) === 'function') { // RequireJS
     define(factory);
-  } else if (typeof(exports) === 'object') { // CommonJS
-    factory(require, exports, module);
+  } else if (typeof(require) === 'function') { // CommonJS
+    factory.call(this, require, exports, module);
   } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(undefined, this, { uri: __URI__ });
+    factory(function require(uri) {
+      var imports = {};
+      this['Components'].utils.import(uri, imports);
+      return imports;
+    }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
-  } else {
-    factory(undefined, (this.loader = {}), { uri: document.location.href });
+  } else {  // Browser or alike
+    var globals = this
+    factory(function require(id) {
+      return globals[id];
+    }, (globals[id] = {}), { uri: document.location.href + '#' + id, id: id });
   }
-}.call(this, function(require, exports, module) {
+}).call(this, 'loader', function(require, exports, module) {
 
 'use strict';
 
@@ -24,13 +31,14 @@ require('api-utils/loader')       // Otherwise CFX will stip out loader.js
 require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 */
 
-// Load using import as at this point we don't have require.
+// Note require here in this context is just an alias for Cu.import which is
+// used since regular require is not available at loader bootstrap.
 const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
-const loaderModule = Components.utils.import(loaderURI);
-const { Loader: BaseLoader, Require, Sandbox, resolveID, evaluate, load,
-        Module, unload, override } = loaderModule;
+const loaderModule = require(loaderURI);
+const { Loader: BaseLoader, Require, Sandbox, resolveURI, evaluate, load,
+        Module, unload, override, descriptor, main } = loaderModule;
 
-exports.resolveID = resolveID;
+exports.resolveURI = resolveURI;
 exports.Require = Require;
 exports.Sandbox = Sandbox;
 exports.evaluate = evaluate;
@@ -38,18 +46,22 @@ exports.load = load;
 exports.Module = Module;
 exports.unload = unload;
 exports.override = override;
-
-// Returns true if module id is 'chrome' or contains `@` character.
-function isPseudo(id) { return id === 'chrome' || ~id.indexOf('@'); }
+exports.descriptor = descriptor;
+exports.main = main;
 
 function Loader(options) {
-  let { prefixURI, manifest } = options;
-  options = override(override({}, options), {
-    resolve: function resolve(id, requirer, baseURI) {
-      let requirerPath = requirer.uri.split(prefixURI).pop();
-      let entry = requirerPath in manifest && manifest[requirerPath];
-      let uri = null;
+  let { manifest } = options;
 
+  options = override(options, {
+    // Put `api-utils/loader` and `api-utils/cuddlefish` loaded as JSM to module
+    // cache to avoid subsequent loads via `require`.
+    modules: override({
+      'api-utils/loader': loaderModule,
+      'api-utils/cuddlefish': exports
+    }, options.modules),
+    resolve: function resolve(id, requirer) {
+      let entry = requirer && requirer in manifest && manifest[requirer];
+      let uri = null;
 
       // If manifest entry for this requirement is present we follow manifest.
       // Note: Standard library modules like 'panel' will be present in
@@ -62,38 +74,18 @@ function Loader(options) {
           throw Error('Module: ' + requirer.id + ' located at ' + requirer.uri
                       + ' has no authority to load: ' + id, requirer.uri);
 
-        let path = requirement.path;
-        // If this is a pseudo module we resolve it to `baseURI`
-        uri = isPseudo(path) ? resolveID(path, requirer, baseURI) :
-              // Otherwise we just prefix it with `prefixURI`.
-              prefixURI + path;
+        uri = requirement;
       }
       // If requirer is off manifest than it's a system module and we allow it
       // to go off manifest.
       else {
-        uri = resolveID(id, requirer, baseURI);
+        uri = id;
       }
-
       return uri;
     }
   });
 
-  let loader = BaseLoader(options);
-
-  // Put `api-utils/loader` and `api-utils/cuddlefish` loaded as JSM to module
-  // cache to avoid subsequent loads via `require`.
-  loader.modules[loaderURI] = {
-    id: 'api-utils/loader',
-    uri: loaderURI,
-    exports: loaderModule
-  };
-  loader.modules[module.uri] = {
-    id: 'api-utils/cuddlefish',
-    uri: module.uri,
-    exports: exports
-  };
-
-  return loader;
+  return BaseLoader(options);
 }
 Loader.prototype = null;
 exports.Loader = Object.freeze(Loader);
