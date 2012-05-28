@@ -5,7 +5,7 @@
 let tests = {}, hiddenFrames, HiddenFrame;
 
 tests.testFrame = function(test) {
-  let url = "data:text/html,<!DOCTYPE%20html>";
+  let url = "data:text/html;charset=utf-8,<!DOCTYPE%20html>";
   test.waitUntilDone();
   let hiddenFrame = hiddenFrames.add(HiddenFrame({
     onReady: function () {

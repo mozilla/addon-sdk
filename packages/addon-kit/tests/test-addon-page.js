@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { isTabOpen, activateTab, openTab, closeTab } = require('api-utils/tabs/utils');
+const { isTabOpen, activateTab, openTab, closeTab, getURI } = require('api-utils/tabs/utils');
 const windows = require('api-utils/window-utils');
 const { Loader } = require('test-harness/loader');
 const { setTimeout } = require('api-utils/timer');
@@ -37,14 +37,24 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
   });
 };
 
-exports['test that add-on pages is closed on unload'] = function(assert) {
+exports['test that add-on pages are closed on unload'] = function(assert, done) {
   let loader = Loader(module);
   loader.require('addon-kit/addon-page');
 
   let tab = openTab(windows.activeBrowserWindow, uri);
-  loader.unload();
 
-  assert.ok(isTabOpen(tab), 'add-on page tabs are closed on unload');
+  // Wait for addon page document to be loaded
+  tab.addEventListener("load", function listener() {
+    // Ignore loading of about:blank document
+    if (getURI(tab) != uri)
+      return;
+    tab.removeEventListener("load", listener, false);
+
+    loader.unload();
+    assert.ok(!isTabOpen(tab), 'add-on page tabs are closed on unload');
+
+    done();
+  }, false);
 };
 
 

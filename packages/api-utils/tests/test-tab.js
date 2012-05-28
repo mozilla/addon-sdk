@@ -25,12 +25,12 @@ exports.testGetTabForWindow = function(test) {
 
   let subSubDocument = encodeURIComponent(
     'Sub iframe<br/>'+
-    '<iframe id="sub-sub-iframe" src="data:text/html,SubSubIframe" />');
+    '<iframe id="sub-sub-iframe" src="data:text/html;charset=utf-8,SubSubIframe" />');
   let subDocument = encodeURIComponent(
     'Iframe<br/>'+
-    '<iframe id="sub-iframe" src="data:text/html,'+subSubDocument+'" />');
-  let url = 'data:text/html,' + encodeURIComponent(
-    'Content<br/><iframe id="iframe" src="data:text/html,'+subDocument+'" />');
+    '<iframe id="sub-iframe" src="data:text/html;charset=utf-8,'+subSubDocument+'" />');
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(
+    'Content<br/><iframe id="iframe" src="data:text/html;charset=utf-8,'+subDocument+'" />');
 
   // Open up a new tab in the background.
   //

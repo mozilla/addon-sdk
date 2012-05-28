@@ -4,9 +4,9 @@
 
 "use strict";
 
-let { Namespace, ns } = require("api-utils/namespace");
-let { Cc, Ci, Cu } = require("chrome");
-let { setTimeout } = require("api-utils/timer")
+const { ns } = require("api-utils/namespace");
+const { Cc, Ci, Cu } = require("chrome");
+const { setTimeout } = require("api-utils/timer")
 
 exports["test post GC references"] = function (assert, done) {
   var target = {}, local = ns()
@@ -22,7 +22,7 @@ exports["test post GC references"] = function (assert, done) {
 };
 
 exports["test namsepace basics"] = function(assert) {
-  var privates = Namespace();
+  var privates = ns();
   var object = { foo: function foo() { return "hello foo"; } };
 
   assert.notEqual(privates(object), object,
@@ -35,7 +35,7 @@ exports["test namsepace basics"] = function(assert) {
 };
 
 exports["test namespace overlays"] = function(assert) {
-  var _ = new Namespace();
+  var _ = ns();
   var object = { foo: 'foo' };
 
   _(object).foo = 'bar';
@@ -56,16 +56,17 @@ exports["test namespace overlays"] = function(assert) {
 };
 
 exports["test shared namespaces"] = function(assert) {
-  var _ = new Namespace({ hello: 'hello world' });
+  var _ = ns();
 
   var f1 = { hello: 1 };
-  var f2 = { foo: 'foo' };
+  var f2 = { foo: 'foo', hello: 2 };
+  _(f1).foo = _(f2).foo = 'bar';
 
   assert.equal(_(f1).hello, _(f2).hello, "namespace can be shared");
   assert.notEqual(f1.hello, _(f1).hello, "shared namespace can overlay");
   assert.notEqual(f2.hello, _(f2).hello, "target is not affected");
 
-  _(f1).hello = 2;
+  _(f1).hello = 3;
 
   assert.notEqual(_(f1).hello, _(f2).hello,
                   "namespaced property can be overided");
@@ -73,8 +74,8 @@ exports["test shared namespaces"] = function(assert) {
 };
 
 exports["test multi namespace"] = function(assert) {
-  var n1 = new Namespace();
-  var n2 = new Namespace();
+  var n1 = ns();
+  var n2 = ns();
   var object = { baz: 1 };
   n1(object).foo = 1;
   n2(object).foo = 2;
@@ -87,8 +88,35 @@ exports["test multi namespace"] = function(assert) {
 };
 
 exports["test ns alias"] = function(assert) {
-  assert.strictEqual(ns, Namespace,
+  assert.strictEqual(ns, require('api-utils/namespace').Namespace,
                       "ns is an alias of Namespace");
-}
+};
+
+exports["test ns inheritance"] = function(assert) {
+  let _ = ns();
+
+  let prototype = { level: 1 };
+  let object = Object.create(prototype);
+  let delegee = Object.create(object);
+
+  _(prototype).foo = {};
+
+  assert.ok(!Object.prototype.hasOwnProperty.call(_(delegee), "foo"),
+            "namespaced property is not copied to descendants");
+  assert.equal(_(delegee).foo, _(prototype).foo,
+               "namespaced properties are inherited by descendants");
+
+  _(object).foo = {};
+  assert.notEqual(_(object).foo, _(prototype).foo,
+                  "namespaced properties may be shadowed");
+  assert.equal(_(object).foo, _(delegee).foo,
+               "shadwed properties are inherited by descendants");
+
+  _(object).bar = {};
+  assert.ok(!("bar" in _(prototype)),
+            "descendants properties are not copied to ancestors");
+  assert.ok(_(object).bar, _(delegee).bar,
+            "descendants properties are inherited");
+};
 
 require("test").run(exports);
