@@ -212,9 +212,9 @@ const PageMod = Loader.compose(EventEmitter, {
     // Immediatly evaluate content script if the document state is already
     // matching contentScriptWhen expectations
     let state = window.document.readyState;
-    if ('start' == this.contentScriptWhen ||
-        'complete' == state ||
-        ('ready' == this.contentScriptWhen && state == 'interactive') ) {
+    if ('start' === this.contentScriptWhen ||
+        'complete' === state ||
+        ('ready' === this.contentScriptWhen && state === 'interactive') ) {
       this._createWorker(window);
       return;
     }
