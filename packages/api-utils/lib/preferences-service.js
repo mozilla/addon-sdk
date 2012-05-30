@@ -20,7 +20,7 @@ const defaultBranch = prefService.getDefaultBranch(null);
 
 function Prefs(branchName) {
   function getPrefKeys() {
-    return Prefs.getChildList(branchName).map(function(key) {
+    return Prefs.keys(branchName).map(function(key) {
       return key.replace(branchName, "");
     });
   }
@@ -117,9 +117,9 @@ exports.has = Prefs.has = function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
 };
 
-exports.getChildList = Prefs.getChildList = function getChildList(aStartingAt) {
+exports.keys = Prefs.keys = function keys(aStartingAt) {
   return prefSvc.getChildList(aStartingAt);
-}
+};
 
 exports.isSet = Prefs.isSet = function isSet(name) {
   return (Prefs.has(name) && prefSvc.prefHasUserValue(name));

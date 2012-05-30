@@ -53,7 +53,7 @@ preference is set.
 </api>
 
 
-<api name="getChildList">
+<api name="keys">
 @function
 @param aStartingAt {string} Preference name.
 @returns {array} Returns an array of strings representing the child preferences of the root of this branch.

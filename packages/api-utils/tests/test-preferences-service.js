@@ -16,7 +16,7 @@ exports.testReset = function(test) {
   prefs.set("test_reset_pref", 5);
   test.assertEqual(prefs.has("test_reset_pref"), true);
   test.assertEqual(prefs.isSet("test_reset_pref"), true);
-  test.assertEqual(prefs.getChildList("test_reset_pref").toString(), "test_reset_pref");
+  test.assertEqual(prefs.keys("test_reset_pref").toString(), "test_reset_pref");
 };
 
 exports.testGetAndSet = function(test) {
@@ -33,7 +33,7 @@ exports.testGetAndSet = function(test) {
                    "set/get integer preference should work");
 
   test.assertEqual(
-      prefs.getChildList("test_set_get_pref").toString(),
+      prefs.keys("test_set_get_pref").toString(),
       "test_set_get_pref.integer,test_set_get_pref");
 
   prefs.set("test_set_get_number_pref", 42);
