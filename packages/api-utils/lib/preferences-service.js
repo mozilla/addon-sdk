@@ -49,7 +49,7 @@ function Prefs(branchName) {
   }, Prefs.prototype);
 }
 
-Prefs.get = function get(name, defaultValue) {
+exports.get = Prefs.get = function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
   case Ci.nsIPrefBranch.PREF_STRING:
     return prefSvc.getComplexValue(name, Ci.nsISupportsString).data;
@@ -73,7 +73,7 @@ Prefs.get = function get(name, defaultValue) {
   }
 };
 
-Prefs.set = function set(name, value) {
+exports.set = Prefs.set = function set(name, value) {
   var prefType;
   if (typeof value != "undefined" && value != null)
     prefType = value.constructor.name;
@@ -113,19 +113,19 @@ Prefs.set = function set(name, value) {
   }
 };
 
-Prefs.has = function has(name) {
+exports.has = Prefs.has = function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
 };
 
-Prefs.getChildList = function getChildList(aStartingAt) {
+exports.getChildList = Prefs.getChildList = function getChildList(aStartingAt) {
   return prefSvc.getChildList(aStartingAt);
 }
 
-Prefs.isSet = function isSet(name) {
+exports.isSet = Prefs.isSet = function isSet(name) {
   return (Prefs.has(name) && prefSvc.prefHasUserValue(name));
 };
 
-Prefs.reset = function reset(name) {
+exports.reset = Prefs.reset = function reset(name) {
   try {
     prefSvc.clearUserPref(name);
   } catch (e if e.result == Cr.NS_ERROR_UNEXPECTED) {
@@ -139,7 +139,7 @@ Prefs.reset = function reset(name) {
   }
 };
 
-Prefs.getLocalized = function getLocalized(name, defaultValue) {
+exports.getLocalized = Prefs.getLocalized = function getLocalized(name, defaultValue) {
   let value = null;
   try {
     value = prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
@@ -149,7 +149,7 @@ Prefs.getLocalized = function getLocalized(name, defaultValue) {
   }
 }
 
-Prefs.setLocalized = function setLocalized(name, value) {
+exports.setLocalized = Prefs.setLocalized = function setLocalized(name, value) {
   // We can't use `prefs.set` here as we have to use `getDefaultBranch`
   // (instead of `getBranch`) in order to have `mIsDefault` set to true, here:
   // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#233
@@ -158,5 +158,5 @@ Prefs.setLocalized = function setLocalized(name, value) {
   defaultBranch.setCharPref(name, value);
 }
 
-module.exports = Prefs;
+exports.Prefs = Prefs;
 

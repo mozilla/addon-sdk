@@ -5,7 +5,7 @@
 "use strict";
 
 const prefs = require("preferences-service");
-const Prefs = prefs;
+const Prefs = prefs.Prefs;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
