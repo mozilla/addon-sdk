@@ -19,10 +19,6 @@ const prefSvc = prefService.getBranch(null);
 const defaultBranch = prefService.getDefaultBranch(null);
 
 function Prefs(branchName) {
-  if (!(this instanceof Prefs)) {
-    return new Prefs(branchName);
-  }
-
   function getPrefKeys() {
     return Prefs.getChildList(branchName).map(function(pref) {
       return pref.replace(branchName, "");
