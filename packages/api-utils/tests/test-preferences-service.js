@@ -5,7 +5,7 @@
 "use strict";
 
 const prefs = require("preferences-service");
-const Prefs = prefs.Prefs;
+const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
@@ -100,7 +100,7 @@ exports.testGetAndSet = function(test) {
 };
 
 exports.testPrefClass = function(test) {
-  var branch = Prefs("test_foo");
+  var branch = Branch("test_foo");
 
   test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
   branch.test = true;
