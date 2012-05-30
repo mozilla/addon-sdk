@@ -20,8 +20,8 @@ const defaultBranch = prefService.getDefaultBranch(null);
 
 function Prefs(branchName) {
   function getPrefKeys() {
-    return Prefs.getChildList(branchName).map(function(pref) {
-      return pref.replace(branchName, "");
+    return Prefs.getChildList(branchName).map(function(key) {
+      return key.replace(branchName, "");
     });
   }
 
