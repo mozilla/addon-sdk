@@ -36,7 +36,9 @@ function Prefs(branchName) {
       Prefs.reset(branchName + pref);
       return true;
     },
-    has: function hasPrefKey(pref) Prefs.has(branchName + pref),
+    has: function hasPrefKey(pref) {
+      return Prefs.has(branchName + pref)
+    },
     getPropertyDescriptor: function(name) {
       return {
         value: Prefs.get(branchName + name)
