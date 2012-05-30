@@ -3,18 +3,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-!function(factory) {
+;(function(id, factory) { // Module boilerplate :(
   if (typeof(define) === 'function') { // RequireJS
     define(factory);
-  } else if (typeof(exports) === 'object') { // CommonJS
-    factory(require, exports, module);
+  } else if (typeof(require) === 'function') { // CommonJS
+    factory.call(this, require, exports, module);
   } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(undefined, this, { uri: __URI__ });
+    factory(function require(uri) {
+      var imports = {};
+      this['Components'].utils.import(uri, imports);
+      return imports;
+    }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
-  } else {
-    factory(undefined, (this.loader = {}), { uri: document.location.href });
+  } else {  // Browser or alike
+    var globals = this
+    factory(function require(id) {
+      return globals[id];
+    }, (globals[id] = {}), { uri: document.location.href + '#' + id, id: id });
   }
-}.call(this, function(require, exports, module) {
+}).call(this, 'loader', function(require, exports, module) {
 
 'use strict';
 
@@ -27,20 +34,22 @@ const { notifyObservers } = Cc['@mozilla.org/observer-service;1'].
                         getService(Ci.nsIObserverService);
 
 // Define some shortcuts.
+const bind = Function.call.bind(Function.bind);
 const getOwnPropertyNames = Object.getOwnPropertyNames;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-const defineProperties = Object.defineProperties;
-const getPrototypeOf = Object.getPrototypeOf;
+const define = Object.defineProperties;
+const prototypeOf = Object.getPrototypeOf;
 const create = Object.create;
+const keys = Object.keys;
 
 // Workaround for bug 674195. Freezing objects from other compartments fail,
 // so we use `Object.freeze` from the same component instead.
 function freeze(object) {
-  if (getPrototypeOf(object) === null) {
+  if (prototypeOf(object) === null) {
       Object.freeze(object);
   }
   else {
-    getPrototypeOf(getPrototypeOf(object.isPrototypeOf)).
+    prototypeOf(prototypeOf(object.isPrototypeOf)).
       constructor. // `Object` from the owner compartment.
       freeze(object);
   }
@@ -48,13 +57,14 @@ function freeze(object) {
 }
 
 // Returns map of given `object`-s own property descriptors.
-function getOwnPropertyDescriptors(object) {
-  let descriptor = {};
+const descriptor = iced(function descriptor(object) {
+  let value = {};
   getOwnPropertyNames(object).forEach(function(name) {
-    descriptor[name] = getOwnPropertyDescriptor(object, name)
+    value[name] = getOwnPropertyDescriptor(object, name)
   });
-  return descriptor;
-}
+  return value;
+});
+exports.descriptor = descriptor;
 
 // Freeze important built-ins so they can't be used by untrusted code as a
 // message passing channel.
@@ -81,8 +91,13 @@ function iced(f) {
 // Returns `target` object. Note we only export this function because it's
 // useful during loader bootstrap when other util modules can't be used &
 // thats only case where this export should be used.
-const override = iced(function override(target, properties) {
-  return defineProperties(target, getOwnPropertyDescriptors(properties));
+const override = iced(function override(target, source) {
+  let properties = descriptor(target)
+  let extension = descriptor(source || {})
+  getOwnPropertyNames(extension).forEach(function(name) {
+    properties[name] = extension[name];
+  });
+  return define({}, properties);
 });
 exports.override = override;
 
@@ -104,6 +119,9 @@ exports.override = override;
 const Sandbox = iced(function Sandbox(options) {
   // Normalize options and rename to match `Cu.Sandbox` expectations.
   options = {
+    // Do not expose `Components` if you really need them (bad idea!) you
+    // still can expose via prototype.
+    wantComponents: false,
     sandboxName: options.name,
     principal: 'principal' in options ? options.principal : systemPrincipal,
     wantXrays: 'wantXrays' in options ? options.wantXrays : true,
@@ -116,7 +134,17 @@ const Sandbox = iced(function Sandbox(options) {
   if (!options.sameGroupAs)
     delete options.sameGroupAs;
 
-  return Cu.Sandbox(options.principal, options);
+  let sandbox = Cu.Sandbox(options.principal, options);
+
+  // Each sandbox at creation gets set of own properties that will be shadowing
+  // ones from it's prototype. We override delete such `sandbox` properties
+  // to avoid shadowing.
+  delete sandbox.Iterator;
+  delete sandbox.Components;
+  delete sandbox.importFunction;
+  delete sandbox.debug;
+
+  return sandbox;
 });
 exports.Sandbox = Sandbox;
 
@@ -133,7 +161,7 @@ const evaluate = iced(function evaluate(sandbox, uri, options) {
     line: 1,
     version: '1.8',
     source: null
-  }, options || {});
+  }, options);
 
   return source ? Cu.evalInSandbox(source, sandbox, version, uri, line)
                 : loadSubScript(uri, sandbox, encoding);
@@ -150,29 +178,19 @@ const load = iced(function load(loader, module) {
     name: module.uri,
     // Get an existing module sandbox, if any, so we can reuse its compartment
     // when creating the new one to reduce memory consumption.
-    sandbox: sandboxes[Object.keys(sandboxes).shift()],
-    // We use `loader.globals` as prototype for the sandbox to provide module
-    // with globals defined by a loader.
-    prototype: globals,
+    sandbox: sandboxes[keys(sandboxes).shift()],
+    // We expose set of properties defined by `CommonJS` specification via
+    // prototype of the sandbox. Also globals are deeper in the prototype
+    // chain so that each module has access to them as well.
+    prototype: create(globals, descriptor({
+      require: require,
+      module: module,
+      exports: module.exports
+    })),
     wantXrays: false
   });
 
-  // Each sandbox at creation gets set of own properties that may be shadowing
-  // ones defined by loader `globals` (For example `dump`). We override
-  // `sandbox` properties with globals to make sure they aren't shadowed. Also,
-  // not that we still need to use `globals` as prototype for sandboxes as some
-  // globals maybe defined after loader is created and they should be accessible
-  // by all modules.
-  override(sandbox, globals);
-  // Finally we expose set of properties defined by `CommonJS` specification.
-  override(sandbox, {
-    require: require,
-    module: module,
-    exports: module.exports
-  });
-
   evaluate(sandbox, module.uri);
-
 
   if (module.exports && typeof(module.exports) === 'object')
     freeze(module.exports);
@@ -203,27 +221,35 @@ const resolve = iced(function resolve(id, base) {
 });
 exports.resolve = resolve;
 
-// Built-in resolver function resolves module `id` to it's `requirer.uri` if
-// it's relative, otherwise resolves it to `baseURI`.
-const resolveID = iced(function resolveID(id, requirer, baseURI) {
-  return resolve(normalize(id), isRelative(id) ? requirer.uri : baseURI);
+const resolveURI = iced(function resolveURI(id, mapping) {
+  let count = mapping.length, index = 0;
+  while (index < count) {
+    let [ path, uri ] = mapping[index ++];
+    if (id.indexOf(path) === 0)
+      return normalize(id.replace(path, uri));
+  }
 });
-exports.resolveID = resolveID;
+exports.resolveURI = resolveURI;
 
 // Creates version of `require` that will be exposed to the given `module`
 // in the context of the given `loader`. Each module gets own limited copy
 // of `require` that is allowed to load only a modules that are associated
 // with it during link time.
 const Require = iced(function Require(loader, requirer) {
-  let { baseURI, modules, resolve } = loader;
+  let { modules, mapping, resolve } = loader;
 
   function require(id) {
     if (!id) // Throw if `id` is not passed.
       throw Error('you must provide a module name when calling require() from '
                   + requirer.id, requirer.uri);
 
-    // Resolves `uri` of module using loaders resolver function.
-    let uri = resolve(id, requirer, baseURI);
+    // Resolve `id` to its requirer if it's relative.
+    let requirement = requirer ? resolve(id, requirer.id) : id;
+
+
+    // Resolves `uri` of module using loaders resolve function.
+    let uri = resolveURI(requirement, mapping);
+
 
     if (!uri) // Throw if `uri` can not be resolved.
       throw Error('Module: Can not resolve "' + id + '" module required by ' +
@@ -237,16 +263,24 @@ const Require = iced(function Require(loader, requirer) {
     // Otherwise load and cache it. We also freeze module to prevent it from
     // further changes at runtime.
     else {
-      module = modules[uri] = Module(id, uri);
+      module = modules[uri] = Module(requirement, uri);
       freeze(load(loader, module));
     }
 
     return module.exports;
   }
-  require.main = loader.main; // `require.main` is main `module`.
+  // Make `require.main === module` evaluate to true in main module scope.
+  require.main = loader.main === requirer ? requirer : undefined;
   return iced(require);
 });
 exports.Require = Require;
+
+const main = iced(function main(loader, id) {
+  let module = Module(id, resolveURI(id, loader.mapping));
+  loader.main = module;
+  return load(loader, module).exports;
+});
+exports.main = main;
 
 // Makes module object that is made available to CommonJS modules when they
 // are evaluated, along with `exports` and `require`.
@@ -276,12 +310,6 @@ exports.unload = unload;
 
 // Function makes new loader that can be used to load CommonJS modules
 // described by a given `options.manifest`. Loader takes following options:
-// - `baseURI`: All the module require terms are resolved relative to it,
-//    unless custom `resolve` function is used. Also in that case `baseURI`
-//    is passed to it a third argument. Please not that built-in resolve
-//    expects `baseURI` with a trailing `/`.
-// - `main.id`: Id of the main module.
-// - `main.uri`: URI of the main module.
 // - `globals`: Optional map of globals, that all module scopes will inherit
 //   from. Map is also exposed under `globals` property of the returned loader
 //   so it can be extended further later. Defaults to `{}`.
@@ -294,12 +322,11 @@ exports.unload = unload;
 //   If `resolve` does not returns `uri` string exception will be thrown by
 //   an associated `require` call.
 const Loader = iced(function Loader(options) {
-  let { main, baseURI, modules, globals, resolve } = override({
-    main: {},
+  let { modules, globals, resolve, paths } = override({
+    paths: {},
     modules: {},
     globals: {},
-    baseURI: 'resource:///modules/',
-    resolve: resolveID,
+    resolve: exports.resolve
   }, options);
 
   // We create an identity object that will be dispatched on an unload
@@ -309,34 +336,53 @@ const Loader = iced(function Loader(options) {
   // observer notifications.
   let destructor = freeze(create(null));
 
+  // Make mapping array that is sorted from longest path to shortest path
+  // to allow overlays.
+  let mapping = keys(paths).
+    sort(function(a, b) { return b.length - a.length }).
+    map(function(path) { return [ path, paths[path] ] });
+
   // Define pseudo modules.
   modules = override({
     '@loader/unload': destructor,
-    '@loader/options': JSON.parse(JSON.stringify(options)),
-    'chrome': { Cc: Cc, CC: CC, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
-                components: Components }
+    '@loader/options': options,
+    'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                CC: bind(CC, Components), components: Components }
   }, modules);
 
-  modules = Object.keys(modules).reduce(function(result, id) {
+  modules = keys(modules).reduce(function(result, id) {
     // We resolve `uri` from `id` since modules are cached by `uri`.
-    let module = Module(id, resolve(id, { uri: '' }, baseURI));
+    let uri = resolveURI(id, mapping);
+    let module = Module(id, uri);
     module.exports = freeze(modules[id]);
-    result[module.uri] = freeze(module);
+    result[uri] = freeze(module);
     return result;
   }, {});
 
-  // Create main module entry.
-  modules[main.uri] = Module(main.id, main.uri);
-
-  return freeze({
-    main: modules[main.uri],
-    destructor: destructor,
-    baseURI: baseURI,
-    resolve: resolve,
-    globals: globals,
-    modules: modules,   // Map of module objects indexed by module URIs.
-    sandboxes: {}       // Map of module sandboxes indexed by module URIs.
-  });
+  // Loader object is just a representation of a environment
+  // state. We freeze it and mark make it's properties non-enumerable
+  // as they are pure implementation detail that no one should rely upon.
+  return freeze(create(null, {
+    destructor: { enumerable: false, value: destructor },
+    globals: { enumerable: false, value: globals },
+    mapping: { enumerable: false, value: mapping },
+    // Map of module objects indexed by module URIs.
+    modules: { enumerable: false, value: modules },
+    // Map of module sandboxes indexed by module URIs.
+    sandboxes: { enumerable: false, value: {} },
+    resolve: { enumerable: false, value: resolve },
+    // Main (entry point) module, it can be set only once, since loader
+    // instance can have only one main module.
+    main: new function() {
+      let main;
+      return {
+        enumerable: false,
+        get: function() { return main; },
+        // Only set main if it has not being set yet!
+        set: function(module) { main = main || module; }
+      }
+    }
+  }));
 });
 exports.Loader = Loader;
 
