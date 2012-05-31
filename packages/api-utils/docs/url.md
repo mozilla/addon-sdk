@@ -97,14 +97,13 @@ The `url` module provides functionality for the parsing and retrieving of URLs.
 
 <api name="mimeType">
 @property {string}
-  The MIME type of the data. By default is empty, that accordingly to RFC2397
-  is equivalent to `text/plain`
+  The MIME type of the data. By default is an empty string.
 </api>
 
 <api name="parameters">
 @property {object}
   An hashmap that contains the parameters of the Data URL. By default is
-  empty, that accordingly to RFC2397 is equivalent to `{"charset" : "US-ASCII"}`
+  an empty object.
 </api>
 
 <api name="base64">

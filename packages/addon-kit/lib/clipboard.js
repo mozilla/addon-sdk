@@ -133,6 +133,9 @@ exports.set = function(aData, aDataType) {
       }
       break;
 
+    // Set images to the clipboard is not straightforward, to have an idea how
+    // it works on platform side, see:
+    // http://mxr.mozilla.org/mozilla-central/source/content/base/src/nsCopySupport.cpp?rev=7857c5bff017#530
     case "image/png":
       let image = options.data;
 
