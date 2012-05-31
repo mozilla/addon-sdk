@@ -191,6 +191,8 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
       this._removeAllListeners('activate');
       this._removeAllListeners('deactivate');
       this._clear();
+
+      delete browser(this._public).internals;
     },
     /**
      * This property represents currently active window.
