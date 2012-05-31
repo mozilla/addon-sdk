@@ -57,3 +57,8 @@ function activateTab(tab) {
   getOwnerWindow(tab).gBrowser.selectedTab = tab;
 }
 exports.activateTab = activateTab;
+
+function getURI(tab) {
+  return tab.linkedBrowser.currentURI.spec;
+}
+exports.getURI = getURI;

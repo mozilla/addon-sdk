@@ -15,7 +15,7 @@ function makeWindow() {
     'xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">' +
     '<iframe id="content" type="content"/>' +
     '</window>';
-  var url = "data:application/vnd.mozilla.xul+xml," +
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," +
             encodeURIComponent(content);
   var features = ["chrome", "width=10", "height=10"];
 
@@ -103,7 +103,7 @@ exports["test:communication with worker global scope"] = function(test) {
       onMessage: onMessage1
     });
     
-    frame.setAttribute("src", "data:text/html,<html><body></body></html>");
+    frame.setAttribute("src", "data:text/html;charset=utf-8,<html><body></body></html>");
   }, false);
   test.waitUntilDone();
 };

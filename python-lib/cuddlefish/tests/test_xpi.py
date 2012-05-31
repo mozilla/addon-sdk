@@ -164,6 +164,7 @@ class SmallXPI(unittest.TestCase):
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
                                               [target_cfg.name, "addon-kit"])
+        api_utils_dir = pkg_cfg.packages["api-utils"].lib[0]
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         used_files = list(m.get_used_files())
         here = up(os.path.abspath(__file__))
@@ -174,15 +175,18 @@ class SmallXPI(unittest.TestCase):
                     [("three", "lib", "main.js"),
                      ("three-deps", "three-a", "lib", "main.js"),
                      ("three-deps", "three-a", "lib", "subdir", "subfile.js"),
-                     ("three-deps", "three-a", "data", "msg.txt"),
-                     ("three-deps", "three-a", "data", "subdir", "submsg.txt"),
+                     ("three", "data", "msg.txt"),
+                     ("three", "data", "subdir", "submsg.txt"),
                      ("three-deps", "three-b", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "main.js"),
-                     ("three-deps", "three-c", "lib", "sub", "foo.js"),
+                     ("three-deps", "three-c", "lib", "sub", "foo.js")
                      ]]
+        expected.append(os.path.join(api_utils_dir, "self.js"))
+
         missing = set(expected) - set(used_files)
         extra = set(used_files) - set(expected)
-        self.failUnlessEqual((list(missing), list(extra)), ([], []))
+        self.failUnlessEqual(list(missing), [])
+        self.failUnlessEqual(list(extra), [])
         used_deps = m.get_used_packages()
 
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
@@ -210,14 +214,15 @@ class SmallXPI(unittest.TestCase):
                     "resources/api-utils/",
                     "resources/api-utils/data/",
                     "resources/api-utils/lib/",
+                    "resources/api-utils/lib/self.js",
                     "resources/three/",
                     "resources/three/lib/",
                     "resources/three/lib/main.js",
+                    "resources/three/data/",
+                    "resources/three/data/msg.txt",
+                    "resources/three/data/subdir/",
+                    "resources/three/data/subdir/submsg.txt",
                     "resources/three-a/",
-                    "resources/three-a/data/",
-                    "resources/three-a/data/msg.txt",
-                    "resources/three-a/data/subdir/",
-                    "resources/three-a/data/subdir/submsg.txt",
                     "resources/three-a/lib/",
                     "resources/three-a/lib/main.js",
                     "resources/three-a/lib/subdir/",
@@ -267,6 +272,7 @@ class SmallXPI(unittest.TestCase):
         package_path = [self.get_linker_files_dir("three-deps")]
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
+
         deps = packaging.get_deps_for_targets(pkg_cfg,
                                               [target_cfg.name, "addon-kit"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True)

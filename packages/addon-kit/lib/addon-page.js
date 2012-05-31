@@ -4,16 +4,12 @@
 
 'use strict';
 
-const { prefixURI, name } = require('@packaging');
 const { WindowTracker, isBrowser } = require('api-utils/window-utils');
 const { add, remove } = require('api-utils/array');
-const { getTabs, closeTab } = require('api-utils/tabs/utils');
+const { getTabs, closeTab, getURI } = require('api-utils/tabs/utils');
+const { data } = require('self');
 
-// Note: This is an URL that will be returned by calling
-// `require('self').data.url('index.html')` from the add-on modules.
-// We could not use this expression as in this module it would have
-// returned "addon-kit/data/index.html" instead.
-const addonURL = prefixURI + name + '/data/index.html';
+const addonURL = data.url('index.html');
 
 WindowTracker({
   onTrack: function onTrack(window) {
@@ -22,7 +18,7 @@ WindowTracker({
   },
   onUntrack: function onUntrack(window) {
     getTabs(window).
-      filter(function(tab) tab.linkedBrowser.currentURI.spec === addonURL).
+      filter(function(tab) { return getURI(tab) === addonURL; }).
       forEach(function(tab) {
         // Note: `onUntrack` will be called for all windows on add-on unloads,
         // so we want to clean them up from these URLs.

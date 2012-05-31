@@ -440,7 +440,7 @@ def get_config_args(name, env_root):
     return config
 
 def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
-    from templates import MAIN_JS, PACKAGE_JSON, README_DOC, MAIN_JS_DOC, TEST_MAIN_JS
+    from templates import PACKAGE_JSON, TEST_MAIN_JS
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than one argument
@@ -455,16 +455,16 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
-    open('README.md','w').write(README_DOC % {'name':addon})
+    open('README.md','w').write('')
     print >>out, '* README.md written'
     open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
                                                    'fullName':addon })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
-    open(os.path.join(path,'lib','main.js'),'w').write(MAIN_JS)
+    open(os.path.join(path,'lib','main.js'),'w').write('')
     print >>out, '* lib/main.js written'
-    open(os.path.join(path,'doc','main.md'),'w').write(MAIN_JS_DOC)
+    open(os.path.join(path,'doc','main.md'),'w').write('')
     print >>out, '* doc/main.md written'
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
@@ -669,7 +669,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     build = packaging.generate_build_for_target(
         pkg_cfg, target, used_deps,
-        include_dep_tests=options.dep_tests
+        include_dep_tests=options.dep_tests,
+        is_running_tests=(command == "test")
         )
 
     harness_options = {

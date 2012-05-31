@@ -378,8 +378,8 @@ exports.testConstructor = function(test) {
   }));
 
   // test updating widget contentURL
-  let url1 = "data:text/html,<body>foodle</body>";
-  let url2 = "data:text/html,<body>nistel</body>";
+  let url1 = "data:text/html;charset=utf-8,<body>foodle</body>";
+  let url2 = "data:text/html;charset=utf-8,<body>nistel</body>";
 
   tests.push(function testUpdatingContentURL() testSingleWidget({
     id: "content",
@@ -668,7 +668,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
                    "document.body.dispatchEvent(evt);",
     contentScriptWhen: "end",
     panel: require("panel").Panel({
-      contentURL: "data:text/html,<body>Look ma, a panel!</body>",
+      contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
       onShow: function() {
         widget1.destroy();
         test.pass("panel displayed on click");
@@ -710,7 +710,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
       this.panel.show();
     },
     panel: require("panel").Panel({
-      contentURL: "data:text/html,<body>Look ma, a panel!</body>",
+      contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
       onShow: function() {
         test.assert(
           onClickCalled,

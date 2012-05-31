@@ -768,14 +768,14 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
 
   switch (type) {
     case CONTENT_TYPE_HTML:
-      contentURL = "data:text/html," + encodeURIComponent(this._widget.content);
+      contentURL = "data:text/html;charset=utf-8," + encodeURIComponent(this._widget.content);
       break;
     case CONTENT_TYPE_URI:
       contentURL = this._widget.contentURL;
       break;
     case CONTENT_TYPE_IMAGE:
       let imageURL = this._widget.contentURL;
-      contentURL = "data:text/html,<html><body><img src='" +
+      contentURL = "data:text/html;charset=utf-8,<html><body><img src='" +
                    encodeURI(imageURL) + "'></body></html>";
       break;
     default:

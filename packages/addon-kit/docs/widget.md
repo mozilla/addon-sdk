@@ -609,8 +609,8 @@ Represents a widget object.
 
 <api name="contentURL">
 @property {string}
-  The URL of content to load into the widget.  This can be
-  [local content](dev-guide/guides/content-scripts/index.html) or remote
+  The URL of content to load into the widget.  This can  point to
+  local content loaded from your add-on's "data" directory or remote
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
@@ -809,11 +809,11 @@ In this example `WidgetView` is used to display different content for
 
 <api name="contentURL">
 @property {string}
-  The URL of content to load into the widget view.  This can be
-  [local content](dev-guide/guides/content-scripts/index.html) or remote
-  content, an image or web content.  Setting it updates the widget view's
-  appearance immediately.  However, if the widget view was created using
-  `content`, then this property is meaningless, and setting it has no effect.
+  The URL of content to load into the widget.  This can  point to
+  local content loaded from your add-on's "data" directory or remote
+  content, an image or web content.  Setting it updates the widget's appearance
+  immediately.  However, if the widget was created using `content`, then this
+  property is meaningless, and setting it has no effect.
 </api>
 
 <api name="panel">

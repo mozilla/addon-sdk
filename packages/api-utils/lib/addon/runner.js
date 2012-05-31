@@ -5,12 +5,12 @@
  */
 
 const { Cc, Ci } = require('chrome');
-const { load, override, Sandbox, evaluate } = require('@loader');
+const { descriptor, Sandbox, evaluate, main } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
-const globals = require('../globals!');
-const options = require('@packaging');
+const { loadReason } = require('self');
+const globals = require('../globals');
 
 const NAME2TOPIC = {
   'Firefox': 'sessionstore-windows-restored',
@@ -24,24 +24,24 @@ const NAME2TOPIC = {
 const APP_STARTUP = NAME2TOPIC[name] || NAME2TOPIC['*'];
 
 // Initializes default preferences
-function setDefaultPrefs() {
-  const prefs = Cc["@mozilla.org/preferences-service;1"].
+function setDefaultPrefs(prefsURI) {
+  const prefs = Cc['@mozilla.org/preferences-service;1'].
                 getService(Ci.nsIPrefService).
                 QueryInterface(Ci.nsIPrefBranch2);
-  const branch = prefs.getDefaultBranch("");
+  const branch = prefs.getDefaultBranch('');
   const sandbox = Sandbox({
-    name: options.prefsURI,
+    name: prefsURI,
     prototype: {
       pref: function(key, val) {
         switch (typeof val) {
-          case "boolean":
+          case 'boolean':
             branch.setBoolPref(key, val);
             break;
-          case "number":
+          case 'number':
             if (val % 1 == 0) // number must be a integer, otherwise ignore it
               branch.setIntPref(key, val);
             break;
-          case "string":
+          case 'string':
             branch.setCharPref(key, val);
             break;
         }
@@ -49,7 +49,7 @@ function setDefaultPrefs() {
     }
   });
   // load preferences.
-  evaluate(sandbox, options.prefsURI);
+  evaluate(sandbox, prefsURI);
 }
 
 function wait(reason, options) {
@@ -64,7 +64,7 @@ function startup(reason, options) {
 
   // Inject globals ASAP in order to have console API working ASAP
   let loader = options.loader;
-  override(loader.globals, globals);
+  Object.defineProperties(loader.globals, descriptor(globals));
 
   // Try initializing localization module before running main module. Just print
   // an exception in case of error, instead of preventing addon to be run.
@@ -72,18 +72,18 @@ function startup(reason, options) {
     // Do not enable HTML localization while running test as it is hard to
     // disable. Because unit tests are evaluated in a another Loader who
     // doesn't have access to this current loader.
-    if (options.loader.main.id !== "test-harness/run-tests")
-      require("api-utils/l10n/html").enable();
+    if (options.main !== 'test-harness/run-tests')
+      require('api-utils/l10n/html').enable();
   } catch(error) {
     console.exception(error);
   }
   try {
     // TODO: When bug 564675 is implemented this will no longer be needed
     // Always set the default prefs, because they disappear on restart
-    setDefaultPrefs();
+    setDefaultPrefs(options.prefsURI);
 
     // this is where the addon's main.js finally run.
-    let program = load(loader, loader.main).exports;
+    let program = main(loader, options.main);
 
     if (typeof(program.onUnload) === 'function')
       unload(program.onUnload);
@@ -91,7 +91,7 @@ function startup(reason, options) {
     if (typeof(program.main) === 'function') {
 
       program.main({
-        loadReason: options.loadReason,
+        loadReason: loadReason,
         staticArgs: staticArgs 
       }, { 
         print: function print(_) { dump(_ + '\n') },

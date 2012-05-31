@@ -6,9 +6,8 @@
 
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("api-utils/timer");
-const { Loader, Require, override } = require("@loader");
+const { Loader, Require, override } = require("test-harness/loader");
 const { Worker } = require('api-utils/content/worker');
-const options = require("@packaging");
 const xulApp = require("api-utils/xul-app");
 
 function makeWindow(contentURL) {
@@ -20,7 +19,7 @@ function makeWindow(contentURL) {
       encodeURIComponent(contentURL) + '"/>' +
     '<script>var documentValue=true;</script>' +
     '</window>';
-  var url = "data:application/vnd.mozilla.xul+xml," +
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," +
             encodeURIComponent(content);
   var features = ["chrome", "width=10", "height=10"];
 
@@ -168,7 +167,7 @@ exports['test:n-arguments emit'] = function(test) {
 }
 
 exports['test:post-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html,");
+  let window = makeWindow("data:text/html;charset=utf-8,");
   test.waitUntilDone();
   
   window.addEventListener("load", function onload() {
@@ -210,7 +209,7 @@ exports['test:post-json-values-only'] = function(test) {
 
 
 exports['test:emit-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html,");
+  let window = makeWindow("data:text/html;charset=utf-8,");
   test.waitUntilDone();
   
   window.addEventListener("load", function onload() {
@@ -263,7 +262,7 @@ exports['test:emit-json-values-only'] = function(test) {
 }
 
 exports['test:content is wrapped'] = function(test) {
-  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -348,19 +347,17 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
   // Create a new module loader in order to be able to create a `console`
   // module mockup:
-  let loader = Loader(override(JSON.parse(JSON.stringify(options)), {
-    globals: {
-      console: {
-        log: hook.bind("log"),
-        info: hook.bind("info"),
-        warn: hook.bind("warn"),
-        error: hook.bind("error"),
-        debug: hook.bind("debug"),
-        exception: hook.bind("exception")
-      }
+  let loader = Loader(module, {
+    console: {
+      log: hook.bind("log"),
+      info: hook.bind("info"),
+      warn: hook.bind("warn"),
+      error: hook.bind("error"),
+      debug: hook.bind("debug"),
+      exception: hook.bind("exception")
     }
-  }));
-  let require = Require(loader, module);
+  });
+  let require = loader.require;
 
   // Intercept all console method calls
   let calls = [];
@@ -402,7 +399,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
 
 exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
-  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -431,7 +428,7 @@ exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
 }
 
 exports['test:setTimeout are unregistered on content unload'] = function(test) {
-  let contentURL = 'data:text/html,foo';
+  let contentURL = 'data:text/html;charset=utf-8,foo';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -469,18 +466,10 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
                            "Nor previous one");
 
           window.close();
-          // Ensure that the document is released after outer window close
-          if (xulApp.versionInRange(xulApp.platformVersion, "15.0a1", "*")) {
-            test.assertRaises(function () {
-              // `originalWindow` will be destroyed only when the outer window
-              // is going to be released. See bug 695480
-              originalWindow.document.title;
-            }, "can't access dead object");
-          }
           test.done();
         }, 100);
       }, true);
-      iframe.setAttribute("src", "data:text/html,<title>final</title>");
+      iframe.setAttribute("src", "data:text/html;charset=utf-8,<title>final</title>");
     }, 100);
 
   }, true);

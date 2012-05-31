@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var url = require("url");
+var { packed } = require("self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -78,11 +79,6 @@ exports.testParseFTPWithUserPass = function(test) {
   test.assertEqual(info.userPass, "user:pass");
 };
 
-// rootURI is jar:file://...!/ if we're packed, and file://.../ if we're
-// unpacked. url.toFilename() is not required to work for the contents of
-// packed XPIs
-var unpacked = (require("@packaging").rootURI.indexOf("file:") == 0);
-
 exports.testToFilename = function(test) {
   test.assertRaises(
     function() { url.toFilename("resource://nonexistent"); },
@@ -90,7 +86,7 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  if (unpacked)
+  if (!packed)
     test.assertMatches(url.toFilename(module.uri),
                        /.*test-url\.js$/,
                        "url.toFilename() on resource: URIs should work");

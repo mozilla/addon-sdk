@@ -35,7 +35,7 @@ function selectTextarea(window, from, to) {
 
 function primeTestCase(html, test, callback) {
   let tabBrowser = require("tab-browser");
-  let dataURL = "data:text/html," + encodeURI(html);
+  let dataURL = "data:text/html;charset=utf-8," + encodeURI(html);
   let tracker = tabBrowser.whenContentLoaded(
     function(window) {
       if (window.document.location.href != dataURL)

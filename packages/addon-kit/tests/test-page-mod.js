@@ -180,7 +180,7 @@ exports.testCommunication2 = function(test) {
   let callbackDone = null,
       window;
 
-  testPageMod(test, "about:credits", [{
+  testPageMod(test, "about:license", [{
       include: "about:*",
       contentScriptWhen: 'start',
       contentScript: 'new ' + function WorkerScope() {
@@ -267,7 +267,7 @@ exports.testMixedContext = function(test) {
   let doneCallback = null;
   let messages = 0;
   let modObject = {
-    include: "data:text/html,",
+    include: "data:text/html;charset=utf-8,",
     contentScript: 'new ' + function WorkerScope() {
       // Both scripts will execute this,
       // context is shared if one script see the other one modification.
@@ -288,7 +288,7 @@ exports.testMixedContext = function(test) {
       });
     }
   };
-  testPageMod(test, "data:text/html,", [modObject, modObject],
+  testPageMod(test, "data:text/html;charset=utf-8,", [modObject, modObject],
     function(win, done) {
       doneCallback = done;
     }
@@ -354,12 +354,12 @@ exports['test tab worker on message'] = function(test) {
   let tabs = require("tabs");
   let { PageMod } = require("page-mod");
 
-  let url1 = "data:text/html,<title>tab1</title><h1>worker1.tab</h1>";
-  let url2 = "data:text/html,<title>tab2</title><h1>worker2.tab</h1>";
+  let url1 = "data:text/html;charset=utf-8,<title>tab1</title><h1>worker1.tab</h1>";
+  let url2 = "data:text/html;charset=utf-8,<title>tab2</title><h1>worker2.tab</h1>";
   let worker1 = null;
 
   let mod = PageMod({
-    include: "data:text/html,*",
+    include: "data:text/html*",
     contentScriptWhen: "ready",
     contentScript: "self.postMessage('#1');",
     onAttach: function onAttach(worker) {
@@ -447,7 +447,7 @@ exports.testContentScriptOptionsOption = function(test) {
 
 exports.testPageModCss = function(test) {
   let [pageMod] = testPageMod(test,
-    'data:text/html,<div style="background: silver">css test</div>', [{
+    'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
       include: "data:*",
       contentStyle: "div { height: 100px; }",
       contentStyleFile:
@@ -472,16 +472,16 @@ exports.testPageModCss = function(test) {
 
 exports.testPageModCssList = function(test) {
   let [pageMod] = testPageMod(test,
-    'data:text/html,<div style="width:320px; max-width: 480px!important">css test</div>', [{
+    'data:text/html;charset=utf-8,<div style="width:320px; max-width: 480px!important">css test</div>', [{
       include: "data:*",
       contentStyleFile: [
         // Highlight evaluation order in this list
-        "data:text/css,div { border: 1px solid black; }",
-        "data:text/css,div { border: 10px solid black; }",
+        "data:text/css;charset=utf-8,div { border: 1px solid black; }",
+        "data:text/css;charset=utf-8,div { border: 10px solid black; }",
         // Highlight evaluation order between contentStylesheet & contentStylesheetFile
-        "data:text/css,div { height: 1000px; }",
+        "data:text/cs;charset=utf-8s,div { height: 1000px; }",
         // Highlight precedence between the author and user style sheet
-        "data:text/css,div { width: 200px; max-width: 640px!important}",
+        "data:text/css;charset=utf-8,div { width: 200px; max-width: 640px!important}",
       ],
       contentStyle: [
         "div { height: 10px; }",
@@ -523,7 +523,7 @@ exports.testPageModCssList = function(test) {
 
 exports.testPageModCssDestroy = function(test) {
   let [pageMod] = testPageMod(test,
-    'data:text/html,<div style="width:200px">css test</div>', [{
+    'data:text/html;charset=utf-8,<div style="width:200px">css test</div>', [{
       include: "data:*",
       contentStyle: "div { width: 100px!important; }"
     }],

@@ -8,7 +8,7 @@ const { open } = require('api-utils/window/utils');
 const { create } = require('api-utils/frame/utils');
 
 exports['test frame creation'] = function(assert) {
-  let window = open('data:text/html,Window');
+  let window = open('data:text/html;charset=utf-8,Window');
   let frame = create(window.document);
 
   assert.equal(frame.getAttribute('type'), 'content',
@@ -24,11 +24,11 @@ exports['test frame creation'] = function(assert) {
 };
 
 exports['test fram has js disabled by default'] = function(assert, done) {
-  let window = open('data:text/html,window');
+  let window = open('data:text/html;charset=utf-8,window');
   window.addEventListener('DOMContentLoaded', function windowReady() {
     window.removeEventListener('DOMContentLoaded', windowReady, false);
     let frame = create(window.document, {
-      uri: 'data:text/html,<script>document.documentElement.innerHTML' +
+      uri: 'data:text/html;charset=utf-8,<script>document.documentElement.innerHTML' +
            '= "J" + "S"</script>',
     });
     frame.contentWindow.addEventListener('DOMContentLoaded', function ready() {
@@ -44,11 +44,11 @@ exports['test fram has js disabled by default'] = function(assert, done) {
 };
 
 exports['test frame with js enabled'] = function(assert, done) {
-  let window = open('data:text/html,window');
+  let window = open('data:text/html;charset=utf-8,window');
   window.addEventListener('DOMContentLoaded', function windowReady() {
     window.removeEventListener('DOMContentLoaded', windowReady, false);
     let frame = create(window.document, {
-      uri: 'data:text/html,<script>document.documentElement.innerHTML' +
+      uri: 'data:text/html;charset=utf-8,<script>document.documentElement.innerHTML' +
            '= "J" + "S"</script>',
       allowJavascript: true
     });

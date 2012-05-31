@@ -7,15 +7,15 @@ const { emit, off } = require("api-utils/event/core");
 const { Class } = require("api-utils/heritage");
 const { EventTarget } = require("api-utils/event/target");
 const { when: unload } = require("api-utils/unload");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
 const prefService = require("api-utils/preferences-service");
 const observers = require("api-utils/observer-service");
 
-const ADDON_BRANCH = "extensions." + jetpackID + ".";
-const BUTTON_PRESSED = jetpackID + "-cmdPressed";
+const ADDON_BRANCH = "extensions." + id + ".";
+const BUTTON_PRESSED = id + "-cmdPressed";
 
 // XXX Currently, only Firefox implements the inline preferences.
-if (!require("xul-app").is("Firefox"))
+if (!require("api-utils/xul-app").is("Firefox"))
   throw Error("This API is only supported in Firefox");
 
 const branch = Cc["@mozilla.org/preferences-service;1"].
@@ -66,7 +66,3 @@ const target = Class({
   prefs: prefs
 })();
 module.exports = target;
-
-// This is workaround making sure that exports is wrapped before it's
-// frozen, which needs to happen in order to workaround Bug 673468.
-off(target, 'workaround-bug-673468');

@@ -2,8 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Loader, Require, unload, override } = require('@loader');
-const packaging = require('@packaging');
+'use strict';
+
+const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
+const packaging = require('@loader/options');
 
 exports['test loader'] = function(assert) {
   var prints = [];
@@ -14,7 +16,6 @@ exports['test loader'] = function(assert) {
   let options = JSON.parse(JSON.stringify(packaging));
 
   let loader = Loader(override(options, {
-    id: Math.random().toString(36).slice(2),
     globals: {
       print: print,
       foo: 1
