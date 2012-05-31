@@ -2,57 +2,69 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-Module exposes low level API for creating [CommonJS module][CommonJS Modules]
-loaders. Code is intentionally authored such that it can be consumed in a several ways:
+The `loader` module exposes a low level API for creating
+[CommonJS module][CommonJS Modules]
+loaders. The code is intentionally authored so that it
+can be loaded in several ways:
 
-1. It can be loaded as a regular script tag in a documents that have
+1. It can be loaded as a regular script tag in documents that have
 [system principals][]:
 
-        <script type='application/javascript' src='resource://gre/modules/toolkit/loader.js'></script>
+    <pre class="brush: html">
+        &lt;script type='application/javascript' src='resource://gre/modules/toolkit/loader.js'&gt;&lt;/script&gt;
+    </pre>
 
-Note that the script will expose a single `loader` object containing all of the
-API functions described in this document.
+    This will expose a single `loader` object containing all of the
+    API functions described in this document.
 
-2. It can be loaded as [JSM style module][]:
+2. It can be loaded as a [JavaScript code module][]:
 
         let { Loader, Require, unload } = Components.utils.import('resource://gre/modules/toolkit/loader.js');
 
-3. It can be required as a CommonJS module from a module loaded in loader
-itself:
+3. It can be required as a CommonJS module from a module loaded in
+the loader itself:
 
         let { Loader, Require, unload } = require('toolkit/loader');
 
 ## What is it good for ?
 
-- Loaders can be used to create somewhat standardized JS environments that
-  people doing non-browser JS are familiar with.
-- Loader provides environment for loading
-  [CommonJS style modules][CommonJS modules], which makes it possible to consume
-  [lots of interesting code](http://search.npmjs.org/) that was already developed.
-- Loader secures each module into an isolated JS sandbox and makes any
-  capability imports explicit via calls to provided `require` function.
-- Task specific loaders with restricted module access can be created.
-- Loader provides unload hooks that may be used to undo changes made by
+- Create somewhat standardized JS environments that people doing
+non-browser JS are familiar with.
+- Provide an environment for loading
+  [CommonJS style modules][CommonJS modules], which makes it possible
+  to consume [lots of interesting code](http://search.npmjs.org/) that
+  has already been developed.
+- Secure each module in an isolated JS sandbox and makes any
+  capability imports explicit via calls to the `require()` function.
+- create task specific loaders with restricted module access.
+- Provide unload hooks that may be used to undo changes made by
   anything loaded into it.
 
 ## Instantiation
 
-Loader module provides `Loader` function that may be used to instantiate new
-loader instances:
+The `loader` module provides a `Loader()` function that may be used
+to instantiate new loader instances:
 
     let loader = Loader(options);
 
 ## Configuration
 
-Desired loader behavior may vary depending on use case, therefor `Loader`
-may be provided with a set of options to configure it appropriately:
+`Loader()` may be provided with a set of configuration options:
+
+* [`paths`](packages/api-utils/loader.html#paths): describes where the loader should
+find the modules it is asked to load. **Mandatory**.
+* [`modules`](packages/api-utils/loader.html#modules): provides a set of module exports. **Optional**.
+* [`globals`](packages/api-utils/loader.html#globals): provides a set of globals shared across modules loaded
+via this loader. **Optional**.
+* [`resolve`](packages/api-utils/loader.html#resolve): provide customized module resolution logic. **Optional**.
 
 ### paths
 
-Loader needs to be provided with a set of locations to indicate where required
-modules should be loaded from. Loader takes required `options.paths` hash, that
-represents mapping of module id prefixes to a locations. There are lots of
-different possibilities, but most common setup look like one below:
+The loader needs to be provided with a set of locations to indicate
+where to find modules loaded using `require()`. This is provided by
+a mandatory `options.paths` hash that represents the mapping between
+module ID prefixes and locations. There are lots of
+different possibilities, but the most common setup looks like this:
 
     let { Loader } = require('toolkit/loader');
     let loader = Loader({
@@ -68,12 +80,12 @@ different possibilities, but most common setup look like one below:
       }
     })
 
-Note that all relative URLs requirements (ones that start with `.` character)
-are first resolved relative to requirer module `id` and result of it is then
-resolved using given `paths` configuration. Although you still may end up with
-a relative module id (if entry point module id is relative itself). In those
-cases you have to decide what entry point module is relative to and provide
-appropriate `./` mapping in `paths`:
+All relative URL `require()` statements (those that start with ".")
+are first resolved relative to the requirer module ID and the result
+of it is then resolved using the `paths` option. You may
+still end up with a relative module ID if the entry point module ID is
+itself relative. In those cases you have to decide what the entry point
+module is relative to and provide an appropriate mapping for it:
 
     let { Loader } = require('toolkit/loader');
     let loader = Loader({
@@ -92,19 +104,21 @@ appropriate `./` mapping in `paths`:
       }
     });
 
-Keep in mind that order of keys in `paths` is irrelevant, since they are sorted
-by keys from longest to shortest to allow overlapping mapping. BTW example above
-in fact overlays base path `''` with different mapping for `'toolkit/'` prefixed
-modules.
+The order of keys in `paths` is irrelevant since they are sorted
+by keys from longest to shortest to allow overlapping mapping.
+The example above overlays the base path `''` with a different mapping
+for `'toolkit/'` prefixed modules.
 
-### Modules
+### modules
 
-Loader may **optionally** be provided with a set of module exports. In SDK
-we call them **pseudo modules**. This feature may be used in few different ways:
+The loader may **optionally** be provided with a set of module exports.
+In the SDK we call these "pseudo modules".
+This feature may be used in a few different ways:
 
-1. To expose API that don't have a JS file with an implementation, or simply
-   are authored in non compatible format (like JSM style module for example):
-
+1. To expose an API that doesn't have a JS file with an implementation
+   or is written in an incompatible format such as
+   [JSM][JavaScript code module]:
+   
         let { Loader } = require('toolkit/loader');
         let loader = Loader({
           modules: {
@@ -112,13 +126,13 @@ we call them **pseudo modules**. This feature may be used in few different ways:
             'net/utils': Cu.import('resource:///modules/NetUtil.jsm', {})
           }
         });
+   Each loader instance comes with a set of built-in pseudo modules
+   that are described in detail in the [Built-in Modules](packages/api-utils/loader.html#Built-in_Modules)  section.
 
-   In fact each loader instance comes with set of built-in pseudo modules,
-   that are described in further details under "Built-in modules" section.
-
-2. This feature also may be employed to reuse already loaded module instances.
-   For example in SDK loader is loaded at bootstrap as a JSM module, but then
-   it is exposed as pseudo-module to avoid overhead of subsequent loads:
+2. To reuse module instances that are already loaded.
+   For example in the SDK, the loader is loaded at bootstrap as a JSM module
+   but is then exposed as a pseudo-module to avoid the overhead of subsequent
+   loads:
 
         let loaderModule = Cu.import('resource://gre/modules/toolkit/loader.js');
         let loader = loaderModule.Loader({
@@ -129,19 +143,20 @@ we call them **pseudo modules**. This feature may be used in few different ways:
           }
         });
 
-   Use this feature with a great care though, while reusage may sound like
-   compelling idea, it comes with side effect of shared state, which is not
-   that great for many reasons. For example unload of a loader won't trigger
+   Use this feature with a great care though. While reuse may sound like a
+   compelling idea it comes with the side effect of shared state, which can
+   cause problems. For example, unload of a loader won't trigger
    unload hooks on pseudo-modules.
 
-### Globals
+### globals
 
-Each module loaded via loader instance is secured into own JS sandbox. These
-modules don't share scope and gets its own set of built-ins
-(`Object, Array, String ..`). Although sometimes it's convenient to
-define a set of common globals that will be shared across them. This can be
-done via optional `globals` option passed to a `Loader`. For example SDK uses
-this feature to provide global `console` object:
+Each module loaded via the loader instance is secured in own JS sandbox.
+These modules don't share scope and get their own set of built-ins
+(`Object`, `Array`, `String` ...). But sometimes it's convenient to
+define a set of common globals that will be shared across modules. This can be
+done using the optional `globals` option.
+
+For example, the SDK uses this feature to provide a global `console` object:
 
     let { Loader } = require('toolkit/loader');
     let loader = Loader({
@@ -155,26 +170,35 @@ this feature to provide global `console` object:
       }
     });
 
-Be careful to not misuse this feature! In general it is not recommended
+Be careful not to misuse this feature! In general it is not recommended
 to provide features via globals, it's almost always better to use
-pseudo-modules or even better modules instead.
+pseudo-modules or, even better, modules.
 
-### Customize resolution
+### resolve
 
-Loader can be configured even further by providing optional `resolve` option.
-This allows to define completely customized module resolution logic. Option
-`resolve` is expected to be a function that takes module `id` that `require`
-was called with and an `id` of the requirer module, from which `require` was
-called. When this option is provided on each `require` call, given `resolve`
-function is called with a required module `id` and a requirer module `id`.
-Return value should be a string representing resolved module `id`. If this
-option is not provided loader will use plain path resolution. Please note that
-returned value is still an `id` string which later is resolved to its location
-URL using mapping provided via `paths` option. This feature may also be used
-to imply specific security constraints. For example SDK at build-time generates
-a manifest file representing a dependency graph of all modules used by an
-add-on. Any attempt to load module violating manifest is unauthorized and is
-rejected with an exception:
+
+The optional `resolve` option enables you to completely customize
+module resolution logic.
+
+`resolve` is assigned a function that takes:
+
+* the ID of the module passed into `require()`
+* the ID of the module that called `require()`
+
+On each `require()` call, the supplied function is then called with
+the ID of the required module and that of the requiring module.
+
+The function returns a string representing the resolved module ID, which
+is then resolved to its location URL using the mapping provided in
+the `paths` option.
+
+If this option is not provided, the loader will use plain path resolution. 
+
+This feature may also be used to implement specific security constraints.
+For example, the SDK generates a manifest file at build time representing
+a dependency graph of all modules used by an add-on. Any attempt to load
+a module not listed in the manifest is unauthorized and is rejected with an
+exception:
 
     let { Loader } = require('toolkit/loader');
     let manifest = {
@@ -198,22 +222,23 @@ rejected with an exception:
         if (id in manifest)
           return requirements[id];
         else
-          throw Error('Module "' + requirer + '" has no athority to require ' +
+          throw Error('Module "' + requirer + '" has no authority to require ' +
                       'module "' + id + "')
       }
     });
 
-Note that thrown exceptions will propagate to caller of `require`. If `resolve`
-fails to return a string value, an exception will still be thrown as loader
-will be unable to resolve required module location.
+Thrown exceptions will propagate to the caller of `require()`. If
+the function assigned to `resolve`
+does not return a string value, an exception will still be thrown as
+the loader will be unable to resolve the required module's location.
 
-### All together
+### All Together
 
-Now all of these options can be combined to configure loader to adjust to
+All of these options can be combined to configure the loader for
 a specific use case. Don't get too excited about configuration options, keep
-in mind that modules are more useful if they interoperability can be used across
-loader instances. Unless you have any specific needs it's best to stick to a
-following SDK compatible configuration:
+in mind that modules are more useful if they can be used across
+loader instances. Unless you have specific needs it's best to stick to an
+SDK-compatible configuration, like this:
 
     let { Loader } = require('toolkit/loader');
     let loader = Loader({
@@ -234,49 +259,51 @@ following SDK compatible configuration:
         // Provide developers with well known `console` object, hopefully
         // with a more advanced implementation.
         console: {
-          log: dump.bind(dump, 'log: '),
-          info: dump.bind(dump, 'info: '),
-          warn: dump.bind(dump, 'warn: '),
-          error: dump.bind(dump, 'error: ')
+          log: dump.bind(dump, "log: "),
+          info: dump.bind(dump, "info: "),
+          warn: dump.bind(dump, "warn: "),
+          error: dump.bind(dump, "error: ")
         }
       },
       modules: {
         // Expose legacy API via pseudo modules that eventually may be
         // replaced with a real ones :)
-        'devtools/gcli': Cu.import('resource:///modules/gcli.jsm', {}),
-        'net/utils': Cu.import('resource:///modules/NetUtil.jsm', {})
+        "devtools/gcli": Cu.import("resource:///modules/gcli.jsm", {}),
+        "net/utils": Cu.import("resource:///modules/NetUtil.jsm", {})
       }
     });
 
-### Loader instances
+### Loader Instances
 
-Loader produces instances that are nothing more than representation of
-environment state into which modules are loaded. It is intentionally made
-immutable and all its properties are just an implementation details that
-no one should depend upon, they may change at any point without any further
+The loader produces instances that are nothing more than representations
+of the environment into which modules are loaded. It is intentionally made
+immutable and all its properties are just an implementation detail that
+no one should depend on, they may change at any point without any further
 notice.
 
-## Loading modules
+## Loading Modules
 
-CommonJS specification defines notion of **main** module, which represents
-an entry point to a program. Loader module exposes function `main` that can
-be used for loading a main module, that starts an execution, all other modules
-will be loaded either by it or it's dependencies:
+The CommonJS specification defines the notion of a **main** module, which
+represents an entry point to a program. 
+
+The `loader` module exposes a `main()` function that can
+be used to load a main module.
+All other modules will be loaded by this module or its dependencies:
 
     let { main, Loader } = require('toolkit/loader');
     let loader = Loader(options);
     let program = main(loader, './main');
 
-Module can recognize if it was loaded as main in order to act accordingly:
+A module can find out whether it was loaded as main:
 
     if (require.main === module)
       main();
 
 It is possible to load other modules before a main one, but it's inherently
-harder to do. That's because every module, other then main has a requirer,
+harder to do. That's because every module except main has a requirer,
 based on which resolution and authority decisions are made. In order to load
-module before a main one (for example to bootstrap an environment) requirer
-must be created first:
+a module before a main one (for example to bootstrap an environment) the
+requirer must be created first:
 
     let { Require, Loader, Module } = require('toolkit/loader');
     let loader = Loader(options);
@@ -284,34 +311,42 @@ must be created first:
     let require = Require(loader, requirer);
     let boostrap = require(bootstrapID);
 
-# Built-in modules
+## Built-in Modules
 
-Each loader instance exposes set of built-in pseudo modules in addition to ones
-being passed via `modules`:
+Each loader instance exposes the following built-in pseudo modules
+in addition to those passed via `modules`:
 
-- `chrome` This module exposes everything that is typically available for JS
-  contexts with [system principals] under [Components] global. This alternative
-  approach of providing same capabilities via modules allows building module
-  capability graphs (by analyzing require statements) that can be used to reason
-  about modules without diving into implementation details.
+### chrome
 
-- `@loader/options` module exposes all of the `options` that had being
-  passed to the enclosing `Loader` during incitation. This allows creation
-  of new loader instances identical to an enclosing one:
+This pseudo module exposes everything that is typically available for JS
+contexts with [system principals][] under the [Components][] global.
+This alternative approach of providing capabilities via modules makes
+it possible to build module capability graphs by analyzing require
+statements. These graphs can be used to reason about modules without diving
+into implementation details.
+
+### @loader/options
+
+This pseudo module exposes all the `options` that were used to configure this
+loader. It enables you to create new loader instances identical to the
+current one:
 
         let { Loader } = require('toolkit/loader');
         let options = require('@loader/options');
         let loader = Loader(options);
 
-  This module is useful in very specific cases. For example SDK uses this
-  feature during test execution to create identical environment with a
-  different state to test how specific modules handle unloads.
+This module is useful in very specific cases. For example the SDK uses this
+feature during test execution to create an identical environment with a
+different state to test how specific modules handle unloads.
 
-- `@loader/unload` This module exposes an object that is unique per loader
-  instance. It is used as a subject for [observer notification][] to allow
-  use of [observer service][] for defining hooks reacting on unload of
-  a specific loader. SDK builds higher level API on top for handling unloads
-  and doing cleanups:
+### @loader/unload
+
+This pseudo module exposes an object that is unique per loader
+instance. It is used as a subject for [observer notification][] to allow
+use of the [observer service][] for defining hooks reacting on the unload of
+a specific loader.
+The SDK builds a higher level API on top of this for handling unloads and
+performing cleanup:
 
         let unloadSubject = require('@loader/unload');
         let observerService = Cc['@mozilla.org/observer-service;1'].
@@ -329,54 +364,65 @@ being passed via `modules`:
         };
         observerService.addObserver(observer, 'sdk:loader:destroy', false);
 
-# Unload
+## Unload
 
-Module exposes function `unload` that can be used to unload specific loader
-instance and undo changes made by modules loaded into it. `unload` takes
-`loader` as a first argument and optionally a `reason` string identifying
-reason why given loader was unloaded. For example in SDK reason may be:
-`shutdown`, `disable`, `uninstall`. Calls to this function will dispatch the
-unload [observer notification][] that modules can listen to as described above.
+The `loader` module exposes an `unload()` function that can be used to
+unload specific loader instance and undo changes made by modules loaded
+into it. `unload` takes `loader` as a first argument and optionally a
+`reason` string identifying the reason why this loader was unloaded.
 
-# Other utilities exposed
+For example in the SDK `reason` may be one of:
+`shutdown`, `disable`, `uninstall`.
 
-Loader module exposes bunch of other utility functions that are used internally
-and can also be handy while bootstrapping loader itself. They are low level
-helpers and are recommended to be used only during loader bootstrap.
 
-### Module
+        unload(loader, 'disable');
 
-`Module` function takes module `id` and `uri` and creates a module instance
-object, that are exposed as `module` variable in the module scope.
+Calls to this function will dispatch the unload
+[observer notification][] that modules can listen to as described above.
+
+## Other Utilities
+
+The loader module exposes several other utility functions that are used
+internally and can also be handy while bootstrapping the loader itself.
+They are low level helpers and should be used only during
+loader bootstrap.
+
+### Module()
+
+The `Module()` function takes a module ID and URI and creates a module
+instance object that is exposed as the `module` variable in the
+module scope.
 
     let module  = Module('foo/bar', 'resource:///modules/foo/bar.js');
 
-Note that this won't actually load module code, it just creates a placeholder
-for it (Section below describes how module can be loaded).
+Note that this won't actually load any module code, it just creates
+a placeholder for it. The section below describes how to load the module.
 
-### load
+### load()
 
-`load` function takes `loader` and loads given `module` into it:
+The `load()` function takes `loader` and loads the given `module` into it:
 
     let loader = Loader(options);
     let module  = Module('foo/bar', 'resource:///modules/foo/bar.js');
     load(loader, module);
 
-## Sandbox
+### Sandbox()
 
-`Sandbox` function is an utility function for creating [JS sandboxes][] and is
-used by loader to create scopes into which modules are loaded. Function takes
-set of configuration options:
+The `Sandbox()` function is a utility function for creating
+[JS sandboxes][]. It is used by the loader to create scopes into which
+modules are loaded. It takes the following set of configuration options:
 
 - `name`: A string value which identifies the sandbox in about:memory.
   Will throw exception if omitted.
 - `principal`: String URI or `nsIPrincipal` for the sandbox.
-  If omitted will defaults to system principal.
-- `prototype`: Object that returned sandbox will inherit from.
+  If omitted defaults to system principal.
+- `prototype`: Object that the returned sandbox will inherit from.
    Defaults to `{}`.
 - `wantXrays`: A Boolean value indicating whether code outside the sandbox
    wants X-ray vision with respect to objects inside the sandbox. Defaults
    to `true`.
+
+<!-- this comment is used to terminate the Markdown list -->
 
        let sandbox = Sandbox({
          name: 'resource:///modules/foo/bar.js',
@@ -391,17 +437,21 @@ set of configuration options:
          }
        });
 
-## evaluate
+### evaluate()
 
-Evaluates code into given `sandbox`. If `options.source` is provided then its
-value is evaluated otherwise source is read from a given `uri`. Either way any
-exceptions will be reported as from given `uri`. Optionally more options may be
-specified:
+Evaluates code in the supplied `sandbox`.
+If `options.source` is provided then its value is evaluated, otherwise
+source is read from the supplied `uri`. Either way, any exceptions will
+be reported as from the `uri`.
 
-- `options.encoding` Defining source encoding, defaults to 'UTF-8'.
-- `options.line` Defining a line number to start count from in stack traces.
+Optionally more options may be specified:
+
+- `options.encoding`: source encoding, defaults to 'UTF-8'.
+- `options.line`: line number to start count from in stack traces.
   Defaults to 1.
-- `options.version` Defining a version of JS used, defaults to '1.8'.
+- `options.version`: version of JS used, defaults to '1.8'.
+
+<!-- this comment is used to terminate the Markdown list -->
 
     // Load script from the given location to a given sandbox:
     evaluate(sandbox, 'resource://path/to/script.js')
@@ -410,27 +460,29 @@ specified:
     evaluate(sandbox, 'foo/bar.js', {
       source: code,
       version: '1.7'
-      // You could also use other optinos described above.
+      // You could also use other options described above.
     })
 
-## Require
+### Require()
 
-As already mentioned under the section "Loading modules" it's common to start
-execution chain by loading a main module. But sometimes you may want to prepare
-environment using existing modules before doing that. In such cases you can
-create requirer module instance and a version of `require` exposed to it with
+As already mentioned in
+[Loading Modules](packages/api-utils/loader.html#Loading_Modules)
+it's common to start execution by loading a main module.
+But sometimes you may want to prepare the environment using
+existing modules before doing that. In such cases you can create a
+requirer module instance and a version of `require` exposed to it with
 this function:
 
     let requirer = Module(requirerID, requirerURI);
     let require = Require(loader, requirer);
     let boostrap = require(bootstrapID);
 
-## resolveURI
+### resolveURI()
 
-This function is used by loader to resolve module `uri` from an `id` using
-mapping array generated from loaders `paths` option. Function iterates each
-element until it finds matching prefix that `id` start with and replaces it
-with a location it maps to:
+This function is used by the loader to resolve module URI from an ID using
+a mapping array generated from the loader's `paths` option.
+It examines each element until it finds the prefix matching the supplied
+ID and replaces it with the location it maps to:
 
     let mapping = [
       [ 'toolkit/', 'resource://gre/modules/toolkit/' ],
@@ -441,19 +493,19 @@ with a location it maps to:
     resolveURI('devtools/gcli', mapping);    // => resource:///modules/devtools/gcli.js
     resolveURI('toolkit/promise', mapping);  // => resource://gre/modules/toolkit/promise.js
 
-## override
+### override()
 
 This function is used to create a fresh object that contains own properties of
-two arguments it takes. If arguments have properties with a conflicting names
+two arguments it takes. If arguments have properties with conflicting names
 the property from the second argument overrides that from the first. This
 function is helpful for combining default and passed properties:
 
     override({ a: 1, b: 1 }, { b: 2, c: 2 }) // => { a: 1, b: 2, c: 2 }
 
-## descriptor
+### descriptor()
 
 This utility function takes an object and as an argument and returns property
-descriptor map for it's own properties. Useful when working with object
+descriptor map for its own properties. It is useful when working with object
 functions introduced in ES5 (`Object.create, Object.defineProperties, ..`):
 
     // define properties of `source` on `target`.
@@ -461,7 +513,7 @@ functions introduced in ES5 (`Object.create, Object.defineProperties, ..`):
 
 [CommonJS Modules]:http://wiki.commonjs.org/wiki/Modules/1.1.1
 [system principals]:https://developer.mozilla.org/en/Security_check_basics#Principals
-[JSM style module]:https://developer.mozilla.org/en/JavaScript_code_modules/Using
+[JavaScript code module]:https://developer.mozilla.org/en/JavaScript_code_modules/Using
 [Observer notification]:https://developer.mozilla.org/en/Observer_Notifications
 [observer service]:https://developer.mozilla.org/en/nsiobserverservice
 [Components]:https://developer.mozilla.org/en/Components
