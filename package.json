@@ -1,0 +1,7 @@
+{
+  "name": "addon-sdk",
+  "id": "@jetpack",
+  "description": "Add-on development made easy.",
+  "keywords": [ "addon", "extension", "javascript", "engine", "platform", "xulrunner", "jetpack-high-level" ],
+  "license": "MPL 2.0"
+}
