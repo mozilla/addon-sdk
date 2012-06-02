@@ -6,7 +6,7 @@
 
 const { EventTarget } = require("api-utils/event/target");
 const { PrefsObserver } = require("api-utils/prefs/observer");
-const Prefs = require("api-utils/preferences-service");
+const Prefs = require("api-utils/preferences-service").Branch;
 
 
 exports.PrefsTarget = function PrefsTarget(options) {
