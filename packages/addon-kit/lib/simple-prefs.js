@@ -5,10 +5,7 @@
 const { emit, off } = require("api-utils/event/core");
 const { when: unload } = require("api-utils/unload");
 const { PrefsTarget } = require("api-utils/prefs/target");
-const { Class } = require("api-utils/heritage");
-const { EventTarget } = require("api-utils/event/target");
 const { id } = require("self");
-const prefService = require("api-utils/preferences-service");
 const observers = require("api-utils/observer-service");
 
 const ADDON_BRANCH = "extensions." + id + ".";
@@ -28,7 +25,6 @@ observers.add(BUTTON_PRESSED, buttonClick);
 
 // Make sure we cleanup listeners on unload.
 unload(function() {
-  off(exports);
   observers.remove(BUTTON_PRESSED, buttonClick);
 });
 

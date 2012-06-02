@@ -4,24 +4,41 @@
 
 "use strict";
 
-const { EventTarget } = require("api-utils/event/target");
-const { PrefsObserver } = require("api-utils/prefs/observer");
-const Prefs = require("api-utils/preferences-service").Branch;
+const { Cc, Ci } = require("chrome");
+const { Class } = require('api-utils/heritage');
+const { EventTarget } = require('api-utils/event/target');
+const { Branch } = require("api-utils/preferences-service");
+const { emit, off } = require("api-utils/event/core");
+const { when: unload } = require("api-utils/unload");
 
+const PrefsTarget = Class({
+  extends: EventTarget,
+  initialize: function(options) {
+    EventTarget.prototype.initialize(options);
 
-exports.PrefsTarget = function PrefsTarget(options) {
-  if (!(this instanceof PrefsTarget)) {
-    return new PrefsTarget(options);
+    let branch;
+    let (branchName = options.branchName || '') {
+      this.prefs = Branch(branchName);
+
+      branch = Cc["@mozilla.org/preferences-service;1"].
+        getService(Ci.nsIPrefService).
+        getBranch(branchName).
+        QueryInterface(Ci.nsIPrefBranch2);
+    }
+
+    let preferenceChange = function(subject, topic, name) {
+      if (topic === 'nsPref:changed') {
+        emit(this, name, name);
+      }
+    }.bind(this);
+    branch.addObserver('', preferenceChange, false);
+
+    // Make sure we cleanup listeners on unload.
+    unload(function() {
+      off(this);
+      branch.removeObserver('', preferenceChange, false);
+    }.bind(this));
   }
+});
 
-  const branchName = options.branchName || '';
-  const target = EventTarget.extend({ prefs: Prefs(branchName) }).new();
-
-  // Start observing preference changes
-  PrefsObserver({
-    branchName: branchName,
-    target: target
-  });
-
-  return target;
-};
+exports.PrefsTarget = PrefsTarget;
