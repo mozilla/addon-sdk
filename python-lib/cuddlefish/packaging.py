@@ -282,6 +282,7 @@ def get_deps_for_targets(pkg_cfg, targets):
 def generate_build_for_target(pkg_cfg, target, deps,
                               include_tests=True,
                               include_dep_tests=False,
+                              is_running_tests=False,
                               default_loader=DEFAULT_LOADER):
 
     build = Bunch(# Contains section directories for all packages:
@@ -316,6 +317,10 @@ def generate_build_for_target(pkg_cfg, target, deps,
                 build.packages[cfg.name][section] = dirname
 
     def add_locale_to_build(cfg):
+        # Bug 730776: Ignore locales for addon-kit, that are only for unit tests
+        if not is_running_tests and cfg.name == "addon-kit":
+            return
+
         path = resolve_dir(cfg, cfg['locale'])
         files = os.listdir(path)
         for filename in files:
@@ -323,8 +328,12 @@ def generate_build_for_target(pkg_cfg, target, deps,
             if os.path.isfile(fullpath) and filename.endswith('.properties'):
                 language = filename[:-len('.properties')]
 
-                from property_parser import parse_file
-                content = parse_file(fullpath)
+                from property_parser import parse_file, MalformedLocaleFileError
+                try:
+                    content = parse_file(fullpath)
+                except MalformedLocaleFileError, msg:
+                    print msg[0]
+                    sys.exit(1)
 
                 # Merge current locales into global locale hashtable.
                 # Locale files only contains one big JSON object

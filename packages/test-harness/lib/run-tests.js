@@ -5,9 +5,9 @@
 "use strict";
 
 var obsvc = require("api-utils/observer-service");
-var system = require("api-utils/system");
-var options = require('@packaging');
-var {Cc,Ci} = require("chrome");
+var { exit, stdout } = require("api-utils/system");
+var cfxArgs = require("@test/options");
+var { Cc, Ci}  = require("chrome");
 
 function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit, print) {
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
@@ -17,7 +17,7 @@ function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit,
   let msg = 'Running tests...';
   let markup = '<?xml version="1.0"?><window xmlns="' + ns +
                '" windowtype="test:runner"><label>' + msg + '</label></window>';
-  let url = "data:application/vnd.mozilla.xul+xml," + escape(markup);
+  let url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(markup);
 
 
   var window = ww.openWindow(null, url, "harness", "centerscreen", null);
@@ -88,14 +88,15 @@ function printFailedTests(tests, verbose, print) {
   }
 }
 
-exports.main = function main() {
+function main() {
   var testsStarted = false;
 
   if (!testsStarted) {
     testsStarted = true;
-    runTests(options.iterations, options.filter,
-             options.profileMemory, options.stopOnError, options.verbose,
-             system.exit,
-             dump);
+    runTests(cfxArgs.iterations, cfxArgs.filter, cfxArgs.profileMemory,
+             cfxArgs.stopOnError, cfxArgs.verbose, exit, stdout.write);
   }
 };
+
+if (require.main === module)
+  main();

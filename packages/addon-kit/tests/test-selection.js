@@ -35,7 +35,7 @@ function selectTextarea(window, from, to) {
 
 function primeTestCase(html, test, callback) {
   let tabBrowser = require("tab-browser");
-  let dataURL = "data:text/html," + encodeURI(html);
+  let dataURL = "data:text/html;charset=utf-8," + encodeURI(html);
   let tracker = tabBrowser.whenContentLoaded(
     function(window) {
       if (window.document.location.href != dataURL)
@@ -448,11 +448,10 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the selection module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("The selection module does not support this application.");
-  };
 }

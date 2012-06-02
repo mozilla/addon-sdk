@@ -7,7 +7,7 @@
 var windowUtils = require("api-utils/window-utils");
 var timer = require("api-utils/timer");
 var { Cc, Ci } = require("chrome");
-var { Loader } = require("./helpers");
+var { Loader, unload } = require("test-harness/loader");
 
 function toArray(iterator) {
   let array = [];
@@ -23,7 +23,7 @@ function makeEmptyWindow() {
                   '                 type="text/css"?>' +
                   '<window xmlns="' + xulNs + '" windowtype="test:window">' +
                   '</window>');
-  var url = "data:application/vnd.mozilla.xul+xml," + escape(blankXul);
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul);
   var features = ["chrome", "width=10", "height=10"];
 
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
@@ -62,7 +62,7 @@ exports['test close on unload'] = function(assert) {
                    "unload listener added on closeOnUnload()");
   assert.equal(timesClosed, 0,
                    "window not closed when registered.");
-  loader.require("unload").send();
+  loader.unload();
   assert.equal(timesClosed, 1,
                    "window closed on module unload.");
   assert.equal(fakeWindow._listeners.length, 0,
@@ -77,10 +77,9 @@ exports['test close on unload'] = function(assert) {
                    "window closed when close() called.");
   assert.equal(fakeWindow._listeners.length, 0,
                    "unload event listener removed on window close");
-  loader.require("unload").send();
+  loader.unload();
   assert.equal(timesClosed, 1,
                    "window not closed again on module unload.");
-  loader.unload();  
 };
 
 exports['test window watcher'] = function(assert, done) {

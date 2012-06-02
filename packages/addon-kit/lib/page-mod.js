@@ -101,6 +101,7 @@ const PageMod = Loader.compose(EventEmitter, {
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
+  contentScriptOptions: Loader.required,
   include: null,
   constructor: function PageMod(options) {
     this._onContent = this._onContent.bind(this);
@@ -112,6 +113,8 @@ const PageMod = Loader.compose(EventEmitter, {
       this.contentScript = options.contentScript;
     if ('contentScriptFile' in options)
       this.contentScriptFile = options.contentScriptFile;
+    if ('contentScriptOptions' in options)
+      this.contentScriptOptions = options.contentScriptOptions;
     if ('contentScriptWhen' in options)
       this.contentScriptWhen = options.contentScriptWhen;
     if ('onAttach' in options)
@@ -200,6 +203,7 @@ const PageMod = Loader.compose(EventEmitter, {
       window: window,
       contentScript: this.contentScript,
       contentScriptFile: this.contentScriptFile,
+      contentScriptOptions: this.contentScriptOptions,
       onError: this._onUncaughtError
     });
     this._emit('attach', worker);
@@ -243,20 +247,20 @@ const PageMod = Loader.compose(EventEmitter, {
         continue;
 
       if (pattern.regexp)
-        documentRules.push("regexp(\"" + pattern.regexp.source + "\")")
+        documentRules.push("regexp(\"" + pattern.regexp.source + "\")");
       else if (pattern.exactURL)
-        documentRules.push("url(" + pattern.exactURL + ")")
+        documentRules.push("url(" + pattern.exactURL + ")");
       else if (pattern.domain)
-        documentRules.push("domain(" + pattern.domain + ")")
+        documentRules.push("domain(" + pattern.domain + ")");
       else if (pattern.urlPrefix)
-        documentRules.push("url-prefix(" + pattern.urlPrefix + ")")
+        documentRules.push("url-prefix(" + pattern.urlPrefix + ")");
       else if (pattern.anyWebPage) {
-        documentRules.length = 0;
+        documentRules.push("regexp(\"^(https?|ftp)://.*?\")");
         break;
       }
     }
 
-    let uri = "data:text/css,";
+    let uri = "data:text/css;charset=utf-8,";
     if (documentRules.length > 0)
       uri += encodeURIComponent("@-moz-document " +
         documentRules.join(",") + " {" + styleRules + "}");

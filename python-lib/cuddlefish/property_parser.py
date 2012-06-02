@@ -33,7 +33,7 @@ def parse(lines, path=None):
         m = KEYVALUE.match(line)
         if not m:
             raise MalformedLocaleFileError(
-                  'Following locale file is not a valid UTF-8 file: %s\n'
+                  'Following locale file is not a valid .properties file: %s\n'
                   'Line %d is incorrect:\n%s' % (path, lineNo, line))
 
         # All spaces are strip. Spaces at the beginning are stripped
@@ -41,18 +41,31 @@ def parse(lines, path=None):
         key = m.group(1).rstrip()
         val = m.group(3).rstrip()
 
+        # `key` can be empty when key is only made of spaces
+        if not key:
+            raise MalformedLocaleFileError(
+                  'Following locale file is not a valid .properties file: %s\n'
+                  'Key is invalid on line %d is incorrect:\n%s' %
+                  (path, lineNo, line))
+
         # Multiline value: keep reading lines, while lines end with backslash
         # and strip spaces at the beginning of lines except the last line
         # that doesn't end up with backslash, we strip all spaces for this one.
-        if val[-1] == '\\':
+        if val.endswith("\\"):
             val = val[:-1]
-            line = lines.next()
-            while line[-1] == '\\':
-                val += line[:-1].lstrip()
-                line = lines.next()
-                lineNo += 1
-            val += line.strip()
-
+            try:
+                # remove spaces before/after and especially the \n at EOL
+                line = lines.next().strip()
+                while line.endswith("\\"):
+                    val += line[:-1].lstrip()
+                    line = lines.next()
+                    lineNo += 1
+                val += line.strip()
+            except StopIteration:
+                raise MalformedLocaleFileError(
+                  'Following locale file is not a valid .properties file: %s\n'
+                  'Unexpected EOF in multiline sequence at line %d:\n%s' %
+                  (path, lineNo, line))
         # Save this new pair
         pairs[key] = val
         lineNo += 1
@@ -78,13 +91,17 @@ def normalize_plural(path, pairs):
             continue
         main_key = m.group(1)
         plural_form = m.group(2)
+        # Allows not specifying a generic key (i.e a key without [form])
         if not main_key in pairs:
-            raise MalformedLocaleFileError(
-                  'Following locale file is not a valid UTF-8 file: %s\n'
-                  'This plural form doesn\'t have a matching generic form:\n'
-                  '%s\n'
-                  'You have to defined following key:\n%s'
-                  % (path, key, main_key))
+            pairs[main_key] = {}
+            # Ensure that we always have the [other] form
+            if not main_key + "[other]" in pairs:
+                raise MalformedLocaleFileError(
+                      'Following locale file is not a valid UTF-8 file: %s\n'
+                      'This plural form doesn\'t have a matching `%s[other]` form:\n'
+                      '%s\n'
+                      'You have to defined following key:\n%s'
+                      % (path, main_key, key, main_key))
         # convert generic form into an object if it is still a string
         if isinstance(pairs[main_key], unicode):
             pairs[main_key] = {"other": pairs[main_key]}

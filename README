@@ -28,3 +28,12 @@ Then run:
 
 This should start a documentation server and open a web browser
 with further instructions.
+
+If you get an error when running cfx or have any other problems getting
+started, see the "Troubleshooting" guide at:
+https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/tutorials/troubleshooting.html
+
+Bugs
+-------
+
+* file a bug: https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK

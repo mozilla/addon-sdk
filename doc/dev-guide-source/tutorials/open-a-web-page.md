@@ -33,8 +33,8 @@ to the `onReady` property, and will be passed the tab as an argument:
 Even then, you don't get direct access to any content hosted in the tab.
 
 To access tab content you need to attach a script to the tab
-using `tab.attach()`. This add-on attaches a script to all open
-tabs. The script adds a red border to the tab's document:
+using `tab.attach()`. This add-on loads a page, then attaches a script to
+the page which adds a red border to it:
 
     var tabs = require("tabs");
     tabs.open({

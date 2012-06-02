@@ -4,7 +4,7 @@
 
 const {Cc, Ci} = require("chrome");
 const { setTimeout } = require("timer");
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
@@ -17,7 +17,7 @@ exports.testOpenAndCloseWindow = function(test) {
   test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   browserWindows.open({
-    url: "data:text/html,<title>windows API test</title>",
+    url: "data:text/html;charset=utf-8,<title>windows API test</title>",
     onOpen: function(window) {
       test.assertEqual(this, browserWindows,
                        "The 'this' object is the windows object.");
@@ -39,7 +39,7 @@ exports.testOpenAndCloseWindow = function(test) {
 };
 
 exports.testAutomaticDestroy = function(test) {
-    
+
   test.waitUntilDone();
   let windows = browserWindows;
 
@@ -50,15 +50,15 @@ exports.testAutomaticDestroy = function(test) {
   windows2.on("open", function() {
     called = true;
   });
-  
+
   loader.unload();
-  
+
   // Fire a windows event and check that this unloaded instance is inactive
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       setTimeout(function () {
-        test.assert(!called, 
+        test.assert(!called,
           "Unloaded windows instance is destroyed and inactive");
         window.close(function () {
           test.done();
@@ -66,7 +66,7 @@ exports.testAutomaticDestroy = function(test) {
       });
     }
   });
-  
+
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
@@ -128,7 +128,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
 
 
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       window.close(verify);
     }
@@ -139,12 +139,12 @@ exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
 
   browserWindows.open({
-    url: "data:text/html,<title>tab 1</title>",
+    url: "data:text/html;charset=utf-8,<title>tab 1</title>",
     onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
 
       window.tabs.open({
-        url: "data:text/html,<title>tab 2</title>",
+        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
         inBackground: true,
         onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
@@ -200,16 +200,16 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       /**
-       * Bug 614079: This test fails intermittently on some specific linux 
+       * Bug 614079: This test fails intermittently on some specific linux
        *             environnements, without being able to reproduce it in same
        *             distribution with same window manager.
        *             Disable it until being able to reproduce it easily.
-      
+
       // On linux, focus is not consistent, so we can't be sure
       // what window will be on top.
-      // Here when we focus "non-browser" window, 
-      // Any Browser window may be selected as "active". 
-      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3, 
+      // Here when we focus "non-browser" window,
+      // Any Browser window may be selected as "active".
+      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
         "Non-browser windows aren't handled by this module");
       */
       window2.activate();
@@ -228,13 +228,13 @@ exports.testActiveWindow = function(test) {
   ];
 
   windows.open({
-    url: "data:text/html,<title>window 2</title>",
+    url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
       windows.open({
-        url: "data:text/html,<title>window 3</title>",
+        url: "data:text/html;charset=utf-8,<title>window 3</title>",
         onOpen: function(window) {
           window.tabs.activeTab.on('ready', function onReady() {
             window3 = window;
@@ -288,6 +288,66 @@ exports.testActiveWindow = function(test) {
   }
 };
 
+exports.testTrackWindows = function(test) {
+  test.waitUntilDone();
+
+  let windows = [];
+  let actions = [];
+
+  let expects = [
+    "activate 0", "global activate 0", "deactivate 0", "global deactivate 0",
+    "activate 1", "global activate 1", "deactivate 1", "global deactivate 1",
+    "activate 2", "global activate 2"
+  ];
+
+  function shutdown(window) {
+    if (this.length === 1) {
+      test.assertEqual(actions.join(), expects.join(),
+        "correct activate and deactivate sequence")
+
+      test.done();
+    }
+  }
+
+  function openWindow() {
+    windows.push(browserWindows.open({
+      url: "data:text/html;charset=utf-8,<i>Hi</i>",
+
+      onActivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("activate " + index);
+
+        if (windows.length < 3)
+          openWindow()
+        else
+          for each (let win in windows)
+            win.close(shutdown)
+      },
+
+      onDeactivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("deactivate " + index)
+      }
+    }));
+  }
+
+  browserWindows.on("activate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global activate " + index)
+  })
+
+  browserWindows.on("deactivate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global deactivate " + index)
+  })
+
+  openWindow();
+}
+
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
@@ -299,11 +359,10 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=571449";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the windows module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("the windows module does not support this application.");
-  };
 }

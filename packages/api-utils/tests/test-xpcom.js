@@ -5,55 +5,58 @@
 const xpcom = require("api-utils/xpcom");
 const { Cc, Ci, Cm, Cr } = require("chrome");
 const { isCIDRegistered } = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-const { Loader } = require("./helpers");
+const { Class } = require("api-utils/heritage");
+const { Loader } = require("test-harness/loader");
 
 exports['test Unknown implements nsISupports'] = function(assert) {
-  let actual = xpcom.Unknown.new();
+  let actual = xpcom.Unknown();
   assert.equal(actual.QueryInterface(Ci.nsISupports),
                actual,
                'component implements nsISupports');
 };
 
 exports['test implement xpcom interfaces'] = function(assert) {
-  let component = xpcom.Unknown.extend({
+  let WeakReference = Class({
+    extends: xpcom.Unknown,
     interfaces: [ 'nsIWeakReference' ],
     QueryReferent: function() {}
-  })
+  });
+  let weakReference = WeakReference()
 
-  assert.equal(component.QueryInterface(Ci.nsISupports),
-               component,
+  assert.equal(weakReference.QueryInterface(Ci.nsISupports),
+               weakReference,
                'component implements nsISupports');
-  assert.equal(component.QueryInterface(Ci.nsIWeakReference),
-               component,
+  assert.equal(weakReference.QueryInterface(Ci.nsIWeakReference),
+               weakReference,
                'component implements specified interface');
 
   assert.throws(function() {
     component.QueryInterface(Ci.nsIObserver);
   }, "component does not implements interface");
 
-  let actual = component.extend({
+  let Observer = Class({
+    extends: WeakReference,
     interfaces: [ 'nsIObserver', 'nsIRequestObserver' ],
     observe: function() {},
     onStartRequest: function() {},
     onStopRequest: function() {}
   });
+  let observer = Observer()
 
-  assert.equal(actual.QueryInterface(Ci.nsISupports),
-               actual,
+  assert.equal(observer.QueryInterface(Ci.nsISupports),
+               observer,
                'derived component implements nsISupports');
-  assert.equal(actual.QueryInterface(Ci.nsIWeakReference),
-               actual,
+  assert.equal(observer.QueryInterface(Ci.nsIWeakReference),
+               observer,
                'derived component implements supers interface');
-  assert.equal(actual.QueryInterface(Ci.nsIObserver),
-               actual.QueryInterface(Ci.nsIRequestObserver),
+  assert.equal(observer.QueryInterface(Ci.nsIObserver),
+               observer.QueryInterface(Ci.nsIRequestObserver),
                'derived component implements specified interfaces');
 };
 
 exports['test implement factory without contract'] = function(assert) {
-  let actual = xpcom.Factory.new({
-    component: xpcom.Unknown.extend({
-      get wrappedJSObject() this,
-    })
+  let actual = xpcom.Factory({
+    get wrappedJSObject() this,
   });
 
   assert.ok(isCIDRegistered(actual.id), 'factory is regiseterd');
@@ -62,16 +65,17 @@ exports['test implement factory without contract'] = function(assert) {
 };
 
 exports['test implement xpcom factory'] = function(assert) {
-  let Component = xpcom.Unknown.extend({
+  let Component = Class({
+    extends: xpcom.Unknown,
     interfaces: [ 'nsIObserver' ],
     get wrappedJSObject() this,
     observe: function() {}
   });
 
-  let factory = xpcom.Factory.new({
+  let factory = xpcom.Factory({
     register: false,
     contract: '@jetpack/test/factory;1',
-    component: Component
+    Component: Component
   });
 
   assert.ok(!isCIDRegistered(factory.id), 'factory is not registered');
@@ -80,7 +84,7 @@ exports['test implement xpcom factory'] = function(assert) {
 
   let actual = Cc[factory.contract].createInstance(Ci.nsIObserver);
 
-  assert.ok(Component.isPrototypeOf(actual.wrappedJSObject),
+  assert.ok(actual.wrappedJSObject instanceof Component,
             "createInstance returnes wrapped factory instances");
 
   assert.notEqual(Cc[factory.contract].createInstance(Ci.nsIObserver),
@@ -89,12 +93,13 @@ exports['test implement xpcom factory'] = function(assert) {
 };
 
 exports['test implement xpcom service'] = function(assert) {
-  let actual = xpcom.Service.new({
+  let actual = xpcom.Service({
     contract: '@jetpack/test/service;1',
     register: false,
-    component: xpcom.Unknown.extend({
-      get wrappedJSObject() this,
+    Component: Class({
+      extends: xpcom.Unknown,
       interfaces: [ 'nsIObserver'],
+      get wrappedJSObject() this,
       observe: function() {},
       name: 'my-service'
     })
@@ -115,11 +120,12 @@ exports['test implement xpcom service'] = function(assert) {
 
 function testRegister(assert, text) {
 
-  const service = xpcom.Service.new({
+  const service = xpcom.Service({
     description: 'test about:boop page',
     contract: '@mozilla.org/network/protocol/about;1?what=boop',
     register: false,
-    component: xpcom.Unknown.extend({
+    Component: Class({
+      extends: xpcom.Unknown,
       get wrappedJSObject() this,
       interfaces: [ 'nsIAboutModule' ],
       newChannel : function(aURI) {
@@ -127,7 +133,7 @@ function testRegister(assert, text) {
                   getService(Ci.nsIIOService);
 
         var channel = ios.newChannel(
-          "data:text/plain," + text,
+          "data:text/plain;charset=utf-8," + text,
           null,
           null
         );
@@ -183,18 +189,18 @@ exports["test unload"] = function(assert) {
   let loader = Loader(module);
   let sbxpcom = loader.require("xpcom");
 
-  let auto = sbxpcom.Factory.new({
+  let auto = sbxpcom.Factory({
     contract: "@mozilla.org/test/auto-unload;1",
     description: "test auto",
-    component: sbxpcom.Unknown.extend({ name: 'auto' })
+    name: "auto"
   });
 
-  let manual = sbxpcom.Factory.new({
+  let manual = sbxpcom.Factory({
     contract: "@mozilla.org/test/manual-unload;1",
     description: "test manual",
     register: false,
     unregister: false,
-    component: sbxpcom.Unknown.extend({ name: 'manual' })
+    name: "manual"
   });
 
   assert.equal(isCIDRegistered(auto.id), true, 'component registered');
@@ -214,4 +220,4 @@ exports["test unload"] = function(assert) {
                    'component was manually unregistered on unload');
 };
 
-require("test").run(exports)
+require("test").run(exports);

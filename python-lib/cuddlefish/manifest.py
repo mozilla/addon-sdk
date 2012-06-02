@@ -77,13 +77,6 @@ class ManifestEntry:
                 # allowed to require() it
                 entry["requirements"][req] = self.requirements[req]
             assert isinstance(entry["requirements"][req], dict)
-        if self.datamap:
-            entry["requirements"]["self"] = {
-                "path": "self",
-                "mapSHA256": self.datamap.data_manifest_hash,
-                "mapName": self.packageName+"-data",
-                "dataURIPrefix": "%s/data/" % (self.packageName),
-                }
         return entry
 
     def add_js(self, js_filename):
@@ -187,8 +180,10 @@ class ManifestBuilder:
         # process the top module, which recurses to process everything it
         # reaches
         if "main" in self.target_cfg:
-            top_me = self.process_module(self.find_top(self.target_cfg))
+            top_mi = self.find_top(self.target_cfg)
+            top_me = self.process_module(top_mi)
             self.top_path = top_me.get_path()
+            self.datamaps[self.target_cfg.name] = DataMap(self.target_cfg)
         if scan_tests:
             mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
             self.process_module(mi)
@@ -252,11 +247,12 @@ class ManifestBuilder:
         # returns all .js files that we reference, plus data/ files. You will
         # need to add the loader, off-manifest files that it needs, and
         # generated metadata.
+        for datamap in self.datamaps.values():
+            for (zipname, absname) in datamap.files_to_copy:
+                yield absname
+
         for me in self.get_module_entries():
             yield me.js_filename
-            if me.datamap:
-                for (zipname, absname) in me.datamap.files_to_copy:
-                    yield absname
 
     def get_all_test_modules(self):
         return self.test_modules
@@ -374,16 +370,10 @@ class ManifestBuilder:
         # traversal of the module graph
 
         for reqname in sorted(requires.keys()):
-            if reqname in ("chrome", "@packaging", "@loader"):
+            # If requirement is chrome or a pseudo-module (starts with @) make
+            # path a requirement name.
+            if reqname == "chrome" or reqname.startswith("@"):
                 me.add_requirement(reqname, {"path": reqname})
-            elif reqname == "self":
-                # this might reference bundled data, so:
-                #  1: hash that data, add the hash as a dependency
-                #  2: arrange for the data to be copied into the XPI later
-                if pkg.name not in self.datamaps:
-                    self.datamaps[pkg.name] = DataMap(pkg)
-                dm = self.datamaps[pkg.name]
-                me.add_data(dm) # 'self' is implicit
             else:
                 # when two modules require() the same name, do they get a
                 # shared instance? This is a deep question. For now say yes.

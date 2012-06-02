@@ -45,6 +45,7 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Alexandre Poirot
 * Nickolay Ponomarev
 * Aza Raskin
+* Till Schneidereit
 * Justin Scott
 * Ayan Shah
 * [skratchdot](https://github.com/skratchdot)
@@ -61,3 +62,5 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * Drew Willcoxon
 * Piotr Zalewa
 * [David Guo](https://github.com/dglol)
+* [Nils Maier](https://github.com/nmaier)
+* [Louis-Rémi Babé](https://github.com/louisremi)

@@ -6,24 +6,17 @@
 //
 // http://narwhaljs.org
 
-var observers = [];
-var unloaders = [];
+
+const { on, off } = require('./system/events');
+const unloadSubject = require('@loader/unload');
+
+const observers = [];
+const unloaders = [];
 
 var when = exports.when = function when(observer) {
   if (observers.indexOf(observer) != -1)
     return;
   observers.unshift(observer);
-};
-
-var send = exports.send = function send(reason, onError) {
-  onError = onError || console.exception;
-  observers.forEach(function (observer) {
-    try {
-      observer(reason);
-    } catch (e) {
-      onError(e);
-    }
-  });
 };
 
 var ensure = exports.ensure = function ensure(obj, destructorName) {
@@ -49,15 +42,38 @@ var ensure = exports.ensure = function ensure(obj, destructorName) {
     }
   };
 
+  // TODO: Find out why the order is inverted here. It seems that
+  // it may be causing issues!
   unloaders.push(unloadWrapper);
 
   obj[destructorName] = unloadWrapper;
 };
 
-when(
-  function(reason) {
-    unloaders.slice().forEach(
-      function(unloadWrapper) {
-        unloadWrapper(reason);
-      });
+function unload(reason) {
+  observers.forEach(function(observer) {
+    try {
+      observer(reason);
+    }
+    catch (error) {
+      console.exception(error);
+    }
   });
+}
+
+when(function(reason) {
+  unloaders.slice().forEach(function(unloadWrapper) {
+    unloadWrapper(reason);
+  });
+});
+
+on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
+  // If this loader is unload then `subject.wrappedJSObject` will be
+  // `destructor`.
+  if (subject.wrappedJSObject === unloadSubject) {
+    off('sdk:loader:destroy', onunload);
+    unload(reason);
+  }
+// Note that we use strong reference to listener here to make sure it's not
+// GC-ed, which may happen otherwise since nothing keeps reference to `onunolad`
+// function.
+}, true);

@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
 
 exports.testIterations = function(test) {
   test.waitUntilDone();
@@ -142,7 +142,7 @@ exports.testBtnListener = function(test) {
     test.pass("Button press event was heard");
     test.done();
   });
-  notify((jetpackID + "-cmdPressed"), "", "test-btn-listen");
+  notify((id + "-cmdPressed"), "", "test-btn-listen");
 
   loader.unload();
 };

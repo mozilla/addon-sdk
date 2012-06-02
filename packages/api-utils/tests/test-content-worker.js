@@ -4,9 +4,11 @@
 
 "use stirct";
 
-const { Cc, Ci } = require('chrome');
-const timer = require('timer');
-const { Loader } = require("@loader");
+const { Cc, Ci } = require("chrome");
+const { setTimeout } = require("api-utils/timer");
+const { Loader, Require, override } = require("test-harness/loader");
+const { Worker } = require('api-utils/content/worker');
+const xulApp = require("api-utils/xul-app");
 
 function makeWindow(contentURL) {
   let content =
@@ -17,7 +19,7 @@ function makeWindow(contentURL) {
       encodeURIComponent(contentURL) + '"/>' +
     '<script>var documentValue=true;</script>' +
     '</window>';
-  var url = "data:application/vnd.mozilla.xul+xml," +
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," +
             encodeURIComponent(content);
   var features = ["chrome", "width=10", "height=10"];
 
@@ -26,7 +28,6 @@ function makeWindow(contentURL) {
          openWindow(null, url, null, features.join(","), null);
 }
 
-const { Worker } = require('content/worker');
 exports['test:sample'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
@@ -100,6 +101,7 @@ exports['test:emit'] = function(test) {
   // Validate worker.port
   worker.port.on('content-to-addon', function (data) {
     test.assertEqual(data, "event data");
+    window.close();
     test.done();
   });
   worker.port.emit('addon-to-content', 'event data');
@@ -129,6 +131,7 @@ exports['test:emit hack message'] = function(test) {
   
   worker.port.on('message', function (data) {
     test.assertEqual(data, "event data");
+    window.close();
     test.done();
   });
   worker.on('message', function (data) {
@@ -157,13 +160,14 @@ exports['test:n-arguments emit'] = function(test) {
     test.assertEqual(arg1, "first argument");
     test.assertEqual(arg2, "second");
     test.assertEqual(arg3, "third");
+    window.close();
     test.done();
   });
   worker.port.emit('addon-to-content', 'first argument', 'second', 'third');
 }
 
 exports['test:post-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html,");
+  let window = makeWindow("data:text/html;charset=utf-8,");
   test.waitUntilDone();
   
   window.addEventListener("load", function onload() {
@@ -194,6 +198,7 @@ exports['test:post-json-values-only'] = function(test) {
       test.assert(message[4], "Array keeps being an array");
       test.assertEqual(message[5], JSON.stringify(array),
                        "Array is correctly serialized");
+      window.close();
       test.done();
     });
     worker.postMessage({ fun: function () {}, w: worker, array: array });
@@ -204,7 +209,7 @@ exports['test:post-json-values-only'] = function(test) {
 
 
 exports['test:emit-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html,");
+  let window = makeWindow("data:text/html;charset=utf-8,");
   test.waitUntilDone();
   
   window.addEventListener("load", function onload() {
@@ -243,6 +248,7 @@ exports['test:emit-json-values-only'] = function(test) {
       test.assert(result[6], "Array keeps being an array");
       test.assertEqual(result[7], JSON.stringify(array),
                        "Array is correctly serialized");
+      window.close();
       test.done();
     });
 
@@ -256,7 +262,7 @@ exports['test:emit-json-values-only'] = function(test) {
 }
 
 exports['test:content is wrapped'] = function(test) {
-  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -272,6 +278,7 @@ exports['test:content is wrapped'] = function(test) {
       onMessage: function(msg) {
         test.assert(msg,
           "content script has a wrapped access to content document");
+        window.close();
         test.done();
       }
     });
@@ -296,6 +303,7 @@ exports['test:chrome is unwrapped'] = function(test) {
       onMessage: function(msg) {
         test.assert(msg,
           "content script has an unwrapped access to chrome document");
+        window.close();
         test.done();
       }
     });
@@ -325,6 +333,7 @@ exports['test:nothing is leaked to content script'] = function(test) {
         test.assert(!list[0], "worker API contrustor isn't leaked");
         test.assert(!list[1], "Proxy API stuff isn't leaked 1/2");
         test.assert(!list[2], "Proxy API stuff isn't leaked 2/2");
+        window.close();
         test.done();
       }
     });
@@ -338,10 +347,8 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
   // Create a new module loader in order to be able to create a `console`
   // module mockup:
-  let sandbox = Loader.new(require("@packaging"));
-  let sandboxRequire = Loader.require.bind(sandbox, module.path);
-  Object.defineProperty(sandbox.globals, 'console', {
-    value: {
+  let loader = Loader(module, {
+    console: {
       log: hook.bind("log"),
       info: hook.bind("info"),
       warn: hook.bind("warn"),
@@ -350,6 +357,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
       exception: hook.bind("exception")
     }
   });
+  let require = loader.require;
 
   // Intercept all console method calls
   let calls = [];
@@ -365,7 +373,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
   window.addEventListener("load", function onload() {
     window.removeEventListener("load", onload, true);
 
-    let worker =  sandboxRequire('content/worker').Worker({
+    let worker =  require('content/worker').Worker({
       window: window,
       contentScript: 'new ' + function WorkerScope() {
         console.log("log");
@@ -381,6 +389,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
         test.assertEqual(JSON.stringify(calls),
                          JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
                          "console has been called successfully, in the expected order");
+        window.close();
         test.done();
       }
     });
@@ -390,7 +399,7 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
 
 
 exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
-  let contentURL = 'data:text/html,<script>var documentValue=true;</script>';
+  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -409,6 +418,7 @@ exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
       onMessage: function(msg) {
         test.assert(msg,
           "content didn't managed to cancel our setTimeout");
+        window.close();
         test.done();
       }
     });
@@ -418,7 +428,7 @@ exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
 }
 
 exports['test:setTimeout are unregistered on content unload'] = function(test) {
-  let contentURL = 'data:text/html,foo';
+  let contentURL = 'data:text/html;charset=utf-8,foo';
   let window = makeWindow(contentURL);
   test.waitUntilDone();
 
@@ -426,7 +436,7 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     window.removeEventListener("load", onload, true);
 
     let iframe = window.document.getElementById("content");
-    let originalDocument = iframe.contentDocument;
+    let originalWindow = iframe.contentWindow;
     let worker =  Worker({
       window: iframe.contentWindow,
       contentScript: 'new ' + function WorkerScope() {
@@ -442,22 +452,24 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     // Change location so that content script is destroyed,
     // and all setTimeout/setInterval should be unregistered.
     // Wait some cycles in order to execute some intervals.
-    timer.setTimeout(function () {
+    setTimeout(function () {
       // Bug 689621: Wait for the new document load so that we are sure that
       // previous document cancelled its intervals
       iframe.addEventListener("load", function onload() {
         iframe.removeEventListener("load", onload, true);
-        let titleAfterLoad = originalDocument.title;
+        let titleAfterLoad = originalWindow.document.title;
         // Wait additional cycles to verify that intervals are really cancelled
-        timer.setTimeout(function () {
+        setTimeout(function () {
           test.assertEqual(iframe.contentDocument.title, "final",
                            "New document has not been modified");
-          test.assertEqual(originalDocument.title, titleAfterLoad,
+          test.assertEqual(originalWindow.document.title, titleAfterLoad,
                            "Nor previous one");
+
+          window.close();
           test.done();
         }, 100);
       }, true);
-      iframe.setAttribute("src", "data:text/html,<title>final</title>");
+      iframe.setAttribute("src", "data:text/html;charset=utf-8,<title>final</title>");
     }, 100);
 
   }, true);

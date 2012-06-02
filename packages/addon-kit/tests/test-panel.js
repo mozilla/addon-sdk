@@ -5,7 +5,7 @@
 let { Cc, Ci } = require("chrome");
 let panels = require('panel');
 let tests = {}, panels, Panel;
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -97,12 +97,12 @@ tests.testDocumentReload = function(test) {
     "</script>";
   let messageCount = 0;
   let panel = Panel({
-    contentURL: "data:text/html," + encodeURIComponent(content),
+    contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
     contentScript: "self.postMessage(window.location.href)",
     onMessage: function (message) {
       messageCount++;
       if (messageCount == 1) {
-        test.assertMatches(message, /data:text\/html,/, "First document had a content script");
+        test.assertMatches(message, /data:text\/html/, "First document had a content script");
       }
       else if (messageCount == 2) {
         test.assertEqual(message, "about:blank", "Second document too");
@@ -139,7 +139,7 @@ tests.testParentResizeHack = function(test) {
                 "</script>" +
                 "Try to resize browser window";
   let panel = Panel({
-    contentURL: "data:text/html," + encodeURIComponent(content),
+    contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
     contentScript: "self.on('message', function(message){" +
                    "  if (message=='resize') " +
                    "    unsafeWindow.contentResize();" +
@@ -178,8 +178,8 @@ tests.testResizePanel = function(test) {
   let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
-  
-  
+
+
   function onFocus() {
     browserWindow.removeEventListener("focus", onFocus, true);
 
@@ -259,7 +259,7 @@ tests.testAnchorAndArrow = function(test) {
   let count = 0;
   function newPanel(tab, anchor) {
     let panel = panels.Panel({
-      contentURL: "data:text/html,<html><body style='padding: 0; margin: 0; " +
+      contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
                   anchor.id + "</body></html>",
       width: 200,
@@ -277,10 +277,10 @@ tests.testAnchorAndArrow = function(test) {
     });
     panel.show(anchor);
   }
-  
+
   let tabs= require("tabs");
-  let url = 'data:text/html,' +
-    '<html><head><title>foo</title></head><body>' + 
+  let url = 'data:text/html;charset=utf-8,' +
+    '<html><head><title>foo</title></head><body>' +
     '<style>div {background: gray; position: absolute; width: 300px; ' +
            'border: 2px solid black;}</style>' +
     '<div id="tl" style="top: 0px; left: 0px;">Top Left</div>' +
@@ -288,7 +288,7 @@ tests.testAnchorAndArrow = function(test) {
     '<div id="bl" style="bottom: 0px; left: 0px;">Bottom Left</div>' +
     '<div id="br" style="bottom: 0px; right: 0px;">Bottom right</div>' +
     '</body></html>';
-  
+
   tabs.open({
     url: url,
     onReady: function(tab) {
@@ -304,9 +304,9 @@ tests.testAnchorAndArrow = function(test) {
       newPanel(tab, anchor);
     }
   });
-  
-  
-  
+
+
+
 };
 
 tests.testPanelTextColor = function(test) {
@@ -314,7 +314,7 @@ tests.testPanelTextColor = function(test) {
   let html = "<html><head><style>body {color: yellow}</style></head>" +
              "<body><p>Foo</p></body></html>";
   let panel = Panel({
-    contentURL: "data:text/html," + encodeURI(html),
+    contentURL: "data:text/html;charset=utf-8," + encodeURI(html),
     contentScript: "self.port.emit('color', " +
                    "window.getComputedStyle(document.body.firstChild, null). " +
                    "       getPropertyValue('color'));"
@@ -377,12 +377,12 @@ tests.testAutomaticDestroy = function(test) {
   let loader = Loader(module);
   let panel = loader.require("panel").Panel({
     contentURL: "about:buildconfig",
-    contentScript: 
+    contentScript:
       "self.port.on('event', function() self.port.emit('event-back'));"
   });
-  
+
   loader.unload();
-  
+
   panel.port.on("event-back", function () {
     test.fail("Panel should have been destroyed on module unload");
   });
@@ -425,7 +425,7 @@ tests.testContentURLOption = function(test) {
                 "contentURL is the string to which it was set.");
   }
 
-  let dataURL = "data:text/html," + encodeURIComponent(HTML_CONTENT);
+  let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
   let (panel = Panel({ contentURL: dataURL })) {
     test.pass("contentURL accepts a data: URL.");
   }
@@ -438,6 +438,25 @@ tests.testContentURLOption = function(test) {
   test.assertRaises(function () Panel({ contentURL: "foo" }),
                     "The `contentURL` option must be a valid URL.",
                     "Panel throws an exception if contentURL is not a URL.");
+};
+
+exports.testContentScriptOptionsOption = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let panel = loader.require("panel").Panel({
+      contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
+      contentScriptWhen: "end",
+      contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      onMessage: function(msg) {
+        test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
+        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
+        test.done();
+      }
+    });
 };
 
 let panelSupported = true;

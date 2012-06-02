@@ -6,11 +6,11 @@
 
 const { emit } = require('api-utils/event/core');
 const { EventTarget } = require('api-utils/event/target');
-const { Loader } = require('./helpers');
+const { Loader } = require('test-harness/loader');
 
 exports['test add a listener'] = function(assert) {
   let events = [ { name: 'event#1' }, 'event#2' ];
-  let target = EventTarget.new();
+  let target = EventTarget();
 
   target.on('message', function(message) {
     assert.equal(this, target, 'this is a target object');
@@ -23,7 +23,7 @@ exports['test add a listener'] = function(assert) {
 
 exports['test pass in listeners'] = function(assert) {
   let actual = [ ];
-  let target = EventTarget.new({
+  let target = EventTarget({
     onMessage: function onMessage(message) {
       assert.equal(this, target, 'this is an event target');
       actual.push(1);
@@ -46,7 +46,7 @@ exports['test pass in listeners'] = function(assert) {
 
 exports['test that listener is unique per type'] = function(assert) {
   let actual = []
-  let target = EventTarget.new();
+  let target = EventTarget();
   function listener() { actual.push(1) }
   target.on('message', listener);
   target.on('message', listener);
@@ -61,7 +61,7 @@ exports['test that listener is unique per type'] = function(assert) {
 };
 
 exports['test event type matters'] = function(assert) {
-  let target = EventTarget.new();
+  let target = EventTarget();
   target.on('message', function() {
     assert.fail('no event is expected');
   });
@@ -75,7 +75,7 @@ exports['test event type matters'] = function(assert) {
 
 exports['test all arguments are pasesd'] = function(assert) {
   let foo = { name: 'foo' }, bar = 'bar';
-  let target = EventTarget.new();
+  let target = EventTarget();
   target.on('message', function(a, b) {
     assert.equal(a, foo, 'first argument passed');
     assert.equal(b, bar, 'second argument passed');
@@ -84,7 +84,7 @@ exports['test all arguments are pasesd'] = function(assert) {
 };
 
 exports['test no side-effects in emit'] = function(assert) {
-  let target = EventTarget.new();
+  let target = EventTarget();
   target.on('message', function() {
     assert.pass('first listener is called');
     target.on('message', function() {
@@ -96,7 +96,7 @@ exports['test no side-effects in emit'] = function(assert) {
 
 exports['test order of propagation'] = function(assert) {
   let actual = [];
-  let target = EventTarget.new();
+  let target = EventTarget();
   target.on('message', function() { actual.push(1); });
   target.on('message', function() { actual.push(2); });
   target.on('message', function() { actual.push(3); });
@@ -105,7 +105,7 @@ exports['test order of propagation'] = function(assert) {
 };
 
 exports['test remove a listener'] = function(assert) {
-  let target = EventTarget.new();
+  let target = EventTarget();
   let actual = [];
   target.on('message', function listener() {
     actual.push(1);
@@ -125,7 +125,7 @@ exports['test remove a listener'] = function(assert) {
 };
 
 exports['test error handling'] = function(assert) {
-  let target = EventTarget.new();
+  let target = EventTarget();
   let error = Error('boom!');
 
   target.on('message', function() { throw error; })
@@ -147,7 +147,7 @@ exports['test unhandled errors'] = function(assert) {
       }
     }}
   });
-  let target = EventTarget.new();
+  let target = EventTarget();
   let boom = Error('Boom!');
   let drax = Error('Draax!!');
 

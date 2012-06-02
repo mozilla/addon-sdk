@@ -3,4 +3,5 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 exports.foo = foo;
-console.log('testing', 1, [2, 3, 4]);
+exports.bar = 2;
+print('testing');

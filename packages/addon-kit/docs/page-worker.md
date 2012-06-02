@@ -30,6 +30,23 @@ URL using the `data.url()` method of the
       contentURL: require("self").data.url("myFile.html")
     });
 
+You can load a new page by setting the page worker's `contentURL` property.
+In this example we fetch the first paragraph of a page from Wikipedia, then
+the first paragraph of a different page:
+
+    var getFirstParagraph = "var paras = document.getElementsByTagName('p');" +
+                            "console.log(paras[0].textContent);" +
+                            "self.port.emit('loaded');"
+
+    pageWorker = require("page-worker").Page({
+      contentScript: getFirstParagraph,
+      contentURL: "http://en.wikipedia.org/wiki/Chalk"
+    });
+
+    pageWorker.port.on("loaded", function() {
+      pageWorker.contentURL = "http://en.wikipedia.org/wiki/Cheese"
+    });
+
 ## Scripting Page-Worker Content ##
 
 To access the page's DOM you need to attach a script to it. In the SDK these
@@ -187,6 +204,11 @@ loaded until its `destroy` method is called or the add-on is unloaded.
     fires
 
     This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value exposed to content scripts under `self.options` property.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+    Optional.
 
   @prop [onMessage] {function}
     Use this to add a listener to the page worker's `message` event.
@@ -206,7 +228,9 @@ communicating using <code>port</code></a> for details.
 
 <api name="contentURL">
 @property {string}
-The URL of the content loaded.
+The URL of content to load.  This can point to
+local content loaded from your add-on's "data" directory or remote content.
+Setting it loads the content immediately.
 </api>
 
 <api name="allow">
@@ -244,6 +268,14 @@ load.
   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
   fires
 
+</api>
+
+<api name="contentScriptOptions">
+@property {object}
+Read-only value exposed to content scripts under `self.options` property.
+
+Any kind of jsonable value (object, array, string, etc.) can be used here.
+Optional.
 </api>
 
 <api name="destroy">

@@ -5,7 +5,7 @@
 "use strict";
 
 const { keyPress } = require("api-utils/dom/events/keys");
-const { Loader } = require("./helpers");
+const { Loader } = require("test-harness/loader");
 
 exports["test unload keyboard observer"] = function(assert, done) {
   let loader = Loader(module);

@@ -352,6 +352,11 @@ Creates a PageMod.
     fires
 
     This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value exposed to content scripts under `self.options` property.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+    Optional.
 
   @prop [contentStyleFile] {string,array}
     The local file URLs of stylesheet to load. Content style specified by this

@@ -34,7 +34,7 @@ exports.testOptionsValidator = function(test) {
 exports.testContentValidator = function(test) {
   test.waitUntilDone();
   Request({
-    url: "data:text/html,response",
+    url: "data:text/html;charset=utf-8,response",
     content: { 'key1' : null, 'key2' : 'some value' },
     onComplete: function(response) {
       test.assertEqual(response.text, "response?key1=null&key2=some+value");
@@ -315,12 +315,14 @@ function assertDeepEqual(test, obj1, obj2, msg) {
       return o1 == o2;
 
     let e = true;
-    for (let [key, val] in Iterator(o1)) {
+    for (let key in o1) {
+      let val = o1[key];
       e = e && key in o2 && equal(o2[key], val);
       if (!e)
         break;
     }
-    for (let [key, val] in Iterator(o2)) {
+    for (let key in o2) {
+      let val = o2[key]
       e = e && key in o1 && equal(o1[key], val);
       if (!e)
         break;

@@ -62,8 +62,7 @@ exports.HiddenFrame = apiUtils.publicConstructor(HiddenFrame);
 function HiddenFrame(options) {
   options = options || {};
   let self = this;
-
-  for each (let [key, val] in Iterator(apiUtils.validateOptions(options, {
+  let validOptions = apiUtils.validateOptions(options, {
     onReady: {
       is: ["undefined", "function", "array"],
       ok: function(v) {
@@ -73,8 +72,14 @@ function HiddenFrame(options) {
         }
         return true;
       }
+    },
+    onUnload: {
+      is: ["undefined", "function"]
     }
-  }))) {
+  });
+
+  for (let key in validOptions) {
+    let val = validOptions[key];
     if (typeof(val) != "undefined")
       options[key] = val;
   }
@@ -82,6 +87,8 @@ function HiddenFrame(options) {
   require("./collection").addCollectionProperty(this, "onReady");
   if (options.onReady)
     this.onReady.add(options.onReady);
+  if (options.onUnload)
+    this.onUnload = options.onUnload;
 
   if (!hostFrame) {
     hostFrame = hiddenWindow.document.createElement("iframe");
@@ -130,6 +137,9 @@ exports.add = function JP_SDK_Frame_add(frame) {
       frame: frame,
       element: element,
       unload: function unload() {
+        // Call before removing to let a chance to avoid "dead object" exception
+        if (typeof frame.onUnload === "function")
+          frame.onUnload();
         hostDocument.documentElement.removeChild(element);
       }
     });
@@ -153,8 +163,9 @@ exports.remove = function remove(frame) {
   if (!entry)
     return;
 
-  entry.unload();
+  // Remove from cache before calling in order to avoid loop
   cache.splice(cache.indexOf(entry), 1);
+  entry.unload();
 }
 
 require("./unload").when(function () {

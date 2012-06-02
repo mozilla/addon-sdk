@@ -4,7 +4,7 @@
 
 var xhr = require("xhr");
 var timer = require("timer");
-var { Loader } = require("./helpers");
+var { Loader } = require("test-harness/loader");
 var xulApp = require("xul-app");
 
 /* Test is intentionally disabled until platform bug 707256 is fixed.

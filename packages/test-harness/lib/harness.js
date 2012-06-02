@@ -5,15 +5,14 @@
 "use strict";
 
 const { Cc,Ci } = require("chrome");
-const { Loader } = require("@loader")
+const { Loader } = require('./loader');
 const memory = require('api-utils/memory');
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
 
-// Cuddlefish loader for the sandbox in which we load and
-// execute tests.
-var sandbox;
+// Cuddlefish loader in which we load and execute tests.
+var loader;
 
 // Function to call when we're done running tests.
 var onDone;
@@ -172,19 +171,19 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (let name in sandbox.modules)
-      memory.track(sandbox.modules[name],
+    for (let name in loader.modules)
+      memory.track(loader.modules[name],
                            "module global scope: " + name);
-      memory.track(sandbox, "Cuddlefish Loader");
+      memory.track(loader, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
                       for each (info in memory.getObjects())];
     }
 
-    sandbox.unload();
+    loader.unload();
 
-    if (sandbox.globals.console.errorsLogged && !results.failed) {
+    if (loader.globals.console.errorsLogged && !results.failed) {
       results.failed++;
       console.error("warnings and/or errors were logged.");
     }
@@ -198,7 +197,7 @@ function cleanup() {
     }
 
     consoleListener.errorsLogged = 0;
-    sandbox = null;
+    loader = null;
 
     memory.gc();
   } catch (e) {
@@ -232,9 +231,9 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
-    let require = Loader.require.bind(sandbox, module.path);
+    let require = loader.require;
     require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: require('@packaging').enableE10s,
+      testOutOfProcess: false,
       testInProcess: true,
       stopOnError: stopOnError,
       filter: filter,
@@ -307,9 +306,9 @@ var runTests = exports.runTests = function runTests(options) {
           system.id + ") under " +
           system.platform + "/" + system.architecture + ".\n");
 
-    sandbox = Loader.new(require("@packaging"));
-    Object.defineProperty(sandbox.globals, 'console', {
-      value: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+
+    loader = Loader(module, {
+      console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
     });
 
     nextIteration();
