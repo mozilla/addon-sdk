@@ -20,28 +20,28 @@ const defaultBranch = prefService.getDefaultBranch(null);
 
 function Branch(branchName) {
   function getPrefKeys() {
-    return Branch.keys(branchName).map(function(key) {
+    return keys(branchName).map(function(key) {
       return key.replace(branchName, "");
     });
   }
 
   return Proxy.create({
     get: function(receiver, pref) {
-      return Branch.get(branchName + pref);
+      return get(branchName + pref);
     },
     set: function(receiver, pref, val) {
-      Branch.set(branchName + pref, val);
+      set(branchName + pref, val);
     },
     delete: function(pref) {
-      Branch.reset(branchName + pref);
+      reset(branchName + pref);
       return true;
     },
     has: function hasPrefKey(pref) {
-      return Branch.has(branchName + pref)
+      return has(branchName + pref)
     },
     getPropertyDescriptor: function(name) {
       return {
-        value: Branch.get(branchName + name)
+        value: get(branchName + name)
       };
     },
     enumerate: getPrefKeys,
@@ -49,7 +49,7 @@ function Branch(branchName) {
   }, Branch.prototype);
 }
 
-exports.get = Branch.get = function get(name, defaultValue) {
+function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
   case Ci.nsIPrefBranch.PREF_STRING:
     return prefSvc.getComplexValue(name, Ci.nsISupportsString).data;
@@ -71,9 +71,10 @@ exports.get = Branch.get = function get(name, defaultValue) {
                     ", which I don't know " +
                     "how to handle.");
   }
-};
+}
+exports.get = get;
 
-exports.set = Branch.set = function set(name, value) {
+function set(name, value) {
   var prefType;
   if (typeof value != "undefined" && value != null)
     prefType = value.constructor.name;
@@ -111,21 +112,25 @@ exports.set = Branch.set = function set(name, value) {
     throw new Error("can't set pref " + name + " to value '" + value +
                     "'; it isn't a string, integer, or boolean");
   }
-};
+}
+exports.set = set;
 
-exports.has = Branch.has = function has(name) {
+function has(name) {
   return (prefSvc.getPrefType(name) != Ci.nsIPrefBranch.PREF_INVALID);
-};
+}
+exports.has = has;
 
-exports.keys = Branch.keys = function keys(aStartingAt) {
+function keys(aStartingAt) {
   return prefSvc.getChildList(aStartingAt);
-};
+}
+exports.keys = keys;
 
-exports.isSet = Branch.isSet = function isSet(name) {
-  return (Branch.has(name) && prefSvc.prefHasUserValue(name));
-};
+function isSet(name) {
+  return (has(name) && prefSvc.prefHasUserValue(name));
+}
+exports.isSet = isSet;
 
-exports.reset = Branch.reset = function reset(name) {
+function reset(name) {
   try {
     prefSvc.clearUserPref(name);
   } catch (e if e.result == Cr.NS_ERROR_UNEXPECTED) {
@@ -137,9 +142,10 @@ exports.reset = Branch.reset = function reset(name) {
     // other exceptions, however, so callers know about them, since we don't
     // know what other exceptions might be thrown and what they might mean.
   }
-};
+}
+exports.reset = reset;
 
-exports.getLocalized = Branch.getLocalized = function getLocalized(name, defaultValue) {
+function getLocalized(name, defaultValue) {
   let value = null;
   try {
     value = prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
@@ -148,8 +154,9 @@ exports.getLocalized = Branch.getLocalized = function getLocalized(name, default
     return value || defaultValue;
   }
 }
+exports.getLocalized = getLocalized;
 
-exports.setLocalized = Branch.setLocalized = function setLocalized(name, value) {
+function setLocalized(name, value) {
   // We can't use `prefs.set` here as we have to use `getDefaultBranch`
   // (instead of `getBranch`) in order to have `mIsDefault` set to true, here:
   // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#233
@@ -157,6 +164,7 @@ exports.setLocalized = Branch.setLocalized = function setLocalized(name, value) 
   // http://mxr.mozilla.org/mozilla-central/source/modules/libpref/src/nsPrefBranch.cpp#244
   defaultBranch.setCharPref(name, value);
 }
+exports.setLocalized = setLocalized;
 
 exports.Branch = Branch;
 
