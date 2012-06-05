@@ -14,7 +14,7 @@ const { when: unload } = require("api-utils/unload");
 const PrefsTarget = Class({
   extends: EventTarget,
   initialize: function(options) {
-    EventTarget.prototype.initialize(options);
+    EventTarget.prototype.initialize.call(this, options);
 
     let branch;
     let (branchName = options.branchName || '') {
