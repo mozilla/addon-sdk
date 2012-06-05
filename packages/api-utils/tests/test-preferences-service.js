@@ -33,8 +33,8 @@ exports.testGetAndSet = function(test) {
                    "set/get integer preference should work");
 
   test.assertEqual(
-      prefs.keys("test_set_get_pref").toString(),
-      "test_set_get_pref.integer,test_set_get_pref");
+      prefs.keys("test_set_get_pref").sort().toString(),
+      ["test_set_get_pref.integer","test_set_get_pref"].sort().toString());
 
   prefs.set("test_set_get_number_pref", 42);
   test.assertRaises(
