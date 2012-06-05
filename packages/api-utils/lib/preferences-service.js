@@ -120,8 +120,8 @@ function has(name) {
 }
 exports.has = has;
 
-function keys(aStartingAt) {
-  return prefSvc.getChildList(aStartingAt);
+function keys(root) {
+  return prefSvc.getChildList(root);
 }
 exports.keys = keys;
 

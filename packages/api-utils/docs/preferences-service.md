@@ -55,7 +55,7 @@ preference is set.
 
 <api name="keys">
 @function
-@param aStartingAt {string} Preference name.
+@param root {string} Preference root name.
 @returns {array} Returns an array of strings representing the child preferences of the root of this branch.
 </api>
 

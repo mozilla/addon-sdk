@@ -16,29 +16,30 @@ const PrefsTarget = Class({
   initialize: function(options) {
     EventTarget.prototype.initialize.call(this, options);
 
-    let branch;
-    let (branchName = options.branchName || '') {
-      this.prefs = Branch(branchName);
-
-      branch = Cc["@mozilla.org/preferences-service;1"].
+    let branchName = options.branchName || '';
+    let branch = Cc["@mozilla.org/preferences-service;1"].
         getService(Ci.nsIPrefService).
         getBranch(branchName).
         QueryInterface(Ci.nsIPrefBranch2);
-    }
+    this.prefs = Branch(branchName);
 
-    let preferenceChange = function(subject, topic, name) {
-      if (topic === 'nsPref:changed') {
-        emit(this, name, name);
-      }
-    }.bind(this);
+    let preferenceChange = onChange.bind(this);
     branch.addObserver('', preferenceChange, false);
 
     // Make sure we cleanup listeners on unload.
-    unload(function() {
-      off(this);
-      branch.removeObserver('', preferenceChange, false);
-    }.bind(this));
+    unload(onUnload.bind(this, branch, preferenceChange));
   }
 });
+
+function onChange(subject, topic, name) {
+  if (topic === 'nsPref:changed') {
+    emit(this, name, name);
+  }
+}
+
+function onUnload(branch, observer) {
+  off(this);
+  branch.removeObserver('', preferenceChange, false);
+}
 
 exports.PrefsTarget = PrefsTarget;
