@@ -39,7 +39,7 @@ function onChange(subject, topic, name) {
 
 function onUnload(branch, observer) {
   off(this);
-  branch.removeObserver('', preferenceChange, false);
+  branch.removeObserver('', observer, false);
 }
 
 exports.PrefsTarget = PrefsTarget;
