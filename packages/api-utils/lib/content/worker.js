@@ -153,12 +153,25 @@ const WorkerSandbox = EventEmitter.compose({
     // by trading two methods that allow to send events to the other side:
     //   - `onEvent` called by content script
     //   - `result.emitToContent` called by addon script
+    // Bug 758203: We have to explicitely define `__exposedProps__` in order
+    // to allow access to these chrome object attributes from this sandbox with
+    // content priviledges
+    // https://developer.mozilla.org/en/XPConnect_wrappers#Other_security_wrappers
     let chromeAPI = {
       timers: {
         setTimeout: timer.setTimeout,
         setInterval: timer.setInterval,
         clearTimeout: timer.clearTimeout,
-        clearInterval: timer.clearInterval
+        clearInterval: timer.clearInterval,
+        __exposedProps__: {
+          setTimeout: 'r',
+          setInterval: 'r',
+          clearTimeout: 'r',
+          clearInterval: 'r'
+        }
+      },
+      __exposedProps__: {
+        timers: 'r'
       }
     };
     let onEvent = this._onContentEvent.bind(this);
