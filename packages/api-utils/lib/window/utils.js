@@ -108,3 +108,29 @@ function open(uri, options) {
                null);
 }
 exports.open = open;
+
+/**
+ * Returns an array of all currently opened windows.
+ * Note that these windows may still be loading.
+ */
+function windows() {
+  let list = [];
+  let winEnum = windowWatcher.getWindowEnumerator();
+  while (winEnum.hasMoreElements()) {
+    let window = winEnum.getNext().QueryInterface(Ci.nsIDOMWindow);
+    list.push(window);
+  }
+  return list;
+}
+exports.windows = windows;
+
+/**
+ * Check if the given window is completely loaded.
+ * i.e. if its "load" event has already been fired and all possible DOM content
+ * is done loading (the whole DOM document, images content, ...)
+ * @params {nsIDOMWindow} window
+ */
+function isDocumentLoaded(window) {
+  return window.document.readyState == "complete";
+}
+exports.isDocumentLoaded = isDocumentLoaded;
