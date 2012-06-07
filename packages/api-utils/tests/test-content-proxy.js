@@ -184,8 +184,8 @@ exports.testPostMessage = createProxyTest(html, function (helper, test) {
     //if (event.source.wrappedJSObject == helper.rawWindow) return;
     ifWindow.removeEventListener("message", listener, false);
     // As we are in system principal, event is an XrayWrapper
-    test.assertEqual(event.source, ifWindow,
-                     "event.source is the iframe window");
+    test.assertEqual(event.source, null,
+                     "event.source is null");
     test.assertEqual(event.origin, "null", "origin is null");
 
     test.assertEqual(event.data, "{\"foo\":\"bar\\n \\\"escaped\\\".\"}",
@@ -248,7 +248,7 @@ exports.testObjectListener2 = createProxyTest("", function (helper) {
           this.called = true;
           assert(event.valueOf() !== event.valueOf(UNWRAP_ACCESS_KEY), "event is wrapped");          
           assert(event.target == document.defaultView, "event.target is the wrapped window");
-          assert(event.source == document.defaultView, "event.source is the wrapped window");
+          assert(event.source == null, "event.source is null");
           assert(event.origin == "null", "origin is null");
           assert(event.data == "ok", "message data is correct");
           done();
