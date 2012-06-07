@@ -579,33 +579,7 @@ const xRayWrappersMissFixes = [
 // Here is the list of them with functions returning some replacement 
 // for a given object `obj`:
 const xRayWrappersMethodsFixes = {
-  // postMessage method is checking the Javascript global
-  // and it expects it to be a window object.
-  // But in our case, the global object is our sandbox global object.
-  // See nsGlobalWindow::CallerInnerWindow():
-  // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsGlobalWindow.cpp#5893
-  // nsCOMPtr<nsPIDOMWindow> win = do_QueryWrappedNative(wrapper);
-  //   win is null
-  postMessage: function (obj) {
-    // Ensure that we are on a window object
-    try {
-      obj.QueryInterface(Ci.nsIDOMWindow);
-    }
-    catch(e) {
-      return null;
-    }
-    // Create a wrapper that is going to call `postMessage` through `eval`
-    let f = function postMessage(message, targetOrigin) {
-      message = message.toString().replace(/['\\]/g,"\\$&");
-      targetOrigin = targetOrigin.toString().replace(/['\\]/g,"\\$&");
 
-      let jscode = "this.postMessage('" + message + "', '" +
-                                targetOrigin + "')";
-      return this.wrappedJSObject.eval(jscode);
-    };
-    return getProxyForFunction(f, NativeFunctionWrapper(f));
-  },
-  
   // Fix mozMatchesSelector uses that is broken on XrayWrappers
   // when we use document.documentElement.mozMatchesSelector.call(node, expr)
   // It's only working if we call mozMatchesSelector on the node itself.
