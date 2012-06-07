@@ -8,7 +8,7 @@ const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
 const { when } = require('./unload');
-const { getInnerId, getOuterId } = require('./window-utils');
+const { getInnerId, getOuterId, windows, isDocumentLoaded } = require('./window/utils');
 const errors = require("./errors");
 
 const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -23,9 +23,13 @@ const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
  *         nsIDOMWindow interface.
  */
 function windowIterator() {
-  let winEnum = windowWatcher.getWindowEnumerator();
-  while (winEnum.hasMoreElements())
-    yield winEnum.getNext().QueryInterface(Ci.nsIDOMWindow);
+  // Bug 752631: We only pass already loaded window in order to avoid
+  // breaking XUL windows DOM. DOM is broken when some JS code try
+  // to access DOM during "uninitialized" state of the related document.
+  let list = windows().filter(isDocumentLoaded);
+  for (let i = 0, l = list.length; i < l; i++) {
+    yield list[i];
+  }
 };
 exports.windowIterator = windowIterator;
 
@@ -51,7 +55,7 @@ function WindowTracker(delegate) {
   this._delegate = delegate;
   this._loadingWindows = [];
 
-  for (let window in windowIterator())
+  for each (let window in windows())
     this._regWindow(window);
   windowWatcher.registerNotification(this);
 
@@ -94,7 +98,7 @@ WindowTracker.prototype = {
 
   unload: function unload() {
     windowWatcher.unregisterNotification(this);
-    for (let window in windowIterator())
+    for each (let window in windows())
       this._unregWindow(window);
   },
 

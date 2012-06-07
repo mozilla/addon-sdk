@@ -11,7 +11,7 @@ var { Loader, unload } = require("test-harness/loader");
 
 function toArray(iterator) {
   let array = [];
-  for each (let item in iterator())
+  for each (let item in iterator)
     array.push(item);
   return array;
 }
@@ -316,5 +316,34 @@ exports['test active window'] = function(assert, done) {
 
   nextTest();
 };
+
+exports['test windowIterator'] = function(assert, done) {
+  // make a new window
+  let window = makeEmptyWindow();
+
+  // make sure that the window hasn't loaded yet
+  assert.notEqual(
+      window.document.readyState,
+      "complete",
+      "window hasn't loaded yet.");
+
+  // this window should only appear in windowIterator() while its loading
+  assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) === -1,
+            "window isn't in windowIterator()");
+
+  // Then it should be in windowIterator()
+  window.addEventListener("load", function onload() {
+    window.addEventListener("load", onload, false);
+    assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) !== -1,
+              "window is now in windowIterator(false)");
+
+    // Wait for the window unload before ending test
+    window.addEventListener("unload", function onunload() {
+      window.addEventListener("unload", onunload, false);
+      done();
+    }, false);
+    window.close();
+  }, false);
+}
 
 require("test").run(exports);
