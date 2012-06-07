@@ -4,24 +4,25 @@
 
 "use strict";
 
-const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
+const { Loader, resolveURI, Require,
+        unload, override, descriptor  } = require('api-utils/cuddlefish');
 
 exports.Loader = function(module, globals, packaging) {
-  let options = override({}, packaging || require("@loader/options"));
-  let prefixURI = options.prefixURI;
-  globals = override(override({}, require('api-utils/globals')), globals || {});
-  override(options, { globals: globals });
+  let options = packaging || require("@loader/options");
+  options = override(options, {
+    globals: override(require('api-utils/globals'), globals || {})
+  });
 
   let loader = Loader(options);
-  return override(Object.create(loader), {
+  return Object.create(loader, descriptor({
     require: Require(loader, module),
     sandbox: function(id) {
-      let requirerPath = module.uri.split(prefixURI).pop();
-      let path = options.manifest[requirerPath].requirements[id].path;
-      return loader.sandboxes[options.prefixURI + path];
+      let requirement = loader.resolve(id, module.id);
+      let uri = resolveURI(requirement, loader.mapping);
+      return loader.sandboxes[uri];
     },
     unload: function(reason) {
       unload(loader, reason);
     }
-  });
+  }));
 };
