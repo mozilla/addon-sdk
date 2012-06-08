@@ -64,7 +64,7 @@ class TestInit(unittest.TestCase):
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail
         out,err = StringIO(), StringIO()
-        init_run = initializer(None, ["init", "ignored-dirname"], out, err)
+        init_run = initializer(None, ["init", "ignored-dirname", "extra-arg"], out, err)
         out, err = out.getvalue(), err.getvalue()
         self.failIfEqual(init_run, 0)
         self.assertTrue("Too many arguments" in err)
