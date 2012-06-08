@@ -7,6 +7,7 @@ import os
 import optparse
 import webbrowser
 
+import base64
 from copy import copy
 import simplejson as json
 from cuddlefish import packaging
@@ -457,8 +458,13 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>out, '*', d, 'directory created'
     open('README.md','w').write('')
     print >>out, '* README.md written'
+    h = os.urandom(80/8)
+    s = base64.b64encode(h, "AB").strip("=")
+    jid = "jid1-" + s
+    print >>out, '* addon ID generated'
     open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon })
+                                                   'fullName':addon,
+                                                   'id':jid})
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
