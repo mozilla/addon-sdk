@@ -10,6 +10,7 @@ const widgets = require("widget");
 const url = require("url");
 const windowUtils = require("window-utils");
 const tabBrowser = require("tab-browser");
+const timer = require("timer");
 
 exports.testConstructor = function(test) {
   test.waitUntilDone(30000);
@@ -181,7 +182,7 @@ exports.testConstructor = function(test) {
     if (!tests.length)
       test.done();
     else
-      require("timer").setTimeout(tests.shift(), 0);
+      timer.setTimeout(tests.shift(), 0);
   }
   function doneTest() nextTest();
 
@@ -999,7 +1000,7 @@ exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  require("timer").setTimeout(function() {
+  timer.setTimeout(function() {
     window.addEventListener("unload", function onUnload() {
       window.removeEventListener("unload", onUnload, false);
       callback();
