@@ -473,8 +473,12 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* lib/main.js written'
     open(os.path.join(path,'doc','main.md'),'w').write('')
     print >>out, '* doc/main.md written'
-    print >>out, '\nYour sample add-on is now ready.'
-    print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    if len(args) == 1:
+        print >>out, '\nYour sample add-on is now ready.'
+        print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    else:
+        print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
+        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
     return 0
 
 def buildJID(target_cfg):
