@@ -5,6 +5,7 @@
 "use strict";
 
 const { Loader } = require("test-harness/loader");
+const timer = require("timer");
 
 exports["test unload window observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
@@ -38,7 +39,7 @@ exports["test unload window observer"] = function(assert, done) {
   activeWindow.open().close();
 
   // Enqueuing asserts to make sure that assertion is not performed early.
-  require("timer").setTimeout(function () {
+  timer.setTimeout(function () {
     assert.equal(1, opened, "observer open was called before unload only");
     assert.equal(1, closed, "observer close was called before unload only");
     done();

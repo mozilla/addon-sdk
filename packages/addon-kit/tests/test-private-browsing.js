@@ -5,6 +5,7 @@
 let pb = require("private-browsing");
 let {Cc,Ci} = require("chrome");
 const { Loader } = require('test-harness/loader');
+const timer = require("timer");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -90,7 +91,7 @@ if (pbService) {
     // is correctly destroyed
     pb.activate();
     pb.once("start", function onStart() {
-      require("timer").setTimeout(function () {
+      timer.setTimeout(function () {
         test.assert(!called, 
           "First private browsing instance is destroyed and inactive");
 
