@@ -6,6 +6,7 @@
 
 let {Cc,Ci} = require("chrome");
 const { Loader } = require('test-harness/loader');
+const timer = require("timer");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -1867,7 +1868,7 @@ TestHelper.prototype = {
     const self = this;
     node.addEventListener(event, function handler(evt) {
       node.removeEventListener(event, handler, useCapture);
-      require("timer").setTimeout(function () {
+      timer.setTimeout(function () {
         try {
           callback.call(self, evt);
         }
