@@ -14,6 +14,7 @@ const globals = require('../globals');
 
 const NAME2TOPIC = {
   'Firefox': 'sessionstore-windows-restored',
+  'Fennec': 'sessionstore-windows-restored',
   'SeaMonkey': 'sessionstore-windows-restored',
   'Thunderbird': 'mail-startup-done',
   '*': 'final-ui-startup'
