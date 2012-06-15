@@ -68,7 +68,7 @@ exports.set = function(aData, aDataType) {
 
   // If `aDataType` is not given or if it's "image", the data is parsed as
   // data URL to detect a better datatype
-  if (!aDataType || aDataType === "image") {
+  if (aData && (!aDataType || aDataType === "image")) {
     try {
       let dataURL = new DataURL(aData);
 
