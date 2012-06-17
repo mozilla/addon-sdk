@@ -7,7 +7,7 @@ unregistering various XCOM interfaces.
 
 ## Implementing XPCOM interfaces
 
-Module exports `Unknow` exemplar object, that may be extended to implement
+Module exports `Unknown` exemplar object, that may be extended to implement
 specific XCOM interface(s). For example [nsIObserver]
 (https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIObserver) may be
 implemented as follows:
