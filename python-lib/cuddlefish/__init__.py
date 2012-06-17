@@ -443,10 +443,17 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
     path = os.getcwd()
     addon = os.path.basename(path)
-    # if more than one argument
-    if len(args) > 1:
+    # if more than two arguments
+    if len(args) > 2:
         print >>err, 'Too many arguments.'
         return 1
+    if len(args) == 2:
+        path = os.path.join(path,args[1])
+        try:
+            os.mkdir(path)
+            print >>out, '*', args[1], 'package directory created'
+        except OSError:
+            print >>out, '*', args[1], 'already exists, testing if directory is empty'
     # avoid clobbering existing files, but we tolerate things like .git
     existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
     if existing:
@@ -455,9 +462,9 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
-    open('README.md','w').write('')
+    open(os.path.join(path,'README.md'),'w').write('')
     print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
+    open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
                                                    'fullName':addon })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
@@ -466,8 +473,12 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* lib/main.js written'
     open(os.path.join(path,'doc','main.md'),'w').write('')
     print >>out, '* doc/main.md written'
-    print >>out, '\nYour sample add-on is now ready.'
-    print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    if len(args) == 1:
+        print >>out, '\nYour sample add-on is now ready.'
+        print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    else:
+        print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
+        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
     return 0
 
 def buildJID(target_cfg):
