@@ -100,7 +100,7 @@ secure, debug and review.</p>
 
 ### Styling web pages ###
 
-Sometimes adding a script to web pages is not enough, you also want to styling
+Sometimes adding a script to web pages is not enough, you also want to style
 them. `PageMod` provides an easy way to do that through options' `contentStyle`
 and `contentStyleFile` properties:
 
@@ -117,8 +117,45 @@ and `contentStyleFile` properties:
       ]
     })
 
-It's important to note that `PageMod` will add these styles as
-[user style sheet](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+`PageMod` will add these styles as
+[user style sheets](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+
+#### Working with Relative URLs in CSS Rules ####
+
+You can't currently use relative URLs in style sheets loaded in this way.
+For example, consider a CSS file that references an external file like this:
+
+    background: rgb(249, 249, 249) url('../../img/my-background.png') repeat-x top center;
+
+If you attach this file using `contentStyleFile`, "my-background.png"
+will not be found.
+
+As a workaround for this, you can build an absolute URL to a file in your
+"data" directory, and construct a `contentStyle` option embedding that URL
+in your rule. For example:
+
+    var data = require("self").data;
+
+    var pageMod = require("page-mod").PageMod({
+      include: "*",
+      contentStyleFile: data.url("my-style.css"),
+      // contentStyle is built dynamically here to include an absolute URL
+      // for the file referenced by this CSS rule.
+      // This workaround is needed because we can't use relative URLs
+      // in contentStyleFile or contentStyle.
+      contentStyle: "h1 { background: url(" + data.url("my-pic.jpg") + ")}"
+    });
+
+This add-on uses a separate file "my-style.css", loaded using
+`contentStyleFile`, for all CSS rules except those that reference
+an external file. For the rule that needs to refer to "my-pic.jpg",
+which is stored in the add-on's "data" directory, it uses `contentStyle`.
+
+Dynamically constructing code strings like those assigned to `contentScript`
+or `contentStyle` is usually considered an unsafe practice that may cause an
+add-on to fail AMO review. In this case it is safe, and should be allowed,
+but including a comment like that in the example above will help to
+prevent any misunderstanding.
 
 ## Communicating With Content Scripts ##
 
