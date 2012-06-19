@@ -209,6 +209,13 @@ CSS is at all complex:
       contentStyleFile: require("self").data.url("my-style.css")
     });
 
+You can't currently use relative URLs in style sheets loaded with
+`contentStyle` or `contentStyleFile`. If you do, the files referenced
+by the relative URLs will not be found.
+
+To learn more about this, and read about a workaround, see the
+[relevant section in the page-mod API documentation](packages/addon-kit/page-mod.html#Working_with_Relative_URLs_in_CSS_Rules).
+
 </div>
 
 ## Learning More ##
