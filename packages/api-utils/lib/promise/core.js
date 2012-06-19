@@ -20,7 +20,7 @@
       return globals[id];
     }, (globals[id] = {}), { uri: document.location.href + '#' + id, id: id });
   }
-}).call(this, 'promise', function(require, exports, module) {
+}).call(this, 'promise/core', function(require, exports, module) {
 
 'use strict';
 
