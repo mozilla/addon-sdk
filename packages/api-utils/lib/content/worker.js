@@ -30,6 +30,9 @@ const JS_VERSION = '1.8';
 const ERR_DESTROYED =
   "The page has been destroyed and can no longer be used.";
 
+const ERR_FROZEN = "The page is currently hidden and can no longer be used " +
+                   "until it is visible again.";
+
 /**
  * This key is not exported and should only be used for proxy tests.
  * The following `PRIVATE_KEY` is used in addon module scope in order to tell
@@ -233,7 +236,7 @@ const WorkerSandbox = EventEmitter.compose({
     }
   },
   destroy: function destroy() {
-    this.emitSync("destroy");
+    this.emitSync("detach");
     this._sandbox = null;
     this._addonWorker = null;
   },
@@ -315,6 +318,10 @@ const Worker = EventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
+    if (this._frozen) {
+      console.warn(ERR_FROZEN);
+      return;
+    }
     this._contentWorker.emit("message", data);
   },
   
@@ -365,6 +372,11 @@ const Worker = EventEmitter.compose({
       return;
     }
 
+    if (this._frozen) {
+      console.warn(ERR_FROZEN);
+      return;
+    }
+
     // We throw exception when the worker has been destroyed
     if (!this._contentWorker) {
       throw new Error(ERR_DESTROYED);
@@ -376,14 +388,18 @@ const Worker = EventEmitter.compose({
   
   // Is worker connected to the content worker sandbox ?
   _inited: false,
-  
+
+  // Is worker being frozen? i.e related document is frozen in bfcache.
+  // Content script should not be reachable if frozen.
+  _frozen: true,
+
   // List of custom events fired before worker is initialized
   get _earlyEvents() {
     delete this._earlyEvents;
     this._earlyEvents = [];
     return this._earlyEvents;
   },
-  
+
   constructor: function Worker(options) {
     options = options || {};
 
@@ -417,7 +433,16 @@ const Worker = EventEmitter.compose({
                      currentInnerWindowID;
     observers.add("inner-window-destroyed", 
                   this._documentUnload = this._documentUnload.bind(this));
-    
+
+    // Listen to pagehide event in order to freeze the content script
+    // while the document is frozen in bfcache:
+    this._window.addEventListener("pageshow",
+                                  this._pageShow = this._pageShow.bind(this),
+                                  true);
+    this._window.addEventListener("pagehide",
+                                  this._pageHide = this._pageHide.bind(this),
+                                  true);
+
     unload.ensure(this._public, "destroy");
     
     // Ensure that worker._port is initialized for contentWorker to be able
@@ -429,6 +454,7 @@ const Worker = EventEmitter.compose({
     
     // Mainly enable worker.port.emit to send event to the content worker
     this._inited = true;
+    this._frozen = false;
     
     // Flush all events that have been fired before the worker is initialized.
     this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
@@ -440,6 +466,18 @@ const Worker = EventEmitter.compose({
     if (innerWinID != this._windowID) return false;
     this._workerCleanup();
     return true;
+  },
+
+  _pageShow: function _pageShow() {
+    this._contentWorker.emitSync("pageshow");
+    this._emit("pageshow");
+    this._frozen = false;
+  },
+
+  _pageHide: function _pageHide() {
+    this._contentWorker.emitSync("pagehide");
+    this._emit("pagehide");
+    this._frozen = true;
   },
 
   get url() {
@@ -475,6 +513,10 @@ const Worker = EventEmitter.compose({
     if (this._contentWorker) 
       this._contentWorker.destroy();
     this._contentWorker = null;
+    if (this._window) {
+      this._window.addEventListener("pageshow", this._pageShow, true);
+      this._window.addEventListener("pagehide", this._pageHide, true);
+    }
     this._window = null;
     // This method may be called multiple times,
     // avoid dispatching `detach` event more than once
