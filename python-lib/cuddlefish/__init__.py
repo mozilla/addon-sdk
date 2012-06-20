@@ -173,6 +173,12 @@ parser_groups = (
                                     action="store_true",
                                     default=False,
                                     cmds=['run', 'test', 'xpi', 'testall'])),
+        (("--adb",), dict(dest="adb",
+                          help="path to adb executable",
+                          metavar=None,
+                          default=None,
+                          cmds=['test', 'run', 'testex', 'testpkgs',
+                                'testall'])),
         (("", "--mobile-app",), dict(dest="mobile_app_name",
                                     help=("Name of your Android application to "
                                           "use. Possible values: 'firefox', "
@@ -513,6 +519,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         parser_kwargs['arguments'] += config_args
         (options, args) = parse_args(**parser_kwargs)
 
+    # Set an env variable with given binary option
+    # In order to allow any subsequent code to catch it. (e.g. xpi.py)
+    if options.binary:
+        os.environ['CUDDLEFISH_BINARY'] = options.binary
+
     command = args[0]
 
     if command == "init":
@@ -767,7 +778,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                   xpi_path=xpi_path,
                   harness_options=harness_options,
                   limit_to=used_files,
-                  extra_harness_options=extra_harness_options)
+                  extra_harness_options=extra_harness_options,
+                  binary=options.binary)
     else:
         from cuddlefish.runner import run_app
 
@@ -784,6 +796,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              harness_options=harness_options,
                              app_type=options.app,
                              binary=options.binary,
+                             adb=options.adb,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
                              enforce_timeouts=enforce_timeouts,

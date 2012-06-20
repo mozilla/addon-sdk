@@ -342,13 +342,17 @@ class XulrunnerAppRunner(mozrunner.Runner):
     @property
     def command(self):
         """Returns the command list to run."""
+        # We have to use Runner command property in order to gain its MacOS fix
+        cmd = mozrunner.Runner.command.fget(self)
 
+        # application.ini should be right after the binary
         if self.__is_xulrunner_sdk:
-            return [self.binary, self.__app_ini, '-profile',
-                    self.profile.profile]
+            cmd.insert(1, self.__app_ini)
         else:
-            return [self.binary, '-app', self.__app_ini, '-profile',
-                    self.profile.profile]
+            cmd.insert(1, '-app')
+            cmd.insert(2, self.__app_ini)
+
+        return cmd
 
     def __find_xulrunner_binary(self):
         if sys.platform == 'darwin':
@@ -374,8 +378,9 @@ class XulrunnerAppRunner(mozrunner.Runner):
                 self.names = runner.names
         return self.__real_binary
 
+
 def run_app(harness_root_dir, manifest_rdf, harness_options,
-            app_type, binary=None, profiledir=None, verbose=False,
+            app_type, binary=None, adb=None, profiledir=None, verbose=False,
             enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
             norun=None,
@@ -383,6 +388,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             mobile_app_name=None):
     if binary:
         binary = os.path.expanduser(binary)
+    if adb:
+        adb = os.path.expanduser(adb)
 
     if addons is None:
         addons = []
@@ -483,7 +490,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
               manifest=manifest_rdf,
               xpi_path=xpi_path,
               harness_options=harness_options,
-              limit_to=used_files)
+              limit_to=used_files,
+              binary=binary)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()
@@ -520,8 +528,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # Delete the temporary xpi file
     os.remove(xpi_path)
 
+    runner_binary = binary
+    if app_type == "fennec-on-device":
+      runner_binary = adb
     runner = runner_class(profile=profile,
-                          binary=binary,
+                          binary=runner_binary,
                           env=env,
                           cmdargs=cmdargs,
                           kp_kwargs=popen_kwargs)
@@ -540,7 +551,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         # In case of mobile device, we need to get stdio from `adb logcat` cmd:
 
         # First flush logs in order to avoid catching previous ones
-        subprocess.call([binary, "logcat", "-c"])
+        subprocess.call([adb, "logcat", "-c"])
 
         # Launch adb command
         runner.start()
@@ -552,7 +563,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         outf.close()
 
         # Then we simply display stdout of `adb logcat`
-        p = subprocess.Popen([binary, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
+        p = subprocess.Popen([adb, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
         while True:
             line = p.stdout.readline()
             if line == '':

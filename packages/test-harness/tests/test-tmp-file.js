@@ -22,3 +22,10 @@ exports.testCreateFromURL = function (test) {
   test.assertEqual(content, "foo",
                    "Temporary file contains the expected content");
 }
+
+exports.testCreateDirectory = function (test) {
+  let path = tmp.createDirectory("directory");
+  test.assert(!file.isFile(path), "Temporary directory isn't a file");
+  test.assertEqual(file.list(path).length, 0,
+                   "Temporary directory can be listed");
+}

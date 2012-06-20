@@ -21,8 +21,37 @@ def mkzipdir(zf, path):
     dirinfo.external_attr = int("040755", 8) << 16L
     zf.writestr(dirinfo, "")
 
-def build_xpi(template_root_dir, manifest, xpi_path,
-              harness_options, limit_to=None, extra_harness_options={}):
+import cfxjs
+USE_CFXJS = True
+def build_xpi(template_root_dir, manifest, xpi_path, harness_options,
+              limit_to=None, extra_harness_options={}, binary=None):
+    if USE_CFXJS:
+        # Retrieve user-specified mozilla runtime binary is none is given.
+        # Usefull during `cfx testcfx` in order to use the binary given via `-b`
+        # This env variable is set by cuddlefish/__init__.py.
+        if not binary and 'CUDDLEFISH_BINARY' in os.environ:
+            binary = os.environ['CUDDLEFISH_BINARY']
+
+        # cfx.js expect an absolute path only
+        xpi_path = os.path.abspath(xpi_path)
+        # limit_to can be a set() which is not jsonable
+        if limit_to:
+            limit_to = list(limit_to)
+
+        cfxjs.execute('build-xpi', {
+            'templatePath': template_root_dir,
+            'installRdf': str(manifest),
+            'xpiPath': xpi_path,
+            'harnessOptions': harness_options.copy(),
+            'extraHarnessOptions': extra_harness_options,
+            'limitTo': limit_to
+        }, binary)
+
+        if not os.path.exists(xpi_path):
+            raise Exception("Unable to build the `xpi` file.")
+        return
+
+    # Python implementation for building xpi file:
     zf = zipfile.ZipFile(xpi_path, "w", zipfile.ZIP_DEFLATED)
 
     open('.install.rdf', 'w').write(str(manifest))
