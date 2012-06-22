@@ -346,11 +346,12 @@ class XulrunnerAppRunner(mozrunner.Runner):
         cmd = mozrunner.Runner.command.fget(self)
 
         # application.ini should be right after the binary
+        bin_index = cmd.index(self.binary)
         if self.__is_xulrunner_sdk:
-            cmd.insert(1, self.__app_ini)
+            cmd.insert(bin_index + 1, self.__app_ini)
         else:
-            cmd.insert(1, '-app')
-            cmd.insert(2, self.__app_ini)
+            cmd.insert(bin_index + 1, '-app')
+            cmd.insert(bin_index + 2, self.__app_ini)
 
         return cmd
 
