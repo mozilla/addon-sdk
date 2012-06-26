@@ -1,7 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
+
 const { Cc, Ci } = require("chrome");
 
 const { ZipWriter } = require("./zip");
-const file = require("api-utils/file");
 const preferences = require("./preferences");
 const { InternalCfxError, InvalidArgument } = require("./exception");
 
@@ -10,12 +14,13 @@ const FILE_SEPARATOR = require("api-utils/runtime").OS === "WINNT" ? "\\" : "/";
 // Utility function which allow to concatenate file path fragments
 // This function accept n-th arguments. It basically join given string with
 // the correct file separator depending on your OS
-function removeEmpty(value) {
-  return value !== ""
-}
 function joinPath() {
   let list = Array.slice(arguments);
-  return list.filter(removeEmpty).join(FILE_SEPARATOR);
+  // We ignore empty arguments in order to avoid having two adjacent separators
+  return list.filter(isNotEmpty).join(FILE_SEPARATOR);
+}
+function isNotEmpty(value) {
+  return value !== "";
 }
 
 // Utility function to ignore unwanted files in .xpi
@@ -23,22 +28,16 @@ const IGNORED_FILE_PREFIXES = ["."];
 const IGNORED_FILE_SUFFIXES = ["~", ".swp"];
 const IGNORED_DIRS = [".git", ".svn", ".hg"];
 
-function isAcceptableDirectory(name) {
-  return IGNORED_DIRS.indexOf(name) === -1;
+function isIgnoredDirectory(name) {
+  return IGNORED_DIRS.indexOf(name) !== -1;
 }
 
-function isAcceptableFile(name, blackList) {
-  for (let i = 0; i < IGNORED_FILE_PREFIXES.length; i++) {
-    let prefix = IGNORED_FILE_PREFIXES[i];
-    if (name.substr(0, prefix.length) == prefix)
-      return false;
-  }
-  for (let i = 0; i < IGNORED_FILE_SUFFIXES.length; i++) {
-    let suffix = IGNORED_FILE_SUFFIXES[i];
-    if (name.substr(-1 * suffix.length) == suffix)
-      return false;
-  }
-  return true;
+function isIgnoredFile(name) {
+  return IGNORED_FILE_PREFIXES.some(function(prefix) {
+    return name.indexOf(prefix) === 0;
+  }) || IGNORED_FILE_SUFFIXES.some(function(suffix) {
+    return name.substr(-1 * suffix.length) === suffix;
+  });
 }
 
 // Utility function in order to read a folder recursively
@@ -58,17 +57,17 @@ function walkDir(path) {
   function readDir(path, file) {
     let dirs = [], files = [];
     let entries = file.directoryEntries;
-    while(entries.hasMoreElements()) {
+    while (entries.hasMoreElements()) {
       let entry = entries.getNext();
       entry.QueryInterface(Ci.nsIFile);
       if (entry.isDirectory()) {
-        if (isAcceptableDirectory(entry.leafName)) {
+        if (!isIgnoredDirectory(entry.leafName)) {
           dirs.push(entry.leafName);
           readDir(joinPath(path, entry.leafName), entry);
         }
       }
       else {
-        if (isAcceptableFile(entry.leafName))
+        if (!isIgnoredFile(entry.leafName))
           files.push(entry.leafName);
       }
     }
@@ -76,6 +75,20 @@ function walkDir(path) {
   }
   readDir("", file);
   return directories;
+}
+
+function rm(path) {
+  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+  try {
+    file.initWithPath(path);
+  } catch(e) {
+    throw new Error("Can't delete non-existent file: " + path + "\n" + e);
+  }
+  try {
+    file.remove(false);
+  } catch(e) {
+    throw new Error("Error while try to delete: " + path + "\n" + e);
+  }
 }
 
 // Utility function for zip library usage. zip library only accept `/` as file
@@ -89,10 +102,17 @@ function prettyPrintJSON(json) {
   return JSON.stringify(json, null, 2);
 }
 
-// Write icon files
+/**
+ * Write icon files into xpi
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {Object} harnessOptions
+ *    Manifest dictionnary which contains icon absolute paths
+ */
 function writeIcons(zip, harnessOptions) {
   if ('icon' in harnessOptions) {
     zip.addFile("icon.png", harnessOptions.icon);
+    // Delete `icon` attribute in order to avoid writting in into manifest file
     delete harnessOptions.icon;
   }
   if ('icon64' in harnessOptions) {
@@ -101,47 +121,74 @@ function writeIcons(zip, harnessOptions) {
   }
 }
 
-// Write default preferences and xul options document (opened from about:addons)
+/**
+ * Write default preferences file and xul options document (opened from
+ * about:addons)
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {String} jetpackID
+ *    Addon id
+ * @param {Object} prefsManifest
+ *    Preferences fields written in addon's package.json `preferences` attribute
+ */
 function writePreferences(zip, jetpackID, prefsManifest) {
-  // Handle `preferences` from package.json
   if (prefsManifest) {
     preferences.validate(prefsManifest);
 
-    opts_xul = preferences.generateOptionsXul(prefsManifest,
+    let optionsXul = preferences.generateOptionsXul(prefsManifest,
                                               jetpackID);
-    zip.addData("options.xul", opts_xul);
+    zip.addData("options.xul", optionsXul);
 
-    prefs_js = preferences.generatePrefsJS(prefsManifest,
+    let prefsJs = preferences.generatePrefsJS(prefsManifest,
                                            jetpackID);
-    zip.addData("defaults/preferences/prefs.js", prefs_js);
+    zip.addData("defaults/preferences/prefs.js", prefsJs);
   }
   else {
     zip.addData("defaults/preferences/prefs.js", "");
   }
 }
 
-// Write all harness files to xpi, mainly bootstrap.js
+/**
+ * Write all harness files to xpi, mainly bootstrap.js
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {String} templatePath
+ *    Absolute path to the template directory from which we will install files
+ */
 function writeTemplate(zip, templatePath) {
   // Copy addon/application template to the xpi
-  for each (let directory in walkDir(templatePath)) {
+  walkDir(templatePath).forEach(function (directory) {
     // TODO: implement filtering
     //filenames = list(filter_filenames(filenames, IGNORED_FILES))
     //dirnames[:] = filter_dirnames(dirnames)
-    for each(let name in directory.dirnames) {
+    directory.dirnames.forEach(function (name) {
       let relpath = joinPath(directory.path, name);
       zip.mkdir(makeZipPath(relpath));
-    }
-    for each(let name in directory.filenames) {
-      if (["install.rdf", "application.ini"].indexOf(name) !== -1)
-        continue;
+    });
+    directory.filenames.filter(function (name) {
+      return ["install.rdf", "application.ini"].indexOf(name) === -1;
+    }).forEach(function (name) {
       let relpath = joinPath(directory.path, name);
       let abspath = joinPath(templatePath, relpath);
       zip.addFile(makeZipPath(relpath), abspath);
-    }
-  }
+    });
+  });
 }
 
-// Write all packages to resources/ folder
+/**
+ * Write all packages to `resources/` folder
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {Object} packages
+ *     A dictionnary of packages. keys are packages names. Values are another
+ *     dictionnary with packages section folder absolute path.
+ *     These folders are written into `resources/` directory in the xpi.
+ * @param {Array} limitTo
+ *     List of all white-listed files. If given, only file whose absolute path
+ *     is in this list are copied into the xpi.
+ * @param {String} xpiPath
+ *     Absolute path to the xpi file. Used to avoid copying the xpi in itself!
+ */
 function writePackages(zip, packages, limitTo, xpiPath) {
   // `packages` is a dictionnary whose keys are package name and values are
   // another dictionnary whose keys are section name (lib or test) and final
@@ -158,16 +205,15 @@ function writePackages(zip, packages, limitTo, xpiPath) {
       // the harness will try to access it.
       zip.mkdir(base_arcpath);
       // cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
-      for each (let directory in walkDir(abs_dirname)) {
-        let goodfiles = directory.filenames;
-        for each(let filename in goodfiles) {
+      walkDir(abs_dirname).forEach(function (directory) {
+        directory.filenames.forEach(function (filename) {
           let abspath = joinPath(abs_dirname, directory.path, filename)
           // Ignore xpi file
           if (abspath == xpiPath)
-            continue;
+            return;
           // strip unused files
           if (limitTo && limitTo.indexOf(abspath) === -1)
-            continue;
+            return;
 
           let arcpath = [
             "resources",
@@ -183,13 +229,20 @@ function writePackages(zip, packages, limitTo, xpiPath) {
           arcpath.push(filename);
           // Always use `/` as separator in zip
           zip.addFile(arcpath.join("/"), abspath);
-        }
-      }
+        });
+      });
     }
   }
 }
 
-// Write locale manifest and locale files to the xpi
+/**
+ * Write locale manifest and locale files to the xpi
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {Object} locales
+ *    A dictionnary of available locales for this addon. Keys are language code
+ *    and values are another dictionnary with all translated strings
+ */
 function writeLocales(zip, locales) {
   // We store a sorted list of locales
   let languages = Object.keys(locales).sort();
@@ -198,16 +251,25 @@ function writeLocales(zip, locales) {
   };
   zip.addData("locales.json", prettyPrintJSON(localesManifest) + "\n");
   zip.mkdir("locale/");
-  for each(let language in languages) {
+  languages.forEach(function (language) {
     let locale = locales[language];
     zip.addData("locale/" + language + ".json", prettyPrintJSON(locale));
-  }
+  });
 }
 
-// Write `harness-options.json` manifest file at xpi root
+/**
+ * Write `harness-options.json` manifest file at xpi root
+ * @param {ZipWriter} zip
+ *    ZipWriter instance for the xpi file
+ * @param {Object} harnessOptions
+ *    Manifest dictionnary to write into harness-options.json file
+ * @param {Object} extraHarnessOptions
+ *    Additional user attributes to inject into this file
+ */
 function writeManifest(zip, harnessOptions, extraHarnessOptions) {
   // TODO: print better error message on harness-options loading error
-  //       "Error: Component returned failure code: 0x80520012 (NS_ERROR_FILE_NOT_FOUND) [nsIChannel.open]"
+  // "Error: Component returned failure code: 0x80520012
+  //  (NS_ERROR_FILE_NOT_FOUND) [nsIChannel.open]"
 
   // Include extra manifest options given manually to cfx
   for (let key in extraHarnessOptions) {
@@ -262,8 +324,7 @@ exports.build = function buildXPI(options) {
     writeIcons(zip, harnessOptions);
 
     writePreferences(zip, harnessOptions.jetpackID,
-                     harnessOptions.preferences ? harnessOptions.preferences
-                                                : null);
+                     harnessOptions.preferences || null);
     delete harnessOptions.preferences;
 
     writeTemplate(zip, templatePath);
@@ -281,10 +342,14 @@ exports.build = function buildXPI(options) {
     // in order to avoid processing it in futher steps in python code
     zip.close();
     try {
-      file.remove(xpiPath);
+      // We do not care about any error while removing the xpi file,
+      // we try to ensure that we do not leave any temporary file around.
+      // It may not even be created.
+      rm(xpiPath);
     }
-    catch(e) {};
-    throw e;
+    finally {
+      throw e;
+    }
   }
   zip.close();
 }

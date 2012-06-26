@@ -1,6 +1,6 @@
-# cfx.js
+# cfx-js
 
-cfx.js is an SDK addon meant to replace python command line application.
+cfx-js is an SDK addon meant to replace python command line application.
 This addon is currently quite limited but it is going to implement all features
 of cfx python application in order to remove python dependency.
 It currently just allow to build an XPI file.
@@ -29,11 +29,11 @@ add-on sdk `cfx` command line application.
            - or -
         $ bin\activate (window)
 
- * Go to cfx.js directory
+ * Go to cfx-js directory
 
         $ cd cfx/
 
- * Generate cfx.js xpi
+ * Generate cfx-js xpi
 
         $ cfx xpi
 
@@ -42,7 +42,7 @@ add-on sdk `cfx` command line application.
         $ mv cfx.xpi xulrunner-app/
 
 
-# Expected JSON Object passed to cfx.js
+# Expected JSON Object passed to cfx-js
 
     {
       "command": "string" // Name of the command to execute
@@ -72,6 +72,8 @@ add-on sdk `cfx` command line application.
                            // written in the xpi
     "install-rdf": "string" // Content of the `install.rdf` to write in the xpi
     "harness-options": {
+      "jetpackID": "string" // Addon id, "some-unique-string@jetpack", or, UUID
+                            // like "{79daaae6-5916-49ba-8d3c-f54df65f210b}"
       "icon": "string"   // Absolute path the the default icon for this addon
       "icon64": "string" // Same thing, but for a 64px version of it
       "packages": {      // A dictionnary of packages. keys are packages names
@@ -89,6 +91,21 @@ add-on sdk `cfx` command line application.
         "en-US": {// language code
           "key": "translation" // key to translate => translated key
         }
+      },
+      "limitTo": [ // Optional list of white-listed files to accept into the xpi
+                   // Used to select which module will be copied
+        "/sdk/addon-kit/lib/page-mod.js",
+        "..."
+      ],
+      "preferences": { // Optional dictionnary of preferences fields supported
+                       // by this addon
+        { "type": "string"            // Preference type, can be string, bool
+                                      // or integer,
+          "name": "stringPreference", // Preference internal name,
+          "value": string, bool or integer, // Preference default value,
+          "title": "string"           // Preference title.
+        },
+        ...
       }
       // All these `harness-options` attributes are used to build the xpi
       // but you can pass other attributes. They will be written into

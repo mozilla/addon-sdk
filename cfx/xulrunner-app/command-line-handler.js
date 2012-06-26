@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
 
 // This XPCOM components allows to run a sdk addon as a xulrunner application
 
@@ -66,7 +67,7 @@ function runApplication(cmdLine) {
 }
 
 // Register a nsICommandLineHandler xpcom object in order to call
-// runApplication method
+// runApplication method at application startup
 function CommandLineHandler() {}
 CommandLineHandler.prototype = {
   classID: Components.ID("{537df286-d9ae-4c7a-a633-6266b1325289}"),

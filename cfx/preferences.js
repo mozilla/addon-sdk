@@ -1,3 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+"use strict";
+
 const { Cc, Ci } = require("chrome");
 const DOMSerializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
                       createInstance(Ci.nsIDOMSerializer);
@@ -74,30 +79,31 @@ function generateOptionsXul(options, jetpackId) {
 }
 exports.generateOptionsXul = generateOptionsXul;
 
+function isFloat(value) {
+  return typeof(value) == "number" && value % 1 !== 0;
+}
+
+/**
+ * Based on preferences manifest written in package.json file of an addon,
+ * returns the necessary prefs.js file content. This file is going to set
+ * default preference values when the addon will be installed.
+ */
 function generatePrefsJS(options, jetpackId) {
-  let pref_list = []
+  let prefList = []
 
   for (let key in options) {
     let pref = options[key];
-    if ('value' in pref) {
-      let value = pref.value;
+    if (!('value' in pref))
+      continue;
+    // TODO: Understand why python code ignore float and only floats?
+    if (isFloat(pref.value))
+      continue;
 
-      // isFloat
-      // TODO: Understand why python code ignore float and only floats?
-      if (typeof value == "number" && value % 1 !== 0)
-        continue;
-      else if (typeof value == "boolean")
-        value = pref.value ? "true" : "false";
-      else if (typeof value == "string")
-        value = "\"" + pref.value.replace(/"/g, "\\\"") + "\"";
-      else
-        value = pref.value;
-
-      prefKey = "extensions." + jetpackId + "." + pref.name;
-      pref_list.push("pref(\"" + prefKey +"\", " + value + ");");
-    }
+    let prefKey = "extensions." + jetpackId + "." + pref.name;
+    let prefValue = JSON.stringify(pref.value);
+    prefList.push("pref(\"" + prefKey +"\", " + prefValue + ");");
   }
 
-  return pref_list.join("\n") + "\n"
+  return prefList.join("\n") + "\n";
 }
 exports.generatePrefsJS = generatePrefsJS;
