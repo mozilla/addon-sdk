@@ -45,8 +45,8 @@ add-on sdk `cfx` command line application.
 # Expected JSON Object passed to cfx.js
 
     {
-      command: "string" // Name of the command to execute
-      options: "object" // Arguments needed to execute this command
+      "command": "string" // Name of the command to execute
+      "options": "object" // Arguments needed to execute this command
     }
 
 ## Supported commands
@@ -57,7 +57,7 @@ add-on sdk `cfx` command line application.
 
    Required `options` object:
    {
-     path: "string" // Absolute path to the xpi to install
+     "path": "string" // Absolute path to the xpi to install
    }
 
 ### build-xpi
@@ -66,34 +66,34 @@ add-on sdk `cfx` command line application.
 
   Required `options` object:
   {
-    xpiPath: "string" // Absolute path to the xpi we want to build
-    templatePath: "string" // Absolute path to the temaplate folder.
+    "xpi-path": "string" // Absolute path to the xpi we want to build
+    "template-path": "string" // Absolute path to the temaplate folder.
                            // All files from this folder are going to be
                            // written in the xpi
-    installRdf: "string" // Content of the `install.rdf` to write in the xpi
-    harnessOptions: {
-      icon: "string"   // Absolute path the the default icon to use for this addon
-      icon64: "string" // Same thing, but for a 64px version of it
-      packages: {      // A dictionnary of packages. keys are packages names
-                       // Values are another dictionnary with packages section
-                       // folders. These folders are written into `resources`
-                       // directory in the xpi
+    "install-rdf": "string" // Content of the `install.rdf` to write in the xpi
+    "harness-options": {
+      "icon": "string"   // Absolute path the the default icon for this addon
+      "icon64": "string" // Same thing, but for a 64px version of it
+      "packages": {      // A dictionnary of packages. keys are packages names
+                         // Values are another dictionnary with packages section
+                         // folders. These folders are written into `resources`
+                         // directory in the xpi
         "api-utils": { // package name
           "test": section, // section name => absolute path to it
           "lib": section
         }
       },
-      locale: { // A dictionnary of available locales for this addon
-                // keys are language code and values are another dictionnary
-                // with all translated strings
-        "en-US": { // language code
+      "locale": { // A dictionnary of available locales for this addon
+                  // keys are language code and values are another dictionnary
+                  // with all translated strings
+        "en-US": {// language code
           "key": "translation" // key to translate => translated key
         }
       }
-      // All these `harnessOptions` attributes are used to build the xpi
+      // All these `harness-options` attributes are used to build the xpi
       // but you can pass other attributes. They will be written into
       // `harness-options.json` at xpi's root folder
     },
-    extraHarnessOptions: "dictionnary" // A set of additional attributes to
-                                       // write into `harness-options.json`
+    "extra-harness-options": "dictionnary" // A set of additional attributes to
+                                           // write into `harness-options.json`
   }

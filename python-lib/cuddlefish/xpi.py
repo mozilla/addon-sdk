@@ -39,12 +39,12 @@ def build_xpi(template_root_dir, manifest, xpi_path, harness_options,
             limit_to = list(limit_to)
 
         cfxjs.execute('build-xpi', {
-            'templatePath': template_root_dir,
-            'installRdf': str(manifest),
-            'xpiPath': xpi_path,
-            'harnessOptions': harness_options.copy(),
-            'extraHarnessOptions': extra_harness_options,
-            'limitTo': limit_to
+            'template-path': template_root_dir,
+            'install-rdf': str(manifest),
+            'xpi-path': xpi_path,
+            'harness-options': harness_options.copy(),
+            'extra-harness-options': extra_harness_options,
+            'limit-to': limit_to
         }, binary)
 
         if not os.path.exists(xpi_path):

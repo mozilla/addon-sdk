@@ -80,32 +80,32 @@ exports.testIt = function (test) {
   let usTranslation = "translation";
   let reverseTranslation = "uoıʇɐןsuɐɹʇ";
   let options = {
-    xpiPath: xpiPath,
-    templatePath: harness,
-    installRdf: installRDF,
-    harnessOptions: {
-      jetpackID: "foo@bar.com",
-      icon: tmpFile.createFromString(iconData, "icon.png"),
-      icon64: tmpFile.createFromString(icon64Data, "icon64.png"),
-      packages: {
+    "xpi-path": xpiPath,
+    "template-path": harness,
+    "install-rdf": installRDF,
+    "harness-options": {
+      "jetpackID": "foo@bar.com",
+      "icon": tmpFile.createFromString(iconData, "icon.png"),
+      "icon64": tmpFile.createFromString(icon64Data, "icon64.png"),
+      "packages": {
         "api-utils": {
           "test": section,
           "lib": section
         }
       },
-      locale: {
+      "locale": {
         "en-US": {
-          key: usTranslation
+          "key": usTranslation
         },
         "en-reverse": {
-          key: reverseTranslation
+          "key": reverseTranslation
         }
       },
-      manifest: {}
+      "manifest": {}
     },
-    limitTo: null,
-    extraHarnessOptions: {
-      extra: "option"
+    "limit-to": null,
+    "extra-harness-options": {
+      "extra": "option"
     }
   };
   xpi.build(options);
@@ -140,7 +140,7 @@ exports.testIt = function (test) {
       // harness manifest contains only extra option and manifest attribute,
       // as all other are removed during xpi building process:
       let expectedHarnessOptions = {
-        jetpackID: options.harnessOptions.jetpackID,
+        jetpackID: options["harness-options"].jetpackID,
         manifest: {},
         extra: "option"
       };

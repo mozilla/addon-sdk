@@ -221,23 +221,43 @@ function writeManifest(zip, harnessOptions, extraHarnessOptions) {
 }
 
 exports.build = function buildXPI(options) {
-  if (!("xpiPath" in options))
+  if (!("xpi-path" in options))
     throw new InternalCfxError("Missing `xpiPath` in cfxjs options");
-  if (!("harnessOptions" in options))
+  let xpiPath = options["xpi-path"];
+
+  if (!("harness-options" in options))
     throw new InternalCfxError(
       "Missing `harnessOptions` in cfxjs options");
-  if (!("templatePath" in options))
+  let harnessOptions = options["harness-options"];
+
+  if (!("template-path" in options))
     throw new InternalCfxError(
       "Missing `templatePath` in cfxjs options");
-  if (!("locale" in options.harnessOptions))
-    throw new InternalCfxError(
-      "Missing `locale` in cfxjs options harnessOptions attribute");
-  let harnessOptions = options.harnessOptions;
+  let templatePath = options["template-path"];
 
-  let zip = new ZipWriter(options.xpiPath);
+  if (!("locale" in harnessOptions))
+    throw new InternalCfxError(
+      "Missing `locale` in cfxjs options `harness-options` attribute");
+
+  if (!("install-rdf" in options))
+    throw new InternalCfxError(
+      "Missing `install-rdf` in cfxjs options");
+  let installRdf = options["install-rdf"];
+
+  if (!("extra-harness-options" in options))
+    throw new InternalCfxError(
+      "Missing `extra-harness-options` in cfxjs options");
+  let extraHarnessOptions = options["extra-harness-options"];
+
+  if (!("limit-to" in options))
+    throw new InternalCfxError(
+      "Missing `limit-to` in cfxjs options");
+  let limitTo = options["limit-to"];
+
+  let zip = new ZipWriter(xpiPath);
 
   try {
-    zip.addData("install.rdf", options.installRdf);
+    zip.addData("install.rdf", installRdf);
 
     writeIcons(zip, harnessOptions);
 
@@ -246,23 +266,22 @@ exports.build = function buildXPI(options) {
                                                 : null);
     delete harnessOptions.preferences;
 
-    writeTemplate(zip, options.templatePath);
+    writeTemplate(zip, templatePath);
 
-    writePackages(zip, harnessOptions.packages, options.limitTo,
-                  options.xpiPath);
+    writePackages(zip, harnessOptions.packages, limitTo, xpiPath);
     delete harnessOptions.packages;
 
     writeLocales(zip, harnessOptions.locale);
     delete harnessOptions.locale;
 
-    writeManifest(zip, harnessOptions, options.extraHarnessOptions);
+    writeManifest(zip, harnessOptions, extraHarnessOptions);
   }
   catch(e) {
     // In case or any error, we delete the eventually created xpi file
     // in order to avoid processing it in futher steps in python code
     zip.close();
     try {
-      file.remove(options.xpiPath);
+      file.remove(xpiPath);
     }
     catch(e) {};
     throw e;
