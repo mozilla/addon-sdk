@@ -325,6 +325,8 @@ exports.build = function buildXPI(options) {
 
     writePreferences(zip, harnessOptions.jetpackID,
                      harnessOptions.preferences || null);
+    // We delete harnessOptions attributes in order to avoid writing them
+    // into xpi's manifest file.
     delete harnessOptions.preferences;
 
     writeTemplate(zip, templatePath);
