@@ -138,8 +138,11 @@ class ExtraHarnessOptions(unittest.TestCase):
     def testBadOptionName(self):
         pkg_name = "extra-options"
         self.xpiname = temp_xpi_file(pkg_name)
-        create_xpi(self.xpiname, pkg_name, "bug-669274-files",
-                   extra_harness_options={"main": "already in use"})
+        with self.failUnlessRaises(Exception) as cm:
+            create_xpi(self.xpiname, pkg_name, "bug-669274-files",
+                       extra_harness_options={"main": "already in use"})
+        self.failUnlessEqual(str(cm.exception),
+                             "Unable to build the `xpi` file.")
         # TODO: enable communication between cfxjs and cfxpy
         # in order to know from python that some specific error happened in JS
         # self.failUnless(not os.path.exists(self.xpiname))

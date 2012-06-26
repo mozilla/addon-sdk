@@ -102,16 +102,16 @@ function writeIcons(zip, harnessOptions) {
 }
 
 // Write default preferences and xul options document (opened from about:addons)
-function writePreferences(zip, jetpackId, preferences) {
+function writePreferences(zip, jetpackID, prefsManifest) {
   // Handle `preferences` from package.json
-  if (preferences) {
-    preferences.validate(preferences);
+  if (prefsManifest) {
+    preferences.validate(prefsManifest);
 
-    opts_xul = preferences.generateOptionsXul(preferences,
+    opts_xul = preferences.generateOptionsXul(prefsManifest,
                                               jetpackID);
     zip.addData("options.xul", opts_xul);
 
-    prefs_js = preferences.generatePrefsJS(preferences,
+    prefs_js = preferences.generatePrefsJS(prefsManifest,
                                            jetpackID);
     zip.addData("defaults/preferences/prefs.js", prefs_js);
   }
