@@ -18,11 +18,12 @@ const { Cc, Ci } = require('chrome'),
       { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs'),
       { WindowDom } = require('api-utils/windows/dom'),
       { WindowLoader } = require('api-utils/windows/loader'),
+      { isBrowser } = require('api-utils/window/utils'),
       { Options } = require('api-utils/tabs/tab'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
       windowUtils = require('api-utils/window-utils'),
-      { WindowTrackerTrait, isBrowser } = windowUtils,
+      { WindowTrackerTrait } = windowUtils,
       { ns } = require('api-utils/namespace'),
       { observer: windowObserver } = require("api-utils/windows/observer");
 
@@ -210,6 +211,7 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
         options = { tabs: [Options(options)] };
       return BrowserWindow(options);
     },
+
      /**
       * Internal listener which is called whenever new window gets open.
       * Creates wrapper and adds to this list.

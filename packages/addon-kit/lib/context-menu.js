@@ -24,8 +24,8 @@ const { MatchPattern } = require("api-utils/match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
-const winUtils = require("api-utils/window-utils");
-const { getInnerId } = require("api-utils/window/utils");
+const { WindowTracker } = require("api-utils/window-utils");
+const { getInnerId, isBrowser } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
 const timer = require("timers");
@@ -839,7 +839,7 @@ let browserManager = {
   // for each currently open browser window.
   init: function BM_init() {
     require("api-utils/unload").ensure(this);
-    let windowTracker = winUtils.WindowTracker(this);
+    let windowTracker = WindowTracker(this);
 
     // Register content windows on content-document-global-created and
     // unregister them on inner-window-destroyed.  For rationale, see bug 667957
@@ -914,7 +914,7 @@ let browserManager = {
   // chrome window, and for each chrome window that is open when the loader
   // loads this module.
   onTrack: function BM_onTrack(window) {
-    if (!this._isBrowserWindow(window))
+    if (!isBrowser(window))
       return;
 
     let browserWin = new BrowserWindow(window);
@@ -955,7 +955,7 @@ let browserManager = {
   // chrome window, and for each chrome window that is open when this module is
   // unloaded.
   onUntrack: function BM_onUntrack(window) {
-    if (!this._isBrowserWindow(window))
+    if (!isBrowser(window))
       return;
 
     // Remove the window from the window list.
@@ -970,11 +970,6 @@ let browserManager = {
     // Remove all top-level items from the window.
     this.topLevelItems.forEach(function (i) browserWin.removeTopLevelItem(i));
     browserWin.destroy();
-  },
-
-  _isBrowserWindow: function BM__isBrowserWindow(win) {
-    let winType = win.document.documentElement.getAttribute("windowtype");
-    return winType === "navigator:browser";
   }
 };
 

@@ -9,7 +9,8 @@ const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
 const { getActiveTab, getTabs, getTabContainers } = require("./utils");
-const { browserWindowIterator, isBrowser } = require("../window-utils");
+const { browserWindowIterator } = require("../window-utils");
+const { isBrowser } = require('../window/utils');
 const { observer: windowObserver } = require("../windows/observer");
 
 const EVENTS = {
