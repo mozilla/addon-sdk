@@ -6,6 +6,8 @@
 const { Cc, Ci } = require("chrome");
 const DOMSerializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
                       createInstance(Ci.nsIDOMSerializer);
+const DOMParser = Cc["@mozilla.org/xmlextras/domparser;1"].
+                  createInstance(Ci.nsIDOMParser);
 
 const { InvalidArgument } = require("./exception");
 
@@ -34,12 +36,8 @@ function validate(options) {
 exports.validate = validate;
 
 function createXULDocument(content) {
-  let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
-            createInstance(Ci.nsIXMLHttpRequest);
-  xhr.open("GET", "data:application/vnd.mozilla.xul+xml," +
-                  "<?xml version=\"1.0\"?>" + content, false);
-  xhr.send(null);
-  return xhr.responseXML;
+  let str = "<?xml version=\"1.0\"?>" + content;
+  return DOMParser.parseFromString(str, "application/xml");
 }
 
 // Takes preferences`'s package.json attribute and returns the options.xul
@@ -95,9 +93,13 @@ function generatePrefsJS(options, jetpackId) {
     let pref = options[key];
     if (!('value' in pref))
       continue;
-    // TODO: Understand why python code ignore float and only floats?
-    if (isFloat(pref.value))
-      continue;
+
+    if (["boolean", "number", "string"].indexOf(typeof(pref.value)) === -1
+        || isFloat(pref.value))
+      throw new InvalidArgument("The '" + pref.name + "' pref has an " +
+                                "unsupported type '"+ typeof(pref.value) +"'." +
+                                " Supported types are: boolean, (non-float) " +
+                                "number and string.");
 
     let prefKey = "extensions." + jetpackId + "." + pref.name;
     let prefValue = JSON.stringify(pref.value);
