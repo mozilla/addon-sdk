@@ -12,13 +12,11 @@ add-on sdk `cfx` command line application.
 
  * cfx python application set `CFX_OPTIONS_FILE` environnement variable to an
    absolute path to a JSON file that contains necessary information to execute
-   some commands,
+   some commands (use JSON file since options may not fit in environment
+   variable),
  * Then, cfx python application run it through the xulrunner template,
  * Finally, the addon reads JSON from `CFX_OPTIONS_FILE` and performs tasks
    described by it.
-
-(We aren't putting JSON content into environnement variable as the size of an
- environnement variable is quite limited)
 
 
 # How to build it and install it
