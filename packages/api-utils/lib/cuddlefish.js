@@ -9,11 +9,14 @@
   } else if (typeof(require) === 'function') { // CommonJS
     factory.call(this, require, exports, module);
   } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(function require(uri) {
+    function require(uri) {
       var imports = {};
       this['Components'].utils.import(uri, imports);
       return imports;
-    }, this, { uri: __URI__, id: id });
+    }
+    // Expose Cu.unload in order to be able to unload loader.js
+    require.unload = this['Components'].utils.unload;
+    factory(require, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
   } else {  // Browser or alike
     var globals = this
@@ -35,8 +38,9 @@ require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 // used since regular require is not available at loader bootstrap.
 const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
 const loaderModule = require(loaderURI);
-const { Loader: BaseLoader, Require, Sandbox, resolveURI, evaluate, load,
-        Module, unload, override, descriptor, main } = loaderModule;
+const { Loader: BaseLoader, unload: BaseUnload,
+        Require, Sandbox, resolveURI, evaluate, load,
+        Module, override, descriptor, main } = loaderModule;
 
 exports.resolveURI = resolveURI;
 exports.Require = Require;
@@ -44,7 +48,6 @@ exports.Sandbox = Sandbox;
 exports.evaluate = evaluate;
 exports.load = load;
 exports.Module = Module;
-exports.unload = unload;
 exports.override = override;
 exports.descriptor = descriptor;
 exports.main = main;
@@ -89,5 +92,14 @@ function Loader(options) {
 }
 Loader.prototype = null;
 exports.Loader = Object.freeze(Loader);
+
+function unload() {
+  BaseUnload.apply(this, arguments);
+  if ("unload" in require) {
+    // Unload JSM in order to avoid leaking loader.js
+    require.unload(loaderURI);
+  }
+}
+exports.unload = unload;
 
 });
