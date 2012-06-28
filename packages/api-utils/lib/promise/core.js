@@ -29,7 +29,7 @@
  * fulfilled to a given `value`. Note the result is not a complete promise
  * implementation, as its method `then` does not returns anything.
  */
-function fulfillment(value) {
+function fulfilled(value) {
   return { then: function then(fulfill) { fulfill(value); } };
 }
 
@@ -38,7 +38,7 @@ function fulfillment(value) {
  * with a given `reason`. Note the result is not a complete promise
  * implementation, as its method `then` does not returns anything.
  */
-function rejection(reason) {
+function rejected(reason) {
   return { then: function then(fulfill, reject) { reject(reason); } };
 }
 
@@ -52,7 +52,7 @@ function attempt(f) {
       return f(input);
     }
     catch(error) {
-      return rejection(error);
+      return rejected(error);
     }
   };
 }
@@ -116,13 +116,13 @@ function defer() {
         // utility function that takes one argument and returns promise
         // fulfilled / rejected with it. This takes care of propagation
         // through the rest of the promise chain.
-        onFulfill = onFulfill ? attempt(onFulfill) : fulfillment;
-        onError = onError ? attempt(onError) : rejection;
+        onFulfill = onFulfill ? attempt(onFulfill) : fulfilled;
+        onError = onError ? attempt(onError) : rejected;
 
         // Create a pair of observers that invoke given handlers & propagate
         // results to `deferred.promise`.
-        function resolve(value) { deferred.resolve(onFulfill(value)); }
-        function reject(reason) { deferred.resolve(onError(reason)); }
+        function resolveDeferred(value) { deferred.resolve(onFulfill(value)); }
+        function rejectDeferred(reason) { deferred.resolve(onError(reason)); }
 
         // If enclosed promise (`this.promise`) observers queue is still alive
         // enqueue a new observer pair into it. Note that this does not
@@ -130,11 +130,11 @@ function defer() {
         // but we still have to queue observers to guarantee an order of
         // propagation.
         if (observers) {
-          observers.push({ resolve: resolve, reject: reject });
+          observers.push({ resolve: resolveDeferred, reject: rejectDeferred });
         }
         // Otherwise just forward observer pair right to a `result` promise.
         else {
-          result.then(resolve, reject);
+          result.then(resolveDeferred, rejectDeferred);
         }
 
         return deferred.promise;
@@ -153,7 +153,7 @@ function defer() {
         // the subsequent handlers can be simply forwarded to it. Since
         // `result` will be a promise all the value / error propagation will
         // be uniformly taken care of.
-        result = isPromise(value) ? value : fulfillment(value);
+        result = isPromise(value) ? value : fulfilled(value);
 
         // Forward already registered observers to a `result` promise in the
         // order they were registered. Note that we intentionally dequeue
@@ -186,7 +186,7 @@ function defer() {
       // `deferred.promise` is rejected with a given `reason`. This may feel
       // little awkward first, but doing it this way greatly simplifies
       // propagation through promise chains.
-      deferred.resolve(rejection(reason));
+      deferred.resolve(rejected(reason));
     }
   };
 

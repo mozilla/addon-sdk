@@ -11,6 +11,7 @@
     factory(function require(uri) {
       var imports = {};
       this['Components'].utils.import(uri, imports);
+      this['Components'].utils.unload(uri); // Avoid leakage
       return imports;
     }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
