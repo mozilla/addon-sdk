@@ -11,10 +11,9 @@
 */
 
 
-var {components,Cc,Ci,Cr,Cu} = require("chrome");
-components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { components, CC, Cc, Ci, Cr, Cu } = require("chrome");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const CC = components.Constructor;
 
 const PR_UINT32_MAX = Math.pow(2, 32) - 1;
 

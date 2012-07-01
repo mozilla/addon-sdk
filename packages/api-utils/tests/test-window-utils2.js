@@ -5,16 +5,9 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { open, backgroundify,
+const { open, backgroundify, windows,
         getXULWindow, getBaseWindow } = require('api-utils/window/utils');
 const windowUtils = require('api-utils/window-utils');
-
-function windows(iterator) {
-  let array = [];
-  for each (let item in windowUtils.windowIterator())
-    array.push(item);
-  return array;
-}
 
 exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
   let active = windowUtils.activeBrowserWindow;

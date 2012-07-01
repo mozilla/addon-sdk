@@ -5,7 +5,7 @@
 import os, unittest, shutil
 from StringIO import StringIO
 from cuddlefish import initializer
-from cuddlefish.templates import MAIN_JS, TEST_MAIN_JS, PACKAGE_JSON
+from cuddlefish.templates import TEST_MAIN_JS, PACKAGE_JSON
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -45,7 +45,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(main_js))
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
-        self.assertEqual(open(main_js,"r").read(),MAIN_JS)
+        self.assertEqual(open(main_js,"r").read(),"")
         self.assertEqual(open(package_json,"r").read(),
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
                                          "fullName": "tmp_addon_SAMPLE" })
@@ -64,7 +64,7 @@ class TestInit(unittest.TestCase):
     def do_test_args(self, basedir):
         # check that running it with spurious arguments will fail
         out,err = StringIO(), StringIO()
-        init_run = initializer(None, ["init", "ignored-dirname"], out, err)
+        init_run = initializer(None, ["init", "specified-dirname", "extra-arg"], out, err)
         out, err = out.getvalue(), err.getvalue()
         self.failIfEqual(init_run, 0)
         self.assertTrue("Too many arguments" in err)
@@ -87,6 +87,55 @@ class TestInit(unittest.TestCase):
     def test_existing_files(self):
         self.run_init_in_subdir("existing_files", self._test_existing_files)
 
+    def test_init_subdir(self):
+        parent = os.path.abspath(os.path.join(".test_tmp", self.id()))
+        basedir = os.path.join(parent, "init-basedir")
+        if os.path.exists(parent):
+            shutil.rmtree(parent)
+        os.makedirs(parent)
+
+        # if the basedir exists and is not empty, init should refuse
+        os.makedirs(basedir)
+        f = open(os.path.join(basedir, "boo"), "w")
+        f.write("stuff")
+        f.close()
+        out, err = StringIO(), StringIO()
+        rc = initializer(None, ["init", basedir], out, err)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc, 1)
+        self.assertTrue("testing if directory is empty" in out, out)
+        self.assertTrue("This command must be run in an empty directory." in err,
+                        err)
+
+        # a .dotfile should be tolerated
+        os.rename(os.path.join(basedir, "boo"), os.path.join(basedir, ".phew"))
+        out, err = StringIO(), StringIO()
+        rc = initializer(None, ["init", basedir], out, err)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertTrue("* data directory created" in out, out)
+        self.assertTrue("Have fun!" in out)
+        self.assertEqual(err,"")
+        self.assertTrue(os.listdir(basedir))
+        main_js = os.path.join(basedir,"lib","main.js")
+        package_json = os.path.join(basedir,"package.json")
+        self.assertTrue(os.path.exists(main_js))
+        self.assertTrue(os.path.exists(package_json))
+        shutil.rmtree(basedir)
+
+        # init should create directories that don't exist already
+        out, err = StringIO(), StringIO()
+        rc = initializer(None, ["init", basedir], out, err)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertTrue("* data directory created" in out)
+        self.assertTrue("Have fun!" in out)
+        self.assertEqual(err,"")
+        self.assertTrue(os.listdir(basedir))
+        main_js = os.path.join(basedir,"lib","main.js")
+        package_json = os.path.join(basedir,"package.json")
+        self.assertTrue(os.path.exists(main_js))
+        self.assertTrue(os.path.exists(package_json))
 
 
 class TestCfxQuits(unittest.TestCase):

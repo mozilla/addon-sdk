@@ -29,6 +29,9 @@ DEFAULT_COMMON_PREFS = {
     # Allow installing extensions dropped into the profile folder
     'extensions.autoDisableScopes' : 10,
 
+    # Disable app update
+    'app.update.enabled' : False,
+
     # Point update checks to a nonexistent local URL for fast failures.
     'extensions.update.url' : 'http://localhost/extensions-dummy/updateURL',
     'extensions.blocklist.url' : 'http://localhost/extensions-dummy/blocklistURL',

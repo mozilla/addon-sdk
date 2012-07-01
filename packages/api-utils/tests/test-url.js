@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var url = require("url");
+var { packed } = require("self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -78,11 +79,6 @@ exports.testParseFTPWithUserPass = function(test) {
   test.assertEqual(info.userPass, "user:pass");
 };
 
-// rootURI is jar:file://...!/ if we're packed, and file://.../ if we're
-// unpacked. url.toFilename() is not required to work for the contents of
-// packed XPIs
-var unpacked = (require("@packaging").rootURI.indexOf("file:") == 0);
-
 exports.testToFilename = function(test) {
   test.assertRaises(
     function() { url.toFilename("resource://nonexistent"); },
@@ -90,7 +86,7 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  if (unpacked)
+  if (!packed)
     test.assertMatches(url.toFilename(module.uri),
                        /.*test-url\.js$/,
                        "url.toFilename() on resource: URIs should work");
@@ -151,11 +147,11 @@ exports.testURL = function(test) {
                    "h:foo",
                    "toString should roundtrip");
   // test relative + base
-  test.assertEqual(URL("mypath", "http://foo").toString(), 
+  test.assertEqual(URL("mypath", "http://foo").toString(),
                    "http://foo/mypath",
                    "relative URL resolved to base");
   // test relative + no base
-  test.assertRaises(function() URL("path").toString(), 
+  test.assertRaises(function() URL("path").toString(),
                     "malformed URI: path",
                     "no base for relative URI should throw");
 
@@ -201,4 +197,59 @@ exports.testStringInterface = function(test) {
   test.assertEqual(a.trim(), EM.trim(), "trim on URL works.");
   test.assertEqual(a.trimRight(), EM.trimRight(), "trimRight on URL works.");
   test.assertEqual(a.trimLeft(), EM.trimLeft(), "trimLeft on URL works.");
+}
+
+exports.testDataURLwithouthURI = function (test) {
+  const { DataURL } = url;
+
+  let dataURL = new DataURL();
+
+  test.assertEqual(dataURL.base64, false, "base64 is false for empty uri")
+  test.assertEqual(dataURL.data, "", "data is an empty string for empty uri")
+  test.assertEqual(dataURL.mimeType, "", "mimeType is an empty string for empty uri")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 0, "parameters is an empty object for empty uri");
+
+  test.assertEqual(dataURL.toString(), "data:,");
+}
+
+exports.testDataURLwithMalformedURI = function (test) {
+  const { DataURL } = url;
+
+  test.assertRaises(function() {
+      let dataURL = new DataURL("http://www.mozilla.com/");
+    },
+    "Malformed Data URL: http://www.mozilla.com/",
+    "DataURL raises an exception for malformed data uri"
+  );
+}
+
+exports.testDataURLparse = function (test) {
+  const { DataURL } = url;
+
+  let dataURL = new DataURL("data:text/html;charset=US-ASCII,%3Ch1%3EHello!%3C%2Fh1%3E");
+
+  test.assertEqual(dataURL.base64, false, "base64 is false for non base64 data uri")
+  test.assertEqual(dataURL.data, "<h1>Hello!</h1>", "data is properly decoded")
+  test.assertEqual(dataURL.mimeType, "text/html", "mimeType is set properly")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 1, "one parameters specified");
+  test.assertEqual(dataURL.parameters["charset"], "US-ASCII", "charset parsed");
+
+  test.assertEqual(dataURL.toString(), "data:text/html;charset=US-ASCII,%3Ch1%3EHello!%3C%2Fh1%3E");
+}
+
+exports.testDataURLparseBase64 = function (test) {
+  const { DataURL } = url;
+  const { decode } = require("./base64");
+
+  let text = "Awesome!";
+  let b64text = "QXdlc29tZSE=";
+  let dataURL = new DataURL("data:text/plain;base64," + b64text);
+
+  test.assertEqual(dataURL.base64, true, "base64 is true for base64 encoded data uri")
+  test.assertEqual(dataURL.data, text, "data is properly decoded")
+  test.assertEqual(dataURL.mimeType, "text/plain", "mimeType is set properly")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 1, "one parameters specified");
+  test.assertEqual(dataURL.parameters["base64"], "", "parameter set without value");
+
+  test.assertEqual(dataURL.toString(), "data:text/plain;base64," + encodeURIComponent(b64text));
 }

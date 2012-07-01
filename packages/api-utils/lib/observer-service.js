@@ -8,7 +8,7 @@ const { Cc, Ci } = require("chrome");
 const { when: unload } = require("./unload");
 const { ns } = require("./namespace");
 const { on, off, emit, once } = require("./system/events");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
 
 const subscribers = ns();
 const cache = [];
@@ -27,7 +27,7 @@ exports.topics = {
    * A topic indicating that the application is in a state usable
    * by add-ons.
    */
-  APPLICATION_READY: jetpackID + "_APPLICATION_READY"
+  APPLICATION_READY: id + "_APPLICATION_READY"
 };
 
 function Listener(callback, target) {

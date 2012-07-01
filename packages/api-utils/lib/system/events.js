@@ -66,9 +66,10 @@ const Observer = Class({
 
 const subscribers = ns();
 
-function on(type, listener, weak) {
-  // Unless last optional argument is `false` we use a weak reference.
-  weak = weak !== false;
+function on(type, listener, strong) {
+  // Unless last optional argument is `true` we use a weak reference to a
+  // listener.
+  let weak = !strong;
   // Take list of observers associated with given `listener` function.
   let observers = subscribers(listener);
   // If `observer` for the given `type` is not registered yet, then
@@ -90,7 +91,7 @@ function once(type, listener) {
   on(type, function cleanup() {
     off(type, listener);
     off(type, cleanup);
-  }, false);
+  }, true);
 }
 exports.once = once;
 

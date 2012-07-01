@@ -2,11 +2,42 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
 
 const { Loader } = require("test-harness/loader");
 const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
-const { jetpackID } = require("@packaging");
+const { id } = require("self");
+
+exports.testIterations = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs").prefs;
+
+  sp["test"] = true;
+  sp["test.test"] = true;
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assert("test" in sp);
+  test.assert(!sp.getPropertyDescriptor);
+  test.assert(Object.prototype.hasOwnProperty.call(sp, "test"));
+  test.assertEqual(["test", "test.test"].toString(), prefAry.sort().toString(), "for (x in y) part 1/2 works");
+  test.assertEqual(["test", "test.test"].toString(), Object.keys(sp).sort().toString(), "Object.keys works");
+
+  delete sp["test"];
+  delete sp["test.test"];
+  let prefAry = [];
+  for (var name in sp ) {
+    prefAry.push(name);
+  }
+  test.assertEqual([].toString(), prefAry.toString(), "for (x in y) part 2/2 works");
+
+  loader.unload();
+  test.done();
+}
 
 exports.testSetGetBool = function(test) {
   test.waitUntilDone();
@@ -112,7 +143,7 @@ exports.testBtnListener = function(test) {
     test.pass("Button press event was heard");
     test.done();
   });
-  notify((jetpackID + "-cmdPressed"), "", "test-btn-listen");
+  notify((id + "-cmdPressed"), "", "test-btn-listen");
 
   loader.unload();
 };
@@ -172,4 +203,13 @@ exports.testPrefUnloadListener = function(test) {
 
   // emit change
   sp.prefs["test-listen3"] = true;
+};
+
+// Bug 732919 - JSON.stringify() fails on simple-prefs.prefs
+exports.testPrefJSONStringification = function(test) {
+  var sp = require("simple-prefs").prefs;
+  test.assertEqual(
+      Object.keys(sp).join(),
+      Object.keys(JSON.parse(JSON.stringify(sp))).join(),
+      "JSON stringification should work.");
 };

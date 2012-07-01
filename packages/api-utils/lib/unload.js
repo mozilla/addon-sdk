@@ -6,9 +6,9 @@
 //
 // http://narwhaljs.org
 
-const { Cc, Ci } = require('chrome');
-const { unloadTopic } = require('@packaging');
-const { once } = require('./system/events');
+
+const { on, off } = require('./system/events');
+const unloadSubject = require('@loader/unload');
 
 const observers = [];
 const unloaders = [];
@@ -49,13 +49,7 @@ var ensure = exports.ensure = function ensure(obj, destructorName) {
   obj[destructorName] = unloadWrapper;
 };
 
-when(function(reason) {
-  unloaders.slice().forEach(function(unloadWrapper) {
-    unloadWrapper(reason);
-  });
-});
-
-once(unloadTopic, function unload({ data: reason }) {
+function unload(reason) {
   observers.forEach(function(observer) {
     try {
       observer(reason);
@@ -64,4 +58,22 @@ once(unloadTopic, function unload({ data: reason }) {
       console.exception(error);
     }
   });
+}
+
+when(function(reason) {
+  unloaders.slice().forEach(function(unloadWrapper) {
+    unloadWrapper(reason);
+  });
 });
+
+on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
+  // If this loader is unload then `subject.wrappedJSObject` will be
+  // `destructor`.
+  if (subject.wrappedJSObject === unloadSubject) {
+    off('sdk:loader:destroy', onunload);
+    unload(reason);
+  }
+// Note that we use strong reference to listener here to make sure it's not
+// GC-ed, which may happen otherwise since nothing keeps reference to `onunolad`
+// function.
+}, true);
