@@ -3,7 +3,12 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-// This XPCOM components allows to run a sdk addon as a xulrunner application
+/**
+ * This XPCOM component allows to run an sdk addon as a xulrunner application.
+ * This nsICommandLineHandler is instanciated on application startup
+ * and will allow us to catch command line arguments in order to make them
+ * available to the addon.
+ */
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;

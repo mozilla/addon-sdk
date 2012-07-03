@@ -158,9 +158,6 @@ function writePreferences(zip, jetpackID, prefsManifest) {
 function writeTemplate(zip, templatePath) {
   // Copy addon/application template to the xpi
   walkDir(templatePath).forEach(function (directory) {
-    // TODO: implement filtering
-    //filenames = list(filter_filenames(filenames, IGNORED_FILES))
-    //dirnames[:] = filter_dirnames(dirnames)
     directory.dirnames.forEach(function (name) {
       let relpath = joinPath(directory.path, name);
       zip.mkdir(makeZipPath(relpath));
@@ -199,36 +196,37 @@ function writePackages(zip, packages, limitTo, xpiPath) {
     // the harness will try to access it.
     zip.mkdir('resources/' + packageName);
     for (let sectionName in packages[packageName]) {
-      let abs_dirname = packages[packageName][sectionName]
-      let base_arcpath = ["resources", packageName, sectionName].join("/")
+      // Get the section absolute path on file system
+      let sectionAbsPath = packages[packageName][sectionName];
+      // And the section relative path in the zip file
+      let sectionZipPath = ["resources", packageName, sectionName].join("/");
       // Always write the top directory, even if it contains no files, since
       // the harness will try to access it.
-      zip.mkdir(base_arcpath);
-      // cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
-      walkDir(abs_dirname).forEach(function (directory) {
+      zip.mkdir(sectionZipPath);
+      // cp -r stuff from sectionAbsPath/ into ZIP/resources/RESOURCEBASE/
+      walkDir(sectionAbsPath).forEach(function (directory) {
         directory.filenames.forEach(function (filename) {
-          let abspath = joinPath(abs_dirname, directory.path, filename)
+          // Get current file absolute path on file system
+          let fileAbsPath = joinPath(sectionAbsPath, directory.path, filename);
           // Ignore xpi file
-          if (abspath == xpiPath)
+          if (fileAbsPath == xpiPath)
             return;
-          // strip unused files
-          if (limitTo && limitTo.indexOf(abspath) === -1)
+          // Strip unused files
+          if (limitTo && limitTo.indexOf(fileAbsPath) === -1)
             return;
 
-          let arcpath = [
-            "resources",
-            packageName,
-            sectionName];
+          // Now compute the file relative path in zip file
+          let fileZipPath = [sectionZipPath];
           // directory.path may be an empty string for files at root folder
           if (directory.path.length > 0) {
             let dirPath = makeZipPath(directory.path);
-            arcpath.push(dirPath);
+            fileZipPath.push(dirPath);
             // Ensure creating a zip entry for sub folders
-            zip.mkdir(arcpath.join("/"));
+            zip.mkdir(fileZipPath.join("/"));
           }
-          arcpath.push(filename);
+          fileZipPath.push(filename);
           // Always use `/` as separator in zip
-          zip.addFile(arcpath.join("/"), abspath);
+          zip.addFile(fileZipPath.join("/"), fileAbsPath);
         });
       });
     }
@@ -325,13 +323,12 @@ exports.build = function buildXPI(options) {
 
     writePreferences(zip, harnessOptions.jetpackID,
                      harnessOptions.preferences || null);
-    // We delete harnessOptions attributes in order to avoid writing them
-    // into xpi's manifest file.
-    delete harnessOptions.preferences;
 
     writeTemplate(zip, templatePath);
 
     writePackages(zip, harnessOptions.packages, limitTo, xpiPath);
+    // We delete harnessOptions attributes in order to avoid writing them
+    // into xpi's manifest file.
     delete harnessOptions.packages;
 
     writeLocales(zip, harnessOptions.locale);

@@ -80,7 +80,9 @@ exports.generateOptionsXul = generateOptionsXul;
 function isFloat(value) {
   return typeof(value) == "number" && value % 1 !== 0;
 }
-
+function isPrimitive(value) {
+  return ["boolean", "number", "string"].indexOf(typeof(value)) === -1;
+}
 /**
  * Based on preferences manifest written in package.json file of an addon,
  * returns the necessary prefs.js file content. This file is going to set
@@ -94,8 +96,7 @@ function generatePrefsJS(options, jetpackId) {
     if (!('value' in pref))
       continue;
 
-    if (["boolean", "number", "string"].indexOf(typeof(pref.value)) === -1
-        || isFloat(pref.value))
+    if (isPrimitive(pref.value) || isFloat(pref.value))
       throw new InvalidArgument("The '" + pref.name + "' pref has an " +
                                 "unsupported type '"+ typeof(pref.value) +"'." +
                                 " Supported types are: boolean, (non-float) " +
