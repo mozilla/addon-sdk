@@ -35,6 +35,14 @@ const COMMANDS = {
                     });
   },
   "build-xpi": function (options) {
+    // Plan for next cfx-js step "building manifest from JS":
+    // console.log("Root Path: " + options["root-path"]);
+    // console.log("SDK Path: " + options["sdk-path"]);
+    // 1) Read FS
+    // ... TODO ...
+    // 2) Build manifest
+    // ... TODO ...
+    // 3) Build xpi
     xpi.build(options);
   },
   "no-quit": function (options) {

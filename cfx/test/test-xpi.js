@@ -90,23 +90,23 @@ exports.testIt = function (test) {
     "install-rdf": installRDF,
     "harness-options": {
       "jetpackID": "foo@bar.com",
-      "icon": tmpFile.createFromString(iconData, "icon.png"),
-      "icon64": tmpFile.createFromString(icon64Data, "icon64.png"),
-      "packages": {
-        "api-utils": {
-          "test": section,
-          "lib": section
-        }
-      },
-      "locale": {
-        "en-US": {
-          "key": usTranslation
-        },
-        "en-reverse": {
-          "key": reverseTranslation
-        }
-      },
       "manifest": {}
+    },
+    "icon": tmpFile.createFromString(iconData, "icon.png"),
+    "icon64": tmpFile.createFromString(icon64Data, "icon64.png"),
+    "packages": {
+      "api-utils": {
+        "test": section,
+        "lib": section
+      }
+    },
+    "locale": {
+      "en-US": {
+        "key": usTranslation
+      },
+      "en-reverse": {
+        "key": reverseTranslation
+      }
     },
     "limit-to": null,
     "extra-harness-options": {

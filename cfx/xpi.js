@@ -106,19 +106,16 @@ function prettyPrintJSON(json) {
  * Write icon files into xpi
  * @param {ZipWriter} zip
  *    ZipWriter instance for the xpi file
- * @param {Object} harnessOptions
- *    Manifest dictionnary which contains icon absolute paths
+ * @param {String} icon
+ *    Optional absolute path to default addon icon
+ * @param {String} icon64
+ *    Optional absolute path to default addon icon with bigger size (64x64)
  */
-function writeIcons(zip, harnessOptions) {
-  if ('icon' in harnessOptions) {
-    zip.addFile("icon.png", harnessOptions.icon);
-    // Delete `icon` attribute in order to avoid writting in into manifest file
-    delete harnessOptions.icon;
-  }
-  if ('icon64' in harnessOptions) {
-    zip.addFile("icon64.png", harnessOptions.icon64);
-    delete harnessOptions.icon64;
-  }
+function writeIcons(zip, icon, icon64) {
+  if (icon)
+    zip.addFile("icon.png", icon);
+  if (icon64)
+    zip.addFile("icon64.png", icon64);
 }
 
 /**
@@ -295,9 +292,11 @@ exports.build = function buildXPI(options) {
       "Missing `templatePath` in cfxjs options");
   let templatePath = options["template-path"];
 
-  if (!("locale" in harnessOptions))
-    throw new InternalCfxError(
-      "Missing `locale` in cfxjs options `harness-options` attribute");
+  if (!("locale" in options))
+    throw new InternalCfxError("Missing `locale` in cfxjs options");
+
+  if (!("packages" in options))
+    throw new InternalCfxError("Missing `packages` in cfxjs options");
 
   if (!("install-rdf" in options))
     throw new InternalCfxError(
@@ -319,20 +318,16 @@ exports.build = function buildXPI(options) {
   try {
     zip.addData("install.rdf", installRdf);
 
-    writeIcons(zip, harnessOptions);
+    writeIcons(zip, options.icon, options.icon64);
 
     writePreferences(zip, harnessOptions.jetpackID,
                      harnessOptions.preferences || null);
 
     writeTemplate(zip, templatePath);
 
-    writePackages(zip, harnessOptions.packages, limitTo, xpiPath);
-    // We delete harnessOptions attributes in order to avoid writing them
-    // into xpi's manifest file.
-    delete harnessOptions.packages;
+    writePackages(zip, options.packages, limitTo, xpiPath);
 
-    writeLocales(zip, harnessOptions.locale);
-    delete harnessOptions.locale;
+    writeLocales(zip, options.locale);
 
     writeManifest(zip, harnessOptions, extraHarnessOptions);
   }

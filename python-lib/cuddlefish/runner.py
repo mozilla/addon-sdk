@@ -380,12 +380,11 @@ class XulrunnerAppRunner(mozrunner.Runner):
         return self.__real_binary
 
 
-def run_app(harness_root_dir, manifest_rdf, harness_options,
-            app_type, binary=None, adb=None, profiledir=None, verbose=False,
+def run_app(harness_root_dir, app_type, resultfile, xpi_path,
+            binary=None, adb=None, profiledir=None, verbose=False,
             enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
-            norun=None,
-            used_files=None, enable_mobile=False,
+            norun=None, enable_mobile=False,
             mobile_app_name=None):
     if binary:
         binary = os.path.expanduser(binary)
@@ -439,19 +438,6 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if args:
         cmdargs.extend(shlex.split(args))
 
-    # TODO: handle logs on remote device
-    if app_type != "fennec-on-device":
-        # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
-        # run"/"cfx test" on the same host. On unix it points at /tmp (which is
-        # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
-        # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
-        # gives us a unique filename that fixes both problems. We leave the
-        # (0-byte) file in place until the browser-side code starts writing to
-        # it, otherwise the symlink attack becomes possible again.
-        fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
-        os.close(fileno)
-        harness_options['resultFile'] = resultfile
-
     def maybe_remove_logfile():
         if os.path.exists(logfile):
             os.remove(logfile)
@@ -462,17 +448,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # 1. On Windows, it's the only way to print console output to stdout/err.
     # 2. It enables us to keep track of the last time output was emitted,
     #    so we can raise an exception if the test runner hangs.
-    if not logfile:
-        fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
-        os.close(fileno)
     logfile_tail = follow_file(logfile)
     atexit.register(maybe_remove_logfile)
 
     logfile = os.path.abspath(os.path.expanduser(logfile))
     maybe_remove_logfile()
-
-    if app_type != "fennec-on-device":
-        harness_options['logFile'] = logfile
 
     env = {}
     env.update(os.environ)
@@ -483,16 +463,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
-    # Create the addon XPI so mozrunner will copy it to the profile it creates.
+    # mozrunner will copy the xpi to the profile it creates.
     # We delete it below after getting mozrunner to create the profile.
-    from cuddlefish.xpi import build_xpi
-    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
-    build_xpi(template_root_dir=harness_root_dir,
-              manifest=manifest_rdf,
-              xpi_path=xpi_path,
-              harness_options=harness_options,
-              limit_to=used_files,
-              binary=binary)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()

@@ -204,12 +204,15 @@ class SmallXPI(unittest.TestCase):
                                                     used_deps,
                                                     include_tests=False)
         options = {'main': target_cfg.main}
-        options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
                       manifest=fake_manifest,
                       xpi_path=xpi_name,
+                      locale=build.get('locale'),
+                      packages=build.get('packages'),
+                      icon=build.get('icon'),
+                      icon64=build.get('icon64'),
                       harness_options=options,
                       limit_to=used_files)
         x = zipfile.ZipFile(xpi_name, "r")
@@ -300,12 +303,15 @@ class SmallXPI(unittest.TestCase):
                                                     used_deps,
                                                     include_tests=True)
         options = {'main': target_cfg.main}
-        options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
                       manifest=fake_manifest,
                       xpi_path=xpi_name,
+                      locale=build.get('locale'),
+                      packages=build.get('packages'),
+                      icon=build.get('icon'),
+                      icon64=build.get('icon64'),
                       harness_options=options,
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
@@ -343,12 +349,15 @@ class SmallXPI(unittest.TestCase):
                                                     used_deps,
                                                     include_tests=True)
         options = {'main': target_cfg.main}
-        options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
                       manifest=fake_manifest,
                       xpi_path=xpi_name,
+                      locale=build.get('locale'),
+                      packages=build.get('packages'),
+                      icon=build.get('icon'),
+                      icon64=build.get('icon64'),
                       harness_options=options,
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
@@ -418,10 +427,15 @@ def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files',
     configs = test_packaging.get_configs(pkg_name, dirname)
     options = {'main': configs.target_cfg.main,
                'jetpackID': buildJID(configs.target_cfg), }
-    options.update(configs.build)
+    if 'preferences' in configs.build:
+      options['preferences'] = configs.build['preferences']
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,
                   xpi_path=xpiname,
+                  locale=configs.build.get('locale'),
+                  packages=configs.build.get('packages'),
+                  icon=configs.build.get('icon'),
+                  icon64=configs.build.get('icon64'),
                   harness_options=options,
                   extra_harness_options=extra_harness_options)
 
