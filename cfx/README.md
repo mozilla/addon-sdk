@@ -83,43 +83,44 @@ add-on sdk `cfx` command line application.
     // Content of the `install.rdf` to write in the xpi
     "install-rdf": "<?xml version=\"1.0\" encoding=\"utf-8\"?><Description ..."
 
+    // Absolute path the the default icon for this addon
+    "icon": "/my-addon/icon.png"
+
+    // Same thing, but for a 64px version of it
+    "icon64": "/my-addon/icon64.png"
+
+    // A dictionnary of packages. Keys are packages names, values are another
+    // dictionnary with packages section folders. These folders are written
+    // into `resources` directory in the xpi
+    "packages": {
+      "api-utils": { // package name
+        "test": "/my-addon/tests/", // section name => absolute path to it
+        "lib": "/my-addon/"
+      }
+    }
+
+    // A dictionnary of available locales for this addon. Keys are language
+    // code and values are another dictionnary with all translated strings
+    "locale": {
+      "en-US": { // language code
+        "key": "translation" // key to translate => translated key
+      }
+    },
+
+    // Optional list of white-listed files to accept into the xpi
+    // Used to select which module will be copied
+    "limitTo": [
+      "/addon-sdk/addon-kit/lib/page-mod.js",
+      "/my-addon/main.js",
+      "..."
+    ],
+
     // Object containing set of various data necessary to build the xpi and
     // it's harness-options.json manifest file
     "harness-options": {
       // Addon id, "some-unique-string@jetpack", or, UUID
       // like "{79daaae6-5916-49ba-8d3c-f54df65f210b}"
       "jetpackID": "some-unique-string@jetpack"
-
-      // Absolute path the the default icon for this addon
-      "icon": "/my-addon/icon.png"
-
-      // Same thing, but for a 64px version of it
-      "icon64": "/my-addon/icon64.png"
-
-      // A dictionnary of packages. Keys are packages names, values are another
-      // dictionnary with packages section folders. These folders are written
-      // into `resources` directory in the xpi
-      "packages": {
-        "api-utils": { // package name
-          "test": "/my-addon/tests/", // section name => absolute path to it
-          "lib": "/my-addon/"
-        }
-      }
-      // A dictionnary of available locales for this addon. Keys are language
-      // code and values are another dictionnary with all translated strings
-      "locale": {
-        "en-US": { // language code
-          "key": "translation" // key to translate => translated key
-        }
-      },
-
-      // Optional list of white-listed files to accept into the xpi
-      // Used to select which module will be copied
-      "limitTo": [
-        "/addon-sdk/addon-kit/lib/page-mod.js",
-        "/my-addon/main.js",
-        "..."
-      ],
 
       // Optional dictionnary of preferences fields supported by this addon
       "preferences": {
