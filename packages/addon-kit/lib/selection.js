@@ -18,7 +18,7 @@ let { Ci, Cc } = require("chrome"),
     { Unknown } = require("api-utils/xpcom"),
     { Class, obscure } = require("api-utils/heritage"),
     { EventTarget } = require("api-utils/event/target"),
-    { observers = require("api-utils/observer-service"),
+    observers = require("api-utils/observer-service"),
     { ns } = require("api-utils/namespace");
 
 // When a document is not visible anymore the selection object is detached, and
