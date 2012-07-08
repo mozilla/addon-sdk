@@ -808,3 +808,42 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
   worker.postMessage("http://localhost:" + serverPort + "/");
 
 });
+
+// Bug 769006: Ensure that MutationObserver works fine with proxies
+let html = '<a href="foo">link</a>';
+exports.testMutationObvserver = createProxyTest(html, function (helper) {
+
+  helper.createWorker(
+    'new ' + function ContentScriptScope() {
+      if (typeof MutationObserver == "undefined") {
+        assert(true, "No MutationObserver for this FF version");
+        done();
+        return;
+      }
+      let link = document.getElementsByTagName("a")[0];
+
+      // Register a Mutation observer
+      let obs = new MutationObserver(function(mutations){
+        // Ensure that mutation data are valid
+        assert(mutations.length == 1, "only one attribute mutation");
+        let mutation = mutations[0];
+        assert(mutation.type == "attributes", "check `type`");
+        assert(mutation.target == link, "check `target`");
+        assert(mutation.attributeName == "href", "check `attributeName`");
+        assert(mutation.oldValue == "foo", "check `oldValue`");
+        obs.disconnect();
+        done();
+      });
+      obs.observe(document, {
+        subtree: true,
+        attributes: true,
+        attributeOldValue: true,
+        attributeFilter: ["href"]
+      });
+
+      // Modify the DOM
+      link.setAttribute("href", "bar");
+    }
+  );
+
+});
