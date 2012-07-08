@@ -21,43 +21,20 @@ function startup(data, reason) {
   try {
     Components.utils.import("resource://gre/modules/ctypes.jsm");
     let libdvm = ctypes.open("libdvm.so");
-    let dvmStdioConverterStartup = libdvm.declare("dvmStdioConverterStartup", ctypes.default_abi, ctypes.void_t);
+    let dvmStdioConverterStartup;
+    // Starting with Android ICS, dalvik uses C++.
+    // So that the symbol isn't a simple C one
+    try {
+      dvmStdioConverterStartup = libdvm.declare("_Z24dvmStdioConverterStartupv", ctypes.default_abi, ctypes.bool);
+    }
+    catch(e) {
+      // Otherwise, before ICS, it was a pure C library
+      dvmStdioConverterStartup = libdvm.declare("dvmStdioConverterStartup", ctypes.default_abi, ctypes.void_t);
+    }
     dvmStdioConverterStartup();
     log("MU: console redirected to adb logcat.\n");
   } catch(e) {
     Cu.reportError("MU: unable to execute jsctype hack: "+e);
-  }
-
-  // This code allow to kill firefox from adb
-  try {
-    let Watcher = {
-      window: null,
-      onOpenWindow: function(window) {
-        window = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
-        window.addEventListener("keydown", this, true);
-      },
-      onCloseWindow: function (window) {},
-      onWindowTitleChange: function () {},
-      handleEvent: function(event) {
-        // This event is dispatched via: abd shell input keycode 19
-        // KEYCODE_DPAD_UP = 19, UP can't be fired by virtual keyboard,
-        // so it should be safe to take this event as a kill signal.
-        // `adb shell input` and `JS keyCode` values doesn't map to same values
-        // In JS, KeyUp maps to DOM_VK_UP = 38:
-        // https://developer.mozilla.org/en/DOM/KeyboardEvent
-        if (event.keyCode == 38 && event.which == 38) {
-          Cu.reportError("Mobile killer triggered!");
-          let appStartup = Cc['@mozilla.org/toolkit/app-startup;1'].
-            getService(Ci.nsIAppStartup);
-          appStartup.quit(Ci.nsIAppStartup.eForceQuit);
-        }
-      }
-    };
-    Services.wm.addListener(Watcher);
-    log("MU: key listener to close firefox set.\n");
-  }
-  catch(e) {
-    log("MU: Unable to register window watcher: " + e + "\n");
   }
 
   try {
