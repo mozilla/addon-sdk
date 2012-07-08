@@ -41,7 +41,7 @@ The example below shows how to use Request to get the most recent public tweet.
         console.log("User: " + tweet.user.screen_name);
         console.log("Tweet: " + tweet.text);
       }
-    });
+    }).get();
 
     // Be a good consumer and check for rate limiting before doing more.
     Request({
