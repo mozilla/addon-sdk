@@ -11,6 +11,7 @@ const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
 const globals = require('../globals!');
 const options = require('@packaging');
+const loadReason = options.loadReason; // Will be Merge conflict see: Bug 771825
 
 const NAME2TOPIC = {
   'Firefox': 'sessionstore-windows-restored',
@@ -91,7 +92,7 @@ function startup(reason, options) {
     if (typeof(program.main) === 'function') {
 
       program.main({
-        loadReason: options.loadReason,
+        loadReason: loadReason,       // Will be Merge conflict see: Bug 771825
         staticArgs: staticArgs 
       }, { 
         print: function print(_) { dump(_ + '\n') },
