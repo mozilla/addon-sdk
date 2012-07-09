@@ -179,7 +179,7 @@ function:
     register(factoryToRegister);
 
 All factories created using `Factory.new` also get unregistered automatically
-when the add-on is unloaded. This also can be disabled by setting the
+when the add-on is unloaded. This can also be disabled, by setting the
 `unregister` option to `false`.
 
     var factoryToUnregister = Service.new({
