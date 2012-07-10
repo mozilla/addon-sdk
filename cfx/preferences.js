@@ -35,25 +35,27 @@ function validate(options) {
 }
 exports.validate = validate;
 
-function createXULDocument(content) {
-  let str = "<?xml version=\"1.0\"?>" + content;
-  return DOMParser.parseFromString(str, "application/xml");
-}
-
 // Takes preferences`'s package.json attribute and returns the options.xul
 // file content needed to build preference panel opened from about:addons
 function generateOptionsXul(options, jetpackId) {
-  let xulns = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-  let content = "<vbox xmlns=\"" + xulns + "\"></vbox>";
-  let doc = createXULDocument(content);
-  let root = doc.documentElement;
+  // Unfortunately, parseFromString/serializeToString are throwing various
+  // exception when using XUL documents. So that we can only serialize
+  // <setting> nodes as pure XML nodes.
+  let xmlString =
+    "<?xml version=\"1.0\" ?>\n" +
+    "<vbox xmlns=\"http://www.mozilla.org/keymaster/gatekeeper/" +
+                  "there.is.only.xul\">\n";
+
+  // Create a document, just to be able to create <setting> DOM nodes
+  let doc = DOMParser.parseFromString("<?xml version=\"1.0\" ?><root />",
+                                      "application/xml");
 
   for (let key in options) {
     let pref = options[key];
     let setting = doc.createElement("setting");
     setting.setAttribute("pref", "extensions." + jetpackId + "." + pref.name);
-    setting.setAttribute("type", pref.type);
     setting.setAttribute("title", pref.title);
+    setting.setAttribute("type", pref.type);
 
     if ("description" in pref)
       setting.appendChild(doc.createTextNode(pref.description));
@@ -70,10 +72,13 @@ function generateOptionsXul(options, jetpackId) {
       setting.setAttribute("on", pref.on);
       setting.setAttribute("off", pref.off);
     }
-    root.appendChild(setting);
+
+    xmlString += "  " + DOMSerializer.serializeToString(setting) + "\n";
   }
 
-  return DOMSerializer.serializeToString(root);
+  xmlString += "</vbox>\n";
+
+  return xmlString;
 }
 exports.generateOptionsXul = generateOptionsXul;
 
