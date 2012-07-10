@@ -97,9 +97,21 @@ function makeZipPath(path) {
   return path.split(FILE_SEPARATOR).join("/");
 }
 
-// Return a pretty printed JSON string with 2 spaces indentation
+// Return a pretty printed JSON string with one space indentation,
+// and try to sort object keys (in order to match python implementation)
 function prettyPrintJSON(json) {
-  return JSON.stringify(json, null, 2);
+  // We rely on the fact that internal implementation of gecko
+  // serialize JSON attributes in order in which they were added:
+  function sort(key, obj) {
+    if (typeof obj !== "object" || obj == null || Array.isArray(obj))
+      return obj;
+    let sortedJSON = {};
+    Object.keys(obj).sort().forEach(function (key) {
+      sortedJSON[key] = obj[key];
+    });
+    return sortedJSON;
+  }
+  return JSON.stringify(json, sort, 1);
 }
 
 /**
