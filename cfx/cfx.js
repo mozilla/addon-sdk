@@ -10,7 +10,7 @@ const system = require("api-utils/system");
 const xpi = require("./xpi");
 
 function getOptions() {
-  let optionsFile = system.env["CFX_OPTIONS_FILE"];
+  let optionsFile = system.env.CFX_OPTIONS_FILE;
   if (!optionsFile) {
     throw new Error("Unable to locate options file, " +
                     "environment variable is not set.");
