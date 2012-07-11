@@ -22,7 +22,15 @@ information, see the [MDC documentation][].
 
 <api name="name">
 @property {string}
-  The host application name.  For example, `"Firefox"`.
+  The host application name.  The possible values here are:
+  
+  * `"Firefox"`
+  * `"Fennec"`
+  * `"Mozilla"`
+  * `"SeaMonkey"`
+  * `"Sunbird"`
+  * `"Thunderbird"`
+
 </api>
 
 <api name="version">
