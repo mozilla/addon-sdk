@@ -19,7 +19,6 @@ We'd like to thank our many Jetpack project contributors!  They include:
 * [Shane Caraveo](https://github.com/mixedpuppy)
 * [Matěj Cepl](https://github.com/mcepl)
 * Hernán Rodriguez Colmeiro
-* [David Creswick](https://github.com/dcrewi)
 * dexter
 * [Matteo Ferretti (ZER0)](https://github.com/ZER0)
 * fuzzykiller

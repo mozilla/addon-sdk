@@ -2,13 +2,13 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-The `xpcom` module provides a low level API for implementing, registering, and
-unregistering various XPCOM interfaces.
+Module `xpcom` provides low level API for implementing and registering /
+unregistering various XCOM interfaces.
 
 ## Implementing XPCOM interfaces
 
-This module exports the `Unknown` exemplar object that may be extended to
-implement specific XPCOM interface(s). For example,
+Module exports `Unknown` exemplar object, that may be extended to implement
+specific XCOM interface(s). For example
 [nsIObserver](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIObserver)
  may be implemented as follows:
 
@@ -46,10 +46,10 @@ implement specific XPCOM interface(s). For example,
     // register observer
     observer.register();
 
-## Implementing XPCOM factories
+## Implementing XCOM factories
 
-The module exports the `Factory` exemplar object that may be used to create
-objects implementing the
+Module exports `Factory` exemplar, object that may be used to create objects
+implementing
 [nsIFactory](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIFactory)
 interface:
 
@@ -75,20 +75,20 @@ interface:
     let requestFactory = Factory.new({ Component: Request });
 
 Factories registered into a runtime may be accessed from the rest of the
-application via the standard XPCOM API using the factory's auto generated `id`
-(optionally you could specify the `id` by passing it as an option):
+application via standard XPCOM API using factory's auto generated `id`
+(optionally you could specify specific `id` by passing it as an option):
 
     let request = Components.classesByID[requestFactory.id].
       createInstance(Ci.nsIRequest);
     request.isPending()     // => false
 
-Be aware that the traditional XPCOM API will always return a wrapped JS object
-exposing only the properties defined by a given interface (`nsIRequest` in our
-case):
+Be aware that traditional XPCOM API will always return a wrapped JS objects
+exposing only properties defined by a given interface (`nsIRequest`) in our
+case:
 
     request.initiate()      // TypeError: request.initiate is not a function
 
-You can still expose the unwrapped JS object, by a special `wrappedJSObject`
+You still can expose unwrapped JS object, by a special `wrappedJSObject`
 property of the component:
 
     let Request = Class({
@@ -118,20 +118,20 @@ property of the component:
 
 Optionally `Factory.new` may be passed globally unique string in a format of:
 `'@domain.com/unique/identifier;1'` as a `contract` option in order to
-associate the factory with the ID:
+associate it with it:
 
     let namedFactory = Factory.new({
       contract: '@examples.com/request/factory;1',
       component: Request
     });
 
-Such factories, when registered, can be accessed from the rest of the
-application using human readable `contract` strings:
+Such factories when registered can be accessed form rest of the application by
+human readable `contract` strings:
 
     let request = Components.classes['@examples.com/request/factory;1'].
                    createInstance(Components.interfaces.nsIRequest);
 
-In addition, factories associated with a given `contract` may be replaced at
+In addition factories associated with a given `contract` may be replaced at
 runtime:
 
     let renewedFactory = Factory.new({
@@ -139,22 +139,22 @@ runtime:
       Component: Class({ extends: Unknown, /* Implementation */ })
     })
 
-Unfortunately the commonly used `Components.classes` won't get updated at
-runtime but there is an alternative, more verbose, way to access the last
-registered factory for a given `contract`:
+Unfortunately commonly used `Components.classes` won't get updated at runtime
+but there is an alternative, more verbose way to access last registered factory
+for a given `contract`:
 
     let id = Components.manager.QueryInterface(Ci.nsIComponentRegistrar).
       contractIDToCID('@examples.com/request/factory;1');
     Components.classesByID[requestFactory.id].
       createInstance(Ci.nsISupports);
 
-This module also exports the `factoryByContract` function to simplify this:
+Module also exports `factoryByContract` function to simplify this:
 
     factoryByContract('@examples.com/request/factory;1').
       createInstance(Ci.nsISupports);
 
-It's also recommended that you construct factories with an optional
-`description` property, providing a human readable description for it:
+It's also recommended to construct factories with an optional `description`
+property, providing human readable description of it:
 
     let factory = Factory.new({
       contract: '@examples.com/request/factory;1',
@@ -165,37 +165,38 @@ It's also recommended that you construct factories with an optional
 ## Registering / Unregistering factories
 
 All factories created using `Factory.new` get automatically registered into
-the runtime unless you set the `register` option to `false`:
+runtime unless explicitly specified otherwise by setting `register` option to
+`false`:
 
     var factoryToRegister = Factory.new({
       register: false,
       Component: Class({ extends: Unknown, /* Implementation */ })
     });
 
-Such factories still may be registered manually using the exported `register`
+Such factories still may be registered manually using exported `register`
 function:
 
     const { register } = require('api-utils/xpcom');
     register(factoryToRegister);
 
 All factories created using `Factory.new` also get unregistered automatically
-when the add-on is unloaded. This also can be disabled by setting the
-`unregister` option to `false`.
+when add-on is unloaded. This also can be disabled by setting `unregister`
+option to `false`.
 
     var factoryToUnregister = Service.new({
       unregister: false,
       Component: Class({ extends: Unknown, /* Implementation */ })
     });
 
-All registered services may be unregistered at any time using the exported
+All registered services may be unregistered at any time using exported
 `unregister` function:
 
     unregister(factoryToUnregister);
 
-## Implementing XPCOM services
+## Implementing XCOM services
 
-This module exports the `Service` exemplar object, that has the same API as
-`Factory` and can be used to register services:
+Module exports `Service` exemplar object, that has exact same API as `Factory`
+and can be used to register services:
 
     const { Service } = require('api-utils/xpcom');
     let service = Service.new({
@@ -209,13 +210,13 @@ This module exports the `Service` exemplar object, that has the same API as
     });
 
 Registered services can be accessed through the rest of the application via
-the standard XPCOM API:
+standard XPCOM API:
 
     let s = Components.classes['@examples/demo/service;1'].
       getService(Components.interfaces.nsISupports);
 
 In contrast to factories, services do not create instances of enclosed
-components, they expose the component itself. Also please note that the
-idiomatic way to work with a service is via its `getService` method:
+components, they expose component itself. Also please note that idiomatic way
+to work with a service is via `getService` method:
 
     s.wrappedJSObject === service.component // => true
