@@ -372,7 +372,7 @@ Creates a PageMod.
     The texts of content scripts to load.  Content scripts specified by this
     option are loaded *after* those specified by the `contentScriptFile` option.
     Optional.
-  @prop [contentScriptWhen="end"] {string}
+  @prop [contentScriptWhen] {string}
     When to load the content scripts. This may take one of the following
     values:
 
