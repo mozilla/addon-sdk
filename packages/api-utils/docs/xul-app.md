@@ -31,6 +31,8 @@ information, see the [MDC documentation][].
   * `"Sunbird"`
   * `"Thunderbird"`
 
+  "Firefox"` and `"Fennec"` are the most commonly used values.
+
 </api>
 
 <api name="version">
