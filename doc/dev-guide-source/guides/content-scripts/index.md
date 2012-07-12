@@ -78,9 +78,11 @@ The next few chapters explain content scripts in detail:
 * [Loading Content Scripts](dev-guide/guides/content-scripts/loading.html):
 how to attach content scripts to web pages, and how to control the point at
 which they are executed
-* [Content Script Access](dev-guide/guides/content-scripts/access.html):
-detail about the access content scripts get to the DOM, to other content scripts,
-and to scripts loaded by the page itself
+* [Accessing the DOM](dev-guide/guides/content-scripts/accessing-the-dom.html):
+detail about the access content scripts get to the DOM
+* [Communicating With Other Scripts](dev-guide/guides/content-scripts/communicating-with-other-scripts.html):
+detail about how content scripts can communicate with "main.js", with other
+content scripts, and with scripts loaded by the web page itself
 * [Communicating Using <code>port</code>](dev-guide/guides/content-scripts/using-port.html):
 how to communicate between your add-on and its content scripts using the
 <code>port</code> object
