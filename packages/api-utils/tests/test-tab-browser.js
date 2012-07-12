@@ -333,13 +333,7 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
 
-    let tab1 = null;
-    tm1.open({
-      url: "data:text/html;charset=utf-8,<title>window1,tab1</title>",
-      onOpen: function(tab) tab1 = tab,
-    });
-    tm1.open("data:text/html;charset=utf-8,<title>window1,tab2</title>");
-
+    // First register listeners to check if a tab is activated
     tm1.onActivate = function onActivate() {
       tm1.onActivate.remove(onActivate);
       timer.setTimeout(function() {
@@ -348,17 +342,25 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
       }, 1000);
     }
 
-    tm2.open("data:text/html;charset=utf-8,<title>window2,tab1</title>");
-    tm2.open({
-      url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
-      onOpen: function(tab4) {
-        test.assertEqual(tm1.activeTab.title, "window1,tab2", "Correct active tab on window 1");
-        test.assertEqual(tm2.activeTab.title, "window2,tab2", "Correct active tab on window 2");
+    // Then try to activate some tabs
+    tm1.open({
+      url: "data:text/html;charset=utf-8,<title>window1,tab1</title>",
+      onOpen: function(tab1) {
+        tm2.open("data:text/html;charset=utf-8,<title>window2,tab1</title>");
+        tm2.open({
+          url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
+          onOpen: function(tab4) {
+            test.assertEqual(tm1.activeTab.title, "window1,tab2", "Correct active tab on window 1");
+            test.assertEqual(tm2.activeTab.title, "window2,tab2", "Correct active tab on window 2");
 
-        tm1.activeTab = tab1;
-        tm1.activeTab = tab4; // Setting activeTab from another window should have no effect
+            tm1.activeTab = tab1;
+            tm1.activeTab = tab4; // Setting activeTab from another window should have no effect
+          }
+        });
       }
     });
+    tm1.open("data:text/html;charset=utf-8,<title>window1,tab2</title>");
+
   });
 }
 
