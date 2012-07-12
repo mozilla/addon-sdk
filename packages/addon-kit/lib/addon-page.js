@@ -4,7 +4,8 @@
 
 'use strict';
 
-const { WindowTracker, isBrowser } = require('api-utils/window-utils');
+const { WindowTracker } = require('api-utils/window-utils');
+const { isBrowser } = require('api-utils/window/utils');
 const { add, remove } = require('api-utils/array');
 const { getTabs, closeTab, getURI } = require('api-utils/tabs/utils');
 const { data } = require('self');

@@ -19,8 +19,13 @@ let Ci = Components.interfaces;
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  * This key should only be used by proxy unit test.
  */
- const UNWRAP_ACCESS_KEY = {};
+const UNWRAP_ACCESS_KEY = {};
 
+/**
+ * WeakMap which maps xraywrappers to already created JS proxies.
+ * Allows to build one single proxy per xraywrapper without leaking.
+ */
+const proxies = new WeakMap();
 
  /**
  * Returns a closure that wraps arguments before calling the given function,
@@ -331,18 +336,13 @@ function getProxyForObject(obj) {
   if ("__isWrappedProxy" in obj) {
     return obj;
   }
-  // Check if there is a proxy cached on this wrapper,
-  // but take care of prototype ___proxy attribute inheritance!
-  if (obj && obj.___proxy && obj.___proxy.valueOf(UNWRAP_ACCESS_KEY) === obj) {
-    return obj.___proxy;
-  }
-  
+  // Check if there is an already built proxy for this wrapper
+  if (proxies.has(obj))
+    return proxies.get(obj);
+
   let proxy = Proxy.create(handlerMaker(obj));
-  
-  Object.defineProperty(obj, "___proxy", {value : proxy,
-                                          writable : false,
-                                          enumerable : false,
-                                          configurable : false});
+  proxies.set(obj, proxy);
+
   return proxy;
 }
 
@@ -357,16 +357,12 @@ function getProxyForFunction(fun, callTrap) {
   }
   if ("__isWrappedProxy" in fun)
     return obj;
-  if ("___proxy" in fun)
-    return fun.___proxy;
+  if (proxies.has(fun))
+    return proxies.get(fun);
   
   let proxy = Proxy.createFunction(handlerMaker(fun), callTrap);
-  
-  Object.defineProperty(fun, "___proxy", {value : proxy,
-                                          writable : false,
-                                          enumerable : false,
-                                          configurable : false});
-  
+  proxies.set(fun, proxy);
+
   return proxy;
 }
 
@@ -546,7 +542,7 @@ const xRayWrappersMissFixes = [
   // Trap access to form["node name"]
   // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
   function (obj, name) {
-    if (typeof obj == "object" && obj.tagName == "FORM") {
+    if (typeof obj == "object" && "tagName" in obj && obj.tagName == "FORM") {
       let match = obj.wrappedJSObject[name];
       let nodes = obj.ownerDocument.getElementsByName(name);
       for (let i = 0, l = nodes.length; i < l; i++) {
@@ -664,6 +660,33 @@ const xRayWrappersMethodsFixes = {
     };
 
     return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+
+  // Bug 769006: nsIDOMMutationObserver.observe fails with proxy as options
+  // attributes
+  observe: function observe(obj) {
+    // Ensure that we are on a DOMMutation object
+    try {
+      // nsIDOMMutationObserver starts with FF14
+      if ("nsIDOMMutationObserver" in Ci)
+        obj.QueryInterface(Ci.nsIDOMMutationObserver);
+      else
+        return null;
+    }
+    catch(e) {
+      return null;
+    }
+    return function nsIDOMMutationObserverObserveFix(target, options) {
+      // Gets native/unwrapped this
+      let self = this && typeof this.valueOf == "function" ?
+                 this.valueOf(UNWRAP_ACCESS_KEY) : this;
+      // Unwrap the xraywrapper target out of JS proxy
+      let targetXray = unwrap(target);
+      // But do not wrap `options` through ContentScriptObjectWrapper
+      let result = wrap(self.observe(targetXray, options));
+      // Finally wrap result into JS proxies
+      return wrap(result);
+    };
   }
 };
 
@@ -696,7 +719,6 @@ function handlerMaker(obj) {
     
     // derived traps
     has: function(name) {
-      if (name == "___proxy") return false;
       if (isEventName(name)) {
         // XrayWrappers throw exception when we try to access expando attributes
         // even on "name in wrapper". So avoid doing it!
@@ -709,9 +731,11 @@ function handlerMaker(obj) {
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      if (name == "___proxy")
-        return undefined;
-      
+      // JS proxies are only meant to fix xraywrappers bugs,
+      // they are not usefull for unwrapped value.
+      if (name == "wrappedJSObject")
+        return obj.wrappedJSObject;
+
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
       if (name == "toString") {

@@ -69,6 +69,7 @@ exports['test close on unload'] = function(assert) {
                    "unload event listener removed on module unload");
 
   timesClosed = 0;
+  loader = Loader(module);
   loader.require("window-utils").closeOnUnload(fakeWindow);
   assert.equal(timesClosed, 0,
                    "window not closed when registered.");

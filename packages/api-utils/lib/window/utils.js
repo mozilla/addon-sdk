@@ -134,3 +134,9 @@ function isDocumentLoaded(window) {
   return window.document.readyState == "complete";
 }
 exports.isDocumentLoaded = isDocumentLoaded;
+
+function isBrowser(window) {
+  return window.document.documentElement.getAttribute("windowtype") ===
+         "navigator:browser";
+};
+exports.isBrowser = isBrowser;
