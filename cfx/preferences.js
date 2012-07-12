@@ -30,7 +30,7 @@ function validate(options) {
     if (pref.type == "control" && !("label" in pref))
       throw new InvalidArgument("The 'control' inline pref type requires a 'label'");
 
-    // TODO: Check that pref["type"] matches default value type
+    // TODO: Bug 772126: Check that pref["type"] matches default value type
   }
 }
 exports.validate = validate;
@@ -38,8 +38,8 @@ exports.validate = validate;
 // Takes preferences`'s package.json attribute and returns the options.xul
 // file content needed to build preference panel opened from about:addons
 function generateOptionsXul(options, jetpackId) {
-  // Unfortunately, parseFromString/serializeToString are throwing various
-  // exception when using XUL documents. So that we can only serialize
+  // Bug 773259: Unfortunately, parseFromString/serializeToString are throwing
+  // various exceptions when using XUL documents. So that we can only serialize
   // <setting> nodes as pure XML nodes.
   let xmlString =
     "<?xml version=\"1.0\" ?>\n" +
