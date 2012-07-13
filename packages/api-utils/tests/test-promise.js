@@ -208,19 +208,6 @@ exports['test resolve'] = function(assert, done) {
   })
 }
 
-exports['test resolve with prototype'] = function(assert, done) {
-  var seventy = resolve(70, {
-    subtract: function subtract(y) {
-      return this.then(function(x) { return x - y })
-    }
-  })
-
-  seventy.subtract(17).then(function(actual) {
-    assert.equal(actual, 70 - 17, 'resolves to expected')
-    done()
-  })
-}
-
 exports['test promised with normal args'] = function(assert, done) {
   var sum = promised(function(x, y) { return x + y })
 
@@ -240,25 +227,6 @@ exports['test promised with promise args'] = function(assert, done) {
   })
 
   deferred.resolve(24)
-}
-
-exports['test promised with prototype'] = function(assert, done) {
-  var deferred = defer()
-  var numeric = {}
-  numeric.subtract = promised(function(y) { return this - y }, numeric)
-
-  var sum = promised(function(x, y) { return x + y }, numeric)
-
-  sum(7, 70).
-    subtract(14).
-    subtract(deferred.promise).
-    subtract(5).
-    then(function(actual) {
-      assert.equal(actual, 7 + 70 - 14 - 23 - 5, 'resolved as expected')
-      done()
-    })
-
-  deferred.resolve(23)
 }
 
 exports['test promised error handleing'] = function(assert, done) {
