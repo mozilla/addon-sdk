@@ -1,43 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Drew Willcoxon <adw@mozilla.com> (Original Author)
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *   Matteo Ferretti <zer0@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -54,14 +19,16 @@ if (!require("api-utils/xul-app").is("Firefox")) {
 const apiUtils = require("api-utils/api-utils");
 const collection = require("api-utils/collection");
 const { Worker } = require("api-utils/content");
-const url = require("api-utils/url");
+const { URL } = require("api-utils/url");
 const { MatchPattern } = require("api-utils/match-pattern");
 const { EventEmitterTrait: EventEmitter } = require("api-utils/events");
 const observerServ = require("api-utils/observer-service");
 const jpSelf = require("self");
-const winUtils = require("api-utils/window-utils");
+const { WindowTracker } = require("api-utils/window-utils");
+const { getInnerId, isBrowser } = require("api-utils/window/utils");
 const { Trait } = require("api-utils/light-traits");
 const { Cortex } = require("api-utils/cortex");
+const timer = require("timers");
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -125,6 +92,10 @@ const PRIVATE_PROPS_KEY = {
 // number will be 0, when the second is created it will be 1, and so on.
 let nextItemID = 0;
 
+// The number of items that haven't finished initializing yet.  See
+// AIT__finishActiveItemInit().
+let numItemsWithUnfinishedInit = 0;
+
 exports.Item = Item;
 exports.Menu = Menu;
 exports.Separator = Separator;
@@ -174,7 +145,7 @@ const ItemBaseTrait = Trait({
       return;
     if (this.parentMenu)
       this.parentMenu.removeItem(this._public);
-    else if (!(this instanceof Separator))
+    else if (!(this instanceof Separator) && this._hasFinishedInit)
       browserManager.removeTopLevelItem(this._public);
     browserManager.unregisterItem(this._public);
     this._wasDestroyed = true;
@@ -248,6 +219,24 @@ const ActiveItemTrait = Trait.compose(ItemBaseTrait, EventEmitter, Trait({
       if (self._workerReg && args.some(function (a) a instanceof URLContext))
         self._workerReg.createNeededWorkers();
     };
+  },
+
+  // Workers are only created for top-level menu items.  When a top-level item
+  // is later added to a Menu, its workers are destroyed.  Well, all items start
+  // out as top-level because there is, unfortunately, no contextMenu.add().  So
+  // when an item is created and immediately added to a Menu, workers for it are
+  // needlessly created and destroyed.  The point of this timeout is to avoid
+  // that.  Items that are created and added to Menus in the same turn of the
+  // event loop won't have workers created for them.
+  _finishActiveItemInit: function AIT__finishActiveItemInit() {
+    numItemsWithUnfinishedInit++;
+    const self = this;
+    timer.setTimeout(function AIT__finishActiveItemInitTimeout() {
+      if (!self.parentMenu && !self._wasDestroyed)
+        browserManager.addTopLevelItem(self._public);
+      self._hasFinishedInit = true;
+      numItemsWithUnfinishedInit--;
+    }, 0);
   },
 
   get label() {
@@ -328,17 +317,25 @@ function Item(options) {
 
   item._public = Cortex(item);
   browserManager.registerItem(item._public);
-  browserManager.addTopLevelItem(item._public);
+  item._finishActiveItemInit();
 
   return item._public;
 }
 
 // Menu is composed of this trait.
-const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
+const MenuTrait = Trait.compose(
+  ActiveItemTrait.resolve({ destroy: "_destroyThisItem" }),
+  Trait({
 
   _initMenu: function MT__initMenu(opts, optRules, optsToNotSet) {
     this._items = [];
     this._initActiveItem(opts, optRules, optsToNotSet);
+  },
+
+  destroy: function MT_destroy() {
+    while (this.items.length)
+      this.items[0].destroy();
+    this._destroyThisItem();
   },
 
   get items() {
@@ -347,22 +344,23 @@ const MenuTrait = Trait.compose(ActiveItemTrait, Trait({
 
   set items(val) {
     let newItems = validateOpt(val, this._optRules.items);
-    while (this._items.length)
-      this.removeItem(this._items[0]);
+    while (this.items.length)
+      this.items[0].destroy();
     newItems.forEach(function (i) this.addItem(i), this);
     return newItems;
   },
 
   addItem: function MT_addItem(item) {
     // First, remove the item from its current parent.
+    let privates = privateItem(item);
     if (item.parentMenu)
       item.parentMenu.removeItem(item);
-    else if (!(item instanceof Separator))
+    else if (!(item instanceof Separator) && privates._hasFinishedInit)
       browserManager.removeTopLevelItem(item);
 
     // Now add the item to this menu.
     this._items.push(item);
-    privateItem(item)._parentMenu = this._public;
+    privates._parentMenu = this._public;
     browserManager.addItemToMenu(item, this._public);
   },
 
@@ -405,8 +403,8 @@ function Menu(options) {
 
   menu._public = Cortex(menu);
   browserManager.registerItem(menu._public);
-  browserManager.addTopLevelItem(menu._public);
   menu.items = options.items;
+  menu._finishActiveItemInit();
 
   return menu._public;
 }
@@ -418,6 +416,7 @@ function Separator() {
 
   sep._public = Cortex(sep);
   browserManager.registerItem(sep._public);
+  sep._hasFinishedInit = true;
   return sep._public;
 }
 
@@ -534,8 +533,7 @@ exports.URLContext = apiUtils.publicConstructor(URLContext);
 
 // Returns a version of opt validated against the given rule.
 function validateOpt(opt, rule) {
-  let { opt } = apiUtils.validateOptions({ opt: opt }, { opt: rule });
-  return opt;
+  return apiUtils.validateOptions({ opt: opt }, { opt: rule }).opt;
 }
 
 // Returns rules for apiUtils.validateOptions() common to Item and Menu.
@@ -577,7 +575,8 @@ function optionsRules() {
         let arr = apiUtils.getTypeOf(v) === "array" ? v : [v];
         try {
           return arr.every(function (s) {
-            return apiUtils.getTypeOf(s) === "string" && url.toFilename(s);
+            return apiUtils.getTypeOf(s) === "string" &&
+                   URL(s).scheme === 'resource';
           });
         }
         catch (err) {}
@@ -640,7 +639,7 @@ const ContextMenuWorker = Worker.compose({
 
   // Returns true if any context listeners are defined in the worker's port.
   anyContextListeners: function CMW_anyContextListeners() {
-    return this._contentWorker._listeners("context").length > 0;
+    return this._contentWorker.hasListenerFor("context");
   },
 
   // Returns the first string or truthy value returned by a context listener in
@@ -648,16 +647,11 @@ const ContextMenuWorker = Worker.compose({
   // no context listeners, returns false.  popupNode is the node that was
   // context-clicked.
   isAnyContextCurrent: function CMW_isAnyContextCurrent(popupNode) {
-    let listeners = this._contentWorker._listeners("context");
-    for (let i = 0; i < listeners.length; i++) {
-      try {
-        let val = listeners[i].call(this._contentWorker._sandbox, popupNode);
-        if (typeof(val) === "string" || val)
-          return val;
-      }
-      catch (err) {
-        console.exception(err);
-      }
+    let results = this._contentWorker.emitSync("context", popupNode);
+    for (let i = 0; i < results.length; i++) {
+      let val = results[i];
+      if (typeof val === "string" || val)
+        return val;
     }
     return false;
   },
@@ -666,7 +660,7 @@ const ContextMenuWorker = Worker.compose({
   // context-clicked, and clickedItemData is the data of the item that was
   // clicked.
   fireClick: function CMW_fireClick(popupNode, clickedItemData) {
-    this._contentWorker._asyncEmit("click", popupNode, clickedItemData);
+    this._contentWorker.emitSync("click", popupNode, clickedItemData);
   }
 });
 
@@ -689,7 +683,7 @@ WorkerRegistry.prototype = {
 
   // Registers a content window, creating a worker for it if it needs one.
   registerContentWin: function WR_registerContentWin(win) {
-    let innerWinID = winUtils.getInnerId(win);
+    let innerWinID = getInnerId(win);
     if ((innerWinID in this.winWorkers) ||
         (innerWinID in this.winsWithoutWorkers))
       return;
@@ -714,7 +708,8 @@ WorkerRegistry.prototype = {
 
   // Creates a worker for each window that needs a worker but doesn't have one.
   createNeededWorkers: function WR_createNeededWorkers() {
-    for (let [innerWinID, win] in Iterator(this.winsWithoutWorkers)) {
+    for (let innerWinID in this.winsWithoutWorkers) {
+      let win = this.winsWithoutWorkers[innerWinID]
       delete this.winsWithoutWorkers[innerWinID];
       this.registerContentWin(win);
     }
@@ -722,7 +717,8 @@ WorkerRegistry.prototype = {
 
   // Destroys the worker for each window that has a worker but doesn't need it.
   destroyUnneededWorkers: function WR_destroyUnneededWorkers() {
-    for (let [innerWinID, winWorker] in Iterator(this.winWorkers)) {
+    for (let innerWinID in this.winWorkers) {
+      let winWorker = this.winWorkers[innerWinID];
       if (!this._doesURLNeedWorker(winWorker.win.document.URL)) {
         this.unregisterContentWin(innerWinID);
         this.winsWithoutWorkers[innerWinID] = winWorker.win;
@@ -732,7 +728,7 @@ WorkerRegistry.prototype = {
 
   // Returns the worker for the item-window pair or null if none exists.
   find: function WR_find(contentWin) {
-    let innerWinID = winUtils.getInnerId(contentWin);
+    let innerWinID = getInnerId(contentWin);
     return (innerWinID in this.winWorkers) ?
            this.winWorkers[innerWinID].worker :
            null;
@@ -843,7 +839,7 @@ let browserManager = {
   // for each currently open browser window.
   init: function BM_init() {
     require("api-utils/unload").ensure(this);
-    let windowTracker = new winUtils.WindowTracker(this);
+    let windowTracker = WindowTracker(this);
 
     // Register content windows on content-document-global-created and
     // unregister them on inner-window-destroyed.  For rationale, see bug 667957
@@ -859,13 +855,13 @@ let browserManager = {
     if (doc.readyState == "loading") {
       const self = this;
       doc.addEventListener("readystatechange", function onReadyStateChange(e) {
-        if (e.target != doc)
+        if (e.target != doc || doc.readyState != "complete")
           return;
         doc.removeEventListener("readystatechange", onReadyStateChange, false);
         self._registerContentWin(contentWin);
       }, false);
     }
-    else
+    else if (doc.readyState == "complete")
       this._registerContentWin(contentWin);
   },
 
@@ -877,7 +873,7 @@ let browserManager = {
   // Stores the given content window with the manager and registers it with each
   // top-level item's worker registry.
   _registerContentWin: function BM__registerContentWin(win) {
-    let innerID = winUtils.getInnerId(win);
+    let innerID = getInnerId(win);
 
     // It's an error to call this method for the same window more than once, but
     // we allow it in one case: when onTrack races _onDocGlobalCreated.  (See
@@ -918,7 +914,7 @@ let browserManager = {
   // chrome window, and for each chrome window that is open when the loader
   // loads this module.
   onTrack: function BM_onTrack(window) {
-    if (!this._isBrowserWindow(window))
+    if (!isBrowser(window))
       return;
 
     let browserWin = new BrowserWindow(window);
@@ -935,7 +931,7 @@ let browserManager = {
       let allContentWins = Array.slice(topContentWin.frames);
       allContentWins.push(topContentWin);
       allContentWins.forEach(function (contentWin) {
-        if (contentWin.document.readyState != "loading")
+        if (contentWin.document.readyState == "complete")
           this._registerContentWin(contentWin);
       }, this);
     }, this);
@@ -959,7 +955,7 @@ let browserManager = {
   // chrome window, and for each chrome window that is open when this module is
   // unloaded.
   onUntrack: function BM_onUntrack(window) {
-    if (!this._isBrowserWindow(window))
+    if (!isBrowser(window))
       return;
 
     // Remove the window from the window list.
@@ -974,11 +970,6 @@ let browserManager = {
     // Remove all top-level items from the window.
     this.topLevelItems.forEach(function (i) browserWin.removeTopLevelItem(i));
     browserWin.destroy();
-  },
-
-  _isBrowserWindow: function BM__isBrowserWindow(win) {
-    let winType = win.document.documentElement.getAttribute("windowtype");
-    return winType === "navigator:browser";
   }
 };
 
@@ -1049,10 +1040,11 @@ BrowserWindow.prototype = {
   },
 
   setItemLabel: function BW_setItemLabel(item, label) {
-    let { domElt, overflowDOMElt } = this.items[privateItem(item)._id];
+    let privates = privateItem(item);
+    let { domElt, overflowDOMElt } = this.items[privates._id];
     this._setDOMEltLabel(domElt, label);
     this._setDOMEltLabel(overflowDOMElt, label);
-    if (!item.parentMenu)
+    if (!item.parentMenu && privates._hasFinishedInit)
       this.contextMenuPopup.itemLabelDidChange(item);
   },
 
@@ -1138,14 +1130,14 @@ BrowserWindow.prototype = {
     return !hasContentContext || worker.isAnyContextCurrent(popupNode);
   },
 
-  // Sets this.popupNode to the node the user context-clicked to invoke the
-  // context menu.  For Gecko 2.0 and later, triggerNode is this node; if it's
-  // falsey, document.popupNode is used.  Returns the popupNode.
+  // Returns the node the user context-clicked to invoke the context menu.
+  // For Gecko 2.0 and later, triggerNode is this node;
+  // if it's falsey, document.popupNode is used.
   capturePopupNode: function BW_capturePopupNode(triggerNode) {
-    this.popupNode = triggerNode || this.doc.popupNode;
-    if (!this.popupNode)
+    var popupNode = triggerNode || this.doc.popupNode;
+    if (!popupNode)
       console.warn("popupNode is null.");
-    return this.popupNode;
+    return popupNode;
   },
 
   destroy: function BW_destroy() {
@@ -1337,23 +1329,39 @@ ContextMenuPopup.prototype = {
       return;
 
     let topLevelItem = privateItem(item)._topLevelItem;
-    let popupNode = this.browserWin.adjustPopupNode(this.browserWin.popupNode,
+    let popupNode = this.browserWin.adjustPopupNode(this._getPopupNode(),
                                                     topLevelItem);
     this.browserWin.fireClick(topLevelItem, popupNode, item.data);
+  },
+
+  _getPopupNode: function CMP__getPopupNode() {
+    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
+    // to avoid a Spidermonkey strict warning on earlier versions.
+    let triggerNode = this.popupDOMElt.triggerNode || undefined;
+    return this.browserWin.capturePopupNode(triggerNode);
   },
 
   // popupshowing is used to show top-level items that match the browser
   // window's current context and hide items that don't.  Each module instance
   // is responsible for showing and hiding the items it owns.
   _handlePopupShowing: function CMP__handlePopupShowing() {
-    // popupDOMElt.triggerNode was added in Gecko 2.0 by bug 383930.  The || is
-    // to avoid a Spidermonkey strict warning on earlier versions.
-    let triggerNode = this.popupDOMElt.triggerNode || undefined;
-    let popupNode = this.browserWin.capturePopupNode(triggerNode);
 
+    // If there are items queued up to finish initializing, let them go first.
+    // Otherwise the overflow submenu and menu separator may end up in an
+    // inappropriate state when those items are later added to the menu.
+    if (numItemsWithUnfinishedInit) {
+      const self = this;
+      timer.setTimeout(function popupShowingTryAgain() {
+        self._handlePopupShowing();
+      }, 0);
+      return;
+    }
+
+    let popupNode = this._getPopupNode();
     // Show and hide items.  Set a "jetpackContextCurrent" property on the
     // DOM elements to signal which of our items match the current context.
-    for (let [itemID, item] in Iterator(this.topLevelItems)) {
+    for (let itemID in this.topLevelItems) {
+      let item = this.topLevelItems[itemID]
       let areContextsCurr =
         this.browserWin.areAllContextsCurrent(item, popupNode);
 
@@ -1408,6 +1416,7 @@ ContextMenuPopup.prototype = {
     let submenu = this._overflowMenu;
     if (!submenu) {
       submenu = this._makeOverflowMenu();
+      submenu.hidden = true;
       this.popupDOMElt.insertBefore(submenu, sep.nextSibling);
     }
   },

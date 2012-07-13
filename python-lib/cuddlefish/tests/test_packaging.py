@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import unittest
 
@@ -18,8 +22,7 @@ def get_configs(pkg_name, dirname='static-files'):
     build = packaging.generate_build_for_target(
         pkg_cfg=pkg_cfg,
         target=pkg_name,
-        deps=deps,
-        prefix='guid-'
+        deps=deps
         )
     return Bunch(target_cfg=target_cfg, pkg_cfg=pkg_cfg, build=build)
 
@@ -27,7 +30,7 @@ class PackagingTests(unittest.TestCase):
     def test_bug_588661(self):
         configs = get_configs('foo', 'bug-588661-files')
         self.assertEqual(configs.build.loader,
-                         'resource://guid-foo-lib/foo-loader.js')
+                         'foo/lib/foo-loader.js')
 
     def test_bug_614712(self):
         configs = get_configs('commonjs-naming', 'bug-614712-files')
@@ -100,6 +103,14 @@ class Directories(unittest.TestCase):
         self.assertEqual(os.path.abspath(p.lib[0]),
                          os.path.abspath(os.path.join(self.packages_path,
                                                       "default-root")))
+
+    def test_locale(self):
+        # package.json is empty, but locale/ exists and should be used
+        p = self.get_config("default-locale")
+        self.assertEqual(os.path.abspath(p.locale),
+                         os.path.abspath(os.path.join(self.packages_path,
+                                                      "default-locale",
+                                                      "locale")))
 
 if __name__ == "__main__":
     unittest.main()

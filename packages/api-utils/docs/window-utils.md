@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
 <!-- edited by Erik Vold [erikvvold@gmail.com] -->
 
@@ -66,7 +70,8 @@ uninstalled, whichever comes first.)
 
 <api name="windowIterator">
 @function
-  An iterator for windows currently open in the application.
+  An iterator for windows currently open in the application. Only windows whose
+  document is already loaded will be dispatched.
 
 **Example**
 

@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 
 The `hidden-frame` module creates host application frames (i.e. XUL `<iframe>`
@@ -25,7 +29,7 @@ Examples
 The following code creates a hidden frame, loads a web page into it, and then
 logs its title:
 
-    const hiddenFrames = require("hidden-frame");
+    var hiddenFrames = require("hidden-frame");
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function() {
         this.element.contentWindow.location = "http://www.mozilla.org/";

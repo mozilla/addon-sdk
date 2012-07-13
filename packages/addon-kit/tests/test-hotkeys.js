@@ -1,7 +1,36 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 const { Hotkey } = require("hotkeys");
 const { keyDown } = require("dom/events/keys");
+const { Loader } = require('test-harness/loader');
+const timer = require("timer");
+
+exports["test hotkey: function key"] = function(assert, done) {
+  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var showHotKey = Hotkey({
+    combo: "f1",
+    onPress: function() {
+      assert.pass("first callback is called");
+      keyDown(element, "f2");
+      showHotKey.destroy();
+    }
+  });
+
+  var hideHotKey = Hotkey({
+    combo: "f2",
+    onPress: function() {
+      assert.pass("second callback is called");
+      hideHotKey.destroy();
+      done();
+    }
+  });
+
+  keyDown(element, "f1");
+};
 
 exports["test hotkey: accel alt shift"] = function(assert, done) {
   var element = require("window-utils").activeBrowserWindow.document.documentElement;
@@ -106,7 +135,7 @@ exports["test no exception on unmodified keypress"] = function(assert) {
 
 exports["test hotkey: automatic destroy"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader();
+  let loader = Loader(module);
   
   var called = false;
   var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;
@@ -123,7 +152,7 @@ exports["test hotkey: automatic destroy"] = function(assert, done) {
   // Ensure that the hotkey is really destroyed
   keyDown(element, "accel-shift-x");
   
-  require("timer").setTimeout(function () {
+  timer.setTimeout(function () {
     assert.ok(!called, "Hotkey is destroyed and not called.");
     done();
   }, 0);

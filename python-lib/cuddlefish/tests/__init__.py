@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import unittest
 import doctest
@@ -31,7 +35,7 @@ def get_tests():
                 if len(test.examples) > 0:
                     tests.append(doctest.DocTestCase(test))
 
-    md_dir = os.path.join(env_root, 'static-files', 'md')
+    md_dir = os.path.join(env_root, 'dev-guide')
     doctest_opts = (doctest.NORMALIZE_WHITESPACE |
                     doctest.REPORT_UDIFF)
     for dirpath, dirnames, filenames in os.walk(md_dir):

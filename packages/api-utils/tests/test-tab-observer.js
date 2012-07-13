@@ -1,11 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 const { openTab, closeTab } = require("api-utils/tabs/utils");
+const { Loader } = require("test-harness/loader");
+const { setTimeout } = require("timer");
 
 exports["test unload tab observer"] = function(assert, done) {
-  // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
-  let loader = assert._log.makeSandboxedLoader();
-
+  let loader = Loader(module);
 
   let window = loader.require("api-utils/window-utils").activeBrowserWindow;
   let observer = loader.require("api-utils/tabs/observer").observer;
@@ -16,16 +20,16 @@ exports["test unload tab observer"] = function(assert, done) {
   observer.on("close", function onClose(window) { closed++; });
 
   // Open and close tab to trigger observers.
-  closeTab(openTab(window, "data:text/html,tab-1"));
+  closeTab(openTab(window, "data:text/html;charset=utf-8,tab-1"));
 
   // Unload the module so that all listeners set by observer are removed.
   loader.unload();
 
   // Open and close tab once again.
-  closeTab(openTab(window, "data:text/html,tab-2"));
+  closeTab(openTab(window, "data:text/html;charset=utf-8,tab-2"));
 
   // Enqueuing asserts to make sure that assertion is not performed early.
-  require("timer").setTimeout(function () {
+  setTimeout(function () {
     assert.equal(1, opened, "observer open was called before unload only");
     assert.equal(1, closed, "observer close was called before unload only");
     done();

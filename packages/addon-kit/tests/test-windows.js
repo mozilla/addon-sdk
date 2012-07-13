@@ -1,56 +1,28 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Felipe Gomes <felipc@gmail.com> (Original author)
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const {Cc, Ci} = require("chrome");
+const { setTimeout } = require("timer");
+const { Loader } = require('test-harness/loader');
+const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
+           getService(Ci.nsIWindowMediator);
+let browserWindows;
+
+function getTestRunnerWindow() wm.getMostRecentWindow("test:runner")
 
 exports.testOpenAndCloseWindow = function(test) {
-    
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
 
-  test.assertEqual(windows.length, 1, "Only one window open");
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
-  windows.open({
-    url: "data:text/html,<title>windows API test</title>",
+  browserWindows.open({
+    url: "data:text/html;charset=utf-8,<title>windows API test</title>",
     onOpen: function(window) {
-      test.assertEqual(this, windows,
+      test.assertEqual(this, browserWindows,
                        "The 'this' object is the windows object.");
       test.assertEqual(window.tabs.length, 1, "Only one tab open");
-      test.assertEqual(windows.length, 2, "Two windows open");
+      test.assertEqual(browserWindows.length, 2, "Two windows open");
       window.tabs.activeTab.on('ready', function onReady(tab) {
         tab.removeListener('ready', onReady);
         test.assert(window.title.indexOf("windows API test") != -1,
@@ -60,33 +32,33 @@ exports.testOpenAndCloseWindow = function(test) {
     },
     onClose: function(window) {
       test.assertEqual(window.tabs.length, 0, "Tabs were cleared");
-      test.assertEqual(windows.length, 1, "Only one window open");
+      test.assertEqual(browserWindows.length, 1, "Only one window open");
       test.done();
     }
   });
 };
 
 exports.testAutomaticDestroy = function(test) {
-    
+
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
   // Create a second windows instance that we will unload
   let called = false;
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let windows2 = loader.require("windows").browserWindows;
   windows2.on("open", function() {
     called = true;
   });
-  
+
   loader.unload();
-  
+
   // Fire a windows event and check that this unloaded instance is inactive
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
-      require("timer").setTimeout(function () {
-        test.assert(!called, 
+      setTimeout(function () {
+        test.assert(!called,
           "Unloaded windows instance is destroyed and inactive");
         window.close(function () {
           test.done();
@@ -94,14 +66,14 @@ exports.testAutomaticDestroy = function(test) {
       });
     }
   });
-  
+
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
-  test.assertEqual(windows.length, 1, "Only one window open");
+  test.assertEqual(browserWindows.length, 1, "Only one window open");
 
   let received = {
     listener1: false,
@@ -156,7 +128,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
 
 
   windows.open({
-    url: "data:text/html,foo",
+    url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       window.close(verify);
     }
@@ -165,15 +137,14 @@ exports.testOnOpenOnCloseListeners = function(test) {
 
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
-  let windows = require("windows").browserWindows;
 
-  windows.open({
-    url: "data:text/html,<title>tab 1</title>",
+  browserWindows.open({
+    url: "data:text/html;charset=utf-8,<title>tab 1</title>",
     onOpen: function onOpen(window) {
       test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
 
       window.tabs.open({
-        url: "data:text/html,<title>tab 2</title>",
+        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
         inBackground: true,
         onReady: function onReady(newTab) {
           test.assertEqual(window.tabs.length, 2, "New tab open");
@@ -202,29 +173,13 @@ exports.testActiveWindow = function(test) {
     return;
   }
 
-  let windows = require("windows").browserWindows;
+  let windows = browserWindows;
 
   // API window objects
   let window2, window3;
 
   // Raw window objects
-  let nonBrowserWindow, rawWindow2, rawWindow3;
-
-  // Find the first non-browser window: probably the test runner window
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-             .getService(Ci.nsIWindowMediator);
-  let winEnum = wm.getEnumerator("");
-  while (winEnum.hasMoreElements()) {
-    let win = winEnum.getNext();
-    if (win.document.documentElement.getAttribute("windowtype") != "navigator:browser") {
-      nonBrowserWindow = win;
-      break;
-    }
-  }
-  if (!nonBrowserWindow) {
-    test.fail("This test can't proceed without a non-browser window");
-    return;
-  }
+  let nonBrowserWindow = getTestRunnerWindow(), rawWindow2, rawWindow3;
 
   test.waitUntilDone();
 
@@ -245,16 +200,16 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       /**
-       * Bug 614079: This test fails intermittently on some specific linux 
+       * Bug 614079: This test fails intermittently on some specific linux
        *             environnements, without being able to reproduce it in same
        *             distribution with same window manager.
        *             Disable it until being able to reproduce it easily.
-      
+
       // On linux, focus is not consistent, so we can't be sure
       // what window will be on top.
-      // Here when we focus "non-browser" window, 
-      // Any Browser window may be selected as "active". 
-      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3, 
+      // Here when we focus "non-browser" window,
+      // Any Browser window may be selected as "active".
+      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
         "Non-browser windows aren't handled by this module");
       */
       window2.activate();
@@ -273,13 +228,13 @@ exports.testActiveWindow = function(test) {
   ];
 
   windows.open({
-    url: "data:text/html,<title>window 2</title>",
+    url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
       window2 = window;
       rawWindow2 = wm.getMostRecentWindow("navigator:browser");
 
       windows.open({
-        url: "data:text/html,<title>window 3</title>",
+        url: "data:text/html;charset=utf-8,<title>window 3</title>",
         onOpen: function(window) {
           window.tabs.activeTab.on('ready', function onReady() {
             window3 = window;
@@ -333,22 +288,81 @@ exports.testActiveWindow = function(test) {
   }
 };
 
+exports.testTrackWindows = function(test) {
+  test.waitUntilDone();
+
+  let windows = [];
+  let actions = [];
+
+  let expects = [
+    "activate 0", "global activate 0", "deactivate 0", "global deactivate 0",
+    "activate 1", "global activate 1", "deactivate 1", "global deactivate 1",
+    "activate 2", "global activate 2"
+  ];
+
+  function shutdown(window) {
+    if (this.length === 1) {
+      test.assertEqual(actions.join(), expects.join(),
+        "correct activate and deactivate sequence")
+
+      test.done();
+    }
+  }
+
+  function openWindow() {
+    windows.push(browserWindows.open({
+      url: "data:text/html;charset=utf-8,<i>Hi</i>",
+
+      onActivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("activate " + index);
+
+        if (windows.length < 3)
+          openWindow()
+        else
+          for each (let win in windows)
+            win.close(shutdown)
+      },
+
+      onDeactivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("deactivate " + index)
+      }
+    }));
+  }
+
+  browserWindows.on("activate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global activate " + index)
+  })
+
+  browserWindows.on("deactivate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global deactivate " + index)
+  })
+
+  openWindow();
+}
+
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("windows");
+  browserWindows = require("windows").browserWindows;
 }
 catch (err) {
   // This bug should be mentioned in the error message.
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=571449";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the windows module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("the windows module does not support this application.");
-  };
 }

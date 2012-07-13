@@ -1,154 +1,227 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Weave.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2008
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *  Dan Mills <thunder@mozilla.com>
- *  Atul Varma <atul@mozilla.com>
- *  Drew Willcoxon <adw@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* vim:set ts=2 sw=2 sts=2 expandtab */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-"use strict";
+// @see http://mxr.mozilla.org/mozilla-central/source/js/src/xpconnect/loader/mozJSComponentLoader.cpp
 
-// For more information on the context in which this script is executed, see:
-// https://developer.mozilla.org/en/Extensions/Bootstrapped_extensions
+'use strict';
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cr = Components.results;
+// IMPORTANT: Avoid adding any initialization tasks here, if you need to do
+// something before add-on is loaded consider addon/runner module instead!
 
-// Object containing information about the XPCOM harness service
-// that manages our addon.
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
+        results: Cr, manager: Cm } = Components;
+const ioService = Cc['@mozilla.org/network/io-service;1'].
+                  getService(Ci.nsIIOService);
+const resourceHandler = ioService.getProtocolHandler('resource').
+                        QueryInterface(Ci.nsIResProtocolHandler);
+const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
+                 'install', 'uninstall', 'upgrade', 'downgrade' ];
 
-var gHarness;
+let loader = null;
+let unload = null;
+let cuddlefishURI = null;
+let nukeTimer = null;
 
-var ios = Cc['@mozilla.org/network/io-service;1']
-          .getService(Ci.nsIIOService);
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let ioservice = Cc['@mozilla.org/network/io-service;1'].
+    getService(Ci.nsIIOService);
+  let channel = ioservice.newChannel(uri, 'UTF-8', null);
+  let stream = channel.open();
 
-var manager = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+  let cstream = Cc['@mozilla.org/intl/converter-input-stream;1'].
+    createInstance(Ci.nsIConverterInputStream);
+  cstream.init(stream, 'UTF-8', 0, 0);
 
-// Dynamically evaluate and initialize the XPCOM component in
-// components/harness.js, which bootstraps our addon. (We want to keep
-// components/harness.js around so that versions of Gecko that don't
-// support rebootless addons can still work.)
+  let str = {};
+  let data = '';
+  let read = 0;
+  do {
+    read = cstream.readString(0xffffffff, str);
+    data += str.value;
+  } while (read != 0);
 
-function setupHarness(installPath, loadReason) {
-  var harnessJs = installPath.clone();
-  harnessJs.append("components");
-  harnessJs.append("harness.js");
-  var path = ios.newFileURI(harnessJs).spec;
-  var harness = {};
-  var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-               .getService(Ci.mozIJSSubScriptLoader);
-  loader.loadSubScript(path, harness);
+  cstream.close();
 
-  var HarnessService = harness.buildHarnessService(installPath);
-  var factory = HarnessService.prototype._xpcom_factory;
-  var proto = HarnessService.prototype;
-
-  // We want to keep this factory around for the lifetime of
-  // the addon so legacy code with access to Components can
-  // access the addon if needed.
-  manager.registerFactory(proto.classID,
-                          proto.classDescription,
-                          proto.contractID,
-                          factory);
-
-  var harnessService = factory.createInstance(null, Ci.nsISupports);
-  harnessService = harnessService.wrappedJSObject;
-
-  gHarness = {
-    service: harnessService,
-    classID: proto.classID,
-    contractID: proto.contractID,
-    factory: factory
-  };
-
-  if (loadReason == "startup")
-    // Simulate a startup event; the harness service will take care of
-    // waiting until the app is ready for the extension's code to run.
-    harnessService.observe(null, "profile-after-change", null);
-  else
-    harnessService.load(loadReason);
+  return data;
 }
 
-function reasonToString(reason) {
-  // If you change these names, change them in harness.js's lifeCycleObserver192
-  // too.
-  switch (reason) {
-  case ADDON_INSTALL:
-    return "install";
-  case ADDON_UNINSTALL:
-    return "uninstall";
-  case ADDON_ENABLE:
-    return "enable";
-  case ADDON_DISABLE:
-    return "disable";
-  case ADDON_UPGRADE:
-    return "upgrade";
-  case ADDON_DOWNGRADE:
-    return "downgrade";
-  // The startup and shutdown strings are also used outside of
-  // lifeCycleObserver192.
-  case APP_STARTUP:
-    return "startup";
-  case APP_SHUTDOWN:
-    return "shutdown";
+// Utility function that converts cfx-py generated paths to a
+// module ids.
+function path2id(path) {
+  // Strips out `/lib` and `.js` from package/lib/path.js
+  return path.replace(/([^\/]*)\/lib/, '$1').replace(/.js$/, '');
+}
+// Utility function that takes old manifest format and creates a manifest
+// in a new format: https://github.com/mozilla/addon-sdk/wiki/JEP-Linker
+function manifestV2(manifest) {
+  return Object.keys(manifest).reduce(function(result, path) {
+    let entry = manifest[path];
+    let id = path2id(path);
+    let requirements = entry.requirements || {};
+    result[id] = {
+      requirements: Object.keys(requirements).reduce(function(result, path) {
+        result[path] = path2id(requirements[path].path);
+        return result;
+      }, {})
+    };
+    return result
+  }, {});
+}
+
+// We don't do anything on install & uninstall yet, but in a future
+// we should allow add-ons to cleanup after uninstall.
+function install(data, reason) {}
+function uninstall(data, reason) {}
+
+function startup(data, reasonCode) {
+  try {
+    let reason = REASON[reasonCode];
+    // URI for the root of the XPI file.
+    // 'jar:' URI if the addon is packed, 'file:' URI otherwise.
+    // (Used by l10n module in order to fetch `locale` folder)
+    let rootURI = data.resourceURI.spec;
+
+    // TODO: Maybe we should perform read harness-options.json asynchronously,
+    // since we can't do anything until 'sessionstore-windows-restored' anyway.
+    let options = JSON.parse(readURI(rootURI + './harness-options.json'));
+
+    let id = options.jetpackID;
+    let name = options.name;
+    // Register a new resource 'domain' for this addon which is mapping to
+    // XPI's `resources` folder.
+    // Generate the domain name by using jetpack ID, which is the extension ID
+    // by stripping common characters that doesn't work as a domain name:
+    let uuidRe =
+      /^\{([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\}$/;
+
+    let domain = id.
+      toLowerCase().
+      replace(/@/g, '-at-').
+      replace(/\./g, '-dot-').
+      replace(uuidRe, '$1');
+
+    let prefixURI = 'resource://' + domain + '/';
+    let resourcesURI = ioService.newURI(rootURI + '/resources/', null, null);
+    resourceHandler.setSubstitution(domain, resourcesURI);
+
+    // Create path to URLs mapping supported by loader.
+    let paths = Object.keys(options.metadata).reduce(function(result, name) {
+      result[name + '/'] = prefixURI + name + '/lib/'
+      result[name + '/tests/'] = prefixURI + name + '/tests/'
+      return result
+    }, {
+      // Relative modules resolve to add-on package lib
+      './': prefixURI + name + '/lib/',
+      'toolkit/': 'resource://gre/modules/toolkit/',
+      '': 'resources:///modules/'
+    });
+
+    // Make version 2 of the manifest
+    let manifest = manifestV2(options.manifest);
+
+    // We use global `loaderURI` to allow unload.
+    cuddlefishURI = prefixURI + options.loader;
+
+    // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
+    let cuddlefish = Cu.import(cuddlefishURI);
+    // Normalize `options.mainPath` so that it looks like one that will come
+    // in a new version of linker.
+    let main = path2id(options.mainPath);
+
+    unload = cuddlefish.unload;
+    loader = cuddlefish.Loader({
+      paths: paths,
+      // modules manifest.
+      manifest: manifest,
+
+      // Add-on ID used by different APIs as a unique identifier.
+      id: id,
+      // Add-on name.
+      name: name,
+      // Add-on version.
+      version: options.metadata[name].version,
+      // Add-on package descriptor.
+      metadata: options.metadata[name],
+      // Add-on load reason.
+      loadReason: reason,
+
+      prefixURI: prefixURI,
+      // Add-on URI.
+      rootURI: rootURI,
+      // options used by system module.
+      // File to write 'OK' or 'FAIL' (exit code emulation).
+      resultFile: options.resultFile,
+      // File to write stdout.
+      logFile: options.logFile,
+      // Arguments passed as --static-args
+      staticArgs: options.staticArgs,
+
+      // Arguments related to test runner.
+      modules: {
+        '@test/options': {
+          allTestModules: options.allTestModules,
+          iterations: options.iterations,
+          filter: options.filter,
+          profileMemory: options.profileMemory,
+          stopOnError: options.stopOnError,
+          verbose: options.verbose,
+        }
+      }
+    });
+
+    let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
+    let require = Require(loader, module);
+    require('api-utils/addon/runner').startup(reason, {
+      loader: loader,
+      main: main,
+      prefsURI: rootURI + 'defaults/preferences/prefs.js'
+    });
+  } catch (error) {
+    dump('Bootstrap error: ' + error.message + '\n' +
+         (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
+    throw error;
   }
-  return undefined;
+};
+
+function setTimeout(callback, delay) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.initWithCallback({ notify: callback }, delay,
+                         Ci.nsITimer.TYPE_ONE_SHOT);
+  return timer;
 }
 
-function install(data, reason) {
-  // We shouldn't start up here; startup() will always be called when
-  // an extension should load, and install() sometimes gets called when
-  // an extension has been installed but is disabled.
-}
-
-function startup(data, reason) {
-  if (!gHarness)
-    setupHarness(data.installPath, reasonToString(reason));
-}
-
-function shutdown(data, reason) {
-  if (gHarness) {
-    var harness = gHarness;
-    gHarness = undefined;
-    harness.service.unload(reasonToString(reason));
-    manager.unregisterFactory(harness.classID, harness.factory);
+function shutdown(data, reasonCode) {
+  let reason = REASON[reasonCode];
+  if (loader) {
+    unload(loader, reason);
+    unload = null;
+    // Bug 724433: We need to unload JSM otherwise it will stay alive
+    // and keep a reference to this compartment.
+    Cu.unload(cuddlefishURI);
+    // Avoid leaking all modules when something goes wrong with one particular
+    // module. Do not clean it up immadiatly in order to allow executing some
+    // actions on addon disabling.
+    // We need to keep a reference to the timer, otherwise it is collected
+    // and won't ever fire.
+    nukeTimer = setTimeout(nukeModules, 1000);
   }
-}
+};
 
-function uninstall(data, reason) {
-  // We shouldn't shutdown here; shutdown() will always be called when
-  // an extension should shutdown, and uninstall() sometimes gets
-  // called when startup() has never been called before it.
+function nukeModules() {
+  nukeTimer = null;
+  // module objects store `exports` which comes from sandboxes
+  // We should avoid keeping link to these object to avoid leaking sandboxes
+  for (let key in loader.modules) {
+    delete loader.modules[key];
+  }
+  // Direct links to sandboxes should be removed too
+  for (let key in loader.sandboxes) {
+    let sandbox = loader.sandboxes[key];
+    delete loader.sandboxes[key];
+  }
+  loader = null;
 }

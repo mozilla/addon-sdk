@@ -1,40 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Myk Melez <myk@mozilla.org> (Original Author)
- *   Irakli Gozalishvili <gozala@mazilla.com>
- *   Mihai Sucan <mihai.sucan@gmail.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -47,18 +13,16 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
+
 const { validateOptions: valid } = require("api-utils/api-utils");
 const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
+const runtime = require("api-utils/runtime");
 
-require("api-utils/xpcom").utils.defineLazyServiceGetter(
-  this,
-  "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1",
-  "nsIWindowMediator"
-);
+const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
+                       getService(Ci.nsIWindowMediator);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
       ON_SHOW = 'popupshown',
@@ -71,14 +35,14 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul",
 const Panel = Symbiont.resolve({
   constructor: '_init',
   _onInit: '_onSymbiontInit',
-  destroy: '_symbiontDestructor'
+  destroy: '_symbiontDestructor',
+  _documentUnload: '_workerDocumentUnload'
 }).compose({
   _frame: Symbiont.required,
   _init: Symbiont.required,
   _onSymbiontInit: Symbiont.required,
   _symbiontDestructor: Symbiont.required,
   _emit: Symbiont.required,
-  _asyncEmit: Symbiont.required,
   on: Symbiont.required,
   removeListener: Symbiont.required,
 
@@ -102,6 +66,7 @@ const Panel = Symbiont.resolve({
     this._onShow = this._onShow.bind(this);
     this._onHide = this._onHide.bind(this);
     this.on('inited', this._onSymbiontInit.bind(this));
+    this.on('propertyChange', this._onChange.bind(this));
 
     options = options || {};
     if ('onShow' in options)
@@ -120,10 +85,13 @@ const Panel = Symbiont.resolve({
   _destructor: function _destructor() {
     this.hide();
     this._removeAllListeners('show');
+    this._removeAllListeners('hide');
+    this._removeAllListeners('propertyChange');
+    this._removeAllListeners('inited');
     // defer cleanup to be performed after panel gets hidden
     this._xulPanel = null;
     this._symbiontDestructor(this);
-    this._removeAllListeners(this, 'hide');
+    this._removeAllListeners();
   },
   destroy: function destroy() {
     this._destructor();
@@ -150,55 +118,59 @@ const Panel = Symbiont.resolve({
     if (!xulPanel) {
       xulPanel = this._xulPanel = document.createElementNS(XUL_NS, 'panel');
       xulPanel.setAttribute("type", "arrow");
-      
-      // One anonymous node has a big padding that doesn't work well with 
-      // Jetpack, as we would like to display an iframe that completely fills 
-      // the panel. 
+
+      // One anonymous node has a big padding that doesn't work well with
+      // Jetpack, as we would like to display an iframe that completely fills
+      // the panel.
       // -> Use a XBL wrapper with inner stylesheet to remove this padding.
       let css = ".panel-inner-arrowcontent, .panel-arrowcontent {padding: 0;}";
       let originalXBL = "chrome://global/content/bindings/popup.xml#arrowpanel";
-      let binding = 
+      let binding =
       '<bindings xmlns="http://www.mozilla.org/xbl">' +
-        '<binding id="id" extends="' + originalXBL + '">' + 
-          '<resources>' + 
-            '<stylesheet src="data:text/css,' + 
+        '<binding id="id" extends="' + originalXBL + '">' +
+          '<resources>' +
+            '<stylesheet src="data:text/css;charset=utf-8,' +
               document.defaultView.encodeURIComponent(css) + '"/>' +
           '</resources>' +
         '</binding>' +
       '</bindings>';
-      xulPanel.style.MozBinding = 'url("data:text/xml,' + 
+      xulPanel.style.MozBinding = 'url("data:text/xml;charset=utf-8,' +
         document.defaultView.encodeURIComponent(binding) + '")';
-      
+
       let frame = document.createElementNS(XUL_NS, 'iframe');
       frame.setAttribute('type', 'content');
       frame.setAttribute('flex', '1');
       frame.setAttribute('transparent', 'transparent');
-      
-      // Load an empty document in order to have an immediatly loaded iframe, 
+      if (runtime.OS === "Darwin") {
+        frame.style.borderRadius = "6px";
+        frame.style.padding = "1px";
+      }
+
+      // Load an empty document in order to have an immediatly loaded iframe,
       // so swapFrameLoaders is going to work without having to wait for load.
-      frame.setAttribute("src","data:,"); 
-      
+      frame.setAttribute("src","data:;charset=utf-8,");
+
       xulPanel.appendChild(frame);
       document.getElementById("mainPopupSet").appendChild(xulPanel);
     }
     let { width, height } = this, x, y, position;
-    
+
     if (!anchor) {
       // Open the popup in the middle of the window.
       x = document.documentElement.clientWidth / 2 - width / 2;
       y = document.documentElement.clientHeight / 2 - height / 2;
       position = null;
-    } 
+    }
     else {
       // Open the popup by the anchor.
       let rect = anchor.getBoundingClientRect();
-      
+
       let window = anchor.ownerDocument.defaultView;
-      
+
       let zoom = window.mozScreenPixelsPerCSSPixel;
       let screenX = rect.left + window.mozInnerScreenX * zoom;
       let screenY = rect.top + window.mozInnerScreenY * zoom;
-      
+
       // Set up the vertical position of the popup relative to the anchor
       // (always display the arrow on anchor center)
       let horizontal, vertical;
@@ -206,26 +178,26 @@ const Panel = Symbiont.resolve({
         vertical = "top";
       else
         vertical = "bottom";
-      
+
       if (screenY > window.screen.availWidth / 2 + width)
         horizontal = "left";
       else
         horizontal = "right";
-      
+
       let verticalInverse = vertical == "top" ? "bottom" : "top";
       position = vertical + "center " + verticalInverse + horizontal;
-      
+
       // Allow panel to flip itself if the panel can't be displayed at the
-      // specified position (useful if we compute a bad position or if the 
+      // specified position (useful if we compute a bad position or if the
       // user moves the window and panel remains visible)
       xulPanel.setAttribute("flip","both");
     }
-    
+
     // Resize the iframe instead of using panel.sizeTo
     // because sizeTo doesn't work with arrow panels
     xulPanel.firstChild.style.width = width + "px";
     xulPanel.firstChild.style.height = height + "px";
-    
+
     // Wait for the XBL binding to be constructed
     function waitForBinding() {
       if (!xulPanel.openPopup) {
@@ -235,7 +207,7 @@ const Panel = Symbiont.resolve({
       xulPanel.openPopup(anchor, position, x, y);
     }
     waitForBinding();
-    
+
     return this._public;
   },
   /* Public API: Panel.hide */
@@ -284,7 +256,7 @@ const Panel = Symbiont.resolve({
     this.__xulPanel = value;
   },
   __xulPanel: null,
-  get _viewFrame() this.__xulPanel.children[0], 
+  get _viewFrame() this.__xulPanel.children[0],
   /**
    * When the XUL panel becomes hidden, we swap frame loaders back to move
    * the content of the panel to the hidden frame & remove panel element.
@@ -298,34 +270,53 @@ const Panel = Symbiont.resolve({
       this._emit('error', e);
     }
   },
+
+  /**
+   * Retrieve computed text color style in order to apply to the iframe
+   * document. As MacOS background is dark gray, we need to use skin's
+   * text color.
+   */
+  _applyStyleToDocument: function _applyStyleToDocument() {
+    try {
+      let win = this._xulPanel.ownerDocument.defaultView;
+      let node = win.document.getAnonymousElementByAttribute(
+        this._xulPanel, "class", "panel-arrowcontent");
+      if (!node) {
+        // Before bug 764755, anonymous content was different:
+        // TODO: Remove this when targeting FF16+
+        node = win.document.getAnonymousElementByAttribute(
+          this._xulPanel, "class", "panel-inner-arrowcontent");
+      }
+      let textColor = win.getComputedStyle(node).getPropertyValue("color");
+      let doc = this._xulPanel.firstChild.contentDocument;
+      let style = doc.createElement("style");
+      style.textContent = "body { color: " + textColor + "; }";
+      let container = doc.head ? doc.head : doc.documentElement;
+
+      if (container.firstChild)
+        container.insertBefore(style, container.firstChild);
+      else
+        container.appendChild(style);
+    }
+    catch(e) {
+      console.error("Unable to apply panel style");
+      console.exception(e);
+    }
+  },
+
   /**
    * When the XUL panel becomes shown, we swap frame loaders between panel
    * frame and hidden frame to preserve state of the content dom.
    */
   _onShow: function _onShow() {
     try {
-      if (!this._inited) // defer if not initialized yet
-        return this.on('inited', this._onShow.bind(this));
-      this._frameLoadersSwapped = true;
-
-      // Retrieve computed text color style in order to apply to the iframe
-      // document. As MacOS background is dark gray, we need to use skin's text
-      // color.
-      let win = this._xulPanel.ownerDocument.defaultView;
-      let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
-                 "class", "panel-inner-arrowcontent");
-      let textColor = win.getComputedStyle(node).getPropertyValue("color");
-      let doc = this._xulPanel.firstChild.contentDocument;
-      let style = doc.createElement("style");
-      style.textContent = "body { color: " + textColor + "; }";
-      let container = doc.head ? doc.head : doc.documentElement;
-      if (container.firstChild)
-        container.insertBefore(style, container.firstChild);
-      else
-        container.appendChild(style);
-
-
-      this._emit('show');
+      if (!this._inited) { // defer if not initialized yet
+        this.on('inited', this._onShow.bind(this));
+      } else {
+        this._frameLoadersSwapped = true;
+        this._applyStyleToDocument();
+        this._emit('show');
+      }
     } catch(e) {
       this._emit('error', e);
     }
@@ -345,7 +336,25 @@ const Panel = Symbiont.resolve({
     // TODO: We're publicly exposing a private event here; this
     // 'inited' event should really be made private, somehow.
     this._emit('inited');
-    this._removeAllListeners('inited');
+  },
+
+  // Catch document unload event in order to rebind load event listener with
+  // Symbiont._initFrame if Worker._documentUnload destroyed the worker
+  _documentUnload: function(subject, topic, data) {
+    if (this._workerDocumentUnload(subject, topic, data)) {
+      this._initFrame(this._frame);
+      return true;
+    }
+    return false;
+  },
+
+  _onChange: function _onChange(e) {
+    if ('contentURL' in e && this._frame) {
+      // Cleanup the worker before injecting the content script in the new
+      // document
+      this._workerCleanup();
+      this._initFrame(this._frame);
+    }
   }
 });
 exports.Panel = function(options) Panel(options)

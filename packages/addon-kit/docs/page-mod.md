@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Nickolay Ponomarev [asqueella@gmail.com] -->
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com] -->
@@ -23,13 +27,13 @@ Like all modules that interact with web content, page-mod uses content
 scripts that execute in the content process and defines a messaging API to
 communicate between the content scripts and the main add-on script. For more
 details on content scripting see the tutorial on [interacting with web
-content](dev-guide/addon-development/web-content.html).
+content](dev-guide/guides/content-scripts/index.html).
 
 To create a PageMod the add-on developer supplies:
 
 * a set of rules to select the desired subset of web pages based on their URL.
 Each rule is specified using the
-[match-pattern](packages/api-utils/docs/match-pattern.html) syntax.
+[match-pattern](packages/api-utils/match-pattern.html) syntax.
 
 * a set of content scripts to execute in the context of the desired pages.
 
@@ -50,6 +54,7 @@ loaded:
     });
 
 If you specify a value of "ready" or "end" for `contentScriptWhen`,
+as opposed to "start",
 then the content script can interact with the DOM itself:
 
     var pageMod = require("page-mod");
@@ -65,9 +70,9 @@ then the content script can interact with the DOM itself:
 Most of the examples in this page define content scripts as strings,
 and use the `contentScript` option to assign them to page mods.
 
-In your code you will more often create content scripts in separate files
+Alternatively, you can create content scripts in separate files
 under your add-on's `data` directory. Then you can use the
-[`self`](packages/addon-kit/docs/self.html) module to retrieve a URL pointing
+[`self`](packages/addon-kit/self.html) module to retrieve a URL pointing
 to the file, and assign this to the page-mod's `contentScriptFile`
 property.
 
@@ -76,13 +81,81 @@ file in your `data` directory as "myScript.js", you would assign it using
 code like:
 
     var data = require("self").data;
-    
+
     var pageMod = require("page-mod");
     pageMod.PageMod({
       include: "*.org",
       contentScriptWhen: 'end',
       contentScriptFile: data.url("myScript.js")
     });
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
+
+### Styling web pages ###
+
+Sometimes adding a script to web pages is not enough, you also want to style
+them. `PageMod` provides an easy way to do that through options' `contentStyle`
+and `contentStyleFile` properties:
+
+    var data = require("self").data;
+    var pageMod = require("page-mod");
+
+    pageMod.PageMod({
+      include: "*.org",
+
+      contentStyleFile: data.url("my-page-mod.css"),
+      contentStyle: [
+        "div { padding: 10px; border: 1px solid silver}",
+        "img { display: none}"
+      ]
+    })
+
+`PageMod` will add these styles as
+[user style sheets](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+
+#### Working with Relative URLs in CSS Rules ####
+
+You can't currently use relative URLs in style sheets loaded in this way.
+For example, consider a CSS file that references an external file like this:
+
+    background: rgb(249, 249, 249) url('../../img/my-background.png') repeat-x top center;
+
+If you attach this file using `contentStyleFile`, "my-background.png"
+will not be found.
+
+As a workaround for this, you can build an absolute URL to a file in your
+"data" directory, and construct a `contentStyle` option embedding that URL
+in your rule. For example:
+
+    var data = require("self").data;
+
+    var pageMod = require("page-mod").PageMod({
+      include: "*",
+      contentStyleFile: data.url("my-style.css"),
+      // contentStyle is built dynamically here to include an absolute URL
+      // for the file referenced by this CSS rule.
+      // This workaround is needed because we can't use relative URLs
+      // in contentStyleFile or contentStyle.
+      contentStyle: "h1 { background: url(" + data.url("my-pic.jpg") + ")}"
+    });
+
+This add-on uses a separate file "my-style.css", loaded using
+`contentStyleFile`, for all CSS rules except those that reference
+an external file. For the rule that needs to refer to "my-pic.jpg",
+which is stored in the add-on's "data" directory, it uses `contentStyle`.
+
+Dynamically constructing code strings like those assigned to `contentScript`
+or `contentStyle` is usually considered an unsafe practice that may cause an
+add-on to fail AMO review. In this case it is safe, and should be allowed,
+but including a comment like that in the example above will help to
+prevent any misunderstanding.
 
 ## Communicating With Content Scripts ##
 
@@ -103,7 +176,7 @@ is loaded into its own execution context with its own copy of the content
 scripts. In this case `onAttach` is called once for each loaded page, and the
 add-on code will have a separate worker for each page:
 
-![Multiple workers](media/multiple-workers.jpg)
+![Multiple workers](static-files/media/multiple-workers.jpg)
 
 This is demonstrated in the following example:
 
@@ -181,9 +254,9 @@ The console output of this add-on is:
 
 ### Mapping workers to tabs ###
 
-The [`worker`](packages/api-utils/docs/content/worker.html) has a `tab`
+The [`worker`](packages/api-utils/content/worker.html) has a `tab`
 property which returns the tab associated with this worker. You can use this
-to access the [`tabs API`](packages/addon-kit/docs/tabs.html) for the tab
+to access the [`tabs API`](packages/addon-kit/tabs.html) for the tab
 associated with a specific page:
 
     var pageMod = require("page-mod");
@@ -206,7 +279,7 @@ For example, we might want to run a script in the context of the currently
 active tab when the user clicks a widget: to block certain content, to
 change the font style, or to display the page's DOM structure.
 
-Using the `attach` method of the [`tab`](packages/addon-kit/docs/tabs.html)
+Using the `attach` method of the [`tab`](packages/addon-kit/tabs.html)
 object, you can attach a set of content scripts to a particular tab. The
 scripts are executed immediately.
 
@@ -217,6 +290,7 @@ The following add-on creates a widget which, when clicked, highlights all the
     var tabs = require("tabs");
 
     var widget = widgets.Widget({
+      id: "div-show",
       label: "Show divs",
       contentURL: "http://www.mozilla.org/favicon.ico",
       onClick: function() {
@@ -286,7 +360,7 @@ Creates a PageMod.
   @prop include {string,array}
     A match pattern string or an array of match pattern strings.  These define
     the pages to which the PageMod applies.  See the
-    [match-pattern](packages/api-utils/docs/match-pattern.html) module for
+    [match-pattern](packages/api-utils/match-pattern.html) module for
     a description of match pattern syntax.
     At least one match pattern must be supplied.
 
@@ -315,6 +389,20 @@ Creates a PageMod.
     fires
 
     This property is optional and defaults to "end".
+  @prop [contentScriptOptions] {object}
+    Read-only value exposed to content scripts under `self.options` property.
+
+    Any kind of jsonable value (object, array, string, etc.) can be used here.
+    Optional.
+
+  @prop [contentStyleFile] {string,array}
+    The local file URLs of stylesheet to load. Content style specified by this
+    option are loaded *before* those specified by the `contentStyle` option.
+    Optional.
+  @prop [contentStyle] {string,array}
+    The texts of stylesheet rules to add. Content styles specified by this
+    option are loaded *after* those specified by the `contentStyleFile` option.
+    Optional.
 
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
@@ -326,9 +414,9 @@ attached to the page in question.
 
 <api name="include">
 @property {List}
-A [list](packages/api-utils/docs/list.html) of match pattern strings.  These
+A [list](packages/api-utils/list.html) of match pattern strings.  These
 define the pages to which the page mod applies.  See the
-[match-pattern](packages/api-utils/docs/match-pattern.html) module for a
+[match-pattern](packages/api-utils/match-pattern.html) module for a
 description of match patterns. Rules can be added to the list by calling its
 `add` method and removed by calling its `remove` method.
 
@@ -338,7 +426,8 @@ description of match patterns. Rules can be added to the list by calling its
 @method
 Stops the page mod from making any more modifications.  Once destroyed the page
 mod can no longer be used.  Note that modifications already made to open pages
-will not be undone.
+will not be undone, except for any stylesheet added by `contentStyle` or
+`contentStyleFile`, that are unregistered immediately.
 </api>
 
 <api name="attach">
@@ -347,7 +436,7 @@ This event is emitted this event when the page-mod's content scripts are
 attached to a page whose URL matches the page-mod's `include` filter.
 
 @argument {Worker}
-The listener function is passed a `Worker` object that can be used to communicate
+The listener function is passed a [`Worker`](packages/api-utils/content/worker.html) object that can be used to communicate
 with any content scripts attached to this page.
 </api>
 

@@ -1,12 +1,31 @@
-const { Ci, Cc } = require("chrome");
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+"use strict";
+
+/* Trick the linker in order to avoid error on `Components.interfaces` usage.
+   We are tricking the linking with `require('./content-proxy.js')` in order
+   to ensure shipping it! But then the linker think that this file is going
+   to be used as a CommonJS module where we forbid usage of `Components`.
+   We only allow usage of it through `require('chrome')`:
+  require("chrome");
+*/
+let Ci = Components.interfaces;
 
 /**
  * Access key that allows privileged code to unwrap proxy wrappers through 
  * valueOf:
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
+ * This key should only be used by proxy unit test.
  */
 const UNWRAP_ACCESS_KEY = {};
-exports.UNWRAP_ACCESS_KEY = UNWRAP_ACCESS_KEY;
+
+/**
+ * WeakMap which maps xraywrappers to already created JS proxies.
+ * Allows to build one single proxy per xraywrapper without leaking.
+ */
+const proxies = new WeakMap();
 
  /**
  * Returns a closure that wraps arguments before calling the given function,
@@ -79,8 +98,9 @@ function ContentScriptFunctionWrapper(fun, obj, name) {
 function NativeFunctionWrapper(fun, originalObject, name) {
   return function () {
     let args = [];
-    let obj = this.valueOf ? this.valueOf(UNWRAP_ACCESS_KEY) : this;
-    
+    let obj = this && typeof this.valueOf == "function" ?
+              this.valueOf(UNWRAP_ACCESS_KEY) : this;
+
     for (let i = 0, l = arguments.length; i < l; i++)
       args.push( unwrap(arguments[i], obj, name) );
     
@@ -136,7 +156,7 @@ function unwrap(value, obj, name) {
 }
 
 /**
- * Returns a XrayWrapper proxy object that allow to wrap any of its function
+ * Returns an XrayWrapper proxy object that allow to wrap any of its function
  * though `ContentScriptFunctionWrapper`. These proxies are given to
  * XrayWrappers in order to automatically wrap values when they call a method
  * of these proxies. So that they are only used internaly and content script,
@@ -219,6 +239,22 @@ function ContentScriptObjectWrapper(obj) {
   return proxy;
 }
 
+// List of all existing typed arrays.
+//   Can be found here:
+//   http://mxr.mozilla.org/mozilla-central/source/js/src/jsapi.cpp#1790
+const typedArraysCtor = [
+  ArrayBuffer,
+  Int8Array,
+  Uint8Array,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+  Uint8ClampedArray
+];
+
 /*
  * Wrap a JS value coming from the document by building a proxy wrapper.
  */
@@ -227,6 +263,24 @@ function wrap(value, obj, name, debug) {
     return value;
   let type = typeof value;
   if (type == "object") {
+    // Bug 671016: Typed arrays don't need to be proxified.
+    // We avoid checking the whole constructor list on all objects
+    // by doing this check only on non-extensible objects:
+    if (!Object.isExtensible(value) &&
+        typedArraysCtor.indexOf(value.constructor) !== -1)
+      return value;
+
+    // Bug 715755: do not proxify COW wrappers
+    // These wrappers throw an exception when trying to access
+    // any attribute that is not in a white list
+    try {
+      ("nonExistantAttribute" in value);
+    }
+    catch(e) {
+      if (e.message.indexOf("Permission denied to access property") !== -1)
+        return value;
+    }
+
     // We may have a XrayWrapper proxy.
     // For example:
     //   let myListener = { handleEvent: function () {} };
@@ -282,18 +336,13 @@ function getProxyForObject(obj) {
   if ("__isWrappedProxy" in obj) {
     return obj;
   }
-  // Check if there is a proxy cached on this wrapper,
-  // but take care of prototype ___proxy attribute inheritance!
-  if (obj && obj.___proxy && obj.___proxy.valueOf(UNWRAP_ACCESS_KEY) === obj) {
-    return obj.___proxy;
-  }
-  
+  // Check if there is an already built proxy for this wrapper
+  if (proxies.has(obj))
+    return proxies.get(obj);
+
   let proxy = Proxy.create(handlerMaker(obj));
-  
-  Object.defineProperty(obj, "___proxy", {value : proxy,
-                                          writable : false,
-                                          enumerable : false,
-                                          configurable : false});
+  proxies.set(obj, proxy);
+
   return proxy;
 }
 
@@ -308,16 +357,12 @@ function getProxyForFunction(fun, callTrap) {
   }
   if ("__isWrappedProxy" in fun)
     return obj;
-  if ("___proxy" in fun)
-    return fun.___proxy;
+  if (proxies.has(fun))
+    return proxies.get(fun);
   
   let proxy = Proxy.createFunction(handlerMaker(fun), callTrap);
-  
-  Object.defineProperty(fun, "___proxy", {value : proxy,
-                                          writable : false,
-                                          enumerable : false,
-                                          configurable : false});
-  
+  proxies.set(fun, proxy);
+
   return proxy;
 }
 
@@ -473,19 +518,20 @@ const xRayWrappersMissFixes = [
       catch(e) {
         return null;
       }
+
       // Integer case:
       let i = parseInt(name);
       if (i >= 0 && i in obj) {
         return wrap(XPCNativeWrapper(obj[i]));
       }
+
       // String name case:
       if (name in obj.wrappedJSObject) {
         let win = obj.wrappedJSObject[name];
         let nodes = obj.document.getElementsByName(name);
         for (let i = 0, l = nodes.length; i < l; i++) {
           let node = nodes[i];
-          if ("contentWindow" in node && 
-              node.contentWindow.wrappedJSObject == win)
+          if ("contentWindow" in node && node.contentWindow == win)
             return wrap(node.contentWindow);
         }
       }
@@ -496,30 +542,33 @@ const xRayWrappersMissFixes = [
   // Trap access to form["node name"]
   // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
   function (obj, name) {
-    if (typeof obj == "object" && obj.tagName == "FORM") {
+    if (typeof obj == "object" && "tagName" in obj && obj.tagName == "FORM") {
       let match = obj.wrappedJSObject[name];
       let nodes = obj.ownerDocument.getElementsByName(name);
       for (let i = 0, l = nodes.length; i < l; i++) {
         let node = nodes[i];
-        if (node.wrappedJSObject == match)
+        if (node == match)
           return wrap(node);
       }
     }
+    return null;
   },
-  
+
   // Fix XPathResult's constants being undefined on XrayWrappers
   // these constants are defined here:
   // http://mxr.mozilla.org/mozilla-central/source/dom/interfaces/xpath/nsIDOMXPathResult.idl
   // and are only numbers.
-  // See bug 665279 for platform fix progress
+  // The platform bug 665279 was fixed in Gecko 10.0a1.
+  // FIXME: remove this workaround once the SDK no longer supports Firefox 9.
   function (obj, name) {
     if (typeof obj == "object" && name in Ci.nsIDOMXPathResult) {
       let value = Ci.nsIDOMXPathResult[name];
       if (typeof value == "number" && value === obj.wrappedJSObject[name])
         return value;
     }
+    return null;
   }
-  
+
 ];
 
 // XrayWrappers have some buggy methods.
@@ -543,8 +592,9 @@ const xRayWrappersMethodsFixes = {
     }
     // Create a wrapper that is going to call `postMessage` through `eval`
     let f = function postMessage(message, targetOrigin) {
-      message = message.toString().replace(/'/g,"\\'");
-      targetOrigin = targetOrigin.toString().replace(/'/g,"\\'");
+      message = message.toString().replace(/['\\]/g,"\\$&");
+      targetOrigin = targetOrigin.toString().replace(/['\\]/g,"\\$&");
+
       let jscode = "this.postMessage('" + message + "', '" +
                                 targetOrigin + "')";
       return this.wrappedJSObject.eval(jscode);
@@ -559,7 +609,10 @@ const xRayWrappersMethodsFixes = {
   mozMatchesSelector: function (obj) {
     // Ensure that we are on an object to expose this buggy method
     try {
-      obj.QueryInterface(Ci.nsIDOMNSElement);
+      // Bug 707576 removed nsIDOMNSElement.
+      // Can be simplified as soon as Firefox 11 become the minversion
+      obj.QueryInterface("nsIDOMElement" in Ci ? Ci.nsIDOMElement :
+                                                 Ci.nsIDOMNSElement);
     }
     catch(e) {
       return null;
@@ -573,8 +626,9 @@ const xRayWrappersMethodsFixes = {
     return getProxyForFunction(f, NativeFunctionWrapper(f));
   },
 
-  // Bug 679054: History API doesn't work with Proxy objects.
-  // We have to pass regular JS objects on `pushState` and replaceState methods.
+  // Bug 679054: History API doesn't work with Proxy objects. We have to pass
+  // regular JS objects on `pushState` and `replaceState` methods.
+  // In addition, the first argument has to come from the same compartment.
   pushState: function (obj) {
     // Ensure that we are on an object that expose History API
     try {
@@ -606,6 +660,33 @@ const xRayWrappersMethodsFixes = {
     };
 
     return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+
+  // Bug 769006: nsIDOMMutationObserver.observe fails with proxy as options
+  // attributes
+  observe: function observe(obj) {
+    // Ensure that we are on a DOMMutation object
+    try {
+      // nsIDOMMutationObserver starts with FF14
+      if ("nsIDOMMutationObserver" in Ci)
+        obj.QueryInterface(Ci.nsIDOMMutationObserver);
+      else
+        return null;
+    }
+    catch(e) {
+      return null;
+    }
+    return function nsIDOMMutationObserverObserveFix(target, options) {
+      // Gets native/unwrapped this
+      let self = this && typeof this.valueOf == "function" ?
+                 this.valueOf(UNWRAP_ACCESS_KEY) : this;
+      // Unwrap the xraywrapper target out of JS proxy
+      let targetXray = unwrap(target);
+      // But do not wrap `options` through ContentScriptObjectWrapper
+      let result = wrap(self.observe(targetXray, options));
+      // Finally wrap result into JS proxies
+      return wrap(result);
+    };
   }
 };
 
@@ -638,29 +719,37 @@ function handlerMaker(obj) {
     
     // derived traps
     has: function(name) {
-      if (name == "___proxy") return false;
       if (isEventName(name)) {
         // XrayWrappers throw exception when we try to access expando attributes
         // even on "name in wrapper". So avoid doing it!
         return name in expando;
       }
-      return name in obj || name in overload || name == "__isWrappedProxy";
+      return name in obj || name in overload || name == "__isWrappedProxy" ||
+             undefined !== this.get(null, name);
     },
     hasOwn: function(name) {
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      
-      if (name == "___proxy")
-        return undefined;
-      
+      // JS proxies are only meant to fix xraywrappers bugs,
+      // they are not usefull for unwrapped value.
+      if (name == "wrappedJSObject")
+        return obj.wrappedJSObject;
+
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
-      if (name == "toString")
-        return wrap(obj.wrappedJSObject ? obj.wrappedJSObject.toString
-                                        : obj.toString,
-                    obj, name);
-      
+      if (name == "toString") {
+        // Bug 714778: we should not pass obj.wrappedJSObject.toString
+        // in order to avoid sharing its proxy between two contents scripts.
+        // (not that `unwrappedObj` can be equal to `obj` when `obj` isn't
+        // an xraywrapper)
+        let unwrappedObj = XPCNativeWrapper.unwrap(obj);
+        return wrap(function () {
+          return unwrappedObj.toString.call(
+                   this.valueOf(UNWRAP_ACCESS_KEY), arguments);
+        }, obj, name);
+      }
+
       // Offer a way to retrieve XrayWrapper from a proxified node through `valueOf`
       if (name == "valueOf")
         return function (key) {
@@ -714,7 +803,7 @@ function handlerMaker(obj) {
     },
     
     set: function(receiver, name, val) {
-      
+
       if (isEventName(name)) {
         //console.log("SET on* attribute : " + name + " / " + val + "/" + obj);
         let shortName = name.replace(/^on/,"");
@@ -757,7 +846,7 @@ function handlerMaker(obj) {
     
     enumerate: function() {
       var result = [];
-      for each (name in Object.keys(obj)) {
+      for each (let name in Object.keys(obj)) {
         result.push(name);
       };
       return result;
@@ -773,13 +862,10 @@ function handlerMaker(obj) {
 /* 
  * Wrap an object from the document to a proxy wrapper.
  */
-exports.create = function create(object) {
-  // We accept either a XrayWrapper or an unwrapped reference
+function create(object) {
   if ("wrappedJSObject" in object)
     object = object.wrappedJSObject;
-
   let xpcWrapper = XPCNativeWrapper(object);
-
   // If we can't build an XPCNativeWrapper, it doesn't make sense to build
   // a proxy. All proxy code is based on having such wrapper that store
   // different JS attributes set.

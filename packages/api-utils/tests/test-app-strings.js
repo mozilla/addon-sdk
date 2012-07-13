@@ -1,4 +1,8 @@
-const {Cc,Ci} = require("chrome");
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const { Cc,Ci } = require("chrome");
 
 let StringBundle = require("app-strings").StringBundle;
 exports.testStringBundle = function(test) {
@@ -39,8 +43,8 @@ exports.testStringBundle = function(test) {
     let elem = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
     a.push([elem.key, elem.value]);
   }
-  for (let keyVal in Iterator(strings))
-    b.push(keyVal);
+  for (let key in strings)
+    b.push([ key, strings.get(key) ]);
 
   // Sort the arrays, because we don't assume enumeration has a set order.
   // Sort compares [key, val] as string "key,val", which sorts the way we want

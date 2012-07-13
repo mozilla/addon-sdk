@@ -1,10 +1,14 @@
-const widgets = require('widget');
-const pageMod = require('page-mod');
-const data = require('self').data;
-const panels = require('panel');
-const simpleStorage = require('simple-storage');
-const notifications = require("notifications");
-const privateBrowsing = require('private-browsing');
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+var widgets = require('widget');
+var pageMod = require('page-mod');
+var data = require('self').data;
+var panels = require('panel');
+var simpleStorage = require('simple-storage');
+var notifications = require("notifications");
+var privateBrowsing = require('private-browsing');
 
 /*
 Global variables

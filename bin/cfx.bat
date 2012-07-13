@@ -1,3 +1,6 @@
 @echo off
+rem This Source Code Form is subject to the terms of the Mozilla Public
+rem License, v. 2.0. If a copy of the MPL was not distributed with this
+rem file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-python "%VIRTUAL_ENV%\bin\cfx" %1 %2 %3 %4 %5 %6 %7 %8 %9
+python "%VIRTUAL_ENV%\bin\cfx" %*

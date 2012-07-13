@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com]  -->
 
 The `"list"` module provides base building blocks for composing lists.
@@ -38,7 +42,7 @@ composition, since all of its API is private except for the `length` property.
 
 **Examples:**
 
-    const MyList = List.compose({
+    var MyList = List.compose({
       add: function add(item1, item2, /*item3...*/) {
         Array.slice(arguments).forEach(this._add.bind(this));
       },

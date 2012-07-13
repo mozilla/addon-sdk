@@ -1,39 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Eric H. Jung <eric.jung@yahoo.com>
- *   Irakli Gozalishivili <gozala@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -45,9 +12,56 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-let { Ci } = require("chrome"),
+let { Ci, Cc } = require("chrome"),
     { setTimeout } = require("api-utils/timer"),
-    { EventEmitter } = require("api-utils/events");
+    { emit, off } = require("api-utils/event/core"),
+    { Unknown } = require("api-utils/xpcom"),
+    { Class, obscure } = require("api-utils/heritage"),
+    { EventTarget } = require("api-utils/event/target"),
+    observers = require("api-utils/observer-service"),
+    { ns } = require("api-utils/namespace");
+
+// When a document is not visible anymore the selection object is detached, and
+// a new selection object is created when it becomes visible again.
+// That makes the previous selection's listeners added previously totally 
+// useless – the listeners are not notified anymore.
+// To fix that we're listening for `document-shown` event in order to add
+// the listeners to the new selection object created.
+//
+// See bug 665386 for further details.
+
+let selections = ns();
+
+observers.add("document-shown", function (document) {
+  var window = document.defaultView;
+
+  let selection = selections(window).selection;
+
+  // We want to handle only the windows where we added selection's listeners 
+  if (selection) {
+    let currentSelection = window.getSelection();
+
+    // If the current selection for the window given is different from the one
+    // stored in the namespace, we need to add the listeners again, and replace
+    // the previous selection in our list with the new one.
+    //
+    // Notice that we don't have to remove the listeners from the old selection,
+    // because is detached. An attempt to remove the listener, will raise an
+    // error (see http://mxr.mozilla.org/mozilla-central/source/layout/generic/nsSelection.cpp#5343 )
+    //
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
+    if (currentSelection instanceof Ci.nsISelectionPrivate && 
+      currentSelection !== selection) {
+
+      currentSelection.addSelectionListener(SelectionListenerManager);
+      selections(window).selection = currentSelection;
+    }
+  }  
+});
+
+const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
+                       getService(Ci.nsIWindowMediator);
 
 // The selection type HTML
 const HTML = 0x01;
@@ -58,45 +72,53 @@ const TEXT = 0x02;
 // The selection type DOM (internal use only)
 const DOM  = 0x03;
 
-/**
- * Creates an object from which a selection can be set, get, etc. Each
- * object has an associated with a range number. Range numbers are the
- * 0-indexed counter of selection ranges as explained at
- * https://developer.mozilla.org/en/DOM/Selection.
- *
- * @param rangeNumber
- *        The zero-based range index into the selection
- */
-function Selection(rangeNumber) {
+// A more developer-friendly message than the caught exception when is not
+// possible change a selection.
+const ERR_CANNOT_CHANGE_SELECTION =
+  "It isn't possible to change the selection, as there isn't currently a selection";
 
-  // In order to hide the private rangeNumber argument from API consumers while
-  // still enabling Selection getters/setters to access it, the getters/setters
-  // are defined as lexical closures in the Selector constructor.
+const Selection = Class({
+  /**
+   * Creates an object from which a selection can be set, get, etc. Each
+   * object has an associated with a range number. Range numbers are the
+   * 0-indexed counter of selection ranges as explained at
+   * https://developer.mozilla.org/en/DOM/Selection.
+   *
+   * @param rangeNumber
+   *        The zero-based range index into the selection
+   */
+  initialize: function initialize(rangeNumber) {
+    // In order to hide the private `rangeNumber` argument from API consumers
+    // while still enabling Selection getters/setters to access it, we define
+    // it as non enumerable, non configurable property. While consumers still
+    // may discover it they won't be able to do any harm which is good enough
+    // in this case.
+    Object.defineProperties(this, {
+      rangeNumber: {
+        enumerable: false,
+        configurable: false,
+        value: rangeNumber
+      }
+    });
+  },
+  get text() { return getSelection(TEXT, this.rangeNumber); },
+  set text(value) { setSelection(value, this.rangeNumber); },
+  get html() { return getSelection(HTML, this.rangeNumber); },
+  set html(value) { setSelection(value, this.rangeNumber); },
+  get isContiguous() {
+    let selection = getSelection(DOM);
 
-  this.__defineGetter__("text", function () getSelection(TEXT, rangeNumber));
-  this.__defineSetter__("text", function (str) setSelection(str, rangeNumber));
+    // If there are multiple ranges, the selection is definitely discontiguous.
+    // It returns `false` also if there are no selection; and `true` if there is
+    // a single non empty range, or a selection in a text field - contiguous or
+    // not (text field selection APIs doesn't support multiple selections).
 
-  this.__defineGetter__("html", function () getSelection(HTML, rangeNumber));
-  this.__defineSetter__("html", function (str) setSelection(str, rangeNumber));
+    if (selection.rangeCount > 1)
+      return false;
 
-  this.__defineGetter__("isContiguous", function () {
-    let sel = getSelection(DOM, rangeNumber);
-    // It isn't enough to check that rangeCount is zero. If one or more ranges
-    // are selected and then unselected, rangeCount is set to one, not zero.
-    // Therefore, if rangeCount is one, we also check if the selection is
-    // collapsed.
-    if (sel.rangeCount == 0)
-      return null;
-    if (sel.rangeCount == 1) {
-      let range = safeGetRange(sel, 0);
-      return range && range.collapsed ? null : true;
-    }
-    return false;
-  });
-}
-
-require("api-utils/xpcom").utils.defineLazyServiceGetter(this, "windowMediator",
-  "@mozilla.org/appshell/window-mediator;1", "nsIWindowMediator");
+    return !!(safeGetRange(selection, 0) || getElementWithSelection());
+  }
+});
 
 /**
  * Returns the most recent content window
@@ -135,7 +157,16 @@ function getSelection(type, rangeNumber) {
     return selection;
   else if (type == TEXT) {
     let range = safeGetRange(selection, rangeNumber);
-    return range ? range.toString() : null;
+
+    if (range)
+      return range.toString();
+
+    let node = getElementWithSelection(window);
+
+    if (!node)
+      return null;
+
+    return node.value.substring(node.selectionStart, node.selectionEnd);
   }
   else if (type == HTML) {
     let range = safeGetRange(selection, rangeNumber);
@@ -176,6 +207,39 @@ function safeGetRange(selection, rangeNumber) {
 }
 
 /**
+ * Returns a reference of the DOM's active element for the window given, if it
+ * supports the text field selection API and has a text selected.
+ *
+ * Note:
+ *   we need this method because window.getSelection doesn't return a selection
+ *   for text selected in a form field (see bug 85686)
+ *
+ * @param {nsIWindow} [window]
+ *    A reference to a window
+ */
+function getElementWithSelection(window) {
+  let element;
+
+  try {
+    element = (window || context()).document.activeElement;
+  }
+  catch (e) {
+    element = null;
+  }
+
+  if (!element)
+    return null;
+
+  let { value, selectionStart, selectionEnd } = element;
+
+  let hasSelection = typeof value === "string" &&
+                      !isNaN(selectionStart) &&
+                      !isNaN(selectionEnd) &&
+                      selectionStart !== selectionEnd;
+
+  return hasSelection ? element : null;
+}
+/**
  * Sets the current selection of the most recent content document by changing
  * the existing selected text/HTML range to the specified value.
  *
@@ -189,33 +253,52 @@ function safeGetRange(selection, rangeNumber) {
 function setSelection(val, rangeNumber) {
     // Make sure we have a window context & that there is a current selection.
     // Selection cannot be set unless there is an existing selection.
-    let window, range;
+    let window, selection;
+
     try {
       window = context();
-      range = window.getSelection().getRangeAt(rangeNumber);
+      selection = window.getSelection();
     }
     catch (e) {
-      // Rethrow with a more developer-friendly message than the caught
-      // exception.
-      throw new Error("It isn't possible to change the selection, as there isn't currently a selection");
+      throw new Error(ERR_CANNOT_CHANGE_SELECTION);
     }
-    // Get rid of the current selection and insert our own
-    range.deleteContents();
-    let node = window.document.createElement("span");
-    range.surroundContents(node);
 
-    // Some relevant JEP-111 requirements:
+    let range = safeGetRange(selection, rangeNumber);
 
-    // Setting the text property replaces the selection with the value to
-    // which the property is set and sets the html property to the same value
-    // to which the text property is being set.
+    if (range) {
+      // Get rid of the current selection and insert our own
+      range.deleteContents();
+      let node = window.document.createElement("span");
+      range.surroundContents(node);
 
-    // Setting the html property replaces the selection with the value to
-    // which the property is set and sets the text property to the text version
-    // of the HTML value.
+      // Some relevant JEP-111 requirements:
 
-    // This sets both the HTML and text properties.
-    node.innerHTML = val;
+      // Setting the text property replaces the selection with the value to
+      // which the property is set and sets the html property to the same value
+      // to which the text property is being set.
+
+      // Setting the html property replaces the selection with the value to
+      // which the property is set and sets the text property to the text version
+      // of the HTML value.
+
+      // This sets both the HTML and text properties.
+      node.innerHTML = val;
+    } else {
+      let node = getElementWithSelection(window);
+
+      if (!node)
+        throw new Error(ERR_CANNOT_CHANGE_SELECTION);
+
+      let { value, selectionStart, selectionEnd } = node;
+
+      let newSelectionEnd = selectionStart + val.length;
+
+      node.value = value.substring(0, selectionStart) +
+                    val +
+                    value.substring(selectionEnd, value.length);
+
+      node.setSelectionRange(selectionStart, newSelectionEnd);
+    }
 }
 
 function onLoad(event) {
@@ -226,15 +309,13 @@ function onUnload(event) {
   SelectionListenerManager.onUnload(event);
 }
 
-let SelectionListenerManager = {
-  QueryInterface: require("api-utils/xpcom").utils.
-                  generateQI([Ci.nsISelectionListener]),
+function onSelect() {
+  SelectionListenerManager.onSelect();
+}
 
-  // The collection of listeners wanting to be notified of selection changes
-  listeners: EventEmitter.compose({
-    emit: function emit(type) this._emitOnObject(exports, type),
-    off: function() this._removeAllListeners.apply(this, arguments)
-  })(),
+let SelectionListenerManager = Class({
+  extends: Unknown,
+  interfaces: [ 'nsISelectionListener' ],
   /**
    * This is the nsISelectionListener implementation. This function is called
    * by Gecko when a selection is changed interactively.
@@ -253,7 +334,12 @@ let SelectionListenerManager = {
     if (!["SELECTALL", "KEYPRESS", "MOUSEUP"].some(function(type) reason &
       Ci.nsISelectionListener[type + "_REASON"]) || selection.toString() == "")
         return;
-    setTimeout(this.listeners.emit, 0, 'select')
+
+    this.onSelect();
+  },
+
+  onSelect : function onSelect() {
+    setTimeout(emit, 0, module.exports, "select");
   },
 
   /**
@@ -284,7 +370,7 @@ let SelectionListenerManager = {
     let self = this;
     function wrap(count, func) {
       if (count-- > 0)
-        require("api-utils/timer").setTimeout(wrap, 0);
+        setTimeout(wrap, 0);
       else
         self.addSelectionListener(window);
     }
@@ -295,8 +381,21 @@ let SelectionListenerManager = {
     if (window.jetpack_core_selection_listener)
       return;
     let selection = window.getSelection();
-    if (selection instanceof Ci.nsISelectionPrivate)
+
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
+    if (selection instanceof Ci.nsISelectionPrivate) {
       selection.addSelectionListener(this);
+
+      selections(window).selection = selection;
+    }
+
+    // nsISelectionListener implementation seems not fire a notification if
+    // a selection is in a text field, therefore we need to add a listener to
+    // window.onselect, that is fired only for text fields.
+    // https://developer.mozilla.org/en/DOM/window.onselect
+    window.addEventListener("select", onSelect, true);
+
     window.jetpack_core_selection_listener = true;
   },
 
@@ -306,16 +405,24 @@ let SelectionListenerManager = {
     if (!window)
       return;
     this.removeSelectionListener(window);
-    this.listeners.off('error');
-    this.listeners.off('selection');
+    off(exports);
   },
 
   removeSelectionListener: function removeSelectionListener(window) {
     if (!window.jetpack_core_selection_listener)
       return;
     let selection = window.getSelection();
-    if (selection instanceof Ci.nsISelectionPrivate)
+
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
+    if (selection instanceof Ci.nsISelectionPrivate) {
       selection.removeSelectionListener(this);
+
+      selections(window).selection = null;
+    }
+
+    window.removeEventListener("select", onSelect);
+
     window.jetpack_core_selection_listener = false;
   },
 
@@ -331,8 +438,7 @@ let SelectionListenerManager = {
     browser.removeEventListener("load", onLoad, true);
     browser.removeEventListener("unload", onUnload, true);
   }
-};
-SelectionListenerManager.listeners.on('error', console.error);
+})();
 
 /**
  * Install |SelectionListenerManager| as tab tracker in order to watch
@@ -340,17 +446,26 @@ SelectionListenerManager.listeners.on('error', console.error);
  */
 require("api-utils/tab-browser").Tracker(SelectionListenerManager);
 
-/**
- * Exports an iterator so that discontiguous selections can be iterated.
- */
-exports.__iterator__ = function __iterator__() {
-  for (let i = 0, sel = getSelection(DOM); i < sel.rangeCount; i++)
-    yield new Selection(i);
-};
+var SelectionIterator = Class(obscure({
+  /**
+   * Exports an iterator so that discontiguous selections can be iterated.
+   *
+   * If discontiguous selections are in a text field, only the first one
+   * is returned because the text field selection APIs doesn't support
+   * multiple selections.
+   */
+  __iterator__: function() {
+    let selection = getSelection(DOM);
+    let count = selection.rangeCount || (getElementWithSelection() ? 1 : 0);
 
-exports.on = SelectionListenerManager.listeners.on;
-exports.removeListener = SelectionListenerManager.listeners.removeListener;
+    for (let i = 0; i < count; i++)
+      yield Selection(i);
+  }
+}));
 
-// Export the Selection singleton. Its rangeNumber is always zero.
-Selection.call(exports, 0);
+var selection = Class({
+  extends: EventTarget,
+  implements: [ Selection, SelectionIterator ]
+})(0);
 
+module.exports = selection;

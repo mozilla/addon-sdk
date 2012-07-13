@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 
 The `tab-browser` module is a low-level API that provides privileged
@@ -25,15 +29,15 @@ Adds a new tab.
 
 **Example**
 
-    const tabBrowser = require("tab-browser");
+    var tabBrowser = require("tab-browser");
     tabBrowser.addTab("http://google.com");
 
-    const tabBrowser = require("tab-browser");
+    var tabBrowser = require("tab-browser");
     tabBrowser.addTab("http://google.com", {
       inBackground: true
     });
 
-    const tabBrowser = require("tab-browser");
+    var tabBrowser = require("tab-browser");
     tabBrowser.addTab("http://google.com", {
       inNewWindow: true,
       onLoad: function(tab) {
@@ -76,7 +80,7 @@ tracker registration.
 
 **Example**
 
-    const tabBrowser = require("tab-browser");
+    var tabBrowser = require("tab-browser");
     let tracker = {
       onTrack: function(tabbrowser) {
         console.log("A new tabbrowser is being tracked.");
@@ -110,7 +114,7 @@ tracker registration.
 
 **Example**
 
-    const tabBrowser = require("tab-browser");
+    var tabBrowser = require("tab-browser");
     let tracker = {
       onTrack: function(tab) {
         console.log("A new tab is being tracked.");

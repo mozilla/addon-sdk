@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 function assertList(test, array, list) {
@@ -24,7 +28,7 @@ function assertList(test, array, list) {
   }
 }
 
-const { List } = require('list');
+const { List } = require('api-utils/list');
 
 exports['test:test for'] = function(test) {
   let fixture = List(3, 2, 1);
@@ -43,17 +47,6 @@ exports['test:test for each'] = function(test) {
   let i = 3;
   for each (let value in fixture) {
     test.assertEqual(i--, value, 'value should match');
-  }
-};
-
-exports['test: for each using Iterator'] = function(test) {
-  let fixture = new List(3, 2, 1);
-
-  test.assertEqual(3, fixture.length, 'length is 3');
-  let v = 3, k = 0;
-  for each (let [key, value] in Iterator(fixture)) {
-    test.assertEqual(k++, key, 'key should match');
-    test.assertEqual(v--, value, 'value should match');
   }
 };
 

@@ -1,38 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Eric H. Jung <eric.jung@yahoo.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let timer = require("timer");
 let {Cc,Ci} = require("chrome");
@@ -55,9 +23,19 @@ function selectAllDivs(window) {
   }
 }
 
+function selectTextarea(window, from, to) {
+  let textarea = window.document.getElementsByTagName("textarea")[0];
+
+  from = from || 0;
+  to = to || textarea.value.length;
+
+  textarea.setSelectionRange(from, to);
+  textarea.focus();
+}
+
 function primeTestCase(html, test, callback) {
   let tabBrowser = require("tab-browser");
-  let dataURL = "data:text/html," + encodeURI(html);
+  let dataURL = "data:text/html;charset=utf-8," + encodeURI(html);
   let tracker = tabBrowser.whenContentLoaded(
     function(window) {
       if (window.document.location.href != dataURL)
@@ -86,7 +64,7 @@ exports.testContiguousMultiple = function testContiguousMultiple(test) {
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, false,
-      "selection.contiguous multiple works.");
+      "selection.isContiguous multiple works.");
   });
 
   test.waitUntilDone(5000);
@@ -97,20 +75,21 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, true,
-      "selection.contiguous single works.");
+      "selection.isContiguous single works.");
   });
 
   test.waitUntilDone(5000);
 };
 
-exports.testContiguousNull = function testContiguousNull(test) {
-  let selection = require("selection");
-  primeTestCase(HTML_SINGLE, test, function(window, test) {
-    test.assertEqual(selection.isContiguous, null,
-      "selection.contiguous null works.");
-  });
+exports.testContiguousWithoutSelection =
+  function testContiguousWithoutSelection(test) {
+    let selection = require("selection");
+    primeTestCase(HTML_SINGLE, test, function(window, test) {
+      test.assertEqual(selection.isContiguous, false,
+        "selection.isContiguous without selection works.");
+    });
 
-  test.waitUntilDone(5000);
+    test.waitUntilDone(5000);
 };
 
 /**
@@ -189,6 +168,19 @@ exports.testGetHTMLWeird = function testGetHTMLWeird(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testGetHTMLNullInTextareaSelection =
+  function testGetHTMLNullInTextareaSelection(test) {
+      let selection = require("selection");
+
+      primeTestCase(TEXT_FIELD, test, function(window, test) {
+        selectTextarea(window);
+
+        test.assertEqual(selection.html, null, "get html null in textarea works")
+      });
+
+      test.waitUntilDone(5000);
+};
+
 const REPLACEMENT_HTML = "<b>Lorem ipsum dolor sit amet</b>";
 
 exports.testSetHTMLSelection = function testSetHTMLSelection(test) {
@@ -223,8 +215,28 @@ const TEXT2 = "noodles";
 const TEXT_MULTIPLE = "<html><body><div>" + TEXT1 + "</div><div>" + TEXT2 +
   "</div></body></html>";
 const TEXT_SINGLE = "<html><body><div>" + TEXT1 + "</div></body></html>";
+const TEXT_FIELD = "<html><body><textarea>" + TEXT1 + "</textarea></body></html>";
 
 // Text tests
+
+exports.testSetHTMLinTextareaSelection =
+  function testSetHTMLinTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      // HTML string is set as plain text in textareas, that's because
+      // `selection.html` and `selection.text` are basically aliases when a
+      // value is set. See bug 677269
+      selection.html = REPLACEMENT_HTML;
+
+      test.assertEqual(selection.text, REPLACEMENT_HTML,
+        "set selection html in textarea works");
+    });
+
+    test.waitUntilDone(5000);
+};
 
 exports.testGetTextSingleSelection =
   function testGetTextSingleSelection(test) {
@@ -276,6 +288,30 @@ exports.testGetTextWeird = function testGetTextWeird(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testGetTextNullInTextareaSelection =
+  function testGetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      test.assertEqual(selection.text, null, "get text null in textarea works")
+    });
+
+    test.waitUntilDone(5000);
+};
+
+exports.testGetTextInTextareaSelection =
+  function testGetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      test.assertEqual(selection.text, TEXT1, "get text null in textarea works")
+    });
+
+    test.waitUntilDone(5000);
+};
+
 const REPLACEMENT_TEXT = "Lorem ipsum dolor sit amet";
 
 exports.testSetTextSelection = function testSetTextSelection(test) {
@@ -304,6 +340,22 @@ exports.testSetHTMLException = function testSetHTMLException(test) {
   test.waitUntilDone(5000);
 };
 
+exports.testSetTextInTextareaSelection =
+  function testSetTextInTextareaSelection(test) {
+    let selection = require("selection");
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      selection.text = REPLACEMENT_TEXT;
+
+      test.assertEqual(selection.text, REPLACEMENT_TEXT,
+        "set selection text in textarea works");
+    });
+
+    test.waitUntilDone(5000);
+};
+
 // Iterator tests
 
 exports.testIterator = function testIterator(test) {
@@ -317,6 +369,23 @@ exports.testIterator = function testIterator(test) {
   });
 
   test.waitUntilDone(5000);
+};
+
+exports.testIteratorWithTextareaSelection =
+  function testIteratorWithTextareaSelection(test) {
+    let selection = require("selection");
+    let selectionCount = 0;
+
+    primeTestCase(TEXT_FIELD, test, function(window, test) {
+      selectTextarea(window);
+
+      for each (let i in selection)
+        selectionCount++;
+
+      test.assertEqual(1, selectionCount, "iterator works in textarea.");
+    });
+
+    test.waitUntilDone(5000);
 };
 
 /* onSelect tests */
@@ -379,11 +448,10 @@ catch (err) {
   let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
   if (err.message.indexOf(bug) < 0)
     throw err;
-  for (let [prop, val] in Iterator(exports)) {
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
+
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("the selection module does not support this application.");
+    }
   }
-  exports.testAppNotSupported = function (test) {
-    test.pass("The selection module does not support this application.");
-  };
 }

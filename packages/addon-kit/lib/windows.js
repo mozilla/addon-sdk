@@ -1,39 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Felipe Gomes <felipc@gmail.com> (Original author)
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 if (!require("api-utils/xul-app").is("Firefox")) {
@@ -51,16 +18,14 @@ const { Cc, Ci } = require('chrome'),
       { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs'),
       { WindowDom } = require('api-utils/windows/dom'),
       { WindowLoader } = require('api-utils/windows/loader'),
-      { WindowTrackerTrait } = require('api-utils/window-utils'),
+      { isBrowser } = require('api-utils/window/utils'),
       { Options } = require('api-utils/tabs/tab'),
-      { utils } = require('api-utils/xpcom'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
-
-      WM = Cc['@mozilla.org/appshell/window-mediator;1'].
-        getService(Ci.nsIWindowMediator),
-
-      BROWSER = 'navigator:browser';
+      windowUtils = require('api-utils/window-utils'),
+      { WindowTrackerTrait } = windowUtils,
+      { ns } = require('api-utils/namespace'),
+      { observer: windowObserver } = require("api-utils/windows/observer");
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S
@@ -85,7 +50,7 @@ const BrowserWindowTrait = Trait.compose(
       // Register this window ASAP, in order to avoid loop that would try
       // to create this window instance over and over (see bug 648244)
       windows.push(this);
-      
+
       // make sure we don't have unhandled errors
       this.on('error', console.exception.bind(console));
 
@@ -93,6 +58,10 @@ const BrowserWindowTrait = Trait.compose(
         this.on('open', options.onOpen);
       if ('onClose' in options)
         this.on('close', options.onClose);
+      if ('onActivate' in options)
+        this.on('activate', options.onActivate);
+      if ('onDeactivate' in options)
+        this.on('deactivate', options.onDeactivate);
       if ('window' in options)
         this._window = options.window;
       if ('tabs' in options) {
@@ -106,6 +75,7 @@ const BrowserWindowTrait = Trait.compose(
       this._load();
       return this;
     },
+    destroy: function () this._onUnload(),
     _tabOptions: [],
     _onLoad: function() {
       try {
@@ -116,14 +86,14 @@ const BrowserWindowTrait = Trait.compose(
       this._emitOnObject(browserWindows, 'open', this._public);
     },
     _onUnload: function() {
+      if (!this._window)
+        return;
       this._destroyWindowTabTracker();
       this._emitOnObject(browserWindows, 'close', this._public);
       this._window = null;
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
-      this._removeAllListeners('close');
-      this._removeAllListeners('open');
-      this._removeAllListeners('ready');
+      this._removeAllListeners();
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?
@@ -132,6 +102,20 @@ const BrowserWindowTrait = Trait.compose(
     }
   })
 );
+
+/**
+ * Gets a `BrowserWindowTrait` for the given `chromeWindow` if previously
+ * registered, `null` otherwise.
+ */
+function getRegisteredWindow(chromeWindow) {
+  for each (let window in windows) {
+    if (chromeWindow === window._window)
+      return window;
+  }
+
+  return null;
+}
+
 /**
  * Wrapper for `BrowserWindowTrait`. Creates new instance if wrapper for
  * window doesn't exists yet. If wrapper already exists then returns it
@@ -142,18 +126,37 @@ const BrowserWindowTrait = Trait.compose(
  * @see BrowserWindowTrait
  */
 function BrowserWindow(options) {
-  let chromeWindow = options.window;
-  for each (let window in windows) {
-    if (chromeWindow == window._window)
-      return window._public
-  }
-  let window = BrowserWindowTrait(options);
-  return window._public;
+  let window = null;
+
+  if ("window" in options)
+    window = getRegisteredWindow(options.window);
+
+  return (window || BrowserWindowTrait(options))._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.
 BrowserWindow.prototype = BrowserWindowTrait.prototype;
-exports.BrowserWindow = BrowserWindow
+exports.BrowserWindow = BrowserWindow;
+
 const windows = [];
+
+const browser = ns();
+
+function onWindowActivation (chromeWindow, event) {
+  if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
+
+  let window = getRegisteredWindow(chromeWindow);
+
+  if (window)
+    window._emit(event.type, window._public);
+  else
+    window = BrowserWindowTrait({ window: chromeWindow });
+
+  browser(browserWindows).internals._emit(event.type, window._public);
+}
+
+windowObserver.on("activate", onWindowActivation);
+windowObserver.on("deactivate", onWindowActivation);
+
 /**
  * `BrowserWindows` trait is composed out of `List` trait and it represents
  * "live" list of currently open browser windows. Instance mutates itself
@@ -176,6 +179,8 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
      * windows.
      */
     constructor: function BrowserWindows() {
+      browser(this._public).internals = this;
+
       this._trackedWindows = [];
       this._initList();
       this._initTracker();
@@ -184,6 +189,11 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
     _destructor: function _destructor() {
       this._removeAllListeners('open');
       this._removeAllListeners('close');
+      this._removeAllListeners('activate');
+      this._removeAllListeners('deactivate');
+      this._clear();
+
+      delete browser(this._public).internals;
     },
     /**
      * This property represents currently active window.
@@ -191,8 +201,9 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
      * @type {Window|null}
      */
     get activeWindow() {
-      let window = WM.getMostRecentWindow(BROWSER);
-      return this._isBrowser(window) ? BrowserWindow({ window: window }) : null;
+      let window = windowUtils.activeBrowserWindow;
+
+      return window ? BrowserWindow({window: window}) : null;
     },
     open: function open(options) {
       if (typeof options === "string")
@@ -200,21 +211,14 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
         options = { tabs: [Options(options)] };
       return BrowserWindow(options);
     },
-    /**
-     * Returns true if specified window is a browser window.
-     * @param {nsIWindow} window
-     * @returns {Boolean}
-     */
-    _isBrowser: function _isBrowser(window)
-      BROWSER === window.document.documentElement.getAttribute("windowtype")
-    ,
+
      /**
       * Internal listener which is called whenever new window gets open.
       * Creates wrapper and adds to this list.
       * @param {nsIWindow} chromeWindow
       */
     _onTrack: function _onTrack(chromeWindow) {
-      if (!this._isBrowser(chromeWindow)) return;
+      if (!isBrowser(chromeWindow)) return;
       let window = BrowserWindow({ window: chromeWindow });
       this._add(window);
       this._emit('open', window);
@@ -225,14 +229,18 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
      * @param {nsIWindow} window
      */
     _onUntrack: function _onUntrack(chromeWindow) {
-      if (!this._isBrowser(chromeWindow)) return;
+      if (!isBrowser(chromeWindow)) return;
       let window = BrowserWindow({ window: chromeWindow });
-      // `_onUnload` method of the `BrowserWindow` will remove `chromeWindow`
-      // from the `windows` array.
       this._remove(window);
       this._emit('close', window);
+
+      // Bug 724404: do not leak this module and linked windows:
+      // We have to do it on untrack and not only when `_onUnload` is called
+      // when windows are closed, otherwise, we will leak on addon disabling.
+      window.destroy();
     }
   }).resolve({ toString: null })
 )();
+
 exports.browserWindows = browserWindows;
 

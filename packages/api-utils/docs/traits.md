@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com]  -->
 
 The `traits` module provides base building blocks for secure object
@@ -62,8 +66,8 @@ arguments is not significant.
 
 Let's say we want to define a reusable piece of code for a lists of elements.
 
-    const { Trait } = require('traits');
-    const List = Trait.compose({
+    var { Trait } = require('traits');
+    var List = Trait.compose({
       // private API:
       _list: null,
       // public API
@@ -117,7 +121,7 @@ Singleton, used during trait composition to define "required" properties.
 
 **Example:**
 
-    const Enumerable = Trait.compose({
+    var Enumerable = Trait.compose({
       list: Trait.required,
       forEach: function forEach(consumer) {
         return this.list.forEach(consumer);
@@ -126,7 +130,7 @@ Singleton, used during trait composition to define "required" properties.
 
     let c1 = Enumerable();      // Error: Missing required property: list
 
-    const EnumerableList = List.compose({
+    var EnumerableList = List.compose({
       get list() this._list.slice(0)
     }, Enumerable);
 
@@ -149,7 +153,7 @@ And if its value is `null`, the property will become required.
 
 **Example:**
 
-    const Range = List.resolve({
+    var Range = List.resolve({
       constructor: null,
       add: '_add',
     }).compose({
@@ -229,7 +233,7 @@ case string `'Trait'` is replaced with the name of `constructor` property.
 
 **Example:**
 
-    const MyTrait = Trait.compose({
+    var MyTrait = Trait.compose({
       constructor: function MyTrait() {
         // do your initialization here
       }

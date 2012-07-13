@@ -1,44 +1,12 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Drew Willcoxon <adw@mozilla.com> (Original Author)
- *   Matteo Ferretti <zer0@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let {Cc,Ci} = require("chrome");
+const { Loader } = require('test-harness/loader');
+const timer = require("timer");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -49,8 +17,7 @@ const OVERFLOW_THRESH_PREF =
 const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
-const TEST_DOC_URL = __url__.replace(/\.js$/, ".html");
-
+const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
 // Destroying items that were previously created should cause them to be absent
 // from the menu.
@@ -469,10 +436,40 @@ exports.testContentContextMatchString = function (test) {
 };
 
 
+// Ensure that contentScripFile is working correctly
+exports.testContentScriptFile = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  // Reject remote files
+  test.assertRaises(function() {
+      new loader.cm.Item({
+        label: "item",
+        contentScriptFile: "http://mozilla.com/context-menu.js"
+      });
+    },
+    "The 'contentScriptFile' option must be a local file URL " +
+    "or an array of local file URLs.",
+    "Item throws when contentScriptFile is a remote URL");
+
+  // But accept files from data folder
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScriptFile: require("self").data.url("test-context-menu.js")
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.done();
+  });
+};
+
+
 // The args passed to context listeners should be correct.
 exports.testContentContextArgs = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
+  let callbacks = 0;
 
   let item = new loader.cm.Item({
     label: "item",
@@ -483,13 +480,14 @@ exports.testContentContextArgs = function (test) {
                    '});',
     onMessage: function (isElt) {
       test.assert(isElt, "node should be an HTML element");
-      test.done();
+      if (++callbacks == 2) test.done();
     }
   });
 
-  test.showMenu(null, function () {});
+  test.showMenu(null, function () {
+    if (++callbacks == 2) test.done();
+  });
 };
-
 
 // Multiple contexts imply intersection, not union, and content context
 // listeners should not be called if all declarative contexts are not current.
@@ -513,7 +511,6 @@ exports.testMultipleContexts = function (test) {
     });
   });
 };
-
 
 // Once a context is removed, it should no longer cause its item to appear.
 exports.testRemoveContext = function (test) {
@@ -919,7 +916,7 @@ exports.testMenuClick = function (test) {
   // Create a top-level menu, submenu, and item, like this:
   // topMenu -> submenu -> item
   // Click the item and make sure the click bubbles.
-  let test = new TestHelper(test);
+  test = new TestHelper(test);
   let loader = test.newLoader();
 
   let item = new loader.cm.Item({
@@ -964,7 +961,6 @@ exports.testMenuClick = function (test) {
     });
   });
 };
-
 
 // Click listeners should work when multiple modules are loaded.
 exports.testItemClickMultipleModules = function (test) {
@@ -1585,15 +1581,50 @@ exports.testItemImage = function (test) {
 };
 
 
+// Menu.destroy should destroy the item tree rooted at that menu.
+exports.testMenuDestroy = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = loader.cm.Menu({
+    label: "menu",
+    items: [
+      loader.cm.Item({ label: "item 0" }),
+      loader.cm.Menu({
+        label: "item 1",
+        items: [
+          loader.cm.Item({ label: "subitem 0" }),
+          loader.cm.Item({ label: "subitem 1" }),
+          loader.cm.Item({ label: "subitem 2" })
+        ]
+      }),
+      loader.cm.Item({ label: "item 2" })
+    ]
+  });
+  menu.destroy();
+
+  let numRegistryEntries = 0;
+  loader.globalScope.browserManager.browserWins.forEach(function (bwin) {
+    for (let itemID in bwin.items)
+      numRegistryEntries++;
+  });
+  test.assertEqual(numRegistryEntries, 0, "All items should be unregistered.");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([], [], [menu]);
+    test.done();
+  });
+};
+
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
 if (!require("xul-app").is("Firefox")) {
-  for (let [prop, val] in Iterator(exports))
-    if (/^test/.test(prop) && typeof(val) === "function")
-      delete exports[prop];
-  exports.testAppNotSupported = function (test) {
-    test.pass("context-menu does not support this application.");
+  module.exports = {
+    testAppNotSupported: function (test) {
+      test.pass("context-menu does not support this application.");
+    }
   };
 }
 
@@ -1837,7 +1868,7 @@ TestHelper.prototype = {
     const self = this;
     node.addEventListener(event, function handler(evt) {
       node.removeEventListener(event, handler, useCapture);
-      require("timer").setTimeout(function () {
+      timer.setTimeout(function () {
         try {
           callback.call(self, evt);
         }
@@ -1845,7 +1876,7 @@ TestHelper.prototype = {
           self.test.exception(err);
           self.test.done();
         }
-      }, 10);
+      }, 20);
     }, useCapture);
   },
 
@@ -1945,13 +1976,11 @@ TestHelper.prototype = {
   // function that unloads the loader and associated resources.
   newLoader: function () {
     const self = this;
-    let loader = this.test.makeSandboxedLoader({
-      globals: { packaging: packaging }
-    });
+    let loader = Loader(module);
     let wrapper = {
       loader: loader,
       cm: loader.require("context-menu"),
-      globalScope: loader.findSandboxForModule("context-menu").globalScope,
+      globalScope: loader.sandbox("context-menu"),
       unload: function () {
         loader.unload();
         let idx = self.loaders.indexOf(wrapper);

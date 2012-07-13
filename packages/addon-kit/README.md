@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 The addon-kit package provides high-level APIs for add-on developers.
 Most of the needs of most add-on developers should be served by the modules
 found here. Modules in this packages don't require any special privileges to

@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
@@ -79,3 +83,45 @@ The `url` module provides functionality for the parsing and retrieving of URLs.
   The converted URL as a string.
 </api>
 
+<api name="DataURL">
+@class
+<api name="DataURL">
+@constructor
+  The DataURL constructor creates an object that represents a data: URL,
+  verifying that the provided string is a valid data: URL in the process.
+
+@param uri {string}
+  A string to be parsed as Data URL. If is not a valid URI, this constructor
+  will throw an exception.
+</api>
+
+<api name="mimeType">
+@property {string}
+  The MIME type of the data. By default is an empty string.
+</api>
+
+<api name="parameters">
+@property {object}
+  An hashmap that contains the parameters of the Data URL. By default is
+  an empty object.
+</api>
+
+<api name="base64">
+@property {boolean}
+  Defines the encoding for the value in `data` property.
+</api>
+
+<api name="data">
+@property {string}
+  The string that contains the data in the Data URL.
+  If the `uri` given to the constructor contains `base64` parameter, this string is decoded.
+</api>
+
+<api name="toString">
+@method
+  Returns a string representation of the Data URL.
+  If `base64` is `true`, the `data` property is encoded using base-64 encoding.
+@returns {string}
+  The URL as a string.
+</api>
+</api>

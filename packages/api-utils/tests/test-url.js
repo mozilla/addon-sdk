@@ -1,4 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var url = require("url");
+var { packed } = require("self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -81,9 +86,15 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  test.assertMatches(url.toFilename(__url__),
-                     /.*test-url\.js$/,
-                     "url.toFilename() on resource: URIs should work");
+  if (!packed)
+    test.assertMatches(url.toFilename(module.uri),
+                       /.*test-url\.js$/,
+                       "url.toFilename() on resource: URIs should work");
+  else
+    test.assertRaises(
+      function() { url.toFilename(module.uri); },
+      "cannot map to filename: "+module.uri,
+      "url.toFilename() can fail for packed XPIs");
 
   test.assertRaises(
     function() { url.toFilename("http://foo.com/"); },
@@ -111,7 +122,8 @@ exports.testToFilename = function(test) {
 };
 
 exports.testFromFilename = function(test) {
-  var fileUrl = url.fromFilename(url.toFilename(__url__));
+  var profileDirName = require("system").pathFor("ProfD");
+  var fileUrl = url.fromFilename(profileDirName);
   test.assertEqual(url.URL(fileUrl).scheme, 'file',
                    'url.toFilename() should return a file: url');
   test.assertEqual(url.fromFilename(url.toFilename(fileUrl)),
@@ -135,11 +147,11 @@ exports.testURL = function(test) {
                    "h:foo",
                    "toString should roundtrip");
   // test relative + base
-  test.assertEqual(URL("mypath", "http://foo").toString(), 
+  test.assertEqual(URL("mypath", "http://foo").toString(),
                    "http://foo/mypath",
                    "relative URL resolved to base");
   // test relative + no base
-  test.assertRaises(function() URL("path").toString(), 
+  test.assertRaises(function() URL("path").toString(),
                     "malformed URI: path",
                     "no base for relative URI should throw");
 
@@ -155,3 +167,89 @@ exports.testURL = function(test) {
   test.assertStrictEqual(a + "", "h:foo",
                          "toString is implicit when a URL is concatenated to a string");
 };
+
+exports.testStringInterface = function(test) {
+  let URL = url.URL;
+  var EM = "about:addons";
+  var a = URL(EM);
+
+  // make sure the standard URL properties are enumerable and not the String interface bits
+  test.assertEqual(Object.keys(a), "scheme,userPass,host,port,path", "enumerable key list check for URL.");
+  test.assertEqual(
+      JSON.stringify(a),
+      "{\"scheme\":\"about\",\"userPass\":null,\"host\":null,\"port\":null,\"path\":\"addons\"}",
+      "JSON.stringify should return a object with correct props and vals.");
+
+  // make sure that the String interface exists and works as expected
+  test.assertEqual(a.indexOf(":"), EM.indexOf(":"), "indexOf on URL works");
+  test.assertEqual(a.valueOf(), EM.valueOf(), "valueOf on URL works.");
+  test.assertEqual(a.toSource(), EM.toSource(), "toSource on URL works.");
+  test.assertEqual(a.lastIndexOf("a"), EM.lastIndexOf("a"), "lastIndexOf on URL works.");
+  test.assertEqual(a.match("t:").toString(), EM.match("t:").toString(), "match on URL works.");
+  test.assertEqual(a.toUpperCase(), EM.toUpperCase(), "toUpperCase on URL works.");
+  test.assertEqual(a.toLowerCase(), EM.toLowerCase(), "toLowerCase on URL works.");
+  test.assertEqual(a.split(":").toString(), EM.split(":").toString(), "split on URL works.");
+  test.assertEqual(a.charAt(2), EM.charAt(2), "charAt on URL works.");
+  test.assertEqual(a.charCodeAt(2), EM.charCodeAt(2), "charCodeAt on URL works.");
+  test.assertEqual(a.concat(EM), EM.concat(a), "concat on URL works.");
+  test.assertEqual(a.substr(2,3), EM.substr(2,3), "substr on URL works.");
+  test.assertEqual(a.substring(2,3), EM.substring(2,3), "substring on URL works.");
+  test.assertEqual(a.trim(), EM.trim(), "trim on URL works.");
+  test.assertEqual(a.trimRight(), EM.trimRight(), "trimRight on URL works.");
+  test.assertEqual(a.trimLeft(), EM.trimLeft(), "trimLeft on URL works.");
+}
+
+exports.testDataURLwithouthURI = function (test) {
+  const { DataURL } = url;
+
+  let dataURL = new DataURL();
+
+  test.assertEqual(dataURL.base64, false, "base64 is false for empty uri")
+  test.assertEqual(dataURL.data, "", "data is an empty string for empty uri")
+  test.assertEqual(dataURL.mimeType, "", "mimeType is an empty string for empty uri")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 0, "parameters is an empty object for empty uri");
+
+  test.assertEqual(dataURL.toString(), "data:,");
+}
+
+exports.testDataURLwithMalformedURI = function (test) {
+  const { DataURL } = url;
+
+  test.assertRaises(function() {
+      let dataURL = new DataURL("http://www.mozilla.com/");
+    },
+    "Malformed Data URL: http://www.mozilla.com/",
+    "DataURL raises an exception for malformed data uri"
+  );
+}
+
+exports.testDataURLparse = function (test) {
+  const { DataURL } = url;
+
+  let dataURL = new DataURL("data:text/html;charset=US-ASCII,%3Ch1%3EHello!%3C%2Fh1%3E");
+
+  test.assertEqual(dataURL.base64, false, "base64 is false for non base64 data uri")
+  test.assertEqual(dataURL.data, "<h1>Hello!</h1>", "data is properly decoded")
+  test.assertEqual(dataURL.mimeType, "text/html", "mimeType is set properly")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 1, "one parameters specified");
+  test.assertEqual(dataURL.parameters["charset"], "US-ASCII", "charset parsed");
+
+  test.assertEqual(dataURL.toString(), "data:text/html;charset=US-ASCII,%3Ch1%3EHello!%3C%2Fh1%3E");
+}
+
+exports.testDataURLparseBase64 = function (test) {
+  const { DataURL } = url;
+  const { decode } = require("./base64");
+
+  let text = "Awesome!";
+  let b64text = "QXdlc29tZSE=";
+  let dataURL = new DataURL("data:text/plain;base64," + b64text);
+
+  test.assertEqual(dataURL.base64, true, "base64 is true for base64 encoded data uri")
+  test.assertEqual(dataURL.data, text, "data is properly decoded")
+  test.assertEqual(dataURL.mimeType, "text/plain", "mimeType is set properly")
+  test.assertEqual(Object.keys(dataURL.parameters).length, 1, "one parameters specified");
+  test.assertEqual(dataURL.parameters["base64"], "", "parameter set without value");
+
+  test.assertEqual(dataURL.toString(), "data:text/plain;base64," + encodeURIComponent(b64text));
+}

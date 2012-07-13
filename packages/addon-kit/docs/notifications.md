@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 
 The `notifications` module allows you to display transient,
@@ -28,7 +32,7 @@ the console.
     });
 
 This one displays an icon that's stored in the add-on's `data` directory.  (See
-the [`self`](packages/addon-kit/docs/self.html) module documentation for more information.)
+the [`self`](packages/addon-kit/self.html) module documentation for more information.)
 
     var notifications = require("notifications");
     var self = require("self");
@@ -50,7 +54,7 @@ the [`self`](packages/addon-kit/docs/self.html) module documentation for more in
     A string to display as the body of the message.
   @prop [iconURL] {string}
     The URL of an icon to display inside the message.  It may be a remote URL,
-    a data URI, or a URL returned by the [`self`](packages/addon-kit/docs/self.html)
+    a data URI, or a URL returned by the [`self`](packages/addon-kit/self.html)
     module.
   @prop [onClick] {function}
     A function to be called when the user clicks the message.  It will be passed

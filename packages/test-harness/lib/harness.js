@@ -1,58 +1,24 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-var {Cc,Ci} = require("chrome");
+const { Cc,Ci } = require("chrome");
+const { Loader } = require('./loader');
+const memory = require('api-utils/memory');
 
 var cService = Cc['@mozilla.org/consoleservice;1'].getService()
                .QueryInterface(Ci.nsIConsoleService);
 
-// Cuddlefish loader for the sandbox in which we load and
-// execute tests.
-var sandbox;
+// Cuddlefish loader in which we load and execute tests.
+var loader;
 
 // Function to call when we're done running tests.
 var onDone;
 
 // Function to print text to a console, w/o CR at the end.
 var print;
-
-// The directories to look for tests in.
-var dirs;
 
 // How many more times to run all tests.
 var iterationsLeft;
@@ -62,6 +28,9 @@ var filter;
 
 // Whether to report memory profiling information.
 var profileMemory;
+
+// Whether we should stop as soon as a test reports a failure.
+var stopOnError;
 
 // Combined information from all test runs.
 var results = {
@@ -154,7 +123,6 @@ function dictDiff(last, curr) {
 
 function reportMemoryUsage() {
   memory.gc();
-  sandbox.memory.gc();
 
   var mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
             .getService(Ci.nsIMemoryReporterManager);
@@ -168,7 +136,7 @@ function reportMemoryUsage() {
   }
 
   var weakrefs = [info.weakref.get()
-                  for each (info in sandbox.memory.getObjects())];
+                  for each (info in memory.getObjects())];
   weakrefs = [weakref for each (weakref in weakrefs) if (weakref)];
   print("Tracked memory objects in testing sandbox: " +
         weakrefs.length + "\n");
@@ -203,19 +171,19 @@ function showResults() {
 
 function cleanup() {
   try {
-    for (let name in sandbox.sandboxes)
-      sandbox.memory.track(sandbox.sandboxes[name].globalScope,
+    for (let name in loader.modules)
+      memory.track(loader.modules[name],
                            "module global scope: " + name);
-    sandbox.memory.track(sandbox, "Cuddlefish Loader");
+      memory.track(loader, "Cuddlefish Loader");
 
     if (profileMemory) {
       gWeakrefInfo = [{ weakref: info.weakref, bin: info.bin }
-                      for each (info in sandbox.memory.getObjects())];
+                      for each (info in memory.getObjects())];
     }
 
-    sandbox.unload();
+    loader.unload();
 
-    if (sandbox.console.errorsLogged && !results.failed) {
+    if (loader.globals.console.errorsLogged && !results.failed) {
       results.failed++;
       console.error("warnings and/or errors were logged.");
     }
@@ -229,7 +197,7 @@ function cleanup() {
     }
 
     consoleListener.errorsLogged = 0;
-    sandbox = null;
+    loader = null;
 
     memory.gc();
   } catch (e) {
@@ -248,7 +216,7 @@ function nextIteration(tests) {
 
     if (profileMemory)
       reportMemoryUsage();
-    
+
     let testRun = [];
     for each (let test in tests.testRunSummary) {
       let testCopy = {};
@@ -261,17 +229,20 @@ function nextIteration(tests) {
     results.testRuns.push(testRun);
     iterationsLeft--;
   }
-  if (iterationsLeft)
-    sandbox.require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: packaging.enableE10s,
+
+  if (iterationsLeft && (!stopOnError || results.failed == 0)) {
+    let require = loader.require;
+    require("api-utils/unit-test").findAndRunTests({
+      testOutOfProcess: false,
       testInProcess: true,
-      fs: sandbox.fs,
-      dirs: dirs,
+      stopOnError: stopOnError,
       filter: filter,
       onDone: nextIteration
     });
-  else
+  }
+  else {
     require("api-utils/timer").setTimeout(cleanup, 0);
+  }
 }
 
 var POINTLESS_ERRORS = [
@@ -319,39 +290,27 @@ var runTests = exports.runTests = function runTests(options) {
   iterationsLeft = options.iterations;
   filter = options.filter;
   profileMemory = options.profileMemory;
+  stopOnError = options.stopOnError;
   onDone = options.onDone;
   print = options.print;
 
   try {
     cService.registerListener(consoleListener);
 
-    var cuddlefish = require("api-utils/cuddlefish");
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
+    var system = require("api-utils/system");
 
-    dirs = [url.toFilename(path)
-            for each (path in options.rootPaths)];
-    var console = new TestRunnerConsole(new ptc.PlainTextConsole(print),
-                                        options);
-    var globals = {packaging: packaging};
+    print("Running tests on " + system.name + " " + system.version +
+          "/Gecko " + system.platformVersion + " (" +
+          system.id + ") under " +
+          system.platform + "/" + system.architecture + ".\n");
 
-    var xulApp = require("api-utils/xul-app");
-    var xulRuntime = Cc["@mozilla.org/xre/app-info;1"]
-                     .getService(Ci.nsIXULRuntime);
 
-    print("Running tests on " + xulApp.name + " " + xulApp.version +
-          "/Gecko " + xulApp.platformVersion + " (" + 
-          xulApp.ID + ") under " +
-          xulRuntime.OS + "/" + xulRuntime.XPCOMABI + ".\n");
+    loader = Loader(module, {
+      console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
+    });
 
-    sandbox = new cuddlefish.Loader({console: console,
-                                     globals: globals,
-                                     metadata: packaging.options.metadata,
-                                     jetpackID: packaging.options.jetpackID,
-                                     uriPrefix: packaging.options.uriPrefix,
-                                     name: packaging.options.name,
-                                     packaging: packaging,
-                                     __proto__: options});
     nextIteration();
   } catch (e) {
     print(require("api-utils/traceback").format(e) + "\n" + e + "\n");
@@ -359,7 +318,6 @@ var runTests = exports.runTests = function runTests(options) {
   }
 };
 
-require("api-utils/unload").when(
-  function() {
-    cService.unregisterListener(consoleListener);
-  });
+require("api-utils/unload").when(function() {
+  cService.unregisterListener(consoleListener);
+});

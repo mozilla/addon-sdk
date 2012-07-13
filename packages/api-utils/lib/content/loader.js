@@ -1,48 +1,22 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Irakli Gozalishvili <gozala@mozilla.com> (Original Author)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
 const { EventEmitter } = require('../events');
-const { validateOptions, getTypeOf } = require('../api-utils');
-const { URL, toFilename } = require('../url');
+const { validateOptions } = require('../api-utils');
+const { URL } = require('../url');
 const file = require('../file');
+
+const LOCAL_URI_SCHEMES = ['resource', 'data'];
+
+// Returns `null` if `value` is `null` or `undefined`, otherwise `value`.
+function ensureNull(value) {
+  return value == null ? null : value;
+}
 
 // map of property validations
 const valid = {
@@ -60,40 +34,52 @@ const valid = {
   },
   contentScriptFile: {
     is: ['undefined', 'null', 'string', 'array'],
-    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
+    map: ensureNull,
     ok: function(value) {
-      if (getTypeOf(value) === 'array') {
-        // Make sure every item is a local file URL.
-        return value.every(function (item) {
-          try {
-            toFilename(item);
-            return true;
-          }
-          catch(e) {
-            return false;
-          }
-        });
-      }
-      return true;
+      if (value === null)
+        return true;
+
+      value = [].concat(value);
+
+      // Make sure every item is a local file URL.
+      return value.every(function (item) {
+        try {
+          return ~LOCAL_URI_SCHEMES.indexOf(URL(item).scheme);
+        }
+        catch(e) {
+          return false;
+        }
+      });
+
     },
-    msg: 'The `contentScriptFile` option must be a local file URL or an array of'
-          + 'URLs.'
+    msg: 'The `contentScriptFile` option must be a local URL or an array of URLs.'
   },
   contentScript: {
     is: ['undefined', 'null', 'string', 'array'],
-    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
-    ok: function(value) 'array' !== getTypeOf(value) ? true :
-      value.every(function(item) 'string' === getTypeOf(item))
-    ,
-    msg: 'The script option must be a string or an array of strings.'
+    map: ensureNull,
+    ok: function(value) {
+      return !Array.isArray(value) || value.every(
+        function(item) { return typeof item === 'string' }
+      );
+    },
+    msg: 'The `contentScript` option must be a string or an array of strings.'
   },
   contentScriptWhen: {
     is: ['string'],
-    ok: function(value) ['start', 'ready', 'end'].indexOf(value) >= 0,
-    map: function(value) { 
+    ok: function(value) { return ~['start', 'ready', 'end'].indexOf(value) },
+    map: function(value) {
       return value || 'end';
     },
     msg: 'The `contentScriptWhen` option must be either "start", "ready" or "end".'
+  },
+  contentScriptOptions: {
+    ok: function(value) {
+      if ( value === undefined ) { return true; }
+      try { JSON.parse( JSON.stringify( value ) ); } catch(e) { return false; }
+      return true;
+    },
+    map: function(value) 'undefined' === getTypeOf(value) ? null : value,
+    msg: 'The contentScriptOptions should be a jsonable value.'
   }
 };
 exports.validationAttributes = valid;
@@ -147,10 +133,10 @@ const Loader = EventEmitter.compose({
   _contentURL: null,
   /**
    * When to load the content scripts.
-   * Possible values are "end" (default), which loads them once all page 
-   * contents have been loaded, "ready", which loads them once DOM nodes are 
-   * ready (ie like DOMContentLoaded event), and "start", which loads them once 
-   * the `window` object for the page has been created, but before any scripts 
+   * Possible values are "end" (default), which loads them once all page
+   * contents have been loaded, "ready", which loads them once DOM nodes are
+   * ready (ie like DOMContentLoaded event), and "start", which loads them once
+   * the `window` object for the page has been created, but before any scripts
    * specified by the page have been loaded.
    * Property change emits `propertyChange` event on instance with this key
    * and new value.
@@ -160,12 +146,24 @@ const Loader = EventEmitter.compose({
   set contentScriptWhen(value) {
     value = validate(value, valid.contentScriptWhen);
     if (value !== this._contentScriptWhen) {
-      this._emit('propertyChange', { 
-        contentScriptWhen: this._contentScriptWhen = value 
+      this._emit('propertyChange', {
+        contentScriptWhen: this._contentScriptWhen = value
       });
     }
   },
   _contentScriptWhen: 'end',
+  /**
+   * Options avalaible from the content script as `self.options`.
+   * The value of options can be of any type (object, array, string, etc.)
+   * but only jsonable values will be available as frozen objects from the
+   * content script.
+   * Property change emits `propertyChange` event on instance with this key
+   * and new value.
+   * @type {Object}
+   */
+  get contentScriptOptions() this._contentScriptOptions,
+  set contentScriptOptions(value) this._contentScriptOptions = value,
+  _contentScriptOptions: null,
   /**
    * The URLs of content scripts.
    * Property change emits `propertyChange` event on instance with this key
@@ -176,7 +174,7 @@ const Loader = EventEmitter.compose({
   set contentScriptFile(value) {
     value = validate(value, valid.contentScriptFile);
     if (value != this._contentScriptFile) {
-      this._emit('propertyChange', { 
+      this._emit('propertyChange', {
         contentScriptFile: this._contentScriptFile = value
       });
     }
@@ -193,11 +191,10 @@ const Loader = EventEmitter.compose({
     value = validate(value, valid.contentScript);
     if (value != this._contentScript) {
       this._emit('propertyChange', {
-        contentScript: this._contentScript = value 
+        contentScript: this._contentScript = value
       });
     }
   },
   _contentScript: null
 });
 exports.Loader = Loader;
-

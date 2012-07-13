@@ -1,48 +1,10 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim:set ts=2 sw=2 sts=2 et: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is
- * the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Dietrich Ayala <dietrich@mozilla.com> (Original Author)
- *   Drew Willcoxon <adw@mozilla.com>
- *   Irakli Gozalishvili <gozala@mozilla.com>
- *   Alexandre Poirot <apoirot@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-const {Cc, Ci} = require("chrome");
 
 // Widget content types
 const CONTENT_TYPE_URI    = 1;
@@ -78,10 +40,13 @@ const { EventEmitter, EventEmitterTrait } = require("api-utils/events");
 const { Trait } = require("api-utils/traits");
 const LightTrait = require('api-utils/light-traits').Trait;
 const { Loader, Symbiont } = require("api-utils/content");
-const timer = require("api-utils/timer");
 const { Cortex } = require('api-utils/cortex');
 const windowsAPI = require("./windows");
+const { WindowTracker } = require("api-utils/window-utils");
+const { isBrowser } = require("api-utils/window/utils");
+const { setTimeout } = require("api-utils/timer");
 const unload = require("api-utils/unload");
+const { uuid } = require("api-utils/uuid");
 
 // Data types definition
 const valid = {
@@ -110,6 +75,14 @@ const valid = {
     },
     defaultValue: 16
   },
+  allow: {
+    is: ["null", "undefined", "object"],
+    map: function (v) {
+      if (!v) v = { script: true };
+      return v;
+    },
+    get defaultValue() ({ script: true })
+  },
 };
 
 // Widgets attributes definition
@@ -119,7 +92,8 @@ let widgetAttributes = {
   tooltip: valid.string,
   width: valid.width,
   content: valid.string,
-  panel: valid.panel
+  panel: valid.panel,
+  allow: valid.allow
 };
 
 // Import data definitions from loader, but don't compose with it as Model
@@ -515,13 +489,13 @@ let browserManager = {
   // that calling this method can cause onTrack to be called immediately if
   // there are open windows.
   init: function () {
-    let windowTracker = new (require("api-utils/window-utils").WindowTracker)(this);
+    let windowTracker = new WindowTracker(this);
     unload.ensure(windowTracker);
   },
 
   // Registers a window with the manager.  This is a WindowTracker callback.
   onTrack: function browserManager_onTrack(window) {
-    if (this._isBrowserWindow(window)) {
+    if (isBrowser(window)) {
       let win = new BrowserWindow(window);
       win.addItems(this.items);
       this.windows.push(win);
@@ -535,7 +509,7 @@ let browserManager = {
   // unload itself, since unloading the browserManager means untracking all
   // currently opened windows.
   onUntrack: function browserManager_onUntrack(window) {
-    if (this._isBrowserWindow(window)) {
+    if (isBrowser(window)) {
       this.items.forEach(function(i) i._onWindowClosed(window));
       for (let i = 0; i < this.windows.length; i++) {
         if (this.windows[i].window == window) {
@@ -575,11 +549,6 @@ let browserManager = {
     let idx = this.items.indexOf(item);
     if (idx > -1)
       this.items.splice(idx, 1);
-  },
-
-  _isBrowserWindow: function browserManager__isBrowserWindow(win) {
-    let winType = win.document.documentElement.getAttribute("windowtype");
-    return winType === "navigator:browser";
   }
 };
 
@@ -668,11 +637,16 @@ BrowserWindow.prototype = {
     
     // Finally insert our widget in the right toolbar and in the right position
     container.insertItem(id, nextNode, null, false);
-    
-    // Update DOM in order to save position if we remove/readd the widget
-    container.setAttribute("currentset", container.currentSet);
-    // Save DOM attribute in order to save position on new window opened
-    this.window.document.persist(container.id, "currentset");
+
+    // Update DOM in order to save position: which toolbar, and which position 
+    // in this toolbar. But only do this the first time we add it to the toolbar
+    // Otherwise, this code will collide with other instance of Widget module
+    // during Firefox startup. See bug 685929.
+    if (ids.indexOf(id) == -1) {
+      container.setAttribute("currentset", container.currentSet);
+      // Save DOM attribute in order to save position on new window opened
+      this.window.document.persist(container.id, "currentset");
+    }
   }
 }
 
@@ -721,7 +695,7 @@ WidgetChrome.prototype.update = function WC_update(updatedItem, property, value)
 WidgetChrome.prototype._createNode = function WC__createNode() {
   // XUL element container for widget
   let node = this._doc.createElement("toolbaritem");
-  let guid = require("api-utils/xpcom").makeUuid().toString();
+  let guid = String(uuid());
   
   // Temporary work around require("self") failing on unit-test execution ...
   let jetpackID = "testID";
@@ -735,6 +709,8 @@ WidgetChrome.prototype._createNode = function WC__createNode() {
   node.setAttribute("label", this._widget.label);
   node.setAttribute("tooltiptext", this._widget.tooltip);
   node.setAttribute("align", "center");
+  // Bug 626326: Prevent customize toolbar context menu to appear
+  node.setAttribute("context", "");
 
   // TODO move into a stylesheet, configurable by consumers.
   // Either widget.style, exposing the style object, or a URL
@@ -789,14 +765,14 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
 
   switch (type) {
     case CONTENT_TYPE_HTML:
-      contentURL = "data:text/html," + encodeURIComponent(this._widget.content);
+      contentURL = "data:text/html;charset=utf-8," + encodeURIComponent(this._widget.content);
       break;
     case CONTENT_TYPE_URI:
       contentURL = this._widget.contentURL;
       break;
     case CONTENT_TYPE_IMAGE:
       let imageURL = this._widget.contentURL;
-      contentURL = "data:text/html,<html><body><img src='" +
+      contentURL = "data:text/html;charset=utf-8,<html><body><img src='" +
                    encodeURI(imageURL) + "'></body></html>";
       break;
     default:
@@ -823,9 +799,10 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
     contentScriptFile: this._widget.contentScriptFile,
     contentScript: this._widget.contentScript,
     contentScriptWhen: this._widget.contentScriptWhen,
+    contentScriptOptions: this._widget.contentScriptOptions,
     allow: this._widget.allow,
     onMessage: function(message) {
-      timer.setTimeout(function() {
+      setTimeout(function() {
         self._widget._onEvent("message", message);
       }, 0);
     }
@@ -855,14 +832,14 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       return;
 
     // Proxy event to the widget
-    timer.setTimeout(function() {
+    setTimeout(function() {
       self._widget._onEvent(EVENTS[e.type], null, self.node);
     }, 0);
   };
 
   this.eventListeners = {};
   let iframe = this.node.firstElementChild;
-  for (let [type, method] in Iterator(EVENTS)) {
+  for (let type in EVENTS) {
     iframe.addEventListener(type, listener, true, true);
 
     // Store listeners for later removal
@@ -871,8 +848,8 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
   
   // On document load, make modifications required for nice default
   // presentation.
-  let self = this;
   function loadListener(e) {
+    let containerStyle = self.window.getComputedStyle(self.node.parentNode);
     // Ignore event firings that target the iframe
     if (e.target == iframe)
       return;
@@ -892,6 +869,12 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
       doc.body.firstElementChild.style.height = "16px";
     }
 
+    // Extend the add-on bar's default text styles to the widget.
+    doc.body.style.color = containerStyle.color;
+    doc.body.style.fontFamily = containerStyle.fontFamily;
+    doc.body.style.fontSize = containerStyle.fontSize;
+    doc.body.style.fontWeight = containerStyle.fontWeight;
+    doc.body.style.textShadow = containerStyle.textShadow;
     // Allow all content to fill the box by default.
     doc.body.style.margin = "0";
   }
@@ -920,8 +903,10 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
 // Remove and unregister the widget from everything
 WidgetChrome.prototype.destroy = function WC_destroy(removedItems) {
   // remove event listeners
-  for (let [type, listener] in Iterator(this.eventListeners))
+  for (let type in this.eventListeners) {
+    let listener = this.eventListeners[type];
     this.node.firstElementChild.removeEventListener(type, listener, true);
+  }
   // remove dom node
   this.node.parentNode.removeChild(this.node);
   // cleanup symbiont

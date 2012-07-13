@@ -1,42 +1,13 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Jetpack.
- *
- * The Initial Developer of the Original Code is Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2007
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Atul Varma <atul@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-const {Cc,Ci,Cr} = require("chrome");
+const { Cc, Ci, Cr } = require("chrome");
+
+const { Class } = require("./heritage");
+const base64 = require("./base64");
 
 var ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
@@ -96,6 +67,10 @@ let toFilename = exports.toFilename = function toFilename(url) {
 };
 
 function URL(url, base) {
+  if (!(this instanceof URL)) {
+     return new URL(url, base);
+  }
+
   var uri = newURI(url, base);
 
   var userPass = null;
@@ -118,6 +93,140 @@ function URL(url, base) {
   this.__defineGetter__("host", function() host);
   this.__defineGetter__("port", function() port);
   this.__defineGetter__("path", function() uri.path);
-  this.toString = function URL_toString() uri.spec;
+
+  Object.defineProperties(this, {
+    toString: {
+      value: function URL_toString() new String(uri.spec).toString(),
+      enumerable: false
+    },
+    valueOf: {
+      value: function() new String(uri.spec).valueOf(),
+      enumerable: false
+    },
+    toSource: {
+      value: function() new String(uri.spec).toSource(),
+      enumerable: false
+    }
+  });
+
+  return this;
 };
-exports.URL = require("./api-utils").publicConstructor(URL);
+
+URL.prototype = Object.create(String.prototype);
+exports.URL = URL;
+
+/**
+ * Parse and serialize a Data URL.
+ *
+ * See: http://tools.ietf.org/html/rfc2397
+ *
+ * Note: Could be extended in the future to decode / encode automatically binary
+ * data.
+ */
+const DataURL = Class({
+
+  get base64 () {
+    return "base64" in this.parameters;
+  },
+
+  set base64 (value) {
+    if (value)
+      this.parameters["base64"] = "";
+    else
+      delete this.parameters["base64"];
+  },
+  /**
+  * Initialize the Data URL object. If a uri is given, it will be parsed.
+  *
+  * @param {String} [uri] The uri to parse
+  *
+  * @throws {URIError} if the Data URL is malformed
+   */
+  initialize: function(uri) {
+    // Due to bug 751834 it is not possible document and define these
+    // properties in the prototype.
+
+    /**
+     * An hashmap that contains the parameters of the Data URL. By default is
+     * empty, that accordingly to RFC is equivalent to {"charset" : "US-ASCII"}
+     */
+    this.parameters = {};
+
+    /**
+     * The MIME type of the data. By default is empty, that accordingly to RFC
+     * is equivalent to "text/plain"
+     */
+    this.mimeType = "";
+
+    /**
+     * The string that represent the data in the Data URL
+     */
+    this.data = "";
+
+    if (typeof uri === "undefined")
+      return;
+
+    uri = String(uri);
+
+    let matches = uri.match(/^data:([^,]*),(.*)$/i);
+
+    if (!matches)
+      throw new URIError("Malformed Data URL: " + uri);
+
+    let mediaType = matches[1].trim();
+
+    this.data = decodeURIComponent(matches[2].trim());
+
+    if (!mediaType)
+      return;
+
+    let parametersList = mediaType.split(";");
+
+    this.mimeType = parametersList.shift().trim();
+
+    for (let parameter, i = 0; parameter = parametersList[i++];) {
+      let pairs = parameter.split("=");
+      let name = pairs[0].trim();
+      let value = pairs.length > 1 ? decodeURIComponent(pairs[1].trim()) : "";
+
+      this.parameters[name] = value;
+    }
+
+    if (this.base64)
+      this.data = base64.decode(this.data);
+
+  },
+
+  /**
+   * Returns the object as a valid Data URL string
+   *
+   * @returns {String} The Data URL
+   */
+  toString : function() {
+    let parametersList = [];
+
+    for (let name in this.parameters) {
+      let encodedParameter = encodeURIComponent(name);
+      let value = this.parameters[name];
+
+      if (value)
+        encodedParameter += "=" + encodeURIComponent(value);
+
+      parametersList.push(encodedParameter);
+    }
+
+    // If there is at least a parameter, add an empty string in order
+    // to start with a `;` on join call.
+    if (parametersList.length > 0)
+      parametersList.unshift("");
+
+    let data = this.base64 ? base64.encode(this.data) : this.data;
+
+    return "data:" +
+      this.mimeType +
+      parametersList.join(";") + "," +
+      encodeURIComponent(data);
+  }
+});
+
+exports.DataURL = DataURL;

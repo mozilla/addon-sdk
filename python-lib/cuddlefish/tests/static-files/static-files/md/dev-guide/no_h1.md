@@ -1,3 +1,0 @@
-## A heading ##
-
-*Some words!*

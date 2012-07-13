@@ -1,4 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var timer = require("timer");
+const { Loader } = require("test-harness/loader");
 
 exports.testSetTimeout = function(test) {
   timer.setTimeout(function() {
@@ -105,7 +110,7 @@ exports.testParamedClearInterval = function(test) {
 
 
 exports.testUnload = function(test) {
-  var loader = test.makeSandboxedLoader();
+  var loader = Loader(module);
   var sbtimer = loader.require("timer");
 
   var myFunc = function myFunc() {

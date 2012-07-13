@@ -1,7 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 let tests = {}, hiddenFrames, HiddenFrame;
 
 tests.testFrame = function(test) {
-  let url = "data:text/html,<!DOCTYPE%20html>";
+  let url = "data:text/html;charset=utf-8,<!DOCTYPE%20html>";
   test.waitUntilDone();
   let hiddenFrame = hiddenFrames.add(HiddenFrame({
     onReady: function () {

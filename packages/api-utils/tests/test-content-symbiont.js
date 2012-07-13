@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 const { Cc, Ci } = require('chrome');
@@ -11,7 +15,7 @@ function makeWindow() {
     'xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">' +
     '<iframe id="content" type="content"/>' +
     '</window>';
-  var url = "data:application/vnd.mozilla.xul+xml," +
+  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," +
             encodeURIComponent(content);
   var features = ["chrome", "width=10", "height=10"];
 
@@ -21,50 +25,44 @@ function makeWindow() {
 }
 
 exports['test:constructing symbiont && validating API'] = function(test) {
-  let window = makeWindow();
-  window.addEventListener("load", function onLoad() {
-    window.removeEventListener("load", onLoad, false);
-    let frame = window.document.getElementById("content");
-    // TODO: support arrays ??
-    let contentScripts = ["1;", "2;"];
-    let contentSymbiont = Symbiont({
-      frame: frame,
-      contentScriptFile: self.data.url("test-content-symbiont.js"),
-      contentScript: contentScripts,
-      contentScriptWhen: "start"
-    });
+  let contentScript = ["1;", "2;"];
+  let contentScriptFile = self.data.url("test-content-symbiont.js");
 
-    test.assertEqual(
-      self.data.url("test-content-symbiont.js"),
-      contentSymbiont.contentScriptFile,
-      "There is one contentScriptFile, as specified in options."
-    );
-    test.assertEqual(
-      contentScripts.length,
-      contentSymbiont.contentScript.length,
-      "There are two contentScripts, as specified in options."
-    );
-    test.assertEqual(
-      contentScripts[0],
-      contentSymbiont.contentScript[0],
-      "There are two contentScripts, as specified in options."
-    );
-    test.assertEqual(
-      contentScripts[1],
-      contentSymbiont.contentScript[1],
-      "There are two contentScripts, as specified in options."
-    )
-    test.assertEqual(
-      contentSymbiont.contentScriptWhen,
-      "start",
-      "contentScriptWhen is as specified in options."
-    );
+  // We can avoid passing a `frame` argument. Symbiont will create one
+  // by using HiddenFrame module
+  let contentSymbiont = Symbiont({
+    contentScriptFile: contentScriptFile,
+    contentScript: contentScript,
+    contentScriptWhen: "start"
+  });
 
-    test.done();
-    window.close();
-    frame.setAttribute("src", "data:text/html,<html><body></body></html>");
-  }, false);
-  test.waitUntilDone();
+  test.assertEqual(
+    contentScriptFile,
+    contentSymbiont.contentScriptFile,
+    "There is one contentScriptFile, as specified in options."
+  );
+  test.assertEqual(
+    contentScript.length,
+    contentSymbiont.contentScript.length,
+    "There are two contentScripts, as specified in options."
+  );
+  test.assertEqual(
+    contentScript[0],
+    contentSymbiont.contentScript[0],
+    "There are two contentScripts, as specified in options."
+  );
+  test.assertEqual(
+    contentScript[1],
+    contentSymbiont.contentScript[1],
+    "There are two contentScripts, as specified in options."
+  )
+  test.assertEqual(
+    contentSymbiont.contentScriptWhen,
+    "start",
+    "contentScriptWhen is as specified in options."
+  );
+
+  contentSymbiont.destroy();
 };
 
 exports["test:communication with worker global scope"] = function(test) {
@@ -105,7 +103,7 @@ exports["test:communication with worker global scope"] = function(test) {
       onMessage: onMessage1
     });
     
-    frame.setAttribute("src", "data:text/html,<html><body></body></html>");
+    frame.setAttribute("src", "data:text/html;charset=utf-8,<html><body></body></html>");
   }, false);
   test.waitUntilDone();
 };
@@ -149,5 +147,38 @@ exports["test:document element present on 'start'"] = function(test) {
         test.pass("document element not necessarily present on 'start'");
       test.done();
     }
+  });
+};
+
+exports["test:direct communication with trusted document"] = function(test) {
+  test.waitUntilDone();
+
+  let worker = Symbiont({
+    contentURL: require("self").data.url("test-trusted-document.html")
+  });
+
+  worker.port.on('document-to-addon', function (arg) {
+    test.assertEqual(arg, "ok", "Received an event from the document");
+    worker.destroy();
+    test.done();
+  });
+  worker.port.emit('addon-to-document', 'ok');
+};
+
+exports["test:`addon` is not available when a content script is set"] = function(test) {
+  test.waitUntilDone();
+
+  let worker = Symbiont({
+    contentURL: require("self").data.url("test-trusted-document.html"),
+    contentScript: "new " + function ContentScriptScope() {
+      self.port.emit("cs-to-addon", "addon" in unsafeWindow);
+    }
+  });
+
+  worker.port.on('cs-to-addon', function (hasAddon) {
+    test.assertEqual(hasAddon, false,
+      "`addon` is not available");
+    worker.destroy();
+    test.done();
   });
 };

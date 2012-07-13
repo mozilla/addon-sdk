@@ -1,20 +1,25 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 The `request` module lets you make simple yet powerful network requests.
 
 <api name="Request">
 @class
-The `Request` object is used to make `GET` or `POST` network requests. It is
-constructed with a URL to which the request is sent. Optionally the user may
-specify a collection of headers and content to send alongside the request and
-a callback which will be executed once the request completes.
+The `Request` object is used to make `GET`, `POST` or `PUT` network requests.
+It is constructed with a URL to which the request is sent. Optionally the user
+may specify a collection of headers and content to send alongside the request
+and a callback which will be executed once the request completes.
 
 Once a `Request` object has been created a `GET` request can be executed by
-calling its `get()` method, or a `POST` request by calling its `post()` method.
+calling its `get()` method, a `POST` request by calling its `post()` method,
+or a `PUT` request by calling its `put()` method.
 
 When the server completes the request, the `Request` object emits a "complete"
 event.  Registered event listeners are passed a `Response` object.
 
-Each `Request` object is designed to be used once. Once `GET` or `POST` are
-called, attempting to call either will throw an error.
+Each `Request` object is designed to be used once. Once `GET`, `POST` or `PUT`
+are called, attempting to call either will throw an error.
 
 Since the request is not being made by any particular website, requests made
 here are not subject to the same-domain restriction that requests made in web
@@ -28,7 +33,7 @@ each can throw if given an invalid value.
 
 The example below shows how to use Request to get the most recent public tweet.
 
-    var Request = require('request').Request;
+    var Request = require("request").Request;
     var latestTweetRequest = Request({
       url: "http://api.twitter.com/1/statuses/public_timeline.json",
       onComplete: function (response) {
@@ -75,12 +80,35 @@ set several properties on the resulting `Request`.
     encode safely.
 
     For `GET` requests, the query string (`content`) will be appended to the
-    URL. For `POST` requests, the query string will be sent as the body of the
-    request.
+    URL. For `POST` and `PUT` requests, the query string will be sent as the body
+    of the request.
 
     @prop [contentType] {string}
     The type of content to send to the server. This explicitly sets the
     `Content-Type` header. The default value is `application/x-www-form-urlencoded`.
+
+    @prop [overrideMimeType] {string}
+    Use this string to override the MIME type returned by the server in the
+    response's Content-Type header. You can use this to treat the content as a
+    different MIME type, or to force text to be interpreted using a specific
+    character.
+
+    For example, if you're retrieving text content which was encoded as
+    ISO-8859-1 (Latin 1), it will be given a content type of "utf-8" and
+    certain characters will not display correctly. To force the response to
+    be interpreted as Latin-1, use `overrideMimeType`:
+
+        var Request = require("request").Request;
+        var quijote = Request({
+          url: "http://www.latin1files.org/quijote.txt",
+          overrideMimeType: "text/plain; charset=latin1",
+          onComplete: function (response) {
+            console.log(response.text);
+          }
+        });
+        
+        quijote.get();
+
 </api>
 
 <api name="url">
@@ -115,6 +143,12 @@ Make a `POST` request.
 @returns {Request}
 </api>
 
+<api name="put">
+@method
+Make a `PUT` request.
+@returns {Request}
+</api>
+
 <api name="complete">
 @event
 The `Request` object emits this event when the request has completed and a
@@ -130,7 +164,7 @@ Listener functions are passed the response to the request as a `Response` object
 <api name="Response">
 @class
 The Response object contains the response to a network request issued using a
-`Request` object. It is returned by the `get()` or `post()` method of a
+`Request` object. It is returned by the `get()`, `post()` or `put()` method of a
 `Request` object.
 
 All members of a `Response` object are read-only.
@@ -158,5 +192,12 @@ The HTTP response status line (e.g. *OK*).
 <api name="headers">
 @property {object}
 The HTTP response headers represented as key/value pairs.
+
+To print all the headers you can do something like this:
+
+    for (var headerName in response.headers) {
+      console.log(headerName + " : " + response.headers[headerName]);
+    }
+
 </api>
 </api>

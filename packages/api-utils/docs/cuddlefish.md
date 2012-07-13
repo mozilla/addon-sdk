@@ -1,5 +1,7 @@
-`cuddlefish` is the name of the SDK's module loader. It builds on
-`securable-module` to provide many SDK-specific globals such as `console`
-and `memory`.
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+`cuddlefish` is the name of the SDK's module loader.
 
 This module still needs to be documented.

@@ -1,7 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 "use strict";
 
 const {Cc,Ci} = require("chrome");
 const timer = require("timer");
+const xulApp = require("xul-app");
+const { Loader } = require("test-harness/loader");
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL
@@ -9,7 +15,6 @@ const timer = require("timer");
  */
 exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
                                            testCallback, timeout) {
-  var xulApp = require("xul-app");
   if (!xulApp.versionInRange(xulApp.platformVersion, "1.9.3a3", "*") &&
       !xulApp.versionInRange(xulApp.platformVersion, "1.9.2.7", "1.9.2.*")) {
     test.pass("Note: not testing PageMod, as it doesn't work on this platform version");
@@ -30,7 +35,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
   else
     test.waitUntilDone();
 
-  let loader = test.makeSandboxedLoader();
+  let loader = Loader(module);
   let pageMod = loader.require("page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
@@ -54,7 +59,8 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
         tabBrowser.removeTab(newTab);
         loader.unload();
         test.done();
-      });
+      }
+    );
   }
   b.addEventListener("load", onPageLoad, true);
 

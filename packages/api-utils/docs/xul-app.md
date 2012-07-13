@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
 
 The `xul-app` module provides facilities for introspecting the application on
@@ -18,7 +22,17 @@ information, see the [MDC documentation][].
 
 <api name="name">
 @property {string}
-  The host application name.  For example, `"Firefox"`.
+  The host application name.  The possible values here are:
+  
+  * `"Firefox"`
+  * `"Fennec"`
+  * `"Mozilla"`
+  * `"SeaMonkey"`
+  * `"Sunbird"`
+  * `"Thunderbird"`
+
+  "Firefox"` and `"Fennec"` are the most commonly used values.
+
 </api>
 
 <api name="version">

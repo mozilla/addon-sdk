@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 
 The `clipboard` module allows callers to interact with the system clipboard,
@@ -8,28 +12,58 @@ The following types are supported:
 
 * `text` (plain text)
 * `html` (a string of HTML)
+* `image` (a base-64 encoded png)
 
 If no data type is provided, then the module will detect it for you.
+
+Currently `image`'s type doesn't support transparency on Windows.
 
 Examples
 --------
 
 Set and get the contents of the clipboard.
 
-    let clipboard = require("clipboard");
+    var clipboard = require("clipboard");
     clipboard.set("Lorem ipsum dolor sit amet");
-    let contents = clipboard.get();
+    var contents = clipboard.get();
 
 Set the clipboard contents to some HTML.
 
-    let clipboard = require("clipboard");
+    var clipboard = require("clipboard");
     clipboard.set("<blink>Lorem ipsum dolor sit amet</blink>", "html");
+
 
 If the clipboard contains HTML content, open it in a new tab.
 
-    let clipboard = require("clipboard");
+    var clipboard = require("clipboard");
     if (clipboard.currentFlavors.indexOf("html") != -1)
       require("tabs").open("data:text/html," + clipboard.get("html"));
+
+Set the clipboard contents to an image.
+
+    var clipboard = require("clipboard");
+    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D");
+
+If the clipboard contains an image, open it in a new tab.
+
+    var clipboard = require("clipboard");
+    if (clipboard.currentFlavors.indexOf("image") != -1)
+      require("tabs").open(clipboard.get());
+
+As noted before, data type can be easily omitted for images.
+
+If the intention is set the clipboard to a data URL as string and not as image,
+it can be easily done specifying a different flavor, like `text`.
+
+    var clipboard = require("clipboard");
+
+    clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D", "text");
 
 <api name="set">
 @function
