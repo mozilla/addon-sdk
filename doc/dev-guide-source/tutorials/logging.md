@@ -27,7 +27,7 @@ Try it out:
 
 * create a new directory, and navigate to it
 * execute `cfx init`
-* open "lib/main.js" and replace its contents with the line above
+* open "lib/main.js" and add the line above
 * execute `cfx run`, then `cfx run` again
 
 Firefox will start, and the following line will appear in the command

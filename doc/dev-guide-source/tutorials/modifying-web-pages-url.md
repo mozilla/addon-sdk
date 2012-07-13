@@ -40,7 +40,7 @@ Try it out:
 
 * create a new directory and navigate to it
 * run `cfx init`
-* open the `lib/main.js` file, and replace its contents with the code above
+* open the `lib/main.js` file, and add the code above
 * run `cfx run`, then run `cfx run` again
 * open [ietf.org](http://www.ietf.org) in the browser window that opens
 
