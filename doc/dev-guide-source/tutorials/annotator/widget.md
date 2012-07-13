@@ -57,7 +57,7 @@ You can copy the widget's icons from here:
 
 ## main.js ##
 
-Now in the `lib` directory open `main.js` and replace its contents with this:
+Now in the `lib` directory open `main.js` and add the following code:
 
     var widgets = require('widget');
     var data = require('self').data;
