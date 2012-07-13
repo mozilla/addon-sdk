@@ -101,7 +101,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property changes an actual title.
    * @type {String}
    */
-  get title() this._tab.label,
+  get title() this._contentDocument.title || this._tab.label,
   set title(value) this._tab.label = String(value),
   /**
    * Location of the page currently loaded in this tab.
