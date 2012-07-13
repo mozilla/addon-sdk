@@ -48,7 +48,9 @@ observers.add("document-shown", function (document) {
     // Notice that we don't have to remove the listeners from the old selection,
     // because is detached. An attempt to remove the listener, will raise an
     // error (see http://mxr.mozilla.org/mozilla-central/source/layout/generic/nsSelection.cpp#5343 )
-
+    //
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
     if (currentSelection instanceof Ci.nsISelectionPrivate && 
       currentSelection !== selection) {
 
@@ -379,6 +381,9 @@ let SelectionListenerManager = Class({
     if (window.jetpack_core_selection_listener)
       return;
     let selection = window.getSelection();
+
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
     if (selection instanceof Ci.nsISelectionPrivate) {
       selection.addSelectionListener(this);
 
@@ -407,6 +412,9 @@ let SelectionListenerManager = Class({
     if (!window.jetpack_core_selection_listener)
       return;
     let selection = window.getSelection();
+
+    // We ensure that the current selection is an instance of 
+    // `nsISelectionPrivate` before working on it, in case is `null`. 
     if (selection instanceof Ci.nsISelectionPrivate) {
       selection.removeSelectionListener(this);
 
