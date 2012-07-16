@@ -35,6 +35,10 @@ let selections = ns();
 observers.add("document-shown", function (document) {
   var window = document.defaultView;
 
+  // We are not interested in documents without valid defaultView
+  if (!window)
+    return;
+
   let selection = selections(window).selection;
 
   // We want to handle only the windows where we added selection's listeners 
