@@ -333,33 +333,52 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
 
-    // First register listeners to check if a tab is activated
-    tm1.onActivate = function onActivate() {
-      tm1.onActivate.remove(onActivate);
-      timer.setTimeout(function() {
-        test.assertEqual(tm1.activeTab.title, "window1,tab1", "activeTab setter works");
-        closeTwoWindows(window1, window2, function() test.done());
-      }, 1000);
-    }
-
-    // Then try to activate some tabs
+    // First open two tabs per window
     tm1.open({
       url: "data:text/html;charset=utf-8,<title>window1,tab1</title>",
       onOpen: function(tab1) {
-        tm2.open("data:text/html;charset=utf-8,<title>window2,tab1</title>");
-        tm2.open({
-          url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
-          onOpen: function(tab4) {
-            test.assertEqual(tm1.activeTab.title, "window1,tab2", "Correct active tab on window 1");
-            test.assertEqual(tm2.activeTab.title, "window2,tab2", "Correct active tab on window 2");
-
-            tm1.activeTab = tab1;
-            tm1.activeTab = tab4; // Setting activeTab from another window should have no effect
+        tm1.open({
+          url: "data:text/html;charset=utf-8,<title>window1,tab2</title>",
+          onOpen: function (tab2) {
+            tm2.open({
+              url: "data:text/html;charset=utf-8,<title>window2,tab1</title>",
+              onOpen: function (tab3) {
+                tm2.open({
+                  url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
+                  onOpen: function(tab4) {
+                    onTabsOpened(tab1, tab2, tab3, tab4);
+                  }
+                });
+              }
+            });
           }
         });
       }
     });
-    tm1.open("data:text/html;charset=utf-8,<title>window1,tab2</title>");
+
+    // Then try to activate tabs, but wait for all of them to be activated after
+    // being opened
+    function onTabsOpened(tab1, tab2, tab3, tab4) {
+      test.assertEqual(tm1.activeTab.title, "window1,tab2",
+                       "Correct active tab on window 1");
+      test.assertEqual(tm2.activeTab.title, "window2,tab2",
+                       "Correct active tab on window 2");
+
+      tm1.onActivate = function onActivate() {
+        tm1.onActivate.remove(onActivate);
+        timer.setTimeout(function() {
+          test.assertEqual(tm1.activeTab.title, "window1,tab1",
+                           "activeTab setter works (window 1)");
+          test.assertEqual(tm2.activeTab.title, "window2,tab2",
+                           "activeTab is ignored with tabs from another window");
+          closeTwoWindows(window1, window2, function() test.done());
+        }, 1000);
+      }
+
+      tm1.activeTab = tab1;
+      // Setting activeTab from another window should have no effect:
+      tm1.activeTab = tab4;
+    }
 
   });
 }
