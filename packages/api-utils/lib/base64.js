@@ -4,11 +4,7 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
-
-// If an object is not given as second argument, the JavaScript Module scope is
-// returned, so we can obtain from it the `atob` and `btoa` functions
-const { atob, btoa } = Cu.import("resource://gre/modules/Services.jsm");
+const { atob, btoa } = require("chrome");
 
 function isUTF8(charset) {
   let type = typeof charset;
