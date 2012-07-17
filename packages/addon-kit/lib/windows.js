@@ -25,7 +25,8 @@ const { Cc, Ci } = require('chrome'),
       windowUtils = require('api-utils/window-utils'),
       { WindowTrackerTrait } = windowUtils,
       { ns } = require('api-utils/namespace'),
-      { observer: windowObserver } = require("api-utils/windows/observer");
+      { observer: windowObserver } = require("api-utils/windows/observer"),
+      { windowNS } = require("api-utils/window/namespace");
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S
@@ -128,10 +129,15 @@ function getRegisteredWindow(chromeWindow) {
 function BrowserWindow(options) {
   let window = null;
 
-  if ("window" in options)
+  if ("window" in options) {
     window = getRegisteredWindow(options.window);
+    if (window)
+      return window._public;
+  }
 
-  return (window || BrowserWindowTrait(options))._public;
+  window = BrowserWindowTrait(options);
+  windowNS(window._public).window = window._window;
+  return window._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.
 BrowserWindow.prototype = BrowserWindowTrait.prototype;
