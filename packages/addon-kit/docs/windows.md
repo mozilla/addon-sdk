@@ -3,6 +3,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!-- contributed by Felipe Gomes [felipc@gmail.com]  -->
+<!-- contributed by Erik Vold [evold@mozilla.com]  -->
 
 
 The `windows` module provides easy access to browser windows, their
@@ -150,6 +151,15 @@ plus an app identifier.
 This property is read-only.
 </api>
 
+<api name="isPrivateBrowsing">
+@property {boolean}
+This read-only boolean is true if private browsing mode is turned on for
+the window.
+
+@param value {boolean}
+If value is `true` then private mode will be enabled, if `false` then disabled.
+</api>
+
 <api name="tabs">
 @property {TabList}
 A live list of tabs in this window. This object has the same interface as the
@@ -170,6 +180,11 @@ Close the window.
 @param [callback] {function}
 A function to be called when the window finishes its closing process.
 This is an optional argument.
+</api>
+
+<api name="setPrivateBrowsing">
+@method
+Turns on/off private browsing mode for this particular window.
 </api>
 
 </api>
