@@ -22,6 +22,7 @@ const { Cc, Ci } = require('chrome'),
       { Options } = require('api-utils/tabs/tab'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
+      { windowNS } = require("api-utils/window/namespace"),
 
       WM = Cc['@mozilla.org/appshell/window-mediator;1'].
         getService(Ci.nsIWindowMediator),
@@ -114,7 +115,9 @@ function BrowserWindow(options) {
     if (chromeWindow == window._window)
       return window._public
   }
+
   let window = BrowserWindowTrait(options);
+  windowNS(window._public).window = window._window;
   return window._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.

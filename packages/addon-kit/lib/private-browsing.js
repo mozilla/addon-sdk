@@ -9,6 +9,7 @@ const { emit, on, once, off } = require("api-utils/event/core");
 const { defer } = require("api-utils/functional");
 const { when: unload } = require("api-utils/unload");
 const observers = require("api-utils/observer-service");
+const { windowNS } = require("api-utils/window/namespace");
 
 // Model holding a state.
 const model = { active: false };
@@ -28,25 +29,46 @@ if (require("api-utils/xul-app").is("Firefox")) {
   observers.add('private-browsing-transition-complete', function onChange() {
     // Update model state.
     model.active = pbService.privateBrowsingEnabled;
+
     // Emit event with in next turn of event loop.
     deferredEmit(exports, model.active ? 'start' : 'stop');
   });
 }
 
-let setMode = defer(function setMode(value) {
+let setMode = defer(function setMode(value, window) {
   // We toggle private browsing mode asynchronously in order to work around
   // bug 659629.  Since private browsing transitions are asynchronous
   // anyway, this doesn't significantly change the behavior of the API.
-  pbService.privateBrowsingEnabled = !!value
+
+  value = !!value;
+
+  if (!window)
+    return pbService.privateBrowsingEnabled = value;
+
+  let chromeWin = windowNS(window).window;
+  if ("gPrivateBrowsingUI" in chromeWin
+      && "privateWindow" in window.gPrivateBrowsingUI) {
+    return gPrivateBrowsingUI.privateWindow = value;
+  }
+
+  pbService.privateBrowsingEnabled = value;
 });
 
 
 // Make sure listeners are cleaned up.
 unload(function() off(exports));
 
-Object.defineProperty(exports, "isActive", { get: function() model.active });
-exports.activate = function activate() pbService && setMode(true)
-exports.deactivate = function deactivate() pbService && setMode(false)
+Object.defineProperty(exports, "isActive", {
+  get: function() {
+    return model.active;
+  }
+});
+exports.activate = function activate(window) {
+  return pbService && setMode(false, window);
+};
+exports.deactivate = function deactivate(window) {
+  return pbService && setMode(false, window);
+}
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
