@@ -25,10 +25,11 @@ const WindowDom = Trait.compose({
     return this._public;
   },
   get isPrivateBrowsing() {
-    let chromeWin = windowNS(window).window;
+    let chromeWin = windowNS(this._public).window;
+
     if ("gPrivateBrowsingUI" in chromeWin
-        && "privateWindow" in window.gPrivateBrowsingUI) {
-      return gPrivateBrowsingUI.privateWindow = value;
+        && "privateWindow" in (chromeWin.gPrivateBrowsingUI)) {
+      return chromeWin.gPrivateBrowsingUI.privateWindow;
     }
 
     return privateBrowsing.isActive;

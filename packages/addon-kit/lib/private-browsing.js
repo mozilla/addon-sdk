@@ -42,16 +42,21 @@ let setMode = defer(function setMode(value, window) {
 
   value = !!value;
 
-  if (!window)
+  if (!window) {
     return pbService.privateBrowsingEnabled = value;
+  }
 
   let chromeWin = windowNS(window).window;
   if ("gPrivateBrowsingUI" in chromeWin
-      && "privateWindow" in window.gPrivateBrowsingUI) {
-    return gPrivateBrowsingUI.privateWindow = value;
+      && "privateWindow" in (chromeWin.gPrivateBrowsingUI)) {
+    chromeWin.gPrivateBrowsingUI.privateWindow = value;
+  }
+  else {
+    pbService.privateBrowsingEnabled = value;
   }
 
-  pbService.privateBrowsingEnabled = value;
+  windowNS(window).emit((value ? "start" : "stop") + "-private-browsing");
+  return null;
 });
 
 

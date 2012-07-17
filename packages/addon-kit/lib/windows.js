@@ -118,6 +118,7 @@ function BrowserWindow(options) {
 
   let window = BrowserWindowTrait(options);
   windowNS(window._public).window = window._window;
+  windowNS(window._public).emit = window._emit.bind(window);
   return window._public;
 }
 // to have proper `instanceof` behavior will go away when #596248 is fixed.
