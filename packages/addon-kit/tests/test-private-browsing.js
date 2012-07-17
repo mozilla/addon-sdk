@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let pb = require("private-browsing");
+let { browserWindows } = require("addon-kit/windows");
 let {Cc,Ci} = require("chrome");
 const { Loader } = require('test-harness/loader');
 
@@ -43,6 +44,27 @@ if (pbService) {
       test.done();
     });
     pb.activate();
+  };
+
+  // tests that activating does put the window into private browsing mode
+  exports.testActivateDeactivateWindow = function (test) {
+    test.waitUntilDone();
+
+    let win = browserWindows.activeWindow;
+    win.on("start-private-browsing", function onStart() {
+      test.assertEqual(win.isPrivateBrowsing, true,
+                       "private browsing mode was activated for window");
+
+      pb.deactivate(win);
+    });
+    win.on("stop-private-browsing", function onStop() {
+      test.assertEqual(win.isPrivateBrowsing, false,
+                       "private browsing mode was deactivate for window");
+
+      // end test
+      test.done();
+    });
+    pb.activate(win);
   };
 
   exports.testStart = function(test) {
