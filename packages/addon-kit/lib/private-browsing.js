@@ -58,17 +58,13 @@ let setMode = defer(function setMode(value, window) {
 // Make sure listeners are cleaned up.
 unload(function() off(exports));
 
-Object.defineProperty(exports, "isActive", {
-  get: function() {
-    return model.active;
-  }
-});
+Object.defineProperty(exports, "isActive", { get: function() model.active });
 exports.activate = function activate(window) {
-  return pbService && setMode(false, window);
+  return pbService && setMode(true, window);
 };
 exports.deactivate = function deactivate(window) {
   return pbService && setMode(false, window);
-}
+};
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
