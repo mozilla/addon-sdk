@@ -3,10 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-const {Cc,Ci,Cu} = require("chrome");
-var NetUtil = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
-NetUtil = NetUtil.NetUtil;
+
+const { Cc, Ci, Cu } = require("chrome");
+const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 const errors = require("./errors");
 const windowUtils = require("./window-utils");
 const apiUtils = require("./api-utils");
