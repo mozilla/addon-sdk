@@ -351,10 +351,8 @@ const Loader = iced(function Loader(options) {
       atob: atob, btoa: btoa,
       CC: bind(CC, Components), components: Components,
       Cu: override(Cu, {
-        import: function(uri) {
-          var exports = {};
-          Cu.import(uri, exports);
-          return exports;
+        import: function(uri, exports) {
+          return Cu.import(uri, exports || {});
         }
       })
     }
