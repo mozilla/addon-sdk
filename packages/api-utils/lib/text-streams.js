@@ -6,10 +6,8 @@
 
 "use strict";
 
-const {Cc,Ci,Cu,components} = require("chrome");
-var NetUtil = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
-NetUtil = NetUtil.NetUtil;
+const { Cc, Ci, Cu, components } = require("chrome");
+const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 
 // NetUtil.asyncCopy() uses this buffer length, and since we call it, for best
 // performance we use it, too.
