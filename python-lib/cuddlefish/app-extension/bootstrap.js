@@ -222,6 +222,9 @@ function nukeModules() {
   for (let key in loader.sandboxes) {
     let sandbox = loader.sandboxes[key];
     delete loader.sandboxes[key];
+    // Bug 775067: From FF17 we can kill all CCW from a given sandbox
+    if ("nukeSandbox" in Cu)
+      Cu.nukeSandbox(sandbox);
   }
   loader = null;
 }
