@@ -4,8 +4,8 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cm, components } = require('chrome');
-const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
+const {Cc, Ci, Cu, Cm, components} = require('chrome');
+Cu.import("resource://gre/modules/AddonManager.jsm", this);
 
 exports.testSelf = function(test) {
   var self = require("self");

@@ -346,16 +346,8 @@ const Loader = iced(function Loader(options) {
   modules = override({
     '@loader/unload': destructor,
     '@loader/options': options,
-    'chrome': {
-      Cc: Cc, Ci: Ci, Cr: Cr, Cm: Cm,
-      atob: atob, btoa: btoa,
-      CC: bind(CC, Components), components: Components,
-      Cu: override(Cu, {
-        import: function(uri, exports) {
-          return Cu.import(uri, exports || {});
-        }
-      })
-    }
+    'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+                CC: bind(CC, Components), components: Components }
   }, modules);
 
   modules = keys(modules).reduce(function(result, id) {
