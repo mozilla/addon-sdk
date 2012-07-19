@@ -33,17 +33,17 @@ exports.testActiveTab_getter = function(test) {
 // See bug 648244: there was a infinite loop.
 exports.testBrowserWindowCreationOnActivate = function(test) {
   test.waitUntilDone();
-  
+
   let windows = require("windows").browserWindows;
   let tabs = require("tabs");
-  
+
   let gotActivate = false;
-  
+
   tabs.once('activate', function onActivate(eventTab) {
     test.assert(windows.activeWindow, "Is able to fetch activeWindow");
     gotActivate = true;
   });
-  
+
   openBrowserWindow(function(window, browser) {
     test.assert(gotActivate, "Received activate event before openBrowserWindow's callback is called");
     closeBrowserWindow(window, function () test.done());
@@ -84,18 +84,18 @@ exports.testAutomaticDestroy = function(test) {
 
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
-    
+
     // Create a second tab instance that we will destroy
     let called = false;
-    
+
     let loader = Loader(module);
     let tabs2 = loader.require("tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
     });
-    
+
     loader.unload();
-    
+
     // Fire a tab event an ensure that this destroyed tab is inactive
     tabs.once('open', function () {
       timer.setTimeout(function () {
@@ -103,9 +103,9 @@ exports.testAutomaticDestroy = function(test) {
         closeBrowserWindow(window, function() test.done());
       }, 0);
     });
-    
+
     tabs.open("data:text/html;charset=utf-8,foo");
-    
+
   });
 };
 
@@ -119,6 +119,7 @@ exports.testTabProperties = function(test) {
       url: url,
       onReady: function(tab) {
         test.assertEqual(tab.title, "foo", "title of the new tab matches");
+        test.assertEqual(tab.contentType, "text/html");
         test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assert(tab.favicon, "favicon of the new tab is not empty");
         test.assertEqual(tab.style, null, "style of the new tab matches");
@@ -635,14 +636,14 @@ exports.testAttachOnOpen = function (test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
-    
+
     tabs.open({
       url: "data:text/html;charset=utf-8,foobar",
       onOpen: function (tab) {
         let worker = tab.attach({
           contentScript: 'self.postMessage(document.location.href); ',
           onMessage: function (msg) {
-            test.assertEqual(msg, "about:blank", 
+            test.assertEqual(msg, "about:blank",
               "Worker document url is about:blank on open");
             worker.destroy();
             closeBrowserWindow(window, function() test.done());
@@ -650,7 +651,7 @@ exports.testAttachOnOpen = function (test) {
         });
       }
     });
-    
+
   });
 }
 
@@ -676,7 +677,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
                            '  function () self.postMessage(document.location.href)' +
                            ');',
             onMessage: function (msg) {
-              test.assertEqual(msg, firstLocation, 
+              test.assertEqual(msg, firstLocation,
                                "Worker url is equal to the 1st document");
               tab.url = secondLocation;
             },
@@ -685,22 +686,22 @@ exports.testAttachOnMultipleDocuments = function (test) {
               test.pass("Got worker1 detach event");
               test.assertRaises(function () {
                   worker1.postMessage("ex-1");
-                }, 
-                /The page has been destroyed/, 
+                },
+                /The page has been destroyed/,
                 "postMessage throw because worker1 is destroyed");
               checkEnd();
             }
           });
           worker1.postMessage("new-doc-1");
-        } 
+        }
         else if (onReadyCount == 2) {
-          
+
           worker2 = tab.attach({
             contentScript: 'self.on("message", ' +
                            '  function () self.postMessage(document.location.href)' +
                            ');',
             onMessage: function (msg) {
-              test.assertEqual(msg, secondLocation, 
+              test.assertEqual(msg, secondLocation,
                                "Worker url is equal to the 2nd document");
               tab.url = thirdLocation;
             },
@@ -709,32 +710,32 @@ exports.testAttachOnMultipleDocuments = function (test) {
               test.pass("Got worker2 detach event");
               test.assertRaises(function () {
                   worker2.postMessage("ex-2");
-                }, 
-                /The page has been destroyed/, 
+                },
+                /The page has been destroyed/,
                 "postMessage throw because worker2 is destroyed");
               checkEnd();
             }
           });
           worker2.postMessage("new-doc-2");
-        } 
-        else if (onReadyCount == 3) {
-          
-          tab.close();
-          
         }
-        
+        else if (onReadyCount == 3) {
+
+          tab.close();
+
+        }
+
       }
     });
-    
+
     function checkEnd() {
       if (detachEventCount != 2)
         return;
-      
+
       test.pass("Got all detach events");
-      
+
       closeBrowserWindow(window, function() test.done());
     }
-    
+
   });
 }
 
@@ -747,7 +748,7 @@ exports.testAttachWrappers = function (test) {
     let document = "data:text/html;charset=utf-8,<script>var globalJSVar = true; " +
                    "                       document.getElementById = 3;</script>";
     let count = 0;
-    
+
     tabs.open({
       url: document,
       onReady: function (tab) {
@@ -766,7 +767,7 @@ exports.testAttachWrappers = function (test) {
         });
       }
     });
-    
+
   });
 }
 
@@ -780,7 +781,7 @@ exports.testAttachUnwrapped = function (test) {
     let tabs = require("tabs");
     let document = "data:text/html;charset=utf-8,<script>var globalJSVar=true;</script>";
     let count = 0;
-    
+
     tabs.open({
       url: document,
       onReady: function (tab) {
@@ -797,7 +798,7 @@ exports.testAttachUnwrapped = function (test) {
         });
       }
     });
-    
+
   });
 }
 */
@@ -853,7 +854,7 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
-  
+
   if (callback) {
     window.addEventListener("load", function onLoad(event) {
       if (event.target && event.target.defaultView == window) {

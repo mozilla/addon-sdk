@@ -187,6 +187,13 @@ The URL of the favicon for the page currently loaded in the tab.
 This property is read-only.
 </api>
 
+<api name="contentType">
+@property {string}
+Returns the Content-Type from the HTTP headers of the document currently
+loaded in the tab.
+This property is read-only.
+</api>
+
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
