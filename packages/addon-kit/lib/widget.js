@@ -414,7 +414,7 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     }
   },
 
-  _onEvent: function WidgetView__onEvent(type, eventData, domNode) {
+  _onEvent: function WidgetView__onEvent(type, eventData, domNode, domEvent) {
     // Dispatch event in view
     this._emit(type, eventData);
     
@@ -426,8 +426,13 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
 
     // Special case for click events: if the widget doesn't have a click
     // handler, but it does have a panel, display the panel.
-    if ("click" == type && !this._listeners("click").length && this.panel)
-      this.panel.show(domNode);
+    if ("click" == type && !this._listeners("click").length && this.panel) {
+      // Bug 741371: For large widget, we center the panel to the click position
+      if (this.width > 40)
+        this.panel.show(domNode, domEvent.clientX);
+      else
+        this.panel.show(domNode);
+    }
   },
   
   _isInWindow: function WidgetView__isInWindow(window) {
@@ -833,7 +838,7 @@ WidgetChrome.prototype.addEventHandlers = function WC_addEventHandlers() {
 
     // Proxy event to the widget
     setTimeout(function() {
-      self._widget._onEvent(EVENTS[e.type], null, self.node);
+      self._widget._onEvent(EVENTS[e.type], null, self.node, e);
     }, 0);
   };
 

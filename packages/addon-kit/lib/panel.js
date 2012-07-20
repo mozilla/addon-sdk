@@ -111,7 +111,7 @@ const Panel = Symbiont.resolve({
   get isShowing() !!this._xulPanel && this._xulPanel.state == "open",
 
   /* Public API: Panel.show */
-  show: function show(anchor) {
+  show: function show(anchor, clientX) {
     anchor = anchor || null;
     let document = getWindow(anchor).document;
     let xulPanel = this._xulPanel;
@@ -160,6 +160,12 @@ const Panel = Symbiont.resolve({
       x = document.documentElement.clientWidth / 2 - width / 2;
       y = document.documentElement.clientHeight / 2 - height / 2;
       position = null;
+    }
+    else if (clientX) {
+      // Bug 741371: Open the panel to a relative position of an anchor
+      x = clientX;
+      y = null;
+      position = "before_start";
     }
     else {
       // Open the popup by the anchor.
