@@ -189,9 +189,19 @@ This property is read-only.
 
 <api name="contentType">
 @property {string}
-Returns the Content-Type from the HTTP headers of the document currently
-loaded in the tab.
+<div class="experimental">
+<strong>
+  This is currently an experimental API, so we might change it in future releases.
+</strong>
+<p>
+Returns the MIME type that the document currently loaded in the tab is being
+rendered as.
+This may come from HTTP headers or other sources of MIME information,
+and might be affected by automatic type conversions performed by either the
+browser or extensions.
 This property is read-only.
+</p>
+</div>
 </api>
 
 <api name="index">

@@ -105,8 +105,8 @@ const TabTrait = Trait.compose(EventEmitter, {
   set title(value) this._contentDocument.title = String(value),
 
   /**
-   * Returns the Content-Type from the HTTP headers of the document currently
-   * loaded in the tab.
+   * Returns the MIME type that the document loaded in the tab is being
+   * rendered as.
    * @type {String}
    */
   get contentType() this._contentDocument.contentType,

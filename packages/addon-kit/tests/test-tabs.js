@@ -131,6 +131,21 @@ exports.testTabProperties = function(test) {
   });
 };
 
+exports.testTabContentTypeWithXML = function(test) {
+  test.waitUntilDone();
+  openBrowserWindow(function(window, browser) {
+    let tabs= require("tabs");
+    let url = "data:text/xml;charset=utf-8,<foo>bar</foo>";
+    tabs.open({
+      url: url,
+      onReady: function(tab) {
+        test.assertEqual(tab.contentType, "text/xml");
+        closeBrowserWindow(window, function() test.done());
+      }
+    });
+  });
+};
+
 // test tabs iterator and length property
 exports.testTabsIteratorAndLength = function(test) {
   test.waitUntilDone();
