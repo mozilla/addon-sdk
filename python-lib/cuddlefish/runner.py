@@ -574,7 +574,7 @@ def run_app(harness_root_dir, app_type, resultfile, xpi_path,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
+    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec)\b[^ ]* ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox

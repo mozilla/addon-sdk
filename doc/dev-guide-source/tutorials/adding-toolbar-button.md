@@ -14,17 +14,12 @@ and learned the
 To add a button to the toolbar, use the
 [`widget`](packages/addon-kit/widget.html) module.
 
-The default add-on created by `cfx init`
-uses a widget, so we'll start with that as an example. If you haven't already
-followed the tutorial introducing
-[`cfx init`](dev-guide/tutorials/getting-started-with-cfx.html#cfx-init),
-do that now, then come back here.
+Create a new directory, navigate to it, and execute `cfx init`.
+Then open the file called "main.js" in the "lib" directory and
+add the following code to it:
 
-Create a new directory, navigate to it, and execute `cfx init`. Then open the file called
-"main.js" in the "lib" directory:
-
-    const widgets = require("widget");
-    const tabs = require("tabs");
+    var widgets = require("widget");
+    var tabs = require("tabs");
 
     var widget = widgets.Widget({
       id: "mozilla-link",

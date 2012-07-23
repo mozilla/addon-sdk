@@ -39,6 +39,7 @@ Object.defineProperty(exports, 'define', {
   // `define` is provided as a lazy getter that binds below defined `define`
   // function to the module scope, so that require, exports and module
   // variables remain accessible.
+  configurable: true,
   get: function() {
     let sandbox = this;
     return function define(factory) {
