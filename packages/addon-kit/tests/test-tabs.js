@@ -29,6 +29,54 @@ exports.testActiveTab_getter = function(test) {
   });
 };
 
+// Bug 682681 - tab.title should never be empty
+exports.testBug682681_aboutURI = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+
+      test.assertEqual(tab.title, "New Tab", "title of about: tab is not blank");
+
+      // end of test
+      closeBrowserWindow(window, function() test.done());
+    });
+
+    // open a about: url
+    tabs.open({
+      url: "about:blank",
+      inBackground: true
+    });
+  });
+};
+
+// related to Bug 682681
+exports.testTitleForDataURI = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require("tabs");
+
+    tabs.on('ready', function onReady(tab) {
+      tabs.removeListener('ready', onReady);
+
+      test.assertEqual(tab.title, "tab", "data: title is not Connecting...");
+
+      // end of test
+      closeBrowserWindow(window, function() test.done());
+    });
+
+    // open a about: url
+    tabs.open({
+      url: "data:text/html;charset=utf-8,<title>tab</title>",
+      inBackground: true
+    });
+  });
+};
+
 // test 'BrowserWindow' instance creation on tab 'activate' event
 // See bug 648244: there was a infinite loop.
 exports.testBrowserWindowCreationOnActivate = function(test) {
