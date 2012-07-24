@@ -307,15 +307,18 @@ var runTests = exports.runTests = function runTests(options) {
           system.id + ") under " +
           system.platform + "/" + system.architecture + ".\n");
 
-
+    // Copy globals to fresh object (as globals will be frozen and can't be
+    // overridden. And then we override, global console to expose one designed
+    // for tests.
+    let descriptors = {};
+    Object.getOwnPropertyNames(globals).forEach(function(name) {
+      descriptors[name] = Object.getOwnPropertyDescriptor(globals, name);
+    });
+    descriptors.console = {value: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)};
+    let testGlobals = Object.defineProperties({}, descriptors);
     loader = Loader(override(JSON.parse(JSON.stringify(require("@packaging"))), {
       id: Math.random().toString(36).slice(2),
-      // Copy globals to fresh object (as globals will be frozen and can't be
-      // overridden. And then we override, global console to expose one designed
-      // for tests.
-      globals: override(override({}, globals), {
-        console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
-      })
+      globals: testGlobals
     }));
 
     nextIteration();
