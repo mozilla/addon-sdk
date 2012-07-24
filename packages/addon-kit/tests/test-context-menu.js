@@ -474,12 +474,11 @@ exports.testContentContextArgs = function (test) {
   let item = new loader.cm.Item({
     label: "item",
     contentScript: 'self.on("context", function (node) {' +
-                   '  let Ci = Components["interfaces"];' +
-                   '  self.postMessage(node instanceof Ci.nsIDOMHTMLElement);' +
+                   '  self.postMessage(node.tagName);' +
                    '  return false;' +
                    '});',
-    onMessage: function (isElt) {
-      test.assert(isElt, "node should be an HTML element");
+    onMessage: function (tagName) {
+      test.assertEqual(tagName, "HTML", "node should be an HTML element");
       if (++callbacks == 2) test.done();
     }
   });
@@ -888,13 +887,13 @@ exports.testItemClick = function (test) {
     contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components["interfaces"];' +
                    '  self.postMessage({' +
-                   '    isElt: node instanceof Ci.nsIDOMHTMLElement,' +
+                   '    tagName: node.tagName,' +
                    '    data: data' +
                    '  });' +
                    '});',
     onMessage: function (data) {
       test.assertEqual(this, item, "`this` inside onMessage should be item");
-      test.assert(data.isElt, "node should be an HTML element");
+      test.assertEqual(data.tagName, "HTML", "node should be an HTML element");
       test.assertEqual(data.data, item.data, "data should be item data");
       test.done();
     }
@@ -934,13 +933,13 @@ exports.testMenuClick = function (test) {
     contentScript: 'self.on("click", function (node, data) {' +
                    '  let Ci = Components["interfaces"];' +
                    '  self.postMessage({' +
-                   '    isAnchor: node instanceof Ci.nsIDOMHTMLAnchorElement,' +
+                   '    tagName: node.tagName,' +
                    '    data: data' +
                    '  });' +
                    '});',
     onMessage: function (data) {
       test.assertEqual(this, topMenu, "`this` inside top menu should be menu");
-      test.assert(data.isAnchor, "Clicked node should be anchor");
+      test.assertEqual(data.tagName, "A", "Clicked node should be anchor");
       test.assertEqual(data.data, item.data,
                        "Clicked item data should be correct");
       test.done();
@@ -1214,6 +1213,33 @@ exports.testLoadWithOpenTab = function (test) {
   });
 };
 
+// Bug 732716: Ensure that the node given in `click` event works fine
+// (i.e. is correctly wrapped)
+exports.testDrawImageOnClickNode = function (test) {
+  test = new TestHelper(test);
+  test.withTestDoc(function (window, doc) {
+    let loader = test.newLoader();
+    let item = new loader.cm.Item({
+      label: "item",
+      context: loader.cm.SelectorContext("img"),
+      contentScript: "new " + function() {
+        self.on("click", function (img, data) {
+          let ctx = document.createElement("canvas").getContext("2d");
+          ctx.drawImage(img, 1, 1, 1, 1);
+          self.postMessage("done");
+        });
+      },
+      onMessage: function (msg) {
+        if (msg === "done")
+          test.done();
+      }
+    });
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu([item], [], []);
+      test.getItemElt(popup, item).click();
+    });
+  });
+};
 
 // Setting an item's label before the menu is ever shown should correctly change
 // its label and, if necessary, its order within the menu.
