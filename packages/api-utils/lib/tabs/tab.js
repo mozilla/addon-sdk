@@ -11,7 +11,11 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
-
+const {
+  getOwnerWindow,
+  getBrowserForTab,
+  getTabTitle
+} = require("./utils");
 
 
 // Array of the inner instances of all the wrapped tabs.
@@ -82,11 +86,11 @@ const TabTrait = Trait.compose(EventEmitter, {
   /**
    * Browser DOM element where page of this tab is currently loaded.
    */
-  get _browser() this._window.gBrowser.getBrowserForTab(this._tab),
+  get _browser() getBrowserForTab(this._tab),
   /**
    * Window DOM element containing this tab.
    */
-  get _window() this._tab.ownerDocument.defaultView,
+  get _window() getOwnerWindow(this._tab),
   /**
    * Document object of the page that is currently loaded in this tab.
    */
@@ -101,8 +105,8 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property changes an actual title.
    * @type {String}
    */
-  get title() this._contentDocument.title,
-  set title(value) this._contentDocument.title = String(value),
+  get title() getTabTitle(this._tab),
+  set title(value) this._tab.label = String(value),
   /**
    * Location of the page currently loaded in this tab.
    * Changing this property will loads page under under the specified location.

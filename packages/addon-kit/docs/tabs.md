@@ -171,7 +171,7 @@ passed the `Tab` object that triggered the event.
 
 <api name="title">
 @property {string}
-The title of the page currently loaded in the tab.
+The title of the tab (usually the title of the page currently loaded in the tab)
 This property can be set to change the tab title.
 </api>
 
