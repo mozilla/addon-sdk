@@ -60,21 +60,11 @@ Object.defineProperty(exports, 'define', {
   // function to the module scope, so that require, exports and module
   // variables remain accessible.
   configurable: true,
-  get: (function() {
-    function define(factory) {
+  get: function() {
+    let sandbox = this;
+    return function define(factory) {
       factory = Array.slice(arguments).pop();
-      factory.call(this, this.require, this.exports, this.module);
+      factory.call(sandbox, sandbox.require, sandbox.exports, sandbox.module);
     }
-
-    return function getter() {
-      // Redefine `define` as a static property to make sure that module
-      // gets access to the same function so that `define === define` is
-      // `true`.
-      Object.defineProperty(this, 'define', {
-        configurable: false,
-        value: define.bind(this)
-      });
-      return this.define;
-    }
-  })()
+  }
 });
