@@ -2,9 +2,9 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# Creating Event Emitters #
+# Creating Event Targets #
 
-<span class="aside">This tutorial describes the use of low-level APIs:
+<span class="aside">This tutorial describes the use of low-level APIs.
 These APIs are still in active development, and we expect to make
 incompatible changes to them in future releases.</span>
 
@@ -248,7 +248,7 @@ or by passing the `onShow` option to `Panel`'s constructor:
       contentURL: "https://en.wikipedia.org/w/index.php"
     });
 
-If your class inherit from `EventTarget`, options like this are automatically
+If your class inherits from `EventTarget`, options like this are automatically
 handled for you. For example, given the implementation of `BookmarkManager`
 above, your "main.js" could be rewritten like this:
 
