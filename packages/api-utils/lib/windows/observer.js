@@ -46,8 +46,4 @@ WindowTracker({
   }
 });
 
-// Making observer aware of already opened windows.
-for each (let window in windowIterator())
-  observer.observe(window);
-
 exports.observer = observer;
