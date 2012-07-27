@@ -56,9 +56,14 @@ exports.testResponseHeaders = function(test) {
   req.onreadystatechange = function() {
     if (req.readyState == 4 && req.status == 0) {
       var headers = req.getAllResponseHeaders();
-      if (xulApp.versionInRange(xulApp.platformVersion, "13.0a1", "*")) {
+      if (xulApp.versionInRange(xulApp.platformVersion, "13.0a1", "16.*")) {
         // Now that bug 608939 is FIXED, headers works correctly on files:
         test.assertEqual(headers, "Content-Type: text/plain\n",
+                         "XHR's headers are valid");
+      }
+      else if (xulApp.versionInRange(xulApp.platformVersion, "17.0a1", "*")) {
+        // Bug 730925 changed the line endings for xhr headers:
+        test.assertEqual(headers, "Content-Type: text/plain\r\n",
                          "XHR's headers are valid");
       }
       else {
