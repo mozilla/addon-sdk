@@ -34,10 +34,8 @@ For example:
 
 * if an add-on creates a single `panel` object and loads several content
 scripts into the panel, then they can interact with each other
-
 * if an add-on creates two `panel` objects and loads a script into each
 one, they can't interact with each other.
-
 * if an add-on creates a single `page-mod` object and loads several content
 scripts into the page mod, then only content scripts associated with the
 same page can interact with each other: if two different matching pages are
@@ -49,9 +47,9 @@ the content script explicitly makes them available.
 
 ## Page Scripts ##
 
-If a content script's document includes its own scripts using `<script>` tags,
+If a page includes its own scripts using `<script>` tags,
 either embedded in the page or linked to it using the `src` attribute, there
-are a couple of ways to communicate with it:
+are a couple of ways a content script can communicate with it:
 
 * using the [DOM `postMessage()` API](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using the DOM postMessage API)
 * using [custom DOM events](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using Custom DOM Events)
@@ -96,9 +94,9 @@ Finally, "listen.html" uses `window.addEventListener()` to listen for
 messages from the content script:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html>
-<html>
-<head></head>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
   &lt;body&gt;
     &lt;script&gt;
       window.addEventListener('message', function(event) {
@@ -116,8 +114,8 @@ messages from the content script:
 Sending messages from the page script to the content script is just
 the same, but in reverse.
 
-In this add-on "main.js" creates a [`page-mod`](packages/addon-kit/page-mod.html)
-to match the URL of the web page:
+Here "main.js" creates a [`page-mod`](packages/addon-kit/page-mod.html)
+that attaches "listen.js" to the web page:
 
     var data = require("self").data;
 
@@ -131,24 +129,19 @@ The web page "talk.html" embeds a script that uses `window.postMessage()`
 to send the content script a message when the user clicks a button:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html>
-<html>
-
-<head></head>
-
-<body>
-  <script>
-    function sendMessage() {
-      window.addEventListener("click", function() {
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;script&gt;
+      function sendMessage() {
         window.postMessage("Message from page script", "http://my-domain.org/");
-      });
-    }
-  &lt;/script>
+      }
+    &lt;/script&gt;
+    &lt;button onclick="sendMessage()"&gt;Send Message&lt;/button&gt;
+  &lt;/body&gt;
 
-<button onclick="sendMessage()">Send Message</button>
-</body>
-
-</html>
+&lt;/html&gt;
 </script>
 
 Finally, the content script "listen.js" uses
@@ -195,17 +188,17 @@ Finally "listen.html" listens for the new event and examines its
 `detail` attribute to retrieve the payload:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html>
-<html>
-  <head></head>
-  <body>
-    <script>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;script&gt;
       document.documentElement.addEventListener("addon-message", function(event) {
         window.alert(JSON.stringify(event.detail))
       }, false);
-    &lt;/script>
-  </body>
-</html>
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
 </script>
 
 #### Messaging From Page Script to Content Script ####
@@ -228,24 +221,24 @@ The web page "talk.html" creates and dispatches a custom DOM event,
 using `initCustomEvent()`'s `detail` parameter to supply the payload:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html>
-<html>
-  <head></head>
-  <body>
-    <script>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+    &lt;script&gt;
       function sendMessage() {
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent("addon-message", true, true, { hello: 'world' });
         document.documentElement.dispatchEvent(event);
       }
-    &lt;/script>
-    <button onclick="sendMessage()">Send Message</button>
-  </body>
-</html>
+    &lt;/script&gt;
+    &lt;button onclick="sendMessage()"&gt;Send Message&lt;/button&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
 </script>
 
 Finally, the content script "listen.js" listens for the new event
-and examines its `detail` attribute to retrieve the payload:
+and retrieves the payload from its `detail` attribute:
 
     document.documentElement.addEventListener("addon-message", function(event) {
       console.log(JSON.stringify(event.detail));
