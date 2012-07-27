@@ -59,7 +59,7 @@ are a couple of ways to communicate with it:
 ### Using the DOM postMessage API ###
 
 You can communicate between the content script and page scripts using
-[`postMessage()`](https://developer.mozilla.org/en/DOM/window.postMessage),
+[`window.postMessage()`](https://developer.mozilla.org/en/DOM/window.postMessage),
 but there's a twist: in early versions of the SDK, the global `postMessage()`
 function in content scripts was used for communicating between the content
 script and the main add-on code. Although this has been
@@ -99,17 +99,16 @@ messages from the content script:
 <!DOCTYPE html>
 <html>
 <head></head>
+  &lt;body&gt;
+    &lt;script&gt;
+      window.addEventListener('message', function(event) {
+        window.alert(event.data);
+      }, false);
+    &lt;/script&gt;
+  &lt;/body&gt;
 
-<body>
-  <script>
-    window.addEventListener('message', function(event) {
-      window.alert(event.data);
-    }, false);
-  &lt;/script>
-
-</body>
-
-</html>
+&lt;/html&gt;
+]]>
 </script>
 
 #### Messaging From Page Script To Content Script ####
@@ -251,3 +250,4 @@ and examines its `detail` attribute to retrieve the payload:
     document.documentElement.addEventListener("addon-message", function(event) {
       console.log(JSON.stringify(event.detail));
     }, false);
+
