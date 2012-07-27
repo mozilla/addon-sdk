@@ -17,12 +17,55 @@ let { Ci, Cc } = require("chrome"),
     { emit, off } = require("api-utils/event/core"),
     { Unknown } = require("api-utils/xpcom"),
     { Class, obscure } = require("api-utils/heritage"),
-    { EventTarget } = require("api-utils/event/target");
+    { EventTarget } = require("api-utils/event/target"),
+    observers = require("api-utils/observer-service"),
+    { ns } = require("api-utils/namespace");
 
+// When a document is not visible anymore the selection object is detached, and
+// a new selection object is created when it becomes visible again.
+// That makes the previous selection's listeners added previously totally
+// useless – the listeners are not notified anymore.
+// To fix that we're listening for `document-shown` event in order to add
+// the listeners to the new selection object created.
+//
+// See bug 665386 for further details.
+
+let selections = ns();
+
+observers.add("document-shown", function (document) {
+  var window = document.defaultView;
+
+  // We are not interested in documents without valid defaultView
+  if (!window)
+    return;
+
+  let selection = selections(window).selection;
+
+  // We want to handle only the windows where we added selection's listeners
+  if (selection) {
+    let currentSelection = window.getSelection();
+
+    // If the current selection for the window given is different from the one
+    // stored in the namespace, we need to add the listeners again, and replace
+    // the previous selection in our list with the new one.
+    //
+    // Notice that we don't have to remove the listeners from the old selection,
+    // because is detached. An attempt to remove the listener, will raise an
+    // error (see http://mxr.mozilla.org/mozilla-central/source/layout/generic/nsSelection.cpp#5343 )
+    //
+    // We ensure that the current selection is an instance of
+    // `nsISelectionPrivate` before working on it, in case is `null`.
+    if (currentSelection instanceof Ci.nsISelectionPrivate &&
+      currentSelection !== selection) {
+
+      currentSelection.addSelectionListener(SelectionListenerManager);
+      selections(window).selection = currentSelection;
+    }
+  }
+});
 
 const windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
                        getService(Ci.nsIWindowMediator);
-
 
 // The selection type HTML
 const HTML = 0x01;
@@ -339,19 +382,27 @@ let SelectionListenerManager = Class({
   },
 
   addSelectionListener: function addSelectionListener(window) {
-    if (window.jetpack_core_selection_listener)
+    // Don't add the selection's listener more than once to the same window.
+    if ("selection" in selections(window))
       return;
+
     let selection = window.getSelection();
-    if (selection instanceof Ci.nsISelectionPrivate)
+
+    // We ensure that the current selection is an instance of
+    // `nsISelectionPrivate` before working on it, in case is `null`.
+    if (selection instanceof Ci.nsISelectionPrivate) {
       selection.addSelectionListener(this);
 
-    // nsISelectionListener implementation seems not fire a notification if
-    // a selection is in a text field, therefore we need to add a listener to
-    // window.onselect, that is fired only for text fields.
-    // https://developer.mozilla.org/en/DOM/window.onselect
-    window.addEventListener("select", onSelect, true);
+      // nsISelectionListener implementation seems not fire a notification if
+      // a selection is in a text field, therefore we need to add a listener to
+      // window.onselect, that is fired only for text fields.
+      // For consistency, we add it only when the nsISelectionListener is added.
+      //
+      // https://developer.mozilla.org/en/DOM/window.onselect
+      window.addEventListener("select", onSelect, true);
 
-    window.jetpack_core_selection_listener = true;
+      selections(window).selection = selection;
+    }
   },
 
   onUnload: function onUnload(event) {
@@ -364,15 +415,21 @@ let SelectionListenerManager = Class({
   },
 
   removeSelectionListener: function removeSelectionListener(window) {
-    if (!window.jetpack_core_selection_listener)
+    // Don't remove the selection's listener to a window that wasn't handled.
+    if (!("selection" in selections(window)))
       return;
+
     let selection = window.getSelection();
-    if (selection instanceof Ci.nsISelectionPrivate)
+
+    // We ensure that the current selection is an instance of
+    // `nsISelectionPrivate` before working on it, in case is `null`.
+    if (selection instanceof Ci.nsISelectionPrivate) {
       selection.removeSelectionListener(this);
 
-    window.removeEventListener("select", onSelect);
+      window.removeEventListener("select", onSelect);
 
-    window.jetpack_core_selection_listener = false;
+      delete selections(window).selection;
+    }
   },
 
   /**

@@ -694,16 +694,10 @@ line somewhat like the following:
 
   const {%(needs)s} = require("chrome");
 
-Then you can use 'Components' as well as any shortcuts to its properties
-that you import from the 'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and
-'Cu' for the 'classes', 'interfaces', 'manager', 'results', and 'utils'
-properties, respectively).
-
-(Note: once bug 636145 is fixed, to access 'Components' directly you'll
-need to retrieve it from the 'chrome' module by adding it to the list of
-symbols you import from the module. To avoid having to make this change
-in the future, replace all occurrences of 'Components' in your code with
-the equivalent shortcuts now.)
+Then you can use any shortcuts to its properties that you import from the
+'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and 'Cu' for the 'classes',
+'interfaces', 'manager', 'results', and 'utils' properties, respectively. And
+`components` for `Components` object itself).
 """ % { "fn": fn, "needs": ",".join(sorted(old_chrome)),
         "lines": "\n".join([" %3d: %s" % (lineno,line)
                             for (lineno, line) in old_chrome_lines]),
@@ -716,10 +710,6 @@ def scan_module(fn, lines, stderr=sys.stderr):
     requires, locations = scan_requirements_with_grep(fn, lines)
     if filename == "cuddlefish.js":
         # this is the loader: don't scan for chrome
-        problems = False
-    elif "chrome" in requires:
-        # if they declare require("chrome"), we tolerate the use of
-        # Components (see bug 663541 for rationale)
         problems = False
     else:
         problems = scan_for_bad_chrome(fn, lines, stderr)

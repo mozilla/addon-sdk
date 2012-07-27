@@ -70,8 +70,8 @@ this minimal set:
 appear
 
 Next, create a new add-on. Make a directory called 'clickme' wherever you
-like, navigate to it and run `cfx init`. Open `lib/main.js` and replace its contents
-with this:
+like, navigate to it and run `cfx init`. Open `lib/main.js` and add the
+following code:
 
     var menuitem = require("menuitems").Menuitem({
       id: "clickme",
