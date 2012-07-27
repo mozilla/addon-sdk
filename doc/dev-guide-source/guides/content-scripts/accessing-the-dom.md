@@ -2,15 +2,10 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# Content Script Access #
+# Accessing the DOM #
 
-This page talks about the access content scripts have to:
-
-* DOM objects in the pages they are attached to
-* other content scripts
-* other scripts loaded by the page they are attached to
-
-## Access to the DOM ##
+This page talks about the access content scripts have to DOM objects
+in the pages they are attached to.
 
 Content scripts need to be able to access DOM objects in arbitrary web
 pages, but this could cause two potential security problems:
@@ -127,80 +122,3 @@ Greasemonkey's unsafeWindow, and the
 [warnings for that](http://wiki.greasespot.net/UnsafeWindow) apply equally
 here. Also, `unsafeWindow` isn't a supported API, so it could be removed or
 changed in a future version of the SDK.
-
-## Access to Other Content Scripts ##
-
-Content scripts loaded into the same document can interact
-with each other directly as well as with the web content itself. However,
-content scripts which have been loaded into different documents
-cannot interact with each other.
-
-For example:
-
-* if an add-on creates a single `panel` object and loads several content
-scripts into the panel, then they can interact with each other
-
-* if an add-on creates two `panel` objects and loads a script into each
-one, they can't interact with each other.
-
-* if an add-on creates a single `page-mod` object and loads several content
-scripts into the page mod, then only content scripts associated with the
-same page can interact with each other: if two different matching pages are
-loaded, content scripts attached to page A cannot interact with those attached
-to page B.
-
-The web content has no access to objects created by the content script, unless
-the content script explicitly makes them available.
-
-## Access to Page Scripts ##
-
-You can communicate between the content script and page scripts using
-[`postMessage()`](https://developer.mozilla.org/en/DOM/window.postMessage),
-but there's a twist: in early versions of the SDK, the global `postMessage()`
-function in content scripts was used for communicating between the content
-script and the main add-on code. Although this has been
-[deprecated in favor of `self.postMessage`](https://wiki.mozilla.org/Labs/Jetpack/Release_Notes/1.0b5#Major_Changes),
-the old globals are still supported, so you can't currently use
-`window.postMessage()`. You must use `document.defaultView.postMessage()`
-instead.
-
-The following page script uses
-[`window.addEventListener`](https://developer.mozilla.org/en/DOM/element.addEventListener)
-to listen for messages:
-
-<script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns="http://www.w3.org/1999/xhtml">
-
-  <head>
-    <script>
-      window.addEventListener("message", function(event) {
-        window.alert(event.data);
-      }, false);
-    &lt;/script>
-
-  </head>
-
-</html>
-
-</script>
-
-Content scripts can send it messages using `document.defaultView.postMessage()`:
-
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var data = require("self").data;
-
-    var widget = widgets.Widget({
-      id: "postMessage",
-      label: "demonstrate document.defaultView.postMessage",
-      contentURL: "http://www.mozilla.org/favicon.ico",
-      onClick: function() {
-        tabs.activeTab.attach({
-          contentScript: "document.defaultView.postMessage('hi there!', '*');"
-        });
-      }
-    });
-
-    tabs.open(data.url("listener.html"));
