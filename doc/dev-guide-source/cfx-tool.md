@@ -292,10 +292,14 @@ modules called "test_myCode.js" or "testMyCode.js".</span>
 
 Called with no options this command will look for a file called `package.json`
 in the current directory. If `package.json` exists, `cfx` will load the
-corresponding add-on and run its tests by loading from the `tests` directory
-any modules that start with the word `test-` and calling each of their exported
-functions, passing them a [test runner](packages/api-utils/unit-test.html)
-object as an argument.
+corresponding add-on, load from the `tests` directory
+any modules that start with the word `test-` and run the unit tests
+they contain.
+
+See the
+[tutorial on unit testing](dev-guide/tutorials/unit-testing.html) and the
+[reference documentation for the `assert` module](packages/api-utils/test/assert.html)
+for details.
 
 #### Supported Options #####
 
