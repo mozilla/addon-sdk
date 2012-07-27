@@ -309,7 +309,8 @@ hr {
   border-style: solid;
   border-top-width: 1px;
   border-color: #a0d0fb;
-  margin-left: 0em;
+  margin-left: 0;
+  padding-bottom: 0;
 }
 
 #sidebar ul li:first-child {  

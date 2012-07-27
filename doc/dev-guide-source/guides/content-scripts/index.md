@@ -41,8 +41,8 @@ _content scripts_.
 A single add-on may use multiple content scripts, and content scripts loaded
 into the same context can interact directly with each other as well as with
 the web content itself. See the chapter on
-<a href="dev-guide/guides/content-scripts/access.html">
-content script access</a>.
+<a href="dev-guide/guides/content-scripts/communicating-with-other-scripts.html">
+communicating with other scripts</a>.
 
 The add-on script and content script can't directly access each other's state.
 Instead, you can define your own events which each side can emit, and the

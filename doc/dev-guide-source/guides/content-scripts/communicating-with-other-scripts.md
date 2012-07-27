@@ -9,8 +9,8 @@ communicate with:
 
 * [your `main.js` file](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#main.js),
 or any other modules in your add-on
-* [other content scripts loaded by your add-on](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Content_Scripts)
-* [page scripts](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Page_Scripts) (that is, scripts embedded in the web page or
+* [other content scripts loaded by your add-on](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Content Scripts)
+* [page scripts](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Page Scripts) (that is, scripts embedded in the web page or
 included using `<script>` tags) 
 
 ## main.js ##
@@ -53,8 +53,8 @@ If a content script's document includes its own scripts using `<script>` tags,
 either embedded in the page or linked to it using the `src` attribute, there
 are a couple of ways to communicate with it:
 
-* using the [DOM `postMessage()` API](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using_the_DOM_postMessage_API)
-* using [custom DOM events](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using_Custom_DOM_Events)
+* using the [DOM `postMessage()` API](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using the DOM postMessage API)
+* using [custom DOM events](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Using Custom DOM Events)
 
 ### Using the DOM postMessage API ###
 
@@ -90,13 +90,14 @@ the message to the page:
 
     document.defaultView.postMessage("Message from content script", "http://my-domain.org/");
 
+The second argument may be '*' which will allow communication with any domain.
+
 Finally, "listen.html" uses `window.addEventListener()` to listen for
 messages from the content script:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns="http://www.w3.org/1999/xhtml">
-
+<!DOCTYPE html>
+<html>
 <head></head>
 
 <body>
@@ -119,7 +120,6 @@ the same, but in reverse.
 In this add-on "main.js" creates a [`page-mod`](packages/addon-kit/page-mod.html)
 to match the URL of the web page:
 
-    var tabs = require("tabs");
     var data = require("self").data;
 
     var pageMod = require("page-mod");
@@ -132,8 +132,8 @@ The web page "talk.html" embeds a script that uses `window.postMessage()`
 to send the content script a message when the user clicks a button:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 
 <head></head>
 
@@ -164,14 +164,8 @@ script:
 ### Using Custom DOM Events ###
 
 As an alternative to using `postMessage()` you can use
-[custom DOM events](https://developer.mozilla.org/en/Code_snippets/Interaction_between_privileged_and_non-privileged_pages)
+[custom DOM events](https://developer.mozilla.org/en/DOM/CustomEvent)
 to communicate between page scripts and content scripts.
-
-To use custom DOM events, the sender creates and inserts a new DOM element.
-It then creates a new DOM event which it dispatches from the new DOM element.
-
-The listener listens for the event and can retrieve the value of any
-attributes set on the element that sent it.
 
 #### Messaging From Content Script To Page Script ####
 
@@ -189,44 +183,29 @@ that will attach "talk.js" to the target web page:
       contentScriptFile: data.url("talk.js")
     });
 
-Next, "talk.js":
-
-* creates and inserts a new DOM element
-* sets an attribute on the new element: this is the message payload
-* creates a DOM event and dispatches it from the new element
+Next, "talk.js" creates and dispatches a custom event, passing the payload
+in the `detail` parameter to `initCustomEvent()`:
 
 <!-- This comment is used to terminate the Markdown list above -->
 
-    var element = document.createElement("MessagingElement");  
-    element.setAttribute("message", "Message from content script");  
-    document.documentElement.appendChild(element);  
-
-    var evt = document.createEvent("Events");  
-    evt.initEvent("MyEvent", true, false);  
-    element.dispatchEvent(evt);
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent("addon-message", true, true, { hello: 'world' });
+    document.documentElement.dispatchEvent(event);
 
 Finally "listen.html" listens for the new event and examines its
-`target` to retrieve the payload:
+`detail` attribute to retrieve the payload:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns="http://www.w3.org/1999/xhtml">
-
-<head></head>
-
-<body>
-  <script>
-
-function displayMessage(e) {
-  alert("Received from web page: " + e.target.getAttribute("message"));
-}
-
-document.addEventListener("MyEvent", displayMessage, false, true);
-
-  &lt;/script>
-
-</body>
-
+<!DOCTYPE html>
+<html>
+  <head></head>
+  <body>
+    <script>
+      document.documentElement.addEventListener("addon-message", function(event) {
+        window.alert(JSON.stringify(event.detail))
+      }, false);
+    &lt;/script>
+  </body>
 </html>
 </script>
 
@@ -246,43 +225,29 @@ to target the page we are interested in:
       contentScriptFile: data.url("listen.js")
     });
 
-The web page "talk.html":
-
-* creates and inserts a new DOM element
-* sets an attribute on the new element: this is the message payload
-* creates a DOM event and dispatches it from the new element
+The web page "talk.html" creates and dispatches a custom DOM event,
+using `initCustomEvent()`'s `detail` parameter to supply the payload:
 
 <script type="syntaxhighlighter" class="brush: html"><![CDATA[
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang='en' xml:lang='en' xmlns="http://www.w3.org/1999/xhtml">
-
-<head></head>
-
-<body>
-  <script>
-    function sendMessage() {
-	  var element = document.createElement("MyExtensionDataElement");  
-      element.setAttribute("attribute1", "foobar");  
-      element.setAttribute("attribute2", "hello world");  
-      document.documentElement.appendChild(element);  
-
-      var evt = document.createEvent("Events");  
-      evt.initEvent("MyExtensionEvent", true, false);  
-      element.dispatchEvent(evt);	
-    }
-  &lt;/script>
-
-<button onclick="sendMessage()">Send Message</button>
-</body>
-
+<!DOCTYPE html>
+<html>
+  <head></head>
+  <body>
+    <script>
+      function sendMessage() {
+        var event = document.createEvent('CustomEvent');
+        event.initCustomEvent("addon-message", true, true, { hello: 'world' });
+        document.documentElement.dispatchEvent(event);
+      }
+    &lt;/script>
+    <button onclick="sendMessage()">Send Message</button>
+  </body>
 </html>
 </script>
 
 Finally, the content script "listen.js" listens for the new event
-and examines the `target` to retrieve the payload:
+and examines its `detail` attribute to retrieve the payload:
 
-    function displayMessage(e) {
-      alert("Received from web page: " + e.target.getAttribute("message"));
-    }
-
-    document.addEventListener("MessagingElement", displayMessage, false, true);
+    document.documentElement.addEventListener("addon-message", function(event) {
+      console.log(JSON.stringify(event.detail));
+    }, false);
