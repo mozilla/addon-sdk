@@ -7,15 +7,17 @@
 This section of the guide explains how content scripts can
 communicate with:
 
-* [your add-on's `main.js` file](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#main.js)
+* [your `main.js` file](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#main.js),
+or any other modules in your add-on
 * [other content scripts loaded by your add-on](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Content_Scripts)
 * [page scripts](dev-guide/guides/content-scripts/communicating-with-other-scripts.html#Page_Scripts) (that is, scripts embedded in the web page or
 included using `<script>` tags) 
 
 ## main.js ##
 
-You can communicate with your add-on's "main.js" by sending it messages,
-using either the `postMessage()` API or the `port.emit()` API. See the
+Your content scripts can communicate with your add-on's "main.js"
+(or any other modules you're written for your add-on) by sending it messages,
+using either the `port.emit()` API or the `postMessage()` API. See the
 articles on
 [using `postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html)
 and
