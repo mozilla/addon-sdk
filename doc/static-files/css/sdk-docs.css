@@ -14,6 +14,13 @@ pre {
   overflow: auto;
 }
 
+.quote {
+  color: black;
+  background-color: whitesmoke;
+  padding: 10px;
+  overflow: auto;
+}
+
 h1 {
   color: black;
 }

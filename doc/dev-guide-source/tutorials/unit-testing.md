@@ -81,41 +81,38 @@ In its place create a file called `test-base64.js` with the following
 contents:
 
 <pre><code>
-var base64 = require("base64")
+var base64 = require("base64");
 
-function test_atob(test) {
-  test.assertEqual(base64.atob("aGVsbG8="), "hello");
-  test.done();
+exports["test atob"] = function(assert) {
+	  assert.ok(base64.atob("aGVsbG8=") == "hello", "atob works");
 }
 
-function test_btoa(test) {
-  test.assertEqual(base64.btoa("hello"), "aGVsbG8=");
-  test.done();
+exports["test btoa"] = function(assert) {
+  assert.ok(base64.btoa("hello") == "aGVsbG8=", "btoa works");
 }
 
-function test_empty_string(test) {
-  test.assertRaises(function() {
-    base64.atob();
-  },
-  "String contains an invalid character");
-};
+exports["test empty string"] = function(assert) {
+  assert.throws(function() {
+	              base64.atob();
+	            },
+                "empty string check works");
+}
 
-exports.test_atob = test_atob;
-exports.test_btoa = test_btoa;
-exports.test_empty_string = test_empty_string;
+require("test").run(exports);
 </code></pre>
 
 This file: exports three functions, each of which expects to receive a single
-argument which is a `test` object. `test` is supplied by the
-[`unit-test`](packages/api-utils/unit-test.html) module and provides
-functions to simplify unit testing.
+argument which is an `assert` object. `assert` is supplied by the
+[`test/assert`](packages/api-utils/test/assert.html) module and implements
+the [CommonJS Unit Testing specification](http://wiki.commonjs.org/wiki/Unit_Testing/1.1).
 
-* The first two functions call `atob()` and `btoa()` and use [`test.assertEqual()`](packages/api-utils/unit-test.html#assertEqual(a, b, message))
+* The first two functions call `atob()` and `btoa()` and use
+[`assert.ok()`](packages/api-utils/test/assert.html)
 to check that the output is as expected.
 
 * The second function tests the module's error-handling code by passing an
 empty string into `atob()` and using
-[`test.assertRaises()`](packages/api-utils/unit-test.html#assertRaises(func, predicate, message))
+[`assert.throws()`](packages/api-utils/test/assert.html)
 to check that the expected exception is raised.
 
 At this point your add-on ought to look like this:
@@ -137,16 +134,16 @@ Now execute `cfx --verbose test` from the add-on's root directory.
 You should see something like this:
 
 <pre>
-Running tests on Firefox 10.0/Gecko 10.0 ({ec8030f7-c20a-464f-9b0e-13a3a9e97384}) under darwin/x86.
-info: executing 'test-base64.test_atob'
-info: pass: a == b == "hello"
-info: executing 'test-base64.test_btoa'
-info: pass: a == b == "aGVsbG8="
-info: executing 'test-base64.test_empty_string'
-info: pass: a == b == "String contains an invalid character"
+Running tests on Firefox 13.0/Gecko 13.0 ({ec8030f7-c20a-464f-9b0e-13a3a9e97384}) under darwin/x86.
+info: executing 'test-base64.test atob'
+info: pass: atob works
+info: executing 'test-base64.test btoa'
+info: pass: btoa works
+info: executing 'test-base64.test empty string'
+info: pass: empty string check works
 
 3 of 3 tests passed.
-Total time: 1.691787 seconds
+Total time: 5.172589 seconds
 Program terminated successfully.
 </pre>
 
@@ -159,8 +156,8 @@ modules called "test_myCode.js" or "testMyCode.js".</span>
 * looks in the `test` directory of your
 package
 * loads any modules whose names start with the word `test-`
-*  calls all their exported functions, passing them a `test` object
-implementation as their only argument.
+*  calls each exported function whose name starts with "test", passing it
+an [`assert`](packages/api-utils/test/assert.html) object as its only argument.
 
 Obviously, you don't have to pass the `--verbose` option to `cfx` if you don't
 want to; doing so just makes the output easier to read.
