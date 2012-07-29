@@ -27,8 +27,8 @@ let setPBMode = defer(function setPBMode(value, window) {
     // is per-window private browsing implemented?
     let chromeWin = windowNS(window).window;
     if ("gPrivateBrowsingUI" in chromeWin
-        && "privateWindow" in window.gPrivateBrowsingUI) {
-      return gPrivateBrowsingUI.privateWindow = value;
+        && "privateWindow" in chromeWin.gPrivateBrowsingUI) {
+      return chromeWin.gPrivateBrowsingUI.privateWindow = value;
     }
   }
 
@@ -41,9 +41,9 @@ let getMode = function getMode(window) {
   if (window) {
     // is per-window private browsing implemented?
     let chromeWin = windowNS(window).window;
-    if ("gPrivateBrowsingUI" in chromeWin
-        && "privateWindow" in window.gPrivateBrowsingUI) {
-      return gPrivateBrowsingUI.privateWindow;
+    if ("gPrivateBrowsingUI" in chromeWin &&
+        "privateWindow" in chromeWin.gPrivateBrowsingUI) {
+      return chromeWin.gPrivateBrowsingUI.privateWindow;
     }
   }
 

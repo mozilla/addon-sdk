@@ -26,7 +26,7 @@ const WindowDom = Trait.compose({
     return this._public;
   },
   get isPrivateBrowsing() {
-    return getMode(windowNS(window).window);
+    return getMode(this._public);
   }
 });
 exports.WindowDom = WindowDom;
