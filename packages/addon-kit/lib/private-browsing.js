@@ -4,22 +4,21 @@
 
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-const { emit, on, once, off } = require("api-utils/event/core");
-const { defer } = require("api-utils/functional");
-const { when: unload } = require("api-utils/unload");
-const observers = require("api-utils/observer-service");
-const { windowNS } = require("api-utils/window/namespace");
+const { Cc, Ci } = require('chrome');
+const { setMode } = require('api-utils/private-browsing/utils');
+const { emit, on, once, off } = require('api-utils/event/core');
+const { defer } = require('api-utils/functional');
+const { when: unload } = require('api-utils/unload');
+const observers = require('api-utils/observer-service');
+
+let deferredEmit = defer(emit);
 
 // Model holding a state.
 const model = { active: false };
 
-let deferredEmit = defer(emit);
-
-let pbService;
 // Currently, only Firefox implements the private browsing service.
 if (require("api-utils/xul-app").is("Firefox")) {
-  pbService = Cc["@mozilla.org/privatebrowsing;1"].
+  let pbService = Cc["@mozilla.org/privatebrowsing;1"].
               getService(Ci.nsIPrivateBrowsingService);
 
   // Update model state.
@@ -35,45 +34,26 @@ if (require("api-utils/xul-app").is("Firefox")) {
   });
 }
 
-let setMode = defer(function setMode(value, window) {
-  // We toggle private browsing mode asynchronously in order to work around
-  // bug 659629.  Since private browsing transitions are asynchronous
-  // anyway, this doesn't significantly change the behavior of the API.
+exports.activate = function activate() {
+  return setMode(true);
+};
+exports.deactivate = function deactivate() {
+  return setMode(false);
+};
 
-  value = !!value;
-
-  if (!window)
-    return pbService.privateBrowsingEnabled = value;
-
-  let chromeWin = windowNS(window).window;
-  if ("gPrivateBrowsingUI" in chromeWin
-      && "privateWindow" in window.gPrivateBrowsingUI) {
-    return gPrivateBrowsingUI.privateWindow = value;
-  }
-
-  pbService.privateBrowsingEnabled = value;
-});
-
-
-// Make sure listeners are cleaned up.
+//Make sure listeners are cleaned up.
 unload(function() off(exports));
 
 Object.defineProperty(exports, "isActive", {
-  get: function() {
-    return model.active;
-  }
-});
-exports.activate = function activate(window) {
-  return pbService && setMode(false, window);
-};
-exports.deactivate = function deactivate(window) {
-  return pbService && setMode(false, window);
+get: function() {
+ return model.active;
 }
+});
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
-  // Note: We can't just bind `off` as we do it for other methods cause skipping
-  // a listener argument will remove all listeners for the given event type
-  // causing misbehavior. This way we make sure all arguments are passed.
-  off(exports, type, listener);
+// Note: We can't just bind `off` as we do it for other methods cause skipping
+// a listener argument will remove all listeners for the given event type
+// causing misbehavior. This way we make sure all arguments are passed.
+off(exports, type, listener);
 };
