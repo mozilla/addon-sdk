@@ -34,21 +34,12 @@ if (require("api-utils/xul-app").is("Firefox")) {
   });
 }
 
-exports.activate = function activate() {
-  return setMode(true);
-};
-exports.deactivate = function deactivate() {
-  return setMode(false);
-};
-
 //Make sure listeners are cleaned up.
 unload(function() off(exports));
 
-Object.defineProperty(exports, "isActive", {
-get: function() {
- return model.active;
-}
-});
+Object.defineProperty(exports, "isActive", { get: function() model.active });
+exports.activate = function activate() setMode(true);
+exports.deactivate = function deactivate() setMode(false);
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
