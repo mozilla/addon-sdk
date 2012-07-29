@@ -6,7 +6,8 @@
 
 const { Trait } = require('../traits'),
       { windowNS } = require("api-utils/window/namespace"),
-      privateBrowsing = require("addon-kit/private-browsing");
+      privateBrowsing = require("addon-kit/private-browsing"),
+      { getMode } = require('api-utils/private-browsing/utils');
 
 const WindowDom = Trait.compose({
   _window: Trait.required,
@@ -25,18 +26,7 @@ const WindowDom = Trait.compose({
     return this._public;
   },
   get isPrivateBrowsing() {
-    let chromeWin = windowNS(window).window;
-    if ("gPrivateBrowsingUI" in chromeWin
-        && "privateWindow" in window.gPrivateBrowsingUI) {
-      return gPrivateBrowsingUI.privateWindow = value;
-    }
-
-    return privateBrowsing.isActive;
-  },
-  setPrivateBrowsing: function(value) {
-    if (value)
-      return privateBrowsing.activate(this._public);
-    return privateBrowsing.deactivate(this._public);
+    return getMode(windowNS(window).window);
   }
 });
 exports.WindowDom = WindowDom;
