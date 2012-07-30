@@ -4,46 +4,24 @@
 
 'use strict';
 
-const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
-const packaging = require('@loader/options');
+let { Loader, main, unload } = require('api-utils/loader');
 
-exports['test loader'] = function(assert) {
-  var prints = [];
-  function print(message) {
-    prints.push(message);
-  }
+exports['test dependency cycles'] = function(assert) {
+  let uri = module.uri.substr(0, module.uri.lastIndexOf('/')) +
+            '/fixtures/loader/cycles/'
 
-  let options = JSON.parse(JSON.stringify(packaging));
-
-  let loader = Loader(override(options, {
-    globals: {
-      print: print,
-      foo: 1
-    }
-  }));
-  let require = Require(loader, module);
-
-  var fixture = require('./loader/fixture');
-
-  assert.equal(fixture.foo, 1, 'custom globals must work.');
-  assert.equal(fixture.bar, 2, 'exports are set');
-
-  assert.equal(prints[0], 'testing', 'global print must be injected.');
-
-  var unloadsCalled = '';
-
-  require("api-utils/unload").when(function(reason) {
-    assert.equal(reason, 'test', 'unload reason is passed');
-    unloadsCalled += 'a';
-  });
-  require('unload.js').when(function() {
-    unloadsCalled += 'b';
+  let loader = Loader({
+    paths: { '': uri }
   });
 
-  unload(loader, 'test');
+  let program = main(loader, 'main')
 
-  assert.equal(unloadsCalled, 'ba',
-               'loader.unload() must call listeners in LIFO order.');
+  assert.equal(program.a.b, program.b, 'module `a` gets correct `b`')
+  assert.equal(program.b.a, program.a, 'module `b` gets correct `a`')
+  assert.equal(program.c.main, program, 'module `c` gets correct `main`')
+
+  unload(loader);
 };
 
 require('test').run(exports);
+
