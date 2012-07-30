@@ -107,6 +107,14 @@ const TabTrait = Trait.compose(EventEmitter, {
    */
   get title() getTabTitle(this._tab),
   set title(value) this._tab.label = String(value),
+
+  /**
+   * Returns the MIME type that the document loaded in the tab is being
+   * rendered as.
+   * @type {String}
+   */
+  get contentType() this._contentDocument.contentType,
+
   /**
    * Location of the page currently loaded in this tab.
    * Changing this property will loads page under under the specified location.
@@ -153,7 +161,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   unpin: function unpin() {
     this._window.gBrowser.unpinTab(this._tab);
   },
-  
+
   /**
    * Create a worker for this tab, first argument is options given to Worker.
    * @type {Worker}
@@ -167,7 +175,7 @@ const TabTrait = Trait.compose(EventEmitter, {
     });
     return worker;
   },
-  
+
   /**
    * Make this tab active.
    * Please note: That this function is called synchronous since in E10S that
@@ -234,7 +242,7 @@ exports.getTabForWindow = function (win) {
                      .QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIDOMWindow);
   if (!topWindow.gBrowser) return null;
-  
+
   // Get top window object, in case we are in a content iframe
   let topContentWindow;
   try {
@@ -243,13 +251,13 @@ exports.getTabForWindow = function (win) {
     // It may throw if win is not a valid content window
     return null;
   }
-  
+
   function getWindowID(obj) {
     return obj.QueryInterface(Ci.nsIInterfaceRequestor)
               .getInterface(Ci.nsIDOMWindowUtils)
               .currentInnerWindowID;
   }
-  
+
   // Search for related Tab
   let topWindowId = getWindowID(topContentWindow);
   for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
@@ -262,7 +270,7 @@ exports.getTabForWindow = function (win) {
       });
     }
   }
-  
+
   // We were unable to find the related tab!
   return null;
 }
