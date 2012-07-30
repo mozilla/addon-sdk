@@ -7,7 +7,8 @@
 let { Loader, main, unload } = require('api-utils/loader');
 
 exports['test dependency cycles'] = function(assert) {
-  let uri = require('./fixtures/loader/cycles/uri');
+  let uri = module.uri.substr(0, module.uri.lastIndexOf('/')) +
+            '/fixtures/loader/cycles/'
 
   let loader = Loader({
     paths: { '': uri }
