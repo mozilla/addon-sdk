@@ -5,12 +5,12 @@
 'use strict';
 
 const { Trait } = require('../traits');
+const { getWindowTitle } = require('api-utils/window/utils');
 
 const WindowDom = Trait.compose({
   _window: Trait.required,
   get title() {
-    let window = this._window;
-    return window && window.document ? window.document.title : null
+    return getWindowTitle(this._window);
   },
   close: function close() {
     let window = this._window;
@@ -23,5 +23,5 @@ const WindowDom = Trait.compose({
     return this._public;
   }
 });
-exports.WindowDom = WindowDom;
 
+exports.WindowDom = WindowDom;

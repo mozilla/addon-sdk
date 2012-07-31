@@ -64,6 +64,7 @@ const BrowserWindowTrait = Trait.compose(
         this.on('deactivate', options.onDeactivate);
       if ('window' in options)
         this._window = options.window;
+
       if ('tabs' in options) {
         this._tabOptions = Array.isArray(options.tabs) ?
                            options.tabs.map(Options) :
@@ -72,6 +73,7 @@ const BrowserWindowTrait = Trait.compose(
       else if ('url' in options) {
         this._tabOptions = [ Options(options.url) ];
       }
+
       this._load();
       return this;
     },
@@ -202,7 +204,6 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
      */
     get activeWindow() {
       let window = windowUtils.activeBrowserWindow;
-
       return window ? BrowserWindow({window: window}) : null;
     },
     open: function open(options) {

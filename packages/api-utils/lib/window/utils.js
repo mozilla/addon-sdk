@@ -11,6 +11,15 @@ const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
 const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 const observers = require('api-utils/observer-service');
+const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
+           getService(Ci.nsIWindowMediator);
+const array = require('api-utils/array');
+
+const BROWSER = 'navigator:browser',
+      URI_BROWSER = 'chrome://browser/content/browser.xul',
+      NAME = '_blank',
+      FEATURES = 'chrome,all,dialog=no';
+
 
 /**
  * Returns the ID of the window's current inner window.
@@ -110,6 +119,28 @@ function open(uri, options) {
 exports.open = open;
 
 /**
+ * Opens a top level window and returns it's `nsIDOMWindow` representation.
+ * Same as `open` but with more features
+ * @param {Object} options
+ * 
+ */
+function openDialog(options) {
+  options = options || {};
+
+  let browser = WM.getMostRecentWindow(BROWSER);
+  return browser.openDialog.apply(
+      browser, 
+      array.flatten([
+        options.url || URI_BROWSER,
+        options.name || '_blank',
+        options.features || 'chrome,all,dialog=no',
+        options.args || null
+      ])
+  );
+}
+exports.openDialog = openDialog;
+
+/**
  * Returns an array of all currently opened windows.
  * Note that these windows may still be loading.
  */
@@ -136,7 +167,11 @@ function isDocumentLoaded(window) {
 exports.isDocumentLoaded = isDocumentLoaded;
 
 function isBrowser(window) {
-  return window.document.documentElement.getAttribute("windowtype") ===
-         "navigator:browser";
+  return window.document.documentElement.getAttribute("windowtype") === BROWSER;
 };
 exports.isBrowser = isBrowser;
+
+function getWindowTitle(window) {
+  return window && window.document ? window.document.title : null;
+}
+exports.getWindowTitle = getWindowTitle;

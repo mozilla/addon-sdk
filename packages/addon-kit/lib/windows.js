@@ -12,8 +12,7 @@ else if (require("api-utils/xul-app").is("Fennec")) {
 else {
   throw new Error([
     "The windows module currently supports only Firefox & Fennec. In the future",
-    " we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=571449 for more information."
+    " we would like it to support other applications, however."
   ].join(""));
 }
 

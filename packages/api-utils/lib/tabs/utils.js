@@ -38,8 +38,15 @@ function getOwnerWindow(tab) {
 }
 exports.getOwnerWindow = getOwnerWindow;
 
-function openTab(window, url) {
-  return window.gBrowser.addTab(url);
+if (require("api-utils/xul-app").is("Fennec")) {
+  var openTab = function openTab(window, url) {
+    return window.BrowserApp.addTab(url);
+  }
+}
+else {
+  var openTab = function openTab(window, url) {
+    return window.gBrowser.addTab(url);
+  }
 }
 exports.openTab = openTab;
 
