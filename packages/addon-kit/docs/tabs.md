@@ -217,11 +217,6 @@ This property is read-only.
 [app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
 </api>
 
-<api name="getThumbnail">
-@property {method}
-Returns thumbnail data URI of the page currently loaded in this tab.
-</api>
-
 <api name="pin">
 @method
 Pins this tab as an [app tab][].
@@ -250,6 +245,11 @@ Reloads this tab.
 <api name="activate">
 @method
 Makes this tab active, which will bring this tab to the foreground.
+</api>
+
+<api name="getThumbnail">
+@method
+Returns thumbnail data URI of the page currently loaded in this tab.
 </api>
 
 <api name="attach">
