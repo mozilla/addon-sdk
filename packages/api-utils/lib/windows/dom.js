@@ -5,8 +5,6 @@
 'use strict';
 
 const { Trait } = require('../traits'),
-      { windowNS } = require("api-utils/window/namespace"),
-      privateBrowsing = require("addon-kit/private-browsing"),
       { getMode } = require('api-utils/private-browsing/utils');
 
 const WindowDom = Trait.compose({
@@ -26,7 +24,7 @@ const WindowDom = Trait.compose({
     return this._public;
   },
   get isPrivateBrowsing() {
-    return getMode(this._public);
+    return getMode(this._window);
   }
 });
 exports.WindowDom = WindowDom;

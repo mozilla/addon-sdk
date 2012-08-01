@@ -6,7 +6,6 @@
 
 const { Cc, Ci } = require('chrome');
 const { defer } = require('api-utils/functional');
-const { windowNS } = require('api-utils/window/namespace');
 const observers = require('api-utils/observer-service');
 const { emit, on, once, off } = require('api-utils/event/core');
 const { when: unload } = require('api-utils/unload');
@@ -39,12 +38,11 @@ if (require("api-utils/xul-app").is("Firefox")) {
 // We toggle private browsing mode asynchronously in order to work around
 // bug 659629.  Since private browsing transitions are asynchronous
 // anyway, this doesn't significantly change the behavior of the API.
-let setMode = defer(function setMode(value, window) {
+let setMode = defer(function setMode(value, chromeWin) {
   value = !!value;  // Cast to boolean.
 
-  if (window) {
+  if (chromeWin) {
     // is per-window private browsing implemented?
-    let chromeWin = windowNS(window).window;
     if ("gPrivateBrowsingUI" in chromeWin
         && "privateWindow" in chromeWin.gPrivateBrowsingUI) {
       return chromeWin.gPrivateBrowsingUI.privateWindow = value;
@@ -56,10 +54,9 @@ let setMode = defer(function setMode(value, window) {
 });
 exports.setMode = setMode;
 
-let getMode = function getMode(window) {
-  if (window) {
+let getMode = function getMode(chromeWin) {
+  if (chromeWin) {
     // is per-window private browsing implemented?
-    let chromeWin = windowNS(window).window;
     if ("gPrivateBrowsingUI" in chromeWin &&
         "privateWindow" in chromeWin.gPrivateBrowsingUI) {
       return chromeWin.gPrivateBrowsingUI.privateWindow;
