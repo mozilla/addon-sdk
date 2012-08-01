@@ -4,40 +4,23 @@
 
 "use strict";
 
-const { Cc, Ci } = require('chrome');
-const { setMode } = require('api-utils/private-browsing/utils');
+const { setMode, getMode, on: onStateChange } = require('api-utils/private-browsing/utils');
 const { emit, on, once, off } = require('api-utils/event/core');
-const { defer } = require('api-utils/functional');
 const { when: unload } = require('api-utils/unload');
 const observers = require('api-utils/observer-service');
 
-let deferredEmit = defer(emit);
+onStateChange('start', function onStart() {
+  emit(exports, 'start');
+});
 
-// Model holding a state.
-const model = { active: false };
-
-// Currently, only Firefox implements the private browsing service.
-if (require("api-utils/xul-app").is("Firefox")) {
-  let pbService = Cc["@mozilla.org/privatebrowsing;1"].
-              getService(Ci.nsIPrivateBrowsingService);
-
-  // Update model state.
-  model.active = pbService.privateBrowsingEnabled;
-
-  // set up an observer for private browsing switches.
-  observers.add('private-browsing-transition-complete', function onChange() {
-    // Update model state.
-    model.active = pbService.privateBrowsingEnabled;
-
-    // Emit event with in next turn of event loop.
-    deferredEmit(exports, model.active ? 'start' : 'stop');
-  });
-}
+onStateChange('stop', function onStop() {
+  emit(exports, 'stop');
+});
 
 // Make sure listeners are cleaned up.
 unload(function() off(exports));
 
-Object.defineProperty(exports, "isActive", { get: function() model.active });
+Object.defineProperty(exports, "isActive", { get: function() getMode() });
 exports.activate = function activate() setMode(true);
 exports.deactivate = function deactivate() setMode(false);
 exports.on = on.bind(null, exports);
