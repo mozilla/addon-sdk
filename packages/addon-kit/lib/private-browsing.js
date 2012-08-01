@@ -34,7 +34,7 @@ if (require("api-utils/xul-app").is("Firefox")) {
   });
 }
 
-//Make sure listeners are cleaned up.
+// Make sure listeners are cleaned up.
 unload(function() off(exports));
 
 Object.defineProperty(exports, "isActive", { get: function() model.active });
@@ -43,8 +43,8 @@ exports.deactivate = function deactivate() setMode(false);
 exports.on = on.bind(null, exports);
 exports.once = once.bind(null, exports);
 exports.removeListener = function removeListener(type, listener) {
-// Note: We can't just bind `off` as we do it for other methods cause skipping
-// a listener argument will remove all listeners for the given event type
-// causing misbehavior. This way we make sure all arguments are passed.
-off(exports, type, listener);
+  // Note: We can't just bind `off` as we do it for other methods cause skipping
+  // a listener argument will remove all listeners for the given event type
+  // causing misbehavior. This way we make sure all arguments are passed.
+  off(exports, type, listener);
 };

@@ -17,11 +17,11 @@ if (require("api-utils/xul-app").is("Firefox")) {
               getService(Ci.nsIPrivateBrowsingService);
 }
 
-let setPBMode = defer(function setPBMode(value, window) {
-  // We toggle private browsing mode asynchronously in order to work around
-  // bug 659629.  Since private browsing transitions are asynchronous
-  // anyway, this doesn't significantly change the behavior of the API.
-  value = !!value;
+// We toggle private browsing mode asynchronously in order to work around
+// bug 659629.  Since private browsing transitions are asynchronous
+// anyway, this doesn't significantly change the behavior of the API.
+let setMode = defer(function setMode(value, window) {
+  value = !!value;  // Cast to boolean.
 
   if (window) {
     // is per-window private browsing implemented?
@@ -35,7 +35,7 @@ let setPBMode = defer(function setPBMode(value, window) {
   // default
   return pbService && (pbService.privateBrowsingEnabled = value);
 });
-exports.setMode = setPBMode;
+exports.setMode = setMode;
 
 let getMode = function getMode(window) {
   if (window) {
