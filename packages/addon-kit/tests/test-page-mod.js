@@ -9,6 +9,7 @@ var testPageMod = require("pagemod-test-helpers").testPageMod;
 const { Loader } = require('test-harness/loader');
 const tabs = require("tabs");
 const timer = require("timer");
+const { Cc, Ci } = require("chrome");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -419,6 +420,90 @@ exports.testAutomaticDestroy = function(test) {
   });
 
 }
+
+exports['test attachment to tabs only'] = function(test) {
+  test.waitUntilDone();
+
+  let { PageMod } = require('page-mod');
+  let openedTab = null; // Tab opened in openTabWithIframe()
+  let workerCount = 0;
+
+  let mod = PageMod({
+    include: 'data:text/html*',
+    contentScriptWhen: 'start',
+    contentScript: '',
+    onAttach: function onAttach(worker) {
+      if (worker.tab == openedTab) {
+        if (++workerCount == 2) {
+          test.pass('Succesfully applied to tab documents and its iframe');
+          worker.destroy();
+          mod.destroy();
+          test.done();
+        }
+      }
+      else {
+        test.fail('page-mod attached to a non-tab document');
+      }
+    }
+  });
+
+  function openHiddenFrame() {
+    console.info('Open iframe in hidden window');
+    let hiddenFrames = require('api-utils/hidden-frame');
+    let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
+      onReady: function () {
+        let element = this.element;
+        element.addEventListener('DOMContentLoaded', function onload() {
+          element.removeEventListener('DOMContentLoaded', onload, false);
+          hiddenFrames.remove(hiddenFrame);
+          openToplevelWindow();
+        }, false);
+        element.setAttribute('src', 'data:text/html;charset=utf-8,foo');
+      }
+    }));
+  }
+
+  function openToplevelWindow() {
+    console.info('Open toplevel window');
+    let ww = Cc['@mozilla.org/embedcomp/window-watcher;1'].
+             getService(Ci.nsIWindowWatcher);
+    let win = ww.openWindow(null, 'data:text/html;charset=utf-8,bar', null, '', null);
+    win.addEventListener('DOMContentLoaded', function onload() {
+      win.removeEventListener('DOMContentLoaded', onload, false);
+      win.close();
+      openBrowserIframe();
+    }, false);
+  }
+
+  function openBrowserIframe() {
+    console.info('Open iframe in browser window');
+    let window = require('api-utils/window-utils').activeBrowserWindow;
+    let document = window.document;
+    let iframe = document.createElement('iframe');
+    iframe.setAttribute('type', 'content');
+    iframe.setAttribute('src', 'data:text/html;charset=utf-8,foobar');
+    iframe.addEventListener('DOMContentLoaded', function onload() {
+      iframe.removeEventListener('DOMContentLoaded', onload, false);
+      iframe.parentNode.removeChild(iframe);
+      openTabWithIframe();
+    }, false);
+    document.documentElement.appendChild(iframe);
+  }
+
+  // Only these two documents will be accepted by the page-mod
+  function openTabWithIframe() {
+    console.info('Open iframe in a tab');
+    let content = '<iframe src="data:text/html,iframe"/>';
+    require('tabs').open({
+      url: 'data:text/html;charset=utf-8,' + encodeURIComponent(content),
+      onOpen: function onOpen(tab) {
+        openedTab = tab;
+      }
+    });
+  }
+
+  openHiddenFrame();
+};
 
 exports.testContentScriptOptionsOption = function(test) {
 	test.waitUntilDone();
