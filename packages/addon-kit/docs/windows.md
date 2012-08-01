@@ -176,6 +176,11 @@ A live list of tabs in this window. This object has the same interface as the
 tabs in this window, not all tabs in all windows. This property is read-only.
 </api>
 
+<api name="isPrivateBrowsing">
+@property {boolean}
+Returns `true` if the window is in private browsing mode, and `false` otherwise.
+</api>
+
 <api name="activate">
 @method
 Makes window active, which will focus that window and bring it to the
