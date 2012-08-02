@@ -6,6 +6,7 @@
 var {Cc,Ci} = require("chrome");
 const { Loader } = require("test-harness/loader");
 const timer = require("timer");
+const { StringBundle } = require('api-utils/app-strings');
 
 // test tab.activeTab getter
 exports.testActiveTab_getter = function(test) {
@@ -33,13 +34,17 @@ exports.testActiveTab_getter = function(test) {
 exports.testBug682681_aboutURI = function(test) {
   test.waitUntilDone();
 
+  let tabStrings = StringBundle('chrome://browser/locale/tabbrowser.properties');
+
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
 
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
 
-      test.assertEqual(tab.title, "New Tab", "title of about: tab is not blank");
+      test.assertEqual(tab.title,
+                       tabStrings.get('tabs.emptyTabTitle'),
+                       "title of about: tab is not blank");
 
       // end of test
       closeBrowserWindow(window, function() test.done());
