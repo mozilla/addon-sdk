@@ -43,6 +43,7 @@ const WindowTabTracker = Trait.compose({
     // point it is necessary to invoke lazy `tabs` getter on the windows object
     // which creates a `TabList` instance.
     this.tabs;
+
     // Binding all methods used as event listeners to the instance.
     this._onTabReady = this._emitEvent.bind(this, "ready");
     this._onTabOpen = this._onTabEvent.bind(this, "open");
@@ -58,6 +59,7 @@ const WindowTabTracker = Trait.compose({
       // necessary to synchronize tabs lists with an actual state.
       this._onTabOpen(tab);
     }
+
     // We also emulate "activate" event so that it's picked up by a tab list.
     this._onTabActivate(getActiveTab(this._window));
 
@@ -87,6 +89,7 @@ const WindowTabTracker = Trait.compose({
       let options = this._tabOptions.shift() || {};
       options.tab = tab;
       options.window = this._public;
+
       // creating tab wrapper and adding listener to "ready" events.
       let wrappedTab = Tab(options);
 
@@ -125,6 +128,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       this._window = options.window;
       // Add new items to the list
       this.on(EVENTS.open.name, this._add.bind(this));
+
       // Remove closed items from the list
       this.on(EVENTS.close.name, this._remove.bind(this));
 
@@ -132,6 +136,7 @@ const TabList = List.resolve({ constructor: "_init" }).compose(
       this.on("activate", function onTabActivate(tab) {
         this._activeTab = tab;
       }.bind(this));
+
       // Initialize list.
       this._init();
       // This list is not going to emit any events, object holding this list

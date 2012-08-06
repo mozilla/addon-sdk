@@ -35,6 +35,7 @@ const TabTrait = Trait.compose(EventEmitter, {
     this._onReady = this._onReady.bind(this);
     this._tab = options.tab;
     let window = this.window = options.window;
+
     // Setting event listener if was passed.
     for each (let type in EVENTS) {
       let listener = options[type.listener];
@@ -149,7 +150,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   unpin: function unpin() {
     this._window.gBrowser.unpinTab(this._tab);
   },
-  
+
   /**
    * Create a worker for this tab, first argument is options given to Worker.
    * @type {Worker}
@@ -163,10 +164,10 @@ const TabTrait = Trait.compose(EventEmitter, {
     });
     return worker;
   },
-  
+
   /**
    * Make this tab active.
-   * Please note: That this function is called synchronous since in E10S that
+   * Please note: That this function is called asynchronous since in E10S that
    * will be the case. Besides this function is called from a constructor where
    * we would like to return instance before firing a 'TabActivated' event.
    */

@@ -19,14 +19,23 @@ exports.testBrowserWindowsLength = function(test) {
 exports.testOpenAndCloseWindow = function(test) {
   test.waitUntilDone();
 
-  browserWindows.open({
-    url: "data:text/html;charset=utf-8,<title>windows API test</title>",
-    onOpen: function(window) {
+  let tabCount = browserWindows.activeWindow.tabs.length;
+  let url = "data:text/html;charset=utf-8,<title>windows API test</title>";
 
+  browserWindows.open({
+    url: url,
+    onOpen: function(window) {
       test.assertEqual(this, browserWindows,
                     "The 'this' object is the windows object.");
-      //test.assertEqual(window.tabs.length, 1, "Only one tab open");
+
+      test.assertEqual(window.tabs.length, (tabCount+1), "Only one tab open");
       test.assertEqual(browserWindows.length, 1, "Still only one window open");
+
+      /*
+      test.assertEqual(window.tabs.activeTab.url, url, "the active tab url is the opened url");
+      test.assert(window.tabs.activeTab.title.indexOf("windows API test") != -1,
+      "URL correctly loaded");
+      */
 
       /*
       window.tabs.activeTab.on('ready', function onReady(tab) {
@@ -43,6 +52,7 @@ exports.testOpenAndCloseWindow = function(test) {
         tab.close();
       });
       */
+
       // end test
       test.done();
     }
