@@ -107,6 +107,9 @@ exports.set = function(aData, aDataType) {
   if (!xferable)
     throw new Error("Couldn't set the clipboard due to an internal error " +
                     "(couldn't create a Transferable object).");
+  // Bug 769440: Starting with FF16, transferable have to be inited
+  if ("init" in xferable)
+    xferable.init(null);
 
   switch (flavor) {
     case "text/html":
@@ -208,6 +211,9 @@ exports.get = function(aDataType) {
   if (!xferable)
     throw new Error("Couldn't set the clipboard due to an internal error " +
                     "(couldn't create a Transferable object).");
+  // Bug 769440: Starting with FF16, transferable have to be inited
+  if ("init" in xferable)
+    xferable.init(null);
 
   var flavor = fromJetpackFlavor(options.datatype);
 

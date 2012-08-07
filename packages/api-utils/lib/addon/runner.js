@@ -5,11 +5,12 @@
  */
 
 const { Cc, Ci } = require('chrome');
-const { descriptor, Sandbox, evaluate, main } = require('api-utils/loader');
+const { descriptor, Sandbox, evaluate, main, resolveURI } = require('api-utils/loader');
 const { once } = require('../system/events');
 const { exit, env, staticArgs, name } = require('../system');
 const { when: unload } = require('../unload');
 const { loadReason } = require('self');
+const { rootURI } = require("@loader/options");
 const globals = require('../globals');
 
 const NAME2TOPIC = {
@@ -53,6 +54,11 @@ function setDefaultPrefs(prefsURI) {
   evaluate(sandbox, prefsURI);
 }
 
+function definePseudo(loader, id, exports) {
+  let uri = resolveURI(id, loader.mapping);
+  loader.modules[uri] = { exports: exports };
+}
+
 function wait(reason, options) {
   once(APP_STARTUP, function() {
     startup(null, options);
@@ -64,27 +70,43 @@ function startup(reason, options) {
     return wait(reason, options);
 
   // Inject globals ASAP in order to have console API working ASAP
-  let loader = options.loader;
-  Object.defineProperties(loader.globals, descriptor(globals));
+  Object.defineProperties(options.loader.globals, descriptor(globals));
 
-  // Try initializing localization module before running main module. Just print
-  // an exception in case of error, instead of preventing addon to be run.
+  // Load localization manifest and .properties files.
+  // Run the addon even in case of error (best effort approach)
+  require('api-utils/l10n/loader').
+    load(rootURI).
+    then(null, function failure(error) {
+      console.info("Error while loading localization: " + error.message);
+    }).
+    then(function onLocalizationReady(data) {
+      // Exports data to a pseudo module so that api-utils/l10n/core
+      // can get access to it
+      definePseudo(options.loader, '@l10n/data', data);
+      run(options);
+    });
+}
+
+function run(options) {
   try {
-    // Do not enable HTML localization while running test as it is hard to
-    // disable. Because unit tests are evaluated in a another Loader who
-    // doesn't have access to this current loader.
-    if (options.main !== 'test-harness/run-tests')
-      require('api-utils/l10n/html').enable();
-  } catch(error) {
-    console.exception(error);
-  }
-  try {
+    // Try initializing HTML localization before running main module. Just print
+    // an exception in case of error, instead of preventing addon to be run.
+    try {
+      // Do not enable HTML localization while running test as it is hard to
+      // disable. Because unit tests are evaluated in a another Loader who
+      // doesn't have access to this current loader.
+      if (options.main !== 'test-harness/run-tests')
+        require('api-utils/l10n/html').enable();
+    } catch(error) {
+      console.exception(error);
+    }
+
     // TODO: When bug 564675 is implemented this will no longer be needed
     // Always set the default prefs, because they disappear on restart
     setDefaultPrefs(options.prefsURI);
 
     // this is where the addon's main.js finally run.
-    let program = main(loader, options.main);
+    let program = main(options.loader, options.main);
 
     if (typeof(program.onUnload) === 'function')
       unload(program.onUnload);

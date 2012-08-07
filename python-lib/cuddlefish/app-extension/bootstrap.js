@@ -22,6 +22,7 @@ const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
 let loader = null;
 let unload = null;
 let cuddlefishURI = null;
+let nukeTimer = null;
 
 // Utility function that synchronously reads local resource from the given
 // `uri` and returns content string.
@@ -186,13 +187,44 @@ function startup(data, reasonCode) {
   }
 };
 
+function setTimeout(callback, delay) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.initWithCallback({ notify: callback }, delay,
+                         Ci.nsITimer.TYPE_ONE_SHOT);
+  return timer;
+}
+
 function shutdown(data, reasonCode) {
   let reason = REASON[reasonCode];
   if (loader) {
     unload(loader, reason);
+    unload = null;
     // Bug 724433: We need to unload JSM otherwise it will stay alive
     // and keep a reference to this compartment.
     Cu.unload(cuddlefishURI);
-    loader = unload = null;
+    // Avoid leaking all modules when something goes wrong with one particular
+    // module. Do not clean it up immadiatly in order to allow executing some
+    // actions on addon disabling.
+    // We need to keep a reference to the timer, otherwise it is collected
+    // and won't ever fire.
+    nukeTimer = setTimeout(nukeModules, 1000);
   }
 };
+
+function nukeModules() {
+  nukeTimer = null;
+  // module objects store `exports` which comes from sandboxes
+  // We should avoid keeping link to these object to avoid leaking sandboxes
+  for (let key in loader.modules) {
+    delete loader.modules[key];
+  }
+  // Direct links to sandboxes should be removed too
+  for (let key in loader.sandboxes) {
+    let sandbox = loader.sandboxes[key];
+    delete loader.sandboxes[key];
+    // Bug 775067: From FF17 we can kill all CCW from a given sandbox
+    if ("nukeSandbox" in Cu)
+      Cu.nukeSandbox(sandbox);
+  }
+  loader = null;
+}

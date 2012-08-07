@@ -816,7 +816,7 @@ will create a profile there for you. So you just have to make up
 a path and name the first time, and keep using it:
 
 <pre>
-cfx run --profile-dir="~/addon-dev/profiles/boogaloo"
+cfx run --profiledir="~/addon-dev/profiles/boogaloo"
 </pre>
 
 The path must contain at least one "/" (although you may specify
