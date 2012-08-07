@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-if (require("api-utils/xul-app").is("Firefox")) {
-  var tabs = require("api-utils/tabs/firefox-tabs");
-}
-else if (require("api-utils/xul-app").is("Fennec")) {
-  var tabs = require("api-utils/tabs/fennec-tabs");
-}
-else {
-  throw new Error([
-    "The tabs module currently supports only Firefox & Fennec. In the future",
-    " we would like it to support other applications, however."
-  ].join(""));
-}
+const { browserWindows } = require("addon-kit/windows");
+const { tabs } = require("api-utils/windows/tabs-firefox");
+
+Object.defineProperties(tabs, {
+  open: { value: function open(options) {
+    if (options.inNewWindow)
+        // `tabs` option is under review and may be removed.
+        return browserWindows.open({ tabs: [ options ] });
+    // Open in active window if new window was not required.
+    return browserWindows.activeWindow.tabs.open(options);
+  }}
+});
 
 // Workaround for bug 674195. Freezing objects from other compartments fail,
 // so we use `Object.freeze` from the same component as objects

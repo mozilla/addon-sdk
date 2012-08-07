@@ -7,7 +7,7 @@ var {Cc,Ci} = require("chrome");
 const { Loader } = require("test-harness/loader");
 const timer = require("timer");
 
-// test tab.activeTab getter
+// TEST: tabs.activeTab getter
 exports.testActiveTab_getter = function(test) {
   test.waitUntilDone();
 

@@ -78,10 +78,12 @@ const Tabs = Class({
   get activeTab() {
     return tabsNS(this).activeTab;
   },
-  open: function() {
+  open: function(options) {
     let activeWin = browserWindows.activeWindow;
-    let tab = openTab(windowNS(activeWin).window, options.url);
-    
+    let tab = getTabForRawTab(openTab(windowNS(activeWin).window, options.url));
+    if (options.onOpen) {
+      options.onOpen(tab);
+    }
   },
   get length() tabsNS(this).tabs.length,
   __iterator__: function __iterator__() {
