@@ -6,7 +6,8 @@
 const { BrowserWindow } = require('api-utils/window/browser-window');
 const windowUtils = require('api-utils/window-utils');
 const { windowNS } = require('api-utils/window/namespace');
-const events = require("api-utils/event/core");
+const { on, off, once, emit } = require("api-utils/event/core");
+const { method } = require('../functional');
 const { WindowTracker } = require('api-utils/window-utils');
 const { isBrowser } = require('api-utils/window/utils');
 const { openTab } = require("../tabs/utils");
@@ -27,7 +28,8 @@ const browserWindows = {
     if (options.onOpen)
       options.onOpen.call(browserWindows, activeWin);
 
-    events.emit(browserWindows, 'open', activeWin);
+    emit(activeWin, 'open', activeWin);
+    emit(browserWindows, 'open', activeWin);
 
     return null;
   },
@@ -37,7 +39,11 @@ const browserWindows = {
   },
   get length() {
     return windows.length;
-  }
+  },
+  on: method(on),
+  once: method(once),
+  off: method(off),
+  removeListener: method(off),
 };
 exports.browserWindows = browserWindows;
 
@@ -80,12 +86,12 @@ WindowTracker({
   onTrack: function onTrack(chromeWindow) {
     if (!isBrowser(chromeWindow)) return;
     let window = getBrowserWindow({ window: chromeWindow });
-    events.emit(browserWindows, 'open', window);
+    emit(browserWindows, 'open', window);
   },
   onUntrack: function onUntrack(chromeWindow) {
     if (!isBrowser(chromeWindow)) return;
     let window = getBrowserWindow({ window: chromeWindow });
-    events.emit(browserWindows, 'close', window);
+    emit(browserWindows, 'close', window);
 
     window.destroy();
   }

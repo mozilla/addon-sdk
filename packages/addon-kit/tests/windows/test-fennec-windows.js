@@ -46,9 +46,7 @@ exports.testOpenAndCloseWindow = function(test) {
         });
 
         tab.close();
-
       });
-
     }
   });
 };

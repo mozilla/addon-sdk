@@ -7,7 +7,7 @@ const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
 const { defer } = require("../functional");
 const { EVENTS } = require("./events");
-const { on, off } = require('api-utils/event/core');
+const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
 
 const Tab = Class({
@@ -113,6 +113,7 @@ const Tab = Class({
   },
 
   on: method(on),
+  once: method(once),
   off: method(off),
   removeListener: method(off),
 });

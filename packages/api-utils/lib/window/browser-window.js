@@ -5,8 +5,8 @@
 
 const { Class } = require('api-utils/heritage');
 const { windowNS } = require('api-utils/window/namespace');
-const { on, off, once } = require('../event/core');
-const { method } = require('../functional');
+const { on, off, once } = require('api-utils/event/core');
+const { method } = require('api-utils/functional');
 const { openDialog } = require('api-utils/window/utils');
 const unload = require('api-utils/unload');
 const { getWindowTitle } = require('api-utils/window/utils');
@@ -55,6 +55,7 @@ const BrowserWindow = Class({
     if (window) window.focus();
     return this;
   },
+  // TODO: consider using window.BrowserApp.quit() for Fennec..
   close: function() {
     let window = windowNS(this).window;
     if (window) window.close();

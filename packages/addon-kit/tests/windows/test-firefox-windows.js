@@ -12,6 +12,7 @@ let browserWindows;
 
 function getTestRunnerWindow() wm.getMostRecentWindow("test:runner")
 
+// TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
   test.waitUntilDone();
 
@@ -40,8 +41,8 @@ exports.testOpenAndCloseWindow = function(test) {
 };
 
 exports.testAutomaticDestroy = function(test) {
-
   test.waitUntilDone();
+
   let windows = browserWindows;
 
   // Create a second windows instance that we will unload
@@ -67,7 +68,6 @@ exports.testAutomaticDestroy = function(test) {
       });
     }
   });
-
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
