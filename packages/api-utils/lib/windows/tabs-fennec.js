@@ -32,8 +32,9 @@ const Tabs = Class({
     }
 
     window.BrowserApp.deck.addEventListener("TabOpen", function(evt) {
-      //console.log("TabOpen!!!"+window.BrowserApp.tabs.length);
-      let tab = getTabForBrowser(evt.target);
+      let browser = evt.target;
+
+      let tab = getTabForBrowser();
       if (tab === null) {
         // create a Tab instance for this new tab
         tab = addTab(Tab({
@@ -41,8 +42,20 @@ const Tabs = Class({
           tab: getRawTabForBrowser(evt.target)
         }));
       }
+
+      // TODO: this isn't always the case..
       tabsNS(this).activeTab = tab;
+
+      // TODO: remove listener on unload
+      browser.addEventListener("DOMContentLoaded", function onReady() {
+        emit(tab, "ready", tab);
+        emit(this, "ready", tab);
+      }.bind(this), false);
+
+      emit(tab, "open", tab);
       emit(this, "open", tab);
+
+      
     }.bind(this), false);
 
     window.BrowserApp.deck.addEventListener("TabSelect", function(evt) {
@@ -54,19 +67,15 @@ const Tabs = Class({
 
     window.BrowserApp.deck.addEventListener("TabClose", function(evt) {
       let tab = getTabForBrowser(evt.target);
+      removeTab(tab);
+
+      emit(tab, "close", tab)
       emit(this, "close", tab);
     }.bind(this), false);
 
     return this;
   },
   get activeTab() {
-	  /*
-    console.log("Tab1!!!!!:" + tabsNS(this).window.BrowserApp.selectedTab.browser.currentURI.spec);
-    console.log("Tab2!!!!!:" + tabsNS(this).window.BrowserApp.tabs.length);
-    let tabs = tabsNS(this).window.BrowserApp.tabs;
-    for (let i = 0; i< tabs.length; i++) {
-      console.log("Tab3!!!!!:" + tabs[i].browser.currentURI.spec);
-    }*/
     return tabsNS(this).activeTab;
   },
   open: function() {
@@ -94,6 +103,19 @@ function addTab(aTab) {
 
   // add the new tab
   tabsNS(gTabs).tabs.push(aTab);
+  return aTab;
+}
+
+function removeTab(aTab) {
+  let tabs = tabsNS(gTabs).tabs;
+  for (let i = tabs.length - 1; i >= 0; i--) {
+    let tab = tabs[i];
+    // tab is already in our list
+    if (tab === aTab) {
+      tabs.splice(i, 1);
+      return aTab;
+    }
+  }
   return aTab;
 }
 

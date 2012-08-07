@@ -7,6 +7,8 @@ const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
 const { defer } = require("../functional");
 const { EVENTS } = require("./events");
+const { on, off } = require('api-utils/event/core');
+const { method } = require('../functional');
 
 const Tab = Class({
   initialize: function initialize(options) {
@@ -108,6 +110,10 @@ const Tab = Class({
    */
   reload: function reload() {
     tabNS(this).tab.reloadWithMode(false);
-  }
+  },
+
+  on: method(on),
+  off: method(off),
+  removeListener: method(off),
 });
 exports.Tab = Tab;

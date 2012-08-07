@@ -5,11 +5,11 @@
 
 const { Class } = require('api-utils/heritage');
 const { windowNS } = require('api-utils/window/namespace');
-//const { tabs } = require('api-utils/windows/tabs-fennec');
 const { on, off, once } = require('../event/core');
 const { method } = require('../functional');
 const { openDialog } = require('api-utils/window/utils');
 const unload = require('api-utils/unload');
+const { getWindowTitle } = require('api-utils/window/utils');
 
 const BrowserWindow = Class({
   initialize: function initialize(options) {
