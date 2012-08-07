@@ -114,7 +114,6 @@ const Tab = Class({
 
   on: method(on),
   once: method(once),
-  off: method(off),
   removeListener: method(off),
 });
 exports.Tab = Tab;

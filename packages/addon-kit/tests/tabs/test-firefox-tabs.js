@@ -29,21 +29,21 @@ exports.testActiveTab_getter = function(test) {
   });
 };
 
-// test 'BrowserWindow' instance creation on tab 'activate' event
+// TEST: 'BrowserWindow' instance creation on tab 'activate' event
 // See bug 648244: there was a infinite loop.
 exports.testBrowserWindowCreationOnActivate = function(test) {
   test.waitUntilDone();
-  
+
   let windows = require("windows").browserWindows;
   let tabs = require("tabs");
-  
+
   let gotActivate = false;
-  
+
   tabs.once('activate', function onActivate(eventTab) {
     test.assert(windows.activeWindow, "Is able to fetch activeWindow");
     gotActivate = true;
   });
-  
+
   openBrowserWindow(function(window, browser) {
     test.assert(gotActivate, "Received activate event before openBrowserWindow's callback is called");
     closeBrowserWindow(window, function () test.done());
@@ -853,7 +853,7 @@ function openBrowserWindow(callback, url) {
   urlString.data = url;
   let window = ww.openWindow(null, "chrome://browser/content/browser.xul",
                              "_blank", "chrome,all,dialog=no", urlString);
-  
+
   if (callback) {
     window.addEventListener("load", function onLoad(event) {
       if (event.target && event.target.defaultView == window) {

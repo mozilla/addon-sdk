@@ -9,7 +9,8 @@ const { browserWindows } = require("api-utils/windows/fennec");
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
 const { openTab } = require('api-utils/tabs/utils');
-const { on, emit } = require('api-utils/event/core');
+const { on, once, off, emit } = require('api-utils/event/core');
+const { method } = require('../functional');
 
 var mainWindow = windowNS(browserWindows.activeWindow).window;
 
@@ -62,6 +63,7 @@ const Tabs = Class({
       // Set value whenever new tab becomes active.
       let tab = tabsNS(this).activeTab = getTabForBrowser(evt.target);
 
+      emit(tab, "activate", tab);
       emit(this, "activate", tab);
     }.bind(this), false);
 
@@ -90,7 +92,10 @@ const Tabs = Class({
     let tabs = tabsNS(this).tabs;
     for each(let tab in tabs)
       yield tab;
-  }
+  },
+  on: method(on),
+  once: method(once),
+  removeListener: method(off),
 });
 const gTabs = exports.tabs = Tabs({window: mainWindow});
 

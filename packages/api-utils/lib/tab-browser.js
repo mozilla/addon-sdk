@@ -91,7 +91,8 @@ exports.addTab = function addTab(url, options) {
       }
       require("./errors").catchAndLog(function(e) options.onLoad(e))(e);
     }, options.url);
-  } else {
+  }
+  else {
     let tab = win.gBrowser.addTab(options.url);
     if (!options.inBackground)
       win.gBrowser.selectedTab = tab;
