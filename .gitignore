@@ -7,7 +7,10 @@ doc/dev-guide/
 doc/index.html
 doc/packages/
 doc/status.md5
-
+packages/*
+!packages/addon-kit/
+!packages/api-utils/
+!packages/test-harness/
 
 # If you want to add other files here, like *.pyc and *.DS_Store,
 # please add them to a global git ignore file.
