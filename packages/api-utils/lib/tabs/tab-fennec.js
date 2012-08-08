@@ -9,6 +9,7 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
+//const { getFaviconURIForLocation } = require("../utils/data");
 
 const Tab = Class({
   initialize: function initialize(options) {
@@ -42,7 +43,9 @@ const Tab = Class({
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
    */
-  get favicon() "",
+  get favicon() "",//getFaviconURIForLocation(this.url),
+
+  getThumbnail: function () "",
 
   /**
    * The index of the tab relative to other tabs in the application window.

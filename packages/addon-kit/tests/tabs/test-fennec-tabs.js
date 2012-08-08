@@ -144,3 +144,28 @@ exports.testAutomaticDestroy = function(test) {
 
   tabs.open("data:text/html;charset=utf-8,foo");
 };
+
+// TEST: tab properties
+exports.testTabProperties = function(test) {
+  test.waitUntilDone();
+
+  let tabs = require("tabs");
+  let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      test.assertEqual(tab.title, "foo", "title of the new tab matches");
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      // TODO: uncomment below, and fix!
+      //test.assert(tab.favicon, "favicon of the new tab is not empty");
+      test.assertEqual(tab.style, null, "style of the new tab matches");
+      test.assertEqual(tab.index, 1, "index of the new tab matches");
+      test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+
+      tab.close(function() {
+        // end test
+        test.done();
+      });
+    }
+  });
+};

@@ -183,10 +183,11 @@ exports.testTabProperties = function(test) {
   });
 };
 
+// TEST: tab properties
 exports.testTabContentTypeAndReload = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs= require("tabs");
+    let tabs = require("tabs");
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
     let urlXML = "data:text/xml;charset=utf-8,<foo>bar</foo>";
     tabs.open({
