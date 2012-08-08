@@ -392,7 +392,7 @@ exports.testIteratorWithTextareaSelection =
 
 /*
 function sendSelectionSetEvent(window) {
-  const Ci = Components.interfaces;
+  const Ci = Components['interfaces'];
   let utils = window.QueryInterface(Ci.nsIInterfaceRequestor).
                                     getInterface(Ci.nsIDOMWindowUtils);
   if (!utils.sendSelectionSetEvent(0, 1, false))

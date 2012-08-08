@@ -48,10 +48,8 @@ function run(jQuery) {
         headingIDExists = headingIDs.indexOf(suffixedName) != -1;
       }
       headingIDs.push(suffixedName);
-      suffixedName = suffixedName.replace(/ /g, '_');
-      var encodedName = encodeURIComponent(suffixedName);
-      // Now add the ID attribute and ToC entry
-      $(this).attr("id", encodedName);
+      // Now add the ID attribute
+      $(this).attr("id", suffixedName);
    });
   }
 
@@ -71,7 +69,7 @@ function run(jQuery) {
                   document.location.search;
 
     $(headings).each(function(i) {
-      var url = pageURL + "#" + $(this).attr("id");
+      var url = pageURL + "#" + encodeURIComponent($(this).attr("id"));
       var tocEntry = $("<a></a>").attr({
         href: url,
         "class": $(this).attr("tagName")

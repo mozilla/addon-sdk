@@ -69,8 +69,7 @@ of the box for that window.
 The test objects in the original script need access to the DOM window object,
 so in the SDK port, they need to run in a content script. In fact, they need
 access to the un-proxied DOM window, so they can see the objects added by
-libraries, so we’ll need to use the experimental
-[unsafeWindow](dev-guide/guides/content-scripts/access.html) object.
+libraries, so we’ll need to use the experimental [unsafeWindow](dev-guide/guides/content-scripts/accessing-the-dom.html#unsafeWindow)
 
 The main add-on script, `main.js`, will use a
 [`page-mod`](packages/addon-kit/page-mod.html)

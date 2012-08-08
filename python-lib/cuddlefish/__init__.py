@@ -636,7 +636,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
-    from cuddlefish.manifest import build_manifest, ModuleNotFoundError
+    from cuddlefish.manifest import build_manifest, ModuleNotFoundError, \
+                                    BadChromeMarkerError
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
     # dependent package that defines a "loader" property in its package.json.
@@ -666,6 +667,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                   loader_modules)
     except ModuleNotFoundError, e:
         print str(e)
+        sys.exit(1)
+    except BadChromeMarkerError, e:
+        # An error had already been displayed on stderr in manifest code
         sys.exit(1)
     used_deps = manifest.get_used_packages()
     if command == "test":

@@ -6,6 +6,7 @@
 
 const { Trait } = require('../traits');
 const { getWindowTitle } = require('api-utils/window/utils');
+const { getMode } = require('api-utils/private-browsing/utils');
 
 const WindowDom = Trait.compose({
   _window: Trait.required,
@@ -21,7 +22,9 @@ const WindowDom = Trait.compose({
     let window = this._window;
     if (window) window.focus();
     return this._public;
+  },
+  get isPrivateBrowsing() {
+    return getMode(this._window);
   }
 });
-
 exports.WindowDom = WindowDom;

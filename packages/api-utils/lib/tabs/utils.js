@@ -61,12 +61,12 @@ function isTabOpen(tab) {
 exports.isTabOpen = isTabOpen;
 
 function closeTab(tab) {
-  return getOwnerWindow(tab).gBrowser.removeTab(tab);
+  return getGBrowserForTab(tab).removeTab(tab);
 }
 exports.closeTab = closeTab;
 
 function activateTab(tab) {
-  getOwnerWindow(tab).gBrowser.selectedTab = tab;
+  getGBrowserForTab(tab).selectedTab = tab;
 }
 exports.activateTab = activateTab;
 
@@ -91,3 +91,18 @@ function Options(options) {
   });
 }
 exports.Options = Options;
+
+function getGBrowserForTab(tab) {
+  return getOwnerWindow(tab).gBrowser;
+}
+exports.getGBrowserForTab = getGBrowserForTab;
+
+function getBrowserForTab(tab) {
+  return getGBrowserForTab(tab).getBrowserForTab(tab);
+}
+exports.getBrowserForTab = getBrowserForTab;
+
+function getTabTitle(tab) {
+  return getBrowserForTab(tab).contentDocument.title || tab.label;
+}
+exports.getTabTitle = getTabTitle;
