@@ -8,7 +8,7 @@ const { Tab } = require('api-utils/tabs/tab-fennec');
 const { browserWindows } = require("api-utils/windows/fennec");
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
-const { openTab } = require('api-utils/tabs/utils');
+const { openTab, Options } = require('api-utils/tabs/utils');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
 
@@ -59,8 +59,6 @@ const Tabs = Class({
 
       emit(tab, "open", tab);
       emit(this, "open", tab);
-
-      
     }.bind(this), false);
 
     window.BrowserApp.deck.addEventListener("TabSelect", function(evt) {
@@ -85,16 +83,15 @@ const Tabs = Class({
     return tabsNS(this).activeTab;
   },
   open: function(options) {
-    options = options || {};
+    options = Options(options);
     let activeWin = browserWindows.activeWindow;
     let rawTab = openTab(windowNS(activeWin).window, options.url, {
       inBackground: options.inBackground,
     });
     let tab = getTabForRawTab(rawTab);
 
-    if (options.onOpen) {
+    if (options.onOpen)
       options.onOpen(tab);
-    }
   },
   get length() tabsNS(this).tabs.length,
   __iterator__: function __iterator__() {

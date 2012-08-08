@@ -5,11 +5,11 @@
 
 const { Trait } = require("../traits");
 const { List } = require("../list");
-const { Tab, Options } = require("../tabs/tab");
+const { Tab } = require("../tabs/tab");
 const { EventEmitter } = require("../events");
 const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,
-        openTab, activateTab } = require("../tabs/utils");
+        openTab, activateTab, Options } = require("../tabs/utils");
 const { observer: tabsObserver } = require("../tabs/observer");
 
 const TAB_BROWSER = "tabbrowser";

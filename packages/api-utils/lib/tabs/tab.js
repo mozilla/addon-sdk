@@ -6,7 +6,6 @@
 const { Ci } = require('chrome');
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");
-const { validateOptions } = require("../api-utils");
 const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
@@ -203,24 +202,6 @@ function Tab(options) {
 }
 Tab.prototype = TabTrait.prototype;
 exports.Tab = Tab;
-
-function Options(options) {
-  if ("string" === typeof options)
-    options = { url: options };
-
-  return validateOptions(options, {
-    url: { is: ["string"] },
-    inBackground: { is: ["undefined", "boolean"] },
-    isPinned: { is: ["undefined", "boolean"] },
-    onOpen: { is: ["undefined", "function"] },
-    onClose: { is: ["undefined", "function"] },
-    onReady: { is: ["undefined", "function"] },
-    onActivate: { is: ["undefined", "function"] },
-    onDeactivate: { is: ["undefined", "function"] }
-  });
-}
-exports.Options = Options;
-
 
 exports.getTabForWindow = function (win) {
   // Get browser window

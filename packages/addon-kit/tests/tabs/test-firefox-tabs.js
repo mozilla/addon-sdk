@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var {Cc,Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
 const { Loader } = require("test-harness/loader");
 const timer = require("timer");
 
@@ -79,33 +79,33 @@ exports.testActiveTab_setter = function(test) {
   });
 };
 
+// TEST: tab unloader
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
     let tabs = require("tabs");
-    
+
     // Create a second tab instance that we will destroy
     let called = false;
-    
+
     let loader = Loader(module);
     let tabs2 = loader.require("tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
     });
-    
+
     loader.unload();
-    
-    // Fire a tab event an ensure that this destroyed tab is inactive
+
+    // Fire a tab event and ensure that the destroyed tab is inactive
     tabs.once('open', function () {
       timer.setTimeout(function () {
         test.assert(!called, "Unloaded tab module is destroyed and inactive");
         closeBrowserWindow(window, function() test.done());
       }, 0);
     });
-    
+
     tabs.open("data:text/html;charset=utf-8,foo");
-    
   });
 };
 
