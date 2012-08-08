@@ -50,7 +50,7 @@ exports.testBrowserWindowCreationOnActivate = function(test) {
   });
 }
 
-// test tab.activeTab setter
+// TEST: tab.activate()
 exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
 

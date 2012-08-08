@@ -35,17 +35,21 @@ const Tabs = Class({
     window.BrowserApp.deck.addEventListener("TabOpen", function(evt) {
       let browser = evt.target;
 
-      let tab = getTabForBrowser();
+      let tab = getTabForBrowser(browser);
       if (tab === null) {
+        let rawTab = getRawTabForBrowser(evt.target);
+
         // create a Tab instance for this new tab
         tab = addTab(Tab({
           window: window,
-          tab: getRawTabForBrowser(evt.target)
+          tab: rawTab
         }));
-      }
 
-      // TODO: this isn't always the case..
-      tabsNS(this).activeTab = tab;
+        if (window.BrowserApp.selectedTab === rawTab) {
+          // TODO: this isn't always the case..
+          tabsNS(this).activeTab = tab;
+        }
+      }
 
       // TODO: remove listener on unload
       browser.addEventListener("DOMContentLoaded", function onReady() {
@@ -81,8 +85,13 @@ const Tabs = Class({
     return tabsNS(this).activeTab;
   },
   open: function(options) {
+    options = options || {};
     let activeWin = browserWindows.activeWindow;
-    let tab = getTabForRawTab(openTab(windowNS(activeWin).window, options.url));
+    let rawTab = openTab(windowNS(activeWin).window, options.url, {
+      inBackground: options.inBackground,
+    });
+    let tab = getTabForRawTab(rawTab);
+
     if (options.onOpen) {
       options.onOpen(tab);
     }

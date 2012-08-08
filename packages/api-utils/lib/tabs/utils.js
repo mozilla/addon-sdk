@@ -39,8 +39,11 @@ function getOwnerWindow(tab) {
 exports.getOwnerWindow = getOwnerWindow;
 
 if (require("api-utils/xul-app").is("Fennec")) {
-  var openTab = function openTab(window, url) {
-    return window.BrowserApp.addTab(url, {selected: true});
+  var openTab = function openTab(window, url, options) {
+    options = options || {};
+    return window.BrowserApp.addTab(url, {
+      selected: options.inBackground ? false : true,
+    });
   }
 }
 else {

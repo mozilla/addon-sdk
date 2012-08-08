@@ -46,9 +46,12 @@ exports.testActiveWindowActiveTabOnActivate = function(test) {
     test.assertEqual(windows.activeWindow.tabs.activeTab, tab,
                     "the active window's active tab is the tab provided");
 
-    if (++activateCount >= 2) {
+    if (++activateCount == 2) {
       // end test
       test.done();
+    }
+    else if (activateCount > 2) {
+      test.fail("activateCount is greater than 2 for some reason..");
     }
   });
 
@@ -62,4 +65,32 @@ exports.testActiveWindowActiveTabOnActivate = function(test) {
   });
 };
 
+// TEST: tab.activate()
+exports.testActiveTab_setter = function(test) {
+  test.waitUntilDone();
 
+  let tabs = require("tabs");
+  let url = URL.replace("#title#", "foo");
+  let activeTabURL = tabs.activeTab.url;
+
+  tabs.once('ready', function onReady(tab) {
+    test.assertEqual(tabs.activeTab.url, activeTabURL, "activeTab url has not changed");
+    test.assertEqual(tab.url, url, "url of new background tab matches");
+
+    tabs.once('activate', function onActivate(eventTab) {
+      test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
+      test.assertEqual(eventTab, tab, "event argument is the activated tab");
+      test.assertEqual(eventTab, tabs.activeTab, "the tab is the active one");
+
+      // end test
+      test.done();
+    });
+
+    tab.activate();
+  });
+
+  tabs.open({
+    url: url,
+    inBackground: true
+  });
+};
