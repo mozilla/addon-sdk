@@ -14,24 +14,15 @@ let deferredEmit = defer(emit);
 
 let pbService;
 
-// Model holding a state.
-const model = { active: false };
-
 // Currently, only Firefox implements the private browsing service.
 if (require("api-utils/xul-app").is("Firefox")) {
   pbService = Cc["@mozilla.org/privatebrowsing;1"].
               getService(Ci.nsIPrivateBrowsingService);
 
-  // Update model state.
-  model.active = pbService.privateBrowsingEnabled;
-
   // set up an observer for private browsing switches.
   observers.add('private-browsing-transition-complete', function onChange() {
-    // Update model state.
-    model.active = pbService.privateBrowsingEnabled;
-
     // Emit event with in next turn of event loop.
-    deferredEmit(exports, model.active ? 'start' : 'stop');
+    deferredEmit(exports, pbService.privateBrowsingEnabled ? 'start' : 'stop');
   });
 }
 
@@ -64,7 +55,7 @@ let getMode = function getMode(chromeWin) {
   }
 
   // default
-  return model.active;
+  return pbService ? pbService.privateBrowsingEnabled : false;
 };
 exports.getMode = getMode;
 
