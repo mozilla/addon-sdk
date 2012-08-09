@@ -205,7 +205,7 @@ exports.testTabContentTypeAndReload = function(test) {
   });
 };
 
-// test tabs iterator and length property
+// TEST: tabs iterator and length property
 exports.testTabsIteratorAndLength = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

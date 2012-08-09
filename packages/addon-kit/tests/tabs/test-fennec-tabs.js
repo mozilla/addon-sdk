@@ -149,7 +149,6 @@ exports.testAutomaticDestroy = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
 
-  let tabs = require("tabs");
   let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
   tabs.open({
     url: url,
@@ -166,6 +165,42 @@ exports.testTabProperties = function(test) {
         // end test
         test.done();
       });
+    }
+  });
+};
+
+// TEST: tabs iterator and length property
+exports.testTabsIteratorAndLength = function(test) {
+  test.waitUntilDone();
+
+  let newTabs = [];
+  let startCount = 0;
+  for each (let t in tabs) startCount++;
+
+  test.assertEqual(startCount, tabs.length, "length property is correct");
+
+  let url = "data:text/html;charset=utf-8,default";
+  tabs.open({url: url, onOpen: function(tab) newTabs.push(tab)});
+  tabs.open({url: url, onOpen: function(tab) newTabs.push(tab)});
+  tabs.open({
+    url: url,
+    onOpen: function(tab) {
+      let count = 0;
+      for each (let t in tabs) count++;
+      test.assertEqual(count, startCount + 3, "iterated tab count matches");
+      test.assertEqual(startCount + 3, tabs.length, "iterated tab count matches length property");
+
+      let newTabsLength = newTabs.length;
+      newTabs.forEach(function(t) t.close(function() {
+        if (--newTabsLength > 0) return;
+
+        tab.close(function() {
+          test.assertEqual(tabs.length, tabsLen, "tabs were closed");
+
+          // end test
+          test.done();
+        });
+      }));
     }
   });
 };

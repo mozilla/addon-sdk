@@ -51,6 +51,8 @@ const Tabs = Class({
         }
       }
 
+      tabNS(tab).opened = true;
+
       // TODO: remove listener on unload
       browser.addEventListener("DOMContentLoaded", function onReady() {
         emit(tab, "ready", tab);
@@ -90,8 +92,12 @@ const Tabs = Class({
     });
     let tab = getTabForRawTab(rawTab);
 
-    if (options.onOpen)
-      options.onOpen(tab);
+    if (options.onOpen) {
+      if (tabNS(tab).opened)
+        options.onOpen(tab);
+      else
+        tab.once('open', options.onOpen);
+    }
 
     if (options.onReady)
       tab.on('ready', options.onReady);
@@ -114,7 +120,7 @@ function addTab(aTab) {
     let tab = tabs[i];
     // tab is already in our list
     if (tab === aTab)
-      return tab;
+      return aTab;
   }
 
   // add the new tab
