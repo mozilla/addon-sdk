@@ -741,6 +741,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                 enable_mobile=options.enable_mobile)
 
     if command == "xpi" and options.update_link:
+        if not options.update_link.startswith("https"):
+            raise optparse.OptionValueError("--update-link must start with 'https': %s" % options.update_link)
         rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
         print >>stdout, "Exporting update description to %s." % rdf_name
         update = RDFUpdate()
