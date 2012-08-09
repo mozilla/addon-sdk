@@ -45,7 +45,7 @@ const Tab = Class({
    */
   get favicon() "",//getFaviconURIForLocation(this.url),
 
-  getThumbnail: function () "",
+  getThumbnail: function() null,
 
   /**
    * The index of the tab relative to other tabs in the application window.
