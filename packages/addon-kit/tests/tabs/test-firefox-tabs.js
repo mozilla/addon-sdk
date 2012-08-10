@@ -229,7 +229,7 @@ exports.testTabsIteratorAndLength = function(test) {
   });
 };
 
-// test tab.url setter
+// TEST: tab.url setter
 exports.testTabLocation = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
@@ -254,7 +254,7 @@ exports.testTabLocation = function(test) {
   });
 };
 
-// test tab.close()
+// TEST: tab.close()
 exports.testTabClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
