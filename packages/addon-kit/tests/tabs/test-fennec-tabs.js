@@ -78,6 +78,7 @@ exports.testActiveWindowActiveTabOnActivate = function(test) {
   });
 };
 
+
 // TEST: tab.activate()
 exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
@@ -201,6 +202,34 @@ exports.testTabsIteratorAndLength = function(test) {
           test.done();
         });
       }));
+    }
+  });
+};
+
+// TEST: tab.url setter
+exports.testTabLocation = function(test) {
+  test.waitUntilDone();
+
+  let url1 = "data:text/html;charset=utf-8,foo";
+  let url2 = "data:text/html;charset=utf-8,bar";
+
+  tabs.on('ready', function onReady(tab) {
+    if (tab.url != url2)
+      return;
+
+    tabs.removeListener('ready', onReady);
+    test.pass("tab loaded the correct url");
+
+    tab.close(function() {
+      // end test
+      test.done();
+    });
+  });
+
+  tabs.open({
+    url: url1,
+    onOpen: function(tab) {
+      tab.url = url2;
     }
   });
 };

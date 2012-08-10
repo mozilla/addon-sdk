@@ -37,7 +37,9 @@ const Tab = Class({
    * @type {String}
    */
   get url() String(tabNS(this).browser.currentURI.spec),
-  set url(value) defer(function(url) tabNS(this).browser.loadURI(url)),
+  set url(url) {
+    tabNS(this).browser.loadURI(url);
+  },
 
   /**
    * URI of the favicon for the page currently loaded in this tab.
