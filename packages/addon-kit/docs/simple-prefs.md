@@ -105,9 +105,14 @@ These are attributes that all settings *may* have:
   </tr>
 
   <tr>
+    <td><code>label</code></td>
+    <td>Button text for the `control` type.</td>
+  </tr>
+
+  <tr>
     <td><code>value</code></td>
     <td>A default value for the setting. Depending on the setting type,
-	this may be an integer, string, or boolean value.</td>
+    this may be an integer, string, or boolean value.</td>
   </tr>
 
 </table>
