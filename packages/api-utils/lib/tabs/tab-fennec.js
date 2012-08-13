@@ -114,7 +114,7 @@ const Tab = Class({
    * Reload the tab
    */
   reload: function reload() {
-    tabNS(this).tab.reloadWithMode(false);
+    tabNS(this).browser.reload();
   },
 
   on: method(on),

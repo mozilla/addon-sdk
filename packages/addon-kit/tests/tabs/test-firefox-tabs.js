@@ -275,7 +275,7 @@ exports.testTabClose = function(test) {
   });
 };
 
-// test tab.reload()
+// TEST: tab.reload()
 exports.testTabReload = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
@@ -935,7 +935,10 @@ function openBrowserWindow(callback, url) {
           timer.setTimeout(function () {
             callback(window, browsers[0]);
           }, 10);
-        } catch (e) { console.exception(e); }
+        }
+        catch (e) {
+          console.exception(e);
+        }
       }
     }, true);
   }

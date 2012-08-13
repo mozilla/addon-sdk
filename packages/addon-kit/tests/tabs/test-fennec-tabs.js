@@ -6,9 +6,10 @@
 const { Cc, Ci } = require("chrome");
 const { Loader } = require("test-harness/loader");
 const timer = require("timer");
-const URL = "data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>";
 const tabs = require("tabs");
+
 const tabsLen = tabs.length;
+const URL = "data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>";
 
 // TEST: tabs.activeTab getter
 exports.testActiveTab_getter = function(test) {
@@ -238,7 +239,6 @@ exports.testTabLocation = function(test) {
 exports.testTabClose = function(test) {
   test.waitUntilDone();
 
-  let tabs = require("tabs");
   let url = "data:text/html;charset=utf-8,foo";
 
   test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
@@ -255,4 +255,33 @@ exports.testTabClose = function(test) {
   });
 
   tabs.open(url);
+};
+
+// TEST: tab.reload()
+exports.testTabReload = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,<!doctype%20html><title></title>";
+
+  tabs.open({
+    url: url,
+    onReady: function onReady(tab) {
+      tab.removeListener('ready', onReady);
+
+      tab.once(
+        'ready',
+        function onReload() {
+          test.pass("the tab was loaded again");
+          test.assertEqual(tab.url, url, "the tab has the same URL");
+
+          tab.close(function() {
+            // end test
+            test.done();
+          });
+        }
+      );
+
+      tab.reload();
+    }
+  });
 };
