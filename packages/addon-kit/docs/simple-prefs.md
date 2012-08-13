@@ -106,7 +106,7 @@ These are attributes that all settings *may* have:
 
   <tr>
     <td><code>label</code></td>
-    <td>Button text for the `control` type.</td>
+    <td>Button text for the <code>control</code> type.</td>
   </tr>
 
   <tr>
