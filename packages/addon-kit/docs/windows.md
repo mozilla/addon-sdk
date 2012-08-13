@@ -52,6 +52,7 @@ Object emits all the events listed under "Events" section.
     windows.on('deactivate', function(window) {
       console.log("A window was deactivated.");
     });
+</api>
 
 
 <api name="activeWindow">
