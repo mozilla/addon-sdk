@@ -327,7 +327,7 @@ exports.testTabMove = function(test) {
   });
 };
 
-// open tab with default options
+// TEST: open tab with default options
 exports.testOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

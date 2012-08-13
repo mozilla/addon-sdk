@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-const { Loader } = require("test-harness/loader");
-const timer = require("timer");
-const tabs = require("tabs");
+const { Cc, Ci } = require('chrome');
+const { Loader } = require('test-harness/loader');
+const timer = require('timer');
+const tabs = require('tabs');
+const windows = require('windows');
 
 const tabsLen = tabs.length;
-const URL = "data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>";
+const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 
 // TEST: tabs.activeTab getter
 exports.testActiveTab_getter = function(test) {
@@ -298,6 +299,24 @@ exports.testTabMove = function(test) {
       test.assertEqual(tab.index, 1, "tab index before move matches");
       tab.index = 0;
       test.assertEqual(tab.index, 0, "tab index after move matches");
+
+      // end test
+      tab.close(function() test.done());
+    }
+  });
+};
+
+// TEST: open tab with default options
+exports.testOpen = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,default";
+
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      test.assertEqual(tabs.activeTab, tab, "URL of active tab in the current window matches");
 
       // end test
       tab.close(function() test.done());
