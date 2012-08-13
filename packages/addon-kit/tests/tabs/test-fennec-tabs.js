@@ -274,14 +274,33 @@ exports.testTabReload = function(test) {
           test.pass("the tab was loaded again");
           test.assertEqual(tab.url, url, "the tab has the same URL");
 
-          tab.close(function() {
-            // end test
-            test.done();
-          });
+          // end test
+          tab.close(function() test.done());
         }
       );
 
       tab.reload();
+    }
+  });
+};
+
+// TEST: tab.move()
+exports.testTabMove = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,foo";
+
+  test.assertEqual(tabs.length, 1, "there is only one tab open");
+
+  tabs.open({
+    url: url,
+    onOpen: function(tab) {
+      test.assertEqual(tab.index, 1, "tab index before move matches");
+      tab.index = 0;
+      test.assertEqual(tab.index, 0, "tab index after move matches");
+
+      // end test
+      tab.close(function() test.done());
     }
   });
 };

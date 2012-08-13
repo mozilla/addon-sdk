@@ -63,7 +63,8 @@ const Tab = Class({
     }
     return -1;
   },
-  set index(value) {},
+  set index(value) {
+  },
 
   /**
    * Whether or not tab is pinned (Is an app-tab).

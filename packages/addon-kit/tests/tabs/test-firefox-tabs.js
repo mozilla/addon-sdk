@@ -308,7 +308,7 @@ exports.testTabReload = function(test) {
   });
 };
 
-// test tab.move()
+// TEST: tab.move()
 exports.testTabMove = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
