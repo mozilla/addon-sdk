@@ -8,6 +8,7 @@ const { Loader } = require('test-harness/loader');
 const timer = require('timer');
 const tabs = require('tabs');
 const windows = require('windows');
+const xulApp = require("xul-app");
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
@@ -327,8 +328,6 @@ exports.testOpen = function(test) {
 
 // TEST: open pinned tab
 exports.testOpenPinned = function(test) {
-  const xulApp = require("xul-app");
-
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
     // test tab pinning
     test.waitUntilDone();
@@ -339,6 +338,30 @@ exports.testOpenPinned = function(test) {
       isPinned: true,
       onOpen: function(tab) {
         test.assertEqual(tab.isPinned, true, "The new tab is pinned");
+
+        // end test
+        tab.close(function() test.done());
+      }
+    });
+  }
+  else {
+    test.pass("Pinned tabs are not supported in this application.");
+  }
+};
+
+// TEST: pin/unpin opened tab
+exports.testPinUnpin = function(test) {
+  if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
+    test.waitUntilDone();
+
+    let url = "data:text/html;charset=utf-8,default";
+    tabs.open({
+      url: url,
+      onOpen: function(tab) {
+        tab.pin();
+        test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
+        tab.unpin();
+        test.assertEqual(tab.isPinned, false, "The tab was unpinned correctly");
 
         // end test
         tab.close(function() test.done());

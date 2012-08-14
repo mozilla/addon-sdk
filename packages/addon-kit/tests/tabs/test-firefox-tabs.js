@@ -370,7 +370,7 @@ exports.testOpenPinned = function(test) {
   }
 };
 
-// pin/unpin opened tab
+// TEST: pin/unpin opened tab
 exports.testPinUnpin = function(test) {
   const xulApp = require("xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
