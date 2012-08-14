@@ -7,6 +7,7 @@ const { Cc, Ci } = require('chrome');
 const { Loader } = require('test-harness/loader');
 const timer = require('timer');
 const tabs = require('tabs');
+//const {tabs} = require('api-utils/windows/tabs-fennec');
 const windows = require('windows');
 const xulApp = require("xul-app");
 
@@ -414,4 +415,30 @@ exports.testOpenInNewWindow = function(test) {
       tab.close(function() test.done());
     }
   });
+};
+
+// TEST: onOpen event handler
+exports.testTabsEvent_onOpen = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,1";
+  let eventCount = 0;
+
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+  };
+  tabs.on('open', listener1);
+
+  // add listener via collection add
+  tabs.on('open', function listener2(tab) {
+    test.assertEqual(++eventCount, 2, "both listeners notified");
+    tabs.removeListener('open', listener1);
+    tabs.removeListener('open', listener2);
+
+    // ends test
+    tab.close(function() test.done());
+  });
+
+  tabs.open(url);
 };

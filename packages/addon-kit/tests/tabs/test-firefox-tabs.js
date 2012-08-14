@@ -457,7 +457,7 @@ exports.testOpenInNewWindow = function(test) {
   });
 };
 
-// onOpen event handler
+// TEST: onOpen event handler
 exports.testTabsEvent_onOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
