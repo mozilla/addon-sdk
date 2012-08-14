@@ -75,8 +75,8 @@ const Tabs = Class({
       let tab = getTabForBrowser(evt.target);
       removeTab(tab);
 
-      emit(tab, "close", tab)
       emit(this, "close", tab);
+      emit(tab, "close", tab)
     }.bind(this), false);
 
     return this;
@@ -92,6 +92,9 @@ const Tabs = Class({
       isPinned: options.isPinned
     });
     let tab = getTabForRawTab(rawTab);
+
+    if (options.onClose)
+      tab.once('close', options.onClose);
 
     if (options.onOpen) {
       if (tabNS(tab).opened)

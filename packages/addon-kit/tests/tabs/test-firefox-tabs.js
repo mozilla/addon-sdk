@@ -514,7 +514,7 @@ exports.testTabsEvent_onClose = function(test) {
   });
 };
 
-// onClose event handler when a window is closed
+// TEST: onClose event handler when a window is closed
 exports.testTabsEvent_onCloseWindow = function(test) {
   test.waitUntilDone();
 

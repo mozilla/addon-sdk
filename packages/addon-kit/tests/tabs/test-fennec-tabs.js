@@ -473,3 +473,49 @@ exports.testTabsEvent_onClose = function(test) {
 
   tabs.open(url);
 };
+
+// TEST: onClose event handler when a window is closed
+exports.testTabsEvent_onCloseWindow = function(test) {
+  test.waitUntilDone();
+
+  let closeCount = 0, individualCloseCount = 0;
+  function listener() {
+    closeCount++;
+  }
+  tabs.on('close', listener);
+
+  // One tab is already open with the window
+  let openTabs = 0;
+  function testCasePossiblyLoaded(tab) {
+    tab.close(function() {
+      if (++openTabs == 3) {
+        tabs.removeListener("close", listener);
+
+        test.assertEqual(closeCount, 3, "Correct number of close events received");
+        test.assertEqual(individualCloseCount, 3,
+                         "Each tab with an attached onClose listener received a close " +
+                         "event when the window was closed");
+
+        test.done();
+      }
+    });
+  }
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,tab2",
+    onOpen: testCasePossiblyLoaded,
+    onClose: function() individualCloseCount++
+  });
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,tab3",
+    onOpen: testCasePossiblyLoaded,
+    onClose: function() individualCloseCount++
+  });
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,tab4",
+    onOpen: testCasePossiblyLoaded,
+    onClose: function() individualCloseCount++
+  });
+};
