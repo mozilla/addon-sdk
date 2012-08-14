@@ -338,13 +338,15 @@ exports.testOpen = function(test) {
       onReady: function(tab) {
         test.assertEqual(tab.url, url, "URL of the new tab matches");
         test.assertEqual(window.content.location, url, "URL of active tab in the current window matches");
+        test.assertEqual(tab.isPinned, false, "The new tab is not pinned");
+
         closeBrowserWindow(window, function() test.done());
       }
     });
   });
 };
 
-// open pinned tab
+// TEST: open pinned tab
 exports.testOpenPinned = function(test) {
   const xulApp = require("xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {

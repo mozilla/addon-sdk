@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+const { Cc, Ci } = require('chrome');
 const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
 const { defer } = require("../functional");
@@ -70,7 +71,11 @@ const Tab = Class({
    * Whether or not tab is pinned (Is an app-tab).
    * @type {Boolean}
    */
-  get isPinned() false,
+  get isPinned() {
+    return !!Cc["@mozilla.org/browser/sessionstore;1"].
+           getService(Ci.nsISessionStore).
+           getTabValue(tabNS(this).tab, 'appOrigin');
+  },
   pin: function pin() {},
   unpin: function unpin() {},
 

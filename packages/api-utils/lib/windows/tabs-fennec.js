@@ -89,6 +89,7 @@ const Tabs = Class({
     let activeWin = browserWindows.activeWindow;
     let rawTab = openTab(windowNS(activeWin).window, options.url, {
       inBackground: options.inBackground,
+      isPinned: options.isPinned
     });
     let tab = getTabForRawTab(rawTab);
 

@@ -45,6 +45,7 @@ if (require("api-utils/xul-app").is("Fennec")) {
     options = options || {};
     return window.BrowserApp.addTab(url, {
       selected: options.inBackground ? false : true,
+      pinned: options.isPinned || false
     });
   }
 }
