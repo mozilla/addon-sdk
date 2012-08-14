@@ -395,7 +395,7 @@ exports.testPinUnpin = function(test) {
   }
 };
 
-// open tab in background
+// TEST: open tab in background
 exports.testInBackground = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

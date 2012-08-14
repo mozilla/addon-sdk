@@ -81,7 +81,6 @@ exports.testActiveWindowActiveTabOnActivate = function(test) {
   });
 };
 
-
 // TEST: tab.activate()
 exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
@@ -371,4 +370,27 @@ exports.testPinUnpin = function(test) {
   else {
     test.pass("Pinned tabs are not supported in this application.");
   }
+};
+
+// TEST: open tab in background
+exports.testInBackground = function(test) {
+  test.waitUntilDone();
+
+  let activeUrl = tabs.activeTab.url;
+  let url = "data:text/html;charset=utf-8,background";
+  let window = windows.browserWindows.activeWindow;
+  tabs.once('ready', function onReady(tab) {
+    test.assertEqual(tabs.activeTab.url, activeUrl, "URL of active tab has not changed");
+    test.assertEqual(tab.url, url, "URL of the new background tab matches");
+    test.assertEqual(windows.browserWindows.activeWindow, window, "a new window was not opened");
+    test.assertNotEqual(tabs.activeTab.url, url, "URL of active tab is not the new URL");
+
+    // end test
+    tab.close(function() test.done());
+  });
+
+  tabs.open({
+    url: url,
+    inBackground: true
+  });
 };

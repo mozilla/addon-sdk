@@ -55,8 +55,8 @@ const Tabs = Class({
 
       // TODO: remove listener on unload
       browser.addEventListener("DOMContentLoaded", function onReady() {
-        emit(tab, "ready", tab);
-        emit(this, "ready", tab);
+        emit(tab, 'ready', tab);
+        emit(this, 'ready', tab);
       }.bind(this), false);
 
       emit(tab, "open", tab);
