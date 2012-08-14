@@ -394,3 +394,24 @@ exports.testInBackground = function(test) {
     inBackground: true
   });
 };
+
+// TEST: open tab in new window
+exports.testOpenInNewWindow = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,newwindow";
+  let window = windows.browserWindows.activeWindow;
+
+  tabs.open({
+    url: url,
+    inNewWindow: true,
+    onReady: function(tab) {
+      test.assertEqual(windows.browserWindows.length, 1, "a new window was not opened");
+      test.assertEqual(windows.browserWindows.activeWindow, window, "old window is active");
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      test.assertEqual(tabs.activeTab, tab, "tab is the activeTab");
+
+      tab.close(function() test.done());
+    }
+  });
+};

@@ -418,7 +418,7 @@ exports.testInBackground = function(test) {
   });
 };
 
-// open tab in new window
+// TEST: open tab in new window
 exports.testOpenInNewWindow = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
