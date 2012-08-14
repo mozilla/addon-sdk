@@ -442,3 +442,34 @@ exports.testTabsEvent_onOpen = function(test) {
 
   tabs.open(url);
 };
+
+// TEST: onClose event handler
+exports.testTabsEvent_onClose = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,onclose";
+  let eventCount = 0;
+
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+  }
+  tabs.on('close', listener1);
+
+  // add listener via collection add
+  tabs.on('close', function listener2(tab) {
+    test.assertEqual(++eventCount, 2, "both listeners notified");
+    tabs.removeListener('close', listener1);
+    tabs.removeListener('close', listener2);
+
+    // end test
+    test.done();
+  });
+
+  tabs.on('ready', function onReady(tab) {
+    tabs.removeListener('ready', onReady);
+    tab.close();
+  });
+
+  tabs.open(url);
+};

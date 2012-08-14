@@ -483,7 +483,7 @@ exports.testTabsEvent_onOpen = function(test) {
   });
 };
 
-// onClose event handler
+// TEST: onClose event handler
 exports.testTabsEvent_onClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
