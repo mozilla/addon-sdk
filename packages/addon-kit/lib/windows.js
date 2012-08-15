@@ -11,7 +11,7 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Cc, Ci } = require('chrome'),
+const { Cc, Ci, Cr } = require('chrome'),
       { Trait } = require('api-utils/traits'),
       { List } = require('api-utils/list'),
       { EventEmitter } = require('api-utils/events'),
@@ -83,6 +83,9 @@ const BrowserWindowTrait = Trait.compose(
       } catch(e) {
         this._emit('error', e)
       }
+
+      this._initWindowPrivateBrowser();
+
       this._emitOnObject(browserWindows, 'open', this._public);
     },
     _onUnload: function() {
@@ -91,9 +94,40 @@ const BrowserWindowTrait = Trait.compose(
       this._destroyWindowTabTracker();
       this._emitOnObject(browserWindows, 'close', this._public);
       this._window = null;
+      this._privateBrowsingObserver._unloaded = true;
+      this._privateBrowsingObserver = null;
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
       this._removeAllListeners();
+    },
+    _initWindowPrivateBrowser: function() {
+      let docShell = this._window.getInterface(Ci.nsIWebNavigation).
+                                  QueryInterface(Ci.nsIDocShell);
+
+      // check that per-window private browsing is implemented
+      if (!('addWeakPrivacyTransitionObserver' in docShell))
+        return;
+
+      let window = this;
+      this._privateBrowsingObserver = {
+        QueryInterface: function(iid) {
+          if (Ci.nsIPrivacyTransitionObserver.equals(iid) ||
+              Ci.nsISupportsWeakReference.equals(iid) ||
+              Ci.nsISupports.equals(iid))
+            return this;
+          throw Cr.NS_ERROR_NO_INTERFACE;
+        },
+        privateModeChanged: function(enabled) {
+          // need this check because there will be a delay between the moment
+          // that our reference to this observer is removed, and the moment
+          // that the observer is garbage collected
+          if (this._unloaded) return;
+          window._emit('private-browsing', window._public);
+        },
+        _unloaded: false
+      };
+
+      docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?

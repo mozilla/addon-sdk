@@ -7,6 +7,7 @@ const { setTimeout } = require("timer");
 const { Loader } = require('test-harness/loader');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
+const pbUtils = require('api-utils/private-browsing/utils');
 let browserWindows;
 
 function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
@@ -38,9 +39,10 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
-exports.testPerWindowPrivateBrowsing = function(test) {
-  var activeWindow =  wm.getMostRecentWindow("navigator:browser");
+exports.testPerWindowPrivateBrowsing_getter = function(test) {
+  let activeWindow =  wm.getMostRecentWindow("navigator:browser");
 
+  // is per-window PB implemented?
   if ("gPrivateBrowsingUI" in activeWindow
       && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
     let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
@@ -64,6 +66,60 @@ exports.testPerWindowPrivateBrowsing = function(test) {
                 browserWindows.activeWindow.isPrivateBrowsing,
                 "Active window PB mode is the same value as the mode returned " +
                 "by private-browsing module");
+  }
+};
+
+exports.testPerWindowPrivateBrowsing_events = function(test) {
+  test.waitUntilDone();
+  let docShell =  wm.getMostRecentWindow("navigator:browser").
+                         getInterface(Ci.nsIWebNavigation).
+                         QueryInterface(Ci.nsIDocShell);
+
+  if ("addWeakPrivacyTransitionObserver" in docShell) {
+    browserWindows.open({
+      url: "data:text/html;charset=utf-8,foo",
+      onOpen: function(window) {
+        test.assert(!window.isPrivateBrowsing, 'newly opened window is not in PB mode');
+        let chromeWin = wm.getMostRecentWindow("navigator:browser");
+        let chromeWinDocShell = chromeWin.getInterface(Ci.nsIWebNavigation).
+                                          QueryInterface(Ci.nsIDocShell)
+
+        let count = 0;
+        window.on('private-browsing', function onPB(window) {
+          if (++count == 1) {
+            test.assert(window.isPrivateBrowsing, 'window is in PB mode');
+            //pbUtils.setMode(false, chromeWin);
+            chromeWinDocShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = false;
+          }
+          else if (count == 2) {
+            test.assert(!window.isPrivateBrowsing, 'window is in not PB mode');
+            window.removeListener('private-browsing', onPB);
+
+            // our listener is now off, so let's test that worked..
+           chromeWinDocShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = true;
+           chromeWinDocShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = false;
+
+            window.close(function() {
+              test.assert(!window.isPrivateBrowsing, 'window is in not PB mode');
+              test.assert(count == 2, 'window private browsing listener was not removed');
+
+              // end test
+              test.done();
+            });
+          }
+          else {
+            test.fail('window private browsing listener was not removed');
+          }
+        });
+
+        //pbUtils.setMode(true, chromeWin);
+        chromeWinDocShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = true;
+      }
+    });
+  }
+  else {
+    test.pass('per-window private browsing observer is not implemented');
+    test.done();
   }
 };
 
