@@ -229,3 +229,12 @@ Event emitted when the active window is made inactive.
 Listeners are passed the `window` object that has become inactive.
 </api>
 
+<api name="private-browsing">
+@event
+Event emitted when a window's private-browsing mode changes.
+Check the window's [`isPrivateBrowsing`](packages/addon-kit/windows.html#isPrivateBrowsing)
+property to determine the window is in private browsing mode or not.
+
+@argument {Window}
+Listeners are passed the `window` object that triggered the event.
+</api>
