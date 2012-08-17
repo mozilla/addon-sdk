@@ -572,3 +572,34 @@ exports.testTabsEvent_onActivate = function(test) {
     tabs.open(url);
 };
 
+// TEST: onDeactivate event handler
+exports.testTabsEvent_onDeactivate = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,ondeactivate";
+  let eventCount = 0;
+
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+  };
+  tabs.on('deactivate', listener1);
+
+  // add listener via collection add
+  tabs.on('deactivate', function listener2(tab) {
+    test.assertEqual(++eventCount, 2, "both listeners notified");
+    tabs.removeListener('deactivate', listener1);
+    tabs.removeListener('deactivate', listener2);
+
+    // end test
+    tab.close(function() test.done());
+  });
+
+  tabs.on('activate', function onActivate(tab) {
+    tabs.removeListener('activate', onActivate);
+    tabs.open("data:text/html;charset=utf-8,foo");
+    tab.close();
+  });
+
+  tabs.open(url);
+};

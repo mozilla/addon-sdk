@@ -69,6 +69,12 @@ const Tabs = Class({
 
       emit(tab, "activate", tab);
       emit(this, "activate", tab);
+
+      for each (let t in this) {
+        if (t === tab) continue;
+        emit(t, 'deactivate', t);
+        emit(this, 'deactivate', t);
+      }
     }.bind(this), false);
 
     window.BrowserApp.deck.addEventListener("TabClose", function(evt) {
