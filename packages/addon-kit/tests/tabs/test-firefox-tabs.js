@@ -595,7 +595,7 @@ exports.testTabsEvent_onReady = function(test) {
   });
 };
 
-// onActivate event handler
+// TEST: onActivate event handler
 exports.testTabsEvent_onActivate = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

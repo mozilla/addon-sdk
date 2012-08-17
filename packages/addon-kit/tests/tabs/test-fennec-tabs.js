@@ -545,3 +545,30 @@ exports.testTabsEvent_onReady = function(test) {
 
   tabs.open(url);
 };
+
+// TEST: onActivate event handler
+exports.testTabsEvent_onActivate = function(test) {
+  test.waitUntilDone();
+
+    let url = "data:text/html;charset=utf-8,onactivate";
+    let eventCount = 0;
+
+    // add listener via property assignment
+    function listener1(tab) {
+      eventCount++;
+    };
+    tabs.on('activate', listener1);
+
+    // add listener via collection add
+    tabs.on('activate', function listener2(tab) {
+      test.assertEqual(++eventCount, 2, "both listeners notified");
+      tabs.removeListener('activate', listener1);
+      tabs.removeListener('activate', listener2);
+
+      // end test
+      tab.close(function() test.done());
+    });
+
+    tabs.open(url);
+};
+
