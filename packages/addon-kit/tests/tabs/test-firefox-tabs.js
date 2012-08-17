@@ -569,7 +569,7 @@ exports.testTabsEvent_onCloseWindow = function(test) {
   });
 }
 
-// onReady event handler
+// TEST: onReady event handler
 exports.testTabsEvent_onReady = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

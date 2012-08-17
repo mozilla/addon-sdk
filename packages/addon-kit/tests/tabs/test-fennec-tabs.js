@@ -519,3 +519,29 @@ exports.testTabsEvent_onCloseWindow = function(test) {
     onClose: function() individualCloseCount++
   });
 };
+
+// TEST: onReady event handler
+exports.testTabsEvent_onReady = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,onready";
+  let eventCount = 0;
+
+  // add listener via property assignment
+  function listener1(tab) {
+    eventCount++;
+  };
+  tabs.on('ready', listener1);
+
+  // add listener via collection add
+  tabs.on('ready', function listener2(tab) {
+    test.assertEqual(++eventCount, 2, "both listeners notified");
+    tabs.removeListener('ready', listener1);
+    tabs.removeListener('ready', listener2);
+
+    // end test
+    tab.close(function() test.done());
+  });
+
+  tabs.open(url);
+};
