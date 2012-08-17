@@ -90,8 +90,18 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
     }
   };
 
+  let windows = browserWindows;
   let windowCount = browserWindows.length;
-  browserWindows.open({
+  let testWindow;
+
+  let globalCount = 0;
+  windows.on('private-browsing', function onGlobalPB(window) {
+    if (testWindow != window) return;
+    if (++globalCount == 2)
+      windows.removeListener('private-browsing', onGlobalPB);
+  });
+
+  testWindow = browserWindows.open({
     url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       test.assertEqual(window.isPrivateBrowsing, false, 'newly opened window is not in PB mode');
@@ -121,6 +131,7 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
               window.close(function() {
                 test.assertEqual(window.isPrivateBrowsing, false, 'window is in not PB mode');
                 test.assertEqual(count, 2, 'window private browsing listener was not removed');
+                test.assertEqual(globalCount, 2, 'window private browsing listener was not removed');
                 test.assertEqual(windowCount, browserWindows.length, 'window count is unchanged');
 
                 // end test

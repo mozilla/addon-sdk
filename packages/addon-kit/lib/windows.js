@@ -108,6 +108,7 @@ const BrowserWindowTrait = Trait.compose(
       let window = this;
       let emitPBChange = function() {
         window._emitOnObject(browserWindows, 'private-browsing', window._public);
+        browser(browserWindows).internals._emit('private-browsing', window._public);
       };
 
       // check that per-window private browsing events is implemented
