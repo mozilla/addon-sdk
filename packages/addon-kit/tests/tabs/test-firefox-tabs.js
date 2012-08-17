@@ -652,6 +652,7 @@ exports.testTabsEvent_onDeactivate = function(test) {
   });
 };
 
+// pinning
 exports.testTabsEvent_pinning = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
@@ -679,7 +680,7 @@ exports.testTabsEvent_pinning = function(test) {
   });
 };
 
-// per-tab event handlers
+// TEST: per-tab event handlers
 exports.testPerTabEvents = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {

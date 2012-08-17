@@ -603,3 +603,34 @@ exports.testTabsEvent_onDeactivate = function(test) {
 
   tabs.open(url);
 };
+
+// TODO: test pinning
+
+// TEST: per-tab event handlers
+exports.testPerTabEvents = function(test) {
+  test.waitUntilDone();
+
+  let eventCount = 0;
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,foo",
+    onOpen: function(tab) {
+      // add listener via property assignment
+      function listener1() {
+        eventCount++;
+      };
+      tab.on('ready', listener1);
+
+      // add listener via collection add
+      tab.on('ready', function listener2() {
+        test.assertEqual(eventCount, 1, "both listeners notified");
+        tab.removeListener('ready', listener1);
+        tab.removeListener('ready', listener2);
+
+        // end test
+        tab.close(function() test.done());
+      });
+    }
+  });
+};
+
