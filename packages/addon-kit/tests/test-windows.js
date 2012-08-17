@@ -76,6 +76,7 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
   let docShell;
 
   let setPBMode = function(mode) {
+    if (!docShell) return;
     if ("addWeakPrivacyTransitionObserver" in docShell) {
       docShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = mode;
     }
@@ -123,7 +124,7 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
                 test.assertEqual(windowCount, browserWindows.length, 'window count is unchanged');
 
                 // end test
-                setTimeout(function() test.done(), 10);
+                test.done();
               });
             });
 
