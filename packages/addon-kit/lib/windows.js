@@ -110,7 +110,7 @@ const BrowserWindowTrait = Trait.compose(
         window._emitOnObject(browserWindows, 'private-browsing', window._public);
       };
 
-      // check that per-window private browsing is implemented
+      // check that per-window private browsing events is implemented
       if ('addWeakPrivacyTransitionObserver' in docShell) {
         // create the observer and keep a reference to it
         this._privateBrowsingObserver = {
