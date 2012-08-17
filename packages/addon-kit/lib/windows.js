@@ -95,39 +95,56 @@ const BrowserWindowTrait = Trait.compose(
       this._emitOnObject(browserWindows, 'close', this._public);
       this._window = null;
       this._privateBrowsingObserver._unloaded = true;
-      this._privateBrowsingObserver = null;
+      this._privateBrowsingObserver = {};
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
       this._removeAllListeners();
     },
+    _privateBrowsingObserver: {},
     _initWindowPrivateBrowser: function() {
-      let docShell = this._window.getInterface(Ci.nsIWebNavigation).
+      let docShell = this._window.QueryInterface(Ci.nsIInterfaceRequestor).
+                                  getInterface(Ci.nsIWebNavigation).
                                   QueryInterface(Ci.nsIDocShell);
-
-      // check that per-window private browsing is implemented
-      if (!('addWeakPrivacyTransitionObserver' in docShell))
-        return;
-
       let window = this;
-      this._privateBrowsingObserver = {
-        QueryInterface: function(iid) {
-          if (Ci.nsIPrivacyTransitionObserver.equals(iid) ||
-              Ci.nsISupportsWeakReference.equals(iid) ||
-              Ci.nsISupports.equals(iid))
-            return this;
-          throw Cr.NS_ERROR_NO_INTERFACE;
-        },
-        privateModeChanged: function(enabled) {
-          // need this check because there will be a delay between the moment
-          // that our reference to this observer is removed, and the moment
-          // that the observer is garbage collected
-          if (this._unloaded) return;
-          window._emit('private-browsing', window._public);
-        },
-        _unloaded: false
+      let emitPBChange = function() {
+        window._emitOnObject(browserWindows, 'private-browsing', window._public);
       };
 
-      docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
+      // check that per-window private browsing is implemented
+      if ('addWeakPrivacyTransitionObserver' in docShell) {
+        // create the observer and keep a reference to it
+        this._privateBrowsingObserver = {
+          QueryInterface: function(iid) {
+            if (Ci.nsIPrivacyTransitionObserver.equals(iid) ||
+                Ci.nsISupportsWeakReference.equals(iid) ||
+                Ci.nsISupports.equals(iid))
+              return this;
+            throw Cr.NS_ERROR_NO_INTERFACE;
+          },
+          privateModeChanged: function(enabled) {
+            // need this check because there will be a delay between the moment
+            // that our reference to this observer is removed, and the moment
+            // that the observer is garbage collected
+            if (this._unloaded) return;
+            emitPBChange();
+          },
+          _unloaded: false
+        };
+
+        // add the observer
+        docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
+      }
+      else {
+        let privateBrowsing = require('private-browsing');
+        privateBrowsing.on('start', emitPBChange);
+        privateBrowsing.on('stop', emitPBChange);
+
+        // on close cleanup
+        window._public.once('close', function onClose(window) {
+          privateBrowsing.removeListener('start', emitPBChange);
+          privateBrowsing.removeListener('stop', emitPBChange);
+        });
+      }
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?
