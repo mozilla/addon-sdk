@@ -37,29 +37,19 @@ exports.testPerWindowPrivateBrowsing = function(test) {
   }
 };
 
-exports.testWindowTabsObject = function(test) {
+exports.testWindowTabsObject_alt = function(test) {
   test.waitUntilDone();
 
   let window = browserWindows.activeWindow;
-  test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-  let tabTitle = window.tabs.activeTab.title;
-  window.activeTab.title = 'tab 1';
-
   window.tabs.open({
     url: "data:text/html;charset=utf-8,<title>tab 2</title>",
     inBackground: true,
-    onReady: function onReady(newTab) {
-      test.assertEqual(window.tabs.length, 2, "New tab open");
-      test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-      test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+    onReady: function onReady(tab) {
+      test.assertEqual(tab.title, "tab 2", "Correct new tab title");
+      test.assertNotEqual(window.tabs.activeTab, tab, "Correct active tab");
 
-      let i = 1;
-      for each (let tab in window.tabs)
-        test.assertEqual(tab.title, "tab " + i++, "Correct title");
-      window.activeTab.title = tabTitle;
-      test.assertEqual(window.tabs.activeTab.title, tabTitle, "Correct active tab");
-
-      test.done();
+      // end test
+      tab.close(test.done());
     }
   });
 };

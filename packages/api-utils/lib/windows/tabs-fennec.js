@@ -111,6 +111,8 @@ const Tabs = Class({
 
     if (options.onReady)
       tab.on('ready', options.onReady);
+
+    return tab;
   },
   get length() tabsNS(this).tabs.length,
   __iterator__: function __iterator__() {

@@ -70,6 +70,37 @@ exports.testAutomaticDestroy = function(test) {
   });
 };
 
+exports.testWindowTabsObject = function(test) {
+  test.waitUntilDone();
+
+  browserWindows.open({
+    url: "data:text/html;charset=utf-8,<title>tab 1</title>",
+    onOpen: function onOpen(window) {
+      test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
+
+      window.tabs.open({
+        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
+        inBackground: true,
+        onReady: function onReady(newTab) {
+          test.assertEqual(window.tabs.length, 2, "New tab open");
+          test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
+          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+          let i = 1;
+          for each (let tab in window.tabs)
+            test.assertEqual(tab.title, "tab " + i++, "Correct title");
+
+          window.close();
+        }
+      });
+    },
+    onClose: function onClose(window) {
+      test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
+      test.done();
+    }
+  });
+};
+
 exports.testOnOpenOnCloseListeners = function(test) {
   test.waitUntilDone();
   let windows = browserWindows;
