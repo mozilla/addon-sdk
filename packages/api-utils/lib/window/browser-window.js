@@ -10,6 +10,7 @@ const { method } = require('api-utils/functional');
 const { openDialog } = require('api-utils/window/utils');
 const unload = require('api-utils/unload');
 const { getWindowTitle } = require('api-utils/window/utils');
+const { getMode } = require('api-utils/private-browsing/utils');
 
 const BrowserWindow = Class({
   initialize: function initialize(options) {
@@ -64,10 +65,13 @@ const BrowserWindow = Class({
   get title() {
     return getWindowTitle(windowNS(this).window);
   },
-  get tabs() require('api-utils/windows/tabs-fennec').tabs,
+  get tabs() require('tabs'),
+  get activeTab() require('tabs').activeTab,
   on: method(on),
-  off: method(off),
   removeListener: method(off),
-  once: method(once)
+  once: method(once),
+  get isPrivateBrowsing() {
+    return getMode(windowNS(this).window);
+  },
 });
 exports.BrowserWindow = BrowserWindow;

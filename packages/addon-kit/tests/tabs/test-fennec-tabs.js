@@ -7,7 +7,6 @@ const { Cc, Ci } = require('chrome');
 const { Loader } = require('test-harness/loader');
 const timer = require('timer');
 const tabs = require('tabs');
-//const {tabs} = require('api-utils/windows/tabs-fennec');
 const windows = require('windows');
 const xulApp = require("xul-app");
 

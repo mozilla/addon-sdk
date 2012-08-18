@@ -40,35 +40,6 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
-exports.testPerWindowPrivateBrowsing = function(test) {
-  var activeWindow =  wm.getMostRecentWindow("navigator:browser");
-
-  if ("gPrivateBrowsingUI" in activeWindow
-      && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
-    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
-
-    activeWindow.gPrivateBrowsingUI.privateWindow = false;
-
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is not in PB mode");
-
-    activeWindow.gPrivateBrowsingUI.privateWindow = true;
-
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is in PB mode");
-
-    activeWindow.gPrivateBrowsingUI.privateWindow = currentState;
-  }
-  else {
-    test.assertEqual(require('private-browsing').isActive,
-                browserWindows.activeWindow.isPrivateBrowsing,
-                "Active window PB mode is the same value as the mode returned " +
-                "by private-browsing module");
-  }
-};
-
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
 
@@ -161,37 +132,6 @@ exports.testOnOpenOnCloseListeners = function(test) {
     url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       window.close(verify);
-    }
-  });
-};
-
-exports.testWindowTabsObject = function(test) {
-  test.waitUntilDone();
-
-  browserWindows.open({
-    url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onOpen: function onOpen(window) {
-      test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-
-      window.tabs.open({
-        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
-        inBackground: true,
-        onReady: function onReady(newTab) {
-          test.assertEqual(window.tabs.length, 2, "New tab open");
-          test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
-
-          let i = 1;
-          for each (let tab in window.tabs)
-            test.assertEqual(tab.title, "tab " + i++, "Correct title");
-
-          window.close();
-        }
-      });
-    },
-    onClose: function onClose(window) {
-      test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
-      test.done();
     }
   });
 };
