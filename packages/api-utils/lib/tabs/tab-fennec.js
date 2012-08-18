@@ -84,15 +84,13 @@ const Tab = Class({
    * @type {Worker}
    */
   attach: function attach(options) {
-    /*
-    let { Worker } = require("../content/worker");
-    options.window = this._contentWindow;
+    let { Worker } = require("api-utils/content/worker");
+    options.window = tabNS(this).browser.contentWindow;
     let worker = Worker(options);
     worker.once("detach", function detach() {
       worker.destroy();
     });
     return worker;
-    */
   },
 
   /**
