@@ -562,6 +562,7 @@ exports.testTabsEvent_onActivate = function(test) {
     // add listener via collection add
     tabs.on('activate', function listener2(tab) {
       test.assertEqual(++eventCount, 2, "both listeners notified");
+      test.assertEqual(tab, tabs.activeTab, 'the active tab is correct');
       tabs.removeListener('activate', listener1);
       tabs.removeListener('activate', listener2);
 
@@ -587,7 +588,8 @@ exports.testTabsEvent_onDeactivate = function(test) {
 
   // add listener via collection add
   tabs.on('deactivate', function listener2(tab) {
-    test.assertEqual(++eventCount, 2, "both listeners notified");
+    test.assertEqual(++eventCount, 2, 'both listeners notified');
+    test.assertNotEqual(tab, tabs.activeTab, 'the active tab is not the deactivated tab');
     tabs.removeListener('deactivate', listener1);
     tabs.removeListener('deactivate', listener2);
 
@@ -633,4 +635,6 @@ exports.testPerTabEvents = function(test) {
     }
   });
 };
+
+// TODO: test attaching workers
 
