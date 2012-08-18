@@ -734,5 +734,29 @@ exports.testAttachOnMultipleDocuments = function (test) {
   }
 };
 
-// TODO: test attaching workers
+exports.testAttachWrappers = function (test) {
+  // Check that content script has access to wrapped values by default
+  test.waitUntilDone();
+  let document = "data:text/html;charset=utf-8,<script>var globalJSVar = true; " +
+                 "                       document.getElementById = 3;</script>";
+  let count = 0;
 
+  tabs.open({
+    url: document,
+    onReady: function (tab) {
+      let worker = tab.attach({
+        contentScript: 'try {' +
+                       '  self.postMessage(!("globalJSVar" in window));' +
+                       '  self.postMessage(typeof window.globalJSVar == "undefined");' +
+                       '} catch(e) {' +
+                       '  self.postMessage(e.message);' +
+                       '}',
+        onMessage: function (msg) {
+          test.assertEqual(msg, true, "Worker has wrapped objects ("+count+")");
+          if (count++ == 1)
+            tab.close(function() test.done());
+        }
+      });
+    }
+  });
+};
