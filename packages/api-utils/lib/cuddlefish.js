@@ -12,6 +12,9 @@
     factory(function require(uri) {
       var imports = {};
       this['Components'].utils.import(uri, imports);
+      // Bug 764840: Immediatly unload this JSM in order to avoid leaking it on
+      // addon disabling.
+      this['Components'].utils.unload(uri);
       return imports;
     }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
