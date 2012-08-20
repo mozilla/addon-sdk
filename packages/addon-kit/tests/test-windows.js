@@ -96,8 +96,8 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
 
   let globalCount = 0;
   windows.on('private-browsing', function onGlobalPB(window) {
-    if (testWindow != window) return;
-    if (++globalCount == 2)
+    if (testWindow != window) return; // ignore windows not involved in the test (if any)
+    if (++globalCount == 2) // stop listening after 2 PB state changes
       windows.removeListener('private-browsing', onGlobalPB);
   });
 
@@ -122,10 +122,10 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
           test.assertEqual(window.isPrivateBrowsing, false, 'window is in not PB mode');
           window.removeListener('private-browsing', onPB);
 
-          let (counter = 0, onPB) {
-            window.on('private-browsing', function onPB(window) {
+          let (counter = 0) {
+            window.on('private-browsing', function onPB2(window) {
               if (++counter != 2) return;
-              window.removeListener('private-browsing', onPB);
+              window.removeListener('private-browsing', onPB2);
 
               // close the window
               window.close(function() {
@@ -450,13 +450,13 @@ exports.testTrackWindows = function(test) {
 
   browserWindows.on("activate", function (window) {
     let index = windows.indexOf(window);
-    if (index < 0) return;
 
     actions.push("global activate " + index)
   })
 
   browserWindows.on("deactivate", function (window) {
     let index = windows.indexOf(window);
+    // ignore windows not involved with test
     if (index < 0) return;
 
     actions.push("global deactivate " + index)

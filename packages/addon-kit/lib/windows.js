@@ -136,7 +136,7 @@ const BrowserWindowTrait = Trait.compose(
         docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
       }
       else {
-        let privateBrowsing = require('private-browsing');
+        let privateBrowsing = require('./private-browsing');
         privateBrowsing.on('start', emitPBChange);
         privateBrowsing.on('stop', emitPBChange);
 
