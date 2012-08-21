@@ -48,19 +48,19 @@ exports.testPerWindowPrivateBrowsing_getter = function(test) {
       && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
     let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
 
-    activeWindow.gPrivateBrowsingUI.privateWindow = false;
+    pbUtils.setMode(false, activeWindow);
 
     test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
                      browserWindows.activeWindow.isPrivateBrowsing,
                      "Active window is not in PB mode");
 
-    activeWindow.gPrivateBrowsingUI.privateWindow = true;
+    pbUtils.setMode(true, activeWindow);
 
     test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
                      browserWindows.activeWindow.isPrivateBrowsing,
                      "Active window is in PB mode");
 
-    activeWindow.gPrivateBrowsingUI.privateWindow = currentState;
+    pbUtils.setMode(currentState, activeWindow);
   }
   else {
     test.assertEqual(require('private-browsing').isActive,
@@ -73,22 +73,9 @@ exports.testPerWindowPrivateBrowsing_getter = function(test) {
 exports.testPerWindowPrivateBrowsing_events = function(test) {
   test.waitUntilDone();
 
-  let docShell;
+  let chromeWin;
 
-  let setPBMode = function(mode) {
-    if (!docShell) return;
-    if ("addWeakPrivacyTransitionObserver" in docShell) {
-      docShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing = mode;
-    }
-    else {
-      if (mode) {
-        privateBrowsing.activate();
-      }
-      else {
-        privateBrowsing.deactivate();
-      }
-    }
-  };
+  let setPBMode = function(mode) pbUtils.setMode(mode, chromeWin);
 
   let windows = browserWindows;
   let windowCount = browserWindows.length;
@@ -106,10 +93,7 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
     onOpen: function(window) {
       test.assertEqual(window.isPrivateBrowsing, false, 'newly opened window is not in PB mode');
 
-      docShell = wm.getMostRecentWindow("navigator:browser").
-                    QueryInterface(Ci.nsIInterfaceRequestor).
-                    getInterface(Ci.nsIWebNavigation).
-                    QueryInterface(Ci.nsIDocShell);
+      chromeWin = wm.getMostRecentWindow("navigator:browser");
 
       let count = 0;
       window.on('private-browsing', function onPB(window) {

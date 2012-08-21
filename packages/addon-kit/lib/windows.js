@@ -25,7 +25,8 @@ const { Cc, Ci, Cr } = require('chrome'),
       windowUtils = require('api-utils/window-utils'),
       { WindowTrackerTrait } = windowUtils,
       { ns } = require('api-utils/namespace'),
-      { observer: windowObserver } = require("api-utils/windows/observer");
+      { observer: windowObserver } = require("api-utils/windows/observer"),
+      { isWindowPBEnabled } = require('api-utils/private-browsing/utils');
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S
@@ -102,20 +103,13 @@ const BrowserWindowTrait = Trait.compose(
     },
     _privateBrowsingObserver: {},
     _initWindowPrivateBrowser: function() {
-      let docShell = this._window.QueryInterface(Ci.nsIInterfaceRequestor).
-                                  getInterface(Ci.nsIWebNavigation).
-                                  QueryInterface(Ci.nsIDocShellTreeItem).
-                                  treeOwner.
-                                  QueryInterface(Ci.nsIInterfaceRequestor).
-                                  getInterface(Ci.nsIXULWindow).docShell;
-      let window = this;
       let emitPBChange = function() {
-        window._emitOnObject(browserWindows, 'private-browsing', window._public);
-        browser(browserWindows).internals._emit('private-browsing', window._public);
-      };
+        this._emitOnObject(browserWindows, 'private-browsing', this._public);
+        browser(browserWindows).internals._emit('private-browsing', this._public);
+      }.bind(this);
 
       // check that per-window private browsing events is implemented
-      if ('addWeakPrivacyTransitionObserver' in docShell) {
+      if (isWindowPBEnabled(this._window)) {
         // create the observer and keep a reference to it
         this._privateBrowsingObserver = {
           QueryInterface: function(iid) {
@@ -136,7 +130,7 @@ const BrowserWindowTrait = Trait.compose(
         };
 
         // add the observer
-        docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
+        this._window.gBrowser.docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
       }
       else {
         let privateBrowsing = require('./private-browsing');
@@ -144,7 +138,7 @@ const BrowserWindowTrait = Trait.compose(
         privateBrowsing.on('stop', emitPBChange);
 
         // on close cleanup
-        window._public.once('close', function onClose(window) {
+        this._public.once('close', function onClose(window) {
           privateBrowsing.removeListener('start', emitPBChange);
           privateBrowsing.removeListener('stop', emitPBChange);
         });

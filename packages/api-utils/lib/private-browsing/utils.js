@@ -26,18 +26,28 @@ if (require("api-utils/xul-app").is("Firefox")) {
   });
 }
 
+// checks that per-window private browsing implemented
+let isWindowPBEnabled = function isWindowPBEnabled(chromeWin) {
+  return 'gBrowser' in chromeWin &&
+         'addWeakPrivacyTransitionObserver' in chromeWin.gBrowser.docShell &&
+         'gPrivateBrowsingUI' in chromeWin &&
+         'privateWindow' in chromeWin.gPrivateBrowsingUI;
+}
+exports.isWindowPBEnabled = isWindowPBEnabled;
+
 // We toggle private browsing mode asynchronously in order to work around
 // bug 659629.  Since private browsing transitions are asynchronous
 // anyway, this doesn't significantly change the behavior of the API.
+// Note: this method should not be used with `chromeWin` argument until
+//       the UI has been implemented.
 let setMode = defer(function setMode(value, chromeWin) {
   value = !!value;  // Cast to boolean.
 
-  if (chromeWin) {
-    // is per-window private browsing implemented?
-    if ("gPrivateBrowsingUI" in chromeWin
-        && "privateWindow" in chromeWin.gPrivateBrowsingUI) {
-      return chromeWin.gPrivateBrowsingUI.privateWindow = value;
-    }
+  if (chromeWin && isWindowPBEnabled(chromeWin)) {
+    return chromeWin.gBrowser.
+                     docShell.
+                     QueryInterface(Ci.nsILoadContext).
+                     usePrivateBrowsing = value;
   }
 
   // default
@@ -46,12 +56,8 @@ let setMode = defer(function setMode(value, chromeWin) {
 exports.setMode = setMode;
 
 let getMode = function getMode(chromeWin) {
-  if (chromeWin) {
-    // is per-window private browsing implemented?
-    if ("gPrivateBrowsingUI" in chromeWin &&
-        "privateWindow" in chromeWin.gPrivateBrowsingUI) {
-      return chromeWin.gPrivateBrowsingUI.privateWindow;
-    }
+  if (chromeWin && isWindowPBEnabled(chromeWin)) {
+    return chromeWin.gPrivateBrowsingUI.privateWindow;
   }
 
   // default
