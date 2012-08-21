@@ -104,7 +104,10 @@ const BrowserWindowTrait = Trait.compose(
     _initWindowPrivateBrowser: function() {
       let docShell = this._window.QueryInterface(Ci.nsIInterfaceRequestor).
                                   getInterface(Ci.nsIWebNavigation).
-                                  QueryInterface(Ci.nsIDocShell);
+                                  QueryInterface(Ci.nsIDocShellTreeItem).
+                                  treeOwner.
+                                  QueryInterface(Ci.nsIInterfaceRequestor).
+                                  getInterface(Ci.nsIXULWindow).docShell;
       let window = this;
       let emitPBChange = function() {
         window._emitOnObject(browserWindows, 'private-browsing', window._public);
