@@ -9,6 +9,8 @@ const { setTimeout } = require("timers");
 const { notify } = require("observer-service");
 const { id } = require("self");
 
+const specialChars = '!@#$%^&*()_-=+[]{}~`\'"<>,./?;:';
+
 exports.testIterations = function(test) {
   test.waitUntilDone();
 
@@ -51,6 +53,33 @@ exports.testSetGetBool = function(test) {
 
   loader.unload();
   test.done();
+};
+
+// TEST: setting and getting preferences with special characters work
+exports.testSpecialChars = function(test) {
+  test.waitUntilDone();
+
+  let chars = specialChars.split('');
+  let len = chars.length;
+
+  let loader = Loader(module);
+  let simplePrefs = loader.require("simple-prefs");
+  let sp = loader.require("simple-prefs").prefs;
+
+  let count = 0;
+  chars.forEach(function(char) {
+    let rand = Math.random() + '';
+    simplePrefs.on(char, function onPrefChanged() {
+      simplePrefs.removeListener(char, onPrefChanged);
+
+      test.assertEqual(sp[char], rand, 'setting pref with a name that is a special char, ' + char + ", worked!");
+
+      // end test
+      if (++count == len) test.done();
+    })
+    sp[char] = rand;
+  });
+  loader.unload();
 };
 
 exports.testSetGetInt = function(test) {

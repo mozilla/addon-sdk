@@ -9,6 +9,8 @@ const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
+const specialChars = '!@#$%^&*()_-=+[]{}~`\'"<>,./?;:';
+
 exports.testReset = function(test) {
   prefs.reset("test_reset_pref");
   test.assertEqual(prefs.has("test_reset_pref"), false);
@@ -128,3 +130,15 @@ exports.testGetSetLocalized = function(test) {
   // Undo our modification
   prefs.reset(prefName);
 }
+
+// TEST: setting and getting preferences with special characters work
+exports.testSpecialChars = function(test) {
+  let chars = specialChars.split('');
+  const ROOT = 'test.';
+
+  chars.forEach(function(char) {
+    let rand = Math.random() + '';
+    prefs.set(ROOT+char, rand);
+    test.assertEqual(prefs.get(ROOT+char), rand, 'setting pref with a name that is a special char, ' + char + ", worked!");
+  });
+};
