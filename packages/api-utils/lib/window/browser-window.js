@@ -12,6 +12,8 @@ const unload = require('api-utils/unload');
 const { getWindowTitle } = require('api-utils/window/utils');
 const { getMode } = require('api-utils/private-browsing/utils');
 
+const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
+
 const BrowserWindow = Class({
   initialize: function initialize(options) {
       // make sure we don't have unhandled errors
@@ -39,6 +41,7 @@ const BrowserWindow = Class({
         windowNS(this).window = options.window;
       }
       else {
+        // TODO: test
         windowNS(this).window = openDialog({
           args: tabOptions.map(function(options) {
             return options.url
@@ -49,29 +52,22 @@ const BrowserWindow = Class({
     return this;
   },
   destroy: function() {
-    // TODO: implement
+    return null;
   },
   activate: function activate() {
-    let window = windowNS(this).window;
-    if (window) window.focus();
-    return this;
+    this.activeTab.activate();
+    return null;
   },
-  // TODO: consider using window.BrowserApp.quit() for Fennec..
   close: function() {
-    let window = windowNS(this).window;
-    if (window) window.close();
-    return this;
+    throw new Error(ERR_FENNEC_MSG);
+    return null;
   },
-  get title() {
-    return getWindowTitle(windowNS(this).window);
-  },
+  get title() getWindowTitle(windowNS(this).window),
   get tabs() require('tabs'),
   get activeTab() require('tabs').activeTab,
   on: method(on),
   removeListener: method(off),
   once: method(once),
-  get isPrivateBrowsing() {
-    return getMode(windowNS(this).window);
-  },
+  get isPrivateBrowsing() getMode(windowNS(this).window),
 });
 exports.BrowserWindow = BrowserWindow;

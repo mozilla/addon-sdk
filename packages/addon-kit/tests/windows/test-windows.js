@@ -53,3 +53,17 @@ exports.testWindowTabsObject_alt = function(test) {
     }
   });
 };
+
+// TEST: browserWindows.activeWindow
+exports.testWindowActivateMethod_simple = function(test) {
+  let window = browserWindows.activeWindow;
+  let tab = window.tabs.activeTab;
+
+  window.activate();
+
+  test.assertEqual(browserWindows.activeWindow, window,
+                   "Active window is active after window.activate() call");
+  test.assertEqual(window.tabs.activeTab, tab,
+                   "Active tab is active after window.activate() call");
+  
+};

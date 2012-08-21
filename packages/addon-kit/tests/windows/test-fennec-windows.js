@@ -10,43 +10,35 @@ const WM = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 const { browserWindows } = require('windows');
 
-// TEST: browserWindows.length
+const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("tabs") instead';
+
+// TEST: browserWindows.length for Fennec
 exports.testBrowserWindowsLength = function(test) {
   test.assertEqual(browserWindows.length, 1, "Only one window open");
 };
 
 // TEST: open & close window
-exports.testOpenAndCloseWindow = function(test) {
-  test.waitUntilDone();
-
+exports.testOpenWindow = function(test) {
   let tabCount = browserWindows.activeWindow.tabs.length;
   let url = "data:text/html;charset=utf-8,<title>windows%20API%20test</title>";
 
-  browserWindows.open({
-    url: url,
-    onOpen: function(window) {
-      test.assertEqual(this, browserWindows,
-                    "The 'this' object is the windows object.");
+  try {
+    browserWindows.open({url: url});
+    test.fail('Error was not thrown');
+  }
+  catch(e) {
+    test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.open');
+  }
+};
 
-      test.assertEqual(window.tabs.length, (tabCount+1), "Only one tab open");
-      test.assertEqual(browserWindows.length, 1, "Only one window open");
+exports.testCloseWindow = function(test) {
+  let window = browserWindows.activeWindow;
 
-      window.tabs.activeTab.on('ready', function onReady(tab) {
-        tab.removeListener('ready', onReady);
-        test.assertEqual(window.tabs.activeTab.url, url, "the active tab url is the opened url");
-        test.assert(tab.title.indexOf("windows API test") != -1,
-                 "URL correctly loaded");
-
-        tab.on("close", function(tab) {
-          test.assertEqual(window.tabs.length, tabCount, "Created tabs were cleared");
-          test.assertEqual(browserWindows.length, 1, "Only one window open");
-
-          // end test
-          test.done();
-        });
-
-        tab.close();
-      });
-    }
-  });
+  try {
+    window.close();
+    test.fail('Error was not thrown');
+  }
+  catch(e) {
+    test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.close');
+  }
 };

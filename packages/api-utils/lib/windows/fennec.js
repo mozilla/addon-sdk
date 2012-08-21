@@ -10,7 +10,8 @@ const { on, off, once, emit } = require("api-utils/event/core");
 const { method } = require('../functional');
 const { WindowTracker } = require('api-utils/window-utils');
 const { isBrowser } = require('api-utils/window/utils');
-const { openTab } = require("../tabs/utils");
+
+const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 const windows = [];
 
@@ -20,17 +21,7 @@ const browserWindows = {
     return window ? getBrowserWindow({window: window}) : null;
   },
   open: function open(options) {
-    let activeWin = browserWindows.activeWindow;
-
-    // open tab in the one true window
-    openTab(windowNS(activeWin).window, options.url);
-
-    if (options.onOpen)
-      options.onOpen.call(browserWindows, activeWin);
-
-    emit(activeWin, 'open', activeWin);
-    emit(browserWindows, 'open', activeWin);
-
+    throw new Error(ERR_FENNEC_MSG);
     return null;
   },
   __iterator__: function __iterator__() {
