@@ -135,10 +135,13 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
+    let top = window.top === window ? content : content.top;
+    let parent = window.parent === window ? content : content.parent;
     merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
-      get top() content,
+      get top() top,
+      get parent() parent,
       // Use the Greasemonkey naming convention to provide access to the
       // unwrapped window object so the content script can access document
       // JavaScript values.

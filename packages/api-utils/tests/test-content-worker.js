@@ -475,3 +475,71 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
   }, true);
 
 }
+
+exports['test:check window attribute in iframes'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let contentWin = window.document.getElementById("content").contentWindow;
+    let contentDoc = contentWin.document;
+    let iframe = contentDoc.createElement("iframe");
+    contentDoc.body.appendChild(iframe);
+
+    let worker =  Worker({
+      window: iframe.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage([
+          window.top !== window,
+          frameElement,
+          window.parent !== window,
+          top.location.href
+        ]);
+      },
+      onMessage: function(msg) {
+        test.assert(msg[0], "window.top != window");
+        test.assert(msg[1], "window.frameElement is defined");
+        test.assert(msg[2], "window.parent != window");
+        test.assertEqual(msg[3], contentDoc.location.href,
+                         "top.location refers to the toplevel doc");
+        window.close();
+        test.done();
+      }
+    });
+
+  }, true);
+
+}
+
+exports['test:check window attribute in toplevel documents'] = function(test) {
+  let window = makeWindow();
+  test.waitUntilDone();
+
+  window.addEventListener("load", function onload() {
+    window.removeEventListener("load", onload, true);
+
+    let contentWin = window.document.getElementById("content").contentWindow;
+
+    let worker =  Worker({
+      window: contentWin,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage([
+          window.top === window,
+          frameElement,
+          window.parent === window
+        ]);
+      },
+      onMessage: function(msg) {
+        test.assert(msg[0], "window.top == window");
+        test.assert(!msg[1], "window.frameElement is null");
+        test.assert(msg[2], "window.parent == window");
+        window.close();
+        test.done();
+      }
+    });
+
+  }, true);
+
+}
