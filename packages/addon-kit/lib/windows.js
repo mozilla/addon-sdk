@@ -142,7 +142,12 @@ const BrowserWindowTrait = Trait.compose(
       }
 
       this.once('close', function onUnload() {
+        // note that the window has closed or the module has unloaded so that
+        // our per-window PB observer is no longer active while it waits
+        // to be garbage collected.
         unloaded = true;
+        // remove our reference to the per-window PB observer, so that it can
+        // be garbage collected.
         this._privateBrowsingObserver = {};
       }.bind(this));
     },
