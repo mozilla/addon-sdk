@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+'use strict';
+
 let pb = require("private-browsing");
 let {Cc,Ci} = require("chrome");
 const { Loader } = require('test-harness/loader');
@@ -15,7 +17,6 @@ if (require("xul-app").is("Firefox")) {
 }
 
 if (pbService) {
-
   // tests that isActive has the same value as the private browsing service
   // expects
   exports.testGetIsActive = function (test) {
@@ -74,7 +75,7 @@ if (pbService) {
     pb.activate();
     pb.deactivate();
   };
-  
+
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it

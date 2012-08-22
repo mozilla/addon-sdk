@@ -9,7 +9,7 @@ const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
 
-function getTestRunnerWindow() wm.getMostRecentWindow("test:runner")
+function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
 
 exports.testOpenAndCloseWindow = function(test) {
   test.waitUntilDone();
@@ -38,8 +38,36 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
-exports.testAutomaticDestroy = function(test) {
+exports.testPerWindowPrivateBrowsing = function(test) {
+  var activeWindow =  wm.getMostRecentWindow("navigator:browser");
 
+  if ("gPrivateBrowsingUI" in activeWindow
+      && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
+    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = false;
+
+    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
+                     browserWindows.activeWindow.isPrivateBrowsing,
+                     "Active window is not in PB mode");
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = true;
+
+    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
+                     browserWindows.activeWindow.isPrivateBrowsing,
+                     "Active window is in PB mode");
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = currentState;
+  }
+  else {
+    test.assertEqual(require('private-browsing').isActive,
+                browserWindows.activeWindow.isPrivateBrowsing,
+                "Active window PB mode is the same value as the mode returned " +
+                "by private-browsing module");
+  }
+};
+
+exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
   let windows = browserWindows;
 

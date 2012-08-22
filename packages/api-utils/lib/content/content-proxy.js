@@ -5,13 +5,12 @@
 "use strict";
 
 /* Trick the linker in order to avoid error on `Components.interfaces` usage.
-   We are tricking the linking with `require('./content-proxy.js')` in order
-   to ensure shipping it! But then the linker think that this file is going
-   to be used as a CommonJS module where we forbid usage of `Components`.
-   We only allow usage of it through `require('chrome')`:
-  require("chrome");
+   We are tricking the linker with `require('./content-proxy.js')` from
+   worjer.js in order to ensure shipping this file! But then the linker think
+   that this file is going to be used as a CommonJS module where we forbid usage
+   of `Components`.
 */
-let Ci = Components.interfaces;
+let Ci = Components['interfaces'];
 
 /**
  * Access key that allows privileged code to unwrap proxy wrappers through 
@@ -19,13 +18,8 @@ let Ci = Components.interfaces;
  *   let xpcWrapper = proxyWrapper.valueOf(UNWRAP_ACCESS_KEY);
  * This key should only be used by proxy unit test.
  */
-const UNWRAP_ACCESS_KEY = {};
+ const UNWRAP_ACCESS_KEY = {};
 
-/**
- * WeakMap which maps xraywrappers to already created JS proxies.
- * Allows to build one single proxy per xraywrapper without leaking.
- */
-const proxies = new WeakMap();
 
  /**
  * Returns a closure that wraps arguments before calling the given function,
@@ -336,13 +330,18 @@ function getProxyForObject(obj) {
   if ("__isWrappedProxy" in obj) {
     return obj;
   }
-  // Check if there is an already built proxy for this wrapper
-  if (proxies.has(obj))
-    return proxies.get(obj);
-
+  // Check if there is a proxy cached on this wrapper,
+  // but take care of prototype ___proxy attribute inheritance!
+  if (obj && obj.___proxy && obj.___proxy.valueOf(UNWRAP_ACCESS_KEY) === obj) {
+    return obj.___proxy;
+  }
+  
   let proxy = Proxy.create(handlerMaker(obj));
-  proxies.set(obj, proxy);
-
+  
+  Object.defineProperty(obj, "___proxy", {value : proxy,
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : false});
   return proxy;
 }
 
@@ -357,12 +356,16 @@ function getProxyForFunction(fun, callTrap) {
   }
   if ("__isWrappedProxy" in fun)
     return obj;
-  if (proxies.has(fun))
-    return proxies.get(fun);
+  if ("___proxy" in fun)
+    return fun.___proxy;
   
   let proxy = Proxy.createFunction(handlerMaker(fun), callTrap);
-  proxies.set(fun, proxy);
-
+  
+  Object.defineProperty(fun, "___proxy", {value : proxy,
+                                          writable : false,
+                                          enumerable : false,
+                                          configurable : false});
+  
   return proxy;
 }
 
@@ -719,6 +722,7 @@ function handlerMaker(obj) {
     
     // derived traps
     has: function(name) {
+      if (name == "___proxy") return false;
       if (isEventName(name)) {
         // XrayWrappers throw exception when we try to access expando attributes
         // even on "name in wrapper". So avoid doing it!
@@ -731,11 +735,9 @@ function handlerMaker(obj) {
       return Object.prototype.hasOwnProperty.call(obj, name);
     },
     get: function(receiver, name) {
-      // JS proxies are only meant to fix xraywrappers bugs,
-      // they are not usefull for unwrapped value.
-      if (name == "wrappedJSObject")
-        return obj.wrappedJSObject;
-
+      if (name == "___proxy")
+        return undefined;
+      
       // Overload toString in order to avoid returning "[XrayWrapper [object HTMLElement]]"
       // or "[object Function]" for function's Proxy
       if (name == "toString") {

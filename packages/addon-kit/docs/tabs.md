@@ -171,7 +171,7 @@ passed the `Tab` object that triggered the event.
 
 <api name="title">
 @property {string}
-The title of the page currently loaded in the tab.
+The title of the tab (usually the title of the page currently loaded in the tab)
 This property can be set to change the tab title.
 </api>
 
@@ -187,6 +187,23 @@ The URL of the favicon for the page currently loaded in the tab.
 This property is read-only.
 </api>
 
+<api name="contentType">
+@property {string}
+<div class="experimental">
+<strong>
+  This is currently an experimental API, so we might change it in future releases.
+</strong>
+<p>
+Returns the MIME type that the document currently loaded in the tab is being
+rendered as.
+This may come from HTTP headers or other sources of MIME information,
+and might be affected by automatic type conversions performed by either the
+browser or extensions.
+This property is read-only.
+</p>
+</div>
+</api>
+
 <api name="index">
 @property {integer}
 The index of the tab relative to other tabs in the application window.
@@ -198,11 +215,6 @@ This property can be set to change its relative position.
 Whether or not tab is pinned as an [app tab][].
 This property is read-only.
 [app tab]:http://support.mozilla.com/en-US/kb/what-are-app-tabs
-</api>
-
-<api name="getThumbnail">
-@property {method}
-Returns thumbnail data URI of the page currently loaded in this tab.
 </api>
 
 <api name="pin">
@@ -233,6 +245,11 @@ Reloads this tab.
 <api name="activate">
 @method
 Makes this tab active, which will bring this tab to the foreground.
+</api>
+
+<api name="getThumbnail">
+@method
+Returns thumbnail data URI of the page currently loaded in this tab.
 </api>
 
 <api name="attach">

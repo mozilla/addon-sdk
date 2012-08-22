@@ -46,6 +46,11 @@ function onContentWindow(event) {
   if (!(document instanceof Ci.nsIDOMHTMLDocument))
     return;
 
+  // Bug 769483: data:URI documents instanciated with nsIDOMParser
+  // have a null `location` attribute at this time
+  if (!document.location)
+    return;
+
   // Accept only document from this addon
   if (document.location.href.indexOf(assetsURI) !== 0)
     return;

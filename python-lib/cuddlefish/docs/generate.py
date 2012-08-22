@@ -58,7 +58,7 @@ def generate_named_file(env_root, filename):
     abs_path = os.path.abspath(filename)
     if abs_path.startswith(os.path.join(env_root, 'packages')):
         doc_html, dest_dir, filename = generate_api_doc(env_root, abs_path, web_docs)
-        write_file(env_root, doc_html, dest_dir, filename)
+        write_file(env_root, doc_html, dest_dir, filename, False)
     elif abs_path.startswith(os.path.join(get_sdk_docs_path(env_root), 'dev-guide-source')):
         doc_html, dest_dir, filename = generate_guide_doc(env_root, abs_path, web_docs)
         write_file(env_root, doc_html, dest_dir, filename, False)
