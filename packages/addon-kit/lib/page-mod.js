@@ -15,6 +15,7 @@ const { validateOptions : validate } = require('api-utils/api-utils');
 const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
+const { getTabForContentWindow } = require('api-utils/tabs/utils');
 
 const styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].
                             getService(Ci.nsIStyleSheetService);
@@ -283,7 +284,7 @@ const PageModManager = Registry.resolve({
     if (!window)
       return;
     // We apply only on documents in tabs of Firefox
-    if (!isChildOfBrowserTab(window))
+    if (!getTabForContentWindow(window))
       return;
 
     for (let rule in RULES)
@@ -297,24 +298,3 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
-
-function isChildOfBrowserTab(window) {
-  // Retrieve the topmost frame container. It can be either <xul:browser>,
-  // <xul:iframe/> or <html:iframe/>. But in our case, it should be xul:browser.
-  let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIWebNavigation)
-                   .QueryInterface(Ci.nsIDocShell)
-                   .chromeEventHandler;
-  // Is null for toplevel documents
-  if (!browser)
-    return false;
-  // Retrieve the owner window, should be browser.xul one
-  let chromeWindow = browser.ownerDocument.defaultView;
-  // Ensure that it is top-level browser window
-  if (!('gBrowser' in chromeWindow))
-    return false;
-  // We use Array.some as `browsers` is a NodeList and doesn't have regular
-  // array methods, like indexOf.
-  return Array.some(chromeWindow.gBrowser.browsers,
-                    function (b) { return b === browser });
-}
