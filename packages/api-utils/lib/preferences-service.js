@@ -52,7 +52,7 @@ function Branch(branchName) {
 function get(name, defaultValue) {
   switch (prefSvc.getPrefType(name)) {
   case Ci.nsIPrefBranch.PREF_STRING:
-    return prefSvc.getComplexValue(name, Ci.nsISupportsString).data;
+    return prefSvc.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
 
   case Ci.nsIPrefBranch.PREF_INT:
     return prefSvc.getIntPref(name);
@@ -81,12 +81,10 @@ function set(name, value) {
 
   switch (prefType) {
   case "String":
-    {
-      var string = Cc["@mozilla.org/supports-string;1"].
-                   createInstance(Ci.nsISupportsString);
-      string.data = value;
-      prefSvc.setComplexValue(name, Ci.nsISupportsString, string);
-    }
+    let string = Cc["@mozilla.org/pref-localizedstring;1"].
+                 createInstance(Ci.nsIPrefLocalizedString);
+    string.data = value;
+    prefSvc.setComplexValue(name, Ci.nsIPrefLocalizedString, string);
     break;
 
   case "Number":

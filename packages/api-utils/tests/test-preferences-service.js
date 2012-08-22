@@ -8,6 +8,9 @@ const prefs = require("preferences-service");
 const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
+const { StringBundle } = require('api-utils/app-strings');
+
+const TEST_LOCALIZED_PROPERTIES = 'chrome://browser-region/locale/region.properties';
 
 exports.testReset = function(test) {
   prefs.reset("test_reset_pref");
@@ -77,6 +80,15 @@ exports.testGetAndSet = function(test) {
   prefs.set("test_set_get_pref.string", "foo");
   test.assertEqual(prefs.get("test_set_get_pref.string"), "foo",
                    "set/get string preference should work");
+
+  let localizedStrings = StringBundle(TEST_LOCALIZED_PROPERTIES);
+  test.assertEqual(prefs.get("browser.search.defaultenginename"),
+                   localizedStrings.get('browser.search.defaultenginename'),
+                   "set/get localized preference should work");
+  prefs.set("browser.search.defaultenginename", 'WORLD');
+  test.assertEqual(prefs.get("browser.search.defaultenginename"), "WORLD",
+                   "set/get localized preference should work");
+  prefs.reset("browser.search.defaultenginename");
 
   prefs.set("test_set_get_pref.boolean", true);
   test.assertEqual(prefs.get("test_set_get_pref.boolean"), true,
