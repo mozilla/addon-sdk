@@ -44,8 +44,7 @@ exports.testPerWindowPrivateBrowsing_getter = function(test) {
   let activeWindow =  wm.getMostRecentWindow("navigator:browser");
 
   // is per-window PB implemented?
-  if ("gPrivateBrowsingUI" in activeWindow
-      && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
+  if (pbUtils.isWindowPBEnabled(activeWindow)) {
     let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
 
     pbUtils.setMode(false, activeWindow);
