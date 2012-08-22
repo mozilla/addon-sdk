@@ -138,6 +138,55 @@ exports.testPerWindowPrivateBrowsing_events = function(test) {
   });
 };
 
+exports.testPerWindowPrivateBrowsing_eventsUnload = function(test) {
+  test.waitUntilDone();
+
+  let chromeWin;
+  let setPBMode = function(mode) pbUtils.setMode(mode, chromeWin);
+  let loader = Loader(module);
+  let {browserWindows: windows} = loader.require('windows');
+  let testWindow;
+  let count = 0;
+  let globalCount = 0;
+
+  browserWindows.on('private-browsing', function onGlobalPB(window) {
+    if (testWindow != window) return; // ignore windows not involved in the test (if any)
+    if (++globalCount == 2) { // stop listening after 2 PB state changes
+      browserWindows.removeListener('private-browsing', onGlobalPB);
+
+      test.assertEqual(window.isPrivateBrowsing, false, 'PB mode is off');
+      test.assertEqual(globalCount, 2, 'total calls to setPBMode is correct');
+      test.assertEqual(count, 1, 'unload of PB listener worked');
+
+      window.close(function() {
+
+        // end test
+        test.done();
+      });
+    }
+    else {
+      setPBMode(!window.isPrivateBrowsing);
+    }
+  });
+
+  testWindow = windows.open({
+    url: "data:text/html;charset=utf-8,foo",
+    onOpen: function(window) {
+      test.assertEqual(window.isPrivateBrowsing, false, 'newly opened window is not in PB mode');
+      testWindow = browserWindows.activeWindow;
+
+      chromeWin = wm.getMostRecentWindow("navigator:browser");
+
+      window.on('private-browsing', function() {
+        count++;
+        loader.unload();
+      });
+
+      setPBMode(true);
+    }
+  });
+};
+
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
   let windows = browserWindows;

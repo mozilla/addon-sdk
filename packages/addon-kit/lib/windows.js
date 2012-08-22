@@ -95,18 +95,22 @@ const BrowserWindowTrait = Trait.compose(
       this._destroyWindowTabTracker();
       this._emitOnObject(browserWindows, 'close', this._public);
       this._window = null;
-      this._privateBrowsingObserver._unloaded = true;
-      this._privateBrowsingObserver = {};
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
       this._removeAllListeners();
     },
     _privateBrowsingObserver: {},
     _initWindowPrivateBrowser: function() {
-      let emitPBChange = function() {
+      let unloaded = false;
+      let emitPBChange = (function() {
+        // need this check because there will be a delay between the moment
+        // that our reference to this observer is removed, and the moment
+        // that the observer is garbage collected
+        if (unloaded) return;
+        let browserWindowsPrivate = browser(browserWindows).internals;
         this._emitOnObject(browserWindows, 'private-browsing', this._public);
-        browser(browserWindows).internals._emit('private-browsing', this._public);
-      }.bind(this);
+        browserWindowsPrivate._emit('private-browsing', this._public);
+      }.bind(this));
 
       // check that per-window private browsing events is implemented
       if (isWindowPBEnabled(this._window)) {
@@ -119,30 +123,28 @@ const BrowserWindowTrait = Trait.compose(
               return this;
             throw Cr.NS_ERROR_NO_INTERFACE;
           },
-          privateModeChanged: function(enabled) {
-            // need this check because there will be a delay between the moment
-            // that our reference to this observer is removed, and the moment
-            // that the observer is garbage collected
-            if (this._unloaded) return;
-            emitPBChange();
-          },
-          _unloaded: false
+          privateModeChanged: emitPBChange
         };
 
         // add the observer
         this._window.gBrowser.docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
       }
       else {
-        let privateBrowsing = require('./private-browsing');
-        privateBrowsing.on('start', emitPBChange);
-        privateBrowsing.on('stop', emitPBChange);
+        let pb = require('./private-browsing');
+        pb.on('start', emitPBChange);
+        pb.on('stop', emitPBChange);
 
         // on close cleanup
-        this._public.once('close', function onClose(window) {
-          privateBrowsing.removeListener('start', emitPBChange);
-          privateBrowsing.removeListener('stop', emitPBChange);
+        this.once('close', function onUnload(window) {
+          pb.removeListener('start', emitPBChange);
+          pb.removeListener('stop', emitPBChange);
         });
       }
+
+      this.once('close', function onUnload() {
+        unloaded = true;
+        this._privateBrowsingObserver = {};
+      }.bind(this));
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?
