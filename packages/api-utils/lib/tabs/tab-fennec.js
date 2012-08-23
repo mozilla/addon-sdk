@@ -70,6 +70,7 @@ const Tab = Class({
     return -1;
   },
   set index(value) {
+    throw new Error(ERR_FENNEC_MSG); // TODO
   },
 
   /**

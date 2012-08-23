@@ -208,8 +208,13 @@ exports.testTabMove = function(test) {
     url: url,
     onOpen: function(tab) {
       test.assertEqual(tab.index, 1, "tab index before move matches");
-      tab.index = 0;
-      test.assertEqual(tab.index, 0, "tab index after move matches");
+      try {
+        tab.index = 0;
+        test.assertEqual(tab.index, 0, "tab index after move matches");
+      }
+      catch(e) {
+        test.assertEqual(e, ERR_MSG, 'Error is thrown on setting tab.index');
+      }
 
       // end test
       tab.close(function() test.done());
