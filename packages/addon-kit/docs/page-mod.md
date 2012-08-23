@@ -1,3 +1,4 @@
+
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
@@ -64,6 +65,10 @@ then the content script can interact with the DOM itself:
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
+
+Note that starting with SDK 1.11, page-mod now only applies to documents loaded
+in tabs. So that it won't apply to addon panels, page-workers, widgets, nor in
+firefox hidden window.
 
 ### Using `contentScriptFile` ###
 
