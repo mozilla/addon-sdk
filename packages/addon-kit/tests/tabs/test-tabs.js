@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+const { Loader } = require('test-harness/loader');
 const { browserWindows } = require('windows');
 const tabs = require('tabs');
 
@@ -31,6 +32,61 @@ exports.testTabCounts = function(test) {
       // end test
       tab.close(function() test.done());
     }
+  });
+};
+
+// TEST: tabs.activeTab getter
+exports.testActiveTab_getter_alt = function(test) {
+  test.waitUntilDone();
+
+  let url = URL.replace("#title#", "foo");
+  tabs.open({
+    url: url,
+    onOpen: function(tab) {
+      test.assert(!!tabs.activeTab);
+      test.assertEqual(tabs.activeTab, tab, 'the active tab is correct');
+
+      tab.on("ready", function() {
+        test.assertEqual(tab.url, url);
+        test.assertEqual(tab.title, "foo");
+
+        tab.close(function() {
+          // end test
+          test.done();
+        });
+      });
+    }
+  });
+};
+
+// TEST: tab.activate()
+exports.testActiveTab_setter_alt = function(test) {
+  test.waitUntilDone();
+
+  let url = URL.replace("#title#", "foo");
+  let activeTabURL = tabs.activeTab.url;
+
+  tabs.once('ready', function onReady(tab) {
+    test.assertEqual(tabs.activeTab.url, activeTabURL, "activeTab url has not changed");
+    test.assertEqual(tab.url, url, "url of new background tab matches");
+
+    tabs.once('activate', function onActivate(eventTab) {
+      test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
+      test.assertEqual(eventTab, tab, "event argument is the activated tab");
+      test.assertEqual(eventTab, tabs.activeTab, "the tab is the active one");
+
+      tab.close(function() {
+        // end test
+        test.done();
+      });
+    });
+
+    tab.activate();
+  });
+
+  tabs.open({
+    url: url,
+    inBackground: true
   });
 };
 
