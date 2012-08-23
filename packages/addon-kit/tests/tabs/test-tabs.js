@@ -127,3 +127,130 @@ exports.testActiveWindowActiveTabOnActivate_alt = function(test) {
     onOpen: function(tab) newTabs.push(tab)
   });
 };
+
+exports.testAttachOnOpen_alt = function (test) {
+  // Take care that attach has to be called on tab ready and not on tab open.
+  test.waitUntilDone();
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,foobar",
+    onOpen: function (tab) {
+      let worker = tab.attach({
+        contentScript: 'self.postMessage(document.location.href); ',
+        onMessage: function (msg) {
+          test.assertEqual(msg, "about:blank",
+            "Worker document url is about:blank on open");
+          worker.destroy();
+          tab.close(function() test.done());
+        }
+      });
+    }
+  });
+};
+
+exports.testAttachOnMultipleDocuments_alt = function (test) {
+  // Example of attach that process multiple tab documents
+  test.waitUntilDone();
+
+  let firstLocation = "data:text/html;charset=utf-8,foobar";
+  let secondLocation = "data:text/html;charset=utf-8,bar";
+  let thirdLocation = "data:text/html;charset=utf-8,fox";
+  let onReadyCount = 0;
+  let worker1 = null;
+  let worker2 = null;
+  let detachEventCount = 0;
+
+  tabs.open({
+    url: firstLocation,
+    onReady: function (tab) {
+      onReadyCount++;
+      if (onReadyCount == 1) {
+        worker1 = tab.attach({
+          contentScript: 'self.on("message", ' +
+                         '  function () self.postMessage(document.location.href)' +
+                         ');',
+          onMessage: function (msg) {
+            test.assertEqual(msg, firstLocation,
+                             "Worker url is equal to the 1st document");
+            tab.url = secondLocation;
+          },
+          onDetach: function () {
+            detachEventCount++;
+            test.pass("Got worker1 detach event");
+            test.assertRaises(function () {
+                worker1.postMessage("ex-1");
+              },
+              /The page has been destroyed/,
+              "postMessage throw because worker1 is destroyed");
+            checkEnd();
+          }
+        });
+        worker1.postMessage("new-doc-1");
+      }
+      else if (onReadyCount == 2) {
+        worker2 = tab.attach({
+          contentScript: 'self.on("message", ' +
+                         '  function () self.postMessage(document.location.href)' +
+                         ');',
+          onMessage: function (msg) {
+            test.assertEqual(msg, secondLocation,
+                             "Worker url is equal to the 2nd document");
+            tab.url = thirdLocation;
+          },
+          onDetach: function () {
+            detachEventCount++;
+            test.pass("Got worker2 detach event");
+            test.assertRaises(function () {
+                worker2.postMessage("ex-2");
+              },
+              /The page has been destroyed/,
+              "postMessage throw because worker2 is destroyed");
+            checkEnd(tab);
+          }
+        });
+        worker2.postMessage("new-doc-2");
+      }
+      else if (onReadyCount == 3) {
+        tab.close();
+      }
+    }
+  });
+
+  function checkEnd(tab) {
+    if (detachEventCount != 2)
+      return;
+
+    test.pass("Got all detach events");
+
+    // end test
+    test.done();
+  }
+};
+
+exports.testAttachWrappers_alt = function (test) {
+  // Check that content script has access to wrapped values by default
+  test.waitUntilDone();
+
+  let document = "data:text/html;charset=utf-8,<script>var globalJSVar = true; " +
+                 "                       document.getElementById = 3;</script>";
+  let count = 0;
+
+  tabs.open({
+    url: document,
+    onReady: function (tab) {
+      let worker = tab.attach({
+        contentScript: 'try {' +
+                       '  self.postMessage(!("globalJSVar" in window));' +
+                       '  self.postMessage(typeof window.globalJSVar == "undefined");' +
+                       '} catch(e) {' +
+                       '  self.postMessage(e.message);' +
+                       '}',
+        onMessage: function (msg) {
+          test.assertEqual(msg, true, "Worker has wrapped objects ("+count+")");
+          if (count++ == 1)
+            tab.close(function() test.done());
+        }
+      });
+    }
+  });
+};
