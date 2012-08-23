@@ -47,10 +47,12 @@ const Tab = Class({
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
    */
-  get favicon() "",//getFaviconURIForLocation(this.url),
+  get favicon() {
+    throw new Error(ERR_FENNEC_MSG); // TODO
+  },
 
   getThumbnail: function() {
-    throw new Error(ERR_FENNEC_MSG);
+    throw new Error(ERR_FENNEC_MSG); // TODO
   },
 
   /**
