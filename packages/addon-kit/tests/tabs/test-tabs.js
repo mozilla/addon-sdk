@@ -172,6 +172,29 @@ exports.testOpenPinned_alt = function(test) {
   }
 };
 
+// TEST: tab.close()
+exports.testTabClose = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,foo";
+
+  test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
+
+  tabs.once('ready', function onReady(tab) {
+    test.assertEqual(url, tab.url, "tab is now the active tab");
+    test.assertEqual(tabs.activeTab.url, tab.url, "tab is now the active tab");
+
+    tab.close(function() {
+      test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
+
+      // end test
+      test.done();
+    });
+  });
+
+  tabs.open(url);
+};
+
 exports.testAttachOnOpen_alt = function (test) {
   // Take care that attach has to be called on tab ready and not on tab open.
   test.waitUntilDone();
