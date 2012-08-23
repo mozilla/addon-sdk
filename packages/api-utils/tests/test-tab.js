@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tabAPI = require("tabs/tab");
+const tabAPI = require("tabs/tab-firefox");
 const tabs = require("addon-kit/tabs"); // From addon-kit
 const windowUtils = require("window-utils");
 
