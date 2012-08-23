@@ -39,48 +39,6 @@ exports.testActiveTab_getter = function(test) {
   });
 };
 
-// TEST: activeWindow getter and activeTab getter on tab 'activate' event
-exports.testActiveWindowActiveTabOnActivate = function(test) {
-  test.waitUntilDone();
-
-  let windows = require("windows").browserWindows;
-  let activateCount = 0;
-  let newTabs = [];
-
-  tabs.on('activate', function onActivate(tab) {
-    test.assertEqual(windows.activeWindow.tabs.activeTab, tab,
-                    "the active window's active tab is the tab provided");
-    newTabs.push(tab);
-
-    if (++activateCount == 2) {
-      tabs.removeListener('activate', onActivate);
-
-      newTabs.forEach(function(tab) {
-        tab.close(function() {
-          if (--activateCount == 0) {
-            test.assertEqual(tabs.length, tabsLen, "tabs were closed");
-
-            // end test
-            test.done();
-          }
-        });
-      });
-    }
-    else if (activateCount > 2) {
-      test.fail("activateCount is greater than 2 for some reason..");
-    }
-  });
-
-  windows.open({
-    url: URL.replace("#title#", "windows.open"),
-    onOpen: function(window) {
-      tabs.open({
-        url: URL.replace("#title#", "tabs.open")
-      });
-    }
-  });
-};
-
 // TEST: tab.activate()
 exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();

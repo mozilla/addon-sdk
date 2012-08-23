@@ -12,3 +12,7 @@ else if (require("api-utils/xul-app").is("Fennec")) {
 
 for (var test in tests)
   exports[test] = tests[test];
+
+tests = require("./tabs/test-tabs");
+for (let test in tests)
+  exports[test] = tests[test];
