@@ -61,8 +61,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   },
   destroy: function destroy() {
     this._removeAllListeners();
-    this._browser.removeEventListener(EVENTS.ready.dom, this._onReady,
-                                            true);
+    this._browser.removeEventListener(EVENTS.ready.dom, this._onReady, true);
   },
 
   /**
