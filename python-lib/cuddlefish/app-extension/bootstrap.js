@@ -16,12 +16,16 @@ const ioService = Cc['@mozilla.org/network/io-service;1'].
                   getService(Ci.nsIIOService);
 const resourceHandler = ioService.getProtocolHandler('resource').
                         QueryInterface(Ci.nsIResProtocolHandler);
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
+
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
 let unload = null;
-let cuddlefishURI = null;
+let cuddlefishSandbox = null;
 let nukeTimer = null;
 
 // Utility function that synchronously reads local resource from the given
@@ -123,11 +127,13 @@ function startup(data, reasonCode) {
     // Make version 2 of the manifest
     let manifest = manifestV2(options.manifest);
 
-    // We use global `loaderURI` to allow unload.
-    cuddlefishURI = prefixURI + options.loader;
+    // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
+    cuddlefishSandbox = Cu.Sandbox(systemPrincipal);
+    let cuddlefishURI = prefixURI + options.loader;
+    cuddlefishSandbox.__URI__ = cuddlefishURI;
+    scriptLoader.loadSubScript(cuddlefishURI, cuddlefishSandbox, 'UTF-8');
+    let cuddlefish = cuddlefishSandbox.exports;
 
-    // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
-    let cuddlefish = Cu.import(cuddlefishURI);
     // Normalize `options.mainPath` so that it looks like one that will come
     // in a new version of linker.
     let main = path2id(options.mainPath);
@@ -174,7 +180,8 @@ function startup(data, reasonCode) {
     });
 
     let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
-    let require = Require(loader, module);
+    let require = cuddlefish.Require(loader, module);
+
     require('api-utils/addon/runner').startup(reason, {
       loader: loader,
       main: main,
@@ -199,11 +206,15 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Bug 724433: We need to unload JSM otherwise it will stay alive
+    // Unload sandbox used to evaluate loader.js
+    cuddlefishSandbox.destroy();
+    // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
     // and keep a reference to this compartment.
-    Cu.unload(cuddlefishURI);
+    if ("nukeSandbox" in Cu)
+      Cu.nukeSandbox(cuddlefishSandbox);
+    cuddlefishSandbox = null;
     // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immadiatly in order to allow executing some
+    // module. Do not clean it up immediatly in order to allow executing some
     // actions on addon disabling.
     // We need to keep a reference to the timer, otherwise it is collected
     // and won't ever fire.
