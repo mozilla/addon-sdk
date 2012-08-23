@@ -182,20 +182,20 @@ const PageMod = Loader.compose(EventEmitter, {
   _loadingWindows: [],
 
   _applyOnExistingDocuments: function _applyOnExistingDocuments() {
+    let mod = this;
     // Returns true if the URL match one rule
-    function isMatchingURL(uri, rules) {
-      for each(let rule in rules) {
-        if (RULES[rule].test(uri))
+    function isMatchingURL(tab) {
+      for each(let rule in mod.rules) {
+        if (RULES[rule].test(tab.uri))
           return true;
       }
       return false;
-    };
-    for each (let tab in getAllTabs()) {
-      if (isMatchingURL(tab.uri, this.include)) {
-        // Fake a newly created document
-        this._onContent(tab.content);
-      }
     }
+    getAllTabs().filter(isMatchingURL)
+                .forEach(function (tab) {
+                  // Fake a newly created document
+                  mod._onContent(tab.content);
+                });
   },
 
   _onContent: function _onContent(window) {
