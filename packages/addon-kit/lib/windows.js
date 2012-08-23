@@ -18,7 +18,7 @@ const { Cc, Ci, Cr } = require('chrome'),
       { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs'),
       { WindowDom } = require('api-utils/windows/dom'),
       { WindowLoader } = require('api-utils/windows/loader'),
-      { isBrowser } = require('api-utils/window/utils'),
+      { isBrowser, getWindowDocShell } = require('api-utils/window/utils'),
       { Options } = require('api-utils/tabs/tab'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
@@ -127,7 +127,7 @@ const BrowserWindowTrait = Trait.compose(
         };
 
         // add the observer
-        this._window.gBrowser.docShell.addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
+        getWindowDocShell(this._window).addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
       }
       else {
         let pb = require('./private-browsing');

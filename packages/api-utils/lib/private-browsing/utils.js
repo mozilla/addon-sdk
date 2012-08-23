@@ -9,6 +9,7 @@ const { defer } = require('api-utils/functional');
 const observers = require('api-utils/observer-service');
 const { emit, on, once, off } = require('api-utils/event/core');
 const { when: unload } = require('api-utils/unload');
+const { getWindowLoadingContext } = require('api-utils/window/utils');
 
 let deferredEmit = defer(emit);
 
@@ -28,10 +29,12 @@ if (require("api-utils/xul-app").is("Firefox")) {
 
 // checks that per-window private browsing implemented
 let isWindowPBEnabled = function isWindowPBEnabled(chromeWin) {
-  return 'gBrowser' in chromeWin &&
+  return !!(chromeWin &&
+         'gBrowser' in chromeWin &&
+         'docShell' in chromeWin.gBrowser &&
          'addWeakPrivacyTransitionObserver' in chromeWin.gBrowser.docShell &&
          'gPrivateBrowsingUI' in chromeWin &&
-         'privateWindow' in chromeWin.gPrivateBrowsingUI;
+         'privateWindow' in chromeWin.gPrivateBrowsingUI);
 }
 exports.isWindowPBEnabled = isWindowPBEnabled;
 
@@ -43,12 +46,8 @@ exports.isWindowPBEnabled = isWindowPBEnabled;
 let setMode = defer(function setMode(value, chromeWin) {
   value = !!value;  // Cast to boolean.
 
-  if (chromeWin && isWindowPBEnabled(chromeWin)) {
-    return chromeWin.gBrowser.
-                     docShell.
-                     QueryInterface(Ci.nsILoadContext).
-                     usePrivateBrowsing = value;
-  }
+  if (isWindowPBEnabled(chromeWin))
+    return getWindowLoadingContext(chromeWin).usePrivateBrowsing = value;
 
   // default
   return pbService && (pbService.privateBrowsingEnabled = value);
@@ -56,9 +55,8 @@ let setMode = defer(function setMode(value, chromeWin) {
 exports.setMode = setMode;
 
 let getMode = function getMode(chromeWin) {
-  if (chromeWin && isWindowPBEnabled(chromeWin)) {
-    return chromeWin.gPrivateBrowsingUI.privateWindow;
-  }
+  if (isWindowPBEnabled(chromeWin))
+    return getWindowLoadingContext(chromeWin).usePrivateBrowsing;
 
   // default
   return pbService ? pbService.privateBrowsingEnabled : false;
