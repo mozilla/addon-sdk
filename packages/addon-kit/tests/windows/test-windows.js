@@ -8,6 +8,20 @@ const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 const { browserWindows } = require('windows');
 
+// TEST: browserWindows Iterator
+exports.testBrowserWindowsIterator = function(test) {
+  let activeWindowCount = 0;
+  let windows = [];
+  for each (let window in browserWindows) {
+    if (window === browserWindows.activeWindow)
+      activeWindowCount++;
+
+    test.assertEqual(windows.indexOf(window), -1, 'window not already in iterator');
+    windows.push(window);
+  }
+  test.assertEqual(activeWindowCount, 1, 'activeWindow was found in the iterator');
+};
+
 exports.testPerWindowPrivateBrowsing = function(test) {
   var activeWindow =  wm.getMostRecentWindow("navigator:browser");
 
