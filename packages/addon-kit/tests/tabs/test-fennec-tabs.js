@@ -273,9 +273,19 @@ exports.testPinUnpin = function(test) {
     tabs.open({
       url: url,
       onOpen: function(tab) {
-        tab.pin();
-        test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
-        tab.unpin();
+        try {
+          tab.pin();
+          test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
+        }
+        catch(e) {
+          test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.pin/unpin');
+        }
+        try {
+          tab.unpin();
+        }
+        catch(e) {
+          test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.pin/unpin');
+        }
         test.assertEqual(tab.isPinned, false, "The tab was unpinned correctly");
 
         // end test

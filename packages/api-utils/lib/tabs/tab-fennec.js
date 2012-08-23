@@ -82,8 +82,12 @@ const Tab = Class({
            getService(Ci.nsISessionStore).
            getTabValue(tabNS(this).tab, 'appOrigin');
   },
-  pin: function pin() {},
-  unpin: function unpin() {},
+  pin: function pin() {
+    throw new Error(ERR_FENNEC_MSG); // TODO
+  },
+  unpin: function unpin() {
+    throw new Error(ERR_FENNEC_MSG); // TODO
+  },
 
   /**
    * Create a worker for this tab, first argument is options given to Worker.
