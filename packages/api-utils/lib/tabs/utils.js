@@ -5,26 +5,18 @@
 
 "use strict";
 
-function getTabContainer(tabBrowser) {
-  return tabBrowser.tabContainer;
+function getTabBrowser(window) {
+  return window.gBrowser;
+}
+exports.getTabBrowser = getTabBrowser;
+
+function getTabContainer(window) {
+  return getTabBrowser(window).tabContainer;
 }
 exports.getTabContainer = getTabContainer;
 
-function getTabBrowsers(window) {
-  return Array.slice(window.document.getElementsByTagName("tabbrowser"));
-}
-exports.getTabBrowsers = getTabBrowsers;
-
-function getTabContainers(window) {
-  return getTabBrowsers(window).map(getTabContainer);
-}
-exports.getTabContainers = getTabContainers;
-
 function getTabs(window) {
-  return getTabContainers(window).reduce(function (tabs, container) {
-    tabs.push.apply(tabs, container.children);
-    return tabs;
-  }, []);
+  return Array.slice(getTabContainer(window).children);
 }
 exports.getTabs = getTabs;
 
@@ -49,12 +41,12 @@ function isTabOpen(tab) {
 exports.isTabOpen = isTabOpen;
 
 function closeTab(tab) {
-  return getGBrowserForTab(tab).removeTab(tab);
+  return getTabBrowserForTab(tab).removeTab(tab);
 }
 exports.closeTab = closeTab;
 
 function activateTab(tab) {
-  getGBrowserForTab(tab).selectedTab = tab;
+  getTabBrowserForTab(tab).selectedTab = tab;
 }
 exports.activateTab = activateTab;
 
@@ -63,13 +55,13 @@ function getURI(tab) {
 }
 exports.getURI = getURI;
 
-function getGBrowserForTab(tab) {
+function getTabBrowserForTab(tab) {
   return getOwnerWindow(tab).gBrowser;
 }
-exports.getGBrowserForTab = getGBrowserForTab;
+exports.getTabBrowserForTab = getTabBrowserForTab;
 
 function getBrowserForTab(tab) {
-  return getGBrowserForTab(tab).getBrowserForTab(tab);
+  return tab.linkedBrowser;
 }
 exports.getBrowserForTab = getBrowserForTab;
 
@@ -77,3 +69,8 @@ function getTabTitle(tab) {
   return getBrowserForTab(tab).contentDocument.title || tab.label;
 }
 exports.getTabTitle = getTabTitle;
+
+function getTabContentWindow(tab) {
+  return getBrowserForTab(tab).contentWindow;
+}
+exports.getTabContentWindow = getTabContentWindow;

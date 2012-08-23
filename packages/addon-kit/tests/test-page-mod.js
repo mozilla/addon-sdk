@@ -351,7 +351,7 @@ exports.testRelatedTab = function(test) {
 exports.testWorksWithExistingTabs = function(test) {
   test.waitUntilDone();
 
-  let url = "data:text/html," + encodeURI("Test unique document");
+  let url = "data:text/html;charset=utf-8," + encodeURI("Test unique document");
   let { PageMod } = require("page-mod");
   tabs.open({
     url: url,

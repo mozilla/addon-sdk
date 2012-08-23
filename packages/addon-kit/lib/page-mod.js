@@ -17,6 +17,9 @@ const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
 const { windowIterator } = require("window-utils");
+const { isBrowser } = require('api-utils/window/utils');
+const { getTabs, getTabContentWindow,
+        getURI: getTabURI } = require("api-utils/tabs/utils");
 
 // Whether or not the host application dispatches a document-element-inserted
 // notification when the document element is inserted into the DOM of a page.
@@ -183,18 +186,31 @@ const PageMod = Loader.compose(EventEmitter, {
 
   _applyOnExistingDocuments: function _applyOnExistingDocuments() {
     let mod = this;
-    // Returns true if the URL match one rule
-    function isMatchingURL(tab) {
-      for each(let rule in mod.rules) {
-        if (RULES[rule].test(tab.uri))
-          return true;
+    // Iterate over all tabs on all currently opened windows
+    function getAllTabs() {
+      let tabs = [];
+      // Iterate over all chrome windows
+      for (let window in windowIterator()) {
+        if (!isBrowser(window))
+          continue;
+        tabs = tabs.concat(getTabs(window));
       }
-      return false;
+      return tabs;
     }
-    getAllTabs().filter(isMatchingURL)
+
+    // Returns true if the tab match one rule
+    function isMatchingURI(uri) {
+      // Use Array.some as `include` isn't a native array
+      return Array.some(mod.include, function (rule) {
+        return RULES[rule].test(uri);
+      });
+    }
+    getAllTabs().filter(function (tab) {
+                  return isMatchingURI(getTabURI(tab));
+                })
                 .forEach(function (tab) {
                   // Fake a newly created document
-                  mod._onContent(tab.content);
+                  mod._onContent(getTabContentWindow(tab));
                 });
   },
 
@@ -352,29 +368,3 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
-
-// Iterate over all tabs on all currently opened windows
-function getAllTabs() {
-  let tabList = [];
-  // Iterate over all chrome windows
-  for (let window in windowIterator()) {
-    // Get a reference to the main <xul:tabbrowser> node
-    let tabbrowser = window.document.getElementById("content");
-    // It may not be a browser window but a jsconsole ...
-    if (!tabbrowser)
-      continue;
-    let tabs = tabbrowser.tabContainer;
-    if (!tabs)
-      continue;
-    // Iterate over its tabs
-    for (let i = 0; i < tabs.children.length; i++) {
-      let tab = tabs.children[i];
-      let browser = tab.linkedBrowser;
-      tabList.push({
-        uri: browser.currentURI.spec,
-        content: browser.contentWindow
-      });
-    }
-  }
-  return tabList;
-}
