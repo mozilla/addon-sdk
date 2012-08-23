@@ -28,6 +28,7 @@ exports.testOpenWindow = function(test) {
   }
   catch(e) {
     test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.open');
+    test.assertEqual(browserWindows.length, 1, "Only one window open");
   }
 };
 
@@ -40,5 +41,6 @@ exports.testCloseWindow = function(test) {
   }
   catch(e) {
     test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.close');
+    test.assertEqual(browserWindows.length, 1, "Only one window open");
   }
 };
