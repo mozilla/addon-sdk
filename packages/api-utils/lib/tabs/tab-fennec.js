@@ -11,6 +11,7 @@ const { EVENTS } = require("./events");
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
 //const { getFaviconURIForLocation } = require("../utils/data");
+const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 const Tab = Class({
   initialize: function initialize(options) {
@@ -48,7 +49,9 @@ const Tab = Class({
    */
   get favicon() "",//getFaviconURIForLocation(this.url),
 
-  getThumbnail: function() null,
+  getThumbnail: function() {
+    throw new Error(ERR_FENNEC_MSG);
+  },
 
   /**
    * The index of the tab relative to other tabs in the application window.

@@ -12,6 +12,7 @@ const xulApp = require("xul-app");
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
+const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 // TEST: tab unloader
 exports.testAutomaticDestroy = function(test) {
@@ -63,7 +64,12 @@ exports.testTabProperties = function(test) {
       test.assert(tab.favicon, "favicon of the new tab is not empty");
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, 1, "index of the new tab matches");
-      test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+      try {
+        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+      }
+      catch(e) {
+        test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.getThumbnail()');
+      }
 
       tab.close(function() {
         // end test
