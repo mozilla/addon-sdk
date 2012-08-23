@@ -443,10 +443,17 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
     path = os.getcwd()
     addon = os.path.basename(path)
-    # if more than one argument
-    if len(args) > 1:
+    # if more than two arguments
+    if len(args) > 2:
         print >>err, 'Too many arguments.'
         return 1
+    if len(args) == 2:
+        path = os.path.join(path,args[1])
+        try:
+            os.mkdir(path)
+            print >>out, '*', args[1], 'package directory created'
+        except OSError:
+            print >>out, '*', args[1], 'already exists, testing if directory is empty'
     # avoid clobbering existing files, but we tolerate things like .git
     existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
     if existing:
@@ -455,9 +462,9 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
-    open('README.md','w').write('')
+    open(os.path.join(path,'README.md'),'w').write('')
     print >>out, '* README.md written'
-    open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
+    open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
                                                    'fullName':addon })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
@@ -466,8 +473,12 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* lib/main.js written'
     open(os.path.join(path,'doc','main.md'),'w').write('')
     print >>out, '* doc/main.md written'
-    print >>out, '\nYour sample add-on is now ready.'
-    print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    if len(args) == 1:
+        print >>out, '\nYour sample add-on is now ready.'
+        print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
+    else:
+        print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
+        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
     return 0
 
 def buildJID(target_cfg):
@@ -625,7 +636,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     deps = packaging.get_deps_for_targets(pkg_cfg, targets)
 
-    from cuddlefish.manifest import build_manifest, ModuleNotFoundError
+    from cuddlefish.manifest import build_manifest, ModuleNotFoundError, \
+                                    BadChromeMarkerError
     # Figure out what loader files should be scanned. This is normally
     # computed inside packaging.generate_build_for_target(), by the first
     # dependent package that defines a "loader" property in its package.json.
@@ -655,6 +667,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                   loader_modules)
     except ModuleNotFoundError, e:
         print str(e)
+        sys.exit(1)
+    except BadChromeMarkerError, e:
+        # An error had already been displayed on stderr in manifest code
         sys.exit(1)
     used_deps = manifest.get_used_packages()
     if command == "test":
@@ -726,6 +741,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                 enable_mobile=options.enable_mobile)
 
     if command == "xpi" and options.update_link:
+        if not options.update_link.startswith("https"):
+            raise optparse.OptionValueError("--update-link must start with 'https': %s" % options.update_link)
         rdf_name = UPDATE_RDF_FILENAME % target_cfg.name
         print >>stdout, "Exporting update description to %s." % rdf_name
         update = RDFUpdate()

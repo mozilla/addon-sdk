@@ -20,7 +20,7 @@ from cuddlefish.prefs import DEFAULT_FENNEC_PREFS
 # Used to remove noise from ADB output
 CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(.*)$')
 # Used to filter only messages send by `console` module
-FILTER_ONLY_CONSOLE_FROM_ADB = re.compile(r'^I/(stderr)\s*\(\s*\d+\):\s*((info|warning|error|debug): .*)$')
+FILTER_ONLY_CONSOLE_FROM_ADB = re.compile(r'^I/(stdout|stderr)\s*\(\s*\d+\):\s*((info|warning|error|debug): .*)$')
 
 # Maximum time we'll wait for tests to finish, in seconds.
 # The purpose of this timeout is to recover from infinite loops.  It should be
@@ -186,14 +186,14 @@ class RemoteFennecRunner(mozrunner.Runner):
         # First try to kill firefox if it is already running
         pid = self.getProcessPID(self._intent_name)
         if pid != None:
-            # Send a key "up" signal to mobile-utils addon
-            # in order to kill running firefox instance
-            # KEYCODE_DPAD_UP = 19
-            # http://developer.android.com/reference/android/view/KeyEvent.html#KEYCODE_DPAD_UP
             print "Killing running Firefox instance ..."
-            subprocess.call([self._adb_path, "shell", "input keyevent 19"])
-            subprocess.Popen(self.command, stdout=subprocess.PIPE).wait()
+            subprocess.call([self._adb_path, "shell",
+                             "am force-stop " + self._intent_name])
             time.sleep(2)
+            if self.getProcessPID(self._intent_name) != None:
+                raise Exception("Unable to automatically kill running Firefox" +
+                                " instance. Please close it manually before " +
+                                "executing cfx.")
 
         print "Pushing the addon to your device"
 
@@ -590,7 +590,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # Note: this regex doesn't handle all valid versions in the Toolkit Version
     # Format <https://developer.mozilla.org/en/Toolkit_version_format>, just the
     # common subset that we expect Mozilla apps to use.
-    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec) ((\d+)\.\S*)",
+    mo = re.search(r"Mozilla (Firefox|Iceweasel|Fennec)\b[^ ]* ((\d+)\.\S*)",
                    version_output)
     if not mo:
         # cfx may be used with Thunderbird, SeaMonkey or an exotic Firefox

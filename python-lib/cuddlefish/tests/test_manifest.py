@@ -191,18 +191,6 @@ class Chrome(unittest.TestCase, Extra):
         self.failUnlessEqual(problems, False)
         self.failUnlessEqual(err, [])
 
-    def test_chrome_components(self):
-        # Bug 663541: tolerate "Components" if you're marked with
-        # require("chrome"), to avoid requiring module authors to rewrite a
-        # lot of code. Once bug 636145 is fixed, such code will break. To fix
-        # it, add {Components}=require("chrome"), but that won't work until
-        # after 636145 is fixed.
-        mod = """require("chrome");
-        var ios = Components.classes['@mozilla.org/network/io-service;1'];"""
-        requires, problems, err = scan2(mod)
-        self.failUnlessKeysAre(requires, ["chrome"])
-        self.failUnlessEqual((problems, err), (False, []))
-
     def test_not_chrome(self):
         # from bug 596595
         mod = r'soughtLines: new RegExp("^\\s*(\\[[0-9 .]*\\])?\\s*\\(\\((EE|WW)\\)|.* [Cc]hipsets?: \\)|\\s*Backtrace")'
@@ -233,7 +221,7 @@ class BadChrome(unittest.TestCase, Extra):
         self.failUnlessEqual(err[4], "use 'Components' to access chrome authority. To do so, you need to add a\n")
         self.failUnlessEqual(err[5], "line somewhat like the following:\n")
         self.failUnlessEqual(err[7], '  const {Cc,Cu} = require("chrome");\n')
-        self.failUnlessEqual(err[9], "Then you can use 'Components' as well as any shortcuts to its properties\n")
+        self.failUnlessEqual(err[9], "Then you can use any shortcuts to its properties that you import from the\n")
 
     def test_bad_misc(self):
         # If it looks like you're using something that doesn't have an alias,
@@ -248,7 +236,22 @@ class BadChrome(unittest.TestCase, Extra):
         self.failUnlessEqual(err[3], "use 'Components' to access chrome authority. To do so, you need to add a\n")
         self.failUnlessEqual(err[4], "line somewhat like the following:\n")
         self.failUnlessEqual(err[6], '  const {components} = require("chrome");\n')
-        self.failUnlessEqual(err[8], "Then you can use 'Components' as well as any shortcuts to its properties\n")
+        self.failUnlessEqual(err[8], "Then you can use any shortcuts to its properties that you import from the\n")
+
+    def test_chrome_components(self):
+        # Bug 636145/774636: We no longer tolerate usages of "Components",
+        # even when adding `require("chrome")` to your module.
+        mod = """require("chrome");
+        var ios = Components.classes['@mozilla.org/network/io-service;1'];"""
+        requires, problems, err = scan2(mod)
+        self.failUnlessKeysAre(requires, ["chrome"])
+        self.failUnlessEqual(problems, True)
+        self.failUnlessEqual(err[1], "The following lines from file fake.js:\n")
+        self.failUnlessEqual(err[2], "   2: var ios = Components.classes['@mozilla.org/network/io-service;1'];\n")
+        self.failUnlessEqual(err[3], "use 'Components' to access chrome authority. To do so, you need to add a\n")
+        self.failUnlessEqual(err[4], "line somewhat like the following:\n")
+        self.failUnlessEqual(err[6], '  const {Cc} = require("chrome");\n')
+        self.failUnlessEqual(err[8], "Then you can use any shortcuts to its properties that you import from the\n")
 
 if __name__ == '__main__':
     unittest.main()

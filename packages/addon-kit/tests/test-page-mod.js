@@ -8,6 +8,7 @@ var pageMod = require("page-mod");
 var testPageMod = require("pagemod-test-helpers").testPageMod;
 const { Loader } = require('test-harness/loader');
 const tabs = require("tabs");
+const timer = require("timer");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -15,7 +16,7 @@ const tabs = require("tabs");
 exports.delay = function(test) {
   if (false) {
     test.waitUntilDone(60000);
-    require("timer").setTimeout(function() {test.done();}, 4000);
+    timer.setTimeout(function() {test.done();}, 4000);
   } else
     test.pass();
 }

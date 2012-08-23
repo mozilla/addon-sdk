@@ -5,13 +5,13 @@
 
 "use strict";
 
-const { Cc, Ci, components: { Constructor: CConstructor } } = require("chrome");
+const { Cc, Ci, CC } = require("chrome");
 const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].
                      getService(Ci.nsILoginManager);
 const { URL: parseURL } = require("../url");
-const LoginInfo = CConstructor("@mozilla.org/login-manager/loginInfo;1",
-                               "nsILoginInfo", "init");
+const LoginInfo = CC("@mozilla.org/login-manager/loginInfo;1",
+                     "nsILoginInfo", "init");
 
 function filterMatchingLogins(loginInfo)
   Object.keys(this).every(function(key) loginInfo[key] === this[key], this);

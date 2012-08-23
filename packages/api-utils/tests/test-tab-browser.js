@@ -10,7 +10,7 @@ function onBrowserLoad(callback, event) {
     this.removeEventListener("load", onBrowserLoad, true);
     let browsers = this.document.getElementsByTagName("tabbrowser");
     try {
-      require("timer").setTimeout(function (window) {
+      timer.setTimeout(function (window) {
         callback(window, browsers[0]);
       }, 10, this);
     } catch (e) { console.exception(e); }
@@ -33,7 +33,7 @@ function openBrowserWindow(callback, url) {
 
 // Helper for calling code at window close
 function closeBrowserWindow(window, callback) {
-  require("timer").setTimeout(function() {
+  timer.setTimeout(function() {
     window.addEventListener("unload", function onUnload() {
       window.removeEventListener("unload", onUnload, false);
       callback();
@@ -119,7 +119,7 @@ exports.testTrackerWithDelegate = function(test) {
       }
       else if (this.state == "waiting for browser window to open") {
         this.state = "waiting for browser window to close";
-        require("timer").setTimeout(function() {
+        timer.setTimeout(function() {
           closeBrowserWindow(browser.ownerDocument.defaultView, function() {
             test.assertEqual(delegate.state, "deinitializing");
             tb.unload();
@@ -232,7 +232,7 @@ exports.testTabTracker = function(test) {
         test.assertEqual(delegate.tracked, tracked + 3, "delegate tracked tabs matched count");
         tabTracker.unload();
         closeBrowserWindow(browserWindow, function() {
-          require("timer").setTimeout(function() test.done(), 0);
+          timer.setTimeout(function() test.done(), 0);
         });
       }
     }
@@ -333,32 +333,53 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
 
-    let tab1 = null;
+    // First open two tabs per window
     tm1.open({
       url: "data:text/html;charset=utf-8,<title>window1,tab1</title>",
-      onOpen: function(tab) tab1 = tab,
-    });
-    tm1.open("data:text/html;charset=utf-8,<title>window1,tab2</title>");
-
-    tm1.onActivate = function onActivate() {
-      tm1.onActivate.remove(onActivate);
-      require("timer").setTimeout(function() {
-        test.assertEqual(tm1.activeTab.title, "window1,tab1", "activeTab setter works");
-        closeTwoWindows(window1, window2, function() test.done());
-      }, 1000);
-    }
-
-    tm2.open("data:text/html;charset=utf-8,<title>window2,tab1</title>");
-    tm2.open({
-      url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
-      onOpen: function(tab4) {
-        test.assertEqual(tm1.activeTab.title, "window1,tab2", "Correct active tab on window 1");
-        test.assertEqual(tm2.activeTab.title, "window2,tab2", "Correct active tab on window 2");
-
-        tm1.activeTab = tab1;
-        tm1.activeTab = tab4; // Setting activeTab from another window should have no effect
+      onOpen: function(tab1) {
+        tm1.open({
+          url: "data:text/html;charset=utf-8,<title>window1,tab2</title>",
+          onOpen: function (tab2) {
+            tm2.open({
+              url: "data:text/html;charset=utf-8,<title>window2,tab1</title>",
+              onOpen: function (tab3) {
+                tm2.open({
+                  url: "data:text/html;charset=utf-8,<title>window2,tab2</title>",
+                  onOpen: function(tab4) {
+                    onTabsOpened(tab1, tab2, tab3, tab4);
+                  }
+                });
+              }
+            });
+          }
+        });
       }
     });
+
+    // Then try to activate tabs, but wait for all of them to be activated after
+    // being opened
+    function onTabsOpened(tab1, tab2, tab3, tab4) {
+      test.assertEqual(tm1.activeTab.title, "window1,tab2",
+                       "Correct active tab on window 1");
+      test.assertEqual(tm2.activeTab.title, "window2,tab2",
+                       "Correct active tab on window 2");
+
+      tm1.onActivate = function onActivate() {
+        tm1.onActivate.remove(onActivate);
+        timer.setTimeout(function() {
+          test.assertEqual(tm1.activeTab.title, "window1,tab1",
+                           "activeTab setter works (window 1)");
+          test.assertEqual(tm2.activeTab.title, "window2,tab2",
+                           "activeTab is ignored with tabs from another window");
+          closeTwoWindows(window1, window2, function() test.done());
+        }, 1000);
+      }
+
+      tm1.activeTab = tab1;
+      // Setting activeTab from another window should have no effect:
+      tm1.activeTab = tab4;
+    }
+
   });
 }
 

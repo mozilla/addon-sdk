@@ -9,7 +9,7 @@ const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
 
-function getTestRunnerWindow() wm.getMostRecentWindow("test:runner")
+function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
 
 exports.testOpenAndCloseWindow = function(test) {
   test.waitUntilDone();
@@ -38,8 +38,36 @@ exports.testOpenAndCloseWindow = function(test) {
   });
 };
 
+exports.testPerWindowPrivateBrowsing = function(test) {
+  var activeWindow =  wm.getMostRecentWindow("navigator:browser");
+
+  if ("gPrivateBrowsingUI" in activeWindow
+      && "privateWindow" in activeWindow.gPrivateBrowsingUI) {
+    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = false;
+
+    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
+                     browserWindows.activeWindow.isPrivateBrowsing,
+                     "Active window is not in PB mode");
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = true;
+
+    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
+                     browserWindows.activeWindow.isPrivateBrowsing,
+                     "Active window is in PB mode");
+
+    activeWindow.gPrivateBrowsingUI.privateWindow = currentState;
+  }
+  else {
+    test.assertEqual(require('private-browsing').isActive,
+                browserWindows.activeWindow.isPrivateBrowsing,
+                "Active window PB mode is the same value as the mode returned " +
+                "by private-browsing module");
+  }
+};
+
 exports.testAutomaticDestroy = function(test) {
-    
   test.waitUntilDone();
   let windows = browserWindows;
 
@@ -50,15 +78,15 @@ exports.testAutomaticDestroy = function(test) {
   windows2.on("open", function() {
     called = true;
   });
-  
+
   loader.unload();
-  
+
   // Fire a windows event and check that this unloaded instance is inactive
   windows.open({
     url: "data:text/html;charset=utf-8,foo",
     onOpen: function(window) {
       setTimeout(function () {
-        test.assert(!called, 
+        test.assert(!called,
           "Unloaded windows instance is destroyed and inactive");
         window.close(function () {
           test.done();
@@ -66,7 +94,7 @@ exports.testAutomaticDestroy = function(test) {
       });
     }
   });
-  
+
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
@@ -200,16 +228,16 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       /**
-       * Bug 614079: This test fails intermittently on some specific linux 
+       * Bug 614079: This test fails intermittently on some specific linux
        *             environnements, without being able to reproduce it in same
        *             distribution with same window manager.
        *             Disable it until being able to reproduce it easily.
-      
+
       // On linux, focus is not consistent, so we can't be sure
       // what window will be on top.
-      // Here when we focus "non-browser" window, 
-      // Any Browser window may be selected as "active". 
-      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3, 
+      // Here when we focus "non-browser" window,
+      // Any Browser window may be selected as "active".
+      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
         "Non-browser windows aren't handled by this module");
       */
       window2.activate();
@@ -287,6 +315,66 @@ exports.testActiveWindow = function(test) {
     });
   }
 };
+
+exports.testTrackWindows = function(test) {
+  test.waitUntilDone();
+
+  let windows = [];
+  let actions = [];
+
+  let expects = [
+    "activate 0", "global activate 0", "deactivate 0", "global deactivate 0",
+    "activate 1", "global activate 1", "deactivate 1", "global deactivate 1",
+    "activate 2", "global activate 2"
+  ];
+
+  function shutdown(window) {
+    if (this.length === 1) {
+      test.assertEqual(actions.join(), expects.join(),
+        "correct activate and deactivate sequence")
+
+      test.done();
+    }
+  }
+
+  function openWindow() {
+    windows.push(browserWindows.open({
+      url: "data:text/html;charset=utf-8,<i>Hi</i>",
+
+      onActivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("activate " + index);
+
+        if (windows.length < 3)
+          openWindow()
+        else
+          for each (let win in windows)
+            win.close(shutdown)
+      },
+
+      onDeactivate: function(window) {
+        let index = windows.indexOf(window);
+
+        actions.push("deactivate " + index)
+      }
+    }));
+  }
+
+  browserWindows.on("activate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global activate " + index)
+  })
+
+  browserWindows.on("deactivate", function (window) {
+    let index = windows.indexOf(window);
+
+    actions.push("global deactivate " + index)
+  })
+
+  openWindow();
+}
 
 // If the module doesn't support the app we're being run in, require() will
 // throw.  In that case, remove all tests above from exports, and add one dummy

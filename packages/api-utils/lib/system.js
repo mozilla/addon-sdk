@@ -52,7 +52,7 @@ exports.env = require('./environment').env;
  */
 exports.exit = function exit(code) {
   // This is used by 'cfx' to find out exit code.
-  if ('resultFile' in options) {
+  if ('resultFile' in options && options.resultFile) {
     let mode = PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE;
     let stream = openFile(options.resultFile, mode);
     let status = code ? 'FAIL' : 'OK';
@@ -66,7 +66,7 @@ exports.exit = function exit(code) {
 
 exports.stdout = new function() {
   let write = dump
-  if ('logFile' in options) {
+  if ('logFile' in options && options.logFile) {
     let mode = PR_WRONLY | PR_CREATE_FILE | PR_APPEND;
     let stream = openFile(options.logFile, mode);
     write = function write(data) {

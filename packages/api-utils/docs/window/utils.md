@@ -20,7 +20,7 @@ Module provides `getXULWindow` function that can be used get access
 [nsIDOMWindow](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow):
 
     let { Ci } = require('chrome');
-    let utils = require('api-utils/window-utils');
+    let utils = require('api-utils/window/utils');
     let active = utils.activeBrowserWindow;
     active instanceof Ci.nsIXULWindow // => false
     utils.getXULWindow(active) instanceof Ci.nsIXULWindow // => true
@@ -32,7 +32,7 @@ Module provides `getBaseWindow` function that can be used get access
 for the given [nsIDOMWindow](https://developer.mozilla.org/en/nsIDOMWindow):
 
     let { Ci } = require('chrome');
-    let utils = require('api-utils/window-utils');
+    let utils = require('api-utils/window/utils');
     let active = utils.activeBrowserWindow;
     active instanceof Ci.nsIBaseWindow // => false
     utils.getBaseWindow(active) instanceof Ci.nsIBaseWindow // => true
@@ -43,7 +43,7 @@ Module exports `open` function that may be used to open top level
 (application) windows. Function takes `uri` of the window document as a first
 argument and optional hash of `options` as second argument.
 
-    let { open } = require('api-utils/window-utils');
+    let { open } = require('api-utils/window/utils');
     let window = open('data:text/html,Hello Window');
 
 Following options may be provided to configure created window behavior:
@@ -84,7 +84,12 @@ Optionally more configuration options via second `options` argument. If
 be closed on application quit, preventing application from quitting. While this
 is possible you should make sure to close all such windows manually:
 
-    let { backgroundify, open } = require('api-utils/window-utils');
+    let { backgroundify, open } = require('api-utils/window/utils');
     let bgwin = backgroundify(open('data:text/html,Foo'), {
       close: false
     });
+
+### isBrowser
+
+Returns true if the given window is a Firefox browser window.
+(i.e windows with chrome://browser/content/browser.xul document)

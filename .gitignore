@@ -7,11 +7,17 @@ doc/dev-guide/
 doc/index.html
 doc/packages/
 doc/status.md5
+packages/*
+!packages/addon-kit/
+!packages/api-utils/
+!packages/test-harness/
 
+# Python
+*.pyc
 
-# If you want to add other files here, like *.pyc and *.DS_Store,
-# please add them to a global git ignore file.
-#
-# You can do this by creating ~/.gitignore and then running:
-#
-# git config --global core.excludesfile ~/.gitignore
+# OSX
+*.DS_Store
+
+# Windows
+*Thumbs.db
+

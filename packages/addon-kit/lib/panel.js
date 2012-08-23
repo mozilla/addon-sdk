@@ -270,6 +270,40 @@ const Panel = Symbiont.resolve({
       this._emit('error', e);
     }
   },
+
+  /**
+   * Retrieve computed text color style in order to apply to the iframe
+   * document. As MacOS background is dark gray, we need to use skin's
+   * text color.
+   */
+  _applyStyleToDocument: function _applyStyleToDocument() {
+    try {
+      let win = this._xulPanel.ownerDocument.defaultView;
+      let node = win.document.getAnonymousElementByAttribute(
+        this._xulPanel, "class", "panel-arrowcontent");
+      if (!node) {
+        // Before bug 764755, anonymous content was different:
+        // TODO: Remove this when targeting FF16+
+        node = win.document.getAnonymousElementByAttribute(
+          this._xulPanel, "class", "panel-inner-arrowcontent");
+      }
+      let textColor = win.getComputedStyle(node).getPropertyValue("color");
+      let doc = this._xulPanel.firstChild.contentDocument;
+      let style = doc.createElement("style");
+      style.textContent = "body { color: " + textColor + "; }";
+      let container = doc.head ? doc.head : doc.documentElement;
+
+      if (container.firstChild)
+        container.insertBefore(style, container.firstChild);
+      else
+        container.appendChild(style);
+    }
+    catch(e) {
+      console.error("Unable to apply panel style");
+      console.exception(e);
+    }
+  },
+
   /**
    * When the XUL panel becomes shown, we swap frame loaders between panel
    * frame and hidden frame to preserve state of the content dom.
@@ -280,24 +314,7 @@ const Panel = Symbiont.resolve({
         this.on('inited', this._onShow.bind(this));
       } else {
         this._frameLoadersSwapped = true;
-
-        // Retrieve computed text color style in order to apply to the iframe
-        // document. As MacOS background is dark gray, we need to use skin's
-        // text color.
-        let win = this._xulPanel.ownerDocument.defaultView;
-        let node = win.document.getAnonymousElementByAttribute(this._xulPanel,
-                    "class", "panel-inner-arrowcontent");
-        let textColor = win.getComputedStyle(node).getPropertyValue("color");
-        let doc = this._xulPanel.firstChild.contentDocument;
-        let style = doc.createElement("style");
-        style.textContent = "body { color: " + textColor + "; }";
-        let container = doc.head ? doc.head : doc.documentElement;
-
-        if (container.firstChild)
-          container.insertBefore(style, container.firstChild);
-        else
-          container.appendChild(style);
-
+        this._applyStyleToDocument();
         this._emit('show');
       }
     } catch(e) {

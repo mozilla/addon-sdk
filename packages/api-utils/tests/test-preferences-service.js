@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 const prefs = require("preferences-service");
+const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
 
@@ -13,20 +16,25 @@ exports.testReset = function(test) {
   prefs.set("test_reset_pref", 5);
   test.assertEqual(prefs.has("test_reset_pref"), true);
   test.assertEqual(prefs.isSet("test_reset_pref"), true);
+  test.assertEqual(prefs.keys("test_reset_pref").toString(), "test_reset_pref");
 };
 
 exports.testGetAndSet = function(test) {
   let svc = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService).
             getBranch(null);
-  svc.setCharPref("test_get_string_pref", "a normal string");
-  test.assertEqual(prefs.get("test_get_string_pref"), "a normal string",
+  svc.setCharPref("test_set_get_pref", "a normal string");
+  test.assertEqual(prefs.get("test_set_get_pref"), "a normal string",
                    "preferences-service should read from " +
                    "application-wide preferences service");
 
   prefs.set("test_set_get_pref.integer", 1);
   test.assertEqual(prefs.get("test_set_get_pref.integer"), 1,
                    "set/get integer preference should work");
+
+  test.assertEqual(
+      prefs.keys("test_set_get_pref").sort().toString(),
+      ["test_set_get_pref.integer","test_set_get_pref"].sort().toString());
 
   prefs.set("test_set_get_number_pref", 42);
   test.assertRaises(
@@ -89,6 +97,16 @@ exports.testGetAndSet = function(test) {
         "Setting a pref to " + uneval(value) + " should raise error"
       );
     });
+};
+
+exports.testPrefClass = function(test) {
+  var branch = Branch("test_foo");
+
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
+  branch.test = true;
+  test.assertEqual(branch.test, true, "test_foo.test is true");
+  delete branch.test;
+  test.assertEqual(branch.test, undefined, "test_foo.test is undefined");
 };
 
 exports.testGetSetLocalized = function(test) {

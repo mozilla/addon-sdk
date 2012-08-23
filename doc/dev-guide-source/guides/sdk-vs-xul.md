@@ -89,12 +89,6 @@ functionality via XPCOM. The SDK's supported APIs expose a relatively
 small set of this functionality.</p></td>
 </tr>
 
-<tr>
-<td><strong><a name="localization">Localization Support</a></strong></td>
-<td><p>The SDK currently only has fairly basic <a href="dev-guide/tutorials/l10n.html">localization support</a>.
-</p></td>
-</tr>
-
 </table>
 
 ### Low-level APIs and Third-party Modules ###

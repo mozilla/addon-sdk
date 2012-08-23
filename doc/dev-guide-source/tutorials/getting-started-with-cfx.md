@@ -63,8 +63,23 @@ You'll see some output like this:
 Use `cfx run` to run a new instance of Firefox with your add-on installed.
 This is the command you'll use to test out your add-on while developing it.
 
-`cfx init` actually creates a very basic add-on, so to see `cfx run` in action
-we don't need to write any code. Just type:
+The main code for an add-on is always kept in a file called `main.js` in your
+add-on's `lib` directory. Open the `main.js` for this add-on, and
+add the following code:
+
+    var widgets = require("widget");
+    var tabs = require("tabs");
+
+    var widget = widgets.Widget({
+      id: "mozilla-link",
+      label: "Mozilla website",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        tabs.open("http://www.mozilla.org/");
+      }
+    });
+
+Now type:
 
 <pre>
 cfx run
@@ -84,21 +99,6 @@ Run `cfx run` again, and it will run an instance of Firefox. In the
 bottom-right corner of the browser you'll see an icon with the Firefox
 logo. Click the icon, and a new tab will open with
 [http://www.mozilla.org/](http://www.mozilla.org/) loaded into it.
-
-The main code for an add-on is always kept in a file called `main.js` in your
-add-on's `lib` directory. Open the `main.js` for this add-on:
-
-    const widgets = require("widget");
-    const tabs = require("tabs");
-
-    var widget = widgets.Widget({
-      id: "mozilla-link",
-      label: "Mozilla website",
-      contentURL: "http://www.mozilla.org/favicon.ico",
-      onClick: function() {
-        tabs.open("http://www.mozilla.org/");
-      }
-    });
 
 This add-on uses two SDK modules: the
 [`widget`](packages/addon-kit/widget.html) module, which enables you

@@ -43,6 +43,17 @@ Object emits all the events listed under "Events" section.
       console.log("A window was closed.");
     });
 
+    // add a listener to the 'activate' event
+    windows.on('activate', function(window) {
+      console.log("A window was activated.");
+    });
+
+    // add a listener to the 'deactivate' event
+    windows.on('deactivate', function(window) {
+      console.log("A window was deactivated.");
+    });
+
+
 <api name="activeWindow">
 @property {BrowserWindow}
 
@@ -116,6 +127,14 @@ functional and its properties can be accessed. This is an optional property.
 A callback function that is called when the window will be called.
 This is an optional property.
 
+@prop [onActivate] {function}
+A callback function that is called when the window is made active.
+This is an optional property.
+
+@prop [onDeactivate] {function}
+A callback function that is called when the window is made inactive.
+This is an optional property.
+
 @returns {BrowserWindow}
 </api>
 
@@ -157,6 +176,11 @@ A live list of tabs in this window. This object has the same interface as the
 tabs in this window, not all tabs in all windows. This property is read-only.
 </api>
 
+<api name="isPrivateBrowsing">
+@property {boolean}
+Returns `true` if the window is in private browsing mode, and `false` otherwise.
+</api>
+
 <api name="activate">
 @method
 Makes window active, which will focus that window and bring it to the
@@ -189,3 +213,19 @@ Event emitted when a window is closed.
 @argument {Window}
 Listeners are passed the `window` object that triggered the event.
 </api>
+
+<api name="activate">
+@event
+Event emitted when an inactive window is made active.
+@argument {Window}
+Listeners are passed the `window` object that has become active.
+</api>
+
+<api name="deactivate">
+@event
+Event emitted when the active window is made inactive.
+
+@argument {Window}
+Listeners are passed the `window` object that has become inactive.
+</api>
+

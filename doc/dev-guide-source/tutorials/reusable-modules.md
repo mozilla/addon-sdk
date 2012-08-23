@@ -70,7 +70,7 @@ Try it out:
 
 * create a new directory called "whereami" and navigate to it
 * execute `cfx init`
-* open "lib/main.js" and replace its contents with the code above
+* open "lib/main.js" and add the code above
 * execute `cfx run`, then `cfx run` again
 
 You should see a button added to the "Add-on Bar" at the bottom of

@@ -7,6 +7,7 @@
 const { Hotkey } = require("hotkeys");
 const { keyDown } = require("dom/events/keys");
 const { Loader } = require('test-harness/loader');
+const timer = require("timer");
 
 exports["test hotkey: function key"] = function(assert, done) {
   var element = require("window-utils").activeBrowserWindow.document.documentElement;
@@ -151,7 +152,7 @@ exports["test hotkey: automatic destroy"] = function(assert, done) {
   // Ensure that the hotkey is really destroyed
   keyDown(element, "accel-shift-x");
   
-  require("timer").setTimeout(function () {
+  timer.setTimeout(function () {
     assert.ok(!called, "Hotkey is destroyed and not called.");
     done();
   }, 0);
