@@ -19,7 +19,8 @@ displayed whenever something in the page is selected. When it's
 clicked, the selection is sent to the main add-on code, which just
 logs it:
 
-    var menuItem = contextMenu.Item({
+     var contextMenu = require("context-menu");
+     var menuItem = contextMenu.Item({
       label: "Log Selection",
       context: contextMenu.SelectionContext(),
       contentScript: 'self.on("click", function () {' +
