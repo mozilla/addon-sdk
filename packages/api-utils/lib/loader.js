@@ -166,7 +166,7 @@ const evaluate = iced(function evaluate(sandbox, uri, options) {
   try {
     return source ? Cu.evalInSandbox(source, sandbox, version, uri, line)
                   : loadSubScript(uri, sandbox, encoding);
-  } catch (exc if exc instanceof SyntaxError) {
+  } catch (exc if exc.name === "SyntaxError") {
     // see https://bugzilla.mozilla.org/show_bug.cgi?id=551604
     throw SyntaxError(exc.message+' at '+exc.fileName+':'+exc.lineNumber,
                       exc.fileName, exc.lineNumber);
