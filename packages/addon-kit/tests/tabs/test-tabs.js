@@ -43,18 +43,14 @@ exports.testActiveTab_getter_alt = function(test) {
   let url = URL.replace("#title#", "foo");
   tabs.open({
     url: url,
-    onOpen: function(tab) {
-      test.assert(!!tabs.activeTab);
-      test.assertEqual(tabs.activeTab, tab, 'the active tab is correct');
+    onReady: function(tab) {
+      test.assertEqual(tabs.activeTab.url, tab.url, 'the active tab is correct');
+      test.assertEqual(tab.url, url);
+      test.assertEqual(tab.title, "foo");
 
-      tab.on("ready", function() {
-        test.assertEqual(tab.url, url);
-        test.assertEqual(tab.title, "foo");
-
-        tab.close(function() {
-          // end test
-          test.done();
-        });
+      tab.close(function() {
+        // end test
+        test.done();
       });
     }
   });
@@ -65,73 +61,41 @@ exports.testActiveTab_setter_alt = function(test) {
   test.waitUntilDone();
 
   let url = URL.replace("#title#", "foo");
-  let activeTabURL = tabs.activeTab.url;
-
-  tabs.once('ready', function onReady(tab) {
-    test.assertEqual(tabs.activeTab.url, activeTabURL, "activeTab url has not changed");
-    test.assertEqual(tab.url, url, "url of new background tab matches");
-
-    tabs.once('activate', function onActivate(eventTab) {
-      test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
-      test.assertEqual(eventTab, tab, "event argument is the activated tab");
-      test.assertEqual(eventTab, tabs.activeTab, "the tab is the active one");
-
-      tab.close(function() {
-        // end test
-        test.done();
-      });
-    });
-
-    tab.activate();
-  });
 
   tabs.open({
-    url: url,
-    inBackground: true
-  });
-};
+    url: "about:blank",
+    onActivate: function(activeTab) {
+      let activeTabURL = tabs.activeTab.url;
 
-// TEST: activeWindow getter and activeTab getter on tab 'activate' event
-exports.testActiveWindowActiveTabOnActivate_alt = function(test) {
-  test.waitUntilDone();
+      tabs.open({
+        url: url,
+        inBackground: true,
+        onReady: function onReady(tab) {
+          test.assertEqual(tabs.activeTab.url, activeTabURL, "activeTab url has not changed");
+          test.assertEqual(tab.url, url, "url of new background tab matches");
 
-  let activateCount = 0;
-  let newTabs = [];
+          tab.once('activate', function onActivate(eventTab) {
+            test.assertEqual(tabs.activeTab.url, url, "url after activeTab setter matches");
+            test.assertEqual(eventTab, tab, "event argument is the activated tab");
+            test.assertEqual(eventTab, tabs.activeTab, "the tab is the active one");
 
-  tabs.on('activate', function onActivate(tab) {
-    test.assert(browserWindows.activeWindow.tabs.activeTab === tab,
-                    "the active window's active tab is the tab provided");
+            activeTab.close(function() {
+              tab.close(function() {
+                // end test
+                test.done();
+              });
+            });
+          });
 
-    if (++activateCount == 2) {
-      tabs.removeListener('activate', onActivate);
-
-      newTabs.forEach(function(tab) {
-        tab.close(function() {
-          if (--activateCount == 0) {
-            // end test
-            test.done();
-          }
-        });
+          tab.activate();
+        }
       });
     }
-    else if (activateCount > 2) {
-      test.fail("activateCount is greater than 2 for some reason..");
-    }
-  });
-
-  tabs.open({
-    url: URL.replace("#title#", "tabs.open1"),
-    onOpen: function(tab) newTabs.push(tab)
-  });
-  tabs.open({
-    url: URL.replace("#title#", "tabs.open2"),
-    onOpen: function(tab) newTabs.push(tab)
   });
 };
-
 
 // TEST: open tab with default options
-exports.testOpen_alt = function(test) {
+exports.testTabsOpen_alt = function(test) {
   test.waitUntilDone();
 
   let url = "data:text/html;charset=utf-8,default";
@@ -149,50 +113,35 @@ exports.testOpen_alt = function(test) {
   });
 };
 
-// TEST: open pinned tab
-exports.testOpenPinned_alt = function(test) {
-  if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
-    // test tab pinning
-    test.waitUntilDone();
-
-    let url = "about:blank";
-    tabs.open({
-      url: url,
-      isPinned: true,
-      onOpen: function(tab) {
-        test.assertEqual(tab.isPinned, true, "The new tab is pinned");
-
-        // end test
-        tab.close(function() test.done());
-      }
-    });
-  }
-  else {
-    test.pass("Pinned tabs are not supported in this application.");
-  }
-};
-
 // TEST: tab.close()
-exports.testTabClose = function(test) {
+exports.testTabClose_alt = function(test) {
   test.waitUntilDone();
 
-  let url = "data:text/html;charset=utf-8,foo";
+  let url = "data:text/html;charset=utf-8,tab.close()%20test";
+  tabs.open({
+    url: "about:blank",
+    onActivate: function(tab) {
+      test.assertNotEqual(tabs.activeTab.url, url, "tab is not the active tab");
 
-  test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
+      tab.close(function() {
+        tabs.once('ready', function onReady(tab) {
+          test.assertEqual(tab.url, url, "tab is now the active tab");
+          test.assertEqual(tabs.activeTab.url, url, "tab is now the active tab");
 
-  tabs.once('ready', function onReady(tab) {
-    test.assertEqual(url, tab.url, "tab is now the active tab");
-    test.assertEqual(tabs.activeTab.url, tab.url, "tab is now the active tab");
+          tab.close(function() {
+            tabs.once('activate', function() {
+              test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
 
-    tab.close(function() {
-      test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
+              // end test
+              test.done();
+            });
+          });
+        });
 
-      // end test
-      test.done();
-    });
+        tabs.open(url);
+      });
+    }
   });
-
-  tabs.open(url);
 };
 
 exports.testAttachOnOpen_alt = function (test) {
@@ -321,3 +270,43 @@ exports.testAttachWrappers_alt = function (test) {
     }
   });
 };
+
+// TEST: activeWindow getter and activeTab getter on tab 'activate' event
+exports.testActiveWindowActiveTabOnActivate_alt = function(test) {
+  test.waitUntilDone();
+
+  let activateCount = 0;
+  let newTabs = [];
+  let tabs = browserWindows.activeWindow.tabs;
+
+  tabs.on('activate', function onActivate(tab) {
+    test.assertEqual(tabs.activeTab, tab,
+                    "the active window's active tab is the tab provided");
+
+    if (++activateCount == 2) {
+      tabs.removeListener('activate', onActivate);
+
+      newTabs.forEach(function(tab) {
+        tab.close(function() {
+          if (--activateCount == 0) {
+            // end test
+            test.done();
+          }
+        });
+      });
+    }
+    else if (activateCount > 2) {
+      test.fail("activateCount is greater than 2 for some reason..");
+    }
+  });
+
+  tabs.open({
+    url: URL.replace("#title#", "tabs.open1"),
+    onOpen: function(tab) newTabs.push(tab)
+  });
+  tabs.open({
+    url: URL.replace("#title#", "tabs.open2"),
+    onOpen: function(tab) newTabs.push(tab)
+  });
+};
+

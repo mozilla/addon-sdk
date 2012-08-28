@@ -261,12 +261,15 @@ exports.testTabClose = function(test) {
     let tabs = require("tabs");
     let url = "data:text/html;charset=utf-8,foo";
 
-    test.assertNotEqual(tabs.activeTab.url, url, "tab is now the active tab");
+    test.assertNotEqual(tabs.activeTab.url, url, "tab is not the active tab");
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
       test.assertEqual(tabs.activeTab.url, tab.url, "tab is now the active tab");
       tab.close(function() {
-        closeBrowserWindow(window, function() test.done());
+        closeBrowserWindow(window, function() {
+          test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
+          test.done()
+        });
       });
       test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
     });

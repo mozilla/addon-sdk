@@ -55,6 +55,7 @@ exports.testTabProperties = function(test) {
   test.waitUntilDone();
 
   let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
+  let tabsLen = tabs.length;
   tabs.open({
     url: url,
     onReady: function(tab) {
@@ -67,7 +68,7 @@ exports.testTabProperties = function(test) {
         test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.favicon');
       }
       test.assertEqual(tab.style, null, "style of the new tab matches");
-      test.assertEqual(tab.index, 1, "index of the new tab matches");
+      test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
       try {
         test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
       }
@@ -93,12 +94,13 @@ exports.testTabsIteratorAndLength = function(test) {
 
   test.assertEqual(startCount, tabs.length, "length property is correct");
 
-  let url = "data:text/html;charset=utf-8,default";
+  let url = "data:text/html;charset=utf-8,testTabsIteratorAndLength";
   tabs.open({url: url, onOpen: function(tab) newTabs.push(tab)});
   tabs.open({url: url, onOpen: function(tab) newTabs.push(tab)});
   tabs.open({
     url: url,
     onOpen: function(tab) {
+      newTabs.push(tab)
       let count = 0;
       for each (let t in tabs) count++;
       test.assertEqual(count, startCount + 3, "iterated tab count matches");
@@ -109,7 +111,9 @@ exports.testTabsIteratorAndLength = function(test) {
         if (--newTabsLength > 0) return;
 
         tab.close(function() {
-          test.assertEqual(tabs.length, tabsLen, "tabs were closed");
+          for each (let t in tabs)
+            if (tab.url == url || newTabs.indexOf(t) > 0)
+              test.fail('test tab was not closed');
 
           // end test
           test.done();
@@ -178,26 +182,55 @@ exports.testTabReload = function(test) {
 exports.testTabMove = function(test) {
   test.waitUntilDone();
 
-  let url = "data:text/html;charset=utf-8,foo";
-
-  test.assertEqual(tabs.length, 1, "there is only one tab open");
+  let url = "data:text/html;charset=utf-8,testTabMove";
 
   tabs.open({
     url: url,
-    onOpen: function(tab) {
-      test.assertEqual(tab.index, 1, "tab index before move matches");
-      try {
-        tab.index = 0;
-        test.assertEqual(tab.index, 0, "tab index after move matches");
-      }
-      catch(e) {
-        test.assertEqual(e, ERR_MSG, 'Error is thrown on setting tab.index');
-      }
+    onOpen: function(tab1) {
+      test.assert(tab1.index >= 0, "opening a tab returns a tab w/ valid index");
 
-      // end test
-      tab.close(function() test.done());
+      tabs.open({
+        url: url,
+        onOpen: function(tab) {
+          test.assert(tab.index > tab1.index, "2nd tab has valid index");
+          try {
+            tab.index = 0;
+            test.assertEqual(tab.index, 0, "tab index after move matches");
+          }
+          catch(e) {
+            test.assertEqual(e, ERR_MSG, 'Error is thrown on setting tab.index');
+          }
+
+          // end test
+          tab1.close(function() tab.close(function() test.done()));
+        }
+      });
     }
   });
+};
+
+// TEST: open pinned tab
+exports.testOpenPinned_alt = function(test) {
+  if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
+    // test tab pinning
+    test.waitUntilDone();
+
+    let url = "about:blank";
+    tabs.open({
+      url: url,
+      isPinned: true,
+      onOpen: function(tab) {
+        test.assertEqual(tab.isPinned, true, "The new tab is pinned");
+
+        // end test
+        tab.close(function() test.done());
+      }
+    });
+  }
+  else {
+    test.pass("Pinned tabs are not supported in this application.");
+    test.done();
+  }
 };
 
 // TEST: pin/unpin opened tab
