@@ -163,9 +163,9 @@ When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
 this function: a `worker` object.
 
-The worker can be thought of as the add-on's end of
-a communication channel between the add-on code and the content scripts that
-have been attached to this page.
+The [`worker`](packages/api-utils/content/worker.html) can be thought of as
+the add-on's end of a communication channel between the add-on code and
+the content scripts that have been attached to this page.
 
 Thus the add-on can pass messages to the content scripts by calling the
 worker's `postMessage` function and can receive messages from the content
@@ -254,10 +254,10 @@ The console output of this add-on is:
 
 ### Mapping workers to tabs ###
 
-The [`worker`](packages/api-utils/content/worker.html) has a `tab`
-property which returns the tab associated with this worker. You can use this
-to access the [`tabs API`](packages/addon-kit/tabs.html) for the tab
-associated with a specific page:
+The `worker` has a `tab` property which returns the tab associated with
+this worker. You can use this to access
+the [`tabs API`](packages/addon-kit/tabs.html) for the tab associated
+with a specific page:
 
     var pageMod = require("page-mod");
     var tabs = require("tabs");
