@@ -178,20 +178,20 @@ Object.defineProperties(exports, {
  * Returns the ID of the window's current inner window.
  */
 exports.getInnerId = function(window) {
-  console.warn('require("window-utils").getInnerId is deprecated, ' +
-               'please use require("window/utils").getInnerId instead');
+  console.error('DEPRECATED: require("window-utils").getInnerId is deprecated' +
+                ', please use require("window/utils").getInnerId instead');
   return getInnerId(window);
 };
 
 exports.getOuterId = function(window) {
-  console.warn('require("window-utils").getOuterId is deprecated, ' +
-               'please use require("window/utils").getOuterId instead');
+  console.error('DEPRECATED: require("window-utils").getOuterId is deprecated' +
+                ', please use require("window/utils").getOuterId instead');
   return getOuterId(window);
 };
 
 exports.isBrowser = function(window) {
-  console.warn('require("window-utils").isBrowser is deprecated, ' +
-               'please use require("window/utils").isBrowser instead');
+  console.error('DEPRECATED: require("window-utils").isBrowser is deprecated' +
+                ', please use require("window/utils").isBrowser instead');
   return isBrowser(window);
 };
 
