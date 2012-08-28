@@ -42,7 +42,7 @@ exports.isWindowPBEnabled = isWindowPBEnabled;
 // bug 659629.  Since private browsing transitions are asynchronous
 // anyway, this doesn't significantly change the behavior of the API.
 // Note: this method should not be used with `chromeWin` argument until
-//       the UI has been implemented.
+//       the UI has been implemented. Bug 729865
 let setMode = defer(function setMode(value, chromeWin) {
   value = !!value;  // Cast to boolean.
 
