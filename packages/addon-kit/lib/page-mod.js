@@ -102,7 +102,7 @@ function readURI(uri) {
 const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
   _listeners: EventEmitter.required,
-  target: [],
+  attachTo: [],
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
@@ -126,8 +126,8 @@ const PageMod = Loader.compose(EventEmitter, {
       this.on('attach', options.onAttach);
     if ('onError' in options)
       this.on('error', options.onError);
-    if ('target' in options)
-      this.target = options.target;
+    if ('attachTo' in options)
+      this.attachTo = options.attachTo;
 
     let include = options.include;
     let rules = this.include = Rules();
@@ -164,7 +164,7 @@ const PageMod = Loader.compose(EventEmitter, {
 
     // `_applyOnExistingDocuments` has to be called after `pageModManager.add()`
     // otherwise its calls to `_onContent` method won't do anything.
-    if ('target' in options && options.target.indexOf('existing') !== -1)
+    if ('attachTo' in options && options.attachTo.indexOf('existing') !== -1)
       this._applyOnExistingDocuments();
   },
 

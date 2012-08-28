@@ -358,7 +358,7 @@ exports.testWorksWithExistingTabs = function(test) {
     onReady: function onReady(tab) {
       let pageMod = new PageMod({
         include: url,
-        target: ["existing"],
+        attachTo: ["existing"],
         onAttach: function(worker) {
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
           pageMod.destroy();
