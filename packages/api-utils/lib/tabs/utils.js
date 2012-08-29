@@ -93,8 +93,11 @@ function getTabForContentWindow(window) {
   // Retrieve the owner window, should be browser.xul one
   let chromeWindow = browser.ownerDocument.defaultView;
 
-  // Ensure that it is top-level browser window
-  if ('gBrowser' in chromeWindow) {
+  // Ensure that it is top-level browser window.
+  // We need extra checks because of Mac hidden window that has a broken
+  // `gBrowser` global attribute.
+  if ('gBrowser' in chromeWindow && chromeWindow.gBrowser &&
+      'browsers' in chromeWindow.gBrowser) {
     // Looks like we are on Firefox Desktop
     // Then search for the position in tabbrowser in order to get the tab object
     let browsers = chromeWindow.gBrowser.browsers;
