@@ -67,7 +67,6 @@ const Tabs = Class({
     window.BrowserApp.deck.addEventListener(EVENTS.activate.dom, function(evt) {
       // Set value whenever new tab becomes active.
       let tab = tabsNS(this).activeTab = getTabForBrowser(evt.target);
-
       emit(tab, "activate", tab);
       emit(this, "activate", tab);
 
@@ -112,6 +111,9 @@ const Tabs = Class({
 
     if (options.onReady)
       tab.on('ready', options.onReady);
+
+    if (options.onActivate)
+      tab.once('activate', options.onActivate);
 
     return tab;
   },

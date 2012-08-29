@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+var tests = {};
 if (require("api-utils/xul-app").is("Firefox")) {
-  var tests = require("./tabs/test-firefox-tabs");
+  tests = require("./tabs/test-firefox-tabs");
 }
 else if (require("api-utils/xul-app").is("Fennec")) {
-  var tests = require("./tabs/test-fennec-tabs");
+  tests = require("./tabs/test-fennec-tabs");
 }
 
 for (var test in tests)

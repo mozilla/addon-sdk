@@ -60,11 +60,12 @@ exports.testActiveTab_getter_alt = function(test) {
 exports.testActiveTab_setter_alt = function(test) {
   test.waitUntilDone();
 
-  let url = URL.replace("#title#", "foo");
+  let url = URL.replace("#title#", "testActiveTab_setter_alt");
+  let tab1URL = URL.replace("#title#", "tab1");
 
   tabs.open({
-    url: "about:blank",
-    onActivate: function(activeTab) {
+    url: tab1URL,
+    onReady: function(activeTab) {
       let activeTabURL = tabs.activeTab.url;
 
       tabs.open({
@@ -117,28 +118,31 @@ exports.testTabsOpen_alt = function(test) {
 exports.testTabClose_alt = function(test) {
   test.waitUntilDone();
 
-  let url = "data:text/html;charset=utf-8,tab.close()%20test";
+  let url = URL.replace('#title#', 'TabClose_alt');
+  let tab1URL = URL.replace('#title#', 'tab1');
+
   tabs.open({
-    url: "about:blank",
-    onActivate: function(tab) {
+    url: tab1URL,
+    onReady: function(tab1) {
+      // make sure that our tab is not active first
       test.assertNotEqual(tabs.activeTab.url, url, "tab is not the active tab");
 
-      tab.close(function() {
-        tabs.once('ready', function onReady(tab) {
+      tabs.open({
+        url: url,
+        onReady: function(tab) {
           test.assertEqual(tab.url, url, "tab is now the active tab");
           test.assertEqual(tabs.activeTab.url, url, "tab is now the active tab");
 
-          tab.close(function() {
-            tabs.once('activate', function() {
-              test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
+          // another tab should be activated on close
+          tabs.once('activate', function() {
+            test.assertNotEqual(tabs.activeTab.url, url, "tab is no longer the active tab");
 
-              // end test
-              test.done();
-            });
+            // end test
+            tab1.close(function() test.done());
           });
-        });
 
-        tabs.open(url);
+          tab.close();
+        }
       });
     }
   });
