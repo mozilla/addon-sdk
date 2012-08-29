@@ -66,9 +66,11 @@ then the content script can interact with the DOM itself:
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
-Note that starting with SDK 1.11, page-mod now only applies to documents loaded
-in tabs. So that it won't apply to addon panels, page-workers, widgets, nor in
-firefox hidden window.
+<div class="warning">
+  Starting with SDK 1.11, page-mod only attaches scripts to documents loaded
+  in tabs. It will not attach scripts to add-on panels, page-workers, widgets,
+  or  Firefox hidden windows.
+</div>
 
 ### Using `contentScriptFile` ###
 
