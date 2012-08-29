@@ -5,6 +5,8 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
+
 function getTabBrowser(window) {
   return window.gBrowser;
 }
@@ -74,3 +76,38 @@ function getTabContentWindow(tab) {
   return getBrowserForTab(tab).contentWindow;
 }
 exports.getTabContentWindow = getTabContentWindow;
+
+function getTabForContentWindow(window) {
+  // Retrieve the topmost frame container. It can be either <xul:browser>,
+  // <xul:iframe/> or <html:iframe/>. But in our case, it should be xul:browser.
+  let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIWebNavigation)
+                   .QueryInterface(Ci.nsIDocShell)
+                   .chromeEventHandler;
+  // Is null for toplevel documents
+  if (!browser)
+    return false;
+  // Retrieve the owner window, should be browser.xul one
+  let chromeWindow = browser.ownerDocument.defaultView;
+
+  // Ensure that it is top-level browser window.
+  // We need extra checks because of Mac hidden window that has a broken
+  // `gBrowser` global attribute.
+  if ('gBrowser' in chromeWindow && chromeWindow.gBrowser &&
+      'browsers' in chromeWindow.gBrowser) {
+    // Looks like we are on Firefox Desktop
+    // Then search for the position in tabbrowser in order to get the tab object
+    let browsers = chromeWindow.gBrowser.browsers;
+    let i = browsers.indexOf(browser);
+    if (i !== -1)
+      return chromeWindow.gBrowser.tabs[i];
+    return null;
+  }
+  else if ('BrowserApp' in chromeWindow) {
+    // Looks like we are on Firefox Mobile
+    return chromeWindow.BrowserApp.getTabForWindow(window)
+  }
+
+  return null;
+}
+exports.getTabForContentWindow = getTabForContentWindow;
