@@ -411,6 +411,12 @@ Creates a PageMod.
     option are loaded *after* those specified by the `contentStyleFile` option.
     Optional.
 
+  @prop [attachTo] {array}
+    Option to specify on which documents PageMod should be applied.
+    For now, it only accepts one value: "existing". If `attachTo` contains
+    "existing", the PageMod will be automatically applied on already opened
+    tabs.
+
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to
 a matching page. The function will be called with one argument, a `worker`

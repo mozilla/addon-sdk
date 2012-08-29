@@ -15,7 +15,10 @@ const { validateOptions : validate } = require('api-utils/api-utils');
 const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
-const { getTabForContentWindow } = require('api-utils/tabs/utils');
+const { windowIterator } = require("window-utils");
+const { isBrowser } = require('api-utils/window/utils');
+const { getTabs, getTabContentWindow, getTabForContentWindow,
+        getURI: getTabURI } = require("api-utils/tabs/utils");
 
 const styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].
                             getService(Ci.nsIStyleSheetService);
@@ -82,6 +85,7 @@ function readURI(uri) {
 const PageMod = Loader.compose(EventEmitter, {
   on: EventEmitter.required,
   _listeners: EventEmitter.required,
+  attachTo: [],
   contentScript: Loader.required,
   contentScriptFile: Loader.required,
   contentScriptWhen: Loader.required,
@@ -105,6 +109,8 @@ const PageMod = Loader.compose(EventEmitter, {
       this.on('attach', options.onAttach);
     if ('onError' in options)
       this.on('error', options.onError);
+    if ('attachTo' in options)
+      this.attachTo = options.attachTo;
 
     let include = options.include;
     let rules = this.include = Rules();
@@ -138,6 +144,11 @@ const PageMod = Loader.compose(EventEmitter, {
     pageModManager.add(this._public);
 
     this._loadingWindows = [];
+
+    // `_applyOnExistingDocuments` has to be called after `pageModManager.add()`
+    // otherwise its calls to `_onContent` method won't do anything.
+    if ('attachTo' in options && options.attachTo.indexOf('existing') !== -1)
+      this._applyOnExistingDocuments();
   },
 
   destroy: function destroy() {
@@ -156,12 +167,38 @@ const PageMod = Loader.compose(EventEmitter, {
 
   _loadingWindows: [],
 
+  _applyOnExistingDocuments: function _applyOnExistingDocuments() {
+    let mod = this;
+    // Returns true if the tab match one rule
+    function isMatchingURI(uri) {
+      // Use Array.some as `include` isn't a native array
+      return Array.some(mod.include, function (rule) {
+        return RULES[rule].test(uri);
+      });
+    }
+    getAllTabs().
+      filter(function (tab) {
+        return isMatchingURI(getTabURI(tab));
+      }).
+      forEach(function (tab) {
+        // Fake a newly created document
+        mod._onContent(getTabContentWindow(tab));
+      });
+  },
+
   _onContent: function _onContent(window) {
     // not registered yet
     if (!pageModManager.has(this))
       return;
 
-    if ('start' == this.contentScriptWhen) {
+    // Immediatly evaluate content script if the document state is already
+    // matching contentScriptWhen expectations
+    let state = window.document.readyState;
+    if ('start' === this.contentScriptWhen ||
+        // Is `load` event already dispatched?
+        'complete' === state ||
+        // Is DOMContentLoaded already dispatched and waiting for it?
+        ('ready' === this.contentScriptWhen && state === 'interactive') ) {
       this._createWorker(window);
       return;
     }
@@ -298,3 +335,15 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
+
+// Returns all tabs on all currently opened windows
+function getAllTabs() {
+  let tabs = [];
+  // Iterate over all chrome windows
+  for (let window in windowIterator()) {
+    if (!isBrowser(window))
+      continue;
+    tabs = tabs.concat(getTabs(window));
+  }
+  return tabs;
+}
