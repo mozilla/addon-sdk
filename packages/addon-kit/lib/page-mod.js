@@ -169,18 +169,6 @@ const PageMod = Loader.compose(EventEmitter, {
 
   _applyOnExistingDocuments: function _applyOnExistingDocuments() {
     let mod = this;
-    // Iterate over all tabs on all currently opened windows
-    function getAllTabs() {
-      let tabs = [];
-      // Iterate over all chrome windows
-      for (let window in windowIterator()) {
-        if (!isBrowser(window))
-          continue;
-        tabs = tabs.concat(getTabs(window));
-      }
-      return tabs;
-    }
-
     // Returns true if the tab match one rule
     function isMatchingURI(uri) {
       // Use Array.some as `include` isn't a native array
@@ -188,13 +176,14 @@ const PageMod = Loader.compose(EventEmitter, {
         return RULES[rule].test(uri);
       });
     }
-    getAllTabs().filter(function (tab) {
-                  return isMatchingURI(getTabURI(tab));
-                })
-                .forEach(function (tab) {
-                  // Fake a newly created document
-                  mod._onContent(getTabContentWindow(tab));
-                });
+    getAllTabs().
+      filter(function (tab) {
+        return isMatchingURI(getTabURI(tab));
+      }).
+      forEach(function (tab) {
+        // Fake a newly created document
+        mod._onContent(getTabContentWindow(tab));
+      });
   },
 
   _onContent: function _onContent(window) {
@@ -206,7 +195,9 @@ const PageMod = Loader.compose(EventEmitter, {
     // matching contentScriptWhen expectations
     let state = window.document.readyState;
     if ('start' === this.contentScriptWhen ||
+        // Is `load` event already dispatched?
         'complete' === state ||
+        // Is DOMContentLoaded already dispatched and waiting for it?
         ('ready' === this.contentScriptWhen && state === 'interactive') ) {
       this._createWorker(window);
       return;
@@ -344,3 +335,15 @@ const PageModManager = Registry.resolve({
   }
 });
 const pageModManager = PageModManager();
+
+// Returns all tabs on all currently opened windows
+function getAllTabs() {
+  let tabs = [];
+  // Iterate over all chrome windows
+  for (let window in windowIterator()) {
+    if (!isBrowser(window))
+      continue;
+    tabs = tabs.concat(getTabs(window));
+  }
+  return tabs;
+}
