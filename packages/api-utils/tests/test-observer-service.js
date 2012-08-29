@@ -29,7 +29,7 @@ exports.testUnloadAndErrorLogging = function(test) {
   sbobsvc.add("narg", badCb);
   observers.notify("narg", "yo yo");
   var lines = prints[0].split("\n");
-  test.assertEqual(lines[0], "error: api-utils: An exception occurred.");
+  test.assertEqual(lines[0], "error: " + require("self").name + ": An exception occurred.");
   test.assertEqual(lines[1], "Traceback (most recent call last):");
   test.assertEqual(lines.slice(-2)[0], "Error: foo");
 
