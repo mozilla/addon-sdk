@@ -9,13 +9,27 @@ module.metadata = {
 };
 
 const { Cc, Ci } = require('chrome');
+const { id } = require('self');
 
 // Injects `indexedDB` to `this` scope.
 Cc["@mozilla.org/dom/indexeddb/manager;1"].
 getService(Ci.nsIIndexedDatabaseManager).
 initWindowless(this);
 
-exports.indexedDB = indexedDB;
+// Wrap `indexedDB` methods in order to prefix names
+// with add-on IDs. This is temporary workaround for
+// Bug 786688. Note: once bug is fixed and prefixing is
+// removed existing DBs will appear non-existing.
+function prefixWrapper(method) {
+  return function(name) {
+    let args = [ id + ':' + name ].concat(Array.slice(arguments, 1));
+    return method.apply(indexedDB, args);
+  }
+}
+exports.indexedDB = Object.create(indexedDB, {
+  open: { value: prefixWrapper(indexedDB.open) },
+  deleteDatabase: { value: prefixWrapper(indexedDB.deleteDatabase) }
+});
 exports.IDBKeyRange = IDBKeyRange;
 exports.DOMException = Ci.nsIDOMDOMException;
 exports.IDBCursor = Ci.nsIIDBCursor;
