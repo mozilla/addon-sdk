@@ -100,7 +100,6 @@ exports.testTabsIteratorAndLength = function(test) {
   tabs.open({
     url: url,
     onOpen: function(tab) {
-      newTabs.push(tab)
       let count = 0;
       for each (let t in tabs) count++;
       test.assertEqual(count, startCount + 3, "iterated tab count matches");
@@ -111,10 +110,6 @@ exports.testTabsIteratorAndLength = function(test) {
         if (--newTabsLength > 0) return;
 
         tab.close(function() {
-          for each (let t in tabs)
-            if (tab.url == url || newTabs.indexOf(t) > 0)
-              test.fail('test tab was not closed');
-
           // end test
           test.done();
         });
