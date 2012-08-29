@@ -359,11 +359,11 @@ times.
 
 <tr>
   <td>
-    <code>-f FILTER, --filter=FILTER</code>
+    <code>-f FILENAME[:TESTNAME], --filter=FILENAME[:TESTNAME]</code>
   </td>
   <td>
-    Run only those test modules whose names match the regexp supplied in
-    FILTER.
+    Only run tests whose filenames match FILENAME and
+    optionally match TESTNAME, both regexps (test, testall, testex, testpkgs)
     <br>
     For example: if you specify <code>--filter data</code>, then
     <code>cfx</code> will only run tests in those modules whose name contain
