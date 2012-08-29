@@ -10,6 +10,7 @@ const { Loader } = require('test-harness/loader');
 const tabs = require("tabs");
 const timer = require("timer");
 const { Cc, Ci } = require("chrome");
+const windowUtils = require('api-utils/window/utils');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -433,8 +434,8 @@ exports['test attachment to tabs only'] = function(test) {
     contentScriptWhen: 'start',
     contentScript: '',
     onAttach: function onAttach(worker) {
-      if (worker.tab == openedTab) {
-        if (++workerCount == 2) {
+      if (worker.tab === openedTab) {
+        if (++workerCount == 3) {
           test.pass('Succesfully applied to tab documents and its iframe');
           worker.destroy();
           mod.destroy();
@@ -465,9 +466,7 @@ exports['test attachment to tabs only'] = function(test) {
 
   function openToplevelWindow() {
     console.info('Open toplevel window');
-    let ww = Cc['@mozilla.org/embedcomp/window-watcher;1'].
-             getService(Ci.nsIWindowWatcher);
-    let win = ww.openWindow(null, 'data:text/html;charset=utf-8,bar', null, '', null);
+    let win = windowUtils.open('data:text/html;charset=utf-8,bar');
     win.addEventListener('DOMContentLoaded', function onload() {
       win.removeEventListener('DOMContentLoaded', onload, false);
       win.close();
@@ -485,15 +484,17 @@ exports['test attachment to tabs only'] = function(test) {
     iframe.addEventListener('DOMContentLoaded', function onload() {
       iframe.removeEventListener('DOMContentLoaded', onload, false);
       iframe.parentNode.removeChild(iframe);
-      openTabWithIframe();
+      openTabWithIframes();
     }, false);
     document.documentElement.appendChild(iframe);
   }
 
-  // Only these two documents will be accepted by the page-mod
-  function openTabWithIframe() {
-    console.info('Open iframe in a tab');
-    let content = '<iframe src="data:text/html,iframe"/>';
+  // Only these three documents will be accepted by the page-mod
+  function openTabWithIframes() {
+    console.info('Open iframes in a tab');
+    let subContent = '<iframe src="data:text/html,sub frame" />'
+    let content = '<iframe src="data:text/html,' +
+                  encodeURIComponent(subContent) + '" />';
     require('tabs').open({
       url: 'data:text/html;charset=utf-8,' + encodeURIComponent(content),
       onOpen: function onOpen(tab) {
