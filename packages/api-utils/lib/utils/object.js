@@ -21,7 +21,7 @@
  */
 function merge(source) {
   let descriptor = {};
-  Array.slice(arguments, 1).forEach(function onEach(properties) {
+  Array.slice(arguments, 1).filter(Boolean).forEach(function onEach(properties) {
     Object.getOwnPropertyNames(properties).forEach(function(name) {
       descriptor[name] = Object.getOwnPropertyDescriptor(properties, name);
     });
