@@ -12,6 +12,7 @@ const { openTab, Options } = require('api-utils/tabs/utils');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
 const { EVENTS } = require("api-utils/tabs/events");
+const { when: unload } = require('unload');
 
 var mainWindow = windowNS(browserWindows.activeWindow).window;
 
@@ -33,7 +34,7 @@ const Tabs = Class({
         tabsNS(this).activeTab = tab;
     }
 
-    window.BrowserApp.deck.addEventListener(EVENTS.open.dom, function(evt) {
+    let onTabOpen = (function(evt) {
       let browser = evt.target;
 
       let tab = getTabForBrowser(browser);
@@ -54,6 +55,7 @@ const Tabs = Class({
 
       tabNS(tab).opened = true;
 
+      // TabReady
       // TODO: remove listener on unload
       browser.addEventListener(EVENTS.ready.dom, function onReady() {
         emit(tab, 'ready', tab);
@@ -62,8 +64,9 @@ const Tabs = Class({
 
       emit(tab, "open", tab);
       emit(this, "open", tab);
-    }.bind(this), false);
+    }).bind(this)
 
+    // TabClose
     window.BrowserApp.deck.addEventListener(EVENTS.activate.dom, function(evt) {
       // Set value whenever new tab becomes active.
       let tab = tabsNS(this).activeTab = getTabForBrowser(evt.target);
@@ -82,8 +85,16 @@ const Tabs = Class({
       removeTab(tab);
 
       emit(this, "close", tab);
-      emit(tab, "close", tab)
+      emit(tab, "close", tab);
     }.bind(this), false);
+
+    // TabOpen event
+    window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
+
+    unload(function() {
+      window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
+      off(this);
+    }.bind(this));
 
     return this;
   },

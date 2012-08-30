@@ -310,7 +310,7 @@ exports.testOpenInNewWindow = function(test) {
 exports.testTabsEvent_onOpen = function(test) {
   test.waitUntilDone();
 
-  let url = "data:text/html;charset=utf-8,1";
+  let url = URL.replace('#title#', 'testTabsEvent_onOpen');
   let eventCount = 0;
 
   // add listener via property assignment
