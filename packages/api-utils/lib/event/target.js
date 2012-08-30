@@ -6,6 +6,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { on, once, off } = require('./core');
 const { method } = require('../functional');
 const { Class } = require('../heritage');

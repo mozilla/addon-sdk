@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const XUL = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
 
 /**

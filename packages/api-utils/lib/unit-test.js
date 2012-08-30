@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const memory = require('api-utils/memory');
 var timer = require("./timer");
 

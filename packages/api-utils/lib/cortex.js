@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 // `var` is being used in the module in order to make it reusable in
 // environments in which `let` and `const` is not yet supported.
 

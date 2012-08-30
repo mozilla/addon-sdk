@@ -5,6 +5,12 @@
 // Following pseudo module is set by `api-utils/addon/runner` and its load
 // method needs to be called before loading `core` module. But it may have
 // failed, so that this pseudo won't be available
+
+module.metadata = {
+  "stability": "unstable"
+};
+
+
 let hash = {}, bestMatchingLocale = null;
 try {
   let data = require("@l10n/data");

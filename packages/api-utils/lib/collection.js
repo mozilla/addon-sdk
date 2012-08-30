@@ -6,6 +6,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 exports.Collection = Collection;
 
 /**

@@ -25,6 +25,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
