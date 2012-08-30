@@ -34,6 +34,7 @@ const Tabs = Class({
         tabsNS(this).activeTab = tab;
     }
 
+    // TabOpen
     let onTabOpen = (function(evt) {
       let browser = evt.target;
 
@@ -66,8 +67,8 @@ const Tabs = Class({
       emit(this, "open", tab);
     }).bind(this)
 
-    // TabClose
-    window.BrowserApp.deck.addEventListener(EVENTS.activate.dom, function(evt) {
+    // TabSelect
+    let onTabSelect = function(evt) {
       // Set value whenever new tab becomes active.
       let tab = tabsNS(this).activeTab = getTabForBrowser(evt.target);
       emit(tab, "activate", tab);
@@ -78,21 +79,30 @@ const Tabs = Class({
         emit(t, 'deactivate', t);
         emit(this, 'deactivate', t);
       }
-    }.bind(this), false);
+    }.bind(this);
 
-    window.BrowserApp.deck.addEventListener(EVENTS.close.dom, function(evt) {
+    // TabClose
+    let onTabClose = function(evt) {
       let tab = getTabForBrowser(evt.target);
       removeTab(tab);
 
       emit(this, "close", tab);
       emit(tab, "close", tab);
-    }.bind(this), false);
+    }.bind(this);
 
     // TabOpen event
     window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
 
+    // TabSelect
+    window.BrowserApp.deck.addEventListener(EVENTS.activate.dom, onTabSelect, false);
+
+    // TabClose
+    window.BrowserApp.deck.addEventListener(EVENTS.close.dom, onTabClose, false);
+
     unload(function() {
-      window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
+      window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
+      window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
+      window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
       off(this);
     }.bind(this));
 
