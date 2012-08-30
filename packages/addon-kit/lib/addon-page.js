@@ -18,13 +18,14 @@ WindowTracker({
       add(window.XULBrowserWindow.inContentWhitelist, addonURL);
   },
   onUntrack: function onUntrack(window) {
-    getTabs(window).
-      filter(function(tab) { return getURI(tab) === addonURL; }).
-      forEach(function(tab) {
-        // Note: `onUntrack` will be called for all windows on add-on unloads,
-        // so we want to clean them up from these URLs.
-        remove(window.XULBrowserWindow.inContentWhitelist, addonURL);
-        closeTab(tab);
-      });
+    if (isBrowser(window))
+      getTabs(window).
+        filter(function(tab) { return getURI(tab) === addonURL; }).
+        forEach(function(tab) {
+          // Note: `onUntrack` will be called for all windows on add-on unloads,
+          // so we want to clean them up from these URLs.
+          remove(window.XULBrowserWindow.inContentWhitelist, addonURL);
+          closeTab(tab);
+        });
   }
 });
