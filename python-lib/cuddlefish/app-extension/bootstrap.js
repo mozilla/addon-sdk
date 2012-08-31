@@ -129,7 +129,7 @@ function startup(data, reasonCode) {
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
     let cuddlefishURI = prefixURI + options.loader;
-    let cuddlefishSandbox = loadSandbox(cuddlefishURI);
+    cuddlefishSandbox = loadSandbox(cuddlefishURI);
     let cuddlefish = cuddlefishSandbox.exports;
 
     // Normalize `options.mainPath` so that it looks like one that will come
@@ -199,7 +199,9 @@ function loadSandbox(uri) {
   // correctly
   sandbox.exports = {};
   sandbox.module = { uri: uri, exports: sandbox.exports };
-  sandbox.require = function () {};
+  sandbox.require = function () {
+    throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+  };
   scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
   return sandbox;
 }
@@ -221,12 +223,6 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Unload sandbox used to evaluate loader.js
-    unloadSandbox(cuddlefishSandbox.loaderSandbox);
-    // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
-    // and keep a reference to this compartment.
-    unloadSandbox(cuddlefishSandbox);
-    cuddlefishSandbox = null;
     // Avoid leaking all modules when something goes wrong with one particular
     // module. Do not clean it up immediatly in order to allow executing some
     // actions on addon disabling.
@@ -251,4 +247,11 @@ function nukeModules() {
     unloadSandbox(sandbox);
   }
   loader = null;
+
+  // Unload sandbox used to evaluate loader.js
+  unloadSandbox(cuddlefishSandbox.loaderSandbox);
+  // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
+  // and keep a reference to this compartment.
+  unloadSandbox(cuddlefishSandbox);
+  cuddlefishSandbox = null;
 }
