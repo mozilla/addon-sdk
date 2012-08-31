@@ -4,10 +4,10 @@
 "use strict";
 
 if (require("api-utils/xul-app").is("Firefox")) {
-  var windows = require("api-utils/windows/firefox");
+  module.exports = require("api-utils/windows/firefox");
 }
 else if (require("api-utils/xul-app").is("Fennec")) {
-  var windows = require("api-utils/windows/fennec");
+  module.exports = require("api-utils/windows/fennec");
 }
 else {
   throw new Error([
@@ -15,6 +15,3 @@ else {
     " we would like it to support other applications, however."
   ].join(""));
 }
-
-for (var prop in windows)
-  exports[prop] = windows[prop];
