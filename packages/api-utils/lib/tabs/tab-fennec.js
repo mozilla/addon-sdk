@@ -18,8 +18,6 @@ const Tab = Class({
 
     tabInternals.window = options.window;
     tabInternals.tab = options.tab;
-
-    return this;
   },
   destroy: function() {},
 
