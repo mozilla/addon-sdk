@@ -4,6 +4,10 @@
 
 'use strict';
 
+let xulApp = require("api-utils/xul-app");
+if (xulApp.versionInRange(xulApp.platformVersion, "16.0a1", "*")) {
+new function tests() {
+
 const { indexedDB, IDBKeyRange, DOMException, IDBCursor, IDBTransaction,
         IDBOpenDBRequest, IDBVersionChangeEvent, IDBDatabase, IDBFactory,
         IDBIndex, IDBObjectStore, IDBRequest
@@ -96,5 +100,11 @@ function testRead(assert, done) {
   };
 };
 
+}
+} else {
+  exports.testDB = function(assert) {
+    assert.pass('IndexedDB is not implemented')
+  }
+}
 
 require('test').run(exports);
