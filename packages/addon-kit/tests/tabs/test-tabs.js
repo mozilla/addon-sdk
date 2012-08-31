@@ -36,26 +36,6 @@ exports.testTabCounts = function(test) {
   });
 };
 
-// TEST: tabs.activeTab getter
-exports.testActiveTab_getter_alt = function(test) {
-  test.waitUntilDone();
-
-  let url = URL.replace("#title#", "foo");
-  tabs.open({
-    url: url,
-    onActivate: function(tab) {
-      test.assertEqual(tabs.activeTab.url, tab.url, 'the active tab is correct');
-      test.assertEqual(tab.url, url);
-      test.assertEqual(tab.title, "foo");
-
-      tab.close(function() {
-        // end test
-        test.done();
-      });
-    }
-  });
-};
-
 // TEST: tab.activate()
 exports.testActiveTab_setter_alt = function(test) {
   test.waitUntilDone();
