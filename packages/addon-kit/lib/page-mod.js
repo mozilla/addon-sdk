@@ -28,6 +28,9 @@ const USER_SHEET = styleSheetService.USER_SHEET;
 const io = Cc['@mozilla.org/network/io-service;1'].
               getService(Ci.nsIIOService);
 
+// Valid values for `attachTo` option
+const VALID_ATTACHTO_OPTIONS = ['existing', 'top', 'frame'];
+
 // contentStyle* / contentScript* are sharing the same validation constraints,
 // so they can be mostly reused, except for the messages.
 const validStyleOptions = {
@@ -109,8 +112,30 @@ const PageMod = Loader.compose(EventEmitter, {
       this.on('attach', options.onAttach);
     if ('onError' in options)
       this.on('error', options.onError);
-    if ('attachTo' in options)
-      this.attachTo = options.attachTo;
+    if ('attachTo' in options) {
+      if (typeof options.attachTo == 'string')
+        this.attachTo = [options.attachTo];
+      else if (Array.isArray(options.attachTo))
+        this.attachTo = options.attachTo;
+      else
+        throw new Error('The `attachTo` option must be a string or an array ' +
+                        'of strings.');
+
+      let isValidAttachToItem = function isValidAttachToItem(item) {
+        return typeof item === 'string' &&
+               VALID_ATTACHTO_OPTIONS.indexOf(item) !== -1;
+      }
+      if (!this.attachTo.every(isValidAttachToItem))
+        throw new Error('The `attachTo` option valid accept only following ' +
+                        'values: '+ VALID_ATTACHTO_OPTIONS.join(', '));
+      if (this.attachTo.indexOf("top") === -1 &&
+          this.attachTo.indexOf("frame") === -1)
+        throw new Error('The `attachTo` option must always contain at least' +
+                        ' `top` or `frame` value');
+    }
+    else {
+      this.attachTo = ["top", "frame"];
+    }
 
     let include = options.include;
     let rules = this.include = Rules();
@@ -189,6 +214,14 @@ const PageMod = Loader.compose(EventEmitter, {
   _onContent: function _onContent(window) {
     // not registered yet
     if (!pageModManager.has(this))
+      return;
+
+    let isTopDocument = window.top === window;
+    // Is a top level document and `top` is not set, ignore
+    if (isTopDocument && this.attachTo.indexOf("top") === -1)
+      return;
+    // Is a frame document and `frame` is not set, ignore
+    if (!isTopDocument && this.attachTo.indexOf("frame") === -1)
       return;
 
     // Immediatly evaluate content script if the document state is already
