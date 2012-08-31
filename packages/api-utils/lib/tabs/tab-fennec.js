@@ -14,11 +14,10 @@ const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider usi
 
 const Tab = Class({
   initialize: function initialize(options) {
-    let ns = tabNS(this);
-    let window = ns.window = options.window;
-    let tab = ns.tab = options.tab;
+    let tabInternals = tabNS(this);
 
-    ns.browser = tab.browser;
+    tabInternals.window = options.window;
+    tabInternals.tab = options.tab;
 
     return this;
   },
@@ -29,17 +28,17 @@ const Tab = Class({
    * Changing this property changes an actual title.
    * @type {String}
    */
-  get title() tabNS(this).browser.contentDocument.title,
-  set title(value) tabNS(this).browser.contentDocument.title = String(value),
+  get title() tabNS(this).tab.browser.contentDocument.title,
+  set title(value) tabNS(this).tab.browser.contentDocument.title = String(value),
 
   /**
    * Location of the page currently loaded in this tab.
    * Changing this property will loads page under under the specified location.
    * @type {String}
    */
-  get url() String(tabNS(this).browser.currentURI.spec),
+  get url() String(tabNS(this).tab.browser.currentURI.spec),
   set url(url) {
-    tabNS(this).browser.loadURI(url);
+    tabNS(this).tab.browser.loadURI(url);
   },
 
   /**
@@ -94,7 +93,7 @@ const Tab = Class({
    */
   attach: function attach(options) {
     let { Worker } = require("api-utils/content/worker");
-    options.window = tabNS(this).browser.contentWindow;
+    options.window = tabNS(this).tab.browser.contentWindow;
     let worker = Worker(options);
     worker.once("detach", function detach() {
       worker.destroy();
@@ -127,7 +126,7 @@ const Tab = Class({
    * Reload the tab
    */
   reload: function reload() {
-    tabNS(this).browser.reload();
+    tabNS(this).tab.browser.reload();
   },
 
   on: method(on),
