@@ -18,8 +18,11 @@ require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 
 // `loadSandbox` is exposed by bootstrap.js
-const loaderURI = __URI__.replace(/\/[^\/]*$/, '/loader.js');
-const loaderModule = loadSandbox(loaderURI);
+const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
+// We need to keep a reference to the sandbox in order to unload it in
+// bootstrap.js
+const loaderSandbox = loadSandbox(loaderURI);
+const loaderModule = loaderSandbox.exports;
 
 const { override } = loaderModule;
 
@@ -61,11 +64,7 @@ function CuddlefishLoader(options) {
 
   return loaderModule.Loader(options);
 }
-const exports = override(loaderModule, {
+
+exports = override(loaderModule, {
   Loader: CuddlefishLoader
 });
-
-// Called by bootstrap.js on addon shutdown
-function destroy() {
-  unloadSandbox(loaderModule);
-}

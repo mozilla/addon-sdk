@@ -194,10 +194,14 @@ function startup(data, reasonCode) {
 
 function loadSandbox(uri) {
   let proto = { sandboxPrototype: { loadSandbox: loadSandbox } };
-  let module = Cu.Sandbox(systemPrincipal, proto);
-  module.__URI__ = uri;
-  scriptLoader.loadSubScript(uri, module, 'UTF-8');
-  return module;
+  let sandbox = Cu.Sandbox(systemPrincipal, proto);
+  // Create a fake commonjs environnement just to enable loading loader.js
+  // correctly
+  sandbox.exports = {};
+  sandbox.module = { uri: uri, exports: sandbox.exports };
+  sandbox.require = function () {};
+  scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
+  return sandbox;
 }
 
 function unloadSandbox(sandbox) {
@@ -218,7 +222,7 @@ function shutdown(data, reasonCode) {
     unload(loader, reason);
     unload = null;
     // Unload sandbox used to evaluate loader.js
-    cuddlefishSandbox.destroy();
+    unloadSandbox(cuddlefishSandbox.loaderSandbox);
     // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
     // and keep a reference to this compartment.
     unloadSandbox(cuddlefishSandbox);
