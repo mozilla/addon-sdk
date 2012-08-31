@@ -10,6 +10,8 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
+const { getTabTitle } = require('api-utils/tabs/utils');
+
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 const Tab = Class({
@@ -26,7 +28,7 @@ const Tab = Class({
    * Changing this property changes an actual title.
    * @type {String}
    */
-  get title() tabNS(this).tab.browser.contentDocument.title,
+  get title() getTabTitle(tabNS(this).tab),
   set title(value) tabNS(this).tab.browser.contentDocument.title = String(value),
 
   /**

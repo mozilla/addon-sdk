@@ -36,7 +36,9 @@ function getActiveTab(window) {
 exports.getActiveTab = getActiveTab;
 
 function getOwnerWindow(tab) {
-  return tab.ownerDocument.defaultView;
+  if (tab.ownerDocument)
+    return tab.ownerDocument.defaultView;
+  return null;
 }
 exports.getOwnerWindow = getOwnerWindow;
 
@@ -94,16 +96,25 @@ function Options(options) {
 exports.Options = Options;
 
 function getGBrowserForTab(tab) {
-  return getOwnerWindow(tab).gBrowser;
+  let outerWin = getOwnerWindow(tab);
+  if (outerWin)
+    return getOwnerWindow(tab).gBrowser;
+  return null;
 }
 exports.getGBrowserForTab = getGBrowserForTab;
 
 function getBrowserForTab(tab) {
-  return getGBrowserForTab(tab).getBrowserForTab(tab);
+  let gBrowser = getGBrowserForTab(tab);
+  if (gBrowser) // firefox
+    return getGBrowserForTab(tab).getBrowserForTab(tab);
+  else if (tab.browser) // fennec
+    return tab.browser;
+
+  return null;
 }
 exports.getBrowserForTab = getBrowserForTab;
 
 function getTabTitle(tab) {
-  return getBrowserForTab(tab).contentDocument.title || tab.label;
+  return getBrowserForTab(tab).contentDocument.title || tab.label || "";
 }
 exports.getTabTitle = getTabTitle;
