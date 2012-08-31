@@ -130,8 +130,8 @@ const PageMod = Loader.compose(EventEmitter, {
                         'values: '+ VALID_ATTACHTO_OPTIONS.join(', '));
       if (this.attachTo.indexOf("top") === -1 &&
           this.attachTo.indexOf("frame") === -1)
-        throw new Error('The `attachTo` option must always be set to contain ' +
-                        'at least `top` or `frame` value');
+        throw new Error('The `attachTo` option must always contain at least' +
+                        ' `top` or `frame` value');
     }
     else {
       this.attachTo = ["top", "frame"];
