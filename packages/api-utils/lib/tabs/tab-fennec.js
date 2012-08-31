@@ -10,7 +10,6 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
-//const { getFaviconURIForLocation } = require("../utils/data");
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 const Tab = Class({
