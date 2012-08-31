@@ -157,6 +157,13 @@ exports.isRegistered = isRegistered;
  * name and `component.contract` with the class.
  */
 function register(factory) {
+  if (!(factory instanceof Factory)) {
+    throw new Error("xpcom.register() expect a Factory instance.\n" +
+                    "Please refactor your code to new xpcom module if you" +
+                    " are repacking an addon from SDK <= 1.5:\n" +
+                    "https://addons.mozilla.org/en-US/developers/docs/sdk/latest/packages/api-utils/xpcom.html");
+  }
+
   registerFactory(factory.id, factory.description, factory.contract, factory);
 
   if (factory.unregister)
