@@ -128,10 +128,8 @@ function startup(data, reasonCode) {
     let manifest = manifestV2(options.manifest);
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
-    cuddlefishSandbox = Cu.Sandbox(systemPrincipal);
     let cuddlefishURI = prefixURI + options.loader;
-    cuddlefishSandbox.__URI__ = cuddlefishURI;
-    scriptLoader.loadSubScript(cuddlefishURI, cuddlefishSandbox, 'UTF-8');
+    let cuddlefishSandbox = loadSandbox(cuddlefishURI);
     let cuddlefish = cuddlefishSandbox.exports;
 
     // Normalize `options.mainPath` so that it looks like one that will come
@@ -194,6 +192,19 @@ function startup(data, reasonCode) {
   }
 };
 
+function loadSandbox(uri) {
+  let proto = { sandboxPrototype: { loadSandbox: loadSandbox } };
+  let module = Cu.Sandbox(systemPrincipal, proto);
+  module.__URI__ = uri;
+  scriptLoader.loadSubScript(uri, module, 'UTF-8');
+  return module;
+}
+
+function unloadSandbox(sandbox) {
+  if ("nukeSandbox" in Cu)
+    Cu.nukeSandbox(sandbox);
+}
+
 function setTimeout(callback, delay) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   timer.initWithCallback({ notify: callback }, delay,
@@ -210,8 +221,7 @@ function shutdown(data, reasonCode) {
     cuddlefishSandbox.destroy();
     // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
     // and keep a reference to this compartment.
-    if ("nukeSandbox" in Cu)
-      Cu.nukeSandbox(cuddlefishSandbox);
+    unloadSandbox(cuddlefishSandbox);
     cuddlefishSandbox = null;
     // Avoid leaking all modules when something goes wrong with one particular
     // module. Do not clean it up immediatly in order to allow executing some
@@ -234,8 +244,7 @@ function nukeModules() {
     let sandbox = loader.sandboxes[key];
     delete loader.sandboxes[key];
     // Bug 775067: From FF17 we can kill all CCW from a given sandbox
-    if ("nukeSandbox" in Cu)
-      Cu.nukeSandbox(sandbox);
+    unloadSandbox(sandbox);
   }
   loader = null;
 }

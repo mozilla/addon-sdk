@@ -16,14 +16,11 @@ require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 */
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
-const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
-const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
-                     getService(Ci.mozIJSSubScriptLoader);
 
+// `loadSandbox` is exposed by bootstrap.js
 const loaderURI = __URI__.replace(/\/[^\/]*$/, '/loader.js');
-const loaderModule = Cu.Sandbox(systemPrincipal);
-loaderModule.__URI__ = loaderURI;
-scriptLoader.loadSubScript(loaderURI, loaderModule, 'UTF-8');
+const loaderModule = loadSandbox(loaderURI);
+
 const { override } = loaderModule;
 
 function CuddlefishLoader(options) {
@@ -70,6 +67,5 @@ const exports = override(loaderModule, {
 
 // Called by bootstrap.js on addon shutdown
 function destroy() {
-  if ("nukeSandbox" in Cu)
-    Cu.nukeSandbox(loaderModule);
+  unloadSandbox(loaderModule);
 }
