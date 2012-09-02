@@ -15,8 +15,6 @@
       return imports;
     }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
-  } else if (~String(this).indexOf('Sandbox')) { // Sandbox
-    factory(function require(uri) {}, this, { uri: __URI__, id: id });
   } else {  // Browser or alike
     var globals = this
     factory(function require(id) {
@@ -251,6 +249,7 @@ const Require = iced(function Require(loader, requirer) {
 
     // Resolves `uri` of module using loaders resolve function.
     let uri = resolveURI(requirement, mapping);
+
 
     if (!uri) // Throw if `uri` can not be resolved.
       throw Error('Module: Can not resolve "' + id + '" module required by ' +
