@@ -32,6 +32,7 @@ Right now only the following modules are fully functional:
 * [page-worker](packages/addon-kit/page-worker.html)
 * [request](packages/addon-kit/request.html)
 * [self](packages/addon-kit/self.html)
+* [simple-prefs](packages/addon-kit/simple-prefs.html)
 * [simple-storage](packages/addon-kit/simple-storage.html)
 * [timers](packages/addon-kit/timers.html)
 
