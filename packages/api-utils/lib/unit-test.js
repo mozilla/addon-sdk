@@ -350,7 +350,8 @@ TestRunner.prototype = {
             a = a();
           }
           catch(e) {
-            test.fail("Exception when calling asynchronous assertion: " + e);
+            test.fail("Exception when calling asynchronous assertion: " + e +
+                      "\n" + e.stack);
             finished = true;
             return;
           }
