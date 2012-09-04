@@ -24,7 +24,7 @@ const BrowserWindow = Class({
     return null;
   },
   activate: function activate() {
-    this.activeTab.activate();
+    // TODO
     return null;
   },
   close: function() {
