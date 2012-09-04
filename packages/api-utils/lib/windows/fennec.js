@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { BrowserWindow } = require('api-utils/window/browser-window');
+const { BrowserWindow } = require('api-utils/window/browser');
 const windowUtils = require('api-utils/window-utils');
 const { windowNS } = require('api-utils/window/namespace');
 const { on, off, once, emit } = require("api-utils/event/core");
