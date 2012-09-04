@@ -411,7 +411,7 @@ Creates a PageMod.
     option are loaded *after* those specified by the `contentStyleFile` option.
     Optional.
 
-  @prop [attachTo] {string, array}
+  @prop [attachTo] {string,array}
     Option to specify on which documents PageMod should be applied.
     It accepts following values:
 
