@@ -70,6 +70,6 @@ exports.base64Encode = deprecateFunction(base64.encode,
  * Decodes a string of data which has been encoded using base-64 encoding.
  */
 exports.base64Decode = deprecateFunction(base64.decode,
-  'DEPRECATED: require("api-utils/utils/data").base64Dencode is deprecated, ' +
+  'require("api-utils/utils/data").base64Dencode is deprecated, ' +
   'please use require("api-utils/base64").decode instead'
 );

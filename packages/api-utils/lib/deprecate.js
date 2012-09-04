@@ -8,13 +8,14 @@ const { components } = require("chrome");
 const traceback = require("./traceback");
 
 function deprecatedUsage(msg) {
+  // Print caller stacktrace in order to help figuring out which code
+  // does use deprecated thing
   let stack = traceback.get().slice(0, -1);
   console.error("DEPRECATED: " + msg + "\n" + traceback.format(stack));
 }
 exports.deprecatedUsage = deprecatedUsage;
 
 function deprecateFunction(fun, msg) {
-  let stack = traceback.get().slice(0, -1);
   return function deprecated() {
     deprecatedUsage(msg);
     return fun.apply(this, arguments);
