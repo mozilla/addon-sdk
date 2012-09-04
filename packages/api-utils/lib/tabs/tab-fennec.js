@@ -46,7 +46,9 @@ const Tab = Class({
    * @type {String}
    */
   get favicon() {
-    throw new Error(ERR_FENNEC_MSG); // TODO
+    // TODO: provide the real favicon when it is available
+    // return blank default
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAEklEQVQ4jWNgGAWjYBSMAggAAAQQAAF/TXiOAAAAAElFTkSuQmCC';
   },
 
   getThumbnail: function() {

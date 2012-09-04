@@ -61,12 +61,7 @@ exports.testTabProperties = function(test) {
     onReady: function(tab) {
       test.assertEqual(tab.title, "foo", "title of the new tab matches");
       test.assertEqual(tab.url, url, "URL of the new tab matches");
-      try {
-        test.assert(tab.favicon, "favicon of the new tab is not empty");
-      }
-      catch(e) {
-        test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.favicon');
-      }
+      test.assert(tab.favicon, "favicon of the new tab is not empty");
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
       try {
