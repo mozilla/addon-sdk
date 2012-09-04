@@ -47,6 +47,8 @@ const Tab = Class({
    */
   get favicon() {
     // TODO: provide the real favicon when it is available
+    console.error(ERR_FENNEC_MSG);
+
     // return blank default
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAEklEQVQ4jWNgGAWjYBSMAggAAAQQAAF/TXiOAAAAAElFTkSuQmCC';
   },

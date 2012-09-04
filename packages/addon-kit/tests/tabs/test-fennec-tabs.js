@@ -14,6 +14,22 @@ const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("tabs") instead';
 
+function LoaderWithHookedConsole() {
+  let errors = [];
+  let loader = Loader(module, {
+    console: Object.create(console, {
+      error: { value: function(error) {
+        errors.push(error);
+      }}
+    })
+  });
+
+  return {
+    loader: loader,
+    errors: errors
+  }
+}
+
 // TEST: tab unloader
 exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
@@ -53,6 +69,8 @@ exports.testAutomaticDestroy = function(test) {
 // TEST: tab properties
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
+  let { loader, errors } = LoaderWithHookedConsole();
+  let tabs = loader.require('tabs');
 
   let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
   let tabsLen = tabs.length;
@@ -62,6 +80,8 @@ exports.testTabProperties = function(test) {
       test.assertEqual(tab.title, "foo", "title of the new tab matches");
       test.assertEqual(tab.url, url, "URL of the new tab matches");
       test.assert(tab.favicon, "favicon of the new tab is not empty");
+      // TODO: remove need for this test by implementing the favicon feature
+      test.assertEqual(errors.length, 1, "favicon logs an error for now");
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
       try {
@@ -72,6 +92,8 @@ exports.testTabProperties = function(test) {
       }
 
       tab.close(function() {
+        loader.unload();
+
         // end test
         test.done();
       });
