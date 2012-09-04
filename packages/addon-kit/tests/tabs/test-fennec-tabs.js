@@ -12,7 +12,7 @@ const xulApp = require("xul-app");
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
-const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("tabs") instead';
+const ERR_MSG = 'Error: This method is not yet supported by Fennec';
 
 function LoaderWithHookedConsole() {
   let errors = [];
@@ -224,62 +224,81 @@ exports.testTabMove = function(test) {
   });
 };
 
+// TEST: open tab with default options
+exports.testTabsOpen_alt = function(test) {
+  test.waitUntilDone();
+
+  let { loader, errors } = LoaderWithHookedConsole();
+  let tabs = loader.require('tabs');
+  let url = "data:text/html;charset=utf-8,default";
+
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      test.assertEqual(tab.url, url, "URL of the new tab matches");
+      test.assertEqual(tabs.activeTab, tab, "URL of active tab in the current window matches");
+      test.assertEqual(tab.isPinned, false, "The new tab is not pinned");
+      test.assertEqual(errors.length, 1, "isPinned logs error");
+
+      // end test
+      tab.close(function() {
+        loader.unload();
+        test.done();
+      });
+    }
+  });
+};
+
 // TEST: open pinned tab
 exports.testOpenPinned_alt = function(test) {
-  if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
-    // test tab pinning
     test.waitUntilDone();
 
+    let { loader, errors } = LoaderWithHookedConsole();
+    let tabs = loader.require('tabs');
     let url = "about:blank";
+
     tabs.open({
       url: url,
       isPinned: true,
       onOpen: function(tab) {
-        test.assertEqual(tab.isPinned, true, "The new tab is pinned");
+        test.assertEqual(tab.isPinned, false, "The new tab is pinned");
+        test.assertEqual(errors.length, 2, "isPinned logs error");
 
         // end test
-        tab.close(function() test.done());
+        tab.close(function() {
+          loader.unload();
+          test.done();
+        });
       }
     });
-  }
-  else {
-    test.pass("Pinned tabs are not supported in this application.");
-    test.done();
-  }
 };
 
 // TEST: pin/unpin opened tab
-exports.testPinUnpin = function(test) {
-  if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
+exports.testPinUnpin_alt = function(test) {
     test.waitUntilDone();
 
+    let { loader, errors } = LoaderWithHookedConsole();
+    let tabs = loader.require('tabs');
     let url = "data:text/html;charset=utf-8,default";
+
     tabs.open({
       url: url,
       onOpen: function(tab) {
-        try {
-          tab.pin();
-          test.assertEqual(tab.isPinned, true, "The tab was pinned correctly");
-        }
-        catch(e) {
-          test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.pin/unpin');
-        }
-        try {
-          tab.unpin();
-        }
-        catch(e) {
-          test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.pin/unpin');
-        }
+        tab.pin();
+        test.assertEqual(tab.isPinned, false, "The tab was pinned correctly");
+        test.assertEqual(errors.length, 2, "tab.pin() logs error");
+
+        tab.unpin();
         test.assertEqual(tab.isPinned, false, "The tab was unpinned correctly");
+        test.assertEqual(errors.length, 4, "tab.unpin() logs error");
 
         // end test
-        tab.close(function() test.done());
+        tab.close(function() {
+          loader.unload();
+          test.done();
+        });
       }
     });
-  }
-  else {
-    test.pass("Pinned tabs are not supported in this application.");
-  }
 };
 
 // TEST: open tab in background

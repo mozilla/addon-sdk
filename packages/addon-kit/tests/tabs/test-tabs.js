@@ -75,25 +75,6 @@ exports.testActiveTab_setter_alt = function(test) {
   });
 };
 
-// TEST: open tab with default options
-exports.testTabsOpen_alt = function(test) {
-  test.waitUntilDone();
-
-  let url = "data:text/html;charset=utf-8,default";
-
-  tabs.open({
-    url: url,
-    onReady: function(tab) {
-      test.assertEqual(tab.url, url, "URL of the new tab matches");
-      test.assertEqual(tabs.activeTab, tab, "URL of active tab in the current window matches");
-      test.assertEqual(tab.isPinned, false, "The new tab is not pinned");
-
-      // end test
-      tab.close(function() test.done());
-    }
-  });
-};
-
 // TEST: tab.close()
 exports.testTabClose_alt = function(test) {
   test.waitUntilDone();

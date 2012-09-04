@@ -16,6 +16,8 @@ const { when: unload } = require('unload');
 
 var mainWindow = windowNS(browserWindows.activeWindow).window;
 
+const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
+
 const Tabs = Class({
   initialize: function initialize(options) {
     let window = tabsNS(this).window = options.window;
@@ -114,9 +116,13 @@ const Tabs = Class({
   open: function(options) {
     options = Options(options);
     let activeWin = browserWindows.activeWindow;
+
+    if (options.isPinned) {
+      console.error(ERR_FENNEC_MSG); // TODO
+    }
+
     let rawTab = openTab(windowNS(activeWin).window, options.url, {
-      inBackground: options.inBackground,
-      isPinned: options.isPinned
+      inBackground: options.inBackground
     });
     let tab = getTabForRawTab(rawTab);
 
