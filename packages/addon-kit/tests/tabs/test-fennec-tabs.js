@@ -194,6 +194,9 @@ exports.testTabReload = function(test) {
 exports.testTabMove = function(test) {
   test.waitUntilDone();
 
+  let { loader, errors } = LoaderWithHookedConsole();
+  let tabs = loader.require('tabs');
+
   let url = "data:text/html;charset=utf-8,testTabMove";
 
   tabs.open({
@@ -204,17 +207,17 @@ exports.testTabMove = function(test) {
       tabs.open({
         url: url,
         onOpen: function(tab) {
+          let i = tab.index;
           test.assert(tab.index > tab1.index, "2nd tab has valid index");
-          try {
-            tab.index = 0;
-            test.assertEqual(tab.index, 0, "tab index after move matches");
-          }
-          catch(e) {
-            test.assertEqual(e, ERR_MSG, 'Error is thrown on setting tab.index');
-          }
+          tab.index = 0;
+          test.assertEqual(tab.index, i, "tab index after move matches");
+          test.assertEqual(errors.length, 1, "setting tab.index logs error");
 
           // end test
-          tab1.close(function() tab.close(function() test.done()));
+          tab1.close(function() tab.close(function() {
+            loader.unload();
+            test.done();
+          }));
         }
       });
     }
