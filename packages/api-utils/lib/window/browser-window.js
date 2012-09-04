@@ -32,6 +32,8 @@ const BrowserWindow = Class({
     return null;
   },
   get title() getWindowTitle(windowNS(this).window),
+  // TODO: remove assumption below
+  // NOTE: Fennec only has one window, which is assumed below
   get tabs() require('tabs'),
   get activeTab() require('tabs').activeTab,
   on: method(on),
