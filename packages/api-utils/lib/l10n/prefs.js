@@ -6,14 +6,17 @@
 
 const observers = require("api-utils/observer-service");
 const core = require("api-utils/l10n/core");
+const { id: jetpackId} = require('self');
 
 const OPTIONS_DISPLAYED = "addon-options-displayed";
 
 function onOptionsDisplayed(document, addonId) {
-  let nodes = document.querySelectorAll('setting, button');
+  if (addonId !== jetpackId)
+    return;
+  let query = 'setting[data-jetpack-id="' + jetpackId + '"][pref-name], ' +
+              'button[data-jetpack-id="' + jetpackId + '"][pref-name]';
+  let nodes = document.querySelectorAll(query);
   for (let node of nodes) {
-    if (!node.hasAttribute("pref-name"))
-      continue;
     let name = node.getAttribute("pref-name");
     if (node.tagName == "setting") {
       let desc = core.get(name + "_description");
