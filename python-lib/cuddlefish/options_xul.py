@@ -41,6 +41,8 @@ def parse_options(options, jetpack_id):
 
     for pref in options:
         setting = doc.createElement("setting")
+        setting.setAttribute("pref-name", pref["name"])
+        setting.setAttribute("data-jetpack-id", jetpack_id)
         setting.setAttribute("pref", "extensions." + jetpack_id + "." + pref["name"])
         setting.setAttribute("type", pref["type"])
         setting.setAttribute("title", pref["title"])
@@ -50,6 +52,8 @@ def parse_options(options, jetpack_id):
 
         if (pref["type"] == "control"):
             button = doc.createElement("button")
+            button.setAttribute("pref-name", pref["name"])
+            button.setAttribute("data-jetpack-id", jetpack_id)
             button.setAttribute("label", pref["label"])
             button.setAttribute("oncommand", "Services.obs.notifyObservers(null, '" +
                                               jetpack_id + "-cmdPressed', '" +
