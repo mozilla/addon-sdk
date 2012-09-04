@@ -8,6 +8,7 @@ const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
 const { defer } = require("../functional");
 const { EVENTS } = require("./events");
+const { EventTarget } = require("api-utils/event/target");
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
 const { getTabTitle } = require('api-utils/tabs/utils');
@@ -15,7 +16,9 @@ const { getTabTitle } = require('api-utils/tabs/utils');
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
 const Tab = Class({
+  extends: EventTarget,
   initialize: function initialize(options) {
+    EventTarget.prototype.initialize.call(this, options);
     let tabInternals = tabNS(this);
 
     tabInternals.window = options.window;
@@ -130,10 +133,6 @@ const Tab = Class({
    */
   reload: function reload() {
     tabNS(this).tab.browser.reload();
-  },
-
-  on: method(on),
-  once: method(once),
-  removeListener: method(off),
+  }
 });
 exports.Tab = Tab;
