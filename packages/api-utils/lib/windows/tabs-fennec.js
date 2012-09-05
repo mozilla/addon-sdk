@@ -28,10 +28,7 @@ const Tabs = Class({
     let tabsInternals = tabsNS(this);
     let window = tabsNS(this).window = options.window;
     let tabs = tabsNS(this).tabs = getTabs(window).map(function(rawTab) {
-      let tab = Tab({window: window, tab: rawTab});
-      if (window.BrowserApp.selectedTab === rawTab)
-        tabsInternals.activeTab = tab;
-      return tab;
+      return Tab({window: window, tab: rawTab});
     });
 
     // TabOpen
@@ -47,11 +44,6 @@ const Tabs = Class({
           window: window,
           tab: rawTab
         }));
-
-        if (window.BrowserApp.selectedTab === rawTab) {
-          // TODO: this isn't always the case..
-          tabsNS(this).activeTab = tab;
-        }
       }
 
       tabNS(tab).opened = true;
@@ -70,7 +62,7 @@ const Tabs = Class({
     // TabSelect
     let onTabSelect = function(evt) {
       // Set value whenever new tab becomes active.
-      let tab = tabsNS(this).activeTab = getTabForBrowser(evt.target);
+      let tab = getTabForBrowser(evt.target);
       emit(tab, "activate", tab);
       emit(this, "activate", tab);
 
@@ -107,7 +99,7 @@ const Tabs = Class({
     }.bind(this));
   },
   get activeTab() {
-    return tabsNS(this).activeTab;
+    return getTabForRawTab(tabsNS(this).window.BrowserApp.selectedTab);
   },
   open: function(options) {
     options = Options(options);
