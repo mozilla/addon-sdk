@@ -72,7 +72,8 @@ function closeTab(tab) {
   let window = tabNS(getTabForRawTab(tab)).window;
   // fennec?
   if (window && window.BrowserApp)
-    window.BrowserApp.closeTab(tab);
+    return window.BrowserApp.closeTab(tab);
+  return null;
 }
 exports.closeTab = closeTab;
 
@@ -152,7 +153,7 @@ function getTabForWindow(win) {
   for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
     let w = topWindow.gBrowser.browsers[i].contentWindow;
     if (getWindowID(w) == topWindowId) {
-      return Tab({
+      return require('api-utils/tabs/tab').Tab({
         // TODO: api-utils should not depend on addon-kit!
         window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
         tab: topWindow.gBrowser.tabs[i]

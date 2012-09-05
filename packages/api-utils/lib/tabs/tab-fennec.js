@@ -12,6 +12,7 @@ const { EventTarget } = require('api-utils/event/target');
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
 const { getTabTitle, closeTab } = require('api-utils/tabs/utils');
+const { Worker } = require('api-utils/tabs/worker');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
@@ -98,13 +99,7 @@ const Tab = Class({
    * @type {Worker}
    */
   attach: function attach(options) {
-    let { Worker } = require("api-utils/content/worker");
-    options.window = tabNS(this).tab.browser.contentWindow;
-    let worker = Worker(options);
-    worker.once("detach", function detach() {
-      worker.destroy();
-    });
-    return worker;
+    return Worker(options, tabNS(this).tab.browser.contentWindow);
   },
 
   /**

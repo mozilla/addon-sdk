@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");
@@ -13,7 +13,8 @@ const {
   getOwnerWindow,
   getBrowserForTab,
   getTabTitle
-} = require("./utils");
+} = require('./utils');
+const { Worker } = require('api-utils/tabs/worker');
 
 
 // Array of the inner instances of all the wrapped tabs.
@@ -165,13 +166,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * @type {Worker}
    */
   attach: function attach(options) {
-    let { Worker } = require("../content/worker");
-    options.window = this._contentWindow;
-    let worker = Worker(options);
-    worker.once("detach", function detach() {
-      worker.destroy();
-    });
-    return worker;
+    return Worker(options, this._contentWindow);
   },
 
   /**
