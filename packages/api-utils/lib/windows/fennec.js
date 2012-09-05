@@ -15,6 +15,8 @@ const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider usi
 
 const windows = [];
 
+// NOTE: On Fennec there is only one window.
+
 const browserWindows = {
   get activeWindow() {
     let window = windowUtils.activeBrowserWindow;
