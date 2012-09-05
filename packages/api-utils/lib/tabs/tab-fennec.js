@@ -72,7 +72,7 @@ const Tab = Class({
       if (tabs[i] === tab)
         return i;
     }
-    return -1;
+    return null;
   },
   set index(value) {
     console.error(ERR_FENNEC_MSG); // TODO
