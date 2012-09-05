@@ -411,11 +411,18 @@ Creates a PageMod.
     option are loaded *after* those specified by the `contentStyleFile` option.
     Optional.
 
-  @prop [attachTo] {array}
+  @prop [attachTo] {string,array}
     Option to specify on which documents PageMod should be applied.
-    For now, it only accepts one value: "existing". If `attachTo` contains
-    "existing", the PageMod will be automatically applied on already opened
+    It accepts following values:
+
+    * "existing": the PageMod will be automatically applied on already opened
     tabs.
+    * "top": the PageMod will be applied to top-level tab documents
+    * "frame": the PageMod will be applied to all iframe inside tab documents
+
+    When omitted, it defaults to ["top", "frame"]. When set, you have to at
+    least set either "top" and/or "frame".
+    Optional.
 
   @prop [onAttach] {function}
 A function to call when the PageMod attaches content scripts to

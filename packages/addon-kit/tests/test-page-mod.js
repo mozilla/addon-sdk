@@ -360,7 +360,7 @@ exports.testWorksWithExistingTabs = function(test) {
     onReady: function onReady(tab) {
       let pageMod = new PageMod({
         include: url,
-        attachTo: ["existing"],
+        attachTo: ["existing", "top", "frame"],
         onAttach: function(worker) {
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
           pageMod.destroy();
@@ -515,7 +515,7 @@ exports['test attachment to tabs only'] = function(test) {
   // Only these three documents will be accepted by the page-mod
   function openTabWithIframes() {
     console.info('Open iframes in a tab');
-    let subContent = '<iframe src="data:text/html,sub frame" />'
+    let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
     let content = '<iframe src="data:text/html,' +
                   encodeURIComponent(subContent) + '" />';
     require('tabs').open({
@@ -527,6 +527,86 @@ exports['test attachment to tabs only'] = function(test) {
   }
 
   openHiddenFrame();
+};
+
+exports['test111 attachTo [top]'] = function(test) {
+  test.waitUntilDone();
+
+  let { PageMod } = require('page-mod');
+
+  let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
+  let content = '<iframe src="data:text/html;charset=utf-8,' +
+                encodeURIComponent(subContent) + '" />';
+  let topDocumentURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(content)
+
+  let workerCount = 0;
+
+  let mod = PageMod({
+    include: 'data:text/html*',
+    contentScriptWhen: 'start',
+    contentScript: 'self.postMessage(document.location.href);',
+    attachTo: ['top'],
+    onAttach: function onAttach(worker) {
+      if (++workerCount == 1) {
+        worker.on('message', function (href) {
+          test.assertEqual(href, topDocumentURL,
+                           "worker on top level document only");
+          worker.destroy();
+          mod.destroy();
+          test.done();
+        });
+      }
+      else {
+        test.fail('page-mod attached to a non-top document');
+      }
+    }
+  });
+
+  require('tabs').open(topDocumentURL);
+};
+
+exports['test111 attachTo [frame]'] = function(test) {
+  test.waitUntilDone();
+
+  let { PageMod } = require('page-mod');
+
+  let subFrameURL = 'data:text/html;charset=utf-8,subframe';
+  let subContent = '<iframe src="' + subFrameURL + '" />';
+  let frameURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(subContent);
+  let content = '<iframe src="' + frameURL + '" />';
+  let topDocumentURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(content)
+
+  let workerCount = 0, messageCount = 0;
+
+  function onMessage(href) {
+    if (href == frameURL)
+      test.pass("worker on first frame");
+    else if (href == subFrameURL)
+      test.pass("worker on second frame");
+    else
+      test.fail("worker on unexpected document: " + href);
+    this.destroy();
+    if (++messageCount == 2) {
+      mod.destroy();
+      test.done();
+    }
+  }
+  let mod = PageMod({
+    include: 'data:text/html*',
+    contentScriptWhen: 'start',
+    contentScript: 'self.postMessage(document.location.href);',
+    attachTo: ['frame'],
+    onAttach: function onAttach(worker) {
+      if (++workerCount <= 2) {
+        worker.on('message', onMessage);
+      }
+      else {
+        test.fail('page-mod attached to a non-frame document');
+      }
+    }
+  });
+
+  require('tabs').open(topDocumentURL);
 };
 
 exports.testContentScriptOptionsOption = function(test) {

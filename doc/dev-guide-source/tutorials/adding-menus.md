@@ -26,7 +26,23 @@ describes how to add a menu item using the `menuitems` package in particular.
 First we'll download `menuitems` from
 [https://github.com/erikvold/menuitems-jplib](https://github.com/erikvold/menuitems-jplib/zipball/51080383cbb0fe2a05f8992a8aae890f4c014176).
 
-Next, extract it under the SDK's `packages` directory:
+Third-party packages like `menuitems` can be installed in three
+different places:
+
+* in the `packages` directory under the SDK root, alongside built-in
+packages like [`addon-kit`](packages/addon-kit/index.html) and
+[`api-utils`](packages/api-utils/index.html). If you do this the package is
+available to any other add-ons you're developing using that SDK instance,
+and the package's documentation is visible through `cfx docs`.
+* in a `packages` directory you create under your add-on's root: if you
+do this, the package is only available to that add-on.
+* in a directory indicated using the `packages` key in
+your add-on's [package.json](dev-guide/package-spec.html). If you
+do this, you may not keep any packages in your add-on's `packages`
+directory, or they will not be found.
+
+In this example we will install the package under the SDK root. From
+the SDK root directory, execute something like the following commands:
 
 <pre>
 cd packages
