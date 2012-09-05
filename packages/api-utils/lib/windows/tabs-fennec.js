@@ -8,7 +8,7 @@ const { Tab } = require('api-utils/tabs/tab');
 const { browserWindows } = require('api-utils/windows/fennec');
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
-const { openTab, getTabForRawTab } = require('api-utils/tabs/utils');
+const { openTab, getTabs, getTabForRawTab } = require('api-utils/tabs/utils');
 const { Options } = require('api-utils/tabs/common');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
@@ -25,21 +25,14 @@ const Tabs = Class({
   initialize: function initialize(options) {
     EventTarget.prototype.initialize.call(this, options);
 
+    let tabsInternals = tabsNS(this);
     let window = tabsNS(this).window = options.window;
-    let tabs = tabsNS(this).tabs = [];
-
-    for (let i = 0, len = window.BrowserApp.tabs.length; i < len; i++) {
-      let rawTab = window.BrowserApp.tabs[i];
-      let tab = Tab({
-        window: window,
-        tab: rawTab
-      });
-
-      tabs.push(tab);
-
-      if (window.BrowserApp.selectedTab == rawTab)
-        tabsNS(this).activeTab = tab;
-    }
+    let tabs = tabsNS(this).tabs = getTabs(window).map(function(rawTab) {
+      let tab = Tab({window: window, tab: rawTab});
+      if (window.BrowserApp.selectedTab === rawTab)
+        tabsInternals.activeTab = tab;
+      return tab;
+    });
 
     // TabOpen
     let onTabOpen = (function(evt) {
@@ -112,8 +105,6 @@ const Tabs = Class({
       window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
       off(this);
     }.bind(this));
-
-    return this;
   },
   get activeTab() {
     return tabsNS(this).activeTab;

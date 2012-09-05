@@ -23,6 +23,11 @@ function getTabContainers(window) {
 exports.getTabContainers = getTabContainers;
 
 function getTabs(window) {
+  // fennec
+  if (window.BrowserApp)
+    return window.BrowserApp.tabs;
+
+  // firefox - default
   return getTabContainers(window).reduce(function (tabs, container) {
     tabs.push.apply(tabs, container.children);
     return tabs;
