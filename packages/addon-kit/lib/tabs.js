@@ -7,7 +7,7 @@ if (require("api-utils/xul-app").is("Firefox")) {
   module.exports = require("api-utils/tabs/firefox-tabs");
 }
 else if (require("api-utils/xul-app").is("Fennec")) {
-  module.exports = require("api-utils/tabs/fennec-tabs");
+  module.exports = require("api-utils/windows/tabs-fennec").tabs;
 }
 else {
   throw new Error([
