@@ -11,7 +11,7 @@ const { EVENTS } = require("./events");
 const { EventTarget } = require('api-utils/event/target');
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
-const { getTabTitle } = require('api-utils/tabs/utils');
+const { getTabTitle, closeTab } = require('api-utils/tabs/utils');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
@@ -125,7 +125,7 @@ const Tab = Class({
     if (callback)
       this.once(EVENTS.close.name, callback);
 
-    tabNS(this).window.BrowserApp.closeTab(tabNS(this).tab);
+    closeTab(tabNS(this).tab);
   },
 
   /**

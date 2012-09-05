@@ -8,7 +8,7 @@ const { Tab } = require('api-utils/tabs/tab-fennec');
 const { browserWindows } = require("api-utils/windows/fennec");
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
-const { openTab, Options } = require('api-utils/tabs/utils');
+const { openTab, Options, getTabForRawTab } = require('api-utils/tabs/utils');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
 const { EVENTS } = require("api-utils/tabs/events");
@@ -197,16 +197,6 @@ function getRawTabForBrowser(browser) {
     let tab = tabs[i];
     if (tab.browser === browser)
       return tab
-  }
-  return null;
-}
-
-function getTabForRawTab(aRawTab) {
-  let tabs = tabsNS(gTabs).tabs;
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    let tab = tabs[i];
-    if (tabNS(tab).tab === aRawTab)
-      return tab;
   }
   return null;
 }

@@ -6,6 +6,7 @@
 "use strict";
 
 const { validateOptions } = require("api-utils/api-utils");
+const { tabNS, tabsNS } = require('api-utils/tabs/namespace');
 
 function getTabContainer(tabBrowser) {
   return tabBrowser.tabContainer;
@@ -64,9 +65,29 @@ function isTabOpen(tab) {
 exports.isTabOpen = isTabOpen;
 
 function closeTab(tab) {
-  return getGBrowserForTab(tab).removeTab(tab);
+  let gBrowser = getGBrowserForTab(tab);
+  // normal case?
+  if (gBrowser)
+    return gBrowser.removeTab(tab);
+
+  let window = tabNS(getTabForRawTab(tab)).window;
+  // fennec?
+  if (window && window.BrowserApp)
+    window.BrowserApp.closeTab(tab);
 }
 exports.closeTab = closeTab;
+
+// fennec
+function getTabForRawTab(aRawTab) {
+  let tabs = tabsNS(require('tabs')).tabs;
+  for (let i = tabs.length - 1; i >= 0; i--) {
+    let tab = tabs[i];
+    if (tabNS(tab).tab === aRawTab)
+      return tab;
+  }
+  return null;
+}
+exports.getTabForRawTab = getTabForRawTab;
 
 function activateTab(tab) {
   getGBrowserForTab(tab).selectedTab = tab;
