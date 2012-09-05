@@ -318,10 +318,9 @@ const Worker = EventEmitter.compose({
   postMessage: function postMessage(data) {
     if (!this._contentWorker)
       throw new Error(ERR_DESTROYED);
-    if (this._frozen) {
-      console.warn(ERR_FROZEN);
-      return;
-    }
+    if (this._frozen)
+      throw new Error(ERR_FROZEN);
+
     this._contentWorker.emit("message", data);
   },
   
@@ -372,10 +371,8 @@ const Worker = EventEmitter.compose({
       return;
     }
 
-    if (this._frozen) {
-      console.warn(ERR_FROZEN);
-      return;
-    }
+    if (this._frozen)
+      throw new Error(ERR_FROZEN);
 
     // We throw exception when the worker has been destroyed
     if (!this._contentWorker) {

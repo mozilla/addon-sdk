@@ -201,10 +201,15 @@ const ContentWorker = Object.freeze({
       frozenTimers.forEach(registerTimer);
     });
     pipe.on("pagehide", function onPageHide() {
-      frozenTimers = [];
-      for (let id in _timers)
-        frozenTimers.push(_timers[id]);
-      disableAllTimers();
+      // Delay timeouts freezing, as some other pagehide listeners
+      // may register some that won't be frozen otherwise! (this particular
+      // pagehide listener will be called first)
+      chromeSetTimeout(function () {
+        frozenTimers = [];
+        for (let id in _timers)
+          frozenTimers.push(_timers[id]);
+        disableAllTimers();
+      }, 0);
     });
 
     // Unregister all timers when the page is destroyed
