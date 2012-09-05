@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Ci } = require('chrome');
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");
 const { defer } = require("../functional");
@@ -213,45 +212,3 @@ function Tab(options) {
 }
 Tab.prototype = TabTrait.prototype;
 exports.Tab = Tab;
-
-exports.getTabForWindow = function (win) {
-  // Get browser window
-  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIWebNavigation)
-                     .QueryInterface(Ci.nsIDocShellTreeItem)
-                     .rootTreeItem
-                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDOMWindow);
-  if (!topWindow.gBrowser) return null;
-
-  // Get top window object, in case we are in a content iframe
-  let topContentWindow;
-  try {
-    topContentWindow = win.top;
-  } catch(e) {
-    // It may throw if win is not a valid content window
-    return null;
-  }
-
-  function getWindowID(obj) {
-    return obj.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
-              .currentInnerWindowID;
-  }
-
-  // Search for related Tab
-  let topWindowId = getWindowID(topContentWindow);
-  for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
-    let w = topWindow.gBrowser.browsers[i].contentWindow;
-    if (getWindowID(w) == topWindowId) {
-      return Tab({
-        // TODO: api-utils should not depend on addon-kit!
-        window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
-        tab: topWindow.gBrowser.tabs[i]
-      });
-    }
-  }
-
-  // We were unable to find the related tab!
-  return null;
-}

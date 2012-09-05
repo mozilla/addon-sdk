@@ -5,6 +5,7 @@
 'use strict';
 
 const { tabNS, tabsNS } = require('api-utils/tabs/namespace');
+const { Ci } = require('chrome');
 
 function getTabContainer(tabBrowser) {
   return tabBrowser.tabContainer;
@@ -120,3 +121,46 @@ function getTabTitle(tab) {
   return getBrowserForTab(tab).contentDocument.title || tab.label || "";
 }
 exports.getTabTitle = getTabTitle;
+
+function getTabForWindow(win) {
+  // Get browser window
+  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIWebNavigation)
+                     .QueryInterface(Ci.nsIDocShellTreeItem)
+                     .rootTreeItem
+                     .QueryInterface(Ci.nsIInterfaceRequestor)
+                     .getInterface(Ci.nsIDOMWindow);
+  if (!topWindow.gBrowser) return null;
+
+  // Get top window object, in case we are in a content iframe
+  let topContentWindow;
+  try {
+    topContentWindow = win.top;
+  } catch(e) {
+    // It may throw if win is not a valid content window
+    return null;
+  }
+
+  function getWindowID(obj) {
+    return obj.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIDOMWindowUtils)
+              .currentInnerWindowID;
+  }
+
+  // Search for related Tab
+  let topWindowId = getWindowID(topContentWindow);
+  for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
+    let w = topWindow.gBrowser.browsers[i].contentWindow;
+    if (getWindowID(w) == topWindowId) {
+      return Tab({
+        // TODO: api-utils should not depend on addon-kit!
+        window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
+        tab: topWindow.gBrowser.tabs[i]
+      });
+    }
+  }
+
+  // We were unable to find the related tab!
+  return null;
+}
+exports.getTabForWindow = getTabForWindow;

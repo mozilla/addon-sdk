@@ -458,9 +458,8 @@ const Worker = EventEmitter.compose({
   
   get tab() {
     if (this._window) {
-      let tab = require("../tabs/tab-firefox");
       // this._window will be null after detach
-      return tab.getTabForWindow(this._window);
+      return require('api-utils/tabs/utils').getTabForWindow(this._window);
     }
     return null;
   },
