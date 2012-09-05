@@ -9,7 +9,8 @@ const { Tab } = require("../tabs/tab-firefox");
 const { EventEmitter } = require("../events");
 const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,
-        openTab, activateTab, Options } = require("../tabs/utils");
+        openTab, activateTab } = require("../tabs/utils");
+const { Options } = require("../tabs/common");
 const { observer: tabsObserver } = require("../tabs/observer");
 
 const TAB_BROWSER = "tabbrowser";
