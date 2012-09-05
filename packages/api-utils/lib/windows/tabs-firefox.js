@@ -5,7 +5,7 @@
 
 const { Trait } = require("../traits");
 const { List } = require("../list");
-const { Tab } = require("../tabs/tab-firefox");
+const { Tab } = require("../tabs/tab");
 const { EventEmitter } = require("../events");
 const { EVENTS } = require("../tabs/events");
 const { getOwnerWindow, getActiveTab, getTabs,

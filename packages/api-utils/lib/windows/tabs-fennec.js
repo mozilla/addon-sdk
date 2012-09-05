@@ -4,8 +4,8 @@
 "use strict";
 
 const { Class } = require('api-utils/heritage');
-const { Tab } = require('api-utils/tabs/tab-fennec');
-const { browserWindows } = require("api-utils/windows/fennec");
+const { Tab } = require('api-utils/tabs/tab');
+const { browserWindows } = require('api-utils/windows/fennec');
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
 const { openTab, getTabForRawTab } = require('api-utils/tabs/utils');
