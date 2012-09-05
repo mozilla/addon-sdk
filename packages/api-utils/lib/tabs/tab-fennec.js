@@ -6,12 +6,11 @@
 const { Cc, Ci } = require('chrome');
 const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
-const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { EventTarget } = require('api-utils/event/target');
 const { on, once, off } = require('api-utils/event/core');
 const { method } = require('../functional');
-const { getTabTitle, closeTab } = require('api-utils/tabs/utils');
+const { activateTab, getTabTitle, closeTab } = require('api-utils/tabs/utils');
 const { Worker } = require('api-utils/tabs/worker');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
@@ -104,14 +103,10 @@ const Tab = Class({
 
   /**
    * Make this tab active.
-   * Please note: That this function is called asynchronous since in E10S that
-   * will be the case. Besides this function is called from a constructor where
-   * we would like to return instance before firing a 'TabActivated' event.
    */
-  activate: defer(function activate() {
-    if (tabNS(this).window) // Ignore if window is closed by the time this is invoked.
-      tabNS(this).window.BrowserApp.selectTab(tabNS(this).tab);
-  }),
+  activate: function activate() {
+    activateTab(tabNS(this).tab, tabNS(this).window);
+  },
 
   /**
    * Close the tab

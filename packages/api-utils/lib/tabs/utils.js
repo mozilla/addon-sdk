@@ -5,7 +5,25 @@
 'use strict';
 
 const { tabNS, tabsNS } = require('api-utils/tabs/namespace');
+const { defer } = require("../functional");
 const { Ci } = require('chrome');
+
+function activateTab(tab, window) {
+  let gBrowser = getGBrowserForTab(tab);
+
+  // normal case
+  if (gBrowser) {console.log(1);
+    gBrowser.selectedTab = tab;
+  }
+  // fennec ?
+  else if (window && window.BrowserApp) {console.log(2);
+    window.BrowserApp.selectTab(tab);
+  }
+  return null;
+}
+// Please note: That this function is called asynchronous since in E10S that
+// will be the case.
+exports.activateTab = defer(activateTab);
 
 function getTabContainer(tabBrowser) {
   return tabBrowser.tabContainer;
@@ -93,11 +111,6 @@ function getTabForRawTab(aRawTab) {
   return null;
 }
 exports.getTabForRawTab = getTabForRawTab;
-
-function activateTab(tab) {
-  getGBrowserForTab(tab).selectedTab = tab;
-}
-exports.activateTab = activateTab;
 
 function getURI(tab) {
   return tab.linkedBrowser.currentURI.spec;

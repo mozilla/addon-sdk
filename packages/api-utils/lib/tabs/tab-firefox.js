@@ -10,6 +10,7 @@ const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
 const {
+  activateTab,
   getOwnerWindow,
   getBrowserForTab,
   getTabTitle
@@ -176,8 +177,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * we would like to return instance before firing a 'TabActivated' event.
    */
   activate: defer(function activate() {
-    if (this._window) // Ignore if window is closed by the time this is invoked.
-      this._window.gBrowser.selectedTab = this._tab;
+    activateTab(this._tab);
   }),
   /**
    * Close the tab
