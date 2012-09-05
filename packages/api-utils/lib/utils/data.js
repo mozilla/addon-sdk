@@ -10,8 +10,7 @@ const base64 = require("../base64");
 const IOService = Cc["@mozilla.org/network/io-service;1"].
   getService(Ci.nsIIOService);
 
-const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
-
+const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 const FaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                           getService(Ci.nsIFaviconService);
 
@@ -57,19 +56,14 @@ function getChromeURIContent(chromeURI) {
   input.close();
   return content;
 }
-
-exports.getChromeURIContent = function deprecated_getChromeURIContent() {
-  console.error('DEPRECATED: require("api-utils/utils/data").getChromeURIContent' +
-                ' is deprecated, please use require("api-utils/url/io").readURI ' +
-                'instead, for non binary content.');
-}
+exports.getChromeURIContent = getChromeURIContent;
 
 /**
  * Creates a base-64 encoded ASCII string from a string of binary data.
  */
 exports.base64Encode = function base64Encode(data) {
-  console.error('DEPRECATED: require("api-utils/utils/data").base64Encode is '
-                'deprecated, please use require("api-utils/base64").encode instead');
+  console.warn('require("api-utils/utils/data").base64Encode is deprecated, ' +
+               'please use require("api-utils/base64").encode instead');
 
   return base64.encode(data);
 }
@@ -77,8 +71,8 @@ exports.base64Encode = function base64Encode(data) {
  * Decodes a string of data which has been encoded using base-64 encoding.
  */
 exports.base64Decode = function base64Decode(data) {
-  console.error('DEPRECATED: require("api-utils/utils/data").base64Dencode is ' +
-                'deprecated, please use require("api-utils/base64").decode instead');
+  console.warn('require("api-utils/utils/data").base64Dencode is deprecated, ' +
+               'please use require("api-utils/base64").decode instead');
 
   return base64.decode(data);
 }
