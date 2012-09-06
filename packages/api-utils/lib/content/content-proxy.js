@@ -5,13 +5,12 @@
 "use strict";
 
 /* Trick the linker in order to avoid error on `Components.interfaces` usage.
-   We are tricking the linking with `require('./content-proxy.js')` in order
-   to ensure shipping it! But then the linker think that this file is going
-   to be used as a CommonJS module where we forbid usage of `Components`.
-   We only allow usage of it through `require('chrome')`:
-  require("chrome");
+   We are tricking the linker with `require('./content-proxy.js')` from
+   worjer.js in order to ensure shipping this file! But then the linker think
+   that this file is going to be used as a CommonJS module where we forbid usage
+   of `Components`.
 */
-let Ci = Components.interfaces;
+let Ci = Components['interfaces'];
 
 /**
  * Access key that allows privileged code to unwrap proxy wrappers through 
@@ -546,7 +545,7 @@ const xRayWrappersMissFixes = [
   // Trap access to form["node name"]
   // http://mxr.mozilla.org/mozilla-central/source/dom/base/nsDOMClassInfo.cpp#9477
   function (obj, name) {
-    if (typeof obj == "object" && obj.tagName == "FORM") {
+    if (typeof obj == "object" && "tagName" in obj && obj.tagName == "FORM") {
       let match = obj.wrappedJSObject[name];
       let nodes = obj.ownerDocument.getElementsByName(name);
       for (let i = 0, l = nodes.length; i < l; i++) {
@@ -664,6 +663,33 @@ const xRayWrappersMethodsFixes = {
     };
 
     return getProxyForFunction(f, NativeFunctionWrapper(f));
+  },
+
+  // Bug 769006: nsIDOMMutationObserver.observe fails with proxy as options
+  // attributes
+  observe: function observe(obj) {
+    // Ensure that we are on a DOMMutation object
+    try {
+      // nsIDOMMutationObserver starts with FF14
+      if ("nsIDOMMutationObserver" in Ci)
+        obj.QueryInterface(Ci.nsIDOMMutationObserver);
+      else
+        return null;
+    }
+    catch(e) {
+      return null;
+    }
+    return function nsIDOMMutationObserverObserveFix(target, options) {
+      // Gets native/unwrapped this
+      let self = this && typeof this.valueOf == "function" ?
+                 this.valueOf(UNWRAP_ACCESS_KEY) : this;
+      // Unwrap the xraywrapper target out of JS proxy
+      let targetXray = unwrap(target);
+      // But do not wrap `options` through ContentScriptObjectWrapper
+      let result = wrap(self.observe(targetXray, options));
+      // Finally wrap result into JS proxies
+      return wrap(result);
+    };
   }
 };
 

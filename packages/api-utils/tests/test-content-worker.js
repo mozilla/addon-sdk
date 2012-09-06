@@ -104,43 +104,43 @@ exports["test:sample"] = WorkerTest(
     test.assertEqual(worker.url, window.location.href,
                      "worker.url works");
     worker.postMessage("hi!");
-  
-});
+  }
+);
 
 exports["test:emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(test, browser, done) {
-  
-  let worker =  Worker({
-      window: browser.contentWindow,
-      contentScript: "new " + function WorkerScope() {
-        // Validate self.on and self.emit
-        self.port.on("addon-to-content", function (data) {
-          self.port.emit("content-to-addon", data);
-        });
-        
-        // Check for global pollution
-        //if (typeof on != "undefined")
-        //  self.postMessage("`on` is in globals");
-        if (typeof once != "undefined")
-          self.postMessage("`once` is in globals");
-        if (typeof emit != "undefined")
-          self.postMessage("`emit` is in globals");
-        
-      },
-      onMessage: function(msg) {
-        test.fail("Got an unexpected message : "+msg);
-      }
+
+    let worker =  Worker({
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          // Validate self.on and self.emit
+          self.port.on("addon-to-content", function (data) {
+            self.port.emit("content-to-addon", data);
+          });
+
+          // Check for global pollution
+          //if (typeof on != "undefined")
+          //  self.postMessage("`on` is in globals");
+          if (typeof once != "undefined")
+            self.postMessage("`once` is in globals");
+          if (typeof emit != "undefined")
+            self.postMessage("`emit` is in globals");
+
+        },
+        onMessage: function(msg) {
+          test.fail("Got an unexpected message : "+msg);
+        }
+      });
+
+    // Validate worker.port
+    worker.port.on("content-to-addon", function (data) {
+      test.assertEqual(data, "event data");
+      done();
     });
-  
-  // Validate worker.port
-  worker.port.on("content-to-addon", function (data) {
-    test.assertEqual(data, "event data");
-    done();
-  });
-  worker.port.emit("addon-to-content", "event data");
-  
-});
+    worker.port.emit("addon-to-content", "event data");
+  }
+);
 
 exports["test:emit hack message"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -170,7 +170,8 @@ exports["test:emit hack message"] = WorkerTest(
       test.fail("Got an unexpected message : "+msg);
     });
     worker.port.emit("message", "event data");
-});
+  }
+);
 
 exports["test:n-arguments emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -193,7 +194,8 @@ exports["test:n-arguments emit"] = WorkerTest(
       done();
     });
     worker.port.emit("addon-to-content", "first argument", "second", "third");
-});
+  }
+);
 
 exports["test:post-json-values-only"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -228,8 +230,8 @@ exports["test:post-json-values-only"] = WorkerTest(
       done();
     });
     worker.postMessage({ fun: function () {}, w: worker, array: array });
-
-});
+  }
+);
 
 exports["test:emit-json-values-only"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -253,7 +255,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
           });
         }
       });
-    
+
     // Validate worker.port
     let array = [1, 2, 3];
     worker.port.on("content-to-addon", function (result) {
@@ -276,8 +278,8 @@ exports["test:emit-json-values-only"] = WorkerTest(
       dom: browser.contentWindow.document.createElement("div")
     };
     worker.port.emit("addon-to-content", function () {}, worker, obj, array);
-
-});
+  }
+);
 
 exports["test:content is wrapped"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
@@ -295,15 +297,14 @@ exports["test:content is wrapped"] = WorkerTest(
         done();
       }
     });
-
-});
+  }
+);
 
 exports["test:chrome is unwrapped"] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
 
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+  listenOnce(window, "load", function onload() {
 
     let worker =  Worker({
       window: window,
@@ -319,8 +320,7 @@ exports["test:chrome is unwrapped"] = function(test) {
       }
     });
 
-  }, true);
-
+  });
 }
 
 exports["test:nothing is leaked to content script"] = WorkerTest(
@@ -344,8 +344,8 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
         done();
       }
     });
-
-});
+  }
+);
 
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -393,8 +393,8 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
         done();
       }
     });
-
-});
+  }
+);
 
 
 exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
@@ -416,8 +416,8 @@ exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
         done();
       }
     });
-
-});
+  }
+);
 
 exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
   DEFAULT_CONTENT_URL,
@@ -456,8 +456,83 @@ exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
         }, 100);
       });
     }, 100);
+  }
+);
 
-});
+exports['test:check window attribute in iframes'] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+
+    // Create a first iframe and wait for its loading
+    let contentWin = browser.contentWindow;
+    let contentDoc = contentWin.document;
+    let iframe = contentDoc.createElement("iframe");
+    contentDoc.body.appendChild(iframe);
+
+    listenOnce(iframe, "load", function onload() {
+
+      // Create a second iframe inside the first one and wait for its loading
+      let iframeDoc = iframe.contentWindow.document;
+      let subIframe = iframeDoc.createElement("iframe");
+      iframeDoc.body.appendChild(subIframe);
+
+      listenOnce(subIframe, "load", function onload() {
+        subIframe.removeEventListener("load", onload, true);
+
+        // And finally create a worker against this second iframe
+        let worker =  Worker({
+          window: subIframe.contentWindow,
+          contentScript: 'new ' + function WorkerScope() {
+            self.postMessage([
+              window.top !== window,
+              frameElement,
+              window.parent !== window,
+              top.location.href,
+              parent.location.href,
+            ]);
+          },
+          onMessage: function(msg) {
+            test.assert(msg[0], "window.top != window");
+            test.assert(msg[1], "window.frameElement is defined");
+            test.assert(msg[2], "window.parent != window");
+            test.assertEqual(msg[3], contentWin.location.href,
+                             "top.location refers to the toplevel content doc");
+            test.assertEqual(msg[4], iframe.contentWindow.location.href,
+                             "parent.location refers to the first iframe doc");
+            done();
+          }
+        });
+
+      });
+      subIframe.setAttribute("src", "data:text/html;charset=utf-8,bar");
+
+    });
+    iframe.setAttribute("src", "data:text/html;charset=utf-8,foo");
+  }
+);
+
+exports['test:check window attribute in toplevel documents'] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+
+    let worker =  Worker({
+      window: browser.contentWindow,
+      contentScript: 'new ' + function WorkerScope() {
+        self.postMessage([
+          window.top === window,
+          frameElement,
+          window.parent === window
+        ]);
+      },
+      onMessage: function(msg) {
+        test.assert(msg[0], "window.top == window");
+        test.assert(!msg[1], "window.frameElement is null");
+        test.assert(msg[2], "window.parent == window");
+        done();
+      }
+    });
+  }
+);
 
 exports["test:check worker API with page history"] = WorkerTest(
   DEFAULT_CONTENT_URL,

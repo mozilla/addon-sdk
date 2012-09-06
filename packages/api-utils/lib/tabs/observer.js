@@ -8,8 +8,9 @@
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");
 const { Trait } = require("../light-traits");
-const { getActiveTab, getTabs, getTabContainers } = require("./utils");
-const { browserWindowIterator, isBrowser } = require("../window-utils");
+const { getActiveTab, getTabs, getTabContainer } = require("./utils");
+const { browserWindowIterator } = require("../window-utils");
+const { isBrowser } = require('../window/utils');
 const { observer: windowObserver } = require("../windows/observer");
 
 const EVENTS = {
@@ -63,9 +64,7 @@ observer.on("select", onTabSelect);
 // containers to the observed list.
 function onWindowOpen(chromeWindow) {
   if (!isBrowser(chromeWindow)) return; // Ignore if it's not a browser window.
-  getTabContainers(chromeWindow).forEach(function (container) {
-    observer.observe(container);
-  });
+  observer.observe(getTabContainer(chromeWindow));
 }
 windowObserver.on("open", onWindowOpen);
 
@@ -77,9 +76,7 @@ function onWindowClose(chromeWindow) {
     observer._emit("deactivate", selectedTab);
     selectedTab = null;
   }
-  getTabContainers(chromeWindow).forEach(function (container) {
-    observer.ignore(container);
-  });
+  observer.ignore(getTabContainer(chromeWindow));
 }
 windowObserver.on("close", onWindowClose);
 

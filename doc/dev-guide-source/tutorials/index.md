@@ -207,6 +207,17 @@ on the left for the full list of APIs.
 
   </tr>
 
+  <tr>
+    <td>
+      <h4><a href="dev-guide/tutorials/event-targets.html">Writing Event Targets</a></h4>
+      Enable the objects you define to emit their own events.
+    </td>
+
+    <td>
+    </td>
+
+  </tr>
+
 </table>
 
 <hr>

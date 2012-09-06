@@ -11,7 +11,12 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
-
+const {
+  getOwnerWindow,
+  getBrowserForTab,
+  getTabTitle,
+  getTabForContentWindow
+} = require("./utils");
 
 
 // Array of the inner instances of all the wrapped tabs.
@@ -82,11 +87,11 @@ const TabTrait = Trait.compose(EventEmitter, {
   /**
    * Browser DOM element where page of this tab is currently loaded.
    */
-  get _browser() this._window.gBrowser.getBrowserForTab(this._tab),
+  get _browser() getBrowserForTab(this._tab),
   /**
    * Window DOM element containing this tab.
    */
-  get _window() this._tab.ownerDocument.defaultView,
+  get _window() getOwnerWindow(this._tab),
   /**
    * Document object of the page that is currently loaded in this tab.
    */
@@ -101,8 +106,16 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property changes an actual title.
    * @type {String}
    */
-  get title() this._contentDocument.title,
-  set title(value) this._contentDocument.title = String(value),
+  get title() getTabTitle(this._tab),
+  set title(value) this._tab.label = String(value),
+
+  /**
+   * Returns the MIME type that the document loaded in the tab is being
+   * rendered as.
+   * @type {String}
+   */
+  get contentType() this._contentDocument.contentType,
+
   /**
    * Location of the page currently loaded in this tab.
    * Changing this property will loads page under under the specified location.
@@ -149,7 +162,7 @@ const TabTrait = Trait.compose(EventEmitter, {
   unpin: function unpin() {
     this._window.gBrowser.unpinTab(this._tab);
   },
-  
+
   /**
    * Create a worker for this tab, first argument is options given to Worker.
    * @type {Worker}
@@ -163,7 +176,7 @@ const TabTrait = Trait.compose(EventEmitter, {
     });
     return worker;
   },
-  
+
   /**
    * Make this tab active.
    * Please note: That this function is called synchronous since in E10S that
@@ -222,43 +235,15 @@ exports.Options = Options;
 
 
 exports.getTabForWindow = function (win) {
-  // Get browser window
-  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIWebNavigation)
-                     .QueryInterface(Ci.nsIDocShellTreeItem)
-                     .rootTreeItem
-                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDOMWindow);
-  if (!topWindow.gBrowser) return null;
-  
-  // Get top window object, in case we are in a content iframe
-  let topContentWindow;
-  try {
-    topContentWindow = win.top;
-  } catch(e) {
-    // It may throw if win is not a valid content window
-    return null;
-  }
-  
-  function getWindowID(obj) {
-    return obj.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
-              .currentInnerWindowID;
-  }
-  
-  // Search for related Tab
-  let topWindowId = getWindowID(topContentWindow);
-  for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
-    let w = topWindow.gBrowser.browsers[i].contentWindow;
-    if (getWindowID(w) == topWindowId) {
-      return Tab({
-        // TODO: api-utils should not depend on addon-kit!
-        window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
-        tab: topWindow.gBrowser.tabs[i]
-      });
-    }
-  }
-  
+  let tab = getTabForContentWindow(win);
   // We were unable to find the related tab!
-  return null;
+  if (!tab)
+    return null;
+
+  let topWindow = getOwnerWindow(tab);
+  return Tab({
+    // TODO: api-utils should not depend on addon-kit!
+    window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
+    tab: tab
+  });
 }

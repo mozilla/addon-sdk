@@ -7,18 +7,20 @@ unregistering various XCOM interfaces.
 
 ## Implementing XPCOM interfaces
 
-Module exports `Unknow` exemplar object, that may be extended to implement
-specific XCOM interface(s). For example [nsIObserver]
-(https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIObserver) may be
-implemented as follows:
+Module exports `Unknown` exemplar object, that may be extended to implement
+specific XCOM interface(s). For example
+[nsIObserver](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIObserver)
+ may be implemented as follows:
 
+    const { Class } = require('api-utils/heritage');
     const { Unknown } = require('api-utils/xpcom');
     const { Cc, Ci } = require('chrome')
     const observerService = Cc["@mozilla.org/observer-service;1"].
                             getService(Ci.nsIObserverService);
 
     // Create my observer exemplar
-    const SleepObserver = Unknown.extend({
+    const SleepObserver = Class({
+      extends: Unknown,
       interfaces: [ 'nsIObserver' ],    // Interfaces component implements
       topic: 'sleep_notification',
       initialize: function(fn) { this.fn = fn },
@@ -26,7 +28,7 @@ implemented as follows:
         observerService.addObserver(this, this.topic, false);
       },
       unregister: function() {
-        addObserver.removeObserver(this, this.topic, false);
+        observerService.removeObserver(this, this.topic);
       },
       observe: function observe(subject, topic, data) {
         this.fn({
@@ -51,8 +53,10 @@ implementing
 [nsIFactory](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIFactory)
 interface:
 
+    const { Class } = require('api-utils/heritage');
     const { Factory } = require('api-utils/xpcom');
-    let Request = Unknown.extend({
+    let Request = Class({
+      extends: Unknown,
       interfaces: [ 'nsIRequest' ],
       initialize: function initialize() {
         this.pending = false;
@@ -68,7 +72,7 @@ interface:
       }
     });
 
-    let requestFactory = Factory.new({ component: Request });
+    let requestFactory = Factory.new({ Component: Request });
 
 Factories registered into a runtime may be accessed from the rest of the
 application via standard XPCOM API using factory's auto generated `id`
@@ -87,7 +91,8 @@ case:
 You still can expose unwrapped JS object, by a special `wrappedJSObject`
 property of the component:
 
-    let Request = Unknown.extend({
+    let Request = Class({
+      extends: Unknown,
       get wrappedJSObject() this,
       interfaces: [ 'nsIRequest' ],
       initialize: function initialize() {
@@ -104,7 +109,7 @@ property of the component:
       }
     });
 
-    let requestFactory = Factory.new({ component: Request });
+    let requestFactory = Factory.new({ Component: Request });
     let request = Components.classesByID[requestFactory.id].
       createInstance(Ci.nsIRequest);
     request.isPending();     // => false
@@ -131,7 +136,7 @@ runtime:
 
     let renewedFactory = Factory.new({
       contract: '@examples.com/request/factory;1',
-      component: Unknown.extend({ /* Implementation */ })
+      Component: Class({ extends: Unknown, /* Implementation */ })
     })
 
 Unfortunately commonly used `Components.classes` won't get updated at runtime
@@ -154,7 +159,7 @@ property, providing human readable description of it:
     let factory = Factory.new({
       contract: '@examples.com/request/factory;1',
       description: 'Super duper request factory',
-      component: Request
+      Component: Request
     });
 
 ## Registering / Unregistering factories
@@ -165,7 +170,7 @@ runtime unless explicitly specified otherwise by setting `register` option to
 
     var factoryToRegister = Factory.new({
       register: false,
-      component: Unknown.extend({ /* Implementation */ })
+      Component: Class({ extends: Unknown, /* Implementation */ })
     });
 
 Such factories still may be registered manually using exported `register`
@@ -180,7 +185,7 @@ option to `false`.
 
     var factoryToUnregister = Service.new({
       unregister: false,
-      component: Unknown.extend({ /* Implementation */ })
+      Component: Class({ extends: Unknown, /* Implementation */ })
     });
 
 All registered services may be unregistered at any time using exported
@@ -197,7 +202,8 @@ and can be used to register services:
     let service = Service.new({
       contract: '@examples/demo/service;1',
       description: 'My demo service',
-      component: Unknown.extend({
+      Component: Class({
+        extends: Unknown,
         // Implementation
         get wrappedJSObject() this
       })

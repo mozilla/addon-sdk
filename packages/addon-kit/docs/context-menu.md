@@ -31,6 +31,11 @@ user visits a certain page, don't create the item when that page loads, and
 don't remove it when the page unloads.  Rather, create your item only once and
 supply a context that matches the target URL.
 
+Note that *context menu items are only displayed when the page has finished loading*.
+While the page is still loading, or if you cancel load, context menu items
+added using this module will not appear.
+[Bug 714914](https://bugzilla.mozilla.org/show_bug.cgi?id=714914) tracks
+this problem.
 
 Specifying Contexts
 -------------------

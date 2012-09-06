@@ -1,3 +1,4 @@
+
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
@@ -65,6 +66,12 @@ then the content script can interact with the DOM itself:
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
+<div class="warning">
+  Starting with SDK 1.11, page-mod only attaches scripts to documents loaded
+  in tabs. It will not attach scripts to add-on panels, page-workers, widgets,
+  or  Firefox hidden windows.
+</div>
+
 ### Using `contentScriptFile` ###
 
 Most of the examples in this page define content scripts as strings,
@@ -100,7 +107,7 @@ secure, debug and review.</p>
 
 ### Styling web pages ###
 
-Sometimes adding a script to web pages is not enough, you also want to styling
+Sometimes adding a script to web pages is not enough, you also want to style
 them. `PageMod` provides an easy way to do that through options' `contentStyle`
 and `contentStyleFile` properties:
 
@@ -117,8 +124,45 @@ and `contentStyleFile` properties:
       ]
     })
 
-It's important to note that `PageMod` will add these styles as
-[user style sheet](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+`PageMod` will add these styles as
+[user style sheets](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+
+#### Working with Relative URLs in CSS Rules ####
+
+You can't currently use relative URLs in style sheets loaded in this way.
+For example, consider a CSS file that references an external file like this:
+
+    background: rgb(249, 249, 249) url('../../img/my-background.png') repeat-x top center;
+
+If you attach this file using `contentStyleFile`, "my-background.png"
+will not be found.
+
+As a workaround for this, you can build an absolute URL to a file in your
+"data" directory, and construct a `contentStyle` option embedding that URL
+in your rule. For example:
+
+    var data = require("self").data;
+
+    var pageMod = require("page-mod").PageMod({
+      include: "*",
+      contentStyleFile: data.url("my-style.css"),
+      // contentStyle is built dynamically here to include an absolute URL
+      // for the file referenced by this CSS rule.
+      // This workaround is needed because we can't use relative URLs
+      // in contentStyleFile or contentStyle.
+      contentStyle: "h1 { background: url(" + data.url("my-pic.jpg") + ")}"
+    });
+
+This add-on uses a separate file "my-style.css", loaded using
+`contentStyleFile`, for all CSS rules except those that reference
+an external file. For the rule that needs to refer to "my-pic.jpg",
+which is stored in the add-on's "data" directory, it uses `contentStyle`.
+
+Dynamically constructing code strings like those assigned to `contentScript`
+or `contentStyle` is usually considered an unsafe practice that may cause an
+add-on to fail AMO review. In this case it is safe, and should be allowed,
+but including a comment like that in the example above will help to
+prevent any misunderstanding.
 
 ## Communicating With Content Scripts ##
 
@@ -126,9 +170,9 @@ When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
 this function: a `worker` object.
 
-The worker can be thought of as the add-on's end of
-a communication channel between the add-on code and the content scripts that
-have been attached to this page.
+The [`worker`](packages/api-utils/content/worker.html) can be thought of as
+the add-on's end of a communication channel between the add-on code and
+the content scripts that have been attached to this page.
 
 Thus the add-on can pass messages to the content scripts by calling the
 worker's `postMessage` function and can receive messages from the content
@@ -217,10 +261,10 @@ The console output of this add-on is:
 
 ### Mapping workers to tabs ###
 
-The [`worker`](packages/api-utils/content/worker.html) has a `tab`
-property which returns the tab associated with this worker. You can use this
-to access the [`tabs API`](packages/addon-kit/tabs.html) for the tab
-associated with a specific page:
+The `worker` has a `tab` property which returns the tab associated with
+this worker. You can use this to access
+the [`tabs API`](packages/addon-kit/tabs.html) for the tab associated
+with a specific page:
 
     var pageMod = require("page-mod");
     var tabs = require("tabs");
@@ -365,6 +409,19 @@ Creates a PageMod.
   @prop [contentStyle] {string,array}
     The texts of stylesheet rules to add. Content styles specified by this
     option are loaded *after* those specified by the `contentStyleFile` option.
+    Optional.
+
+  @prop [attachTo] {string,array}
+    Option to specify on which documents PageMod should be applied.
+    It accepts following values:
+
+    * "existing": the PageMod will be automatically applied on already opened
+    tabs.
+    * "top": the PageMod will be applied to top-level tab documents
+    * "frame": the PageMod will be applied to all iframe inside tab documents
+
+    When omitted, it defaults to ["top", "frame"]. When set, you have to at
+    least set either "top" and/or "frame".
     Optional.
 
   @prop [onAttach] {function}

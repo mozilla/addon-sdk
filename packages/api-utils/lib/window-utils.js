@@ -8,7 +8,8 @@ const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
 const { when } = require('./unload');
-const { getInnerId, getOuterId, windows, isDocumentLoaded } = require('./window/utils');
+const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser } =
+  require('./window/utils');
 const errors = require("./errors");
 
 const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -188,11 +189,11 @@ exports.getOuterId = function(window) {
   return getOuterId(window);
 };
 
-function isBrowser(window) {
-  return window.document.documentElement.getAttribute("windowtype") ===
-         "navigator:browser";
+exports.isBrowser = function(window) {
+  console.warn('require("window-utils").isBrowser is deprecated, ' +
+               'please use require("window/utils").isBrowser instead');
+  return isBrowser(window);
 };
-exports.isBrowser = isBrowser;
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 

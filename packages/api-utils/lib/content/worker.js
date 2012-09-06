@@ -15,6 +15,9 @@ const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { sandbox, evaluate, load } = require("../sandbox");
 const { merge } = require('../utils/object');
+const xulApp = require("api-utils/xul-app");
+const USE_JS_PROXIES = !xulApp.versionInRange(xulApp.platformVersion,
+                                              "17.0a2", "*");
 
 /* Trick the linker in order to ensure shipping these files in the XPI.
   require('./content-proxy.js');
@@ -71,7 +74,13 @@ const WorkerSandbox = EventEmitter.compose({
    *     Mainly used by context-menu in order to avoid breaking it.
    */
   emitSync: function emitSync() {
-    return this._emitToContent(Array.slice(arguments));
+    let args = Array.slice(arguments);
+    // Bug 732716: Ensure wrapping xrays sent to the content script
+    // otherwise it will have access to raw xraywrappers and content script
+    // will assume it is an user object coming from the content script sandbox
+    if ("_wrap" in this)
+      args = args.map(this._wrap);
+    return this._emitToContent(args);
   },
 
   /**
@@ -113,15 +122,18 @@ const WorkerSandbox = EventEmitter.compose({
 
     // Instantiate trusted code in another Sandbox in order to prevent content
     // script from messing with standard classes used by proxy and API code.
-    let apiSanbox = sandbox(window, { wantXrays: true });
+    let apiSandbox = sandbox(window, { wantXrays: true });
 
     // Build content proxies only if the document has a non-system principal
-    if (XPCNativeWrapper.unwrap(window) !== window) {
-      apiSanbox.console = console;
+    // And only on old firefox versions that doesn't ship bug 738244
+    if (USE_JS_PROXIES && XPCNativeWrapper.unwrap(window) !== window) {
+      apiSandbox.console = console;
       // Execute the proxy code
-      load(apiSanbox, CONTENT_PROXY_URL);
+      load(apiSandbox, CONTENT_PROXY_URL);
       // Get a reference of the window's proxy
-      proto = apiSanbox.create(window);
+      proto = apiSandbox.create(window);
+      // Keep a reference to `wrap` function for `emitSync` usage
+      this._wrap = apiSandbox.wrap;
     }
 
     // Create the sandbox and bind it to window in order for content scripts to
@@ -130,10 +142,16 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
+    // We have to ensure that window.top and window.parent are the exact same
+    // object than window object, i.e. the sandbox global object. But not
+    // always, in case of iframes, top and parent are another window object.
+    let top = window.top === window ? content : content.top;
+    let parent = window.parent === window ? content : content.parent;
     merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
-      get top() content,
+      get top() top,
+      get parent() parent,
       // Use the Greasemonkey naming convention to provide access to the
       // unwrapped window object so the content script can access document
       // JavaScript values.
@@ -145,7 +163,7 @@ const WorkerSandbox = EventEmitter.compose({
     // Load trusted code that will inject content script API.
     // We need to expose JS objects defined in same principal in order to
     // avoid having any kind of wrapper.
-    load(apiSanbox, CONTENT_WORKER_URL);
+    load(apiSandbox, CONTENT_WORKER_URL);
 
     // prepare a clean `self.options`
     let options = 'contentScriptOptions' in worker ?
@@ -179,7 +197,7 @@ const WorkerSandbox = EventEmitter.compose({
     };
     let onEvent = this._onContentEvent.bind(this);
     // `ContentWorker` is defined in CONTENT_WORKER_URL file
-    let result = apiSanbox.ContentWorker.inject(content, chromeAPI, onEvent, options);
+    let result = apiSandbox.ContentWorker.inject(content, chromeAPI, onEvent, options);
     this._emitToContent = result.emitToContent;
     this._hasListenerFor = result.hasListenerFor;
 
@@ -203,8 +221,8 @@ const WorkerSandbox = EventEmitter.compose({
     // Internal feature that is only used by SDK tests:
     // Expose unlock key to content script context.
     // See `PRIVATE_KEY` definition for more information.
-    if (apiSanbox && worker._expose_key)
-      content.UNWRAP_ACCESS_KEY = apiSanbox.UNWRAP_ACCESS_KEY;
+    if (apiSandbox && worker._expose_key)
+      content.UNWRAP_ACCESS_KEY = apiSandbox.UNWRAP_ACCESS_KEY;
 
     // Inject `addon` global into target document if document is trusted,
     // `addon` in document is equivalent to `self` in content script.
@@ -239,6 +257,7 @@ const WorkerSandbox = EventEmitter.compose({
     this.emitSync("detach");
     this._sandbox = null;
     this._addonWorker = null;
+    this._wrap = null;
   },
   
   /**

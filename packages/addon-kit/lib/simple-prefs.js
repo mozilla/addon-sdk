@@ -1,8 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 const { emit, off } = require("api-utils/event/core");
 const { when: unload } = require("api-utils/unload");
@@ -12,10 +11,6 @@ const observers = require("api-utils/observer-service");
 
 const ADDON_BRANCH = "extensions." + id + ".";
 const BUTTON_PRESSED = id + "-cmdPressed";
-
-// XXX Currently, only Firefox implements the inline preferences.
-if (!require("api-utils/xul-app").is("Firefox"))
-  throw Error("This API is only supported in Firefox");
 
 const target = PrefsTarget({ branchName: ADDON_BRANCH });
 

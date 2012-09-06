@@ -163,7 +163,7 @@ const DataURL = Class({
      */
     this.data = "";
 
-    if (!uri)
+    if (typeof uri === "undefined")
       return;
 
     uri = String(uri);
