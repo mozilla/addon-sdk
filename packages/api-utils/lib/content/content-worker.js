@@ -30,7 +30,7 @@ const ContentWorker = Object.freeze({
       removeListener: function removeListener(name, callback) {
         if (!(name in listeners))
           return;
-        let index = listeners[name].indexOf(name);
+        let index = listeners[name].indexOf(callback);
         if (index == -1)
           return;
         listeners[name].splice(index, 1);
