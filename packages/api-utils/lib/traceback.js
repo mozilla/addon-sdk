@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Cc, Ci, components } = require("chrome");
@@ -101,7 +100,7 @@ var format = exports.format = function format(tbOrException) {
   tb.forEach(
     function(frame) {
       if (!(frame.filename || frame.lineNo || frame.funcName))
-	return;
+        return;
       lines.push('  File "' + frame.filename + '", line ' +
                  frame.lineNo + ', in ' + frame.funcName);
       var sourceLine = safeGetFileLine(frame.filename, frame.lineNo);
