@@ -73,7 +73,7 @@ function readURI(uri, options) {
     sync: false
   }, options);
 
-  return options.sync 
+  return options.sync
     ? readSync(uri, options.charset)
     : readAsync(uri, options.charset);
 }
