@@ -135,6 +135,9 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
+    // We have to ensure that window.top and window.parent are the exact same
+    // object than window object, i.e. the sandbox global object. But not
+    // always, in case of iframes, top and parent are another window object.
     let top = window.top === window ? content : content.top;
     let parent = window.parent === window ? content : content.parent;
     merge(content, {

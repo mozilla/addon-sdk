@@ -480,34 +480,57 @@ exports['test:check window attribute in iframes'] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
 
+  // Wait for top-level chrome window loading
   window.addEventListener("load", function onload() {
     window.removeEventListener("load", onload, true);
 
+    // Create a first iframe and wait for its loading
     let contentWin = window.document.getElementById("content").contentWindow;
     let contentDoc = contentWin.document;
     let iframe = contentDoc.createElement("iframe");
-    contentDoc.body.appendChild(iframe);
 
-    let worker =  Worker({
-      window: iframe.contentWindow,
-      contentScript: 'new ' + function WorkerScope() {
-        self.postMessage([
-          window.top !== window,
-          frameElement,
-          window.parent !== window,
-          top.location.href
-        ]);
-      },
-      onMessage: function(msg) {
-        test.assert(msg[0], "window.top != window");
-        test.assert(msg[1], "window.frameElement is defined");
-        test.assert(msg[2], "window.parent != window");
-        test.assertEqual(msg[3], contentDoc.location.href,
-                         "top.location refers to the toplevel doc");
-        window.close();
-        test.done();
-      }
-    });
+    iframe.addEventListener("load", function onload() {
+      iframe.removeEventListener("load", onload, true);
+
+      // Create a second iframe inside the first one and wait for its loading
+      let iframeDoc = iframe.contentWindow.document;
+      let subIframe = iframeDoc.createElement("iframe");
+
+      subIframe.addEventListener("load", function onload() {
+        subIframe.removeEventListener("load", onload, true);
+
+        // And finally create a worker against this second iframe
+        let worker =  Worker({
+          window: subIframe.contentWindow,
+          contentScript: 'new ' + function WorkerScope() {
+            self.postMessage([
+              window.top !== window,
+              frameElement,
+              window.parent !== window,
+              top.location.href,
+              parent.location.href,
+            ]);
+          },
+          onMessage: function(msg) {
+            test.assert(msg[0], "window.top != window");
+            test.assert(msg[1], "window.frameElement is defined");
+            test.assert(msg[2], "window.parent != window");
+            test.assertEqual(msg[3], contentWin.location.href,
+                             "top.location refers to the toplevel content doc");
+            test.assertEqual(msg[4], iframe.contentWindow.location.href,
+                             "parent.location refers to the first iframe doc");
+            window.close();
+            test.done();
+          }
+        });
+
+      }, true);
+      subIframe.setAttribute("src", "data:text/html;charset=utf-8,bar");
+      iframeDoc.body.appendChild(subIframe);
+
+    }, true);
+    iframe.setAttribute("src", "data:text/html;charset=utf-8,foo");
+    contentDoc.body.appendChild(iframe);
 
   }, true);
 
