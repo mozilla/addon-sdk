@@ -1,14 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Cc, Ci } = require('chrome');
 const { Loader } = require('test-harness/loader');
 const timer = require('timer');
 const tabs = require('tabs');
 const windows = require('windows');
-const xulApp = require("xul-app");
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
@@ -36,9 +35,12 @@ exports.testAutomaticDestroy = function(test) {
 
   let called = false;
 
-  let loader = Loader(module);
-  let tabs2 = loader.require("tabs");
+  let loader2 = Loader(module);
+  let loader3 = Loader(module);
+  let tabs2 = loader2.require('tabs');
+  let tabs3 = loader3.require('tabs');
   let tabs2Len = tabs2.length;
+
   tabs2.on('open', function onOpen(tab) {
     test.fail("an onOpen listener was called that should not have been");
     called = true;
@@ -55,15 +57,33 @@ exports.testAutomaticDestroy = function(test) {
     test.fail("an onClose listener was called that should not have been");
     called = true;
   });
+  loader2.unload();
 
-  loader.unload();
+  tabs3.on('open', function onOpen(tab) {
+    test.pass("an onOpen listener was called for tabs3");
+
+    tab.on('ready', function onReady(tab) {
+      test.fail("an onReady listener was called that should not have been");
+      called = true;
+    });
+    tab.on('select', function onSelect(tab) {
+      test.fail("an onSelect listener was called that should not have been");
+      called = true;
+    });
+    tab.on('close', function onClose(tab) {
+      test.fail("an onClose listener was called that should not have been");
+      called = true;
+    });
+  });
+  tabs3.open(URL.replace(/#title#/, 'tabs3'));
+  loader3.unload();
 
   // Fire a tab event and ensure that the destroyed tab is inactive
   tabs.once('open', function(tab) {
     test.pass('tabs.once("open") works!');
 
     test.assertEqual(tabs2Len, tabs2.length, "tabs2 length was not changed");
-    test.assertEqual(tabs.length, (tabs2.length+1), "tabs.length > tabs2.length");
+    test.assertEqual(tabs.length, (tabs2.length+2), "tabs.length > tabs2.length");
 
     tab.once('ready', function() {
       test.pass('tab.once("ready") works!');
@@ -83,7 +103,7 @@ exports.testAutomaticDestroy = function(test) {
     });
   });
 
-  tabs.open("data:text/html;charset=utf-8,foo");
+  tabs.open('data:text/html;charset=utf-8,foo');
 };
 
 // TEST: tab properties
