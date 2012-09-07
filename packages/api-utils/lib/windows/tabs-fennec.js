@@ -73,15 +73,6 @@ const Tabs = Class({
       }
     }.bind(this);
 
-    // TabClose
-    let onTabClose = function(evt) {
-      let tab = getTabForBrowser(evt.target);
-      removeTab(tab);
-
-      emit(this, "close", tab);
-      emit(tab, "close", tab);
-    }.bind(this);
-
     // TabOpen event
     window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
 
@@ -184,3 +175,12 @@ function getRawTabForBrowser(browser) {
   }
   return null;
 }
+
+// TabClose
+function onTabClose(evt) {
+  let tab = getTabForBrowser(evt.target);
+  removeTab(tab);
+
+  emit(gTabs, "close", tab);
+  emit(tab, "close", tab);
+};
