@@ -1,12 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Loader } = require('test-harness/loader');
 const { browserWindows } = require('windows');
 const tabs = require('tabs');
-const xulApp = require("xul-app");
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 

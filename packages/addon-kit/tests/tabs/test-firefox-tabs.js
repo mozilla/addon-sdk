@@ -1,11 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
-const { Cc, Ci } = require("chrome");
-const { Loader } = require("test-harness/loader");
-const timer = require("timer");
+const { Cc, Ci } = require('chrome');
+const { Loader } = require('test-harness/loader');
+const timer = require('timer');
 const { StringBundle } = require('api-utils/app-strings');
 
 // TEST: tabs.activeTab getter
