@@ -13,7 +13,7 @@ const { Worker } = require('api-utils/tabs/worker');
 const { emit } = require('api-utils/event/core');
 const { when: unload } = require('unload');
 
-const { EVENTS } = require("./events");
+const { EVENTS } = require('./events');
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
 const Tab = Class({

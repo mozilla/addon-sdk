@@ -7,7 +7,7 @@ const { Class } = require('api-utils/heritage');
 const { BrowserWindow } = require('api-utils/window/browser');
 const windowUtils = require('api-utils/window-utils');
 const { windowNS } = require('api-utils/window/namespace');
-const { on, off, once, emit } = require("api-utils/event/core");
+const { on, off, once, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
 const { WindowTracker } = require('api-utils/window-utils');
 const { isBrowser } = require('api-utils/window/utils');
@@ -63,7 +63,7 @@ function getBrowserWindow(options) {
   let window = null;
 
   // if we have a BrowserWindow already then use it
-  if ("window" in options)
+  if ('window' in options)
     window = getRegisteredWindow(options.window);
   if (window)
     return window;

@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Class } = require('api-utils/heritage');
 const { Tab } = require('api-utils/tabs/tab');
@@ -12,7 +12,7 @@ const { openTab, getTabs, getTabForRawTab } = require('api-utils/tabs/utils');
 const { Options } = require('api-utils/tabs/common');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
-const { EVENTS } = require("api-utils/tabs/events");
+const { EVENTS } = require('api-utils/tabs/events');
 const { EventTarget } = require('api-utils/event/target');
 const { when: unload } = require('unload');
 const { windowIterator } = require('api-utils/window-utils');
@@ -158,16 +158,16 @@ function onTabOpen(evt) {
 
   tabNS(tab).opened = true;
 
-  emit(tab, "open", tab);
-  emit(gTabs, "open", tab);
+  emit(tab, 'open', tab);
+  emit(gTabs, 'open', tab);
 };
 
 // TabSelect
 function onTabSelect(evt) {
   // Set value whenever new tab becomes active.
   let tab = getTabForBrowser(evt.target);
-  emit(tab, "activate", tab);
-  emit(gTabs, "activate", tab);
+  emit(tab, 'activate', tab);
+  emit(gTabs, 'activate', tab);
 
   for each (let t in gTabs) {
     if (t === tab) continue;
@@ -181,6 +181,6 @@ function onTabClose(evt) {
   let tab = getTabForBrowser(evt.target);
   removeTab(tab);
 
-  emit(gTabs, "close", tab);
-  emit(tab, "close", tab);
+  emit(gTabs, 'close', tab);
+  emit(tab, 'close', tab);
 };
