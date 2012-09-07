@@ -1,15 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
-
-if (!require("api-utils/xul-app").is("Firefox")) {
-  throw new Error([
-    "The windows module currently supports only Firefox. In the future",
-    " we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=571449 for more information."
-  ].join(""));
-}
+'use strict';
 
 const { Cc, Ci } = require('chrome'),
       { Trait } = require('api-utils/traits'),
@@ -25,7 +17,7 @@ const { Cc, Ci } = require('chrome'),
       windowUtils = require('api-utils/window-utils'),
       { WindowTrackerTrait } = windowUtils,
       { ns } = require('api-utils/namespace'),
-      { observer: windowObserver } = require("api-utils/windows/observer");
+      { observer: windowObserver } = require('api-utils/windows/observer');
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S
@@ -244,4 +236,3 @@ const browserWindows = Trait.resolve({ toString: null }).compose(
 )();
 
 exports.browserWindows = browserWindows;
-
