@@ -16,6 +16,10 @@ Cc["@mozilla.org/dom/indexeddb/manager;1"].
 getService(Ci.nsIIndexedDatabaseManager).
 initWindowless(this);
 
+if (indexedDB === undefined) {
+  var indexedDB = mozIndexedDB;
+} // fx 14 gets this under a prefix
+
 // Wrap `indexedDB` methods in order to prefix names
 // with add-on IDs. This is temporary workaround for
 // Bug 786688. Note: once bug is fixed and prefixing is
