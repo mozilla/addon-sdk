@@ -1,8 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
+const { Class } = require('api-utils/heritage');
 const { BrowserWindow } = require('api-utils/window/browser');
 const windowUtils = require('api-utils/window-utils');
 const { windowNS } = require('api-utils/window/namespace');
@@ -10,6 +11,7 @@ const { on, off, once, emit } = require("api-utils/event/core");
 const { method } = require('../functional');
 const { WindowTracker } = require('api-utils/window-utils');
 const { isBrowser } = require('api-utils/window/utils');
+const { EventTarget } = require('api-utils/event/target');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
@@ -17,7 +19,8 @@ const windows = [];
 
 // NOTE: On Fennec there is only one window.
 
-const browserWindows = {
+let BrowserWindows = Class({
+  extends: EventTarget,
   get activeWindow() {
     let window = windowUtils.activeBrowserWindow;
     return window ? getBrowserWindow({window: window}) : null;
@@ -32,13 +35,9 @@ const browserWindows = {
   },
   get length() {
     return windows.length;
-  },
-  on: method(on),
-  once: method(once),
-  off: method(off),
-  removeListener: method(off),
-};
-exports.browserWindows = browserWindows;
+  }
+});
+const browserWindows = exports.browserWindows = BrowserWindows();
 
 
 /**
