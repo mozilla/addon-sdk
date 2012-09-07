@@ -10,6 +10,7 @@ const { Cc, Ci } = require('chrome');
 
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
                getService(Ci.nsIWindowMediator);
+const dataURI = 'data:text/html;charset=utf-8,<html><body/></html>';
 
 const utf8text = 'Hello, ゼロ!\n';
 const latin1text = 'Hello, ã‚¼ãƒ­!\n';
@@ -105,6 +106,21 @@ exports["test readURISync with not existing file"] = function(assert) {
   assert.throws(function(){
     readURISync(data.url("test-uri-io-fake.txt"));
   }, /NS_ERROR_FILE_NOT_FOUND/);
+}
+
+exports['test data URI sync'] = function(assert) {
+  let content = readURISync(dataURI);
+  assert.equal(content, '<html><body/></html>', 'data URI is read correctly');
+}
+
+exports['test data URI async'] = function(assert, done) {
+  readURI(dataURI).then(function(content) {
+    assert.equal(content, '<html><body/></html>', 'data URI is read correctly');
+    done();
+  }, function() {
+    assert.fail('data URI is not read correctly');
+    done();
+  });
 }
 
 exports['test chrome URI sync'] = function(assert) {
