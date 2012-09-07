@@ -137,7 +137,7 @@ function getTabForWindow(win) {
     return null;
 
   let topWindow = getOwnerWindow(tab);
-  return Tab({
+  return require('api-utils/tabs/tab').Tab({
     // TODO: api-utils should not depend on addon-kit!
     window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
     tab: tab
