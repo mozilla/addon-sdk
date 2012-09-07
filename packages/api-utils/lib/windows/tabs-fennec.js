@@ -158,13 +158,6 @@ function onTabOpen(evt) {
 
   tabNS(tab).opened = true;
 
-  // TabReady
-  // TODO: remove listener on unload
-  browser.addEventListener(EVENTS.ready.dom, function onReady() {
-    emit(tab, 'ready', tab);
-    emit(gTabs, 'ready', tab);
-  }, false);
-
   emit(tab, "open", tab);
   emit(gTabs, "open", tab);
 };

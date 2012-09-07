@@ -10,6 +10,7 @@ const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
 const { EventTarget } = require('api-utils/event/target');
 const { activateTab, getTabTitle, closeTab } = require('api-utils/tabs/utils');
 const { Worker } = require('api-utils/tabs/worker');
+const { emit } = require('api-utils/event/core');
 
 const { EVENTS } = require("./events");
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
@@ -23,7 +24,13 @@ const Tab = Class({
     let tabInternals = tabNS(this);
 
     tabInternals.window = options.window || getMostRecentBrowserWindow();
-    tabInternals.tab = options.tab;
+    let tab = tabInternals.tab = options.tab;
+
+    // TabReady
+    tab.browser.addEventListener(EVENTS.ready.dom, function onReady() {
+      emit(this, 'ready', this);
+      emit(require('tabs'), 'ready', this);
+    }.bind(this), false);
   },
 
   /**
