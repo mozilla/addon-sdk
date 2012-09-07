@@ -9,7 +9,7 @@ const { defer } = require("../functional");
 const { Ci } = require('chrome');
 
 function activateTab(tab, window) {
-  let gBrowser = getGBrowserForTab(tab);
+  let gBrowser = getTabBrowserForTab(tab);
 
   // normal case
   if (gBrowser) {console.log(1);
@@ -25,20 +25,15 @@ function activateTab(tab, window) {
 // will be the case.
 exports.activateTab = defer(activateTab);
 
-function getTabContainer(tabBrowser) {
-  return tabBrowser.tabContainer;
+function getTabBrowser(window) {
+  return window.gBrowser;
+}
+exports.getTabBrowser = getTabBrowser;
+
+function getTabContainer(window) {
+  return getTabBrowser(window).tabContainer;
 }
 exports.getTabContainer = getTabContainer;
-
-function getTabBrowsers(window) {
-  return Array.slice(window.document.getElementsByTagName("tabbrowser"));
-}
-exports.getTabBrowsers = getTabBrowsers;
-
-function getTabContainers(window) {
-  return getTabBrowsers(window).map(getTabContainer);
-}
-exports.getTabContainers = getTabContainers;
 
 function getTabs(window) {
   // fennec
@@ -46,10 +41,7 @@ function getTabs(window) {
     return window.BrowserApp.tabs;
 
   // firefox - default
-  return getTabContainers(window).reduce(function (tabs, container) {
-    tabs.push.apply(tabs, container.children);
-    return tabs;
-  }, []);
+  return Array.slice(getTabContainer(window).children);
 }
 exports.getTabs = getTabs;
 
@@ -87,7 +79,7 @@ function isTabOpen(tab) {
 exports.isTabOpen = isTabOpen;
 
 function closeTab(tab) {
-  let gBrowser = getGBrowserForTab(tab);
+  let gBrowser = getTabBrowserForTab(tab);
   // normal case?
   if (gBrowser)
     return gBrowser.removeTab(tab);
@@ -117,22 +109,19 @@ function getURI(tab) {
 }
 exports.getURI = getURI;
 
-function getGBrowserForTab(tab) {
+function getTabBrowserForTab(tab) {
   let outerWin = getOwnerWindow(tab);
   if (outerWin)
     return getOwnerWindow(tab).gBrowser;
   return null;
 }
-exports.getGBrowserForTab = getGBrowserForTab;
+exports.getTabBrowserForTab = getTabBrowserForTab;
 
 function getBrowserForTab(tab) {
-  let gBrowser = getGBrowserForTab(tab);
-  if (gBrowser) // firefox
-    return getGBrowserForTab(tab).getBrowserForTab(tab);
-  else if (tab.browser) // fennec
+  if (tab.browser) // fennec
     return tab.browser;
 
-  return null;
+  return tab.linkedBrowser;
 }
 exports.getBrowserForTab = getBrowserForTab;
 
@@ -142,44 +131,56 @@ function getTabTitle(tab) {
 exports.getTabTitle = getTabTitle;
 
 function getTabForWindow(win) {
-  // Get browser window
-  let topWindow = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIWebNavigation)
-                     .QueryInterface(Ci.nsIDocShellTreeItem)
-                     .rootTreeItem
-                     .QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDOMWindow);
-  if (!topWindow.gBrowser) return null;
-
-  // Get top window object, in case we are in a content iframe
-  let topContentWindow;
-  try {
-    topContentWindow = win.top;
-  } catch(e) {
-    // It may throw if win is not a valid content window
-    return null;
-  }
-
-  function getWindowID(obj) {
-    return obj.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
-              .currentInnerWindowID;
-  }
-
-  // Search for related Tab
-  let topWindowId = getWindowID(topContentWindow);
-  for (let i = 0; i < topWindow.gBrowser.browsers.length; i++) {
-    let w = topWindow.gBrowser.browsers[i].contentWindow;
-    if (getWindowID(w) == topWindowId) {
-      return require('api-utils/tabs/tab').Tab({
-        // TODO: api-utils should not depend on addon-kit!
-        window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
-        tab: topWindow.gBrowser.tabs[i]
-      });
-    }
-  }
-
+  let tab = getTabForContentWindow(win);
   // We were unable to find the related tab!
-  return null;
+  if (!tab)
+    return null;
+
+  let topWindow = getOwnerWindow(tab);
+  return Tab({
+    // TODO: api-utils should not depend on addon-kit!
+    window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
+    tab: tab
+  });
 }
 exports.getTabForWindow = getTabForWindow;
+
+function getTabContentWindow(tab) {
+  return getBrowserForTab(tab).contentWindow;
+}
+exports.getTabContentWindow = getTabContentWindow;
+
+function getTabForContentWindow(window) {
+  // Retrieve the topmost frame container. It can be either <xul:browser>,
+  // <xul:iframe/> or <html:iframe/>. But in our case, it should be xul:browser.
+  let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIWebNavigation)
+                   .QueryInterface(Ci.nsIDocShell)
+                   .chromeEventHandler;
+  // Is null for toplevel documents
+  if (!browser)
+    return false;
+  // Retrieve the owner window, should be browser.xul one
+  let chromeWindow = browser.ownerDocument.defaultView;
+
+  // Ensure that it is top-level browser window.
+  // We need extra checks because of Mac hidden window that has a broken
+  // `gBrowser` global attribute.
+  if ('gBrowser' in chromeWindow && chromeWindow.gBrowser &&
+      'browsers' in chromeWindow.gBrowser) {
+    // Looks like we are on Firefox Desktop
+    // Then search for the position in tabbrowser in order to get the tab object
+    let browsers = chromeWindow.gBrowser.browsers;
+    let i = browsers.indexOf(browser);
+    if (i !== -1)
+      return chromeWindow.gBrowser.tabs[i];
+    return null;
+  }
+  else if ('BrowserApp' in chromeWindow) {
+    // Looks like we are on Firefox Mobile
+    return chromeWindow.BrowserApp.getTabForWindow(window)
+  }
+
+  return null;
+}
+exports.getTabForContentWindow = getTabForContentWindow;

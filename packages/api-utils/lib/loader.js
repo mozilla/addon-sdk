@@ -347,7 +347,11 @@ const Loader = iced(function Loader(options) {
     '@loader/unload': destructor,
     '@loader/options': options,
     'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
-                CC: bind(CC, Components), components: Components }
+                CC: bind(CC, Components), components: Components,
+                // Note: Exporting `ChromeWorker` does not works, probably
+                // because platform does some sandbox incompatible scope
+                // sniffing .
+                ChromeWorker: function(uri) { return new ChromeWorker(uri) }}
   }, modules);
 
   modules = keys(modules).reduce(function(result, id) {

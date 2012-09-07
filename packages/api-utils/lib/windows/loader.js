@@ -6,7 +6,6 @@
 const { Cc, Ci } = require('chrome'),
       { setTimeout } = require("../timer"),
       { Trait } = require('../traits'),
-
       { openDialog } = require('api-utils/window/utils'),
 
       ON_LOAD = 'load',
@@ -50,11 +49,13 @@ const WindowLoader = Trait.compose({
   set _window(window) {
     let _window = this.__window;
     if (!window) window = null;
+
     if (window !== _window) {
       if (_window) {
         _window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
         _window.removeEventListener(ON_LOAD, this.__loadListener, false);
       }
+
       if (window) {
         window.addEventListener(
           ON_UNLOAD,
@@ -63,7 +64,9 @@ const WindowLoader = Trait.compose({
           ,
           false
         );
+
         this.__window = window;
+
         // If window is not loaded yet setting up a listener.
         if (STATE_LOADED != window.document.readyState) {
           window.addEventListener(

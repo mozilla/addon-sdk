@@ -30,8 +30,10 @@ Right now only the following modules are fully functional:
 
 * [page-mod](packages/addon-kit/page-mod.html)
 * [page-worker](packages/addon-kit/page-worker.html)
+* [private-browsing](packages/addon-kit/private-browsing.html)
 * [request](packages/addon-kit/request.html)
 * [self](packages/addon-kit/self.html)
+* [simple-prefs](packages/addon-kit/simple-prefs.html)
 * [simple-storage](packages/addon-kit/simple-storage.html)
 * [timers](packages/addon-kit/timers.html)
 

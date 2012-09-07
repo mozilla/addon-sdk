@@ -69,6 +69,15 @@ function getBaseWindow(window) {
 }
 exports.getBaseWindow = getBaseWindow;
 
+function getWindowDocShell(window) window.gBrowser.docShell;
+exports.getWindowDocShell = getWindowDocShell;
+
+function getWindowLoadingContext(window) {
+  return getWindowDocShell(window).
+         QueryInterface(Ci.nsILoadContext);
+}
+exports.getWindowLoadingContext = getWindowLoadingContext;
+
 /**
  * Removes given window from the application's window registry. Unless
  * `options.close` is `false` window is automatically closed on application

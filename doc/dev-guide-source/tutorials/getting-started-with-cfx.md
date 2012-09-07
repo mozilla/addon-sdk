@@ -111,8 +111,8 @@ the Mozilla home page in a new tab.
 Try editing this file. For example, we could change the icon displayed
 and the URL that gets loaded:
 
-    const widgets = require("widget");
-    const tabs = require("tabs");
+    var widgets = require("widget");
+    var tabs = require("tabs");
 
     var widget = widgets.Widget({
       id: "jquery-link",

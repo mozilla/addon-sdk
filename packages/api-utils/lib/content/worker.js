@@ -15,6 +15,9 @@ const observers = require('../observer-service');
 const { Cortex } = require('../cortex');
 const { sandbox, evaluate, load } = require("../sandbox");
 const { merge } = require('../utils/object');
+const xulApp = require("api-utils/xul-app");
+const USE_JS_PROXIES = !xulApp.versionInRange(xulApp.platformVersion,
+                                              "17.0a2", "*");
 
 /* Trick the linker in order to ensure shipping these files in the XPI.
   require('./content-proxy.js');
@@ -119,7 +122,8 @@ const WorkerSandbox = EventEmitter.compose({
     let apiSandbox = sandbox(window, { wantXrays: true });
 
     // Build content proxies only if the document has a non-system principal
-    if (XPCNativeWrapper.unwrap(window) !== window) {
+    // And only on old firefox versions that doesn't ship bug 738244
+    if (USE_JS_PROXIES && XPCNativeWrapper.unwrap(window) !== window) {
       apiSandbox.console = console;
       // Execute the proxy code
       load(apiSandbox, CONTENT_PROXY_URL);
@@ -135,10 +139,16 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
+    // We have to ensure that window.top and window.parent are the exact same
+    // object than window object, i.e. the sandbox global object. But not
+    // always, in case of iframes, top and parent are another window object.
+    let top = window.top === window ? content : content.top;
+    let parent = window.parent === window ? content : content.parent;
     merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
-      get top() content,
+      get top() top,
+      get parent() parent,
       // Use the Greasemonkey naming convention to provide access to the
       // unwrapped window object so the content script can access document
       // JavaScript values.

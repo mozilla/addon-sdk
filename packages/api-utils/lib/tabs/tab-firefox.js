@@ -13,7 +13,7 @@ const {
   activateTab,
   getOwnerWindow,
   getBrowserForTab,
-  getTabTitle
+  getTabTitle,
 } = require('./utils');
 const { Worker } = require('api-utils/tabs/worker');
 
