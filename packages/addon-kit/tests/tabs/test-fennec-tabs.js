@@ -43,6 +43,18 @@ exports.testAutomaticDestroy = function(test) {
     test.fail("an onOpen listener was called that should not have been");
     called = true;
   });
+  tabs2.on('ready', function onReady(tab) {
+    test.fail("an onReady listener was called that should not have been");
+    called = true;
+  });
+  tabs2.on('select', function onSelect(tab) {
+    test.fail("an onSelect listener was called that should not have been");
+    called = true;
+  });
+  tabs2.on('close', function onClose(tab) {
+    test.fail("an onClose listener was called that should not have been");
+    called = true;
+  });
 
   loader.unload();
 
@@ -53,13 +65,21 @@ exports.testAutomaticDestroy = function(test) {
     test.assertEqual(tabs2Len, tabs2.length, "tabs2 length was not changed");
     test.assertEqual(tabs.length, (tabs2.length+1), "tabs.length > tabs2.length");
 
-    timer.setTimeout(function () {
-      test.assert(!called, "Unloaded tab module is destroyed and inactive");
+    tab.once('ready', function() {
+      test.pass('tab.once("ready") works!');
 
-      tab.close(function() {
-        // end test
-        test.done();
+      tab.once('close', function() {
+        test.pass('tab.once("close") works!');
+
+        timer.setTimeout(function () {
+          test.assert(!called, "Unloaded tab module is destroyed and inactive");
+
+          // end test
+          test.done();
+        });
       });
+
+      tab.close();
     });
   });
 
