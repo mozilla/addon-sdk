@@ -57,21 +57,7 @@ const Tabs = Class({
 
       emit(tab, "open", tab);
       emit(this, "open", tab);
-    }).bind(this)
-
-    // TabSelect
-    let onTabSelect = function(evt) {
-      // Set value whenever new tab becomes active.
-      let tab = getTabForBrowser(evt.target);
-      emit(tab, "activate", tab);
-      emit(this, "activate", tab);
-
-      for each (let t in this) {
-        if (t === tab) continue;
-        emit(t, 'deactivate', t);
-        emit(this, 'deactivate', t);
-      }
-    }.bind(this);
+    }).bind(this);
 
     // TabOpen event
     window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
@@ -175,6 +161,20 @@ function getRawTabForBrowser(browser) {
   }
   return null;
 }
+
+// TabSelect
+function onTabSelect(evt) {
+  // Set value whenever new tab becomes active.
+  let tab = getTabForBrowser(evt.target);
+  emit(tab, "activate", tab);
+  emit(gTabs, "activate", tab);
+
+  for each (let t in gTabs) {
+    if (t === tab) continue;
+    emit(t, 'deactivate', t);
+    emit(gTabs, 'deactivate', t);
+  }
+};
 
 // TabClose
 function onTabClose(evt) {
