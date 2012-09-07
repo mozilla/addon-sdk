@@ -39,8 +39,7 @@ const Tabs = Class({
     // TabClose
     window.BrowserApp.deck.addEventListener(EVENTS.close.dom, onTabClose, false);
 
-    // 
-    window.addEventListener('close', tabsUnloader, false);
+    // window.addEventListener('close', tabsUnloader, false);
   },
   get activeTab() {
     return getTabForRawTab(tabsNS(this).window.BrowserApp.selectedTab);
@@ -90,10 +89,11 @@ const gTabs = exports.tabs = Tabs(mainWindow);
 
 function tabsUnloader(evt, window) {
   window = window || evt.target;
+  if (!window.BrowserApp) return;
   window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
-  window.BrowserApp.deck.removeEventListener('close', tabsUnloader, false);
+  // window.removeEventListener('close', tabsUnloader, false);
 }
 
 // unload handler
