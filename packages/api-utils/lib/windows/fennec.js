@@ -85,7 +85,5 @@ WindowTracker({
     if (!isBrowser(chromeWindow)) return;
     let window = getBrowserWindow({ window: chromeWindow });
     emit(browserWindows, 'close', window);
-
-    window.destroy();
   }
 });
