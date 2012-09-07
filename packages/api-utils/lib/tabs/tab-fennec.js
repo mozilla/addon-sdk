@@ -11,6 +11,7 @@ const { EventTarget } = require('api-utils/event/target');
 const { activateTab, getTabTitle, closeTab } = require('api-utils/tabs/utils');
 const { Worker } = require('api-utils/tabs/worker');
 const { emit } = require('api-utils/event/core');
+const { when: unload } = require('unload');
 
 const { EVENTS } = require("./events");
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
@@ -24,13 +25,11 @@ const Tab = Class({
     let tabInternals = tabNS(this);
 
     tabInternals.window = options.window || getMostRecentBrowserWindow();
-    let tab = tabInternals.tab = options.tab;
+    tabInternals.tab = options.tab;
 
     // TabReady
-    tab.browser.addEventListener(EVENTS.ready.dom, function onReady() {
-      emit(this, 'ready', this);
-      emit(require('tabs'), 'ready', this);
-    }.bind(this), false);
+    tabInternals.onReady = onTabReady.bind(this);
+    tab.browser.addEventListener(EVENTS.ready.dom, tabInternals.onReady, false);
   },
 
   /**
@@ -133,3 +132,18 @@ const Tab = Class({
   }
 });
 exports.Tab = Tab;
+
+unload(function() {
+  for each (let tab in require('tabs')) {
+    let tabInternals = tabNS(tab);
+    tabInternals.tab.browser.removeEventListener(EVENTS.ready.dom, tabInternals.onReady, false);
+    tabInternals.onReady = null;
+    tabInternals.tab = null;
+    tabInternals.window = null;
+  }
+});
+
+function onTabReady() {
+  emit(this, 'ready', this);
+  emit(require('tabs'), 'ready', this);
+}
