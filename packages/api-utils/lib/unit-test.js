@@ -241,6 +241,8 @@ TestRunner.prototype = {
         timer.clearTimeout(this.waitTimeout);
         this.waitTimeout = null;
       }
+      // Do not leave any callback set when calling to `waitUntil`
+      this.waitUntilCallback = null;
       if (this.test.passed == 0 && this.test.failed == 0) {
         this._logTestFailed("empty test");
         this.failed++;
@@ -350,7 +352,8 @@ TestRunner.prototype = {
             a = a();
           }
           catch(e) {
-            test.fail("Exception when calling asynchronous assertion: " + e);
+            test.fail("Exception when calling asynchronous assertion: " + e +
+                      "\n" + e.stack);
             finished = true;
             return;
           }

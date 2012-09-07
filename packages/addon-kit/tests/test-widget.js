@@ -578,28 +578,36 @@ exports.testConstructor = function(test) {
   tests.push(function testAddonBarHide() {
     // Hide the addon-bar
     browserWindow.setToolbarVisibility(container(), false);
+    test.assert(container().collapsed,
+                "1st window starts with an hidden addon-bar");
 
     // Then open a browser window and verify that the addon-bar remains hidden
     tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
-      let browserWindow = e.target.defaultView;
-      let doc = browserWindow.document;
-      function container2() doc.getElementById("addon-bar");
+      let browserWindow2 = e.target.defaultView;
+      let doc2 = browserWindow2.document;
+      function container2() doc2.getElementById("addon-bar");
       function widgetCount2() container2() ? container2().childNodes.length : 0;
       let widgetStartCount2 = widgetCount2();
+      test.assert(container2().collapsed,
+                  "2nd window starts with an hidden addon-bar");
 
       let w1Opts = {id:"first", label: "first widget", content: "first content"};
       let w1 = testSingleWidget(w1Opts);
-      test.assertEqual(widgetCount2(), widgetStartCount2 + 1, "2nd window has correct number of child elements after widget creation");
-
+      test.assertEqual(widgetCount2(), widgetStartCount2 + 1,
+                       "2nd window has correct number of child elements after" +
+                       "widget creation");
       w1.destroy();
-      test.assertEqual(widgetCount2(), widgetStartCount2, "2nd window has correct number of child elements after widget destroy");
+      test.assertEqual(widgetCount2(), widgetStartCount2,
+                       "2nd window has correct number of child elements after" +
+                       "widget destroy");
 
       test.assert(container().collapsed, "1st window has an hidden addon-bar");
       test.assert(container2().collapsed, "2nd window has an hidden addon-bar");
 
+      // Reset addon-bar visibility before exiting this test
       browserWindow.setToolbarVisibility(container(), true);
 
-      closeBrowserWindow(browserWindow, function() {
+      closeBrowserWindow(browserWindow2, function() {
         doneTest();
       });
     }});

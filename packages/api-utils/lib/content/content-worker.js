@@ -30,7 +30,7 @@ const ContentWorker = Object.freeze({
       removeListener: function removeListener(name, callback) {
         if (!(name in listeners))
           return;
-        let index = listeners[name].indexOf(name);
+        let index = listeners[name].indexOf(callback);
         if (index == -1)
           return;
         listeners[name].splice(index, 1);
@@ -194,22 +194,22 @@ const ContentWorker = Object.freeze({
 
     // Deprecated use of on/postMessage from globals
     exports.postMessage = function deprecatedPostMessage() {
-      console.warn("The global `postMessage()` function in content " +
-                   "scripts is deprecated in favor of the " +
-                   "`self.postMessage()` function, which works the same. " +
-                   "Replace calls to `postMessage()` with calls to " +
-                   "`self.postMessage()`." +
-                   "For more info on `self.on`, see " +
-                   "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+      console.error("DEPRECATED: The global `postMessage()` function in " +
+                    "content scripts is deprecated in favor of the " +
+                    "`self.postMessage()` function, which works the same. " +
+                    "Replace calls to `postMessage()` with calls to " +
+                    "`self.postMessage()`." +
+                    "For more info on `self.on`, see " +
+                    "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
       return self.postMessage.apply(null, arguments);
     };
     exports.on = function deprecatedOn() {
-      console.warn("The global `on()` function in content scripts is " +
-                   "deprecated in favor of the `self.on()` function, " +
-                   "which works the same. Replace calls to `on()` with " +
-                   "calls to `self.on()`" +
-                   "For more info on `self.on`, see " +
-                   "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+      console.error("DEPRECATED: The global `on()` function in content " +
+                    "scripts is deprecated in favor of the `self.on()` " +
+                    "function, which works the same. Replace calls to `on()` " +
+                    "with calls to `self.on()`" +
+                    "For more info on `self.on`, see " +
+                    "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
       return self.on.apply(null, arguments);
     };
 
@@ -220,12 +220,13 @@ const ContentWorker = Object.freeze({
       set: function (v) {
         if (onMessage)
           self.removeListener("message", onMessage);
-        console.warn("The global `onMessage` function in content scripts " +
-                     "is deprecated in favor of the `self.on()` function. " +
-                     "Replace `onMessage = function (data){}` definitions " +
-                     "with calls to `self.on('message', function (data){})`. " +
-                     "For more info on `self.on`, see " +
-                     "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+        console.error("DEPRECATED: The global `onMessage` function in content" +
+                      "scripts is deprecated in favor of the `self.on()` " +
+                      "function. Replace `onMessage = function (data){}` " +
+                      "definitions with calls to `self.on('message', " +
+                      "function (data){})`. " +
+                      "For more info on `self.on`, see " +
+                      "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
         onMessage = v;
         if (typeof onMessage == "function")
           self.on("message", onMessage);
