@@ -20,9 +20,6 @@ const BrowserWindow = Class({
     EventTarget.prototype.initialize.call(this, options);
     windowNS(this).window = options.window;
   },
-  destroy: function() {
-    return null;
-  },
   activate: function activate() {
     // TODO
     return null;

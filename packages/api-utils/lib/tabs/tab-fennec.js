@@ -25,7 +25,6 @@ const Tab = Class({
     tabInternals.window = options.window || getMostRecentBrowserWindow();
     tabInternals.tab = options.tab;
   },
-  destroy: function() {},
 
   /**
    * The title of the page currently loaded in the tab.

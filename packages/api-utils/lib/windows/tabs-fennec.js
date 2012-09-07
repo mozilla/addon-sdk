@@ -15,8 +15,9 @@ const { method } = require('../functional');
 const { EVENTS } = require("api-utils/tabs/events");
 const { EventTarget } = require('api-utils/event/target');
 const { when: unload } = require('unload');
+const { windowIterator } = require('api-utils/window-utils');
 
-var mainWindow = windowNS(browserWindows.activeWindow).window;
+const mainWindow = windowNS(browserWindows.activeWindow).window;
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
@@ -26,7 +27,7 @@ const Tabs = Class({
     EventTarget.prototype.initialize.call(this, options);
 
     let tabsInternals = tabsNS(this);
-    let window = tabsNS(this).window = options.window;
+    let window = tabsNS(this).window = options.window || mainWindow;
     let tabs = tabsNS(this).tabs = getTabs(window).map(Tab);
 
     // TabOpen event
@@ -38,12 +39,8 @@ const Tabs = Class({
     // TabClose
     window.BrowserApp.deck.addEventListener(EVENTS.close.dom, onTabClose, false);
 
-    unload(function() {
-      window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
-      window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
-      window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
-      off(this);
-    }.bind(this));
+    // 
+    window.addEventListener('close', tabsUnloader, false);
   },
   get activeTab() {
     return getTabForRawTab(tabsNS(this).window.BrowserApp.selectedTab);
@@ -89,7 +86,22 @@ const Tabs = Class({
       yield tab;
   }
 });
-const gTabs = exports.tabs = Tabs({window: mainWindow});
+const gTabs = exports.tabs = Tabs(mainWindow);
+
+function tabsUnloader(evt, window) {
+  window = window || evt.target;
+  window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
+  window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
+  window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
+  window.BrowserApp.deck.removeEventListener('close', tabsUnloader, false);
+}
+
+// unload handler
+unload(function() {
+  for (let window in windowIterator()) {
+    tabsUnloader({}, window);
+  }
+});
 
 function addTab(aTab) {
   let tabs = tabsNS(gTabs).tabs;
