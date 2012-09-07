@@ -1,8 +1,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+'use strict';
 
-"use strict";
 const {Cc,Ci,Cu} = require("chrome");
 var NetUtil = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
@@ -11,6 +11,7 @@ const errors = require("./errors");
 const windowUtils = require("./window-utils");
 const apiUtils = require("./api-utils");
 const collection = require("./collection");
+const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the
@@ -79,9 +80,7 @@ exports.addTab = function addTab(url, options) {
     }
   });
 
-  var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-           .getService(Ci.nsIWindowMediator);
-  var win = wm.getMostRecentWindow("navigator:browser");
+  var win = getMostRecentBrowserWindow();
   if (!win || options.inNewWindow) {
     openBrowserWindow(function(e) {
       if(options.isPinned) {
@@ -263,10 +262,7 @@ exports.whenContentLoaded = function whenContentLoaded(callback) {
 
 Object.defineProperty(exports, 'activeTab', {
   get: function() {
-    const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
-                getService(Ci.nsIWindowMediator);
-    let mainWindow = wm.getMostRecentWindow("navigator:browser");
-    return mainWindow.gBrowser.selectedTab;
+    return getMostRecentBrowserWindow().gBrowser.selectedTab;
   }
 });
 

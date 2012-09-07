@@ -27,37 +27,7 @@ const Tabs = Class({
 
     let tabsInternals = tabsNS(this);
     let window = tabsNS(this).window = options.window;
-    let tabs = tabsNS(this).tabs = getTabs(window).map(function(rawTab) {
-      return Tab({window: window, tab: rawTab});
-    });
-
-    // TabOpen
-    let onTabOpen = (function(evt) {
-      let browser = evt.target;
-
-      let tab = getTabForBrowser(browser);
-      if (tab === null) {
-        let rawTab = getRawTabForBrowser(evt.target);
-
-        // create a Tab instance for this new tab
-        tab = addTab(Tab({
-          window: window,
-          tab: rawTab
-        }));
-      }
-
-      tabNS(tab).opened = true;
-
-      // TabReady
-      // TODO: remove listener on unload
-      browser.addEventListener(EVENTS.ready.dom, function onReady() {
-        emit(tab, 'ready', tab);
-        emit(this, 'ready', tab);
-      }.bind(this), false);
-
-      emit(tab, "open", tab);
-      emit(this, "open", tab);
-    }).bind(this);
+    let tabs = tabsNS(this).tabs = getTabs(window).map(Tab);
 
     // TabOpen event
     window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
@@ -161,6 +131,31 @@ function getRawTabForBrowser(browser) {
   }
   return null;
 }
+
+// TabOpen
+function onTabOpen(evt) {
+  let browser = evt.target;
+
+  let tab = getTabForBrowser(browser);
+  if (tab === null) {
+    let rawTab = getRawTabForBrowser(browser);
+
+    // create a Tab instance for this new tab
+    tab = addTab(Tab(rawTab));
+  }
+
+  tabNS(tab).opened = true;
+
+  // TabReady
+  // TODO: remove listener on unload
+  browser.addEventListener(EVENTS.ready.dom, function onReady() {
+    emit(tab, 'ready', tab);
+    emit(gTabs, 'ready', tab);
+  }, false);
+
+  emit(tab, "open", tab);
+  emit(gTabs, "open", tab);
+};
 
 // TabSelect
 function onTabSelect(evt) {

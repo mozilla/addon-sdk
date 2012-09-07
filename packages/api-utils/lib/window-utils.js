@@ -1,15 +1,20 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
 const { when } = require('./unload');
-const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser } =
-  require('./window/utils');
+const {
+  getInnerId,
+  getOuterId,
+  windows,
+  isDocumentLoaded,
+  isBrowser,
+  getMostRecentBrowserWindow
+} = require('./window/utils');
 const errors = require("./errors");
 
 const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
@@ -165,11 +170,7 @@ Object.defineProperties(exports, {
   },
   activeBrowserWindow: {
     enumerable: true,
-    get: function() {
-      return Cc["@mozilla.org/appshell/window-mediator;1"]
-        .getService(Ci.nsIWindowMediator)
-        .getMostRecentWindow("navigator:browser");
-    }
+    get: getMostRecentBrowserWindow
   }
 });
 

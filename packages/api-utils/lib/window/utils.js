@@ -20,6 +20,12 @@ const BROWSER = 'navigator:browser',
       FEATURES = 'chrome,all,dialog=no';
 
 
+
+function getMostRecentBrowserWindow() {
+  return WM.getMostRecentWindow(BROWSER);
+}
+exports.getMostRecentBrowserWindow = getMostRecentBrowserWindow;
+
 /**
  * Returns the ID of the window's current inner window.
  */

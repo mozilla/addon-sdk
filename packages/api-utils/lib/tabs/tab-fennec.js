@@ -1,27 +1,28 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Cc, Ci } = require('chrome');
 const { Class } = require('api-utils/heritage');
 const { tabNS } = require('api-utils/tabs/namespace');
-const { EVENTS } = require("./events");
+const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
 const { EventTarget } = require('api-utils/event/target');
-const { on, once, off } = require('api-utils/event/core');
-const { method } = require('../functional');
 const { activateTab, getTabTitle, closeTab } = require('api-utils/tabs/utils');
 const { Worker } = require('api-utils/tabs/worker');
 
+const { EVENTS } = require("./events");
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
 const Tab = Class({
   extends: EventTarget,
-  initialize: function initialize(options) {
+  initialize: function initialize(tab) {
+    let options = { tab: tab };
+
     EventTarget.prototype.initialize.call(this, options);
     let tabInternals = tabNS(this);
 
-    tabInternals.window = options.window;
+    tabInternals.window = options.window || getMostRecentBrowserWindow();
     tabInternals.tab = options.tab;
   },
   destroy: function() {},
