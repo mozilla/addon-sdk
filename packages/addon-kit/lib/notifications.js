@@ -3,25 +3,35 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 const { Cc, Ci, Cr } = require("chrome");
 const apiUtils = require("api-utils/api-utils");
 const errors = require("api-utils/errors");
+const winUtils = require('api-utils/window-utils');
 
-try {
-  let alertServ = Cc["@mozilla.org/alerts-service;1"].
-                  getService(Ci.nsIAlertsService);
-
-  // The unit test sets this to a mock notification function.
-  var notify = alertServ.showAlertNotification.bind(alertServ);
+function onFennec(win) {
+  return (win && win.NativeWindow && win.NativeWindow.toast);
 }
-catch (err) {
+
+// fennec?
+if (onFennec(winUtils.activeBrowserWindow)) {
+  notify = notifyUsingFennec;
+}
+else {
+  try {
+    let alertServ = Cc["@mozilla.org/alerts-service;1"].
+                    getService(Ci.nsIAlertsService);
+
+    // The unit test sets this to a mock notification function.
+    var notify = alertServ.showAlertNotification.bind(alertServ);
+  }
   // An exception will be thrown if the platform doesn't provide an alert
   // service, e.g., if Growl is not installed on OS X.  In that case, use a
   // mock notification function that just logs to the console.
-  notify = notifyUsingConsole;
+  catch (err) {
+    notify = notifyUsingConsole;
+  }
 }
 
 exports.notify = function notifications_notify(options) {
@@ -51,11 +61,26 @@ exports.notify = function notifications_notify(options) {
   }
 };
 
-function notifyUsingConsole(iconURL, title, text) {
+function stringNotification(iconURL, title, text) {
   title = title ? "[" + title + "]" : "";
   text = text || "";
-  let str = [title, text].filter(function (s) s).join(" ");
+  return [title, text].filter(function (s) s).join(" ");
+}
+
+function notifyUsingConsole(iconURL, title, text) {
+  let str = stringNotification.apply(null, arguments);
   console.log(str);
+  return null;
+}
+
+function notifyUsingFennec(iconURL, title, text) {
+  let window = winUtils.activeBrowserWindow;
+  if (!onFennec(window))
+    return notifyUsingConsole.apply(null, arguments);
+
+  let str = stringNotification.apply(null, arguments);
+  window.NativeWindow.toast.show(str, 'short');
+  return null;
 }
 
 function validateOptions(options) {
