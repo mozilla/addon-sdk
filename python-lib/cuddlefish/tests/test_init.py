@@ -25,7 +25,7 @@ class TestInit(unittest.TestCase):
             os.chdir(top)
 
     def do_test_init(self,basedir):
-        # Let's init the addon, no error admited
+        # Let's init the addon, no error admitted
         f = open(".ignoreme","w")
         f.write("stuff")
         f.close()
@@ -48,7 +48,8 @@ class TestInit(unittest.TestCase):
         self.assertEqual(open(main_js,"r").read(),"")
         self.assertEqual(open(package_json,"r").read(),
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
-                                         "fullName": "tmp_addon_SAMPLE" })
+                                         "fullName": "tmp_addon_SAMPLE",
+                                         'id':self.id() })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized

@@ -441,6 +441,7 @@ def get_config_args(name, env_root):
 
 def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
+    from preflight import create_jid
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than one argument
@@ -457,8 +458,10 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>out, '*', d, 'directory created'
     open('README.md','w').write('')
     print >>out, '* README.md written'
+    jid = create_jid
     open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon })
+                                                   'fullName':addon,
+                                                   'id':jid })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
