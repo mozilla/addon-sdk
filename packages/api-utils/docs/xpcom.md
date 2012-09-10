@@ -25,9 +25,10 @@ The `xpcom` module makes it simpler to perform three main tasks:
 This module exports a class called `Unknown` which implements the fundamental
 XPCOM interface
 [`nsISupports`](https://developer.mozilla.org/docs/XPCOM_Interface_Reference/nsISupports).
-By subclassing `Unknown` using the [`heritage`](packages/api-utils/heritage.html)
-module, you can provide your own implementations of XPCOM
-interfaces.
+By subclassing `Unknown`, either using
+[standard JavaScript inheritance](https://developer.mozilla.org/en-US/docs/JavaScript/Guide/Inheritance_Revisited)
+or using the SDK's [`heritage`](packages/api-utils/heritage.html)
+module, you can provide your own implementations of XPCOM interfaces.
 
 For example, the add-on below implements the
 [`nsIObserver`](https://developer.mozilla.org/docs/XPCOM_Interface_Reference/nsIObserver)
@@ -72,7 +73,10 @@ for the `HelloWorld` component and the `HelloWorld` constructor, we enable
 XPCOM clients to access the `HelloWorld` component, given its contract ID.
 
 <span class="aside">
-In this example the `HelloWorld` component is available to JavaScript only, so we use the technique documented under the "Using wrappedJSObject" section of [How to Build an XPCOM Component in JavaScript](https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript).</span>
+In this example the `HelloWorld` component is available to JavaScript only,
+so we use the technique documented under the "Using wrappedJSObject"
+section of
+[How to Build an XPCOM Component in JavaScript](https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript).</span>
 
     var { Class } = require('api-utils/heritage');
     var { Unknown, Factory } = require('api-utils/xpcom');
@@ -160,7 +164,7 @@ To learn more about this, see
 ## Implementing XPCOM Services ##
 
 The `xpcom` module exports a class called `Service` which you can use to
-register
+define
 [XPCOM services](https://developer.mozilla.org/en-US/docs/XUL_Tutorial/XPCOM_Interfaces#XPCOM_Services),
 making them available to all XPCOM users.
 
@@ -204,7 +208,7 @@ To learn more about this, see
 ## Registering and Unregistering ##
 
 By default, factories and services are registered with XPCOM automatically
-when they are created, and unregistered automatically when the module
+when they are created, and unregistered automatically when the add-on
 that created them is unloaded.
 
 You can override this behavior using the `register` and `unregister`
@@ -219,14 +223,16 @@ options to the factory or service constructor:
       unregister: false,
     });
 
-If you disable automatic registration or unregistration in this way,
-you can use the `register()` and `unregister()` functions to register
-and unregister factories and services:
+If you disable automatic registration in this way, you can use the
+`register()` function to register factories and services:
 
     xpcom.register(factory);
-<!-- -->
+
+You can use the corresponding `unregister()` function to unregister them,
+whether or not you have disabled automatic unregistration:
 
     xpcom.unregister(factory);
+
 
 You can find out whether a factory or service has been registered by using the
 `isRegistered()` function:
@@ -237,8 +243,11 @@ You can find out whether a factory or service has been registered by using the
 <api name="Unknown">
 @class
 This is the base class for all XPCOM objects. It is not intended to be used
-directly, but you can subclass using the
-[`heritage`](packages/api-utils/heritage.html) module to create new
+directly but you can subclass it,
+either using
+[standard JavaScript inheritance](https://developer.mozilla.org/en-US/docs/JavaScript/Guide/Inheritance_Revisited)
+or using the SDK's [`heritage`](packages/api-utils/heritage.html)
+module, to create new
 implementations of XPCOM interfaces. For example, this subclass implements the
 [`nsIRequest`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/NsIRequest)
 interface:
@@ -295,8 +304,9 @@ searches for the identifier in the `interfaces` property of:
 
 * this object
 * any of this object's ancestors
-* any classes added to this object via the `implements` option defined
-in [`heritage`](packages/api-utils/heritage.html).
+* any classes in the `implements` array property of the instance
+(for example, any classes added to this object via the `implements`
+option defined in [`heritage`](packages/api-utils/heritage.html)).
 
 If it finds a match, it returns `this`, otherwise it throws
 [`Components.results.NS_ERROR_NO_INTERFACE`](https://developer.mozilla.org/en-US/docs/Table_Of_Errors).
@@ -344,7 +354,7 @@ the factory. If a class ID is not given, a new one will be generated. The
 contract ID and class ID are accessible as the values of the `contract` and
 `id` properties, respectively.
 * By default, the factory is registered when it is created and
-unregistered when the module that created it is unloaded. To override this
+unregistered when the add-on that created it is unloaded. To override this
 behavior, you can pass `register` and/or `unregister` options, set to `false`.
 If you do this, you can use the
 [`register()`](packages/api-utils/xpcom.html#register(factory)) and
@@ -392,7 +402,7 @@ By including this option, set to `false`, the factory is not automatically
 registered and you must register it manually using the `register()` function.
 
 @prop [unregister=true] {boolean}
-By default, the factory is unregistered as soon as the module which created it
+By default, the factory is unregistered as soon as the add-on which created it
 is unloaded. By including this option, set to `false`, the factory is not
 automatically unregistered and you must unregister it manually using
 the `unregister()` function.
@@ -507,7 +517,7 @@ Unregister the factory or service supplied. If the factory or service
 is not registered, this function does nothing.
 
 By default, factories and services are unregistered automatically when the
-module that registered them is unloaded.
+add-on that registered them is unloaded.
 
 @param factory {object}
 The factory or service to unregister.
