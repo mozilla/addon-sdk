@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os, unittest, shutil
+import os, unittest, shutil, sys
 from StringIO import StringIO
 from cuddlefish import initializer
 from cuddlefish.templates import TEST_MAIN_JS, PACKAGE_JSON
@@ -33,7 +33,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(init_run, 0)
+        self.assertEqual(init_run["result"], 0)
         self.assertTrue("* lib directory created" in out)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
@@ -46,17 +46,17 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),"")
-        self.assertEqual(open(package_json,"r").read(),
+        self.assertEqual(open(package_json,"r").read() % {"id":"tmp_addon_id" },
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
                                          "fullName": "tmp_addon_SAMPLE",
-                                         'id':self.id() })
+                                         "id":init_run["jid"] })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run,0)
+        self.failIfEqual(init_run["result"],0)
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
@@ -67,7 +67,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         init_run = initializer(None, ["init", "ignored-dirname"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run, 0)
+        self.failIfEqual(init_run["result"], 0)
         self.assertTrue("Too many arguments" in err)
 
     def test_args(self):
@@ -80,7 +80,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         rc = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc["result"], 1)
         self.failUnless("This command must be run in an empty directory" in err,
                         err)
         self.failIf(os.path.exists("lib"))

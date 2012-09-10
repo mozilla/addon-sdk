@@ -17,6 +17,7 @@ PACKAGE_JSON = '''\
 {
   "name": "%(name)s",
   "fullName": "%(fullName)s",
+  "id": "%(id)s",
   "description": "a basic add-on",
   "author": "",
   "license": "MPL 2.0",

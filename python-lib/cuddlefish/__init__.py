@@ -447,18 +447,19 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     # if more than one argument
     if len(args) > 1:
         print >>err, 'Too many arguments.'
-        return 1
+        return {"result":1}
     # avoid clobbering existing files, but we tolerate things like .git
     existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
     if existing:
         print >>err, 'This command must be run in an empty directory.'
-        return 1
+        return {"result":1}
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open('README.md','w').write('')
     print >>out, '* README.md written'
-    jid = create_jid
+    jid = create_jid()
+    print >>out, '* generated jID automatically:', jid
     open('package.json','w').write(PACKAGE_JSON % {'name':addon.lower(),
                                                    'fullName':addon,
                                                    'id':jid })
@@ -471,7 +472,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     print >>out, '* doc/main.md written'
     print >>out, '\nYour sample add-on is now ready.'
     print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
-    return 0
+    return {"result":0, "jid":jid}
 
 def buildJID(target_cfg):
     if "id" in target_cfg:
