@@ -30,16 +30,16 @@ const PrefsTarget = Class({
     unload(onUnload.bind(this, branch, preferenceChange));
   }
 });
+exports.PrefsTarget = PrefsTarget;
+
+/* HELPERS */
 
 function onChange(subject, topic, name) {
-  if (topic === 'nsPref:changed') {
+  if (topic === 'nsPref:changed')
     emit(this, name, name);
-  }
 }
 
 function onUnload(branch, observer) {
   off(this);
   branch.removeObserver('', observer, false);
 }
-
-exports.PrefsTarget = PrefsTarget;
