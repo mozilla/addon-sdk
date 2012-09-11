@@ -3,6 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
+
+module.metadata = {
+  "stability": "deprecated"
+};
+
 // Design inspired by: http://www.traitsjs.org/
 
 // shortcuts

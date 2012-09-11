@@ -6,6 +6,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const UNCAUGHT_ERROR = 'An error event was emitted for which there was no listener.';
 const BAD_LISTENER = 'The event listener must be a function.';
 

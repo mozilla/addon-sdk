@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, Cu } = require("chrome");
 const base64 = require("../base64");
 

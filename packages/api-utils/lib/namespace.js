@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const create = Object.create;
 const prototypeOf = Object.getPrototypeOf;
 

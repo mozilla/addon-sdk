@@ -6,6 +6,9 @@
 //
 // http://narwhaljs.org
 
+module.metadata = {
+  "stability": "experimental"
+};
 
 const { on, off } = require('./system/events');
 const unloadSubject = require('@loader/unload');

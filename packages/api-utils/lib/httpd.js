@@ -10,6 +10,9 @@
 * httpd.js.
 */
 
+module.metadata = {
+  "stability": "experimental"
+};
 
 const { components, CC, Cc, Ci, Cr, Cu } = require("chrome");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");

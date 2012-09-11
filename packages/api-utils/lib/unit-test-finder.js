@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const file = require("./file");
 const memory = require('api-utils/memory');
 const suites = require('@test/options').allTestModules;

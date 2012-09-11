@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const {Cc,Ci,Cr} = require("chrome");
 const byteStreams = require("./byte-streams");
 const textStreams = require("./text-streams");
