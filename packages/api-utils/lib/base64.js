@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cu } = require("chrome");
 
 // If an object is not given as second argument, the JavaScript Module scope is

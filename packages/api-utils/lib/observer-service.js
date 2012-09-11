@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const { Cc, Ci } = require("chrome");
 const { when: unload } = require("./unload");
 const { ns } = require("./namespace");

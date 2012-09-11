@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require("chrome");
 const runtime = require("../runtime");
 const { isString } = require("../type");

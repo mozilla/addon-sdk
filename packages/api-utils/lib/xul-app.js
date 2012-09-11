@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const {Cc, Ci} = require("chrome");
 
 var appInfo = Cc["@mozilla.org/xre/app-info;1"]

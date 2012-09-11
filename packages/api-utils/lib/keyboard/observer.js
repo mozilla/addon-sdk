@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Trait } = require("../light-traits");
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { DOMEventAssembler } = require("../events/assembler");

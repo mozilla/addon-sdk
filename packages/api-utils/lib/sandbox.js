@@ -5,6 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const { Cc, Ci, CC, Cu } = require('chrome');
 const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
 const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].

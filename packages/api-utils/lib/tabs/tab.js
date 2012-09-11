@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Ci } = require('chrome');
 const { Trait } = require("../traits");
 const { EventEmitter } = require("../events");

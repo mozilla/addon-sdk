@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Ci } = require("chrome");
 
 function getTabBrowser(window) {

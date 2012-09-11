@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, Cu } = require("chrome");
 const base64 = require("../base64");
 
@@ -13,6 +17,7 @@ const IOService = Cc["@mozilla.org/network/io-service;1"].
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 const FaviconService = Cc["@mozilla.org/browser/favicon-service;1"].
                           getService(Ci.nsIFaviconService);
+const { deprecateFunction } = require("api-utils/deprecate");
 
 const PNG_B64 = "data:image/png;base64,";
 const DEF_FAVICON_URI = "chrome://mozapps/skin/places/defaultFavicon.png";
@@ -61,18 +66,14 @@ exports.getChromeURIContent = getChromeURIContent;
 /**
  * Creates a base-64 encoded ASCII string from a string of binary data.
  */
-exports.base64Encode = function base64Encode(data) {
-  console.warn('require("api-utils/utils/data").base64Encode is deprecated, ' +
-               'please use require("api-utils/base64").encode instead');
-
-  return base64.encode(data);
-}
+exports.base64Encode = deprecateFunction(base64.encode,
+  'require("api-utils/utils/data").base64Encode is deprecated, ' +
+  'please use require("api-utils/base64").encode instead'
+);
 /**
  * Decodes a string of data which has been encoded using base-64 encoding.
  */
-exports.base64Decode = function base64Decode(data) {
-  console.warn('require("api-utils/utils/data").base64Dencode is deprecated, ' +
-               'please use require("api-utils/base64").decode instead');
-
-  return base64.decode(data);
-}
+exports.base64Decode = deprecateFunction(base64.decode,
+  'require("api-utils/utils/data").base64Dencode is deprecated, ' +
+  'please use require("api-utils/base64").decode instead'
+);
