@@ -8,30 +8,19 @@
 const { Cc, Ci, Cr } = require("chrome");
 const apiUtils = require("api-utils/api-utils");
 const errors = require("api-utils/errors");
-const winUtils = require('api-utils/window-utils');
 
-function onFennec(win) {
-  return (win && win.NativeWindow && win.NativeWindow.toast);
+try {
+  let alertServ = Cc["@mozilla.org/alerts-service;1"].
+                  getService(Ci.nsIAlertsService);
+
+  // The unit test sets this to a mock notification function.
+  var notify = alertServ.showAlertNotification.bind(alertServ);
 }
-
-// fennec?
-if (onFennec(winUtils.activeBrowserWindow)) {
-  notify = notifyUsingFennec;
-}
-else {
-  try {
-    let alertServ = Cc["@mozilla.org/alerts-service;1"].
-                    getService(Ci.nsIAlertsService);
-
-    // The unit test sets this to a mock notification function.
-    var notify = alertServ.showAlertNotification.bind(alertServ);
-  }
+catch (err) {
   // An exception will be thrown if the platform doesn't provide an alert
   // service, e.g., if Growl is not installed on OS X.  In that case, use a
   // mock notification function that just logs to the console.
-  catch (err) {
-    notify = notifyUsingConsole;
-  }
+  notify = notifyUsingConsole;
 }
 
 exports.notify = function notifications_notify(options) {
@@ -61,26 +50,11 @@ exports.notify = function notifications_notify(options) {
   }
 };
 
-function stringNotification(iconURL, title, text) {
+function notifyUsingConsole(iconURL, title, text) {
   title = title ? "[" + title + "]" : "";
   text = text || "";
-  return [title, text].filter(function (s) s).join(" ");
-}
-
-function notifyUsingConsole(iconURL, title, text) {
-  let str = stringNotification.apply(null, arguments);
+  let str = [title, text].filter(function (s) s).join(" ");
   console.log(str);
-  return null;
-}
-
-function notifyUsingFennec(iconURL, title, text) {
-  let window = winUtils.activeBrowserWindow;
-  if (!onFennec(window))
-    return notifyUsingConsole.apply(null, arguments);
-
-  let str = stringNotification.apply(null, arguments);
-  window.NativeWindow.toast.show(str, 'short');
-  return null;
 }
 
 function validateOptions(options) {
