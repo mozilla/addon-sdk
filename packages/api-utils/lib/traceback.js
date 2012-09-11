@@ -101,7 +101,8 @@ var format = exports.format = function format(tbOrException) {
   tb.forEach(
     function(frame) {
       if (!(frame.filename || frame.lineNo || frame.funcName))
-	return;
+      	return;
+      
       lines.push('  File "' + frame.filename + '", line ' +
                  frame.lineNo + ', in ' + frame.funcName);
       var sourceLine = safeGetFileLine(frame.filename, frame.lineNo);

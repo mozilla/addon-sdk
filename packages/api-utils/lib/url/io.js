@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Ci, Cu, Cr, components } = require("chrome");
-const { defer, resolve, reject } = require("../promise");
+const { Cu, components } = require("chrome");
+const { defer } = require("../promise");
 const { merge } = require("../utils/object");
 
 const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
@@ -13,12 +13,16 @@ const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
  * returns a resolved promise if succeed; rejected promise otherwise.
  */
 function readSync(uri, charset) {
+  let { promise, resolve, reject } = defer();
+
   try {
-    return resolve(readURISync(uri, charset));
+    resolve(readURISync(uri, charset));
   }
   catch (e) {
-    return reject("Failed to read: '" + uri + "' (Error Code: " + e.result + ")");
+    reject("Failed to read: '" + uri + "' (Error Code: " + e.result + ")");
   }
+
+  return promise;
 }
 
 /**
@@ -29,23 +33,17 @@ function readAsync(uri, charset) {
   let channel = NetUtil.newChannel(uri, charset, null);
 
   let { promise, resolve, reject } = defer();
-  let data = "";
 
-	channel.asyncOpen({
-	  onStartRequest: function(request, context) {},
+  NetUtil.asyncFetch(channel, function (stream, result) {
+    if (components.isSuccessCode(result)) {
+      let count = stream.available();
+      let data = NetUtil.readInputStreamToString(stream, count, { charset : charset });
 
-	  onDataAvailable: function(request, context, stream, offset, count) {
-      data += NetUtil.readInputStreamToString(stream, count, { charset : charset });
-	  },
-
-	  onStopRequest: function(request, context, result) {
-	    if (components.isSuccessCode(result)) {
-        resolve(data);
-      } else {
-        reject("Failed to read: '" + uri + "' (Error Code: " + result + ")");
-      }
+      resolve(data);
+    } else {
+      reject("Failed to read: '" + uri + "' (Error Code: " + result + ")");
     }
-  }, null);
+  });
 
   return promise;
 }
@@ -73,7 +71,7 @@ function readURI(uri, options) {
     sync: false
   }, options);
 
-  return options.sync 
+  return options.sync
     ? readSync(uri, options.charset)
     : readAsync(uri, options.charset);
 }
