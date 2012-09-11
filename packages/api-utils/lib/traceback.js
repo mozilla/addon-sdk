@@ -1,31 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
-const {Cc,Ci,components} = require("chrome");
+const { Cc, Ci, components } = require("chrome");
+const { readURISync } = require("./url/io");
 
 // Undo the auto-parentification of URLs done in bug 418356.
 function deParentifyURL(url) {
   return url ? url.split(" -> ").slice(-1)[0] : url;
-}
-
-// TODO: We might want to move this function to url or some similar
-// module.
-function getLocalFile(path) {
-  var ios = Cc['@mozilla.org/network/io-service;1']
-            .getService(Ci.nsIIOService);
-  var channel = ios.newChannel(path, null, null);
-  var iStream = channel.open();
-  var siStream = Cc['@mozilla.org/scriptableinputstream;1']
-                 .createInstance(Ci.nsIScriptableInputStream);
-  siStream.init(iStream);
-  var data = new String();
-  data += siStream.read(-1);
-  siStream.close();
-  iStream.close();
-  return data;
 }
 
 function safeGetFileLine(path, line) {
@@ -34,7 +17,7 @@ function safeGetFileLine(path, line) {
     // TODO: There should be an easier, more accurate way to figure out
     // what's the case here.
     if (!(scheme == "http" || scheme == "https"))
-      return getLocalFile(path).split("\n")[line - 1];
+      return readURISync(path).split("\n")[line - 1];
   } catch (e) {}
   return null;
 }
@@ -117,7 +100,7 @@ var format = exports.format = function format(tbOrException) {
   tb.forEach(
     function(frame) {
       if (!(frame.filename || frame.lineNo || frame.funcName))
-	return;
+        return;
       lines.push('  File "' + frame.filename + '", line ' +
                  frame.lineNo + ', in ' + frame.funcName);
       var sourceLine = safeGetFileLine(frame.filename, frame.lineNo);
