@@ -14,10 +14,10 @@ The `url/io` module provides functionality for read URLs' content.
 @param [options] {object}
   `options` can have any or all of the following fields:
   @prop [sync=false] {boolean}
-    If this option is set to `true`, the promise returned will be resolved 
+    If this option is set to `true`, the promise returned will be resolved
     synchronously. Defaults to `false` if not provided.
   @prop [charset="UTF-8"] {string}
-    The character set to use when read the content of the `uri` given. 
+    The character set to use when read the content of the `uri` given.
     Defaults to `UTF-8` if not provided.
 @returns {promise}
   The promise that will be resolved with the content of the URL given.
