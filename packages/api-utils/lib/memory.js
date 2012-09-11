@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const {Cc,Ci,Cu,components} = require("chrome");
 var trackedObjects = {};
 

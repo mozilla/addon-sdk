@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require('chrome');
 const { defer } = require('api-utils/functional');
 const observers = require('api-utils/observer-service');

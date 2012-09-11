@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const { Cc, Ci } = require('chrome');
 const { descriptor, Sandbox, evaluate, main, resolveURI } = require('api-utils/loader');
 const { once } = require('../system/events');

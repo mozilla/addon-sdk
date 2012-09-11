@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, Cu } = require("chrome");
 const AppShellService = Cc["@mozilla.org/appshell/appShellService;1"].
   getService(Ci.nsIAppShellService);

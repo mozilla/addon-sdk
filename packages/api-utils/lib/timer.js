@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const { CC, Ci } = require('chrome');
 const { when: unload } = require('./unload');
 

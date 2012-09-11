@@ -5,6 +5,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { Cc, Ci } = require('chrome');
 const { get, set, exists } = Cc['@mozilla.org/process/environment;1'].
                              getService(Ci.nsIEnvironment);
