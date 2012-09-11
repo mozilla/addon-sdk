@@ -187,7 +187,7 @@ exports["test async readURI with chrome URI"] = function(assert, done) {
 
   readURI(chromeURI).then(function(data) {
     content = data;
-    assert.equal(content, utf8text, "The URL content is loaded properly");
+    assert.equal(content, readURISync(chromeURI), "The URL content is loaded properly");
     done();
   }, function() {
     assert.fail("should not reject");
@@ -206,7 +206,7 @@ exports["test sync readURI with chrome URI"] = function(assert) {
     assert.fail("should not reject");
   })
 
-  assert.equal(content, utf8text, "The URL content is loaded properly");
+  assert.equal(content, readURISync(chromeURI), "The URL content is loaded properly");
 }
 
 require("test").run(exports)
