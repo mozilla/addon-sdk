@@ -3,8 +3,10 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+'use strict';
 
 const { Loader } = require('test-harness/loader');
+const { setTimeout } = require('timer');
 
 exports.testOnClick = function (test) {
   let [loader, mockAlertServ] = makeLoader(module);
@@ -25,6 +27,32 @@ exports.testOnClick = function (test) {
   mockAlertServ.click();
   loader.unload();
 };
+
+exports.testNotification = function(test) {
+  test.waitUntilDone(3000);
+
+  let loader = Loader(module);
+  let notifs = loader.require("notifications");
+  let opts = {
+    title: "test title",
+    text: "test text",
+  };
+
+  try {
+    notifs.notify(opts);
+    test.pass('made a notification without throwing an error');
+  }
+  catch(e) {
+    console.error(e);
+    test.fail('using the notification service throws an error');
+  }
+
+  // just wait a bit so the tester can see the notification
+  setTimeout(function() {
+    loader.unload();
+    test.done();
+  }, 2000);
+}
 
 // Returns [loader, mockAlertService].
 function makeLoader(test) {

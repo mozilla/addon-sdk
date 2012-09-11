@@ -28,6 +28,7 @@ and `cfx xpi` when targeting Firefox Mobile.
 
 Right now only the following modules are fully functional:
 
+* [notifications](packages/addon-kit/notifications.html)
 * [page-mod](packages/addon-kit/page-mod.html)
 * [page-worker](packages/addon-kit/page-worker.html)
 * [passwords](packages/addon-kit/passwords.html)
