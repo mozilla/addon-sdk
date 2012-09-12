@@ -24,6 +24,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 function resolution(value) {
   /**
   Returns non-standard compliant (`then` does not returns a promise) promise

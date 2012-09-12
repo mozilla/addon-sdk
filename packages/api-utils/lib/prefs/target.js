@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require("chrome");
 const { Class } = require('api-utils/heritage');
 const { EventTarget } = require('api-utils/event/target');

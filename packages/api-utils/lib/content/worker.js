@@ -5,6 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Trait } = require('../traits');
 const { EventEmitter, EventEmitterTrait } = require('../events');
 const { Ci, Cu, Cc } = require('chrome');
@@ -31,7 +35,8 @@ const CONTENT_WORKER_URL = prefix + 'content-worker.js';
 const JS_VERSION = '1.8';
 
 const ERR_DESTROYED =
-  "The page has been destroyed and can no longer be used.";
+  "Couldn't find the worker to receive this message. " +
+  "The script may not be initialized yet, or may already have been unloaded.";
 
 /**
  * This key is not exported and should only be used for proxy tests.
@@ -139,10 +144,16 @@ const WorkerSandbox = EventEmitter.compose({
       sandboxPrototype: proto,
       wantXrays: true
     });
+    // We have to ensure that window.top and window.parent are the exact same
+    // object than window object, i.e. the sandbox global object. But not
+    // always, in case of iframes, top and parent are another window object.
+    let top = window.top === window ? content : content.top;
+    let parent = window.parent === window ? content : content.parent;
     merge(content, {
       // We need "this === window === top" to be true in toplevel scope:
       get window() content,
-      get top() content,
+      get top() top,
+      get parent() parent,
       // Use the Greasemonkey naming convention to provide access to the
       // unwrapped window object so the content script can access document
       // JavaScript values.
@@ -250,19 +261,19 @@ const WorkerSandbox = EventEmitter.compose({
     this._addonWorker = null;
     this._wrap = null;
   },
-  
+
   /**
    * JavaScript sandbox where all the content scripts are evaluated.
    * {Sandbox}
    */
   _sandbox: null,
-  
+
   /**
    * Reference to the addon side of the worker.
    * @type {Worker}
    */
   _addonWorker: null,
-  
+
   /**
    * Evaluates code in the sandbox.
    * @param {String} code
@@ -312,7 +323,7 @@ const WorkerSandbox = EventEmitter.compose({
 const Worker = EventEmitter.compose({
   on: Trait.required,
   _removeAllListeners: Trait.required,
-  
+
   /**
    * Sends a message to the worker's global scope. Method takes single
    * argument, which represents data to be sent to the worker. The data may
@@ -330,17 +341,17 @@ const Worker = EventEmitter.compose({
       throw new Error(ERR_DESTROYED);
     this._contentWorker.emit("message", data);
   },
-  
+
   /**
    * EventEmitter, that behaves (calls listeners) asynchronously.
    * A way to send customized messages to / from the worker.
-   * Events from in the worker can be observed / emitted via 
+   * Events from in the worker can be observed / emitted via
    * worker.on / worker.emit.
    */
   get port() {
     // We generate dynamically this attribute as it needs to be accessible
     // before Worker.constructor gets called. (For ex: Panel)
-    
+
     // create an event emitter that receive and send events from/to the worker
     let self = this;
     this._port = EventEmitterTrait.create({
@@ -349,29 +360,29 @@ const Worker = EventEmitter.compose({
 
     // expose wrapped port, that exposes only public properties:
     // We need to destroy this getter in order to be able to set the
-    // final value. We need to update only public port attribute as we never 
+    // final value. We need to update only public port attribute as we never
     // try to access port attribute from private API.
     delete this._public.port;
     this._public.port = Cortex(this._port);
     // Replicate public port to the private object
     delete this.port;
     this.port = this._public.port;
-    
+
     return this._port;
   },
-  
+
   /**
    * Same object than this.port but private API.
    * Allow access to _emit, in order to send event to port.
    */
   _port: null,
-  
+
   /**
-   * Emit a custom event to the content script, 
+   * Emit a custom event to the content script,
    * i.e. emit this event on `self.port`
    */
   _emitEventToContent: function _emitEventToContent(args) {
-    // We need to save events that are emitted before the worker is 
+    // We need to save events that are emitted before the worker is
     // initialized
     if (!this._inited) {
       this._earlyEvents.push(args);
@@ -386,17 +397,17 @@ const Worker = EventEmitter.compose({
     // Forward the event to the WorkerSandbox object
     this._contentWorker.emit.apply(null, ["event"].concat(args));
   },
-  
+
   // Is worker connected to the content worker sandbox ?
   _inited: false,
-  
+
   // List of custom events fired before worker is initialized
   get _earlyEvents() {
     delete this._earlyEvents;
     this._earlyEvents = [];
     return this._earlyEvents;
   },
-  
+
   constructor: function Worker(options) {
     options = options || {};
 
@@ -421,33 +432,33 @@ const Worker = EventEmitter.compose({
       this._expose_key = true;
 
     // Track document unload to destroy this worker.
-    // We can't watch for unload event on page's window object as it 
-    // prevents bfcache from working: 
+    // We can't watch for unload event on page's window object as it
+    // prevents bfcache from working:
     // https://developer.mozilla.org/En/Working_with_BFCache
     this._windowID = this._window.
                      QueryInterface(Ci.nsIInterfaceRequestor).
                      getInterface(Ci.nsIDOMWindowUtils).
                      currentInnerWindowID;
-    observers.add("inner-window-destroyed", 
+    observers.add("inner-window-destroyed",
                   this._documentUnload = this._documentUnload.bind(this));
-    
+
     unload.ensure(this._public, "destroy");
-    
+
     // Ensure that worker._port is initialized for contentWorker to be able
     // to send use event during WorkerSandbox(this)
     this.port;
-    
+
     // will set this._contentWorker pointing to the private API:
     this._contentWorker = WorkerSandbox(this);
-    
+
     // Mainly enable worker.port.emit to send event to the content worker
     this._inited = true;
-    
+
     // Flush all events that have been fired before the worker is initialized.
     this._earlyEvents.forEach((function (args) this._emitEventToContent(args)).
                               bind(this));
   },
-  
+
   _documentUnload: function _documentUnload(subject, topic, data) {
     let innerWinID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
     if (innerWinID != this._windowID) return false;
@@ -459,7 +470,7 @@ const Worker = EventEmitter.compose({
     // this._window will be null after detach
     return this._window ? this._window.document.location.href : null;
   },
-  
+
   get tab() {
     if (this._window) {
       let tab = require("../tabs/tab");
@@ -468,16 +479,16 @@ const Worker = EventEmitter.compose({
     }
     return null;
   },
-  
+
   /**
-   * Tells content worker to unload itself and 
+   * Tells content worker to unload itself and
    * removes all the references from itself.
    */
   destroy: function destroy() {
     this._workerCleanup();
     this._removeAllListeners();
   },
-  
+
   /**
    * Remove all internal references to the attached document
    * Tells _port to unload itself and removes all the references from itself.
@@ -485,7 +496,7 @@ const Worker = EventEmitter.compose({
   _workerCleanup: function _workerCleanup() {
     // maybe unloaded before content side is created
     // As Symbiont call worker.constructor on document load
-    if (this._contentWorker) 
+    if (this._contentWorker)
       this._contentWorker.destroy();
     this._contentWorker = null;
     this._window = null;
@@ -498,15 +509,15 @@ const Worker = EventEmitter.compose({
       this._emit("detach");
     }
   },
-  
+
   /**
-   * Receive an event from the content script that need to be sent to 
+   * Receive an event from the content script that need to be sent to
    * worker.port. Provide a way for composed object to catch all events.
    */
   _onContentScriptEvent: function _onContentScriptEvent() {
     this._port._emit.apply(this._port, arguments);
   },
-  
+
   /**
    * Reference to the content side of the worker.
    * @type {WorkerGlobalScope}

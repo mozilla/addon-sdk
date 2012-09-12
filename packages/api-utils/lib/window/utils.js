@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require('chrome');
 
 const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].

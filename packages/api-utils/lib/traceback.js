@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const { Cc, Ci, components } = require("chrome");
 const { readURISync } = require("./url/io");
 
@@ -102,7 +106,7 @@ var format = exports.format = function format(tbOrException) {
     function(frame) {
       if (!(frame.filename || frame.lineNo || frame.funcName))
       	return;
-      
+
       lines.push('  File "' + frame.filename + '", line ' +
                  frame.lineNo + ', in ' + frame.funcName);
       var sourceLine = safeGetFileLine(frame.filename, frame.lineNo);

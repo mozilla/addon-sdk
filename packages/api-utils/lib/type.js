@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 /**
  * Returns `true` if `value` is `undefined`.
  * @examples

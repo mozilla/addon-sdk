@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { observer: keyboardObserver } = require("./observer");
 const { getKeyForCode, normalize, isFunctionKey,
         MODIFIERS } = require("./utils");

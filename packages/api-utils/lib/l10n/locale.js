@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const prefs = require("preferences-service");
 const { Cu, Cc, Ci } = require("chrome");
 const { Services } = Cu.import("resource://gre/modules/Services.jsm");

@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 /**
  * Merges all the properties of all arguments into first argument. If two or
  * more argument objects have own properties with the same name, the property

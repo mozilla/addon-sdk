@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Ci } = require("chrome");
 const events = require("api-utils/system/events");
 const core = require("api-utils/l10n/core");
