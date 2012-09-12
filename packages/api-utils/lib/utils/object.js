@@ -14,6 +14,10 @@ module.metadata = {
  * is overridden, with precedence from right to left, implying, that properties
  * of the object on the left are overridden by a same named property of the
  * object on the right.
+ *
+ * Any argument given with "falsy" value - commonly `null` and `undefined` in
+ * case of objects - are skipped.
+ *
  * @examples
  *    var a = { bar: 0, a: 'a' }
  *    var b = merge(a, { foo: 'foo', bar: 1 }, { foo: 'bar', name: 'b' });
@@ -25,7 +29,10 @@ module.metadata = {
  */
 function merge(source) {
   let descriptor = {};
-  Array.slice(arguments, 1).forEach(function onEach(properties) {
+  // `Boolean` converts the first parameter to a boolean value. Any object is
+  // converted to `true` where `null` and `undefined` becames `false`. Therefore
+  // the `filter` method will keep only objects that are defined and not null.
+  Array.slice(arguments, 1).filter(Boolean).forEach(function onEach(properties) {
     Object.getOwnPropertyNames(properties).forEach(function(name) {
       descriptor[name] = Object.getOwnPropertyDescriptor(properties, name);
     });
