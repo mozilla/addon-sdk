@@ -9,9 +9,20 @@ const { CC } = require('chrome');
 const { id, name, prefixURI, rootURI,
         version, loadReason } = require('@loader/options');
 
-const { readURISync } = require("api-utils/url/io");
+const XMLHttpRequest = CC('@mozilla.org/xmlextras/xmlhttprequest;1',
+                          'nsIXMLHttpRequest');
 
 const addonDataURI = prefixURI + name + '/data/';
+
+// Utility function that synchronously reads local resource from the given
+// `uri` and returns content string.
+function readURI(uri) {
+  let request = XMLHttpRequest();
+  request.open('GET', uri, false);
+  request.overrideMimeType('text/plain');
+  request.send();
+  return request.responseText;
+}
 
 function uri(path) {
   return addonDataURI + (path || '');
@@ -31,6 +42,6 @@ exports.packed = rootURI.indexOf('jar:') === 0
 exports.data = Object.freeze({
   url: uri,
   load: function read(path) {
-    return readURISync(uri(path));
+    return readURI(uri(path));
   }
 });
