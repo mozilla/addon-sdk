@@ -22,44 +22,49 @@ function LoaderWithHookedConsole() {
   }
 }
 
-exports.testDeprecatedUsage = function testDeprecatedUsage(test) {
+exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
   let { loader, deprecate, errors } = LoaderWithHookedConsole();
-  deprecate.deprecatedUsage("foo");
 
-  test.assertEqual(errors.length, 1,
-                   "only one error is dispatched");
+  deprecate.deprecateUsage("foo");
+
+  assert.equal(errors.length, 1, "only one error is dispatched");
+
   let msg = errors[0];
-  test.assert(msg.indexOf("foo") !== -1, "message contains the given message");
-  test.assert(msg.indexOf("testDeprecatedUsage") !== -1,
-              "message contains name of the caller function");
-  test.assert(msg.indexOf(module.uri) !== -1,
-              "message contains URI of the caller module");
+  assert.ok(msg.indexOf("foo") !== -1,
+            "message contains the given message");
+
   loader.unload();
 }
 
-exports.testDeprecateFunction = function testDeprecateFunction(test) {
+exports["test Deprecate Function"] = function testDeprecateFunction(assert) {
   let { loader, deprecate, errors } = LoaderWithHookedConsole();
 
   let self = {};
   let arg1 = "foo";
   let arg2 = {};
+
   function originalFunction(a1, a2) {
-    test.assertEqual(this, self);
-    test.assertEqual(a1, arg1);
-    test.assertEqual(a2, arg2);
+    assert.equal(this, self);
+    assert.equal(a1, arg1);
+    assert.equal(a2, arg2);
   };
-  let deprecatedFunction = deprecate.deprecateFunction(originalFunction,
+
+  let deprecateFunction = deprecate.deprecateFunction(originalFunction,
                                                        "bar");
 
-  deprecatedFunction.call(self, arg1, arg2);
+  deprecateFunction.call(self, arg1, arg2);
 
-  test.assertEqual(errors.length, 1,
+  assert.equal(errors.length, 1,
                    "only one error is dispatched");
+
   let msg = errors[0];
-  test.assert(msg.indexOf("bar") !== -1, "message contains the given message");
-  test.assert(msg.indexOf("testDeprecateFunction") !== -1,
-              "message contains name of the caller function");
-  test.assert(msg.indexOf(module.uri) !== -1,
-              "message contains URI of the caller module");
+  assert.ok(msg.indexOf("bar") !== -1, "message contains the given message");
+  assert.ok(msg.indexOf("testDeprecateFunction") !== -1,
+            "message contains name of the caller function");
+  assert.ok(msg.indexOf(module.uri) !== -1,
+            "message contains URI of the caller module");
+
   loader.unload();
 }
+
+require("test").run(exports)
