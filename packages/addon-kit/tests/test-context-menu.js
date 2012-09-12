@@ -346,7 +346,7 @@ exports.testURLContextRemove = function (test) {
     item.context.remove(context);
   });
 };
-*/
+
 
 // Adding a non-matching URL context after its item is created and the page is
 // loaded should cause the item's worker to be destroyed.
@@ -379,7 +379,7 @@ exports.testURLContextAdd = function (test) {
   });
 };
 
-/*
+
 // Content contexts that return true should cause their items to be present
 // in the menu.
 exports.testContentContextMatch = function (test) {
@@ -1463,7 +1463,7 @@ exports.testMenuItemSwap = function (test) {
   let subitem = loader.cm.Item({ label: "item" });
   let menu0 = loader.cm.Menu({
     label: "menu 0",
-    items: [subitem]
+    items: [loader.cm.Item({ label: "other item" }), subitem]
   });
   let menu1 = loader.cm.Menu({
     label: "menu 1",
@@ -1471,8 +1471,10 @@ exports.testMenuItemSwap = function (test) {
   });
   menu1.addItem(subitem);
 
-  test.assertEqual(menu0.items.length, 0,
+  test.assertEqual(menu0.items.length, 1,
                    "menu should have correct number of items");
+  test.assertEqual(menu0.items[0].label, "other item",
+                   "item label should be correct");
 
   test.assertEqual(menu1.items.length, 1,
                    "menu should have correct number of items");
@@ -1497,12 +1499,14 @@ exports.testMenuItemDestroy = function (test) {
   let subitem = loader.cm.Item({ label: "item" });
   let menu = loader.cm.Menu({
     label: "menu",
-    items: [subitem]
+    items: [subitem, loader.cm.Item({ label: "other item" })]
   });
   subitem.destroy();
 
-  test.assertEqual(menu.items.length, 0,
+  test.assertEqual(menu.items.length, 1,
                    "menu should have correct number of items");
+  test.assertEqual(menu.items[0].label, "other item",
+                   "remaining item should have the correct label");
   test.assertEqual(subitem.parentMenu, null,
                    "item's parent menu should be correct");
 
@@ -1588,7 +1592,9 @@ exports.testItemImage = function (test) {
 
   let imageURL = require("self").data.url("moz_favicon.ico");
   let item = new loader.cm.Item({ label: "item", image: imageURL });
-  let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [] });
+  let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [
+    loader.cm.Item({ label: "subitem" })
+  ]});
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item, menu], [], []);
@@ -1766,7 +1772,7 @@ TestHelper.prototype = {
     this.checkPresentItems(presentItems);
     this.checkAbsentItems(presentItems, absentItems);
     this.checkRemovedItems(removedItems);
-    this.checkSort(presentItems);
+    //this.checkSort(presentItems);
   },
 
   // Asserts that the overflow submenu is present or absent as appropriate for
@@ -1976,6 +1982,7 @@ TestHelper.prototype = {
   // WARNING: The element is found by comparing labels, so don't give two items
   // the same label.
   getItemElt: function (popup, item) {
+    console.log("Looking for " + item);
     let nodes = popup.childNodes;
     for (let i = nodes.length - 1; i >= 0; i--) {
       if (this.getItemType(item) === "Separator") {

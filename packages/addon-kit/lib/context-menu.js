@@ -10,8 +10,10 @@ const { ns } = require("namespace");
 const { validateOptions, getTypeOf } = require("api-utils");
 const { WindowTracker, browserWindowIterator } = require("window-utils");
 const { isBrowser } = require("window/utils");
+const { Ci } = require("chrome");
+const { MatchPattern } = require("api-utils/match-pattern");
 
-//All user items we add have this class name.
+// All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
 
 // Items in the top-level context menu also have this class.
@@ -41,7 +43,116 @@ const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
 // The ID of the overflow submenu's xul:menupopup.
 const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
 
+//These are used by PageContext.isCurrent below. If the popupNode or any of
+//its ancestors is one of these, Firefox uses a tailored context menu, and so
+//the page context doesn't apply.
+const NON_PAGE_CONTEXT_ELTS = [
+  Ci.nsIDOMHTMLAnchorElement,
+  Ci.nsIDOMHTMLAppletElement,
+  Ci.nsIDOMHTMLAreaElement,
+  Ci.nsIDOMHTMLButtonElement,
+  Ci.nsIDOMHTMLCanvasElement,
+  Ci.nsIDOMHTMLEmbedElement,
+  Ci.nsIDOMHTMLImageElement,
+  Ci.nsIDOMHTMLInputElement,
+  Ci.nsIDOMHTMLMapElement,
+  Ci.nsIDOMHTMLMediaElement,
+  Ci.nsIDOMHTMLMenuElement,
+  Ci.nsIDOMHTMLObjectElement,
+  Ci.nsIDOMHTMLOptionElement,
+  Ci.nsIDOMHTMLSelectElement,
+  Ci.nsIDOMHTMLTextAreaElement,
+];
+
 let internal = ns();
+
+let Context = Class({
+});
+
+exports.PageContext = Class({
+  extends: Context,
+
+  isCurrent: function isCurrent(popupNode) {
+    if (!popupNode.ownerDocument.defaultView.getSelection().isCollapsed)
+      return false;
+
+    while (!(popupNode instanceof Ci.nsIDOMDocument)) {
+      if (NON_PAGE_CONTEXT_ELTS.some(function(type) popupNode instanceof type))
+        return false;
+
+      popupNode = popupNode.parentNode;
+    }
+
+    return true;
+  }
+});
+
+exports.SelectionContext = Class({
+  extends: Context,
+  
+  isCurrent: function isCurrent(popupNode) {
+    if (!popupNode.ownerDocument.defaultView.getSelection().isCollapsed)
+      return true;
+
+    let { selectionStart, selectionEnd } = popupNode;
+    return !isNaN(selectionStart) && !isNaN(selectionEnd) &&
+           selectionStart !== selectionEnd;
+  }
+});
+
+exports.SelectorContext = Class({
+  extends: Context,
+  
+  initialize: function initialize(selector) {
+    internal(this).options = validateOptions({ selector: selector }, {
+      selector: {
+        is: ["string"],
+        msg: "selector must be a string."
+      }
+    });
+  },
+
+  isCurrent: function isCurrent(popupNode) {
+    let selector = internal(this).options.selector;
+
+    while (!(popupNode instanceof Ci.nsIDOMDocument)) {
+      if (popupNode.mozMatchesSelector(selector))
+        return true;
+
+      popupNode = popupNode.parentNode;
+    }
+
+    return false;
+  }
+});
+
+exports.URLContext = Class({
+  extends: Context,
+  
+  initialize: function initialize(patterns) {
+    internal(this).options = validateOptions({ patterns: patterns }, {
+      patterns: {
+        map: function (v) Array.isArray(v) ? v : [v],
+        ok: function (v) v.every(function (p) typeof(p) === "string"),
+        msg: "patterns must be a string or an array of strings."
+      }
+    });
+
+    try {
+      internal(this).options.patterns = internal(this).options.patterns.map(function (p) new MatchPattern(p));
+    }
+    catch (err) {
+      console.error("Error creating URLContext match pattern:");
+      throw err;
+    }
+
+  },
+
+  isCurrent: function isCurrent(popupNode) {
+    let url = popupNode.ownerDocument.URL;
+    return internal(this).options.patterns.some(function (p) p.test(url));
+  }
+});
 
 function filterOut(array, item) {
   return array.filter(function(i) i !== item);
@@ -154,6 +265,17 @@ let VisibleItem = Class({
   initialize: function initialize(options) {
     addCollectionProperty(this, "context");
 
+    if ("context" in internal(this).options && internal(this).options.context) {
+      let contexts = internal(this).options.context;
+      if (Array.isArray(contexts)) {
+        for (let context of contexts)
+          this.context.add(context);
+      }
+      else {
+        this.context.add(contexts);
+      }
+    }
+
     BaseItem.prototype.initialize.call(this);
   },
 
@@ -213,6 +335,8 @@ let Item = Class({
 
   set data(val) {
     internal(this).options.data = val;
+
+    MenuManager.updateItem(this);
   },
 });
 
@@ -234,11 +358,6 @@ let Menu = Class({
 
   addItem: function addItem(item) {
     let parent = internal(item).parentMenu;
-
-    // Adding to the same menu is a no-op
-    if (parent === this)
-      return;
-
     if (parent)
       internal(parent).children = filterOut(internal(parent).children, item);
 
@@ -312,53 +431,6 @@ let rootMenu = Menu({
   label: OVERFLOW_MENU_LABEL
 });
 
-let Context = Class({
-});
-
-exports.PageContext = Class({
-  extends: Context,
-
-  initialize: function initialize() {
-  },
-
-  isCurrent: function isCurrent(popupNode) {
-    return false;
-  }
-});
-
-exports.SelectionContext = Class({
-  extends: Context,
-  
-  initialize: function initialize() {
-  },
-
-  isCurrent: function isCurrent(popupNode) {
-    return false;
-  }
-});
-
-exports.SelectorContext = Class({
-  extends: Context,
-  
-  initialize: function initialize(selector) {
-  },
-
-  isCurrent: function isCurrent(popupNode) {
-    return false;
-  }
-});
-
-exports.URLContext = Class({
-  extends: Context,
-  
-  initialize: function initialize(matchPattern) {
-  },
-
-  isCurrent: function isCurrent(popupNode) {
-    return false;
-  }
-});
-
 let MenuManager = {
   windowMap: new WeakMap(),
   windows: [],
@@ -391,6 +463,9 @@ let MenuManager = {
     let menu = window.document.getElementById("contentAreaContextMenu");
     menu.removeEventListener("popupshowing", this, false);
 
+    if (!this.windowMap.has(window))
+      return;
+
     for (let item of internal(rootMenu).children) {
       let xulItem = this.getXULItemForItem(window, item);
       xulItem.parentNode.removeChild(xulItem);
@@ -398,11 +473,8 @@ let MenuManager = {
 
     let oldParent = window.document.getElementById(OVERFLOW_POPUP_ID);
     if (!oldParent)
-      oldParent = window.document.getElementById("contentAreaContextMenu");
+      oldParent = menu;
     this.onXULRemoved(oldParent);
-
-    if (!this.windowMap.has(window))
-      return;
 
     this.windowMap.delete(window);
     this.windows = filterOut(this.windows, window);
@@ -446,17 +518,34 @@ let MenuManager = {
     }
   },
 
-  setVisibility: function setVisibility(window, menu) {
+  setVisibility: function setVisibility(window, menu, popupNode) {
     let anyVisible = false;
 
     for (let item of internal(menu).children) {
       let visible = true;
 
+      console.log("Checking visibility of " + item.label + " against " + popupNode.localName);
+
+      if (item instanceof VisibleItem) {
+        if (item.context.length > 0) {
+          for (let context in item.context) {
+            if (!context.isCurrent(popupNode))
+              visible = false;
+          }
+        }
+        else {
+          let context = exports.PageContext();
+          if (!context.isCurrent(popupNode))
+            visible = false;
+        }
+      }
+
       if (visible && (item instanceof Menu))
-        visible = this.setVisibility(window, item);
+        visible = this.setVisibility(window, item, popupNode);
 
       let xulItem = this.getXULItemForItem(window, item);
       xulItem.hidden = !visible;
+      console.log(visible);
 
       anyVisible = anyVisible || visible;
     }
@@ -490,8 +579,34 @@ let MenuManager = {
   
         this.populateWindow(window, rootMenu);
       }
-  
-      this.setVisibility(window, rootMenu);
+
+      let separator = window.document.getElementById(SEPARATOR_ID);
+      let popup = window.document.getElementById(OVERFLOW_MENU_ID);
+
+      if (this.setVisibility(window, rootMenu, event.target.triggerNode)) {
+        // Some of this instance's items are visible so make sure the separator
+        // and if necessary the overflow popup are visible
+        separator.hidden = false;
+        if (popup)
+          popup.hidden = false;
+      }
+      else {
+        // Get all the highest level items and see if any are visible
+        let topLevelSelector = "." + TOPLEVEL_ITEM_CLASS + ", ." + OVERFLOW_ITEM_CLASS + " > ." + ITEM_CLASS;
+        let topLevelItems = window.document.querySelectorAll(topLevelSelector);
+
+        let visible = false;
+        for (let item of topLevelItems) {
+          if (!item.hidden)
+            visible = true;
+        }
+
+        // If any were visible make sure the separator and if necessary the
+        // overflow popup are visible, otherwise hide them
+        separator.hidden = !visible;
+        if (popup)
+          popup.hidden = !visible;
+      }
     }
     catch (e) {
       console.error(e);
@@ -584,10 +699,13 @@ let MenuManager = {
       xulItem.setAttribute("label", item.label);
       if (item.image)
         xulItem.setAttribute("image", item.image);
+      if (item.data)
+        xulItem.setAttribute("value", item.data);
     }
 
     menupopup.insertBefore(xulItem, before);
     this.setClass(xulItem);
+    xulItem.data = item.data;
 
     if (item instanceof Menu) {
       menupopup = window.document.createElement("menupopup");
@@ -606,8 +724,16 @@ let MenuManager = {
     for (let window of this.windows) {
       let xulItem = this.getXULItemForItem(window, item);
 
-      xulItem.label = item.label;
-      xulItem.image = item.image;
+      // TODO figure out why this requires setAttribute
+      xulItem.setAttribute("label", item.label);
+      if (item.image)
+        xulItem.setAttribute("image", item.image);
+      else
+        xulItem.removeAttribute("image");
+      if (item.data)
+        xulItem.setAttribute("value", item.data);
+      else
+        xulItem.removeAttribute("value");
     }
   },
 
