@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var url = require("url");
-var { packed } = require("self");
+var { packed, data } = require("self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -86,15 +86,11 @@ exports.testToFilename = function(test) {
     "url.toFilename() on nonexistent resources should throw"
   );
 
-  if (!packed)
-    test.assertMatches(url.toFilename(module.uri),
-                       /.*test-url\.js$/,
-                       "url.toFilename() on resource: URIs should work");
-  else
-    test.assertRaises(
-      function() { url.toFilename(module.uri); },
-      "cannot map to filename: "+module.uri,
-      "url.toFilename() can fail for packed XPIs");
+  test.assert(url.toFilename(data.url()), 'there is a file url for self.data.url');
+
+  test.assertMatches(url.toFilename(module.uri),
+                     /.*test-url\.js$/,
+                     "url.toFilename() on resource: URIs should work");
 
   test.assertRaises(
     function() { url.toFilename("http://foo.com/"); },

@@ -1,22 +1,20 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 module.metadata = {
   "stability": "experimental"
 };
 
 const { Cc, Ci, Cr } = require("chrome");
-
 const { Class } = require("./heritage");
 const base64 = require("./base64");
 
-var ios = Cc['@mozilla.org/network/io-service;1']
+const ios = Cc['@mozilla.org/network/io-service;1']
           .getService(Ci.nsIIOService);
 
-var resProt = ios.getProtocolHandler("resource")
+const resProt = ios.getProtocolHandler("resource")
               .QueryInterface(Ci.nsIResProtocolHandler);
 
 function newURI(uriStr, base) {
@@ -51,11 +49,14 @@ let fromFilename = exports.fromFilename = function fromFilename(path) {
 };
 
 let toFilename = exports.toFilename = function toFilename(url) {
-  var uri = newURI(url);
-  if (uri.scheme == "resource")
+  let uri = newURI(url);
+
+  if (uri.scheme == "resource") {
     uri = newURI(resolveResourceURI(uri));
-  if (uri.scheme == "chrome") {
-    var channel = ios.newChannelFromURI(uri);
+    return uri.spec;
+  }
+  else if (uri.scheme == "chrome") {
+    let channel = ios.newChannelFromURI(uri);
     try {
       channel = channel.QueryInterface(Ci.nsIFileChannel);
       return channel.file.path;
@@ -63,10 +64,11 @@ let toFilename = exports.toFilename = function toFilename(url) {
       throw new Error("chrome url isn't on filesystem: " + url);
     }
   }
-  if (uri.scheme == "file") {
-    var file = uri.QueryInterface(Ci.nsIFileURL).file;
+  else if (uri.scheme == "file") {
+    let file = uri.QueryInterface(Ci.nsIFileURL).file;
     return file.path;
   }
+
   throw new Error("cannot map to filename: " + url);
 };
 
