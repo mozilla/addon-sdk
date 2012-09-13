@@ -104,14 +104,14 @@ unload(function() {
   }
 });
 
-function addTab(aTab) {
-  listNS(gTabs).add(aTab);
-  return aTab;
+function addTab(tab) {
+  listNS(gTabs).add(tab);
+  return tab;
 }
 
-function removeTab(aTab) {
-  listNS(gTabs).remove(aTab);
-  return aTab;
+function removeTab(tab) {
+  listNS(gTabs).remove(tab);
+  return tab;
 }
 
 function getTabForBrowser(browser) {
