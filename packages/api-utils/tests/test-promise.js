@@ -308,4 +308,20 @@ exports['test promised are greedy'] = function(assert, done) {
   done()
 }
 
+exports['test arrays should not flatten'] = function(assert, done) {
+  var a = defer()
+  var b = defer()
+
+  var combine = promised(function(str, arr) {
+    assert.equal(str, 'Hello', 'Array was not flattened')
+    assert.deepEqual(arr, [ 'my', 'friend' ])
+  })
+
+  combine(a.promise, b.promise).then(done)
+
+
+  a.resolve('Hello')
+  b.resolve([ 'my', 'friend' ])
+}
+
 require("test").run(exports)
