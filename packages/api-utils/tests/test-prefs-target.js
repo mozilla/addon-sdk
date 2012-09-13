@@ -10,7 +10,7 @@ const { setTimeout } = require('timers');
 
 const root = PrefsTarget();
 
-exports.testPrefTarget = function(test) {
+exports.testPrefsTarget = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
@@ -19,17 +19,19 @@ exports.testPrefTarget = function(test) {
 
   test.assertEqual(get(name, ''), '', 'test pref is blank');
 
-  pt.once('test', function() {
+  pt.once(name, function() {
     test.assertEqual(pt.prefs[name], 2, 'test pref is 2');
 
-    pt.once('test', function() {
+    pt.once(name, function() {
       test.fail('should not have heard a pref change');
     });
     loader.unload();
-    root.once('test', function() {
+    root.once(name, function() {
       test.pass('test pref was changed');
       reset(name);
 
+      // NOTE: using setTimeout to make sure that the other listener had
+      //       a chance to fail
       // end test
       setTimeout(function() test.done());
     });
