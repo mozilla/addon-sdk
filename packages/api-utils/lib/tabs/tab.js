@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'stability': 'unstable'
+};
+
 if (require('api-utils/xul-app').is('Firefox')) {
   module.exports = require('api-utils/tabs/tab-firefox');
 }
@@ -11,7 +15,7 @@ else if (require('api-utils/xul-app').is('Fennec')) {
 }
 else {
   throw new Error([
-    "The tabs module currently supports only Firefox & Fennec. In the future",
-    " we would like it to support other applications, however."
-  ].join(""));
+    'The tabs module currently supports only Firefox & Fennec. In the future',
+    ' we would like it to support other applications, however.'
+  ].join(''));
 }

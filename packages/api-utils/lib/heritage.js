@@ -6,6 +6,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 var getPrototypeOf = Object.getPrototypeOf;
 var getNames = Object.getOwnPropertyNames;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;

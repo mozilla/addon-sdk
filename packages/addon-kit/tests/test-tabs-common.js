@@ -160,7 +160,7 @@ exports.testAttachOnMultipleDocuments_alt = function (test) {
             test.assertRaises(function () {
                 worker1.postMessage("ex-1");
               },
-              /The page has been destroyed/,
+              /Couldn't find the worker/,
               "postMessage throw because worker1 is destroyed");
             checkEnd();
           }
@@ -183,7 +183,7 @@ exports.testAttachOnMultipleDocuments_alt = function (test) {
             test.assertRaises(function () {
                 worker2.postMessage("ex-2");
               },
-              /The page has been destroyed/,
+              /Couldn't find the worker/,
               "postMessage throw because worker2 is destroyed");
             checkEnd(tab);
           }

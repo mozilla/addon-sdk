@@ -8,6 +8,10 @@ const { Trait } = require('../traits');
 const { getWindowTitle } = require('../window/utils');
 const { getMode } = require('../private-browsing/utils');
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const WindowDom = Trait.compose({
   _window: Trait.required,
   get title() {

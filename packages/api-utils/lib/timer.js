@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const { CC, Ci } = require('chrome');
 const { when: unload } = require('./unload');
 

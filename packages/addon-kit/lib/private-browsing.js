@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { setMode, getMode, on: onStateChange } = require('api-utils/private-browsing/utils');
 const { emit, on, once, off } = require('api-utils/event/core');
 const { when: unload } = require('api-utils/unload');

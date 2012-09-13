@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const BaseAssert = require("./test/assert").Assert;
 const { isFunction, isObject } = require("./type");
 

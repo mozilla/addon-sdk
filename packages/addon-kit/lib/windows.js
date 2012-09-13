@@ -3,15 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-if (require("api-utils/xul-app").is("Firefox")) {
-  module.exports = require("api-utils/windows/firefox");
+module.metadata = {
+  'stability': 'stable'
+};
+
+if (require('api-utils/xul-app').is('Firefox')) {
+  module.exports = require('api-utils/windows/firefox');
 }
-else if (require("api-utils/xul-app").is("Fennec")) {
-  module.exports = require("api-utils/windows/fennec");
+else if (require('api-utils/xul-app').is('Fennec')) {
+  module.exports = require('api-utils/windows/fennec');
 }
 else {
   throw new Error([
-    "The windows module currently supports only Firefox & Fennec. In the future",
-    " we would like it to support other applications, however."
-  ].join(""));
+    'The windows module currently supports only Firefox & Fennec. In the future',
+    ' we would like it to support other applications, however.'
+  ].join(''));
 }

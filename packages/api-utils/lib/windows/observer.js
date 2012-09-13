@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { EventEmitterTrait: EventEmitter } = require("../events");
 const { WindowTracker, windowIterator } = require("../window-utils");
 const { DOMEventAssembler } = require("../events/assembler");

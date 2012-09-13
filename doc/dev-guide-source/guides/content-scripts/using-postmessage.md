@@ -74,7 +74,7 @@ which is supposed to receive it.
 </span>
 
 <pre>
-Error: The page has been destroyed and can no longer be used.
+Error: Couldn't find the worker to receive this message. The script may not be initialized yet, or may already have been unloaded.
 </pre>
 
 So code like this, where we create a panel and then

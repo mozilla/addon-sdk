@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'stability': 'deprecated'
+};
+
 const { Cc, Ci } = require('chrome');
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');

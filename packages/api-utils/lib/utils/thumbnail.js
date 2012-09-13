@@ -10,6 +10,10 @@ const AppShellService = Cc['@mozilla.org/appshell/appShellService;1'].
 const NS = 'http://www.w3.org/1999/xhtml';
 const COLOR = 'rgb(255,255,255)';
 
+module.metadata = {
+  'stability': 'unstable'
+};
+
 /**
  * Creates canvas element with a thumbnail of the passed window.
  * @param {Window} window

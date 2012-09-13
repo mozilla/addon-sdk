@@ -6,7 +6,8 @@ let tests = {}, Pages, Page;
 const { Loader } = require('test-harness/loader');
 
 const ERR_DESTROYED =
-  "The page has been destroyed and can no longer be used.";
+  "Couldn't find the worker to receive this message. " +
+  "The script may not be initialized yet, or may already have been unloaded.";
 
 tests.testSimplePageCreation = function(test) {
   test.waitUntilDone();
@@ -23,9 +24,9 @@ tests.testSimplePageCreation = function(test) {
   });
 }
 
-/* 
- * Tests that we can't be tricked by document overloads as we have access 
- * to wrapped nodes 
+/*
+ * Tests that we can't be tricked by document overloads as we have access
+ * to wrapped nodes
  */
 tests.testWrappedDOM = function(test) {
   test.waitUntilDone();
@@ -178,7 +179,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
     page.removeListener('message', step0);
     page.on('message', step1);
     page.allow = { script: false };
-    page.contentURL = content = 
+    page.contentURL = content =
       "data:text/html;charset=utf-8,<script>window.localStorage.allowScript='f'</script>";
   }
 
@@ -200,7 +201,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
     page.removeListener('message', step2);
     page.on('message', step3);
     page.allow.script = false;
-    page.contentURL = content = 
+    page.contentURL = content =
       "data:text/html;charset=utf-8,<script>window.localStorage.allowScript=3</script>";
   }
 
@@ -211,7 +212,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
     page.removeListener('message', step3);
     page.on('message', step4);
     page.allow.script = true;
-    page.contentURL = content = 
+    page.contentURL = content =
       "data:text/html;charset=utf-8,<script>window.localStorage.allowScript=4</script>";
   }
 

@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, CC } = require("chrome");
 const { uri: ADDON_URI } = require("self");
 const loginManager = Cc["@mozilla.org/login-manager;1"].

@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 /**
  * Returns `true` if given `array` contain given `element` or `false`
  * otherwise.

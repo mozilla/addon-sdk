@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { emit } = require("../events");
 const { getCodeForKey, toJSON } = require("../../keyboard/utils");
 const { has } = require("../../array");

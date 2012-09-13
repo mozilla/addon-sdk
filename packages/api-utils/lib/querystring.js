@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 let unescape = decodeURIComponent;
 exports.unescape = unescape;
 
