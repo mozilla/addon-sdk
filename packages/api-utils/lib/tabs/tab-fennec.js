@@ -8,7 +8,7 @@ const { Class } = require('heritage');
 const { tabNS } = require('./namespace');
 const { getMostRecentBrowserWindow } = require('../window/utils');
 const { EventTarget } = require('../event/target');
-const { activateTab, getTabTitle, closeTab } = require('./utils');
+const { activateTab, getTabTitle, closeTab, getTabURL, setTabURL } = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('unload');
@@ -46,10 +46,8 @@ const Tab = Class({
    * Changing this property will loads page under under the specified location.
    * @type {String}
    */
-  get url() String(tabNS(this).tab.browser.currentURI.spec),
-  set url(url) {
-    tabNS(this).tab.browser.loadURI(url);
-  },
+  get url() getTabURL(tabNS(this).tab),
+  set url(url) setTabURL(tabNS(this).tab, url),
 
   /**
    * URI of the favicon for the page currently loaded in this tab.

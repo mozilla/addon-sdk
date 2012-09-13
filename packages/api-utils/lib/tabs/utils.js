@@ -179,3 +179,22 @@ function getTabForContentWindow(window) {
   return null;
 }
 exports.getTabForContentWindow = getTabForContentWindow;
+
+function getTabURL(tab) {
+  if (tab.browser) // fennec
+    return String(tab.browser.currentURI.spec);
+  return String(getBrowserForTab(tab).currentURI.spec);
+}
+exports.getTabURL = getTabURL;
+
+function setTabURL(tab, url) {
+  url = String(url);
+  if (tab.browser)
+    return tab.browser.loadURI(url);
+  return getBrowserForTab(tab).loadURI(url);
+}
+// "TabOpen" event is fired when it's still "about:blank" is loaded in the
+// changing `location` property of the `contentDocument` has no effect since
+// seems to be either ignored or overridden by internal listener, there for
+// location change is enqueued for the next turn of event loop.
+exports.setTabURL = defer(setTabURL);

@@ -14,6 +14,8 @@ const {
   getOwnerWindow,
   getBrowserForTab,
   getTabTitle,
+  getTabURL,
+  setTabURL
 } = require('./utils');
 const { Worker } = require('api-utils/tabs/worker');
 
@@ -120,13 +122,8 @@ const TabTrait = Trait.compose(EventEmitter, {
    * Changing this property will loads page under under the specified location.
    * @type {String}
    */
-  get url() String(this._browser.currentURI.spec),
-  set url(value) this._changeLocation(String(value)),
-  // "TabOpen" event is fired when it's still "about:blank" is loaded in the
-  // changing `location` property of the `contentDocument` has no effect since
-  // seems to be either ignored or overridden by internal listener, there for
-  // location change is enqueued for the next turn of event loop.
-  _changeLocation: defer(function(url) this._browser.loadURI(url)),
+  get url() getTabURL(this._tab),
+  set url(url) setTabURL(this._tab, url),
   /**
    * URI of the favicon for the page currently loaded in this tab.
    * @type {String}
