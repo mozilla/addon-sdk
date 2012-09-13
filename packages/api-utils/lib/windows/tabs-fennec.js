@@ -88,8 +88,9 @@ const Tabs = Class({
 let gTabs = exports.tabs = Tabs(mainWindow);
 
 function tabsUnloader(evt, window) {
-  window = window || evt.target;
-  if (!window.BrowserApp) return;
+  window = window || (evt && evt.target);
+  if (!(window && window.BrowserApp))
+    return;
   window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
@@ -99,7 +100,7 @@ function tabsUnloader(evt, window) {
 // unload handler
 unload(function() {
   for (let window in windowIterator()) {
-    tabsUnloader({}, window);
+    tabsUnloader(null, window);
   }
 });
 
