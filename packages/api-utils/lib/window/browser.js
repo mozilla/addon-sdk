@@ -3,15 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('api-utils/heritage');
-const { windowNS } = require('api-utils/window/namespace');
-const { on, off, once } = require('api-utils/event/core');
-const { method } = require('api-utils/functional');
-const { openDialog } = require('api-utils/window/utils');
-const unload = require('api-utils/unload');
-const { getWindowTitle } = require('api-utils/window/utils');
-const { getMode } = require('api-utils/private-browsing/utils');
-const { EventTarget } = require('api-utils/event/target');
+const { Class } = require('../heritage');
+const { windowNS } = require('./namespace');
+const { on, off, once } = require('../event/core');
+const { method } = require('../functional');
+const { openDialog, getWindowTitle } = require('./utils');
+const unload = require('../unload');
+const { getMode } = require('../private-browsing/utils');
+const { EventTarget } = require('../event/target');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
@@ -29,8 +28,9 @@ const BrowserWindow = Class({
     return null;
   },
   get title() getWindowTitle(windowNS(this).window),
-  // TODO: remove assumption below
   // NOTE: Fennec only has one window, which is assumed below
+  // TODO: remove assumption below
+  // NOTE: tabs requires windows
   get tabs() require('tabs'),
   get activeTab() require('tabs').activeTab,
   on: method(on),
