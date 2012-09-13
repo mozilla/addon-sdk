@@ -6,6 +6,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const {Ci} = require("chrome");
 
 if (!require("api-utils/xul-app").is("Firefox")) {
