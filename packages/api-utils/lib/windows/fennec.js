@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('api-utils/heritage');
-const { BrowserWindow } = require('api-utils/window/browser');
-const windowUtils = require('api-utils/window-utils');
-const { windowNS } = require('api-utils/window/namespace');
-const { on, off, once, emit } = require('api-utils/event/core');
+const { Class } = require('heritage');
+const { BrowserWindow } = require('../window/browser');
+const windowUtils = require('../window-utils');
+const { windowNS } = require('../window/namespace');
+const { on, off, once, emit } = require('../event/core');
 const { method } = require('../functional');
-const { WindowTracker } = require('api-utils/window-utils');
-const { isBrowser } = require('api-utils/window/utils');
-const { EventTarget } = require('api-utils/event/target');
-const { List, listNS } = require('api-utils/list/new');
+const { WindowTracker } = require('../window-utils');
+const { isBrowser } = require('../window/utils');
+const { EventTarget } = require('../event/target');
+const { List, listNS } = require('../list/new');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
