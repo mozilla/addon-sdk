@@ -15,14 +15,21 @@ const pbUtils = require('api-utils/private-browsing/utils');
 exports.testBrowserWindowsIterator = function(test) {
   let activeWindowCount = 0;
   let windows = [];
+  let i = 0;
   for each (let window in browserWindows) {
     if (window === browserWindows.activeWindow)
       activeWindowCount++;
 
     test.assertEqual(windows.indexOf(window), -1, 'window not already in iterator');
+    test.assertEqual(browserWindows[i++], window, 'browserWindows[x] works');
     windows.push(window);
   }
   test.assertEqual(activeWindowCount, 1, 'activeWindow was found in the iterator');
+
+  i = 0;
+  for (let j in browserWindows) {
+    test.assertEqual(j, i++, 'for (x in browserWindows) works');
+  }
 };
 
 if (pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
