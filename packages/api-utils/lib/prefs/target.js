@@ -1,23 +1,25 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 module.metadata = {
   "stability": "unstable"
 };
 
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci } = require('chrome');
 const { Class } = require('api-utils/heritage');
 const { EventTarget } = require('api-utils/event/target');
-const { Branch } = require("api-utils/preferences-service");
-const { emit, off } = require("api-utils/event/core");
-const { when: unload } = require("api-utils/unload");
+const { Branch } = require('api-utils/preferences-service');
+const { emit, off } = require('api-utils/event/core');
+const { when: unload } = require('api-utils/unload');
+
+const prefTargetNS = require('namespace').ns();
 
 const PrefsTarget = Class({
   extends: EventTarget,
   initialize: function(options) {
+    options = options || {};
     EventTarget.prototype.initialize.call(this, options);
 
     let branchName = options.branchName || '';
@@ -25,25 +27,33 @@ const PrefsTarget = Class({
         getService(Ci.nsIPrefService).
         getBranch(branchName).
         QueryInterface(Ci.nsIPrefBranch2);
+    prefTargetNS(this).branch = branch;
+
+    // provides easy access to preference values
     this.prefs = Branch(branchName);
 
-    let preferenceChange = onChange.bind(this);
-    branch.addObserver('', preferenceChange, false);
+    // start listening to preference changes
+    let observer = prefTargetNS(this).observer = onChange.bind(this);
+    branch.addObserver('', observer, false);
 
-    // Make sure we cleanup listeners on unload.
-    unload(onUnload.bind(this, branch, preferenceChange));
+    // Make sure to destroy this on unload
+    unload(destroy.bind(this));
   }
 });
+exports.PrefsTarget = PrefsTarget;
+
+/* HELPERS */
 
 function onChange(subject, topic, name) {
-  if (topic === 'nsPref:changed') {
+  if (topic === 'nsPref:changed')
     emit(this, name, name);
-  }
 }
 
-function onUnload(branch, observer) {
+function destroy() {
   off(this);
-  branch.removeObserver('', observer, false);
-}
 
-exports.PrefsTarget = PrefsTarget;
+  // stop listening to preference changes
+  let branch = prefTargetNS(this).branch;
+  branch.removeObserver('', prefTargetNS(this).observer, false);
+  prefTargetNS(this).observer = null;
+}
