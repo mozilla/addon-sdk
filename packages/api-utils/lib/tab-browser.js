@@ -11,7 +11,10 @@ const errors = require("./errors");
 const windowUtils = require("./window-utils");
 const apiUtils = require("./api-utils");
 const collection = require("./collection");
-const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
+const {
+  getMostRecentBrowserWindow,
+  getSelectedTab
+} = require('api-utils/window/utils');
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the
@@ -86,7 +89,7 @@ exports.addTab = function addTab(url, options) {
       if(options.isPinned) {
         //get the active tab in the recently created window
         let mainWindow = e.target.defaultView;
-        mainWindow.gBrowser.pinTab(mainWindow.gBrowser.selectedTab);
+        mainWindow.gBrowser.pinTab(getSelectedTab(mainWindow));
       }
       require("./errors").catchAndLog(function(e) options.onLoad(e))(e);
     }, options.url);
@@ -262,7 +265,7 @@ exports.whenContentLoaded = function whenContentLoaded(callback) {
 
 Object.defineProperty(exports, 'activeTab', {
   get: function() {
-    return getMostRecentBrowserWindow().gBrowser.selectedTab;
+    return getSelectedTab(getMostRecentBrowserWindow());
   }
 });
 
@@ -353,7 +356,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
    */
   this.__defineGetter__("activeTab", function() {
     try {
-      return window ? tabConstructor(window.gBrowser.selectedTab)
+      return window ? tabConstructor(getSelectedTab(window))
                     : tabConstructor(exports.activeTab);
     }
     catch (e) { }

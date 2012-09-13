@@ -8,7 +8,10 @@ const { Tab } = require('api-utils/tabs/tab');
 const { browserWindows } = require('api-utils/windows/fennec');
 const { windowNS } = require('api-utils/window/namespace');
 const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
-const { openTab, getTabs, getTabForRawTab } = require('api-utils/tabs/utils');
+const { openTab,
+        getTabs,
+        getTabForRawTab
+      } = require('api-utils/tabs/utils');
 const { Options } = require('api-utils/tabs/common');
 const { on, once, off, emit } = require('api-utils/event/core');
 const { method } = require('../functional');
@@ -16,6 +19,7 @@ const { EVENTS } = require('api-utils/tabs/events');
 const { EventTarget } = require('api-utils/event/target');
 const { when: unload } = require('unload');
 const { windowIterator } = require('api-utils/window-utils');
+const { getSelectedTab } = require('api-utils/window/utils');
 const { List, listNS } = require('api-utils/list/new');
 
 const mainWindow = windowNS(browserWindows.activeWindow).window;
@@ -44,7 +48,7 @@ const Tabs = Class({
     // window.addEventListener('close', tabsUnloader, false);
   },
   get activeTab() {
-    return getTabForRawTab(tabsNS(this).window.BrowserApp.selectedTab);
+    return getTabForRawTab(getSelectedTab(tabsNS(this).window));
   },
   open: function(options) {
     options = Options(options);
