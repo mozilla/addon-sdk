@@ -87,8 +87,8 @@ const Tabs = Class({
 });
 let gTabs = exports.tabs = Tabs(mainWindow);
 
-function tabsUnloader(evt, window) {
-  window = window || (evt && evt.target);
+function tabsUnloader(event, window) {
+  window = window || (event && event.target);
   if (!(window && window.BrowserApp))
     return;
   window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
@@ -129,8 +129,8 @@ function getRawTabForBrowser(browser) {
 }
 
 // TabOpen
-function onTabOpen(evt) {
-  let browser = evt.target;
+function onTabOpen(event) {
+  let browser = event.target;
 
   let tab = getTabForBrowser(browser);
   if (tab === null) {
@@ -147,9 +147,9 @@ function onTabOpen(evt) {
 };
 
 // TabSelect
-function onTabSelect(evt) {
+function onTabSelect(event) {
   // Set value whenever new tab becomes active.
-  let tab = getTabForBrowser(evt.target);
+  let tab = getTabForBrowser(event.target);
   emit(tab, 'activate', tab);
   emit(gTabs, 'activate', tab);
 
@@ -161,8 +161,8 @@ function onTabSelect(evt) {
 };
 
 // TabClose
-function onTabClose(evt) {
-  let tab = getTabForBrowser(evt.target);
+function onTabClose(event) {
+  let tab = getTabForBrowser(event.target);
   removeTab(tab);
 
   emit(gTabs, 'close', tab);
