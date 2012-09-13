@@ -18,6 +18,7 @@ const { merge } = require('../utils/object');
 const xulApp = require("api-utils/xul-app");
 const USE_JS_PROXIES = !xulApp.versionInRange(xulApp.platformVersion,
                                               "17.0a2", "*");
+const { getTabForWindow } = require('../tabs/utils');
 
 /* Trick the linker in order to ensure shipping these files in the XPI.
   require('./content-proxy.js');
@@ -467,10 +468,9 @@ const Worker = EventEmitter.compose({
   },
   
   get tab() {
-    if (this._window) {
-      // this._window will be null after detach
-      return require('api-utils/tabs/utils').getTabForWindow(this._window);
-    }
+    // this._window will be null after detach
+    if (this._window)
+      return getTabForWindow(this._window);
     return null;
   },
   

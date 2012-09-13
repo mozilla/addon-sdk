@@ -4,13 +4,13 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { Class } = require('api-utils/heritage');
-const { tabNS } = require('api-utils/tabs/namespace');
-const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
-const { EventTarget } = require('api-utils/event/target');
-const { activateTab, getTabTitle, closeTab } = require('api-utils/tabs/utils');
-const { Worker } = require('api-utils/tabs/worker');
-const { emit } = require('api-utils/event/core');
+const { Class } = require('heritage');
+const { tabNS } = require('./namespace');
+const { getMostRecentBrowserWindow } = require('../window/utils');
+const { EventTarget } = require('../event/target');
+const { activateTab, getTabTitle, closeTab } = require('./utils');
+const { Worker } = require('./worker');
+const { emit } = require('../event/core');
 const { when: unload } = require('unload');
 
 const { EVENTS } = require('./events');
