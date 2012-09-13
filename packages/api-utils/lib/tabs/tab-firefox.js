@@ -14,6 +14,7 @@ const {
   getOwnerWindow,
   getBrowserForTab,
   getTabTitle,
+  setTabTitle,
   getTabURL,
   setTabURL
 } = require('./utils');
@@ -108,7 +109,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * @type {String}
    */
   get title() getTabTitle(this._tab),
-  set title(value) this._tab.label = String(value),
+  set title(title) setTabTitle(this._tab, title),
 
   /**
    * Returns the MIME type that the document loaded in the tab is being

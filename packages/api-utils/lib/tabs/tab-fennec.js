@@ -8,7 +8,14 @@ const { Class } = require('heritage');
 const { tabNS } = require('./namespace');
 const { getMostRecentBrowserWindow } = require('../window/utils');
 const { EventTarget } = require('../event/target');
-const { activateTab, getTabTitle, closeTab, getTabURL, setTabURL } = require('./utils');
+const {
+  activateTab,
+  getTabTitle,
+  setTabTitle,
+  closeTab,
+  getTabURL,
+  setTabURL
+} = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('unload');
@@ -39,7 +46,7 @@ const Tab = Class({
    * @type {String}
    */
   get title() getTabTitle(tabNS(this).tab),
-  set title(value) tabNS(this).tab.browser.contentDocument.title = String(value),
+  set title(title) setTabTitle(tabNS(this).tab, title),
 
   /**
    * Location of the page currently loaded in this tab.

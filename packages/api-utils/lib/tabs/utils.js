@@ -125,6 +125,14 @@ function getTabTitle(tab) {
 }
 exports.getTabTitle = getTabTitle;
 
+function setTabTitle(tab, title) {
+  title = String(title);
+  if (tab.browser)
+    tab.browser.contentDocument.title = title;
+  tab.label = String(title);
+}
+exports.setTabTitle = setTabTitle;
+
 function getTabForWindow(win) {
   let tab = getTabForContentWindow(win);
   // We were unable to find the related tab!
