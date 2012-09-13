@@ -25,13 +25,21 @@ function LoaderWithHookedConsole() {
 exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
   let { loader, deprecate, errors } = LoaderWithHookedConsole();
 
-  deprecate.deprecateUsage("foo");
+  function functionIsDeprecated() {
+    deprecate.deprecateUsage("foo");
+  }
+
+  functionIsDeprecated();
 
   assert.equal(errors.length, 1, "only one error is dispatched");
 
   let msg = errors[0];
   assert.ok(msg.indexOf("foo") !== -1,
             "message contains the given message");
+  assert.ok(msg.indexOf("functionIsDeprecated") !== -1,
+            "message contains name of the caller function");
+  assert.ok(msg.indexOf(module.uri) !== -1,
+             "message contains URI of the caller module");
 
   loader.unload();
 }
