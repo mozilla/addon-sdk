@@ -5,6 +5,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, CC } = require('chrome');
 const options = require('@loader/options');
 const file = require('./file');

@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 let { Cc, Ci, CC } = require('chrome');
 let { PlainTextConsole } = require('./plain-text-console');
 let { stdout } = require('api-utils/system');

@@ -5,6 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Worker } = require('./worker');
 const { Loader } = require('./loader');
 const hiddenFrames = require('../hidden-frame');

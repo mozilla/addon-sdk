@@ -3,6 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
+
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const {Cc,Ci,Cu} = require("chrome");
 var NetUtil = {};
 Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);

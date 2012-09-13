@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const {
   compose: _compose,
   override: _override,

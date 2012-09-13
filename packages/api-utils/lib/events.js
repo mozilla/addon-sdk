@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const ERROR_TYPE = 'error',
       UNCAUGHT_ERROR = 'An error event was dispatched for which there was'
         + ' no listener.',

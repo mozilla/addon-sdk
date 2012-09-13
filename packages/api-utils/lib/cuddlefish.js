@@ -25,6 +25,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 /* Workarounds to include dependencies in the manifest
 require('chrome')                 // Otherwise CFX will complain about Components
 require('api-utils/loader')       // Otherwise CFX will stip out loader.js

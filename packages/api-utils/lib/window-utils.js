@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');

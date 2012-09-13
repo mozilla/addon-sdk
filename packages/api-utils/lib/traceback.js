@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const {Cc,Ci,components} = require("chrome");
 
 // Undo the auto-parentification of URLs done in bug 418356.
