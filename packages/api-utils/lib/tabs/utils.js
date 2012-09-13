@@ -12,7 +12,7 @@ function activateTab(tab, window) {
   let gBrowser = getTabBrowserForTab(tab);
 
   // normal case
-  if (gBrowser) {console.log(1);
+  if (gBrowser) {
     gBrowser.selectedTab = tab;
   }
   // fennec ?
