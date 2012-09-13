@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+const { Worker: ContentWorker } = require('../content/worker');
+
 function Worker(options, window) {
-  let { Worker } = require('api-utils/content/worker');
   options.window = window;
 
-  let worker = Worker(options);
+  let worker = ContentWorker(options);
   worker.once("detach", function detach() {
     worker.destroy();
   });
