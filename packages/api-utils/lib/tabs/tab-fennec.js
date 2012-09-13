@@ -12,6 +12,7 @@ const { activateTab, getTabTitle, closeTab } = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('unload');
+const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 
 const { EVENTS } = require('./events');
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
@@ -58,12 +59,17 @@ const Tab = Class({
     // TODO: provide the real favicon when it is available
     console.error(ERR_FENNEC_MSG);
 
-    // return blank default
+    // return 16x16 blank default
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAEklEQVQ4jWNgGAWjYBSMAggAAAQQAAF/TXiOAAAAAElFTkSuQmCC';
   },
 
   getThumbnail: function() {
-    throw new Error(ERR_FENNEC_MSG); // TODO
+    // TODO: implement!
+    console.error(ERR_FENNEC_MSG);
+
+    // return 80x45 blank default
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAtCAYAAAA5reyyAAAAJElEQVRoge3BAQEAAACCIP+vbkhAAQAAAAAAAAAAAAAAAADXBjhtAAGQ0AF/AAAAAElFTkSuQmCC';
+    //return getThumbnailURIForWindow(tabNS(this).tab.browser.contentWindow);
   },
 
   /**

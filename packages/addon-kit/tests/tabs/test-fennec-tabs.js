@@ -124,12 +124,7 @@ exports.testTabProperties = function(test) {
       test.assertEqual(errors.length, 1, "favicon logs an error for now");
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
-      try {
-        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
-      }
-      catch(e) {
-        test.assertEqual(e, ERR_MSG, 'Error is thrown on tab.getThumbnail()');
-      }
+      test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
 
       tab.close(function() {
         loader.unload();
