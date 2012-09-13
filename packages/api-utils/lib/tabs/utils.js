@@ -57,20 +57,17 @@ function getOwnerWindow(tab) {
 }
 exports.getOwnerWindow = getOwnerWindow;
 
-if (require("api-utils/xul-app").is("Fennec")) {
-  var openTab = function openTab(window, url, options) {
-    options = options || {};
+function openTab(window, url, options) {
+  options = options || {};
+  // fennec?
+  if (window.BrowserApp) {
     return window.BrowserApp.addTab(url, {
       selected: options.inBackground ? false : true,
       pinned: options.isPinned || false
     });
   }
-}
-else {
-  var openTab = function openTab(window, url) {
-    return window.gBrowser.addTab(url);
-  }
-}
+  return window.gBrowser.addTab(url);
+};
 exports.openTab = openTab;
 
 function isTabOpen(tab) {
