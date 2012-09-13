@@ -20,9 +20,7 @@ exports.testPrefTarget = function(test) {
   test.assertEqual(get(name, ''), '', 'test pref is blank');
 
   pt.once('test', function() {
-    test.assertEqual(get(name), '2', 'test pref is 2');
-    reset(name);
-    test.assertEqual(get(name, ''), '', 'test pref is reset');
+    test.assertEqual(pt.prefs[name], 2, 'test pref is 2');
 
     pt.once('test', function() {
       test.fail('should not have heard a pref change');
@@ -35,8 +33,8 @@ exports.testPrefTarget = function(test) {
       // end test
       setTimeout(function() test.done());
     });
-    set(name, '3');
+    set(name, 3);
   });
 
-  set(name, '2');
+  pt.prefs[name] = 2;
 };
