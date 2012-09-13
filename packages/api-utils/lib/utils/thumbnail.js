@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+module.metadata = {
+  'stability': 'unstable'
+};
+
 const { Cc, Ci, Cu } = require('chrome');
 const AppShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 
 const NS = 'http://www.w3.org/1999/xhtml';
 const COLOR = 'rgb(255,255,255)';
-
-module.metadata = {
-  'stability': 'unstable'
-};
 
 /**
  * Creates canvas element with a thumbnail of the passed window.
