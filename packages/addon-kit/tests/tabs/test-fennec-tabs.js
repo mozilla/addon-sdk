@@ -612,11 +612,14 @@ exports.testActiveTab_getter_alt = function(test) {
     onActivate: function(tab) {
       test.assertEqual(tabs.activeTab.url, tab.url, 'the active tab is correct');
       test.assertEqual(tab.url, url);
-      test.assertEqual(tab.title, "foo");
 
-      tab.close(function() {
-        // end test
-        test.done();
+      tab.once('ready', function() {
+        test.assertEqual(tab.title, "foo");
+
+        tab.close(function() {
+          // end test
+          test.done();
+        });
       });
     }
   });

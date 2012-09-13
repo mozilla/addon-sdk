@@ -16,7 +16,7 @@ function activateTab(tab, window) {
     gBrowser.selectedTab = tab;
   }
   // fennec ?
-  else if (window && window.BrowserApp) {console.log(2);
+  else if (window && window.BrowserApp) {
     window.BrowserApp.selectTab(tab);
   }
   return null;
@@ -94,9 +94,7 @@ exports.closeTab = closeTab;
 
 // fennec
 function getTabForRawTab(aRawTab) {
-  let tabs = tabsNS(require('tabs')).tabs;
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    let tab = tabs[i];
+  for each (let tab in require('tabs')) {
     if (tabNS(tab).tab === aRawTab)
       return tab;
   }

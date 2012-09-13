@@ -12,15 +12,18 @@ const { method } = require('../functional');
 const { WindowTracker } = require('api-utils/window-utils');
 const { isBrowser } = require('api-utils/window/utils');
 const { EventTarget } = require('api-utils/event/target');
+const { List, listNS } = require('api-utils/list/new');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
-
-const windows = [];
 
 // NOTE: On Fennec there is only one window.
 
 let BrowserWindows = Class({
+  implements: [ List ],
   extends: EventTarget,
+  initialize: function() {
+    List.prototype.initialize.apply(this);
+  },
   get activeWindow() {
     let window = windowUtils.activeBrowserWindow;
     return window ? getBrowserWindow({window: window}) : null;
@@ -28,13 +31,6 @@ let BrowserWindows = Class({
   open: function open(options) {
     throw new Error(ERR_FENNEC_MSG);
     return null;
-  },
-  __iterator__: function __iterator__() {
-    for (var i = 0, len = windows.length; i < len; i++)
-      yield windows[i];
-  },
-  get length() {
-    return windows.length;
   }
 });
 const browserWindows = exports.browserWindows = BrowserWindows();
@@ -45,7 +41,7 @@ const browserWindows = exports.browserWindows = BrowserWindows();
  * registered, `null` otherwise.
  */
 function getRegisteredWindow(chromeWindow) {
-  for each (let window in windows) {
+  for each (let window in browserWindows) {
     if (chromeWindow === windowNS(window).window)
       return window;
   }
@@ -70,7 +66,7 @@ function getBrowserWindow(options) {
 
   // we don't have a BrowserWindow yet, so create one
   var window = BrowserWindow(options);
-  windows.push(window);
+  listNS(browserWindows).add(window);
   return window;
 }
 

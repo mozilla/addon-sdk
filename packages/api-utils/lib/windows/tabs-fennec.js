@@ -16,19 +16,21 @@ const { EVENTS } = require('api-utils/tabs/events');
 const { EventTarget } = require('api-utils/event/target');
 const { when: unload } = require('unload');
 const { windowIterator } = require('api-utils/window-utils');
+const { List, listNS } = require('api-utils/list/new');
 
 const mainWindow = windowNS(browserWindows.activeWindow).window;
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
 const Tabs = Class({
+  implements: [ List ],
   extends: EventTarget,
   initialize: function initialize(options) {
-    EventTarget.prototype.initialize.call(this, options);
-
     let tabsInternals = tabsNS(this);
     let window = tabsNS(this).window = options.window || mainWindow;
-    let tabs = tabsNS(this).tabs = getTabs(window).map(Tab);
+
+    EventTarget.prototype.initialize.call(this, options);
+    List.prototype.initialize.apply(this, getTabs(window).map(Tab));
 
     // TabOpen event
     window.BrowserApp.deck.addEventListener(EVENTS.open.dom, onTabOpen, false);
@@ -77,15 +79,9 @@ const Tabs = Class({
       tab.on('activate', options.onActivate);
 
     return tab;
-  },
-  get length() tabsNS(this).tabs.length,
-  __iterator__: function __iterator__() {
-    let tabs = tabsNS(this).tabs;
-    for each(let tab in tabs)
-      yield tab;
   }
 });
-const gTabs = exports.tabs = Tabs(mainWindow);
+let gTabs = exports.tabs = Tabs(mainWindow);
 
 function tabsUnloader(evt, window) {
   window = window || evt.target;
@@ -104,29 +100,12 @@ unload(function() {
 });
 
 function addTab(aTab) {
-  let tabs = tabsNS(gTabs).tabs;
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    let tab = tabs[i];
-    // tab is already in our list
-    if (tab === aTab)
-      return aTab;
-  }
-
-  // add the new tab
-  tabsNS(gTabs).tabs.push(aTab);
+  listNS(gTabs).add(aTab);
   return aTab;
 }
 
 function removeTab(aTab) {
-  let tabs = tabsNS(gTabs).tabs;
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    let tab = tabs[i];
-    // tab is already in our list
-    if (tab === aTab) {
-      tabs.splice(i, 1);
-      return aTab;
-    }
-  }
+  listNS(gTabs).remove(aTab);
   return aTab;
 }
 
