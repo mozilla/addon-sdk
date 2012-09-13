@@ -225,7 +225,7 @@ execution context. In the following example we pass two content scripts into
 the `PageMod`: these content scripts will share a worker instance.
 
 In the example each content script identifies itself to the add-on script
-by sending it a message using the global `postMessage` function. In the
+by sending it a message using `self.postMessage` function. In the
 `onAttach` function the add-on code logs the fact that a new page is
 attached and registers a listener function that simply logs the message:
 
@@ -237,9 +237,9 @@ attached and registers a listener function that simply logs the message:
     pageMod.PageMod({
       include: ["http://www.mozilla*"],
       contentScriptWhen: 'end',
-      contentScript: ["postMessage('Content script 1 is attached to '+ " +
+      contentScript: ["self.postMessage('Content script 1 is attached to '+ " +
                       "document.URL);",
-                      "postMessage('Content script 2 is attached to '+ " +
+                      "self.postMessage('Content script 2 is attached to '+ " +
                       "document.URL);"],
       onAttach: function onAttach(worker) {
         console.log("Attaching content scripts")
