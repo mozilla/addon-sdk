@@ -1,12 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 const { Cc, Ci } = require('chrome'),
-      { setTimeout } = require("../timer"),
+      { setTimeout } = require('../timer'),
       { Trait } = require('../traits'),
-      { openDialog } = require('api-utils/window/utils'),
+      { openDialog } = require('../window/utils'),
 
       ON_LOAD = 'load',
       ON_UNLOAD = 'unload',

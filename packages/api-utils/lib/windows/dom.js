@@ -5,8 +5,8 @@
 'use strict';
 
 const { Trait } = require('../traits');
-const { getWindowTitle } = require('api-utils/window/utils');
-const { getMode } = require('api-utils/private-browsing/utils');
+const { getWindowTitle } = require('../window/utils');
+const { getMode } = require('../private-browsing/utils');
 
 const WindowDom = Trait.compose({
   _window: Trait.required,

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { validateOptions } = require('api-utils/api-utils');
+const { validateOptions } = require('../api-utils');
 
 function Options(options) {
   if ('string' === typeof options)

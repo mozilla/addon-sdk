@@ -3,4 +3,4 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-exports.windowNS = require('api-utils/namespace').ns();
+exports.windowNS = require('namespace').ns();

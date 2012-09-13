@@ -4,21 +4,21 @@
 'use strict';
 
 const { Cc, Ci, Cr } = require('chrome'),
-      { Trait } = require('api-utils/traits'),
-      { List } = require('api-utils/list'),
-      { EventEmitter } = require('api-utils/events'),
-      { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs-firefox'),
-      { WindowDom } = require('api-utils/windows/dom'),
-      { WindowLoader } = require('api-utils/windows/loader'),
-      { isBrowser, getWindowDocShell } = require('api-utils/window/utils'),
-      { Options } = require('api-utils/tabs/common'),
-      apiUtils = require('api-utils/api-utils'),
-      unload = require('api-utils/unload'),
-      windowUtils = require('api-utils/window-utils'),
+      { Trait } = require('../traits'),
+      { List } = require('../list'),
+      { EventEmitter } = require('../events'),
+      { WindowTabs, WindowTabTracker } = require('./tabs-firefox'),
+      { WindowDom } = require('./dom'),
+      { WindowLoader } = require('./loader'),
+      { isBrowser, getWindowDocShell } = require('../window/utils'),
+      { Options } = require('../tabs/common'),
+      apiUtils = require('../api-utils'),
+      unload = require('unload'),
+      windowUtils = require('../window-utils'),
       { WindowTrackerTrait } = windowUtils,
-      { ns } = require('api-utils/namespace'),
-      { observer: windowObserver } = require('api-utils/windows/observer'),
-      { isWindowPBEnabled } = require('api-utils/private-browsing/utils');
+      { ns } = require('namespace'),
+      { observer: windowObserver } = require('./observer'),
+      { isWindowPBEnabled } = require('../private-browsing/utils');
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S

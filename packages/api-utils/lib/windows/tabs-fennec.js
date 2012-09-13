@@ -3,24 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('api-utils/heritage');
-const { Tab } = require('api-utils/tabs/tab');
+const { Class } = require('heritage');
+const { Tab } = require('../tabs/tab');
 const { browserWindows } = require('./fennec');
-const { windowNS } = require('api-utils/window/namespace');
-const { tabsNS, tabNS } = require('api-utils/tabs/namespace');
+const { windowNS } = require('../window/namespace');
+const { tabsNS, tabNS } = require('../tabs/namespace');
 const { openTab,
         getTabs,
         getTabForRawTab
-      } = require('api-utils/tabs/utils');
-const { Options } = require('api-utils/tabs/common');
-const { on, once, off, emit } = require('api-utils/event/core');
+      } = require('../tabs/utils');
+const { Options } = require('../tabs/common');
+const { on, once, off, emit } = require('../event/core');
 const { method } = require('../functional');
-const { EVENTS } = require('api-utils/tabs/events');
-const { EventTarget } = require('api-utils/event/target');
+const { EVENTS } = require('../tabs/events');
+const { EventTarget } = require('../event/target');
 const { when: unload } = require('unload');
-const { windowIterator } = require('api-utils/window-utils');
-const { getSelectedTab } = require('api-utils/window/utils');
-const { List, listNS } = require('api-utils/list/new');
+const { windowIterator } = require('window-utils');
+const { getSelectedTab } = require('../window/utils');
+const { List, listNS } = require('../list/new');
 
 const mainWindow = windowNS(browserWindows.activeWindow).window;
 

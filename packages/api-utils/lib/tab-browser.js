@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const {Cc,Ci,Cu} = require("chrome");
+const {Cc,Ci,Cu} = require('chrome');
 var NetUtil = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
+Cu.import('resource://gre/modules/NetUtil.jsm', NetUtil);
 NetUtil = NetUtil.NetUtil;
-const errors = require("./errors");
-const windowUtils = require("./window-utils");
-const apiUtils = require("./api-utils");
-const collection = require("./collection");
+const errors = require('./errors');
+const windowUtils = require('./window-utils');
+const apiUtils = require('./api-utils');
+const collection = require('./collection');
 const {
   getMostRecentBrowserWindow,
   getSelectedTab
-} = require('api-utils/window/utils');
+} = require('./window/utils');
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the

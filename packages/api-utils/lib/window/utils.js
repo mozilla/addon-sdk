@@ -12,7 +12,7 @@ const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
 const observers = require('api-utils/observer-service');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-const array = require('api-utils/array');
+const array = require('array');
 
 const BROWSER = 'navigator:browser',
       URI_BROWSER = 'chrome://browser/content/browser.xul',
