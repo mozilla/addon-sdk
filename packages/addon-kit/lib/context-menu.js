@@ -523,6 +523,9 @@ let Menu = Class({
 
   addItem: function addItem(item) {
     let oldParent = internal(item).parentMenu;
+
+    // Don't just call removeItem here as that would remove the corresponding
+    // UI element which is more costly than just moving it to the right place
     if (oldParent)
       internal(oldParent).children = filterOut(internal(oldParent).children, item);
 
@@ -842,8 +845,10 @@ let MenuManager = {
       menupopup = xulNode.firstChild;
     }
 
-    // TODO figure out the before element so all items from the same add-on
-    // stick together
+    if (after) {
+      let afterNode = this.getXULNodeForItem(window, after);
+      before = afterNode.nextSibling;
+    }
 
     return {
       menupopup: menupopup,
