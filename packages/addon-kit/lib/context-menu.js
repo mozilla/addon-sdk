@@ -72,6 +72,7 @@ const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLTextAreaElement,
 ];
 
+// Holds private properties for API objects
 let internal = ns();
 
 let Context = Class({
@@ -84,6 +85,8 @@ let Context = Class({
   }
 });
 
+// Matches when the context-clicked node doesn't have any of
+// NON_PAGE_CONTEXT_ELTS in its ancestors
 exports.PageContext = Class({
   extends: Context,
 
@@ -102,6 +105,7 @@ exports.PageContext = Class({
   }
 });
 
+// Matches when there is an active selection in the window
 exports.SelectionContext = Class({
   extends: Context,
   
@@ -115,6 +119,8 @@ exports.SelectionContext = Class({
   }
 });
 
+// Matches when the context-clicked node or any of its ancestors matches the
+// selector given
 exports.SelectorContext = Class({
   extends: Context,
   
@@ -146,6 +152,7 @@ exports.SelectorContext = Class({
   }
 });
 
+// Matches when the page url matches any of the patterns given
 exports.URLContext = Class({
   extends: Context,
   
@@ -274,8 +281,10 @@ let ContextWorker = Worker.compose({
   }
 });
 
+// Tests whether an item should be visible or not based on its contexts and
+// content scripts
 function isItemVisible(item, popupNode) {
-  if (!(item instanceof VisibleItem))
+  if (!(item instanceof LabelledItem))
     return true;
 
   if (item.context.length > 0) {
@@ -291,20 +300,21 @@ function isItemVisible(item, popupNode) {
   }
 
   let worker = getItemWorkerForWindow(item, popupNode.ownerDocument.defaultView);
-  if (worker) {
-    let result = worker.isAnyContextCurrent(popupNode);
-    if (typeof result === "string")
-      item.label = result;
-    else if (result === false)
-      return false;
-  }
+  if (!worker)
+    return true;
+
+  let result = worker.isAnyContextCurrent(popupNode);
+  if (typeof result === "string")
+    item.label = result;
+  else if (result === false)
+    return false;
 
   return true;
 }
 
+// Destroys any item's content scripts workers associated with the given window
 function destroyItemWorker(item, window) {
   let worker = internal(item).workerMap.get(window);
-  console.log("destroyWorker " + window + " " + worker);
   if (worker)
     worker.destroy();
 
@@ -313,6 +323,9 @@ function destroyItemWorker(item, window) {
   window.removeEventListener("unload", internal(item).unloadListener, false);
 }
 
+// Gets the item's content script worker for a window, creating one if necessary
+// Once created it will be automatically destroyed when the window unloads.
+// If there is not content scripts for the item then null will be returned.
 function getItemWorkerForWindow(item, window) {
   if (!item.contentScript && !item.contentScriptFile)
     return null;
@@ -341,6 +354,8 @@ function getItemWorkerForWindow(item, window) {
   return worker;
 }
 
+// Called when an item is clicked to send out click events to the content
+// scripts
 function itemClicked(item, clickedItem, popupNode) {
   let worker = getItemWorkerForWindow(item, popupNode.ownerDocument.defaultView);
 
@@ -356,6 +371,7 @@ function itemClicked(item, clickedItem, popupNode) {
     itemClicked(item.parentMenu, clickedItem, popupNode);
 }
 
+// All things that appear in the context menu extend this
 let BaseItem = Class({
   initialize: function initialize() {
     // The only time rootMenu is undefined is when we're actually initializing
@@ -373,14 +389,15 @@ let BaseItem = Class({
 
   get parentMenu() {
     let parent = internal(this).parentMenu;
-    // Hide the root menu from the hierarchy
+    // Hide the root menu from the public hierarchy
     if (parent === rootMenu)
       return null;
     return parent;
   }
 });
 
-let VisibleItem = Class({
+// All things that have a label on the context menu extend this
+let LabelledItem = Class({
   extends: BaseItem,
   implements: [ EventTarget ],
 
@@ -398,6 +415,8 @@ let VisibleItem = Class({
       }
     }
 
+    // Used to cache content script workers and the windows they have been
+    // created for
     internal(this).workerMap = new WeakMap();
     internal(this).workerWindows = [];
 
@@ -455,12 +474,12 @@ let VisibleItem = Class({
 });
 
 let Item = Class({
-  extends: VisibleItem,
+  extends: LabelledItem,
 
   initialize: function initialize(options) {
     internal(this).options = validateOptions(options, itemOptionRules);
 
-    VisibleItem.prototype.initialize.call(this, options);
+    LabelledItem.prototype.initialize.call(this, options);
   },
 
   toString: function toString() {
@@ -479,12 +498,12 @@ let Item = Class({
 });
 
 let Menu = Class({
-  extends: VisibleItem,
+  extends: LabelledItem,
 
   initialize: function initialize(options) {
     internal(this).options = validateOptions(options, menuOptionRules);
 
-    VisibleItem.prototype.initialize.call(this, options);
+    LabelledItem.prototype.initialize.call(this, options);
 
     internal(this).children = [];
 
@@ -495,16 +514,17 @@ let Menu = Class({
   },
 
   destroy: function destroy() {
+    // Destroys the entire hierarchy
     for (let item of internal(this).children)
       item.destroy();
 
-    VisibleItem.prototype.destroy.call(this);
+    LabelledItem.prototype.destroy.call(this);
   },
 
   addItem: function addItem(item) {
-    let parent = internal(item).parentMenu;
-    if (parent)
-      internal(parent).children = filterOut(internal(parent).children, item);
+    let oldParent = internal(item).parentMenu;
+    if (oldParent)
+      internal(oldParent).children = filterOut(internal(oldParent).children, item);
 
     let after = null;
     let children = internal(this).children;
@@ -514,7 +534,9 @@ let Menu = Class({
     children.push(item);
     internal(item).parentMenu = this;
 
-    if (parent)
+    // If there was an old parent then we just have to move the item, otherwise
+    // it needs to be created
+    if (oldParent)
       MenuManager.moveItem(item, after);
     else
       MenuManager.createItem(item, after);
@@ -570,12 +592,14 @@ exports.Item = Item;
 exports.Menu = Menu;
 exports.Separator = Separator;
 
-//An internal menu to hold the root context items. It should never be reachable
-//by API consumers
+// An internal menu to hold the root context items. It should never be reachable
+// by API consumers
 let rootMenu = Menu({
   label: OVERFLOW_MENU_LABEL
 });
 
+// App specific UI code lives here, it should handle populating the context
+// menu and passing clicks etc. through to the items.
 let MenuManager = {
   windowMap: new WeakMap(),
   windows: [],
@@ -585,16 +609,16 @@ let MenuManager = {
     return prefs.get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
   },
 
+  // When a new window is added start watching it for context menu shows
   onTrack: function onTrack(window) {
     if (!isBrowser(window))
       return;
 
+    // Generally shouldn't happen, but just in case
     if (this.windowMap.has(window)) {
       console.warn("Already seen this window");
       return;
     }
-
-    console.log("Saw a browser window open");
 
     let menu = window.document.getElementById("contentAreaContextMenu");
     menu.addEventListener("popupshowing", this, false);
@@ -604,18 +628,22 @@ let MenuManager = {
     if (!isBrowser(window))
       return;
 
-    console.log("Saw a browser window close");
     let menu = window.document.getElementById("contentAreaContextMenu");
     menu.removeEventListener("popupshowing", this, false);
 
+    // If this window hasn't been populated then no point doing anything more
     if (!this.windowMap.has(window))
       return;
 
+    // If we're getting unloaded at runtime then we must remove all the
+    // generated XUL nodes
     for (let item of internal(rootMenu).children) {
-      let xulItem = this.getXULItemForItem(window, item);
-      xulItem.parentNode.removeChild(xulItem);
+      let xulNode = this.getXULNodeForItem(window, item);
+      xulNode.parentNode.removeChild(xulNode);
     }
 
+    // If there's an overflow menu then that is where we removed everything from
+    // otherwise it was from the main context menu
     let oldParent = window.document.getElementById(OVERFLOW_POPUP_ID);
     if (!oldParent)
       oldParent = menu;
@@ -625,6 +653,8 @@ let MenuManager = {
     this.windows = filterOut(this.windows, window);
   },
 
+  // Called when any XUL nodes have been removed from a menupopup. This handles
+  // making sure the separator and overflow are correct
   onXULRemoved: function onXULRemoved(parent) {
     let window = parent.ownerDocument.defaultView;
 
@@ -663,19 +693,21 @@ let MenuManager = {
     }
   },
 
+  // Recurses through the menu setting the visibility of items. Returns true
+  // if any of the items in this menu were visible
   setVisibility: function setVisibility(window, menu, popupNode) {
     let anyVisible = false;
 
     for (let item of internal(menu).children) {
       let visible = isItemVisible(item, popupNode);
 
+      // Recurse through Menus, if none of the sub-items were visible then the
+      // menu is hidden too.
       if (visible && (item instanceof Menu))
         visible = this.setVisibility(window, item, popupNode);
 
-      console.log(item + " is " + (visible ? "visible" : "hidden"));
-
-      let xulItem = this.getXULItemForItem(window, item);
-      xulItem.hidden = !visible;
+      let xulNode = this.getXULNodeForItem(window, item);
+      xulNode.hidden = !visible;
 
       anyVisible = anyVisible || visible;
     }
@@ -683,15 +715,17 @@ let MenuManager = {
     return anyVisible;
   },
 
+  // Recurses through the item hierarchy creating XUL nodes for everything
   populateWindow: function populateWindow(window, menu) {
     for (let item of internal(menu).children) {
       MenuManager.createItemInWindow(window, item);
 
       if (item instanceof Menu)
-        populateWindow(window, item);
+        this.populateWindow(window, item);
     }
   },
 
+  // Called when the context menu appears
   handleEvent: function handleEvent(event) {
     try {
       if (event.type != "popupshowing")
@@ -701,6 +735,8 @@ let MenuManager = {
   
       let window = event.target.ownerDocument.defaultView;
   
+      // If we've never seen the context menu for this browser window then
+      // populate it with all the items we know about
       if (!this.windowMap.has(window)) {
         this.windows.push(window);
         this.windowMap.set(window, {
@@ -721,7 +757,8 @@ let MenuManager = {
           popup.hidden = false;
       }
       else {
-        // Get all the highest level items and see if any are visible
+        // We need to test whether any other instance has visible items.
+        // Get all the highest level items and see if any are visible.
         let topLevelSelector = "." + TOPLEVEL_ITEM_CLASS + ", ." + OVERFLOW_ITEM_CLASS + " > ." + ITEM_CLASS;
         let topLevelItems = window.document.querySelectorAll(topLevelSelector);
 
@@ -744,22 +781,24 @@ let MenuManager = {
     }
   },
 
-  setClass: function setClass(xulItem) {
+  // Sets the right class for XUL nodes
+  setClass: function setClass(xulNode) {
     let cls = ITEM_CLASS;
 
-    if (xulItem.parentNode.id == "contentAreaContextMenu")
+    if (xulNode.parentNode.id == "contentAreaContextMenu")
       cls += " " + TOPLEVEL_ITEM_CLASS;
 
-    if (xulItem.parentNode.id == OVERFLOW_POPUP_ID)
+    if (xulNode.parentNode.id == OVERFLOW_POPUP_ID)
       cls += " " + OVERFLOW_ITEM_CLASS;
 
-    xulItem.className = cls;
+    xulNode.className = cls;
   },
 
-  getXULItemForItem: function getXULItemForItem(window, item) {
+  getXULNodeForItem: function getXULNodeForItem(window, item) {
     return this.windowMap.get(window).menuMap.get(item);
   },
 
+  // Works out where to insert a XUL node for an item in a browser window
   getInsertionPoint: function getInsertionPoint(window, item, after) {
     let menupopup = null
     let before = null;
@@ -791,16 +830,16 @@ let MenuManager = {
           menupopup.setAttribute("id", OVERFLOW_POPUP_ID);
           overflowMenu.appendChild(menupopup);
 
-          for (let xulItem of toplevel) {
-            menupopup.appendChild(xulItem);
-            this.setClass(xulItem);
+          for (let xulNode of toplevel) {
+            menupopup.appendChild(xulNode);
+            this.setClass(xulNode);
           }
         }
       }
     }
     else {
-      let xulItem = this.getXULItemForItem(window, menu);
-      menupopup = xulItem.firstChild;
+      let xulNode = this.getXULNodeForItem(window, menu);
+      menupopup = xulNode.firstChild;
     }
 
     // TODO figure out the before element so all items from the same add-on
@@ -812,8 +851,8 @@ let MenuManager = {
     };
   },
 
+  // Creates a XUL node for an item in a window
   createItemInWindow: function createItemInWindow(window, item, after) {
-    console.log("Creating a " + item);
     let state = this.windowMap.get(window);
 
     let { menupopup, before } = this.getInsertionPoint(window, item, after);
@@ -824,18 +863,17 @@ let MenuManager = {
     else if (item instanceof Separator)
       type = "menuseparator";
 
-    console.log("Creating a " + type + " for " + item);
-    let xulItem = window.document.createElement(type);
-    if (item instanceof VisibleItem) {
-      xulItem.setAttribute("label", item.label);
+    let xulNode = window.document.createElement(type);
+    if (item instanceof LabelledItem) {
+      xulNode.setAttribute("label", item.label);
       if (item.image)
-        xulItem.setAttribute("image", item.image);
+        xulNode.setAttribute("image", item.image);
       if (item.data)
-        xulItem.setAttribute("value", item.data);
+        xulNode.setAttribute("value", item.data);
 
-      xulItem.addEventListener("click", function(event) {
+      xulNode.addEventListener("click", function(event) {
         // Only care about clicks directly on this item
-        if (event.target !== xulItem)
+        if (event.target !== xulNode)
           return;
 
         let popupNode = window.document.getElementById("contentAreaContextMenu").triggerNode;
@@ -844,57 +882,61 @@ let MenuManager = {
       }, false);
     }
 
-    menupopup.insertBefore(xulItem, before);
-    this.setClass(xulItem);
-    xulItem.data = item.data;
+    menupopup.insertBefore(xulNode, before);
+    this.setClass(xulNode);
+    xulNode.data = item.data;
 
     if (item instanceof Menu) {
       menupopup = window.document.createElement("menupopup");
-      xulItem.appendChild(menupopup);
+      xulNode.appendChild(menupopup);
     }
 
-    state.menuMap.set(item, xulItem);
+    state.menuMap.set(item, xulNode);
   },
 
+  // Creates a XUL node for an item in every window we've already populated
   createItem: function createItem(item, after) {
     for (let window of this.windows)
       this.createItemInWindow(window, item, after);
   },
 
+  // Updates the XUL node for an item in every window we've already populated
   updateItem: function updateItem(item) {
     for (let window of this.windows) {
-      let xulItem = this.getXULItemForItem(window, item);
+      let xulNode = this.getXULNodeForItem(window, item);
 
       // TODO figure out why this requires setAttribute
-      xulItem.setAttribute("label", item.label);
+      xulNode.setAttribute("label", item.label);
       if (item.image)
-        xulItem.setAttribute("image", item.image);
+        xulNode.setAttribute("image", item.image);
       else
-        xulItem.removeAttribute("image");
+        xulNode.removeAttribute("image");
       if (item.data)
-        xulItem.setAttribute("value", item.data);
+        xulNode.setAttribute("value", item.data);
       else
-        xulItem.removeAttribute("value");
+        xulNode.removeAttribute("value");
     }
   },
 
+  // Moves the XUL node for an item in every window we've ever populated to its
+  // new place in the hierarchy
   moveItem: function moveItem(item, after) {
     for (let window of this.windows) {
       let state = this.windowMap.get(window);
-      let xulItem = state.menuMap.get(item);
+      let xulNode = state.menuMap.get(item);
 
-      let oldParent = xulItem.parentNode;
+      let oldParent = xulNode.parentNode;
 
-      console.log("Moving " + item + " to " + internal(item).parentMenu);
       let { menupopup, before } = this.getInsertionPoint(window, item, after);
-      menupopup.insertBefore(xulItem, before);
+      menupopup.insertBefore(xulNode, before);
 
-      this.setClass(xulItem);
+      this.setClass(xulNode);
 
       this.onXULRemoved(oldParent);
     }
   },
 
+  // Removes the XUL nodes for an item in every window we've ever populated.
   removeItem: function removeItem(item) {
     for (let window of this.windows) {
       let state = this.windowMap.get(window);

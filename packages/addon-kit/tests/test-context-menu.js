@@ -2090,7 +2090,6 @@ TestHelper.prototype = {
   // WARNING: The element is found by comparing labels, so don't give two items
   // the same label.
   getItemElt: function (popup, item) {
-    console.log("Looking for " + item);
     let nodes = popup.childNodes;
     for (let i = nodes.length - 1; i >= 0; i--) {
       if (this.getItemType(item) === "Separator") {
