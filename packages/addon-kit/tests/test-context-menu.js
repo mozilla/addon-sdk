@@ -41,7 +41,7 @@ exports.testConstructDestroy = function (test) {
     test.showMenu(null, function (popup) {
 
       // It should be removed from the menu.
-      test.checkMenu([], [], [item]);
+      test.checkMenu([item], [], [item]);
       test.done();
     });
   });
@@ -119,7 +119,7 @@ exports.testSelectorContextNoMatch = function (test) {
   });
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([], [item], []);
+    test.checkMenu([item], [item], []);
     test.done();
   });
 };
@@ -182,7 +182,7 @@ exports.testPageContextNoMatch = function (test) {
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("image"), function (popup) {
-      test.checkMenu([], items, []);
+      test.checkMenu(items, items, []);
       test.done();
     });
   });
@@ -246,7 +246,7 @@ exports.testSelectionContextNoMatchInTextField = function (test) {
     let textfield = doc.getElementById("textfield");
     textfield.setSelectionRange(0, 0);
     test.showMenu(textfield, function (popup) {
-      test.checkMenu([], [item], []);
+      test.checkMenu([item], [item], []);
       test.done();
     });
   });
@@ -265,7 +265,7 @@ exports.testSelectionContextNoMatch = function (test) {
   });
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([], [item], []);
+    test.checkMenu([item], [item], []);
     test.done();
   });
 };
@@ -322,7 +322,7 @@ exports.testURLContextNoMatch = function (test) {
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(null, function (popup) {
-      test.checkMenu([], items, []);
+      test.checkMenu(items, items, []);
       test.done();
     });
   });
@@ -352,7 +352,7 @@ exports.testURLContextRemove = function (test) {
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(null, function (popup) {
-      test.checkMenu([], [item], []);
+      test.checkMenu([item], [item], []);
 
       item.context.remove(context);
 
@@ -444,7 +444,7 @@ exports.testContentContextNoMatch = function (test) {
   });
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([], [item], []);
+    test.checkMenu([item], [item], []);
     test.done();
   });
 };
@@ -539,7 +539,7 @@ exports.testMultipleContexts = function (test) {
 
   test.withTestDoc(function (window, doc) {
     test.showMenu(doc.getElementById("span-link"), function (popup) {
-      test.checkMenu([], [item], []);
+      test.checkMenu([item], [item], []);
       test.done();
     });
   });
@@ -566,7 +566,7 @@ exports.testRemoveContext = function (test) {
       // Remove the img context and check again.
       item.context.remove(ctxt);
       test.showMenu(doc.getElementById("image"), function (popup) {
-        test.checkMenu([], [item], []);
+        test.checkMenu([item], [item], []);
         test.done();
       });
     });
@@ -610,7 +610,7 @@ exports.testUnload = function (test) {
     test.showMenu(null, function (popup) {
 
       // The item should be removed from the menu.
-      test.checkMenu([], [], [item]);
+      test.checkMenu([item], [], [item]);
       test.done();
     });
   });
@@ -639,7 +639,7 @@ exports.testMultipleModulesAdd = function (test) {
     test.showMenu(null, function (popup) {
 
       // The first item should be removed from the menu.
-      test.checkMenu([item1], [], [item0]);
+      test.checkMenu([item0, item1], [], [item0]);
       popup.hidePopup();
 
       // Unload the second module.
@@ -647,7 +647,7 @@ exports.testMultipleModulesAdd = function (test) {
       test.showMenu(null, function (popup) {
 
         // Both items should be removed from the menu.
-        test.checkMenu([], [], [item0, item1]);
+        test.checkMenu([item0, item1], [], [item0, item1]);
         test.done();
       });
     });
@@ -685,7 +685,7 @@ exports.testMultipleModulesAddOverflow = function (test) {
 
       // The first items should be removed from the menu, which should not
       // overflow.
-      test.checkMenu([item1], [], items0);
+      test.checkMenu(allItems, [], items0);
       popup.hidePopup();
 
       // Unload the second module.
@@ -693,7 +693,7 @@ exports.testMultipleModulesAddOverflow = function (test) {
       test.showMenu(null, function (popup) {
 
         // All items should be removed from the menu.
-        test.checkMenu([], [], allItems);
+        test.checkMenu(allItems, [], allItems);
         test.done();
       });
     });
@@ -720,7 +720,7 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
   test.showMenu(null, function (popup) {
 
     // The menu should contain item1.
-    test.checkMenu([item1], [item0], []);
+    test.checkMenu([item0, item1], [item0], []);
     popup.hidePopup();
 
     // Unload module 0.
@@ -728,7 +728,7 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
     test.showMenu(null, function (popup) {
 
       // item0 should be removed from the menu.
-      test.checkMenu([item1], [], [item0]);
+      test.checkMenu([item0, item1], [], [item0]);
       popup.hidePopup();
 
       // Unload module 1.
@@ -736,7 +736,7 @@ exports.testMultipleModulesDiffContexts1 = function (test) {
       test.showMenu(null, function (popup) {
 
         // Both items should be removed from the menu.
-        test.checkMenu([], [], [item0, item1]);
+        test.checkMenu([item0, item1], [], [item0, item1]);
         test.done();
       });
     });
@@ -763,7 +763,7 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
   test.showMenu(null, function (popup) {
 
     // The menu should contain item1.
-    test.checkMenu([item1], [item0], []);
+    test.checkMenu([item0, item1], [item0], []);
     popup.hidePopup();
 
     // Unload module 0.
@@ -771,7 +771,7 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
     test.showMenu(null, function (popup) {
 
       // item0 should be removed from the menu.
-      test.checkMenu([item1], [], [item0]);
+      test.checkMenu([item0, item1], [], [item0]);
       popup.hidePopup();
 
       // Unload module 1.
@@ -779,7 +779,7 @@ exports.testMultipleModulesDiffContexts2 = function (test) {
       test.showMenu(null, function (popup) {
 
         // Both items should be removed from the menu.
-        test.checkMenu([], [], [item0, item1]);
+        test.checkMenu([item0, item1], [], [item0, item1]);
         test.done();
       });
     });
@@ -806,7 +806,7 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
   test.showMenu(null, function (popup) {
 
     // The menu should contain item1.
-    test.checkMenu([item1], [item0], []);
+    test.checkMenu([item0, item1], [item0], []);
     popup.hidePopup();
 
     // Unload module 1.
@@ -814,7 +814,7 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
     test.showMenu(null, function (popup) {
 
       // item1 should be removed from the menu.
-      test.checkMenu([], [item0], [item1]);
+      test.checkMenu([item0, item1], [item0], [item1]);
       popup.hidePopup();
 
       // Unload module 0.
@@ -822,7 +822,7 @@ exports.testMultipleModulesDiffContexts3 = function (test) {
       test.showMenu(null, function (popup) {
 
         // Both items should be removed from the menu.
-        test.checkMenu([], [], [item0, item1]);
+        test.checkMenu([item0, item1], [], [item0, item1]);
         test.done();
       });
     });
@@ -849,7 +849,7 @@ exports.testMultipleModulesDiffContexts4 = function (test) {
   test.showMenu(null, function (popup) {
 
     // The menu should contain item1.
-    test.checkMenu([item1], [item0], []);
+    test.checkMenu([item0, item1], [item0], []);
     popup.hidePopup();
 
     // Unload module 1.
@@ -857,7 +857,7 @@ exports.testMultipleModulesDiffContexts4 = function (test) {
     test.showMenu(null, function (popup) {
 
       // item1 should be removed from the menu.
-      test.checkMenu([], [item0], [item1]);
+      test.checkMenu([item0, item1], [item0], [item1]);
       popup.hidePopup();
 
       // Unload module 0.
@@ -865,7 +865,7 @@ exports.testMultipleModulesDiffContexts4 = function (test) {
       test.showMenu(null, function (popup) {
 
         // Both items should be removed from the menu.
-        test.checkMenu([], [], [item0, item1]);
+        test.checkMenu([item0, item1], [], [item0, item1]);
         test.done();
       });
     });
@@ -893,7 +893,7 @@ exports.testMultipleModulesAddRemove = function (test) {
     test.showMenu(null, function (popup) {
 
       // The item should be removed from the menu.
-      test.checkMenu([], [], [item]);
+      test.checkMenu([item], [], [item]);
       popup.hidePopup();
 
       // Unload module 1.
@@ -902,7 +902,7 @@ exports.testMultipleModulesAddRemove = function (test) {
 
         // There shouldn't be any errors involving the menu separator or
         // overflow submenu.
-        test.checkMenu([], [], [item]);
+        test.checkMenu([item], [], [item]);
         test.done();
       });
     });
@@ -1073,7 +1073,7 @@ exports.testNewWindowMultipleModules = function (test) {
     loader.unload();
     test.withNewWindow(function () {
       test.showMenu(null, function (popup) {
-        test.checkMenu([], [], []);
+        test.checkMenu([item], [], [item]);
         test.done();
       });
     });
@@ -1151,7 +1151,7 @@ exports.testSortingMultipleModules = function (test) {
     test.showMenu(null, function (popup) {
 
       // All items should be removed.
-      test.checkMenu([], [], allItems);
+      test.checkMenu(allItems, [], allItems);
       test.done();
     });
   });
@@ -1700,26 +1700,6 @@ TestHelper.prototype = {
     this.test[methodName].apply(this.test, args);
   },
 
-  // Asserts that absentItems -- an array of items that should not match the
-  // current context -- aren't present in the menu.
-  checkAbsentItems: function (presentItems, absentItems) {
-    for (let i = 0; i < absentItems.length; i++) {
-      let item = absentItems[i];
-      let elt = this.getItemElt(this.contextMenuPopup, item);
-
-      // The implementation actually hides items rather than removing or not
-      // adding them in the first place, but that's an implementation detail.
-      this.test.assert(!elt || elt.hidden,
-                       "Item should not be present in top-level menu");
-
-      if (this.shouldOverflow(presentItems)) {
-        elt = getItemElt(this.overflowPopup, item);
-        this.test.assert(!elt || elt.hidden,
-                         "Item should not be present in overflow submenu");
-      }
-    }
-  },
-
   // Asserts that elt, a DOM element representing item, looks OK.
   checkItemElt: function (elt, item) {
     let itemType = this.getItemType(item);
@@ -1764,126 +1744,77 @@ TestHelper.prototype = {
   // that shouldn't.  removedItems are items that have been removed from the
   // menu.
   checkMenu: function (presentItems, absentItems, removedItems) {
-    this.checkSeparator(presentItems);
-    this.checkOverflow(presentItems);
-    this.checkPresentItems(presentItems);
-    this.checkAbsentItems(presentItems, absentItems);
-    this.checkRemovedItems(removedItems);
-    this.checkOrder(presentItems);
-  },
+    // Count up howe many top-level items there are
+    let total = 0;
+    for (let item of presentItems) {
+      if (absentItems.indexOf(item) < 0 && removedItems.indexOf(item) < 0)
+        total++;
+    }
 
-  // Asserts that the overflow submenu is present or absent as appropriate for
-  // presentItems.
-  checkOverflow: function (presentItems) {
-    let submenu = this.overflowSubmenu;
-    if (this.shouldOverflow(presentItems)) {
-      this.test.assert(submenu && !submenu.hidden,
-                       "Overflow submenu should be present");
-      this.test.assert(submenu.localName, "menu",
-                       "Overflow submenu should be a <menu>");
-      let overflowPopup = this.overflowPopup;
-      this.test.assert(overflowPopup,
-                       "Overflow submenu popup should be present");
-      this.test.assert(overflowPopup.localName, "menupopup",
-                       "Overflow submenu popup should be a <menupopup>");
+    let separator = this.contextMenuSeparator;
+    if (total == 0) {
+      this.test.assert(!separator || separator.hidden,
+                       "separator should not be present");
     }
     else {
-      this.test.assert(!submenu || submenu.hidden,
-                       "Overflow submenu should be absent");
-    }
-  },
-
-  // Asserts that the items that are present in the menu because they match the
-  // current context look OK.
-  checkPresentItems: function (presentItems) {
-    function recurse(popup, items, isTopLevel) {
-      items.forEach(function (item) {
-        let elt = this.getItemElt(popup, item);
-
-        if (isTopLevel) {
-          if (this.shouldOverflow(items)) {
-            this.test.assert(!elt || elt.hidden,
-                             "Item should not be present in top-level menu");
-
-            let overflowPopup = this.overflowPopup;
-            this.test.assert(overflowPopup,
-                             "Overflow submenu should be present");
-
-            elt = this.getItemElt(overflowPopup, item);
-            this.test.assert(elt && !elt.hidden,
-                             "Item should be present in overflow submenu");
-          }
-          else {
-            this.test.assert(elt && !elt.hidden,
-                             "Item should be present in top-level menu");
-          }
-        }
-        else {
-          this.test.assert(elt && !elt.hidden,
-                           "Item should be present in menu");
-        }
-
-        if (elt)
-          this.checkItemElt(elt, item);
-        if (this.getItemType(item) === "Menu")
-          recurse.call(this, elt.firstChild, item.items, false);
-      }, this);
+      this.test.assert(separator && !separator.hidden,
+                       "separator should be present");
     }
 
-    recurse.call(this, this.contextMenuPopup, presentItems, true);
-  },
+    let mainNodes = this.browserWindow.document.querySelectorAll("#contentAreaContextMenu > ." + ITEM_CLASS);
+    let overflowNodes = this.browserWindow.document.querySelectorAll("#" + OVERFLOW_POPUP_ID + " > ." + ITEM_CLASS);
 
-  // Asserts that items that have been removed from the menu are really removed.
-  checkRemovedItems: function (removedItems) {
-    for (let i = 0; i < removedItems.length; i++) {
-      let item = removedItems[i];
-
-      let elt = this.getItemElt(this.contextMenuPopup, item);
-      this.test.assert(!elt, "Item should be removed from top-level menu");
-
-      let overflowPopup = this.overflowPopup;
-      if (overflowPopup) {
-        elt = this.getItemElt(overflowPopup, item);
-        this.test.assert(!elt, "Item should be removed from overflow submenu");
-      }
-    }
-  },
-
-  // Asserts that the menu separator separating standard items from our items
-  // looks OK.
-  checkSeparator: function (presentItems) {
-    let sep = this.contextMenuSeparator;
-    if (presentItems.length) {
-      this.test.assert(sep && !sep.hidden, "Menu separator should be present");
-      if (sep) {
-        this.test.assertEqual(sep.localName, "menuseparator",
-                              "Menu separator should be a <menuseparator>");
-      }
+    let overflow = this.overflowSubmenu;
+    if (this.shouldOverflow(total)) {
+      this.test.assert(overflow && !overflow.hidden,
+                       "overflow menu should be present");
+      this.test.assertEqual(mainNodes.length, 0,
+                            "should be no items in the main context menu");
     }
     else {
-      this.test.assert(!sep || sep.hidden, "Menu separator should be absent");
+      this.test.assert(!overflow || overflow.hidden,
+                       "overflow menu should not be present");
+      this.test.assertEqual(overflowNodes.length, 0,
+                            "should be no items in the overflow context menu");
     }
+
+    let nodes = this.shouldOverflow(total) ? overflowNodes : mainNodes;
+
+    this.checkNodes(nodes, presentItems, absentItems, removedItems)
+    let pos = 0;
   },
 
-  // Asserts that our items are in the correct order.
-  checkOrder: function (presentItems) {
-    // Get the first item in sorted order, get its elt, walk the nextSibling
-    // chain, making sure each is greater than the previous.
-    if (presentItems.length) {
-      let elt = this.shouldOverflow(presentItems) ?
-                this.getItemElt(this.overflowPopup, presentItems[0]) :
-                this.getItemElt(this.contextMenuPopup, presentItems[0]);
-      let numElts = 1;
-      while (elt.nextSibling &&
-             elt.nextSibling.className.split(/\s+/).indexOf(ITEM_CLASS) >= 0) {
-        let eltLabel = elt.getAttribute("label");
-        let nextLabel = elt.nextSibling.getAttribute("label");
-        elt = elt.nextSibling;
-        numElts++;
+  // Recurses through the item hierarchy of presentItems comparing it to the
+  // node hierarchy of nodes. Any items in removedItems will be skipped (so
+  // should not exist in the XUL), any items in absentItems must exist and be
+  // hidden
+  checkNodes: function (nodes, presentItems, absentItems, removedItems) {
+    let pos = 0;
+    for (let item of presentItems) {
+      // Removed items shouldn't be in the list
+      if (removedItems.indexOf(item) >= 0)
+        continue;
+
+      let hidden = absentItems.indexOf(item) >= 0;
+
+      this.checkItemElt(nodes[pos], item);
+      this.test.assertEqual(nodes[pos].hidden, hidden,
+                            "hidden should be set correctly");
+
+      if (this.getItemType(item) == "Menu") {
+        this.test.assertEqual(nodes[pos].firstChild.localName, "menupopup",
+                              "menu XUL should contain a menupopup");
+        this.checkNodes(nodes[pos].firstChild.childNodes, item.items, absentItems, removedItems);
       }
-      this.test.assertEqual(numElts, presentItems.length,
-                            "Should have seen all the items in the menu");
+
+      if (pos > 0)
+        this.test.assertEqual(nodes[pos].previousSibling, nodes[pos - 1],
+                              "nodes should all be in the same group");
+      pos++;
     }
+
+    this.test.assertEqual(nodes.length, pos,
+                          "should have matched all the XUL nodes");
   },
 
   // Attaches an event listener to node.  The listener is automatically removed
@@ -2027,9 +1958,9 @@ TestHelper.prototype = {
     return wrapper;
   },
 
-  // Returns true if the number of presentItems crosses the overflow threshold.
-  shouldOverflow: function (presentItems) {
-    return presentItems.length >
+  // Returns true if the count crosses the overflow threshold.
+  shouldOverflow: function (count) {
+    return count >
            (this.loaders.length ?
             this.loaders[0].loader.require("preferences-service").
               get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT) :
