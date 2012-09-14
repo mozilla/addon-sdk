@@ -6,6 +6,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { Cc, Ci, Cr } = require("chrome");
 const apiUtils = require("api-utils/api-utils");
 const errors = require("api-utils/errors");

@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { Class, mix } = require("api-utils/heritage");
 const { addCollectionProperty } = require("api-utils/collection");
 const { ns } = require("api-utils/namespace");

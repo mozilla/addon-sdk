@@ -197,7 +197,7 @@ var promised = (function() {
   function promisedConcat(promises, unknown) {
     return promises.then(function(values) {
       return resolve(unknown).then(function(value) {
-        return values.concat(value)
+        return values.concat([ value ])
       })
     })
   }

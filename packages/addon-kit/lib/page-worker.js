@@ -5,6 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const { Symbiont } = require("api-utils/content");
 const { Trait } = require("api-utils/traits");
 
