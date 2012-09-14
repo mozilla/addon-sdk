@@ -1460,7 +1460,7 @@ exports.testMenuItemSwap = function (test) {
   let subitem = loader.cm.Item({ label: "item" });
   let menu0 = loader.cm.Menu({
     label: "menu 0",
-    items: [loader.cm.Item({ label: "other item" }), subitem]
+    items: [subitem]
   });
   let menu1 = loader.cm.Menu({
     label: "menu 1",
@@ -1468,10 +1468,8 @@ exports.testMenuItemSwap = function (test) {
   });
   menu1.addItem(subitem);
 
-  test.assertEqual(menu0.items.length, 1,
+  test.assertEqual(menu0.items.length, 0,
                    "menu should have correct number of items");
-  test.assertEqual(menu0.items[0].label, "other item",
-                   "item label should be correct");
 
   test.assertEqual(menu1.items.length, 1,
                    "menu should have correct number of items");
@@ -1482,7 +1480,7 @@ exports.testMenuItemSwap = function (test) {
                    "item's parent menu should be correct");
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([menu0, menu1], [], []);
+    test.checkMenu([menu0, menu1], [menu0], []);
     test.done();
   });
 };
@@ -1496,19 +1494,17 @@ exports.testMenuItemDestroy = function (test) {
   let subitem = loader.cm.Item({ label: "item" });
   let menu = loader.cm.Menu({
     label: "menu",
-    items: [subitem, loader.cm.Item({ label: "other item" })]
+    items: [subitem]
   });
   subitem.destroy();
 
-  test.assertEqual(menu.items.length, 1,
+  test.assertEqual(menu.items.length, 0,
                    "menu should have correct number of items");
-  test.assertEqual(menu.items[0].label, "other item",
-                   "remaining item should have the correct label");
   test.assertEqual(subitem.parentMenu, null,
                    "item's parent menu should be correct");
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([menu], [], []);
+    test.checkMenu([menu], [menu], []);
     test.done();
   });
 };
@@ -1801,7 +1797,8 @@ TestHelper.prototype = {
       this.test.assertEqual(nodes[pos].hidden, hidden,
                             "hidden should be set correctly");
 
-      if (this.getItemType(item) == "Menu") {
+      // The contents of hidden menus doesn't matter so much
+      if (!hidden && this.getItemType(item) == "Menu") {
         this.test.assertEqual(nodes[pos].firstChild.localName, "menupopup",
                               "menu XUL should contain a menupopup");
         this.checkNodes(nodes[pos].firstChild.childNodes, item.items, absentItems, removedItems);
@@ -1814,7 +1811,7 @@ TestHelper.prototype = {
     }
 
     this.test.assertEqual(nodes.length, pos,
-                          "should have matched all the XUL nodes");
+                          "should have checked all the XUL nodes");
   },
 
   // Attaches an event listener to node.  The listener is automatically removed
