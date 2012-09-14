@@ -834,7 +834,8 @@ let MenuManager = {
         xulItem.setAttribute("value", item.data);
 
       xulItem.addEventListener("click", function(event) {
-        if (event.target !== event.currentTarget)
+        // Only care about clicks directly on this item
+        if (event.target !== xulItem)
           return;
 
         let popupNode = window.document.getElementById("contentAreaContextMenu").triggerNode;

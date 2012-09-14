@@ -1636,11 +1636,191 @@ exports.testMenuDestroy = function (test) {
   test.assertEqual(numRegistryEntries, 0, "All items should be unregistered.");*/
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([], [], [menu]);
+    test.checkMenu([menu], [], [menu]);
     test.done();
   });
 };
 
+// Checks that if a menu contains sub items that are hidden then the menu is
+// hidden too. Also checks that content scripts and contexts work for sub items.
+exports.testSubItemContextNoMatchHideMenu = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      items: [
+        loader.cm.Item({
+          label: "subitem 1",
+          context: loader.cm.SelectorContext(".foo")
+        })
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 2",
+      items: [
+        loader.cm.Item({
+          label: "subitem 2",
+          contentScript: 'self.on("context", function () false);'
+        })
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 3",
+      items: [
+        loader.cm.Item({
+          label: "subitem 3",
+          context: loader.cm.SelectorContext(".foo")
+        }),
+        loader.cm.Item({
+          label: "subitem 4",
+          contentScript: 'self.on("context", function () false);'
+        })
+      ]
+    })
+  ];
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu(items, items, []);
+    test.done();
+  });
+};
+
+
+// Checks that if a menu contains a combination of hidden and visible sub items
+// then the menu is still visible too.
+exports.testSubItemContextMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let hiddenItems = [
+    loader.cm.Item({
+      label: "subitem 3",
+      context: loader.cm.SelectorContext(".foo")
+    }),
+    loader.cm.Item({
+      label: "subitem 6",
+      contentScript: 'self.on("context", function () false);'
+    })
+  ];
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      items: [
+        loader.cm.Item({
+          label: "subitem 1",
+          context: loader.cm.URLContext(TEST_DOC_URL)
+        })
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 2",
+      items: [
+        loader.cm.Item({
+          label: "subitem 2",
+          contentScript: 'self.on("context", function () true);'
+        })
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 3",
+      items: [
+        hiddenItems[0],
+        loader.cm.Item({
+          label: "subitem 4",
+          contentScript: 'self.on("context", function () true);'
+        })
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 4",
+      items: [
+        loader.cm.Item({
+          label: "subitem 5",
+          context: loader.cm.URLContext(TEST_DOC_URL)
+        }),
+        hiddenItems[1]
+      ]
+    }),
+    loader.cm.Menu({
+      label: "menu 5",
+      items: [
+        loader.cm.Item({
+          label: "subitem 7",
+          context: loader.cm.URLContext(TEST_DOC_URL)
+        }),
+        loader.cm.Item({
+          label: "subitem 8",
+          contentScript: 'self.on("context", function () true);'
+        })
+      ]
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, hiddenItems, []);
+      test.done();
+    });
+  });
+};
+
+exports.testSubItemClick = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let state = 0;
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      items: [
+        loader.cm.Item({
+          label: "subitem 1",
+          data: "foobar",
+          contentScript: 'self.on("click", function (node, data) {' +
+                         '  self.postMessage({' +
+                         '    tagName: node.tagName,' +
+                         '    data: data' +
+                         '  });' +
+                         '});',
+          onMessage: function(msg) {
+            test.assertEqual(msg.tagName, "HTML", "should have seen the right node");
+            test.assertEqual(msg.data, "foobar", "should have seen the right data");
+            test.assertEqual(state, 0, "should have seen the event at the right time");
+            state++;
+          }
+        })
+      ],
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage({' +
+                     '    tagName: node.tagName,' +
+                     '    data: data' +
+                     '  });' +
+                     '});',
+      onMessage: function(msg) {
+        test.assertEqual(msg.tagName, "HTML", "should have seen the right node");
+        test.assertEqual(msg.data, "foobar", "should have seen the right data");
+        test.assertEqual(state, 1, "should have seen the event at the right time");
+
+        test.done();
+      }
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, [], []);
+
+      let topMenuElt = test.getItemElt(popup, items[0]);
+      let topMenuPopup = topMenuElt.firstChild;
+      let itemElt = test.getItemElt(topMenuPopup, items[0].items[0]);
+      itemElt.click();
+    });
+  });
+};
 
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
