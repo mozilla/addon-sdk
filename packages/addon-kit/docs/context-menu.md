@@ -31,6 +31,13 @@ user visits a certain page, don't create the item when that page loads, and
 don't remove it when the page unloads.  Rather, create your item only once and
 supply a context that matches the target URL.
 
+Context menu items are displayed in the order created or in the case of sub
+menus the order added to the sub menu. Menu items for each add-on will be
+grouped together automatically. If the total number of menu items in the main
+context menu from all add-ons exceeds a certain number (normally 10) all of the
+menu items will instead appear in an overflow menu to avoid making the context
+menu too large.
+
 Note that *context menu items are only displayed when the page has finished loading*.
 While the page is still loading, or if you cancel load, context menu items
 added using this module will not appear.
@@ -619,7 +626,8 @@ A labeled menu item that expands into a submenu.
 @method
   Appends a menu item to the end of the menu.  If the item is already contained
   in another menu or in the top-level context menu, it's automatically removed
-  first.
+  first.  If the item is already contained in this menu it will just be moved
+  to the end of the menu.
 @param item {Item,Menu,Separator}
   The `Item`, `Menu`, or `Separator` to add to the menu.
 </api>
