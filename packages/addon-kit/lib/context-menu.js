@@ -115,16 +115,17 @@ exports.SelectorContext = Class({
   extends: Context,
   
   initialize: function initialize(selector) {
-    internal(this).options = validateOptions({ selector: selector }, {
+    let options = validateOptions({ selector: selector }, {
       selector: {
         is: ["string"],
         msg: "selector must be a string."
       }
     });
+    internal(this).selector = options.selector;
   },
 
   adjustPopupNode: function adjustPopupNode(popupNode) {
-    let selector = internal(this).options.selector;
+    let selector = internal(this).selector;
 
     while (!(popupNode instanceof Ci.nsIDOMDocument)) {
       if (popupNode.mozMatchesSelector(selector))
@@ -145,7 +146,7 @@ exports.URLContext = Class({
   extends: Context,
   
   initialize: function initialize(patterns) {
-    internal(this).options = validateOptions({ patterns: patterns }, {
+    let options = validateOptions({ patterns: patterns }, {
       patterns: {
         map: function (v) Array.isArray(v) ? v : [v],
         ok: function (v) v.every(function (p) typeof(p) === "string"),
@@ -154,7 +155,7 @@ exports.URLContext = Class({
     });
 
     try {
-      internal(this).options.patterns = internal(this).options.patterns.map(function (p) new MatchPattern(p));
+      internal(this).patterns = options.patterns.map(function (p) new MatchPattern(p));
     }
     catch (err) {
       console.error("Error creating URLContext match pattern:");
@@ -165,7 +166,7 @@ exports.URLContext = Class({
 
   isCurrent: function isCurrent(popupNode) {
     let url = popupNode.ownerDocument.URL;
-    return internal(this).options.patterns.some(function (p) p.test(url));
+    return internal(this).patterns.some(function (p) p.test(url));
   }
 });
 
