@@ -1233,7 +1233,7 @@ exports.testDrawImageOnClickNode = function (test) {
 };
 
 // Setting an item's label before the menu is ever shown should correctly change
-// its label and, if necessary, its order within the menu.
+// its label.
 exports.testSetLabelBeforeShow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -1246,14 +1246,14 @@ exports.testSetLabelBeforeShow = function (test) {
   test.assertEqual(items[0].label, "z");
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([items[1], items[0]], [], []);
+    test.checkMenu(items, [], []);
     test.done();
   });
 };
 
 
 // Setting an item's label after the menu is shown should correctly change its
-// label and, if necessary, its order within the menu.
+// label.
 exports.testSetLabelAfterShow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -1270,7 +1270,7 @@ exports.testSetLabelAfterShow = function (test) {
     items[0].label = "z";
     test.assertEqual(items[0].label, "z");
     test.showMenu(null, function (popup) {
-      test.checkMenu([items[1], items[0]], [], []);
+      test.checkMenu(items, [], []);
       test.done();
     });
   });
@@ -1278,8 +1278,7 @@ exports.testSetLabelAfterShow = function (test) {
 
 
 // Setting an item's label before the menu is ever shown should correctly change
-// its label and, if necessary, its order within the menu if the item is in the
-// overflow submenu.
+// its label.
 exports.testSetLabelBeforeShowOverflow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -1295,7 +1294,7 @@ exports.testSetLabelBeforeShowOverflow = function (test) {
   test.assertEqual(items[0].label, "z");
 
   test.showMenu(null, function (popup) {
-    test.checkMenu([items[1], items[0]], [], []);
+    test.checkMenu(items, [], []);
     prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
     test.done();
   });
@@ -1303,8 +1302,7 @@ exports.testSetLabelBeforeShowOverflow = function (test) {
 
 
 // Setting an item's label after the menu is shown should correctly change its
-// label and, if necessary, its order within the menu if the item is in the
-// overflow submenu.
+// label.
 exports.testSetLabelAfterShowOverflow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -1324,7 +1322,7 @@ exports.testSetLabelAfterShowOverflow = function (test) {
     items[0].label = "z";
     test.assertEqual(items[0].label, "z");
     test.showMenu(null, function (popup) {
-      test.checkMenu([items[1], items[0]], [], []);
+      test.checkMenu(items, [], []);
       prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
       test.done();
     });
@@ -1763,7 +1761,7 @@ TestHelper.prototype = {
     this.checkPresentItems(presentItems);
     this.checkAbsentItems(presentItems, absentItems);
     this.checkRemovedItems(removedItems);
-    //this.checkSort(presentItems);
+    this.checkOrder(presentItems);
   },
 
   // Asserts that the overflow submenu is present or absent as appropriate for
@@ -1859,29 +1857,24 @@ TestHelper.prototype = {
     }
   },
 
-  // Asserts that our items are sorted.
-  checkSort: function (presentItems) {
+  // Asserts that our items are in the correct order.
+  checkOrder: function (presentItems) {
     // Get the first item in sorted order, get its elt, walk the nextSibling
     // chain, making sure each is greater than the previous.
     if (presentItems.length) {
-      let sorted = presentItems.slice(0).
-                   sort(function (a, b) a.label.localeCompare(b.label));
       let elt = this.shouldOverflow(presentItems) ?
-                this.getItemElt(this.overflowPopup, sorted[0]) :
-                this.getItemElt(this.contextMenuPopup, sorted[0]);
+                this.getItemElt(this.overflowPopup, presentItems[0]) :
+                this.getItemElt(this.contextMenuPopup, presentItems[0]);
       let numElts = 1;
       while (elt.nextSibling &&
              elt.nextSibling.className.split(/\s+/).indexOf(ITEM_CLASS) >= 0) {
         let eltLabel = elt.getAttribute("label");
         let nextLabel = elt.nextSibling.getAttribute("label");
-        this.test.assert(eltLabel.localeCompare(nextLabel) < 0,
-                         "Item label should be < next item's label");
         elt = elt.nextSibling;
         numElts++;
       }
       this.test.assertEqual(numElts, presentItems.length,
-                            "The first item in sorted order should have the " +
-                            "first element in sorted order");
+                            "Should have seen all the items in the menu");
     }
   },
 
