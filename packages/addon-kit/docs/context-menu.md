@@ -199,6 +199,11 @@ This example takes advantage of that fact.  The listener can be assured that
 Your item is shown only when all declarative contexts are current and your
 context listener returns true.
 
+The content script is executed for every page that a context menu is shown for.
+It will be executed the first time it is needed (i.e. when the context menu is
+first shown and all of the declarative contexts for your item are current) and
+then remains active until you destroy your context menu item or the page is
+unloaded.
 
 Handling Menu Item Clicks
 -------------------------
@@ -221,8 +226,11 @@ item's content script like so:
 Note that the listener function has parameters called `node` and `data`.  `node`
 is the node that the user context-clicked to invoke the menu.  You can use it
 when performing some action.  `data` is the `data` property of the menu item
-that was clicked.  Since only top-level menu items have content scripts, this
-comes in handy for determining which item in a `Menu` was clicked:
+that was clicked.  Note that when you have a hierarchy of menu items the click
+event will be sent to the content script of the item clicked and all ancestors
+so be sure to verify that the `data` value passed matches the item you expect.
+You can use this to simplify click handling by providing just a single click
+listener on a `Menu` that reacts to clicks for any child items.:
 
     var cm = require("context-menu");
     cm.Menu({
@@ -437,21 +445,19 @@ A labeled menu item that can perform an action when clicked.
   @prop [context] {value}
     If the item is contained in the top-level context menu, this declaratively
     specifies the context under which the item will appear; see Specifying
-    Contexts above.  Ignored if the item is contained in a submenu.
+    Contexts above.
   @prop [contentScript] {string,array}
     If the item is contained in the top-level context menu, this is the content
     script or an array of content scripts that the item can use to interact with
-    the page.  Ignored if the item is contained in a submenu.
+    the page.
   @prop [contentScriptFile] {string,array}
     If the item is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the item can
-    use to interact with the page.  Ignored if the item is contained in a
-    submenu.
+    use to interact with the page.
   @prop [onMessage] {function}
     If the item is contained in the top-level context menu, this function will
     be called when the content script calls `self.postMessage`.  It will be
-    passed the data that was passed to `postMessage`.  Ignored if the item is
-    contained in a submenu.
+    passed the data that was passed to `postMessage`.
 </api>
 
 <api name="label">
@@ -480,8 +486,7 @@ A labeled menu item that can perform an action when clicked.
 @property {list}
   A list of declarative contexts for which the menu item will appear in the
   context menu.  Contexts can be added by calling `context.add()` and removed by
-  called `context.remove()`.  This property is meaningful only for items
-  contained in the top-level context menu.
+  called `context.remove()`.
 </api>
 
 <api name="parentMenu">
@@ -494,15 +499,13 @@ A labeled menu item that can perform an action when clicked.
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
-  item during creation.  This property is meaningful only for items contained in
-  the top-level context menu.
+  item during creation.
 </api>
 
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
-  item during creation.  This property is meaningful only for items contained in
-  the top-level context menu.
+  item during creation.
 </api>
 
 <api name="destroy">
@@ -549,21 +552,19 @@ A labeled menu item that expands into a submenu.
   @prop [context] {value}
     If the menu is contained in the top-level context menu, this declaratively
     specifies the context under which the menu will appear; see Specifying
-    Contexts above.  Ignored if the menu is contained in a submenu.
+    Contexts above.
   @prop [contentScript] {string,array}
     If the menu is contained in the top-level context menu, this is the content
     script or an array of content scripts that the menu can use to interact with
-    the page.  Ignored if the menu is contained in a submenu.
+    the page.
   @prop [contentScriptFile] {string,array}
     If the menu is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the menu can
-    use to interact with the page.  Ignored if the menu is contained in a
-    submenu.
+    use to interact with the page.
   @prop [onMessage] {function}
     If the menu is contained in the top-level context menu, this function will
     be called when the content script calls `self.postMessage`.  It will be
-    passed the data that was passed to `postMessage`.  Ignored if the item is
-    contained in a submenu.
+    passed the data that was passed to `postMessage`.
 </api>
 
 <api name="label">
@@ -592,8 +593,7 @@ A labeled menu item that expands into a submenu.
 @property {list}
   A list of declarative contexts for which the menu will appear in the context
   menu.  Contexts can be added by calling `context.add()` and removed by called
-  `context.remove()`.  This property is meaningful only for menus contained in
-  the top-level context menu.
+  `context.remove()`.
 </api>
 
 <api name="parentMenu">
@@ -606,15 +606,13 @@ A labeled menu item that expands into a submenu.
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
-  during creation.  This property is meaningful only for menus contained in the
-  top-level context menu.
+  during creation.
 </api>
 
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
-  during creation.  This property is meaningful only for menus contained in the
-  top-level context menu.
+  during creation.
 </api>
 
 <api name="addItem">
