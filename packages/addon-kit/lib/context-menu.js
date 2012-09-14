@@ -4,14 +4,18 @@
 
 "use strict";
 
-const { Class, mix } = require("heritage");
-const { addCollectionProperty } = require("collection");
-const { ns } = require("namespace");
-const { validateOptions, getTypeOf } = require("api-utils");
-const { WindowTracker, browserWindowIterator } = require("window-utils");
-const { isBrowser } = require("window/utils");
+const { Class, mix } = require("api-utils/heritage");
+const { addCollectionProperty } = require("api-utils/collection");
+const { ns } = require("api-utils/namespace");
+const { validateOptions, getTypeOf } = require("api-utils/api-utils");
+const { URL } = require("api-utils/url");
+const { WindowTracker, browserWindowIterator } = require("api-utils/window-utils");
+const { isBrowser } = require("api-utils/window/utils");
 const { Ci } = require("chrome");
 const { MatchPattern } = require("api-utils/match-pattern");
+const { Worker } = require("api-utils/content/worker");
+const { EventTarget } = require("api-utils/event/target");
+const { emit } = require('api-utils/event/core');
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -67,6 +71,13 @@ const NON_PAGE_CONTEXT_ELTS = [
 let internal = ns();
 
 let Context = Class({
+  adjustPopupNode: function adjustPopupNode(popupNode) {
+    return popupNode;
+  },
+
+  isCurrent: function isCurrent(popupNode) {
+    return false;
+  }
 });
 
 exports.PageContext = Class({
@@ -112,17 +123,21 @@ exports.SelectorContext = Class({
     });
   },
 
-  isCurrent: function isCurrent(popupNode) {
+  adjustPopupNode: function adjustPopupNode(popupNode) {
     let selector = internal(this).options.selector;
 
     while (!(popupNode instanceof Ci.nsIDOMDocument)) {
       if (popupNode.mozMatchesSelector(selector))
-        return true;
+        return popupNode;
 
       popupNode = popupNode.parentNode;
     }
 
-    return false;
+    return null;
+  },
+
+  isCurrent: function isCurrent(popupNode) {
+    return !!this.adjustPopupNode(popupNode);
   }
 });
 
@@ -235,6 +250,31 @@ let menuOptionRules = mix(optionRules, {
   }
 });
 
+let ContextWorker = Worker.compose({
+  // Returns the first string or truthy value returned by a context listener in
+  // the worker's port. If none return a string or truthy value or if there are
+  // no context listeners, returns false. popupNode is the node that was
+  // context-clicked.
+  isAnyContextCurrent: function isAnyContextCurrent(popupNode) {
+    let results = this._contentWorker.emitSync("context", popupNode);
+    if (results.length == 0)
+      return true;
+    for (let i = 0; i < results.length; i++) {
+      let val = results[i];
+      if (typeof val === "string" || val)
+        return val;
+    }
+    return false;
+  },
+
+  // Emits a click event in the worker's port. popupNode is the node that was
+  // context-clicked, and clickedItemData is the data of the item that was
+  // clicked.
+  fireClick: function fireClick(popupNode, clickedItemData) {
+    this._contentWorker.emitSync("click", popupNode, clickedItemData);
+  }
+});
+
 let BaseItem = Class({
   initialize: function initialize() {
     // The only time rootMenu is undefined is when we're actually initializing
@@ -250,6 +290,10 @@ let BaseItem = Class({
       internal(this).parentMenu.removeItem(this);
   },
 
+  isVisible: function isVisible(window, popupNode) {
+    return true;
+  },
+
   get parentMenu() {
     let parent = internal(this).parentMenu;
     // Hide the root menu from the hierarchy
@@ -261,6 +305,7 @@ let BaseItem = Class({
 
 let VisibleItem = Class({
   extends: BaseItem,
+  implements: [ EventTarget ],
 
   initialize: function initialize(options) {
     addCollectionProperty(this, "context");
@@ -276,7 +321,106 @@ let VisibleItem = Class({
       }
     }
 
+    internal(this).workerMap = new WeakMap();
+    internal(this).workerWindows = [];
+
     BaseItem.prototype.initialize.call(this);
+    EventTarget.prototype.initialize.call(this, options);
+  },
+
+  destroy: function destroy() {
+    for (let window of internal(this).workerWindows)
+      this.destroyWorker(window);
+
+    BaseItem.prototype.destroy.call(this);
+  },
+
+  getWorkerForWindow: function getWorkerForWindow(window) {
+    if (!this.contentScript && !this.contentScriptFile)
+      return null;
+
+    let worker = internal(this).workerMap.get(window);
+
+    if (worker)
+      return worker;
+
+    let self = this;
+    worker = ContextWorker({
+      window: window,
+      contentScript: this.contentScript,
+      contentScriptFile: this.contentScriptFile,
+      onError: function (err) console.exception(err),
+      onMessage: function(msg) {
+        emit(self, "message", msg);
+      }
+    });
+
+    internal(this).workerMap.set(window, worker);
+    internal(this).workerWindows.push(window);
+
+    // Might want to just destroy if unused for 60 seconds
+    window.addEventListener("unload", this, false);
+
+    return worker;
+  },
+
+  handleEvent: function handleEvent(event) {
+    if (event.type != "unload")
+      return;
+
+    let window = event.target.defaultView;
+    this.destroyWorker(window);
+  },
+
+  clicked: function clicked(item, popupNode) {
+    let worker = this.getWorkerForWindow(popupNode.ownerDocument.defaultView);
+
+    if (worker) {
+      let node = popupNode;
+      for (let context in this.context)
+        node = context.adjustPopupNode(node);
+  
+      worker.fireClick(node, item.data);
+    }
+
+    if (internal(this).parentMenu)
+      internal(this).parentMenu.clicked(item, popupNode);
+  },
+
+  isVisible: function isVisible(popupNode) {
+    if (this.context.length > 0) {
+      for (let context in this.context) {
+        if (!context.isCurrent(popupNode))
+          return false;
+      }
+    }
+    else {
+      let context = exports.PageContext();
+      if (!context.isCurrent(popupNode))
+        return false;
+    }
+
+    let worker = this.getWorkerForWindow(popupNode.ownerDocument.defaultView);
+    if (worker) {
+      let result = worker.isAnyContextCurrent(popupNode);
+      if (typeof result === "string")
+        this.label = result;
+      else if (result === false)
+        return false;
+    }
+
+    return BaseItem.prototype.isVisible.call(this, popupNode);
+  },
+
+  destroyWorker: function destroyWorkers(window) {
+    let worker = internal(this).workerMap.get(window);
+    console.log("destroyWorker " + window + " " + worker);
+    if (worker)
+      worker.destroy();
+
+    internal(this).workerWindows = filterOut(internal(this).workerWindows, window);
+
+    window.removeEventListener("unload", this, false);
   },
 
   get label() {
@@ -354,6 +498,13 @@ let Menu = Class({
       for (let item of internal(this).options.items)
         this.addItem(item);
     }
+  },
+
+  destroy: function destroy() {
+    for (let item of internal(this).children)
+      item.destroy();
+
+    VisibleItem.prototype.destroy.call(this);
   },
 
   addItem: function addItem(item) {
@@ -522,30 +673,15 @@ let MenuManager = {
     let anyVisible = false;
 
     for (let item of internal(menu).children) {
-      let visible = true;
-
-      console.log("Checking visibility of " + item.label + " against " + popupNode.localName);
-
-      if (item instanceof VisibleItem) {
-        if (item.context.length > 0) {
-          for (let context in item.context) {
-            if (!context.isCurrent(popupNode))
-              visible = false;
-          }
-        }
-        else {
-          let context = exports.PageContext();
-          if (!context.isCurrent(popupNode))
-            visible = false;
-        }
-      }
+      let visible = item.isVisible(popupNode);
 
       if (visible && (item instanceof Menu))
         visible = this.setVisibility(window, item, popupNode);
 
+      console.log(item + " is " + (visible ? "visible" : "hidden"));
+
       let xulItem = this.getXULItemForItem(window, item);
       xulItem.hidden = !visible;
-      console.log(visible);
 
       anyVisible = anyVisible || visible;
     }
@@ -603,13 +739,14 @@ let MenuManager = {
 
         // If any were visible make sure the separator and if necessary the
         // overflow popup are visible, otherwise hide them
-        separator.hidden = !visible;
+        if (separator)
+          separator.hidden = !visible;
         if (popup)
           popup.hidden = !visible;
       }
     }
     catch (e) {
-      console.error(e);
+      console.exception(e);
     }
   },
 
@@ -701,6 +838,14 @@ let MenuManager = {
         xulItem.setAttribute("image", item.image);
       if (item.data)
         xulItem.setAttribute("value", item.data);
+
+      xulItem.addEventListener("click", function(event) {
+        if (event.target !== event.currentTarget)
+          return;
+
+        let popupNode = window.document.getElementById("contentAreaContextMenu").triggerNode;
+        item.clicked(item, popupNode);
+      }, false);
     }
 
     menupopup.insertBefore(xulItem, before);
@@ -761,7 +906,7 @@ let MenuManager = {
 
       let oldParent = xulItem.parentNode;
 
-      xulItem.parentNode.removeChild(xulItem);
+      oldParent.removeChild(xulItem);
       state.menuMap.delete(item);
 
       this.onXULRemoved(oldParent);

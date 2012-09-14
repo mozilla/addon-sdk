@@ -320,9 +320,10 @@ exports.testURLContextNoMatch = function (test) {
   });
 };
 
-/*
+
 // Removing a non-matching URL context after its item is created and the page is
-// loaded should cause the item's content script to be evaluated.
+// loaded should cause the item's content script to be evaluated when the
+// context menu is next opened.
 exports.testURLContextRemove = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -336,46 +337,71 @@ exports.testURLContextRemove = function (test) {
     onMessage: function (msg) {
       test.assert(shouldBeEvaled,
                   "content script should be evaluated when expected");
+      test.assertEqual(msg, "ok", "Should have received the right message");
       shouldBeEvaled = false;
-      test.done();
     }
   });
 
   test.withTestDoc(function (window, doc) {
-    shouldBeEvaled = true;
-    item.context.remove(context);
+    test.showMenu(null, function (popup) {
+      test.checkMenu([], [item], []);
+
+      item.context.remove(context);
+
+      shouldBeEvaled = true;
+
+      test.hideMenu(function () {
+        test.showMenu(null, function (popup) {
+          test.checkMenu([item], [], []);
+  
+          test.assert(!shouldBeEvaled,
+                      "content script should have been evaluated");
+
+          test.hideMenu(function () {
+            // Shouldn't get evaluated again
+            test.showMenu(null, function (popup) {
+              test.checkMenu([item], [], []);
+              test.done();
+            });
+          });
+        });
+      });
+    });
   });
 };
 
 
-// Adding a non-matching URL context after its item is created and the page is
-// loaded should cause the item's worker to be destroyed.
-exports.testURLContextAdd = function (test) {
+// Closing a page after it's been used with a worker should cause the worker
+// to be destroyed
+exports.testWorkerDestroy = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let item = loader.cm.Item({ label: "item" });
+  let expected = null;
+
+  let item = loader.cm.Item({
+    label: "item",
+    contentScript: 'self.postMessage("loaded"); self.on("detach", function () { console.log("got it"); self.postMessage("detached") });',
+    onMessage: function (msg) {
+      test.assertEqual(expected, msg, "Should have received the right message");
+      expected = null;
+      console.log("Saw message " + msg);
+    }
+  });
 
   test.withTestDoc(function (window, doc) {
-    let privatePropsKey = loader.globalScope.PRIVATE_PROPS_KEY;
-    let workerReg = item.valueOf(privatePropsKey)._workerReg;
+    expected = "loaded";
+    test.showMenu(null, function (popup) {
+      test.assertEqual(expected, null, "Should have seen a message");
 
-    let found = false;
-    for each (let winWorker in workerReg.winWorkers) {
-      if (winWorker.win === window) {
-        found = true;
-        break;
-      }
-    }
-    this.test.assert(found, "window should be present in worker registry");
+      test.checkMenu([item], [], []);
 
-    item.context.add(loader.cm.URLContext("*.bogus.com"));
+      expected = "detached";
+      test.closeTab();
+      //test.assertEqual(expected, null, "Should have seen a message");
 
-    for each (let winWorker in workerReg.winWorkers)
-      this.test.assertNotEqual(winWorker.win, window,
-        "window should not be present in worker registry");
-
-    test.done();
+      test.done();
+    });
   });
 };
 
@@ -436,7 +462,7 @@ exports.testContentContextMatchString = function (test) {
 };
 
 
-// Ensure that contentScripFile is working correctly
+// Ensure that contentScriptFile is working correctly
 exports.testContentScriptFile = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -510,7 +536,7 @@ exports.testMultipleContexts = function (test) {
     });
   });
 };
-*/
+
 // Once a context is removed, it should no longer cause its item to appear.
 exports.testRemoveContext = function (test) {
   test = new TestHelper(test);
@@ -875,7 +901,7 @@ exports.testMultipleModulesAddRemove = function (test) {
   });
 };
 
-/*
+
 // An item's click listener should work.
 exports.testItemClick = function (test) {
   test = new TestHelper(test);
@@ -920,11 +946,13 @@ exports.testMenuClick = function (test) {
 
   let item = new loader.cm.Item({
     label: "submenu item",
-    data: "submenu item data"
+    data: "submenu item data",
+    context: loader.cm.SelectorContext("a"),
   });
 
   let submenu = new loader.cm.Menu({
     label: "submenu",
+    context: loader.cm.SelectorContext("a"),
     items: [item]
   });
 
@@ -989,7 +1017,7 @@ exports.testItemClickMultipleModules = function (test) {
     item1Elt.click();
   });
 };
-*/
+
 
 // Adding a separator to a submenu should work OK.
 exports.testSeparator = function (test) {
@@ -1121,44 +1149,7 @@ exports.testSortingMultipleModules = function (test) {
   });
 };
 
-/*
-// The binary search of insertionPoint should work OK.
-exports.testInsertionPoint = function (test) {
-  function mockElts(labels) {
-    return labels.map(function (label) {
-      return { label: label, getAttribute: function (l) label };
-    });
-  }
 
-  test = new TestHelper(test);
-  let loader = test.newLoader();
-  let insertionPoint = loader.globalScope.insertionPoint;
-
-  let ip = insertionPoint("a", []);
-  test.assertStrictEqual(ip, null, "Insertion point should be null");
-
-  ip = insertionPoint("a", mockElts(["b"]));
-  test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
-
-  ip = insertionPoint("c", mockElts(["b"]));
-  test.assertStrictEqual(ip, null, "Insertion point should be null");
-
-  ip = insertionPoint("b", mockElts(["a", "c"]));
-  test.assertEqual(ip.label, "c", "Insertion point should be 'c'");
-
-  ip = insertionPoint("c", mockElts(["a", "b", "d"]));
-  test.assertEqual(ip.label, "d", "Insertion point should be 'd'");
-
-  ip = insertionPoint("a", mockElts(["b", "c", "d"]));
-  test.assertEqual(ip.label, "b", "Insertion point should be 'b'");
-
-  ip = insertionPoint("d", mockElts(["a", "b", "c"]));
-  test.assertStrictEqual(ip, null, "Insertion point should be null");
-
-  test.done();
-};*/
-
-/*
 // Content click handlers and context handlers should be able to communicate,
 // i.e., they're eval'ed in the same worker and sandbox.
 exports.testContentCommunication = function (test) {
@@ -1240,7 +1231,7 @@ exports.testDrawImageOnClickNode = function (test) {
     });
   });
 };
-*/
+
 // Setting an item's label before the menu is ever shown should correctly change
 // its label and, if necessary, its order within the menu.
 exports.testSetLabelBeforeShow = function (test) {
@@ -1858,8 +1849,10 @@ TestHelper.prototype = {
     let sep = this.contextMenuSeparator;
     if (presentItems.length) {
       this.test.assert(sep && !sep.hidden, "Menu separator should be present");
-      this.test.assertEqual(sep.localName, "menuseparator",
-                            "Menu separator should be a <menuseparator>");
+      if (sep) {
+        this.test.assertEqual(sep.localName, "menuseparator",
+                              "Menu separator should be a <menuseparator>");
+      }
     }
     else {
       this.test.assert(!sep || sep.hidden, "Menu separator should be absent");
@@ -1916,10 +1909,8 @@ TestHelper.prototype = {
   // Call to finish the test.
   done: function () {
     function commonDone() {
-      if (this.tab) {
-        this.tabBrowser.removeTab(this.tab);
-        this.tabBrowser.selectedTab = this.oldSelectedTab;
-      }
+      this.closeTab();
+
       while (this.loaders.length) {
         /*let browserManager = this.loaders[0].globalScope.browserManager;
         let topLevelItems = browserManager.topLevelItems.slice();
@@ -1975,6 +1966,14 @@ TestHelper.prototype = {
                                 function () closeBrowserWindow.call(this),
                                 false);
       this.contextMenuPopup.hidePopup();
+    }
+  },
+
+  closeTab: function() {
+    if (this.tab) {
+      this.tabBrowser.removeTab(this.tab);
+      this.tabBrowser.selectedTab = this.oldSelectedTab;
+      this.tab = null;
     }
   },
 
@@ -2075,6 +2074,12 @@ TestHelper.prototype = {
     }
     else
       sendEvent.call(this);
+  },
+
+  hideMenu: function(onhiddenCallback) {
+    this.delayedEventListener(this.browserWindow, "popuphidden", onhiddenCallback);
+
+    this.contextMenuPopup.hidePopup();
   },
 
   // Opens a new browser window.  The window will be closed automatically when
