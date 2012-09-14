@@ -271,6 +271,44 @@ exports.testSelectionContextNoMatch = function (test) {
 };
 
 
+// Selection contexts should cause items to appear when a selection exists even
+// for newly opened pages
+exports.testSelectionContextInNewTab = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    let link = doc.getElementById("targetlink");
+    link.click();
+
+    test.delayedEventListener(this.tabBrowser, "load", function () {
+      let browser = test.tabBrowser.selectedBrowser;
+      let window = browser.contentWindow;
+      let doc = browser.contentDocument;
+      window.getSelection().selectAllChildren(doc.body);
+
+      test.showMenu(null, function (popup) {
+        test.checkMenu([item], [], []);
+        popup.hidePopup();
+
+        test.tabBrowser.removeTab(test.tabBrowser.selectedTab);
+        test.tabBrowser.selectedTab = test.tab;
+
+        test.showMenu(null, function (popup) {
+          test.checkMenu([item], [item], []);
+          test.done();
+        });
+      });
+    }, true);
+  });
+};
+
+
 // URL contexts should cause items to appear on pages that match.
 exports.testURLContextMatch = function (test) {
   test = new TestHelper(test);
