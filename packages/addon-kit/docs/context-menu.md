@@ -724,7 +724,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](packages/api-utils/match-pattern.html) string or an array of
-  match pattern strings.
+  A [match pattern](packages/api-utils/match-pattern.html) string, regexp or an
+  array of match pattern strings or regexps.
 </api>
 </api>

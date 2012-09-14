@@ -284,6 +284,10 @@ exports.testURLContextMatch = function (test) {
     loader.cm.Item({
       label: "item 1",
       context: loader.cm.URLContext([TEST_DOC_URL, "*.bogus.com"])
+    }),
+    loader.cm.Item({
+      label: "item 2",
+      context: loader.cm.URLContext([new RegExp(".*\\.html")])
     })
   ];
 
@@ -309,6 +313,10 @@ exports.testURLContextNoMatch = function (test) {
     loader.cm.Item({
       label: "item 1",
       context: loader.cm.URLContext(["*.bogus.com", "*.gnarly.com"])
+    }),
+    loader.cm.Item({
+      label: "item 2",
+      context: loader.cm.URLContext([new RegExp(".*\\.js")])
     })
   ];
 

@@ -150,19 +150,13 @@ exports.URLContext = Class({
   extends: Context,
   
   initialize: function initialize(patterns) {
-    let options = validateOptions({ patterns: patterns }, {
-      patterns: {
-        map: function (v) Array.isArray(v) ? v : [v],
-        ok: function (v) v.every(function (p) typeof(p) === "string"),
-        msg: "patterns must be a string or an array of strings."
-      }
-    });
+    patterns = Array.isArray(patterns) ? patterns : [patterns];
 
     try {
-      internal(this).patterns = options.patterns.map(function (p) new MatchPattern(p));
+      internal(this).patterns = patterns.map(function (p) new MatchPattern(p));
     }
     catch (err) {
-      console.error("Error creating URLContext match pattern:");
+      console.error("patterns must be a string, regexp or an array of strings or regexps");
       throw err;
     }
 
