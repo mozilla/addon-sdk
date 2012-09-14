@@ -361,7 +361,7 @@ exports.testURLContextRemove = function (test) {
       test.hideMenu(function () {
         test.showMenu(null, function (popup) {
           test.checkMenu([item], [], []);
-  
+
           test.assert(!shouldBeEvaled,
                       "content script should have been evaluated");
 
@@ -962,25 +962,25 @@ exports.testMultipleModulesOrderOverflow = function (test) {
   // Use each module to add an item, then unload each module in turn.
   let item0 = new loader0.cm.Item({ label: "item 0" });
   let item1 = new loader1.cm.Item({ label: "item 1" });
-  
+
   test.showMenu(null, function (popup) {
-  
+
     // The menu should contain both items.
     test.checkMenu([item0, item1], [], []);
     popup.hidePopup();
-  
+
     let item2 = new loader0.cm.Item({ label: "item 2" });
-  
+
     test.showMenu(null, function (popup) {
-  
+
       // The new item should be grouped with the same items from loader0.
       test.checkMenu([item0, item2, item1], [], []);
       popup.hidePopup();
-  
+
       let item3 = new loader1.cm.Item({ label: "item 3" });
-  
+
       test.showMenu(null, function (popup) {
-   
+
         // Same again
         test.checkMenu([item0, item2, item1, item3], [], []);
         prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);

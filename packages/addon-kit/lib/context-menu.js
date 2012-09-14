@@ -108,7 +108,7 @@ exports.PageContext = Class({
 // Matches when there is an active selection in the window
 exports.SelectionContext = Class({
   extends: Context,
-  
+
   isCurrent: function isCurrent(popupNode) {
     if (!popupNode.ownerDocument.defaultView.getSelection().isCollapsed)
       return true;
@@ -123,7 +123,7 @@ exports.SelectionContext = Class({
 // selector given
 exports.SelectorContext = Class({
   extends: Context,
-  
+
   initialize: function initialize(selector) {
     let options = validateOptions({ selector: selector }, {
       selector: {
@@ -155,7 +155,7 @@ exports.SelectorContext = Class({
 // Matches when the page url matches any of the patterns given
 exports.URLContext = Class({
   extends: Context,
-  
+
   initialize: function initialize(patterns) {
     patterns = Array.isArray(patterns) ? patterns : [patterns];
 
@@ -439,35 +439,35 @@ let LabelledItem = Class({
   get label() {
     return internal(this).options.label;
   },
-  
+
   set label(val) {
     internal(this).options.label = val;
 
     MenuManager.updateItem(this);
   },
-  
+
   get image() {
     return internal(this).options.image;
   },
-  
+
   set image(val) {
     internal(this).options.image = val;
 
     MenuManager.updateItem(this);
   },
-  
+
   get data() {
     return internal(this).options.data;
   },
-  
+
   set data(val) {
     internal(this).options.data = val;
   },
-  
+
   get contentScript() {
     return internal(this).options.contentScript;
   },
-  
+
   get contentScriptFile() {
     return internal(this).options.contentScriptFile;
   }
@@ -735,9 +735,9 @@ let MenuManager = {
         return;
       if (event.target.id != "contentAreaContextMenu")
         return;
-  
+
       let window = event.target.ownerDocument.defaultView;
-  
+
       // If we've never seen the context menu for this browser window then
       // populate it with all the items we know about
       if (!this.windowMap.has(window)) {
@@ -745,7 +745,7 @@ let MenuManager = {
         this.windowMap.set(window, {
           menuMap: new WeakMap()
         });
-  
+
         this.populateWindow(window, rootMenu);
       }
 
