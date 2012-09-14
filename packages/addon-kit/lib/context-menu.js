@@ -275,6 +275,88 @@ let ContextWorker = Worker.compose({
   }
 });
 
+function isItemVisible(item, popupNode) {
+  if (!(item instanceof VisibleItem))
+    return true;
+
+  if (item.context.length > 0) {
+    for (let context in item.context) {
+      if (!context.isCurrent(popupNode))
+        return false;
+    }
+  }
+  else {
+    let context = exports.PageContext();
+    if (!context.isCurrent(popupNode))
+      return false;
+  }
+
+  let worker = getItemWorkerForWindow(item, popupNode.ownerDocument.defaultView);
+  if (worker) {
+    let result = worker.isAnyContextCurrent(popupNode);
+    if (typeof result === "string")
+      item.label = result;
+    else if (result === false)
+      return false;
+  }
+
+  return true;
+}
+
+function destroyItemWorker(item, window) {
+  let worker = internal(item).workerMap.get(window);
+  console.log("destroyWorker " + window + " " + worker);
+  if (worker)
+    worker.destroy();
+
+  internal(item).workerWindows = filterOut(internal(item).workerWindows, window);
+
+  window.removeEventListener("unload", internal(item).unloadListener, false);
+}
+
+function getItemWorkerForWindow(item, window) {
+  if (!item.contentScript && !item.contentScriptFile)
+    return null;
+
+  let worker = internal(item).workerMap.get(window);
+
+  if (worker)
+    return worker;
+
+  worker = ContextWorker({
+    window: window,
+    contentScript: item.contentScript,
+    contentScriptFile: item.contentScriptFile,
+    onError: function (err) console.exception(err),
+    onMessage: function(msg) {
+      emit(item, "message", msg);
+    }
+  });
+
+  internal(item).workerMap.set(window, worker);
+  internal(item).workerWindows.push(window);
+
+  // Might want to just destroy if unused for 60 seconds
+  window.addEventListener("unload", internal(item).unloadListener, false);
+
+  return worker;
+}
+
+function itemClicked(item, clickedItem, popupNode) {
+  let worker = getItemWorkerForWindow(item, popupNode.ownerDocument.defaultView);
+
+  if (worker) {
+    let node = popupNode;
+    for (let context in item.context)
+      node = context.adjustPopupNode(node);
+
+    worker.fireClick(node, clickedItem.data);
+  }
+
+  if (item.parentMenu)
+    itemClicked(item.parentMenu, clickedItem, popupNode);
+}
+
 let BaseItem = Class({
   initialize: function initialize() {
     // The only time rootMenu is undefined is when we're actually initializing
@@ -288,10 +370,6 @@ let BaseItem = Class({
   destroy: function destroy() {
     if (internal(this).parentMenu)
       internal(this).parentMenu.removeItem(this);
-  },
-
-  isVisible: function isVisible(window, popupNode) {
-    return true;
   },
 
   get parentMenu() {
@@ -324,103 +402,20 @@ let VisibleItem = Class({
     internal(this).workerMap = new WeakMap();
     internal(this).workerWindows = [];
 
+    let self = this;
+    internal(this).unloadListener = function(event) {
+      destroyItemWorker(self, event.target.defaultView);
+    };
+
     BaseItem.prototype.initialize.call(this);
     EventTarget.prototype.initialize.call(this, options);
   },
 
   destroy: function destroy() {
     for (let window of internal(this).workerWindows)
-      this.destroyWorker(window);
+      destroyItemWorker(this, window);
 
     BaseItem.prototype.destroy.call(this);
-  },
-
-  getWorkerForWindow: function getWorkerForWindow(window) {
-    if (!this.contentScript && !this.contentScriptFile)
-      return null;
-
-    let worker = internal(this).workerMap.get(window);
-
-    if (worker)
-      return worker;
-
-    let self = this;
-    worker = ContextWorker({
-      window: window,
-      contentScript: this.contentScript,
-      contentScriptFile: this.contentScriptFile,
-      onError: function (err) console.exception(err),
-      onMessage: function(msg) {
-        emit(self, "message", msg);
-      }
-    });
-
-    internal(this).workerMap.set(window, worker);
-    internal(this).workerWindows.push(window);
-
-    // Might want to just destroy if unused for 60 seconds
-    window.addEventListener("unload", this, false);
-
-    return worker;
-  },
-
-  handleEvent: function handleEvent(event) {
-    if (event.type != "unload")
-      return;
-
-    let window = event.target.defaultView;
-    this.destroyWorker(window);
-  },
-
-  clicked: function clicked(item, popupNode) {
-    let worker = this.getWorkerForWindow(popupNode.ownerDocument.defaultView);
-
-    if (worker) {
-      let node = popupNode;
-      for (let context in this.context)
-        node = context.adjustPopupNode(node);
-  
-      worker.fireClick(node, item.data);
-    }
-
-    if (internal(this).parentMenu)
-      internal(this).parentMenu.clicked(item, popupNode);
-  },
-
-  isVisible: function isVisible(popupNode) {
-    if (this.context.length > 0) {
-      for (let context in this.context) {
-        if (!context.isCurrent(popupNode))
-          return false;
-      }
-    }
-    else {
-      let context = exports.PageContext();
-      if (!context.isCurrent(popupNode))
-        return false;
-    }
-
-    let worker = this.getWorkerForWindow(popupNode.ownerDocument.defaultView);
-    if (worker) {
-      let result = worker.isAnyContextCurrent(popupNode);
-      if (typeof result === "string")
-        this.label = result;
-      else if (result === false)
-        return false;
-    }
-
-    return BaseItem.prototype.isVisible.call(this, popupNode);
-  },
-
-  destroyWorker: function destroyWorkers(window) {
-    let worker = internal(this).workerMap.get(window);
-    console.log("destroyWorker " + window + " " + worker);
-    if (worker)
-      worker.destroy();
-
-    internal(this).workerWindows = filterOut(internal(this).workerWindows, window);
-
-    window.removeEventListener("unload", this, false);
   },
 
   get label() {
@@ -673,7 +668,7 @@ let MenuManager = {
     let anyVisible = false;
 
     for (let item of internal(menu).children) {
-      let visible = item.isVisible(popupNode);
+      let visible = isItemVisible(item, popupNode);
 
       if (visible && (item instanceof Menu))
         visible = this.setVisibility(window, item, popupNode);
@@ -844,7 +839,8 @@ let MenuManager = {
           return;
 
         let popupNode = window.document.getElementById("contentAreaContextMenu").triggerNode;
-        item.clicked(item, popupNode);
+
+        itemClicked(item, item, popupNode);
       }, false);
     }
 
