@@ -309,6 +309,47 @@ exports.testSelectionContextInNewTab = function (test) {
 };
 
 
+// Selection contexts should work when right clicking a form button
+exports.testSelectionContextButtonMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    window.getSelection().selectAllChildren(doc.body);
+    let button = doc.getElementById("button");
+    test.showMenu(button, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+//Selection contexts should work when right clicking a form button
+exports.testSelectionContextButtonNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "item",
+    context: loader.cm.SelectionContext()
+  });
+
+  test.withTestDoc(function (window, doc) {
+    let button = doc.getElementById("button");
+    test.showMenu(button, function (popup) {
+      test.checkMenu([item], [item], []);
+      test.done();
+    });
+  });
+};
+
+
 // URL contexts should cause items to appear on pages that match.
 exports.testURLContextMatch = function (test) {
   test = new TestHelper(test);

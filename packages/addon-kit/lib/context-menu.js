@@ -113,9 +113,14 @@ exports.SelectionContext = Class({
     if (!popupNode.ownerDocument.defaultView.getSelection().isCollapsed)
       return true;
 
-    let { selectionStart, selectionEnd } = popupNode;
-    return !isNaN(selectionStart) && !isNaN(selectionEnd) &&
-           selectionStart !== selectionEnd;
+    try {
+      let { selectionStart, selectionEnd } = popupNode;
+      return !isNaN(selectionStart) && !isNaN(selectionEnd) &&
+             selectionStart !== selectionEnd;
+    }
+    catch (e) {
+      return false;
+    }
   }
 });
 
