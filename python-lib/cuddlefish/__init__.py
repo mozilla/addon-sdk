@@ -339,6 +339,15 @@ def test_all(env_root, defaults):
             fail = (e.code != 0) or fail
 
     if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all unit-test addons..."
+        sys.stderr.flush()
+
+        try:
+            test_all_testaddons(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+
+    if not fail or not defaults.get("stopOnError"):
         print >>sys.stderr, "Testing all packages..."
         sys.stderr.flush()
         try:
@@ -364,6 +373,30 @@ def test_cfx(env_root, verbose):
     os.chdir(olddir)
     sys.stdout.flush(); sys.stderr.flush()
     return retval
+
+def test_all_testaddons(env_root, defaults):
+    addons_dir = os.path.join(env_root, "test-addons")
+    addons = [dirname for dirname in os.listdir(addons_dir)
+                if os.path.isdir(os.path.join(addons_dir, dirname))]
+    addons.sort()
+    fail = False
+    for dirname in addons:
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
+        try:
+            run(arguments=["run",
+                           "--pkgdir",
+                           os.path.join(addons_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+        if fail and defaults.get("stopOnError"):
+            break
+
+    if fail:
+        print >>sys.stderr, "Some test-addons tests were unsuccessful."
+        sys.exit(-1)
 
 def test_all_examples(env_root, defaults):
     examples_dir = os.path.join(env_root, "examples")
@@ -520,6 +553,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         return
     if command == "testpkgs":
         test_all_packages(env_root, defaults=options.__dict__)
+        return
+    elif command == "testaddons":
+        test_all_testaddons(env_root, defaults=options.__dict__)
         return
     elif command == "testex":
         test_all_examples(env_root, defaults=options.__dict__)
