@@ -1,4 +1,4 @@
-r<!-- This Source Code Form is subject to the terms of the Mozilla Public
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
@@ -6,11 +6,8 @@ The `indexed-db` module exposes the
 [IndexedDB API](https://developer.mozilla.org/en-US/docs/IndexedDB)
 to add-ons.
 
-The IndexedDB API is accessible to scripts running in web pages
-as a collection of attributes of the global `window` object.
-For example, to create or open a database a page script would use the
-[`indexedDB` attribute](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBEnvironment),
-or its prefixed equivalent:
+Scripts running in web pages can access IndexedDB via the `window` object.
+For example:
 
     window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 
@@ -23,8 +20,8 @@ or its prefixed equivalent:
     };
 
 Because your main add-on code can't access the DOM, you can't use these
-attributes. Instead, you can use the `indexed-db` module to access the same
-API:
+attributes. So you can use the `indexed-db` module to access the
+same API:
 
     var { indexedDB } = require('indexed-db');
 
@@ -36,74 +33,128 @@ API:
       console.log("success");
     };
 
-The `indexed-db`
-Apart from the `indexedDB` object itself, 
+Apart from the `indexedDB` object itself, this module also exports all
+the other objects that implement the IndexedDB API, listed below.
+Because the interface implemented by all these is almost identical to the DOM
+IndexedDB API, we haven't repeated it here, but refer you to the
+[IndexedDB API documentation](https://developer.mozilla.org/en-US/docs/IndexedDB)
+for all the details.
 
-<api name="set">
-@function
-  Replace the contents of the user's clipboard with the provided data.
-@param data {string}
-  The data to put on the clipboard.
-@param [datatype] {string}
-  The type of the data (optional).
+## Database Naming ##
+
+The only difference between this API and the standard IndexedDB API is that
+the names of databases created using this API are prepended with your
+[add-on ID](dev-guide/guides/program-id.html).
+
+For example, suppose your add-on ID is "my-addon@me.org", and it creates
+a database, naming it "MyDatabase":
+
+    var { indexedDB } = require('indexed-db');
+    var request = indexedDB.open('MyDatabase');
+
+    request.onerror = function(event) {
+      console.log("failure");
+    };
+    request.onsuccess = function(event) {
+      console.log("success");
+      console.log(request.result.name);
+    };
+
+This add-on will give the following output:
+
+<pre>
+info: success
+info: my-addon@me.org:MyDatabase
+</pre>
+
+The reason we do this is that databases created using `window.indexedDB` are
+local to that window, so are essentially private to a page.
+But the windowless implementation used by `indexed-db` module is associated
+with the general chrome, so databases created by different add-ons
+would be visible to each other, and naming clashes would be likely.
+
+<api name="indexedDB">
+@property {object}
+
+Enables you to create, open, and delete databases.
+See the [IDBFactory documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBFactory).
 </api>
 
-<api name="get">
-@function
-  Get the contents of the user's clipboard.
-@param [datatype] {string}
-  Retrieve the clipboard contents only if matching this type (optional).
-  The function will return null if the contents of the clipboard do not match
-  the supplied type.
+<api name="IDBKeyRange">
+@property {object}
+
+Defines a range of keys.
+See the [IDBKeyRange documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBKeyRange).
 </api>
 
-<api name="currentFlavors">
-@property {array}
-  Data on the clipboard is sometimes available in multiple types. For example,
-  HTML data might be available as both a string of HTML (the `html` type)
-  and a string of plain text (the `text` type). This function returns an array
-  of all types in which the data currently on the clipboard is available.
+<api name="IDBCursor">
+@property {object}
+
+For traversing or iterating records in a database.
+See the [IDBCursor documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBCursor).
+
 </api>
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+<api name="IDBTransaction">
+@property {object}
 
-module.metadata = {
-  "stability": "experimental"
-};
+Represents a database transaction.
+See the [IDBTransaction documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBTransaction).
+</api>
 
-const { Cc, Ci } = require('chrome');
-const { id } = require('self');
+<api name="IDBOpenDBRequest">
+@property {object}
 
-// Injects `indexedDB` to `this` scope.
-Cc["@mozilla.org/dom/indexeddb/manager;1"].
-getService(Ci.nsIIndexedDatabaseManager).
-initWindowless(this);
+Represents an asynchronous request to open a database.
+See the [IDBOpenDBRequest documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBOpenDBRequest).
+</api>
 
-// Wrap `indexedDB` methods in order to prefix names
-// with add-on IDs. This is temporary workaround for
-// Bug 786688. Note: once bug is fixed and prefixing is
-// removed existing DBs will appear non-existing.
-function prefixWrapper(method) {
-  return function(name) {
-    let args = [ id + ':' + name ].concat(Array.slice(arguments, 1));
-    return method.apply(indexedDB, args);
-  }
-}
-exports.indexedDB = Object.create(indexedDB, {
-  open: { value: prefixWrapper(indexedDB.open) },
-  deleteDatabase: { value: prefixWrapper(indexedDB.deleteDatabase) }
-});
-exports.IDBKeyRange = IDBKeyRange;
-exports.DOMException = Ci.nsIDOMDOMException;
-exports.IDBCursor = Ci.nsIIDBCursor;
-exports.IDBTransaction = Ci.nsIIDBTransaction;
-exports.IDBOpenDBRequest = Ci.nsIIDBOpenDBRequest;
-exports.IDBVersionChangeEvent = Ci.nsIIDBVersionChangeEvent;
-exports.IDBDatabase = Ci.nsIIDBDatabase;
-exports.IDBFactory = Ci.nsIIDBFactory;
-exports.IDBIndex = Ci.nsIIDBIndex;
-exports.IDBObjectStore = Ci.nsIIDBObjectStore;
-exports.IDBRequest = Ci.nsIIDBRequest;
+<api name="IDBVersionChangeEvent">
+@property {object}
+
+Event indicating that the database version has changed.
+See the [IDBVersionChangeEvent documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBVersionChangeEvent).
+</api>
+
+<api name="IDBDatabase">
+@property {object}
+
+Represents a connection to a database.
+See the [IDBDatabase documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBDatabase).
+</api>
+
+<api name="IDBFactory">
+@property {object}
+
+Enables you to create, open, and delete databases.
+See the [IDBFactory documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBFactory).
+</api>
+
+<api name="IDBIndex">
+@property {object}
+
+Provides access to a database index.
+See the [IDBIndex documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBIndex).
+</api>
+
+<api name="IDBObjectStore">
+@property {object}
+
+Represents an object store in a database.
+See the [IDBObjectStore documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBObjectStore).
+</api>
+
+<api name="IDBRequest">
+@property {object}
+
+Provides access to the results of asynchronous requests to databases
+and database objects.
+See the [IDBRequest documentation](https://developer.mozilla.org/en-US/docs/IndexedDB/IDBRequest).
+</api>
+
+<api name="DOMException">
+@property {object}
+
+Provides granular information about an exception.
+See the [DOMException documentation](https://developer.mozilla.org/en-US/docs/DOM/DOMException).
+</api>
