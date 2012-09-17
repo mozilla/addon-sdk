@@ -19,9 +19,8 @@ For example:
       console.log("success");
     };
 
-Because your main add-on code can't access the DOM, you can't use these
-attributes. So you can use the `indexed-db` module to access the
-same API:
+Because your main add-on code can't access the DOM, you can't do this.
+So you can use the `indexed-db` module to access the same API:
 
     var { indexedDB } = require('indexed-db');
 
@@ -33,13 +32,12 @@ same API:
       console.log("success");
     };
 
-Apart from the `indexedDB` object itself, this module also exports all
-the other objects that implement the IndexedDB API, listed below under
+This module also exports all the other objects that implement
+the IndexedDB API, listed below under
 [API Reference](packages/addon-kit/indexed-db.html#API Reference).
 With the one exception of [database naming](packages/addon-kit/indexed-db.html#Database Naming),
-the `indexed-db` module API is identical to the DOM
-IndexedDB API, so we haven't repeated its documentation here,
-but refer you to the
+`indexed-db`'s API is identical to the DOM IndexedDB API, so we haven't
+repeated its documentation here, but refer you to the
 [IndexedDB API documentation](https://developer.mozilla.org/en-US/docs/IndexedDB)
 for all the details.
 
@@ -72,9 +70,10 @@ info: my-addon@me.org:MyDatabase
 
 The reason we do this is that databases created using `window.indexedDB` are
 local to that window, so are essentially private to a page.
-But the windowless implementation used by `indexed-db` module is associated
-with the general chrome, so databases created by different add-ons
-would be visible to each other, and naming clashes would be likely.
+But the windowless implementation used by the `indexed-db` module
+is associated with the general chrome, so databases created by
+different add-ons would be visible to each other, and naming clashes
+would occur.
 
 <api name="indexedDB">
 @property {object}
@@ -158,6 +157,6 @@ See the [IDBRequest documentation](https://developer.mozilla.org/en-US/docs/Inde
 <api name="DOMException">
 @property {object}
 
-Provides granular information about an exception.
+Provides more detailed information about an exception.
 See the [DOMException documentation](https://developer.mozilla.org/en-US/docs/DOM/DOMException).
 </api>
