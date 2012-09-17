@@ -34,9 +34,12 @@ same API:
     };
 
 Apart from the `indexedDB` object itself, this module also exports all
-the other objects that implement the IndexedDB API, listed below.
-Because the interface implemented by all these is almost identical to the DOM
-IndexedDB API, we haven't repeated it here, but refer you to the
+the other objects that implement the IndexedDB API, listed below under
+[API Reference](packages/addon-kit/indexed-db.html#API Reference).
+With the one exception of [database naming](packages/addon-kit/indexed-db.html#Database Naming),
+the `indexed-db` module API is identical to the DOM
+IndexedDB API, so we haven't repeated its documentation here,
+but refer you to the
 [IndexedDB API documentation](https://developer.mozilla.org/en-US/docs/IndexedDB)
 for all the details.
 
