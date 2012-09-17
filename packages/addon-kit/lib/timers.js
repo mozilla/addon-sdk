@@ -4,5 +4,9 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 // This module just proxies to the low level equivalent "timer" in "api-utils".
 module.exports = require("api-utils/timer");

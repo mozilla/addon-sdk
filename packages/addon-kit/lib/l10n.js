@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const core = require("api-utils/l10n/core");
 const { getRulesForLocale } = require("api-utils/l10n/plural-rules");
 

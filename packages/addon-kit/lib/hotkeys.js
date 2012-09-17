@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 const INVALID_HOTKEY = "Hotkey must have at least one modifier.";
 
 const { toJSON: jsonify, toString: stringify,

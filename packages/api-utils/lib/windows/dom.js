@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Trait } = require('../traits'),
       { getMode } = require('api-utils/private-browsing/utils');
 

@@ -6,6 +6,11 @@
 // Fetching data from: http://unicode.org/repos/cldr/trunk/common/supplemental/plurals.xml
 
 // Mapping of short locale name == to == > rule index in following list
+
+module.metadata = {
+  "stability": "unstable"
+};
+
 const LOCALES_TO_RULES = {
   "af": 3, 
   "ak": 4, 
