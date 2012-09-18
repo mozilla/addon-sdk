@@ -1982,6 +1982,84 @@ exports.testSubItemClick = function (test) {
   });
 };
 
+// Tests that opening a context menu for an outer frame when an inner frame
+// has a selection doesn't activate the SelectionContext
+exports.testSelectionInInnerFrameNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let state = 0;
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      context: loader.cm.SelectionContext()
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    let frame = doc.getElementById("frame");
+    frame.contentWindow.getSelection().selectAllChildren(frame.contentDocument.body);
+
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, items, []);
+      test.done();
+    });
+  });
+};
+
+// Tests that opening a context menu for an inner frame when the inner frame
+// has a selection does activate the SelectionContext
+exports.testSelectionInInnerFrameMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let state = 0;
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      context: loader.cm.SelectionContext()
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    let frame = doc.getElementById("frame");
+    frame.contentWindow.getSelection().selectAllChildren(frame.contentDocument.body);
+
+    test.showMenu(frame.contentDocument.getElementById("text"), function (popup) {
+      test.checkMenu(items, [], []);
+      test.done();
+    });
+  });
+};
+
+// Tests that opening a context menu for an inner frame when the outer frame
+// has a selection doesn't activate the SelectionContext
+exports.testSelectionInOuterFrameNoMatch = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let state = 0;
+
+  let items = [
+    loader.cm.Item({
+      label: "test item",
+      context: loader.cm.SelectionContext()
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    let frame = doc.getElementById("frame");
+    window.getSelection().selectAllChildren(doc.body);
+
+    test.showMenu(frame.contentDocument.getElementById("text"), function (popup) {
+      test.checkMenu(items, items, []);
+      test.done();
+    });
+  });
+};
+
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
@@ -2317,7 +2395,8 @@ TestHelper.prototype = {
       let rect = targetNode ?
                  targetNode.getBoundingClientRect() :
                  { left: 0, top: 0, width: 0, height: 0 };
-      let contentWin = this.browserWindow.content;
+      let contentWin = targetNode ? targetNode.ownerDocument.defaultView
+                                  : this.browserWindow.content;
       contentWin.
         QueryInterface(Ci.nsIInterfaceRequestor).
         getInterface(Ci.nsIDOMWindowUtils).
