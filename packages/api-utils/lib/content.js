@@ -5,6 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 exports.Loader = require('./content/loader').Loader;
 exports.Symbiont = require('./content/symbiont').Symbiont;
 exports.Worker = require('./content/worker').Worker;

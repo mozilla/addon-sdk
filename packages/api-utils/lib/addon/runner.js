@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const { Cc, Ci } = require('chrome');
 const { descriptor, Sandbox, evaluate, main, resolveURI } = require('api-utils/loader');
 const { once } = require('../system/events');
@@ -97,7 +101,16 @@ function run(options) {
       // doesn't have access to this current loader.
       if (options.main !== 'test-harness/run-tests')
         require('api-utils/l10n/html').enable();
-    } catch(error) {
+    }
+    catch(error) {
+      console.exception(error);
+    }
+    // Initialize inline options localization, without preventing addon to be
+    // run in case of error
+    try {
+      require('api-utils/l10n/prefs');
+    }
+    catch(error) {
       console.exception(error);
     }
 

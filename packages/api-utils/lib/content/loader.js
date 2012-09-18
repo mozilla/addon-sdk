@@ -6,6 +6,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { EventEmitter } = require('../events');
 const { validateOptions } = require('../api-utils');
 const { URL } = require('../url');

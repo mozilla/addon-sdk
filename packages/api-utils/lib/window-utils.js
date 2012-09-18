@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "deprecated"
+};
+
 const { Cc, Ci } = require("chrome");
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
@@ -11,6 +15,7 @@ const { when } = require('./unload');
 const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser } =
   require('./window/utils');
 const errors = require("./errors");
+const { deprecateFunction } = require("./deprecate");
 
 const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                        getService(Ci.nsIWindowWatcher);
@@ -177,23 +182,20 @@ Object.defineProperties(exports, {
 /**
  * Returns the ID of the window's current inner window.
  */
-exports.getInnerId = function(window) {
-  console.warn('require("window-utils").getInnerId is deprecated, ' +
-               'please use require("window/utils").getInnerId instead');
-  return getInnerId(window);
-};
+exports.getInnerId = deprecateFunction(getInnerId,
+  'require("window-utils").getInnerId is deprecated, ' +
+  'please use require("window/utils").getInnerId instead'
+);
 
-exports.getOuterId = function(window) {
-  console.warn('require("window-utils").getOuterId is deprecated, ' +
-               'please use require("window/utils").getOuterId instead');
-  return getOuterId(window);
-};
+exports.getOuterId = deprecateFunction(getOuterId,
+  'require("window-utils").getOuterId is deprecated, ' +
+  'please use require("window/utils").getOuterId instead'
+);
 
-exports.isBrowser = function(window) {
-  console.warn('require("window-utils").isBrowser is deprecated, ' +
-               'please use require("window/utils").isBrowser instead');
-  return isBrowser(window);
-};
+exports.isBrowser = deprecateFunction(isBrowser,
+  'require("window-utils").isBrowser is deprecated, ' +
+  'please use require("window/utils").isBrowser instead'
+);
 
 exports.hiddenWindow = appShellService.hiddenDOMWindow;
 

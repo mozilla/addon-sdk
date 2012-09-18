@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The tabs module currently supports only Firefox.  In the future ",

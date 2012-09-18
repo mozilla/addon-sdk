@@ -5,6 +5,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 // Utility function that returns copy of the given `text` with last character
 // removed if it is `"s"`.
 function singularify(text) {

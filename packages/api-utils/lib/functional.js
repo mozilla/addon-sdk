@@ -8,6 +8,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { setTimeout } = require("./timer");
 
 /**

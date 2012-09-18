@@ -4,6 +4,10 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci, Cr, Cm, components: { classesByID } } = require('chrome');
 const { registerFactory, unregisterFactory, isCIDRegistered } =
       Cm.QueryInterface(Ci.nsIComponentRegistrar);

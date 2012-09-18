@@ -129,49 +129,94 @@ const ContentWorker = Object.freeze({
       clearInterval: chromeClearInterval
     } = chromeAPI.timers;
 
-    exports.setTimeout = function ContentScriptSetTimeout(callback, delay) {
-      let params = Array.slice(arguments, 2);
-      let id = chromeSetTimeout(function() {
+    function registerTimer(timer) {
+      let registerMethod = null;
+      if (timer.kind == "timeout")
+        registerMethod = chromeSetTimeout;
+      else if (timer.kind == "interval")
+        registerMethod = chromeSetInterval;
+      else
+        throw new Error("Unknown timer kind: " + timer.kind);
+      let id = registerMethod(onFire, timer.delay);
+      function onFire() {
         try {
-          delete _timers[id];
-          callback.apply(null, params);
+          if (timer.kind == "timeout")
+            delete _timers[id];
+          timer.fun.apply(null, timer.args);
         } catch(e) {
           console.exception(e);
         }
-      }, delay);
-      _timers[id] = "timeout";
+      }
+      _timers[id] = timer;
       return id;
+    }
+
+    function unregisterTimer(id) {
+      if (!(id in _timers))
+        return;
+      let { kind } = _timers[id];
+      delete _timers[id];
+      if (kind == "timeout")
+        chromeClearTimeout(id);
+      else if (kind == "interval")
+        chromeClearInterval(id);
+      else
+        throw new Error("Unknown timer kind: " + kind);
+    }
+
+    function disableAllTimers() {
+      Object.keys(_timers).forEach(unregisterTimer);
+    }
+
+    exports.setTimeout = function ContentScriptSetTimeout(callback, delay) {
+      return registerTimer({
+        kind: "timeout",
+        fun: callback,
+        delay: delay,
+        args: Array.slice(arguments, 2)
+      });
     };
     exports.clearTimeout = function ContentScriptClearTimeout(id) {
-      delete _timers[id];
-      return chromeClearTimeout(id);
+      unregisterTimer(_timers[id]);
     };
 
     exports.setInterval = function ContentScriptSetInterval(callback, delay) {
-      let params = Array.slice(arguments, 2);
-      let id = chromeSetInterval(function() {
-        try {
-          callback.apply(null, params);
-        } catch(e) {
-          console.exception(e);
-        }
-      }, delay);
-      _timers[id] = "interval";
-      return id;
+      return registerTimer({
+        kind: "interval",
+        fun: callback,
+        delay: delay,
+        args: Array.slice(arguments, 2)
+      });
     };
     exports.clearInterval = function ContentScriptClearInterval(id) {
-      delete _timers[id];
-      return chromeClearInterval(id);
+      unregisterTimer(_timers[id]);
     };
-    pipe.on("destroy", function clearTimeouts() {
-      // Unregister all setTimeout/setInterval on page unload
-      for (let id in _timers) {
-        let kind = _timers[id];
-        if (kind == "timeout")
-          chromeClearTimeout(id);
-        else
-          chromeClearInterval(id);
-      }
+
+    // On page-hide, save a list of all existing timers before disabling them,
+    // in order to be able to restore them on page-show.
+    // These events are fired when the page goes in/out of bfcache.
+    // https://developer.mozilla.org/En/Working_with_BFCache
+    let frozenTimers = [];
+    pipe.on("pageshow", function onPageShow() {
+      frozenTimers.forEach(registerTimer);
+    });
+    pipe.on("pagehide", function onPageHide() {
+      // Delay timeouts freezing, as some other pagehide listeners
+      // may register some that won't be frozen otherwise! (this particular
+      // pagehide listener will be called first)
+      chromeSetTimeout(function () {
+        frozenTimers = [];
+        for (let id in _timers)
+          frozenTimers.push(_timers[id]);
+        disableAllTimers();
+      }, 0);
+    });
+
+    // Unregister all timers when the page is destroyed
+    // (i.e. when it is removed from bfcache)
+    pipe.on("detach", function clearTimeouts() {
+      disableAllTimers();
+      _timers = {};
     });
   },
 
@@ -194,22 +239,22 @@ const ContentWorker = Object.freeze({
 
     // Deprecated use of on/postMessage from globals
     exports.postMessage = function deprecatedPostMessage() {
-      console.warn("The global `postMessage()` function in content " +
-                   "scripts is deprecated in favor of the " +
-                   "`self.postMessage()` function, which works the same. " +
-                   "Replace calls to `postMessage()` with calls to " +
-                   "`self.postMessage()`." +
-                   "For more info on `self.on`, see " +
-                   "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+      console.error("DEPRECATED: The global `postMessage()` function in " +
+                    "content scripts is deprecated in favor of the " +
+                    "`self.postMessage()` function, which works the same. " +
+                    "Replace calls to `postMessage()` with calls to " +
+                    "`self.postMessage()`." +
+                    "For more info on `self.on`, see " +
+                    "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
       return self.postMessage.apply(null, arguments);
     };
     exports.on = function deprecatedOn() {
-      console.warn("The global `on()` function in content scripts is " +
-                   "deprecated in favor of the `self.on()` function, " +
-                   "which works the same. Replace calls to `on()` with " +
-                   "calls to `self.on()`" +
-                   "For more info on `self.on`, see " +
-                   "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+      console.error("DEPRECATED: The global `on()` function in content " +
+                    "scripts is deprecated in favor of the `self.on()` " +
+                    "function, which works the same. Replace calls to `on()` " +
+                    "with calls to `self.on()`" +
+                    "For more info on `self.on`, see " +
+                    "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
       return self.on.apply(null, arguments);
     };
 
@@ -220,12 +265,13 @@ const ContentWorker = Object.freeze({
       set: function (v) {
         if (onMessage)
           self.removeListener("message", onMessage);
-        console.warn("The global `onMessage` function in content scripts " +
-                     "is deprecated in favor of the `self.on()` function. " +
-                     "Replace `onMessage = function (data){}` definitions " +
-                     "with calls to `self.on('message', function (data){})`. " +
-                     "For more info on `self.on`, see " +
-                     "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
+        console.error("DEPRECATED: The global `onMessage` function in content" +
+                      "scripts is deprecated in favor of the `self.on()` " +
+                      "function. Replace `onMessage = function (data){}` " +
+                      "definitions with calls to `self.on('message', " +
+                      "function (data){})`. " +
+                      "For more info on `self.on`, see " +
+                      "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.");
         onMessage = v;
         if (typeof onMessage == "function")
           self.on("message", onMessage);

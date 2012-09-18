@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require('chrome'),
       { setTimeout } = require("../timer"),
       { Trait } = require('../traits'),
@@ -44,7 +48,7 @@ const WindowLoader = Trait.compose({
   _load: function _load() {
     if (this.__window) return;
     let params = PARAMS.slice()
-    params.push(this._tabOptions.map(function(options) options.url).join("|"))
+    params.push(this._tabOptions.map(function(options) options.url).join("|"));
     let browser =  WM.getMostRecentWindow(BROWSER);
     this._window = browser.openDialog.apply(browser, params);
   },
@@ -57,11 +61,13 @@ const WindowLoader = Trait.compose({
   set _window(window) {
     let _window = this.__window;
     if (!window) window = null;
+
     if (window !== _window) {
       if (_window) {
         _window.removeEventListener(ON_UNLOAD, this.__unloadListener, false);
         _window.removeEventListener(ON_LOAD, this.__loadListener, false);
       }
+
       if (window) {
         window.addEventListener(
           ON_UNLOAD,
@@ -70,7 +76,9 @@ const WindowLoader = Trait.compose({
           ,
           false
         );
+
         this.__window = window;
+
         // If window is not loaded yet setting up a listener.
         if (STATE_LOADED != window.document.readyState) {
           window.addEventListener(

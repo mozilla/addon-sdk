@@ -3,6 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+module.metadata = {
+  "stability": "stable"
+};
+
 if (!require("api-utils/xul-app").is("Firefox")) {
   throw new Error([
     "The windows module currently supports only Firefox. In the future",
@@ -11,21 +15,22 @@ if (!require("api-utils/xul-app").is("Firefox")) {
   ].join(""));
 }
 
-const { Cc, Ci } = require('chrome'),
+const { Cc, Ci, Cr } = require('chrome'),
       { Trait } = require('api-utils/traits'),
       { List } = require('api-utils/list'),
       { EventEmitter } = require('api-utils/events'),
       { WindowTabs, WindowTabTracker } = require('api-utils/windows/tabs'),
       { WindowDom } = require('api-utils/windows/dom'),
       { WindowLoader } = require('api-utils/windows/loader'),
-      { isBrowser } = require('api-utils/window/utils'),
+      { isBrowser, getWindowDocShell } = require('api-utils/window/utils'),
       { Options } = require('api-utils/tabs/tab'),
       apiUtils = require('api-utils/api-utils'),
       unload = require('api-utils/unload'),
       windowUtils = require('api-utils/window-utils'),
       { WindowTrackerTrait } = windowUtils,
       { ns } = require('api-utils/namespace'),
-      { observer: windowObserver } = require("api-utils/windows/observer");
+      { observer: windowObserver } = require("api-utils/windows/observer"),
+      { isWindowPBEnabled } = require('api-utils/private-browsing/utils');
 
 /**
  * Window trait composes safe wrappers for browser window that are E10S
@@ -83,6 +88,9 @@ const BrowserWindowTrait = Trait.compose(
       } catch(e) {
         this._emit('error', e)
       }
+
+      this._initWindowPrivateBrowser();
+
       this._emitOnObject(browserWindows, 'open', this._public);
     },
     _onUnload: function() {
@@ -94,6 +102,58 @@ const BrowserWindowTrait = Trait.compose(
       // Removing reference from the windows array.
       windows.splice(windows.indexOf(this), 1);
       this._removeAllListeners();
+    },
+    _privateBrowsingObserver: {},
+    _initWindowPrivateBrowser: function() {
+      let unloaded = false;
+      let emitPBChange = (function() {
+        // need this check because there will be a delay between the moment
+        // that our reference to this observer is removed, and the moment
+        // that the observer is garbage collected
+        if (unloaded) return;
+        let browserWindowsPrivate = browser(browserWindows).internals;
+        this._emitOnObject(browserWindows, 'private-browsing', this._public);
+        browserWindowsPrivate._emit('private-browsing', this._public);
+      }.bind(this));
+
+      // check that per-window private browsing events is implemented
+      if (isWindowPBEnabled(this._window)) {
+        // create the observer and keep a reference to it
+        this._privateBrowsingObserver = {
+          QueryInterface: function(iid) {
+            if (Ci.nsIPrivacyTransitionObserver.equals(iid) ||
+                Ci.nsISupportsWeakReference.equals(iid) ||
+                Ci.nsISupports.equals(iid))
+              return this;
+            throw Cr.NS_ERROR_NO_INTERFACE;
+          },
+          privateModeChanged: emitPBChange
+        };
+
+        // add the observer
+        getWindowDocShell(this._window).addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
+      }
+      else {
+        let pb = require('./private-browsing');
+        pb.on('start', emitPBChange);
+        pb.on('stop', emitPBChange);
+
+        // on close cleanup
+        this.once('close', function onUnload(window) {
+          pb.removeListener('start', emitPBChange);
+          pb.removeListener('stop', emitPBChange);
+        });
+      }
+
+      this.once('close', function onUnload() {
+        // note that the window has closed or the module has unloaded so that
+        // our per-window PB observer is no longer active while it waits
+        // to be garbage collected.
+        unloaded = true;
+        // remove our reference to the per-window PB observer, so that it can
+        // be garbage collected.
+        this._privateBrowsingObserver = {};
+      }.bind(this));
     },
     close: function close(callback) {
       // maybe we should deprecate this with message ?

@@ -4,6 +4,10 @@
 
 'use strict';
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const { Cc, Ci } = require('chrome');
 
 const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
@@ -54,6 +58,15 @@ function getBaseWindow(window) {
     QueryInterface(Ci.nsIBaseWindow);
 }
 exports.getBaseWindow = getBaseWindow;
+
+function getWindowDocShell(window) window.gBrowser.docShell;
+exports.getWindowDocShell = getWindowDocShell;
+
+function getWindowLoadingContext(window) {
+  return getWindowDocShell(window).
+         QueryInterface(Ci.nsILoadContext);
+}
+exports.getWindowLoadingContext = getWindowLoadingContext;
 
 /**
  * Removes given window from the application's window registry. Unless

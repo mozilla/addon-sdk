@@ -1,3 +1,4 @@
+
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
@@ -64,6 +65,12 @@ then the content script can interact with the DOM itself:
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
+
+<div class="warning">
+  Starting with SDK 1.11, page-mod only attaches scripts to documents loaded
+  in tabs. It will not attach scripts to add-on panels, page-workers, widgets,
+  or  Firefox hidden windows.
+</div>
 
 ### Using `contentScriptFile` ###
 
@@ -163,9 +170,9 @@ When a matching page is loaded the `PageMod` will call the function that the
 add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
 this function: a `worker` object.
 
-The worker can be thought of as the add-on's end of
-a communication channel between the add-on code and the content scripts that
-have been attached to this page.
+The [`worker`](packages/api-utils/content/worker.html) can be thought of as
+the add-on's end of a communication channel between the add-on code and
+the content scripts that have been attached to this page.
 
 Thus the add-on can pass messages to the content scripts by calling the
 worker's `postMessage` function and can receive messages from the content
@@ -254,10 +261,10 @@ The console output of this add-on is:
 
 ### Mapping workers to tabs ###
 
-The [`worker`](packages/api-utils/content/worker.html) has a `tab`
-property which returns the tab associated with this worker. You can use this
-to access the [`tabs API`](packages/addon-kit/tabs.html) for the tab
-associated with a specific page:
+The `worker` has a `tab` property which returns the tab associated with
+this worker. You can use this to access
+the [`tabs API`](packages/addon-kit/tabs.html) for the tab associated
+with a specific page:
 
     var pageMod = require("page-mod");
     var tabs = require("tabs");
@@ -402,6 +409,19 @@ Creates a PageMod.
   @prop [contentStyle] {string,array}
     The texts of stylesheet rules to add. Content styles specified by this
     option are loaded *after* those specified by the `contentStyleFile` option.
+    Optional.
+
+  @prop [attachTo] {string,array}
+    Option to specify on which documents PageMod should be applied.
+    It accepts following values:
+
+    * "existing": the PageMod will be automatically applied on already opened
+    tabs.
+    * "top": the PageMod will be applied to top-level tab documents
+    * "frame": the PageMod will be applied to all iframe inside tab documents
+
+    When omitted, it defaults to ["top", "frame"]. When set, you have to at
+    least set either "top" and/or "frame".
     Optional.
 
   @prop [onAttach] {function}

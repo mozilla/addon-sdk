@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+module.metadata = {
+  "stability": "experimental"
+};
+
 const { Cc, Ci, Cu } = require("chrome");
 const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
 const { defer } = require("api-utils/promise");

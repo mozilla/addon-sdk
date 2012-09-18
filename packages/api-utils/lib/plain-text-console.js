@@ -4,7 +4,12 @@
 
 "use strict";
 
+module.metadata = {
+  "stability": "unstable"
+};
+
 const {Cc,Ci} = require("chrome");
+const self = require("self");
 
 function stringify(arg) {
   try {
@@ -19,8 +24,9 @@ function stringifyArgs(args) {
   return Array.map(args, stringify).join(" ");
 }
 
-function message(print, level, args) {
-  print(level + ": " + stringifyArgs(args) + "\n", level);
+function message(print, level, args, name) {
+  print(level + ": " + name + ": " +
+    stringifyArgs(args) + "\n", level);
 }
 
 var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
@@ -48,23 +54,23 @@ var Console = exports.PlainTextConsole = function PlainTextConsole(print) {
 
 Console.prototype = {
   log: function log() {
-    message(this.print, "info", arguments);
+    message(this.print, "info", arguments, self.name);
   },
 
   info: function info() {
-    message(this.print, "info", arguments);
+    message(this.print, "info", arguments, self.name);
   },
 
   warn: function warn() {
-    message(this.print, "warning", arguments);
+    message(this.print, "warning", arguments, self.name);
   },
 
   error: function error() {
-    message(this.print, "error", arguments);
+    message(this.print, "error", arguments, self.name);
   },
 
   debug: function debug() {
-    message(this.print, "debug", arguments);
+    message(this.print, "debug", arguments, self.name);
   },
 
   exception: function exception(e) {
@@ -77,6 +83,6 @@ Console.prototype = {
     var traceback = require("./traceback");
     var stack = traceback.get();
     stack.splice(-1, 1);
-    message(this.print, "info", [traceback.format(stack)]);
+    message(this.print, "info", [traceback.format(stack)], self.name);
   }
 };

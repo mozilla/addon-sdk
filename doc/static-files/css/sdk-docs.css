@@ -105,6 +105,16 @@ hr {
   overflow: auto;
  }
 
+#cse-search-box {
+  float: right;
+  margin: 1em;
+  display:inline;
+}
+
+#cse-search-results {
+  margin: 1em;
+}
+
 #toc {
   width: 180px;
   float: right;
