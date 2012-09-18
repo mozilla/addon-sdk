@@ -117,7 +117,18 @@ exports.testIt = function (test) {
 
   // Returns a pretty printed JSON string with 2 spaces indentation
   function prettyJSON(json) {
-    return JSON.stringify(json, null, 2);
+    // We rely on the fact that internal implementation of gecko
+    // serialize JSON attributes in order in which they were added:
+    function sort(key, obj) {
+      if (typeof obj !== "object" || obj == null || Array.isArray(obj))
+        return obj;
+      let sortedJSON = {};
+      Object.keys(obj).sort().forEach(function (key) {
+        sortedJSON[key] = obj[key];
+      });
+      return sortedJSON;
+    }
+    return JSON.stringify(json, sort, 1);
   }
   AddonInstall.install(xpiPath).then(function (addonId) {
     // Check that various metadata set in install.rdf are correctly set/read
