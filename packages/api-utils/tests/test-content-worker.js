@@ -7,18 +7,17 @@
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("api-utils/timer");
 const { Loader, Require, override } = require("test-harness/loader");
-const { Worker } = require('api-utils/content/worker');
-const xulApp = require("api-utils/xul-app");
+const { Worker } = require("api-utils/content/worker");
+
+const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
 
 function makeWindow(contentURL) {
   let content =
-    '<?xml version="1.0"?>' +
-    '<window ' +
-    'xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">' +
-    '<iframe id="content" type="content" src="' +
-      encodeURIComponent(contentURL) + '"/>' +
-    '<script>var documentValue=true;</script>' +
-    '</window>';
+    "<?xml version=\"1.0\"?>" +
+    "<window " +
+    "xmlns=\"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul\">" +
+    "<script>var documentValue=true;</script>" +
+    "</window>";
   var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," +
             encodeURIComponent(content);
   var features = ["chrome", "width=10", "height=10"];
@@ -28,155 +27,184 @@ function makeWindow(contentURL) {
          openWindow(null, url, null, features.join(","), null);
 }
 
-exports['test:sample'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-  
-  // As window has just being created, its document is still loading, 
-  // and we have about:blank document before the expected one
-  test.assertEqual(window.document.location.href, "about:blank",
-                   "window starts by loading about:blank");
-  
-  // We need to wait for the load/unload of temporary about:blank
-  // or our worker is going to be automatically destroyed
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+// Listen for only first one occurence of DOM event
+function listenOnce(node, eventName, callback) {
+  node.addEventListener(eventName, function onevent(event) {
+    node.removeEventListener(eventName, onevent, true);
+    callback(node);
+  }, true);
+}
+
+// Load a given url in a given browser and fires the callback when it is loaded
+function loadAndWait(browser, url, callback) {
+  listenOnce(browser, "load", callback);
+  // We have to wait before calling `loadURI` otherwise, if we call
+  // `loadAndWait` during browser load event, the history will be broken
+  setTimeout(function () {
+    browser.loadURI(url);
+  }, 0);
+}
+
+// Returns a test function that will automatically open a new chrome window
+// with a <browser> element loaded on a given content URL
+// The callback receive 3 arguments:
+// - test: reference to the jetpack test object
+// - browser: a reference to the <browser> xul node
+// - done: a callback to call when test is over
+function WorkerTest(url, callback) {
+  return function testFunction(test) {
+    test.waitUntilDone();
+    let chromeWindow = makeWindow();
+    chromeWindow.addEventListener("load", function onload() {
+      chromeWindow.removeEventListener("load", onload, true);
+      let browser = chromeWindow.document.createElement("browser");
+      browser.setAttribute("type", "content");
+      chromeWindow.document.documentElement.appendChild(browser);
+      // Wait for about:blank load event ...
+      listenOnce(browser, "load", function onAboutBlankLoad() {
+        // ... before loading the expected doc and waiting for its load event
+        loadAndWait(browser, url, function onDocumentLoaded() {
+          callback(test, browser, function onTestDone() {
+            chromeWindow.close();
+            test.done();
+          });
+        });
+      });
+    }, true);
+  };
+}
+
+exports["test:sample"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
     
-    test.assertNotEqual(window.document.location.href, "about:blank", 
+    test.assertNotEqual(browser.contentWindow.location.href, "about:blank",
                         "window is now on the right document");
-    
+
+    let window = browser.contentWindow
     let worker =  Worker({
       window: window,
-      contentScript: 'new ' + function WorkerScope() {
+      contentScript: "new " + function WorkerScope() {
         // window is accessible
         let myLocation = window.location.toString();
-        self.on('message', function(data) {
-          if (data == 'hi!')
-            self.postMessage('bye!');
+        self.on("message", function(data) {
+          if (data == "hi!")
+            self.postMessage("bye!");
         });
       },
-      contentScriptWhen: 'ready',
+      contentScriptWhen: "ready",
       onMessage: function(msg) {
-        test.assertEqual('bye!', msg);
-        test.assertEqual(worker.url, window.document.location.href,
+        test.assertEqual("bye!", msg);
+        test.assertEqual(worker.url, window.location.href,
                          "worker.url still works");
-        test.done();
+        done();
       }
     });
-    
-    test.assertEqual(worker.url, window.document.location.href,
+
+    test.assertEqual(worker.url, window.location.href,
                      "worker.url works");
-    worker.postMessage('hi!');
-    
-  }, true);
-  
-}
+    worker.postMessage("hi!");
+  }
+);
 
-exports['test:emit'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-  
-  let worker =  Worker({
-      window: window,
-      contentScript: 'new ' + function WorkerScope() {
-        // Validate self.on and self.emit
-        self.port.on('addon-to-content', function (data) {
-          self.port.emit('content-to-addon', data);
-        });
-        
-        // Check for global pollution
-        //if (typeof on != "undefined")
-        //  self.postMessage("`on` is in globals");
-        if (typeof once != "undefined")
-          self.postMessage("`once` is in globals");
-        if (typeof emit != "undefined")
-          self.postMessage("`emit` is in globals");
-        
-      },
-      onMessage: function(msg) {
-        test.fail("Got an unexpected message : "+msg);
-      }
-    });
-  
-  // Validate worker.port
-  worker.port.on('content-to-addon', function (data) {
-    test.assertEqual(data, "event data");
-    window.close();
-    test.done();
-  });
-  worker.port.emit('addon-to-content', 'event data');
-  
-}
-
-exports['test:emit hack message'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-  
-  let worker =  Worker({
-      window: window,
-      contentScript: 'new ' + function WorkerScope() {
-        // Validate self.port
-        self.port.on('message', function (data) {
-          self.port.emit('message', data);
-        });
-        // We should not receive message on self, but only on self.port
-        self.on('message', function (data) {
-          self.postMessage('message', data);
-        });
-      },
-      onError: function(e) {
-        test.fail("Got exception: "+e);
-      }
-    });
-  
-  worker.port.on('message', function (data) {
-    test.assertEqual(data, "event data");
-    window.close();
-    test.done();
-  });
-  worker.on('message', function (data) {
-    test.fail("Got an unexpected message : "+msg);
-  });
-  worker.port.emit('message', 'event data');
-  
-}
-
-exports['test:n-arguments emit'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-  
-  let worker =  Worker({
-      window: window,
-      contentScript: 'new ' + function WorkerScope() {
-        // Validate self.on and self.emit
-        self.port.on('addon-to-content', function (a1, a2, a3) {
-          self.port.emit('content-to-addon', a1, a2, a3);
-        });
-      }
-    });
-  
-  // Validate worker.port
-  worker.port.on('content-to-addon', function (arg1, arg2, arg3) {
-    test.assertEqual(arg1, "first argument");
-    test.assertEqual(arg2, "second");
-    test.assertEqual(arg3, "third");
-    window.close();
-    test.done();
-  });
-  worker.port.emit('addon-to-content', 'first argument', 'second', 'third');
-}
-
-exports['test:post-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html;charset=utf-8,");
-  test.waitUntilDone();
-  
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+exports["test:emit"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
 
     let worker =  Worker({
-        window: window.document.getElementById("content").contentWindow,
-        contentScript: 'new ' + function WorkerScope() {
-          self.on('message', function (message) {
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          // Validate self.on and self.emit
+          self.port.on("addon-to-content", function (data) {
+            self.port.emit("content-to-addon", data);
+          });
+
+          // Check for global pollution
+          //if (typeof on != "undefined")
+          //  self.postMessage("`on` is in globals");
+          if (typeof once != "undefined")
+            self.postMessage("`once` is in globals");
+          if (typeof emit != "undefined")
+            self.postMessage("`emit` is in globals");
+
+        },
+        onMessage: function(msg) {
+          test.fail("Got an unexpected message : "+msg);
+        }
+      });
+
+    // Validate worker.port
+    worker.port.on("content-to-addon", function (data) {
+      test.assertEqual(data, "event data");
+      done();
+    });
+    worker.port.emit("addon-to-content", "event data");
+  }
+);
+
+exports["test:emit hack message"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+    let worker =  Worker({
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          // Validate self.port
+          self.port.on("message", function (data) {
+            self.port.emit("message", data);
+          });
+          // We should not receive message on self, but only on self.port
+          self.on("message", function (data) {
+            self.postMessage("message", data);
+          });
+        },
+        onError: function(e) {
+          test.fail("Got exception: "+e);
+        }
+      });
+
+    worker.port.on("message", function (data) {
+      test.assertEqual(data, "event data");
+      done();
+    });
+    worker.on("message", function (data) {
+      test.fail("Got an unexpected message : "+msg);
+    });
+    worker.port.emit("message", "event data");
+  }
+);
+
+exports["test:n-arguments emit"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+    let worker =  Worker({
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          // Validate self.on and self.emit
+          self.port.on("addon-to-content", function (a1, a2, a3) {
+            self.port.emit("content-to-addon", a1, a2, a3);
+          });
+        }
+      });
+
+    // Validate worker.port
+    worker.port.on("content-to-addon", function (arg1, arg2, arg3) {
+      test.assertEqual(arg1, "first argument");
+      test.assertEqual(arg2, "second");
+      test.assertEqual(arg3, "third");
+      done();
+    });
+    worker.port.emit("addon-to-content", "first argument", "second", "third");
+  }
+);
+
+exports["test:post-json-values-only"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+
+    let worker =  Worker({
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          self.on("message", function (message) {
             self.postMessage([ message.fun === undefined,
                                typeof message.w,
                                message.w && "port" in message.w,
@@ -189,39 +217,32 @@ exports['test:post-json-values-only'] = function(test) {
 
     // Validate worker.onMessage
     let array = [1, 2, 3];
-    worker.on('message', function (message) {
+    worker.on("message", function (message) {
       test.assert(message[0], "function becomes undefined");
       test.assertEqual(message[1], "object", "object stays object");
       test.assert(message[2], "object's attributes are enumerable");
-      test.assertEqual(message[3], "about:blank", "jsonable attributes are accessible");
+      test.assertEqual(message[3], DEFAULT_CONTENT_URL,
+                       "jsonable attributes are accessible");
       // See bug 714891, Arrays may be broken over compartements:
       test.assert(message[4], "Array keeps being an array");
       test.assertEqual(message[5], JSON.stringify(array),
                        "Array is correctly serialized");
-      window.close();
-      test.done();
+      done();
     });
     worker.postMessage({ fun: function () {}, w: worker, array: array });
+  }
+);
 
-  }, true);
-
-};
-
-
-exports['test:emit-json-values-only'] = function(test) {
-  let window = makeWindow("data:text/html;charset=utf-8,");
-  test.waitUntilDone();
+exports["test:emit-json-values-only"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
   
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
-  
-    let win = window.document.getElementById("content").contentWindow;
     let worker =  Worker({
-        window: win,
-        contentScript: 'new ' + function WorkerScope() {
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
           // Validate self.on and self.emit
-          self.port.on('addon-to-content', function (fun, w, obj, array) {
-            self.port.emit('content-to-addon', [
+          self.port.on("addon-to-content", function (fun, w, obj, array) {
+            self.port.emit("content-to-addon", [
                             fun === null,
                             typeof w,
                             "port" in w,
@@ -234,72 +255,63 @@ exports['test:emit-json-values-only'] = function(test) {
           });
         }
       });
-    
+
     // Validate worker.port
     let array = [1, 2, 3];
-    worker.port.on('content-to-addon', function (result) {
+    worker.port.on("content-to-addon", function (result) {
       test.assert(result[0], "functions become null");
       test.assertEqual(result[1], "object", "objects stay objects");
       test.assert(result[2], "object's attributes are enumerable");
-      test.assertEqual(result[3], "about:blank", "json attribute is accessible");
+      test.assertEqual(result[3], DEFAULT_CONTENT_URL,
+                       "json attribute is accessible");
       test.assert(!result[4], "function as object attribute is removed");
       test.assertEqual(result[5], 0, "DOM nodes are converted into empty object");
       // See bug 714891, Arrays may be broken over compartments:
       test.assert(result[6], "Array keeps being an array");
       test.assertEqual(result[7], JSON.stringify(array),
                        "Array is correctly serialized");
-      window.close();
-      test.done();
+      done();
     });
 
     let obj = {
       fun: function () {},
-      dom: window.document.createElement("div")
+      dom: browser.contentWindow.document.createElement("div")
     };
     worker.port.emit("addon-to-content", function () {}, worker, obj, array);
+  }
+);
 
-  }, true);
-}
-
-exports['test:content is wrapped'] = function(test) {
-  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
-  let window = makeWindow(contentURL);
-  test.waitUntilDone();
-
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+exports["test:content is wrapped"] = WorkerTest(
+  "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
+  function(test, browser, done) {
 
     let worker =  Worker({
-      window: window.document.getElementById("content").contentWindow,
-      contentScript: 'new ' + function WorkerScope() {
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
         self.postMessage(!window.documentValue);
       },
-      contentScriptWhen: 'ready',
+      contentScriptWhen: "ready",
       onMessage: function(msg) {
         test.assert(msg,
           "content script has a wrapped access to content document");
-        window.close();
-        test.done();
+        done();
       }
     });
+  }
+);
 
-  }, true);
-
-}
-
-exports['test:chrome is unwrapped'] = function(test) {
+exports["test:chrome is unwrapped"] = function(test) {
   let window = makeWindow();
   test.waitUntilDone();
 
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+  listenOnce(window, "load", function onload() {
 
     let worker =  Worker({
       window: window,
-      contentScript: 'new ' + function WorkerScope() {
+      contentScript: "new " + function WorkerScope() {
         self.postMessage(window.documentValue);
       },
-      contentScriptWhen: 'ready',
+      contentScriptWhen: "ready",
       onMessage: function(msg) {
         test.assert(msg,
           "content script has an unwrapped access to chrome document");
@@ -308,74 +320,63 @@ exports['test:chrome is unwrapped'] = function(test) {
       }
     });
 
-  }, true);
-
+  });
 }
 
-exports['test:nothing is leaked to content script'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+exports["test:nothing is leaked to content script"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
 
     let worker =  Worker({
-      window: window,
-      contentScript: 'new ' + function WorkerScope() {
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
         self.postMessage([
           "ContentWorker" in window,
           "UNWRAP_ACCESS_KEY" in window,
           "getProxyForObject" in window
         ]);
       },
-      contentScriptWhen: 'ready',
+      contentScriptWhen: "ready",
       onMessage: function(list) {
         test.assert(!list[0], "worker API contrustor isn't leaked");
         test.assert(!list[1], "Proxy API stuff isn't leaked 1/2");
         test.assert(!list[2], "Proxy API stuff isn't leaked 2/2");
-        window.close();
-        test.done();
+        done();
+      }
+    });
+  }
+);
+
+exports["test:ensure console.xxx works in cs"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+
+    // Create a new module loader in order to be able to create a `console`
+    // module mockup:
+    let loader = Loader(module, {
+      console: {
+        log: hook.bind("log"),
+        info: hook.bind("info"),
+        warn: hook.bind("warn"),
+        error: hook.bind("error"),
+        debug: hook.bind("debug"),
+        exception: hook.bind("exception")
       }
     });
 
-  }, true);
-
-}
-
-exports['test:ensure console.xxx works in cs'] = function(test) {
-  test.waitUntilDone(5000);
-
-  // Create a new module loader in order to be able to create a `console`
-  // module mockup:
-  let loader = Loader(module, {
-    console: {
-      log: hook.bind("log"),
-      info: hook.bind("info"),
-      warn: hook.bind("warn"),
-      error: hook.bind("error"),
-      debug: hook.bind("debug"),
-      exception: hook.bind("exception")
+    // Intercept all console method calls
+    let calls = [];
+    function hook(msg) {
+      test.assertEqual(this, msg,
+                       "console.xxx(\"xxx\"), i.e. message is equal to the " +
+                       "console method name we are calling");
+      calls.push(msg);
     }
-  });
-  let require = loader.require;
 
-  // Intercept all console method calls
-  let calls = [];
-  function hook(msg) {
-    test.assertEqual(this, msg,
-                     "console.xxx(\"xxx\"), i.e. message is equal to the " +
-                     "console method name we are calling");
-    calls.push(msg);
-  }
-
-  // Finally, create a worker that will call all console methods
-  let window = makeWindow();
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
-
-    let worker =  require('content/worker').Worker({
-      window: window,
-      contentScript: 'new ' + function WorkerScope() {
+    // Finally, create a worker that will call all console methods
+    let worker =  loader.require("content/worker").Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
         console.log("log");
         console.info("info");
         console.warn("warn");
@@ -389,64 +390,50 @@ exports['test:ensure console.xxx works in cs'] = function(test) {
         test.assertEqual(JSON.stringify(calls),
                          JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
                          "console has been called successfully, in the expected order");
-        window.close();
-        test.done();
+        done();
       }
     });
-  }, true);
+  }
+);
 
-}
 
-
-exports['test:setTimeout can\'t be cancelled by content'] = function(test) {
-  let contentURL = 'data:text/html;charset=utf-8,<script>var documentValue=true;</script>';
-  let window = makeWindow(contentURL);
-  test.waitUntilDone();
-
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
+  "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
+  function(test, browser, done) {
 
     let worker =  Worker({
-      window: window.document.getElementById("content").contentWindow,
-      contentScript: 'new ' + function WorkerScope() {
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
         let id = setTimeout(function () {
           self.postMessage("timeout");
         }, 100);
         unsafeWindow.eval("clearTimeout("+id+");");
       },
-      contentScriptWhen: 'ready',
+      contentScriptWhen: "ready",
       onMessage: function(msg) {
         test.assert(msg,
           "content didn't managed to cancel our setTimeout");
-        window.close();
-        test.done();
+        done();
       }
     });
+  }
+);
 
-  }, true);
+exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
 
-}
-
-exports['test:setTimeout are unregistered on content unload'] = function(test) {
-  let contentURL = 'data:text/html;charset=utf-8,foo';
-  let window = makeWindow(contentURL);
-  test.waitUntilDone();
-
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
-
-    let iframe = window.document.getElementById("content");
-    let originalWindow = iframe.contentWindow;
+    let originalWindow = browser.contentWindow;
     let worker =  Worker({
-      window: iframe.contentWindow,
-      contentScript: 'new ' + function WorkerScope() {
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
         document.title = "ok";
         let i = 0;
         setInterval(function () {
           document.title = i++;
         }, 10);
       },
-      contentScriptWhen: 'ready'
+      contentScriptWhen: "ready"
     });
 
     // Change location so that content script is destroyed,
@@ -455,48 +442,41 @@ exports['test:setTimeout are unregistered on content unload'] = function(test) {
     setTimeout(function () {
       // Bug 689621: Wait for the new document load so that we are sure that
       // previous document cancelled its intervals
-      iframe.addEventListener("load", function onload() {
-        iframe.removeEventListener("load", onload, true);
+      let url2 = "data:text/html;charset=utf-8,<title>final</title>";
+      loadAndWait(browser, url2, function onload() {
         let titleAfterLoad = originalWindow.document.title;
         // Wait additional cycles to verify that intervals are really cancelled
         setTimeout(function () {
-          test.assertEqual(iframe.contentDocument.title, "final",
+          test.assertEqual(browser.contentDocument.title, "final",
                            "New document has not been modified");
           test.assertEqual(originalWindow.document.title, titleAfterLoad,
                            "Nor previous one");
 
-          window.close();
-          test.done();
+          done();
         }, 100);
-      }, true);
-      iframe.setAttribute("src", "data:text/html;charset=utf-8,<title>final</title>");
+      });
     }, 100);
+  }
+);
 
-  }, true);
-
-}
-
-exports['test:check window attribute in iframes'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-
-  // Wait for top-level chrome window loading
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
+exports['test:check window attribute in iframes'] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
 
     // Create a first iframe and wait for its loading
-    let contentWin = window.document.getElementById("content").contentWindow;
+    let contentWin = browser.contentWindow;
     let contentDoc = contentWin.document;
     let iframe = contentDoc.createElement("iframe");
+    contentDoc.body.appendChild(iframe);
 
-    iframe.addEventListener("load", function onload() {
-      iframe.removeEventListener("load", onload, true);
+    listenOnce(iframe, "load", function onload() {
 
       // Create a second iframe inside the first one and wait for its loading
       let iframeDoc = iframe.contentWindow.document;
       let subIframe = iframeDoc.createElement("iframe");
+      iframeDoc.body.appendChild(subIframe);
 
-      subIframe.addEventListener("load", function onload() {
+      listenOnce(subIframe, "load", function onload() {
         subIframe.removeEventListener("load", onload, true);
 
         // And finally create a worker against this second iframe
@@ -519,34 +499,24 @@ exports['test:check window attribute in iframes'] = function(test) {
                              "top.location refers to the toplevel content doc");
             test.assertEqual(msg[4], iframe.contentWindow.location.href,
                              "parent.location refers to the first iframe doc");
-            window.close();
-            test.done();
+            done();
           }
         });
 
-      }, true);
+      });
       subIframe.setAttribute("src", "data:text/html;charset=utf-8,bar");
-      iframeDoc.body.appendChild(subIframe);
 
-    }, true);
+    });
     iframe.setAttribute("src", "data:text/html;charset=utf-8,foo");
-    contentDoc.body.appendChild(iframe);
+  }
+);
 
-  }, true);
-
-}
-
-exports['test:check window attribute in toplevel documents'] = function(test) {
-  let window = makeWindow();
-  test.waitUntilDone();
-
-  window.addEventListener("load", function onload() {
-    window.removeEventListener("load", onload, true);
-
-    let contentWin = window.document.getElementById("content").contentWindow;
+exports['test:check window attribute in toplevel documents'] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
 
     let worker =  Worker({
-      window: contentWin,
+      window: browser.contentWindow,
       contentScript: 'new ' + function WorkerScope() {
         self.postMessage([
           window.top === window,
@@ -558,11 +528,74 @@ exports['test:check window attribute in toplevel documents'] = function(test) {
         test.assert(msg[0], "window.top == window");
         test.assert(!msg[1], "window.frameElement is null");
         test.assert(msg[2], "window.parent == window");
-        window.close();
-        test.done();
+        done();
       }
     });
+  }
+);
 
-  }, true);
+exports["test:check worker API with page history"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(test, browser, done) {
+    let url2 = "data:text/html;charset=utf-8,bar";
 
-}
+    loadAndWait(browser, url2, function () {
+      let worker =  Worker({
+        window: browser.contentWindow,
+        contentScript: "new " + function WorkerScope() {
+          // Just before the content script is disable, we register a timeout
+          // that will be disable until the page gets visible again
+          self.on("pagehide", function () {
+            setTimeout(function () {
+              self.postMessage("timeout restored");
+            }, 0);
+          });
+        },
+        contentScriptWhen: "start"
+      });
+
+      // postMessage works correctly when the page is visible
+      worker.postMessage("ok");
+
+      // We have to wait before going back into history,
+      // otherwise `goBack` won't do anything.
+      setTimeout(function () {
+        browser.goBack();
+      }, 0);
+
+      // Wait for the document to be hidden
+      browser.addEventListener("pagehide", function onpagehide() {
+        browser.removeEventListener("pagehide", onpagehide, false);
+        // Now any event sent to this worker should throw
+        test.assertRaises(
+            function () { worker.postMessage("data"); },
+            "The page is currently hidden and can no longer be used until it" +
+            " is visible again.",
+            "postMessage should throw when the page is hidden in history"
+            );
+        test.assertRaises(
+            function () { worker.port.emit("event"); },
+            "The page is currently hidden and can no longer be used until it" +
+            " is visible again.",
+            "port.emit should throw when the page is hidden in history"
+            );
+
+        // Display the page with attached content script back in order to resume
+        // its timeout and receive the expected message.
+        // We have to delay this in order to not break the history.
+        // We delay for a non-zero amount of time in order to ensure that we
+        // do not receive the message immediatly, so that the timeout is
+        // actually disabled
+        setTimeout(function () {
+          worker.on("message", function (data) {
+            test.assert(data, "timeout restored");
+            done();
+          });
+          browser.goForward();
+        }, 500);
+
+      }, false);
+    });
+
+  }
+);
