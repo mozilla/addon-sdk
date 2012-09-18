@@ -289,9 +289,6 @@ const WidgetTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     // Keep a reference to it
     this._views.push(view);
     
-    // Emit an `attach` event with a WidgetView instance without private attrs
-    this._emit("attach", view._public);
-    
     return view;
   },
   
@@ -405,7 +402,14 @@ const WidgetViewTrait = LightTrait.compose(EventEmitterTrait, LightTrait({
     
     this._public = Cortex(this);
   },
-  
+
+  // Called by WidgetChrome, when the related Worker is applied to the document,
+  // so that we can start sending events to it
+  _onWorkerReady: function () {
+    // Emit an `attach` event with a WidgetView instance without private attrs
+    this._baseWidget._emit("attach", this._public);
+  },
+
   _onChange: function WidgetView__onChange(name, value) {
     if (name == 'tooltip' && !value) {
       this.tooltip = this.label;
@@ -791,8 +795,15 @@ WidgetChrome.prototype.setContent = function WC_setContent() {
     this._symbiont.destroy();
   
   this._symbiont = Trait.compose(Symbiont.resolve({
-    _onContentScriptEvent: "_onContentScriptEvent-not-used"
+    _onContentScriptEvent: "_onContentScriptEvent-not-used",
+    _onInit: "_initSymbiont"
   }), {
+    // Overload `Symbiont._onInit` in order to know when the related worker
+    // is ready.
+    _onInit: function () {
+      this._initSymbiont();
+      self._widget._onWorkerReady();
+    },
     _onContentScriptEvent: function () {
       // Redirect events to WidgetView
       self._widget._onPortEvent(arguments);
