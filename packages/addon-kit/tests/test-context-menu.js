@@ -1998,7 +1998,7 @@ exports.testSelectionInInnerFrameNoMatch = function (test) {
   ];
 
   test.withTestDoc(function (window, doc) {
-    let frame = doc.getElementById("frame");
+    let frame = doc.getElementById("iframe");
     frame.contentWindow.getSelection().selectAllChildren(frame.contentDocument.body);
 
     test.showMenu(null, function (popup) {
@@ -2024,7 +2024,7 @@ exports.testSelectionInInnerFrameMatch = function (test) {
   ];
 
   test.withTestDoc(function (window, doc) {
-    let frame = doc.getElementById("frame");
+    let frame = doc.getElementById("iframe");
     frame.contentWindow.getSelection().selectAllChildren(frame.contentDocument.body);
 
     test.showMenu(frame.contentDocument.getElementById("text"), function (popup) {
@@ -2050,7 +2050,7 @@ exports.testSelectionInOuterFrameNoMatch = function (test) {
   ];
 
   test.withTestDoc(function (window, doc) {
-    let frame = doc.getElementById("frame");
+    let frame = doc.getElementById("iframe");
     window.getSelection().selectAllChildren(doc.body);
 
     test.showMenu(frame.contentDocument.getElementById("text"), function (popup) {
