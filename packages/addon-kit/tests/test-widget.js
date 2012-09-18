@@ -953,6 +953,80 @@ exports.testContentScriptOptionsOption = function(test) {
     });
 };
 
+exports.testOnAttachWithoutContentScript = function(test) {
+  test.waitUntilDone();
+
+  let widget = require("widget").Widget({
+      id: "onAttachNoCS",
+      label: "onAttachNoCS",
+      content: "onAttachNoCS",
+      onAttach: function (view) {
+        test.pass("received attach event");
+        widget.destroy();
+        test.done();
+      }
+    });
+};
+
+exports.testPostMessageOnAttach = function(test) {
+  test.waitUntilDone();
+
+  let widget = require("widget").Widget({
+      id: "onAttach",
+      label: "onAttach",
+      content: "onAttach",
+      // 1) Send a message immediatly after `attach` event
+      onAttach: function (view) {
+        view.postMessage("ok");
+      },
+      // 2) Listen to it and forward it back to the widget
+      contentScript: "self.on('message', self.postMessage);",
+      // 3) Listen to this forwarded message
+      onMessage: function (msg) {
+        test.assertEqual( msg, "ok", "postMessage works on `attach` event");
+        widget.destroy();
+        test.done();
+      }
+    });
+};
+
+exports.testPostMessageOnLocationChange = function(test) {
+  test.waitUntilDone();
+
+  let attachEventCount = 0;
+  let messagesCount = 0;
+  let widget = require("widget").Widget({
+      id: "onLocationChange",
+      label: "onLocationChange",
+      content: "onLocationChange",
+      contentScript: "new " + function ContentScriptScope() {
+        // Emit an event when content script is applied in order to know when
+        // the first document is loaded so that we can load the 2nd one
+        self.postMessage("ready");
+        // And forward any incoming message back to the widget to see if
+        // messaging is working on 2nd document
+        self.on("message", self.postMessage);
+      },
+      onMessage: function (msg) {
+        messagesCount++;
+        if (messagesCount == 1) {
+          test.assertEqual(msg, "ready", "First document is loaded");
+          widget.content = "location changed";
+        }
+        else if (messagesCount == 2) {
+          test.assertEqual(msg, "ready", "Second document is loaded");
+          widget.postMessage("ok");
+        }
+        else if (messagesCount == 3) {
+          test.assertEqual(msg, "ok",
+                           "We receive the message sent to the 2nd document");
+          widget.destroy();
+          test.done();
+        }
+      }
+    });
+};
+
 exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
   test.waitUntilDone();
 
