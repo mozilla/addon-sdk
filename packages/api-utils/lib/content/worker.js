@@ -535,8 +535,8 @@ const Worker = EventEmitter.compose({
       this._contentWorker.destroy();
     this._contentWorker = null;
     if (this._window) {
-      this._window.addEventListener("pageshow", this._pageShow, true);
-      this._window.addEventListener("pagehide", this._pageHide, true);
+      this._window.removeEventListener("pageshow", this._pageShow, true);
+      this._window.removeEventListener("pagehide", this._pageHide, true);
     }
     this._window = null;
     // This method may be called multiple times,
