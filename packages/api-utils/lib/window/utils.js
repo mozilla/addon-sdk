@@ -118,7 +118,7 @@ function open(uri, options) {
                uri,
                options.name || null,
                serializeFeatures(options.features || {}),
-               null);
+               options.args || null);
 }
 exports.open = open;
 
