@@ -16,12 +16,16 @@ const ioService = Cc['@mozilla.org/network/io-service;1'].
                   getService(Ci.nsIIOService);
 const resourceHandler = ioService.getProtocolHandler('resource').
                         QueryInterface(Ci.nsIResProtocolHandler);
+const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
+const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
+                     getService(Ci.mozIJSSubScriptLoader);
+
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
 let loader = null;
 let unload = null;
-let cuddlefishURI = null;
+let cuddlefishSandbox = null;
 let nukeTimer = null;
 
 // Utility function that synchronously reads local resource from the given
@@ -123,11 +127,11 @@ function startup(data, reasonCode) {
     // Make version 2 of the manifest
     let manifest = manifestV2(options.manifest);
 
-    // We use global `loaderURI` to allow unload.
-    cuddlefishURI = prefixURI + options.loader;
+    // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
+    let cuddlefishURI = prefixURI + options.loader;
+    cuddlefishSandbox = loadSandbox(cuddlefishURI);
+    let cuddlefish = cuddlefishSandbox.exports;
 
-    // Import `cuddlefish.js` module using `Cu.import` and bootstrap loader.
-    let cuddlefish = Cu.import(cuddlefishURI);
     // Normalize `options.mainPath` so that it looks like one that will come
     // in a new version of linker.
     let main = path2id(options.mainPath);
@@ -174,7 +178,8 @@ function startup(data, reasonCode) {
     });
 
     let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
-    let require = Require(loader, module);
+    let require = cuddlefish.Require(loader, module);
+
     require('api-utils/addon/runner').startup(reason, {
       loader: loader,
       main: main,
@@ -186,6 +191,30 @@ function startup(data, reasonCode) {
     throw error;
   }
 };
+
+function loadSandbox(uri) {
+  let proto = {
+    sandboxPrototype: {
+      loadSandbox: loadSandbox,
+      ChromeWorker: ChromeWorker
+    }
+  };
+  let sandbox = Cu.Sandbox(systemPrincipal, proto);
+  // Create a fake commonjs environnement just to enable loading loader.js
+  // correctly
+  sandbox.exports = {};
+  sandbox.module = { uri: uri, exports: sandbox.exports };
+  sandbox.require = function () {
+    throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+  };
+  scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
+  return sandbox;
+}
+
+function unloadSandbox(sandbox) {
+  if ("nukeSandbox" in Cu)
+    Cu.nukeSandbox(sandbox);
+}
 
 function setTimeout(callback, delay) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -199,11 +228,8 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Bug 724433: We need to unload JSM otherwise it will stay alive
-    // and keep a reference to this compartment.
-    Cu.unload(cuddlefishURI);
     // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immadiatly in order to allow executing some
+    // module. Do not clean it up immediatly in order to allow executing some
     // actions on addon disabling.
     // We need to keep a reference to the timer, otherwise it is collected
     // and won't ever fire.
@@ -223,8 +249,14 @@ function nukeModules() {
     let sandbox = loader.sandboxes[key];
     delete loader.sandboxes[key];
     // Bug 775067: From FF17 we can kill all CCW from a given sandbox
-    if ("nukeSandbox" in Cu)
-      Cu.nukeSandbox(sandbox);
+    unloadSandbox(sandbox);
   }
   loader = null;
+
+  // Unload sandbox used to evaluate loader.js
+  unloadSandbox(cuddlefishSandbox.loaderSandbox);
+  // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
+  // and keep a reference to this compartment.
+  unloadSandbox(cuddlefishSandbox);
+  cuddlefishSandbox = null;
 }
