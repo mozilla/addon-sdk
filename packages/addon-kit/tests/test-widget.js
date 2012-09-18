@@ -1034,48 +1034,86 @@ exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
   let w2 = widgets.Widget({id: "2nd", label: "2nd widget", content: "2"});
   let w3 = widgets.Widget({id: "3rd", label: "3rd widget", content: "3"});
 
-  // Hack to move 2nd and 3rd widgets manually to the navigation bar, in 5th
-  // position, i.e. after search box. 3rd widget will be in 5th and 2nd in 6th.
+  // First wait for all 3 widgets to be added to the current browser window
+  let firstAttachCount = 0;
+  function onAttachFirstWindow(widget) {
+    if (++firstAttachCount<3)
+      return;
+    onWidgetsReady();
+  }
+  w1.once("attach", onAttachFirstWindow);
+  w2.once("attach", onAttachFirstWindow);
+  w3.once("attach", onAttachFirstWindow);
+
   function getWidgetNode(toolbar, position) {
     return toolbar.getElementsByTagName("toolbaritem")[position];
   }
-  let browserWindow = windowUtils.activeBrowserWindow;
-  let doc = browserWindow.document;
-  let addonBar = doc.getElementById("addon-bar");
-  let w2Toolbaritem = getWidgetNode(addonBar, 1);
-  let w3ToolbarItem = getWidgetNode(addonBar, 2);
-  let navBar = doc.getElementById("nav-bar");
-  navBar.insertItem(w2Toolbaritem.id, navBar.childNodes[6], null, false);
-  navBar.insertItem(w3ToolbarItem.id, navBar.childNodes[6], null, false);
-  // Widget and Firefox codes rely on this `currentset` attribute,
-  // so ensure it is correctly saved
-  navBar.setAttribute("currentset", navBar.currentSet);
-  doc.persist(navBar.id, "currentset");
-  // Update addonbar too as we removed widget from there.
-  // Otherwise, widgets may still be added to this toolbar.
-  addonBar.setAttribute("currentset", addonBar.currentSet);
-  doc.persist(addonBar.id, "currentset");
+  function openBrowserWindow() {
+    let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+             getService(Ci.nsIWindowWatcher);
+    let urlString = Cc["@mozilla.org/supports-string;1"].
+                    createInstance(Ci.nsISupportsString);
+    urlString.data = "about:blank";
+    return ww.openWindow(null, "chrome://browser/content/browser.xul",
+                               "_blank", "chrome,all,dialog=no", urlString);
+  }
 
-  tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
-    let browserWindow = e.target.defaultView;
+  // Then move them before openeing a new browser window
+  function onWidgetsReady() {
+    // Hack to move 2nd and 3rd widgets manually to the navigation bar right after
+    // the search box.
+    let browserWindow = windowUtils.activeBrowserWindow;
     let doc = browserWindow.document;
-    let navBar = doc.getElementById("nav-bar");
     let addonBar = doc.getElementById("addon-bar");
+    let w2ToolbarItem = getWidgetNode(addonBar, 1);
+    let w3ToolbarItem = getWidgetNode(addonBar, 2);
+    let navBar = doc.getElementById("nav-bar");
+    let searchBox = doc.getElementById("search-container");
+    // Insert 3rd at the right of search box by adding it before its right sibling
+    navBar.insertItem(w3ToolbarItem.id, searchBox.nextSibling, null, false);
+    // Then insert 2nd before 3rd
+    navBar.insertItem(w2ToolbarItem.id, w3ToolbarItem, null, false);
+    // Widget and Firefox codes rely on this `currentset` attribute,
+    // so ensure it is correctly saved
+    navBar.setAttribute("currentset", navBar.currentSet);
+    doc.persist(navBar.id, "currentset");
+    // Update addonbar too as we removed widget from there.
+    // Otherwise, widgets may still be added to this toolbar.
+    addonBar.setAttribute("currentset", addonBar.currentSet);
+    doc.persist(addonBar.id, "currentset");
 
-    // Ensure that 1st is in addon bar
-    test.assertEqual(getWidgetNode(addonBar, 0).getAttribute("label"), w1.label);
-    // And that 2nd and 3rd keep their original positions in navigation bar
-    test.assertEqual(navBar.childNodes[5].getAttribute("label"), w3.label);
-    test.assertEqual(navBar.childNodes[6].getAttribute("label"), w2.label);
+    // Wait for all widget to be attached to this new window before checking
+    // their position
+    let attachCount = 0;
+    let browserWindow2;
+    function onAttach(widget) {
+      if (++attachCount < 3)
+        return;
+      let doc = browserWindow2.document;
+      let addonBar = doc.getElementById("addon-bar");
+      let searchBox = doc.getElementById("search-container");
 
-    w1.destroy();
-    w2.destroy();
-    w3.destroy();
+      // Ensure that 1st is in addon bar
+      test.assertEqual(getWidgetNode(addonBar, 0).getAttribute("label"), w1.label);
+      // And that 2nd and 3rd keep their original positions in navigation bar,
+      // i.e. right after search box
+      test.assertEqual(searchBox.nextSibling.getAttribute("label"), w2.label);
+      test.assertEqual(searchBox.nextSibling.nextSibling.getAttribute("label"), w3.label);
 
-    closeBrowserWindow(browserWindow, function() {
-      test.done();
-    });
-  }});
+      w1.destroy();
+      w2.destroy();
+      w3.destroy();
+
+      closeBrowserWindow(browserWindow2, function() {
+        test.done();
+      });
+    }
+    w1.on("attach", onAttach);
+    w2.on("attach", onAttach);
+    w3.on("attach", onAttach);
+
+    browserWindow2 = openBrowserWindow(browserWindow);
+  }
 };
 
 /******************* helpers *********************/
