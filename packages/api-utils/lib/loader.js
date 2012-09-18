@@ -15,6 +15,8 @@
       return imports;
     }, this, { uri: __URI__, id: id });
     this.EXPORTED_SYMBOLS = Object.keys(this);
+  } else if (~String(this).indexOf('Sandbox')) { // Sandbox
+    factory(function require(uri) {}, this, { uri: __URI__, id: id });
   } else {  // Browser or alike
     var globals = this
     factory(function require(id) {
@@ -254,7 +256,6 @@ const Require = iced(function Require(loader, requirer) {
     // Resolves `uri` of module using loaders resolve function.
     let uri = resolveURI(requirement, mapping);
 
-
     if (!uri) // Throw if `uri` can not be resolved.
       throw Error('Module: Can not resolve "' + id + '" module required by ' +
                   requirer.id + ' located at ' + requirer.uri, requirer.uri);
@@ -352,10 +353,10 @@ const Loader = iced(function Loader(options) {
     '@loader/options': options,
     'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
                 CC: bind(CC, Components), components: Components,
-                // Note: Exporting `ChromeWorker` does not works, probably
-                // because platform does some sandbox incompatible scope
-                // sniffing .
-                ChromeWorker: function(uri) { return new ChromeWorker(uri) }}
+                // `ChromeWorker` has to be inject in loader global scope.
+                // It is done by bootstrap.js:loadSandbox for the SDK.
+                ChromeWorker: ChromeWorker
+    }
   }, modules);
 
   modules = keys(modules).reduce(function(result, id) {
