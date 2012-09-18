@@ -460,37 +460,40 @@ exports.testURLContextRemove = function (test) {
 
 // Closing a page after it's been used with a worker should cause the worker
 // to be destroyed
-exports.testWorkerDestroy = function (test) {
+/*exports.testWorkerDestroy = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let expected = null;
+  let loadExpected = false;
 
   let item = loader.cm.Item({
     label: "item",
-    contentScript: 'self.postMessage("loaded"); self.on("detach", function () { console.log("got it"); self.postMessage("detached") });',
+    contentScript: 'self.postMessage("loaded"); self.on("detach", function () { console.log("saw detach"); self.postMessage("detach") });',
     onMessage: function (msg) {
-      test.assertEqual(expected, msg, "Should have received the right message");
-      expected = null;
-      console.log("Saw message " + msg);
+      console.log("Saw " + msg)
+      switch (msg) {
+      case "loaded":
+        test.assert(loadExpected, "Should have seen the load event at the right time");
+        loadExpected = false;
+        break;
+      case "detach":
+        test.done();
+        break;
+      }
     }
   });
 
   test.withTestDoc(function (window, doc) {
-    expected = "loaded";
+    loadExpected = true;
     test.showMenu(null, function (popup) {
-      test.assertEqual(expected, null, "Should have seen a message");
+      test.assert(!loadExpected, "Should have seen a message");
 
       test.checkMenu([item], [], []);
 
-      expected = "detached";
       test.closeTab();
-      //test.assertEqual(expected, null, "Should have seen a message");
-
-      test.done();
     });
   });
-};
+};*/
 
 
 // Content contexts that return true should cause their items to be present

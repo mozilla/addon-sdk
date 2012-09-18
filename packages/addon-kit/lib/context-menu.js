@@ -20,6 +20,7 @@ const { MatchPattern } = require("api-utils/match-pattern");
 const { Worker } = require("api-utils/content/worker");
 const { EventTarget } = require("api-utils/event/target");
 const { emit } = require('api-utils/event/core');
+const { when } = require('api-utils/unload');
 
 // All user items we add have this class name.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -324,8 +325,6 @@ function destroyItemWorker(item, window) {
     worker.destroy();
 
   internal(item).workerWindows = filterOut(internal(item).workerWindows, window);
-
-  window.removeEventListener("unload", internal(item).unloadListener, false);
 }
 
 // Gets the item's content script worker for a window, creating one if necessary
@@ -347,14 +346,14 @@ function getItemWorkerForWindow(item, window) {
     onError: function (err) console.exception(err),
     onMessage: function(msg) {
       emit(item, "message", msg);
+    },
+    onDetach: function() {
+      destroyItemWorker(item, window);
     }
   });
 
   internal(item).workerMap.set(window, worker);
   internal(item).workerWindows.push(window);
-
-  // Might want to just destroy if unused for 60 seconds
-  window.addEventListener("unload", internal(item).unloadListener, false);
 
   return worker;
 }
@@ -425,11 +424,6 @@ let LabelledItem = Class({
     internal(this).workerMap = new WeakMap();
     internal(this).workerWindows = [];
 
-    let self = this;
-    internal(this).unloadListener = function(event) {
-      destroyItemWorker(self, event.target.defaultView);
-    };
-
     BaseItem.prototype.initialize.call(this);
     EventTarget.prototype.initialize.call(this, options);
   },
@@ -437,6 +431,7 @@ let LabelledItem = Class({
   destroy: function destroy() {
     for (let window of internal(this).workerWindows)
       destroyItemWorker(this, window);
+    internal(this).workerWindows = [];
 
     BaseItem.prototype.destroy.call(this);
   },
@@ -604,6 +599,10 @@ exports.Separator = Separator;
 // by API consumers
 let rootMenu = Menu({
   label: OVERFLOW_MENU_LABEL
+});
+
+when(function() {
+  rootMenu.destroy();
 });
 
 // App specific UI code lives here, it should handle populating the context
