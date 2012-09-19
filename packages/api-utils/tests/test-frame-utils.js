@@ -7,20 +7,24 @@
 const { open } = require('api-utils/window/utils');
 const { create } = require('api-utils/frame/utils');
 
-exports['test frame creation'] = function(assert) {
+exports['test frame creation'] = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,Window');
-  let frame = create(window.document);
+  window.addEventListener('DOMContentLoaded', function windowReady() {
 
-  assert.equal(frame.getAttribute('type'), 'content',
-               'frame type is content');
-  assert.ok(frame.contentWindow, 'frame has contentWindow');
-  assert.equal(frame.contentWindow.location.href, 'about:blank',
-               'by default "about:blank" is loaded');
-  assert.equal(frame.docShell.allowAuth, false, 'auth disabled by default');
-  assert.equal(frame.docShell.allowJavascript, false, 'js disabled by default');
-  assert.equal(frame.docShell.allowPlugins, false,
-               'plugins disabled by default');
-  window.close();
+    let frame = create(window.document);
+
+    assert.equal(frame.getAttribute('type'), 'content',
+                 'frame type is content');
+    assert.ok(frame.contentWindow, 'frame has contentWindow');
+    assert.equal(frame.contentWindow.location.href, 'about:blank',
+                 'by default "about:blank" is loaded');
+    assert.equal(frame.docShell.allowAuth, false, 'auth disabled by default');
+    assert.equal(frame.docShell.allowJavascript, false, 'js disabled by default');
+    assert.equal(frame.docShell.allowPlugins, false,
+                 'plugins disabled by default');
+    window.close();
+    done();
+  }, false);
 };
 
 exports['test fram has js disabled by default'] = function(assert, done) {
