@@ -730,6 +730,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['manifest'] = manifest.get_harness_options_manifest()
     harness_options['allTestModules'] = manifest.get_all_test_modules()
+    if len(harness_options['allTestModules']) == 0 and command == "test":
+      return
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
