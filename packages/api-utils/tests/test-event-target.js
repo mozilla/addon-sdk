@@ -161,6 +161,7 @@ exports['test unhandled errors'] = function(assert) {
   emit(target, 'message');
   assert.ok(~String(exceptions[1]).indexOf('Draax!'),
             'error in error handler is logged');
+  loader.unload();
 };
 
 require('test').run(exports);
