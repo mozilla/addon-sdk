@@ -39,6 +39,9 @@ var results = {
   testRuns: []
 };
 
+// A list of the compartments and windows loaded after startup
+var startLeaks;
+
 // JSON serialization of last memory usage stats; we keep it stringified
 // so we don't actually change the memory usage stats (in terms of objects)
 // of the JSRuntime we're profiling.
@@ -145,7 +148,20 @@ function reportMemoryUsage() {
 var gWeakrefInfo;
 
 function showResults() {
-  memory.gc();
+  let leaks = getPotentialLeaks();
+  let compartmentURLs = Object.keys(leaks.compartments).filter(function(url) {
+    return !(url in startLeaks.compartments);
+  });
+
+  for (let url of compartmentURLs)
+    console.warn("LEAK", leaks.compartments[url]);
+
+  let windowURLs = Object.keys(leaks.windows).filter(function(url) {
+    return !(url in startLeaks.windows);
+  });
+
+  for (let url of windowURLs)
+    console.warn("LEAK", leaks.windows[url]);
 
   if (gWeakrefInfo) {
     gWeakrefInfo.forEach(
@@ -203,7 +219,126 @@ function cleanup() {
     console.exception(e);
   };
 
-  require("api-utils/timer").setTimeout(showResults, 1);
+  // For some reason a short delay is needed to allow all compartments to go
+  // away
+  require("api-utils/timer").setTimeout(showResults, 10);
+}
+
+function getPotentialLeaks() {
+  memory.gc();
+
+  // Things we can assume are part of the platform and so aren't leaks
+  let WHITELIST_BASE_URLS = [
+    "chrome://",
+    "resource:///",
+    "resource://app/",
+    "resource://gre/",
+    "resource://gre-resources/",
+    "resource://pdf.js/",
+    "resource://pdf.js.components/",
+    "resource://services-common/",
+    "resource://services-crypto/",
+    "resource://services-sync/"
+  ];
+
+  let ioService = Cc["@mozilla.org/network/io-service;1"].
+                 getService(Ci.nsIIOService);
+  let uri = ioService.newURI("chrome://global/content/", "UTF-8", null);
+  let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
+                  getService(Ci.nsIChromeRegistry);
+  uri = chromeReg.convertChromeURL(uri);
+  let spec = uri.spec;
+  let pos = spec.indexOf("!/");
+  WHITELIST_BASE_URLS.push(spec.substring(0, pos + 2));
+
+  let compartmentRegexp = new RegExp("^explicit/js-non-window/compartments/non-window-global/compartment\\((.+)\\)/");
+  let compartmentDetails = new RegExp("^([^,]+)(?:, (.+?))?(?: \\(from: (.*)\\))?$");
+  let windowRegexp = new RegExp("^explicit/window-objects/top\\((.*)\\)/active");
+  let windowDetails = new RegExp("^(.*), id=.*$");
+
+  function isPossibleLeak(item) {
+    if (!item.location)
+      return false;
+
+    for (let whitelist of WHITELIST_BASE_URLS) {
+      if (item.location.substring(0, whitelist.length) == whitelist)
+        return false;
+    }
+
+    return true;
+  }
+
+  let compartments = {};
+  let windows = {};
+  function logReporter(process, path, kind, units, amount, description) {
+    let matches = compartmentRegexp.exec(path);
+    if (matches) {
+      if (matches[1] in compartments)
+        return;
+
+      let details = compartmentDetails.exec(matches[1]);
+      if (!details) {
+        console.error("Unable to parse compartment detail " + matches[1]);
+        return;
+      }
+ 
+      let item = {
+        path: matches[1],
+        principal: details[1],
+        location: details[2] ? details[2].replace("\\", "/", "g") : undefined,
+        source: details[3] ? details[3].split(" -> ").reverse() : undefined,
+        toString: function() this.location
+      };
+
+      if (!isPossibleLeak(item))
+        return;
+
+      compartments[matches[1]] = item;
+      return;
+    }
+
+    matches = windowRegexp.exec(path);
+    if (matches) {
+      if (matches[1] in windows)
+        return;
+
+      let details = windowDetails.exec(matches[1]);
+      if (!details) {
+        console.error("Unable to parse window detail " + matches[1]);
+        return;
+      }
+
+      let item = {
+        path: matches[1],
+        location: details[1].replace("\\", "/", "g"),
+        source: [details[1].replace("\\", "/", "g")],
+        toString: function() this.location
+      };
+
+      if (!isPossibleLeak(item))
+        return;
+
+      windows[matches[1]] = item;
+    }
+  }
+
+  let mgr = Cc["@mozilla.org/memory-reporter-manager;1"].
+            getService(Ci.nsIMemoryReporterManager);
+
+  let enm = mgr.enumerateReporters();
+  while (enm.hasMoreElements()) {
+    let reporter = enm.getNext().QueryInterface(Ci.nsIMemoryReporter);
+    logReporter(reporter.process, reporter.path, reporter.kind, reporter.units,
+                reporter.amount, reporter.description);
+  }
+
+  let enm = mgr.enumerateMultiReporters();
+  while (enm.hasMoreElements()) {
+    let mr = enm.getNext().QueryInterface(Ci.nsIMemoryMultiReporter);
+    mr.collectReports(logReporter, null);
+  }
+
+  return { compartments: compartments, windows: windows };
 }
 
 function nextIteration(tests) {
@@ -304,6 +439,12 @@ var runTests = exports.runTests = function runTests(options) {
     loader = Loader(module, {
       console: new TestRunnerConsole(new ptc.PlainTextConsole(print), options)
     });
+
+    // Load these before getting initial leak stats as they will still be in
+    // memory when we check later
+    require("api-utils/unit-test");
+    require("api-utils/unit-test-finder");
+    startLeaks = getPotentialLeaks();
 
     nextIteration();
   } catch (e) {

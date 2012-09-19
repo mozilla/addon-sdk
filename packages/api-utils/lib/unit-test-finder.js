@@ -11,6 +11,8 @@ module.metadata = {
 const file = require("./file");
 const memory = require('api-utils/memory');
 const suites = require('@test/options').allTestModules;
+const { Loader } = require('test-harness/loader');
+const { ensure } = require('api-utils/unload');
 
 
 const NOT_TESTS = ['setup', 'teardown'];
@@ -52,14 +54,18 @@ TestFinder.prototype = {
 
     suites.forEach(
       function(suite) {
-        var module = require(suite);
+        // Load each test in its own loader so it can be garbage collected after
+        // completing and tests can't affect each other as much
+        let loader = Loader(module);
+        ensure(loader);
+        var testModule = loader.require(suite);
         if (self.testInProcess)
-          for each (let name in Object.keys(module).sort()) {
+          for each (let name in Object.keys(testModule).sort()) {
             if(NOT_TESTS.indexOf(name) === -1 && filter(suite, name)) {
               tests.push({
-                           setup: module.setup,
-                           teardown: module.teardown,
-                           testFunction: module[name],
+                           setup: testModule.setup,
+                           teardown: testModule.teardown,
+                           testFunction: testModule[name],
                            name: suite + "." + name
                          });
             }
