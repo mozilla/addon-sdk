@@ -19,6 +19,7 @@ const { validateOptions : validate } = require('api-utils/api-utils');
 const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
+const { readURISync } = require('api-utils/url/io');
 const { windowIterator } = require("window-utils");
 const { isBrowser } = require('api-utils/window/utils');
 const { getTabs, getTabContentWindow, getTabForContentWindow,
@@ -66,24 +67,6 @@ const Rules = EventEmitter.resolve({ toString: null }).compose(List, {
     this._emit('remove', rule);
   }.bind(this)),
 });
-
-/**
- * Returns the content of the uri given
- */
-function readURI(uri) {
-  let channel = io.newChannel(uri, null, null);
-
-  let stream = Cc["@mozilla.org/scriptableinputstream;1"].
-                  createInstance(Ci.nsIScriptableInputStream);
-
-  stream.init(channel.open());
-
-  let data = stream.read(stream.available());
-
-  stream.close();
-
-  return data;
-}
 
 /**
  * PageMod constructor (exported below).
@@ -154,7 +137,7 @@ const PageMod = Loader.compose(EventEmitter, {
     let styleRules = "";
 
     if (contentStyleFile)
-      styleRules = [].concat(contentStyleFile).map(readURI).join("");
+      styleRules = [].concat(contentStyleFile).map(readURISync).join("");
 
     if (contentStyle)
       styleRules += [].concat(contentStyle).join("");
