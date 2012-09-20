@@ -4,10 +4,11 @@
 'use strict';
 
 module.metadata = {
-  "stability": "unstable"
+  'stability': 'unstable'
 };
 
 const { Cc, Ci } = require('chrome');
+const array = require('../array');
 
 const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                        getService(Ci.nsIWindowWatcher);
@@ -16,14 +17,11 @@ const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
 const observers = require('api-utils/observer-service');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-const array = require('array');
 
 const BROWSER = 'navigator:browser',
       URI_BROWSER = 'chrome://browser/content/browser.xul',
       NAME = '_blank',
       FEATURES = 'chrome,all,dialog=no';
-
-
 
 function getMostRecentBrowserWindow() {
   return WM.getMostRecentWindow(BROWSER);

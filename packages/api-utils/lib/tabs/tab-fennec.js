@@ -8,14 +8,8 @@ const { Class } = require('heritage');
 const { tabNS } = require('./namespace');
 const { getMostRecentBrowserWindow } = require('../window/utils');
 const { EventTarget } = require('../event/target');
-const {
-  activateTab,
-  getTabTitle,
-  setTabTitle,
-  closeTab,
-  getTabURL,
-  setTabURL
-} = require('./utils');
+const { activateTab, getTabTitle, setTabTitle, closeTab, getTabURL,
+        setTabURL } = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('unload');

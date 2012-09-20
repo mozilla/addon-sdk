@@ -31,8 +31,8 @@ const BrowserWindow = Class({
   // NOTE: Fennec only has one window, which is assumed below
   // TODO: remove assumption below
   // NOTE: tabs requires windows
-  get tabs() require('tabs'),
-  get activeTab() require('tabs').activeTab,
+  get tabs() require('addon-kit/tabs'),
+  get activeTab() require('addon-kit/tabs').activeTab,
   on: method(on),
   removeListener: method(off),
   once: method(once),

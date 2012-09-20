@@ -3,22 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('heritage');
+const { Class } = require('../heritage');
 const { Tab } = require('../tabs/tab');
 const { browserWindows } = require('./fennec');
 const { windowNS } = require('../window/namespace');
 const { tabsNS, tabNS } = require('../tabs/namespace');
-const { openTab,
-        getTabs,
-        getTabForRawTab
-      } = require('../tabs/utils');
+const { openTab, getTabs, getTabForRawTab } = require('../tabs/utils');
 const { Options } = require('../tabs/common');
 const { on, once, off, emit } = require('../event/core');
 const { method } = require('../functional');
 const { EVENTS } = require('../tabs/events');
 const { EventTarget } = require('../event/target');
-const { when: unload } = require('unload');
-const { windowIterator } = require('window-utils');
+const { when: unload } = require('../unload');
+const { windowIterator } = require('../window-utils');
 const { getSelectedTab } = require('../window/utils');
 const { List, listNS } = require('../list/new');
 

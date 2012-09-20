@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('api-utils/heritage');
-const listNS = require('api-utils/namespace').ns();
+const { Class } = require('../heritage');
+const listNS = require('../namespace').ns();
 
 const List = Class({
   /**

@@ -11,14 +11,8 @@ const { Cc, Ci } = require('chrome');
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
 const { when } = require('./unload');
-const {
-  getInnerId,
-  getOuterId,
-  windows,
-  isDocumentLoaded,
-  isBrowser,
-  getMostRecentBrowserWindow
-} = require('./window/utils');
+const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser,
+        getMostRecentBrowserWindow } = require('./window/utils');
 const errors = require('./errors');
 const { deprecateFunction } = require('./deprecate');
 
