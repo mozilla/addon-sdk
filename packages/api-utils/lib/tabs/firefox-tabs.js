@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
+// TODO: BUG 792670 - remove dependency below
 const { browserWindows } = require('addon-kit/windows');
 const { tabs } = require('../windows/tabs-firefox');
 
