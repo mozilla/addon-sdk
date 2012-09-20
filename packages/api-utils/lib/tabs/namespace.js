@@ -3,8 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-module.metadata = {
-  'stability': 'stable'
-};
+let { ns } = require('../namespace');
 
-module.exports = require('api-utils/tabs/tabs');
+exports.tabsNS = ns();
+exports.tabNS = ns();

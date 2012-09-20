@@ -1,21 +1,20 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
+
+const { Trait } = require('../traits');
+const { getWindowTitle } = require('../window/utils');
+const { getMode } = require('../private-browsing/utils');
 
 module.metadata = {
   "stability": "unstable"
 };
 
-const { Trait } = require('../traits'),
-      { getMode } = require('api-utils/private-browsing/utils');
-
 const WindowDom = Trait.compose({
   _window: Trait.required,
   get title() {
-    let window = this._window;
-    return window && window.document ? window.document.title : null
+    return getWindowTitle(this._window);
   },
   close: function close() {
     let window = this._window;

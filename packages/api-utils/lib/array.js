@@ -71,3 +71,11 @@ exports.unique = function unique(array) {
   });
   return value;
 };
+
+exports.flatten = function flatten(array){
+   var flat = [];
+   for (var i = 0, l = array.length; i < l; i++) {
+    flat = flat.concat(Array.isArray(array[i]) ? flatten(array[i]) : array[i]);
+   }
+   return flat;
+};
