@@ -1,21 +1,22 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 module.metadata = {
-  "stability": "deprecated"
+  'stability': 'deprecated'
 };
 
-const {Cc,Ci,Cu} = require("chrome");
+const {Cc,Ci,Cu} = require('chrome');
 var NetUtil = {};
-Cu.import("resource://gre/modules/NetUtil.jsm", NetUtil);
+Cu.import('resource://gre/modules/NetUtil.jsm', NetUtil);
 NetUtil = NetUtil.NetUtil;
-const errors = require("./errors");
-const windowUtils = require("./window-utils");
-const apiUtils = require("./api-utils");
-const collection = require("./collection");
+const errors = require('./errors');
+const windowUtils = require('./window-utils');
+const apiUtils = require('./api-utils');
+const collection = require('./collection');
+const { getMostRecentBrowserWindow } = require('./window/utils');
+const { getSelectedTab } = require('./tabs/utils');
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the
@@ -84,19 +85,18 @@ exports.addTab = function addTab(url, options) {
     }
   });
 
-  var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
-           .getService(Ci.nsIWindowMediator);
-  var win = wm.getMostRecentWindow("navigator:browser");
+  var win = getMostRecentBrowserWindow();
   if (!win || options.inNewWindow) {
     openBrowserWindow(function(e) {
       if(options.isPinned) {
         //get the active tab in the recently created window
         let mainWindow = e.target.defaultView;
-        mainWindow.gBrowser.pinTab(mainWindow.gBrowser.selectedTab);
+        mainWindow.gBrowser.pinTab(getSelectedTab(mainWindow));
       }
       require("./errors").catchAndLog(function(e) options.onLoad(e))(e);
     }, options.url);
-  } else {
+  }
+  else {
     let tab = win.gBrowser.addTab(options.url);
     if (!options.inBackground)
       win.gBrowser.selectedTab = tab;
@@ -267,10 +267,7 @@ exports.whenContentLoaded = function whenContentLoaded(callback) {
 
 Object.defineProperty(exports, 'activeTab', {
   get: function() {
-    const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
-                getService(Ci.nsIWindowMediator);
-    let mainWindow = wm.getMostRecentWindow("navigator:browser");
-    return mainWindow.gBrowser.selectedTab;
+    return getSelectedTab(getMostRecentBrowserWindow());
   }
 });
 
@@ -361,7 +358,7 @@ let TabModule = exports.TabModule = function TabModule(window) {
    */
   this.__defineGetter__("activeTab", function() {
     try {
-      return window ? tabConstructor(window.gBrowser.selectedTab)
+      return window ? tabConstructor(getSelectedTab(window))
                     : tabConstructor(exports.activeTab);
     }
     catch (e) { }

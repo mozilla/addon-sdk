@@ -1,8 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+'use strict'
 
-var array = require("array");
+const array = require("array");
 
 exports.testHas = function(test) {
   var testAry = [1, 2, 3];
@@ -37,4 +38,11 @@ exports.testRemove = function(test) {
   test.assertEqual(array.remove(testAry, 2), true);
   test.assertEqual(testAry.length, 1);
   test.assertEqual(testAry[0], 1);
+};
+
+exports.testFlatten = function(test) {
+  test.assertEqual(array.flatten([1, 2, 3]).length, 3);
+  test.assertEqual(array.flatten([1, [2, 3]]).length, 3);
+  test.assertEqual(array.flatten([1, [2, [3]]]).length, 3);
+  test.assertEqual(array.flatten([[1], [[2, [3]]]]).length, 3);
 };

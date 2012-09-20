@@ -24,6 +24,7 @@ const { Symbiont } = require("api-utils/content");
 const { EventEmitter } = require('api-utils/events');
 const timer = require("api-utils/timer");
 const runtime = require("api-utils/runtime");
+const { getMostRecentBrowserWindow } = require('api-utils/window/utils');
 
 const windowMediator = Cc['@mozilla.org/appshell/window-mediator;1'].
                        getService(Ci.nsIWindowMediator);
@@ -395,7 +396,7 @@ function getWindow(anchor) {
   // If we didn't find the anchor's window (or we have no anchor),
   // return the most recent browser window.
   if (!window)
-    window = windowMediator.getMostRecentWindow("navigator:browser");
+    window = getMostRecentBrowserWindow();
 
   return window;
 }
