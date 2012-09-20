@@ -9,7 +9,6 @@ const { tabNS } = require('./namespace');
 const { EventTarget } = require('../event/target');
 const { activateTab, getTabTitle, setTabTitle, closeTab, getTabURL,
         setTabURL, getOwnerWindow } = require('./utils');
-const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('../unload');
 
@@ -102,6 +101,9 @@ const Tab = Class({
    * @type {Worker}
    */
   attach: function attach(options) {
+    // BUG 792946 https://bugzilla.mozilla.org/show_bug.cgi?id=792946
+    // TODO: fix this circular dependency
+    let { Worker } = require('./worker');
     return Worker(options, tabNS(this).tab.browser.contentWindow);
   },
 

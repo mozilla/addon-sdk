@@ -11,8 +11,6 @@ const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
 const { activateTab, getOwnerWindow, getBrowserForTab, getTabTitle, setTabTitle,
         getTabURL, setTabURL } = require('./utils');
-const { Worker } = require('./worker');
-
 
 // Array of the inner instances of all the wrapped tabs.
 const TABS = [];
@@ -158,6 +156,9 @@ const TabTrait = Trait.compose(EventEmitter, {
    * @type {Worker}
    */
   attach: function attach(options) {
+    // BUG 792946 https://bugzilla.mozilla.org/show_bug.cgi?id=792946
+    // TODO: fix this circular dependency
+    let { Worker } = require('./worker');
     return Worker(options, this._contentWindow);
   },
 

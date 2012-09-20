@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Worker: ContentWorker } = require('../content/worker');
+const ContentWorker = require('../content/worker').Worker;
 
 function Worker(options, window) {
   options.window = window;
