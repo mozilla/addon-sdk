@@ -41,8 +41,6 @@ const Tabs = Class({
 
     // TabClose
     window.BrowserApp.deck.addEventListener(EVENTS.close.dom, onTabClose, false);
-
-    // window.addEventListener('close', tabsUnloader, false);
   },
   get activeTab() {
     return getTabForRawTab(getSelectedTab(tabsNS(this).window));
@@ -91,7 +89,6 @@ function tabsUnloader(event, window) {
   window.BrowserApp.deck.removeEventListener(EVENTS.open.dom, onTabOpen, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.activate.dom, onTabSelect, false);
   window.BrowserApp.deck.removeEventListener(EVENTS.close.dom, onTabClose, false);
-  // window.removeEventListener('close', tabsUnloader, false);
 }
 
 // unload handler
