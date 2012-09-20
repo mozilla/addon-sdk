@@ -8,9 +8,8 @@ module.metadata = {
   'stability': 'unstable'
 };
 
-const { tabNS } = require('./namespace');
 const { defer } = require("../functional");
-const { getWindowHoldingTab } = require('../window/helpers');
+const { windows } = require('../window/utils');
 const { Ci } = require('chrome');
 
 function activateTab(tab, window) {
@@ -56,11 +55,30 @@ function getActiveTab(window) {
 exports.getActiveTab = getActiveTab;
 
 function getOwnerWindow(tab) {
+  // normal case
   if (tab.ownerDocument)
     return tab.ownerDocument.defaultView;
-  return null;
+
+  // try fennec case
+  return getWindowHoldingTab(tab);
 }
 exports.getOwnerWindow = getOwnerWindow;
+
+// fennec
+function getWindowHoldingTab(rawTab) {
+  for each (let window in windows()) {
+    // this function may be called when not using fennec
+    if (!window.BrowserApp)
+      continue;
+
+    for each (let tab in window.BrowserApp.tabs) {
+      if (tab === rawTab)
+        return window;
+    }
+  }
+
+  return null;
+}
 
 function openTab(window, url, options) {
   options = options || {};

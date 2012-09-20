@@ -6,10 +6,9 @@
 const { Cc, Ci } = require('chrome');
 const { Class } = require('../heritage');
 const { tabNS } = require('./namespace');
-const { getMostRecentBrowserWindow } = require('../window/utils');
 const { EventTarget } = require('../event/target');
 const { activateTab, getTabTitle, setTabTitle, closeTab, getTabURL,
-        setTabURL } = require('./utils');
+        setTabURL, getOwnerWindow } = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
 const { when: unload } = require('../unload');
@@ -25,7 +24,7 @@ const Tab = Class({
     EventTarget.prototype.initialize.call(this, options);
     let tabInternals = tabNS(this);
 
-    tabInternals.window = options.window || getMostRecentBrowserWindow();
+    tabInternals.window = options.window || getOwnerWindow(options.tab);
     tabInternals.tab = options.tab;
   },
 

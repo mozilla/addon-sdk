@@ -123,6 +123,8 @@ const BrowserWindowTrait = Trait.compose(
         getWindowDocShell(this._window).addWeakPrivacyTransitionObserver(this._privateBrowsingObserver);
       }
       else {
+        // TODO: remove dependency on addon-kit below
+        // BUG 792644 https://bugzilla.mozilla.org/show_bug.cgi?id=792644
         let pb = require('addon-kit/private-browsing');
         pb.on('start', emitPBChange);
         pb.on('stop', emitPBChange);
