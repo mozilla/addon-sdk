@@ -692,8 +692,13 @@ communicating using <code>port</code></a> for details.
 
 <api name="attach">
 @event
-This event is emitted when a new `WidgetView` object is created using the
-`getView()` function.
+This event is emitted when a browser window is opened and a new `WidgetView`
+object is created. If the widget has a content script, this event is fired
+only when the content script is applied according to the `contentScriptWhen`
+attribute.
+
+@argument {WidgetView}
+The related `WidgetView` object.
 </api>
 
 <api name="click">
