@@ -139,9 +139,18 @@ function onTabOpen(event) {
 
   tabNS(tab).opened = true;
 
+    // TabReady
+  let onReady = tabNS(tab).onReady = onTabReady.bind(tab);
+  browser.addEventListener(EVENTS.ready.dom, onReady, false);
+
   emit(tab, 'open', tab);
   emit(gTabs, 'open', tab);
 };
+
+function onTabReady() {
+  emit(this, 'ready', this);
+  emit(gTabs, 'ready', this);
+}
 
 // TabSelect
 function onTabSelect(event) {
@@ -165,3 +174,13 @@ function onTabClose(event) {
   emit(gTabs, 'close', tab);
   emit(tab, 'close', tab);
 };
+
+unload(function() {
+  for each (let tab in gTabs) {
+    let tabInternals = tabNS(tab);
+    tabInternals.tab.browser.removeEventListener(EVENTS.ready.dom, tabInternals.onReady, false);
+    tabInternals.onReady = null;
+    tabInternals.tab = null;
+    tabInternals.window = null;
+  }
+});

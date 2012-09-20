@@ -27,10 +27,6 @@ const Tab = Class({
 
     tabInternals.window = options.window || getMostRecentBrowserWindow();
     tabInternals.tab = options.tab;
-
-    // TabReady
-    tabInternals.onReady = onTabReady.bind(this);
-    tab.browser.addEventListener(EVENTS.ready.dom, tabInternals.onReady, false);
   },
 
   /**
@@ -135,18 +131,3 @@ const Tab = Class({
   }
 });
 exports.Tab = Tab;
-
-unload(function() {
-  for each (let tab in require('tabs')) {
-    let tabInternals = tabNS(tab);
-    tabInternals.tab.browser.removeEventListener(EVENTS.ready.dom, tabInternals.onReady, false);
-    tabInternals.onReady = null;
-    tabInternals.tab = null;
-    tabInternals.window = null;
-  }
-});
-
-function onTabReady() {
-  emit(this, 'ready', this);
-  emit(require('tabs'), 'ready', this);
-}
