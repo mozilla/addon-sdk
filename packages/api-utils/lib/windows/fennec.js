@@ -12,7 +12,7 @@ const { method } = require('../functional');
 const { WindowTracker } = require('../window-utils');
 const { isBrowser } = require('../window/utils');
 const { EventTarget } = require('../event/target');
-const { List, listNS } = require('../list/new');
+const { List, addListItem } = require('../list/new');
 
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
@@ -66,7 +66,7 @@ function getBrowserWindow(options) {
 
   // we don't have a BrowserWindow yet, so create one
   var window = BrowserWindow(options);
-  listNS(browserWindows).add(window);
+  addListItem(browserWindows, window);
   return window;
 }
 

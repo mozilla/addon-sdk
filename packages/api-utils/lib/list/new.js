@@ -1,5 +1,5 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * License, v. 2.0. If a copy of the MPL was not distributed with that
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
@@ -16,36 +16,8 @@ const List = Class({
   initialize: function List() {
     listNS(this).keyValueMap = [];
 
-    let _add = listNS(this).add = function _add(value) {
-      let list = listNS(this).keyValueMap,
-          index = list.indexOf(value);
-
-      if (-1 === index) {
-        try {
-          this[this.length] = value;
-        }
-        catch (e) {}
-        list.push(value);
-      }
-    }.bind(this);
-
     for (let i = 0, ii = arguments.length; i < ii; i++)
-      _add(arguments[i]);
-
-    let _remove = listNS(this).remove = function _remove(element) {
-      let list = listNS(this).keyValueMap,
-          index = list.indexOf(element);
-
-      if (0 <= index) {
-        list.splice(index, 1);
-        try {
-          for (let length = list.length; index < length; index++)
-            this[index] = list[index];
-          this[list.length] = undefined;
-        }
-        catch(e){}
-      }
-    }.bind(this);
+      addListItem(this, arguments[i]);
   },
   /**
    * Number of elements in this list.
@@ -72,4 +44,35 @@ const List = Class({
   }
 });
 exports.List = List;
+
+function addListItem(that, value) {
+  let list = listNS(that).keyValueMap,
+      index = list.indexOf(value);
+
+  if (-1 === index) {
+    try {
+      that[that.length] = value;
+    }
+    catch (e) {}
+    list.push(value);
+  }
+}
+exports.addListItem = addListItem;
+
+function removeListItem(that, element) {
+  let list = listNS(that).keyValueMap,
+      index = list.indexOf(element);
+
+  if (0 <= index) {
+    list.splice(index, 1);
+    try {
+      for (let length = list.length; index < length; index++)
+        that[index] = list[index];
+      that[list.length] = undefined;
+    }
+    catch(e){}
+  }
+}
+exports.removeListItem = removeListItem;
+
 exports.listNS = listNS;

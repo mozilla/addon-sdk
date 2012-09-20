@@ -16,7 +16,7 @@ const { EVENTS } = require('../tabs/events');
 const { EventTarget } = require('../event/target');
 const { when: unload } = require('../unload');
 const { windowIterator } = require('../window-utils');
-const { List, listNS } = require('../list/new');
+const { List, addListItem, removeListItem } = require('../list/new');
 
 const mainWindow = windowNS(browserWindows.activeWindow).window;
 
@@ -98,12 +98,12 @@ unload(function() {
 });
 
 function addTab(tab) {
-  listNS(gTabs).add(tab);
+  addListItem(gTabs, tab);
   return tab;
 }
 
 function removeTab(tab) {
-  listNS(gTabs).remove(tab);
+  removeListItem(gTabs, tab);
   return tab;
 }
 
