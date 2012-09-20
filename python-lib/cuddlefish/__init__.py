@@ -323,11 +323,12 @@ def parse_args(arguments, global_options, usage, version, parser_groups,
 def test_all(env_root, defaults):
     fail = False
 
-    print >>sys.stderr, "Testing cfx..."
-    sys.stderr.flush()
-    result = test_cfx(env_root, defaults['verbose'])
-    if result.failures or result.errors:
-        fail = True
+    if not defaults['filter']:
+        print >>sys.stderr, "Testing cfx..."
+        sys.stderr.flush()
+        result = test_cfx(env_root, defaults['verbose'])
+        if result.failures or result.errors:
+            fail = True
 
     if not fail or not defaults.get("stopOnError"):
         print >>sys.stderr, "Testing all examples..."
@@ -528,6 +529,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_all(env_root, defaults=options.__dict__)
         return
     elif command == "testcfx":
+        if options.filter:
+            print >>sys.stderr, "The filter option is not valid with the testcfx command"
+            return
         test_cfx(env_root, options.verbose)
         return
     elif command == "docs":
@@ -730,6 +734,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['manifest'] = manifest.get_harness_options_manifest()
     harness_options['allTestModules'] = manifest.get_all_test_modules()
+    if len(harness_options['allTestModules']) == 0 and command == "test":
+        sys.exit(0)
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
