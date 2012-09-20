@@ -19,8 +19,8 @@ const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
 
 const Tab = Class({
   extends: EventTarget,
-  initialize: function initialize(tab) {
-    let options = { tab: tab };
+  initialize: function initialize(options) {
+    options = options.tab ? options : { tab: options };
 
     EventTarget.prototype.initialize.call(this, options);
     let tabInternals = tabNS(this);
