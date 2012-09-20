@@ -8,7 +8,7 @@ const { Tab } = require('../tabs/tab');
 const { browserWindows } = require('./fennec');
 const { windowNS } = require('../window/namespace');
 const { tabsNS, tabNS } = require('../tabs/namespace');
-const { openTab, getTabs, getTabForRawTab } = require('../tabs/utils');
+const { openTab, getTabs } = require('../tabs/utils');
 const { Options } = require('../tabs/common');
 const { on, once, off, emit } = require('../event/core');
 const { method } = require('../functional');
@@ -171,6 +171,14 @@ function onTabClose(event) {
   emit(gTabs, 'close', tab);
   emit(tab, 'close', tab);
 };
+
+function getTabForRawTab(rawTab) {
+  for each (let tab in gTabs) {
+    if (tabNS(tab).tab === rawTab)
+      return tab;
+  }
+  return null;
+}
 
 unload(function() {
   for each (let tab in gTabs) {

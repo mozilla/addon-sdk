@@ -10,6 +10,7 @@ module.metadata = {
 
 const { tabNS } = require('./namespace');
 const { defer } = require("../functional");
+const { getWindowHoldingTab } = require('../window/helpers');
 const { Ci } = require('chrome');
 
 function activateTab(tab, window) {
@@ -85,23 +86,13 @@ function closeTab(tab) {
   if (gBrowser)
     return gBrowser.removeTab(tab);
 
-  let window = tabNS(getTabForRawTab(tab)).window;
+  let window = getWindowHoldingTab(tab);
   // fennec?
   if (window && window.BrowserApp)
     return window.BrowserApp.closeTab(tab);
   return null;
 }
 exports.closeTab = closeTab;
-
-// fennec
-function getTabForRawTab(aRawTab) {
-  for each (let tab in require('tabs')) {
-    if (tabNS(tab).tab === aRawTab)
-      return tab;
-  }
-  return null;
-}
-exports.getTabForRawTab = getTabForRawTab;
 
 function getURI(tab) {
   return tab.linkedBrowser.currentURI.spec;
@@ -136,21 +127,6 @@ function setTabTitle(tab, title) {
   tab.label = String(title);
 }
 exports.setTabTitle = setTabTitle;
-
-function getTabForWindow(win) {
-  let tab = getTabForContentWindow(win);
-  // We were unable to find the related tab!
-  if (!tab)
-    return null;
-
-  let topWindow = getOwnerWindow(tab);
-  return require('api-utils/tabs/tab').Tab({
-    // TODO: api-utils should not depend on addon-kit!
-    window: require("addon-kit/windows").BrowserWindow({ window: topWindow }),
-    tab: tab
-  });
-}
-exports.getTabForWindow = getTabForWindow;
 
 function getTabContentWindow(tab) {
   return getBrowserForTab(tab).contentWindow;

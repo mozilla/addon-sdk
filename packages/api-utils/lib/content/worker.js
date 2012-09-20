@@ -22,7 +22,7 @@ const { merge } = require('../utils/object');
 const xulApp = require("api-utils/xul-app");
 const USE_JS_PROXIES = !xulApp.versionInRange(xulApp.platformVersion,
                                               "17.0a2", "*");
-const { getTabForWindow } = require('../tabs/utils');
+const { getTabForWindow } = require('../tabs/helpers');
 
 /* Trick the linker in order to ensure shipping these files in the XPI.
   require('./content-proxy.js');

@@ -5,7 +5,7 @@
 const tabAPI = require('tabs/tab');
 const tabs = require("addon-kit/tabs"); // From addon-kit
 const windowUtils = require("window-utils");
-const { getTabForWindow } = require('tabs/utils');
+const { getTabForWindow } = require('tabs/helpers');
 
 // The primary test tab
 var primaryTab;
