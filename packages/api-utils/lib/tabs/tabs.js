@@ -4,18 +4,18 @@
 'use strict';
 
 module.metadata = {
-  'stability': 'stable'
+  'stability': 'unstable'
 };
 
-if (require('api-utils/xul-app').is('Firefox')) {
-  module.exports = require('api-utils/windows/firefox');
+if (require('../xul-app').is('Firefox')) {
+  module.exports = require('./firefox-tabs');
 }
-else if (require('api-utils/xul-app').is('Fennec')) {
-  module.exports = require('api-utils/windows/fennec');
+else if (require('../xul-app').is('Fennec')) {
+  module.exports = require('../windows/tabs-fennec').tabs;
 }
 else {
   throw new Error([
-    'The windows module currently supports only Firefox & Fennec. In the future',
+    'The tabs module currently supports only Firefox & Fennec. In the future',
     ' we would like it to support other applications, however.'
   ].join(''));
 }

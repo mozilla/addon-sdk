@@ -10,25 +10,7 @@ module.metadata = {
 
 const { Cc, Ci } = require("chrome");
 const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
-const { defer } = require("api-utils/promise");
-
-function readURI(uri) {
-  let { promise, resolve, reject } = defer();
-
-  let request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
-                createInstance(Ci.nsIXMLHttpRequest);
-  request.open('GET', uri, true);
-  request.overrideMimeType('text/plain');
-  request.onload = function () {
-    resolve(request.responseText);
-  }
-  request.onerror = function () {
-    reject("Failed to read: " + uri + " (status: " + request.status + ")");
-  }
-  request.send();
-
-  return promise;
-}
+const { readURI } = require("api-utils/url/io");
 
 function parseJsonURI(uri) {
   return readURI(uri).
