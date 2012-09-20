@@ -25,9 +25,7 @@ function activateTab(tab, window) {
   }
   return null;
 }
-// Please note: That this function is called asynchronous since in E10S that
-// will be the case.
-exports.activateTab = defer(activateTab);
+exports.activateTab = activateTab;
 
 function getTabBrowser(window) {
   return window.gBrowser;
