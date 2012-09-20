@@ -15,7 +15,8 @@ const errors = require('./errors');
 const windowUtils = require('./window-utils');
 const apiUtils = require('./api-utils');
 const collection = require('./collection');
-const { getMostRecentBrowserWindow, getSelectedTab } = require('./window/utils');
+const { getMostRecentBrowserWindow } = require('./window/utils');
+const { getSelectedTab } = require('./tabs/utils');
 
 // TODO: The hard-coding of app-specific info here isn't very nice;
 // ideally such app-specific info should be more decoupled, and the

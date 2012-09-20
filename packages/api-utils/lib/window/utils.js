@@ -28,15 +28,6 @@ function getMostRecentBrowserWindow() {
 }
 exports.getMostRecentBrowserWindow = getMostRecentBrowserWindow;
 
-function getSelectedTab(window) {
-  if (window.BrowserApp) // fennec?
-    return window.BrowserApp.selectedTab;
-  if (window.gBrowser)
-    return window.gBrowser.selectedTab;
-  return null;
-}
-exports.getSelectedTab = getSelectedTab;
-
 /**
  * Returns the ID of the window's current inner window.
  */

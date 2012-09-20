@@ -8,7 +8,7 @@ const { Tab } = require('../tabs/tab');
 const { browserWindows } = require('./fennec');
 const { windowNS } = require('../window/namespace');
 const { tabsNS, tabNS } = require('../tabs/namespace');
-const { openTab, getTabs } = require('../tabs/utils');
+const { openTab, getTabs, getSelectedTab } = require('../tabs/utils');
 const { Options } = require('../tabs/common');
 const { on, once, off, emit } = require('../event/core');
 const { method } = require('../functional');
@@ -16,7 +16,6 @@ const { EVENTS } = require('../tabs/events');
 const { EventTarget } = require('../event/target');
 const { when: unload } = require('../unload');
 const { windowIterator } = require('../window-utils');
-const { getSelectedTab } = require('../window/utils');
 const { List, listNS } = require('../list/new');
 
 const mainWindow = windowNS(browserWindows.activeWindow).window;

@@ -186,3 +186,12 @@ function setTabURL(tab, url) {
 // seems to be either ignored or overridden by internal listener, there for
 // location change is enqueued for the next turn of event loop.
 exports.setTabURL = defer(setTabURL);
+
+function getSelectedTab(window) {
+  if (window.BrowserApp) // fennec?
+    return window.BrowserApp.selectedTab;
+  if (window.gBrowser)
+    return window.gBrowser.selectedTab;
+  return null;
+}
+exports.getSelectedTab = getSelectedTab;
