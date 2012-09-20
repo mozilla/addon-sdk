@@ -57,7 +57,6 @@ TestFinder.prototype = {
         // Load each test in its own loader so it can be garbage collected after
         // completing and tests can't affect each other as much
         let loader = Loader(module);
-        ensure(loader);
         var testModule = loader.require(suite);
         if (self.testInProcess)
           for each (let name in Object.keys(testModule).sort()) {

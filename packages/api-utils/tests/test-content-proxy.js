@@ -76,8 +76,7 @@ function createWorker(test, xrayWindow, contentScript, done) {
         }
       },
       contentScript
-    ],
-    onDetach: function() loader.unload()
+    ]
   });
 
   worker.port.on("done", done);

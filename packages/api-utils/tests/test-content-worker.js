@@ -390,7 +390,6 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
         test.assertEqual(JSON.stringify(calls),
                          JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
                          "console has been called successfully, in the expected order");
-        loader.unload();
         done();
       }
     });
