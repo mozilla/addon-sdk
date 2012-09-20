@@ -7,15 +7,4 @@ module.metadata = {
   'stability': 'stable'
 };
 
-if (require('api-utils/xul-app').is('Firefox')) {
-  module.exports = require('api-utils/tabs/firefox-tabs');
-}
-else if (require('api-utils/xul-app').is('Fennec')) {
-  module.exports = require('api-utils/windows/tabs-fennec').tabs;
-}
-else {
-  throw new Error([
-    'The tabs module currently supports only Firefox & Fennec. In the future',
-    ' we would like it to support other applications, however.'
-  ].join(''));
-}
+module.exports = require('api-utils/tabs/tabs');

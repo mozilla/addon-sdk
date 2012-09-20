@@ -8,7 +8,7 @@ module.metadata = {
   'stability': 'unstable'
 };
 
-const { tabNS, tabsNS } = require('./namespace');
+const { tabNS } = require('./namespace');
 const { defer } = require("../functional");
 const { Ci } = require('chrome');
 

@@ -9,16 +9,9 @@ const { defer } = require("../functional");
 const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
-const {
-  activateTab,
-  getOwnerWindow,
-  getBrowserForTab,
-  getTabTitle,
-  setTabTitle,
-  getTabURL,
-  setTabURL
-} = require('./utils');
-const { Worker } = require('api-utils/tabs/worker');
+const { activateTab, getOwnerWindow, getBrowserForTab, getTabTitle, setTabTitle,
+        getTabURL, setTabURL } = require('./utils');
+const { Worker } = require('./worker');
 
 
 // Array of the inner instances of all the wrapped tabs.

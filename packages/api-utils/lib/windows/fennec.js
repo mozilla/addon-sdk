@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Class } = require('heritage');
+const { Class } = require('../heritage');
 const { BrowserWindow } = require('../window/browser');
 const windowUtils = require('../window-utils');
 const { windowNS } = require('../window/namespace');

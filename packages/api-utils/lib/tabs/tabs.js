@@ -8,10 +8,10 @@ module.metadata = {
 };
 
 if (require('../xul-app').is('Firefox')) {
-  module.exports = require('./tab-firefox');
+  module.exports = require('./firefox-tabs');
 }
 else if (require('../xul-app').is('Fennec')) {
-  module.exports = require('./tab-fennec');
+  module.exports = require('../windows/tabs-fennec').tabs;
 }
 else {
   throw new Error([

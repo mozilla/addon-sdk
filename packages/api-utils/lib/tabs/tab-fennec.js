@@ -4,7 +4,7 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { Class } = require('heritage');
+const { Class } = require('../heritage');
 const { tabNS } = require('./namespace');
 const { getMostRecentBrowserWindow } = require('../window/utils');
 const { EventTarget } = require('../event/target');
@@ -12,8 +12,7 @@ const { activateTab, getTabTitle, setTabTitle, closeTab, getTabURL,
         setTabURL } = require('./utils');
 const { Worker } = require('./worker');
 const { emit } = require('../event/core');
-const { when: unload } = require('unload');
-const { getThumbnailURIForWindow } = require("../utils/thumbnail");
+const { when: unload } = require('../unload');
 
 const { EVENTS } = require('./events');
 const ERR_FENNEC_MSG = 'This method is not yet supported by Fennec';
@@ -68,7 +67,6 @@ const Tab = Class({
 
     // return 80x45 blank default
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAtCAYAAAA5reyyAAAAJElEQVRoge3BAQEAAACCIP+vbkhAAQAAAAAAAAAAAAAAAADXBjhtAAGQ0AF/AAAAAElFTkSuQmCC';
-    //return getThumbnailURIForWindow(tabNS(this).tab.browser.contentWindow);
   },
 
   /**
