@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { List, listNS } = require('api-utils/list/new');
+const { List, addListItem, removeListItem } = require('api-utils/list/new');
 const { Class } = require('api-utils/heritage');
 
 exports.testList = function(test) {
   let list = List();
-  listNS(list).add(1);
+  addListItem(list, 1);
 
   for (let key in list) {
     test.assertEqual(key, 0, 'key is correct');
@@ -21,7 +21,7 @@ exports.testList = function(test) {
     test.assertEqual(++count, 1, 'count is correct');
   }
 
-  listNS(list).remove(1);
+  removeListItem(list, 1);
   test.assertEqual(list.length, 0, 'remove worked');
 };
 
@@ -37,7 +37,7 @@ exports.testImplementsList = function(test) {
   for each (let ele in list2) {
     test.assertEqual(ele, count++, 'ele is correct');
   }
-  listNS(list2).add(3);
+  addListItem(list2, 3);
   test.assertEqual(list2.length, 4, '3 was added');
   test.assertEqual(list2[list2.length-1], 3, '3 was added');
 }
