@@ -7,8 +7,8 @@
 const { readURI, readURISync } = require("api-utils/url/io");
 const { data } = require("self");
 
-const utf8text = "Hello, ゼロ!\n";
-const latin1text = "Hello, ã‚¼ãƒ­!\n";
+const utf8text = "Hello, ゼロ!";
+const latin1text = "Hello, ã‚¼ãƒ­!";
 
 const dataURIutf8 = "data:text/plain;charset=utf-8," + encodeURIComponent(utf8text);
 const dataURIlatin1 = "data:text/plain;charset=ISO-8859-1," + escape(latin1text);
