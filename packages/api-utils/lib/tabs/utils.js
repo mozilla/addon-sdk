@@ -92,7 +92,11 @@ function openTab(window, url, options) {
 exports.openTab = openTab;
 
 function isTabOpen(tab) {
-  return !!tab.linkedBrowser;
+  // normal case?
+  if (!!tab.linkedBrowser)
+    return true;
+  // try fennec
+  return !!getWindowHoldingTab(tab);
 }
 exports.isTabOpen = isTabOpen;
 

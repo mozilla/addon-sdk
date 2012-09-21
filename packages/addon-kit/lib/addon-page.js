@@ -1,11 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
 module.metadata = {
-  "stability": "experimental"
+  'stability': 'experimental'
 };
 
 const { WindowTracker } = require('api-utils/window-utils');
@@ -18,18 +17,22 @@ const addonURL = data.url('index.html');
 
 WindowTracker({
   onTrack: function onTrack(window) {
-    if (isBrowser(window))
+    if (isBrowser(window) && window.XULBrowserWindow)
       add(window.XULBrowserWindow.inContentWhitelist, addonURL);
   },
   onUntrack: function onUntrack(window) {
-    if (isBrowser(window))
-      getTabs(window).
-        filter(function(tab) { return getURI(tab) === addonURL; }).
-        forEach(function(tab) {
-          // Note: `onUntrack` will be called for all windows on add-on unloads,
-          // so we want to clean them up from these URLs.
-          remove(window.XULBrowserWindow.inContentWhitelist, addonURL);
-          closeTab(tab);
-        });
+    if (isBrowser(window) && window.XULBrowserWindow)
+      getTabs(window).filter(tabFilter).forEach(untrackTab.bind(null, window));
   }
 });
+
+function tabFilter(tab) {
+  return getURI(tab) === addonURL;
+}
+
+function untrackTab(window, tab) {
+  // Note: `onUntrack` will be called for all windows on add-on unloads,
+  // so we want to clean them up from these URLs.
+  remove(window.XULBrowserWindow.inContentWhitelist, addonURL);
+  closeTab(tab);
+}

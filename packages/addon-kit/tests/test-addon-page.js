@@ -8,11 +8,16 @@ const { isTabOpen, activateTab, openTab, closeTab, getURI } = require('api-utils
 const windows = require('api-utils/window-utils');
 const { Loader } = require('test-harness/loader');
 const { setTimeout } = require('api-utils/timer');
+const { is } = require('api-utils/xul-app');
+const tabs = require('tabs');
 
 let uri = require('self').data.url('index.html');
 
-function isChromeVisible(window)
-  window.document.documentElement.getAttribute('disablechrome') !== 'true'
+function isChromeVisible(window) {
+	let x = window.document.documentElement.getAttribute('disablechrome')
+	console.log('x is '+x)
+  return x !== 'true';
+}
 
 exports['test that add-on page has no chrome'] = function(assert, done) {
   let loader = Loader(module);
@@ -28,7 +33,7 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
   setTimeout(function() {
     activateTab(tab);
 
-    assert.ok(!isChromeVisible(window), 'chrome is not visible for addon page');
+    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
 
     closeTab(tab);
     assert.ok(isChromeVisible(window), 'chrome is visible again');
@@ -41,20 +46,19 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
   let loader = Loader(module);
   loader.require('addon-kit/addon-page');
 
-  let tab = openTab(windows.activeBrowserWindow, uri);
-
   // Wait for addon page document to be loaded
-  tab.addEventListener("load", function listener() {
+  tabs.once("ready", function listener(tab) {
     // Ignore loading of about:blank document
-    if (getURI(tab) != uri)
+    if (tab.url != uri)
       return;
-    tab.removeEventListener("load", listener, false);
 
     loader.unload();
     assert.ok(!isTabOpen(tab), 'add-on page tabs are closed on unload');
 
     done();
   }, false);
+
+  tabs.open(uri);
 };
 
 
