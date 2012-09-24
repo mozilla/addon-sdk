@@ -2,6 +2,16 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<div class="experimental">
+<br>
+
+**This module is currently experimental.**
+
+**Based on the feedback we get from users, we expect to change it,
+and may need to make incompatible changes in future releases.**
+
+</div>
+
 The `indexed-db` module exposes the
 [IndexedDB API](https://developer.mozilla.org/en-US/docs/IndexedDB)
 to add-ons.
@@ -35,9 +45,14 @@ So you can use the `indexed-db` module to access the same API:
 This module also exports all the other objects that implement
 the IndexedDB API, listed below under
 [API Reference](packages/addon-kit/indexed-db.html#API Reference).
-With the one exception of [database naming](packages/addon-kit/indexed-db.html#Database Naming),
-`indexed-db`'s API is identical to the DOM IndexedDB API, so we haven't
-repeated its documentation here, but refer you to the
+
+<span class="aside">
+The only difference is that databases created using this API are
+[prepended with the add-on ID](packages/addon-kit/indexed-db.html#Database Naming).
+</span>
+
+The API exposed by `indexed-db` is almost identical to the DOM IndexedDB API,
+so we haven't repeated its documentation here, but refer you to the
 [IndexedDB API documentation](https://developer.mozilla.org/en-US/docs/IndexedDB)
 for all the details.
 
@@ -68,12 +83,9 @@ info: success
 info: my-addon@me.org:MyDatabase
 </pre>
 
-The reason we do this is that databases created using `window.indexedDB` are
-local to that window, so are essentially private to a page.
-But the windowless implementation used by the `indexed-db` module
-is associated with the general chrome, so databases created by
-different add-ons would be visible to each other, and naming clashes
-would occur.
+We do this to avoid possible naming conflicts between different add-ons.
+This may change in future, depending on the resolution of
+[bug 786688](https://bugzilla.mozilla.org/show_bug.cgi?id=786688).
 
 <api name="indexedDB">
 @property {object}
