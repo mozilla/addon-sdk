@@ -1,25 +1,24 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-"use strict";
+'use strict';
 
 module.metadata = {
-  "stability": "deprecated"
+  'stability': 'deprecated'
 };
 
-const { Cc, Ci } = require("chrome");
+const { Cc, Ci } = require('chrome');
 const { EventEmitter } = require('./events');
 const { Trait } = require('./traits');
 const { when } = require('./unload');
-const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser } =
-  require('./window/utils');
-const errors = require("./errors");
-const { deprecateFunction } = require("./deprecate");
+const { getInnerId, getOuterId, windows, isDocumentLoaded, isBrowser,
+        getMostRecentBrowserWindow } = require('./window/utils');
+const errors = require('./errors');
+const { deprecateFunction } = require('./deprecate');
 
-const windowWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                        getService(Ci.nsIWindowWatcher);
-const appShellService = Cc["@mozilla.org/appshell/appShellService;1"].
+const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 
 /**
@@ -65,7 +64,7 @@ function WindowTracker(delegate) {
     this._regWindow(window);
   windowWatcher.registerNotification(this);
 
-  require("./unload").ensure(this);
+  require('./unload').ensure(this);
 
   return this;
 };
@@ -73,7 +72,7 @@ function WindowTracker(delegate) {
 WindowTracker.prototype = {
   _regLoadingWindow: function _regLoadingWindow(window) {
     this._loadingWindows.push(window);
-    window.addEventListener("load", this, true);
+    window.addEventListener('load', this, true);
   },
 
   _unregLoadingWindow: function _unregLoadingWindow(window) {
@@ -81,12 +80,12 @@ WindowTracker.prototype = {
 
     if (index != -1) {
       this._loadingWindows.splice(index, 1);
-      window.removeEventListener("load", this, true);
+      window.removeEventListener('load', this, true);
     }
   },
 
   _regWindow: function _regWindow(window) {
-    if (window.document.readyState == "complete") {
+    if (window.document.readyState == 'complete') {
       this._unregLoadingWindow(window);
       this._delegate.onTrack(window);
     } else
@@ -94,7 +93,7 @@ WindowTracker.prototype = {
   },
 
   _unregWindow: function _unregWindow(window) {
-    if (window.document.readyState == "complete") {
+    if (window.document.readyState == 'complete') {
       if (this._delegate.onUntrack)
         this._delegate.onUntrack(window);
     } else {
@@ -109,7 +108,7 @@ WindowTracker.prototype = {
   },
 
   handleEvent: errors.catchAndLog(function handleEvent(event) {
-    if (event.type == "load" && event.target) {
+    if (event.type == 'load' && event.target) {
       var window = event.target.defaultView;
       if (window)
         this._regWindow(window);
@@ -118,7 +117,7 @@ WindowTracker.prototype = {
 
   observe: errors.catchAndLog(function observe(subject, topic, data) {
     var window = subject.QueryInterface(Ci.nsIDOMWindow);
-    if (topic == "domwindowopened")
+    if (topic == 'domwindowopened')
       this._regWindow(window);
     else
       this._unregWindow(window);
@@ -143,16 +142,16 @@ var gDocsToClose = [];
 function onDocUnload(event) {
   var index = gDocsToClose.indexOf(event.target);
   if (index == -1)
-    throw new Error("internal error: unloading document not found");
+    throw new Error('internal error: unloading document not found');
   var document = gDocsToClose.splice(index, 1)[0];
   // Just in case, let's remove the event listener too.
-  document.defaultView.removeEventListener("unload", onDocUnload, false);
+  document.defaultView.removeEventListener('unload', onDocUnload, false);
 }
 
-onDocUnload = require("./errors").catchAndLog(onDocUnload);
+onDocUnload = require('./errors').catchAndLog(onDocUnload);
 
 exports.closeOnUnload = function closeOnUnload(window) {
-  window.addEventListener("unload", onDocUnload, false);
+  window.addEventListener('unload', onDocUnload, false);
   gDocsToClose.push(window.document);
 };
 
@@ -160,7 +159,7 @@ Object.defineProperties(exports, {
   activeWindow: {
     enumerable: true,
     get: function() {
-      return Cc["@mozilla.org/appshell/window-mediator;1"]
+      return Cc['@mozilla.org/appshell/window-mediator;1']
         .getService(Ci.nsIWindowMediator)
         .getMostRecentWindow(null);
     },
@@ -170,11 +169,7 @@ Object.defineProperties(exports, {
   },
   activeBrowserWindow: {
     enumerable: true,
-    get: function() {
-      return Cc["@mozilla.org/appshell/window-mediator;1"]
-        .getService(Ci.nsIWindowMediator)
-        .getMostRecentWindow("navigator:browser");
-    }
+    get: getMostRecentBrowserWindow
   }
 });
 

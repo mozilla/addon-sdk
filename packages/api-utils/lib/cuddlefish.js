@@ -3,25 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-;(function(id, factory) { // Module boilerplate :(
-  if (typeof(define) === 'function') { // RequireJS
-    define(factory);
-  } else if (typeof(require) === 'function') { // CommonJS
-    factory.call(this, require, exports, module);
-  } else if (~String(this).indexOf('BackstagePass')) { // JSM
-    factory(function require(uri) {
-      var imports = {};
-      this['Components'].utils.import(uri, imports);
-      return imports;
-    }, this, { uri: __URI__, id: id });
-    this.EXPORTED_SYMBOLS = Object.keys(this);
-  } else {  // Browser or alike
-    var globals = this
-    factory(function require(id) {
-      return globals[id];
-    }, (globals[id] = {}), { uri: document.location.href + '#' + id, id: id });
-  }
-}).call(this, 'loader', function(require, exports, module) {
 
 'use strict';
 
@@ -29,31 +10,27 @@ module.metadata = {
   "stability": "unstable"
 };
 
+// This module is manually loaded by bootstrap.js in a sandbox and immediatly
+// put in module cache so that it is never loaded in any other way.
+
 /* Workarounds to include dependencies in the manifest
 require('chrome')                 // Otherwise CFX will complain about Components
 require('api-utils/loader')       // Otherwise CFX will stip out loader.js
 require('api-utils/addon/runner') // Otherwise CFX will stip out addon/runner.js
 */
 
-// Note require here in this context is just an alias for Cu.import which is
-// used since regular require is not available at loader bootstrap.
+const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
+
+// `loadSandbox` is exposed by bootstrap.js
 const loaderURI = module.uri.replace(/\/[^\/]*$/, '/loader.js');
-const loaderModule = require(loaderURI);
-const { Loader: BaseLoader, Require, Sandbox, resolveURI, evaluate, load,
-        Module, unload, override, descriptor, main } = loaderModule;
+// We need to keep a reference to the sandbox in order to unload it in
+// bootstrap.js
+const loaderSandbox = loadSandbox(loaderURI);
+const loaderModule = loaderSandbox.exports;
 
-exports.resolveURI = resolveURI;
-exports.Require = Require;
-exports.Sandbox = Sandbox;
-exports.evaluate = evaluate;
-exports.load = load;
-exports.Module = Module;
-exports.unload = unload;
-exports.override = override;
-exports.descriptor = descriptor;
-exports.main = main;
+const { override } = loaderModule;
 
-function Loader(options) {
+function CuddlefishLoader(options) {
   let { manifest } = options;
 
   options = override(options, {
@@ -89,9 +66,9 @@ function Loader(options) {
     }
   });
 
-  return BaseLoader(options);
+  return loaderModule.Loader(options);
 }
-Loader.prototype = null;
-exports.Loader = Object.freeze(Loader);
 
+exports = override(loaderModule, {
+  Loader: CuddlefishLoader
 });

@@ -1,27 +1,20 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"use strict";
+'use strict';
 
 module.metadata = {
   "stability": "unstable"
 };
 
 const { Cc, Ci } = require('chrome'),
-      { setTimeout } = require("../timer"),
+      { setTimeout } = require('../timer'),
       { Trait } = require('../traits'),
+      { openDialog } = require('../window/utils'),
 
-      WM = Cc['@mozilla.org/appshell/window-mediator;1'].
-        getService(Ci.nsIWindowMediator),
-
-      URI_BROWSER = 'chrome://browser/content/browser.xul',
-      NAME = '_blank',
-      FEATURES = 'chrome,all,dialog=no',
-      PARAMS = [ URI_BROWSER, NAME, FEATURES ],
       ON_LOAD = 'load',
       ON_UNLOAD = 'unload',
-      STATE_LOADED = 'complete',
-      BROWSER = 'navigator:browser';
+      STATE_LOADED = 'complete';
 
 /**
  * Trait provides private `_window` property and requires `_onLoad` property
@@ -47,10 +40,9 @@ const WindowLoader = Trait.compose({
   _onUnload: Trait.required,
   _load: function _load() {
     if (this.__window) return;
-    let params = PARAMS.slice()
-    params.push(this._tabOptions.map(function(options) options.url).join("|"));
-    let browser =  WM.getMostRecentWindow(BROWSER);
-    this._window = browser.openDialog.apply(browser, params);
+    this._window = openDialog({
+      args: this._tabOptions.map(function(options) options.url).join("|")
+    });
   },
   /**
    * Private window who's load event is being tracked. Once window is loaded

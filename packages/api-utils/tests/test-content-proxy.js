@@ -819,8 +819,17 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
   let serverPort = 8099;
   let server = require("httpd").startServerAsync(serverPort);
   server.registerPathHandler("/", function handle(request, response) {
-    // Returns an empty webpage
-    response.write("<meta charset='utf-8'>");
+    // Returns the webpage that receive a message and forward it back to its
+    // parent document by appending ' world'.
+    let content = "<html><head><meta charset='utf-8'></head>\n";
+    content += "<script>\n";
+    content += "  window.addEventListener('message', function (event) {\n";
+    content += "    parent.postMessage(event.data + ' world', '*');\n";
+    content += "  }, true);\n";
+    content += "</script>\n";
+    content += "<body></body>\n";
+    content += "</html>\n";
+    response.write(content);
   });
 
   let worker = helper.createWorker(
@@ -832,14 +841,17 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
         iframe.addEventListener("load", function onload() {
           iframe.removeEventListener("load", onload, true);
           try {
-            // Try accessing iframe's content that is made of COW wrappers
-            // Take care of debug builds that add object address after `Window`
-            assert(String(iframe.contentWindow).match(/\[object Window.*\]/),
-                   "COW works properly");
+            // Try to communicate with iframe's content
+            window.addEventListener("message", function onmessage(event) {
+              window.removeEventListener("message", onmessage, true);
+
+              assert(event.data == "hello world", "COW works properly");
+              self.port.emit("end");
+            }, true);
+            iframe.contentWindow.postMessage("hello", "*");
           } catch(e) {
             assert(false, "COW fails : "+e.message);
           }
-          self.port.emit("end");
         }, true);
         iframe.setAttribute("src", url);
         document.body.appendChild(iframe);

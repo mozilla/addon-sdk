@@ -181,10 +181,18 @@ class SmallXPI(unittest.TestCase):
                      ("three-deps", "three-c", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "sub", "foo.js")
                      ]]
-        expected.append(os.path.join(api_utils_dir, "self.js"))
+
+        add_api_utils = lambda path: os.path.join(api_utils_dir, path)
+        expected.extend([add_api_utils(module) for module in [
+            "self.js",
+            "promise.js",
+            os.path.join("url", "io.js"),
+            os.path.join("utils", "object.js")
+            ]])
 
         missing = set(expected) - set(used_files)
         extra = set(used_files) - set(expected)
+
         self.failUnlessEqual(list(missing), [])
         self.failUnlessEqual(list(extra), [])
         used_deps = m.get_used_packages()
@@ -215,6 +223,11 @@ class SmallXPI(unittest.TestCase):
                     "resources/api-utils/data/",
                     "resources/api-utils/lib/",
                     "resources/api-utils/lib/self.js",
+                    "resources/api-utils/lib/utils/",
+                    "resources/api-utils/lib/url/",
+                    "resources/api-utils/lib/promise.js",
+                    "resources/api-utils/lib/utils/object.js",
+                    "resources/api-utils/lib/url/io.js",
                     "resources/three/",
                     "resources/three/lib/",
                     "resources/three/lib/main.js",

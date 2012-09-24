@@ -1,20 +1,32 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
 module.metadata = {
-  "stability": "unstable"
+  'stability': 'unstable'
 };
 
 const { Cc, Ci } = require('chrome');
+const array = require('../array');
 
 const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                        getService(Ci.nsIWindowWatcher);
 const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 const observers = require('api-utils/observer-service');
+const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
+           getService(Ci.nsIWindowMediator);
+
+const BROWSER = 'navigator:browser',
+      URI_BROWSER = 'chrome://browser/content/browser.xul',
+      NAME = '_blank',
+      FEATURES = 'chrome,all,dialog=no';
+
+function getMostRecentBrowserWindow() {
+  return WM.getMostRecentWindow(BROWSER);
+}
+exports.getMostRecentBrowserWindow = getMostRecentBrowserWindow;
 
 /**
  * Returns the ID of the window's current inner window.
@@ -118,9 +130,31 @@ function open(uri, options) {
                uri,
                options.name || null,
                serializeFeatures(options.features || {}),
-               null);
+               options.args || null);
 }
 exports.open = open;
+
+/**
+ * Opens a top level window and returns it's `nsIDOMWindow` representation.
+ * Same as `open` but with more features
+ * @param {Object} options
+ * 
+ */
+function openDialog(options) {
+  options = options || {};
+
+  let browser = WM.getMostRecentWindow(BROWSER);
+  return browser.openDialog.apply(
+      browser, 
+      array.flatten([
+        options.url || URI_BROWSER,
+        options.name || '_blank',
+        options.features || 'chrome,all,dialog=no',
+        options.args || null
+      ])
+  );
+}
+exports.openDialog = openDialog;
 
 /**
  * Returns an array of all currently opened windows.
@@ -149,7 +183,11 @@ function isDocumentLoaded(window) {
 exports.isDocumentLoaded = isDocumentLoaded;
 
 function isBrowser(window) {
-  return window.document.documentElement.getAttribute("windowtype") ===
-         "navigator:browser";
+  return window.document.documentElement.getAttribute("windowtype") === BROWSER;
 };
 exports.isBrowser = isBrowser;
+
+function getWindowTitle(window) {
+  return window && window.document ? window.document.title : null;
+}
+exports.getWindowTitle = getWindowTitle;
