@@ -201,11 +201,14 @@ const ContentWorker = Object.freeze({
       frozenTimers.forEach(registerTimer);
     });
     pipe.on("pagehide", function onPageHide() {
-      // Delay timeouts freezing, as some other pagehide listeners
-      // may register some that won't be frozen otherwise! (this particular
-      // pagehide listener will be called first)
+      frozenTimers = [];
+      for (let id in _timers)
+        frozenTimers.push(_timers[id]);
+      disableAllTimers();
+      // Some other pagehide listeners may register some timers that won't be
+      // frozen as this particular pagehide listener is called first.
+      // So freeze these timers on next cycle.
       chromeSetTimeout(function () {
-        frozenTimers = [];
         for (let id in _timers)
           frozenTimers.push(_timers[id]);
         disableAllTimers();
@@ -217,6 +220,7 @@ const ContentWorker = Object.freeze({
     pipe.on("detach", function clearTimeouts() {
       disableAllTimers();
       _timers = {};
+      frozenTimers = [];
     });
   },
 
