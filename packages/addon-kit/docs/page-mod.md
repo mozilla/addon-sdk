@@ -7,93 +7,59 @@
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com] -->
 
-Overview
---------
-The page-mod module enables add-on developers to execute scripts in the context
-of specific web pages. Most obviously you could use page-mod to dynamically
-modify the content of certain pages.
+The `page-mod` module enables you to run scripts in the context of
+specific web pages. To use it, you specify:
 
-The module exports a constructor function `PageMod` which creates a new page
-modification (or "mod" for short).
+* one or more scripts to attach. The SDK calls these scripts "content scripts".
+* a pattern that a page's URL must match, in order for the script(s)
+to be attached to that page.
 
-A page mod does not modify its pages until those pages are loaded or reloaded.
-In other words, if your add-on is loaded while the user's browser is open, the
-user will have to reload any open pages that match the mod for the mod to affect
-them.
-
-To stop a page mod from making any more modifications, call its `destroy`
-method.
-
-Like all modules that interact with web content, page-mod uses content
-scripts that execute in the content process and defines a messaging API to
-communicate between the content scripts and the main add-on script. For more
-details on content scripting see the tutorial on [interacting with web
-content](dev-guide/guides/content-scripts/index.html).
-
-To create a PageMod the add-on developer supplies:
-
-* a set of rules to select the desired subset of web pages based on their URL.
-Each rule is specified using the
-[match-pattern](packages/api-utils/match-pattern.html) syntax.
-
-* a set of content scripts to execute in the context of the desired pages.
-
-* a value for the onAttach option: this value is a function which will be
-called when a page is loaded that matches the ruleset. This is used to set up a
-communication channel between the add-on code and the content script.
-
-All these parameters are optional except for the ruleset, which must include
-at least one rule.
-
-The following add-on displays an alert whenever a page matching the ruleset is
-loaded:
+For example, the following add-on displays an alert whenever the user
+visits any page hosted at "mozilla.org":
 
     var pageMod = require("page-mod");
+
     pageMod.PageMod({
-      include: "*.org",
+      include: "*.mozilla.org",
       contentScript: 'window.alert("Page matches ruleset");'
     });
 
-If you specify a value of "ready" or "end" for `contentScriptWhen`,
-as opposed to "start",
-then the content script can interact with the DOM itself:
+You can modify the document in your script:
 
     var pageMod = require("page-mod");
+
     pageMod.PageMod({
-      include: "*.org",
-      contentScriptWhen: 'end',
+      include: "*.mozilla.org",
       contentScript: 'document.body.innerHTML = ' +
                      ' "<h1>Page matches ruleset</h1>";'
     });
 
-<div class="warning">
-  Starting with SDK 1.11, page-mod only attaches scripts to documents loaded
-  in tabs. It will not attach scripts to add-on panels, page-workers, widgets,
-  or  Firefox hidden windows.
-</div>
+You can supply the content script(s) in one of two ways:
 
-### Using `contentScriptFile` ###
+* as a string literal, or an array of string literals, assigned to the `contentScript` option, as above
+* as separate files supplied in your add-on's "data" directory.
+In this case files are specified by a URL typically constructed using the
+`url()` method of the
+[`self` module's `data` object](packages/addon-kit/self.html#data):
 
-Most of the examples in this page define content scripts as strings,
-and use the `contentScript` option to assign them to page mods.
-
-Alternatively, you can create content scripts in separate files
-under your add-on's `data` directory. Then you can use the
-[`self`](packages/addon-kit/self.html) module to retrieve a URL pointing
-to the file, and assign this to the page-mod's `contentScriptFile`
-property.
-
-For example, if you save the content script
-file in your `data` directory as "myScript.js", you would assign it using
-code like:
+<!-- -->
 
     var data = require("self").data;
-
     var pageMod = require("page-mod");
     pageMod.PageMod({
-      include: "*.org",
-      contentScriptWhen: 'end',
-      contentScriptFile: data.url("myScript.js")
+      include: "*.mozilla.org",
+      contentScriptFile: data.url("my-script.js")
+    });
+
+<!-- -->
+
+    var data = require("self").data;
+    var pageMod = require("page-mod");
+
+    pageMod.PageMod({
+      include: "*.mozilla.org",
+      contentScriptFile: [self.data.url("jquery-1.7.min.js"),
+                          self.data.url("my-script.js")]
     });
 
 <div class="warning">
@@ -105,166 +71,104 @@ have problems getting your add-on approved on AMO.</p>
 secure, debug and review.</p>
 </div>
 
-### Styling web pages ###
+A page-mod only attaches scripts to documents loaded in tabs. It will not
+attach scripts to add-on panels, page-workers, widgets, or Firefox hidden
+windows.
 
-Sometimes adding a script to web pages is not enough, you also want to style
-them. `PageMod` provides an easy way to do that through options' `contentStyle`
-and `contentStyleFile` properties:
+To stop a page-mod from making any more modifications, call its `destroy()`
+method.
 
-    var data = require("self").data;
-    var pageMod = require("page-mod");
+The `PageMod` constructor takes a number of other options to control its
+behavior, all documented in detail in the
+[API Reference](packages/addon-kit/page-mod.html#API Reference) section below:
 
-    pageMod.PageMod({
-      include: "*.org",
+* `contentStyle` or `contentStyleFile` list stylesheets to attach.
+* `contentScriptOptions` defines read-only values accessible to content
+scripts.
+* `attachTo` controls whether to attach scripts to tabs
+that were already open when the page-mod was created, and whether to attach
+scripts to iframes as well as the topmost document.
+* `contentScriptWhen` controls the point during document load at which content
+scripts are attached.
 
-      contentStyleFile: data.url("my-page-mod.css"),
-      contentStyle: [
-        "div { padding: 10px; border: 1px solid silver}",
-        "img { display: none}"
-      ]
-    })
-
-`PageMod` will add these styles as
-[user style sheets](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
-
-#### Working with Relative URLs in CSS Rules ####
-
-You can't currently use relative URLs in style sheets loaded in this way.
-For example, consider a CSS file that references an external file like this:
-
-    background: rgb(249, 249, 249) url('../../img/my-background.png') repeat-x top center;
-
-If you attach this file using `contentStyleFile`, "my-background.png"
-will not be found.
-
-As a workaround for this, you can build an absolute URL to a file in your
-"data" directory, and construct a `contentStyle` option embedding that URL
-in your rule. For example:
-
-    var data = require("self").data;
-
-    var pageMod = require("page-mod").PageMod({
-      include: "*",
-      contentStyleFile: data.url("my-style.css"),
-      // contentStyle is built dynamically here to include an absolute URL
-      // for the file referenced by this CSS rule.
-      // This workaround is needed because we can't use relative URLs
-      // in contentStyleFile or contentStyle.
-      contentStyle: "h1 { background: url(" + data.url("my-pic.jpg") + ")}"
-    });
-
-This add-on uses a separate file "my-style.css", loaded using
-`contentStyleFile`, for all CSS rules except those that reference
-an external file. For the rule that needs to refer to "my-pic.jpg",
-which is stored in the add-on's "data" directory, it uses `contentStyle`.
-
-Dynamically constructing code strings like those assigned to `contentScript`
-or `contentStyle` is usually considered an unsafe practice that may cause an
-add-on to fail AMO review. In this case it is safe, and should be allowed,
-but including a comment like that in the example above will help to
-prevent any misunderstanding.
+For all the details on content scripts, see the
+[guide to content scripts](dev-guide/guides/content-scripts/index.html).
 
 ## Communicating With Content Scripts ##
 
-When a matching page is loaded the `PageMod` will call the function that the
-add-on code supplied to `onAttach`. The `PageMod` supplies one argument to
-this function: a `worker` object.
+Your add-on's "main.js" can't directly access the state of content scripts
+you load, but you can communicate between your add-on and its content scripts
+by exchanging messages.
 
-The [`worker`](packages/api-utils/content/worker.html) can be thought of as
-the add-on's end of a communication channel between the add-on code and
-the content scripts that have been attached to this page.
+To do this, you'll need to listen to the page-mod's `attach` event.
+This event is triggered every time the page-mod's content script is attached
+to a document. The listener is passed a
+[`worker`](packages/api-utils/content/worker.html) object that your add-on
+can use to send and receive messages.
 
-Thus the add-on can pass messages to the content scripts by calling the
-worker's `postMessage` function and can receive messages from the content
-scripts by registering a function as a listener to the worker's `on` function.
+For example, the following add-on retrieves the HTML content of specific
+tags from documents that match the pattern. The main add-on code sends the
+desired tag to the content script, and the content script replies by sending
+the HTML content of all the elements with that tag.
 
-Note that if multiple matching pages are loaded simultaneously then each page
-is loaded into its own execution context with its own copy of the content
-scripts. In this case `onAttach` is called once for each loaded page, and the
-add-on code will have a separate worker for each page:
+/lib/main.js:
 
-![Multiple workers](static-files/media/multiple-workers.jpg)
-
-This is demonstrated in the following example:
-
-    var pageMod = require("page-mod");
-    var tabs = require("tabs");
-
-    var workers = [];
-
-    pageMod.PageMod({
-      include: ["http://www.mozilla*"],
-      contentScriptWhen: 'end',
-      contentScript: "onMessage = function onMessage(message) {" +
-                     "  window.alert(message);};",
-      onAttach: function onAttach(worker) {
-        if (workers.push(worker) == 3) {
-          workers[0].postMessage("The first worker!");
-          workers[1].postMessage("The second worker!");
-          workers[2].postMessage("The third worker!");
-        }
-      }
-    });
-
-    tabs.open("http://www.mozilla.com");
-    tabs.open("http://www.mozilla.org");
-    tabs.open("http://www.mozilla-europe.org");
-
-Here we specify a ruleset to match any URLs starting with
-"http://www.mozilla". When a page matches we add the supplied worker to
-an array, and when we have three workers in the array we send a message to
-each worker in turn, telling it the order in which it was attached. The
-worker just displays the message in an alert box.
-
-This shows that separate pages execute in separate contexts and that each
-context has its own communication channel with the add-on script.
-
-Note though that while there is a separate worker for each execution context,
-the worker is shared across all the content scripts associated with a single
-execution context. In the following example we pass two content scripts into
-the `PageMod`: these content scripts will share a worker instance.
-
-In the example each content script identifies itself to the add-on script
-by sending it a message using the global `postMessage` function. In the
-`onAttach` function the add-on code logs the fact that a new page is
-attached and registers a listener function that simply logs the message:
-
-
-    var pageMod = require("page-mod");
+    var tag = "p";
     var data = require("self").data;
-    var tabs = require("tabs");
+    var pageMod = require("page-mod");
 
     pageMod.PageMod({
-      include: ["http://www.mozilla*"],
-      contentScriptWhen: 'end',
-      contentScript: ["postMessage('Content script 1 is attached to '+ " +
-                      "document.URL);",
-                      "postMessage('Content script 2 is attached to '+ " +
-                      "document.URL);"],
-      onAttach: function onAttach(worker) {
-        console.log("Attaching content scripts")
-        worker.on('message', function(data) {
-          console.log(data);
+      include: "*.mozilla.org",
+      contentScriptFile: data.url("element-getter.js"),
+      onAttach: function(worker) {
+        worker.port.emit("getElements", tag);
+        worker.port.on("gotElement", function(elementContent) {
+          console.log(elementContent);
         });
       }
     });
 
-    tabs.open("http://www.mozilla.com");
+/data/element-getter.js:
 
-The console output of this add-on is:
+    self.port.on("getElements", function(tag) {
+      var elements = document.getElementsByTagName(tag);
+      for (var i = 0; i < elements.length; i++) {
+        self.port.emit("gotElement", elements[i].innerHTML);
+      }
+    });
 
-<pre>
-  info: Attaching content scripts
-  info: Content script 1 is attached to http://www.mozilla.com/en-US/
-  info: Content script 2 is attached to http://www.mozilla.com/en-US/
-</pre>
+When the user loads a document hosted at "mozilla.org":
 
-### Mapping workers to tabs ###
+<img class="image-right" alt="page-mod messaging diagram" src="static-files/media/page-mod-messaging.png"/>
+
+* The content script "element-getter.js" is attached to the document
+and runs. It adds a listener to the `getElements` message.
+* The `attach` event is sent to the "main.js" code. Its event handler sends
+the `getElements` message to the content script, and then adds a listener
+to the `gotElement` message.
+* The content script receives the `getElements` message, retrieves all
+elements of that type, and for each element sends a `gotElement` message
+containing the element's `innerHTML`.
+* The "main.js" code receives each `gotElement` message and logs the
+contents.
+
+If multiple documents that match the page-mod's `include` pattern are loaded,
+then each document is loaded into its own execution context with its own copy
+of the content scripts. In this case the listener assigned to `onAttach`
+is called once for each loaded document, and the add-on code will have a
+separate worker for each document.
+
+To learn much more about communicating with content scripts, see the
+[guide to content scripts](dev-guide/guides/content-scripts/index.html) and in
+particular the chapter on
+[communicating using `port`](dev-guide/guides/content-scripts/using-port.html).
+
+## Mapping Workers to Tabs ##
 
 The `worker` has a `tab` property which returns the tab associated with
 this worker. You can use this to access
 the [`tabs API`](packages/addon-kit/tabs.html) for the tab associated
-with a specific page:
+with a specific document:
 
     var pageMod = require("page-mod");
     var tabs = require("tabs");
@@ -276,49 +180,14 @@ with a specific page:
       }
     });
 
-### Attaching content scripts to tabs ###
-
-We've seen that the page mod API attaches content scripts to pages based on
-their URL. Sometimes, though, we don't care about the URL: we just want
-to execute a script on demand in the context of a particular tab.
-
-For example, we might want to run a script in the context of the currently
-active tab when the user clicks a widget: to block certain content, to
-change the font style, or to display the page's DOM structure.
-
-Using the `attach` method of the [`tab`](packages/addon-kit/tabs.html)
-object, you can attach a set of content scripts to a particular tab. The
-scripts are executed immediately.
-
-The following add-on creates a widget which, when clicked, highlights all the
-`div` elements in the page loaded into the active tab:
-
-    var widgets = require("widget");
-    var tabs = require("tabs");
-
-    var widget = widgets.Widget({
-      id: "div-show",
-      label: "Show divs",
-      contentURL: "http://www.mozilla.org/favicon.ico",
-      onClick: function() {
-        tabs.activeTab.attach({
-          contentScript:
-            'var divs = document.getElementsByTagName("div");' +
-            'for (var i = 0; i < divs.length; ++i) {' +
-              'divs[i].setAttribute("style", "border: solid red 1px;");' +
-            '}'
-        });
-      }
-    });
-
 ## Destroying Workers ##
 
-Workers generate a `detach` event when their associated page is closed: that
-is, when the tab is closed or the tab's location changes. If
-you are maintaining a list of workers belonging to a page mod, you can use
+Workers generate a `detach` event when their associated document is closed:
+that is, when the tab is closed or the tab's location changes. If
+you are maintaining a list of workers belonging to a page-mod, you can use
 this event to remove workers that are no longer valid.
 
-For example, if you maintain a list of workers attached to a page mod:
+For example, if you maintain a list of workers attached to a page-mod:
 
     var workers = [];
 
@@ -354,116 +223,394 @@ You can remove workers when they are no longer valid by listening to `detach`:
       }
     });
 
+
+## Attaching Content Scripts to Tabs ##
+
+We've seen that the page-mod API attaches content scripts to documents based
+on their URL. Sometimes, though, we don't care about the URL: we just want
+to execute a script on demand in the context of a particular tab.
+
+For example, we might want to run a script in the context of the currently
+active tab when the user clicks a widget: to block certain content, to
+change the font style, or to display the document's DOM structure.
+
+Using the `attach` method of the [`tab`](packages/addon-kit/tabs.html)
+object, you can attach a set of content scripts to a particular tab. The
+scripts are executed immediately.
+
+The following add-on creates a widget which, when clicked, highlights all the
+`div` elements in the document loaded into the active tab:
+
+    var widgets = require("widget");
+    var tabs = require("tabs");
+
+    var widget = widgets.Widget({
+      id: "div-show",
+      label: "Show divs",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        tabs.activeTab.attach({
+          contentScript:
+            'var divs = document.getElementsByTagName("div");' +
+            'for (var i = 0; i < divs.length; ++i) {' +
+              'divs[i].setAttribute("style", "border: solid red 1px;");' +
+            '}'
+        });
+      }
+    });
+
 <api name="PageMod">
 @class
-A PageMod object. Once activated a page mod will execute the supplied content
-scripts in the context of any pages matching the pattern specified by the
-'include' property.
+A page-mod object. Once created a page-mod will execute the supplied content
+scripts, and load any supplied stylesheets, in the context of any documents
+matching the pattern specified by the `include` property.
+
 <api name="PageMod">
 @constructor
-Creates a PageMod.
+Creates a page-mod.
 @param options {object}
-  Options for the PageMod, with the following keys:
+  Options for the page-mod. All these options are optional except for `include`
+  (although if you don't supply any scripts or stylesheets, your page-mod
+  won't be very useful).
   @prop include {string,array}
     A match pattern string or an array of match pattern strings.  These define
-    the pages to which the PageMod applies.  See the
-    [match-pattern](packages/api-utils/match-pattern.html) module for
-    a description of match pattern syntax.
-    At least one match pattern must be supplied.
+    the documents to which the page-mod applies. At least one match pattern
+    must be supplied.
+
+    You can specify a URL exactly:
+
+        var pageMod = require("page-mod");
+        pageMod.PageMod({
+          include: "http://www.iana.org/domains/example/",
+          contentScript: 'window.alert("Page matches ruleset");'
+        });
+
+    You can specify a number of wildcard forms, for example:
+
+        var pageMod = require("page-mod");
+        pageMod.PageMod({
+          include: "*.mozilla.org",
+          contentScript: 'window.alert("Page matches ruleset");'
+        });
+
+    You can specify a set of URLs using a
+    [regular expression](packages/api-utils/match-pattern.html#Regular Expressions).
+    The pattern must match the entire URL, not just a subset, and has
+    `global`, `ignoreCase`, and `multiline` disabled.
+
+        var pageMod = require("page-mod");
+        pageMod.PageMod({
+          include: /.*developer.*/,
+          contentScript: 'window.alert("Page matches ruleset");'
+        });
+
+  To specify multiple patterns, pass an array of match patterns:
+
+      var pageMod = require("page-mod");
+      pageMod.PageMod({
+        include: ["*.developer.mozilla.org", "*.addons.mozilla.org"],
+        contentScript: 'window.alert("Page matches ruleset");'
+      });
+
+    See the [match-pattern](packages/api-utils/match-pattern.html) module for
+    a detailed description of match pattern syntax.
 
   @prop [contentScriptFile] {string,array}
-    The local file URLs of content scripts to load.  Content scripts specified
-    by this option are loaded *before* those specified by the `contentScript`
-    option. Optional.
+    This option specifies one or more content scripts to attach to targeted
+    documents.
+
+    Each script is supplied as a separate file under your add-on's "data"
+    directory, and is specified by a URL typically constructed using the
+    `url()` method of the
+    [`self` module's `data` object](packages/addon-kit/self.html#data).
+
+        var data = require("self").data;
+        var pageMod = require("page-mod");
+        pageMod.PageMod({
+          include: "*",
+          contentScriptFile: data.url("my-script.js")
+        });
+
+    To attach multiple scripts, pass an array of URLs.
+
+        var data = require("self").data;
+        var pageMod = require("page-mod");
+
+        pageMod.PageMod({
+          include: "*",
+          contentScriptFile: [self.data.url("jquery-1.7.min.js"),
+                              self.data.url("my-script.js")]
+        });
+
+    Content scripts specified using this option are loaded before those
+    specified by the `contentScript` option.
+
   @prop [contentScript] {string,array}
-    The texts of content scripts to load.  Content scripts specified by this
-    option are loaded *after* those specified by the `contentScriptFile` option.
-    Optional.
+   This option specifies one or more content scripts to attach to targeted
+   documents. Each script is supplied directly as a single string:
+
+        var pageMod = require("page-mod");
+        pageMod.PageMod({
+          include: "*",
+          contentScript: 'window.alert("Page matches ruleset");'
+        });
+
+   To attach multiple scripts, supply an array of strings.
+
+   Content scripts specified by this option are loaded after those
+   specified by the `contentScriptFile` option.
+
+<div class="warning">
+<p>Unless your content script is extremely simple and consists only of a
+static string, don't use <code>contentScript</code>: if you do, you may
+have problems getting your add-on approved on AMO.</p>
+<p>Instead, keep the script in a separate file and load it using
+<code>contentScriptFile</code>. This makes your code easier to maintain,
+secure, debug and review.</p>
+</div>
+
   @prop [contentScriptWhen="end"] {string}
-    When to load the content scripts. This may take one of the following
-    values:
+   By default, content scripts are attached after all the content
+   (DOM, JS, CSS, images) for the document has been loaded, at the time the
+   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+   fires. Using this option you can customize this behavior.
 
-    * "start": load content scripts immediately after the document
-    element for the page is inserted into the DOM, but before the DOM content
-    itself has been loaded
-    * "ready": load content scripts once DOM content has been loaded,
-    corresponding to the
-    [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
-    event
-    * "end": load content scripts once all the content (DOM, JS, CSS,
-    images) for the page has been loaded, at the time the
-    [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
-    fires
+   The option takes a single string that may take any one of the following
+   values:
 
-    This property is optional and defaults to "end".
+   * `"start"`: load content scripts immediately after the document
+   element is inserted into the DOM, but before the DOM content
+   itself has been loaded
+   * `"ready"`: load content scripts once DOM content has been loaded,
+   corresponding to the
+   [DOMContentLoaded](https://developer.mozilla.org/en/Gecko-Specific_DOM_Events)
+   event
+   * `"end"`: the default. Load content scripts once all the content
+   (DOM, JS, CSS, images) has been loaded, at the time the
+   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+   fires
+
+<!-- -->
+
+       var pageMod = require("page-mod");
+       pageMod.PageMod({
+         include: "*",
+         contentScript: 'window.alert("Page matches ruleset");',
+         contentScriptWhen: "start"
+       });
+
+   If you specify `"start"` for `contentScriptWhen`, your scripts will not be
+   able to interact with the document's DOM right away (although they could
+   listen for `window.onload` or `DOMContentLoaded` themselves).
+
   @prop [contentScriptOptions] {object}
-    Read-only value exposed to content scripts under `self.options` property.
+   You can use this option to define some read-only values for your content
+   scripts.
 
-    Any kind of jsonable value (object, array, string, etc.) can be used here.
-    Optional.
+   The option consists of an object literal listing `name:value` pairs for
+   the values you want to provide to the content script. For example:
+
+       var data = require("self").data;
+       var pageMod = require("page-mod");
+       pageMod.PageMod({
+         include: "*",
+         contentScriptFile: data.url("my-script.js"),
+         contentScriptOptions: {
+           showOptions: true,
+           someNumbers: [1, 2],
+           greeting: "Hello!"
+         }
+       });
+
+   The values are accessible to content scripts via the `self.options`
+   property:
+
+       // my-script.js
+       if (self.options.showOptions) {
+         window.alert(self.options.greeting);
+         window.alert(self.options.someNumbers[0] + self.options.someNumbers[1]);
+       }
+
+   The values can be any JSON-serializable value: a string, number,
+   boolean, null, array of JSON-serializable values, or an object whose
+   property values are themselves JSON-serializable. This means you can't send
+   functions, and if the object contains methods they won't be usable. You
+   also can't pass cyclic values.
 
   @prop [contentStyleFile] {string,array}
-    The local file URLs of stylesheet to load. Content style specified by this
-    option are loaded *before* those specified by the `contentStyle` option.
-    Optional.
+    Use this option to load one or more stylesheets into the targeted
+    documents as
+    [user stylesheets](https://developer.mozilla.org/en/CSS/Getting_Started/Cascading_and_inheritance).
+
+    Each stylesheet is supplied as a separate file under your add-on's "data"
+    directory, and is specified by a URL typically constructed using the
+    `url()` method of the
+    [`self` module's `data` object](packages/addon-kit/self.html#data).
+    To add multiple stylesheet files, pass an array of URLs.
+
+        var data = require("self").data;
+        var pageMod = require("page-mod");
+
+        pageMod.PageMod({
+          include: "*.org",
+          contentStyleFile: data.url("my-page-mod.css")
+        });
+
+    Content styles specified by this
+    option are loaded before those specified by the `contentStyle` option.
+
+    You can't currently use relative URLs in stylesheets loaded in this way.
+    For example, consider a CSS file that references an external file like this:
+
+        background: rgb(249, 249, 249) url('../../img/my-background.png') repeat-x top center;
+
+    If you attach this file using `contentStyleFile`, "my-background.png"
+    will not be found.
+
+    As a workaround for this, you can build an absolute URL to a file in your
+    "data" directory, and construct a `contentStyle` option embedding that URL
+    in your rule. For example:
+
+        var data = require("self").data;
+        var pageMod = require("page-mod").PageMod({
+          include: "*",
+          contentStyleFile: data.url("my-style.css"),
+          // contentStyle is built dynamically here to include an absolute URL
+          // for the file referenced by this CSS rule.
+          // This workaround is needed because we can't use relative URLs
+          // in contentStyleFile or contentStyle.
+          contentStyle: "h1 { background: url(" + data.url("my-pic.jpg") + ")}"
+        });
+
+    This add-on uses a separate file "my-style.css", loaded using
+    `contentStyleFile`, for all CSS rules except those that reference
+    an external file. For the rule that needs to refer to "my-pic.jpg",
+    which is stored in the add-on's "data" directory, it uses `contentStyle`.
+
+    Dynamically constructing code strings like those assigned to `contentScript`
+    or `contentStyle` is usually considered an unsafe practice that may cause an
+    add-on to fail AMO review. In this case it is safe, and should be allowed,
+    but including a comment like that in the example above will help to
+    prevent any misunderstanding.
+
   @prop [contentStyle] {string,array}
-    The texts of stylesheet rules to add. Content styles specified by this
-    option are loaded *after* those specified by the `contentStyleFile` option.
-    Optional.
+    Use this option to load one or more stylesheet rules into
+    the targeted documents.
+
+    Each stylesheet rule is supplied as a separate string. To supply
+    multiple rules, pass an array of strings:
+
+        var pageMod = require("page-mod");
+
+        pageMod.PageMod({
+          include: "*.org",
+          contentStyle: [
+            "div { padding: 10px; border: 1px solid silver}",
+            "img { display: none}"
+          ]
+        });
+
+    Content styles specified by this
+    option are loaded after those specified by the `contentStyleFile` option.
 
   @prop [attachTo] {string,array}
-    Option to specify on which documents PageMod should be applied.
-    It accepts following values:
+   If this option is not specified, content scripts:
 
-    * "existing": the PageMod will be automatically applied on already opened
-    tabs.
-    * "top": the PageMod will be applied to top-level tab documents
-    * "frame": the PageMod will be applied to all iframe inside tab documents
+   * are not attached to any tabs that are already open when the page-mod is
+   created.
+   * are attached to all documents whose URL matches the rule: so if your
+   rule matches a specific hostname and path, and the topmost document that
+   satisfies the rule includes ten iframes using a relative URL, then your
+   page-mod is applied eleven times.
 
-    When omitted, it defaults to ["top", "frame"]. When set, you have to at
-    least set either "top" and/or "frame".
-    Optional.
+<!-- -->
+
+   You can modify this behavior using the `attachTo` option.
+
+   It accepts the following values:
+
+   * `"existing"`: the page-mod will be automatically applied on already
+   opened tabs.
+   * `"top"`: the page-mod will be applied to top-level tab documents
+   * `"frame"`: the page-mod will be applied to all iframes inside tab
+   documents
+
+<!-- -->
+
+   If the option is set at all, you must set at least one of `"top"` and
+   `"frame"`.
+
+   For example, the following page-mod will be attached to already opened
+   tabs, but not to any iframes:
+
+       var pageMod = require("page-mod");
+       pageMod.PageMod({
+         include: "*",
+         contentScript: "",
+         attachTo: ["existing", "top"],
+         onAttach: function(worker) {
+           console.log("attached to: " + worker.tab.url);
+         }
+       });
 
   @prop [onAttach] {function}
-A function to call when the PageMod attaches content scripts to
-a matching page. The function will be called with one argument, a `worker`
-object which the add-on script can use to communicate with the content scripts
-attached to the page in question.
+   Assign a listener function to this option to listen to the page-mod's
+   `attach` event. See the
+   [documentation for `attach`](packages/addon-kit/page-mod.html#attach) and
+   [Communicating With Content Scripts](packages/addon-kit/page-mod.html#Communicating With Content Scripts).
 
 </api>
 
 <api name="include">
 @property {List}
-A [list](packages/api-utils/list.html) of match pattern strings.  These
-define the pages to which the page mod applies.  See the
-[match-pattern](packages/api-utils/match-pattern.html) module for a
-description of match patterns. Rules can be added to the list by calling its
-`add` method and removed by calling its `remove` method.
+  A [list](packages/api-utils/list.html) of match pattern strings.  These
+  define the documents to which the page-mod applies. See the documentation of
+  the `include` option above for details of `include` syntax.
+  Rules can be added to the list by calling its
+  `add` method and removed by calling its `remove` method.
 
 </api>
 
 <api name="destroy">
 @method
-Stops the page mod from making any more modifications.  Once destroyed the page
-mod can no longer be used.  Note that modifications already made to open pages
-will not be undone, except for any stylesheet added by `contentStyle` or
-`contentStyleFile`, that are unregistered immediately.
+  Stops the page-mod from making any more modifications. Once destroyed
+  the page-mod can no longer be used.
+
+  Modifications already made to open documents by content scripts
+  will not be undone, but stylesheets added by `contentStyle` or
+  `contentStyleFile`, will be unregistered immediately.
 </api>
 
 <api name="attach">
 @event
-This event is emitted this event when the page-mod's content scripts are
-attached to a page whose URL matches the page-mod's `include` filter.
+  This event is emitted when the page-mod's content scripts are
+  attached to a document whose URL matches the page-mod's `include` pattern.
+
+   The listener function is passed a
+   [`worker`](packages/api-utils/content/worker.html) object that you
+   can use to
+   [communicate with the content scripts](packages/addon-kit/page-mod.html#Communicating With Content Scripts) your page-mod has
+   loaded into this particular document.
+
+   The `attach` event is triggered every time this page-mod's content
+   scripts are attached to a document. So if the user loads several
+   documents which match this page-mod's `include` pattern, `attach` will be
+   triggered for each document, each time with a distinct `worker` instance.
+
+   Each worker then represents a channel of communication with the set of
+   content scripts loaded by this particular page-mod into that
+   particular document.
 
 @argument {Worker}
-The listener function is passed a [`Worker`](packages/api-utils/content/worker.html) object that can be used to communicate
-with any content scripts attached to this page.
+   The listener function is passed a [`Worker`](packages/api-utils/content/worker.html)
+   object that can be used to communicate with any content scripts
+   attached to this document.
 </api>
 
 <api name="error">
 @event
-This event is emitted when an uncaught runtime error occurs in one of the page
-mod's content scripts.
+This event is emitted when an uncaught runtime error occurs in one of the
+page-mod's content scripts.
 
 @argument {Error}
 Listeners are passed a single argument, the
