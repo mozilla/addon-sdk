@@ -166,6 +166,21 @@ const WorkerSandbox = EventEmitter.compose({
       get unsafeWindow() window.wrappedJSObject
     });
 
+    // Bug 787063: Xraywrapprers fails to support window.onload expando.
+    // Workaround it until platform is fixed.
+    let onload = null;
+    merge(content, {
+      get onload() { return onload; },
+      set onload(f) {
+        if (onload)
+          content.removeEventListener("load", onload, false);
+        // Accept only functions.
+        onload = typeof(f) === "function" ? f : null;
+        if (onload)
+          content.addEventListener("load", onload, false);
+      }
+    });
+
     // Load trusted code that will inject content script API.
     // We need to expose JS objects defined in same principal in order to
     // avoid having any kind of wrapper.
