@@ -78,6 +78,7 @@ exports["test:communication with worker global scope"] = function(test) {
 
   function onMessage2(message) {
     if (5 == message) {
+      window.close();
       test.done();
     } else {
       test.assertEqual(message, 3, "Program gets message via onMessage2.");
