@@ -463,7 +463,9 @@ exports['test attachment to tabs only'] = function(test) {
           test.pass('Succesfully applied to tab documents and its iframe');
           worker.destroy();
           mod.destroy();
-          test.done();
+          openedTab.close(function() {
+            test.done();
+          });
         }
       }
       else {
@@ -552,9 +554,12 @@ exports['test111 attachTo [top]'] = function(test) {
         worker.on('message', function (href) {
           test.assertEqual(href, topDocumentURL,
                            "worker on top level document only");
+          let tab = worker.tab;
           worker.destroy();
           mod.destroy();
-          test.done();
+          tab.close(function() {
+            test.done();
+          });
         });
       }
       else {
@@ -589,7 +594,9 @@ exports['test111 attachTo [frame]'] = function(test) {
     this.destroy();
     if (++messageCount == 2) {
       mod.destroy();
-      test.done();
+      require('tabs').activeTab.close(function() {
+        test.done();
+      });
     }
   }
   let mod = PageMod({
