@@ -147,22 +147,38 @@ function reportMemoryUsage() {
 
 var gWeakrefInfo;
 
+function showLeaks() {
+  let iterations = 0;
+
+  function checkLeaks() {
+    let leaks = getPotentialLeaks();
+    let compartmentURLs = Object.keys(leaks.compartments).filter(function(url) {
+      return !(url in startLeaks.compartments);
+    });
+
+    let windowURLs = Object.keys(leaks.windows).filter(function(url) {
+      return !(url in startLeaks.windows);
+    });
+
+    if ((iterations < 10) && (compartmentURLs.length || windowURLs.length)) {
+      iterations++;
+      require("timer").setTimeout(checkLeaks, 100);
+      return;
+    }
+
+    for (let url of compartmentURLs)
+      console.warn("LEAKED", leaks.compartments[url]);
+
+    for (let url of windowURLs)
+      console.warn("LEAKED", leaks.windows[url]);
+
+    showResults();
+  }
+
+  checkLeaks();
+}
+
 function showResults() {
-  let leaks = getPotentialLeaks();
-  let compartmentURLs = Object.keys(leaks.compartments).filter(function(url) {
-    return !(url in startLeaks.compartments);
-  });
-
-  for (let url of compartmentURLs)
-    console.warn("LEAK", leaks.compartments[url]);
-
-  let windowURLs = Object.keys(leaks.windows).filter(function(url) {
-    return !(url in startLeaks.windows);
-  });
-
-  for (let url of windowURLs)
-    console.warn("LEAK", leaks.windows[url]);
-
   if (gWeakrefInfo) {
     gWeakrefInfo.forEach(
       function(info) {
@@ -219,9 +235,7 @@ function cleanup() {
     console.exception(e);
   };
 
-  // For some reason a short delay is needed to allow all compartments to go
-  // away
-  require("api-utils/timer").setTimeout(showResults, 10);
+  require("api-utils/timer").setTimeout(showLeaks, 1);
 }
 
 function getPotentialLeaks() {
