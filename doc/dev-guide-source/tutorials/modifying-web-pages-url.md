@@ -220,8 +220,23 @@ To learn more about this, and read about a workaround, see the
 
 ## Learning More ##
 
-To learn more about page-mod, see its
+To learn more about `page-mod`, see its
 [API reference page](packages/addon-kit/page-mod.html).
+In particular, the `PageMod` constructor takes several additional options
+to control its behavior:
 
-To learn more about content scripts, see the
+* By default, content scripts are not attached to any tabs that are
+already open when the page-mod is created, and are attached to iframes
+as well as top-level documents. To control this behavior use the `attachTo`
+option.
+
+* Define read-only values accessible to content scripts using the
+`contentScriptOptions` option.
+
+* By default, content scripts are attached after all the content
+   (DOM, JS, CSS, images) for the page has been loaded, at the time the
+   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+   fires. To control this behavior use the `contentScriptWhen` option.
+
+To learn more about content scripts in general, see the
 [content scripts guide](dev-guide/guides/content-scripts/index.html).

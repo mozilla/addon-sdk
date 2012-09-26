@@ -186,8 +186,8 @@ class SmallXPI(unittest.TestCase):
         expected.extend([add_api_utils(module) for module in [
             "self.js",
             "promise.js",
-            "url/io.js",
-            "utils/object.js"
+            os.path.join("url", "io.js"),
+            os.path.join("utils", "object.js")
             ]])
 
         missing = set(expected) - set(used_files)
