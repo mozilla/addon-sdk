@@ -274,3 +274,23 @@ exports.testActiveWindowActiveTabOnActivate_alt = function(test) {
   });
 };
 
+// TEST: tab properties
+exports.testTabContentTypeAndReload = function(test) {
+  test.waitUntilDone();
+
+  let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
+  let urlXML = "data:text/xml;charset=utf-8,<foo>bar</foo>";
+  tabs.open({
+    url: url,
+    onReady: function(tab) {
+      if (tab.url === url) {
+        test.assertEqual(tab.contentType, "text/html");
+        tab.url = urlXML;
+      }
+      else {
+        test.assertEqual(tab.contentType, "text/xml");
+        tab.close(function() test.done());
+      }
+    }
+  });
+};
