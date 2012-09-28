@@ -350,6 +350,7 @@ const Panel = Symbiont.resolve({
 
   _onChange: function _onChange(e) {
     if ('contentURL' in e && this._frame) {
+      this._frameLoadersSwapped = false;
       // Cleanup the worker before injecting the content script in the new
       // document
       this._workerCleanup();
