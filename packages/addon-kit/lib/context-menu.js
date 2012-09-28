@@ -361,6 +361,7 @@ function getItemWorkerForWindow(item, window) {
 // Called when an item is clicked to send out click events to the content
 // scripts
 function itemClicked(item, clickedItem, popupNode) {
+  try {
   let worker = getItemWorkerForWindow(item, popupNode.ownerDocument.defaultView);
 
   if (worker) {
@@ -373,6 +374,10 @@ function itemClicked(item, clickedItem, popupNode) {
 
   if (item.parentMenu)
     itemClicked(item.parentMenu, clickedItem, popupNode);
+  }
+  catch (e) {
+    console.exception(e);
+  }
 }
 
 // All things that appear in the context menu extend this
@@ -607,6 +612,306 @@ when(function() {
 
 // App specific UI code lives here, it should handle populating the context
 // menu and passing clicks etc. through to the items.
+
+// This wraps every window that we've seen a context menu open for
+let WindowWrapper = Class({
+  initialize: function initialize(window) {
+    this.window = window;
+    this.menuMap = new WeakMap();
+
+    this.contextMenu = window.document.getElementById("contentAreaContextMenu");
+
+    this.populate(rootMenu);
+
+    this.contextMenu.addEventListener("popupshowing", this, false);
+  },
+
+  destroy: function destroy() {
+    this.contextMenu.removeEventListener("popupshowing", this, false);
+
+    // If we're getting unloaded at runtime then we must remove all the
+    // generated XUL nodes
+    for (let item of internal(rootMenu).children) {
+      let xulNode = this.getXULNodeForItem(item);
+      xulNode.parentNode.removeChild(xulNode);
+    }
+
+    // If there's an overflow menu then that is where we removed everything from
+    // otherwise it was from the main context menu
+    let oldParent = this.window.document.getElementById(OVERFLOW_POPUP_ID);
+    if (!oldParent)
+      oldParent = this.contextMenu;
+    this.onXULRemoved(oldParent);
+  },
+
+  getXULNodeForItem: function getXULNodeForItem(item) {
+    return this.menuMap.get(item);
+  },
+
+  // Recurses through the item hierarchy creating XUL nodes for everything
+  populate: function populate(menu) {
+    for (let item of internal(menu).children) {
+      this.createItem(item);
+
+      if (item instanceof Menu)
+        this.populate(item);
+    }
+  },
+
+  // Recurses through the menu setting the visibility of items. Returns true
+  // if any of the items in this menu were visible
+  setVisibility: function setVisibility(menu, popupNode) {
+    let anyVisible = false;
+
+    for (let item of internal(menu).children) {
+      let visible = isItemVisible(item, popupNode);
+
+      // Recurse through Menus, if none of the sub-items were visible then the
+      // menu is hidden too.
+      if (visible && (item instanceof Menu))
+        visible = this.setVisibility(item, popupNode);
+
+      let xulNode = this.getXULNodeForItem(item);
+      xulNode.hidden = !visible;
+
+      anyVisible = anyVisible || visible;
+    }
+
+    return anyVisible;
+  },
+
+  // Works out where to insert a XUL node for an item in a browser window
+  getInsertionPoint: function getInsertionPoint(item, after) {
+    let menupopup = null;
+    let before = null;
+
+    let menu = internal(item).parentMenu;
+    if (menu === rootMenu) {
+      menupopup = this.window.document.getElementById(OVERFLOW_POPUP_ID);
+
+      // If there isn't already an overflow menu then check if we need to
+      // create one, otherwise use the main context menu
+      if (!menupopup) {
+        menupopup = this.contextMenu;
+        let toplevel = this.window.document.querySelectorAll("." + TOPLEVEL_ITEM_CLASS);
+
+        if (toplevel.length == 0) {
+          // Create the separator
+          let separator = this.window.document.createElement("menuseparator");
+          separator.setAttribute("id", SEPARATOR_ID);
+          this.contextMenu.appendChild(separator);
+        }
+        else if (toplevel.length >= MenuManager.overflowThreshold) {
+          // Create the overflow menu and move everything there
+          let overflowMenu = this.window.document.createElement("menu");
+          overflowMenu.setAttribute("id", OVERFLOW_MENU_ID);
+          overflowMenu.setAttribute("label", OVERFLOW_MENU_LABEL);
+          this.contextMenu.appendChild(overflowMenu);
+
+          menupopup = this.window.document.createElement("menupopup");
+          menupopup.setAttribute("id", OVERFLOW_POPUP_ID);
+          overflowMenu.appendChild(menupopup);
+
+          for (let xulNode of toplevel) {
+            menupopup.appendChild(xulNode);
+            this.setXULClass(xulNode);
+          }
+        }
+      }
+    }
+    else {
+      let xulNode = this.getXULNodeForItem(menu);
+      menupopup = xulNode.firstChild;
+    }
+
+    if (after) {
+      let afterNode = this.getXULNodeForItem(after);
+      before = afterNode.nextSibling;
+    }
+
+    return {
+      menupopup: menupopup,
+      before: before
+    };
+  },
+
+  // Sets the right class for XUL nodes
+  setXULClass: function setXULClass(xulNode) {
+    let cls = ITEM_CLASS;
+
+    if (xulNode.parentNode == this.contextMenu)
+      cls += " " + TOPLEVEL_ITEM_CLASS;
+
+    if (xulNode.parentNode.id == OVERFLOW_POPUP_ID)
+      cls += " " + OVERFLOW_ITEM_CLASS;
+
+    xulNode.className = cls;
+  },
+
+  // Creates a XUL node for an item
+  createItem: function createItem(item, after) {
+    let { menupopup, before } = this.getInsertionPoint(item, after);
+
+    let type = "menuitem";
+    if (item instanceof Menu)
+      type = "menu";
+    else if (item instanceof Separator)
+      type = "menuseparator";
+
+    let xulNode = this.window.document.createElement(type);
+    if (item instanceof LabelledItem) {
+      xulNode.setAttribute("label", item.label);
+      if (item.image)
+        xulNode.setAttribute("image", item.image);
+      if (item.data)
+        xulNode.setAttribute("value", item.data);
+
+      let self = this;
+      xulNode.addEventListener("click", function(event) {
+        // Only care about clicks directly on this item
+        if (event.target !== xulNode)
+          return;
+
+        itemClicked(item, item, self.contextMenu.triggerNode);
+      }, false);
+    }
+
+    menupopup.insertBefore(xulNode, before);
+    this.setXULClass(xulNode);
+    xulNode.data = item.data;
+
+    if (item instanceof Menu) {
+      menupopup = this.window.document.createElement("menupopup");
+      xulNode.appendChild(menupopup);
+    }
+
+    this.menuMap.set(item, xulNode);
+  },
+
+  // Updates the XUL node for an item in this window
+  updateItem: function updateItem(item) {
+    let xulNode = this.getXULNodeForItem(item);
+
+    // TODO figure out why this requires setAttribute
+    xulNode.setAttribute("label", item.label);
+    if (item.image)
+      xulNode.setAttribute("image", item.image);
+    else
+      xulNode.removeAttribute("image");
+    if (item.data)
+      xulNode.setAttribute("value", item.data);
+    else
+      xulNode.removeAttribute("value");
+  },
+
+  // Moves the XUL node for an item in this window to its new place in the
+  // hierarchy
+  moveItem: function moveItem(item, after) {
+    let xulNode = this.getXULNodeForItem(item);
+
+    let oldParent = xulNode.parentNode;
+
+    let { menupopup, before } = this.getInsertionPoint(item, after);
+    menupopup.insertBefore(xulNode, before);
+
+    this.setXULClass(xulNode);
+
+    this.onXULRemoved(oldParent);
+  },
+
+  // Removes the XUL nodes for an item in every window we've ever populated.
+  removeItem: function removeItem(item) {
+    let xulItem = this.getXULNodeForItem(item);
+
+    let oldParent = xulItem.parentNode;
+
+    oldParent.removeChild(xulItem);
+    this.menuMap.delete(item);
+
+    this.onXULRemoved(oldParent);
+  },
+
+  // Called when any XUL nodes have been removed from a menupopup. This handles
+  // making sure the separator and overflow are correct
+  onXULRemoved: function onXULRemoved(parent) {
+    if (parent == this.contextMenu) {
+      let toplevel = this.window.document.querySelectorAll("." + TOPLEVEL_ITEM_CLASS);
+
+      // If there are no more items then remove the separator
+      if (toplevel.length == 0) {
+        let separator = this.window.document.getElementById(SEPARATOR_ID);
+        if (separator)
+          separator.parentNode.removeChild(separator);
+      }
+    }
+    else if (parent.id == OVERFLOW_POPUP_ID) {
+      if (parent.childNodes.length == 0) {
+        // It's possible that this add-on had all the items in the overflow
+        // menu and they're now all gone, so remove the separator and overflow
+        // menu directly
+
+        let separator = this.window.document.getElementById(SEPARATOR_ID);
+        separator.parentNode.removeChild(separator);
+        parent.parentNode.parentNode.removeChild(parent.parentNode);
+      }
+      else if (parent.childNodes.length <= MenuManager.overflowThreshold) {
+        // Otherwise if the overflow menu is empty enough move everything in
+        // the overflow menu back to top level and remove the overflow menu
+
+        while (parent.firstChild) {
+          let node = parent.firstChild;
+          this.contextMenu.insertBefore(node, parent.parentNode);
+          this.setXULClass(node);
+        }
+        this.contextMenu.removeChild(parent.parentNode);
+      }
+    }
+  },
+
+  // Called when the context menu is shown
+  handleEvent: function handleEvent(event) {
+    try {
+      if (event.type != "popupshowing")
+        return;
+      if (event.target.id != "contentAreaContextMenu")
+        return;
+
+      let separator = this.window.document.getElementById(SEPARATOR_ID);
+      let popup = this.window.document.getElementById(OVERFLOW_MENU_ID);
+  
+      if (this.setVisibility(rootMenu, event.target.triggerNode)) {
+        // Some of this instance's items are visible so make sure the separator
+        // and if necessary the overflow popup are visible
+        separator.hidden = false;
+        if (popup)
+          popup.hidden = false;
+      }
+      else {
+        // We need to test whether any other instance has visible items.
+        // Get all the highest level items and see if any are visible.
+        let topLevelSelector = "." + TOPLEVEL_ITEM_CLASS + ", ." + OVERFLOW_ITEM_CLASS + " > ." + ITEM_CLASS;
+        let topLevelItems = this.window.document.querySelectorAll(topLevelSelector);
+  
+        let visible = false;
+        for (let item of topLevelItems) {
+          if (!item.hidden)
+            visible = true;
+        }
+  
+        // If any were visible make sure the separator and if necessary the
+        // overflow popup are visible, otherwise hide them
+        if (separator)
+          separator.hidden = !visible;
+        if (popup)
+          popup.hidden = !visible;
+      }
+    }
+    catch (e) {
+      console.exception(e);
+    }
+  }
+});
+
 let MenuManager = {
   windowMap: new WeakMap(),
   windows: [],
@@ -627,6 +932,7 @@ let MenuManager = {
       return;
     }
 
+    // Wait for the context menu to be opened before doing anything
     let menu = window.document.getElementById("contentAreaContextMenu");
     menu.addEventListener("popupshowing", this, false);
   },
@@ -642,97 +948,14 @@ let MenuManager = {
     if (!this.windowMap.has(window))
       return;
 
-    // If we're getting unloaded at runtime then we must remove all the
-    // generated XUL nodes
-    for (let item of internal(rootMenu).children) {
-      let xulNode = this.getXULNodeForItem(window, item);
-      xulNode.parentNode.removeChild(xulNode);
-    }
-
-    // If there's an overflow menu then that is where we removed everything from
-    // otherwise it was from the main context menu
-    let oldParent = window.document.getElementById(OVERFLOW_POPUP_ID);
-    if (!oldParent)
-      oldParent = menu;
-    this.onXULRemoved(oldParent);
+    let wrapper = this.windowMap.get(window);
+    wrapper.destroy();
 
     this.windowMap.delete(window);
     this.windows = filterOut(this.windows, window);
   },
 
-  // Called when any XUL nodes have been removed from a menupopup. This handles
-  // making sure the separator and overflow are correct
-  onXULRemoved: function onXULRemoved(parent) {
-    let window = parent.ownerDocument.defaultView;
-
-    if (parent.id == "contentAreaContextMenu") {
-      let toplevel = window.document.querySelectorAll("." + TOPLEVEL_ITEM_CLASS);
-
-      // If there are no more items then remove the separator
-      if (toplevel.length == 0) {
-        let separator = window.document.getElementById(SEPARATOR_ID);
-        if (separator)
-          separator.parentNode.removeChild(separator);
-      }
-    }
-    else if (parent.id == OVERFLOW_POPUP_ID) {
-      if (parent.childNodes.length == 0) {
-        // It's possible that this add-on had all the items in the overflow
-        // menu and they're now all gone, so remove the separator and overflow
-        // menu directly
-
-        let separator = window.document.getElementById(SEPARATOR_ID);
-        separator.parentNode.removeChild(separator);
-        parent.parentNode.parentNode.removeChild(parent.parentNode);
-      }
-      else if (parent.childNodes.length <= this.overflowThreshold) {
-        // Otherwise if the overflow menu is empty enough move everything in
-        // the overflow menu back to top level and remove the overflow menu
-
-        let context = window.document.getElementById("contentAreaContextMenu");
-        while (parent.firstChild) {
-          let node = parent.firstChild;
-          context.insertBefore(node, parent.parentNode);
-          this.setClass(node);
-        }
-        context.removeChild(parent.parentNode);
-      }
-    }
-  },
-
-  // Recurses through the menu setting the visibility of items. Returns true
-  // if any of the items in this menu were visible
-  setVisibility: function setVisibility(window, menu, popupNode) {
-    let anyVisible = false;
-
-    for (let item of internal(menu).children) {
-      let visible = isItemVisible(item, popupNode);
-
-      // Recurse through Menus, if none of the sub-items were visible then the
-      // menu is hidden too.
-      if (visible && (item instanceof Menu))
-        visible = this.setVisibility(window, item, popupNode);
-
-      let xulNode = this.getXULNodeForItem(window, item);
-      xulNode.hidden = !visible;
-
-      anyVisible = anyVisible || visible;
-    }
-
-    return anyVisible;
-  },
-
-  // Recurses through the item hierarchy creating XUL nodes for everything
-  populateWindow: function populateWindow(window, menu) {
-    for (let item of internal(menu).children) {
-      MenuManager.createItemInWindow(window, item);
-
-      if (item instanceof Menu)
-        this.populateWindow(window, item);
-    }
-  },
-
-  // Called when the context menu appears
+  // Called when the context menu appears for an unpopulated window
   handleEvent: function handleEvent(event) {
     try {
       if (event.type != "popupshowing")
@@ -740,190 +963,33 @@ let MenuManager = {
       if (event.target.id != "contentAreaContextMenu")
         return;
 
+      event.target.removeEventListener("popupshowing", this, false);
+
       let window = event.target.ownerDocument.defaultView;
+      let wrapper = WindowWrapper(window);
+      this.windows.push(window);
+      this.windowMap.set(window, wrapper);
 
-      // If we've never seen the context menu for this browser window then
-      // populate it with all the items we know about
-      if (!this.windowMap.has(window)) {
-        this.windows.push(window);
-        this.windowMap.set(window, {
-          menuMap: new WeakMap()
-        });
-
-        this.populateWindow(window, rootMenu);
-      }
-
-      let separator = window.document.getElementById(SEPARATOR_ID);
-      let popup = window.document.getElementById(OVERFLOW_MENU_ID);
-
-      if (this.setVisibility(window, rootMenu, event.target.triggerNode)) {
-        // Some of this instance's items are visible so make sure the separator
-        // and if necessary the overflow popup are visible
-        separator.hidden = false;
-        if (popup)
-          popup.hidden = false;
-      }
-      else {
-        // We need to test whether any other instance has visible items.
-        // Get all the highest level items and see if any are visible.
-        let topLevelSelector = "." + TOPLEVEL_ITEM_CLASS + ", ." + OVERFLOW_ITEM_CLASS + " > ." + ITEM_CLASS;
-        let topLevelItems = window.document.querySelectorAll(topLevelSelector);
-
-        let visible = false;
-        for (let item of topLevelItems) {
-          if (!item.hidden)
-            visible = true;
-        }
-
-        // If any were visible make sure the separator and if necessary the
-        // overflow popup are visible, otherwise hide them
-        if (separator)
-          separator.hidden = !visible;
-        if (popup)
-          popup.hidden = !visible;
-      }
+      wrapper.handleEvent(event);
     }
     catch (e) {
       console.exception(e);
     }
   },
 
-  // Sets the right class for XUL nodes
-  setClass: function setClass(xulNode) {
-    let cls = ITEM_CLASS;
-
-    if (xulNode.parentNode.id == "contentAreaContextMenu")
-      cls += " " + TOPLEVEL_ITEM_CLASS;
-
-    if (xulNode.parentNode.id == OVERFLOW_POPUP_ID)
-      cls += " " + OVERFLOW_ITEM_CLASS;
-
-    xulNode.className = cls;
-  },
-
-  getXULNodeForItem: function getXULNodeForItem(window, item) {
-    return this.windowMap.get(window).menuMap.get(item);
-  },
-
-  // Works out where to insert a XUL node for an item in a browser window
-  getInsertionPoint: function getInsertionPoint(window, item, after) {
-    let menupopup = null
-    let before = null;
-
-    let menu = internal(item).parentMenu;
-    if (menu === rootMenu) {
-      menupopup = window.document.getElementById(OVERFLOW_POPUP_ID);
-
-      // If there isn't already an overflow menu then check if we need to
-      // create one, otherwise use the main context menu
-      if (!menupopup) {
-        menupopup = window.document.getElementById("contentAreaContextMenu");
-        let toplevel = window.document.querySelectorAll("." + TOPLEVEL_ITEM_CLASS);
-
-        if (toplevel.length == 0) {
-          // Create the separator
-          let separator = window.document.createElement("menuseparator");
-          separator.setAttribute("id", SEPARATOR_ID);
-          menupopup.appendChild(separator);
-        }
-        else if (toplevel.length >= this.overflowThreshold) {
-          // Create the overflow menu and move everything there
-          let overflowMenu = window.document.createElement("menu");
-          overflowMenu.setAttribute("id", OVERFLOW_MENU_ID);
-          overflowMenu.setAttribute("label", OVERFLOW_MENU_LABEL);
-          menupopup.appendChild(overflowMenu);
-
-          menupopup = window.document.createElement("menupopup");
-          menupopup.setAttribute("id", OVERFLOW_POPUP_ID);
-          overflowMenu.appendChild(menupopup);
-
-          for (let xulNode of toplevel) {
-            menupopup.appendChild(xulNode);
-            this.setClass(xulNode);
-          }
-        }
-      }
-    }
-    else {
-      let xulNode = this.getXULNodeForItem(window, menu);
-      menupopup = xulNode.firstChild;
-    }
-
-    if (after) {
-      let afterNode = this.getXULNodeForItem(window, after);
-      before = afterNode.nextSibling;
-    }
-
-    return {
-      menupopup: menupopup,
-      before: before
-    };
-  },
-
-  // Creates a XUL node for an item in a window
-  createItemInWindow: function createItemInWindow(window, item, after) {
-    let state = this.windowMap.get(window);
-
-    let { menupopup, before } = this.getInsertionPoint(window, item, after);
-
-    let type = "menuitem";
-    if (item instanceof Menu)
-      type = "menu";
-    else if (item instanceof Separator)
-      type = "menuseparator";
-
-    let xulNode = window.document.createElement(type);
-    if (item instanceof LabelledItem) {
-      xulNode.setAttribute("label", item.label);
-      if (item.image)
-        xulNode.setAttribute("image", item.image);
-      if (item.data)
-        xulNode.setAttribute("value", item.data);
-
-      xulNode.addEventListener("click", function(event) {
-        // Only care about clicks directly on this item
-        if (event.target !== xulNode)
-          return;
-
-        let popupNode = window.document.getElementById("contentAreaContextMenu").triggerNode;
-
-        itemClicked(item, item, popupNode);
-      }, false);
-    }
-
-    menupopup.insertBefore(xulNode, before);
-    this.setClass(xulNode);
-    xulNode.data = item.data;
-
-    if (item instanceof Menu) {
-      menupopup = window.document.createElement("menupopup");
-      xulNode.appendChild(menupopup);
-    }
-
-    state.menuMap.set(item, xulNode);
-  },
-
   // Creates a XUL node for an item in every window we've already populated
   createItem: function createItem(item, after) {
-    for (let window of this.windows)
-      this.createItemInWindow(window, item, after);
+    for (let window of this.windows) {
+      let wrapper = this.windowMap.get(window);
+      wrapper.createItem(item, after);
+    }
   },
 
   // Updates the XUL node for an item in every window we've already populated
   updateItem: function updateItem(item) {
     for (let window of this.windows) {
-      let xulNode = this.getXULNodeForItem(window, item);
-
-      // TODO figure out why this requires setAttribute
-      xulNode.setAttribute("label", item.label);
-      if (item.image)
-        xulNode.setAttribute("image", item.image);
-      else
-        xulNode.removeAttribute("image");
-      if (item.data)
-        xulNode.setAttribute("value", item.data);
-      else
-        xulNode.removeAttribute("value");
+      let wrapper = this.windowMap.get(window);
+      wrapper.updateItem(item);
     }
   },
 
@@ -931,32 +997,16 @@ let MenuManager = {
   // new place in the hierarchy
   moveItem: function moveItem(item, after) {
     for (let window of this.windows) {
-      let state = this.windowMap.get(window);
-      let xulNode = state.menuMap.get(item);
-
-      let oldParent = xulNode.parentNode;
-
-      let { menupopup, before } = this.getInsertionPoint(window, item, after);
-      menupopup.insertBefore(xulNode, before);
-
-      this.setClass(xulNode);
-
-      this.onXULRemoved(oldParent);
+      let wrapper = this.windowMap.get(window);
+      wrapper.moveItem(item, after);
     }
   },
 
   // Removes the XUL nodes for an item in every window we've ever populated.
   removeItem: function removeItem(item) {
     for (let window of this.windows) {
-      let state = this.windowMap.get(window);
-      let xulItem = state.menuMap.get(item);
-
-      let oldParent = xulItem.parentNode;
-
-      oldParent.removeChild(xulItem);
-      state.menuMap.delete(item);
-
-      this.onXULRemoved(oldParent);
+      let wrapper = this.windowMap.get(window);
+      wrapper.removeItem(item);
     }
   }
 };
