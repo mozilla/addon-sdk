@@ -139,6 +139,9 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
                     " assertion callback: '" + arguments[1] + "'");
         }
       },
+      info: function (msg) {
+        test.assertEqual(msg, "executing 'wait4ever'");
+      },
       trace: function () {}
     }
   });
