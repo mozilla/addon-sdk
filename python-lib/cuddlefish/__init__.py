@@ -375,7 +375,7 @@ def test_cfx(env_root, verbose):
     return retval
 
 def test_all_testaddons(env_root, defaults):
-    addons_dir = os.path.join(env_root, "test-addons")
+    addons_dir = os.path.join(env_root, "test", "addons")
     addons = [dirname for dirname in os.listdir(addons_dir)
                 if os.path.isdir(os.path.join(addons_dir, dirname))]
     addons.sort()
@@ -395,7 +395,7 @@ def test_all_testaddons(env_root, defaults):
             break
 
     if fail:
-        print >>sys.stderr, "Some test-addons tests were unsuccessful."
+        print >>sys.stderr, "Some test addons tests were unsuccessful."
         sys.exit(-1)
 
 def test_all_examples(env_root, defaults):
