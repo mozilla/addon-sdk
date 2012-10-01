@@ -436,6 +436,8 @@ TestRunner.prototype = {
     this.testFailureLogged = false;
 
     try {
+      this.console.info("executing '" + this.test.name + "'");
+
       if(this.test.setup) {
         this.test.setup(this);
       }

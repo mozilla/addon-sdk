@@ -9,7 +9,7 @@ var { exit, stdout } = require("api-utils/system");
 var cfxArgs = require("@test/options");
 var { Cc, Ci}  = require("chrome");
 
-function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit, print) {
+function runTests(findAndRunTests) {
   var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
            .getService(Ci.nsIWindowWatcher);
 
@@ -25,13 +25,17 @@ function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit,
   var harness = require("./harness");
 
   function onDone(tests) {
+    stdout.write("\n");
+    var total = tests.passed + tests.failed;
+    stdout.write(tests.passed + " of " + total + " tests passed.\n");
+
     window.close();
     if (tests.failed == 0) {
       if (tests.passed === 0)
-        print("No tests were run\n");
+        stdout.write("No tests were run\n");
       exit(0);
     } else {
-      printFailedTests(tests, verbose, print);
+      printFailedTests(tests, cfxArgs.verbose, stdout.write);
       exit(1);
     }
   };
@@ -50,13 +54,16 @@ function runTests(iterations, filter, profileMemory, stopOnError, verbose, exit,
       // For ex: nsIFocusManager.getFocusedElementForWindow may throw
       // NS_ERROR_ILLEGAL_VALUE exception.
       require("timer").setTimeout(function () {
-        harness.runTests({iterations: iterations,
-                          filter: filter,
-                          profileMemory: profileMemory,
-                          stopOnError: stopOnError,
-                          verbose: verbose,
-                          print: print,
-                          onDone: onDone});
+        harness.runTests({
+          findAndRunTests: findAndRunTests,
+          iterations: cfxArgs.iterations || 1,
+          filter: cfxArgs.filter,
+          profileMemory: cfxArgs.profileMemory,
+          stopOnError: cfxArgs.stopOnError,
+          verbose: cfxArgs.verbose,
+          print: stdout.write,
+          onDone: onDone
+        });
       }, 0);
     }, true);
     window.focus();
@@ -93,10 +100,51 @@ function main() {
 
   if (!testsStarted) {
     testsStarted = true;
-    runTests(cfxArgs.iterations, cfxArgs.filter, cfxArgs.profileMemory,
-             cfxArgs.stopOnError, cfxArgs.verbose, exit, stdout.write);
+    runTests(function findAndRunTests(loader, nextIteration) {
+      loader.require("api-utils/unit-test").findAndRunTests({
+        testOutOfProcess: false,
+        testInProcess: true,
+        stopOnError: cfxArgs.stopOnError,
+        filter: cfxArgs.filter,
+        onDone: nextIteration
+      });
+    });
   }
 };
 
 if (require.main === module)
   main();
+
+exports.runTestsFromModule = function runTestsFromModule(module) {
+  let id = module.id;
+  // Make a copy of exports as it may already be frozen by module loader
+  let exports = {};
+  Object.keys(module.exports).forEach(function(key) {
+    exports[key] = module.exports[key];
+  });
+
+  runTests(function findAndRunTests(loader, nextIteration) {
+    // Consider that all these tests are CommonJS ones
+    loader.require('api-utils/test').run(exports);
+
+    // Reproduce what is done in unit-test-finder.findTests()
+    let tests = [];
+    for each (let name in Object.keys(exports).sort()) {
+      tests.push({
+        setup: exports.setup,
+        teardown: exports.teardown,
+        testFunction: exports[name],
+        name: id + "." + name
+      });
+    }
+
+    // Reproduce what is done by unit-test.findAndRunTests()
+    var { TestRunner } = loader.require("api-utils/unit-test");
+    var runner = new TestRunner();
+    runner.startMany({
+      tests: tests,
+      stopOnError: cfxArgs.stopOnError,
+      onDone: nextIteration
+    });
+  });
+}
