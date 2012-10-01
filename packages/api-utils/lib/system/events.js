@@ -32,10 +32,10 @@ const Subject = Class({
   getInterfaces: function() {}
 });
 
-function emit(type, event) {
+function emit(topic, event) {
   let subject = 'subject' in event ? Subject(event.subject) : null;
   let data = 'data' in event ? event.data : null;
-  notifyObservers(subject, type, data);
+  notifyObservers(subject, topic, data);
 }
 exports.emit = emit;
 
@@ -57,7 +57,7 @@ const Observer = Class({
 
     try {
       this.listener({
-        type: topic,
+        topic: topic,
         subject: subject,
         data: data
       });
@@ -70,44 +70,44 @@ const Observer = Class({
 
 const subscribers = ns();
 
-function on(type, listener, strong) {
+function on(topic, listener, strong) {
   // Unless last optional argument is `true` we use a weak reference to a
   // listener.
   let weak = !strong;
   // Take list of observers associated with given `listener` function.
   let observers = subscribers(listener);
-  // If `observer` for the given `type` is not registered yet, then
+  // If `observer` for the given `topic` is not registered yet, then
   // associate an `observer` and register it.
-  if (!(type in observers)) {
+  if (!(topic in observers)) {
     let observer = Observer(listener);
-    observers[type] = observer;
-    addObserver(observer, type, weak);
+    observers[topic] = observer;
+    addObserver(observer, topic, weak);
   }
 }
 exports.on = on;
 
-function once(type, listener) {
+function once(topic, listener) {
   // Note: this code assumes order in which listeners are called, which is fine
   // as long as dispatch happens in same order as listener registration which
   // is the case now. That being said we should be aware that this may break
   // in a future if order will change.
-  on(type, listener);
-  on(type, function cleanup() {
-    off(type, listener);
-    off(type, cleanup);
+  on(topic, listener);
+  on(topic, function cleanup() {
+    off(topic, listener);
+    off(topic, cleanup);
   }, true);
 }
 exports.once = once;
 
-function off(type, listener) {
+function off(topic, listener) {
   // Take list of observers as with the given `listener`.
   let observers = subscribers(listener);
-  // If `observer` for the given `type` is registered, then
+  // If `observer` for the given `topic` is registered, then
   // remove it & unregister.
-  if (type in observers) {
-    let observer = observers[type];
-    delete observers[type];
-    removeObserver(observer, type);
+  if (topic in observers) {
+    let observer = observers[topic];
+    delete observers[topic];
+    removeObserver(observer, topic);
   }
 }
 exports.off = off;
