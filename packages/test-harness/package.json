@@ -4,5 +4,5 @@
     "author": "Atul Varma (http://toolness.com/)",
     "keywords": ["jetpack-low-level"],
     "license": "MPL 2.0",
-    "dependencies": ["api-utils"]
+    "dependencies": ["sdk"]
 }

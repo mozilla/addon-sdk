@@ -650,11 +650,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # the choice of loader for manifest-generation purposes. In practice,
     # this means that alternative loaders probably won't work with
     # --strip-xpi.
-    assert packaging.DEFAULT_LOADER == "api-utils"
-    assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
-    cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
-                                      "lib", "cuddlefish.js")
-    loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
+    assert packaging.DEFAULT_LOADER == "sdk"
+    assert pkg_cfg.packages["sdk"].loader == "lib/loader/cuddlefish.js"
+    cuddlefish_js_path = os.path.join(pkg_cfg.packages["sdk"].root_dir,
+                                      "loader", "cuddlefish.js")
+    loader_modules = [("sdk", "lib", "loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
     test_filter_re = None
     if scan_tests and options.filter:
@@ -700,12 +700,14 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "test":
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
-        harness_options['main'] = 'test-harness/run-tests'
-        harness_options['mainPath'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_path()
+        harness_options['main'] = 'sdk/test/runner'
+        harness_options['mainPath'] = manifest.get_manifest_entry("sdk", "lib", "test/runner").get_path()
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainPath'] = manifest.top_path
     extra_environment["CFX_COMMAND"] = command
+
+    print harness_options['main'], harness_options['mainPath']
 
     for option in inherited_options:
         harness_options[option] = getattr(options, option)

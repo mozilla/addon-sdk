@@ -1,0 +1,6 @@
+{
+  "name": "toolkit",
+  "directories": {
+    "lib": "."
+  }
+}

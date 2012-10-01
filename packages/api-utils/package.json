@@ -9,6 +9,5 @@
         "Daniel Aquino <mr.danielaquino@gmail.com>"
     ],
     "license": "MPL 2.0",
-    "dependencies": ["addon-kit"],
-    "loader": "lib/cuddlefish.js"
+    "dependencies": ["addon-kit"]
 }

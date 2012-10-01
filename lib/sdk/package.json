@@ -1,0 +1,15 @@
+{
+    "name": "sdk",
+    "description": "Add-on development made easy.",
+    "keywords": ["javascript", "engine", "platform", "xulrunner", "jetpack-high-level"],
+    "author": "Atul Varma (http://toolness.com/) <atul@mozilla.com>",
+    "contributors": [
+        "Myk Melez (http://melez.com/) <myk@mozilla.org>",
+        "Daniel Aquino <mr.danielaquino@gmail.com>"
+    ],
+    "directories": {
+      "lib": "."
+    },
+    "license": "MPL 2.0",
+    "loader": "lib/loader/cuddlefish.js"
+}

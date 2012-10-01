@@ -12,7 +12,7 @@ from cuddlefish.bunch import Bunch
 
 MANIFEST_NAME = 'package.json'
 
-DEFAULT_LOADER = 'api-utils'
+DEFAULT_LOADER = 'sdk'
 
 DEFAULT_PROGRAM_MODULE = 'main'
 
@@ -233,6 +233,9 @@ def build_config(root_dir, target_cfg, packagepath=[]):
     packages_dir = os.path.join(root_dir, 'packages')
     if os.path.exists(packages_dir) and os.path.isdir(packages_dir):
         dirs_to_scan.append(packages_dir)
+    lib_dir = os.path.join(root_dir, 'lib')
+    if os.path.exists(lib_dir) and os.path.isdir(lib_dir):
+        dirs_to_scan.append(lib_dir)
     dirs_to_scan.extend(packagepath)
 
     packages = Bunch({target_cfg.name: target_cfg})

@@ -8,6 +8,11 @@ import simplejson as json
 SEP = os.path.sep
 from cuddlefish.util import filter_filenames, filter_dirnames
 
+# Load new layout mapping hashtable
+path = os.path.join(os.environ.get('CUDDLEFISH_ROOT'), "mapping.json")
+data = open(path, 'r').read()
+NEW_LAYOUT_MAPPING = json.loads(data)
+
 def js_zipname(packagename, modulename):
     return "%s-lib/%s.js" % (packagename, modulename)
 def docs_zipname(packagename, modulename):
@@ -185,7 +190,7 @@ class ManifestBuilder:
             self.top_path = top_me.get_path()
             self.datamaps[self.target_cfg.name] = DataMap(self.target_cfg)
         if scan_tests:
-            mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
+            mi = self._find_module_in_package("sdk", "lib", "test/runner", [])
             self.process_module(mi)
             # also scan all test files in all packages that we use. By making
             # a copy of self.used_packagenames first, we refrain from
@@ -213,8 +218,8 @@ class ManifestBuilder:
                         test_modules.append( (testname, tme) )
             # also add it as an artificial dependency of unit-test-finder, so
             # the runtime dynamic load can work.
-            test_finder = self.get_manifest_entry("api-utils", "lib",
-                                                  "unit-test-finder")
+            test_finder = self.get_manifest_entry("sdk", "lib",
+                                                  "deprecated/unit-test-finder")
             for (testname,tme) in test_modules:
                 test_finder.add_requirement(testname, tme)
                 # finally, tell the runtime about it, so they won't have to
@@ -427,12 +432,12 @@ class ManifestBuilder:
         modulename = from_module.name
 
         #print " %s require(%s))" % (from_module, reqname)
-        bits = reqname.split("/")
 
         if reqname.startswith("./") or reqname.startswith("../"):
             # 1: they want something relative to themselves, always from
             # their own package
             them = modulename.split("/")[:-1]
+            bits = reqname.split("/")
             while bits[0] in (".", ".."):
                 if not bits:
                     raise BAD("no actual modulename")
@@ -451,8 +456,21 @@ class ManifestBuilder:
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
 
+        # Search for a module in new layout.
+        # First normalize require argument in order to easily find a mapping
+        normalized = reqname
+        if normalized.endswith(".js"):
+            normalized = normalized[:-len(".js")]
+        if normalized.startswith("addon-kit/"):
+            normalized = normalized[len("addon-kit/"):]
+        if normalized.startswith("api-utils/"):
+            normalized = normalized[len("api-utils/"):]
+        if normalized in NEW_LAYOUT_MAPPING:
+          reqname = NEW_LAYOUT_MAPPING[normalized]
+
         if "/" in reqname:
             # 2: PKG/MOD: find PKG, look inside for MOD
+            bits = reqname.split("/")
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
             mi = self._get_module_from_package(lookfor_pkg,
