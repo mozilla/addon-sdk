@@ -10,7 +10,7 @@ module.metadata = {
 
 const { Cc, Ci } = require("chrome");
 const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
-const { defer } = require("api-utils/promise");
+const { defer, resolve } = require("api-utils/promise");
 
 function readURI(uri) {
   let { promise, resolve, reject } = defer();
@@ -70,7 +70,7 @@ exports.load = function load(rootURI) {
   return getBestLocale(rootURI).then(function (bestMatchingLocale) {
     // It may be null if the addon doesn't have any locale file
     if (!bestMatchingLocale)
-      throw Error("There is no localization file for your language.");
+      return resolve(null);
 
     let localeURI = rootURI + "locale/" + bestMatchingLocale + ".json";
 
