@@ -740,3 +740,36 @@ exports.testPageModCssDestroy = function(test) {
     }
   );
 };
+
+exports.testWindowListeners = function(test) {
+  test.waitUntilDone();
+  let tabs = require("tabs");
+  let tab;
+
+  let pageMod = require("page-mod").PageMod({
+    include: "about:*",
+    contentScriptWhen: "start",
+    contentScript: "new " + function ContentScriptScope() {
+      window.addEventListener("DOMContentLoaded", function onContentLoaded() {
+        window.onload = function onLoad() {
+          self.postMessage(true);
+        };
+      }, false);
+    },
+    onAttach: function(w) {
+      w.on("message", function (success) {
+        test.assert(success, "received both DOMContentLoaded and load events");
+        pageMod.destroy();
+        tab.close();
+        test.done();
+      });
+    }
+  });
+
+  tabs.open({
+    url: "about:credits",
+    onReady: function onReady(t) {
+      tab = t;
+    }
+  });
+}
