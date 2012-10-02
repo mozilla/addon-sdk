@@ -1,13 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 const prefs = require("preferences-service");
 const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
+
+const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
 
 exports.testReset = function(test) {
   prefs.reset("test_reset_pref");
@@ -128,3 +129,15 @@ exports.testGetSetLocalized = function(test) {
   // Undo our modification
   prefs.reset(prefName);
 }
+
+// TEST: setting and getting preferences with special characters work
+exports.testSpecialChars = function(test) {
+  let chars = specialChars.split('');
+  const ROOT = "test.";
+
+  chars.forEach(function(char) {
+    let rand = Math.random() + "";
+    prefs.set(ROOT+char, rand);
+    test.assertEqual(prefs.get(ROOT+char), rand, "setting pref with a name that is a special char, " + char + ", worked!");
+  });
+};

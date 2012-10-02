@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tabAPI = require("tabs/tab");
+const tabAPI = require('tabs/tab');
 const tabs = require("addon-kit/tabs"); // From addon-kit
 const windowUtils = require("window-utils");
+const { getTabForWindow } = require('tabs/helpers');
 
 // The primary test tab
 var primaryTab;
@@ -18,9 +19,9 @@ var iframeWin;
 exports.testGetTabForWindow = function(test) {
   test.waitUntilDone();
 
-  test.assertEqual(tabAPI.getTabForWindow(windowUtils.activeWindow), null,
+  test.assertEqual(getTabForWindow(windowUtils.activeWindow), null,
     "getTabForWindow return null on topwindow");
-  test.assertEqual(tabAPI.getTabForWindow(windowUtils.activeBrowserWindow), null,
+  test.assertEqual(getTabForWindow(windowUtils.activeBrowserWindow), null,
     "getTabForWindow return null on topwindow");
 
   let subSubDocument = encodeURIComponent(
@@ -52,7 +53,7 @@ function step2(url, test) {
       primaryTab = tab;
       let window = windowUtils.activeBrowserWindow.content;
 
-      let matchedTab = tabAPI.getTabForWindow(window);
+      let matchedTab = getTabForWindow(window);
       test.assertEqual(matchedTab, tab,
         "We are able to find the tab with his content window object");
 
@@ -77,15 +78,15 @@ function step2(url, test) {
         }
         let subSubIframeWin = subSubIframe.contentWindow;
 
-        matchedTab = tabAPI.getTabForWindow(iframeWin);
+        matchedTab = getTabForWindow(iframeWin);
         test.assertEqual(matchedTab, tab,
           "We are able to find the tab with an iframe window object");
 
-        matchedTab = tabAPI.getTabForWindow(subIframeWin);
+        matchedTab = getTabForWindow(subIframeWin);
         test.assertEqual(matchedTab, tab,
           "We are able to find the tab with a sub-iframe window object");
 
-        matchedTab = tabAPI.getTabForWindow(subSubIframeWin);
+        matchedTab = getTabForWindow(subSubIframeWin);
         test.assertEqual(matchedTab, tab,
           "We are able to find the tab with a sub-sub-iframe window object");
 
@@ -100,7 +101,7 @@ function step2(url, test) {
 
 function step3(test) {
 
-  let matchedTab = tabAPI.getTabForWindow(iframeWin);
+  let matchedTab = getTabForWindow(iframeWin);
   test.assertEqual(matchedTab, primaryTab,
     "We get the correct tab even when it's in the background");
 

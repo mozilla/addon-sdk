@@ -251,6 +251,13 @@ sp.on("sayHello", function() {
 	</tr>
 </table>
 
+## Localization ##
+
+Using the SDK's localization system, you can provide translated forms
+of the `title` and `description` attributes. See the
+[localization tutorial](dev-guide/tutorials/l10n.html#Using Localized Strings in Preferences)
+for more details.
+
 <api name="prefs">
 @property {object}
   *experimental* A persistent object private to your add-on.  Properties with boolean,
