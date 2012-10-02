@@ -333,6 +333,13 @@ const PageModManager = Registry.resolve({
     for (let rule in RULES) {
       delete RULES[rule];
     }
+
+    // We need to do some cleaning er PageMods, like unregistering any
+    // `contentStyle*`
+    this._registry.forEach(function(pageMod) {
+      pageMod.destroy();
+    });
+
     this._registryDestructor();
   },
   _onContentWindow: function _onContentWindow(document) {

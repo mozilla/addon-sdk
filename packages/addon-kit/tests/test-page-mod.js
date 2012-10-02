@@ -11,6 +11,7 @@ const tabs = require("tabs");
 const timer = require("timer");
 const { Cc, Ci } = require("chrome");
 const windowUtils = require('api-utils/window/utils');
+const { getTabContentWindow, getActiveTab } = require("api-utils/tabs/utils");
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -739,4 +740,43 @@ exports.testPageModCssDestroy = function(test) {
 
     }
   );
+};
+
+exports.testPageModCssAutomaticDestroy = function(test) {
+  test.waitUntilDone();
+  let loader = Loader(module);
+
+  let pageMod = loader.require("page-mod").PageMod({
+    include: "data:*",
+    contentStyle: "div { width: 100px!important; }"
+  });
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
+
+    onReady: function onReady(tab) {
+      let browserWindow = require('api-utils/window-utils').activeBrowserWindow;
+      let win = getTabContentWindow(getActiveTab(browserWindow));
+
+      let div = win.document.querySelector("div"),
+          style = win.getComputedStyle(div);
+
+      test.assertEqual(
+        style.width,
+        "100px",
+        "PageMod contentStyle worked"
+      );
+
+      loader.unload();
+
+      test.assertEqual(
+        style.width,
+        "200px",
+        "PageMod contentStyle is removed after loader's unload"
+      );
+
+      tab.close();
+      test.done();
+    }
+  });
 };
