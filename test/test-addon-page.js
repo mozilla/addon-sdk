@@ -4,19 +4,20 @@
 
 'use strict';
 
-const { isTabOpen, activateTab, openTab, closeTab, getURI } = require('api-utils/tabs/utils');
-const windows = require('api-utils/window-utils');
-const { Loader } = require('test-harness/loader');
-const { setTimeout } = require('api-utils/timer');
+const { isTabOpen, activateTab, openTab,
+        closeTab, getURI } = require('sdk/tabs/utils');
+const windows = require('sdk/deprecated/window-utils');
+const { Loader } = require('sdk/test/loader');
+const { setTimeout } = require('sdk/timers');
 
-let uri = require('self').data.url('index.html');
+let uri = require('sdk/self').data.url('index.html');
 
 function isChromeVisible(window)
   window.document.documentElement.getAttribute('disablechrome') !== 'true'
 
 exports['test that add-on page has no chrome'] = function(assert, done) {
   let loader = Loader(module);
-  loader.require('addon-kit/addon-page');
+  loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
   let tab = openTab(window, uri);
@@ -39,7 +40,7 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
 
 exports['test that add-on pages are closed on unload'] = function(assert, done) {
   let loader = Loader(module);
-  loader.require('addon-kit/addon-page');
+  loader.require('sdk/addon-page');
 
   let tab = openTab(windows.activeBrowserWindow, uri);
 
@@ -58,4 +59,4 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
 };
 
 
-require('test').run(exports);
+require('sdk/test').run(exports);

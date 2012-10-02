@@ -4,12 +4,12 @@
 
 "use strict";
 
-const { pathFor } = require('api-utils/system');
-const file = require("api-utils/file");
-const url = require("api-utils/url");
+const { pathFor } = require('sdk/system');
+const file = require("sdk/io/file");
+const url = require("sdk/core/url");
 
-const byteStreams = require("api-utils/byte-streams");
-const textStreams = require("api-utils/text-streams");
+const byteStreams = require("sdk/io/byte-streams");
+const textStreams = require("sdk/io/text-streams");
 
 const ERRORS = {
   FILE_NOT_FOUND: /^path does not exist: .+$/,

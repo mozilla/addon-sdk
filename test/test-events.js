@@ -5,7 +5,7 @@
 'use strict';
 
 // Exposing private methods as public in order to test
-const EventEmitter = require('events').EventEmitter.compose({
+const EventEmitter = require('sdk/deprecated/events').EventEmitter.compose({
   listeners: function(type) this._listeners(type),
   emit: function() this._emit.apply(this, arguments),
   emitOnObject: function() this._emitOnObject.apply(this, arguments),
@@ -243,7 +243,7 @@ exports['test:once'] = function(test) {
 };
 
 exports["test:removing once"] = function(test) {
-  let e = require("events").EventEmitterTrait.create();
+  let e = require("sdk/deprecated/events").EventEmitterTrait.create();
   e.once("foo", function() { test.pass("listener was called"); });
   e.once("error", function() { test.fail("error event was emitted"); });
   e._emit("foo", "bug-656684");

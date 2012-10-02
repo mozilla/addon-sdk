@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict'
 
-const array = require("array");
+const array = require("sdk/util/array");
 
 exports.testHas = function(test) {
   var testAry = [1, 2, 3];

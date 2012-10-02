@@ -5,9 +5,9 @@
 "use stirct";
 
 const { Cc, Ci } = require("chrome");
-const { setTimeout } = require("api-utils/timer");
-const { Loader, Require, override } = require("test-harness/loader");
-const { Worker } = require("api-utils/content/worker");
+const { setTimeout } = require("sdk/timers");
+const { Loader, Require, override } = require("sdk/test/loader");
+const { Worker } = require("sdk/content/worker");
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
 
@@ -374,7 +374,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
     }
 
     // Finally, create a worker that will call all console methods
-    let worker =  loader.require("content/worker").Worker({
+    let worker =  loader.require("sdk/content/worker").Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
         console.log("log");

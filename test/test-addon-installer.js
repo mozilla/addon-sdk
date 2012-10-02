@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Cc, Ci, Cu } = require("chrome");
-const AddonInstaller = require("api-utils/addon/installer");
-const observers = require("api-utils/observer-service");
-const { setTimeout } = require("timer");
-const tmp = require("test-harness/tmp-file");
+const AddonInstaller = require("sdk/addon/installer");
+const observers = require("sdk/deprecated/observer-service");
+const { setTimeout } = require("sdk/timers");
+const tmp = require("sdk/test/tmp-file");
+const system = require("sdk/system");
 
 const testFolderURL = module.uri.split('test-addon-installer.js')[0];
 const ADDON_URL = testFolderURL + "fixtures/addon-install-unit-test@mozilla.com.xpi";
@@ -67,7 +68,7 @@ exports.testFailingInstallWithInvalidPath = function (test) {
 exports.testFailingInstallWithInvalidFile = function (test) {
   test.waitUntilDone();
 
-  let directory = require("system").pathFor("ProfD");
+  let directory = system.pathFor("ProfD");
   AddonInstaller.install(directory).then(
     function onInstalled(id) {
       test.fail("Unexpected success");

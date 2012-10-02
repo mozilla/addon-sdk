@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { getPreferedLocales, findClosestLocale } = require("api-utils/l10n/locale");
-const prefs = require("preferences-service");
+const { getPreferedLocales, findClosestLocale } = require("sdk/l10n/locale");
+const prefs = require("sdk/preferences/service");
 const { Cc, Ci, Cu } = require("chrome");
 const { Services } = Cu.import("resource://gre/modules/Services.jsm");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);

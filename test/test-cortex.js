@@ -6,7 +6,7 @@
 
 "use strict";
 
-var Cortex = require("cortex").Cortex;
+var Cortex = require("sdk/deprecated/cortex").Cortex;
 
 exports["test property changes propagate"] = function (assert) {
   var source = {

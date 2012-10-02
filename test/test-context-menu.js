@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let {Cc,Ci} = require("chrome");
-const { Loader } = require('test-harness/loader');
-const timer = require("timer");
+const { Loader } = require('sdk/test/loader');
+const timer = require("sdk/timers");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
@@ -455,7 +455,7 @@ exports.testContentScriptFile = function (test) {
   // But accept files from data folder
   let item = new loader.cm.Item({
     label: "item",
-    contentScriptFile: require("self").data.url("test-context-menu.js")
+    contentScriptFile: require("sdk/self").data.url("test-context-menu.js")
   });
 
   test.showMenu(null, function (popup) {
@@ -1293,7 +1293,7 @@ exports.testSetLabelBeforeShowOverflow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let prefs = loader.loader.require("preferences-service");
+  let prefs = loader.loader.require("sdk/preferences/service");
   prefs.set(OVERFLOW_THRESH_PREF, 0);
 
   let items = [
@@ -1318,7 +1318,7 @@ exports.testSetLabelAfterShowOverflow = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let prefs = loader.loader.require("preferences-service");
+  let prefs = loader.loader.require("sdk/preferences/service");
   prefs.set(OVERFLOW_THRESH_PREF, 0);
 
   let items = [
@@ -1586,14 +1586,14 @@ exports.testItemImage = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
 
-  let imageURL = require("self").data.url("moz_favicon.ico");
+  let imageURL = require("sdk/self").data.url("moz_favicon.ico");
   let item = new loader.cm.Item({ label: "item", image: imageURL });
   let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [] });
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item, menu], [], []);
 
-    let imageURL2 = require("self").data.url("dummy.ico");
+    let imageURL2 = require("sdk/self").data.url("dummy.ico");
     item.image = imageURL2;
     menu.image = imageURL2;
     test.checkMenu([item, menu], [], []);
@@ -1646,7 +1646,7 @@ exports.testMenuDestroy = function (test) {
 // NO TESTS BELOW THIS LINE! ///////////////////////////////////////////////////
 
 // Run only a dummy test if context-menu doesn't support the host app.
-if (!require("xul-app").is("Firefox")) {
+if (!require("sdk/system/xul-app").is("Firefox")) {
   module.exports = {
     testAppNotSupported: function (test) {
       test.pass("context-menu does not support this application.");
@@ -2005,8 +2005,8 @@ TestHelper.prototype = {
     let loader = Loader(module);
     let wrapper = {
       loader: loader,
-      cm: loader.require("context-menu"),
-      globalScope: loader.sandbox("context-menu"),
+      cm: loader.require("sdk/context-menu"),
+      globalScope: loader.sandbox("sdk/context-menu"),
       unload: function () {
         loader.unload();
         let idx = self.loaders.indexOf(wrapper);
@@ -2023,7 +2023,7 @@ TestHelper.prototype = {
   shouldOverflow: function (presentItems) {
     return presentItems.length >
            (this.loaders.length ?
-            this.loaders[0].loader.require("preferences-service").
+            this.loaders[0].loader.require("sdk/preferences/service").
               get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT) :
             OVERFLOW_THRESH_DEFAULT);
   },

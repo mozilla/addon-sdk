@@ -4,9 +4,9 @@
 
 "use strict";
 
-const { ns } = require("api-utils/namespace");
+const { ns } = require("sdk/core/namespace");
 const { Cc, Ci, Cu } = require("chrome");
-const { setTimeout } = require("api-utils/timer")
+const { setTimeout } = require("sdk/timers")
 
 exports["test post GC references"] = function (assert, done) {
   var target = {}, local = ns()
@@ -88,7 +88,7 @@ exports["test multi namespace"] = function(assert) {
 };
 
 exports["test ns alias"] = function(assert) {
-  assert.strictEqual(ns, require('api-utils/namespace').Namespace,
+  assert.strictEqual(ns, require('sdk/core/namespace').Namespace,
                       "ns is an alias of Namespace");
 };
 

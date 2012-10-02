@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tmp = require("test-harness/tmp-file");
-const file = require("api-utils/file");
+const tmp = require("sdk/test/tmp-file");
+const file = require("sdk/io/file");
 
 const testFolderURL = module.uri.split('test-tmp-file.js')[0];
 

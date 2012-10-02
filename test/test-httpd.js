@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const port = 8099;
-const file = require("api-utils/file");
-const { pathFor } = require("api-utils/system");
+const file = require("sdk/io/file");
+const { pathFor } = require("sdk/system");
 
 exports.testBasicHTTPServer = function(test) {
   let basePath = pathFor("TmpD");
@@ -14,13 +14,13 @@ exports.testBasicHTTPServer = function(test) {
   fileStream.write(content);
   fileStream.close();
 
-  let { startServerAsync } = require("httpd");
+  let { startServerAsync } = require("sdk/test/httpd");
   let srv = startServerAsync(port, basePath);
 
   test.waitUntilDone();
 
   // Request this very file.
-  let Request = require('request').Request;
+  let Request = require('sdk/request').Request;
   Request({
     url: "http://localhost:" + port + "/test-httpd.txt",
     onComplete: function (response) {
@@ -39,7 +39,7 @@ exports.testBasicHTTPServer = function(test) {
 exports.testDynamicServer = function (test) {
   let content = "This is the HTTPD test file.\n";
 
-  let { startServerAsync } = require("httpd");
+  let { startServerAsync } = require("sdk/test/httpd");
   let srv = startServerAsync(port);
 
   // See documentation here:
@@ -54,7 +54,7 @@ exports.testDynamicServer = function (test) {
   test.waitUntilDone();
 
   // Request this very file.
-  let Request = require('request').Request;
+  let Request = require('sdk/request').Request;
   Request({
     url: "http://localhost:" + port + "/test-httpd.txt",
     onComplete: function (response) {

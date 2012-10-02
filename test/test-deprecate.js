@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const deprecate = require("deprecate");
-var { Loader } = require("test-harness/loader");
+const deprecate = require("sdk/util/deprecate");
+var { Loader } = require("sdk/test/loader");
 
 function LoaderWithHookedConsole() {
   let errors = [];
@@ -17,7 +17,7 @@ function LoaderWithHookedConsole() {
 
   return {
     loader: loader,
-    deprecate: loader.require("api-utils/deprecate"),
+    deprecate: loader.require("sdk/util/deprecate"),
     errors: errors
   }
 }

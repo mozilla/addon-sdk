@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { Loader, Require, unload, override } = require('api-utils/cuddlefish');
+const { Loader, Require, unload, override } = require('sdk/loader/cuddlefish');
 const packaging = require('@loader/options');
 
 exports['test loader'] = function(assert) {
@@ -32,11 +32,11 @@ exports['test loader'] = function(assert) {
 
   var unloadsCalled = '';
 
-  require("api-utils/unload").when(function(reason) {
+  require("sdk/system/unload").when(function(reason) {
     assert.equal(reason, 'test', 'unload reason is passed');
     unloadsCalled += 'a';
   });
-  require('unload.js').when(function() {
+  require('sdk/system/unload.js').when(function() {
     unloadsCalled += 'b';
   });
 

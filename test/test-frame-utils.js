@@ -4,8 +4,8 @@
 
 'use strict';
 
-const { open } = require('api-utils/window/utils');
-const { create } = require('api-utils/frame/utils');
+const { open } = require('sdk/window/utils');
+const { create } = require('sdk/frame/utils');
 
 exports['test frame creation'] = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,Window');

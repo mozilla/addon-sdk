@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-const { Loader } = require('content/loader');
-const self = require("self");
+const { Loader } = require('sdk/content/loader');
+const self = require("sdk/self");
 
 exports['test:contentURL'] = function(test) {
   let loader = Loader(),

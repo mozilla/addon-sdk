@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Class, extend, mix, obscure } = require('api-utils/heritage');
+const { Class, extend, mix, obscure } = require('sdk/core/heritage');
 
 exports['test extend'] = function(assert) {
   let ancestor = { a: 1 };

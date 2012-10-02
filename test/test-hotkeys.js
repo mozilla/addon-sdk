@@ -4,13 +4,14 @@
 
 "use strict";
 
-const { Hotkey } = require("hotkeys");
-const { keyDown } = require("dom/events/keys");
-const { Loader } = require('test-harness/loader');
-const timer = require("timer");
+const { Hotkey } = require("sdk/hotkeys");
+const { keyDown } = require("sdk/dom/events/keys");
+const { Loader } = require('sdk/test/loader');
+const timer = require("sdk/timers");
+const winUtils = require("sdk/deprecated/window-utils");
 
 exports["test hotkey: function key"] = function(assert, done) {
-  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var element = winUtils.activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "f1",
     onPress: function() {
@@ -33,7 +34,7 @@ exports["test hotkey: function key"] = function(assert, done) {
 };
 
 exports["test hotkey: accel alt shift"] = function(assert, done) {
-  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var element = winUtils.activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "accel-shift-6",
     onPress: function() {
@@ -56,7 +57,7 @@ exports["test hotkey: accel alt shift"] = function(assert, done) {
 };
 
 exports["test hotkey meta & control"] = function(assert, done) {
-  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var element = winUtils.activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "meta-3",
     onPress: function() {
@@ -79,7 +80,7 @@ exports["test hotkey meta & control"] = function(assert, done) {
 };
 
 exports["test hotkey: control-1 / meta--"] = function(assert, done) {
-  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var element = winUtils.activeBrowserWindow.document.documentElement;
   var showHotKey = Hotkey({
     combo: "control-1",
     onPress: function() {
@@ -123,7 +124,7 @@ exports["test invalid combos"] = function(assert) {
 };
 
 exports["test no exception on unmodified keypress"] = function(assert) {
-  var element = require("window-utils").activeBrowserWindow.document.documentElement;
+  var element = winUtils.activeBrowserWindow.document.documentElement;
   var someHotkey = Hotkey({
     combo: "control-alt-1",
     onPress: function() {
@@ -138,8 +139,8 @@ exports["test hotkey: automatic destroy"] = function(assert, done) {
   let loader = Loader(module);
   
   var called = false;
-  var element = loader.require("window-utils").activeBrowserWindow.document.documentElement;
-  var hotkey = loader.require("hotkeys").Hotkey({
+  var element = loader.require("sdk/deprecated/window-utils").activeBrowserWindow.document.documentElement;
+  var hotkey = loader.require("sdk/hotkeys").Hotkey({
     combo: "accel-shift-x",
     onPress: function() {
       called = true;

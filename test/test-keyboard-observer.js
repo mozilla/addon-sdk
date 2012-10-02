@@ -4,15 +4,15 @@
 
 "use strict";
 
-const { keyPress } = require("api-utils/dom/events/keys");
-const { Loader } = require("test-harness/loader");
-const timer = require("timer");
+const { keyPress } = require("sdk/dom/events/keys");
+const { Loader } = require("sdk/test/loader");
+const timer = require("sdk/timers");
 
 exports["test unload keyboard observer"] = function(assert, done) {
   let loader = Loader(module);
-  let element = loader.require("api-utils/window-utils").
+  let element = loader.require("sdk/deprecated/window-utils").
                        activeBrowserWindow.document.documentElement;
-  let observer = loader.require("api-utils/keyboard/observer").
+  let observer = loader.require("sdk/keyboard/observer").
                         observer;
   let called = 0;
 

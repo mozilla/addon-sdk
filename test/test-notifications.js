@@ -4,11 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Loader } = require('test-harness/loader');
+const { Loader } = require('sdk/test/loader');
 
 exports.testOnClick = function (test) {
   let [loader, mockAlertServ] = makeLoader(module);
-  let notifs = loader.require("notifications");
+  let notifs = loader.require("sdk/notifications");
   let data = "test data";
   let opts = {
     onClick: function (clickedData) {
@@ -39,7 +39,7 @@ function makeLoader(test) {
       this._alertListener.observe(null, "alertclickcallback", this._cookie);
     }
   };
-  loader.require("notifications");
+  loader.require("sdk/notifications");
   let scope = loader.sandbox("notifications");
   scope.notify = mockAlertServ.showAlertNotification.bind(mockAlertServ);
   return [loader, mockAlertServ];

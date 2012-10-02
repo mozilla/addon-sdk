@@ -28,7 +28,7 @@ tests.testFrame = function(test) {
 let hiddenFrameSupported = true;
 
 try {
-  hiddenFrames = require("hidden-frame");
+  hiddenFrames = require("sdk/frame/hidden-frame");
   HiddenFrame = hiddenFrames.HiddenFrame;
 }
 catch(ex if ex.message == [

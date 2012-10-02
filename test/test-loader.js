@@ -4,7 +4,7 @@
 
 'use strict';
 
-let { Loader, main, unload } = require('api-utils/loader');
+let { Loader, main, unload } = require('sdk/loader/loader');
 
 exports['test dependency cycles'] = function(assert) {
   let uri = module.uri.substr(0, module.uri.lastIndexOf('/')) +
