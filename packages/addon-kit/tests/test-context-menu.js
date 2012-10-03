@@ -1208,6 +1208,30 @@ exports.testSeparator = function (test) {
 };
 
 
+// The parentMenu option should work
+exports.testParentMenu = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let menu = new loader.cm.Menu({
+    label: "submenu",
+    items: [loader.cm.Item({ label: "item 1" })],
+    parentMenu: loader.cm.contentContextMenu
+  });
+
+  let item = loader.cm.Item({
+    label: "item 2",
+    parentMenu: menu,
+  });
+
+  test.assertEqual(menu.items[1], item, "Item should be in the sub menu");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([menu], [], []);
+    test.done();
+  });
+};
+
 // Existing context menu modifications should apply to new windows.
 exports.testNewWindow = function (test) {
   test = new TestHelper(test);
@@ -2158,11 +2182,11 @@ TestHelper.prototype = {
   },
 
   // Asserts that the context menu looks OK given the arguments.  presentItems
-  // are items that should match the current context.  absentItems are items
-  // that shouldn't.  removedItems are items that have been removed from the
-  // menu.
+  // are items that have been added to the menu.  absentItems are items that 
+  // shouldn't match the current context.  removedItems are items that have been
+  // removed from the menu.
   checkMenu: function (presentItems, absentItems, removedItems) {
-    // Count up howe many top-level items there are
+    // Count up how many top-level items there are
     let total = 0;
     for (let item of presentItems) {
       if (absentItems.indexOf(item) < 0 && removedItems.indexOf(item) < 0)

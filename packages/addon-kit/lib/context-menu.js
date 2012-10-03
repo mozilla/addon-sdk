@@ -186,7 +186,16 @@ function filterOut(array, item) {
 }
 
 // Shared option validation rules for Item and Menu
-let optionRules =  {
+let baseItemRules = {
+  parentMenu: {
+    is: ["object", "undefined"],
+    ok: function (v) {
+      if (!v)
+        return true;
+      return (v instanceof ItemContainer) || (v instanceof Menu);
+    },
+    msg: "parentMenu is specified must be a Menu."
+  },
   context: {
     is: ["undefined", "object", "array"],
     ok: function (v) {
@@ -197,16 +206,6 @@ let optionRules =  {
     },
     msg: "The 'context' option must be a Context object or an array of " +
          "Context objects."
-  },
-  label: {
-    map: function (v) v.toString(),
-    is: ["string"],
-    ok: function (v) !!v,
-    msg: "The item must have a non-empty string label."
-  },
-  image: {
-    map: function (v) v.toString(),
-    is: ["string", "undefined", "null"]
   },
   contentScript: {
     is: ["string", "array", "undefined"],
@@ -238,8 +237,21 @@ let optionRules =  {
   }
 };
 
+let labelledItemRules =  mix(baseItemRules, {
+  label: {
+    map: function (v) v.toString(),
+    is: ["string"],
+    ok: function (v) !!v,
+    msg: "The item must have a non-empty string label."
+  },
+  image: {
+    map: function (v) v.toString(),
+    is: ["string", "undefined", "null"]
+  }
+});
+
 // Additional validation rules for Item
-let itemOptionRules = mix(optionRules, {
+let itemRules = mix(labelledItemRules, {
   data: {
     map: function (v) v.toString(),
     is: ["string", "undefined"]
@@ -247,7 +259,7 @@ let itemOptionRules = mix(optionRules, {
 });
 
 // Additional validation rules for Menu
-let menuOptionRules = mix(optionRules, {
+let menuRules = mix(labelledItemRules, {
   items: {
     is: ["array", "undefined"],
     ok: function (v) {
@@ -290,9 +302,6 @@ let ContextWorker = Worker.compose({
 // Tests whether an item should be visible or not based on its contexts and
 // content scripts
 function isItemVisible(item, popupNode) {
-  if (!(item instanceof LabelledItem))
-    return true;
-
   if (item.context.length > 0) {
     for (let context in item.context) {
       if (!context.isCurrent(popupNode))
@@ -383,26 +392,12 @@ function itemClicked(item, clickedItem, popupNode) {
 // All things that appear in the context menu extend this
 let BaseItem = Class({
   initialize: function initialize() {
-    exports.contentContextMenu.addItem(this);
-  },
-
-  destroy: function destroy() {
-    if (internal(this).parentMenu)
-      internal(this).parentMenu.removeItem(this);
-  },
-
-  get parentMenu() {
-    return internal(this).parentMenu;
-  }
-});
-
-// All things that have a label on the context menu extend this
-let LabelledItem = Class({
-  extends: BaseItem,
-  implements: [ EventTarget ],
-
-  initialize: function initialize(options) {
     addCollectionProperty(this, "context");
+
+    // Used to cache content script workers and the windows they have been
+    // created for
+    internal(this).workerMap = new WeakMap();
+    internal(this).workerWindows = [];
 
     if ("context" in internal(this).options && internal(this).options.context) {
       let contexts = internal(this).options.context;
@@ -415,11 +410,37 @@ let LabelledItem = Class({
       }
     }
 
-    // Used to cache content script workers and the windows they have been
-    // created for
-    internal(this).workerMap = new WeakMap();
-    internal(this).workerWindows = [];
+    let parentMenu = internal(this).options.parentMenu;
+    if (!parentMenu)
+      parentMenu = exports.contentContextMenu;
 
+    parentMenu.addItem(this);
+  },
+
+  destroy: function destroy() {
+    if (internal(this).parentMenu)
+      internal(this).parentMenu.removeItem(this);
+  },
+
+  get parentMenu() {
+    return internal(this).parentMenu;
+  },
+
+  get contentScript() {
+    return internal(this).options.contentScript;
+  },
+
+  get contentScriptFile() {
+    return internal(this).options.contentScriptFile;
+  }
+});
+
+// All things that have a label on the context menu extend this
+let LabelledItem = Class({
+  extends: BaseItem,
+  implements: [ EventTarget ],
+
+  initialize: function initialize(options) {
     BaseItem.prototype.initialize.call(this);
     EventTarget.prototype.initialize.call(this, options);
   },
@@ -458,14 +479,6 @@ let LabelledItem = Class({
 
   set data(val) {
     internal(this).options.data = val;
-  },
-
-  get contentScript() {
-    return internal(this).options.contentScript;
-  },
-
-  get contentScriptFile() {
-    return internal(this).options.contentScriptFile;
   }
 });
 
@@ -473,7 +486,7 @@ let Item = Class({
   extends: LabelledItem,
 
   initialize: function initialize(options) {
-    internal(this).options = validateOptions(options, itemOptionRules);
+    internal(this).options = validateOptions(options, itemRules);
 
     LabelledItem.prototype.initialize.call(this, options);
   },
@@ -567,7 +580,7 @@ let Menu = Class({
   implements: [ItemContainer],
 
   initialize: function initialize(options) {
-    internal(this).options = validateOptions(options, menuOptionRules);
+    internal(this).options = validateOptions(options, menuRules);
 
     LabelledItem.prototype.initialize.call(this, options);
     ItemContainer.prototype.initialize.call(this);
@@ -590,6 +603,12 @@ let Menu = Class({
 
 let Separator = Class({
   extends: BaseItem,
+
+  initialize: function initialize(options) {
+    internal(this).options = validateOptions(options, baseItemRules);
+
+    BaseItem.prototype.initialize.call(this);
+  },
 
   toString: function toString() {
     return "[object Separator]";
