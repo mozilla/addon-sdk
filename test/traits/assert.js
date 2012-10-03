@@ -4,7 +4,7 @@
 
 "use strict";
 
-var BaseAssert = require("test/assert").Assert;
+var BaseAssert = require("sdk/test/assert").Assert;
 
 /**
  * Whether or not given property descriptors are equivalent. They are

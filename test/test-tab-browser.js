@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var timer = require("timer");
+var timer = require("sdk/timers");
 var {Cc,Ci} = require("chrome");
 
 function onBrowserLoad(callback, event) {
@@ -61,10 +61,10 @@ function closeTwoWindows(window1, window2, callback) {
 exports.testAddTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    const tabBrowser = require("tab-browser");
+    const tabBrowser = require("sdk/deprecated/tab-browser");
 
     let cache = [];
-    let windowUtils = require("window-utils");
+    let windowUtils = require("sdk/deprecated/window-utils");
     new windowUtils.WindowTracker({
       onTrack: function(win) {
         cache.push(win);
@@ -109,7 +109,7 @@ exports.testAddTab = function(test) {
 
 exports.testTrackerWithDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("tab-browser");
+  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var delegate = {
     state: "initializing",
@@ -148,7 +148,7 @@ exports.testTrackerWithDelegate = function(test) {
 
 exports.testWhenContentLoaded = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("tab-browser");
+  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var tracker = tabBrowser.whenContentLoaded(
     function(window) {
@@ -169,7 +169,7 @@ exports.testWhenContentLoaded = function(test) {
 
 exports.testTrackerWithoutDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("tab-browser");
+  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var tb = new tabBrowser.Tracker();
@@ -198,7 +198,7 @@ exports.testTrackerWithoutDelegate = function(test) {
 
 exports.testTabTracker = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("tab-browser");
+  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var delegate = {
@@ -252,8 +252,8 @@ exports.testTabTracker = function(test) {
 exports.testActiveTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(browserWindow, browser) {
-    const tabBrowser = require("tab-browser");
-    const TabModule = require("tab-browser").TabModule;
+    const tabBrowser = require("sdk/deprecated/tab-browser");
+    const TabModule = require("sdk/deprecated/tab-browser").TabModule;
     let tm = new TabModule(browserWindow);
     test.assertEqual(tm.length, 1);
     let url1 = "data:text/html;charset=utf-8,foo";
@@ -291,7 +291,7 @@ exports.testActiveTab = function(test) {
 // TabModule tests
 exports.testEventsAndLengthStayInModule = function(test) {
   test.waitUntilDone();
-  let TabModule = require("tab-browser").TabModule;
+  let TabModule = require("sdk/deprecated/tab-browser").TabModule;
 
   openTwoWindows(function(window1, window2) {
     let tm1 = new TabModule(window1);
@@ -327,7 +327,7 @@ exports.testEventsAndLengthStayInModule = function(test) {
 
 exports.testTabModuleActiveTab_getterAndSetter = function(test) {
   test.waitUntilDone();
-  let TabModule = require("tab-browser").TabModule;
+  let TabModule = require("sdk/deprecated/tab-browser").TabModule;
 
   openTwoWindows(function(window1, window2) {
     let tm1 = new TabModule(window1);
@@ -386,7 +386,7 @@ exports.testTabModuleActiveTab_getterAndSetter = function(test) {
 // test tabs iterator
 exports.testTabModuleTabsIterator = function(test) {
   test.waitUntilDone();
-  let TabModule = require("tab-browser").TabModule;
+  let TabModule = require("sdk/deprecated/tab-browser").TabModule;
 
   openBrowserWindow(function(window) {
     let tm1 = new TabModule(window);
@@ -409,7 +409,7 @@ exports.testTabModuleTabsIterator = function(test) {
 // inNewWindow parameter is ignored on single-window modules
 exports.testTabModuleCantOpenInNewWindow = function(test) {
   test.waitUntilDone();
-  let TabModule = require("tab-browser").TabModule;
+  let TabModule = require("sdk/deprecated/tab-browser").TabModule;
 
   openBrowserWindow(function(window) {
     let tm = new TabModule(window);
@@ -429,7 +429,7 @@ exports.testTabModuleCantOpenInNewWindow = function(test) {
 // window won't duplicate events fired on each module
 exports.testModuleListenersDontInteract = function(test) {
   test.waitUntilDone();
-  let TabModule = require("tab-browser").TabModule;
+  let TabModule = require("sdk/deprecated/tab-browser").TabModule;
 
   openBrowserWindow(function(window) {
     let tm1 = new TabModule(window);
@@ -497,7 +497,7 @@ function activeWindow() {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("tab-browser");
+  require("sdk/deprecated/tab-browser");
 }
 catch (err) {
   // This bug should be mentioned in the error message.

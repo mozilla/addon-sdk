@@ -4,9 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const file = require("file");
-const { pathFor } = require("api-utils/system");
-const { Loader } = require("test-harness/loader");
+const file = require("sdk/io/file");
+const { pathFor } = require("sdk/system");
+const { Loader } = require("sdk/test/loader");
 
 const STREAM_CLOSED_ERROR = "The stream is closed and cannot be used.";
 
@@ -141,7 +141,7 @@ exports.testWriteAsync = function (test) {
 
 exports.testUnload = function (test) {
   let loader = Loader(module);
-  let file = loader.require("file");
+  let file = loader.require("sdk/io/file");
 
   let filename = dataFileFilename("temp");
   let stream = file.open(filename, "w");

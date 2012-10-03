@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var timer = require("timer");
-const { Loader } = require("test-harness/loader");
+var timer = require("sdk/timers");
+const { Loader } = require("sdk/test/loader");
 
 exports.testSetTimeout = function(test) {
   timer.setTimeout(function() {
@@ -111,7 +111,7 @@ exports.testParamedClearInterval = function(test) {
 
 exports.testUnload = function(test) {
   var loader = Loader(module);
-  var sbtimer = loader.require("timer");
+  var sbtimer = loader.require("sdk/timers");
 
   var myFunc = function myFunc() {
     test.fail("myFunc() should not be called in testUnload");

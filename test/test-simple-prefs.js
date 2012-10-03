@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { Loader } = require("test-harness/loader");
-const { setTimeout } = require("timers");
-const { notify } = require("observer-service");
-const { id } = require("self");
-const simplePrefs = require("simple-prefs");
+const { Loader } = require("sdk/test/loader");
+const { setTimeout } = require("sdk/timers");
+const { notify } = require("sdk/deprecated/observer-service");
+const { id } = require("sdk/self");
+const simplePrefs = require("sdk/simple-prefs");
 const { prefs: sp } = simplePrefs;
 
 const specialChars = "!@#$%^&*()_-=+[]{}~`\'\"<>,./?;:";
@@ -147,7 +147,7 @@ exports.testPrefUnloadListener = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
-  let sp = loader.require("simple-prefs");
+  let sp = loader.require("sdk/simple-prefs");
   let counter = 0;
 
   let listener = function() {
@@ -158,7 +158,7 @@ exports.testPrefUnloadListener = function(test) {
     // this may not execute after unload, but definitely shouldn't fire listener
     sp.prefs["test-listen3"] = false;
     // this should execute, but also definitely shouldn't fire listener
-    require("simple-prefs").prefs["test-listen3"] = false; // 
+    require("sdk/simple-prefs").prefs["test-listen3"] = false; // 
 
     test.done();
   };
@@ -171,7 +171,7 @@ exports.testPrefUnloadListener = function(test) {
 
 // Bug 732919 - JSON.stringify() fails on simple-prefs.prefs
 exports.testPrefJSONStringification = function(test) {
-  var sp = require("simple-prefs").prefs;
+  var sp = require("sdk/simple-prefs").prefs;
   test.assertEqual(
       Object.keys(sp).join(),
       Object.keys(JSON.parse(JSON.stringify(sp))).join(),

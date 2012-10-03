@@ -4,7 +4,7 @@
 
 "use strict";
 
-var Trait = require("light-traits").Trait;
+var Trait = require("sdk/deprecated/light-traits").Trait;
 
 exports["test custom constructor and inherited toString"] = function(assert) {
   function Type() {

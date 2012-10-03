@@ -4,7 +4,7 @@
 
 "use strict";
 
-var Trait = require("light-traits").Trait;
+var Trait = require("sdk/deprecated/light-traits").Trait;
 var utils = require("./utils");
 var Data = utils.Data;
 var Method = utils.Method;

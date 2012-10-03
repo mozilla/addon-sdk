@@ -6,8 +6,8 @@
 
 const { Ci } = require('chrome');
 const { open, backgroundify, windows,
-        getXULWindow, getBaseWindow } = require('api-utils/window/utils');
-const windowUtils = require('api-utils/window-utils');
+        getXULWindow, getBaseWindow } = require('sdk/window/utils');
+const windowUtils = require('sdk/deprecated/window-utils');
 
 exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
   let active = windowUtils.activeBrowserWindow;

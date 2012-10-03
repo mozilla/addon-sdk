@@ -4,17 +4,17 @@
 
 "use strict";
 
-const { Loader } = require("test-harness/loader");
-const timer = require("timer");
+const { Loader } = require("sdk/test/loader");
+const timer = require("sdk/timers");
 
 exports["test unload window observer"] = function(assert, done) {
   // Hacky way to be able to create unloadable modules via makeSandboxedLoader.
   let loader = Loader(module);
 
-  let utils = loader.require("api-utils/window-utils");
+  let utils = loader.require("sdk/deprecated/window-utils");
   let { activeBrowserWindow: activeWindow } = utils;
-  let { isBrowser } = require('api-utils/window/utils');
-  let observer = loader.require("api-utils/windows/observer").observer;
+  let { isBrowser } = require('sdk/window/utils');
+  let observer = loader.require("sdk/windows/observer").observer;
   let opened = 0;
   let closed = 0;
 

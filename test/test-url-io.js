@@ -4,8 +4,8 @@
 
 "use strict";
 
-const { readURI, readURISync } = require("api-utils/url/io");
-const { data } = require("self");
+const { readURI, readURISync } = require("sdk/io/url");
+const { data } = require("sdk/self");
 
 const utf8text = "Hello, ゼロ!";
 const latin1text = "Hello, ã‚¼ãƒ­!";

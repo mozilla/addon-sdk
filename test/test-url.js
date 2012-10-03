@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var url = require("url");
-var { packed } = require("self");
+var url = require("sdk/core/url");
+var { packed } = require("sdk/self");
 
 exports.testResolve = function(test) {
   test.assertEqual(url.URL("bar", "http://www.foo.com/").toString(),
@@ -122,7 +122,7 @@ exports.testToFilename = function(test) {
 };
 
 exports.testFromFilename = function(test) {
-  var profileDirName = require("system").pathFor("ProfD");
+  var profileDirName = require("sdk/system").pathFor("ProfD");
   var fileUrl = url.fromFilename(profileDirName);
   test.assertEqual(url.URL(fileUrl).scheme, 'file',
                    'url.toFilename() should return a file: url');
@@ -239,7 +239,7 @@ exports.testDataURLparse = function (test) {
 
 exports.testDataURLparseBase64 = function (test) {
   const { DataURL } = url;
-  const { decode } = require("./base64");
+  const { decode } = require("sdk/base64");
 
   let text = "Awesome!";
   let b64text = "QXdlc29tZSE=";

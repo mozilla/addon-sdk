@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const traceback = require("traceback");
+const traceback = require("sdk/console/traceback");
 
 exports.test_no_args = function(test) {
   var passed = false;

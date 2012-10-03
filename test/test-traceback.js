@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var traceback = require("traceback");
+var traceback = require("sdk/console/traceback");
 var {Cc,Ci,Cr,Cu} = require("chrome");
 
 function throwNsIException() {
@@ -16,7 +16,7 @@ function throwError() {
 }
 
 exports.testFormatDoesNotFetchRemoteFiles = function(test) {
-  var observers = require("observer-service");
+  var observers = require("sdk/deprecated/observer-service");
   ["http", "https"].forEach(
     function(scheme) {
       var httpRequests = 0;
@@ -66,7 +66,7 @@ exports.testFromExceptionWithError = function(test) {
     test.fail("an exception should've been thrown");
   } catch (e if e instanceof Error) {
     var tb = traceback.fromException(e);
-    var xulApp = require("xul-app");
+    var xulApp = require("sdk/system/xul-app");
     test.assertEqual(tb.slice(-1)[0].funcName, "throwError");
   }
 };

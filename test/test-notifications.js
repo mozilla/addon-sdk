@@ -40,7 +40,7 @@ function makeLoader(test) {
     }
   };
   loader.require("sdk/notifications");
-  let scope = loader.sandbox("notifications");
+  let scope = loader.sandbox("sdk/notifications");
   scope.notify = mockAlertServ.showAlertNotification.bind(mockAlertServ);
   return [loader, mockAlertServ];
 };

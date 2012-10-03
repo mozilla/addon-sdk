@@ -6,10 +6,10 @@
 const { Cc, Ci } = require('chrome');
 const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-const { Loader } = require('test-harness/loader');
-const { browserWindows } = require('windows');
-const privateBrowsing = require('private-browsing');
-const pbUtils = require('api-utils/private-browsing/utils');
+const { Loader } = require('sdk/test/loader');
+const { browserWindows } = require('sdk/windows');
+const privateBrowsing = require('sdk/private-browsing');
+const pbUtils = require('sdk/private-browsing/utils');
 
 // TEST: browserWindows Iterator
 exports.testBrowserWindowsIterator = function(test) {
@@ -128,7 +128,7 @@ if (pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
     let chromeWin;
     let setPBMode = function(mode) pbUtils.setMode(mode, chromeWin);
     let loader = Loader(module);
-    let {browserWindows: windows} = loader.require('windows');
+    let {browserWindows: windows} = loader.require('sdk/windows');
     let testWindow;
     let count = 0;
     let globalCount = 0;

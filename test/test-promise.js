@@ -5,7 +5,7 @@
 
 'use strict';
 
-var core = require('api-utils/promise'),
+var core = require('sdk/core/promise'),
     defer = core.defer, resolve = core.resolve, reject = core.reject,
     promised = core.promised
 

@@ -4,13 +4,13 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { setTimeout } = require('timer');
-const { Loader } = require('test-harness/loader');
+const { setTimeout } = require('sdk/timers');
+const { Loader } = require('skd/test/loader');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-const { browserWindows } = require('windows');
+const { browserWindows } = require('sdk/windows');
 
-const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("tabs") instead';
+const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("sdk/tabs") instead';
 
 // TEST: browserWindows.length for Fennec
 exports.testBrowserWindowsLength = function(test) {

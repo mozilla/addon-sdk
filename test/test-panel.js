@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let { Cc, Ci } = require("chrome");
-let panels = require('panel');
+let panels = require('sdk/panel');
 let tests = {}, panels, Panel;
-const { Loader } = require('test-harness/loader');
-const timer = require("timer");
+const { Loader } = require('sdk/test/loader');
+const timer = require("sdk/timers");
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -279,7 +279,7 @@ tests.testAnchorAndArrow = function(test) {
     panel.show(anchor);
   }
 
-  let tabs= require("tabs");
+  let tabs= require("sdk/tabs");
   let url = 'data:text/html;charset=utf-8,' +
     '<html><head><title>foo</title></head><body>' +
     '<style>div {background: gray; position: absolute; width: 300px; ' +
@@ -376,7 +376,7 @@ function makeEventOrderTest(options) {
 
 tests.testAutomaticDestroy = function(test) {
   let loader = Loader(module);
-  let panel = loader.require("panel").Panel({
+  let panel = loader.require("sdk/panel").Panel({
     contentURL: "about:buildconfig",
     contentScript:
       "self.port.on('event', function() self.port.emit('event-back'));"
@@ -445,7 +445,7 @@ exports.testContentScriptOptionsOption = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
-  let panel = loader.require("panel").Panel({
+  let panel = loader.require("sdk/panel").Panel({
       contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
       contentScriptWhen: "end",
       contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
@@ -463,7 +463,7 @@ exports.testContentScriptOptionsOption = function(test) {
 let panelSupported = true;
 
 try {
-  panels = require("panel");
+  panels = require("sdk/panel");
   Panel = panels.Panel;
 }
 catch(ex if ex.message == [

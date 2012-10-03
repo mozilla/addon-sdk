@@ -22,7 +22,7 @@
 "use strict";
 
 // test using assert
-var qs = require('api-utils/querystring');
+var qs = require('sdk/core/querystring');
 
 // folding block, commented to pass gjslint
 // {{{

@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { uuid } = require('api-utils/uuid');
+const { uuid } = require('sdk/util/uuid');
 
 exports['test generate uuid'] = function(assert) {
   let signature = /{[0-9a-f\-]+}/
