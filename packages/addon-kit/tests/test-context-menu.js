@@ -27,7 +27,8 @@ exports.testConstructDestroy = function (test) {
 
   // Create an item.
   let item = new loader.cm.Item({ label: "item" });
-  test.assertEqual(item.parentMenu, null, "item's parent menu should be null");
+  test.assertEqual(item.parentMenu, loader.cm.contentContextMenu,
+                   "item's parent menu should be correct");
 
   test.showMenu(null, function (popup) {
 

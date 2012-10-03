@@ -383,12 +383,7 @@ function itemClicked(item, clickedItem, popupNode) {
 // All things that appear in the context menu extend this
 let BaseItem = Class({
   initialize: function initialize() {
-    // The only time rootMenu is undefined is when we're actually initializing
-    // it
-    if (!rootMenu)
-      return;
-
-    rootMenu.addItem(this);
+    exports.contentContextMenu.addItem(this);
   },
 
   destroy: function destroy() {
@@ -397,11 +392,7 @@ let BaseItem = Class({
   },
 
   get parentMenu() {
-    let parent = internal(this).parentMenu;
-    // Hide the root menu from the public hierarchy
-    if (parent === rootMenu)
-      return null;
-    return parent;
+    return internal(this).parentMenu;
   }
 });
 
@@ -502,28 +493,15 @@ let Item = Class({
   },
 });
 
-let Menu = Class({
-  extends: LabelledItem,
-
-  initialize: function initialize(options) {
-    internal(this).options = validateOptions(options, menuOptionRules);
-
-    LabelledItem.prototype.initialize.call(this, options);
-
+let ItemContainer = Class({
+  initialize: function initialize() {
     internal(this).children = [];
-
-    if (internal(this).options.items) {
-      for (let item of internal(this).options.items)
-        this.addItem(item);
-    }
   },
 
   destroy: function destroy() {
     // Destroys the entire hierarchy
     for (let item of internal(this).children)
       item.destroy();
-
-    LabelledItem.prototype.destroy.call(this);
   },
 
   addItem: function addItem(item) {
@@ -561,10 +539,6 @@ let Menu = Class({
     MenuManager.removeItem(item);
   },
 
-  toString: function toString() {
-    return "[object Menu \"" + this.label + "\"]";
-  },
-
   get items() {
     return internal(this).children.slice(0);
   },
@@ -588,6 +562,32 @@ let Menu = Class({
   },
 });
 
+let Menu = Class({
+  extends: LabelledItem,
+  implements: [ItemContainer],
+
+  initialize: function initialize(options) {
+    internal(this).options = validateOptions(options, menuOptionRules);
+
+    LabelledItem.prototype.initialize.call(this, options);
+    ItemContainer.prototype.initialize.call(this);
+
+    if (internal(this).options.items) {
+      for (let item of internal(this).options.items)
+        this.addItem(item);
+    }
+  },
+
+  destroy: function destroy() {
+    ItemContainer.prototype.destroy.call(this);
+    LabelledItem.prototype.destroy.call(this);
+  },
+
+  toString: function toString() {
+    return "[object Menu \"" + this.label + "\"]";
+  },
+});
+
 let Separator = Class({
   extends: BaseItem,
 
@@ -600,14 +600,11 @@ exports.Item = Item;
 exports.Menu = Menu;
 exports.Separator = Separator;
 
-// An internal menu to hold the root context items. It should never be reachable
-// by API consumers
-let rootMenu = Menu({
-  label: OVERFLOW_MENU_LABEL
-});
+// Holds items for the content area context menu
+exports.contentContextMenu = ItemContainer();
 
 when(function() {
-  rootMenu.destroy();
+  exports.contentContextMenu.destroy();
 });
 
 // App specific UI code lives here, it should handle populating the context
@@ -621,7 +618,7 @@ let WindowWrapper = Class({
 
     this.contextMenu = window.document.getElementById("contentAreaContextMenu");
 
-    this.populate(rootMenu);
+    this.populate(exports.contentContextMenu);
 
     this.contextMenu.addEventListener("popupshowing", this, false);
   },
@@ -631,7 +628,7 @@ let WindowWrapper = Class({
 
     // If we're getting unloaded at runtime then we must remove all the
     // generated XUL nodes
-    for (let item of internal(rootMenu).children) {
+    for (let item of internal(exports.contentContextMenu).children) {
       let xulNode = this.getXULNodeForItem(item);
       xulNode.parentNode.removeChild(xulNode);
     }
@@ -681,12 +678,12 @@ let WindowWrapper = Class({
   },
 
   // Works out where to insert a XUL node for an item in a browser window
-  getInsertionPoint: function getInsertionPoint(item, after) {
+  insertIntoXUL: function insertIntoXUL(item, node, after) {
     let menupopup = null;
     let before = null;
 
     let menu = internal(item).parentMenu;
-    if (menu === rootMenu) {
+    if (menu === exports.contentContextMenu) {
       menupopup = this.window.document.getElementById(OVERFLOW_POPUP_ID);
 
       // If there isn't already an overflow menu then check if we need to
@@ -729,10 +726,7 @@ let WindowWrapper = Class({
       before = afterNode.nextSibling;
     }
 
-    return {
-      menupopup: menupopup,
-      before: before
-    };
+    menupopup.insertBefore(node, before);
   },
 
   // Sets the right class for XUL nodes
@@ -750,8 +744,6 @@ let WindowWrapper = Class({
 
   // Creates a XUL node for an item
   createItem: function createItem(item, after) {
-    let { menupopup, before } = this.getInsertionPoint(item, after);
-
     let type = "menuitem";
     if (item instanceof Menu)
       type = "menu";
@@ -776,12 +768,12 @@ let WindowWrapper = Class({
       }, false);
     }
 
-    menupopup.insertBefore(xulNode, before);
+    this.insertIntoXUL(item, xulNode, after);
     this.setXULClass(xulNode);
     xulNode.data = item.data;
 
     if (item instanceof Menu) {
-      menupopup = this.window.document.createElement("menupopup");
+      let menupopup = this.window.document.createElement("menupopup");
       xulNode.appendChild(menupopup);
     }
 
@@ -808,14 +800,10 @@ let WindowWrapper = Class({
   // hierarchy
   moveItem: function moveItem(item, after) {
     let xulNode = this.getXULNodeForItem(item);
-
     let oldParent = xulNode.parentNode;
 
-    let { menupopup, before } = this.getInsertionPoint(item, after);
-    menupopup.insertBefore(xulNode, before);
-
+    this.insertIntoXUL(item, xulNode, after);
     this.setXULClass(xulNode);
-
     this.onXULRemoved(oldParent);
   },
 
@@ -879,7 +867,7 @@ let WindowWrapper = Class({
       let separator = this.window.document.getElementById(SEPARATOR_ID);
       let popup = this.window.document.getElementById(OVERFLOW_MENU_ID);
   
-      if (this.setVisibility(rootMenu, event.target.triggerNode)) {
+      if (this.setVisibility(exports.contentContextMenu, event.target.triggerNode)) {
         // Some of this instance's items are visible so make sure the separator
         // and if necessary the overflow popup are visible
         separator.hidden = false;
