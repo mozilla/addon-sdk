@@ -1,0 +1,3 @@
+component {537df286-d9ae-4c7a-a633-6266b1325289} command-line-handler.js
+contract @mozilla.org/cfx/clh;1 {537df286-d9ae-4c7a-a633-6266b1325289}
+category command-line-handler m-cfx @mozilla.org/cfx/clh;1

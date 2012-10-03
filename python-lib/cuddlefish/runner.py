@@ -342,13 +342,18 @@ class XulrunnerAppRunner(mozrunner.Runner):
     @property
     def command(self):
         """Returns the command list to run."""
+        # We have to use Runner command property in order to gain its MacOS fix
+        cmd = mozrunner.Runner.command.fget(self)
 
+        # application.ini should be right after the binary
+        bin_index = cmd.index(self.binary)
         if self.__is_xulrunner_sdk:
-            return [self.binary, self.__app_ini, '-profile',
-                    self.profile.profile]
+            cmd.insert(bin_index + 1, self.__app_ini)
         else:
-            return [self.binary, '-app', self.__app_ini, '-profile',
-                    self.profile.profile]
+            cmd.insert(bin_index + 1, '-app')
+            cmd.insert(bin_index + 2, self.__app_ini)
+
+        return cmd
 
     def __find_xulrunner_binary(self):
         if sys.platform == 'darwin':
@@ -374,15 +379,17 @@ class XulrunnerAppRunner(mozrunner.Runner):
                 self.names = runner.names
         return self.__real_binary
 
-def run_app(harness_root_dir, manifest_rdf, harness_options,
-            app_type, binary=None, profiledir=None, verbose=False,
+
+def run_app(harness_root_dir, app_type, resultfile, xpi_path,
+            binary=None, adb=None, profiledir=None, verbose=False,
             enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
-            norun=None,
-            used_files=None, enable_mobile=False,
+            norun=None, enable_mobile=False,
             mobile_app_name=None):
     if binary:
         binary = os.path.expanduser(binary)
+    if adb:
+        adb = os.path.expanduser(adb)
 
     if addons is None:
         addons = []
@@ -431,19 +438,6 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if args:
         cmdargs.extend(shlex.split(args))
 
-    # TODO: handle logs on remote device
-    if app_type != "fennec-on-device":
-        # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
-        # run"/"cfx test" on the same host. On unix it points at /tmp (which is
-        # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
-        # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
-        # gives us a unique filename that fixes both problems. We leave the
-        # (0-byte) file in place until the browser-side code starts writing to
-        # it, otherwise the symlink attack becomes possible again.
-        fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
-        os.close(fileno)
-        harness_options['resultFile'] = resultfile
-
     def maybe_remove_logfile():
         if os.path.exists(logfile):
             os.remove(logfile)
@@ -454,17 +448,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # 1. On Windows, it's the only way to print console output to stdout/err.
     # 2. It enables us to keep track of the last time output was emitted,
     #    so we can raise an exception if the test runner hangs.
-    if not logfile:
-        fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
-        os.close(fileno)
     logfile_tail = follow_file(logfile)
     atexit.register(maybe_remove_logfile)
 
     logfile = os.path.abspath(os.path.expanduser(logfile))
     maybe_remove_logfile()
-
-    if app_type != "fennec-on-device":
-        harness_options['logFile'] = logfile
 
     env = {}
     env.update(os.environ)
@@ -475,15 +463,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     if norun:
         cmdargs.append("-no-remote")
 
-    # Create the addon XPI so mozrunner will copy it to the profile it creates.
+    # mozrunner will copy the xpi to the profile it creates.
     # We delete it below after getting mozrunner to create the profile.
-    from cuddlefish.xpi import build_xpi
-    xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
-    build_xpi(template_root_dir=harness_root_dir,
-              manifest=manifest_rdf,
-              xpi_path=xpi_path,
-              harness_options=harness_options,
-              limit_to=used_files)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()
@@ -520,8 +501,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
     # Delete the temporary xpi file
     os.remove(xpi_path)
 
+    runner_binary = binary
+    if app_type == "fennec-on-device":
+      runner_binary = adb
     runner = runner_class(profile=profile,
-                          binary=binary,
+                          binary=runner_binary,
                           env=env,
                           cmdargs=cmdargs,
                           kp_kwargs=popen_kwargs)
@@ -540,7 +524,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         # In case of mobile device, we need to get stdio from `adb logcat` cmd:
 
         # First flush logs in order to avoid catching previous ones
-        subprocess.call([binary, "logcat", "-c"])
+        subprocess.call([adb, "logcat", "-c"])
 
         # Launch adb command
         runner.start()
@@ -552,7 +536,7 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
         outf.close()
 
         # Then we simply display stdout of `adb logcat`
-        p = subprocess.Popen([binary, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
+        p = subprocess.Popen([adb, "logcat", "stderr:V stdout:V GeckoConsole:V *:S"], stdout=subprocess.PIPE)
         while True:
             line = p.stdout.readline()
             if line == '':

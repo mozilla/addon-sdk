@@ -4,24 +4,26 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-
-const system = require("api-utils/system");
 const file = require("api-utils/file");
 const unload = require("api-utils/unload");
 
-// Retrieve the path to the OS temporary directory:
-const tmpDir = require("system").pathFor("TmpD");
+// Retrieve the nsIFile to the OS temporary directory:
+const tmpDir = Cc["@mozilla.org/file/directory_service;1"].
+                 getService(Ci.nsIProperties).
+                 get("TmpD", Ci.nsILocalFile);
 
-// List of all tmp file created
+// List of all tmp file created (files or directories)
 let files = [];
 
 // Remove all tmp files on addon disabling
 unload.when(function () {
-  files.forEach(function (path){
+  files.forEach(function (file){
     // Catch exception in order to avoid leaking following files
     try {
-      if (file.exists(path))
-        file.remove(path);
+      if (file.exists()) {
+        // Remove recursively for directories
+        file.remove(true);
+      }
     }
     catch(e) {
       console.exception(e);
@@ -50,17 +52,23 @@ function readBinaryURI(uri) {
   return data;
 }
 
+const { NORMAL_FILE_TYPE, DIRECTORY_TYPE } = Ci.nsIFile;
+
+function createFile(type, name) {
+  let file = tmpDir.clone();
+  file.append(name ? name : "tmp-file");
+  file.createUnique(type, parseInt(666, 8));
+  files.push(file);
+  return file.path;
+}
+
 // Create a temporary file from a given string and returns its path
 exports.createFromString = function createFromString(data, tmpName) {  
-  let filename = (tmpName ? tmpName : "tmp-file") + "-" + (new Date().getTime());
-  let path = file.join(tmpDir, filename);
+  let path = createFile(NORMAL_FILE_TYPE, tmpName);
 
   let tmpFile = file.open(path, "wb");
   tmpFile.write(data);
   tmpFile.close();
-
-  // Register tmp file path
-  files.push(path);
 
   return path;
 }
@@ -69,4 +77,9 @@ exports.createFromString = function createFromString(data, tmpName) {
 exports.createFromURL = function createFromURL(url, tmpName) {
   let data = readBinaryURI(url);
   return exports.createFromString(data, tmpName);
+}
+
+// Returns a temporary directory path
+exports.createDirectory = function createDirectory(tmpName) {
+  return createFile(DIRECTORY_TYPE, tmpName);
 }

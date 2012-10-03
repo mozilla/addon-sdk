@@ -6,6 +6,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import tempfile
 
 from copy import copy
 import simplejson as json
@@ -173,6 +174,12 @@ parser_groups = (
                                     action="store_true",
                                     default=False,
                                     cmds=['run', 'test', 'xpi', 'testall'])),
+        (("--adb",), dict(dest="adb",
+                          help="path to adb executable",
+                          metavar=None,
+                          default=None,
+                          cmds=['test', 'run', 'testex', 'testpkgs',
+                                'testall'])),
         (("", "--mobile-app",), dict(dest="mobile_app_name",
                                     help=("Name of your Android application to "
                                           "use. Possible values: 'firefox', "
@@ -547,6 +554,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         parser_kwargs['arguments'] += config_args
         (options, args) = parse_args(**parser_kwargs)
 
+    # Set an env variable with given binary option
+    # In order to allow any subsequent code to catch it. (e.g. xpi.py)
+    if options.binary:
+        os.environ['CUDDLEFISH_BINARY'] = options.binary
+
     command = args[0]
 
     if command == "init":
@@ -732,9 +744,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         'jetpackID': jid,
         'staticArgs': options.static_args,
         'name': target,
+        'loader': build['loader'],
         }
-
-    harness_options.update(build)
+    if 'preferences' in build:
+      harness_options['preferences'] = build['preferences']
 
     extra_environment = {}
     if command == "test":
@@ -755,8 +768,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     harness_options['sdkVersion'] = sdk_version
 
     packaging.call_plugins(pkg_cfg, used_deps)
-
-    retval = 0
 
     if options.templatedir:
         app_extension_dir = os.path.abspath(options.templatedir)
@@ -802,56 +813,91 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if options.no_strip_xpi:
         used_files = None # disables the filter, includes all files
 
+    extra_harness_options = {}
+    resultfile = None
     if command == 'xpi':
-        from cuddlefish.xpi import build_xpi
-        extra_harness_options = {}
         for kv in options.extra_harness_option_args:
             key,value = kv.split("=", 1)
             extra_harness_options[key] = value
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
-        build_xpi(template_root_dir=app_extension_dir,
-                  manifest=manifest_rdf,
-                  xpi_path=xpi_path,
-                  harness_options=harness_options,
-                  limit_to=used_files,
-                  extra_harness_options=extra_harness_options)
-    else:
+    else: # test or run
+        xpi_path = tempfile.mktemp(suffix='cfx-tmp.xpi')
+
+        if options.app != "fennec-on-device":
+            # tempfile.gettempdir() was constant, preventing two simultaneous "cfx
+            # run"/"cfx test" on the same host. On unix it points at /tmp (which is
+            # world-writeable), enabling a symlink attack (e.g. imagine some bad guy
+            # does 'ln -s ~/.ssh/id_rsa /tmp/harness_result'). NamedTemporaryFile
+            # gives us a unique filename that fixes both problems. We leave the
+            # (0-byte) file in place until the browser-side code starts writing to
+            # it, otherwise the symlink attack becomes possible again.
+            fileno,resultfile = tempfile.mkstemp(prefix="harness-result-")
+            os.close(fileno)
+            harness_options['resultFile'] = resultfile
+
+        logfile = options.logfile
+        if not logfile:
+            fileno,logfile = tempfile.mkstemp(prefix="harness-log-")
+            os.close(fileno)
+        if options.app != "fennec-on-device":
+            harness_options['logFile'] = logfile
+
+    from cuddlefish.xpi import build_xpi
+    build_xpi(root_path=options.pkgdir,
+        sdk_path=env_root,
+        template_root_dir=app_extension_dir,
+        manifest=manifest_rdf,
+        xpi_path=xpi_path,
+        harness_options=harness_options,
+        limit_to=used_files,
+        icon=build.get('icon'),
+        icon64=build.get('icon64'),
+        locale=build.get('locale'),
+        packages=build.get('packages'),
+        extra_harness_options=extra_harness_options,
+        binary=options.binary)
+
+    # in case of `cfx xpi` we can exit immediatly
+    if command == "xpi":
+        sys.exit(0)
+        return
+
+    if options.profiledir:
+        options.profiledir = os.path.expanduser(options.profiledir)
+        options.profiledir = os.path.abspath(options.profiledir)
+
+    if options.addons is not None:
+        options.addons = options.addons.split(",")
+
+    retval = 0
+    try:
         from cuddlefish.runner import run_app
-
-        if options.profiledir:
-            options.profiledir = os.path.expanduser(options.profiledir)
-            options.profiledir = os.path.abspath(options.profiledir)
-
-        if options.addons is not None:
-            options.addons = options.addons.split(",")
-
-        try:
-            retval = run_app(harness_root_dir=app_extension_dir,
-                             manifest_rdf=manifest_rdf,
-                             harness_options=harness_options,
-                             app_type=options.app,
-                             binary=options.binary,
-                             profiledir=options.profiledir,
-                             verbose=options.verbose,
-                             enforce_timeouts=enforce_timeouts,
-                             logfile=options.logfile,
-                             addons=options.addons,
-                             args=options.cmdargs,
-                             extra_environment=extra_environment,
-                             norun=options.no_run,
-                             used_files=used_files,
-                             enable_mobile=options.enable_mobile,
-                             mobile_app_name=options.mobile_app_name)
-        except ValueError, e:
-            print ""
-            print "A given cfx option has an inappropriate value:"
-            print >>sys.stderr, "  " + "  \n  ".join(str(e).split("\n"))
+        retval = run_app(harness_root_dir=app_extension_dir,
+                         app_type=options.app,
+                         resultfile=resultfile,
+                         xpi_path=xpi_path,
+                         binary=options.binary,
+                         adb=options.adb,
+                         profiledir=options.profiledir,
+                         verbose=options.verbose,
+                         enforce_timeouts=enforce_timeouts,
+                         logfile=logfile,
+                         addons=options.addons,
+                         args=options.cmdargs,
+                         extra_environment=extra_environment,
+                         norun=options.no_run,
+                         enable_mobile=options.enable_mobile,
+                         mobile_app_name=options.mobile_app_name)
+    except ValueError, e:
+        print ""
+        print "A given cfx option has an inappropriate value:"
+        print >>sys.stderr, "  " + "  \n  ".join(str(e).split("\n"))
+        retval = -1
+    except Exception, e:
+        if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
+            print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
             retval = -1
-        except Exception, e:
-            if str(e).startswith(MOZRUNNER_BIN_NOT_FOUND):
-                print >>sys.stderr, MOZRUNNER_BIN_NOT_FOUND_HELP.strip()
-                retval = -1
-            else:
-                raise
+        else:
+            raise
     sys.exit(retval)
