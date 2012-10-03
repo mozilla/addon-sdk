@@ -23,17 +23,17 @@ const { emit } = require('api-utils/event/core');
 const { when } = require('api-utils/unload');
 
 // All user items we add have this class.
-const ITEM_CLASS = "jetpack-context-menu-item";
+const ITEM_CLASS = "addon-context-menu-item";
 
 // Items in the top-level context menu also have this class.
-const TOPLEVEL_ITEM_CLASS = "jetpack-context-menu-item-toplevel";
+const TOPLEVEL_ITEM_CLASS = "addon-context-menu-item-toplevel";
 
 // Items in the overflow submenu also have this class.
-const OVERFLOW_ITEM_CLASS = "jetpack-context-menu-item-overflow";
+const OVERFLOW_ITEM_CLASS = "addon-context-menu-item-overflow";
 
 // The class of the menu separator that separates standard context menu items
 // from our user items.
-const SEPARATOR_CLASS = "jetpack-context-menu-separator";
+const SEPARATOR_CLASS = "addon-context-menu-separator";
 
 // If more than this number of items are added to the context menu, all items
 // overflow into a "Jetpack" submenu.
@@ -47,10 +47,10 @@ const OVERFLOW_THRESH_PREF =
 const OVERFLOW_MENU_LABEL = "Add-ons";
 
 // The class of the overflow sub-xul:menu.
-const OVERFLOW_MENU_CLASS = "jetpack-content-menu-overflow-menu";
+const OVERFLOW_MENU_CLASS = "addon-content-menu-overflow-menu";
 
 // The class of the overflow submenu's xul:menupopup.
-const OVERFLOW_POPUP_CLASS = "jetpack-content-menu-overflow-popup";
+const OVERFLOW_POPUP_CLASS = "addon-content-menu-overflow-popup";
 
 //These are used by PageContext.isCurrent below. If the popupNode or any of
 //its ancestors is one of these, Firefox uses a tailored context menu, and so

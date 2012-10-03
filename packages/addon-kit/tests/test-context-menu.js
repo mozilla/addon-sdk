@@ -9,13 +9,13 @@ const { Loader } = require('test-harness/loader');
 const timer = require("timer");
 
 // These should match the same constants in the module.
-const ITEM_CLASS = "jetpack-context-menu-item";
-const SEPARATOR_CLASS = "jetpack-context-menu-separator";
+const ITEM_CLASS = "addon-context-menu-item";
+const SEPARATOR_CLASS = "addon-context-menu-separator";
 const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_THRESH_PREF =
   "extensions.addon-sdk.context-menu.overflowThreshold";
-const OVERFLOW_MENU_CLASS = "jetpack-content-menu-overflow-menu";
-const OVERFLOW_POPUP_CLASS = "jetpack-content-menu-overflow-popup";
+const OVERFLOW_MENU_CLASS = "addon-content-menu-overflow-menu";
+const OVERFLOW_POPUP_CLASS = "addon-content-menu-overflow-popup";
 
 const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
