@@ -10,12 +10,12 @@ const timer = require("timer");
 
 // These should match the same constants in the module.
 const ITEM_CLASS = "jetpack-context-menu-item";
-const SEPARATOR_ID = "jetpack-context-menu-separator";
+const SEPARATOR_CLASS = "jetpack-context-menu-separator";
 const OVERFLOW_THRESH_DEFAULT = 10;
 const OVERFLOW_THRESH_PREF =
   "extensions.addon-sdk.context-menu.overflowThreshold";
-const OVERFLOW_MENU_ID = "jetpack-content-menu-overflow-menu";
-const OVERFLOW_POPUP_ID = "jetpack-content-menu-overflow-popup";
+const OVERFLOW_MENU_CLASS = "jetpack-content-menu-overflow-menu";
+const OVERFLOW_POPUP_CLASS = "jetpack-content-menu-overflow-popup";
 
 const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
@@ -2122,15 +2122,15 @@ TestHelper.prototype = {
   },
 
   get contextMenuSeparator() {
-    return this.browserWindow.document.getElementById(SEPARATOR_ID);
+    return this.browserWindow.document.querySelector("." + SEPARATOR_CLASS);
   },
 
   get overflowPopup() {
-    return this.browserWindow.document.getElementById(OVERFLOW_POPUP_ID);
+    return this.browserWindow.document.querySelector("." + OVERFLOW_POPUP_CLASS);
   },
 
   get overflowSubmenu() {
-    return this.browserWindow.document.getElementById(OVERFLOW_MENU_ID);
+    return this.browserWindow.document.querySelector("." + OVERFLOW_MENU_CLASS);
   },
 
   get tabBrowser() {
@@ -2204,7 +2204,7 @@ TestHelper.prototype = {
     }
 
     let mainNodes = this.browserWindow.document.querySelectorAll("#contentAreaContextMenu > ." + ITEM_CLASS);
-    let overflowNodes = this.browserWindow.document.querySelectorAll("#" + OVERFLOW_POPUP_ID + " > ." + ITEM_CLASS);
+    let overflowNodes = this.browserWindow.document.querySelectorAll("." + OVERFLOW_POPUP_CLASS + " > ." + ITEM_CLASS);
 
     let overflow = this.overflowSubmenu;
     if (this.shouldOverflow(total)) {
