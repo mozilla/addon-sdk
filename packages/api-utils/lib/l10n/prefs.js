@@ -25,6 +25,12 @@ function onOptionsDisplayed(document, addonId) {
       let title = core.get(name + "_title");
       if (title)
         node.setAttribute("title", title);
+
+      for (let item of node.querySelectorAll("menuitem, radio")) {
+          let label = core.get(item.getAttribute("label"));
+          if (label)
+            item.setAttribute("label", label);
+      }
     }
     else if (node.tagName == "button") {
       let label = core.get(name + "_label");
