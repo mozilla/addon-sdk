@@ -988,6 +988,8 @@ let WindowWrapper = Class({
       if (wrapper.items === root)
         return wrapper;
     }
+
+    return null;
   }
 });
 
