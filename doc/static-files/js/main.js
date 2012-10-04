@@ -4,12 +4,6 @@
 
 function run(jQuery) {
 
-  function showThirdPartyModules() {
-    if ($("#third-party-package-summaries").html() != "") {
-      $("#third-party-packages-subsection").show();
-    }
-  }
-
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
@@ -101,7 +95,6 @@ function run(jQuery) {
     searchBox.blur();
   }
 
-  showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateAnchors();

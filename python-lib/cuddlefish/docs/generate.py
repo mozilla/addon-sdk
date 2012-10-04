@@ -11,7 +11,6 @@ import StringIO
 import HTMLParser
 import urlparse
 
-from cuddlefish import packaging
 from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
 from cuddlefish.docs import webdocs
@@ -37,7 +36,7 @@ def clean_generated_docs(docs_dir):
     dev_guide_dir = os.path.join(docs_dir, "dev-guide")
     if os.path.exists(dev_guide_dir):
         shutil.rmtree(dev_guide_dir)
-    api_doc_dir = os.path.join(docs_dir, "packages")
+    api_doc_dir = os.path.join(docs_dir, "modules")
     if os.path.exists(api_doc_dir):
         shutil.rmtree(api_doc_dir)
 
@@ -56,7 +55,7 @@ def generate_named_file(env_root, filename):
     web_docs = webdocs.WebDocs(env_root, get_base_url(env_root))
     # next, generate api doc or guide doc
     abs_path = os.path.abspath(filename)
-    if abs_path.startswith(os.path.join(env_root, 'packages')):
+    if abs_path.startswith(os.path.join(env_root, 'modules')):
         doc_html, dest_dir, filename = generate_api_doc(env_root, abs_path, web_docs)
         write_file(env_root, doc_html, dest_dir, filename, False)
     elif abs_path.startswith(os.path.join(get_sdk_docs_path(env_root), 'dev-guide-source')):
@@ -87,13 +86,13 @@ def generate_docs(env_root, base_url=None, stdout=sys.stdout):
     return get_base_url(env_root) + "index.html"
 
 # this function builds a hash of the name and last modification date of:
-# * every file in "packages" which ends in ".md"
+# * every file in "doc/sdk" which ends in ".md"
 # * every file in "static-files" which does not start with "."
 def calculate_current_status(env_root):
     docs_dir = get_sdk_docs_path(env_root)
     current_status = hashlib.md5()
-    package_src_dir = os.path.join(env_root, "packages")
-    for (dirpath, dirnames, filenames) in os.walk(package_src_dir):
+    module_src_dir = os.path.join(env_root, "doc", "sdk")
+    for (dirpath, dirnames, filenames) in os.walk(module_src_dir):
         for filename in filenames:
             if filename.endswith(".md"):
                 current_status.update(filename)
@@ -124,37 +123,11 @@ def generate_docs_from_scratch(env_root, base_url):
             if n.endswith("~"):
                 os.unlink(os.path.join(dirpath, n))
 
-    # generate api docs from all packages
-    os.mkdir(os.path.join(docs_dir, "packages"))
-    # create the index file and save that
-    pkg_cfg = packaging.build_pkg_cfg(env_root)
-    index = json.dumps(packaging.build_pkg_index(pkg_cfg))
-    index_path = os.path.join(docs_dir, "packages", 'index.json')
-    open(index_path, 'w').write(index)
-
-    # for each package, generate its docs
-    for pkg_name, pkg in pkg_cfg['packages'].items():
-        src_dir = pkg.root_dir
-        package_dirname = os.path.basename(src_dir)
-        dest_dir = os.path.join(docs_dir, "packages", package_dirname)
-        os.mkdir(dest_dir)
-
-        src_readme = os.path.join(src_dir, "README.md")
-        if os.path.exists(src_readme):
-            shutil.copyfile(src_readme,
-                            os.path.join(dest_dir, "README.md"))
-
-        # create the package page
-        package_filename = os.path.join(dest_dir, "index.html")
-        if not os.path.exists(package_filename):
-            package_doc_html = web_docs.create_package_page(pkg_name)
-            replace_file(env_root, package_filename, package_doc_html, must_rewrite_links)
-
-        # generate all the API docs
-        docs_src_dir = os.path.join(src_dir, "doc")
-        if os.path.isdir(os.path.join(src_dir, "docs")):
-            docs_src_dir = os.path.join(src_dir, "docs")
-        generate_file_tree(env_root, docs_src_dir, web_docs, generate_api_doc, must_rewrite_links)
+    # generate api docs for all modules
+    if not os.path.exists(os.path.join(docs_dir, "modules")):
+        os.mkdir(os.path.join(docs_dir, "modules"))
+    docs_src_dir = os.sep.join([env_root, "doc", "sdk"])
+    generate_file_tree(env_root, docs_src_dir, web_docs, generate_api_doc, must_rewrite_links)
 
     # generate all the guide docs
     dev_guide_src = os.path.join(docs_dir, "dev-guide-source")
@@ -174,6 +147,7 @@ def generate_file_tree(env_root, src_dir, web_docs, generate_file, must_rewrite_
             if src_path.endswith(".md"):
                 # write the standalone HTML files
                 doc_html, dest_dir, filename = generate_file(env_root, src_path, web_docs)
+                print dest_dir
                 write_file(env_root, doc_html, dest_dir, filename, must_rewrite_links)
 
 def generate_api_doc(env_root, src_dir, web_docs):
@@ -224,9 +198,9 @@ def get_guide_doc_dest_path(env_root, src_dir):
 def get_api_doc_dest_path(env_root, src_dir):
     src_dir_relative = src_dir[len(env_root) + 1:]
     src_dir_relative_pieces = src_dir_relative.split(os.sep)
-    del src_dir_relative_pieces[2]
+    src_dir_relative_pieces[1] = "modules"
     src_dir_relative = os.sep.join(src_dir_relative_pieces)
-    return os.path.split(os.path.join(get_sdk_docs_path(env_root), src_dir_relative)[:-3])
+    return os.path.split(os.path.join(env_root, src_dir_relative)[:-3])
 
 class LinkRewriter(HTMLParser.HTMLParser):
     def __init__(self, link_prefix):
