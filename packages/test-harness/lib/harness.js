@@ -23,14 +23,14 @@ var print;
 // How many more times to run all tests.
 var iterationsLeft;
 
-// Only tests in files whose names match this regexp filter will be run.
-var filter;
-
 // Whether to report memory profiling information.
 var profileMemory;
 
 // Whether we should stop as soon as a test reports a failure.
 var stopOnError;
+
+// Function to call to retrieve a list of tests to execute
+var findAndRunTests;
 
 // Combined information from all test runs.
 var results = {
@@ -163,9 +163,6 @@ function showResults() {
     );
   }
 
-  print("\n");
-  var total = results.passed + results.failed;
-  print(results.passed + " of " + total + " tests passed.\n");
   onDone(results);
 }
 
@@ -231,14 +228,10 @@ function nextIteration(tests) {
   }
 
   if (iterationsLeft && (!stopOnError || results.failed == 0)) {
-    let require = loader.require;
-    require("api-utils/unit-test").findAndRunTests({
-      testOutOfProcess: false,
-      testInProcess: true,
-      stopOnError: stopOnError,
-      filter: filter,
-      onDone: nextIteration
-    });
+    // Pass the loader which has a hooked console that doesn't dispatch
+    // errors to the JS console and avoid firing false alarm in our
+    // console listener
+    findAndRunTests(loader, nextIteration);
   }
   else {
     require("api-utils/timer").setTimeout(cleanup, 0);
@@ -288,11 +281,11 @@ function TestRunnerConsole(base, options) {
 
 var runTests = exports.runTests = function runTests(options) {
   iterationsLeft = options.iterations;
-  filter = options.filter;
   profileMemory = options.profileMemory;
   stopOnError = options.stopOnError;
   onDone = options.onDone;
   print = options.print;
+  findAndRunTests = options.findAndRunTests;
 
   try {
     cService.registerListener(consoleListener);
@@ -300,7 +293,8 @@ var runTests = exports.runTests = function runTests(options) {
     var ptc = require("api-utils/plain-text-console");
     var url = require("api-utils/url");
     var system = require("api-utils/system");
-
+    require("api-utils/unit-test");
+    require("api-utils/test");
     print("Running tests on " + system.name + " " + system.version +
           "/Gecko " + system.platformVersion + " (" +
           system.id + ") under " +

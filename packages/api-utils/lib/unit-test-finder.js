@@ -23,14 +23,6 @@ var TestFinder = exports.TestFinder = function TestFinder(options) {
 };
 
 TestFinder.prototype = {
-  _makeTest: function _makeTest(suite, name, test) {
-    function runTest(runner) {
-      console.info("executing '" + suite + "." + name + "'");
-      test(runner);
-    }
-    return runTest;
-  },
-
   findTests: function findTests(cb) {
     var self = this;
     var tests = [];
@@ -67,7 +59,7 @@ TestFinder.prototype = {
               tests.push({
                            setup: module.setup,
                            teardown: module.teardown,
-                           testFunction: self._makeTest(suite, name, module[name]),
+                           testFunction: module[name],
                            name: suite + "." + name
                          });
             }

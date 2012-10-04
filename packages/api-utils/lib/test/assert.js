@@ -63,7 +63,20 @@ function Assert(logger) {
 }
 Assert.prototype = {
   fail: function fail(e) {
-    this._log.fail(e.message);
+    if (!e || typeof(e) !== 'object') {
+      this._log.fail(e);
+      return;
+    }
+    let message = e.message;
+    if ('operator' in e) {
+      message += [
+        " -",
+        source(e.expected),
+        e.operator,
+        source(e.actual)
+      ].join(" ");
+    }
+    this._log.fail(message);
   },
   pass: function pass(message) {
     this._log.pass(message);
