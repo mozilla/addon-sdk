@@ -59,8 +59,8 @@ class WebDocs(object):
     def _make_module_text(self, module_list):
         module_text = ''
         for module in module_list:
-            module_link = tag_wrap(module.name, 'a', \
-                {'href': "/".join(["modules", module.name]) + '.html'})
+            module_link = tag_wrap(module.name(), 'a', \
+                {'href': "/".join(["modules", module.name()]) + '.html'})
             module_text += module_link
         return module_text
 
@@ -71,10 +71,12 @@ class WebDocs(object):
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         sdk_version = get_versions()["version"]
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
-        high_level_module_list, low_level_module_list = get_module_list(os.sep.join([root, "doc", "sdk"]))
+        module_list = get_module_list(os.sep.join([root, "doc", "sdk"]))
+        high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \
             HIGH_LEVEL_MODULE_SUMMARIES, high_level_module_text)
+        low_level_module_list = [module_info for module_info in module_list if module_info.level() == "low"]
         low_level_module_text = self._make_module_text(low_level_module_list)
         base_page = insert_after(base_page, \
             LOW_LEVEL_MODULE_SUMMARIES, low_level_module_text)
