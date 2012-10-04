@@ -13,9 +13,9 @@ object, and
 
 The `xpcom` module makes it simpler to perform three main tasks:
 
-* [Implement XPCOM object interfaces](packages/api-utils/xpcom.html#Implementing XPCOM Interfaces)
-* [Implement and register XPCOM factories](packages/api-utils/xpcom.html#Implementing XPCOM Factories)
-* [Implement and register XPCOM services](packages/api-utils/xpcom.html#Implementing XPCOM Services)
+* [Implement XPCOM object interfaces](modules/platform/xpcom.html#Implementing XPCOM Interfaces)
+* [Implement and register XPCOM factories](modules/platform/xpcom.html#Implementing XPCOM Factories)
+* [Implement and register XPCOM services](modules/platform/xpcom.html#Implementing XPCOM Services)
 
 ## Implementing XPCOM Interfaces ##
 
@@ -27,7 +27,7 @@ XPCOM interface
 [`nsISupports`](https://developer.mozilla.org/docs/XPCOM_Interface_Reference/nsISupports).
 By subclassing `Unknown`, either using
 [standard JavaScript inheritance](https://developer.mozilla.org/en-US/docs/JavaScript/Guide/Inheritance_Revisited)
-or using the SDK's [`heritage`](packages/api-utils/heritage.html)
+or using the SDK's [`heritage`](modules/core/heritage.html)
 module, you can provide your own implementations of XPCOM interfaces.
 
 For example, the add-on below implements the
@@ -159,7 +159,7 @@ technique:
 
 By default, factories are registered and unregistered automatically.
 To learn more about this, see
-[Registering and Unregistering](packages/api-utils/xpcom.html#Registering and Unregistering).
+[Registering and Unregistering](modules/platform/xpcom.html#Registering and Unregistering).
 
 ## Implementing XPCOM Services ##
 
@@ -203,7 +203,7 @@ After this, XPCOM users can access the service using the `getService()` API:
 
 By default, services are registered and unregistered automatically.
 To learn more about this, see
-[Registering and Unregistering](packages/api-utils/xpcom.html#Registering and Unregistering).
+[Registering and Unregistering](modules/platform/xpcom.html#Registering and Unregistering).
 
 ## Registering and Unregistering ##
 
@@ -246,7 +246,7 @@ This is the base class for all XPCOM objects. It is not intended to be used
 directly but you can subclass it,
 either using
 [standard JavaScript inheritance](https://developer.mozilla.org/en-US/docs/JavaScript/Guide/Inheritance_Revisited)
-or using the SDK's [`heritage`](packages/api-utils/heritage.html)
+or using the SDK's [`heritage`](modules/core/heritage.html)
 module, to create new
 implementations of XPCOM interfaces. For example, this subclass implements the
 [`nsIRequest`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/NsIRequest)
@@ -306,7 +306,7 @@ searches for the identifier in the `interfaces` property of:
 * any of this object's ancestors
 * any classes in the `implements` array property of the instance
 (for example, any classes added to this object via the `implements`
-option defined in [`heritage`](packages/api-utils/heritage.html)).
+option defined in [`heritage`](modules/core/heritage.html)).
 
 If it finds a match, it returns `this`, otherwise it throws
 [`Components.results.NS_ERROR_NO_INTERFACE`](https://developer.mozilla.org/en-US/docs/Table_Of_Errors).
@@ -357,8 +357,8 @@ contract ID and class ID are accessible as the values of the `contract` and
 unregistered when the add-on that created it is unloaded. To override this
 behavior, you can pass `register` and/or `unregister` options, set to `false`.
 If you do this, you can use the
-[`register()`](packages/api-utils/xpcom.html#register(factory)) and
-[`unregister()`](packages/api-utils/xpcom.html#unregister(factory)) functions
+[`register()`](modules/platform/xpcom.html#register(factory)) and
+[`unregister()`](modules/platform/xpcom.html#unregister(factory)) functions
 to register and unregister.
 
 <api name="Factory">
@@ -447,7 +447,7 @@ implementations it does nothing interesting.
 <api name="QueryInterface">
 @method
 See the documentation for
-[`Unknown.QueryInterface()`](packages/api-utils/xpcom.html#QueryInterface(interface)).
+[`Unknown.QueryInterface()`](modules/platform/xpcom.html#QueryInterface(interface)).
 </api>
 
 <api name="interfaces">
@@ -495,7 +495,7 @@ supplying the contract ID:
 
 The `Service` interface is identical to the
 `Factory` interface, so refer to the
-[`Factory` interface documentation](packages/api-utils/xpcom.html#Factory)
+[`Factory` interface documentation](modules/platform/xpcom.html#Factory)
 for details.
 </api>
 

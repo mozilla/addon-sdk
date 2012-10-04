@@ -172,7 +172,7 @@ This property is read-only.
 <api name="tabs">
 @property {TabList}
 A live list of tabs in this window. This object has the same interface as the
-[`tabs` API](packages/addon-kit/tabs.html), except it contains only the
+[`tabs` API](modules/tabs.html), except it contains only the
 tabs in this window, not all tabs in all windows. This property is read-only.
 </api>
 
@@ -232,7 +232,7 @@ Listeners are passed the `window` object that has become inactive.
 <api name="private-browsing">
 @event
 Event emitted when a window's private-browsing mode changes.
-Check the window's [`isPrivateBrowsing`](packages/addon-kit/windows.html#isPrivateBrowsing)
+Check the window's [`isPrivateBrowsing`](modules/windows.html#isPrivateBrowsing)
 property to determine the window is in private browsing mode or not.
 
 @argument {Window}

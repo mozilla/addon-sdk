@@ -13,7 +13,7 @@ and learned the
 
 To modify any pages that match a particular pattern
 (for example, "http://example.org/") as they are loaded, use the
-[`page-mod`](packages/addon-kit/page-mod.html) module.
+[`page-mod`](modules/page-mod.html) module.
 
 To create a page-mod you need to specify two things:
 
@@ -52,7 +52,7 @@ alt="ietf.org eaten by page-mod" />
 ## Specifying the Match Pattern ##
 
 The match pattern uses the
-[`match-pattern`](packages/api-utils/match-pattern.html)
+[`match-pattern`](modules/match-pattern/core.html)
 syntax. You can pass a single match-pattern string, or an array.
 
 ## Keeping the Content Script in a Separate File ##
@@ -214,14 +214,14 @@ You can't currently use relative URLs in style sheets loaded with
 by the relative URLs will not be found.
 
 To learn more about this, and read about a workaround, see the
-[relevant section in the page-mod API documentation](packages/addon-kit/page-mod.html#Working_with_Relative_URLs_in_CSS_Rules).
+[relevant section in the page-mod API documentation](modules/page-mod.html#Working_with_Relative_URLs_in_CSS_Rules).
 
 </div>
 
 ## Learning More ##
 
 To learn more about `page-mod`, see its
-[API reference page](packages/addon-kit/page-mod.html).
+[API reference page](modules/page-mod.html).
 In particular, the `PageMod` constructor takes several additional options
 to control its behavior:
 

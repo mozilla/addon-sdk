@@ -40,7 +40,7 @@ You can supply the content script(s) in one of two ways:
 * as separate files supplied in your add-on's "data" directory.
 In this case files are specified by a URL typically constructed using the
 `url()` method of the
-[`self` module's `data` object](packages/addon-kit/self.html#data):
+[`self` module's `data` object](modules/self.html#data):
 
 <!-- -->
 
@@ -80,7 +80,7 @@ method.
 
 The `PageMod` constructor takes a number of other options to control its
 behavior, all documented in detail in the
-[API Reference](packages/addon-kit/page-mod.html#API Reference) section below:
+[API Reference](modules/page-mod.html#API Reference) section below:
 
 * `contentStyle` or `contentStyleFile` list stylesheets to attach.
 * `contentScriptOptions` defines read-only values accessible to content
@@ -103,7 +103,7 @@ by exchanging messages.
 To do this, you'll need to listen to the page-mod's `attach` event.
 This event is triggered every time the page-mod's content script is attached
 to a document. The listener is passed a
-[`worker`](packages/api-utils/content/worker.html) object that your add-on
+[`worker`](modules/content/worker.html) object that your add-on
 can use to send and receive messages.
 
 For example, the following add-on retrieves the HTML content of specific
@@ -167,7 +167,7 @@ particular the chapter on
 
 The `worker` has a `tab` property which returns the tab associated with
 this worker. You can use this to access
-the [`tabs API`](packages/addon-kit/tabs.html) for the tab associated
+the [`tabs API`](modules/tabs.html) for the tab associated
 with a specific document:
 
     var pageMod = require("page-mod");
@@ -234,7 +234,7 @@ For example, we might want to run a script in the context of the currently
 active tab when the user clicks a widget: to block certain content, to
 change the font style, or to display the document's DOM structure.
 
-Using the `attach` method of the [`tab`](packages/addon-kit/tabs.html)
+Using the `attach` method of the [`tab`](modules/tabs.html)
 object, you can attach a set of content scripts to a particular tab. The
 scripts are executed immediately.
 
@@ -294,7 +294,7 @@ Creates a page-mod.
         });
 
     You can specify a set of URLs using a
-    [regular expression](packages/api-utils/match-pattern.html#Regular Expressions).
+    [regular expression](modules/match-pattern/core.html#Regular Expressions).
     The pattern must match the entire URL, not just a subset, and has
     `global`, `ignoreCase`, and `multiline` disabled.
 
@@ -312,7 +312,7 @@ Creates a page-mod.
         contentScript: 'window.alert("Page matches ruleset");'
       });
 
-    See the [match-pattern](packages/api-utils/match-pattern.html) module for
+    See the [match-pattern](modules/match-pattern/core.html) module for
     a detailed description of match pattern syntax.
 
   @prop [contentScriptFile] {string,array}
@@ -322,7 +322,7 @@ Creates a page-mod.
     Each script is supplied as a separate file under your add-on's "data"
     directory, and is specified by a URL typically constructed using the
     `url()` method of the
-    [`self` module's `data` object](packages/addon-kit/self.html#data).
+    [`self` module's `data` object](modules/self.html#data).
 
         var data = require("self").data;
         var pageMod = require("page-mod");
@@ -445,7 +445,7 @@ secure, debug and review.</p>
     Each stylesheet is supplied as a separate file under your add-on's "data"
     directory, and is specified by a URL typically constructed using the
     `url()` method of the
-    [`self` module's `data` object](packages/addon-kit/self.html#data).
+    [`self` module's `data` object](modules/self.html#data).
     To add multiple stylesheet files, pass an array of URLs.
 
         var data = require("self").data;
@@ -556,14 +556,14 @@ secure, debug and review.</p>
   @prop [onAttach] {function}
    Assign a listener function to this option to listen to the page-mod's
    `attach` event. See the
-   [documentation for `attach`](packages/addon-kit/page-mod.html#attach) and
-   [Communicating With Content Scripts](packages/addon-kit/page-mod.html#Communicating With Content Scripts).
+   [documentation for `attach`](modules/page-mod.html#attach) and
+   [Communicating With Content Scripts](modules/page-mod.html#Communicating With Content Scripts).
 
 </api>
 
 <api name="include">
 @property {List}
-  A [list](packages/api-utils/list.html) of match pattern strings.  These
+  A [list](modules/util/list.html) of match pattern strings.  These
   define the documents to which the page-mod applies. See the documentation of
   the `include` option above for details of `include` syntax.
   Rules can be added to the list by calling its
@@ -587,9 +587,9 @@ secure, debug and review.</p>
   attached to a document whose URL matches the page-mod's `include` pattern.
 
    The listener function is passed a
-   [`worker`](packages/api-utils/content/worker.html) object that you
+   [`worker`](modules/content/worker.html) object that you
    can use to
-   [communicate with the content scripts](packages/addon-kit/page-mod.html#Communicating With Content Scripts) your page-mod has
+   [communicate with the content scripts](modules/page-mod.html#Communicating With Content Scripts) your page-mod has
    loaded into this particular document.
 
    The `attach` event is triggered every time this page-mod's content
@@ -602,7 +602,7 @@ secure, debug and review.</p>
    particular document.
 
 @argument {Worker}
-   The listener function is passed a [`Worker`](packages/api-utils/content/worker.html)
+   The listener function is passed a [`Worker`](modules/content/worker.html)
    object that can be used to communicate with any content scripts
    attached to this document.
 </api>
