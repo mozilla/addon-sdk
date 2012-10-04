@@ -8,7 +8,7 @@ const { Class } = require('../heritage');
 const { tabNS } = require('./namespace');
 const { EventTarget } = require('../event/target');
 const { activateTab, getTabTitle, setTabTitle, closeTab, getTabURL,
-        setTabURL, getOwnerWindow, getTabType } = require('./utils');
+        setTabURL, getOwnerWindow, getTabContentType } = require('./utils');
 const { emit } = require('../event/core');
 const { when: unload } = require('../unload');
 
@@ -101,7 +101,7 @@ const Tab = Class({
    * rendered as.
    * @type {String}
    */
-  get contentType() getTabType(tabNS(this).tab),
+  get contentType() getTabContentType(tabNS(this).tab),
 
   /**
    * Create a worker for this tab, first argument is options given to Worker.

@@ -203,10 +203,10 @@ function setTabURL(tab, url) {
 // location change is enqueued for the next turn of event loop.
 exports.setTabURL = defer(setTabURL);
 
-function getTabType(tab) {
+function getTabContentType(tab) {
   return getBrowserForTab(tab).contentDocument.contentType;
 }
-exports.getTabType = getTabType;
+exports.getTabContentType = getTabContentType;
 
 function getSelectedTab(window) {
   if (window.BrowserApp) // fennec?

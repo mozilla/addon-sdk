@@ -10,7 +10,7 @@ const { EVENTS } = require("./events");
 const { getThumbnailURIForWindow } = require("../utils/thumbnail");
 const { getFaviconURIForLocation } = require("../utils/data");
 const { activateTab, getOwnerWindow, getBrowserForTab, getTabTitle, setTabTitle,
-        getTabURL, setTabURL, getTabType } = require('./utils');
+        getTabURL, setTabURL, getTabContentType } = require('./utils');
 
 // Array of the inner instances of all the wrapped tabs.
 const TABS = [];
@@ -107,7 +107,7 @@ const TabTrait = Trait.compose(EventEmitter, {
    * rendered as.
    * @type {String}
    */
-  get contentType() getTabType(this._tab),
+  get contentType() getTabContentType(this._tab),
 
   /**
    * Location of the page currently loaded in this tab.
