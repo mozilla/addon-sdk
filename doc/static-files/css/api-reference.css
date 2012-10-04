@@ -96,6 +96,10 @@ Next-level API component, like a class method
   margin-bottom: 20px;
 }
 
+.experimental, .experimental > p {
+  margin: 10px 0;
+}
+
 /*
 All collections of API components
 */

@@ -5,7 +5,6 @@
 <!-- contributed by Erik Vold [erikvvold@gmail.com]  -->
 
 <div class="experimental">
-<br>
 
 **This module is currently experimental.**
 

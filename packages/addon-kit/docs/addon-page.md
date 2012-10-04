@@ -8,6 +8,8 @@
 in future releases. In particular, we might make this the default
 style for certain pages loaded from "data".**
 
+</div>
+
 With the Add-on SDK you can present information to the user,
 such as a guide to using your add-on, in a browser tab.
 You can supply the content in an HTML file in your add-on's
@@ -34,4 +36,3 @@ navigational elements:
 This only affects the page at "data/index.html":
 all other pages are displayed normally.
 
-</div>
