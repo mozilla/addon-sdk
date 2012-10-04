@@ -9,7 +9,7 @@ import cgi
 from cuddlefish import packaging
 from cuddlefish.docs import apirenderer
 from cuddlefish._version import get_versions
-from modulelist import get_module_list
+from documentationitem import get_module_list
 
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
@@ -80,8 +80,6 @@ class WebDocs(object):
         low_level_module_text = self._make_module_text(low_level_module_list)
         base_page = insert_after(base_page, \
             LOW_LEVEL_MODULE_SUMMARIES, low_level_module_text)
-        
-
         return base_page
 
     def _create_package_detail_row(self, field_value, \
