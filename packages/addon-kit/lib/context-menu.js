@@ -621,12 +621,9 @@ exports.Separator = Separator;
 
 // Holds items for the content area context menu
 exports.contentContextMenu = ItemContainer();
-// Holds items for the tab context menu
-exports.tabContextMenu = ItemContainer();
 
 when(function() {
   exports.contentContextMenu.destroy();
-  exports.tabContextMenu.destroy();
 });
 
 // App specific UI code lives here, it should handle populating the context
@@ -970,7 +967,6 @@ let WindowWrapper = Class({
     this.window = window;
     this.menus = [
       new MenuWrapper(this, exports.contentContextMenu, window.document.getElementById("contentAreaContextMenu")),
-      new MenuWrapper(this, exports.tabContextMenu, window.document.getElementById("tabContextMenu")),
     ];
   },
 
