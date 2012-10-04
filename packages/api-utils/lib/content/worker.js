@@ -216,12 +216,16 @@ const WorkerSandbox = EventEmitter.compose({
 
     // self.postMessage calls
     this.on("message", function postMessage(data) {
-      self._addonWorker._emit('message', data);
+      // destroyed?
+      if (self._addonWorker)
+        self._addonWorker._emit('message', data);
     });
 
     // self.port.emit calls
     this.on("event", function portEmit(name, args) {
-      self._addonWorker._onContentScriptEvent.apply(self._addonWorker, arguments);
+      // destroyed?
+      if (self._addonWorker)
+        self._addonWorker._onContentScriptEvent.apply(self._addonWorker, arguments);
     });
 
     // Internal feature that is only used by SDK tests:
