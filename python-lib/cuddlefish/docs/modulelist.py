@@ -2,14 +2,26 @@ import sys, os
 
 class ModuleInfo(object):
     def __init__(self, root, md_path, filename):
+        # SDK-root + "doc" + "sdk"
         self.root = root
-        self.md_path = md_path
-        self.filename = filename
-        if self.root == self.md_path:
+        # full path to MD file, without filename
+        self.source_path = md_path
+        # MD filename
+        self.source_filename = filename
+        self.source_path_and_filename = os.sep.join([self.source_path, self.filename])
+        # relative path from root, without filename
+        self.source_path_relative_from_root = self.source_path[len(self.root) + 1:]
+
+        root_pieces = root.split(os.sep)
+        root_pieces[-1] = "modules"
+        # full path to HTML file, without filename
+        self.destination_path = os.sep.join([os.sep.join(root_pieces), self.source_path_relative_from_root])
+
+        if self.root == md_path:
             self.name = filename[:-3]
         else:
-            print self.md_path[len(self.root):]
-            self.name = "/".join([self.md_path[len(self.root) + 1:], filename[:-3]])
+            path_from_root_pieces = self.source_path_relative_from_root.split(os.sep)
+            self.name = "/".join(["/".join(path_from_root_pieces), self.filename[:-len(".md")]])
 
 def get_module_list(root):
     high_level = []
