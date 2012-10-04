@@ -14,7 +14,7 @@ import urlparse
 from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
 from cuddlefish.docs import webdocs
-from modulelist import get_combined_module_list
+from modulelist import get_module_list
 import simplejson as json
 
 DIGEST = "status.md5"
@@ -130,8 +130,8 @@ def generate_docs_from_scratch(env_root, base_url):
     module_root = os.sep.join([env_root, "doc", "sdk"])
     #generate_file_tree(env_root, module_root, web_docs, generate_api_doc, must_rewrite_links)
 
-    module_list = get_combined_module_list(module_root)
-    [write_module_doc(module_info) for module_info in module_list]
+    module_list = get_module_list(module_root)
+    [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
 
     # generate all the guide docs
     dev_guide_src = os.path.join(docs_dir, "dev-guide-source")
@@ -141,9 +141,9 @@ def generate_docs_from_scratch(env_root, base_url):
     doc_html, dest_dir, filename = generate_guide_doc(env_root, os.path.join(docs_dir, 'dev-guide-source', 'index.md'), web_docs)
     write_file(env_root, doc_html, docs_dir, 'index', False)
 
-def write_module_doc(env_root, module_info, web_docs, must_rewrite_links):
-    doc_html = web_docs.create_module_page(module_info.source_path_and_filename)
-    write_file(env_root, doc_html, module_info.destination_path, module_info.filename[:-len(".md")], must_rewrite_links)
+def write_module_doc(env_root, web_docs, module_info, must_rewrite_links):
+    doc_html = web_docs.create_module_page(module_info.source_path_and_filename())
+    write_file(env_root, doc_html, module_info.destination_path(), module_info.base_filename(), must_rewrite_links)
 
 def generate_file_tree(env_root, src_dir, web_docs, generate_file, must_rewrite_links):
     for (dirpath, dirnames, filenames) in os.walk(src_dir):
