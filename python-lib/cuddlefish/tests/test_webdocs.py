@@ -8,23 +8,6 @@ import unittest
 from cuddlefish.docs import webdocs
 
 class WebDocTests(unittest.TestCase):
-    def test_create_package_doc(self):
-        root = os.path.join(os.getcwd() + \
-                            '/python-lib/cuddlefish/tests/static-files')
-        web_docs = webdocs.WebDocs(root)
-        aarvark_package = web_docs.create_package_page('aardvark')
-        self._test_common_contents(aarvark_package)
-        self.assertTrue('<h1>aardvark</h1>'\
-            in aarvark_package)
-        self.assertTrue(\
-            '<span class="meta-header">Author</span>'\
-            in aarvark_package)
-        self.assertTrue(\
-            '<span class="author">Jon Smith</span>'\
-            in aarvark_package)
-        self.assertTrue(\
-            '<title>aardvark - Add-on SDK Documentation</title>'\
-            in aarvark_package)
 
     def test_create_guide1_doc(self):
         root = os.path.join(os.getcwd() + \
@@ -58,7 +41,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         module = web_docs.create_module_page(os.path.join(\
-            root + '/packages/aardvark/doc/aardvark-feeder.blah'))
+            root + '/doc/sdk/aardvark-feeder.blah'))
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
@@ -87,11 +70,9 @@ class WebDocTests(unittest.TestCase):
 
     def _test_common_contents(self, doc):
         self.assertTrue(\
-            '<a href="packages/aardvark/index.html"' in doc)
+            '<a href="modules/anteater/anteater.html">anteater/anteater</a>' in doc)
         self.assertTrue(\
-            '<a href="packages/anteater_files/index.html"' in doc)
-        self.assertTrue(\
-            '<a href="packages/aardvark/main.html">main</a>' in doc)
+            '<a href="modules/aardvark-feeder.html">aardvark-feeder</a>' in doc)
 
 if __name__ == "__main__":
     unittest.main()
