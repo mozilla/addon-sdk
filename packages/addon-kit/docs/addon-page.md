@@ -13,6 +13,8 @@ such as a guide to using your add-on, in a browser tab.
 You can supply the content in an HTML file in your add-on's
 "data" directory.
 
+***Note:*** This module has no effect on Fennec.
+
 For pages like this, navigational elements such as the
 [Awesome Bar](http://support.mozilla.org/en-US/kb/Location%20bar%20autocomplete),
 [Search Bar](http://support.mozilla.org/en-US/kb/Search%20bar), or
