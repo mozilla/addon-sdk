@@ -8,7 +8,7 @@ module.metadata = {
 };
 
 const { WindowTracker } = require('api-utils/window-utils');
-const { isBrowser } = require('api-utils/window/utils');
+const { isXULBrowser } = require('api-utils/window/utils');
 const { add, remove } = require('api-utils/array');
 const { getTabs, closeTab, getURI } = require('api-utils/tabs/utils');
 const { data } = require('self');
@@ -17,11 +17,11 @@ const addonURL = data.url('index.html');
 
 WindowTracker({
   onTrack: function onTrack(window) {
-    if (isBrowser(window) && window.XULBrowserWindow)
+    if (isXULBrowser(window))
       add(window.XULBrowserWindow.inContentWhitelist, addonURL);
   },
   onUntrack: function onUntrack(window) {
-    if (isBrowser(window) && window.XULBrowserWindow)
+    if (isXULBrowser(window))
       getTabs(window).filter(tabFilter).forEach(untrackTab.bind(null, window));
   }
 });

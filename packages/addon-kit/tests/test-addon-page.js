@@ -14,8 +14,7 @@ const tabs = require('tabs');
 let uri = require('self').data.url('index.html');
 
 function isChromeVisible(window) {
-	let x = window.document.documentElement.getAttribute('disablechrome')
-	console.log('x is '+x)
+  let x = window.document.documentElement.getAttribute('disablechrome')
   return x !== 'true';
 }
 
