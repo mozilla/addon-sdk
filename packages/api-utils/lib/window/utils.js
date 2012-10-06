@@ -195,3 +195,4 @@ exports.getWindowTitle = getWindowTitle;
 function isXULBrowser(window) {
   return !!(isBrowser(window) && window.XULBrowserWindow);
 }
+exports.isXULBrowser = isXULBrowser;
