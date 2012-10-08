@@ -159,6 +159,15 @@ exports["test compatibility"] = function(assert) {
 
   assert.equal(require("test/assert"),
                require("sdk/test/assert"), "sdk/test/assert -> test/assert");
+
+  assert.equal(require("hidden-frame"),
+               require("sdk/frame/hidden-frame"), "sdk/frame/hidden-frame -> hidden-frame");
+
+  assert.equal(require("collection"),
+               require("sdk/util/collection"), "sdk/util/collection -> collection");
+
+  assert.equal(require("array"),
+               require("sdk/util/array"), "sdk/util/array -> array");
 };
 
 

@@ -47,6 +47,10 @@
   "dom/events": "sdk/dom/events",
   "utils/data": "sdk/io/data",
   "test/assert": "sdk/test/assert",
+  "hidden-frame": "sdk/frame/hidden-frame",
+  "collection": "sdk/util/collection",
+  "array": "sdk/util/array",
+
 
   "addon-page": "sdk/addon-page",
   "clipboard": "sdk/clipboard",
