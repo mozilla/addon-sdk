@@ -82,49 +82,6 @@ class WebDocs(object):
             LOW_LEVEL_MODULE_SUMMARIES, low_level_module_text)
         return base_page
 
-    def _create_package_detail_row(self, field_value, \
-                                   field_descriptor, field_name):
-        meta = tag_wrap(tag_wrap(field_descriptor, 'span', \
-                                 {'class':'meta-header'}), 'td')
-        value = tag_wrap(tag_wrap(field_value, 'span', \
-                                 {'class':field_name}), 'td')
-        return tag_wrap(meta + value, 'tr')
-
-    def _create_package_detail_table(self, package_json):
-        table_contents = ''
-        if package_json.get('author', None):
-            table_contents += self._create_package_detail_row(\
-                cgi.escape(package_json['author']), 'Author', 'author')
-        if package_json.get('version', None):
-            table_contents += self._create_package_detail_row(\
-                package_json['version'], 'Version', 'version')
-        if package_json.get('license', None):
-            table_contents += self._create_package_detail_row(\
-                package_json['license'], 'License', 'license')
-        if package_json.get('dependencies', None):
-            table_contents += self._create_package_detail_row(\
-                ', '.join(package_json['dependencies']), \
-                'Dependencies', 'dependencies')
-        table_contents += self._create_package_detail_row(\
-            self._create_module_list(package_json), 'Modules', 'modules')
-        return tag_wrap(tag_wrap(table_contents, 'tbody'), 'table', \
-            {'class':'meta-table'})
-
-    def _create_package_detail(self, package_name):
-        package_json = self.packages_json.get(package_name, None)
-        if not package_json:
-            raise IOError(errno.ENOENT, 'Package not found')
-        # pieces of the package detail: 1) title, 2) table, 3) description
-        package_title = tag_wrap(package_name, 'h1')
-        table = self._create_package_detail_table(package_json)
-        description = ''
-        if package_json.get('readme', None):
-            description += tag_wrap(tag_wrap(\
-                markdown.markdown(\
-                    package_json['readme']), 'p'), 'div', {'class':'docs'})
-        return tag_wrap(package_title + table + description, 'div', \
-                        {'class':'package-detail'})
-
     def _insert_title(self, target, content):
         match = re.search('<h1>.*</h1>', content)
         if match:

@@ -132,6 +132,7 @@ def generate_docs_from_scratch(env_root, base_url):
     module_list = get_module_list(module_root)
     [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
 
+    # generate dev-guide docs
     devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
     devguide_list = get_devguide_list(devguide_root)
     [write_devguide_doc(env_root, web_docs, devguide_info, must_rewrite_links) for devguide_info in devguide_list]
