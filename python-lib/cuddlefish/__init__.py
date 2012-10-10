@@ -119,9 +119,9 @@ parser_groups = (
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
-                                               "'addon-kit'."),
+                                               "'addon-sdk'."),
                                          metavar=None,
-                                         default="addon-kit",
+                                         default="addon-sdk",
                                          cmds=['run', 'xpi', 'test', 'testex',
                                                'testpkgs', 'testall',
                                                'testcfx'])),
@@ -216,7 +216,7 @@ parser_groups = (
                                                 "containing test runner "
                                                 "program (default is "
                                                 "test-harness)"),
-                                          default="test-harness",
+                                          default="addon-sdk",
                                           cmds=['test', 'testex', 'testpkgs',
                                                 'testall'])),
         # --keydir was removed in 1.0b5, but we keep it around in the options
@@ -427,6 +427,7 @@ def test_all_packages(env_root, defaults):
     packages_dir = os.path.join(env_root, "packages")
     packages = [dirname for dirname in os.listdir(packages_dir)
                 if os.path.isdir(os.path.join(packages_dir, dirname))]
+    packages.append(env_root)
     packages.sort()
     print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))
     sys.stderr.flush()
@@ -690,11 +691,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # the choice of loader for manifest-generation purposes. In practice,
     # this means that alternative loaders probably won't work with
     # --strip-xpi.
-    assert packaging.DEFAULT_LOADER == "api-utils"
-    assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
-    cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
-                                      "lib", "cuddlefish.js")
-    loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
+    assert packaging.DEFAULT_LOADER == "addon-sdk"
+    assert pkg_cfg.packages["addon-sdk"].loader == "lib/sdk/loader/cuddlefish.js"
+    cuddlefish_js_path = os.path.join(pkg_cfg.packages["addon-sdk"].root_dir,
+                                      "lib", "sdk", "loader", "cuddlefish.js")
+    loader_modules = [("addon-sdk", "lib", "sdk/loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
     test_filter_re = None
     if scan_tests and options.filter:
@@ -740,8 +741,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "test":
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
-        harness_options['main'] = 'test-harness/run-tests'
-        harness_options['mainPath'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_path()
+        harness_options['main'] = 'sdk/test/runner'
+        harness_options['mainPath'] = manifest.get_manifest_entry("addon-sdk", "lib", "sdk/test/runner").get_path()
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainPath'] = manifest.top_path
