@@ -14,6 +14,8 @@ from cuddlefish.docs import apirenderer
 from cuddlefish.docs import webdocs
 from documentationitem import get_module_list
 from documentationitem import get_devguide_list
+from documentationitem import ModuleInfo
+from documentationitem import DevGuideItemInfo
 from linkrewriter import rewrite_links
 import simplejson as json
 
@@ -52,16 +54,18 @@ def generate_static_docs(env_root):
 def generate_local_docs(env_root):
     return generate_docs(env_root, get_base_url(env_root))
 
-def generate_named_file(env_root, filename):
+def generate_named_file(env_root, filename_and_path):
     web_docs = webdocs.WebDocs(env_root, get_base_url(env_root))
-    # next, generate api doc or guide doc
-    abs_path = os.path.abspath(filename)
-    if abs_path.startswith(os.path.join(env_root, 'modules')):
-        doc_html, dest_dir, filename = generate_api_doc(env_root, abs_path, web_docs)
-        write_file(env_root, doc_html, dest_dir, filename, False)
+    abs_path = os.path.abspath(filename_and_path)
+    path, filename = os.path.split(abs_path)
+    if abs_path.startswith(os.path.join(env_root, 'doc', 'module-source')):
+        module_root = os.sep.join([env_root, "doc", "module-source"])
+        module_info = ModuleInfo(module_root, path, filename)
+        write_module_doc(env_root, web_docs, module_info, False)
     elif abs_path.startswith(os.path.join(get_sdk_docs_path(env_root), 'dev-guide-source')):
-        doc_html, dest_dir, filename = generate_guide_doc(env_root, abs_path, web_docs)
-        write_file(env_root, doc_html, dest_dir, filename, False)
+        devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
+        devguideitem_info = DevGuideItemInfo(devguide_root, path, filename)
+        write_devguide_doc(env_root, web_docs, devguideitem_info, False)
     else:
         raise ValueError("Not a valid path to a documentation file")
 

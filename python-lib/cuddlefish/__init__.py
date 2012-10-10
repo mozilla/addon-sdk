@@ -574,7 +574,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_named_file(env_root, filename=args[1])
+            docs_home = generate.generate_named_file(env_root, filename_and_path=args[1])
         else:
             docs_home = generate.generate_local_docs(env_root)
             webbrowser.open(docs_home)
