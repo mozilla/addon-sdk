@@ -93,7 +93,7 @@ def generate_docs(env_root, base_url=None, stdout=sys.stdout):
 def calculate_current_status(env_root):
     docs_dir = get_sdk_docs_path(env_root)
     current_status = hashlib.md5()
-    module_src_dir = os.path.join(env_root, "doc", "sdk")
+    module_src_dir = os.path.join(env_root, "doc", "module-source")
     for (dirpath, dirnames, filenames) in os.walk(module_src_dir):
         for filename in filenames:
             if filename.endswith(".md"):
@@ -128,7 +128,7 @@ def generate_docs_from_scratch(env_root, base_url):
     # generate api docs for all modules
     if not os.path.exists(os.path.join(docs_dir, "modules")):
         os.mkdir(os.path.join(docs_dir, "modules"))
-    module_root = os.sep.join([env_root, "doc", "sdk"])
+    module_root = os.sep.join([env_root, "doc", "module-source"])
     module_list = get_module_list(module_root)
     [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
 

@@ -23,7 +23,7 @@ if your add-on uses literal Unix-style path specifications, it won't work for
 users on Windows.
 
 To ensure your add-on works for everyone, generate paths using the
-[`join`](modules/io/file.html#join(...)) function.  Unfortunately
+[`join`](modules/sdk/io/file.html#join(...)) function.  Unfortunately
 this API does not currently provide a way to obtain an absolute base path which
 you could then use with `join`.  For now, you need to
 [`require("chrome")`](dev-guide/tutorials/chrome.html) and use the
@@ -112,11 +112,11 @@ more about escaping characters in strings at
 @returns {stream}
   If the file is opened in text read-only `mode`, a `TextReader` is returned,
   and if text write-only mode, a `TextWriter` is returned.  See
-  [`text-streams`](modules/io/text-streams.html) for information on
+  [`text-streams`](modules/sdk/io/text-streams.html) for information on
   these text stream objects.  If the file is opened in binary read-only `mode`,
   a `ByteReader` is returned, and if binary write-only mode, a `ByteWriter` is
   returned.  See
-  [`byte-streams`](modules/io/byte-streams.html) for more
+  [`byte-streams`](modules/sdk/io/byte-streams.html) for more
   information on these byte stream objects.  Opened files should always be
   closed after use by calling `close` on the returned stream.
 </api>

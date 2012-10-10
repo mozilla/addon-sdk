@@ -51,12 +51,12 @@ to instantiate new loader instances:
 
 `Loader()` may be provided with a set of configuration options:
 
-* [`paths`](modules/loader.html#paths): describes where the loader should
+* [`paths`](modules/toolkit/loader.html#paths): describes where the loader should
 find the modules it is asked to load. **Mandatory**.
-* [`modules`](modules/loader.html#modules): provides a set of module exports. **Optional**.
-* [`globals`](modules/loader.html#globals): provides a set of globals shared across modules loaded
+* [`modules`](modules/toolkit/loader.html#modules): provides a set of module exports. **Optional**.
+* [`globals`](modules/toolkit/loader.html#globals): provides a set of globals shared across modules loaded
 via this loader. **Optional**.
-* [`resolve`](modules/loader.html#resolve): provide customized module resolution logic. **Optional**.
+* [`resolve`](modules/toolkit/loader.html#resolve): provide customized module resolution logic. **Optional**.
 
 ### paths
 
@@ -127,7 +127,7 @@ This feature may be used in a few different ways:
           }
         });
    Each loader instance comes with a set of built-in pseudo modules
-   that are described in detail in the [Built-in Modules](modules/loader.html#Built-in_Modules)  section.
+   that are described in detail in the [Built-in Modules](modules/toolkit/loader.html#Built-in_Modules)  section.
 
 2. To reuse module instances that are already loaded.
    For example in the SDK, the loader is loaded at bootstrap as a JSM module
@@ -466,7 +466,7 @@ Optionally more options may be specified:
 ### Require()
 
 As already mentioned in
-[Loading Modules](modules/loader.html#Loading_Modules)
+[Loading Modules](modules/toolkit/loader.html#Loading_Modules)
 it's common to start execution by loading a main module.
 But sometimes you may want to prepare the environment using
 existing modules before doing that. In such cases you can create a

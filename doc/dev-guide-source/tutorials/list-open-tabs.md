@@ -12,10 +12,10 @@ and learned the
 </span>
 
 To list the open tabs, you can iterate over the
-[`tabs`](modules/tabs.html) object itself.
+[`tabs`](modules/sdk/tabs.html) object itself.
 
 The following add-on adds a
-[`widget`](modules/widget.html) that logs
+[`widget`](modules/sdk/widget.html) that logs
 the URLs of open tabs when the user clicks it:
 
     var widget = require("widget").Widget({
@@ -67,7 +67,7 @@ tabs. The script adds a red border to the tab's document:
 ## Learning More ##
 
 To learn more about working with tabs in the SDK, see the
-[`tabs` API reference](modules/tabs.html).
+[`tabs` API reference](modules/sdk/tabs.html).
 
 To learn more about running scripts in tabs, see the
 [tutorial on using `tab.attach()`](dev-guide/tutorials/modifying-web-pages-tab.html).
