@@ -60,7 +60,7 @@ class WebDocs(object):
         module_text = ''
         for module in module_list:
             module_link = tag_wrap(module.name(), 'a', \
-                {'href': "/".join(["modules", module.name()]) + '.html'})
+                {'href': "/".join(["modules", module.relative_url()])})
             module_text += module_link
         return module_text
 
@@ -71,7 +71,7 @@ class WebDocs(object):
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         sdk_version = get_versions()["version"]
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
-        module_list = get_module_list(os.sep.join([root, "doc", "sdk"]))
+        module_list = get_module_list(os.sep.join([root, "doc", "module-source"]))
         high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \

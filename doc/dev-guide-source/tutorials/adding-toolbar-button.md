@@ -12,7 +12,7 @@ and learned the
 </span>
 
 To add a button to the toolbar, use the
-[`widget`](modules/widget.html) module.
+[`widget`](modules/sdk/widget.html) module.
 
 Create a new directory, navigate to it, and execute `cfx init`.
 Then open the file called "main.js" in the "lib" directory and
@@ -164,7 +164,7 @@ To learn more about working with panels, see the tutorial on
 ## Learning More ##
 
 To learn more about the widget module, see its
-[API reference documentation](modules/widget.html).
+[API reference documentation](modules/sdk/widget.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/guides/content-scripts/index.html).

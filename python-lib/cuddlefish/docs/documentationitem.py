@@ -47,17 +47,22 @@ class ModuleInfo(DocumentationItemInfo):
     def destination_path(self):
         root_pieces = self.root.split(os.sep)
         root_pieces[-1] = "modules"
-        return os.sep.join([os.sep.join(root_pieces), self.source_path_relative_from_root()])
+        relative_pieces = self.source_path_relative_from_root().split(os.sep)
+        return os.sep.join(root_pieces + relative_pieces)
+
+    def relative_url(self):
+        relative_pieces = self.source_path_relative_from_root().split(os.sep)
+        return "/".join(relative_pieces) + "/" + self.base_filename() + ".html"
 
     def name(self):
-        if self.root == self.source_path:
+        if os.sep.join([self.root, "sdk"]) == self.source_path:
             return self.source_filename[:-3]
         else:
             path_from_root_pieces = self.source_path_relative_from_root().split(os.sep)
-            return "/".join(["/".join(path_from_root_pieces), self.source_filename[:-len(".md")]])
+            return "/".join(["/".join(path_from_root_pieces[1:]), self.source_filename[:-len(".md")]])
 
     def level(self):
-        if self.root == self.source_path:
+        if os.sep.join([self.root, "sdk"]) == self.source_path:
             return "high"
         else:
             return "low"

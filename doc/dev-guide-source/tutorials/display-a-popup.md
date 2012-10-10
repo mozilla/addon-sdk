@@ -12,7 +12,7 @@ and learned the
 </span>
 
 To display a popup dialog, use the
-[`panel`](modules/panel.html) module. A panel's content is
+[`panel`](modules/sdk/panel.html) module. A panel's content is
 defined using HTML. You can run content scripts in the panel: although the
 script running in the panel can't directly access your main add-on code,
 you can exchange messages between the panel script and the add-on code.
@@ -145,7 +145,7 @@ in the console.
 ## Learning More ##
 
 To learn more about the `panel` module, see the
-[`panel` API reference](modules/panel.html).
+[`panel` API reference](modules/sdk/panel.html).
 
 To learn more about attaching panels to widgets, see the
-[`widget` API reference](modules/widget.html).
+[`widget` API reference](modules/sdk/widget.html).

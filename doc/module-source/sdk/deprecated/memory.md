@@ -4,4 +4,4 @@
 
 The `memory` module provides a concrete default implementation for the SDK's
 `memory` global. For documentation on the `memory` global, see the
-[Globals](modules/system/globals.html) reference.
+[Globals](modules/sdk/system/globals.html) reference.

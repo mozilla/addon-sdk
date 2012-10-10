@@ -16,14 +16,14 @@ from cuddlefish.tests import env_root
 
 INITIAL_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "index.html"], \
-                    ["modules", "aardvark-feeder.html"], \
-                    ["modules", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "aardvark-feeder.html"], \
+                    ["modules", "sdk", "anteater", "anteater.html"]]
 
 EXTENDED_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "extra.html"], \
                     ["dev-guide", "index.html"], \
-                    ["modules", "aardvark-feeder.html"], \
-                    ["modules", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "aardvark-feeder.html"], \
+                    ["modules", "sdk", "anteater", "anteater.html"]]
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
@@ -131,10 +131,10 @@ class Generate_Docs_Tests(unittest.TestCase):
         generate.clean_generated_docs(docs_root)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET)
         # touching an MD file under sdk **does** cause a regenerate
-        os.utime(os.path.join(test_root, "doc", "sdk", "aardvark-feeder.md"), None)
+        os.utime(os.path.join(test_root, "doc", "module-source", "sdk", "aardvark-feeder.md"), None)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET, new_digest)
         # touching a non MD file under sdk **does not** cause a regenerate
-        os.utime(os.path.join(test_root, "doc", "sdk", "not_a_doc.js"), None)
+        os.utime(os.path.join(test_root, "doc", "module-source", "sdk", "not_a_doc.js"), None)
         self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching a non MD file under static-files **does not** cause a regenerate
         os.utime(os.path.join(docs_root, "static-files", "another.html"), None)

@@ -64,7 +64,7 @@ These are attributes that all settings *must* have.
   <tr>
     <td><code>type</code></td>
     <td>The type of setting, as defined in the
-	<a href="modules/simple-prefs.html#Setting_Types">"Setting Types"</a>
+	<a href="modules/sdk/simple-prefs.html#Setting_Types">"Setting Types"</a>
 	section below.</td>
   </tr>
 
@@ -116,7 +116,7 @@ These are attributes that all settings *may* have:
 
 These are settings that are only applicable to certain setting types.
 They are documented along with the
-[setting types themselves](modules/simple-prefs.html#Setting_Types).
+[setting types themselves](modules/sdk/simple-prefs.html#Setting_Types).
 
 ## Setting Types ##
 

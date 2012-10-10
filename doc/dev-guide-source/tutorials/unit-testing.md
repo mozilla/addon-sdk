@@ -24,7 +24,7 @@ In a web page, you can perform Base64 encoding and decoding using the
 to the `window` object: since this object is not available in your
 main add-on code, `atob()` and `btoa()` aren't available either. Using the
 low-level
-[window-utils](modules/deprecated/window-utils.html) module you
+[window-utils](modules/sdk/deprecated/window-utils.html) module you
 can access `window`, enabling you to call these functions.
 
 However, it's good practice to encapsulate the code that directly accesses
@@ -103,16 +103,16 @@ require("test").run(exports);
 
 This file: exports three functions, each of which expects to receive a single
 argument which is an `assert` object. `assert` is supplied by the
-[`test/assert`](modules/test/assert.html) module and implements
+[`test/assert`](modules/sdk/test/assert.html) module and implements
 the [CommonJS Unit Testing specification](http://wiki.commonjs.org/wiki/Unit_Testing/1.1).
 
 * The first two functions call `atob()` and `btoa()` and use
-[`assert.ok()`](modules/test/assert.html)
+[`assert.ok()`](modules/sdk/test/assert.html)
 to check that the output is as expected.
 
 * The second function tests the module's error-handling code by passing an
 empty string into `atob()` and using
-[`assert.throws()`](modules/test/assert.html)
+[`assert.throws()`](modules/sdk/test/assert.html)
 to check that the expected exception is raised.
 
 At this point your add-on ought to look like this:
@@ -157,7 +157,7 @@ modules called "test_myCode.js" or "testMyCode.js".</span>
 package
 * loads any modules whose names start with the word `test-`
 *  calls each exported function whose name starts with "test", passing it
-an [`assert`](modules/test/assert.html) object as its only argument.
+an [`assert`](modules/sdk/test/assert.html) object as its only argument.
 
 Obviously, you don't have to pass the `--verbose` option to `cfx` if you don't
 want to; doing so just makes the output easier to read.

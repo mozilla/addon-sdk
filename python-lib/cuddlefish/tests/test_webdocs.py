@@ -41,7 +41,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         module = web_docs.create_module_page(os.path.join(\
-            root + '/doc/sdk/aardvark-feeder.blah'))
+            root + '/doc/module-source/sdk/aardvark-feeder.blah'))
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
@@ -70,9 +70,9 @@ class WebDocTests(unittest.TestCase):
 
     def _test_common_contents(self, doc):
         self.assertTrue(\
-            '<a href="modules/anteater/anteater.html">anteater/anteater</a>' in doc)
+            '<a href="modules/sdk/anteater/anteater.html">anteater/anteater</a>' in doc)
         self.assertTrue(\
-            '<a href="modules/aardvark-feeder.html">aardvark-feeder</a>' in doc)
+            '<a href="modules/sdk/aardvark-feeder.html">aardvark-feeder</a>' in doc)
 
 if __name__ == "__main__":
     unittest.main()

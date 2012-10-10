@@ -109,27 +109,27 @@ Modules in the `api-utils` package implement low-level APIs. These
 modules fall roughly into three categories:
 
 * fundamental utilities such as
-[collection](modules/platform/xpcom.html) and
-[url](modules/core/url.html). Many add-ons are likely to
+[collection](modules/sdk/platform/xpcom.html) and
+[url](modules/sdk/core/url.html). Many add-ons are likely to
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[event/core](modules/event/core.html),
-[event/target](modules/event/target.html),
-[heritage](modules/core/heritage.html), and
-[namespace](modules/core/namespace.html). You're more
+[event/core](modules/sdk/event/core.html),
+[event/target](modules/sdk/event/target.html),
+[heritage](modules/sdk/core/heritage.html), and
+[namespace](modules/sdk/core/namespace.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.
 
 * privileged modules that expose powerful low-level capabilities
-such as [xhr](modules/io/xhr.html) and
-[xpcom](modules/platform/xpcom.html). You can use these
+such as [xhr](modules/sdk/io/xhr.html) and
+[xpcom](modules/sdk/platform/xpcom.html). You can use these
 modules in your add-on if you need to, but should be aware that
 the cost of privileged access is the need to take more elaborate
 security precautions. In many cases these modules have simpler,
 more restricted analogs in the high-level addon-kit package (for
-example, [tabs](modules/tabs.html) or
-[request](modules/request.html)).
+example, [tabs](modules/sdk/tabs.html) or
+[request](modules/sdk/request.html)).
 
 <div class="warning">
 <p>These modules are still in active development,

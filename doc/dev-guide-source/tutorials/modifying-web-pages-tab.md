@@ -13,7 +13,7 @@ and learned the
 
 To modify the page hosted by a particular tab, load a script into it
 using the `attach()` method of the
-[tab](modules/tabs.html) object. Because their job is
+[tab](modules/sdk/tabs.html) object. Because their job is
 to interact with web content, these scripts are called *content scripts*.
 
 Here's a simple example:
@@ -147,7 +147,7 @@ To learn more about working with tabs in the SDK, see the
 [Open a Web Page](dev-guide/tutorials/open-a-web-page.html)
 tutorial, the
 [List Open Tabs](dev-guide/tutorials/list-open-tabs.html)
-tutorial, and the [`tabs` API reference](modules/tabs.html).
+tutorial, and the [`tabs` API reference](modules/sdk/tabs.html).
 
 To learn more about content scripts, see the
 [content scripts guide](dev-guide/guides/content-scripts/index.html).
