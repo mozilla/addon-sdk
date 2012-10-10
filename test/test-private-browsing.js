@@ -3,14 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let pb = require("private-browsing");
+let pb = require("sdk/private-browsing");
 let {Cc,Ci} = require("chrome");
-const { Loader } = require('test-harness/loader');
-const timer = require("timer");
+const { Loader } = require('sdk/test/loader');
+const timer = require("sdk/timers");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
-if (require("xul-app").is("Firefox")) {
+if (require("sdk/system/xul-app").is("Firefox")) {
   pbService = Cc["@mozilla.org/privatebrowsing;1"].
               getService(Ci.nsIPrivateBrowsingService);
 }
@@ -79,7 +79,7 @@ if (pbService) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
     let loader = Loader(module);
-    let pb2 = loader.require("private-browsing");
+    let pb2 = loader.require("sdk/private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
       called = true;
@@ -164,7 +164,7 @@ if (pbService) {
   };
 
   exports["test activate private mode via handler"] = function(test) {
-    const tabs = require("tabs");
+    const tabs = require("sdk/tabs");
 
     test.waitUntilDone();
     function onReady(tab) {

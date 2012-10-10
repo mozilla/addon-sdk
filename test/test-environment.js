@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { env } = require('api-utils/environment');
+const { env } = require('sdk/system/environment');
 const { Cc, Ci } = require('chrome');
 const { get, set, exists } = Cc['@mozilla.org/process/environment;1'].
                              getService(Ci.nsIEnvironment);

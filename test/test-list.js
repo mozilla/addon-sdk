@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { List, addListItem, removeListItem } = require('api-utils/list/new');
-const { Class } = require('api-utils/heritage');
+const { List, addListItem, removeListItem } = require('sdk/util/list');
+const { Class } = require('sdk/core/heritage');
 
 exports.testList = function(test) {
   let list = List();

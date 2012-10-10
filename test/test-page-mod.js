@@ -4,14 +4,15 @@
 
 "use strict";
 
-var pageMod = require("page-mod");
-var testPageMod = require("pagemod-test-helpers").testPageMod;
-const { Loader } = require('test-harness/loader');
-const tabs = require("tabs");
-const timer = require("timer");
+var pageMod = require("sdk/page-mod");
+var testPageMod = require("./pagemod-test-helpers").testPageMod;
+const { Loader } = require('sdk/test/loader');
+const tabs = require("sdk/tabs");
+const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
-const windowUtils = require('api-utils/window/utils');
-const { getTabContentWindow, getActiveTab } = require("api-utils/tabs/utils");
+const { open } = require('sdk/window/utils');
+const windowUtils = require('sdk/deprecated/window-utils');
+const { getTabContentWindow, getActiveTab } = require('sdk/tabs/utils');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -303,7 +304,7 @@ exports.testHistory = function(test) {
   // We need a valid url in order to have a working History API.
   // (i.e do not work on data: or about: pages)
   // Test bug 679054.
-  let url = require("self").data.url("test-page-mod.html");
+  let url = require("sdk/self").data.url("test-page-mod.html");
   let callbackDone = null;
   testPageMod(test, url, [{
       include: url,
@@ -331,7 +332,7 @@ exports.testRelatedTab = function(test) {
   test.waitUntilDone();
 
   let tab;
-  let { PageMod } = require("page-mod");
+  let { PageMod } = require("sdk/page-mod");
   let pageMod = new PageMod({
     include: "about:*",
     onAttach: function(worker) {
@@ -355,7 +356,7 @@ exports.testWorksWithExistingTabs = function(test) {
   test.waitUntilDone();
 
   let url = "data:text/html;charset=utf-8," + encodeURI("Test unique document");
-  let { PageMod } = require("page-mod");
+  let { PageMod } = require("sdk/page-mod");
   tabs.open({
     url: url,
     onReady: function onReady(tab) {
@@ -377,9 +378,9 @@ exports.testWorksWithExistingTabs = function(test) {
 exports['test tab worker on message'] = function(test) {
   test.waitUntilDone();
 
-  let { browserWindows } = require("windows");
-  let tabs = require("tabs");
-  let { PageMod } = require("page-mod");
+  let { browserWindows } = require("sdk/windows");
+  let tabs = require("sdk/tabs");
+  let { PageMod } = require("sdk/page-mod");
 
   let url1 = "data:text/html;charset=utf-8,<title>tab1</title><h1>worker1.tab</h1>";
   let url2 = "data:text/html;charset=utf-8,<title>tab2</title><h1>worker2.tab</h1>";
@@ -422,7 +423,7 @@ exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
   let loader = Loader(module);
 
-  let pageMod = loader.require("page-mod").PageMod({
+  let pageMod = loader.require("sdk/page-mod").PageMod({
     include: "about:*",
     contentScriptWhen: "start",
     onAttach: function(w) {
@@ -434,7 +435,7 @@ exports.testAutomaticDestroy = function(test) {
   loader.unload();
 
   // Then create a second tab to ensure that it is correctly destroyed
-  let tabs = require("tabs");
+  let tabs = require("sdk/tabs");
   tabs.open({
     url: "about:",
     onReady: function onReady(tab) {
@@ -449,7 +450,7 @@ exports.testAutomaticDestroy = function(test) {
 exports['test attachment to tabs only'] = function(test) {
   test.waitUntilDone();
 
-  let { PageMod } = require('page-mod');
+  let { PageMod } = require('sdk/page-mod');
   let openedTab = null; // Tab opened in openTabWithIframe()
   let workerCount = 0;
 
@@ -474,7 +475,7 @@ exports['test attachment to tabs only'] = function(test) {
 
   function openHiddenFrame() {
     console.info('Open iframe in hidden window');
-    let hiddenFrames = require('api-utils/hidden-frame');
+    let hiddenFrames = require('sdk/frame/hidden-frame');
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function () {
         let element = this.element;
@@ -490,7 +491,7 @@ exports['test attachment to tabs only'] = function(test) {
 
   function openToplevelWindow() {
     console.info('Open toplevel window');
-    let win = windowUtils.open('data:text/html;charset=utf-8,bar');
+    let win = open('data:text/html;charset=utf-8,bar');
     win.addEventListener('DOMContentLoaded', function onload() {
       win.removeEventListener('DOMContentLoaded', onload, false);
       win.close();
@@ -500,7 +501,7 @@ exports['test attachment to tabs only'] = function(test) {
 
   function openBrowserIframe() {
     console.info('Open iframe in browser window');
-    let window = require('api-utils/window-utils').activeBrowserWindow;
+    let window = require('sdk/deprecated/window-utils').activeBrowserWindow;
     let document = window.document;
     let iframe = document.createElement('iframe');
     iframe.setAttribute('type', 'content');
@@ -519,7 +520,7 @@ exports['test attachment to tabs only'] = function(test) {
     let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
     let content = '<iframe src="data:text/html,' +
                   encodeURIComponent(subContent) + '" />';
-    require('tabs').open({
+    require('sdk/tabs').open({
       url: 'data:text/html;charset=utf-8,' + encodeURIComponent(content),
       onOpen: function onOpen(tab) {
         openedTab = tab;
@@ -533,7 +534,7 @@ exports['test attachment to tabs only'] = function(test) {
 exports['test111 attachTo [top]'] = function(test) {
   test.waitUntilDone();
 
-  let { PageMod } = require('page-mod');
+  let { PageMod } = require('sdk/page-mod');
 
   let subContent = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
   let content = '<iframe src="data:text/html;charset=utf-8,' +
@@ -563,13 +564,13 @@ exports['test111 attachTo [top]'] = function(test) {
     }
   });
 
-  require('tabs').open(topDocumentURL);
+  require('sdk/tabs').open(topDocumentURL);
 };
 
 exports['test111 attachTo [frame]'] = function(test) {
   test.waitUntilDone();
 
-  let { PageMod } = require('page-mod');
+  let { PageMod } = require('sdk/page-mod');
 
   let subFrameURL = 'data:text/html;charset=utf-8,subframe';
   let subContent = '<iframe src="' + subFrameURL + '" />';
@@ -607,7 +608,7 @@ exports['test111 attachTo [frame]'] = function(test) {
     }
   });
 
-  require('tabs').open(topDocumentURL);
+  require('sdk/tabs').open(topDocumentURL);
 };
 
 exports.testContentScriptOptionsOption = function(test) {
@@ -642,7 +643,7 @@ exports.testPageModCss = function(test) {
       include: "data:*",
       contentStyle: "div { height: 100px; }",
       contentStyleFile:
-        require("self").data.url("pagemod-css-include-file.css")
+        require("sdk/self").data.url("pagemod-css-include-file.css")
     }],
     function(win, done) {
       let div = win.document.querySelector("div");
@@ -755,7 +756,7 @@ exports.testPageModCssAutomaticDestroy = function(test) {
     url: "data:text/html;charset=utf-8,<div style='width:200px'>css test</div>",
 
     onReady: function onReady(tab) {
-      let browserWindow = require('api-utils/window-utils').activeBrowserWindow;
+      let browserWindow = windowUtils.activeBrowserWindow;
       let win = getTabContentWindow(getActiveTab(browserWindow));
 
       let div = win.document.querySelector("div"),

@@ -8,7 +8,7 @@ const {Cc, Ci, Cu, Cm, components} = require('chrome');
 Cu.import("resource://gre/modules/AddonManager.jsm", this);
 
 exports.testSelf = function(test) {
-  var self = require("self");
+  var self = require("sdk/self");
 
   var source = self.data.load("test-content-symbiont.js");
   test.assert(source.match(/test-content-symbiont/), "self.data.load() works");
@@ -27,8 +27,7 @@ exports.testSelf = function(test) {
 
   // When tests are run on just the api-utils package, self.name is
   // api-utils. When they're run as 'cfx testall', self.name is testpkgs.
-  test.assert((self.name == "api-utils") || (self.name == "testpkgs"),
-              "self.name is api-utils or testpkgs");
+  test.assert(self.name == "addon-sdk", "self.name is addon-sdk");
 
   // loadReason may change here, as we change the way tests addons are installed
   test.assertEqual(self.loadReason, "startup",
@@ -38,7 +37,7 @@ exports.testSelf = function(test) {
 exports.testSelfID = function(test) {
   test.waitUntilDone();
 
-  var self = require("self");
+  var self = require("sdk/self");
   // We can't assert anything about the ID inside the unit test right now,
   // because the ID we get depends upon how the test was invoked. The idea
   // is that it is supposed to come from the main top-level package's

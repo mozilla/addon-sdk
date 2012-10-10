@@ -4,19 +4,19 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { Loader } = require('test-harness/loader');
-const timer = require('timer');
-const { StringBundle } = require('api-utils/app-strings');
+const { Loader } = require('sdk/test/loader');
+const timer = require('sdk/timers');
+const { StringBundle } = require('sdk/deprecated/app-strings');
 
 // TEST: tabs.activeTab getter
 exports.testActiveTab_getter = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head></html>";
-    require("tab-browser").addTab(
+    require("sdk/deprecated/tab-browser").addTab(
       url,
       {
         onLoad: function(e) {
@@ -37,7 +37,7 @@ exports.testBug682681_aboutURI = function(test) {
   let tabStrings = StringBundle('chrome://browser/locale/tabbrowser.properties');
 
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
@@ -63,7 +63,7 @@ exports.testTitleForDataURI = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     tabs.on('ready', function onReady(tab) {
       tabs.removeListener('ready', onReady);
@@ -87,8 +87,8 @@ exports.testTitleForDataURI = function(test) {
 exports.testBrowserWindowCreationOnActivate = function(test) {
   test.waitUntilDone();
 
-  let windows = require("windows").browserWindows;
-  let tabs = require("tabs");
+  let windows = require("sdk/windows").browserWindows;
+  let tabs = require("sdk/tabs");
 
   let gotActivate = false;
 
@@ -108,7 +108,7 @@ exports.testActiveTab_setter = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head></html>";
 
     tabs.on('ready', function onReady(tab) {
@@ -137,13 +137,13 @@ exports.testAutomaticDestroy = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     // Create a second tab instance that we will destroy
     let called = false;
 
     let loader = Loader(module);
-    let tabs2 = loader.require("tabs");
+    let tabs2 = loader.require("sdk/tabs");
     tabs2.on('open', function onOpen(tab) {
       called = true;
     });
@@ -166,7 +166,7 @@ exports.testAutomaticDestroy = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs= require("tabs");
+    let tabs= require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
     tabs.open({
       url: url,
@@ -187,7 +187,7 @@ exports.testTabProperties = function(test) {
 exports.testTabContentTypeAndReload = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
     let urlXML = "data:text/xml;charset=utf-8,<foo>bar</foo>";
     tabs.open({
@@ -209,7 +209,7 @@ exports.testTabContentTypeAndReload = function(test) {
 exports.testTabsIteratorAndLength = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let startCount = 0;
     for each (let t in tabs) startCount++;
     test.assertEqual(startCount, tabs.length, "length property is correct");
@@ -233,7 +233,7 @@ exports.testTabsIteratorAndLength = function(test) {
 exports.testTabLocation = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url1 = "data:text/html;charset=utf-8,foo";
     let url2 = "data:text/html;charset=utf-8,bar";
 
@@ -258,7 +258,7 @@ exports.testTabLocation = function(test) {
 exports.testTabClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,foo";
 
     test.assertNotEqual(tabs.activeTab.url, url, "tab is not the active tab");
@@ -282,7 +282,7 @@ exports.testTabClose = function(test) {
 exports.testTabReload = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,<!doctype%20html><title></title>";
 
     tabs.open({ url: url, onReady: function onReady(tab) {
@@ -315,7 +315,7 @@ exports.testTabReload = function(test) {
 exports.testTabMove = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,foo";
 
     tabs.open({
@@ -334,7 +334,7 @@ exports.testTabMove = function(test) {
 exports.testOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,default";
     tabs.open({
       url: url,
@@ -351,12 +351,12 @@ exports.testOpen = function(test) {
 
 // TEST: open pinned tab
 exports.testOpenPinned = function(test) {
-  const xulApp = require("xul-app");
+  const xulApp = require("sdk/system/xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
     // test tab pinning
     test.waitUntilDone();
     openBrowserWindow(function(window, browser) {
-      let tabs = require("tabs");
+      let tabs = require("sdk/tabs");
       let url = "data:text/html;charset=utf-8,default";
       tabs.open({
         url: url,
@@ -375,11 +375,11 @@ exports.testOpenPinned = function(test) {
 
 // TEST: pin/unpin opened tab
 exports.testPinUnpin = function(test) {
-  const xulApp = require("xul-app");
+  const xulApp = require("sdk/system/xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "2.0b2", "*")) {
     test.waitUntilDone();
     openBrowserWindow(function(window, browser) {
-      let tabs = require("tabs");
+      let tabs = require("sdk/tabs");
       let url = "data:text/html;charset=utf-8,default";
       tabs.open({
         url: url,
@@ -402,7 +402,7 @@ exports.testPinUnpin = function(test) {
 exports.testInBackground = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let activeUrl = tabs.activeTab.url;
     let url = "data:text/html;charset=utf-8,background";
     test.assertEqual(activeWindow, window, "activeWindow matches this window");
@@ -425,10 +425,10 @@ exports.testInBackground = function(test) {
 exports.testOpenInNewWindow = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     let cache = [];
-    let windowUtils = require("window-utils");
+    let windowUtils = require("sdk/deprecated/window-utils");
     let wt = new windowUtils.WindowTracker({
       onTrack: function(win) {
         cache.push(win);
@@ -464,7 +464,7 @@ exports.testOpenInNewWindow = function(test) {
 exports.testTabsEvent_onOpen = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,1";
     let eventCount = 0;
 
@@ -490,7 +490,7 @@ exports.testTabsEvent_onOpen = function(test) {
 exports.testTabsEvent_onClose = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,onclose";
     let eventCount = 0;
 
@@ -522,7 +522,7 @@ exports.testTabsEvent_onCloseWindow = function(test) {
   test.waitUntilDone();
 
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     let closeCount = 0, individualCloseCount = 0;
     function listener() {
@@ -576,7 +576,7 @@ exports.testTabsEvent_onCloseWindow = function(test) {
 exports.testTabsEvent_onReady = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,onready";
     let eventCount = 0;
 
@@ -602,7 +602,7 @@ exports.testTabsEvent_onReady = function(test) {
 exports.testTabsEvent_onActivate = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,onactivate";
     let eventCount = 0;
 
@@ -628,7 +628,7 @@ exports.testTabsEvent_onActivate = function(test) {
 exports.testTabsEvent_onDeactivate = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,ondeactivate";
     let eventCount = 0;
 
@@ -659,7 +659,7 @@ exports.testTabsEvent_onDeactivate = function(test) {
 exports.testTabsEvent_pinning = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let url = "data:text/html;charset=utf-8,1";
 
     tabs.on('open', function onOpen(tab) {
@@ -687,7 +687,7 @@ exports.testTabsEvent_pinning = function(test) {
 exports.testPerTabEvents = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     let eventCount = 0;
 
     tabs.open({
@@ -715,7 +715,7 @@ exports.testAttachOnOpen = function (test) {
   // Take care that attach has to be called on tab ready and not on tab open.
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
 
     tabs.open({
       url: "data:text/html;charset=utf-8,foobar",
@@ -739,7 +739,7 @@ exports.testAttachOnMultipleDocuments = function (test) {
   // Example of attach that process multiple tab documents
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let firstLocation = "data:text/html;charset=utf-8,foobar";
     let secondLocation = "data:text/html;charset=utf-8,bar";
     let thirdLocation = "data:text/html;charset=utf-8,fox";
@@ -821,7 +821,7 @@ exports.testAttachWrappers = function (test) {
   // Check that content script has access to wrapped values by default
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let document = "data:text/html;charset=utf-8,<script>var globalJSVar = true; " +
                    "                       document.getElementById = 3;</script>";
     let count = 0;
@@ -855,7 +855,7 @@ exports.testAttachUnwrapped = function (test) {
   // Check that content script has access to unwrapped values through unsafeWindow
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    let tabs = require("tabs");
+    let tabs = require("sdk/tabs");
     let document = "data:text/html;charset=utf-8,<script>var globalJSVar=true;</script>";
     let count = 0;
 
@@ -884,7 +884,7 @@ exports['test window focus changes active tab'] = function(test) {
   test.waitUntilDone();
   let win1 = openBrowserWindow(function() {
     let win2 = openBrowserWindow(function() {
-      let tabs = require("tabs");
+      let tabs = require("sdk/tabs");
       tabs.on("activate", function onActivate() {
         tabs.removeListener("activate", onActivate);
         test.pass("activate was called on windows focus change.");
@@ -901,9 +901,9 @@ exports['test ready event on new window tab'] = function(test) {
   test.waitUntilDone();
   let uri = encodeURI("data:text/html;charset=utf-8,Waiting for ready event!");
 
-  require("tabs").on("ready", function onReady(tab) {
+  require("sdk/tabs").on("ready", function onReady(tab) {
     if (tab.url === uri) {
-      require("tabs").removeListener("ready", onReady);
+      require("sdk/tabs").removeListener("ready", onReady);
       test.pass("ready event was emitted");
       closeBrowserWindow(window, function() {
         test.done();
@@ -965,7 +965,7 @@ function closeBrowserWindow(window, callback) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("tabs");
+  require("sdk/tabs");
 }
 catch (err) {
   // This bug should be mentioned in the error message.

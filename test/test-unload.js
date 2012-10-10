@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var unload = require("unload");
-var { Loader } = require("test-harness/loader");
+var unload = require("sdk/system/unload");
+var { Loader } = require("sdk/test/loader");
 
 exports.testUnloading = function(test) {
   var loader = Loader(module, {
@@ -16,7 +16,7 @@ exports.testUnloading = function(test) {
     })
   });
   var exceptions = [];
-  var ul = loader.require("unload");
+  var ul = loader.require("sdk/system/unload");
   var unloadCalled = 0;
   function unload() {
     unloadCalled++;
@@ -64,9 +64,9 @@ exports.testEnsure = function(test) {
  */
 exports.testEnsureWithTraits = function(test) {
 
-  let { Trait } = require("traits");
+  let { Trait } = require("sdk/deprecated/traits");
   let loader = Loader(module);
-  let ul = loader.require("unload");
+  let ul = loader.require("sdk/system/unload");
 
   let called = 0;
   let composedCalled = 0;
@@ -120,9 +120,9 @@ exports.testEnsureWithTraits = function(test) {
 
 exports.testEnsureWithTraitsPrivate = function(test) {
 
-  let { Trait } = require("traits");
+  let { Trait } = require("sdk/deprecated/traits");
   let loader = Loader(module);
-  let ul = loader.require("unload");
+  let ul = loader.require("sdk/system/unload");
 
   let called = 0;
   let privateObj = null;
@@ -151,7 +151,7 @@ exports.testEnsureWithTraitsPrivate = function(test) {
 exports.testReason = function (test) {
   var reason = "Reason doesn't actually have to be anything in particular.";
   var loader = Loader(module);
-  var ul = loader.require("unload");
+  var ul = loader.require("sdk/system/unload");
   ul.when(function (rsn) {
     test.assertEqual(rsn, reason,
                      "when() reason should be reason given to loader");

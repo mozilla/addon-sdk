@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { store, search, remove } = require("passwords");
+const { store, search, remove } = require("sdk/passwords");
 
 exports["test store requires `password` field"] = function(assert, done) {
   store({

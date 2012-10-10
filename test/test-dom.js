@@ -4,8 +4,8 @@
 
 "use strict";
 
-const events = require("dom/events");
-const { activeBrowserWindow: { document } } = require("window-utils");
+const events = require("sdk/dom/events");
+const { activeBrowserWindow: { document } } = require("sdk/deprecated/window-utils");
 const window = document.window;
 
 exports["test on / emit"] = function (assert, done) {

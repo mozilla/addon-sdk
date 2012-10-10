@@ -4,7 +4,7 @@
 
 "use strict"
 
-var utils = require("type");
+var utils = require("sdk/lang/type");
 
 exports["test function"] = function (assert) {
   assert.ok(utils.isFunction(function(){}), "value is function");

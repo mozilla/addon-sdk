@@ -4,10 +4,10 @@
 
 "use strict";
 
-var windowUtils = require("api-utils/window-utils");
-var timer = require("api-utils/timer");
+var windowUtils = require("sdk/deprecated/window-utils");
+var timer = require("sdk/timers");
 var { Cc, Ci } = require("chrome");
-var { Loader, unload } = require("test-harness/loader");
+var { Loader, unload } = require("sdk/test/loader");
 
 function toArray(iterator) {
   let array = [];
@@ -57,7 +57,7 @@ exports['test close on unload'] = function(assert) {
   };
 
   let loader = Loader(module);
-  loader.require("window-utils").closeOnUnload(fakeWindow);
+  loader.require("sdk/deprecated/window-utils").closeOnUnload(fakeWindow);
   assert.equal(fakeWindow._listeners.length, 1,
                    "unload listener added on closeOnUnload()");
   assert.equal(timesClosed, 0,
@@ -70,7 +70,7 @@ exports['test close on unload'] = function(assert) {
 
   timesClosed = 0;
   loader = Loader(module);
-  loader.require("window-utils").closeOnUnload(fakeWindow);
+  loader.require("sdk/deprecated/window-utils").closeOnUnload(fakeWindow);
   assert.equal(timesClosed, 0,
                    "window not closed when registered.");
   fakeWindow.close();

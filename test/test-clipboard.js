@@ -56,7 +56,7 @@ const canvasHTML = "data:text/html," + encodeURIComponent(
 );
 
 function comparePixelImages(imageA, imageB, callback) {
-  let tabs = require("tabs");
+  let tabs = require("sdk/tabs");
 
   tabs.open({
     url: canvasHTML,
@@ -105,7 +105,7 @@ exports.testWithNoFlavor = function(test) {
   var contents = "hello there";
   var flavor = "text";
   var fullFlavor = "text/unicode";
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   // Confirm we set the clipboard
   test.assert(clip.set(contents));
   // Confirm flavor is set
@@ -126,7 +126,7 @@ exports.testWithFlavor = function(test) {
   var fullFlavor = "text/html";
   var unicodeFlavor = "text";
   var unicodeFullFlavor = "text/unicode";
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   test.assert(clip.set(contents, flavor));
   test.assertEqual(clip.currentFlavors[0], unicodeFlavor);
   test.assertEqual(clip.currentFlavors[1], flavor);
@@ -142,7 +142,7 @@ exports.testWithRedundantFlavor = function(test) {
   var contents = "<b>hello there</b>";
   var flavor = "text";
   var fullFlavor = "text/unicode";
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   test.assert(clip.set(contents, flavor));
   test.assertEqual(clip.currentFlavors[0], flavor);
   test.assertEqual(clip.get(), contents);
@@ -153,14 +153,14 @@ exports.testWithRedundantFlavor = function(test) {
 exports.testNotInFlavor = function(test) {
   var contents = "hello there";
   var flavor = "html";
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   test.assert(clip.set(contents));
   // If there's nothing on the clipboard with this flavor, should return null
   test.assertEqual(clip.get(flavor), null);
 };
 
 exports.testSetImage = function(test) {
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   var flavor = "image";
   var fullFlavor = "image/png";
 
@@ -171,7 +171,7 @@ exports.testSetImage = function(test) {
 exports.testGetImage = function(test) {
   test.waitUntilDone();
 
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
 
   clip.set(base64png, "image");
 
@@ -186,7 +186,7 @@ exports.testGetImage = function(test) {
 }
 
 exports.testSetImageTypeNotSupported = function(test) {
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   var flavor = "image";
 
   test.assertRaises(function () {
@@ -201,7 +201,7 @@ exports.testSetImageTypeNotSupported = function(test) {
 //
 // See: http://mxr.mozilla.org/mozilla-central/source/image/src/Decoder.cpp#136
 exports.testSetImageTypeWrongData = function(test) {
-  var clip = require("clipboard");
+  var clip = require("sdk/clipboard");
   var flavor = "image";
 
   var wrongPNG = "data:image/png" + base64jpeg.substr(15);

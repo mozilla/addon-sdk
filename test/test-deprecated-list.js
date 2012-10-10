@@ -28,7 +28,7 @@ function assertList(test, array, list) {
   }
 }
 
-const { List } = require('api-utils/list');
+const { List } = require('sdk/deprecated/list');
 
 exports['test:test for'] = function(test) {
   let fixture = List(3, 2, 1);

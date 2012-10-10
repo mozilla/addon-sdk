@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var xhr = require("xhr");
-var timer = require("timer");
-var { Loader } = require("test-harness/loader");
-var xulApp = require("xul-app");
+var xhr = require("sdk/net/xhr");
+var timer = require("sdk/timers");
+var { Loader } = require("sdk/test/loader");
+var xulApp = require("sdk/system/xul-app");
 
 /* Test is intentionally disabled until platform bug 707256 is fixed.
 exports.testAbortedXhr = function(test) {
@@ -39,7 +39,7 @@ exports.testLocalXhr = function(test) {
 
 exports.testUnload = function(test) {
   var loader = Loader(module);
-  var sbxhr = loader.require("xhr");
+  var sbxhr = loader.require("sdk/net/xhr");
   var req = new sbxhr.XMLHttpRequest();
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);

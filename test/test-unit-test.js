@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const timer = require("timer");
-const { Loader } = require("test-harness/loader");
+const timer = require("sdk/timers");
+const { Loader } = require("sdk/test/loader");
 
 var setupCalled = false, teardownCalled = false;
 
@@ -116,7 +116,7 @@ exports.testWaitUntilErrorInCallback = function(test) {
 exports.testWaitUntilTimeoutInCallback = function(test) {
   test.waitUntilDone(1000);
 
-  let runner = new (require("unit-test").TestRunner)({
+  let runner = new (require("sdk/deprecated/unit-test").TestRunner)({
     console: {
       calls: 0,
       error: function(msg) {

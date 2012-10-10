@@ -4,7 +4,7 @@
 
 const { Cc,Ci } = require("chrome");
 
-let StringBundle = require("app-strings").StringBundle;
+let StringBundle = require("sdk/deprecated/app-strings").StringBundle;
 exports.testStringBundle = function(test) {
   let url = "chrome://global/locale/security/caps.properties";
 

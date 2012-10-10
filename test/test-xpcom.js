@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const xpcom = require("api-utils/xpcom");
+const xpcom = require("sdk/platform/xpcom");
 const { Cc, Ci, Cm, Cr } = require("chrome");
 const { isCIDRegistered } = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-const { Class } = require("api-utils/heritage");
-const { Loader } = require("test-harness/loader");
+const { Class } = require("sdk/core/heritage");
+const { Loader } = require("sdk/test/loader");
 
 exports['test Unknown implements nsISupports'] = function(assert) {
   let actual = xpcom.Unknown();
@@ -187,7 +187,7 @@ exports["test re-register"] = function(assert) {
 
 exports["test unload"] = function(assert) {
   let loader = Loader(module);
-  let sbxpcom = loader.require("xpcom");
+  let sbxpcom = loader.require("sdk/platform/xpcom");
 
   let auto = sbxpcom.Factory({
     contract: "@mozilla.org/test/auto-unload;1",

@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Loader } = require('test-harness/loader');
-const { browserWindows } = require('windows');
-const tabs = require('tabs');
+const { Loader } = require('sdk/test/loader');
+const { browserWindows } = require('sdk/windows');
+const tabs = require('sdk/tabs');
 
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
 

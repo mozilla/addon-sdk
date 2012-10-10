@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { getRulesForLocale } = require("api-utils/l10n/plural-rules");
+const { getRulesForLocale } = require("sdk/l10n/plural-rules");
 
 // For more information, please visit unicode website:
 // http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html

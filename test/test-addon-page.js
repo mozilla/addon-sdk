@@ -4,14 +4,15 @@
 
 'use strict';
 
-const { isTabOpen, activateTab, openTab, closeTab, getURI } = require('api-utils/tabs/utils');
-const windows = require('api-utils/window-utils');
-const { Loader } = require('test-harness/loader');
-const { setTimeout } = require('api-utils/timer');
-const { is } = require('api-utils/xul-app');
-const tabs = require('tabs');
+const { isTabOpen, activateTab, openTab,
+        closeTab, getURI } = require('sdk/tabs/utils');
+const windows = require('sdk/deprecated/window-utils');
+const { Loader } = require('sdk/test/loader');
+const { setTimeout } = require('sdk/timers');
+const { is } = require('sdk/system/xul-app');
+const tabs = require('sdk/tabs');
 
-let uri = require('self').data.url('index.html');
+let uri = require('sdk/self').data.url('index.html');
 
 function isChromeVisible(window) {
   let x = window.document.documentElement.getAttribute('disablechrome')
@@ -43,7 +44,7 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
 
 exports['test that add-on pages are closed on unload'] = function(assert, done) {
   let loader = Loader(module);
-  loader.require('addon-kit/addon-page');
+  loader.require('sdk/addon-page');
 
   // Wait for addon page document to be loaded
   tabs.once("ready", function listener(tab) {
@@ -61,4 +62,4 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
 };
 
 
-require('test').run(exports);
+require('sdk/test').run(exports);

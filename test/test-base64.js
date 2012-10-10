@@ -4,7 +4,7 @@
 
 "use strict";
 
-const base64 = require("api-utils/base64");
+const base64 = require("sdk/base64");
 
 const text = "Awesome!";
 const b64text = "QXdlc29tZSE=";

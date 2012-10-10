@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { sandbox, load, evaluate } = require('api-utils/sandbox');
-const xulApp = require("xul-app");
+const { sandbox, load, evaluate } = require('sdk/loader/sandbox');
+const xulApp = require("sdk/system/xul-app");
 const fixturesURI = module.uri.split('test-sandbox.js')[0] + 'fixtures/';
 
 

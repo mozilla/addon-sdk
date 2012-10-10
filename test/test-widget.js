@@ -5,12 +5,12 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const { Loader } = require('test-harness/loader');
-const widgets = require("widget");
-const url = require("url");
-const windowUtils = require("window-utils");
-const tabBrowser = require("tab-browser");
-const timer = require("timer");
+const { Loader } = require('sdk/test/loader');
+const widgets = require("sdk/widget");
+const url = require("sdk/url");
+const windowUtils = require("sdk/deprecated/window-utils");
+const tabBrowser = require("sdk/deprecated/tab-browser");
+const timer = require("sdk/timers");
 
 exports.testConstructor = function(test) {
   test.waitUntilDone(30000);
@@ -42,7 +42,7 @@ exports.testConstructor = function(test) {
 
   // Test automatic widget destroy on unload
   let loader = Loader(module);
-  let widgetsFromLoader = loader.require("widget");
+  let widgetsFromLoader = loader.require("sdk/widget");
   let widgetStartCount = widgetCount();
   let w = widgetsFromLoader.Widget({ id: "fooID", label: "foo", content: "bar" });
   test.assertEqual(widgetCount(), widgetStartCount + 1, "widget has been correctly added");
@@ -131,7 +131,7 @@ exports.testConstructor = function(test) {
 
   // Test concurrent widget module instances on addon-bar hiding
   let loader = Loader(module);
-  let anotherWidgetsInstance = loader.require("widget");
+  let anotherWidgetsInstance = loader.require("sdk/widget");
   test.assert(container().collapsed, "UI is hidden when no widgets");
   AddonsMgrListener.onInstalling();
   let w1 = widgets.Widget({id: "foo", label: "foo", content: "bar"});
@@ -218,7 +218,7 @@ exports.testConstructor = function(test) {
   tests.push(function testImageURLWidget() testSingleWidget({
     id: "image",
     label: "image url widget",
-    contentURL: require("self").data.url("test.html"),
+    contentURL: require("sdk/self").data.url("test.html"),
     contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " +
                    "content: document.body.firstElementChild.innerHTML});",
@@ -236,7 +236,7 @@ exports.testConstructor = function(test) {
   tests.push(function testWebURIWidget() testSingleWidget({
     id: "web",
     label: "web uri widget",
-    contentURL: require("self").data.url("test.html"),
+    contentURL: require("sdk/self").data.url("test.html"),
     contentScript: "self.postMessage({title: document.title, " +
                    "tag: document.body.firstElementChild.tagName, " +
                    "content: document.body.firstElementChild.innerHTML});",
@@ -302,7 +302,7 @@ exports.testConstructor = function(test) {
   tests.push(function testOnclickEventImage() testSingleWidget({
     id: "click",
     label: "click test widget - image",
-    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('click', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
@@ -318,7 +318,7 @@ exports.testConstructor = function(test) {
   tests.push(function testOnmouseoverEventImage() testSingleWidget({
     id: "mouseover",
     label: "mouseover test widget - image",
-    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
@@ -334,7 +334,7 @@ exports.testConstructor = function(test) {
   tests.push(function testOnmouseoutEventImage() testSingleWidget({
     id: "mouseout",
     label: "mouseout test widget - image",
-    contentURL: require("self").data.url("moz_favicon.ico"),
+    contentURL: require("sdk/self").data.url("moz_favicon.ico"),
     contentScript: "var evt = document.createEvent('HTMLEvents'); " +
                    "evt.initEvent('mouseout', true, true ); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
@@ -528,7 +528,7 @@ exports.testConstructor = function(test) {
       contentScript: "self.port.on('event', function () self.port.emit('event'))"
     };
     let widget = testSingleWidget(w1Opts);
-    let windows = require("windows").browserWindows;
+    let windows = require("sdk/windows").browserWindows;
 
     // 2/ Retrieve a WidgetView for the initial browser window
     let acceptDetach = false;
@@ -666,7 +666,7 @@ exports.testConstructor = function(test) {
 };
 
 exports.testPanelWidget1 = function testPanelWidget1(test) {
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
 
   let widget1 = widgets.Widget({
     id: "panel1",
@@ -676,7 +676,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
                    "evt.initEvent('click', true, true ); " +
                    "document.body.dispatchEvent(evt);",
     contentScriptWhen: "end",
-    panel: require("panel").Panel({
+    panel: require("sdk/panel").Panel({
       contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
       onShow: function() {
         widget1.destroy();
@@ -689,7 +689,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
 };
 
 exports.testPanelWidget2 = function testPanelWidget2(test) {
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   test.assertRaises(
     function() {
       widgets.Widget({
@@ -704,7 +704,7 @@ exports.testPanelWidget2 = function testPanelWidget2(test) {
 };
 
 exports.testPanelWidget3 = function testPanelWidget3(test) {
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   let onClickCalled = false;
   let widget3 = widgets.Widget({
     id: "panel3",
@@ -718,7 +718,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
       onClickCalled = true;
       this.panel.show();
     },
-    panel: require("panel").Panel({
+    panel: require("sdk/panel").Panel({
       contentURL: "data:text/html;charset=utf-8,<body>Look ma, a panel!</body>",
       onShow: function() {
         test.assert(
@@ -736,7 +736,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
 exports.testWidgetMessaging = function testWidgetMessaging(test) {
   test.waitUntilDone();
   let origMessage = "foo";
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   let widget = widgets.Widget({
     id: "foo",
     label: "foo",
@@ -757,7 +757,7 @@ exports.testWidgetMessaging = function testWidgetMessaging(test) {
 
 exports.testWidgetViews = function testWidgetViews(test) {
   test.waitUntilDone();
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   let widget = widgets.Widget({
     id: "foo",
     label: "foo",
@@ -781,7 +781,7 @@ exports.testWidgetViews = function testWidgetViews(test) {
 
 exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(test) {
   test.waitUntilDone();
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   let view = null;
   let widget = widgets.Widget({
     id: "foo",
@@ -798,7 +798,7 @@ exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(test) {
     onClick: function (eventView) {
       test.assertEqual(view, eventView,
                          "event first argument is equal to the WidgetView");
-      let view2 = widget.getView(require("windows").browserWindows.activeWindow);
+      let view2 = widget.getView(require("sdk/windows").browserWindows.activeWindow);
       test.assertEqual(view, view2,
                          "widget.getView return the same WidgetView");
       widget.destroy();
@@ -809,7 +809,7 @@ exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(test) {
 
 exports.testWidgetViewsCustomEvents = function testWidgetViewsCustomEvents(test) {
   test.waitUntilDone();
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
   let widget = widgets.Widget({
     id: "foo",
     label: "foo",
@@ -833,14 +833,14 @@ exports.testWidgetViewsCustomEvents = function testWidgetViewsCustomEvents(test)
 
 exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {
   test.waitUntilDone();
-  const widgets = require("widget");
+  const widgets = require("sdk/widget");
 
   let widget = new widgets.Widget({
     id: "foo",
     label: "foo",
     content: "foo"
   });
-  let view = widget.getView(require("windows").browserWindows.activeWindow);
+  let view = widget.getView(require("sdk/windows").browserWindows.activeWindow);
   widget.tooltip = null;
   test.assertEqual(view.tooltip, "foo",
                    "view tooltip defaults to base widget label");
@@ -853,8 +853,8 @@ exports.testWidgetViewsTooltip = function testWidgetViewsTooltip(test) {
 exports.testWidgetMove = function testWidgetMove(test) {
   test.waitUntilDone();
 
-  let windowUtils = require("window-utils");
-  let widgets = require("widget");
+  let windowUtils = require("sdk/deprecated/window-utils");
+  let widgets = require("sdk/widget");
 
   let browserWindow = windowUtils.activeBrowserWindow;
   let doc = browserWindow.document;
@@ -902,7 +902,7 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
   test.waitUntilDone();
 
   function getWidgetContent(widget) {
-    let windowUtils = require("window-utils");
+    let windowUtils = require("sdk/deprecated/window-utils");
     let browserWindow = windowUtils.activeBrowserWindow;
     let doc = browserWindow.document;
     let widgetNode = doc.querySelector('toolbaritem[label="' + widget.label + '"]');
@@ -910,7 +910,7 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
     return widgetNode.firstChild.contentDocument.body.innerHTML;
   }
 
-  let widgets = require("widget");
+  let widgets = require("sdk/widget");
   let count = 0;
   let widget = widgets.Widget({
     id: "1",
@@ -934,7 +934,7 @@ exports.testWidgetWithPound = function testWidgetWithPound(test) {
 exports.testContentScriptOptionsOption = function(test) {
   test.waitUntilDone();
 
-  let widget = require("widget").Widget({
+  let widget = require("sdk/widget").Widget({
       id: "fooz",
       label: "fooz",
       content: "fooz",
@@ -956,7 +956,7 @@ exports.testContentScriptOptionsOption = function(test) {
 exports.testOnAttachWithoutContentScript = function(test) {
   test.waitUntilDone();
 
-  let widget = require("widget").Widget({
+  let widget = require("sdk/widget").Widget({
       id: "onAttachNoCS",
       label: "onAttachNoCS",
       content: "onAttachNoCS",
@@ -971,7 +971,7 @@ exports.testOnAttachWithoutContentScript = function(test) {
 exports.testPostMessageOnAttach = function(test) {
   test.waitUntilDone();
 
-  let widget = require("widget").Widget({
+  let widget = require("sdk/widget").Widget({
       id: "onAttach",
       label: "onAttach",
       content: "onAttach",
@@ -995,7 +995,7 @@ exports.testPostMessageOnLocationChange = function(test) {
 
   let attachEventCount = 0;
   let messagesCount = 0;
-  let widget = require("widget").Widget({
+  let widget = require("sdk/widget").Widget({
       id: "onLocationChange",
       label: "onLocationChange",
       content: "onLocationChange",
@@ -1135,7 +1135,7 @@ function closeBrowserWindow(window, callback) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("widget");
+  require("sdk/widget");
 }
 catch (err) {
   // This bug should be mentioned in the error message.

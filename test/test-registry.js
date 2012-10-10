@@ -6,7 +6,7 @@
 
 exports['test:add'] = function(test) {
   function Class() {}
-  let fixture = require('utils/registry').Registry(Class);
+  let fixture = require('sdk/util/registry').Registry(Class);
   let isAddEmitted = false;
   fixture.on('add', function(item) {
     test.assert(
@@ -30,7 +30,7 @@ exports['test:add'] = function(test) {
 
 exports['test:remove'] = function(test) {
   function Class() {}
-  let fixture = require('utils/registry').Registry(Class);
+  let fixture = require('sdk/util/registry').Registry(Class);
   fixture.on('remove', function(item) {
      test.assert(
       item instanceof Class,
@@ -55,7 +55,7 @@ exports['test:remove'] = function(test) {
 
 exports['test:items'] = function(test) {
   function Class() {}
-  let fixture = require('utils/registry').Registry(Class),
+  let fixture = require('sdk/util/registry').Registry(Class),
       actual,
       times = 0;
 

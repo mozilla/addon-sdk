@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { store, search, remove } = require("passwords/utils");
+const { store, search, remove } = require("sdk/passwords/utils");
 
 exports["test store requires `password` field"] = function(assert) {
   assert.throws(function() {

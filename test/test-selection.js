@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-let timer = require("timer");
+let timer = require("sdk/timers");
 let {Cc,Ci} = require("chrome");
 
 // Arbitrary delay needed to avoid weird behavior.
@@ -34,7 +34,7 @@ function selectTextarea(window, from, to) {
 }
 
 function primeTestCase(html, test, callback) {
-  let tabBrowser = require("tab-browser");
+  let tabBrowser = require("sdk/deprecated/tab-browser");
   let dataURL = "data:text/html;charset=utf-8," + encodeURI(html);
   let tracker = tabBrowser.whenContentLoaded(
     function(window) {
@@ -60,7 +60,7 @@ const HTML_SINGLE = '<html><body>' + DIV1 + '</body></html>';
 // Tests of contiguous
 
 exports.testContiguousMultiple = function testContiguousMultiple(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, false,
@@ -71,7 +71,7 @@ exports.testContiguousMultiple = function testContiguousMultiple(test) {
 };
 
 exports.testContiguousSingle = function testContiguousSingle(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.isContiguous, true,
@@ -83,7 +83,7 @@ exports.testContiguousSingle = function testContiguousSingle(test) {
 
 exports.testContiguousWithoutSelection =
   function testContiguousWithoutSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
     primeTestCase(HTML_SINGLE, test, function(window, test) {
       test.assertEqual(selection.isContiguous, false,
         "selection.isContiguous without selection works.");
@@ -96,7 +96,7 @@ exports.testContiguousWithoutSelection =
  * Test that setting the contiguous property has no effect.
  */
 /*exports.testSetContiguous = function testSetContiguous(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
     try {
@@ -116,7 +116,7 @@ exports.testContiguousWithoutSelection =
 // HTML tests
 
 exports.testGetHTMLSingleSelection = function testGetHTMLSingleSelection(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     test.assertEqual(selection.html, DIV1, "get html selection works");
@@ -131,7 +131,7 @@ exports.testGetHTMLSingleSelection = function testGetHTMLSingleSelection(test) {
    the appropriate order. In the meantime, add a comment to that effect here */
 exports.testGetHTMLMultipleSelection =
   function testGetHTMLMultipleSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
     primeTestCase(HTML_MULTIPLE, test, function(window, test) {
       selectAllDivs(window);
       let assertions = false;
@@ -148,7 +148,7 @@ exports.testGetHTMLMultipleSelection =
 };
 
 exports.testGetHTMLNull = function testGetHTMLNull(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     test.assertEqual(selection.html, null, "get html null works");
   });
@@ -157,7 +157,7 @@ exports.testGetHTMLNull = function testGetHTMLNull(test) {
 };
 
 exports.testGetHTMLWeird = function testGetHTMLWeird(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   // If the getter is used when there are contiguous selections, the first
   // selection should be returned
   primeTestCase(HTML_MULTIPLE, test, function(window, test) {
@@ -170,7 +170,7 @@ exports.testGetHTMLWeird = function testGetHTMLWeird(test) {
 
 exports.testGetHTMLNullInTextareaSelection =
   function testGetHTMLNullInTextareaSelection(test) {
-      let selection = require("selection");
+      let selection = require("sdk/selection");
 
       primeTestCase(TEXT_FIELD, test, function(window, test) {
         selectTextarea(window);
@@ -184,7 +184,7 @@ exports.testGetHTMLNullInTextareaSelection =
 const REPLACEMENT_HTML = "<b>Lorem ipsum dolor sit amet</b>";
 
 exports.testSetHTMLSelection = function testSetHTMLSelection(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     selection.html = REPLACEMENT_HTML;
@@ -196,7 +196,7 @@ exports.testSetHTMLSelection = function testSetHTMLSelection(test) {
 };
 
 exports.testSetHTMLException = function testSetHTMLException(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(HTML_SINGLE, test, function(window, test) {
     try {
       selection.html = REPLACEMENT_HTML;
@@ -221,7 +221,7 @@ const TEXT_FIELD = "<html><body><textarea>" + TEXT1 + "</textarea></body></html>
 
 exports.testSetHTMLinTextareaSelection =
   function testSetHTMLinTextareaSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
 
     primeTestCase(TEXT_FIELD, test, function(window, test) {
       selectTextarea(window);
@@ -240,7 +240,7 @@ exports.testSetHTMLinTextareaSelection =
 
 exports.testGetTextSingleSelection =
   function testGetTextSingleSelection(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
     primeTestCase(TEXT_SINGLE, test, function(window, test) {
       selectAllDivs(window);
       test.assertEqual(selection.text, TEXT1, "get text selection works");
@@ -251,7 +251,7 @@ exports.testGetTextSingleSelection =
 
 exports.testGetTextMultipleSelection =
   function testGetTextMultipleSelection(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
     primeTestCase(TEXT_MULTIPLE, test, function(window, test) {
       selectAllDivs(window);
       let assertions = false;
@@ -268,7 +268,7 @@ exports.testGetTextMultipleSelection =
 };
 
 exports.testGetTextNull = function testGetTextNull(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(TEXT_SINGLE, test, function(window, test) {
     test.assertEqual(selection.text, null, "get text null works");
   });
@@ -277,7 +277,7 @@ exports.testGetTextNull = function testGetTextNull(test) {
 };
 
 exports.testGetTextWeird = function testGetTextWeird(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   // If the getter is used when there are contiguous selections, the first
   // selection should be returned
   primeTestCase(TEXT_MULTIPLE, test, function(window, test) {
@@ -290,7 +290,7 @@ exports.testGetTextWeird = function testGetTextWeird(test) {
 
 exports.testGetTextNullInTextareaSelection =
   function testGetTextInTextareaSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
 
     primeTestCase(TEXT_FIELD, test, function(window, test) {
       test.assertEqual(selection.text, null, "get text null in textarea works")
@@ -301,7 +301,7 @@ exports.testGetTextNullInTextareaSelection =
 
 exports.testGetTextInTextareaSelection =
   function testGetTextInTextareaSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
 
     primeTestCase(TEXT_FIELD, test, function(window, test) {
       selectTextarea(window);
@@ -315,7 +315,7 @@ exports.testGetTextInTextareaSelection =
 const REPLACEMENT_TEXT = "Lorem ipsum dolor sit amet";
 
 exports.testSetTextSelection = function testSetTextSelection(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(TEXT_SINGLE, test, function(window, test) {
     selectAllDivs(window);
     selection.text = REPLACEMENT_TEXT;
@@ -326,7 +326,7 @@ exports.testSetTextSelection = function testSetTextSelection(test) {
 };
 
 exports.testSetHTMLException = function testSetHTMLException(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   primeTestCase(TEXT_SINGLE, test, function(window, test) {
     try {
       selection.text = REPLACEMENT_TEXT;
@@ -342,7 +342,7 @@ exports.testSetHTMLException = function testSetHTMLException(test) {
 
 exports.testSetTextInTextareaSelection =
   function testSetTextInTextareaSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
 
     primeTestCase(TEXT_FIELD, test, function(window, test) {
       selectTextarea(window);
@@ -359,7 +359,7 @@ exports.testSetTextInTextareaSelection =
 // Iterator tests
 
 exports.testIterator = function testIterator(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   let selectionCount = 0;
   primeTestCase(TEXT_MULTIPLE, test, function(window, test) {
     selectAllDivs(window);
@@ -373,7 +373,7 @@ exports.testIterator = function testIterator(test) {
 
 exports.testIteratorWithTextareaSelection =
   function testIteratorWithTextareaSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
     let selectionCount = 0;
 
     primeTestCase(TEXT_FIELD, test, function(window, test) {
@@ -404,7 +404,7 @@ function sendSelectionSetEvent(window) {
 // testOnSelect() requires nsIDOMWindowUtils, which is only available in
 // Firefox 3.7+.
 exports.testOnSelect = function testOnSelect(test) {
-  let selection = require("selection");
+  let selection = require("sdk/selection");
   let callbackCount = 0;
   primeTestCase(TEXT_SINGLE, test, function(window, test) {
     selection.onSelect = function() {callbackCount++};
@@ -423,7 +423,7 @@ exports.testOnSelect = function testOnSelect(test) {
 // available in Firefox 3.7+.
 exports.testOnSelectExceptionNoBubble =
   function testOnSelectTextSelection(test) {
-    let selection = require("selection");
+    let selection = require("sdk/selection");
     primeTestCase(HTML_SINGLE, test, function(window, test) {
       selection.onSelect = function() {
         throw new Error("Exception thrown in testOnSelectExceptionNoBubble");
@@ -441,7 +441,7 @@ exports.testOnSelectExceptionNoBubble =
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("selection");
+  require("sdk/selection");
 }
 catch (err) {
   // This bug should be mentioned in the error message.

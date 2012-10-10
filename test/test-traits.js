@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Trait } = require('traits');
+const { Trait } = require('sdk/deprecated/traits');
 
 exports['test:simple compose'] = function(test) {
   let List = Trait.compose({

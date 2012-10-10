@@ -4,15 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const file = require("file");
-const prefs = require("preferences-service");
+const file = require("sdk/io/file");
+const prefs = require("sdk/preferences/service");
 
 const QUOTA_PREF = "extensions.addon-sdk.simple-storage.quota";
 
 let {Cc,Ci} = require("chrome");
 
-const { Loader } = require("test-harness/loader");
-const { id } = require("self");
+const { Loader } = require("sdk/test/loader");
+const { id } = require("sdk/self");
 
 let storeFile = Cc["@mozilla.org/file/directory_service;1"].
                 getService(Ci.nsIProperties).
@@ -23,20 +23,20 @@ storeFile.append("simple-storage");
 storeFile.append("store.json");
 let storeFilename = storeFile.path;
 
-function manager(loader) loader.sandbox("simple-storage").manager;
+function manager(loader) loader.sandbox("sdk/simple-storage").manager;
 
 exports.testSetGet = function (test) {
   test.waitUntilDone();
 
   // Load the module once, set a value.
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   manager(loader).jsonStore.onWrite = function (storage) {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       file.remove(storeFilename);
       test.done();
@@ -103,7 +103,7 @@ exports.testSetGetRootUndefined = function (test) {
 
 exports.testEmpty = function (test) {
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   loader.unload();
   test.assert(!file.exists(storeFilename), "Store file should not exist");
 };
@@ -113,7 +113,7 @@ exports.testMalformed = function (test) {
   stream.write("i'm not json");
   stream.close();
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   let empty = true;
   for (let key in ss.storage) {
     empty = false;
@@ -129,7 +129,7 @@ exports.testQuotaExceededHandle = function (test) {
   prefs.set(QUOTA_PREF, 18);
 
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   ss.on("OverQuota", function () {
     test.pass("OverQuota was emitted as expected");
     test.assertEqual(this, ss, "`this` should be simple storage");
@@ -137,7 +137,7 @@ exports.testQuotaExceededHandle = function (test) {
 
     manager(loader).jsonStore.onWrite = function () {
       loader = Loader(module);
-      ss = loader.require("simple-storage");
+      ss = loader.require("sdk/simple-storage");
       let numProps = 0;
       for (let prop in ss.storage)
         numProps++;
@@ -164,11 +164,11 @@ exports.testQuotaExceededNoHandle = function (test) {
   prefs.set(QUOTA_PREF, 5);
 
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
 
   manager(loader).jsonStore.onWrite = function (storage) {
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     test.assertEqual(ss.storage, val,
                      "Value should have persisted: " + ss.storage);
     ss.storage = "some very long string that is very long";
@@ -180,7 +180,7 @@ exports.testQuotaExceededNoHandle = function (test) {
       loader.unload();
 
       loader = Loader(module);
-      ss = loader.require("simple-storage");
+      ss = loader.require("sdk/simple-storage");
       test.assertEqual(ss.storage, val,
                        "Over-quota value should not have been written, " +
                        "old value should have persisted: " + ss.storage);
@@ -203,7 +203,7 @@ exports.testQuotaUsage = function (test) {
   prefs.set(QUOTA_PREF, quota);
 
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
 
   // {"a":1} (7 bytes)
   ss.storage = { a: 1 };
@@ -227,12 +227,12 @@ exports.testQuotaUsage = function (test) {
 exports.testUninstall = function (test) {
   test.waitUntilDone();
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     loader.unload("uninstall");
     test.assert(!file.exists(storeFilename), "Store file should be removed");
     test.done();
@@ -246,13 +246,13 @@ exports.testSetNoSetRead = function (test) {
 
   // Load the module, set a value.
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   manager(loader).jsonStore.onWrite = function (storage) {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again but don't access ss.storage.
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       test.fail("Nothing should be written since `storage` was not accessed.");
     };
@@ -260,7 +260,7 @@ exports.testSetNoSetRead = function (test) {
 
     // Load the module a third time and make sure the value stuck.
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     manager(loader).jsonStore.onWrite = function (storage) {
       file.remove(storeFilename);
       test.done();
@@ -282,13 +282,13 @@ function setGetRoot(test, val, compare) {
 
   // Load the module once, set a value.
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   manager(loader).jsonStore.onWrite = function () {
     test.assert(file.exists(storeFilename), "Store file should exist");
 
     // Load the module again and make sure the value stuck.
     loader = Loader(module);
-    ss = loader.require("simple-storage");
+    ss = loader.require("sdk/simple-storage");
     manager(loader).jsonStore.onWrite = function () {
       file.remove(storeFilename);
       test.done();
@@ -305,7 +305,7 @@ function setGetRootError(test, val, msg) {
   let pred = "storage must be one of the following types: " +
              "array, boolean, null, number, object, string";
   let loader = Loader(module);
-  let ss = loader.require("simple-storage");
+  let ss = loader.require("sdk/simple-storage");
   test.assertRaises(function () ss.storage = val, pred, msg);
   loader.unload();
 }

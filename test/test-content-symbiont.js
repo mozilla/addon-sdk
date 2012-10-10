@@ -5,8 +5,8 @@
 "use strict";
 
 const { Cc, Ci } = require('chrome');
-const { Symbiont } = require('content/symbiont');
-const self = require("self");
+const { Symbiont } = require('sdk/content/symbiont');
+const self = require("sdk/self");
 
 function makeWindow() {
   let content =
@@ -135,7 +135,7 @@ exports['test:pageWorker'] = function(test) {
 
 exports["test:document element present on 'start'"] = function(test) {
   test.waitUntilDone();
-  let xulApp = require("xul-app");
+  let xulApp = require("sdk/system/xul-app");
   let worker = Symbiont({
     contentURL: "about:buildconfig",
     contentScript: "self.postMessage(!!document.documentElement)",
@@ -154,7 +154,7 @@ exports["test:direct communication with trusted document"] = function(test) {
   test.waitUntilDone();
 
   let worker = Symbiont({
-    contentURL: require("self").data.url("test-trusted-document.html")
+    contentURL: require("sdk/self").data.url("test-trusted-document.html")
   });
 
   worker.port.on('document-to-addon', function (arg) {
@@ -169,7 +169,7 @@ exports["test:`addon` is not available when a content script is set"] = function
   test.waitUntilDone();
 
   let worker = Symbiont({
-    contentURL: require("self").data.url("test-trusted-document.html"),
+    contentURL: require("sdk/self").data.url("test-trusted-document.html"),
     contentScript: "new " + function ContentScriptScope() {
       self.port.emit("cs-to-addon", "addon" in unsafeWindow);
     }

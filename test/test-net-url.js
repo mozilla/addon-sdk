@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { readURI, readURISync } = require("api-utils/url/io");
+const { readURI, readURISync } = require("sdk/net/url");
 const { data } = require("self");
 
 const utf8text = "Hello, ゼロ!";
@@ -17,7 +17,7 @@ const chromeURI = "chrome://global-platform/locale/accessible.properties";
 exports["test async readURI"] = function(assert, done) {
   let content = "";
 
-  readURI(data.url("test-uri-io.txt")).then(function(data) {
+  readURI(data.url("test-net-url.txt")).then(function(data) {
     content = data;
     assert.equal(content, utf8text, "The URL content is loaded properly");
     done();
@@ -32,7 +32,7 @@ exports["test async readURI"] = function(assert, done) {
 exports["test sync readURI"] = function(assert) {
   let content = "";
 
-  readURI(data.url("test-uri-io.txt"), { sync: true }).then(function(data) {
+  readURI(data.url("test-net-url.txt"), { sync: true }).then(function(data) {
     content = data;
   }, function() {
     assert.fail("should not reject");
@@ -42,7 +42,7 @@ exports["test sync readURI"] = function(assert) {
 }
 
 exports["test readURISync"] = function(assert) {
-  let content = readURISync(data.url("test-uri-io.txt"));
+  let content = readURISync(data.url("test-net-url.txt"));
 
   assert.equal(content, utf8text, "The URL content is loaded properly");
 }
@@ -50,7 +50,7 @@ exports["test readURISync"] = function(assert) {
 exports["test async readURI with ISO-8859-1 charset"] = function(assert, done) {
   let content = "";
 
-  readURI(data.url("test-uri-io.txt"), { charset : "ISO-8859-1"}).then(function(data) {
+  readURI(data.url("test-net-url.txt"), { charset : "ISO-8859-1"}).then(function(data) {
     content = data;
     assert.equal(content, latin1text, "The URL content is loaded properly");
     done();
@@ -65,7 +65,7 @@ exports["test async readURI with ISO-8859-1 charset"] = function(assert, done) {
 exports["test sync readURI with ISO-8859-1 charset"] = function(assert) {
   let content = "";
 
-  readURI(data.url("test-uri-io.txt"), {
+  readURI(data.url("test-net-url.txt"), {
     sync: true,
     charset: "ISO-8859-1"
   }).then(function(data) {
@@ -78,13 +78,13 @@ exports["test sync readURI with ISO-8859-1 charset"] = function(assert) {
 }
 
 exports["test readURISync with ISO-8859-1 charset"] = function(assert) {
-  let content = readURISync(data.url("test-uri-io.txt"), "ISO-8859-1");
+  let content = readURISync(data.url("test-net-url.txt"), "ISO-8859-1");
 
   assert.equal(content, latin1text, "The URL content is loaded properly");
 }
 
 exports["test async readURI with not existing file"] = function(assert, done) {
-  readURI(data.url("test-uri-io-fake.txt")).then(function(data) {
+  readURI(data.url("test-net-url-fake.txt")).then(function(data) {
     assert.fail("should not resolve");
     done();
   }, function(reason) {
@@ -94,7 +94,7 @@ exports["test async readURI with not existing file"] = function(assert, done) {
 }
 
 exports["test sync readURI with not existing file"] = function(assert) {
-  readURI(data.url("test-uri-io-fake.txt"), { sync: true }).then(function(data) {
+  readURI(data.url("test-net-url-fake.txt"), { sync: true }).then(function(data) {
     assert.fail("should not resolve");
   }, function(reason) {
     assert.ok(reason.indexOf("Failed to read:") === 0);
@@ -103,7 +103,7 @@ exports["test sync readURI with not existing file"] = function(assert) {
 
 exports["test readURISync with not existing file"] = function(assert) {
   assert.throws(function() {
-    readURISync(data.url("test-uri-io-fake.txt"));
+    readURISync(data.url("test-net-url-fake.txt"));
   }, /NS_ERROR_FILE_NOT_FOUND/);
 }
 

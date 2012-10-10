@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const observers = require("api-utils/observer-service");
+const observers = require("sdk/deprecated/observer-service");
 const { Cc, Ci } = require("chrome");
-const { Loader } = require("test-harness/loader");
-const { PlainTextConsole } = require("api-utils/plain-text-console");
+const { Loader } = require("sdk/test/loader");
+const { PlainTextConsole } = require("sdk/console/plain-text");
 
 exports.testUnloadAndErrorLogging = function(test) {
   var prints = [];
@@ -14,7 +14,7 @@ exports.testUnloadAndErrorLogging = function(test) {
       prints.push(_);
     })
   });
-  var sbobsvc = loader.require("api-utils/observer-service");
+  var sbobsvc = loader.require("sdk/deprecated/observer-service");
 
   var timesCalled = 0;
   var cb = function(subject, data) {
@@ -29,7 +29,7 @@ exports.testUnloadAndErrorLogging = function(test) {
   sbobsvc.add("narg", badCb);
   observers.notify("narg", "yo yo");
   var lines = prints[0].split("\n");
-  test.assertEqual(lines[0], "error: " + require("self").name + ": An exception occurred.");
+  test.assertEqual(lines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
   test.assertEqual(lines[1], "Traceback (most recent call last):");
   test.assertEqual(lines.slice(-2)[0], "Error: foo");
 

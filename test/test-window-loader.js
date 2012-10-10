@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const { WindowLoader } = require('windows/loader'),
-      { Trait } = require('traits');
+const { WindowLoader } = require('sdk/windows/loader'),
+      { Trait } = require('sdk/deprecated/traits');
 
 const Loader = Trait.compose(
   WindowLoader,

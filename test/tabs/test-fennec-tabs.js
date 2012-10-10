@@ -4,10 +4,10 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { Loader } = require('test-harness/loader');
-const timer = require('timer');
-const tabs = require('tabs');
-const windows = require('windows');
+const { Loader } = require('sdk/test/loader');
+const timer = require('sdk/timers');
+const tabs = require('sdk/tabs');
+const windows = require('sdk/windows');
 
 const tabsLen = tabs.length;
 const URL = 'data:text/html;charset=utf-8,<html><head><title>#title#</title></head></html>';
@@ -37,8 +37,8 @@ exports.testAutomaticDestroy = function(test) {
 
   let loader2 = Loader(module);
   let loader3 = Loader(module);
-  let tabs2 = loader2.require('tabs');
-  let tabs3 = loader3.require('tabs');
+  let tabs2 = loader2.require('sdk/tabs');
+  let tabs3 = loader3.require('sdk/tabs');
   let tabs2Len = tabs2.length;
 
   tabs2.on('open', function onOpen(tab) {
@@ -110,7 +110,7 @@ exports.testAutomaticDestroy = function(test) {
 exports.testTabProperties = function(test) {
   test.waitUntilDone();
   let { loader, errors } = LoaderWithHookedConsole();
-  let tabs = loader.require('tabs');
+  let tabs = loader.require('sdk/tabs');
 
   let url = "data:text/html;charset=utf-8,<html><head><title>foo</title></head><body>foo</body></html>";
   let tabsLen = tabs.length;
@@ -230,7 +230,7 @@ exports.testTabMove = function(test) {
   test.waitUntilDone();
 
   let { loader, errors } = LoaderWithHookedConsole();
-  let tabs = loader.require('tabs');
+  let tabs = loader.require('sdk/tabs');
 
   let url = "data:text/html;charset=utf-8,testTabMove";
 
@@ -264,7 +264,7 @@ exports.testTabsOpen_alt = function(test) {
   test.waitUntilDone();
 
   let { loader, errors } = LoaderWithHookedConsole();
-  let tabs = loader.require('tabs');
+  let tabs = loader.require('sdk/tabs');
   let url = "data:text/html;charset=utf-8,default";
 
   tabs.open({
@@ -289,7 +289,7 @@ exports.testOpenPinned_alt = function(test) {
     test.waitUntilDone();
 
     let { loader, errors } = LoaderWithHookedConsole();
-    let tabs = loader.require('tabs');
+    let tabs = loader.require('sdk/tabs');
     let url = "about:blank";
 
     tabs.open({
@@ -313,7 +313,7 @@ exports.testPinUnpin_alt = function(test) {
     test.waitUntilDone();
 
     let { loader, errors } = LoaderWithHookedConsole();
-    let tabs = loader.require('tabs');
+    let tabs = loader.require('sdk/tabs');
     let url = "data:text/html;charset=utf-8,default";
 
     tabs.open({

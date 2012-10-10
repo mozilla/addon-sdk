@@ -4,8 +4,8 @@
 'use strict';
 
 const { Cc, Ci } = require('chrome');
-const { setTimeout } = require('timer');
-const { Loader } = require('test-harness/loader');
+const { setTimeout } = require('sdk/timers');
+const { Loader } = require('sdk/test/loader');
 const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
@@ -48,7 +48,7 @@ exports.testAutomaticDestroy = function(test) {
   // Create a second windows instance that we will unload
   let called = false;
   let loader = Loader(module);
-  let windows2 = loader.require("windows").browserWindows;
+  let windows2 = loader.require("sdk/windows").browserWindows;
   windows2.on("open", function() {
     called = true;
   });
@@ -168,7 +168,7 @@ exports.testOnOpenOnCloseListeners = function(test) {
 };
 
 exports.testActiveWindow = function(test) {
-  const xulApp = require("xul-app");
+  const xulApp = require("sdk/system/xul-app");
   if (xulApp.versionInRange(xulApp.platformVersion, "1.9.2", "1.9.2.*")) {
     test.pass("This test is disabled on 3.6. For more information, see bug 598525");
     return;
@@ -353,7 +353,7 @@ exports.testTrackWindows = function(test) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  browserWindows = require("windows").browserWindows;
+  browserWindows = require("sdk/windows").browserWindows;
 }
 catch (err) {
   // This bug should be mentioned in the error message.

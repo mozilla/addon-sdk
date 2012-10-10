@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let tests = {}, Pages, Page;
-const { Loader } = require('test-harness/loader');
+const { Loader } = require('sdk/test/loader');
 
 const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +
@@ -95,8 +95,8 @@ tests.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
-  let Pages = loader.require("page-worker");
-  let global = loader.sandbox("page-worker");
+  let Pages = loader.require("sdk/page-worker");
+  let global = loader.sandbox("sdk/page-worker");
 
   let pagesReady = 0;
 
@@ -132,7 +132,7 @@ tests.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
-  let Pages = loader.require("page-worker");
+  let Pages = loader.require("sdk/page-worker");
 
   let page = Pages.Page({
     contentScript: "self.postMessage('')",
@@ -265,8 +265,8 @@ tests.testLoadContentPage = function(test) {
       // and the rest of whose items are arguments to pass it.
       test[message.shift()].apply(test, message);
     },
-    contentURL: require("self").data.url("test-page-worker.html"),
-    contentScriptFile: require("self").data.url("test-page-worker.js"),
+    contentURL: require("sdk/self").data.url("test-page-worker.html"),
+    contentScriptFile: require("sdk/self").data.url("test-page-worker.js"),
     contentScriptWhen: "ready"
   });
 
@@ -361,7 +361,7 @@ function isDestroyed(page) {
 let pageWorkerSupported = true;
 
 try {
-  Pages = require("page-worker");
+  Pages = require("sdk/page-worker");
   Page = Pages.Page;
 }
 catch (ex if ex.message == [

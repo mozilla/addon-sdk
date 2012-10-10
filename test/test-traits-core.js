@@ -120,7 +120,7 @@ function Conflict(name) {
 function testMethod() {};
 
 const { trait, compose, resolve, required, override, create } =
-  require('traits/core');
+  require('sdk/deprecated/traits/core');
 
 
 exports['test:empty trait'] = function(test) {

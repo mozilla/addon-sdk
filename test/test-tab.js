@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tabAPI = require('tabs/tab');
-const tabs = require("addon-kit/tabs"); // From addon-kit
-const windowUtils = require("window-utils");
-const { getTabForWindow } = require('tabs/helpers');
+const tabAPI = require('sdk/tabs/tab');
+const tabs = require("sdk/tabs"); // From addon-kit
+const windowUtils = require("sdk/deprecated/window-utils");
+const { getTabForWindow } = require('sdk/tabs/helpers');
 
 // The primary test tab
 var primaryTab;
@@ -57,7 +57,7 @@ function step2(url, test) {
       test.assertEqual(matchedTab, tab,
         "We are able to find the tab with his content window object");
 
-      let timer = require("timer");
+      let timer = require("sdk/timers");
       function waitForFrames() {
         let iframe = window.document.getElementById("iframe");
         if (!iframe) {

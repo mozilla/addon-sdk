@@ -5,9 +5,9 @@
 "use strict";
 
 const {Cc,Ci} = require("chrome");
-const timer = require("timer");
-const xulApp = require("xul-app");
-const { Loader } = require("test-harness/loader");
+const timer = require("sdk/timers");
+const xulApp = require("sdk/system/xul-app");
+const { Loader } = require("sdk/test/loader");
 
 /**
  * A helper function that creates a PageMod, then opens the specified URL
@@ -36,7 +36,7 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
     test.waitUntilDone();
 
   let loader = Loader(module);
-  let pageMod = loader.require("page-mod");
+  let pageMod = loader.require("sdk/page-mod");
 
   var pageMods = [new pageMod.PageMod(opts) for each(opts in pageModOptions)];
 

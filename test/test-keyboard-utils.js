@@ -4,8 +4,8 @@
 
 "use strict";
 
-const utils = require("keyboard/utils");
-const runtime = require("runtime");
+const utils = require("sdk/keyboard/utils");
+const runtime = require("sdk/system/runtime");
 
 const isMac = runtime.OS === "Darwin";
 

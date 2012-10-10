@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const hiddenFrames = require("hidden-frame");
-const xulApp = require("xul-app");
+const hiddenFrames = require("sdk/frame/hidden-frame");
+const xulApp = require("sdk/system/xul-app");
 
 const USE_JS_PROXIES = !xulApp.versionInRange(xulApp.platformVersion,
                                               "17.0a2", "*");
 
-const { Loader } = require('test-harness/loader');
+const { Loader } = require('sdk/test/loader');
 
 /*
  * Utility function that allow to easily run a proxy test with a clean
@@ -61,8 +61,8 @@ function createWorker(test, xrayWindow, contentScript, done) {
   // unlock key `PRIVATE_KEY`. This key should not be used anywhere else.
   // See `PRIVATE_KEY` definition in worker.js
   let loader = Loader(module);
-  let Worker = loader.require("api-utils/content/worker").Worker;
-  let key = loader.sandbox("api-utils/content/worker").PRIVATE_KEY;
+  let Worker = loader.require("sdk/content/worker").Worker;
+  let key = loader.sandbox("sdk/content/worker").PRIVATE_KEY;
   let worker = Worker({
     exposeUnlockKey : USE_JS_PROXIES ? key : null,
     window: xrayWindow,
@@ -817,7 +817,7 @@ if (USE_JS_PROXIES) {
 // Create an http server in order to simulate real cross domain documents
 exports.testCrossDomainIframe = createProxyTest("", function (helper) {
   let serverPort = 8099;
-  let server = require("httpd").startServerAsync(serverPort);
+  let server = require("sdk/test/httpd").startServerAsync(serverPort);
   server.registerPathHandler("/", function handle(request, response) {
     // Returns the webpage that receive a message and forward it back to its
     // parent document by appending ' world'.

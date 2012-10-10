@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { PrefsTarget } = require('api-utils/prefs/target');
-const { get, set, reset } = require('api-utils/preferences-service');
-const { Loader } = require('test-harness/loader');
-const { setTimeout } = require('timers');
+const { PrefsTarget } = require('sdk/preferences/event-target');
+const { get, set, reset } = require('sdk/preferences/service');
+const { Loader } = require('sdk/test/loader');
+const { setTimeout } = require('sdk/timers');
 
 const root = PrefsTarget();
 
@@ -14,7 +14,7 @@ exports.testPrefsTarget = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
-  let pt = loader.require('api-utils/prefs/target').PrefsTarget({});
+  let pt = loader.require('sdk/preferences/event-target').PrefsTarget({});
   let name = 'test';
 
   test.assertEqual(get(name, ''), '', 'test pref is blank');

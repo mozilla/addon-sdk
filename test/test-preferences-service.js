@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const prefs = require("preferences-service");
+const prefs = require("sdk/preferences/service");
 const Branch = prefs.Branch;
 const { Cc, Ci, Cu } = require("chrome");
 const BundleService = Cc["@mozilla.org/intl/stringbundle;1"].getService(Ci.nsIStringBundleService);
