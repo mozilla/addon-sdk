@@ -40,7 +40,7 @@ are listed below.
       console.log(location);
     });
 
-[EventEmitter]:packages/api-utils/events.html
+[EventEmitter]:modules/deprecated/events.html
 
 <api name="Worker">
 @constructor
@@ -65,7 +65,7 @@ Options for the constructor, with the following keys:
 
 <api name="port">
 @property {EventEmitter}
-[EventEmitter](packages/api-utils/events.html) object that allows you to:
+[EventEmitter](modules/deprecated/events.html) object that allows you to:
 
 * send customized messages to the worker using the `port.emit` function
 * receive events from the worker using the `port.on` function
@@ -94,7 +94,7 @@ The URL of the content.
 <api name="tab">
 @property {object}
 If this worker is attached to a content document, returns the related 
-[tab](packages/addon-kit/tabs.html).
+[tab](modules/tabs.html).
 </api>
 
 <api name="message">

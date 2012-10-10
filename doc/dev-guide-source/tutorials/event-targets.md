@@ -10,8 +10,8 @@ incompatible changes to them in future releases.</span>
 
 The [guide to event-driven programming with the SDK](dev-guide/guides/events.html)
 describes how to consume events: that is, how to listen to events generated
-by event targets. For example, you can listen to [`private-browsing`'s `start` event](packages/addon-kit/private-browsing.html#start) or the
-[`Panel` object's `show` event](packages/addon-kit/panel.html#show).
+by event targets. For example, you can listen to [`private-browsing`'s `start` event](modules/private-browsing.html#start) or the
+[`Panel` object's `show` event](modules/panel.html#show).
 
 With the SDK, it's also simple to implement your own event targets.
 This is especially useful if you want to
@@ -65,7 +65,7 @@ the output in the console.
 We can adapt this code into a separate module that exposes the SDK's
 standard event interface.
 
-To do this we'll use the [`event/core`](packages/api-utils/event/core.html)
+To do this we'll use the [`event/core`](modules/event/core.html)
 module.
 
 Create a new file in "lib" called "bookmarks.js", and add the following code:
@@ -113,7 +113,7 @@ function is implemented by calling the underlying `off()` function.
 
 We can use this module in the same way we use any other module that emits
 module-level events, such as
-[`private-browsing`](packages/addon-kit/private-browsing.html). For example,
+[`private-browsing`](modules/private-browsing.html). For example,
 we can adapt "main.js" as follows:
 
     var bookmarks = require("./bookmarks");
@@ -142,7 +142,7 @@ Sometimes we want to emit events at the level of individual objects,
 rather than at the level of the module.
 
 To do this, we can inherit from the SDK's
-[`EventTarget`](packages/api-utils/event/target.html) class. `EventTarget`
+[`EventTarget`](modules/event/target.html) class. `EventTarget`
 provides an implementation of the functions needed to add and remove
 event listeners: `on()`, `once()`, and `removeListener()`.
 
@@ -188,13 +188,13 @@ Open "bookmarks.js" and replace its contents with this code:
 The code to interact with the Places API is the same here. However:
 
 * we're now importing from four modules:
-    * [`event/core`](packages/api-utils/event/core.html) gives us
+    * [`event/core`](modules/event/core.html) gives us
 `emit()`: note that we don't need `on`, `once`, or `off`,
 since we will use `EventTarget` for adding and removing listeners
-    * [`event/target`](packages/api-utils/event/target.html) gives us
+    * [`event/target`](modules/event/target.html) gives us
 `EventTarget`, which implements the interface for adding and removing
 listeners
-    * [`heritage`](packages/api-utils/heritage.html) gives us
+    * [`heritage`](modules/core/heritage.html) gives us
 `Class()`, which we can use to inherit from `EventTarget`
     * `utils/object` gives us `merge()`, which just simplifies setting up the
 `BookmarkManager`'s properties
@@ -236,7 +236,7 @@ To use this event target we can create it and call the `on()`, `once()`, and
 Finally, most event targets accept options of the form "onEvent", where
 "Event" is the capitalized form of the event type. For example, you
 can listen to the
-[`Panel` object's `show` event](packages/addon-kit/panel.html#show)
+[`Panel` object's `show` event](modules/panel.html#show)
 either by calling:
 
     myPanel.on("show", listenerFunction);

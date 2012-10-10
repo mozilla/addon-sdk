@@ -72,7 +72,7 @@ Suppose we have a page called "listen.html" hosted at "my-domain.org", and we wa
 from the add-on to a script embedded in that page.
 
 In the main add-on code, we have a
-[`page-mod`](packages/addon-kit/page-mod.html) that attaches the content script
+[`page-mod`](modules/page-mod.html) that attaches the content script
 "talk.js" to the right page:
 
     var data = require("self").data;
@@ -114,7 +114,7 @@ messages from the content script:
 Sending messages from the page script to the content script is just
 the same, but in reverse.
 
-Here "main.js" creates a [`page-mod`](packages/addon-kit/page-mod.html)
+Here "main.js" creates a [`page-mod`](modules/page-mod.html)
 that attaches "listen.js" to the web page:
 
     var data = require("self").data;
@@ -164,7 +164,7 @@ to communicate between page scripts and content scripts.
 Here's an example showing how to use custom DOM events to send a message
 from a content script to a page script.
 
-First, "main.js" will create a [`page-mod`](packages/addon-kit/page-mod.html)
+First, "main.js" will create a [`page-mod`](modules/page-mod.html)
 that will attach "talk.js" to the target web page:
 
     var data = require("self").data;
@@ -206,7 +206,7 @@ Finally "listen.html" listens for the new event and examines its
 Sending messages using custom DOM events from the page script
 to the content script is just the same, but in reverse.
 
-Again, "main.js" creates a [`page-mod`](packages/addon-kit/page-mod.html)
+Again, "main.js" creates a [`page-mod`](modules/page-mod.html)
 to target the page we are interested in:
 
     var data = require("self").data;

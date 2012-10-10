@@ -28,16 +28,15 @@ and `cfx xpi` when targeting Firefox Mobile.
 
 Right now only the following modules are fully functional:
 
-* [addon-page](packages/addon-kit/addon-page.html)
-* [page-mod](packages/addon-kit/page-mod.html)
-* [page-worker](packages/addon-kit/page-worker.html)
-* [passwords](packages/addon-kit/passwords.html)
-* [private-browsing](packages/addon-kit/private-browsing.html)
-* [request](packages/addon-kit/request.html)
-* [self](packages/addon-kit/self.html)
-* [simple-prefs](packages/addon-kit/simple-prefs.html)
-* [simple-storage](packages/addon-kit/simple-storage.html)
-* [timers](packages/addon-kit/timers.html)
+* [page-mod](modules/page-mod.html)
+* [page-worker](modules/page-worker.html)
+* [passwords](modules/passwords.html)
+* [private-browsing](modules/private-browsing.html)
+* [request](modules/request.html)
+* [self](modules/self.html)
+* [simple-prefs](modules/simple-prefs.html)
+* [simple-storage](modules/simple-storage.html)
+* [timers](modules/timers.html)
 
 We're working on adding support for the other modules.
 

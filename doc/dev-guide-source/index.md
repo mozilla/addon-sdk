@@ -131,9 +131,9 @@ Learn about common development techniques, such as
     <td>
       <h4>API reference</h4>
       Reference documentation for the high-level SDK APIs found in the
-      <a href="packages/addon-kit/index.html">addon-kit</a>
+      FIXME
       package, and the low-level APIs found in the
-      <a href="packages/api-utils/index.html">api-utils</a> package.
+      FIXME.
     </td>
 
     <td>

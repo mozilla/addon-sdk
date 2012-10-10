@@ -6,7 +6,7 @@ The `url/io` module provides functionality for read URLs' content.
 
 <api name="readURI">
 @function
-  Reads a URI and returns a [promise](packages/api-utils/promise.html).
+  Reads a URI and returns a [promise](modules/core/promise.html).
 
 @param uri {string}
   The URL, as a string, to load.
