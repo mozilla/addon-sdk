@@ -425,8 +425,11 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     packages_dir = os.path.join(env_root, "packages")
-    packages = [dirname for dirname in os.listdir(packages_dir)
-                if os.path.isdir(os.path.join(packages_dir, dirname))]
+    if os.path.isdir(packages_dir):
+      packages = [dirname for dirname in os.listdir(packages_dir)
+                  if os.path.isdir(os.path.join(packages_dir, dirname))]
+    else:
+      packages = []
     packages.append(env_root)
     packages.sort()
     print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))

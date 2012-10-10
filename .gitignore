@@ -8,9 +8,6 @@ doc/index.html
 doc/packages/
 doc/status.md5
 packages/*
-!packages/addon-kit/
-!packages/api-utils/
-!packages/test-harness/
 
 # Python
 *.pyc
