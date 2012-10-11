@@ -110,7 +110,7 @@ modules fall roughly into three categories:
 
 * fundamental utilities such as
 [collection](modules/sdk/platform/xpcom.html) and
-[url](modules/sdk/core/url.html). Many add-ons are likely to
+[url](modules/sdk/url.html). Many add-ons are likely to
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
@@ -122,7 +122,7 @@ likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.
 
 * privileged modules that expose powerful low-level capabilities
-such as [xhr](modules/sdk/io/xhr.html) and
+such as [xhr](modules/sdk/net/xhr.html) and
 [xpcom](modules/sdk/platform/xpcom.html). You can use these
 modules in your add-on if you need to, but should be aware that
 the cost of privileged access is the need to take more elaborate

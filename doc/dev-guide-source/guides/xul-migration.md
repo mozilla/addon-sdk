@@ -166,7 +166,7 @@ continue to work as new versions of Firefox are released.
 
 In addition to the High-Level APIs, the SDK includes a number of
 Low-Level APIs some of which, such
-as [`tab-browser`](modules/sdk/deprecated/tab-browser.html), [`xhr`](modules/sdk/io/xhr.html), and
+as [`tab-browser`](modules/sdk/deprecated/tab-browser.html), [`xhr`](modules/sdk/net/xhr.html), and
 [`window-utils`](modules/sdk/deprecated/window-utils.html), expose powerful
 browser capabilities.
 

@@ -31,7 +31,7 @@ You can modify the document in your script:
     pageMod.PageMod({
       include: "*.mozilla.org",
       contentScript: 'document.body.innerHTML = ' +
-                     ' "<h1>Page matches ruleset</h1>";'
+                     ' "<h1>Page mpackages_diratches ruleset</h1>";'
     });
 
 You can supply the content script(s) in one of two ways:
@@ -294,7 +294,7 @@ Creates a page-mod.
         });
 
     You can specify a set of URLs using a
-    [regular expression](modules/sdk/match-pattern/core.html#Regular Expressions).
+    [regular expression](modules/sdk/page-mod/match-pattern.html#Regular Expressions).
     The pattern must match the entire URL, not just a subset, and has
     `global`, `ignoreCase`, and `multiline` disabled.
 
@@ -312,7 +312,7 @@ Creates a page-mod.
         contentScript: 'window.alert("Page matches ruleset");'
       });
 
-    See the [match-pattern](modules/sdk/match-pattern/core.html) module for
+    See the [match-pattern](modules/sdk/page-mod/match-pattern.html) module for
     a detailed description of match pattern syntax.
 
   @prop [contentScriptFile] {string,array}

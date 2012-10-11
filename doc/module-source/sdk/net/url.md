@@ -2,11 +2,11 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-The `url/io` module provides functionality for read URLs' content.
+The `net/url` module provides functionality for read URLs' content.
 
 <api name="readURI">
 @function
-  Reads a URI and returns a [promise](modules/core/promise.html).
+  Reads a URI and returns a [promise](modules/sdk/core/promise.html).
 
 @param uri {string}
   The URL, as a string, to load.

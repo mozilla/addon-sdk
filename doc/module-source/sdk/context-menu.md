@@ -124,7 +124,7 @@ exported by the `context-menu` module.
       the patterns.  These are the same match pattern strings that you use with
       the <a href="modules/sdk/page-mod.html"><code>page-mod</code></a>
       <code>include</code> property.
-      <a href="modules/sdk/match-pattern/core.html">Read more about patterns</a>.
+      <a href="modules/sdk/page-mod/match-pattern.html">Read more about patterns</a>.
     </td>
   </tr>
   <tr>
@@ -718,7 +718,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](modules/sdk/match-pattern/core.html) string or an array of
+  A [match pattern](modules/sdk/page-mod/match-pattern.html) string or an array of
   match pattern strings.
 </api>
 </api>
