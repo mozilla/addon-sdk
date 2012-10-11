@@ -781,3 +781,28 @@ exports.testPageModCssAutomaticDestroy = function(test) {
     }
   });
 };
+
+exports.testEvents = function(test) {
+  let content = "<script>\n new " + function DocumentScope()  {
+    window.addEventListener("ContentScriptEvent", function () {
+      window.receivedEvent = true;
+    }, false);
+  } + "\n</script>";
+  let url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  testPageMod(test, url, [{
+      include: "data:*",
+      contentScript: 'new ' + function WorkerScope() {
+        let evt = document.createEvent("Event");
+        evt.initEvent("ContentScriptEvent", true, true);
+        document.body.dispatchEvent(evt);
+      }
+    }],
+    function(win, done) {
+      test.assert(
+        win.receivedEvent,
+        "Content script sent an event and document received it"
+      );
+      done();
+    }
+  );
+};
