@@ -298,7 +298,7 @@ they contain.
 
 See the
 [tutorial on unit testing](dev-guide/tutorials/unit-testing.html) and the
-[reference documentation for the `assert` module](packages/api-utils/test/assert.html)
+[reference documentation for the `assert` module](modules/sdk/test/assert.html)
 for details.
 
 #### Supported Options #####
@@ -806,7 +806,7 @@ one run of `cfx` will not, by default, be available in the next run.
 
 This includes, for example, any extra add-ons you installed, or your
 history, or any data stored using the
-[simple-storage](packages/addon-kit/simple-storage.html) API.
+[simple-storage](modules/sdk/simple-storage.html) API.
 
 To make `cfx` use a specific profile, pass the `--profiledir` option,
 specifying the path to the profile you wish to use.

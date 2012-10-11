@@ -30,8 +30,8 @@ Third-party packages like `menuitems` can be installed in three
 different places:
 
 * in the `packages` directory under the SDK root, alongside built-in
-packages like [`addon-kit`](packages/addon-kit/index.html) and
-[`api-utils`](packages/api-utils/index.html). If you do this the package is
+packages like [`addon-kit`]FIXME and
+[`api-utils`]FIXME. If you do this the package is
 available to any other add-ons you're developing using that SDK instance,
 and the package's documentation is visible through `cfx docs`.
 * in a `packages` directory you create under your add-on's root: if you
@@ -109,7 +109,7 @@ In your add-on's `package.json` add the line:
 Note that due to
 [bug 663480](https://bugzilla.mozilla.org/show_bug.cgi?id=663480), if you
 add a `dependencies` line to `package.json`, and you use any modules from
-built-in packages like [`addon-kit`](packages/addon-kit/index.html), then
+built-in packages like [`addon-kit`]FIXME, then
 you must also declare your dependency on that built-in package, like this:
 
 <pre>
