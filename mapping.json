@@ -50,6 +50,7 @@
   "hidden-frame": "sdk/frame/hidden-frame",
   "collection": "sdk/util/collection",
   "array": "sdk/util/array",
+  "cortex": "sdk/deprecated/cortex",
 
 
   "addon-page": "sdk/addon-page",
