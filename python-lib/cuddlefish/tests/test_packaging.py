@@ -45,10 +45,10 @@ class PackagingTests(unittest.TestCase):
         configs = get_configs('aardvark')
         packages = configs.pkg_cfg.packages
 
-        self.assertTrue('api-utils' in packages)
+        self.assertTrue('addon-sdk' in packages)
         self.assertTrue('aardvark' in packages)
-        self.assertTrue('api-utils' in packages.aardvark.dependencies)
-        self.assertEqual(packages['api-utils'].loader, 'lib/loader.js')
+        self.assertTrue('addon-sdk' in packages.aardvark.dependencies)
+        self.assertEqual(packages['addon-sdk'].loader, 'lib/sdk/loader/cuddlefish.js')
         self.assertTrue(packages.aardvark.main == 'main')
         self.assertTrue(packages.aardvark.version == "1.0")
 

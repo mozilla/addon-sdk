@@ -177,10 +177,10 @@ function startup(data, reasonCode) {
       }
     });
 
-    let module = cuddlefish.Module('api-utils/cuddlefish', cuddlefishURI);
+    let module = cuddlefish.Module('addon-sdk/sdk/loader/cuddlefish', cuddlefishURI);
     let require = cuddlefish.Require(loader, module);
 
-    require('api-utils/addon/runner').startup(reason, {
+    require('sdk/addon/runner').startup(reason, {
       loader: loader,
       main: main,
       prefsURI: rootURI + 'defaults/preferences/prefs.js'
