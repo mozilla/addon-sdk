@@ -2265,9 +2265,13 @@ TestHelper.prototype = {
   // after a short delay.  Since the module we're testing relies on the same
   // event listeners to do its work, this is to give them a little breathing
   // room before callback runs.  Inside callback |this| is this object.
-  delayedEventListener: function (node, event, callback, useCapture) {
+  // Optionally you can pass a function to test if the event is the event you
+  // want.
+  delayedEventListener: function (node, event, callback, useCapture, isValid) {
     const self = this;
     node.addEventListener(event, function handler(evt) {
+      if (isValid && !isValid(evt))
+        return;
       node.removeEventListener(event, handler, useCapture);
       timer.setTimeout(function () {
         try {
@@ -2476,6 +2480,8 @@ TestHelper.prototype = {
     this.delayedEventListener(browser, "load", function () {
       this.tabBrowser.selectedTab = this.tab;
       onloadCallback.call(this, browser.contentWindow, browser.contentDocument);
-    }, true);
+    }, true, function(evt) {
+      return evt.target.location == TEST_DOC_URL;
+    });
   }
 };
