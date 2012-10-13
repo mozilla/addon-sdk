@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-const prefs = require("preferences-service");
-const { Loader } = require('test-harness/loader');
-const { resolveURI } = require('api-utils/loader');
+const prefs = require("sdk/preferences/service");
+const { Loader } = require('sdk/test/loader');
+const { resolveURI } = require('toolkit/loader');
 const { rootURI } = require("@loader/options");
 
 const PREF_MATCH_OS_LOCALE  = "intl.locale.matchOS";
@@ -33,7 +33,7 @@ function createTest(locale, testFunction) {
     // the right .json file
     setLocale(locale);
     // Initialize main l10n module in order to load new locale files
-    loader.require("api-utils/l10n/loader").
+    loader.require("sdk/l10n/loader").
       load(rootURI).
       then(function success(data) {
              definePseudo(loader, '@l10n/data', data);
@@ -56,7 +56,7 @@ function createTest(locale, testFunction) {
 }
 
 exports.testExactMatching = createTest("fr-FR", function(assert, loader, done) {
-  let _ = loader.require("addon-kit/l10n").get;
+  let _ = loader.require("sdk/l10n").get;
   assert.equal(_("Not translated"), "Not translated",
                    "Key not translated");
   assert.equal(_("Translated"), "Oui",
@@ -90,11 +90,11 @@ exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done
   // Ensure initing html component that watch document creations
   // Note that this module is automatically initialized in
   // cuddlefish.js:Loader.main in regular addons. But it isn't for unit tests.
-  let loaderHtmlL10n = loader.require("api-utils/l10n/html");
+  let loaderHtmlL10n = loader.require("sdk/l10n/html");
   loaderHtmlL10n.enable();
 
-  let uri = require("self").data.url("test-localization.html");
-  let worker = loader.require("page-worker").Page({
+  let uri = require("sdk/self").data.url("test-localization.html");
+  let worker = loader.require("sdk/page-worker").Page({
     contentURL: uri,
     contentScript: "new " + function ContentScriptScope() {
       let nodes = document.body.querySelectorAll("*[data-l10n-id]");
@@ -124,7 +124,7 @@ exports.testHtmlLocalization = createTest("en-GB", function(assert, loader, done
 });
 
 exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) {
-  let _ = loader.require("addon-kit/l10n").get;
+  let _ = loader.require("sdk/l10n").get;
 
   assert.equal(_("Not translated"), "Not translated",
                "String w/o translation is kept as-is");
@@ -164,7 +164,7 @@ exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) 
 });
 
 exports.testShortLocaleName = createTest("eo", function(assert, loader, done) {
-  let _ = loader.require("addon-kit/l10n").get;
+  let _ = loader.require("sdk/l10n").get;
   assert.equal(_("Not translated"), "Not translated",
                "String w/o translation is kept as-is");
   assert.equal(_("Translated"), "jes",
@@ -176,6 +176,6 @@ exports.testShortLocaleName = createTest("eo", function(assert, loader, done) {
 
 // Before running tests, disable HTML service which is automatially enabled
 // in api-utils/addon/runner.js
-require('api-utils/l10n/html').disable();
+require('sdk/l10n/html').disable();
 
-require("test-harness/run-tests").runTestsFromModule(module);
+require("sdk/test/runner").runTestsFromModule(module);
