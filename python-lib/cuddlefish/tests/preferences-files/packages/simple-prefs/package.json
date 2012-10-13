@@ -19,7 +19,7 @@
         "type": "menulist",
         "title": "\"><test",
         "value": "1",
-        "menulist": [
+        "options": [
             {
                 "value": "0",
                 "label": "label1"
@@ -35,7 +35,7 @@
         "type": "radio",
         "title": "tëst",
         "value": "red",
-        "radio": [
+        "options": [
             {
                 "value": "red",
                 "label": "rouge"

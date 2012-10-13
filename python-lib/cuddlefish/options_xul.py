@@ -32,28 +32,16 @@ def validate_prefs(options):
                 raise MissingPrefAttr("The 'control' inline pref type requires a 'label'")
 
         # Make sure the 'menulist' type has a 'menulist'
-        if (pref["type"] == "menulist"):
-            if ("menulist" not in pref):
-                raise MissingPrefAttr("The 'menulist' inline pref type requires a 'menulist'")
+        if (pref["type"] == "menulist" or pref["type"] == "radio"):
+            if ("options" not in pref):
+                raise MissingPrefAttr("The 'menulist' and the 'radio' inline pref types requires a 'options'")
 
-            # Make sure each menuitem has a 'value' and a 'label'
-            for item in pref["menulist"]:
+            # Make sure each option has a 'value' and a 'label'
+            for item in pref["options"]:
                 if ("value" not in item):
-                    raise MissingPrefAttr("'menuitem' requires a 'value'")
+                    raise MissingPrefAttr("'options' requires a 'value'")
                 if ("label" not in item):
-                    raise MissingPrefAttr("'menuitem' requires a 'label'")
-
-        # Make sure the 'radio' type has a 'radio'
-        if (pref["type"] == "radio"):
-            if ("radio" not in pref):
-                raise MissingPrefAttr("The 'radio' inline pref type requires a 'radio'")
-
-            # Make sure each item has a 'value' and a 'label'
-            for item in pref["radio"]:
-                if ("value" not in item):
-                    raise MissingPrefAttr("'radio' requires a 'value'")
-                if ("label" not in item):
-                    raise MissingPrefAttr("'radio' requires a 'label'")
+                    raise MissingPrefAttr("'options' requires a 'label'")
 
         # TODO: Check that pref["type"] matches default value type
 
@@ -89,7 +77,7 @@ def parse_options(options, jetpack_id):
         elif (pref["type"] == "menulist"):
             menulist = doc.createElement("menulist")
             menupopup = doc.createElement("menupopup")
-            for item in pref["menulist"]:
+            for item in pref["options"]:
                 menuitem = doc.createElement("menuitem")
                 menuitem.setAttribute("value", item["value"])
                 menuitem.setAttribute("label", item["label"])
@@ -98,7 +86,7 @@ def parse_options(options, jetpack_id):
             setting.appendChild(menulist)
         elif (pref["type"] == "radio"):
             radiogroup = doc.createElement("radiogroup")
-            for item in pref["radio"]:
+            for item in pref["options"]:
                 radio = doc.createElement("radio")
                 radio.setAttribute("value", item["value"])
                 radio.setAttribute("label", item["label"])
