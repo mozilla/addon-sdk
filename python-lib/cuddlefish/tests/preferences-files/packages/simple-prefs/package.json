@@ -13,6 +13,38 @@
         "type": "string",
         "title": "tëst",
         "value": "ünicødé"
+    },
+    {
+        "name": "test3",
+        "type": "menulist",
+        "title": "\"><test",
+        "value": "1",
+        "menulist": [
+            {
+                "value": "0",
+                "label": "label1"
+            },
+            {
+                "value": "1",
+                "label": "label2"
+            }
+        ]
+    },
+    {
+        "name": "test4",
+        "type": "radio",
+        "title": "tëst",
+        "value": "red",
+        "radio": [
+            {
+                "value": "red",
+                "label": "rouge"
+            },
+            {
+                "value": "blue",
+                "label": "bleu"
+            }
+        ]
     }],
     "loader": "lib/main.js"
 }
