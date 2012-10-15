@@ -32,8 +32,9 @@ def insert_after(target, insertion_point_id, text_to_insert):
     return target[:insertion_point] + text_to_insert + target[insertion_point:]
 
 class WebDocs(object):
-    def __init__(self, root, base_url = None):
+    def __init__(self, root, version=get_versions()["version"], base_url = None):
         self.root = root
+        self.version = version
         self.pkg_cfg = packaging.build_pkg_cfg(root)
         self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
         self.base_page = self._create_base_page(root, base_url)
@@ -69,8 +70,7 @@ class WebDocs(object):
         if base_url:
             base_tag = 'href="' + base_url + '"'
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
-        sdk_version = get_versions()["version"]
-        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
+        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
         module_list = get_module_list(os.sep.join([root, "doc", "module-source"]))
         high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
