@@ -34,9 +34,6 @@ if (require("api-utils/xul-app").is("Firefox")) {
 // checks that per-window private browsing implemented
 let isWindowPBEnabled = function isWindowPBEnabled(chromeWin) {
   return !!(chromeWin &&
-         'gBrowser' in chromeWin &&
-         'docShell' in chromeWin.gBrowser &&
-         'addWeakPrivacyTransitionObserver' in chromeWin.gBrowser.docShell &&
          'gPrivateBrowsingUI' in chromeWin &&
          'privateWindow' in chromeWin.gPrivateBrowsingUI);
 }
