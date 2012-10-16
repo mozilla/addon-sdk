@@ -259,18 +259,18 @@ class LinkRewriter(HTMLParser.HTMLParser):
     def handle_startendtag(self, tag, attrs):
         self.stack.append(self.__html_startend_tag(tag, self._rewrite_link(attrs)))
 
+    def _update_attribute(self, attr_name, attrs):
+        attr_value = attrs.get(attr_name, '')
+        if attr_value:
+            parsed = urlparse.urlparse(attr_value)
+            if not parsed.scheme:
+                attrs[attr_name] = self.link_prefix + attr_value
+
     def _rewrite_link(self, attrs):
         attrs = dict(attrs)
-        href = attrs.get('href', '')
-        if href:
-            parsed = urlparse.urlparse(href)
-            if not parsed.scheme:
-                attrs['href'] = self.link_prefix + href
-        src = attrs.get('src', '')
-        if src:
-            parsed = urlparse.urlparse(src)
-            if not parsed.scheme:
-                attrs['src'] = self.link_prefix + src
+        self._update_attribute('href', attrs)
+        self._update_attribute('src', attrs)
+        self._update_attribute('action', attrs)
         return attrs
 
     def handle_data(self, data):
