@@ -194,6 +194,11 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['test', 'testex', 'testpkgs'])),
+        (("", "--override-version",), dict(dest="override_version",
+                                  help="Pass in a version string to use in generated docs",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['sdocs'])),
         ]
      ),
 
@@ -540,7 +545,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate
-        filename = generate.generate_static_docs(env_root)
+        filename=""
+        if options.override_version:
+            filename = generate.generate_static_docs(env_root, override_version=options.override_version)
+        else:
+            filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
     elif command not in ["xpi", "test", "run"]:
