@@ -53,8 +53,9 @@ def insert_after(target, insertion_point_id, text_to_insert):
     return target[:insertion_point] + text_to_insert + target[insertion_point:]
 
 class WebDocs(object):
-    def __init__(self, root, base_url = None):
+    def __init__(self, root, version=get_versions()["version"], base_url = None):
         self.root = root
+        self.version = version
         self.pkg_cfg = packaging.build_pkg_cfg(root)
         self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
         self.base_page = self._create_base_page(root, base_url)
@@ -123,8 +124,7 @@ class WebDocs(object):
         if base_url:
             base_tag = 'href="' + base_url + '"'
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
-        sdk_version = get_versions()["version"]
-        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + sdk_version)
+        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
         third_party_summaries = \
             self._create_package_summaries(self.packages_json, is_third_party)
         base_page = insert_after(base_page, \

@@ -11,6 +11,7 @@ import StringIO
 import HTMLParser
 import urlparse
 
+from cuddlefish._version import get_versions
 from cuddlefish import packaging
 from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
@@ -41,19 +42,19 @@ def clean_generated_docs(docs_dir):
     if os.path.exists(api_doc_dir):
         shutil.rmtree(api_doc_dir)
 
-def generate_static_docs(env_root):
+def generate_static_docs(env_root, override_version=get_versions()["version"]):
     clean_generated_docs(get_sdk_docs_path(env_root))
-    generate_docs(env_root, stdout=StringIO.StringIO())
+    generate_docs(env_root, override_version, stdout=StringIO.StringIO())
     tgz = tarfile.open(TGZ_FILENAME, 'w:gz')
     tgz.add(get_sdk_docs_path(env_root), "doc")
     tgz.close()
     return TGZ_FILENAME
 
 def generate_local_docs(env_root):
-    return generate_docs(env_root, get_base_url(env_root))
+    return generate_docs(env_root, get_versions()["version"], get_base_url(env_root))
 
 def generate_named_file(env_root, filename):
-    web_docs = webdocs.WebDocs(env_root, get_base_url(env_root))
+    web_docs = webdocs.WebDocs(env_root, get_versions()["version"], get_base_url(env_root))
     # next, generate api doc or guide doc
     abs_path = os.path.abspath(filename)
     if abs_path.startswith(os.path.join(env_root, 'packages')):
@@ -65,12 +66,12 @@ def generate_named_file(env_root, filename):
     else:
         raise ValueError("Not a valid path to a documentation file")
 
-def generate_docs(env_root, base_url=None, stdout=sys.stdout):
+def generate_docs(env_root, version=get_versions()["version"], base_url=None, stdout=sys.stdout):
     docs_dir = get_sdk_docs_path(env_root)
     # if the generated docs don't exist, generate everything
     if not os.path.exists(os.path.join(docs_dir, "dev-guide")):
         print >>stdout, "Generating documentation..."
-        generate_docs_from_scratch(env_root, base_url)
+        generate_docs_from_scratch(env_root, version, base_url)
         current_status = calculate_current_status(env_root)
         open(os.path.join(docs_dir, DIGEST), "w").write(current_status)
     else:
@@ -82,7 +83,7 @@ def generate_docs(env_root, base_url=None, stdout=sys.stdout):
         # if the docs are not up to date, generate everything
         if not docs_are_up_to_date:
             print >>stdout, "Regenerating documentation..."
-            generate_docs_from_scratch(env_root, base_url)
+            generate_docs_from_scratch(env_root, version, base_url)
             open(os.path.join(docs_dir, DIGEST), "w").write(current_status)
     return get_base_url(env_root) + "index.html"
 
@@ -109,9 +110,9 @@ def calculate_current_status(env_root):
     current_status.update(str(os.path.getmtime(os.path.join(dirpath, base_html_file))))
     return current_status.digest()
 
-def generate_docs_from_scratch(env_root, base_url):
+def generate_docs_from_scratch(env_root, version, base_url):
     docs_dir = get_sdk_docs_path(env_root)
-    web_docs = webdocs.WebDocs(env_root, base_url)
+    web_docs = webdocs.WebDocs(env_root, version, base_url)
     must_rewrite_links = True
     if base_url:
         must_rewrite_links = False
