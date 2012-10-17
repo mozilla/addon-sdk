@@ -199,8 +199,8 @@ class SmallXPI(unittest.TestCase):
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        api_utils_dir = pkg_cfg.packages["api-utils"].lib[0]
+                                              [target_cfg.name, "addon-sdk"])
+        addon_sdk_dir = pkg_cfg.packages["addon-sdk"].lib[0]
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         used_files = list(m.get_used_files())
         here = up(os.path.abspath(__file__))
@@ -218,12 +218,12 @@ class SmallXPI(unittest.TestCase):
                      ("three-deps", "three-c", "lib", "sub", "foo.js")
                      ]]
 
-        add_api_utils = lambda path: os.path.join(api_utils_dir, path)
-        expected.extend([add_api_utils(module) for module in [
-            "self.js",
-            "promise.js",
-            os.path.join("url", "io.js"),
-            os.path.join("utils", "object.js")
+        add_addon_sdk= lambda path: os.path.join(addon_sdk_dir, path)
+        expected.extend([add_addon_sdk(module) for module in [
+            os.path.join("sdk", "self.js"),
+            os.path.join("sdk", "core", "promise.js"),
+            os.path.join("sdk", "net", "url.js"),
+            os.path.join("sdk", "util", "object.js")
             ]])
 
         missing = set(expected) - set(used_files)
@@ -255,15 +255,17 @@ class SmallXPI(unittest.TestCase):
                     "install.rdf",
                     "defaults/preferences/prefs.js",
                     "resources/",
-                    "resources/api-utils/",
-                    "resources/api-utils/data/",
-                    "resources/api-utils/lib/",
-                    "resources/api-utils/lib/self.js",
-                    "resources/api-utils/lib/utils/",
-                    "resources/api-utils/lib/url/",
-                    "resources/api-utils/lib/promise.js",
-                    "resources/api-utils/lib/utils/object.js",
-                    "resources/api-utils/lib/url/io.js",
+                    "resources/addon-sdk/",
+                    "resources/addon-sdk/data/",
+                    "resources/addon-sdk/lib/",
+                    "resources/addon-sdk/lib/sdk/",
+                    "resources/addon-sdk/lib/sdk/self.js",
+                    "resources/addon-sdk/lib/sdk/core/",
+                    "resources/addon-sdk/lib/sdk/util/",
+                    "resources/addon-sdk/lib/sdk/net/",
+                    "resources/addon-sdk/lib/sdk/core/promise.js",
+                    "resources/addon-sdk/lib/sdk/util/object.js",
+                    "resources/addon-sdk/lib/sdk/net/url.js",
                     "resources/three/",
                     "resources/three/lib/",
                     "resources/three/lib/main.js",
@@ -323,7 +325,7 @@ class SmallXPI(unittest.TestCase):
                                          packagepath=package_path)
 
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
+                                              [target_cfg.name, "addon-sdk"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True)
         self.failUnlessEqual(sorted(m.get_all_test_modules()),
                              sorted(["test-one", "test-two"]))
@@ -348,10 +350,10 @@ class SmallXPI(unittest.TestCase):
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        self.failUnless("resources/api-utils/lib/unit-test.js" in names, names)
-        self.failUnless("resources/api-utils/lib/unit-test-finder.js" in names, names)
-        self.failUnless("resources/test-harness/lib/harness.js" in names, names)
-        self.failUnless("resources/test-harness/lib/run-tests.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
         # all files are copied into the XPI, even the things that don't look
         # like tests.
         self.failUnless("resources/three/tests/test-one.js" in names, names)
@@ -364,7 +366,7 @@ class SmallXPI(unittest.TestCase):
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
+                                              [target_cfg.name, "addon-sdk"])
         FILTER = ".*one.*"
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True,
                                     test_filter_re=FILTER)
@@ -391,10 +393,10 @@ class SmallXPI(unittest.TestCase):
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        self.failUnless("resources/api-utils/lib/unit-test.js" in names, names)
-        self.failUnless("resources/api-utils/lib/unit-test-finder.js" in names, names)
-        self.failUnless("resources/test-harness/lib/harness.js" in names, names)
-        self.failUnless("resources/test-harness/lib/run-tests.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
         # get_all_test_modules() respects the filter. But all files are still
         # copied into the XPI.
         self.failUnless("resources/three/tests/test-one.js" in names, names)
