@@ -27,7 +27,8 @@ function onOptionsDisplayed(document, addonId) {
         node.setAttribute("title", title);
 
       for (let item of node.querySelectorAll("menuitem, radio")) {
-          let label = core.get(item.getAttribute("label"));
+          let key = name + "_options." + item.getAttribute("label");
+          let label = core.get(key);
           if (label)
             item.setAttribute("label", label);
       }
