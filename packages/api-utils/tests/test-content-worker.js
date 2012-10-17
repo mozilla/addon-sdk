@@ -419,6 +419,62 @@ exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
   }
 );
 
+exports["test:clearTimeout"] = WorkerTest(
+  "data:text/html;charset=utf-8,clear timeout",
+  function(test, browser, done) {
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        let id1 = setTimeout(function() {
+          self.postMessage("failed");
+        }, 10);
+        let id2 = setTimeout(function() {
+          self.postMessage("done");
+        }, 100);
+        clearTimeout(id1);
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(msg) {
+        if (msg === "failed") {
+          test.fail("failed to cancel timer");
+        } else {
+          test.pass("timer cancelled");
+          done();
+        }
+      }
+    });
+  }
+);
+
+exports["test:clearInterval"] = WorkerTest(
+  "data:text/html;charset=utf-8,clear timeout",
+  function(test, browser, done) {
+    let called = 0;
+    let worker = Worker({
+      window: browser.contentWindow,
+      contentScript: "new " + function WorkerScope() {
+        let id = setInterval(function() {
+          self.postMessage("intreval")
+          clearInterval(id)
+          setTimeout(function() {
+            self.postMessage("done")
+          }, 100)
+        }, 10);
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(msg) {
+        if (msg === "intreval") {
+          called = called + 1;
+          if (called > 1) test.fail("failed to cancel timer");
+        } else {
+          test.pass("interval cancelled");
+          done();
+        }
+      }
+    });
+  }
+)
+
 exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(test, browser, done) {

@@ -23,6 +23,10 @@ exports.delay = function(test) {
     test.pass();
 }
 
+function Isolate(worker) {
+  return "(" + worker + ")()";
+}
+
 /* Tests for the PageMod APIs */
 
 exports.testPageMod1 = function(test) {
@@ -740,3 +744,76 @@ exports.testPageModCssDestroy = function(test) {
     }
   );
 };
+
+exports.testPageModTimeout = function(test) {
+  test.waitUntilDone();
+  let tab = null
+  let loader = Loader(module);
+  let { PageMod } = loader.require("page-mod");
+
+  let mod = PageMod({
+    include: "data:*",
+    contentScript: Isolate(function() {
+      var id = setTimeout(function() {
+        self.port.emit("fired", id)
+      }, 10)
+      self.port.emit("scheduled", id);
+    }),
+    onAttach: function(worker) {
+      worker.port.on("scheduled", function(id) {
+        test.pass("timer was scheduled")
+        worker.port.on("fired", function(data) {
+          test.assertEqual(id, data, "timer was fired")
+          tab.close()
+          worker.destroy()
+          loader.unload()
+          test.done()
+        })
+      })
+    }
+  });
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,timeout",
+    onReady: function($) { tab = $ }
+  })
+}
+
+
+exports.testPageModcancelTimeout = function(test) {
+  test.waitUntilDone();
+  let tab = null
+  let loader = Loader(module);
+  let { PageMod } = loader.require("page-mod");
+
+  let mod = PageMod({
+    include: "data:*",
+    contentScript: Isolate(function() {
+      var id1 = setTimeout(function() {
+        self.port.emit("failed")
+      }, 10)
+      var id2 = setTimeout(function() {
+        self.port.emit("timeout")
+      }, 100)
+      clearTimeout(id1)
+    }),
+    onAttach: function(worker) {
+      worker.port.on("failed", function() {
+        test.fail("cancelled timeout fired")
+      })
+      worker.port.on("timeout", function(id) {
+        test.pass("timer was scheduled")
+        tab.close()
+        worker.destroy()
+        loader.unload()
+        test.done()
+      })
+    }
+  });
+
+  tabs.open({
+    url: "data:text/html;charset=utf-8,cancell timeout",
+    onReady: function($) { tab = $ }
+  })
+}
+
