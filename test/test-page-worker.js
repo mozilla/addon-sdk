@@ -1,15 +1,17 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+'use strict';
 
-let tests = {}, Pages, Page;
 const { Loader } = require('sdk/test/loader');
+const Pages = require("sdk/page-worker");
+const Page = Pages.Page;
 
 const ERR_DESTROYED =
   "Couldn't find the worker to receive this message. " +
   "The script may not be initialized yet, or may already have been unloaded.";
 
-tests.testSimplePageCreation = function(test) {
+exports.testSimplePageCreation = function(test) {
   test.waitUntilDone();
 
   let page = new Page({
@@ -28,7 +30,7 @@ tests.testSimplePageCreation = function(test) {
  * Tests that we can't be tricked by document overloads as we have access
  * to wrapped nodes
  */
-tests.testWrappedDOM = function(test) {
+exports.testWrappedDOM = function(test) {
   test.waitUntilDone();
 
   let page = Page({
@@ -54,7 +56,7 @@ tests.testWrappedDOM = function(test) {
 /*
 // We do not offer unwrapped access to DOM since bug 601295 landed
 // See 660780 to track progress of unwrap feature
-tests.testUnwrappedDOM = function(test) {
+exports.testUnwrappedDOM = function(test) {
   test.waitUntilDone();
 
   let page = Page({
@@ -78,7 +80,7 @@ tests.testUnwrappedDOM = function(test) {
 }
 */
 
-tests.testPageProperties = function(test) {
+exports.testPageProperties = function(test) {
   let page = new Page();
 
   for each (let prop in ['contentURL', 'allow', 'contentScriptFile',
@@ -91,7 +93,7 @@ tests.testPageProperties = function(test) {
               "postMessage doesn't throw exception on page.");
 }
 
-tests.testConstructorAndDestructor = function(test) {
+exports.testConstructorAndDestructor = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
@@ -128,7 +130,7 @@ tests.testConstructorAndDestructor = function(test) {
   }
 }
 
-tests.testAutoDestructor = function(test) {
+exports.testAutoDestructor = function(test) {
   test.waitUntilDone();
 
   let loader = Loader(module);
@@ -145,7 +147,7 @@ tests.testAutoDestructor = function(test) {
   });
 }
 
-tests.testValidateOptions = function(test) {
+exports.testValidateOptions = function(test) {
   test.assertRaises(
     function () Page({ contentURL: 'home' }),
     "The `contentURL` option must be a valid URL.",
@@ -161,7 +163,7 @@ tests.testValidateOptions = function(test) {
   test.pass("Options validation is working.");
 }
 
-tests.testContentAndAllowGettersAndSetters = function(test) {
+exports.testContentAndAllowGettersAndSetters = function(test) {
   test.waitUntilDone();
   let content = "data:text/html;charset=utf-8,<script>window.localStorage.allowScript=3;</script>";
   let page = Page({
@@ -225,7 +227,7 @@ tests.testContentAndAllowGettersAndSetters = function(test) {
 
 }
 
-tests.testOnMessageCallback = function(test) {
+exports.testOnMessageCallback = function(test) {
   test.waitUntilDone();
 
   Page({
@@ -238,7 +240,7 @@ tests.testOnMessageCallback = function(test) {
   });
 }
 
-tests.testMultipleOnMessageCallbacks = function(test) {
+exports.testMultipleOnMessageCallbacks = function(test) {
   test.waitUntilDone();
 
   let count = 0;
@@ -255,7 +257,7 @@ tests.testMultipleOnMessageCallbacks = function(test) {
 
 }
 
-tests.testLoadContentPage = function(test) {
+exports.testLoadContentPage = function(test) {
 
   test.waitUntilDone();
 
@@ -272,7 +274,7 @@ tests.testLoadContentPage = function(test) {
 
 }
 
-tests.testAllowScriptDefault = function(test) {
+exports.testAllowScriptDefault = function(test) {
 
   test.waitUntilDone();
 
@@ -287,7 +289,7 @@ tests.testAllowScriptDefault = function(test) {
   });
 }
 
-tests.testAllowScript = function(test) {
+exports.testAllowScript = function(test) {
 
   test.waitUntilDone();
 
@@ -304,7 +306,7 @@ tests.testAllowScript = function(test) {
   });
 }
 
-tests.testPingPong = function(test) {
+exports.testPingPong = function(test) {
   test.waitUntilDone();
   let page = Page({
     contentURL: 'data:text/html;charset=utf-8,ping-pong',
@@ -322,7 +324,7 @@ tests.testPingPong = function(test) {
   });
 };
 
-tests.testMultipleDestroys = function(test) {
+exports.testMultipleDestroys = function(test) {
   let page = Page();
   page.destroy();
   page.destroy();
@@ -355,30 +357,4 @@ function isDestroyed(page) {
     return true;
   }
   return false;
-}
-
-
-let pageWorkerSupported = true;
-
-try {
-  Pages = require("sdk/page-worker");
-  Page = Pages.Page;
-}
-catch (ex if ex.message == [
-    "The page-worker module currently supports only Firefox and Thunderbird. ",
-    "In the future, we would like it to support other applications, however. ",
-    "Please see https://bugzilla.mozilla.org/show_bug.cgi?id=546740 for more ",
-    "information."
-  ].join("")) {
-  pageWorkerSupported = false;
-}
-
-if (pageWorkerSupported) {
-  for (let test in tests) {
-    exports[test] = tests[test];
-  }
-} else {
-  exports.testPageWorkerNotSupported = function(test) {
-    test.pass("The page-worker module is not supported on this app.");
-  }
 }
