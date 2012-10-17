@@ -233,9 +233,11 @@ used by the Add-on Manager. All the inline settings are supported.
          that is an array of objects with mandatory attributes 
          "label" and "value"<p>
       <p>The values of the "value" attributes must be supplied as strings.</p>
-      <p>The values of the "label" attributes are used as localization keys, 
-         or used verbatim as labels if no matching entries are exist in 
-         locale file.</p></td>
+      <p>The values of the "label" attributes prefixed with "{name}_options.",
+          where {name} is the name of the preference, 
+          are used as localization keys.
+          If no matching entries are found, the value of the "label" 
+          attributes is used verbatim as labels.</p></td>
 		<td><pre>
 {
     "name": "typeOfBreath",
@@ -266,9 +268,11 @@ used by the Add-on Manager. All the inline settings are supported.
          that is an array of objects with mandatory attributes 
          "label" and "value"<p>
       <p>The values of the "value" attributes must be supplied as strings.</p>
-      <p>The values of the "label" attributes are used as localization keys, 
-         or used verbatim as labels if no matching entries are exist in 
-         locale file.</p></td>
+      <p>The values of the "label" attributes prefixed with "{name}_options.",
+          where {name} is the name of the preference, 
+          are used as localization keys.
+          If no matching entries are found, the value of the "label" 
+          attributes is used verbatim as labels.</p></td>
 		<td><pre>
 {
     "name": "alignment",
