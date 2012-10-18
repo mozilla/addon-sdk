@@ -67,9 +67,9 @@ class PrefsTests(unittest.TestCase):
         assertPref(settings[3], 'test4', 'radio', u't\u00EBst')
 
         menuItems = settings[2].findall(
-            '{0}menulist/{0}menupopup/{0}menuitem'.format(xulNamespacePrefix))
+            '%(0)smenulist/%(0)smenupopup/%(0)smenuitem' % { "0": xulNamespacePrefix })
         radios = settings[3].findall(
-            '{0}radiogroup/{0}radio'.format(xulNamespacePrefix))
+            '%(0)sradiogroup/%(0)sradio' % { "0": xulNamespacePrefix })
 
         def assertOption(option, value, label):
             self.failUnlessEqual(option.get('value'), value)
