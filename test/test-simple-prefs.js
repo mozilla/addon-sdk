@@ -101,6 +101,30 @@ exports.testPrefListener = function(test) {
   simplePrefs.on("test-listen", listener);
 
   sp["test-listen"] = true;
+
+  // Wildcard listen
+  let toSet = ['wildcard1','wildcard.pref2','wildcard.even.longer.test'];
+  let observed = [];
+
+  let wildlistener = function(prefName) {
+    if (toSet.indexOf(prefName) > -1) observed.push(prefName);
+  };
+
+  simplePrefs.on('',wildlistener);
+
+  toSet.forEach(function(pref) {
+    sp[pref] = true;
+  });
+
+  test.assert((observed.length == 3 && toSet.length == 3),
+      "Wildcard lengths inconsistent" + JSON.stringify([observed.length, toSet.length]));
+
+  toSet.forEach(function(pref,ii) {
+    test.assertEqual(observed[ii], pref, "Wildcard observed " + pref);
+  });
+
+  simplePrefs.removeListener('',wildlistener);
+
 };
 
 exports.testBtnListener = function(test) {
@@ -158,7 +182,7 @@ exports.testPrefUnloadListener = function(test) {
     // this may not execute after unload, but definitely shouldn't fire listener
     sp.prefs["test-listen3"] = false;
     // this should execute, but also definitely shouldn't fire listener
-    require("sdk/simple-prefs").prefs["test-listen3"] = false; //
+    require("sdk/simple-prefs").prefs["test-listen3"] = false;
 
     test.done();
   };
@@ -168,6 +192,34 @@ exports.testPrefUnloadListener = function(test) {
   // emit change
   sp.prefs["test-listen3"] = true;
 };
+
+
+// Bug 710117: Test that simple-pref listeners are removed on unload
+exports.testPrefUnloadWildcardListener = function(test) {
+  test.waitUntilDone();
+  let testpref = "test-wildcard-unload-listener";
+  let loader = Loader(module);
+  let sp = loader.require("simple-prefs");
+  let counter = 0;
+
+  let listener = function() {
+    test.assertEqual(++counter, 1, "This listener should only be called once");
+
+    loader.unload();
+
+    // this may not execute after unload, but definitely shouldn't fire listener
+    sp.prefs[testpref] = false;
+    // this should execute, but also definitely shouldn't fire listener
+    require("simple-prefs").prefs[testpref] = false;
+
+    test.done();
+  };
+
+  sp.on("", listener);
+  // emit change
+  sp.prefs[testpref] = true;
+};
+
 
 // Bug 732919 - JSON.stringify() fails on simple-prefs.prefs
 exports.testPrefJSONStringification = function(test) {
