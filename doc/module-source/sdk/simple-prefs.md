@@ -346,6 +346,8 @@ for more details.
     require("simple-prefs").on("somePreference", onPrefChange);
     require("simple-prefs").on("someOtherPreference", onPrefChange);
 
+    // `""` listens to all changes in the extension's branch
+    require("simple-prefs").on("", onPrefChange);
 
 @param prefName {String}
   The name of the preference to watch for changes.
