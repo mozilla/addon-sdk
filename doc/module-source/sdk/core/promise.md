@@ -4,7 +4,7 @@
 
 ## Rationale
 
-Most of the JS APIs are asynchronous complementing it's non-blocking nature.
+Most of the JS APIs are asynchronous complementing its non-blocking nature.
 While this has a good reason and many advantages, it comes with a price.
 Instead of structuring our programs into logical black boxes:
 
@@ -14,7 +14,7 @@ Instead of structuring our programs into logical black boxes:
     }
 
 
-We're forced into continuation passing style, involving lot's of machinery:
+We're forced into continuation passing style, involving lots of machinery:
 
     function sphagetti(a, b, callback) {
       assemble(a, function continueWith(error, c) {
