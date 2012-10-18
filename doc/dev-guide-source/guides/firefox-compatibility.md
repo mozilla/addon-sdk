@@ -61,7 +61,7 @@ The `minVersion` and `maxVersion` values that are written into add-ons
 generated with the SDK are taken from the template file found at:
 
 <pre>
-python-lib/cuddlefish/app-extension/install.rdf
+app-extension/install.rdf
 </pre>
 
 If you need to create add-ons which are compatible with a wider range of
