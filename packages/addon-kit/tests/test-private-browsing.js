@@ -3,10 +3,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let pb = require("private-browsing");
-let {Cc,Ci} = require("chrome");
+let { Cc,Ci } = require("chrome");
 const { Loader } = require('test-harness/loader');
 const timer = require("timer");
+let pb = LoaderWithHookedConsole().loader.require("private-browsing");
+
+function LoaderWithHookedConsole() {
+  let errors = [];
+  let loader = Loader(module, {
+    console: Object.create(console, {
+      error: { value: function(e) {
+        if (!/DEPRECATED:/.test(e)) {
+          console.error(e);
+        }
+      }}
+    })
+  });
+
+  return {
+    loader: loader,
+    errors: errors
+  }
+}
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -78,7 +96,7 @@ if (pbService) {
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
-    let loader = Loader(module);
+    let { loader, errors } = LoaderWithHookedConsole();
     let pb2 = loader.require("private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
