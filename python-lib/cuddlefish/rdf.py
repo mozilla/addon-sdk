@@ -176,7 +176,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
 
 if __name__ == "__main__":
     print "Running smoke test."
-    root = os.path.join(os.path.dirname(__file__), 'app-extension')
+    root = os.path.join(os.path.dirname(__file__), '../../app-extension')
     manifest = gen_manifest(root, {'name': 'test extension'},
                             'fakeid', 'http://foo.com/update.rdf')
     update = RDFUpdate()
