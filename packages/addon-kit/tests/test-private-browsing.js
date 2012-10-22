@@ -1,30 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-'use strict';
+"use strict";
 
 let { Cc,Ci } = require("chrome");
-const { Loader } = require('test-harness/loader');
-const timer = require("timer");
-let pb = LoaderWithHookedConsole().loader.require("private-browsing");
-
-function LoaderWithHookedConsole() {
-  let errors = [];
-  let loader = Loader(module, {
-    console: Object.create(console, {
-      error: { value: function(e) {
-        if (!/DEPRECATED:/.test(e)) {
-          console.error(e);
-        }
-      }}
-    })
-  });
-
-  return {
-    loader: loader,
-    errors: errors
-  }
-}
+const timer = require("timers");
+const { LoaderWithHookedConsole, pb } = require("private-browsing-helper");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.

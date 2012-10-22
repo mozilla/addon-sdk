@@ -7,8 +7,6 @@ const { setTimeout } = require("timer");
 const { Loader } = require('test-harness/loader');
 const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
            getService(Ci.nsIWindowMediator);
-const privateBrowsing = require('private-browsing');
-const pbUtils = require('api-utils/private-browsing/utils');
 let browserWindows;
 
 function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
@@ -38,35 +36,6 @@ exports.testOpenAndCloseWindow = function(test) {
       test.done();
     }
   });
-};
-
-exports.testPerWindowPrivateBrowsing_getter = function(test) {
-  let activeWindow =  wm.getMostRecentWindow("navigator:browser");
-
-  // is per-window PB implemented?
-  if (pbUtils.isWindowPBEnabled(activeWindow)) {
-    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
-
-    pbUtils.setMode(false, activeWindow);
-
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is not in PB mode");
-
-    pbUtils.setMode(true, activeWindow);
-
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is in PB mode");
-
-    pbUtils.setMode(currentState, activeWindow);
-  }
-  else {
-    test.assertEqual(require('private-browsing').isActive,
-                browserWindows.activeWindow.isPrivateBrowsing,
-                "Active window PB mode is the same value as the mode returned " +
-                "by private-browsing module");
-  }
 };
 
 exports.testAutomaticDestroy = function(test) {
