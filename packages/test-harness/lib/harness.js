@@ -246,8 +246,13 @@ function nextIteration(tests) {
 }
 
 var POINTLESS_ERRORS = [
-  "Invalid chrome URI:",
-  "OpenGL LayerManager Initialized Succesfully."
+  'Invalid chrome URI:',
+  'OpenGL LayerManager Initialized Succesfully.',
+  '[JavaScript Error: "TelemetryStopwatch:',
+  '[JavaScript Warning: "ReferenceErrorL reference to undefined property',
+  '[Javascript Warning: "Error: Failed to preserve wrapper of wrapped ' +
+    'native weak map key',
+  '[JavaScript Warning: "Duplicate resource declaration for'
 ];
 
 var consoleListener = {
