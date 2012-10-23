@@ -10,8 +10,6 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 let browserWindows;
 
-function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
-
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
   test.waitUntilDone();
@@ -180,7 +178,7 @@ exports.testActiveWindow = function(test) {
   let window2, window3;
 
   // Raw window objects
-  let nonBrowserWindow = getTestRunnerWindow(), rawWindow2, rawWindow3;
+  let rawWindow2, rawWindow3;
 
   test.waitUntilDone();
 
@@ -196,8 +194,7 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(rawWindow2);
     },
     function() {
-      nonBrowserWindow.focus();
-      continueAfterFocus(nonBrowserWindow);
+      nextStep();
     },
     function() {
       /**
@@ -223,7 +220,6 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
-      nonBrowserWindow.focus();
       finishTest();
     }
   ];
@@ -253,7 +249,6 @@ exports.testActiveWindow = function(test) {
   }
 
   function continueAfterFocus(targetWindow) {
-
     // Based on SimpleTest.waitForFocus
     var fm = Cc["@mozilla.org/focus-manager;1"].
              getService(Ci.nsIFocusManager);
@@ -336,13 +331,12 @@ exports.testTrackWindows = function(test) {
 
   browserWindows.on("activate", function (window) {
     let index = windows.indexOf(window);
-
     actions.push("global activate " + index)
   })
 
   browserWindows.on("deactivate", function (window) {
     let index = windows.indexOf(window);
-
+    if (index < 0) return;
     actions.push("global deactivate " + index)
   })
 
