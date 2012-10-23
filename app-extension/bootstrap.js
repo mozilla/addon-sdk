@@ -172,6 +172,7 @@ function startup(data, reasonCode) {
           filter: options.filter,
           profileMemory: options.profileMemory,
           stopOnError: options.stopOnError,
+          suppressWebConsole: options.suppressWebConsole,
           verbose: options.verbose,
         }
       }

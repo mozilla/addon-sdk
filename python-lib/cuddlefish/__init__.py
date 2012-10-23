@@ -194,6 +194,12 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['test', 'testex', 'testpkgs'])),
+        (("", "--suppress-web-console",), dict(dest="suppressWebConsole",
+                                  help="Prevent web console logs in command line",
+                                  action="store_true",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['test'])),
         (("", "--override-version",), dict(dest="override_version",
                                   help="Pass in a version string to use in generated docs",
                                   metavar=None,
@@ -521,7 +527,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
         print >>out, 'Do "cfx test" to test it and "cfx run" to try it.  Have fun!'
     else:
         print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
-        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
+        print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!'
     return 0
 
 def buildJID(target_cfg):
@@ -550,7 +556,6 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     (options, args) = parse_args(**parser_kwargs)
 
     config_args = get_config_args(options.config, env_root);
-    
     # reparse configs with arguments from local.json
     if config_args:
         parser_kwargs['arguments'] += config_args
@@ -632,7 +637,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
-                                  'stopOnError'])
+                                  'stopOnError', 'suppressWebConsole'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
