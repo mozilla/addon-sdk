@@ -5,8 +5,10 @@ jetpack-sdk-docs.tgz
 .test_tmp/
 doc/dev-guide/
 doc/index.html
-doc/packages/
+doc/modules/
 doc/status.md5
+python-lib/cuddlefish/tests/static-files/sdk-docs/
+addon-sdk-docs.tgz
 packages/*
 
 # Python

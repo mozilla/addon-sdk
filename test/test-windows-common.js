@@ -3,13 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { Cc, Ci } = require('chrome');
-const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
-           getService(Ci.nsIWindowMediator);
 const { Loader } = require('sdk/test/loader');
 const { browserWindows } = require('sdk/windows');
-const privateBrowsing = require('sdk/private-browsing');
-const pbUtils = require('sdk/private-browsing/utils');
 
 // TEST: browserWindows Iterator
 exports.testBrowserWindowsIterator = function(test) {
@@ -31,29 +26,6 @@ exports.testBrowserWindowsIterator = function(test) {
     test.assertEqual(j, i++, 'for (x in browserWindows) works');
   }
 };
-
-if (pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
-  exports.testPerWindowPrivateBrowsing_getter = function(test) {
-    let activeWindow =  wm.getMostRecentWindow('navigator:browser');
-  
-    // is per-window PB implemented?
-    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
-  
-    pbUtils.setMode(false, activeWindow);
-  
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is not in PB mode");
-  
-    pbUtils.setMode(true, activeWindow);
-  
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     "Active window is in PB mode");
-  
-    pbUtils.setMode(currentState, activeWindow);
-  };
-}
 
 exports.testWindowTabsObject_alt = function(test) {
   test.waitUntilDone();
