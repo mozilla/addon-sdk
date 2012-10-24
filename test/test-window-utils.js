@@ -236,6 +236,9 @@ exports['test window watcher without untracker'] = function(assert, done) {
 };
 
 exports['test active window'] = function(assert, done) {
+  let testRunnerWindow = Cc["@mozilla.org/appshell/window-mediator;1"]
+                         .getService(Ci.nsIWindowMediator)
+                         .getMostRecentWindow("test:runner");
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
@@ -252,21 +255,26 @@ exports['test active window'] = function(assert, done) {
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
                        "Correct active window [1]");
-      nextTest();
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
+      assert.equal(windowUtils.activeWindow, testRunnerWindow,
+                       "Correct active window [2]");
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
-                       "Correct active browser window [2]");
+                       "Correct active browser window [3]");
       continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
-                       "Correct active window [3]");
-      nextTest();
+                       "Correct active window [4]");
+      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
     },
     function() {
+      assert.equal(windowUtils.activeWindow, testRunnerWindow,
+                       "Correct active window [5]");
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
-                       "Correct active browser window [4]");
+                       "Correct active browser window [6]");
+      testRunnerWindow = null;
       browserWindow = null;
       done();
     }
@@ -280,6 +288,7 @@ exports['test active window'] = function(assert, done) {
   }
 
   function continueAfterFocus(targetWindow) {
+
     // Based on SimpleTest.waitForFocus
     var fm = Cc["@mozilla.org/focus-manager;1"].
              getService(Ci.nsIFocusManager);
