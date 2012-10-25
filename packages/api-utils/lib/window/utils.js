@@ -15,6 +15,18 @@ const windowWatcher = Cc['@mozilla.org/embedcomp/window-watcher;1'].
 const appShellService = Cc['@mozilla.org/appshell/appShellService;1'].
                         getService(Ci.nsIAppShellService);
 const observers = require('api-utils/observer-service');
+const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
+           getService(Ci.nsIWindowMediator);
+
+const BROWSER = 'navigator:browser',
+      URI_BROWSER = 'chrome://browser/content/browser.xul',
+      NAME = '_blank',
+      FEATURES = 'chrome,all,dialog=no';
+
+function getMostRecentBrowserWindow() {
+  return WM.getMostRecentWindow(BROWSER);
+}
+exports.getMostRecentBrowserWindow = getMostRecentBrowserWindow;
 
 /**
  * Returns the ID of the window's current inner window.
@@ -153,3 +165,10 @@ function isBrowser(window) {
          "navigator:browser";
 };
 exports.isBrowser = isBrowser;
+
+function getFrames(window) {
+  return Array.slice(window.frames).reduce(function(frames, frame) {
+    return frames.concat(frame, getFrames(frame))
+  }, [])
+}
+exports.getFrames = getFrames;
