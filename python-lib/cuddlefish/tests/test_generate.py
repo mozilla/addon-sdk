@@ -92,6 +92,13 @@ class Link_Checker(HTMLParser.HTMLParser):
 class Generate_Docs_Tests(unittest.TestCase):
 
     def test_generate_static_docs(self):
+
+        def cleanup():
+            shutil.rmtree(get_base_url_path())
+            tgz.close()
+            os.remove(tar_filename)
+            generate.clean_generated_docs(os.path.join(env_root, "doc"))
+
         # make sure we start clean
         if os.path.exists(get_base_url_path()):
             shutil.rmtree(get_base_url_path())
@@ -118,12 +125,11 @@ class Generate_Docs_Tests(unittest.TestCase):
             print "The following links are broken:"
             for broken_link in sorted(broken_links):
                 print " "+ broken_link
+
+            cleanup()
             self.fail("%d links are broken" % len(broken_links))
-        # clean up
-        shutil.rmtree(get_base_url_path())
-        tgz.close()
-        os.remove(tar_filename)
-        generate.clean_generated_docs(os.path.join(env_root, "doc"))
+
+        cleanup()
 
     def test_generate_docs(self):
         test_root = get_test_root()
