@@ -876,15 +876,18 @@ exports.testBug803529 = function(test) {
       return;
     }
 
-    pageMod.PageMod({
+    let pagemod = pageMod.PageMod({
       include: ["*", "data:*"],
       attachTo: ["existing", "frame"],
       contentScriptWhen: 'ready',
       onAttach: function(mod) {
-        if (++counter < 2) return;
+        if (++counter != 2) return;
         test.pass('page mod attached to iframe');
-        closeTab(tab);
-        test.done();
+        timer.setTimeout(function() {
+          pagemod.destroy();
+          closeTab(tab);
+          test.done();
+        }, 0);
       }
     });
   }
