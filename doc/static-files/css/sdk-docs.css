@@ -383,3 +383,9 @@ table.catalog>tbody tr:first-child td {
 table.catalog>tbody tr:last-child td {
   padding-bottom: 0em;
 }
+
+.directory-tree ul ul{
+  padding-left: 20px;
+  list-style-image: url("../media/icons/arrow-right.png");
+list-style-position: inside;
+  font-size: 1.0em }
