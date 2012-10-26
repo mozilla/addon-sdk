@@ -10,7 +10,9 @@ const { Loader } = require('test-harness/loader');
 const tabs = require("tabs");
 const timer = require("timer");
 const { Cc, Ci } = require("chrome");
+const { open, getFrames, getMostRecentBrowserWindow } = require('api-utils/window/utils');
 const windowUtils = require('api-utils/window/utils');
+const { getTabContentWindow, getActiveTab, openTab, closeTab } = require('api-utils/tabs/utils');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -817,3 +819,38 @@ exports.testPageModcancelTimeout = function(test) {
   })
 }
 
+exports.testBug803529 = function(test) {
+  test.waitUntilDone();
+
+  let subIFrame = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
+  let iFrame = '<iframe src="data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame) + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame)
+
+  let counter = 0;
+  let tab = openTab(getMostRecentBrowserWindow(), url);
+  let window = getTabContentWindow(tab);
+
+  function wait4Iframes() {
+    if (window.document.readyState != "complete" ||
+        getFrames(window).length != 2) {
+      return;
+    }
+
+    let pagemod = pageMod.PageMod({
+      include: ["*", "data:*"],
+      attachTo: ["existing", "frame"],
+      contentScriptWhen: 'ready',
+      onAttach: function(mod) {
+        if (++counter != 2) return;
+        test.pass('page mod attached to iframe');
+        timer.setTimeout(function() {
+          pagemod.destroy();
+          closeTab(tab);
+          test.done();
+        }, 0);
+      }
+    });
+  }
+
+  window.addEventListener("load", wait4Iframes, false);
+};

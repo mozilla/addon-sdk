@@ -20,7 +20,7 @@ const { validationAttributes } = require('api-utils/content/loader');
 const { Cc, Ci } = require('chrome');
 const { merge } = require('api-utils/utils/object');
 const { windowIterator } = require("window-utils");
-const { isBrowser } = require('api-utils/window/utils');
+const { isBrowser, getFrames } = require('api-utils/window/utils');
 const { getTabs, getTabContentWindow, getTabForContentWindow,
         getURI: getTabURI } = require("api-utils/tabs/utils");
 
@@ -205,14 +205,20 @@ const PageMod = Loader.compose(EventEmitter, {
         return RULES[rule].test(uri);
       });
     }
-    getAllTabs().
-      filter(function (tab) {
-        return isMatchingURI(getTabURI(tab));
-      }).
-      forEach(function (tab) {
-        // Fake a newly created document
-        mod._onContent(getTabContentWindow(tab));
+    let tabs = getAllTabs().filter(function (tab) {
+      return isMatchingURI(getTabURI(tab));
+    });
+
+    tabs.forEach(function (tab) {
+      // Fake a newly created document
+      let window = getTabContentWindow(tab);
+      mod._onContent(window);
+
+      let windows = getFrames(window);
+      windows.forEach(function(win) {
+          mod._onContent(win);
       });
+    });
   },
 
   _onContent: function _onContent(window) {
