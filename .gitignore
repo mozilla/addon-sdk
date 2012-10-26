@@ -7,8 +7,6 @@ doc/dev-guide/
 doc/index.html
 doc/modules/
 doc/status.md5
-python-lib/cuddlefish/tests/static-files/sdk-docs/
-addon-sdk-docs.tgz
 packages/*
 
 # Python
