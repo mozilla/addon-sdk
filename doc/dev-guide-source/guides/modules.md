@@ -63,7 +63,7 @@ High-level modules like <code>clipboard</code> are directly underneath the "sdk"
               <li><span class="highlight">core</span>
 <div class="annotation">
 Subdirectories of "sdk" are used to group related low-level modules.
-</div></li>
+</div>
                 <ul>
                   <li class="highlight"><span class="highlight">heritage.js</span>
 <div class="annotation">
