@@ -21,9 +21,6 @@ object of another module.
 
 ## CommonJS Modules in the Add-on SDK ##
 
-<img class="image-right" src="static-files/media/commonjs-wikipanel.png"
-alt="CommonJS wikipanel">
-
 Except for [scripts that interact directly with web content](dev-guide/guides/content-scripts/index.html),
 all the JavaScript code you'll write or use when developing add-ons using
 the SDK is part of a CommonJS module, including:
@@ -41,28 +38,59 @@ outside the SDK, but usable by SDK-based add-ons.
 Modules supplied with the SDK can be found in the "lib" directory under
 the SDK root.
 
-<div class="directory-tree">
-<br>
-
-* addon-sdk
-    * app-extension
-    * bin
-    * data
-    * doc
-    * examples
-    * lib
-        * sdk
-            * clipboard.js
-            * core
-                * heritage.js
-        * toolkit
-    * python-lib
-    * test
+<ul class="tree">
+  <li>addon-sdk
+    <ul>
+      <li>app-extension</li>
+      <li>bin</li>
+      <li>data</li>
+      <li>doc</li>
+      <li>examples</li>
+      <li><span class="highlight">lib</span>
+<div class="annotation">
+All the modules provided by the SDK are stored under "lib".
 </div>
+        <ul>
+          <li><span class="highlight">sdk</span>
+<div class="annotation">
+All modules that are specifically intended for users of the SDK are stored in the "sdk" directory.
+</div>
+            <ul>
+              <li><span class="highlight">clipboard.js</span>
+<div class="annotation">
+High-level modules like <code>clipboard</code> are directly underneath the "sdk" directory.
+</div></li>
+              <li><span class="highlight">core</span>
+<div class="annotation">
+Subdirectories of "sdk" are used to group related low-level modules.
+</div></li>
+                <ul>
+                  <li class="highlight"><span class="highlight">heritage.js</span>
+<div class="annotation">
+Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk".
+</div></li>
+                  <li><span class="highlight">namespace.js</span>
+<div class="annotation">
+Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk".
+</div></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li><span class="highlight">toolkit</span>
+<div class="annotation">
+Very generic, platform-agnostic modules that are shared with other
+projects are stored in "toolkit".
+</div></li>
+        </ul>
+      </li>
+      <li>python-lib</li>
+      <li>test</li>
+    </ul>
+  </li>
+</ul>
 
-Modules which are shared with other projects are in the "toolkit"
-directory, and the rest are in the "sdk" directory.
-
+<div style="clear:both"></div>
 
 <pre>
 ls packages

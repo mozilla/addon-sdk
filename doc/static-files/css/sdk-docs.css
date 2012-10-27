@@ -384,8 +384,51 @@ table.catalog>tbody tr:last-child td {
   padding-bottom: 0em;
 }
 
-.directory-tree ul ul{
-  padding-left: 20px;
-  list-style-image: url("../media/icons/arrow-right.png");
-list-style-position: inside;
-  font-size: 1.0em }
+ul.tree li {
+  list-style-type: none;
+  font-weight: normal;
+}
+
+ul.tree span.highlight {
+  color: red;
+}
+
+ul.tree span.highlight:hover {
+  font-weight: bold;
+}
+
+ul.tree span.highlight:hover + div.annotation {
+  display:block;
+}
+
+ul.tree ul  {
+  list-style-type: none;
+  background: url("../media/icons/vline.png") repeat-y;
+  margin: 0;
+  padding: 0;
+  margin-left: 10px;
+}
+
+ul.tree ul li {
+  margin: 0;
+  padding: 0 12px;
+  line-height: 20px;
+  background: url("../media/icons/node.png") no-repeat;
+  font-weight: normal;
+}
+
+ul.tree ul li:last-child {
+  background: #fff url("../media/icons/lastnode.png") no-repeat;
+}
+
+.annotation {
+  display:none;
+  color: black;
+  font-weight: normal;
+  float: right;
+  padding-left: 1em;
+  margin-left: 1em;
+  margin-right: 0;
+  width: 50%;
+  border-left: 1px solid gray;
+}
