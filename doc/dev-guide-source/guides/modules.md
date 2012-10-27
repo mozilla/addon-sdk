@@ -2,41 +2,37 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# CommonJS Modules #
+# Modules in the SDK #
 
 [CommonJS](http://wiki.commonjs.org/wiki/CommonJS) is the underlying
 infrastructure for both the SDK and the add-ons you build using the SDK.
-
-A CommonJS **module** is a piece of reusable JavaScript: it exports certain
+A CommonJS module is a piece of reusable JavaScript: it exports certain
 objects which are thus made available to dependent code. To facilitate this
 CommonJS defines:
 
 * an object called `exports` which contains all the objects which a CommonJS
 module wants to make available to other modules
-
 * a function called `require` which a module can use to import the `exports`
 object of another module.
 
 ![CommonJS modules](static-files/media/commonjs-modules.png)
 
-## CommonJS Modules in the Add-on SDK ##
-
 Except for [scripts that interact directly with web content](dev-guide/guides/content-scripts/index.html),
 all the JavaScript code you'll write or use when developing add-ons using
 the SDK is part of a CommonJS module, including:
 
-* **core SDK modules**: the JavaScript modules which the SDK provides, such as
-[`panel`](modules/sdk/panel.html) or [page-mod](modules/sdk/page-mod.html)
+* [SDK modules](dev-guide/guides/modules.html#SDK Core Modules):
+the JavaScript modules which the SDK provides, such as
+[`panel`](modules/sdk/panel.html) and [page-mod](modules/sdk/page-mod.html)
+* [modules in your add-on](dev-guide/guides/modules.html#Modules In Your Add-on):
+each of the JavaScript files in your add-ons "lib" directory.
+* [community-developed modules](dev-guide/guides/modules.html#Community-developed Modules):
+reusable modules developed and maintained outside the SDK, but usable by SDK-based add-ons.
 
-* **modules in your add-on**: each of the JavaScript files in your add-ons "lib" directory.
+## SDK Modules ##
 
-* **community-developed modules**: reusable modules developed and maintained
-outside the SDK, but usable by SDK-based add-ons.
-
-### SDK Core Modules ###
-
-Modules supplied with the SDK can be found in the "lib" directory under
-the SDK root.
+All the modules supplied with the SDK can be found in the "lib"
+directory under the SDK root.
 
 <ul class="tree">
   <li>addon-sdk
@@ -52,36 +48,46 @@ All the modules provided by the SDK are stored under "lib".
 </div>
         <ul>
           <li><span class="highlight">sdk</span>
-<div class="annotation">
-All modules that are specifically intended for users of the SDK are stored in the "sdk" directory.
-</div>
+              <div class="annotation">
+              All modules that are specifically intended for users of the SDK are stored in the "sdk" directory.
+              </div>
             <ul>
               <li><span class="highlight">clipboard.js</span>
-<div class="annotation">
-High-level modules like <code>clipboard</code> are directly underneath the "sdk" directory.
-</div></li>
+                  <div class="annotation">
+                  High-level modules like <code>clipboard</code> are directly underneath the "sdk" directory.
+                  </div>
+              </li>
               <li><span class="highlight">core</span>
-<div class="annotation">
-Subdirectories of "sdk" are used to group related low-level modules.
-</div>
+                  <div class="annotation">
+                  Subdirectories of "sdk" are used to group related low-level modules.
+                  </div>
                 <ul>
-                  <li class="highlight"><span class="highlight">heritage.js</span>
-<div class="annotation">
-Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk".
-</div></li>
+                  <li><span class="highlight">heritage.js</span>
+                      <div class="annotation">
+                      Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk"
+                       - in this case, "core".
+                      </div>
+                  </li>
                   <li><span class="highlight">namespace.js</span>
-<div class="annotation">
-Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk".
-</div></li>
+                      <div class="annotation">
+                      Low-level modules like <code>heritage</code> and <code>namespace</code> are always stored under a subdirectory of "sdk"
+                       - in this case, "core".
+                      </div>
+                  </li>
                 </ul>
               </li>
             </ul>
           </li>
           <li><span class="highlight">toolkit</span>
-<div class="annotation">
-Very generic, platform-agnostic modules that are shared with other
-projects are stored in "toolkit".
-</div></li>
+              <div class="annotation">
+              Very generic, platform-agnostic modules that are shared with other
+              projects, such as <code>loader</code> are stored in "toolkit".
+              </div>
+              <ul>
+                <li><span class="highlight">loader</span>
+                </li>
+              </ul>
+          </li>
         </ul>
       </li>
       <li>python-lib</li>
@@ -103,7 +109,7 @@ addon-kitapi-utilstest-harness
 </pre>
 
 
-### Modules in Your Add-on ###
+### Modules In Your Add-on ###
 
 At a minimum, an SDK-based add-on consists of a single module
 named `main.js`, but you can factor your add-on's code into a collection
