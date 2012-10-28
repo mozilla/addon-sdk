@@ -364,19 +364,29 @@ exports.testWorksWithExistingTabs = function(test) {
   tabs.open({
     url: url,
     onReady: function onReady(tab) {
-      let pageMod = new PageMod({
+      let pageModOnExisting = new PageMod({
         include: url,
         attachTo: ["existing", "top", "frame"],
         onAttach: function(worker) {
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
-          pageMod.destroy();
-          tab.close();
-          test.done();
+
+          timer.setTimeout(function() {
+            pageModOnExisting.destroy();
+            pageModOffExisting.destroy();
+            tab.close();
+            test.done();
+          }, 0);
+        }
+      });
+
+      let pageModOffExisting = new PageMod({
+        include: url,
+        onAttach: function(worker) {
+          test.fail("pageModOffExisting page-mod should not have attached to anything");
         }
       });
     }
   });
-
 };
 
 exports['test tab worker on message'] = function(test) {
@@ -616,7 +626,7 @@ exports['test111 attachTo [frame]'] = function(test) {
 };
 
 exports.testContentScriptOptionsOption = function(test) {
-	test.waitUntilDone();
+  test.waitUntilDone();
 
   let callbackDone = null;
   testPageMod(test, "about:", [{
@@ -876,18 +886,29 @@ exports.testBug803529 = function(test) {
       return;
     }
 
-    let pagemod = pageMod.PageMod({
+    let pagemodOnExisting = pageMod.PageMod({
       include: ["*", "data:*"],
       attachTo: ["existing", "frame"],
       contentScriptWhen: 'ready',
       onAttach: function(mod) {
         if (++counter != 2) return;
         test.pass('page mod attached to iframe');
+
         timer.setTimeout(function() {
-          pagemod.destroy();
+          pagemodOnExisting.destroy();
+          pagemodOffExisting.destroy();
           closeTab(tab);
           test.done();
         }, 0);
+      }
+    });
+
+    let pagemodOffExisting = pageMod.PageMod({
+      include: ["*", "data:*"],
+      attachTo: ["frame"],
+      contentScriptWhen: 'ready',
+      onAttach: function(mod) {
+        test.fail('pagemodOffExisting page-mod should not have been attached');
       }
     });
   }
