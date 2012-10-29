@@ -25,9 +25,9 @@
 
 exports['test path'] = function(assert) {
 
-var system = require('system');
-var path = require('path');
-var isWindows = require('system').platform.indexOf('win') === 0;
+var system = require('sdk/system');
+var path = require('sdk/fs/path');
+var isWindows = require('sdk/system').platform.indexOf('win') === 0;
 
 
 // POSIX filenames may include control characters
