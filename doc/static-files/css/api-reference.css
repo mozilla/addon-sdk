@@ -117,7 +117,7 @@ Parameter components are divided by a thin border
 */
 .parameter_set .api_component {
   padding: 3px;
-  border-top: 2px solid rgba(255,255,255,.3);
+  border-top: 3px solid white;
 }
 
 /*

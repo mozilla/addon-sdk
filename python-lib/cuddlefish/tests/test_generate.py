@@ -16,12 +16,14 @@ from cuddlefish.tests import env_root
 
 INITIAL_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "index.html"], \
-                    ["packages", "aardvark", "index.html"] ]
+                    ["modules", "sdk", "aardvark-feeder.html"], \
+                    ["modules", "sdk", "anteater", "anteater.html"]]
 
 EXTENDED_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "extra.html"], \
                     ["dev-guide", "index.html"], \
-                    ["packages", "aardvark", "index.html"] ]
+                    ["modules", "sdk", "aardvark-feeder.html"], \
+                    ["modules", "sdk", "anteater", "anteater.html"]]
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
@@ -90,6 +92,13 @@ class Link_Checker(HTMLParser.HTMLParser):
 class Generate_Docs_Tests(unittest.TestCase):
 
     def test_generate_static_docs(self):
+
+        def cleanup():
+            shutil.rmtree(get_base_url_path())
+            tgz.close()
+            os.remove(tar_filename)
+            generate.clean_generated_docs(os.path.join(env_root, "doc"))
+
         # make sure we start clean
         if os.path.exists(get_base_url_path()):
             shutil.rmtree(get_base_url_path())
@@ -116,23 +125,22 @@ class Generate_Docs_Tests(unittest.TestCase):
             print "The following links are broken:"
             for broken_link in sorted(broken_links):
                 print " "+ broken_link
+
+            cleanup()
             self.fail("%d links are broken" % len(broken_links))
-        # clean up
-        shutil.rmtree(get_base_url_path())
-        tgz.close()
-        os.remove(tar_filename)
-        generate.clean_generated_docs(os.path.join(env_root, "doc"))
+
+        cleanup()
 
     def test_generate_docs(self):
         test_root = get_test_root()
         docs_root = os.path.join(test_root, "doc")
         generate.clean_generated_docs(docs_root)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET)
-        # touching an MD file under packages **does** cause a regenerate
-        os.utime(os.path.join(test_root, "packages", "aardvark", "doc", "main.md"), None)
+        # touching an MD file under sdk **does** cause a regenerate
+        os.utime(os.path.join(test_root, "doc", "module-source", "sdk", "aardvark-feeder.md"), None)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET, new_digest)
-        # touching a non MD file under packages **does not** cause a regenerate
-        os.utime(os.path.join(test_root, "packages", "aardvark", "lib", "main.js"), None)
+        # touching a non MD file under sdk **does not** cause a regenerate
+        os.utime(os.path.join(test_root, "doc", "module-source", "sdk", "not_a_doc.js"), None)
         self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching a non MD file under static-files **does not** cause a regenerate
         os.utime(os.path.join(docs_root, "static-files", "another.html"), None)
