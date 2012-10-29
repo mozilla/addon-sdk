@@ -384,21 +384,17 @@ table.catalog>tbody tr:last-child td {
   padding-bottom: 0em;
 }
 
+ul.tree {
+  float: left;
+}
+
 ul.tree li {
   list-style-type: none;
   font-weight: normal;
 }
 
-ul.tree span.highlight {
+ul.tree li.highlight-tree-node, ul.tree li.highlight-tree-node li {
   color: red;
-}
-
-ul.tree span.highlight:hover {
-  font-weight: bold;
-}
-
-ul.tree span.highlight:hover + div.annotation {
-  display:block;
 }
 
 ul.tree ul  {
@@ -419,16 +415,4 @@ ul.tree ul li {
 
 ul.tree ul li:last-child {
   background: #fff url("../media/icons/lastnode.png") no-repeat;
-}
-
-.annotation {
-  display:none;
-  color: black;
-  font-weight: normal;
-  float: right;
-  padding-left: 1em;
-  margin-left: 1em;
-  margin-right: 0;
-  width: 60%;
-  border-left: 1px solid gray;
 }
