@@ -302,10 +302,10 @@ exports["test Set Text in Multiple DOM Selection"] = function(assert, done) {
 
     selection.text = "bar";
 
-    assert.equal(selection.text, "bar",
+    assert.equal(selection.text, expectedText[0],
       "set selection.text with single DOM Selection works.");
 
-    assert.equal(selection.html, "bar",
+    assert.equal(selection.html, expectedHTML[0],
       "selection.html with single DOM Selection works.");
 
     let selectionCount = 0;
@@ -335,10 +335,10 @@ exports["test Set HTML in Multiple DOM Selection"] = function(assert, done) {
 
     selection.html = html;
 
-    assert.equal(selection.text, "bar",
+    assert.equal(selection.text, expectedText[0],
       "set selection.text with DOM Selection works.");
 
-    assert.equal(selection.html, html,
+    assert.equal(selection.html, expectedHTML[0],
       "selection.html with DOM Selection works.");
 
     let selectionCount = 0;
@@ -369,10 +369,10 @@ exports["test Set HTML as text in Multiple DOM Selection"] = function(assert, do
 
     selection.text = text;
 
-    assert.equal(selection.text, text,
+    assert.equal(selection.text, expectedText[0],
       "set selection.text with DOM Selection works.");
 
-    assert.equal(selection.html, html,
+    assert.equal(selection.html, expectedHTML[0],
       "selection.html with DOM Selection works.");
 
     let selectionCount = 0;
