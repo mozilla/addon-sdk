@@ -338,7 +338,7 @@ hr {
 .sidebar-subsection-contents a {
   display: block;
   text-decoration: none;
-  padding: 1px 15px;
+  padding: 1px 10px;
 }
 
 .modules a {
@@ -349,7 +349,7 @@ hr {
   background-color: white;
   border-color: #a0d0fb;
   border: solid 1px;
-  padding: 0px 14px;
+  padding: 0px 9px;
   border-color: #a0d0fb;
 }
 

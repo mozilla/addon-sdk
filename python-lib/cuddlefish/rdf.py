@@ -164,7 +164,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("17.0a1"))
+        elem.appendChild(dom.createTextNode("19.0a1"))
         ta_desc.appendChild(elem)
 
     if target_cfg.get("homepage"):
@@ -176,7 +176,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
 
 if __name__ == "__main__":
     print "Running smoke test."
-    root = os.path.join(os.path.dirname(__file__), 'app-extension')
+    root = os.path.join(os.path.dirname(__file__), '../../app-extension')
     manifest = gen_manifest(root, {'name': 'test extension'},
                             'fakeid', 'http://foo.com/update.rdf')
     update = RDFUpdate()

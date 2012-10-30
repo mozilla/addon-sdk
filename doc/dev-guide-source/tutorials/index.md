@@ -93,12 +93,12 @@ on the left for the full list of APIs.
     <td>
       <h4><a href="dev-guide/tutorials/open-a-web-page.html">Open a web page</a></h4>
       Open a web page in a new browser tab or window using the
-      <code><a href="packages/addon-kit/tabs.html">tabs</a></code> module, and access its content.
+      <code><a href="modules/sdk/tabs.html">tabs</a></code> module, and access its content.
     </td>
 
     <td>
       <h4><a href="dev-guide/tutorials/list-open-tabs.html">Get the list of open tabs</a></h4>
-      Use the <code><a href="packages/addon-kit/tabs.html">tabs</a></code>
+      Use the <code><a href="modules/sdk/tabs.html">tabs</a></code>
       module to iterate through the currently open tabs, and access their content.
     </td>
 
@@ -107,7 +107,7 @@ on the left for the full list of APIs.
   <tr>
     <td>
       <h4><a href="dev-guide/tutorials/listen-for-page-load.html">Listen for page load</a></h4>
-      Use the <code><a href="packages/addon-kit/tabs.html">tabs</a></code>
+      Use the <code><a href="modules/sdk/tabs.html">tabs</a></code>
       module to get notified when new web pages are loaded, and access their content.
     </td>
 
