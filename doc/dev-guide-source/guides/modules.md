@@ -22,7 +22,7 @@ the SDK is part of a CommonJS module, including:
 
 * [SDK modules](dev-guide/guides/modules.html#SDK Modules):
 the JavaScript modules which the SDK provides, such as
-[`panel`](modules/sdk/panel.html) and [page-mod](modules/sdk/page-mod.html)
+[`panel`](modules/sdk/panel.html) and [page-mod](modules/sdk/page-mod.html).
 * [Local modules](dev-guide/guides/modules.html#Local Modules):
 each of the JavaScript files under your add-ons "lib" directory.
 * [External modules](dev-guide/guides/modules.html#External Modules):
@@ -148,11 +148,13 @@ For example, the following add-on contains an additional module directly under
 
 To import modules into `main`:
 
+    // main.js code
     var dialog = require("./password-dialog");
     var hash = require("./secrets/hash");
 
 To import modules into `password-store`:
 
+    // password-store.js code
     var dialog = require("../password-dialog");
     var hash = require("../secrets/hash");
 
@@ -172,7 +174,7 @@ module explicitly using a relative path.
 ## External Modules ##
 
 As well as using the SDK's modules and writing your own, you
-can use modules that have been developed outside the SDK, but made
+can use modules that have been developed outside the SDK and made
 available to other add-on authors.
 
 There's a list of these
@@ -186,7 +188,7 @@ copy them somewhere under your add-ons "lib" directory and
 reference them with a path relative to the importing module.
 
 For example, this add-on places external modules in a "dependencies"
-directory.
+directory:
 
 <ul class="tree">
   <li>my-addon
@@ -208,6 +210,7 @@ directory.
 It can then load them in the same way it would load a local module.
 For example, to load from `main`:
 
+    // main.js code
     var geo = require("/.dependencies/geolocation");
 
 <div style="clear:both"></div>

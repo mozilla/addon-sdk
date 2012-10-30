@@ -386,6 +386,9 @@ table.catalog>tbody tr:last-child td {
 
 ul.tree {
   float: left;
+  border: 1px solid lightgray;
+  padding: 1em 0em;
+  margin-right: 1em;
 }
 
 ul.tree li {
