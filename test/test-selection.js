@@ -16,7 +16,7 @@ const { defer } = require("sdk/core/promise");
 const tabs = require("sdk/tabs");
 const { getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
-const { Loader } = require('sdk/test/loader');
+const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
 
 // General purpose utility functions
@@ -320,6 +320,9 @@ exports["test Set Text in Multiple DOM Selection"] = function(assert, done) {
       selectionCount++;
     }
 
+    assert.equal(selectionCount, 2,
+      "Two iterable selections");
+
   }).then(close).then(loader.unload).then(done);
 };
 
@@ -352,6 +355,9 @@ exports["test Set HTML in Multiple DOM Selection"] = function(assert, done) {
 
       selectionCount++;
     }
+
+    assert.equal(selectionCount, 2,
+      "Two iterable selections");
 
   }).then(close).then(loader.unload).then(done);
 };
@@ -386,6 +392,77 @@ exports["test Set HTML as text in Multiple DOM Selection"] = function(assert, do
 
       selectionCount++;
     }
+
+    assert.equal(selectionCount, 2,
+      "Two iterable selections");
+
+  }).then(close).then(loader.unload).then(done);
+};
+
+exports["test Set Text in Textarea Selection"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  open(URL).then(selectTextarea).then(function() {
+
+    let text = "bar";
+
+    selection.text = text;
+
+    assert.equal(selection.text, text,
+      "set selection.text with Textarea Selection works.");
+
+    assert.strictEqual(selection.html, null,
+      "selection.html with Textarea Selection works.");
+
+    let selectionCount = 0;
+    for each (let sel in selection) {
+      selectionCount++;
+
+      assert.equal(sel.text, text,
+        "iterable selection.text with Textarea Selection works.");
+
+      assert.strictEqual(sel.html, null,
+        "iterable selection.html with Textarea Selection works.");
+    }
+
+    assert.equal(selectionCount, 1,
+      "One iterable selection");
+
+  }).then(close).then(loader.unload).then(done);
+};
+
+exports["test Set HTML in Textarea Selection"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  open(URL).then(selectTextarea).then(function() {
+
+    let html = "<span>b<b>a</b>r</span>";
+
+    // Textarea can't have HTML so set `html` property is equals to set `text`
+    // property
+    selection.html = html;
+
+    assert.equal(selection.text, html,
+      "set selection.text with Textarea Selection works.");
+
+    assert.strictEqual(selection.html, null,
+      "selection.html with Textarea Selection works.");
+
+    let selectionCount = 0;
+    for each (let sel in selection) {
+      selectionCount++;
+
+      assert.equal(sel.text, html,
+        "iterable selection.text with Textarea Selection works.");
+
+      assert.strictEqual(sel.html, null,
+        "iterable selection.html with Textarea Selection works.");
+    }
+
+    assert.equal(selectionCount, 1,
+      "One iterable selection");
 
   }).then(close).then(loader.unload).then(done);
 };
