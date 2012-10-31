@@ -6,6 +6,7 @@ const observers = require("sdk/deprecated/observer-service");
 const { Cc, Ci } = require("chrome");
 const { Loader } = require("sdk/test/loader");
 const { PlainTextConsole } = require("sdk/console/plain-text");
+const {uuid} = require('sdk/util/uuid');
 
 exports.testUnloadAndErrorLogging = function(test) {
   var prints = [];
@@ -77,4 +78,29 @@ exports.testObserverService = function(test) {
   service.notifyObservers(null, "blarg", "some data");
   test.assertEqual(timesCalled, 2,
                    "observer-service.remove() should work");
+};
+
+exports.testObserverWildcard = function(test) {
+  let uu = function() uuid().number.slice(1,-1);
+
+  var counter = {};
+  let uuids = [0,1,2,3,4,5].map(uu);
+
+  var cb = function(subject, data, topic) {
+    if (counter[topic] === undefined) {counter[topic] = 0};
+    counter[topic] ++;
+  };
+
+  observers.add("*", cb);
+
+  uuids.forEach(function(id){
+    observers.notify(id, {},{});
+  })
+
+  uuids.forEach(function(id){
+    test.assertEqual(counter[id], 1, "wildcard counter detects correct topic, not '*' ")
+  });
+
+  observers.remove("*", cb);
+
 };
