@@ -231,7 +231,7 @@ To launch the application, enter the following command:
   <td>
     The <code>cfx run</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
@@ -292,10 +292,14 @@ modules called "test_myCode.js" or "testMyCode.js".</span>
 
 Called with no options this command will look for a file called `package.json`
 in the current directory. If `package.json` exists, `cfx` will load the
-corresponding add-on and run its tests by loading from the `tests` directory
-any modules that start with the word `test-` and calling each of their exported
-functions, passing them a [test runner](packages/api-utils/unit-test.html)
-object as an argument.
+corresponding add-on, load from the `tests` directory
+any modules that start with the word `test-` and run the unit tests
+they contain.
+
+See the
+[tutorial on unit testing](dev-guide/tutorials/unit-testing.html) and the
+[reference documentation for the `assert` module](modules/sdk/test/assert.html)
+for details.
 
 #### Supported Options #####
 
@@ -355,11 +359,11 @@ times.
 
 <tr>
   <td>
-    <code>-f FILTER, --filter=FILTER</code>
+    <code>-f FILENAME[:TESTNAME], --filter=FILENAME[:TESTNAME]</code>
   </td>
   <td>
-    Run only those test modules whose names match the regexp supplied in
-    FILTER.
+    Only run tests whose filenames match FILENAME and
+    optionally match TESTNAME, both regexps (test, testall, testex, testpkgs)
     <br>
     For example: if you specify <code>--filter data</code>, then
     <code>cfx</code> will only run tests in those modules whose name contain
@@ -677,7 +681,7 @@ add-on whenever it is run.
   <td>
     The <code>cfx xpi</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
@@ -802,7 +806,7 @@ one run of `cfx` will not, by default, be available in the next run.
 
 This includes, for example, any extra add-ons you installed, or your
 history, or any data stored using the
-[simple-storage](packages/addon-kit/simple-storage.html) API.
+[simple-storage](modules/sdk/simple-storage.html) API.
 
 To make `cfx` use a specific profile, pass the `--profiledir` option,
 specifying the path to the profile you wish to use.
@@ -812,7 +816,7 @@ will create a profile there for you. So you just have to make up
 a path and name the first time, and keep using it:
 
 <pre>
-cfx run --profile-dir="~/addon-dev/profiles/boogaloo"
+cfx run --profiledir="~/addon-dev/profiles/boogaloo"
 </pre>
 
 The path must contain at least one "/" (although you may specify

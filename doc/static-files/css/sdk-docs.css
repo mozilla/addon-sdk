@@ -14,6 +14,13 @@ pre {
   overflow: auto;
 }
 
+.quote {
+  color: black;
+  background-color: whitesmoke;
+  padding: 10px;
+  overflow: auto;
+}
+
 h1 {
   color: black;
 }
@@ -97,6 +104,16 @@ hr {
 .api_reference  h5, .api_reference  h6 {
   overflow: auto;
  }
+
+#cse-search-box {
+  float: right;
+  margin: 1em;
+  display:inline;
+}
+
+#cse-search-results {
+  margin: 1em;
+}
 
 #toc {
   width: 180px;
@@ -302,7 +319,8 @@ hr {
   border-style: solid;
   border-top-width: 1px;
   border-color: #a0d0fb;
-  margin-left: 0em;
+  margin-left: 0;
+  padding-bottom: 0;
 }
 
 #sidebar ul li:first-child {  
@@ -320,7 +338,7 @@ hr {
 .sidebar-subsection-contents a {
   display: block;
   text-decoration: none;
-  padding: 1px 15px;
+  padding: 1px 10px;
 }
 
 .modules a {
@@ -331,7 +349,7 @@ hr {
   background-color: white;
   border-color: #a0d0fb;
   border: solid 1px;
-  padding: 0px 14px;
+  padding: 0px 9px;
   border-color: #a0d0fb;
 }
 

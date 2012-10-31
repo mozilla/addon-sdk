@@ -11,6 +11,11 @@
   vertical-align: baseline;
 }
 
+p, ul, ol, dl, address, table, pre, form, fieldset {
+  font-size: 1em;
+  margin-bottom: 1.5em;
+}
+
 html {
   background-color: #fff;
   background-image: url(../media/bg-header.png);
@@ -131,11 +136,13 @@ h5, h6 {
 
 li {
   margin-left: 2em;
+  padding-bottom: 0.5em;
 }
 
 ol {
   list-style-type: decimal;
   margin-left: 2em;
+  margin-bottom: 0;
 }
 
 dt {
@@ -145,11 +152,6 @@ dt {
 
 ul ul, ol ol, ol ul, ul ol {
   margin-bottom: 0;
-}
-
-p, ul, ol, dl, address, table, pre, form, fieldset {
-  font-size: 1em;
-  margin-bottom: 1.5em;
 }
 
 th, td {

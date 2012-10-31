@@ -21,7 +21,7 @@ The module-search logic needs to provide features like:
 * support for "packages": groups of related modules that are bundled together
   for easy distribution
 * easy and concise use of "stdlib" modules like `panel` and `page-mod` in
-  `packages/addon-kit/lib`, perhaps searching multiple packages for a module
+  `FIXMElib`, perhaps searching multiple packages for a module
   with the right name
 * "absolute" imports: minimize searching (and ambiguity) by specifying
   exactly which package contains the module of interest

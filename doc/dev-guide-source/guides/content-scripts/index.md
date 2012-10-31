@@ -10,19 +10,19 @@ content of web pages or be notified when the user clicks a link.
 
 The SDK provides several core modules to support this:
 
-**[panel](packages/addon-kit/panel.html)**<br>
+**[panel](modules/sdk/panel.html)**<br>
 Create a dialog that can host web content.
 
-**[page-worker](packages/addon-kit/page-worker.html)**<br>
+**[page-worker](modules/sdk/page-worker.html)**<br>
 Retrieve a page and access its content, without displaying it to the user.
 
-**[page-mod](packages/addon-kit/page-mod.html)**<br>
+**[page-mod](modules/sdk/page-mod.html)**<br>
 Execute scripts in the context of selected web pages.
 
-**[widget](packages/addon-kit/widget.html)**<br>
+**[widget](modules/sdk/widget.html)**<br>
 Host an add-on's user interface, including web content.
 
-**[context-menu](packages/addon-kit/context-menu.html)**<br>
+**[context-menu](modules/sdk/context-menu.html)**<br>
 Add items to the browser's context menu.
 
 Firefox is moving towards a model in which it uses separate
@@ -41,8 +41,8 @@ _content scripts_.
 A single add-on may use multiple content scripts, and content scripts loaded
 into the same context can interact directly with each other as well as with
 the web content itself. See the chapter on
-<a href="dev-guide/guides/content-scripts/access.html">
-content script access</a>.
+<a href="dev-guide/guides/content-scripts/communicating-with-other-scripts.html">
+communicating with other scripts</a>.
 
 The add-on script and content script can't directly access each other's state.
 Instead, you can define your own events which each side can emit, and the
@@ -57,7 +57,7 @@ relationships. The gray fill represents code written by the add-on developer.
 alt="Content script events">
 
 This might sound complicated but it doesn't need to be. The following add-on
-uses the [page-mod](packages/addon-kit/page-mod.html) module to replace the
+uses the [page-mod](modules/sdk/page-mod.html) module to replace the
 content of any web page in the `.co.uk` domain by executing a content script
 in the context of that page:
 
@@ -78,9 +78,11 @@ The next few chapters explain content scripts in detail:
 * [Loading Content Scripts](dev-guide/guides/content-scripts/loading.html):
 how to attach content scripts to web pages, and how to control the point at
 which they are executed
-* [Content Script Access](dev-guide/guides/content-scripts/access.html):
-detail about the access content scripts get to the DOM, to other content scripts,
-and to scripts loaded by the page itself
+* [Accessing the DOM](dev-guide/guides/content-scripts/accessing-the-dom.html):
+detail about the access content scripts get to the DOM
+* [Communicating With Other Scripts](dev-guide/guides/content-scripts/communicating-with-other-scripts.html):
+detail about how content scripts can communicate with "main.js", with other
+content scripts, and with scripts loaded by the web page itself
 * [Communicating Using <code>port</code>](dev-guide/guides/content-scripts/using-port.html):
 how to communicate between your add-on and its content scripts using the
 <code>port</code> object
