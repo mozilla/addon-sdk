@@ -4,9 +4,9 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const AddonInstaller = require("api-utils/addon/installer");
-const file = require("api-utils/file");
-const system = require("api-utils/system");
+const AddonInstaller = require("sdk/addon/installer");
+const file = require("sdk/io/file");
+const system = require("sdk/system");
 const xpi = require("./xpi");
 
 function getOptions() {

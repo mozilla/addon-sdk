@@ -4,13 +4,13 @@
 "use strict";
 
 const { Cc, Ci, Cu } = require("chrome");
-let { setTimeout } = require("timer");
-const AddonInstall = require("api-utils/addon/installer");
-const xpi = require("xpi");
-const self = require("self");
-const { getChromeURIContent } = require("api-utils/utils/data");
-const tmpFile = require("test-harness/tmp-file");
-const file = require("api-utils/file");
+const { setTimeout } = require("sdk/timers");
+const AddonInstall = require("sdk/addon/installer");
+const xpi = require("./xpi");
+const self = require("sdk/self");
+const { getChromeURIContent } = require("sdk/io/data");
+const tmpFile = require("sdk/test/tmp-file");
+const file = require("sdk/io/file");
 
 const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
 const stringConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
