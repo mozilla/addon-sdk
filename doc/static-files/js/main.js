@@ -4,12 +4,6 @@
 
 function run(jQuery) {
 
-  function showThirdPartyModules() {
-    if ($("#third-party-package-summaries").html() != "") {
-      $("#third-party-packages-subsection").show();
-    }
-  }
-
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
@@ -94,11 +88,18 @@ function run(jQuery) {
     }
   }
 
-  showThirdPartyModules();
+  function refreshSearchBox() {
+    var searchBox = document.getElementById("search-box");
+    searchBox.value = "";
+    searchBox.focus();
+    searchBox.blur();
+  }
+
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateAnchors();
   generateToC();
+  refreshSearchBox();
   jumpToAnchor();
 }
 

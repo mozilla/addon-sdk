@@ -21,6 +21,10 @@ header {
   z-index: 1;
 }
 
+#global-header .menu form {
+  margin-top: 0.5em;
+}
+
 #global-header .menu {
   font-size: 12px;
   position: absolute;

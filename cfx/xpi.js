@@ -9,7 +9,7 @@ const { ZipWriter } = require("./zip");
 const preferences = require("./preferences");
 const { InternalCfxError, InvalidArgument } = require("./exception");
 
-const FILE_SEPARATOR = require("api-utils/runtime").OS === "WINNT" ? "\\" : "/";
+const FILE_SEPARATOR = require("sdk/system/runtime").OS === "WINNT" ? "\\" : "/";
 
 // Utility function which allow to concatenate file path fragments
 // This function accept n-th arguments. It basically join given string with
