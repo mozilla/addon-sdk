@@ -443,7 +443,9 @@ class ManifestBuilder:
                     raise BAD("no actual modulename")
                 if bits[0] == "..":
                     if not them:
+                      if from_module.section is not "tests":
                         raise BAD("too many ..")
+                      them.append("..")
                     them.pop()
                 bits.pop(0)
             bits = them+bits
