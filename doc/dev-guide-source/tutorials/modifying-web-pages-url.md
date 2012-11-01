@@ -13,7 +13,7 @@ and learned the
 
 To modify any pages that match a particular pattern
 (for example, "http://example.org/") as they are loaded, use the
-[`page-mod`](packages/addon-kit/page-mod.html) module.
+[`page-mod`](modules/sdk/page-mod.html) module.
 
 To create a page-mod you need to specify two things:
 
@@ -52,7 +52,7 @@ alt="ietf.org eaten by page-mod" />
 ## Specifying the Match Pattern ##
 
 The match pattern uses the
-[`match-pattern`](packages/api-utils/match-pattern.html)
+[`match-pattern`](modules/sdk/page-mod/match-pattern.html)
 syntax. You can pass a single match-pattern string, or an array.
 
 ## Keeping the Content Script in a Separate File ##
@@ -214,14 +214,29 @@ You can't currently use relative URLs in style sheets loaded with
 by the relative URLs will not be found.
 
 To learn more about this, and read about a workaround, see the
-[relevant section in the page-mod API documentation](packages/addon-kit/page-mod.html#Working_with_Relative_URLs_in_CSS_Rules).
+[relevant section in the page-mod API documentation](modules/sdk/page-mod.html#Working_with_Relative_URLs_in_CSS_Rules).
 
 </div>
 
 ## Learning More ##
 
-To learn more about page-mod, see its
-[API reference page](packages/addon-kit/page-mod.html).
+To learn more about `page-mod`, see its
+[API reference page](modules/sdk/page-mod.html).
+In particular, the `PageMod` constructor takes several additional options
+to control its behavior:
 
-To learn more about content scripts, see the
+* By default, content scripts are not attached to any tabs that are
+already open when the page-mod is created, and are attached to iframes
+as well as top-level documents. To control this behavior use the `attachTo`
+option.
+
+* Define read-only values accessible to content scripts using the
+`contentScriptOptions` option.
+
+* By default, content scripts are attached after all the content
+   (DOM, JS, CSS, images) for the page has been loaded, at the time the
+   [window.onload event](https://developer.mozilla.org/en/DOM/window.onload)
+   fires. To control this behavior use the `contentScriptWhen` option.
+
+To learn more about content scripts in general, see the
 [content scripts guide](dev-guide/guides/content-scripts/index.html).

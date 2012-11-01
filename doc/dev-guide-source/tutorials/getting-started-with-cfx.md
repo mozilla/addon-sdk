@@ -101,9 +101,9 @@ logo. Click the icon, and a new tab will open with
 [http://www.mozilla.org/](http://www.mozilla.org/) loaded into it.
 
 This add-on uses two SDK modules: the
-[`widget`](packages/addon-kit/widget.html) module, which enables you
+[`widget`](modules/sdk/widget.html) module, which enables you
 to add buttons to the browser, and the
-[`tabs`](packages/addon-kit/tabs.html) module, which enables you to
+[`tabs`](modules/sdk/tabs.html) module, which enables you to
 perform basic operations with tabs. In this case, we've created a widget
 whose icon is the Mozilla favicon, and added a click handler that loads
 the Mozilla home page in a new tab.
@@ -111,8 +111,8 @@ the Mozilla home page in a new tab.
 Try editing this file. For example, we could change the icon displayed
 and the URL that gets loaded:
 
-    const widgets = require("widget");
-    const tabs = require("tabs");
+    var widgets = require("widget");
+    var tabs = require("tabs");
 
     var widget = widgets.Widget({
       id: "jquery-link",

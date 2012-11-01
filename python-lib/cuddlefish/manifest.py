@@ -8,6 +8,11 @@ import simplejson as json
 SEP = os.path.sep
 from cuddlefish.util import filter_filenames, filter_dirnames
 
+# Load new layout mapping hashtable
+path = os.path.join(os.environ.get('CUDDLEFISH_ROOT'), "mapping.json")
+data = open(path, 'r').read()
+NEW_LAYOUT_MAPPING = json.loads(data)
+
 def js_zipname(packagename, modulename):
     return "%s-lib/%s.js" % (packagename, modulename)
 def docs_zipname(packagename, modulename):
@@ -185,7 +190,7 @@ class ManifestBuilder:
             self.top_path = top_me.get_path()
             self.datamaps[self.target_cfg.name] = DataMap(self.target_cfg)
         if scan_tests:
-            mi = self._find_module_in_package("test-harness", "lib", "run-tests", [])
+            mi = self._find_module_in_package("addon-sdk", "lib", "sdk/test/runner", [])
             self.process_module(mi)
             # also scan all test files in all packages that we use. By making
             # a copy of self.used_packagenames first, we refrain from
@@ -213,8 +218,8 @@ class ManifestBuilder:
                         test_modules.append( (testname, tme) )
             # also add it as an artificial dependency of unit-test-finder, so
             # the runtime dynamic load can work.
-            test_finder = self.get_manifest_entry("api-utils", "lib",
-                                                  "unit-test-finder")
+            test_finder = self.get_manifest_entry("addon-sdk", "lib",
+                                                  "sdk/deprecated/unit-test-finder")
             for (testname,tme) in test_modules:
                 test_finder.add_requirement(testname, tme)
                 # finally, tell the runtime about it, so they won't have to
@@ -427,12 +432,12 @@ class ManifestBuilder:
         modulename = from_module.name
 
         #print " %s require(%s))" % (from_module, reqname)
-        bits = reqname.split("/")
 
         if reqname.startswith("./") or reqname.startswith("../"):
             # 1: they want something relative to themselves, always from
             # their own package
             them = modulename.split("/")[:-1]
+            bits = reqname.split("/")
             while bits[0] in (".", ".."):
                 if not bits:
                     raise BAD("no actual modulename")
@@ -451,8 +456,21 @@ class ManifestBuilder:
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
 
+        # Search for a module in new layout.
+        # First normalize require argument in order to easily find a mapping
+        normalized = reqname
+        if normalized.endswith(".js"):
+            normalized = normalized[:-len(".js")]
+        if normalized.startswith("addon-kit/"):
+            normalized = normalized[len("addon-kit/"):]
+        if normalized.startswith("api-utils/"):
+            normalized = normalized[len("api-utils/"):]
+        if normalized in NEW_LAYOUT_MAPPING:
+          reqname = NEW_LAYOUT_MAPPING[normalized]
+
         if "/" in reqname:
             # 2: PKG/MOD: find PKG, look inside for MOD
+            bits = reqname.split("/")
             lookfor_pkg = bits[0]
             lookfor_mod = "/".join(bits[1:])
             mi = self._get_module_from_package(lookfor_pkg,
@@ -694,16 +712,10 @@ line somewhat like the following:
 
   const {%(needs)s} = require("chrome");
 
-Then you can use 'Components' as well as any shortcuts to its properties
-that you import from the 'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and
-'Cu' for the 'classes', 'interfaces', 'manager', 'results', and 'utils'
-properties, respectively).
-
-(Note: once bug 636145 is fixed, to access 'Components' directly you'll
-need to retrieve it from the 'chrome' module by adding it to the list of
-symbols you import from the module. To avoid having to make this change
-in the future, replace all occurrences of 'Components' in your code with
-the equivalent shortcuts now.)
+Then you can use any shortcuts to its properties that you import from the
+'chrome' module ('Cc', 'Ci', 'Cm', 'Cr', and 'Cu' for the 'classes',
+'interfaces', 'manager', 'results', and 'utils' properties, respectively. And
+`components` for `Components` object itself).
 """ % { "fn": fn, "needs": ",".join(sorted(old_chrome)),
         "lines": "\n".join([" %3d: %s" % (lineno,line)
                             for (lineno, line) in old_chrome_lines]),
@@ -716,10 +728,6 @@ def scan_module(fn, lines, stderr=sys.stderr):
     requires, locations = scan_requirements_with_grep(fn, lines)
     if filename == "cuddlefish.js":
         # this is the loader: don't scan for chrome
-        problems = False
-    elif "chrome" in requires:
-        # if they declare require("chrome"), we tolerate the use of
-        # Components (see bug 663541 for rationale)
         problems = False
     else:
         problems = scan_for_bad_chrome(fn, lines, stderr)

@@ -14,6 +14,8 @@ from cuddlefish import xpi, packaging, manifest, buildJID
 from cuddlefish.tests import test_packaging
 from test_linker import up
 
+import xml.etree.ElementTree as ElementTree
+
 xpi_template_path = os.path.join(test_packaging.static_files_path,
                                  'xpi-template')
 
@@ -46,15 +48,49 @@ class PrefsTests(unittest.TestCase):
         self.makexpi('simple-prefs')
         self.failUnless('options.xul' in self.xpi.namelist())
         optsxul = self.xpi.read('options.xul').decode("utf-8")
-        self.failUnless('pref="extensions.jid1-fZHqN9JfrDBa8A@jetpack.test"'
-                        in optsxul, optsxul)
-        self.failUnless('type="bool"' in optsxul, optsxul)
-        self.failUnless(u'title="t\u00EBst"' in optsxul, repr(optsxul))
         self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
                              "jid1-fZHqN9JfrDBa8A@jetpack")
+
+        root = ElementTree.XML(optsxul.encode('utf-8'))
+
+        xulNamespacePrefix = \
+            "{http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul}"
+        
+        settings = root.findall(xulNamespacePrefix + 'setting')
+
+        def assertPref(setting, name, prefType, title):
+            packageName = 'jid1-fZHqN9JfrDBa8A@jetpack'
+            self.failUnlessEqual(setting.get('data-jetpack-id'), packageName)
+            self.failUnlessEqual(setting.get('pref'),
+                                 'extensions.' + packageName + '.' + name)
+            self.failUnlessEqual(setting.get('pref-name'), name)
+            self.failUnlessEqual(setting.get('type'), prefType)
+            self.failUnlessEqual(setting.get('title'), title)
+
+        assertPref(settings[0], 'test', 'bool', u't\u00EBst')
+        assertPref(settings[1], 'test2', 'string', u't\u00EBst')
+        assertPref(settings[2], 'test3', 'menulist', '"><test')
+        assertPref(settings[3], 'test4', 'radio', u't\u00EBst')
+
+        menuItems = settings[2].findall(
+            '%(0)smenulist/%(0)smenupopup/%(0)smenuitem' % { "0": xulNamespacePrefix })
+        radios = settings[3].findall(
+            '%(0)sradiogroup/%(0)sradio' % { "0": xulNamespacePrefix })
+
+        def assertOption(option, value, label):
+            self.failUnlessEqual(option.get('value'), value)
+            self.failUnlessEqual(option.get('label'), label)
+        
+        assertOption(menuItems[0], "0", "label1")
+        assertOption(menuItems[1], "1", "label2")
+        assertOption(radios[0], "red", "rouge")
+        assertOption(radios[1], "blue", "bleu")
+
         prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
         exp = [u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test", false);',
                u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test2", "\u00FCnic\u00F8d\u00E9");',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test3", "1");',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test4", "red");',
                ]
         self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
 
@@ -174,8 +210,8 @@ class SmallXPI(unittest.TestCase):
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        api_utils_dir = pkg_cfg.packages["api-utils"].lib[0]
+                                              [target_cfg.name, "addon-sdk"])
+        addon_sdk_dir = pkg_cfg.packages["addon-sdk"].lib[0]
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         used_files = list(m.get_used_files())
         here = up(os.path.abspath(__file__))
@@ -192,10 +228,18 @@ class SmallXPI(unittest.TestCase):
                      ("three-deps", "three-c", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "sub", "foo.js")
                      ]]
-        expected.append(os.path.join(api_utils_dir, "self.js"))
+
+        add_addon_sdk= lambda path: os.path.join(addon_sdk_dir, path)
+        expected.extend([add_addon_sdk(module) for module in [
+            os.path.join("sdk", "self.js"),
+            os.path.join("sdk", "core", "promise.js"),
+            os.path.join("sdk", "net", "url.js"),
+            os.path.join("sdk", "util", "object.js")
+            ]])
 
         missing = set(expected) - set(used_files)
         extra = set(used_files) - set(expected)
+
         self.failUnlessEqual(list(missing), [])
         self.failUnlessEqual(list(extra), [])
         used_deps = m.get_used_packages()
@@ -225,10 +269,17 @@ class SmallXPI(unittest.TestCase):
                     "install.rdf",
                     "defaults/preferences/prefs.js",
                     "resources/",
-                    "resources/api-utils/",
-                    "resources/api-utils/data/",
-                    "resources/api-utils/lib/",
-                    "resources/api-utils/lib/self.js",
+                    "resources/addon-sdk/",
+                    "resources/addon-sdk/data/",
+                    "resources/addon-sdk/lib/",
+                    "resources/addon-sdk/lib/sdk/",
+                    "resources/addon-sdk/lib/sdk/self.js",
+                    "resources/addon-sdk/lib/sdk/core/",
+                    "resources/addon-sdk/lib/sdk/util/",
+                    "resources/addon-sdk/lib/sdk/net/",
+                    "resources/addon-sdk/lib/sdk/core/promise.js",
+                    "resources/addon-sdk/lib/sdk/util/object.js",
+                    "resources/addon-sdk/lib/sdk/net/url.js",
                     "resources/three/",
                     "resources/three/lib/",
                     "resources/three/lib/main.js",
@@ -288,7 +339,7 @@ class SmallXPI(unittest.TestCase):
                                          packagepath=package_path)
 
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
+                                              [target_cfg.name, "addon-sdk"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True)
         self.failUnlessEqual(sorted(m.get_all_test_modules()),
                              sorted(["test-one", "test-two"]))
@@ -316,10 +367,10 @@ class SmallXPI(unittest.TestCase):
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        self.failUnless("resources/api-utils/lib/unit-test.js" in names, names)
-        self.failUnless("resources/api-utils/lib/unit-test-finder.js" in names, names)
-        self.failUnless("resources/test-harness/lib/harness.js" in names, names)
-        self.failUnless("resources/test-harness/lib/run-tests.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
         # all files are copied into the XPI, even the things that don't look
         # like tests.
         self.failUnless("resources/three/tests/test-one.js" in names, names)
@@ -332,7 +383,7 @@ class SmallXPI(unittest.TestCase):
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
+                                              [target_cfg.name, "addon-sdk"])
         FILTER = ".*one.*"
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True,
                                     test_filter_re=FILTER)
@@ -362,10 +413,10 @@ class SmallXPI(unittest.TestCase):
                       limit_to=None)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        self.failUnless("resources/api-utils/lib/unit-test.js" in names, names)
-        self.failUnless("resources/api-utils/lib/unit-test-finder.js" in names, names)
-        self.failUnless("resources/test-harness/lib/harness.js" in names, names)
-        self.failUnless("resources/test-harness/lib/run-tests.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
         # get_all_test_modules() respects the filter. But all files are still
         # copied into the XPI.
         self.failUnless("resources/three/tests/test-one.js" in names, names)
