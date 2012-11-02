@@ -15,7 +15,7 @@ exports.testHas = function(test) {
   test.assertEqual(array.has(testAry, 2), true);
   test.assertEqual(array.has(testAry, 3), true);
   test.assertEqual(array.has(testAry, 4), false);
-  test.assertEqual(array.has(testAry, "1"), false);
+  test.assertEqual(array.has(testAry, '1'), false);
 };
 exports.testHasAny = function(test) {
   var testAry = [1, 2, 3];
@@ -33,7 +33,7 @@ exports.testHasAny = function(test) {
   test.assertEqual(array.hasAny(testAry, [3]), true);
   test.assertEqual(array.hasAny(testAry, [4]), false);
   test.assertEqual(array.hasAny(testAry), false);
-  test.assertEqual(array.hasAny(testAry, "1"), false);
+  test.assertEqual(array.hasAny(testAry, '1'), false);
 };
 
 exports.testAdd = function(test) {
