@@ -12,7 +12,7 @@ const DOMParser = Cc["@mozilla.org/xmlextras/domparser;1"].
 const { InvalidArgument } = require("./exception");
 
 const VALID_PREF_TYPES = ['bool', 'boolint', 'integer', 'string', 'color',
-                          'file', 'directory', 'control'];
+                          'file', 'directory', 'control', 'menulist', 'radio'];
 
 // Validate preferences from `preferences`'s package.json attribute
 function validate(options) {
@@ -29,6 +29,20 @@ function validate(options) {
     // Make sure the 'control' type has a 'label'
     if (pref.type == "control" && !("label" in pref))
       throw new InvalidArgument("The 'control' inline pref type requires a 'label'");
+
+    if (pref.type == "menulist" || pref.type == "radio") {
+      // Make sure 'menulist' and 'radio' types have a 'options'
+      if (!("options" in pref))
+        throw new InvalidArgument("The 'menulist' and the 'radio' inline pref" +
+                                  " types requires a 'options'");
+      // Make sure each option has a 'value' and a 'label'
+      pref.options.forEach(function (item) {
+        if (!("value" in item))
+          throw new InvalidArgument("'options' requires a 'value'");
+        if (!("label" in item))
+          throw new InvalidArgument("'options' requires a 'label'");
+      });
+    }
 
     // TODO: Bug 772126: Check that pref["type"] matches default value type
   }
@@ -53,6 +67,8 @@ function generateOptionsXul(options, jetpackId) {
   for (let key in options) {
     let pref = options[key];
     let setting = doc.createElement("setting");
+    setting.setAttribute("pref-name", pref.name);
+    setting.setAttribute("data-jetpack-id", jetpackId);
     setting.setAttribute("pref", "extensions." + jetpackId + "." + pref.name);
     setting.setAttribute("title", pref.title);
     setting.setAttribute("type", pref.type);
@@ -62,6 +78,8 @@ function generateOptionsXul(options, jetpackId) {
 
     if (pref.type == "control") {
       button = doc.createElement("button");
+      button.setAttribute("pref-name", pref.name);
+      button.setAttribute("data-jetpack-id", jetpackId);
       button.setAttribute("label", pref.label);
       button.setAttribute("oncommand", "Services.obs.notifyObservers(null, '" +
                                         jetpackId + "-cmdPressed', '" +
@@ -71,6 +89,28 @@ function generateOptionsXul(options, jetpackId) {
     else if (pref.type == "boolint") {
       setting.setAttribute("on", pref.on);
       setting.setAttribute("off", pref.off);
+    }
+    else if (pref.type == "menulist") {
+      let menulist = doc.createElement("menulist");
+      let menupopup = doc.createElement("menupopup");
+      pref.options.forEach(function (item) {
+        let menuitem = doc.createElement("menuitem");
+        menuitem.setAttribute("value", item.value);
+        menuitem.setAttribute("label", item.label);
+        menupopup.appendChild(menuitem);
+      });
+      menulist.appendChild(menupopup);
+      setting.appendChild(menulist);
+    }
+    else if (pref.type == "radio") {
+      let radiogroup = doc.createElement("radiogroup");
+      pref.options.forEach(function (item) {
+        let radio = doc.createElement("radio");
+        radio.setAttribute("value", item.value);
+        radio.setAttribute("label", item.label);
+        radiogroup.appendChild(radio);
+      });
+      setting.appendChild(radiogroup);
     }
 
     xmlString += "  " + DOMSerializer.serializeToString(setting) + "\n";
