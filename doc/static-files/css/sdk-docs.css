@@ -315,12 +315,10 @@ hr {
   padding-bottom: 10px;
 }
 
-#sidebar li {
+#sidebar li.sidebar-subsection {
   border-style: solid;
   border-top-width: 1px;
   border-color: #a0d0fb;
-  margin-left: 0;
-  padding-bottom: 0;
 }
 
 #sidebar ul li:first-child {  
@@ -328,8 +326,9 @@ hr {
 }
 
 #sidebar li {
+  margin-left: 0;
+  padding-bottom: 0;
   list-style-type: none;
-  margin-left: 0em;
 }
 .sidebar-subsection-contents ul{
   margin-bottom: 0em;
@@ -347,10 +346,8 @@ hr {
 
 .sidebar-subsection-contents a:hover {
   background-color: white;
-  border-color: #a0d0fb;
-  border: solid 1px;
+  border: solid 1px #a0d0fb;
   padding: 0px 9px;
-  border-color: #a0d0fb;
 }
 
 
@@ -418,4 +415,13 @@ ul.tree ul li {
 
 ul.tree ul li:last-child {
   background: #fff url("../media/icons/lastnode.png") no-repeat;
+}
+
+ul#module-index {
+  border-color: #a0d0fb;
+  border: solid 1px #a0d0fb;
+  padding: 1em;
+  list-style-type: none;
+  -moz-column-count: 3;
+  -moz-column-gap: 1em;
 }

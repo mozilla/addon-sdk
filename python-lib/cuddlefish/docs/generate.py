@@ -136,6 +136,15 @@ def generate_docs_from_scratch(env_root, version, base_url):
     module_root = os.sep.join([env_root, "doc", "module-source"])
     module_list = get_module_list(module_root)
     [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
+    # generate high-level module index
+    high_level_index_file = os.sep.join([env_root, "doc", "module-source", "high-level-modules.md"])
+    high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
+    write_module_index(env_root, web_docs, high_level_index_file, high_level_module_list, must_rewrite_links)
+
+    # generate low-level module index
+    low_level_index_file = os.sep.join([env_root, "doc", "module-source", "low-level-modules.md"])
+    low_level_module_list = [module_info for module_info in module_list if module_info.level() == "low"]
+    write_module_index(env_root, web_docs, low_level_index_file, low_level_module_list, must_rewrite_links)
 
     # generate dev-guide docs
     devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
@@ -145,6 +154,12 @@ def generate_docs_from_scratch(env_root, version, base_url):
     # make /md/dev-guide/welcome.html the top level index file
     doc_html = web_docs.create_guide_page(os.path.join(docs_dir, 'dev-guide-source', 'index.md'))
     write_file(env_root, doc_html, docs_dir, 'index', False)
+
+def write_module_index(env_root, web_docs, source_file, module_list, must_rewrite_links):
+    doc_html = web_docs.create_module_index(source_file, module_list)
+    base_filename, extension = os.path.splitext(os.path.basename(source_file))
+    destination_path = os.sep.join([env_root, "doc", "modules"])
+    write_file(env_root, doc_html, destination_path, base_filename, must_rewrite_links)
 
 def write_module_doc(env_root, web_docs, module_info, must_rewrite_links):
     doc_html = web_docs.create_module_page(module_info.source_path_and_filename())

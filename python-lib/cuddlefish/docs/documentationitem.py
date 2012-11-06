@@ -71,6 +71,9 @@ def get_module_list(root):
     module_list = []
     for (dirpath, dirnames, filenames) in os.walk(root):
         for filename in filenames:
+            # ignore files in the root
+            if root == dirpath:
+                continue
             if filename.endswith(".md"):
                 module_list.append(ModuleInfo(root, dirpath, filename))
     return module_list

@@ -47,22 +47,31 @@ This is useful if you're iteratively editing a single file, and don't want to wa
 regenerate the complete documentation tree.
 
 ### cfx init ####
-Create a new directory, change into it, and run `cfx init`.
+Create a new directory called "my-addon", change into it, and run `cfx init`.
 
 This command will create an skeleton add-on, as a starting point for your
 own add-on development, with the following file structure:
 
-<pre>
-  README.md
-  package.json
-  data/
-  lib/
-      main.js
-  tests/
-      test-main.js
-  docs/
-      main.md
-</pre>
+<ul class="tree">
+  <li>my-addon
+    <ul>
+    <li>data</li>
+    <li>docs
+      <ul><li>main.md</li></ul>
+    </li>
+    <li>lib
+      <ul><li>main.js</li></ul>
+    </li>
+    <li>package.json</li>
+    <li>README.md</li>
+    <li>tests
+      <ul><li>test-main.js</li></ul>
+    </li>
+    </ul>
+  </li>
+</ul>
+
+<div style="clear:both"></div>
 
 ### cfx run ###
 
