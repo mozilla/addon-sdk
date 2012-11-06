@@ -8,21 +8,20 @@ Modules in this section implement low-level APIs. These
 modules fall roughly into three categories:
 
 * fundamental utilities such as
-[collection](modules/sdk/platform/xpcom.html) and
+[collection](modules/sdk/util/collection.html) and
 [url](modules/sdk/url.html). Many add-ons are likely to
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[events](modules/sdk/deprecated/events.html),
+[events](modules/sdk/events/core.html),
 [worker](modules/sdk/content/worker.html), and
 [api-utils](modules/sdk/deprecated/api-utils.html). You're more
 likely to use these if you are building your own modules that
 implement new APIs, thus extending the SDK itself.
 
 * privileged modules that expose powerful low-level capabilities
-such as [window/utils](modules/sdk/window/utils.html),
-[xhr](modules/sdk/net/xhr.html), and
-[xpcom](modules/sdk/platform/xpcom.html). You can use these
+such as [window/utils](modules/sdk/window/utils.html) and
+[xhr](modules/sdk/net/xhr.html). You can use these
 modules in your add-on if you need to, but should be aware that
 the cost of privileged access is the need to take more elaborate
 security precautions. In many cases these modules have simpler,
