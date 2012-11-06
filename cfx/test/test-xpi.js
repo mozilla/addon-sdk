@@ -8,7 +8,6 @@ const { setTimeout } = require("sdk/timers");
 const AddonInstall = require("sdk/addon/installer");
 const xpi = require("./xpi");
 const self = require("sdk/self");
-const { getChromeURIContent } = require("sdk/io/data");
 const tmpFile = require("sdk/test/tmp-file");
 const file = require("sdk/io/file");
 
@@ -16,6 +15,20 @@ const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm");
 const stringConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
                         createInstance(Ci.nsIScriptableUnicodeConverter);
 stringConverter.charset = "UTF-8";
+const IOService = Cc["@mozilla.org/network/io-service;1"].
+                  getService(Ci.nsIIOService);
+
+function readURISync(chromeURI) {
+  let channel = IOService.newChannel(chromeURI, null, null);
+  let input = channel.open();
+  let stream = Cc["@mozilla.org/binaryinputstream;1"].
+                createInstance(Ci.nsIBinaryInputStream);
+  stream.setInputStream(input);
+  let content = stream.readBytes(input.available());
+  stream.close();
+  input.close();
+  return content;
+}
 
 exports.testIt = function (test) {
   test.waitUntilDone(1000000);
@@ -138,19 +151,19 @@ exports.testIt = function (test) {
       test.assertEqual(addon.description, metadata.description);
       test.assertEqual(addon.version, metadata.version);
       test.assertEqual(addon.creator.name, metadata.creator);
-      test.assertEqual(getChromeURIContent(addon.iconURL), iconData);
-      test.assertEqual(getChromeURIContent(addon.icon64URL), icon64Data);
+      test.assertEqual(readURISync(addon.iconURL), iconData);
+      test.assertEqual(readURISync(addon.icon64URL), icon64Data);
 
       function assertFileContent(path, content) {
         let url = addon.getResourceURI(path).spec;
         try {
-          let data = getChromeURIContent(url);
+          let data = readURISync(url);
           // We need to convert string to UTF8 for locale files
           data = stringConverter.ConvertToUnicode(data);
           test.assertEqual(data, content);
         }
         catch(e) {
-          test.fail("Failed to open '" + path + "'");
+          test.fail("Failed to open '" + path + "' "+ e);
         }
       }
       // harness manifest contains only extra option and manifest attribute,

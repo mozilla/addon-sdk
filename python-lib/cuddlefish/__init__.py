@@ -786,7 +786,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.abspath(options.templatedir)
     else:
         mydir = os.path.dirname(os.path.abspath(__file__))
-        app_extension_dir = os.path.join(mydir, "../../app-extension")
+        app_extension_dir = os.path.join(mydir, "..", "..", "app-extension")
 
 
     if target_cfg.get('preferences'):
