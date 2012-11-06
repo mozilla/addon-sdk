@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 const HTML = "<html>\
   <body>\
     <div>foo</div>\
@@ -107,7 +109,7 @@ function selectTextarea(window) {
   if (selection.rangeCount > 0)
     selection.removeAllRanges();
 
-  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
   textarea.focus();
 
   return window;
@@ -583,7 +585,7 @@ exports["test Selection Listener"] = function(assert, done) {
     then(loader.unload);
 };
 
-exports["test OnSelect Listener"] = function(assert, done) {
+exports["test Textarea OnSelect Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
 
@@ -617,6 +619,26 @@ exports["test Selection listener removed on unload"] = function(assert, done) {
     then(done)
 };
 
+exports["test Textarea onSelect Listener removed on unload"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  selection.once("select", function() {
+    assert.fail("Shouldn't be never called");
+  });
+
+  loader.unload();
+
+  assert.pass();
+
+  open(URL).
+    then(selectTextarea).
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(done)
+};
+
+
 exports["test Selection Listener on existing document"] = function(assert, done) {
   let loader = Loader(module);
 
@@ -636,7 +658,7 @@ exports["test Selection Listener on existing document"] = function(assert, done)
 };
 
 
-exports["test OnSelect Listener on existing document"] = function(assert, done) {
+exports["test Textarea OnSelect Listener on existing document"] = function(assert, done) {
   let loader = Loader(module);
 
   open(URL).then(function(window){
@@ -654,7 +676,7 @@ exports["test OnSelect Listener on existing document"] = function(assert, done) 
     then(loader.unload)
 };
 
-// TODO: test Selection Listener on long-held connection
+// TODO: test Selection Listener on long-held connection (Bug 661884)
 //
 //  I didn't find a way to do so with httpd, using `processAsync` I'm able to
 //  Keep the connection but not to flush the buffer to the client in two steps,
