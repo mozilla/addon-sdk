@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 var pageMod = require("sdk/page-mod");
@@ -10,9 +9,10 @@ const { Loader } = require('sdk/test/loader');
 const tabs = require("sdk/tabs");
 const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
-const { open } = require('sdk/window/utils');
+const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
-const { getTabContentWindow, getActiveTab } = require('sdk/tabs/utils');
+const { getTabContentWindow, getActiveTab, openTab, closeTab } = require('sdk/tabs/utils');
+const { data } = require('self');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -858,3 +858,61 @@ exports.testPageModcancelTimeout = function(test) {
     onReady: function($) { tab = $ }
   })
 }
+
+exports.testBug803529 = function(test) {
+  test.waitUntilDone();
+
+  let subIFrame = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
+  let iFrame = '<iframe src="data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame) + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame)
+
+  let counter = 0;
+  let tab = openTab(getMostRecentBrowserWindow(), url);
+  let window = getTabContentWindow(tab);
+
+  function wait4Iframes() {
+    if (window.document.readyState != "complete" ||
+        getFrames(window).length != 2) {
+      return;
+    }
+
+    let pagemod = pageMod.PageMod({
+      include: ["*", "data:*"],
+      attachTo: ["existing", "frame"],
+      contentScriptWhen: 'ready',
+      onAttach: function(mod) {
+        if (++counter != 2) return;
+        test.pass('page mod attached to iframe');
+        timer.setTimeout(function() {
+          pagemod.destroy();
+          closeTab(tab);
+          test.done();
+        }, 0);
+      }
+    });
+  }
+
+  window.addEventListener("load", wait4Iframes, false);
+};
+
+exports.testIFramePostMessage = function(test) {
+  test.waitUntilDone();
+
+  tabs.open({
+    url: data.url("test-iframe.html"),
+    onReady: function(tab) {
+      var worker = tab.attach({
+        contentScriptFile: data.url('test-iframe.js'),
+        contentScript: ' var iframePath = \'' + data.url('test-iframe-postmessage.html') + '\'',
+        onMessage: function(msg) {
+          test.assertEqual(msg.first, 'a string');
+          test.assert(msg.second[1], "array");
+          test.assertEqual(typeof msg.third, 'object');
+
+          worker.destroy();
+          tab.close(function() test.done());
+        }
+      });
+    }
+  });
+};
