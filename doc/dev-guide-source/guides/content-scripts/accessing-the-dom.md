@@ -63,7 +63,7 @@ But thanks to the wrapper, a content script which calls
 
     tabs.open(data.url("xray.html"));
 
-The wrapper is transparent to content scripts: as far as the content scriptr
+The wrapper is transparent to content scripts: as far as the content script
 is concerned, it is accessing the DOM directly. But because it's not, some
 things that you might expect to work, won't. For example, if the page includes
 a library like [jQuery](http://www.jquery.com), or any other page script
@@ -86,6 +86,21 @@ TypeError: window.HTMLElement.prototype is undefined
 
 This issue is being tracked as
 [bug 787070](https://bugzilla.mozilla.org/show_bug.cgi?id=787070).
+
+The main effect of this is that certain features of the
+[Prototype JavaScript framework](http://www.prototypejs.org/) don't work
+if it is loaded as a content script. As a workaround you can
+disable these features by setting
+`Prototype.BrowserFeatures.SpecificElementExtensions` to `false`
+in `prototype.js`:
+
+<pre>
+ if (Prototype.Browser.MobileSafari)
+   Prototype.BrowserFeatures.SpecificElementExtensions = false;
+
++// Disable element extension in addon-sdk content scripts
++Prototype.BrowserFeatures.SpecificElementExtensions = false;
+</pre>
 
 ## Adding Event Listeners ##
 
