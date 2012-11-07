@@ -8,7 +8,8 @@ const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-let browserWindows;
+
+const { browserWindows } = require("sdk/windows");
 
 function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
 
@@ -347,23 +348,4 @@ exports.testTrackWindows = function(test) {
   })
 
   openWindow();
-}
-
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  browserWindows = require("sdk/windows").browserWindows;
-}
-catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=571449";
-  if (err.message.indexOf(bug) < 0)
-    throw err;
-
-  module.exports = {
-    testAppNotSupported: function (test) {
-      test.pass("the windows module does not support this application.");
-    }
-  }
 }

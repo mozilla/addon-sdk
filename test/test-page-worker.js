@@ -329,7 +329,7 @@ tests.testMultipleDestroys = function(test) {
   test.pass("Multiple destroys should not cause an error");
 };
 
-exports.testContentScriptOptionsOption = function(test) {
+tests.testContentScriptOptionsOption = function(test) {
   test.waitUntilDone();
 
   let page = new Page({

@@ -174,5 +174,14 @@ exports["test compatibility"] = function(assert) {
                "api-utils/cortex -> sdk/deprecated/cortex");
 };
 
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 809352");
+    }
+  }
+}
 
-require('test').run(exports);
+require("test").run(exports);

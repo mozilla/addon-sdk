@@ -894,3 +894,14 @@ exports.testBug803529 = function(test) {
 
   window.addEventListener("load", wait4Iframes, false);
 };
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (test) {
+        test.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 784224");
+    }
+  }
+}

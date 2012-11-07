@@ -960,23 +960,3 @@ function closeBrowserWindow(window, callback) {
   }, false);
   window.close();
 }
-
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  require("sdk/tabs");
-}
-catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
-
-  if (err.message.indexOf(bug) < 0)
-    throw err;
-
-  module.exports = {
-    testAppNotSupported: function (test) {
-      test.pass("the tabs module does not support this application.");
-    }
-  }
-}
