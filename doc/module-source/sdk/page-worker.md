@@ -113,12 +113,7 @@ To learn much more about content scripts, see the
 [Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
-<div class="experimental">
 <h3>Scripting Trusted Page Content</h3>
-
-**Note that the feature described in this section is experimental: we'll
-very probably continue to support it, but the name of the `addon`
-property might change in a future release.**
 
 We've already seen that you can package HTML files in your add-on's `data`
 directory and load them using `page-worker`. We can call this "trusted"
@@ -151,8 +146,6 @@ a line like `<script src="my-script.js"></script>` in the page header.
 
 * **in the "main.js" file**: remove the `contentScriptFile` option in
 the `Page()` constructor.
-
-</div>
 
 <api name="Page">
 @class

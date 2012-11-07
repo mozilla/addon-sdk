@@ -52,7 +52,7 @@ if (require("sdk/system/xul-app").is("Fennec")) {
     "test Unsupported Test": function UnsupportedTest (assert) {
         assert.pass(
           "Skipping this test until Fennec support is implemented." +
-          "See bug 8068xx");
+          "See bug 793071");
     }
   }
 }
