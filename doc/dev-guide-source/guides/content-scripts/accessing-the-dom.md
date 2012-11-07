@@ -71,8 +71,18 @@ adds other objects to any DOM nodes, they won't be visible to the content
 script. So to use jQuery you'll typically have to add it as a content script,
 as in [this example](dev-guide/guides/content-scripts/reddit-example.html).
 
-There's also a subtle problem with XRayWrappers: you can't access the
-prototype of an object through an XRayWrapper. Consider a script like this:
+### XRayWrapper Limitations ###
+
+There are some limitations with accessing objects through XRayWrapper.
+
+First, XRayWrappers don't inherit from JavaScript's
+[`Object`](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object),
+so methods like `valueOf`, `toSource`, and `watch` are not available.
+This issue is being tracked as
+[bug 787013](https://bugzilla.mozilla.org/show_bug.cgi?id=787013).
+
+Second, you can't access the prototype of an object through an XRayWrapper.
+Consider a script like this:
 
     window.HTMLElement.prototype.foo = 'bar';
     window.alert(window.document.body.foo);
