@@ -14,12 +14,12 @@ and learned the
 The SDK doesn't yet provide an API to add new menu items to Firefox.
 But it's extensible by design, so anyone can build and publish
 modules for add-on developers to use. Luckily, Erik Vold has written
-a [`menuitems`](https://github.com/erikvold/menuitems-jplib) package
+a [`menuitems`](https://github.com/erikvold/menuitems-jplib) module
 that enables us to add menu items.
 
 This tutorial does double-duty. It describes the general method for
-using an external, third-party package in your add-on, and it
-describes how to add a menu item using the `menuitems` package in particular.
+using an external, third-party module in your add-on, and it
+describes how to add a menu item using the `menuitems` module in particular.
 
 ## Installing `menuitems` ##
 

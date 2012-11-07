@@ -5,7 +5,7 @@
 # Firefox Compatibility #
 
 One of the promises the SDK makes is to maintain compatibility for its
-["supported" or "high-level" APIs]FIXME:
+["supported" or "high-level" APIs](modules/high-level-modules.html):
 meaning that code written against them will not need to change as new
 versions of Firefox are released.
 
