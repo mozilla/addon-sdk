@@ -20,7 +20,7 @@ exports['test basics'] = function(assert) {
 
 exports['test non-privileged'] = function(assert) {
   let fixture = sandbox('http://example.com');
-  if (xulApp.versionInRange(xulApp.platformVersion, "15.0a1", "*")) {
+  if (xulApp.versionInRange(xulApp.platformVersion, "15.0a1", "18.*")) {
     let rv = evaluate(fixture, 'Compo' + 'nents.utils');
     assert.equal(rv, undefined,
                  "Components's attributes are undefined in content sandboxes");
