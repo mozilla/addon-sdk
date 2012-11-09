@@ -48,6 +48,19 @@ This page lists more theoretical in-depth articles about the SDK.
 
   </tr>
 
+  <tr>
+
+    <td>
+      <h4><a href="dev-guide/guides/stability.html">SDK API lifecycle</a></h4>
+      Definition of the lifecycle for the SDK's APIs, including the stability
+      ratings for APIs.
+    </td>
+
+    <td>
+    </td>
+
+  </tr>
+
 </table>
 
 <hr>

@@ -9,7 +9,6 @@ import cgi
 from cuddlefish import packaging
 from cuddlefish.docs import apirenderer
 from cuddlefish._version import get_versions
-from documentationitem import get_module_list
 
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
@@ -32,8 +31,9 @@ def insert_after(target, insertion_point_id, text_to_insert):
     return target[:insertion_point] + text_to_insert + target[insertion_point:]
 
 class WebDocs(object):
-    def __init__(self, root, version=get_versions()["version"], base_url = None):
+    def __init__(self, root, module_list, version=get_versions()["version"], base_url = None):
         self.root = root
+        self.module_list = module_list
         self.version = version
         self.pkg_cfg = packaging.build_pkg_cfg(root)
         self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
@@ -46,10 +46,14 @@ class WebDocs(object):
         guide_content = markdown.markdown(md_content)
         return self._create_page(guide_content)
 
-    def create_module_page(self, path):
-        path, ext = os.path.splitext(path)
+    def create_module_page(self, module_info):
+        path, ext = os.path.splitext(module_info.source_path_and_filename())
         md_path = path + '.md'
         module_content = apirenderer.md_to_div(md_path)
+        stability = module_info.metadata.get("stability", "undefined")
+        stability_note = tag_wrap(stability, "a", {"class":"stability-note stability-" + stability, \
+                                                     "href":"dev-guide/guides/stability.html"})
+        module_content = stability_note + module_content
         return self._create_page(module_content)
 
     def _create_page(self, page_content):
@@ -71,12 +75,11 @@ class WebDocs(object):
             base_tag = 'href="' + base_url + '"'
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
-        module_list = get_module_list(os.sep.join([root, "doc", "module-source"]))
-        high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
+        high_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \
             HIGH_LEVEL_MODULE_SUMMARIES, high_level_module_text)
-        low_level_module_list = [module_info for module_info in module_list if module_info.level() == "low"]
+        low_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "low"]
         low_level_module_text = self._make_module_text(low_level_module_list)
         base_page = insert_after(base_page, \
             LOW_LEVEL_MODULE_SUMMARIES, low_level_module_text)
