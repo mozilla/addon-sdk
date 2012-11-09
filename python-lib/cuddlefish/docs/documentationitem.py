@@ -4,15 +4,6 @@
 
 import sys, os, re, json
 
-class ParseError(Exception):
-    # args[1] is the line number that caused the problem
-    def __init__(self, why, lineno):
-        self.why = why
-        self.lineno = lineno
-    def __str__(self):
-        return ("ParseError: the JS API docs were unparseable on line %d: %s" %
-                        (self.lineno, self.why))
-
 class DocumentationItemInfo(object):
     def __init__(self, env_root, md_path, filename):
         self.env_root = env_root
