@@ -1,3 +1,7 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
 # SDK API Lifecycle #
 
 Developers using the SDK's APIs need to know how far they can trust that
@@ -60,16 +64,18 @@ an alternative, and decide which release to deprecate it in.
 In the chosen release, the SDK team will communicate the module's deprecation:
 
 * update the module's stability index to be "deprecated"
-* include a deprecation notice in the release notes,
-https://blog.mozilla.org/addons/, and mailing list. The deprecation
-notice should point developers at a migration guide.
+* include a deprecation notice in the
+[release notes](https://wiki.mozilla.org/Labs/Jetpack/Release_Notes),
+the [Add-ons blog](https://blog.mozilla.org/addons/), and the
+[Jetpack Google group](https://groups.google.com/forum/?fromgroups#!forum/mozilla-labs-jetpack). The deprecation notice should point developers at a migration guide.
 
 ### Migration ###
 
-The deprecation period defaults to 18 weeks. During this time, the
-module will be in the deprecated state. The SDK team will track usage
-of deprecated modules on addons.mozilla.org and support developers
-migrating their code. The SDK will continue to provide warnings:
+The deprecation period defaults to 18 weeks (that is, three releases).
+During this time, the module will be in the deprecated state. The SDK
+team will track usage of deprecated modules on
+[addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/) and support
+developers migrating their code. The SDK will continue to provide warnings:
 
 * CFX will generate warnings when developers use deprecated modules.
 * API documentation will warn users about that the module is deprecated,
@@ -88,12 +94,13 @@ removed.
 The target removal date is 18 weeks after deprecation. In preparation for
 this date the SDK team will decide whether to go ahead with removal: this
 will depend on how many developers have successfully migrated from the
-deprecated module.
+deprecated module, and on how urgently the module needs to be removed.
 
 If it's OK to remove the module, it will be removed. The SDK team will
 remove the corresponding documentation, and communicate the removal in
-the usual ways: the release notes,  https://blog.mozilla.org/addons/,
-and the Jetpack mailing list.
+the usual ways: the [release notes](https://wiki.mozilla.org/Labs/Jetpack/Release_Notes),
+the [Add-ons blog](https://blog.mozilla.org/addons/), and the
+[Jetpack Google group](https://groups.google.com/forum/?fromgroups#!forum/mozilla-labs-jetpack).
 
 If it's not OK to remove it, the team will continue to support migration
-and target the next release.
+and aim to remove the module in the next release.

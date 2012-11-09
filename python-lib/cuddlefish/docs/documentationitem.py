@@ -4,6 +4,15 @@
 
 import sys, os, re, json
 
+class ParseError(Exception):
+    # args[1] is the line number that caused the problem
+    def __init__(self, why, lineno):
+        self.why = why
+        self.lineno = lineno
+    def __str__(self):
+        return ("ParseError: the JS API docs were unparseable on line %d: %s" %
+                        (self.lineno, self.why))
+
 class DocumentationItemInfo(object):
     def __init__(self, env_root, md_path, filename):
         self.env_root = env_root
@@ -48,7 +57,6 @@ class ModuleInfo(DocumentationItemInfo):
         DocumentationItemInfo.__init__(self, env_root, md_path, filename)
         self.module_root = module_root
         self.metadata = self.get_metadata(self.js_module_path())
-        print self.name() + " : " + self.metadata.get("stability", "undefined")
 
     def remove_comments(self, text):
         def replacer(match):
@@ -64,7 +72,12 @@ class ModuleInfo(DocumentationItemInfo):
         return re.sub(pattern, replacer, text)
 
     def get_metadata(self, path_to_js):
-        js = unicode(open(path_to_js,"r").read(), 'utf8')
+        try:
+            js = unicode(open(path_to_js,"r").read(), 'utf8')
+        except IOError as e:
+            raise Exception, "JS module: '" + path_to_js + \
+                             "', corresponding to documentation file: '"\
+                             + self.source_path_and_filename() + "' wasn't found"
         js = self.remove_comments(js)
         js_lines = js.splitlines(True)
         metadata = ''
