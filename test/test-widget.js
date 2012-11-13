@@ -11,6 +11,23 @@ const url = require("sdk/url");
 const windowUtils = require("sdk/deprecated/window-utils");
 const tabBrowser = require("sdk/deprecated/tab-browser");
 const timer = require("sdk/timers");
+const self = require("self");
+
+function LoaderWithHookedConsole() {
+  let errors = [];
+  let loader = Loader(module, {
+    console: Object.create(console, {
+      error: { value: function(e) {
+        errors.push(e);
+      }}
+    })
+  });
+
+  return {
+    loader: loader,
+    errors: errors
+  }
+}
 
 exports.testConstructor = function(test) {
   test.waitUntilDone(30000);
@@ -1025,6 +1042,25 @@ exports.testPostMessageOnLocationChange = function(test) {
         }
       }
     });
+};
+
+exports.testSVGWidget = function(test) {
+  test.waitUntilDone();
+
+  // use of capital SVG here is intended, that was failing..
+  let SVG_URL = self.data.url("mofo_logo.SVG");
+
+  let widget = require("widget").Widget({
+    id: "mozilla-svg-logo",
+    label: "moz foundation logo",
+    contentURL: SVG_URL,
+    contentScript: "self.postMessage({count: window.document.images.length, src: window.document.images[0].src});",
+    onMessage: function(data) {
+      test.assertEqual(data.count, 1, 'only one image');
+      test.assertEqual(data.src, SVG_URL, 'only one image');
+      test.done();
+    }
+  });
 };
 
 exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {

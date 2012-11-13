@@ -7,6 +7,7 @@ let panels = require('sdk/panel');
 let tests = {}, panels, Panel;
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
+const self = require('self');
 
 tests.testPanel = function(test) {
   test.waitUntilDone();
@@ -439,6 +440,19 @@ tests.testContentURLOption = function(test) {
   test.assertRaises(function () Panel({ contentURL: "foo" }),
                     "The `contentURL` option must be a valid URL.",
                     "Panel throws an exception if contentURL is not a URL.");
+};
+
+tests.testSVGDocument = function(test) {
+  let URL_STRING = self.data.url("mozilla_foundation_logo.svg");
+
+  let panel = Panel({
+    contentURL: URL_STRING
+  });
+  panel.show();
+  panel.hide();
+  test.pass("contentURL accepts a svg document");
+  test.assertEqual(panel.contentURL, URL_STRING,
+              "contentURL is the string to which it was set.");
 };
 
 exports.testContentScriptOptionsOption = function(test) {
