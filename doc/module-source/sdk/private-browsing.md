@@ -13,6 +13,13 @@ This module is available in all applications. However, only Firefox will ever
 transition into or out of private browsing mode. For all other applications,
 `pb.isActive` will always be `false`, and none of the events will be emitted.
 
+<div class="warning">
+The <a href="modules/sdk/private-browsing.html#activate()"><code>activate</code></a> and
+<a href="modules/sdk/private-browsing.html#deactivate()"><code>deactivate</code></a> functions
+are now deprecated. They will continue to work until version 1.13 of the SDK.
+From version 1.13 onwards they will still exist but will have no effect when called.
+</div>
+
 <api name="isActive">
 @property {boolean}
   This read-only boolean is true if private browsing mode is turned on.
@@ -21,11 +28,19 @@ transition into or out of private browsing mode. For all other applications,
 <api name="activate">
 @function
   Turns on private browsing mode.
+  <div class="warning">
+  This function is deprecated. It will continue to work until version 1.13 of the SDK.
+  From version 1.13 onwards it will still exist but will have no effect when called.
+  </div>
 </api>
 
 <api name="deactivate">
 @function
   Turns off private browsing mode.
+  <div class="warning">
+  This function is deprecated. It will continue to work until version 1.13 of the SDK.
+  From version 1.13 onwards it will still exist but will have no effect when called.
+  </div>
 </api>
 
 <api name="start">

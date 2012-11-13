@@ -122,8 +122,7 @@ They are documented along with the
 
 The setting types map to the
 [inline settings types](https://developer.mozilla.org/en/Extensions/Inline_Options)
-used by the Add-on Manager. All the inline settings are supported except
-for `radio` and `menulist`.
+used by the Add-on Manager. All the inline settings are supported.
 
 <table>
     <tr>
@@ -226,6 +225,76 @@ for `radio` and `menulist`.
 	"title": "Select a directory"
 }</pre></td>
 	</tr>
+  <tr>
+		<td><code>menulist</code></td>
+		<td><p>Displayed as a drop-down list.  
+        The type of the stored value depends on the default value.</p>
+      <p>The options are specified by a mandatory "options" attribute, 
+         that is an array of objects with mandatory attributes 
+         "label" and "value"<p>
+      <p>The values of the "value" attributes must be supplied as strings.</p>
+      <p>The values of the "label" attributes prefixed with "{name}_options.",
+          where {name} is the name of the preference, 
+          are used as localization keys.
+          If no matching entries are found, the value of the "label" 
+          attributes is used verbatim as labels.</p></td>
+		<td><pre>
+{
+    "name": "typeOfBreath",
+    "type": "menulist",
+    "title": "Type of breath",
+    "value": 0,
+    "options": [
+        {
+            "value": "0",
+            "label": "Fire"
+        },
+        {
+            "value": "1",
+            "label": "Cold"
+        },
+        {
+            "value": "2",
+            "label": "Disintegration"
+        }
+    ]
+}<pre></td>
+  </tr>
+  <tr>
+		<td><code>radio</code></td>
+		<td><p>Displayed as radio buttons.  
+        The type of the stored value depends on the default value.</p>
+      <p>The options are specified by a mandatory "options" attribute, 
+         that is an array of objects with mandatory attributes 
+         "label" and "value"<p>
+      <p>The values of the "value" attributes must be supplied as strings.</p>
+      <p>The values of the "label" attributes prefixed with "{name}_options.",
+          where {name} is the name of the preference, 
+          are used as localization keys.
+          If no matching entries are found, the value of the "label" 
+          attributes is used verbatim as labels.</p></td>
+		<td><pre>
+{
+    "name": "alignment",
+    "type": "radio",
+    "title": "Alignment",
+    "value": "N",
+    "options": [
+        {
+            "value": "L",
+            "label": "Lawful"
+        },
+        {
+            "value": "N",
+            "label": "Neutral"
+        },
+        {
+            "value": "C",
+            "label": "Chaotic"
+        }
+    ]
+}<pre></td>
+  </tr>
 	<tr>
 		<td><code>control</code></td>
 		<td><p>Displays a button.</p>
@@ -277,6 +346,8 @@ for more details.
     require("simple-prefs").on("somePreference", onPrefChange);
     require("simple-prefs").on("someOtherPreference", onPrefChange);
 
+    // `""` listens to all changes in the extension's branch
+    require("simple-prefs").on("", onPrefChange);
 
 @param prefName {String}
   The name of the preference to watch for changes.

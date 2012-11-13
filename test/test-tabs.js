@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-if (require("api-utils/xul-app").is("Firefox")) {
+if (require("sdk/system/xul-app").is("Firefox")) {
   module.exports = require("./tabs/test-firefox-tabs");
 }
-else if (require("api-utils/xul-app").is("Fennec")) {
+else if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = require("./tabs/test-fennec-tabs");
 }

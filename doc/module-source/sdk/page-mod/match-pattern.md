@@ -21,9 +21,9 @@ slash, and contain no wildcards.
 <table>
 
   <colgroup>
-    <col width="30%">
-    <col width="35%">
-    <col width="35%">
+    <col width="20%">
+    <col width="25%">
+    <col width="55%">
   </colgroup>
 
   <tr>
@@ -46,15 +46,15 @@ slash, and contain no wildcards.
 ### Wildcards ###
 
 **A single asterisk** matches any URL with an `http`, `https`, or `ftp`
-scheme. For other schemes like `file`, use a scheme followed by an
-asterisk, as below.
+scheme. For other schemes like `file`, `resource`, or `data`, use a scheme
+followed by an asterisk, as below.
 
 <table>
 
   <colgroup>
-    <col width="30%">
-    <col width="35%">
-    <col width="35%">
+    <col width="20%">
+    <col width="25%">
+    <col width="55%">
   </colgroup>
 
   <tr>
@@ -70,7 +70,9 @@ asterisk, as below.
         <code>ftp://example.com/</code><br>
         <code>http://bar.com/foo.js</code><br>
         <code>http://foo.com/</code></td>
-    <td><code>file://example.js</code></td>
+    <td><code>file://example.js</code><br>
+        <code>resource://me/my-addon/data/file.html</code><br>
+        <code>data:text/html,Hi there</code></td>
   </tr>
 
 </table>
@@ -81,9 +83,9 @@ domain or a subdomain, using any of `http`, `https`, `ftp`.
 <table>
 
   <colgroup>
-    <col width="30%">
-    <col width="35%">
-    <col width="35%">
+    <col width="20%">
+    <col width="25%">
+    <col width="55%">
   </colgroup>
 
   <tr>
@@ -111,9 +113,9 @@ the pattern.
 <table>
 
   <colgroup>
-    <col width="30%">
-    <col width="35%">
-    <col width="35%">
+    <col width="20%">
+    <col width="25%">
+    <col width="55%">
   </colgroup>
 
   <tr>
@@ -134,13 +136,14 @@ the pattern.
 </table>
 
 **A scheme followed by an asterisk** matches all URLs with that scheme. To
-match local files, use `file://*`.
+match local files, use `file://*`, and to match files loaded from your
+add-on's [data](modules/sdk/self.html#data) directory, use `resource://`.
 
 <table>
 
   <colgroup>
-    <col width="30%">
-    <col width="70%">
+    <col width="20%">
+    <col width="80%">
   </colgroup>
 
   <tr>
@@ -152,6 +155,16 @@ match local files, use `file://*`.
     <td><code>"file://*"</code></td>
     <td><code>file://C:/file.html</code><br>
         <code>file:///home/file.png</code></td>
+  </tr>
+
+  <tr>
+    <td><code>"resource://*"</code></td>
+    <td><code>resource://my-addon-at-me-dot-org/my-addon/data/file.html</code></td>
+  </tr>
+
+  <tr>
+    <td><code>"data:*"</code></td>
+    <td><code>data:text/html,Hi there</code></td>
   </tr>
 
 </table>

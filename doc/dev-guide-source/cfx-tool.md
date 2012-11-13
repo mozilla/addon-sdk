@@ -231,7 +231,7 @@ To launch the application, enter the following command:
   <td>
     The <code>cfx run</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
@@ -681,7 +681,7 @@ add-on whenever it is run.
   <td>
     The <code>cfx xpi</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
