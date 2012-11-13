@@ -903,6 +903,10 @@ exports.testExistingOnFrames = function(test) {
         if (urls.indexOf(worker.url) == -1)
           return;
 
+        test.assertNotEqual(url,
+                            worker.url,
+                            'worker should not be attached to the top window');
+
         if (++counter < 2) {
           // we can rely on this order in this case because we are sure that
           // the frames being tested have completely loaded
