@@ -855,10 +855,11 @@ exports.testPageModcancelTimeout = function(test) {
       })
       worker.port.on("timeout", function(id) {
         test.pass("timer was scheduled")
-        tab.close()
-        worker.destroy()
-        loader.unload()
-        test.done()
+        tab.close();
+        worker.destroy();
+        mod.destroy();
+        loader.unload();
+        test.done();
       })
     }
   });
@@ -869,12 +870,18 @@ exports.testPageModcancelTimeout = function(test) {
   })
 }
 
-exports.testBug803529 = function(test) {
+exports.testExistingOnFrames = function(test) {
   test.waitUntilDone();
 
-  let subIFrame = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
-  let iFrame = '<iframe src="data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame) + '" />';
-  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame)
+  let subFrameURL = 'data:text/html;charset=utf-8,testExistingOnFrames-sub-frame';
+  let subIFrame = '<iframe src="' + subFrameURL + '" />'
+  let iFrameURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame)
+  let iFrame = '<iframe src="' + iFrameURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame);
+
+  // we want all urls related to the test here, and not just the iframe urls
+  // because we need to fail if the test is applied to the top window url.
+  let urls = [url, iFrameURL, subFrameURL];
 
   let counter = 0;
   let tab = openTab(getMostRecentBrowserWindow(), url);
@@ -890,16 +897,34 @@ exports.testBug803529 = function(test) {
       include: ["*", "data:*"],
       attachTo: ["existing", "frame"],
       contentScriptWhen: 'ready',
-      onAttach: function(mod) {
-        if (++counter != 2) return;
-        test.pass('page mod attached to iframe');
+      onAttach: function(worker) {
+        // need to ignore urls that are not part of the test, because other
+        // tests are not closing their tabs when they complete..
+        if (urls.indexOf(worker.url) == -1)
+          return;
 
-        timer.setTimeout(function() {
-          pagemodOnExisting.destroy();
-          pagemodOffExisting.destroy();
-          closeTab(tab);
-          test.done();
-        }, 0);
+        test.assertNotEqual(url,
+                            worker.url,
+                            'worker should not be attached to the top window');
+
+        if (++counter < 2) {
+          // we can rely on this order in this case because we are sure that
+          // the frames being tested have completely loaded
+          test.assertEqual(iFrameURL, worker.url, '1st attach is for top frame');
+        }
+        else if (counter > 2) {
+          test.fail('applied page mod too many times');
+        }
+        else {
+          test.assertEqual(subFrameURL, worker.url, '2nd attach is for sub frame');
+          // need timeout because onAttach is called before the constructor returns
+          timer.setTimeout(function() {
+            pagemodOnExisting.destroy();
+            pagemodOffExisting.destroy();
+            closeTab(tab);
+            test.done();
+          }, 0);
+        }
       }
     });
 
