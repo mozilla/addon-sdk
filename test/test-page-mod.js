@@ -855,10 +855,11 @@ exports.testPageModcancelTimeout = function(test) {
       })
       worker.port.on("timeout", function(id) {
         test.pass("timer was scheduled")
-        tab.close()
-        worker.destroy()
-        loader.unload()
-        test.done()
+        tab.close();
+        worker.destroy();
+        mod.destroy();
+        loader.unload();
+        test.done();
       })
     }
   });
@@ -896,22 +897,22 @@ exports.testExistingOnFrames = function(test) {
       include: ["*", "data:*"],
       attachTo: ["existing", "frame"],
       contentScriptWhen: 'ready',
-      onAttach: function(mod) {
+      onAttach: function(worker) {
         // need to ignore urls that are not part of the test, because other
         // tests are not closing their tabs when they complete..
-        if (urls.indexOf(mod.url) == -1)
+        if (urls.indexOf(worker.url) == -1)
           return;
 
         if (++counter < 2) {
           // we can rely on this order in this case because we are sure that
           // the frames being tested have completely loaded
-          test.assertEqual(iFrameURL, mod.url, '1st attach is for top frame');
+          test.assertEqual(iFrameURL, worker.url, '1st attach is for top frame');
         }
         else if (counter > 2) {
           test.fail('applied page mod too many times');
         }
         else {
-          test.assertEqual(subFrameURL, mod.url, '2nd attach is for sub frame');
+          test.assertEqual(subFrameURL, worker.url, '2nd attach is for sub frame');
           // need timeout because onAttach is called before the constructor returns
           timer.setTimeout(function() {
             pagemodOnExisting.destroy();
