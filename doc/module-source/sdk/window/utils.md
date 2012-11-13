@@ -37,6 +37,21 @@ for the given [nsIDOMWindow](https://developer.mozilla.org/en/nsIDOMWindow):
     active instanceof Ci.nsIBaseWindow // => false
     utils.getBaseWindow(active) instanceof Ci.nsIBaseWindow // => true
 
+### getFocusedWindow
+
+Module provides `getFocusedWindow` function that can be used to get the child
+window within the `activeWindow` that is focused.
+See
+[nsIFocusManager](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIFocusManager)
+for more details.
+
+### getFocusedElement
+
+Module provides `getFocusedElement` function that can be used to get the element
+that is currently focused. This will always be an element within the document
+loaded in the focused window, or `null` if no element in that document is
+focused.
+
 ### open
 
 Module exports `open` function that may be used to open top level
