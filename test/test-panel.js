@@ -471,7 +471,10 @@ exports["test ContentScriptOptions Option"] = function(assert, done) {
 try {
   require("sdk/panel");
 }
-catch (e if /supports only Firefox/.test(e.message)) {
+catch (e) {
+  if (!/supports only Firefox/.test(e.message))
+    throw e;
+
   module.exports = {
     "test Unsupported Application": function Unsupported (assert) {
       assert.pass(e.message);
