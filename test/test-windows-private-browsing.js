@@ -10,26 +10,37 @@ const { pb, pbUtils } = require('private-browsing-helper');
 const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 
-if (pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
-  exports.testPerWindowPrivateBrowsing_getter = function(test) {
-    let activeWindow =  wm.
-                        getMostRecentWindow('navigator:browser');
+exports["test Per Window Private Browsing getter"] = function(assert) {
+  let activeWindow =  wm.
+                      getMostRecentWindow('navigator:browser');
 
-    // is per-window PB implemented?
-    let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
-  
-    pbUtils.setMode(false, activeWindow);
-  
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     'Active window is not in PB mode');
-  
-    pbUtils.setMode(true, activeWindow);
-  
-    test.assertEqual(activeWindow.gPrivateBrowsingUI.privateWindow,
-                     browserWindows.activeWindow.isPrivateBrowsing,
-                     'Active window is in PB mode');
-  
-    pbUtils.setMode(currentState, activeWindow);
-  };
+  // is per-window PB implemented?
+  let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
+
+  pbUtils.setMode(false, activeWindow);
+
+  assert.equal(activeWindow.gPrivateBrowsingUI.privateWindow,
+                   browserWindows.activeWindow.isPrivateBrowsing,
+                   'Active window is not in PB mode');
+
+  pbUtils.setMode(true, activeWindow);
+
+  assert.equal(activeWindow.gPrivateBrowsingUI.privateWindow,
+                   browserWindows.activeWindow.isPrivateBrowsing,
+                   'Active window is in PB mode');
+
+  pbUtils.setMode(currentState, activeWindow);
 }
+
+if (!pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test on platform that doesn't support Window Private" +
+          " browsing."
+        );
+    }
+  }
+}
+
+require("test").run(exports);

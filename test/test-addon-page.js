@@ -46,20 +46,15 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
   let loader = Loader(module);
   loader.require('sdk/addon-page');
 
-  // Wait for addon page document to be loaded
-  tabs.once("ready", function listener(tab) {
-    // Ignore loading of about:blank document
-    if (tab.url != uri)
-      return;
+  tabs.open({
+    url: uri,
+    onReady: function listener(tab) {
+      loader.unload();
+      assert.ok(!isTabOpen(tab), 'add-on page tabs are closed on unload');
 
-    loader.unload();
-    assert.ok(!isTabOpen(tab), 'add-on page tabs are closed on unload');
-
-    done();
-  }, false);
-
-  tabs.open(uri);
+      done();
+    }
+  });
 };
-
 
 require('sdk/test').run(exports);

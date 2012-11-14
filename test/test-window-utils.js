@@ -47,7 +47,7 @@ exports['test close on unload'] = function(assert) {
     close: function() {
       timesClosed++;
       this._listeners.forEach(
-        function(func) { 
+        function(func) {
           func({target: fakeWindow.document});
         });
     },
@@ -345,6 +345,17 @@ exports['test windowIterator'] = function(assert, done) {
     }, false);
     window.close();
   }, false);
+}
+
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 809412");
+    }
+  }
 }
 
 require("test").run(exports);
