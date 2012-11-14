@@ -13,22 +13,6 @@ const tabBrowser = require("sdk/deprecated/tab-browser");
 const timer = require("sdk/timers");
 const self = require("self");
 
-function LoaderWithHookedConsole() {
-  let errors = [];
-  let loader = Loader(module, {
-    console: Object.create(console, {
-      error: { value: function(e) {
-        errors.push(e);
-      }}
-    })
-  });
-
-  return {
-    loader: loader,
-    errors: errors
-  }
-}
-
 exports.testConstructor = function(test) {
   test.waitUntilDone(30000);
 

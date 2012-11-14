@@ -450,6 +450,7 @@ tests.testSVGDocument = function(test) {
   });
   panel.show();
   panel.hide();
+  panel.destroy();
   test.pass("contentURL accepts a svg document");
   test.assertEqual(panel.contentURL, URL_STRING,
               "contentURL is the string to which it was set.");
