@@ -13,7 +13,7 @@ modules fall roughly into three categories:
 want to use modules from this category.
 
 * building blocks for higher level modules, such as
-[events](modules/sdk/event/core.html),
+[events](modules/sdk/events/core.html),
 [worker](modules/sdk/content/worker.html), and
 [api-utils](modules/sdk/deprecated/api-utils.html). You're more
 likely to use these if you are building your own modules that

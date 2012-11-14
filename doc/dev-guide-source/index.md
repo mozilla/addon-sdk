@@ -81,9 +81,8 @@ Learn about common development techniques, such as
     <td>
       <h4><a href="dev-guide/guides/index.html#sdk-infrastructure">SDK infrastructure</a></h4>
       Aspects of the SDK's underlying technology:
-      <a href="dev-guide/guides/commonjs.html">CommonJS</a>, the
-      <a href="dev-guide/guides/program-id.html">Program ID</a>, the
-      <a href="dev-guide/guides/module-search.html">module search algorithm</a>
+      <a href="dev-guide/guides/modules.html">Modules</a>, the
+      <a href="dev-guide/guides/program-id.html">Program ID</a>,
       and the rules defining
       <a href="dev-guide/guides/firefox-compatibility.html">Firefox compatibility</a>.
     </td>
