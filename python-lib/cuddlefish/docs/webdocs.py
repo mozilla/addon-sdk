@@ -15,6 +15,7 @@ INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
 MODULE_INDEX_INSERTION_POINT = '<ul id="module-index">'
+THIRD_PARTY_MODULE_SUMMARIES = '<ul id="third-party-module-summaries">'
 HIGH_LEVEL_MODULE_SUMMARIES = '<ul id="high-level-module-summaries">'
 LOW_LEVEL_MODULE_SUMMARIES = '<ul id="low-level-module-summaries">'
 CONTENT_ID = '<div id="main-content">'
@@ -76,11 +77,18 @@ class WebDocs(object):
             base_tag = 'href="' + base_url + '"'
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
-        module_list = get_module_list(os.sep.join([root, "doc", "module-source"]))
+        module_list = get_module_list(root)
+
+        third_party_module_list = [module_info for module_info in module_list if module_info.level() == "third-party"]
+        third_party_module_text = self._make_module_text(third_party_module_list)
+        base_page = insert_after(base_page, \
+            THIRD_PARTY_MODULE_SUMMARIES, third_party_module_text)
+
         high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \
             HIGH_LEVEL_MODULE_SUMMARIES, high_level_module_text)
+
         low_level_module_list = [module_info for module_info in module_list if module_info.level() == "low"]
         low_level_module_text = self._make_module_text(low_level_module_list)
         base_page = insert_after(base_page, \
