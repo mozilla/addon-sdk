@@ -110,6 +110,12 @@ def calculate_current_status(env_root):
             if filename.endswith(".md"):
                 current_status.update(filename)
                 current_status.update(str(os.path.getmtime(os.path.join(dirpath, filename))))
+    package_dir = os.path.join(env_root, "packages")
+    for (dirpath, dirnames, filenames) in os.walk(package_dir):
+        for filename in filenames:
+            if filename.endswith(".md"):
+                current_status.update(filename)
+                current_status.update(str(os.path.getmtime(os.path.join(dirpath, filename))))
     base_html_file = os.path.join(docs_dir, "static-files", "base.html")
     current_status.update(base_html_file)
     current_status.update(str(os.path.getmtime(os.path.join(dirpath, base_html_file))))
