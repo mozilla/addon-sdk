@@ -643,20 +643,29 @@ exports["test XMLHttpRequest"] = createProxyTest("", function (helper) {
 });
 
 exports["test XPathResult"] = createProxyTest("", function (helper, assert) {
+  const XPathResultTypes = ["ANY_TYPE",
+                            "NUMBER_TYPE", "STRING_TYPE", "BOOLEAN_TYPE",
+                            "UNORDERED_NODE_ITERATOR_TYPE",
+                            "ORDERED_NODE_ITERATOR_TYPE",
+                            "UNORDERED_NODE_SNAPSHOT_TYPE",
+                            "ORDERED_NODE_SNAPSHOT_TYPE",
+                            "ANY_UNORDERED_NODE_TYPE",
+                            "FIRST_ORDERED_NODE_TYPE"];
 
-  // Check XPathResult bug with constants being undefined on
-  // XPCNativeWrapper
-  let value = helper.rawWindow.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+  // Check XPathResult bug with constants being undefined on XPCNativeWrapper
   let xpcXPathResult = helper.xrayWindow.XPathResult;
-  assert.equal(xpcXPathResult.wrappedJSObject.
-                     UNORDERED_NODE_SNAPSHOT_TYPE,
-                   value,
-                   "XPathResult's constants are valid on unwrapped node");
 
-  assert.equal(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 6,
-                   "XPathResult's constants are defined on " +
-                   "XPCNativeWrapper (platform bug #)");
+  XPathResultTypes.forEach(function(type, i) {
+    assert.equal(xpcXPathResult.wrappedJSObject[type],
+                     helper.rawWindow.XPathResult[type],
+                     "XPathResult's constants are valid on unwrapped node");
 
+    assert.equal(xpcXPathResult[type], i,
+                     "XPathResult's constants are defined on " +
+                     "XPCNativeWrapper (platform bug #)");
+  });
+
+  let value = helper.rawWindow.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
       self.port.on("value", function (value) {
@@ -668,7 +677,6 @@ exports["test XPathResult"] = createProxyTest("", function (helper, assert) {
     }
   );
   worker.port.emit("value", value);
-
 });
 
 exports["test Prototype Inheritance"] = createProxyTest("", function (helper) {
