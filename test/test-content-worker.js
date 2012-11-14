@@ -52,8 +52,7 @@ function loadAndWait(browser, url, callback) {
 // - browser: a reference to the <browser> xul node
 // - done: a callback to call when test is over
 function WorkerTest(url, callback) {
-  return function testFunction(test) {
-    test.waitUntilDone();
+  return function testFunction(assert, done) {
     let chromeWindow = makeWindow();
     chromeWindow.addEventListener("load", function onload() {
       chromeWindow.removeEventListener("load", onload, true);
@@ -64,9 +63,9 @@ function WorkerTest(url, callback) {
       listenOnce(browser, "load", function onAboutBlankLoad() {
         // ... before loading the expected doc and waiting for its load event
         loadAndWait(browser, url, function onDocumentLoaded() {
-          callback(test, browser, function onTestDone() {
+          callback(assert, browser, function onTestDone() {
             chromeWindow.close();
-            test.done();
+            done();
           });
         });
       });
@@ -76,9 +75,9 @@ function WorkerTest(url, callback) {
 
 exports["test:sample"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
-    
-    test.assertNotEqual(browser.contentWindow.location.href, "about:blank",
+  function(assert, browser, done) {
+
+    assert.notEqual(browser.contentWindow.location.href, "about:blank",
                         "window is now on the right document");
 
     let window = browser.contentWindow
@@ -94,14 +93,14 @@ exports["test:sample"] = WorkerTest(
       },
       contentScriptWhen: "ready",
       onMessage: function(msg) {
-        test.assertEqual("bye!", msg);
-        test.assertEqual(worker.url, window.location.href,
+        assert.equal("bye!", msg);
+        assert.equal(worker.url, window.location.href,
                          "worker.url still works");
         done();
       }
     });
 
-    test.assertEqual(worker.url, window.location.href,
+    assert.equal(worker.url, window.location.href,
                      "worker.url works");
     worker.postMessage("hi!");
   }
@@ -109,7 +108,7 @@ exports["test:sample"] = WorkerTest(
 
 exports["test:emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
         window: browser.contentWindow,
@@ -129,13 +128,13 @@ exports["test:emit"] = WorkerTest(
 
         },
         onMessage: function(msg) {
-          test.fail("Got an unexpected message : "+msg);
+          assert.fail("Got an unexpected message : "+msg);
         }
       });
 
     // Validate worker.port
     worker.port.on("content-to-addon", function (data) {
-      test.assertEqual(data, "event data");
+      assert.equal(data, "event data");
       done();
     });
     worker.port.emit("addon-to-content", "event data");
@@ -144,7 +143,7 @@ exports["test:emit"] = WorkerTest(
 
 exports["test:emit hack message"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -158,16 +157,16 @@ exports["test:emit hack message"] = WorkerTest(
           });
         },
         onError: function(e) {
-          test.fail("Got exception: "+e);
+          assert.fail("Got exception: "+e);
         }
       });
 
     worker.port.on("message", function (data) {
-      test.assertEqual(data, "event data");
+      assert.equal(data, "event data");
       done();
     });
     worker.on("message", function (data) {
-      test.fail("Got an unexpected message : "+msg);
+      assert.fail("Got an unexpected message : "+msg);
     });
     worker.port.emit("message", "event data");
   }
@@ -175,7 +174,7 @@ exports["test:emit hack message"] = WorkerTest(
 
 exports["test:n-arguments emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -188,9 +187,9 @@ exports["test:n-arguments emit"] = WorkerTest(
 
     // Validate worker.port
     worker.port.on("content-to-addon", function (arg1, arg2, arg3) {
-      test.assertEqual(arg1, "first argument");
-      test.assertEqual(arg2, "second");
-      test.assertEqual(arg3, "third");
+      assert.equal(arg1, "first argument");
+      assert.equal(arg2, "second");
+      assert.equal(arg3, "third");
       done();
     });
     worker.port.emit("addon-to-content", "first argument", "second", "third");
@@ -199,7 +198,7 @@ exports["test:n-arguments emit"] = WorkerTest(
 
 exports["test:post-json-values-only"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
         window: browser.contentWindow,
@@ -218,14 +217,14 @@ exports["test:post-json-values-only"] = WorkerTest(
     // Validate worker.onMessage
     let array = [1, 2, 3];
     worker.on("message", function (message) {
-      test.assert(message[0], "function becomes undefined");
-      test.assertEqual(message[1], "object", "object stays object");
-      test.assert(message[2], "object's attributes are enumerable");
-      test.assertEqual(message[3], DEFAULT_CONTENT_URL,
+      assert.ok(message[0], "function becomes undefined");
+      assert.equal(message[1], "object", "object stays object");
+      assert.ok(message[2], "object's attributes are enumerable");
+      assert.equal(message[3], DEFAULT_CONTENT_URL,
                        "jsonable attributes are accessible");
       // See bug 714891, Arrays may be broken over compartements:
-      test.assert(message[4], "Array keeps being an array");
-      test.assertEqual(message[5], JSON.stringify(array),
+      assert.ok(message[4], "Array keeps being an array");
+      assert.equal(message[5], JSON.stringify(array),
                        "Array is correctly serialized");
       done();
     });
@@ -235,8 +234,8 @@ exports["test:post-json-values-only"] = WorkerTest(
 
 exports["test:emit-json-values-only"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
-  
+  function(assert, browser, done) {
+
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -259,16 +258,16 @@ exports["test:emit-json-values-only"] = WorkerTest(
     // Validate worker.port
     let array = [1, 2, 3];
     worker.port.on("content-to-addon", function (result) {
-      test.assert(result[0], "functions become null");
-      test.assertEqual(result[1], "object", "objects stay objects");
-      test.assert(result[2], "object's attributes are enumerable");
-      test.assertEqual(result[3], DEFAULT_CONTENT_URL,
+      assert.ok(result[0], "functions become null");
+      assert.equal(result[1], "object", "objects stay objects");
+      assert.ok(result[2], "object's attributes are enumerable");
+      assert.equal(result[3], DEFAULT_CONTENT_URL,
                        "json attribute is accessible");
-      test.assert(!result[4], "function as object attribute is removed");
-      test.assertEqual(result[5], 0, "DOM nodes are converted into empty object");
+      assert.ok(!result[4], "function as object attribute is removed");
+      assert.equal(result[5], 0, "DOM nodes are converted into empty object");
       // See bug 714891, Arrays may be broken over compartments:
-      test.assert(result[6], "Array keeps being an array");
-      test.assertEqual(result[7], JSON.stringify(array),
+      assert.ok(result[6], "Array keeps being an array");
+      assert.equal(result[7], JSON.stringify(array),
                        "Array is correctly serialized");
       done();
     });
@@ -283,7 +282,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
 
 exports["test:content is wrapped"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
       window: browser.contentWindow,
@@ -292,7 +291,7 @@ exports["test:content is wrapped"] = WorkerTest(
       },
       contentScriptWhen: "ready",
       onMessage: function(msg) {
-        test.assert(msg,
+        assert.ok(msg,
           "content script has a wrapped access to content document");
         done();
       }
@@ -300,9 +299,8 @@ exports["test:content is wrapped"] = WorkerTest(
   }
 );
 
-exports["test:chrome is unwrapped"] = function(test) {
+exports["test:chrome is unwrapped"] = function(assert, done) {
   let window = makeWindow();
-  test.waitUntilDone();
 
   listenOnce(window, "load", function onload() {
 
@@ -313,10 +311,10 @@ exports["test:chrome is unwrapped"] = function(test) {
       },
       contentScriptWhen: "ready",
       onMessage: function(msg) {
-        test.assert(msg,
+        assert.ok(msg,
           "content script has an unwrapped access to chrome document");
         window.close();
-        test.done();
+        done();
       }
     });
 
@@ -325,7 +323,7 @@ exports["test:chrome is unwrapped"] = function(test) {
 
 exports["test:nothing is leaked to content script"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
       window: browser.contentWindow,
@@ -338,9 +336,9 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
       },
       contentScriptWhen: "ready",
       onMessage: function(list) {
-        test.assert(!list[0], "worker API contrustor isn't leaked");
-        test.assert(!list[1], "Proxy API stuff isn't leaked 1/2");
-        test.assert(!list[2], "Proxy API stuff isn't leaked 2/2");
+        assert.ok(!list[0], "worker API contrustor isn't leaked");
+        assert.ok(!list[1], "Proxy API stuff isn't leaked 1/2");
+        assert.ok(!list[2], "Proxy API stuff isn't leaked 2/2");
         done();
       }
     });
@@ -349,7 +347,7 @@ exports["test:nothing is leaked to content script"] = WorkerTest(
 
 exports["test:ensure console.xxx works in cs"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     // Create a new module loader in order to be able to create a `console`
     // module mockup:
@@ -367,7 +365,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
     // Intercept all console method calls
     let calls = [];
     function hook(msg) {
-      test.assertEqual(this, msg,
+      assert.equal(this, msg,
                        "console.xxx(\"xxx\"), i.e. message is equal to the " +
                        "console method name we are calling");
       calls.push(msg);
@@ -387,7 +385,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
       },
       onMessage: function() {
         // Ensure that console methods are called in the same execution order
-        test.assertEqual(JSON.stringify(calls),
+        assert.equal(JSON.stringify(calls),
                          JSON.stringify(["log", "info", "warn", "error", "debug", "exception"]),
                          "console has been called successfully, in the expected order");
         done();
@@ -399,7 +397,7 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
 
 exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
       window: browser.contentWindow,
@@ -411,7 +409,7 @@ exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
       },
       contentScriptWhen: "ready",
       onMessage: function(msg) {
-        test.assert(msg,
+        assert.ok(msg,
           "content didn't managed to cancel our setTimeout");
         done();
       }
@@ -421,7 +419,7 @@ exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
 
 exports["test:clearTimeout"] = WorkerTest(
   "data:text/html;charset=utf-8,clear timeout",
-  function(test, browser, done) {
+  function(assert, browser, done) {
     let worker = Worker({
       window: browser.contentWindow,
       contentScript: "new " + function WorkerScope() {
@@ -436,9 +434,9 @@ exports["test:clearTimeout"] = WorkerTest(
       contentScriptWhen: "ready",
       onMessage: function(msg) {
         if (msg === "failed") {
-          test.fail("failed to cancel timer");
+          assert.fail("failed to cancel timer");
         } else {
-          test.pass("timer cancelled");
+          assert.pass("timer cancelled");
           done();
         }
       }
@@ -448,7 +446,7 @@ exports["test:clearTimeout"] = WorkerTest(
 
 exports["test:clearInterval"] = WorkerTest(
   "data:text/html;charset=utf-8,clear timeout",
-  function(test, browser, done) {
+  function(assert, browser, done) {
     let called = 0;
     let worker = Worker({
       window: browser.contentWindow,
@@ -465,9 +463,9 @@ exports["test:clearInterval"] = WorkerTest(
       onMessage: function(msg) {
         if (msg === "intreval") {
           called = called + 1;
-          if (called > 1) test.fail("failed to cancel timer");
+          if (called > 1) assert.fail("failed to cancel timer");
         } else {
-          test.pass("interval cancelled");
+          assert.pass("interval cancelled");
           done();
         }
       }
@@ -477,7 +475,7 @@ exports["test:clearInterval"] = WorkerTest(
 
 exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let originalWindow = browser.contentWindow;
     let worker =  Worker({
@@ -503,9 +501,9 @@ exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
         let titleAfterLoad = originalWindow.document.title;
         // Wait additional cycles to verify that intervals are really cancelled
         setTimeout(function () {
-          test.assertEqual(browser.contentDocument.title, "final",
+          assert.equal(browser.contentDocument.title, "final",
                            "New document has not been modified");
-          test.assertEqual(originalWindow.document.title, titleAfterLoad,
+          assert.equal(originalWindow.document.title, titleAfterLoad,
                            "Nor previous one");
 
           done();
@@ -517,7 +515,7 @@ exports["test:setTimeout are unregistered on content unload"] = WorkerTest(
 
 exports['test:check window attribute in iframes'] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     // Create a first iframe and wait for its loading
     let contentWin = browser.contentWindow;
@@ -548,12 +546,12 @@ exports['test:check window attribute in iframes'] = WorkerTest(
             ]);
           },
           onMessage: function(msg) {
-            test.assert(msg[0], "window.top != window");
-            test.assert(msg[1], "window.frameElement is defined");
-            test.assert(msg[2], "window.parent != window");
-            test.assertEqual(msg[3], contentWin.location.href,
+            assert.ok(msg[0], "window.top != window");
+            assert.ok(msg[1], "window.frameElement is defined");
+            assert.ok(msg[2], "window.parent != window");
+            assert.equal(msg[3], contentWin.location.href,
                              "top.location refers to the toplevel content doc");
-            test.assertEqual(msg[4], iframe.contentWindow.location.href,
+            assert.equal(msg[4], iframe.contentWindow.location.href,
                              "parent.location refers to the first iframe doc");
             done();
           }
@@ -569,7 +567,7 @@ exports['test:check window attribute in iframes'] = WorkerTest(
 
 exports['test:check window attribute in toplevel documents'] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
 
     let worker =  Worker({
       window: browser.contentWindow,
@@ -581,9 +579,9 @@ exports['test:check window attribute in toplevel documents'] = WorkerTest(
         ]);
       },
       onMessage: function(msg) {
-        test.assert(msg[0], "window.top == window");
-        test.assert(!msg[1], "window.frameElement is null");
-        test.assert(msg[2], "window.parent == window");
+        assert.ok(msg[0], "window.top == window");
+        assert.ok(!msg[1], "window.frameElement is null");
+        assert.ok(msg[2], "window.parent == window");
         done();
       }
     });
@@ -592,7 +590,7 @@ exports['test:check window attribute in toplevel documents'] = WorkerTest(
 
 exports["test:check worker API with page history"] = WorkerTest(
   DEFAULT_CONTENT_URL,
-  function(test, browser, done) {
+  function(assert, browser, done) {
     let url2 = "data:text/html;charset=utf-8,bar";
 
     loadAndWait(browser, url2, function () {
@@ -623,16 +621,16 @@ exports["test:check worker API with page history"] = WorkerTest(
       browser.addEventListener("pagehide", function onpagehide() {
         browser.removeEventListener("pagehide", onpagehide, false);
         // Now any event sent to this worker should throw
-        test.assertRaises(
+
+        assert.throws(
             function () { worker.postMessage("data"); },
-            "The page is currently hidden and can no longer be used until it" +
-            " is visible again.",
+            /The page is currently hidden and can no longer be used/,
             "postMessage should throw when the page is hidden in history"
             );
-        test.assertRaises(
+
+        assert.throws(
             function () { worker.port.emit("event"); },
-            "The page is currently hidden and can no longer be used until it" +
-            " is visible again.",
+            /The page is currently hidden and can no longer be used/,
             "port.emit should throw when the page is hidden in history"
             );
 
@@ -644,7 +642,7 @@ exports["test:check worker API with page history"] = WorkerTest(
         // actually disabled
         setTimeout(function () {
           worker.on("message", function (data) {
-            test.assert(data, "timeout restored");
+            assert.ok(data, "timeout restored");
             done();
           });
           browser.goForward();
@@ -655,3 +653,15 @@ exports["test:check worker API with page history"] = WorkerTest(
 
   }
 );
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 806817");
+    }
+  }
+}
+
+require("test").run(exports);
