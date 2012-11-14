@@ -447,8 +447,8 @@ exports["test Content URL Option"] = function(assert) {
   }
 
   assert.throws(function () Panel({ contentURL: "foo" }),
-                    "The `contentURL` option must be a valid URL.",
-                    /Panel throws an exception if contentURL is not a URL./);
+                    /The `contentURL` option must be a valid URL./,
+                    "Panel throws an exception if contentURL is not a URL.");
 };
 
 exports["test ContentScriptOptions Option"] = function(assert, done) {
