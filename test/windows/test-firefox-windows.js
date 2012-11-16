@@ -308,7 +308,7 @@ exports.testTrackWindows = function(test) {
 
   function openWindow() {
     windows.push(browserWindows.open({
-      url: "data:text/html;charset=utf-8,<i>Hi</i>",
+      url: "data:text/html;charset=utf-8,<i>testTrackWindows</i>",
 
       onActivate: function(window) {
         let index = windows.indexOf(window);
@@ -332,12 +332,17 @@ exports.testTrackWindows = function(test) {
 
   browserWindows.on("activate", function (window) {
     let index = windows.indexOf(window);
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
     actions.push("global activate " + index)
   })
 
   browserWindows.on("deactivate", function (window) {
     let index = windows.indexOf(window);
-    if (index < 0) return;
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
     actions.push("global deactivate " + index)
   })
 
