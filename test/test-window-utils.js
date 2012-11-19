@@ -47,7 +47,7 @@ exports['test close on unload'] = function(assert) {
     close: function() {
       timesClosed++;
       this._listeners.forEach(
-        function(func) { 
+        function(func) {
           func({target: fakeWindow.document});
         });
     },
@@ -236,9 +236,6 @@ exports['test window watcher without untracker'] = function(assert, done) {
 };
 
 exports['test active window'] = function(assert, done) {
-  let testRunnerWindow = Cc["@mozilla.org/appshell/window-mediator;1"]
-                         .getService(Ci.nsIWindowMediator)
-                         .getMostRecentWindow("test:runner");
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
@@ -255,26 +252,21 @@ exports['test active window'] = function(assert, done) {
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
                        "Correct active window [1]");
-      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
+      nextTest();
     },
     function() {
-      assert.equal(windowUtils.activeWindow, testRunnerWindow,
-                       "Correct active window [2]");
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
-                       "Correct active browser window [3]");
+                       "Correct active browser window [2]");
       continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
-                       "Correct active window [4]");
-      continueAfterFocus(windowUtils.activeWindow = testRunnerWindow);
+                       "Correct active window [3]");
+      nextTest();
     },
     function() {
-      assert.equal(windowUtils.activeWindow, testRunnerWindow,
-                       "Correct active window [5]");
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
-                       "Correct active browser window [6]");
-      testRunnerWindow = null;
+                       "Correct active browser window [4]");
       browserWindow = null;
       done();
     }
@@ -288,7 +280,6 @@ exports['test active window'] = function(assert, done) {
   }
 
   function continueAfterFocus(targetWindow) {
-
     // Based on SimpleTest.waitForFocus
     var fm = Cc["@mozilla.org/focus-manager;1"].
              getService(Ci.nsIFocusManager);
@@ -345,6 +336,17 @@ exports['test windowIterator'] = function(assert, done) {
     }, false);
     window.close();
   }, false);
+}
+
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 809412");
+    }
+  }
 }
 
 require("test").run(exports);

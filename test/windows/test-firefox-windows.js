@@ -8,9 +8,8 @@ const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
-let browserWindows;
 
-function getTestRunnerWindow() wm.getMostRecentWindow("test:runner");
+const { browserWindows } = require("sdk/windows");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -180,7 +179,7 @@ exports.testActiveWindow = function(test) {
   let window2, window3;
 
   // Raw window objects
-  let nonBrowserWindow = getTestRunnerWindow(), rawWindow2, rawWindow3;
+  let rawWindow2, rawWindow3;
 
   test.waitUntilDone();
 
@@ -196,8 +195,7 @@ exports.testActiveWindow = function(test) {
       continueAfterFocus(rawWindow2);
     },
     function() {
-      nonBrowserWindow.focus();
-      continueAfterFocus(nonBrowserWindow);
+      nextStep();
     },
     function() {
       /**
@@ -223,7 +221,6 @@ exports.testActiveWindow = function(test) {
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
-      nonBrowserWindow.focus();
       finishTest();
     }
   ];
@@ -253,7 +250,6 @@ exports.testActiveWindow = function(test) {
   }
 
   function continueAfterFocus(targetWindow) {
-
     // Based on SimpleTest.waitForFocus
     var fm = Cc["@mozilla.org/focus-manager;1"].
              getService(Ci.nsIFocusManager);
@@ -312,7 +308,7 @@ exports.testTrackWindows = function(test) {
 
   function openWindow() {
     windows.push(browserWindows.open({
-      url: "data:text/html;charset=utf-8,<i>Hi</i>",
+      url: "data:text/html;charset=utf-8,<i>testTrackWindows</i>",
 
       onActivate: function(window) {
         let index = windows.indexOf(window);
@@ -336,34 +332,19 @@ exports.testTrackWindows = function(test) {
 
   browserWindows.on("activate", function (window) {
     let index = windows.indexOf(window);
-
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
     actions.push("global activate " + index)
   })
 
   browserWindows.on("deactivate", function (window) {
     let index = windows.indexOf(window);
-
+    // only concerned with windows opened for this test
+    if (index < 0)
+      return;
     actions.push("global deactivate " + index)
   })
 
   openWindow();
-}
-
-// If the module doesn't support the app we're being run in, require() will
-// throw.  In that case, remove all tests above from exports, and add one dummy
-// test that passes.
-try {
-  browserWindows = require("sdk/windows").browserWindows;
-}
-catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=571449";
-  if (err.message.indexOf(bug) < 0)
-    throw err;
-
-  module.exports = {
-    testAppNotSupported: function (test) {
-      test.pass("the windows module does not support this application.");
-    }
-  }
 }

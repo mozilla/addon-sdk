@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 var pageMod = require("sdk/page-mod");
@@ -13,6 +12,7 @@ const { Cc, Ci } = require("chrome");
 const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
 const { getTabContentWindow, getActiveTab, openTab, closeTab } = require('sdk/tabs/utils');
+const { data } = require('self');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -364,19 +364,29 @@ exports.testWorksWithExistingTabs = function(test) {
   tabs.open({
     url: url,
     onReady: function onReady(tab) {
-      let pageMod = new PageMod({
+      let pageModOnExisting = new PageMod({
         include: url,
         attachTo: ["existing", "top", "frame"],
         onAttach: function(worker) {
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
-          pageMod.destroy();
-          tab.close();
-          test.done();
+
+          timer.setTimeout(function() {
+            pageModOnExisting.destroy();
+            pageModOffExisting.destroy();
+            tab.close();
+            test.done();
+          }, 0);
+        }
+      });
+
+      let pageModOffExisting = new PageMod({
+        include: url,
+        onAttach: function(worker) {
+          test.fail("pageModOffExisting page-mod should not have attached to anything");
         }
       });
     }
   });
-
 };
 
 exports['test tab worker on message'] = function(test) {
@@ -616,7 +626,7 @@ exports['test111 attachTo [frame]'] = function(test) {
 };
 
 exports.testContentScriptOptionsOption = function(test) {
-	test.waitUntilDone();
+  test.waitUntilDone();
 
   let callbackDone = null;
   testPageMod(test, "about:", [{
@@ -845,10 +855,11 @@ exports.testPageModcancelTimeout = function(test) {
       })
       worker.port.on("timeout", function(id) {
         test.pass("timer was scheduled")
-        tab.close()
-        worker.destroy()
-        loader.unload()
-        test.done()
+        tab.close();
+        worker.destroy();
+        mod.destroy();
+        loader.unload();
+        test.done();
       })
     }
   });
@@ -859,12 +870,18 @@ exports.testPageModcancelTimeout = function(test) {
   })
 }
 
-exports.testBug803529 = function(test) {
+exports.testExistingOnFrames = function(test) {
   test.waitUntilDone();
 
-  let subIFrame = '<iframe src="data:text/html;charset=utf-8,sub frame" />'
-  let iFrame = '<iframe src="data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame) + '" />';
-  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame)
+  let subFrameURL = 'data:text/html;charset=utf-8,testExistingOnFrames-sub-frame';
+  let subIFrame = '<iframe src="' + subFrameURL + '" />'
+  let iFrameURL = 'data:text/html;charset=utf-8,' + encodeURIComponent(subIFrame)
+  let iFrame = '<iframe src="' + iFrameURL + '" />';
+  let url = 'data:text/html;charset=utf-8,' + encodeURIComponent(iFrame);
+
+  // we want all urls related to the test here, and not just the iframe urls
+  // because we need to fail if the test is applied to the top window url.
+  let urls = [url, iFrameURL, subFrameURL];
 
   let counter = 0;
   let tab = openTab(getMostRecentBrowserWindow(), url);
@@ -876,21 +893,83 @@ exports.testBug803529 = function(test) {
       return;
     }
 
-    let pagemod = pageMod.PageMod({
+    let pagemodOnExisting = pageMod.PageMod({
       include: ["*", "data:*"],
       attachTo: ["existing", "frame"],
       contentScriptWhen: 'ready',
+      onAttach: function(worker) {
+        // need to ignore urls that are not part of the test, because other
+        // tests are not closing their tabs when they complete..
+        if (urls.indexOf(worker.url) == -1)
+          return;
+
+        test.assertNotEqual(url,
+                            worker.url,
+                            'worker should not be attached to the top window');
+
+        if (++counter < 2) {
+          // we can rely on this order in this case because we are sure that
+          // the frames being tested have completely loaded
+          test.assertEqual(iFrameURL, worker.url, '1st attach is for top frame');
+        }
+        else if (counter > 2) {
+          test.fail('applied page mod too many times');
+        }
+        else {
+          test.assertEqual(subFrameURL, worker.url, '2nd attach is for sub frame');
+          // need timeout because onAttach is called before the constructor returns
+          timer.setTimeout(function() {
+            pagemodOnExisting.destroy();
+            pagemodOffExisting.destroy();
+            closeTab(tab);
+            test.done();
+          }, 0);
+        }
+      }
+    });
+
+    let pagemodOffExisting = pageMod.PageMod({
+      include: ["*", "data:*"],
+      attachTo: ["frame"],
+      contentScriptWhen: 'ready',
       onAttach: function(mod) {
-        if (++counter != 2) return;
-        test.pass('page mod attached to iframe');
-        timer.setTimeout(function() {
-          pagemod.destroy();
-          closeTab(tab);
-          test.done();
-        }, 0);
+        test.fail('pagemodOffExisting page-mod should not have been attached');
       }
     });
   }
 
   window.addEventListener("load", wait4Iframes, false);
 };
+
+exports.testIFramePostMessage = function(test) {
+  test.waitUntilDone();
+
+  tabs.open({
+    url: data.url("test-iframe.html"),
+    onReady: function(tab) {
+      var worker = tab.attach({
+        contentScriptFile: data.url('test-iframe.js'),
+        contentScript: ' var iframePath = \'' + data.url('test-iframe-postmessage.html') + '\'',
+        onMessage: function(msg) {
+          test.assertEqual(msg.first, 'a string');
+          test.assert(msg.second[1], "array");
+          test.assertEqual(typeof msg.third, 'object');
+
+          worker.destroy();
+          tab.close(function() test.done());
+        }
+      });
+    }
+  });
+};
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (test) {
+        test.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 784224");
+    }
+  }
+}

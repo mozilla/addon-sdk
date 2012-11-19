@@ -24,7 +24,7 @@ function makeWindow() {
          openWindow(null, url, null, features.join(","), null);
 }
 
-exports['test:constructing symbiont && validating API'] = function(test) {
+exports['test:constructing symbiont && validating API'] = function(assert) {
   let contentScript = ["1;", "2;"];
   let contentScriptFile = self.data.url("test-content-symbiont.js");
 
@@ -36,27 +36,27 @@ exports['test:constructing symbiont && validating API'] = function(test) {
     contentScriptWhen: "start"
   });
 
-  test.assertEqual(
+  assert.equal(
     contentScriptFile,
     contentSymbiont.contentScriptFile,
     "There is one contentScriptFile, as specified in options."
   );
-  test.assertEqual(
+  assert.equal(
     contentScript.length,
     contentSymbiont.contentScript.length,
     "There are two contentScripts, as specified in options."
   );
-  test.assertEqual(
+  assert.equal(
     contentScript[0],
     contentSymbiont.contentScript[0],
     "There are two contentScripts, as specified in options."
   );
-  test.assertEqual(
+  assert.equal(
     contentScript[1],
     contentSymbiont.contentScript[1],
     "There are two contentScripts, as specified in options."
   )
-  test.assertEqual(
+  assert.equal(
     contentSymbiont.contentScriptWhen,
     "start",
     "contentScriptWhen is as specified in options."
@@ -65,12 +65,12 @@ exports['test:constructing symbiont && validating API'] = function(test) {
   contentSymbiont.destroy();
 };
 
-exports["test:communication with worker global scope"] = function(test) {
+exports["test:communication with worker global scope"] = function(assert, done) {
   let window = makeWindow();
   let contentSymbiont;
 
   function onMessage1(message) {
-    test.assertEqual(message, 1, "Program gets message via onMessage.");
+    assert.equal(message, 1, "Program gets message via onMessage.");
     contentSymbiont.removeListener('message', onMessage1);
     contentSymbiont.on('message', onMessage2);
     contentSymbiont.postMessage(2);
@@ -78,9 +78,9 @@ exports["test:communication with worker global scope"] = function(test) {
 
   function onMessage2(message) {
     if (5 == message) {
-      test.done();
+      done();
     } else {
-      test.assertEqual(message, 3, "Program gets message via onMessage2.");
+      assert.equal(message, 3, "Program gets message via onMessage2.");
       contentSymbiont.postMessage(4)
     }
   }
@@ -102,14 +102,12 @@ exports["test:communication with worker global scope"] = function(test) {
       contentScriptWhen: 'ready',
       onMessage: onMessage1
     });
-    
+
     frame.setAttribute("src", "data:text/html;charset=utf-8,<html><body></body></html>");
   }, false);
-  test.waitUntilDone();
 };
 
-exports['test:pageWorker'] = function(test) {
-  test.waitUntilDone();
+exports['test:pageWorker'] = function(assert, done) {
   let worker =  Symbiont({
     contentURL: 'about:buildconfig',
     contentScript: 'new ' + function WorkerScope() {
@@ -121,9 +119,9 @@ exports['test:pageWorker'] = function(test) {
     },
     onMessage: function(msg) {
       if (msg == 'bye!') {
-        test.done()
+        done()
       } else {
-        test.assertEqual(
+        assert.equal(
           worker.contentURL + '',
           msg
         );
@@ -133,8 +131,7 @@ exports['test:pageWorker'] = function(test) {
   });
 };
 
-exports["test:document element present on 'start'"] = function(test) {
-  test.waitUntilDone();
+exports["test:document element present on 'start'"] = function(assert, done) {
   let xulApp = require("sdk/system/xul-app");
   let worker = Symbiont({
     contentURL: "about:buildconfig",
@@ -142,32 +139,28 @@ exports["test:document element present on 'start'"] = function(test) {
     contentScriptWhen: "start",
     onMessage: function(message) {
       if (xulApp.versionInRange(xulApp.platformVersion, "2.0b6", "*"))
-        test.assert(message, "document element present on 'start'");
+        assert.ok(message, "document element present on 'start'");
       else
-        test.pass("document element not necessarily present on 'start'");
-      test.done();
+        assert.pass("document element not necessarily present on 'start'");
+      done();
     }
   });
 };
 
-exports["test:direct communication with trusted document"] = function(test) {
-  test.waitUntilDone();
-
+exports["test:direct communication with trusted document"] = function(assert, done) {
   let worker = Symbiont({
     contentURL: require("sdk/self").data.url("test-trusted-document.html")
   });
 
   worker.port.on('document-to-addon', function (arg) {
-    test.assertEqual(arg, "ok", "Received an event from the document");
+    assert.equal(arg, "ok", "Received an event from the document");
     worker.destroy();
-    test.done();
+    done();
   });
   worker.port.emit('addon-to-document', 'ok');
 };
 
-exports["test:`addon` is not available when a content script is set"] = function(test) {
-  test.waitUntilDone();
-
+exports["test:`addon` is not available when a content script is set"] = function(assert, done) {
   let worker = Symbiont({
     contentURL: require("sdk/self").data.url("test-trusted-document.html"),
     contentScript: "new " + function ContentScriptScope() {
@@ -176,9 +169,21 @@ exports["test:`addon` is not available when a content script is set"] = function
   });
 
   worker.port.on('cs-to-addon', function (hasAddon) {
-    test.assertEqual(hasAddon, false,
+    assert.equal(hasAddon, false,
       "`addon` is not available");
     worker.destroy();
-    test.done();
+    done();
   });
 };
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 806815");
+    }
+  }
+}
+
+require("test").run(exports);
