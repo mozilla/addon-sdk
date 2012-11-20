@@ -424,4 +424,8 @@ ul#module-index {
   list-style-type: none;
   -moz-column-count: 3;
   -moz-column-gap: 1em;
+  -webkit-column-count: 3;
+  -webkit-column-gap: 1em;
+  column-count: 3;
+  column-gap: 1em;
 }
