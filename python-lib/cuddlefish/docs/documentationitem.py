@@ -101,11 +101,12 @@ def get_module_list(env_root):
     get_modules_in_package(env_root, module_root, module_list, True)
     # get the third-party modules
     packages_root = os.sep.join([env_root, "packages"])
-    for entry in os.listdir(packages_root):
-        if os.path.isdir(os.sep.join([packages_root, entry])):
-            package_docs = os.sep.join([packages_root, entry, "docs"])
-            if os.path.exists(package_docs):
-                get_modules_in_package(env_root, package_docs, module_list, False)
+    if os.path.exists(packages_root):
+        for entry in os.listdir(packages_root):
+            if os.path.isdir(os.sep.join([packages_root, entry])):
+                package_docs = os.sep.join([packages_root, entry, "docs"])
+                if os.path.exists(package_docs):
+                    get_modules_in_package(env_root, package_docs, module_list, False)
     return module_list
 
 def get_devguide_list(env_root):
