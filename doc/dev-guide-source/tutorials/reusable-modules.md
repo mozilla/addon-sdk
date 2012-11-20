@@ -373,15 +373,11 @@ there instead.
 
 ### Documentation ###
 
-If you document the package and the modules it contains, then people
-who install your package and execute `cfx docs` will see the documentation
+If you document your modules, people who install your package and
+execute `cfx docs` will see the documentation
 integrated with the SDK's own documentation.
 
-You can document the package that contains the geolocation module by editing
-the "README.md" file that `cfx init` created in the package root. It's in
-[Markdown](http://daringfireball.net/projects/markdown/syntax) syntax.
-
-You can document the geolocation module itself by creating a file called
+You can document the geolocation module by creating a file called
 "geolocation.md" in your package's "doc" directory. This file is also
 written in Markdown, although you can optionally use some
 [extended syntax](https://wiki.mozilla.org/Jetpack/SDK/Writing_Documentation#APIDoc_Syntax)
@@ -389,13 +385,12 @@ to document APIs.
 
 Try it:
 
-* edit "README.md", and add a "geolocation.md" under "doc"
+* add a "geolocation.md" under "doc"
 * copy your geolocation package under the "packages" directory in the SDK root
 * execute `cfx docs`
 
 Once `cfx docs` has finished, you should see a new entry appear in the
-sidebar called "Third-Party APIs", which lists the geolocation package
-and the module it contains.
+sidebar called "Third-Party APIs", which lists the geolocation module.
 
 ### Editing "package.json" ###
 

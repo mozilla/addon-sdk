@@ -14,7 +14,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         guide = web_docs.create_guide_page(os.path.join(\
-            root + '/doc/dev-guide-source/index.blah'))
+            root + '/doc/dev-guide-source/index.md'))
         self._test_common_contents(guide)
         self.assertTrue(\
             '<title>An Imposing Title - Add-on SDK Documentation</title>'\
@@ -29,7 +29,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         guide = web_docs.create_guide_page(os.path.join(\
-            root + '/doc/dev-guide-source/no_h1.blah'))
+            root + '/doc/dev-guide-source/no_h1.md'))
         self._test_common_contents(guide)
         self.assertTrue('<title>Add-on SDK Documentation</title>'\
             in guide)
@@ -41,7 +41,7 @@ class WebDocTests(unittest.TestCase):
             '/python-lib/cuddlefish/tests/static-files')
         web_docs = webdocs.WebDocs(root)
         module = web_docs.create_module_page(os.path.join(\
-            root + '/doc/module-source/sdk/aardvark-feeder.blah'))
+            root + '/doc/module-source/sdk/aardvark-feeder.md'))
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
