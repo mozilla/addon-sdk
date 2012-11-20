@@ -210,4 +210,4 @@ styling, it certainly needs a way to delete annotations, it should deal with
 reliably.
 
 But we hope this gives you an idea of the things that are possible with the
-modules in the `addon-kit` package.
+modules in the SDK.

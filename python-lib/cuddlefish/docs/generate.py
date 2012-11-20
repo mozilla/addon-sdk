@@ -110,6 +110,12 @@ def calculate_current_status(env_root):
             if filename.endswith(".md"):
                 current_status.update(filename)
                 current_status.update(str(os.path.getmtime(os.path.join(dirpath, filename))))
+    package_dir = os.path.join(env_root, "packages")
+    for (dirpath, dirnames, filenames) in os.walk(package_dir):
+        for filename in filenames:
+            if filename.endswith(".md"):
+                current_status.update(filename)
+                current_status.update(str(os.path.getmtime(os.path.join(dirpath, filename))))
     base_html_file = os.path.join(docs_dir, "static-files", "base.html")
     current_status.update(base_html_file)
     current_status.update(str(os.path.getmtime(os.path.join(dirpath, base_html_file))))
@@ -134,17 +140,38 @@ def generate_docs_from_scratch(env_root, version, base_url):
     if not os.path.exists(os.path.join(docs_dir, "modules")):
         os.mkdir(os.path.join(docs_dir, "modules"))
     module_root = os.sep.join([env_root, "doc", "module-source"])
-    module_list = get_module_list(module_root)
+    module_list = get_module_list(env_root)
     [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
 
+    # generate third-party module index
+    third_party_index_file = os.sep.join([env_root, "doc", "module-source", "third-party-modules.md"])
+    third_party_module_list = [module_info for module_info in module_list if module_info.level() == "third-party"]
+    write_module_index(env_root, web_docs, third_party_index_file, third_party_module_list, must_rewrite_links)
+
+
+    # generate high-level module index
+    high_level_index_file = os.sep.join([env_root, "doc", "module-source", "high-level-modules.md"])
+    high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]
+    write_module_index(env_root, web_docs, high_level_index_file, high_level_module_list, must_rewrite_links)
+
+    # generate low-level module index
+    low_level_index_file = os.sep.join([env_root, "doc", "module-source", "low-level-modules.md"])
+    low_level_module_list = [module_info for module_info in module_list if module_info.level() == "low"]
+    write_module_index(env_root, web_docs, low_level_index_file, low_level_module_list, must_rewrite_links)
+
     # generate dev-guide docs
-    devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
-    devguide_list = get_devguide_list(devguide_root)
+    devguide_list = get_devguide_list(env_root)
     [write_devguide_doc(env_root, web_docs, devguide_info, must_rewrite_links) for devguide_info in devguide_list]
 
     # make /md/dev-guide/welcome.html the top level index file
     doc_html = web_docs.create_guide_page(os.path.join(docs_dir, 'dev-guide-source', 'index.md'))
     write_file(env_root, doc_html, docs_dir, 'index', False)
+
+def write_module_index(env_root, web_docs, source_file, module_list, must_rewrite_links):
+    doc_html = web_docs.create_module_index(source_file, module_list)
+    base_filename, extension = os.path.splitext(os.path.basename(source_file))
+    destination_path = os.sep.join([env_root, "doc", "modules"])
+    write_file(env_root, doc_html, destination_path, base_filename, must_rewrite_links)
 
 def write_module_doc(env_root, web_docs, module_info, must_rewrite_links):
     doc_html = web_docs.create_module_page(module_info.source_path_and_filename())

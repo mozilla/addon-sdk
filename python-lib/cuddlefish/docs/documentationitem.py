@@ -2,19 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys, os
+import sys, os, re, json
 
 class DocumentationItemInfo(object):
-    def __init__(self, root, md_path, filename):
-        # SDK-root + "doc" + "sdk"
-        self.root = root
+    def __init__(self, env_root, md_path, filename):
+        self.env_root = env_root
         # full path to MD file, without filename
         self.source_path = md_path
         # MD filename
         self.source_filename = filename
 
-    def root(self):
-        return self.root
+    def env_root(self):
+        return self.env_root
 
     def source_path(self):
         return self.source_path
@@ -28,59 +27,95 @@ class DocumentationItemInfo(object):
     def source_path_and_filename(self):
         return os.sep.join([self.source_path, self.source_filename])
 
-    def source_path_relative_from_root(self):
-        return self.source_path[len(self.root) + 1:]
+    def source_path_relative_from_env_root(self):
+        return self.source_path[len(self.env_root) + 1:]
 
 class DevGuideItemInfo(DocumentationItemInfo):
-    def __init__(self, root, md_path, filename):
-        DocumentationItemInfo.__init__(self, root, md_path, filename)
+    def __init__(self, env_root, devguide_root, md_path, filename):
+        DocumentationItemInfo.__init__(self, env_root, md_path, filename)
+        self.devguide_root = devguide_root
+
+    def source_path_relative_from_devguide_root(self):
+        return self.source_path[len(self.devguide_root) + 1:]
 
     def destination_path(self):
-        root_pieces = self.root.split(os.sep)
+        root_pieces = self.devguide_root.split(os.sep)
         root_pieces[-1] = "dev-guide"
-        return os.sep.join([os.sep.join(root_pieces), self.source_path_relative_from_root()])
+        return os.sep.join([os.sep.join(root_pieces), self.source_path_relative_from_devguide_root()])
 
 class ModuleInfo(DocumentationItemInfo):
-    def __init__(self, root, md_path, filename):
-        DocumentationItemInfo.__init__(self, root, md_path, filename)
+    def __init__(self, env_root, module_root, md_path, filename):
+        DocumentationItemInfo.__init__(self, env_root, md_path, filename)
+        self.module_root = module_root
+
+    def js_module_path(self):
+        return os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
+
+    def source_path_relative_from_module_root(self):
+        return self.source_path[len(self.module_root) + 1:]
 
     def destination_path(self):
-        root_pieces = self.root.split(os.sep)
+        if self.level() == "third-party":
+            return os.sep.join([self.env_root, "doc", "modules", "packages"])
+        root_pieces = self.module_root.split(os.sep)
         root_pieces[-1] = "modules"
-        relative_pieces = self.source_path_relative_from_root().split(os.sep)
+        relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return os.sep.join(root_pieces + relative_pieces)
 
     def relative_url(self):
-        relative_pieces = self.source_path_relative_from_root().split(os.sep)
+        if self.level() == "third-party":
+            relative_pieces = ["packages"]
+        else:
+            relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return "/".join(relative_pieces) + "/" + self.base_filename() + ".html"
 
     def name(self):
-        if os.sep.join([self.root, "sdk"]) == self.source_path:
+        if os.sep.join([self.module_root, "sdk"]) == self.source_path or self.level() == "third-party":
             return self.source_filename[:-3]
         else:
-            path_from_root_pieces = self.source_path_relative_from_root().split(os.sep)
+            path_from_root_pieces = self.source_path_relative_from_module_root().split(os.sep)
             return "/".join(["/".join(path_from_root_pieces[1:]), self.source_filename[:-len(".md")]])
 
     def level(self):
-        if os.sep.join([self.root, "sdk"]) == self.source_path:
-            return "high"
+        if self.source_path_relative_from_env_root().startswith("packages"):
+            return "third-party"
         else:
-            return "low"
+            if os.sep.join([self.module_root, "sdk"]) == self.source_path:
+                return "high"
+            else:
+                return "low"
 
-def get_module_list(root):
-    module_list = []
-    for (dirpath, dirnames, filenames) in os.walk(root):
+def get_modules_in_package(env_root, package_docs_dir, module_list, ignore_files_in_root):
+    for (dirpath, dirnames, filenames) in os.walk(package_docs_dir):
         for filename in filenames:
+            # ignore files in the root
+            if ignore_files_in_root and package_docs_dir == dirpath:
+                continue
             if filename.endswith(".md"):
-                module_list.append(ModuleInfo(root, dirpath, filename))
+                module_list.append(ModuleInfo(env_root, package_docs_dir, dirpath, filename))
+
+def get_module_list(env_root):
+    module_list = []
+    # get the built-in modules
+    module_root = os.sep.join([env_root, "doc", "module-source"])
+    get_modules_in_package(env_root, module_root, module_list, True)
+    # get the third-party modules
+    packages_root = os.sep.join([env_root, "packages"])
+    if os.path.exists(packages_root):
+        for entry in os.listdir(packages_root):
+            if os.path.isdir(os.sep.join([packages_root, entry])):
+                package_docs = os.sep.join([packages_root, entry, "docs"])
+                if os.path.exists(package_docs):
+                    get_modules_in_package(env_root, package_docs, module_list, False)
     return module_list
 
-def get_devguide_list(root):
+def get_devguide_list(env_root):
     devguide_list = []
-    for (dirpath, dirnames, filenames) in os.walk(root):
+    devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
+    for (dirpath, dirnames, filenames) in os.walk(devguide_root):
         for filename in filenames:
             if filename.endswith(".md"):
-                devguide_list.append(DevGuideItemInfo(root, dirpath, filename))
+                devguide_list.append(DevGuideItemInfo(env_root, devguide_root, dirpath, filename))
     return devguide_list
 
 if __name__ == "__main__":

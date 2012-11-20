@@ -31,7 +31,7 @@ You can modify the document in your script:
     pageMod.PageMod({
       include: "*.mozilla.org",
       contentScript: 'document.body.innerHTML = ' +
-                     ' "<h1>Page mpackages_diratches ruleset</h1>";'
+                     ' "<h1>Page matches ruleset</h1>";'
     });
 
 You can supply the content script(s) in one of two ways:
