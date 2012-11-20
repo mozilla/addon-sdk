@@ -7,6 +7,8 @@
 This page talks about the access content scripts have to DOM objects
 in the pages they are attached to.
 
+## XRayWrapper ##
+
 Content scripts need to be able to access DOM objects in arbitrary web
 pages, but this could cause two potential security problems:
 
@@ -15,11 +17,8 @@ enabling a malicious page to steal data or call privileged methods.
 2. a malicious page could redefine standard functions and properties of DOM
 objects so they don't do what the add-on expects.
 
-To deal with this, content scripts access DOM objects via a proxy.
-Any changes they make are made to the proxy, and so are not visible to
-page content.
-
-The proxy is based on `XRayWrapper`, (also known as
+To deal with this, content scripts access DOM objects using
+`XRayWrapper`, (also known as
 [`XPCNativeWrapper`](https://developer.mozilla.org/en/XPCNativeWrapper)).
 These wrappers give the user access to the native values of DOM functions
 and properties, even if they have been redefined by a script.
@@ -42,7 +41,7 @@ For example: the page below redefines `window.confirm()` to return
 
 </script>
 
-But thanks to the content proxy, a content script which calls
+But thanks to the wrapper, a content script which calls
 `window.confirm()` will get the native implementation:
 
     var widgets = require("widget");
@@ -64,7 +63,7 @@ But thanks to the content proxy, a content script which calls
 
     tabs.open(data.url("xray.html"));
 
-The proxy is transparent to content scripts: as far as the content script
+The wrapper is transparent to content scripts: as far as the content script
 is concerned, it is accessing the DOM directly. But because it's not, some
 things that you might expect to work, won't. For example, if the page includes
 a library like [jQuery](http://www.jquery.com), or any other page script
@@ -72,7 +71,48 @@ adds other objects to any DOM nodes, they won't be visible to the content
 script. So to use jQuery you'll typically have to add it as a content script,
 as in [this example](dev-guide/guides/content-scripts/reddit-example.html).
 
-### Adding Event Listeners ###
+### XRayWrapper Limitations ###
+
+There are some limitations with accessing objects through XRayWrapper.
+
+First, XRayWrappers don't inherit from JavaScript's
+[`Object`](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object),
+so methods like `valueOf`, `toSource`, and `watch` are not available.
+This issue is being tracked as
+[bug 787013](https://bugzilla.mozilla.org/show_bug.cgi?id=787013).
+
+Second, you can't access the prototype of an object through an XRayWrapper.
+Consider a script like this:
+
+    window.HTMLElement.prototype.foo = 'bar';
+    window.alert(window.document.body.foo);
+
+Run as a normal page script, this will work fine. But if you execute it as
+a content script you'll see an error like:
+
+<pre>
+TypeError: window.HTMLElement.prototype is undefined
+</pre>
+
+This issue is being tracked as
+[bug 787070](https://bugzilla.mozilla.org/show_bug.cgi?id=787070).
+
+The main effect of this is that certain features of the
+[Prototype JavaScript framework](http://www.prototypejs.org/) don't work
+if it is loaded as a content script. As a workaround you can
+disable these features by setting
+`Prototype.BrowserFeatures.SpecificElementExtensions` to `false`
+in `prototype.js`:
+
+<pre>
+ if (Prototype.Browser.MobileSafari)
+   Prototype.BrowserFeatures.SpecificElementExtensions = false;
+
++// Disable element extension in addon-sdk content scripts
++Prototype.BrowserFeatures.SpecificElementExtensions = false;
+</pre>
+
+## Adding Event Listeners ##
 
 You can listen for DOM events in a content script just as you can in a normal
 page script, but there's one important difference: if you define an event
@@ -108,7 +148,7 @@ Note that with both `onclick` assignment and `addEventListener()`, you must
 define the listener as a function. It cannot be defined as a string, whether
 in a content script or in a page script.
 
-### unsafeWindow ###
+## unsafeWindow ##
 
 If you really need direct access to the underlying DOM, you can use the
 global `unsafeWindow` object.
