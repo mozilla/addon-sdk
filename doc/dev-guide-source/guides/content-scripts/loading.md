@@ -21,7 +21,7 @@ avoids the need to maintain a separate file for the content script.
 
 The `contentScriptFile` option enables you to pass in the local file URL from
 which the content script will be loaded. To supply the file
-"my-content-script.js", located in the /data subdirectory under your package's
+"my-content-script.js", located in the /data subdirectory under your add-on's
 root directory, use a line like:
 
     // "data" is supplied by the "self" module
