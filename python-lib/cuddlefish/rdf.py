@@ -160,7 +160,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("16.0"))
+        elem.appendChild(dom.createTextNode("17.0"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
