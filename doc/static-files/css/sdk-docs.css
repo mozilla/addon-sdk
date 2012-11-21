@@ -386,7 +386,7 @@ a.stability-note {
   width: 8em;
   text-align: center;
   text-decoration: none;
-  color: black;
+  color: white;
   display: block;
   float: right;
   background-color: #E65252;
@@ -398,9 +398,10 @@ a.stability-stable {
   border: 1px solid green;
 }
 
-a.stability-experimental {
+a.stability-unstable, a.stability-experimental {
   background-color: #FFFAAE;
   border: 1px solid #D7DF01;
+  color: black;
 }
 
 ul.tree {
