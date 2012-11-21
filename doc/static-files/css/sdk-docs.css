@@ -396,6 +396,7 @@ a.stability-note {
 a.stability-stable {
   background-color: #46DF86;
   border: 1px solid green;
+  color: black;
 }
 
 a.stability-unstable, a.stability-experimental {
