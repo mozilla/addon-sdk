@@ -91,35 +91,58 @@ class ModuleInfo(DocumentationItemInfo):
         return self.source_path[len(self.module_root) + 1:]
 
     def destination_path(self):
+        if self.level() == "third-party":
+            return os.sep.join([self.env_root, "doc", "modules", "packages"])
         root_pieces = self.module_root.split(os.sep)
         root_pieces[-1] = "modules"
         relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return os.sep.join(root_pieces + relative_pieces)
 
     def relative_url(self):
-        relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
+        if self.level() == "third-party":
+            relative_pieces = ["packages"]
+        else:
+            relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return "/".join(relative_pieces) + "/" + self.base_filename() + ".html"
 
     def name(self):
-        if os.sep.join([self.module_root, "sdk"]) == self.source_path:
+        if os.sep.join([self.module_root, "sdk"]) == self.source_path or self.level() == "third-party":
             return self.source_filename[:-3]
         else:
             path_from_root_pieces = self.source_path_relative_from_module_root().split(os.sep)
             return "/".join(["/".join(path_from_root_pieces[1:]), self.source_filename[:-len(".md")]])
 
     def level(self):
-        if os.sep.join([self.module_root, "sdk"]) == self.source_path:
-            return "high"
+        if self.source_path_relative_from_env_root().startswith("packages"):
+            return "third-party"
         else:
-            return "low"
+            if os.sep.join([self.module_root, "sdk"]) == self.source_path:
+                return "high"
+            else:
+                return "low"
+
+def get_modules_in_package(env_root, package_docs_dir, module_list, ignore_files_in_root):
+    for (dirpath, dirnames, filenames) in os.walk(package_docs_dir):
+        for filename in filenames:
+            # ignore files in the root
+            if ignore_files_in_root and package_docs_dir == dirpath:
+                continue
+            if filename.endswith(".md"):
+                module_list.append(ModuleInfo(env_root, package_docs_dir, dirpath, filename))
 
 def get_module_list(env_root):
     module_list = []
+    # get the built-in modules
     module_root = os.sep.join([env_root, "doc", "module-source"])
-    for (dirpath, dirnames, filenames) in os.walk(module_root):
-        for filename in filenames:
-            if filename.endswith(".md"):
-                module_list.append(ModuleInfo(env_root, module_root, dirpath, filename))
+    get_modules_in_package(env_root, module_root, module_list, True)
+    # get the third-party modules
+    packages_root = os.sep.join([env_root, "packages"])
+    if os.path.exists(packages_root):
+        for entry in os.listdir(packages_root):
+            if os.path.isdir(os.sep.join([packages_root, entry])):
+                package_docs = os.sep.join([packages_root, entry, "docs"])
+                if os.path.exists(package_docs):
+                    get_modules_in_package(env_root, package_docs, module_list, False)
     return module_list
 
 def get_devguide_list(env_root):

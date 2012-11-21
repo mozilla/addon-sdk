@@ -17,7 +17,7 @@ class WebDocTests(unittest.TestCase):
         module_list = get_module_list(root)
         web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
-            root + '/doc/dev-guide-source/index.blah'))
+            root + '/doc/dev-guide-source/index.md'))
         self._test_common_contents(guide)
         self.assertTrue(\
             '<title>An Imposing Title - Add-on SDK Documentation</title>'\
@@ -33,7 +33,7 @@ class WebDocTests(unittest.TestCase):
         module_list = get_module_list(root)
         web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
-            root + '/doc/dev-guide-source/no_h1.blah'))
+            root + '/doc/dev-guide-source/no_h1.md'))
         self._test_common_contents(guide)
         self.assertTrue('<title>Add-on SDK Documentation</title>'\
             in guide)

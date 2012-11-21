@@ -13,6 +13,8 @@ from cuddlefish._version import get_versions
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
 VERSION_INSERTION_POINT = '<div id="version">'
+MODULE_INDEX_INSERTION_POINT = '<ul id="module-index">'
+THIRD_PARTY_MODULE_SUMMARIES = '<ul id="third-party-module-summaries">'
 HIGH_LEVEL_MODULE_SUMMARIES = '<ul id="high-level-module-summaries">'
 LOW_LEVEL_MODULE_SUMMARIES = '<ul id="low-level-module-summaries">'
 CONTENT_ID = '<div id="main-content">'
@@ -40,9 +42,7 @@ class WebDocs(object):
         self.base_page = self._create_base_page(root, base_url)
 
     def create_guide_page(self, path):
-        path, ext = os.path.splitext(path)
-        md_path = path + '.md'
-        md_content = unicode(open(md_path, 'r').read(), 'utf8')
+        md_content = unicode(open(path, 'r').read(), 'utf8')
         guide_content = markdown.markdown(md_content)
         return self._create_page(guide_content)
 
@@ -56,6 +56,13 @@ class WebDocs(object):
         module_content = stability_note + module_content
         return self._create_page(module_content)
 
+    def create_module_index(self, path, module_list):
+        md_content = unicode(open(path, 'r').read(), 'utf8')
+        index_content = markdown.markdown(md_content)
+        module_list_content = self._make_module_text(module_list)
+        index_content = insert_after(index_content, MODULE_INDEX_INSERTION_POINT, module_list_content)
+        return self._create_page(index_content)
+
     def _create_page(self, page_content):
         page = self._insert_title(self.base_page, page_content)
         page = insert_after(page, CONTENT_ID, page_content)
@@ -66,7 +73,8 @@ class WebDocs(object):
         for module in module_list:
             module_link = tag_wrap(module.name(), 'a', \
                 {'href': "/".join(["modules", module.relative_url()])})
-            module_text += module_link
+            module_list_item = tag_wrap(module_link, "li")
+            module_text += module_list_item
         return module_text
 
     def _create_base_page(self, root, base_url):
@@ -75,10 +83,17 @@ class WebDocs(object):
             base_tag = 'href="' + base_url + '"'
             base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
         base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
+
+        third_party_module_list = [module_info for module_info in self.module_list if module_info.level() == "third-party"]
+        third_party_module_text = self._make_module_text(third_party_module_list)
+        base_page = insert_after(base_page, \
+            THIRD_PARTY_MODULE_SUMMARIES, third_party_module_text)
+
         high_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "high"]
         high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \
             HIGH_LEVEL_MODULE_SUMMARIES, high_level_module_text)
+
         low_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "low"]
         low_level_module_text = self._make_module_text(low_level_module_list)
         base_page = insert_after(base_page, \

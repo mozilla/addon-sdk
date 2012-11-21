@@ -17,11 +17,10 @@ This page lists more theoretical in-depth articles about the SDK.
 </colgroup>
   <tr>
     <td>
-      <h4><a href="dev-guide/guides/commonjs.html">CommonJS, packages, and the SDK</a></h4>
-      <a href="http://www.commonjs.org/">CommonJS</a> includes a specification
-      for JavaScript modules: reusable pieces of JavaScript code. This guide
-      provides an introduction to the CommonJS module specification and
-      explains its relationship to the SDK.
+      <h4><a href="dev-guide/guides/modules.html">Module structure of the SDK</a></h4>
+      The SDK, and add-ons built using it, are of composed from reusable JavaScript modules. This
+      explains what these modules are, how to load modules, and how the SDK's module
+      tree is structured.
     </td>
 
     <td>
@@ -35,9 +34,6 @@ This page lists more theoretical in-depth articles about the SDK.
   <tr>
 
     <td>
-      <h4><a href="dev-guide/guides/module-search.html">Module search</a></h4>
-      The algorithm used to find and load modules imported using the
-      <code>require()</code> statement.
     </td>
 
     <td>

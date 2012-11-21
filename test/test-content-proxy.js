@@ -15,9 +15,7 @@ const { Loader } = require('sdk/test/loader');
  * new HTML document. See first unit test for usage.
  */
 function createProxyTest(html, callback) {
-  return function (test) {
-    test.waitUntilDone();
-
+  return function (assert, done) {
     let url = 'data:text/html;charset=utf-8,' + encodeURI(html);
 
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
@@ -30,22 +28,22 @@ function createProxyTest(html, callback) {
           let xrayWindow = hiddenFrame.element.contentWindow;
           let rawWindow = xrayWindow.wrappedJSObject;
 
-          let done = false;
+          let isDone = false;
           let helper = {
             xrayWindow: xrayWindow,
             rawWindow: rawWindow,
             createWorker: function (contentScript) {
-              return createWorker(test, xrayWindow, contentScript, helper.done);
+              return createWorker(assert, xrayWindow, contentScript, helper.done);
             },
             done: function () {
-              if (done)
+              if (isDone)
                 return;
-              done = true;
+              isDone = true;
               hiddenFrames.remove(hiddenFrame);
-              test.done();
+              done();
             }
           }
-          callback(helper, test);
+          callback(helper, assert);
         }
 
         hiddenFrame.element.addEventListener("DOMContentLoaded", onDOMReady, false);
@@ -56,7 +54,7 @@ function createProxyTest(html, callback) {
   };
 }
 
-function createWorker(test, xrayWindow, contentScript, done) {
+function createWorker(assert, xrayWindow, contentScript, done) {
   // We have to use Sandboxed loader in order to get access to the private
   // unlock key `PRIVATE_KEY`. This key should not be used anywhere else.
   // See `PRIVATE_KEY` definition in worker.js
@@ -81,7 +79,7 @@ function createWorker(test, xrayWindow, contentScript, done) {
 
   worker.port.on("done", done);
   worker.port.on("assert", function (data) {
-    test.assert(data.assertion, data.msg);
+    assert.ok(data.assertion, data.msg);
   });
 
   return worker;
@@ -90,12 +88,13 @@ function createWorker(test, xrayWindow, contentScript, done) {
 /* Examples for the `createProxyTest` uses */
 
 let html = "<script>var documentGlobal = true</script>";
-exports.testCreateProxyTest = createProxyTest(html, function (helper, test) {
+
+exports["test Create Proxy Test"] = createProxyTest(html, function (helper, assert) {
   // You can get access to regular `test` object in second argument of
   // `createProxyTest` method:
-  test.assert(helper.rawWindow.documentGlobal,
+  assert.ok(helper.rawWindow.documentGlobal,
               "You have access to a raw window reference via `helper.rawWindow`");
-  test.assert(!("documentGlobal" in helper.xrayWindow),
+  assert.ok(!("documentGlobal" in helper.xrayWindow),
               "You have access to an XrayWrapper reference via `helper.xrayWindow`");
 
   // If you do not create a Worker, you have to call helper.done(),
@@ -103,7 +102,7 @@ exports.testCreateProxyTest = createProxyTest(html, function (helper, test) {
   helper.done();
 });
 
-exports.testCreateProxyTestWithWorker = createProxyTest("", function (helper) {
+exports["test Create Proxy Test With Worker"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     "new " + function WorkerScope() {
@@ -116,7 +115,7 @@ exports.testCreateProxyTestWithWorker = createProxyTest("", function (helper) {
 
 });
 
-exports.testCreateProxyTestWithEvents = createProxyTest("", function (helper, test) {
+exports["test Create Proxy Test With Events"] = createProxyTest("", function (helper, assert) {
 
   let worker = helper.createWorker(
     "new " + function WorkerScope() {
@@ -125,7 +124,7 @@ exports.testCreateProxyTestWithEvents = createProxyTest("", function (helper, te
   );
 
   worker.port.on("foo", function () {
-    test.pass("You can use events");
+    assert.pass("You can use events");
     // And terminate your test with helper.done:
     helper.done();
   });
@@ -136,7 +135,7 @@ if (USE_JS_PROXIES) {
   // Verify that the attribute `exposeUnlockKey`, that allow this test
   // to identify proxies, works correctly.
   // See `PRIVATE_KEY` definition in worker.js
-  exports.testKeyAccess = createProxyTest("", function(helper) {
+  exports["test Key Access"] = createProxyTest("", function(helper) {
 
     helper.createWorker(
       'new ' + function ContentScriptScope() {
@@ -150,7 +149,7 @@ if (USE_JS_PROXIES) {
 
 // Bug 714778: There was some issue around `toString` functions
 //             that ended up being shared between content scripts
-exports.testSharedToStringProxies = createProxyTest("", function(helper) {
+exports["test Shared To String Proxies"] = createProxyTest("", function(helper) {
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -184,7 +183,7 @@ exports.testSharedToStringProxies = createProxyTest("", function(helper) {
 
 // Ensure that postMessage is working correctly across documents with an iframe
 let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
-exports.testPostMessage = createProxyTest(html, function (helper, test) {
+exports["test postMessage"] = createProxyTest(html, function (helper, assert) {
   let ifWindow = helper.xrayWindow.document.getElementById("iframe").contentWindow;
   // Listen without proxies, to check that it will work in regular case
   // simulate listening from a web document.
@@ -192,19 +191,19 @@ exports.testPostMessage = createProxyTest(html, function (helper, test) {
     ifWindow.removeEventListener("message", listener, false);
     // As we are in system principal, event is an XrayWrapper
     if (USE_JS_PROXIES) {
-      test.assertEqual(event.source, ifWindow,
+      assert.equal(event.source, ifWindow,
                        "event.source is the iframe window");
     }
     else {
       // JS proxies had different behavior than xrays, xrays use current
       // compartments when calling postMessage method. Whereas js proxies
       // was using postMessage method compartment, not the caller one.
-      test.assertEqual(event.source, helper.xrayWindow,
+      assert.equal(event.source, helper.xrayWindow,
                        "event.source is the top window");
     }
-    test.assertEqual(event.origin, "null", "origin is null");
+    assert.equal(event.origin, "null", "origin is null");
 
-    test.assertEqual(event.data, "{\"foo\":\"bar\\n \\\"escaped\\\".\"}",
+    assert.equal(event.data, "{\"foo\":\"bar\\n \\\"escaped\\\".\"}",
                      "message data is correct");
 
     helper.done();
@@ -223,7 +222,7 @@ exports.testPostMessage = createProxyTest(html, function (helper, test) {
 });
 
 let html = '<input id="input2" type="checkbox" />';
-exports.testObjectListener = createProxyTest(html, function (helper) {
+exports["test Object Listener"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -250,7 +249,7 @@ exports.testObjectListener = createProxyTest(html, function (helper) {
 
 });
 
-exports.testObjectListener2 = createProxyTest("", function (helper) {
+exports["test Object Listener 2"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -264,7 +263,7 @@ exports.testObjectListener2 = createProxyTest("", function (helper) {
           assert(!this.called, "called only once");
           this.called = true;
           if ('UNWRAP_ACCESS_KEY' in window)
-            assert(event.valueOf() !== event.valueOf(UNWRAP_ACCESS_KEY), "event is wrapped");          
+            assert(event.valueOf() !== event.valueOf(UNWRAP_ACCESS_KEY), "event is wrapped");
           assert(event.target == document.defaultView, "event.target is the wrapped window");
           assert(event.source == document.defaultView, "event.source is the wrapped window");
           assert(event.origin == "null", "origin is null");
@@ -280,7 +279,7 @@ exports.testObjectListener2 = createProxyTest("", function (helper) {
 
 });
 
-let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' + 
+let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
 
 /* Disable test to keep tree green until Bug 756214 is fixed.
@@ -294,12 +293,12 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
       return originalString[name];
     }
   });
-  test.assertRaises(function () {
+  assert.okRaises(function () {
     p.toString();
   },
   /String.prototype.toString called on incompatible Proxy/,
   "toString can't be called with this being the proxy");
-  test.assertEqual(p.binded(), "string", "but it works if we bind this to the original string");
+  assert.equal(p.binded(), "string", "but it works if we bind this to the original string");
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -321,7 +320,7 @@ exports.testStringOverload = createProxyTest(html, function (helper, test) {
 });
 */
 
-exports.testMozMatchedSelector = createProxyTest("", function (helper) {
+exports["test MozMatchedSelector"] = createProxyTest("", function (helper) {
   helper.createWorker(
     'new ' + function ContentScriptScope() {
       // Check mozMatchesSelector XrayWrappers bug:
@@ -341,7 +340,7 @@ exports.testMozMatchedSelector = createProxyTest("", function (helper) {
   );
 });
 
-exports.testEventsOverload = createProxyTest("", function (helper) {
+exports["test Events Overload"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -382,7 +381,7 @@ exports.testEventsOverload = createProxyTest("", function (helper) {
 
 });
 
-exports.testNestedAttributes = createProxyTest("", function (helper) {
+exports["test Nested Attributes"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -403,7 +402,7 @@ exports.testNestedAttributes = createProxyTest("", function (helper) {
 
 });
 
-exports.testFormNodeName = createProxyTest("", function (helper) {
+exports["test Form nodeName"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -422,7 +421,7 @@ exports.testFormNodeName = createProxyTest("", function (helper) {
 
 });
 
-exports.testLocalStorage = createProxyTest("", function (helper, test) {
+exports["test localStorage"] = createProxyTest("", function (helper, assert) {
 
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -441,13 +440,13 @@ exports.testLocalStorage = createProxyTest("", function (helper, test) {
   );
 
   worker.port.on("step1", function () {
-    test.assertEqual(helper.rawWindow.localStorage.name, 1, "localStorage really works");
+    assert.equal(helper.rawWindow.localStorage.name, 1, "localStorage really works");
     worker.port.emit("step2");
   });
 
 });
 
-exports.testAutoUnwrapCustomAttributes = createProxyTest("", function (helper) {
+exports["test Auto Unwrap Custom Attributes"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -464,7 +463,7 @@ exports.testAutoUnwrapCustomAttributes = createProxyTest("", function (helper) {
 
 });
 
-exports.testObjectTag = createProxyTest("", function (helper) {
+exports["test Object Tag"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -479,26 +478,32 @@ exports.testObjectTag = createProxyTest("", function (helper) {
 
 });
 
-exports.testHighlightToStringBehavior = createProxyTest("", function (helper, test) {
+exports["test Highlight toString Behavior"] = createProxyTest("", function (helper, assert) {
   // We do not have any workaround this particular use of toString
   // applied on <object> elements. So disable this test until we found one!
-  //test.assertEqual(helper.rawWindow.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
+  //assert.equal(helper.rawWindow.Object.prototype.toString.call(flash), "[object HTMLObjectElement]", "<object> is HTMLObjectElement");
   function f() {};
-  test.assertMatches(Object.prototype.toString.call(f), /\[object Function.*\]/, "functions are functions 1");
+  let funToString = Object.prototype.toString.call(f);
+  assert.ok(/\[object Function.*\]/.test(funToString), "functions are functions 1");
+
   // This is how jquery call toString:
-  test.assertMatches(helper.rawWindow.Object.prototype.toString.call(""), /\[object String.*\]/, "strings are strings");
+  let strToString = helper.rawWindow.Object.prototype.toString.call("");
+  assert.ok(/\[object String.*\]/.test(strToString), "strings are strings");
+
   let o = {__exposedProps__:{}};
-  test.assertMatches(helper.rawWindow.Object.prototype.toString.call(o), /\[object Object.*\]/, "objects are objects");
+  let objToString = helper.rawWindow.Object.prototype.toString.call(o);
+  assert.ok(/\[object Object.*\]/.test(objToString), "objects are objects");
 
   // Make sure to pass a function from the same compartments
   // or toString will return [object Object] on FF8+
   let f2 = helper.rawWindow.eval("(function () {})");
-  test.assertMatches(helper.rawWindow.Object.prototype.toString.call(f2), /\[object Function.*\]/, "functions are functions 2");
+  let funToString2 = helper.rawWindow.Object.prototype.toString.call(f2);
+  assert.ok(/\[object Function.*\]/.test(funToString2), "functions are functions 2");
 
   helper.done();
 });
 
-exports.testDocumentTagName = createProxyTest("", function (helper) {
+exports["test Document TagName"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -528,7 +533,7 @@ exports.testDocumentTagName = createProxyTest("", function (helper) {
 });
 
 let html = '<iframe id="iframe" name="test" src="data:text/html;charset=utf-8," />';
-exports.testWindowFrames = createProxyTest(html, function (helper) {
+exports["test Window Frames"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
     'let glob = this; new ' + function ContentScriptScope() {
@@ -545,7 +550,7 @@ exports.testWindowFrames = createProxyTest(html, function (helper) {
 
 });
 
-exports.testCollections = createProxyTest("", function (helper) {
+exports["test Collections"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -564,9 +569,9 @@ exports.testCollections = createProxyTest("", function (helper) {
 
 });
 
-let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' + 
+let html = '<input id="input" type="text" /><input id="input3" type="checkbox" />' +
              '<input id="input2" type="checkbox" />';
-exports.testCollections2 = createProxyTest(html, function (helper) {
+exports["test Collections 2"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -596,15 +601,15 @@ exports.testCollections2 = createProxyTest(html, function (helper) {
 
 });
 
-exports.testValueOf = createProxyTest("", function (helper) {
+exports["test valueOf"] = createProxyTest("", function (helper) {
 
   if (USE_JS_PROXIES) {
     helper.createWorker(
       'new ' + function ContentScriptScope() {
         // Check internal use of valueOf() for JS proxies API
-        assert(window.valueOf().toString().match(/\[object Window.*\]/),
+        assert(/\[object Window.*\]/.test(window.valueOf().toString()),
                "proxy.valueOf() returns the wrapped version");
-        assert(window.valueOf({}).toString().match(/\[object Window.*\]/),
+        assert(/\[object Window.*\]/.test(window.valueOf({}).toString()),
                "proxy.valueOf({}) returns the wrapped version");
         done();
       }
@@ -624,7 +629,7 @@ exports.testValueOf = createProxyTest("", function (helper) {
 
 });
 
-exports.testXMLHttpRequest = createProxyTest("", function (helper) {
+exports["test XMLHttpRequest"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -637,21 +642,30 @@ exports.testXMLHttpRequest = createProxyTest("", function (helper) {
 
 });
 
-exports.testXPathResult = createProxyTest("", function (helper, test) {
+exports["test XPathResult"] = createProxyTest("", function (helper, assert) {
+  const XPathResultTypes = ["ANY_TYPE",
+                            "NUMBER_TYPE", "STRING_TYPE", "BOOLEAN_TYPE",
+                            "UNORDERED_NODE_ITERATOR_TYPE",
+                            "ORDERED_NODE_ITERATOR_TYPE",
+                            "UNORDERED_NODE_SNAPSHOT_TYPE",
+                            "ORDERED_NODE_SNAPSHOT_TYPE",
+                            "ANY_UNORDERED_NODE_TYPE",
+                            "FIRST_ORDERED_NODE_TYPE"];
 
-  // Check XPathResult bug with constants being undefined on
-  // XPCNativeWrapper
-  let value = helper.rawWindow.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
+  // Check XPathResult bug with constants being undefined on XPCNativeWrapper
   let xpcXPathResult = helper.xrayWindow.XPathResult;
-  test.assertEqual(xpcXPathResult.wrappedJSObject.
-                     UNORDERED_NODE_SNAPSHOT_TYPE,
-                   value,
-                   "XPathResult's constants are valid on unwrapped node");
 
-  test.assertEqual(xpcXPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, 6,
-                   "XPathResult's constants are defined on " +
-                   "XPCNativeWrapper (platform bug #)");
+  XPathResultTypes.forEach(function(type, i) {
+    assert.equal(xpcXPathResult.wrappedJSObject[type],
+                     helper.rawWindow.XPathResult[type],
+                     "XPathResult's constants are valid on unwrapped node");
 
+    assert.equal(xpcXPathResult[type], i,
+                     "XPathResult's constants are defined on " +
+                     "XPCNativeWrapper (platform bug #)");
+  });
+
+  let value = helper.rawWindow.XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE;
   let worker = helper.createWorker(
     'new ' + function ContentScriptScope() {
       self.port.on("value", function (value) {
@@ -663,10 +677,9 @@ exports.testXPathResult = createProxyTest("", function (helper, test) {
     }
   );
   worker.port.emit("value", value);
-
 });
 
-exports.testPrototypeInheritance = createProxyTest("", function (helper) {
+exports["test Prototype Inheritance"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -683,7 +696,7 @@ exports.testPrototypeInheritance = createProxyTest("", function (helper) {
 
 });
 
-exports.testFunctions = createProxyTest("", function (helper) {
+exports["test Functions"] = createProxyTest("", function (helper) {
 
   helper.rawWindow.callFunction = function callFunction(f) f();
   helper.rawWindow.isEqual = function isEqual(a, b) a == b;
@@ -708,7 +721,7 @@ exports.testFunctions = createProxyTest("", function (helper) {
 });
 
 let html = '<input id="input2" type="checkbox" />';
-exports.testListeners = createProxyTest(html, function (helper) {
+exports["test Listeners"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -765,7 +778,7 @@ exports.testListeners = createProxyTest(html, function (helper) {
 
 });
 
-exports.testMozRequestAnimationFrame = createProxyTest("", function (helper) {
+exports["test MozRequestAnimationFrame"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -778,7 +791,7 @@ exports.testMozRequestAnimationFrame = createProxyTest("", function (helper) {
 
 });
 
-exports.testGlobalScope = createProxyTest("", function (helper) {
+exports["testGlobalScope"] = createProxyTest("", function (helper) {
 
   helper.createWorker(
     'let toplevelScope = true;' +
@@ -791,7 +804,7 @@ exports.testGlobalScope = createProxyTest("", function (helper) {
 
 if (USE_JS_PROXIES) {
   // Bug 671016: Typed arrays should not be proxified
-  exports.testTypedArraysX = createProxyTest("", function (helper) {
+  exports["test Typed ArraysX"] = createProxyTest("", function (helper) {
 
     helper.createWorker(
       'new ' + function ContentScriptScope() {
@@ -815,7 +828,7 @@ if (USE_JS_PROXIES) {
 
 // Bug 715755: proxy code throw an exception on COW
 // Create an http server in order to simulate real cross domain documents
-exports.testCrossDomainIframe = createProxyTest("", function (helper) {
+exports["test Cross Domain Iframe"] = createProxyTest("", function (helper) {
   let serverPort = 8099;
   let server = require("sdk/test/httpd").startServerAsync(serverPort);
   server.registerPathHandler("/", function handle(request, response) {
@@ -869,7 +882,7 @@ exports.testCrossDomainIframe = createProxyTest("", function (helper) {
 
 // Bug 769006: Ensure that MutationObserver works fine with proxies
 let html = '<a href="foo">link</a>';
-exports.testMutationObvserver = createProxyTest(html, function (helper) {
+exports["test MutationObvserver"] = createProxyTest(html, function (helper) {
 
   helper.createWorker(
     'new ' + function ContentScriptScope() {
@@ -905,3 +918,15 @@ exports.testMutationObvserver = createProxyTest(html, function (helper) {
   );
 
 });
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 806813");
+    }
+  }
+}
+
+require("test").run(exports);
