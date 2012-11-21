@@ -6,13 +6,16 @@ import os
 import unittest
 
 from cuddlefish.docs import webdocs
+from cuddlefish.docs.documentationitem import get_module_list
+from cuddlefish.docs.documentationitem import get_devguide_list
 
 class WebDocTests(unittest.TestCase):
 
     def test_create_guide1_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
-        web_docs = webdocs.WebDocs(root)
+        module_list = get_module_list(root)
+        web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
             root + '/doc/dev-guide-source/index.md'))
         self._test_common_contents(guide)
@@ -27,7 +30,8 @@ class WebDocTests(unittest.TestCase):
     def test_create_guide2_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
-        web_docs = webdocs.WebDocs(root)
+        module_list = get_module_list(root)
+        web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
             root + '/doc/dev-guide-source/no_h1.md'))
         self._test_common_contents(guide)
@@ -39,12 +43,23 @@ class WebDocTests(unittest.TestCase):
     def test_create_module_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
-        web_docs = webdocs.WebDocs(root)
-        module = web_docs.create_module_page(os.path.join(\
-            root + '/doc/module-source/sdk/aardvark-feeder.md'))
+        module_list = get_module_list(root)
+        test_module_info = False
+        for module_info in module_list:
+            if module_info.name() == "aardvark-feeder":
+                test_module_info = module_info
+                break
+        self.assertTrue(test_module_info)
+        test_stability = test_module_info.metadata.get("stability", "undefined")
+        self.assertEqual(test_stability, "stable")
+        web_docs = webdocs.WebDocs(root, module_list)
+        module = web_docs.create_module_page(test_module_info)
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
+            in module)
+        self.assertTrue(\
+            'class="stability-note stability-stable"'\
             in module)
         self.assertTrue(\
             '<h1>aardvark-feeder</h1>'\

@@ -56,16 +56,17 @@ def generate_local_docs(env_root):
     return generate_docs(env_root, get_versions()["version"], get_base_url(env_root))
 
 def generate_named_file(env_root, filename_and_path):
-    web_docs = webdocs.WebDocs(env_root, get_versions()["version"], get_base_url(env_root))
+    module_list = get_module_list(env_root)
+    web_docs = webdocs.WebDocs(env_root, module_list, get_versions()["version"], get_base_url(env_root))
     abs_path = os.path.abspath(filename_and_path)
     path, filename = os.path.split(abs_path)
     if abs_path.startswith(os.path.join(env_root, 'doc', 'module-source')):
         module_root = os.sep.join([env_root, "doc", "module-source"])
-        module_info = ModuleInfo(module_root, path, filename)
+        module_info = ModuleInfo(env_root, module_root, path, filename)
         write_module_doc(env_root, web_docs, module_info, False)
     elif abs_path.startswith(os.path.join(get_sdk_docs_path(env_root), 'dev-guide-source')):
         devguide_root = os.sep.join([env_root, "doc", "dev-guide-source"])
-        devguideitem_info = DevGuideItemInfo(devguide_root, path, filename)
+        devguideitem_info = DevGuideItemInfo(env_root, devguide_root, path, filename)
         write_devguide_doc(env_root, web_docs, devguideitem_info, False)
     else:
         raise ValueError("Not a valid path to a documentation file")
@@ -123,7 +124,8 @@ def calculate_current_status(env_root):
 
 def generate_docs_from_scratch(env_root, version, base_url):
     docs_dir = get_sdk_docs_path(env_root)
-    web_docs = webdocs.WebDocs(env_root, version, base_url)
+    module_list = get_module_list(env_root)
+    web_docs = webdocs.WebDocs(env_root, module_list, version, base_url)
     must_rewrite_links = True
     if base_url:
         must_rewrite_links = False
@@ -139,8 +141,6 @@ def generate_docs_from_scratch(env_root, version, base_url):
     # generate api docs for all modules
     if not os.path.exists(os.path.join(docs_dir, "modules")):
         os.mkdir(os.path.join(docs_dir, "modules"))
-    module_root = os.sep.join([env_root, "doc", "module-source"])
-    module_list = get_module_list(env_root)
     [write_module_doc(env_root, web_docs, module_info, must_rewrite_links) for module_info in module_list]
 
     # generate third-party module index
@@ -174,7 +174,7 @@ def write_module_index(env_root, web_docs, source_file, module_list, must_rewrit
     write_file(env_root, doc_html, destination_path, base_filename, must_rewrite_links)
 
 def write_module_doc(env_root, web_docs, module_info, must_rewrite_links):
-    doc_html = web_docs.create_module_page(module_info.source_path_and_filename())
+    doc_html = web_docs.create_module_page(module_info)
     write_file(env_root, doc_html, module_info.destination_path(), module_info.base_filename(), must_rewrite_links)
 
 def write_devguide_doc(env_root, web_docs, devguide_info, must_rewrite_links):
