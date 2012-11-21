@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys, os, re, json
+import sys, os, re, simplejson
 
 class DocumentationItemInfo(object):
     def __init__(self, env_root, md_path, filename):
@@ -65,7 +65,7 @@ class ModuleInfo(DocumentationItemInfo):
     def get_metadata(self, path_to_js):
         try:
             js = unicode(open(path_to_js,"r").read(), 'utf8')
-        except IOError as e:
+        except IOError:
             raise Exception, "JS module: '" + path_to_js + \
                              "', corresponding to documentation file: '"\
                              + self.source_path_and_filename() + "' wasn't found"
@@ -82,7 +82,7 @@ class ModuleInfo(DocumentationItemInfo):
             if line.startswith("module.metadata"):
                 reading_metadata = True
         metadata = metadata.replace("'", '"')
-        return json.loads("{" + metadata + "}")
+        return simplejson.loads("{" + metadata + "}")
 
     def js_module_path(self):
         return os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
@@ -143,6 +143,7 @@ def get_module_list(env_root):
                 package_docs = os.sep.join([packages_root, entry, "docs"])
                 if os.path.exists(package_docs):
                     get_modules_in_package(env_root, package_docs, module_list, False)
+    module_list.sort(key=lambda x: x.name())
     return module_list
 
 def get_devguide_list(env_root):
