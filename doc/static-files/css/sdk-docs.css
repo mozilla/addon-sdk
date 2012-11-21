@@ -381,6 +381,30 @@ table.catalog>tbody tr:last-child td {
   padding-bottom: 0em;
 }
 
+a.stability-note {
+  padding: 0.2em 0.5em;
+  width: 8em;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  display: block;
+  float: right;
+  background-color: #E65252;
+  border: 1px solid #BA0202;
+}
+
+a.stability-stable {
+  background-color: #46DF86;
+  border: 1px solid green;
+  color: black;
+}
+
+a.stability-unstable, a.stability-experimental {
+  background-color: #FFFAAE;
+  border: 1px solid #D7DF01;
+  color: black;
+}
+
 ul.tree {
   float: left;
   border: 1px solid lightgray;
