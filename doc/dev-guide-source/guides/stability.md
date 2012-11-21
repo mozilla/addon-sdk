@@ -6,7 +6,7 @@
 
 Developers using the SDK's APIs need to know how far they can trust that
 a given API will not change in future releases. At the same time, developers
-maintaining and extending the SDKs APIs need to be able to introduce new
+maintaining and extending the SDK's APIs need to be able to introduce new
 APIs that aren't yet fully proven, and to retire old APIs when they're
 no longer optimal or supported by the underlying platform.
 
@@ -16,8 +16,9 @@ main components:
 * a [stability index](dev-guide/guides/stability.html#Stability Index)
 that defines how stable each module is
 * a [deprecation process](dev-guide/guides/stability.html#Deprecation Process)
-that is intended to enable the SDK to remove or change APIs when necessary,
-while giving developers enough time to update their code.
+that defines when and how stable SDK APIs can be changed or removed from
+future versions of the SDK while giving developers enough time to update
+their code.
 
 ## Stability Index ##
 
@@ -54,11 +55,6 @@ documentation page.
 
 ## Deprecation Process ##
 
-### Preparation ###
-
-Before deprecating a module, the SDK team will develop and document
-an alternative, and decide which release to deprecate it in.
-
 ### Deprecation ###
 
 In the chosen release, the SDK team will communicate the module's deprecation:
@@ -67,19 +63,21 @@ In the chosen release, the SDK team will communicate the module's deprecation:
 * include a deprecation notice in the
 [release notes](https://wiki.mozilla.org/Labs/Jetpack/Release_Notes),
 the [Add-ons blog](https://blog.mozilla.org/addons/), and the
-[Jetpack Google group](https://groups.google.com/forum/?fromgroups#!forum/mozilla-labs-jetpack). The deprecation notice should point developers at a migration guide.
+[Jetpack Google group](https://groups.google.com/forum/?fromgroups#!forum/mozilla-labs-jetpack).
+The deprecation notice should point developers at a migration guide.
 
 ### Migration ###
 
-The deprecation period defaults to 18 weeks (that is, three releases).
+The deprecation period defaults to 18 weeks (that is, three releases)
+although in some cases, generally those out of our control, it might
+be shorter than this.
+
 During this time, the module will be in the deprecated state. The SDK
 team will track usage of deprecated modules on
 [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/) and support
 developers migrating their code. The SDK will continue to provide warnings:
 
-* CFX will generate warnings when developers use deprecated modules.
-* API documentation will warn users about that the module is deprecated,
-which release is expected to remove it, and how to migrate.
+* API documentation will inform users that the module is deprecated.
 * Attempts to use a deprecated module at runtime will log an error to
 the error console.
 * The AMO validator will throw errors when deprecated modules are used,
