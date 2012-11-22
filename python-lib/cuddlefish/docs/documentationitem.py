@@ -107,6 +107,7 @@ def get_module_list(env_root):
                 package_docs = os.sep.join([packages_root, entry, "docs"])
                 if os.path.exists(package_docs):
                     get_modules_in_package(env_root, package_docs, module_list, False)
+    module_list.sort(key=lambda x: x.name())
     return module_list
 
 def get_devguide_list(env_root):
