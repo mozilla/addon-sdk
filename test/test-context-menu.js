@@ -2291,35 +2291,7 @@ TestHelper.prototype = {
       this.closeTab();
 
       while (this.loaders.length) {
-        /*let browserManager = this.loaders[0].globalScope.browserManager;
-        let topLevelItems = browserManager.topLevelItems.slice();
-        let privatePropsKey = this.loaders[0].globalScope.PRIVATE_PROPS_KEY;
-        let workerRegs = topLevelItems.map(function (item) {
-          return item.valueOf(privatePropsKey)._workerReg;
-        });*/
-
         this.loaders[0].unload();
-
-        // Make sure the browser manager is cleaned up.
-        /*this.test.assertEqual(browserManager.browserWins.length, 0,
-                              "browserManager should have no windows left");
-        this.test.assertEqual(browserManager.topLevelItems.length, 0,
-                              "browserManager should have no items left");
-        this.test.assert(!("contentWins" in browserManager),
-                         "browserManager should have no content windows left");
-
-        // Make sure the items' worker registries are cleaned up.
-        topLevelItems.forEach(function (item) {
-          this.test.assert(!("_workerReg" in item.valueOf(privatePropsKey)),
-                           "item's worker registry should be removed");
-        }, this);
-        workerRegs.forEach(function (workerReg) {
-          this.test.assertEqual(Object.keys(workerReg.winWorkers).length, 0,
-                                "worker registry should be empty");
-          this.test.assertEqual(
-            Object.keys(workerReg.winsWithoutWorkers).length, 0,
-            "worker registry list of windows without workers should be empty");
-        }, this);*/
       }
       this.test.done();
     }
