@@ -34,9 +34,10 @@ supply a context that matches the target URL.
 Context menu items are displayed in the order created or in the case of sub
 menus the order added to the sub menu. Menu items for each add-on will be
 grouped together automatically. If the total number of menu items in the main
-context menu from all add-ons exceeds a certain number (normally 10) all of the
-menu items will instead appear in an overflow menu to avoid making the context
-menu too large.
+context menu from all add-ons exceeds a certain number (normally 10 but
+configurable with the `extensions.addon-sdk.context-menu.overflowThreshold`
+preference) all of the menu items will instead appear in an overflow menu to
+avoid making the context menu too large.
 
 Note that *context menu items are only displayed when the page has finished loading*.
 While the page is still loading, or if you cancel load, context menu items
