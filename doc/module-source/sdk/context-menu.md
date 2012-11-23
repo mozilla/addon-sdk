@@ -31,6 +31,14 @@ user visits a certain page, don't create the item when that page loads, and
 don't remove it when the page unloads.  Rather, create your item only once and
 supply a context that matches the target URL.
 
+Context menu items are displayed in the order created or in the case of sub
+menus the order added to the sub menu. Menu items for each add-on will be
+grouped together automatically. If the total number of menu items in the main
+context menu from all add-ons exceeds a certain number (normally 10 but
+configurable with the `extensions.addon-sdk.context-menu.overflowThreshold`
+preference) all of the menu items will instead appear in an overflow menu to
+avoid making the context menu too large.
+
 Note that *context menu items are only displayed when the page has finished loading*.
 While the page is still loading, or if you cancel load, context menu items
 added using this module will not appear.
@@ -199,6 +207,11 @@ This example takes advantage of that fact.  The listener can be assured that
 Your item is shown only when all declarative contexts are current and your
 context listener returns true.
 
+The content script is executed for every page that a context menu is shown for.
+It will be executed the first time it is needed (i.e. when the context menu is
+first shown and all of the declarative contexts for your item are current) and
+then remains active until you destroy your context menu item or the page is
+unloaded.
 
 Handling Menu Item Clicks
 -------------------------
@@ -221,8 +234,11 @@ item's content script like so:
 Note that the listener function has parameters called `node` and `data`.  `node`
 is the node that the user context-clicked to invoke the menu.  You can use it
 when performing some action.  `data` is the `data` property of the menu item
-that was clicked.  Since only top-level menu items have content scripts, this
-comes in handy for determining which item in a `Menu` was clicked:
+that was clicked.  Note that when you have a hierarchy of menu items the click
+event will be sent to the content script of the item clicked and all ancestors
+so be sure to verify that the `data` value passed matches the item you expect.
+You can use this to simplify click handling by providing just a single click
+listener on a `Menu` that reacts to clicks for any child items.:
 
     var cm = require("context-menu");
     cm.Menu({
@@ -437,21 +453,19 @@ A labeled menu item that can perform an action when clicked.
   @prop [context] {value}
     If the item is contained in the top-level context menu, this declaratively
     specifies the context under which the item will appear; see Specifying
-    Contexts above.  Ignored if the item is contained in a submenu.
+    Contexts above.
   @prop [contentScript] {string,array}
     If the item is contained in the top-level context menu, this is the content
     script or an array of content scripts that the item can use to interact with
-    the page.  Ignored if the item is contained in a submenu.
+    the page.
   @prop [contentScriptFile] {string,array}
     If the item is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the item can
-    use to interact with the page.  Ignored if the item is contained in a
-    submenu.
+    use to interact with the page.
   @prop [onMessage] {function}
     If the item is contained in the top-level context menu, this function will
     be called when the content script calls `self.postMessage`.  It will be
-    passed the data that was passed to `postMessage`.  Ignored if the item is
-    contained in a submenu.
+    passed the data that was passed to `postMessage`.
 </api>
 
 <api name="label">
@@ -480,8 +494,7 @@ A labeled menu item that can perform an action when clicked.
 @property {list}
   A list of declarative contexts for which the menu item will appear in the
   context menu.  Contexts can be added by calling `context.add()` and removed by
-  called `context.remove()`.  This property is meaningful only for items
-  contained in the top-level context menu.
+  called `context.remove()`.
 </api>
 
 <api name="parentMenu">
@@ -494,15 +507,13 @@ A labeled menu item that can perform an action when clicked.
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
-  item during creation.  This property is meaningful only for items contained in
-  the top-level context menu.
+  item during creation.
 </api>
 
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
-  item during creation.  This property is meaningful only for items contained in
-  the top-level context menu.
+  item during creation.
 </api>
 
 <api name="destroy">
@@ -549,21 +560,19 @@ A labeled menu item that expands into a submenu.
   @prop [context] {value}
     If the menu is contained in the top-level context menu, this declaratively
     specifies the context under which the menu will appear; see Specifying
-    Contexts above.  Ignored if the menu is contained in a submenu.
+    Contexts above.
   @prop [contentScript] {string,array}
     If the menu is contained in the top-level context menu, this is the content
     script or an array of content scripts that the menu can use to interact with
-    the page.  Ignored if the menu is contained in a submenu.
+    the page.
   @prop [contentScriptFile] {string,array}
     If the menu is contained in the top-level context menu, this is the local
     file URL of the content script or an array of such URLs that the menu can
-    use to interact with the page.  Ignored if the menu is contained in a
-    submenu.
+    use to interact with the page.
   @prop [onMessage] {function}
     If the menu is contained in the top-level context menu, this function will
     be called when the content script calls `self.postMessage`.  It will be
-    passed the data that was passed to `postMessage`.  Ignored if the item is
-    contained in a submenu.
+    passed the data that was passed to `postMessage`.
 </api>
 
 <api name="label">
@@ -592,8 +601,7 @@ A labeled menu item that expands into a submenu.
 @property {list}
   A list of declarative contexts for which the menu will appear in the context
   menu.  Contexts can be added by calling `context.add()` and removed by called
-  `context.remove()`.  This property is meaningful only for menus contained in
-  the top-level context menu.
+  `context.remove()`.
 </api>
 
 <api name="parentMenu">
@@ -606,22 +614,21 @@ A labeled menu item that expands into a submenu.
 <api name="contentScript">
 @property {string,array}
   The content script or the array of content scripts associated with the menu
-  during creation.  This property is meaningful only for menus contained in the
-  top-level context menu.
+  during creation.
 </api>
 
 <api name="contentScriptFile">
 @property {string,array}
   The URL of a content script or the array of such URLs associated with the menu
-  during creation.  This property is meaningful only for menus contained in the
-  top-level context menu.
+  during creation.
 </api>
 
 <api name="addItem">
 @method
   Appends a menu item to the end of the menu.  If the item is already contained
   in another menu or in the top-level context menu, it's automatically removed
-  first.
+  first.  If the item is already contained in this menu it will just be moved
+  to the end of the menu.
 @param item {Item,Menu,Separator}
   The `Item`, `Menu`, or `Separator` to add to the menu.
 </api>
@@ -718,7 +725,7 @@ top-level context menu.
   Creates a context that matches pages with particular URLs.  See Specifying
   Contexts above.
 @param matchPattern {string,array}
-  A [match pattern](modules/sdk/page-mod/match-pattern.html) string or an array of
-  match pattern strings.
+  A [match pattern](modules/sdk/page-mod/match-pattern.html) string, regexp or an
+  array of match pattern strings or regexps.
 </api>
 </api>
