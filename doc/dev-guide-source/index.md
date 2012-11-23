@@ -81,9 +81,8 @@ Learn about common development techniques, such as
     <td>
       <h4><a href="dev-guide/guides/index.html#sdk-infrastructure">SDK infrastructure</a></h4>
       Aspects of the SDK's underlying technology:
-      <a href="dev-guide/guides/commonjs.html">CommonJS</a>, the
-      <a href="dev-guide/guides/program-id.html">Program ID</a>, the
-      <a href="dev-guide/guides/module-search.html">module search algorithm</a>
+      <a href="dev-guide/guides/modules.html">Modules</a>, the
+      <a href="dev-guide/guides/program-id.html">Program ID</a>,
       and the rules defining
       <a href="dev-guide/guides/firefox-compatibility.html">Firefox compatibility</a>.
     </td>
@@ -129,13 +128,17 @@ Learn about common development techniques, such as
 </colgroup>
   <tr>
     <td>
-      <h4>API reference</h4>
-      Reference documentation for the high-level SDK APIs found in the
-      FIXME
-      package, and the low-level APIs found in the
-      FIXME.
+      <h4><a href="modules/high-level-modules.html">High-Level APIs</a></h4>
+      Reference documentation for the high-level SDK APIs.
     </td>
 
+    <td>
+      <h4><a href="modules/low-level-modules.html">Low-Level APIs</a></h4>
+      Reference documentation for the low-level SDK APIs.
+    </td>
+  </tr>
+
+  <tr>
     <td>
       <h4>Tools reference</h4>
       Reference documentation for the
@@ -145,7 +148,8 @@ Learn about common development techniques, such as
       global used for logging, and the
       <a href="dev-guide/package-spec.html">package.json</a> file.
     </td>
-
+    <td>
+    </td>
   </tr>
 
 </table>

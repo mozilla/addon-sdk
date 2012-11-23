@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+"use strict";
+
 const { Cc, Ci, Cu } = require("chrome");
 const AddonInstaller = require("sdk/addon/installer");
 const observers = require("sdk/deprecated/observer-service");
@@ -13,8 +15,7 @@ const testFolderURL = module.uri.split('test-addon-installer.js')[0];
 const ADDON_URL = testFolderURL + "fixtures/addon-install-unit-test@mozilla.com.xpi";
 const ADDON_PATH = tmp.createFromURL(ADDON_URL);
 
-exports.testInstall = function (test) {
-  test.waitUntilDone();
+exports["test Install"] = function (assert, done) {
 
   // Save all events distpatched by bootstrap.js of the installed addon
   let events = [];
@@ -26,65 +27,59 @@ exports.testInstall = function (test) {
   // Install the test addon
   AddonInstaller.install(ADDON_PATH).then(
     function onInstalled(id) {
-      test.assertEqual(id, "addon-install-unit-test@mozilla.com", "`id` is valid");
+      assert.equal(id, "addon-install-unit-test@mozilla.com", "`id` is valid");
 
       // Now uninstall it
       AddonInstaller.uninstall(id).then(function () {
         // Ensure that bootstrap.js methods of the addon have been called
         // successfully and in the right order
         let expectedEvents = ["install", "startup", "shutdown", "uninstall"];
-        test.assertEqual(JSON.stringify(events),
+        assert.equal(JSON.stringify(events),
                          JSON.stringify(expectedEvents),
                          "addon's bootstrap.js functions have been called");
 
         observers.remove("addon-install-unit-test", eventsObserver);
-        test.done();
+        done();
       });
     },
     function onFailure(code) {
-      test.fail("Install failed: "+code);
+      assert.fail("Install failed: "+code);
       observers.remove("addon-install-unit-test", eventsObserver);
-      test.done();
+      done();
     }
   );
 }
 
-exports.testFailingInstallWithInvalidPath = function (test) {
-  test.waitUntilDone();
-
+exports["test Failing Install With Invalid Path"] = function (assert, done) {
   AddonInstaller.install("invalid-path").then(
     function onInstalled(id) {
-      test.fail("Unexpected success");
-      test.done();
+      assert.fail("Unexpected success");
+      done();
     },
     function onFailure(code) {
-      test.assertEqual(code, AddonInstaller.ERROR_FILE_ACCESS,
+      assert.equal(code, AddonInstaller.ERROR_FILE_ACCESS,
                        "Got expected error code");
-      test.done();
+      done();
     }
   );
 }
 
-exports.testFailingInstallWithInvalidFile = function (test) {
-  test.waitUntilDone();
-
+exports["test Failing Install With Invalid File"] = function (assert, done) {
   let directory = system.pathFor("ProfD");
   AddonInstaller.install(directory).then(
     function onInstalled(id) {
-      test.fail("Unexpected success");
-      test.done();
+      assert.fail("Unexpected success");
+      done();
     },
     function onFailure(code) {
-      test.assertEqual(code, AddonInstaller.ERROR_CORRUPT_FILE,
+      assert.equal(code, AddonInstaller.ERROR_CORRUPT_FILE,
                        "Got expected error code");
-      test.done();
+      done();
     }
   );
 }
 
-exports.testUpdate = function (test) {
-  test.waitUntilDone();
-
+exports["test Update"] = function (assert, done) {
   // Save all events distpatched by bootstrap.js of the installed addon
   let events = [];
   let iteration = 1;
@@ -95,16 +90,16 @@ exports.testUpdate = function (test) {
 
   function onInstalled(id) {
     let prefix = "[" + iteration + "] ";
-    test.assertEqual(id, "addon-install-unit-test@mozilla.com",
+    assert.equal(id, "addon-install-unit-test@mozilla.com",
                      prefix + "`id` is valid");
 
-    // On 2nd and 3rd iteration, we receive uninstall events from the last 
+    // On 2nd and 3rd iteration, we receive uninstall events from the last
     // previously installed addon
     let expectedEvents =
-      iteration == 1 
+      iteration == 1
       ? ["install", "startup"]
       : ["shutdown", "uninstall", "install", "startup"];
-    test.assertEqual(JSON.stringify(events),
+    assert.equal(JSON.stringify(events),
                      JSON.stringify(expectedEvents),
                      prefix + "addon's bootstrap.js functions have been called");
 
@@ -113,13 +108,13 @@ exports.testUpdate = function (test) {
     }
     else {
       observers.remove("addon-install-unit-test", eventsObserver);
-      test.done();
+      done();
     }
   }
   function onFailure(code) {
-    test.fail("Install failed: "+code);
+    assert.fail("Install failed: "+code);
     observers.remove("addon-install-unit-test", eventsObserver);
-    test.done();
+    done();
   }
 
   function next() {
@@ -129,3 +124,13 @@ exports.testUpdate = function (test) {
 
   next();
 }
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass("Skipping this test until Fennec support is implemented.");
+    }
+  }
+}
+
+require("test").run(exports);

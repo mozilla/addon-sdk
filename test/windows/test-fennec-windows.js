@@ -5,12 +5,12 @@
 
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
-const { Loader } = require('skd/test/loader');
+const { Loader } = require('sdk/test/loader');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 const { browserWindows } = require('sdk/windows');
 
-const ERR_MSG = 'Error: This method is not yet supported by Fennec, consider using require("sdk/tabs") instead';
+const ERR_MSG = 'This method is not yet supported by Fennec, consider using require("tabs") instead';
 
 // TEST: browserWindows.length for Fennec
 exports.testBrowserWindowsLength = function(test) {
@@ -27,7 +27,7 @@ exports.testOpenWindow = function(test) {
     test.fail('Error was not thrown');
   }
   catch(e) {
-    test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.open');
+    test.assertEqual(e.message, ERR_MSG, 'Error is thrown on windows.open');
     test.assertEqual(browserWindows.length, 1, "Only one window open");
   }
 };
@@ -40,7 +40,7 @@ exports.testCloseWindow = function(test) {
     test.fail('Error was not thrown');
   }
   catch(e) {
-    test.assertEqual(e, ERR_MSG, 'Error is thrown on windows.close');
+    test.assertEqual(e.message, ERR_MSG, 'Error is thrown on windows.close');
     test.assertEqual(browserWindows.length, 1, "Only one window open");
   }
 };

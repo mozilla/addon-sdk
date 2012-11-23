@@ -10,7 +10,7 @@ from cuddlefish import rdf, packaging
 
 parent = os.path.dirname
 test_dir = parent(os.path.abspath(__file__))
-template_dir = os.path.join(parent(test_dir), "app-extension")
+template_dir = os.path.join(parent(test_dir), "../../app-extension")
 
 class RDFTests(unittest.TestCase):
     def testBug567660(self):
