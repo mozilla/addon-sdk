@@ -260,12 +260,7 @@ To learn much more about content scripts, see the
 [Working with Content Scripts](dev-guide/guides/content-scripts/index.html)
 guide.
 
-<div class="experimental">
 <h3>Scripting Trusted Panel Content</h3>
-
-**Note that the feature described in this section is experimental: we'll
-very probably continue to support it, but the name of the `addon`
-property might change in a future release.**
 
 We've already seen that you can package HTML files in your add-on's `data`
 directory and use them to define the panel's content. We can call this
@@ -362,7 +357,6 @@ Finally, the HTML file now references "get-text.js" inside a `script` tag:
 
 &lt;/html&gt;
 </pre>
-</div>
 
 ## Styling Trusted Panel Content ##
 

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tabAPI = require('sdk/tabs/tab');
+
 const tabs = require("sdk/tabs"); // From addon-kit
 const windowUtils = require("sdk/deprecated/window-utils");
 const { getTabForWindow } = require('sdk/tabs/helpers');
@@ -16,12 +16,11 @@ var auxTab;
 // The window for the outer iframe in the primary test page
 var iframeWin;
 
-exports.testGetTabForWindow = function(test) {
-  test.waitUntilDone();
+exports["test GetTabForWindow"] = function(assert, done) {
 
-  test.assertEqual(getTabForWindow(windowUtils.activeWindow), null,
+  assert.equal(getTabForWindow(windowUtils.activeWindow), null,
     "getTabForWindow return null on topwindow");
-  test.assertEqual(getTabForWindow(windowUtils.activeBrowserWindow), null,
+  assert.equal(getTabForWindow(windowUtils.activeBrowserWindow), null,
     "getTabForWindow return null on topwindow");
 
   let subSubDocument = encodeURIComponent(
@@ -40,12 +39,12 @@ exports.testGetTabForWindow = function(test) {
   tabs.open({
     inBackground: true,
     url: "about:mozilla",
-    onReady: function(tab) { auxTab = tab; step2(url, test);},
-    onActivate: function(tab) { step3(test); }
+    onReady: function(tab) { auxTab = tab; step2(url, assert);},
+    onActivate: function(tab) { step3(assert, done); }
   });
 };
 
-function step2(url, test) {
+function step2(url, assert) {
 
   tabs.open({
     url: url,
@@ -54,7 +53,7 @@ function step2(url, test) {
       let window = windowUtils.activeBrowserWindow.content;
 
       let matchedTab = getTabForWindow(window);
-      test.assertEqual(matchedTab, tab,
+      assert.equal(matchedTab, tab,
         "We are able to find the tab with his content window object");
 
       let timer = require("sdk/timers");
@@ -79,15 +78,15 @@ function step2(url, test) {
         let subSubIframeWin = subSubIframe.contentWindow;
 
         matchedTab = getTabForWindow(iframeWin);
-        test.assertEqual(matchedTab, tab,
+        assert.equal(matchedTab, tab,
           "We are able to find the tab with an iframe window object");
 
         matchedTab = getTabForWindow(subIframeWin);
-        test.assertEqual(matchedTab, tab,
+        assert.equal(matchedTab, tab,
           "We are able to find the tab with a sub-iframe window object");
 
         matchedTab = getTabForWindow(subSubIframeWin);
-        test.assertEqual(matchedTab, tab,
+        assert.equal(matchedTab, tab,
           "We are able to find the tab with a sub-sub-iframe window object");
 
         // Put our primary tab in the background and test again.
@@ -99,13 +98,25 @@ function step2(url, test) {
   });
 }
 
-function step3(test) {
+function step3(assert, done) {
 
   let matchedTab = getTabForWindow(iframeWin);
-  test.assertEqual(matchedTab, primaryTab,
+  assert.equal(matchedTab, primaryTab,
     "We get the correct tab even when it's in the background");
 
   primaryTab.close(function () {
-      auxTab.close(function () { test.done();});
+      auxTab.close(function () { done();});
     });
 }
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See Bug 809362");
+    }
+  }
+}
+
+require("test").run(exports);

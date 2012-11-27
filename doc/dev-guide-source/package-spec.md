@@ -32,6 +32,8 @@ called `package.json`. This file is also referred to as the
   this is used as the add-on's `em:creator` element in its
   `install.rdf`.
 
+* `translators` - an Array of Strings consisted of translators of the package.
+
 * `contributors` - may be an Array of additional author Strings.
 
 * `homepage` - the URL of the package's website.

@@ -98,15 +98,13 @@ There's much more information on content scripts in the
 
 ## <a name="supported-apis">Using the Supported APIs</a> ##
 
-The SDK provides a set of high level APIs providing some basic user
-interface components and functionality commonly required by add-ons.
-These are collected together in the
-[`addon-kit`]FIXME
-package. Because we expect to keep these APIs compatible as new versions
+The SDK provides a set of high level APIs
+providing some basic user interface components and functionality commonly
+required by add-ons. Because we expect to keep these APIs compatible as new versions
 of Firefox are released, we call them the "supported" APIs.
 
 See the [tutorials](dev-guide/tutorials/index.html)
-and the "High-Level API" reference in the "Developer Guide" sidebar.
+and the [High-Level API reference](modules/high-level-modules.html).
 If the supported APIs do what you need, they're the best option: you get the
 benefits of compatibility across Firefox releases and of the SDK's security
 model.
@@ -165,9 +163,9 @@ continue to work as new versions of Firefox are released.
 </span>
 
 In addition to the High-Level APIs, the SDK includes a number of
-Low-Level APIs some of which, such
-as [`tab-browser`](modules/sdk/deprecated/tab-browser.html), [`xhr`](modules/sdk/net/xhr.html), and
-[`window-utils`](modules/sdk/deprecated/window-utils.html), expose powerful
+[Low-Level APIs](modules/low-level-modules.html) some of which, such
+[`xhr`](modules/sdk/net/xhr.html) and
+[`window/utils`](modules/sdk/window/utils.html), expose powerful
 browser capabilities.
 
 In this section we'll use low-level modules how to:
