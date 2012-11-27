@@ -217,8 +217,8 @@ def get_config_in_dir(path):
 
     if "dependencies" in base_json:
       deps = base_json["dependencies"]
-      deps.append("addon-sdk")
       deps = [x for x in deps if x not in ["addon-kit", "api-utils"]]
+      deps.append("addon-sdk")
       base_json["dependencies"] = deps
 
     return base_json
