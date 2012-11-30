@@ -121,9 +121,7 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
       calls: 0,
       error: function(msg) {
         this.calls++;
-        if (this.calls == 1)
-          test.assertEqual(arguments[0], "TEST FAILED: wait4ever (timed out)");
-        else if (this.calls == 2) {
+        if (this.calls == 2) {
           test.assertEqual(arguments[0], "test assertion never became true:\n");
           test.assertEqual(arguments[1], "assertion failed, value is false\n");
           // We could additionally check that arguments[1] contains the correct
@@ -140,7 +138,18 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
         }
       },
       info: function (msg) {
-        test.assertEqual(msg, "executing 'wait4ever'");
+        this.calls++;
+        if (this.calls == 1) {
+          test.assertEqual(arguments[0], "TEST-START");
+          test.assertEqual(arguments[2], "wait4ever");
+        }
+        else if (this.calls == 3) {
+          test.assertEqual(arguments[0], "TEST-END");
+          test.assertEqual(arguments[2], "wait4ever");
+        }
+        else {
+          test.fail("We got unexpected console.info() calls: " + msg);
+        }
       },
       trace: function () {}
     }
