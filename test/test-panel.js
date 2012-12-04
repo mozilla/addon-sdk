@@ -71,6 +71,7 @@ exports["test Show Hide Panel"] = function(assert, done) {
   let panel = Panel({
     contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
+    contentURL: "data:text/html;charset=utf-8,",
     onMessage: function (message) {
       panel.show();
     },
@@ -190,6 +191,7 @@ exports["test Resize Panel"] = function(assert, done) {
     let panel = Panel({
       contentScript: "self.postMessage('')",
       contentScriptWhen: "end",
+      contentURL: "data:text/html;charset=utf-8,",
       height: 10,
       width: 10,
       onMessage: function (message) {
@@ -457,6 +459,7 @@ exports["test ContentScriptOptions Option"] = function(assert, done) {
       contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
       contentScriptWhen: "end",
       contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      contentURL: "data:text/html;charset=utf-8,",
       onMessage: function(msg) {
         assert.equal( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
         assert.equal( typeof msg[1], 'object', 'object as contentScriptOptions' );
