@@ -111,4 +111,41 @@ exports['test exceptions in modules'] = function(assert) {
   }
 }
 
+exports['test early errors in module'] = function(assert) {
+  let uri = module.uri.substr(0, module.uri.lastIndexOf('/')) +
+            '/fixtures/loader/errors/'
+
+  let loader = Loader({ paths: { '': uri } });
+
+  try {
+    let program = main(loader, 'main')
+  } catch (error) {
+    assert.equal(String(error),
+                 "Error: opening input stream (invalid filename?)",
+                 "thrown errors propagate");
+
+    assert.equal(error.fileName.split("/").pop(), "boomer.js",
+                 "Error comes from the module that threw it");
+
+    assert.equal(error.lineNumber, 7, "error is on line 7");
+
+    let stack = parseStack(error.stack);
+
+    let frame = stack.pop()
+    assert.equal(frame.fileName, uri + "boomer.js",
+                 "module that threw is first in the stack");
+
+    frame = stack.pop()
+    assert.equal(frame.fileName, uri + "main.js",
+                 "module that called it is next in the stack");
+    assert.equal(frame.lineNumber, 7, "caller line is in the stack");
+
+
+    assert.equal(stack.pop().fileName, module.uri,
+                 "this test module is next in the stack");
+  } finally {
+    unload(loader);
+  }
+}
+
 require('test').run(exports);
