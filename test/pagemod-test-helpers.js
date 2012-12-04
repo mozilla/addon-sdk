@@ -47,12 +47,8 @@ exports.testPageMod = function testPageMod(test, testURL, pageModOptions,
 
   function onPageLoad() {
     b.removeEventListener("load", onPageLoad, true);
-    // Delay callback execute as page-mod content scripts may be executed on
-    // load event. So page-mod actions may not be already done.
-    // If we delay even more contentScriptWhen:'end', we may want to modify
-    // this code again.
-    timer.setTimeout(testCallback, 0,
-      b.contentWindow.wrappedJSObject, 
+    testCallback(
+      b.contentWindow.wrappedJSObject,
       function done() {
         pageMods.forEach(function(mod) mod.destroy());
         // XXX leaks reported if we don't close the tab?
