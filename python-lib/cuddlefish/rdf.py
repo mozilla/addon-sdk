@@ -133,6 +133,11 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     # booleans in the .json file, not strings.
     manifest.set("em:unpack", "true" if target_cfg.get("unpack") else "false")
 
+    for translator in target_cfg.get("translators", [ ]):
+        elem = dom.createElement("em:translator");
+        elem.appendChild(dom.createTextNode(translator))
+        dom.documentElement.getElementsByTagName("Description")[0].appendChild(elem)
+
     for contributor in target_cfg.get("contributors", [ ]):
         elem = dom.createElement("em:contributor");
         elem.appendChild(dom.createTextNode(contributor))
