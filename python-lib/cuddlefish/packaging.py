@@ -215,6 +215,12 @@ def get_config_in_dir(path):
 
     base_json.root_dir = path
 
+    if "dependencies" in base_json:
+      deps = base_json["dependencies"]
+      deps = [x for x in deps if x not in ["addon-kit", "api-utils"]]
+      deps.append("addon-sdk")
+      base_json["dependencies"] = deps
+
     return base_json
 
 def _is_same_file(a, b):
