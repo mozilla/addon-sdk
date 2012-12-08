@@ -5,7 +5,7 @@
 from xml.dom.minidom import Document
 
 VALID_PREF_TYPES = ['bool', 'boolint', 'integer', 'string', 'color', 'file',
-                    'directory', 'control']
+                    'directory', 'control', 'menulist', 'radio']
 
 class Error(Exception):
     pass
@@ -30,6 +30,18 @@ def validate_prefs(options):
         if (pref["type"] == "control"):
             if ("label" not in pref):
                 raise MissingPrefAttr("The 'control' inline pref type requires a 'label'")
+
+        # Make sure the 'menulist' type has a 'menulist'
+        if (pref["type"] == "menulist" or pref["type"] == "radio"):
+            if ("options" not in pref):
+                raise MissingPrefAttr("The 'menulist' and the 'radio' inline pref types requires a 'options'")
+
+            # Make sure each option has a 'value' and a 'label'
+            for item in pref["options"]:
+                if ("value" not in item):
+                    raise MissingPrefAttr("'options' requires a 'value'")
+                if ("label" not in item):
+                    raise MissingPrefAttr("'options' requires a 'label'")
 
         # TODO: Check that pref["type"] matches default value type
 
@@ -62,6 +74,24 @@ def parse_options(options, jetpack_id):
         elif (pref["type"] == "boolint"):
             setting.setAttribute("on", pref["on"])
             setting.setAttribute("off", pref["off"])
+        elif (pref["type"] == "menulist"):
+            menulist = doc.createElement("menulist")
+            menupopup = doc.createElement("menupopup")
+            for item in pref["options"]:
+                menuitem = doc.createElement("menuitem")
+                menuitem.setAttribute("value", item["value"])
+                menuitem.setAttribute("label", item["label"])
+                menupopup.appendChild(menuitem)
+            menulist.appendChild(menupopup)
+            setting.appendChild(menulist)
+        elif (pref["type"] == "radio"):
+            radiogroup = doc.createElement("radiogroup")
+            for item in pref["options"]:
+                radio = doc.createElement("radio")
+                radio.setAttribute("value", item["value"])
+                radio.setAttribute("label", item["label"])
+                radiogroup.appendChild(radio)
+            setting.appendChild(radiogroup)
 
         root.appendChild(setting)
 

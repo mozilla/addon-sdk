@@ -14,25 +14,23 @@ and learned the
 The SDK doesn't yet provide an API to add new menu items to Firefox.
 But it's extensible by design, so anyone can build and publish
 modules for add-on developers to use. Luckily, Erik Vold has written
-a [`menuitems`](https://github.com/erikvold/menuitems-jplib) package
+a [`menuitems`](https://github.com/erikvold/menuitems-jplib) module
 that enables us to add menu items.
 
 This tutorial does double-duty. It describes the general method for
-using an external, third-party package in your add-on, and it
-describes how to add a menu item using the `menuitems` package in particular.
+using an external, third-party module in your add-on, and it
+describes how to add a menu item using the `menuitems` module in particular.
 
 ## Installing `menuitems` ##
 
-First we'll download `menuitems` from
+First we'll download the `menuitems` package from
 [https://github.com/erikvold/menuitems-jplib](https://github.com/erikvold/menuitems-jplib/zipball/51080383cbb0fe2a05f8992a8aae890f4c014176).
 
 Third-party packages like `menuitems` can be installed in three
 different places:
 
-* in the `packages` directory under the SDK root, alongside built-in
-packages like [`addon-kit`]FIXME and
-[`api-utils`]FIXME. If you do this the package is
-available to any other add-ons you're developing using that SDK instance,
+* in the `packages` directory under the SDK root. If you do this the package
+is available to any other add-ons you're developing using that SDK instance,
 and the package's documentation is visible through `cfx docs`.
 * in a `packages` directory you create under your add-on's root: if you
 do this, the package is only available to that add-on.
@@ -50,18 +48,24 @@ tar -xf ../erikvold-menuitems-jplib-d80630c.zip
 </pre>
 
 Now if you run `cfx docs` you'll see a new section appear in the sidebar
-labeled "Third-Party APIs", which contains the `menuitems` package.
-The modules it contains are listed below it: you'll
-see that `menuitems` contains a single module, also
+labeled "Third-Party APIs", which lists the modules in the `menuitems`
+package: this package contains a single module, also
 called `menuitems`.
 
-Click on the module name and you'll see API documentation for the module. Click
-on the package name and you'll see basic information about the package.
+Click on the module name and you'll see API documentation for the module.
 
-One important entry in the package page lists the package's dependencies:
+## Module Dependencies ##
+
+If third-party modules only depend on SDK modules, you can use them right
+away, but if they depend on other third-party modules, you'll have to install
+those dependencies as well.
+
+In the package's main directory you'll find a file called "package.json".
+Open it up and look for an entry named "dependencies". The entry for the
+`menuitems` package is:
 
 <pre>
-Dependencies             api-utils, vold-utils
+"dependencies": ["vold-utils"]
 </pre>
 
 This tells us that we need to install the `vold-utils` package,
@@ -109,11 +113,11 @@ In your add-on's `package.json` add the line:
 Note that due to
 [bug 663480](https://bugzilla.mozilla.org/show_bug.cgi?id=663480), if you
 add a `dependencies` line to `package.json`, and you use any modules from
-built-in packages like [`addon-kit`]FIXME, then
-you must also declare your dependency on that built-in package, like this:
+the SDK, then you must also declare your dependency on that built-in package,
+like this:
 
 <pre>
-"dependencies": ["menuitems", "addon-kit"]
+"dependencies": ["menuitems", "addon-sdk"]
 </pre>
 
 Now we're done. Run the add-on and you'll see the new item appear in the

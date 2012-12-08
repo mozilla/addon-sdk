@@ -34,6 +34,7 @@ exports["test Deprecate Usage"] = function testDeprecateUsage(assert) {
   assert.equal(errors.length, 1, "only one error is dispatched");
 
   let msg = errors[0];
+
   assert.ok(msg.indexOf("foo") !== -1,
             "message contains the given message");
   assert.ok(msg.indexOf("functionIsDeprecated") !== -1,

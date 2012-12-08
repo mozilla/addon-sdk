@@ -21,7 +21,7 @@ exports.testLocalXhr = function(test) {
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);
   req.onreadystatechange = function() {
-    if (req.readyState == 4 && req.status == 0) {
+    if (req.readyState == 4 && (req.status == 0 || req.status == 200)) {
       test.assertMatches(req.responseText,
                          /onreadystatechange/,
                          "XMLHttpRequest should get local files");
@@ -54,7 +54,7 @@ exports.testResponseHeaders = function(test) {
   req.overrideMimeType("text/plain");
   req.open("GET", module.uri);
   req.onreadystatechange = function() {
-    if (req.readyState == 4 && req.status == 0) {
+    if (req.readyState == 4 && (req.status == 0 || req.status == 200)) {
       var headers = req.getAllResponseHeaders();
       if (xulApp.versionInRange(xulApp.platformVersion, "13.0a1", "*")) {
         headers = headers.split("\r\n");

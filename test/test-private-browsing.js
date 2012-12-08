@@ -1,12 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-'use strict';
+"use strict";
 
-let pb = require("sdk/private-browsing");
-let {Cc,Ci} = require("chrome");
-const { Loader } = require('sdk/test/loader');
+let { Cc,Ci } = require("chrome");
 const timer = require("sdk/timers");
+const { LoaderWithHookedConsole, pb } = require("private-browsing-helper");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -78,7 +77,7 @@ if (pbService) {
   exports.testAutomaticUnload = function(test) {
     test.waitUntilDone();
     // Create another private browsing instance and unload it
-    let loader = Loader(module);
+    let { loader, errors } = LoaderWithHookedConsole();
     let pb2 = loader.require("sdk/private-browsing");
     let called = false;
     pb2.on("start", function onStart() {
