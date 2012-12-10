@@ -228,7 +228,9 @@ exports["test:post-json-values-only"] = WorkerTest(
                        "Array is correctly serialized");
       done();
     });
-    worker.postMessage({ fun: function () {}, w: worker,
+
+    worker.postMessage({ fun: function () {},
+                         w: { contentScript: worker.contentScript },
                          d: { url: DEFAULT_CONTENT_URL },
                          array: array });
   }
@@ -279,7 +281,8 @@ exports["test:emit-json-values-only"] = WorkerTest(
       dom: browser.contentWindow.document.createElement("div")
     };
 
-    worker.port.emit("addon-to-content", function () {}, worker,
+    worker.port.emit("addon-to-content", function () {},
+                                         { contentScript: worker.contentScript },
                                          { url: DEFAULT_CONTENT_URL },
                                          obj, array);
   }
@@ -658,7 +661,6 @@ exports["test:check worker API with page history"] = WorkerTest(
 
   }
 );
-/**/
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
