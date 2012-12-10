@@ -22,8 +22,8 @@ DEFAULT_ICON = 'icon.png'
 DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
-                  'contributors', 'license', 'homepage', 'icon', 'icon64',
-                  'main', 'directories']
+                  'translators', 'contributors', 'license', 'homepage', 'icon',
+                  'icon64', 'main', 'directories']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -214,6 +214,12 @@ def get_config_in_dir(path):
                 break
 
     base_json.root_dir = path
+
+    if "dependencies" in base_json:
+      deps = base_json["dependencies"]
+      deps = [x for x in deps if x not in ["addon-kit", "api-utils"]]
+      deps.append("addon-sdk")
+      base_json["dependencies"] = deps
 
     return base_json
 

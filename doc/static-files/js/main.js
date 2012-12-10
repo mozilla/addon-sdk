@@ -4,6 +4,12 @@
 
 function run(jQuery) {
 
+  function showThirdPartyModules() {
+    if ($("#third-party-module-summaries").html() != "") {
+      $("#third-party-module-subsection").show();
+    }
+  }
+
   function highlightCode() {
     $("code").parent("pre").addClass("brush: js");
     //remove the inner <code> tags
@@ -95,6 +101,7 @@ function run(jQuery) {
     searchBox.blur();
   }
 
+  showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateAnchors();

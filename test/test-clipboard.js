@@ -101,25 +101,30 @@ function comparePixelImages(imageA, imageB, callback) {
 
 
 // Test the typical use case, setting & getting with no flavors specified
-exports.testWithNoFlavor = function(test) {
+exports["test With No Flavor"] = function(assert) {
   var contents = "hello there";
   var flavor = "text";
   var fullFlavor = "text/unicode";
   var clip = require("sdk/clipboard");
+
   // Confirm we set the clipboard
-  test.assert(clip.set(contents));
+  assert.ok(clip.set(contents));
+
   // Confirm flavor is set
-  test.assertEqual(clip.currentFlavors[0], flavor);
+  assert.equal(clip.currentFlavors[0], flavor);
+
   // Confirm we set the clipboard
-  test.assertEqual(clip.get(), contents);
+  assert.equal(clip.get(), contents);
+
   // Confirm we can get the clipboard using the flavor
-  test.assertEqual(clip.get(flavor), contents);
+  assert.equal(clip.get(flavor), contents);
+
   // Confirm we can still get the clipboard using the full flavor
-  test.assertEqual(clip.get(fullFlavor), contents);
+  assert.equal(clip.get(fullFlavor), contents);
 };
 
 // Test the slightly less common case where we specify the flavor
-exports.testWithFlavor = function(test) {
+exports["test With Flavor"] = function(assert) {
   var contents = "<b>hello there</b>";
   var contentsText = "hello there";
   var flavor = "html";
@@ -127,50 +132,52 @@ exports.testWithFlavor = function(test) {
   var unicodeFlavor = "text";
   var unicodeFullFlavor = "text/unicode";
   var clip = require("sdk/clipboard");
-  test.assert(clip.set(contents, flavor));
-  test.assertEqual(clip.currentFlavors[0], unicodeFlavor);
-  test.assertEqual(clip.currentFlavors[1], flavor);
-  test.assertEqual(clip.get(), contentsText);
-  test.assertEqual(clip.get(flavor), contents);
-  test.assertEqual(clip.get(fullFlavor), contents);
-  test.assertEqual(clip.get(unicodeFlavor), contentsText);
-  test.assertEqual(clip.get(unicodeFullFlavor), contentsText);
+
+  assert.ok(clip.set(contents, flavor));
+
+  assert.equal(clip.currentFlavors[0], unicodeFlavor);
+  assert.equal(clip.currentFlavors[1], flavor);
+  assert.equal(clip.get(), contentsText);
+  assert.equal(clip.get(flavor), contents);
+  assert.equal(clip.get(fullFlavor), contents);
+  assert.equal(clip.get(unicodeFlavor), contentsText);
+  assert.equal(clip.get(unicodeFullFlavor), contentsText);
 };
 
 // Test that the typical case still works when we specify the flavor to set
-exports.testWithRedundantFlavor = function(test) {
+exports["test With Redundant Flavor"] = function(assert) {
   var contents = "<b>hello there</b>";
   var flavor = "text";
   var fullFlavor = "text/unicode";
   var clip = require("sdk/clipboard");
-  test.assert(clip.set(contents, flavor));
-  test.assertEqual(clip.currentFlavors[0], flavor);
-  test.assertEqual(clip.get(), contents);
-  test.assertEqual(clip.get(flavor), contents);
-  test.assertEqual(clip.get(fullFlavor), contents);
+
+  assert.ok(clip.set(contents, flavor));
+  assert.equal(clip.currentFlavors[0], flavor);
+  assert.equal(clip.get(), contents);
+  assert.equal(clip.get(flavor), contents);
+  assert.equal(clip.get(fullFlavor), contents);
 };
 
-exports.testNotInFlavor = function(test) {
+exports["test Not In Flavor"] = function(assert) {
   var contents = "hello there";
   var flavor = "html";
   var clip = require("sdk/clipboard");
-  test.assert(clip.set(contents));
+
+  assert.ok(clip.set(contents));
   // If there's nothing on the clipboard with this flavor, should return null
-  test.assertEqual(clip.get(flavor), null);
+  assert.equal(clip.get(flavor), null);
 };
 
-exports.testSetImage = function(test) {
+exports["test Set Image"] = function(assert) {
   var clip = require("sdk/clipboard");
   var flavor = "image";
   var fullFlavor = "image/png";
 
-  test.assert(clip.set(base64png, flavor), "clipboard set");
-  test.assertEqual(clip.currentFlavors[0], flavor, "flavor is set");
+  assert.ok(clip.set(base64png, flavor), "clipboard set");
+  assert.equal(clip.currentFlavors[0], flavor, "flavor is set");
 };
 
-exports.testGetImage = function(test) {
-  test.waitUntilDone();
-
+exports["test Get Image"] = function(assert, done) {
   var clip = require("sdk/clipboard");
 
   clip.set(base64png, "image");
@@ -178,18 +185,18 @@ exports.testGetImage = function(test) {
   var contents = clip.get();
 
   comparePixelImages(base64png, contents, function (areEquals) {
-    test.assert(areEquals,
+    assert.ok(areEquals,
       "Image gets from clipboard equals to image sets to the clipboard");
 
-    test.done();
+    done();
   });
 }
 
-exports.testSetImageTypeNotSupported = function(test) {
+exports["test Set Image Type Not Supported"] = function(assert) {
   var clip = require("sdk/clipboard");
   var flavor = "image";
 
-  test.assertRaises(function () {
+  assert.throws(function () {
     clip.set(base64jpeg, flavor);
   }, "Invalid flavor for image/jpeg");
 
@@ -200,15 +207,27 @@ exports.testSetImageTypeNotSupported = function(test) {
 // is corrupt, even if the error is catched.
 //
 // See: http://mxr.mozilla.org/mozilla-central/source/image/src/Decoder.cpp#136
-exports.testSetImageTypeWrongData = function(test) {
+exports["test Set Image Type Wrong Data"] = function(assert) {
   var clip = require("sdk/clipboard");
   var flavor = "image";
 
   var wrongPNG = "data:image/png" + base64jpeg.substr(15);
 
-  test.assertRaises(function () {
+  assert.throws(function () {
     clip.set(wrongPNG, flavor);
   }, "Unable to decode data given in a valid image.");
 };
 
 // TODO: Test error cases.
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (assert) {
+        assert.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 789757");
+    }
+  }
+}
+
+require("test").run(exports)

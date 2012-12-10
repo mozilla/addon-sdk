@@ -962,3 +962,14 @@ exports.testIFramePostMessage = function(test) {
     }
   });
 };
+
+if (require("sdk/system/xul-app").is("Fennec")) {
+
+  module.exports = {
+    "test Unsupported Test": function UnsupportedTest (test) {
+        test.pass(
+          "Skipping this test until Fennec support is implemented." +
+          "See bug 784224");
+    }
+  }
+}

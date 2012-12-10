@@ -4,8 +4,8 @@
 
 # Annotator: a More Complex Add-on #
 
-In this tutorial we'll build an add-on that uses most of the modules in the
-addon-kit package.
+In this tutorial we'll build an add-on that uses many of the SDK's
+[high-level APIs](modules/high-level-modules.html).
 
 The add-on is an annotator: it enables the user to select elements of web pages
 and enter notes (annotations) associated with them. The annotator stores the

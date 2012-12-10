@@ -3,36 +3,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let { Cc, Ci } = require("chrome");
-let panels = require('sdk/panel');
-let tests = {}, panels, Panel;
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 const self = require('self');
+const { Panel } = require('sdk/panel');
 
-tests.testPanel = function(test) {
-  test.waitUntilDone();
+exports["test Panel"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let panel = Panel({
     contentURL: "about:buildconfig",
     contentScript: "self.postMessage(1); self.on('message', function() self.postMessage(2));",
     onMessage: function (message) {
-      test.assertEqual(this, panel, "The 'this' object is the panel.");
+      assert.equal(this, panel, "The 'this' object is the panel.");
       switch(message) {
         case 1:
-          test.pass("The panel was loaded.");
+          assert.pass("The panel was loaded.");
           panel.postMessage('');
           break;
         case 2:
-          test.pass("The panel posted a message and received a response.");
+          assert.pass("The panel posted a message and received a response.");
           panel.destroy();
-          test.done();
+          done();
           break;
       }
     }
   });
 };
 
-tests.testPanelEmit = function(test) {
-  test.waitUntilDone();
+exports["test Panel Emit"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let panel = Panel({
     contentURL: "about:buildconfig",
     contentScript: "self.port.emit('loaded');" +
@@ -40,57 +41,61 @@ tests.testPanelEmit = function(test) {
                    "             function() self.port.emit('received'));",
   });
   panel.port.on("loaded", function () {
-    test.pass("The panel was loaded and sent a first event.");
+    assert.pass("The panel was loaded and sent a first event.");
     panel.port.emit("addon-to-content");
   });
   panel.port.on("received", function () {
-    test.pass("The panel posted a message and received a response.");
+    assert.pass("The panel posted a message and received a response.");
     panel.destroy();
-    test.done();
+    done();
   });
 };
 
-tests.testPanelEmitEarly = function(test) {
-  test.waitUntilDone();
+exports["test Panel Emit Early"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let panel = Panel({
     contentURL: "about:buildconfig",
     contentScript: "self.port.on('addon-to-content', " +
                    "             function() self.port.emit('received'));",
   });
   panel.port.on("received", function () {
-    test.pass("The panel posted a message early and received a response.");
+    assert.pass("The panel posted a message early and received a response.");
     panel.destroy();
-    test.done();
+    done();
   });
   panel.port.emit("addon-to-content");
 };
 
-tests.testShowHidePanel = function(test) {
-  test.waitUntilDone();
+exports["test Show Hide Panel"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let panel = Panel({
     contentScript: "self.postMessage('')",
     contentScriptWhen: "end",
+    contentURL: "data:text/html;charset=utf-8,",
     onMessage: function (message) {
       panel.show();
     },
     onShow: function () {
-      test.pass("The panel was shown.");
-      test.assertEqual(this, panel, "The 'this' object is the panel.");
-      test.assertEqual(this.isShowing, true, "panel.isShowing == true.");
+      assert.pass("The panel was shown.");
+      assert.equal(this, panel, "The 'this' object is the panel.");
+      assert.equal(this.isShowing, true, "panel.isShowing == true.");
       panel.hide();
     },
     onHide: function () {
-      test.pass("The panel was hidden.");
-      test.assertEqual(this, panel, "The 'this' object is the panel.");
-      test.assertEqual(this.isShowing, false, "panel.isShowing == false.");
+      assert.pass("The panel was hidden.");
+      assert.equal(this, panel, "The 'this' object is the panel.");
+      assert.equal(this.isShowing, false, "panel.isShowing == false.");
       panel.destroy();
-      test.done();
+      done();
     }
   });
 };
 
-tests.testDocumentReload = function(test) {
-  test.waitUntilDone();
+exports["test Document Reload"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let content =
     "<script>" +
     "setTimeout(function () {" +
@@ -104,18 +109,20 @@ tests.testDocumentReload = function(test) {
     onMessage: function (message) {
       messageCount++;
       if (messageCount == 1) {
-        test.assertMatches(message, /data:text\/html/, "First document had a content script");
+        assert.ok(/data:text\/html/.test(message), "First document had a content script");
       }
       else if (messageCount == 2) {
-        test.assertEqual(message, "about:blank", "Second document too");
+        assert.equal(message, "about:blank", "Second document too");
         panel.destroy();
-        test.done();
+        done();
       }
     }
   });
 };
 
-tests.testParentResizeHack = function(test) {
+exports["test Parent Resize Hack"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
@@ -124,12 +131,10 @@ tests.testParentResizeHack = function(test) {
                   .QueryInterface(Ci.nsIDocShell);
   if (!("allowWindowControl" in docShell)) {
     // bug 635673 is not fixed in this firefox build
-    test.pass("allowWindowControl attribute that allow to fix browser window " +
+    assert.pass("allowWindowControl attribute that allow to fix browser window " +
               "resize is not available on this build.");
     return;
   }
-
-  test.waitUntilDone(30000);
 
   let previousWidth = browserWindow.outerWidth, previousHeight = browserWindow.outerHeight;
 
@@ -153,18 +158,18 @@ tests.testParentResizeHack = function(test) {
     onShow: function () {
       panel.postMessage('resize');
       timer.setTimeout(function () {
-        test.assertEqual(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
-        test.assertEqual(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
+        assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
+        assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
         panel.destroy();
-        test.done();
+        done();
       },0);
     }
   });
   panel.show();
 }
 
-tests.testResizePanel = function(test) {
-  test.waitUntilDone();
+exports["test Resize Panel"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
 
   // These tests fail on Linux if the browser window in which the panel
   // is displayed is not active.  And depending on what other tests have run
@@ -188,6 +193,7 @@ tests.testResizePanel = function(test) {
     let panel = Panel({
       contentScript: "self.postMessage('')",
       contentScriptWhen: "end",
+      contentURL: "data:text/html;charset=utf-8,",
       height: 10,
       width: 10,
       onMessage: function (message) {
@@ -198,11 +204,11 @@ tests.testResizePanel = function(test) {
         panel.hide();
       },
       onHide: function () {
-        test.assert((panel.width == 100) && (panel.height == 100),
+        assert.ok((panel.width == 100) && (panel.height == 100),
           "The panel was resized.");
         if (activeWindow)
           activeWindow.focus();
-        test.done();
+        done();
       }
     });
   }
@@ -216,26 +222,28 @@ tests.testResizePanel = function(test) {
   }
 };
 
-tests.testHideBeforeShow = function(test) {
-  test.waitUntilDone();
+exports["test Hide Before Show"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let showCalled = false;
   let panel = Panel({
     onShow: function () {
       showCalled = true;
     },
     onHide: function () {
-      test.assert(!showCalled, 'must not emit show if was hidden before');
-      test.done();
+      assert.ok(!showCalled, 'must not emit show if was hidden before');
+      done();
     }
   });
   panel.show();
   panel.hide();
 };
 
-tests.testSeveralShowHides = function(test) {
-  test.waitUntilDone();
+exports["test Several Show Hides"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let hideCalled = 0;
-  let panel = panels.Panel({
+  let panel = Panel({
     contentURL: "about:buildconfig",
     onShow: function () {
       panel.hide();
@@ -245,22 +253,23 @@ tests.testSeveralShowHides = function(test) {
       if (hideCalled < 3)
         panel.show();
       else {
-        test.pass("onHide called three times as expected");
-        test.done();
+        assert.pass("onHide called three times as expected");
+        done();
       }
     }
   });
   panel.on('error', function(e) {
-    test.fail('error was emitted:' + e.message + '\n' + e.stack);
+    assert.fail('error was emitted:' + e.message + '\n' + e.stack);
   });
   panel.show();
 };
 
-tests.testAnchorAndArrow = function(test) {
-  test.waitUntilDone(20000);
+exports["test Anchor And Arrow"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let count = 0;
   function newPanel(tab, anchor) {
-    let panel = panels.Panel({
+    let panel = Panel({
       contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
                   anchor.id + "</body></html>",
@@ -270,9 +279,9 @@ tests.testAnchorAndArrow = function(test) {
         count++;
         panel.destroy();
         if (count==5) {
-          test.pass("All anchored panel test displayed");
+          assert.pass("All anchored panel test displayed");
           tab.close(function () {
-            test.done();
+            done();
           });
         }
       }
@@ -311,8 +320,9 @@ tests.testAnchorAndArrow = function(test) {
 
 };
 
-tests.testPanelTextColor = function(test) {
-  test.waitUntilDone();
+exports["test Panel Text Color"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   let html = "<html><head><style>body {color: yellow}</style></head>" +
              "<body><p>Foo</p></body></html>";
   let panel = Panel({
@@ -322,16 +332,16 @@ tests.testPanelTextColor = function(test) {
                    "       getPropertyValue('color'));"
   });
   panel.port.on("color", function (color) {
-    test.assertEqual(color, "rgb(255, 255, 0)",
+    assert.equal(color, "rgb(255, 255, 0)",
       "The panel text color style is preserved when a style exists.");
     panel.destroy();
-    test.done();
+    done();
   });
 };
 
 // Bug 696552: Ensure panel.contentURL modification support
-tests.testChangeContentURL = function(test) {
-  test.waitUntilDone();
+exports["test Change Content URL"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
 
   let panel = Panel({
     contentURL: "about:blank",
@@ -341,15 +351,15 @@ tests.testChangeContentURL = function(test) {
   panel.port.on("ready", function (location) {
     count++;
     if (count == 1) {
-      test.assertEqual(location, "about:blank");
-      test.assertEqual(panel.contentURL, "about:blank");
+      assert.equal(location, "about:blank");
+      assert.equal(panel.contentURL, "about:blank");
       panel.contentURL = "about:buildconfig";
     }
     else {
-      test.assertEqual(location, "about:buildconfig");
-      test.assertEqual(panel.contentURL, "about:buildconfig");
+      assert.equal(location, "about:buildconfig");
+      assert.equal(panel.contentURL, "about:buildconfig");
       panel.destroy();
-      test.done();
+      done();
     }
   });
 };
@@ -357,25 +367,26 @@ tests.testChangeContentURL = function(test) {
 function makeEventOrderTest(options) {
   let expectedEvents = [];
 
-  return function(test) {
-    let panel = panels.Panel({ contentURL: "about:buildconfig" });
+  return function(assert, done) {
+    const { Panel } = require('sdk/panel');
+
+    let panel = Panel({ contentURL: "about:buildconfig" });
 
     function expect(event, cb) {
       expectedEvents.push(event);
       panel.on(event, function() {
-        test.assertEqual(event, expectedEvents.shift());
+        assert.equal(event, expectedEvents.shift());
         if (cb)
           timer.setTimeout(cb, 1);
       });
       return {then: expect};
     }
 
-    test.waitUntilDone();
-    options.test(test, expect, panel);
+    options.test(assert, done, expect, panel);
   }
 }
 
-tests.testAutomaticDestroy = function(test) {
+exports["test Automatic Destroy"] = function(assert) {
   let loader = Loader(module);
   let panel = loader.require("sdk/panel").Panel({
     contentURL: "about:buildconfig",
@@ -386,116 +397,108 @@ tests.testAutomaticDestroy = function(test) {
   loader.unload();
 
   panel.port.on("event-back", function () {
-    test.fail("Panel should have been destroyed on module unload");
+    assert.fail("Panel should have been destroyed on module unload");
   });
   panel.port.emit("event");
-  test.pass("check automatic destroy");
+  assert.pass("check automatic destroy");
 };
 
-tests.testWaitForInitThenShowThenDestroy = makeEventOrderTest({
-  test: function(test, expect, panel) {
+exports["test Wait For Init Then Show Then Destroy"] = makeEventOrderTest({
+  test: function(assert, done, expect, panel) {
     expect('inited', function() { panel.show(); }).
       then('show', function() { panel.destroy(); }).
-      then('hide', function() { test.done(); });
+      then('hide', function() { done(); });
   }
 });
 
-tests.testShowThenWaitForInitThenDestroy = makeEventOrderTest({
-  test: function(test, expect, panel) {
+exports["test Show Then Wait For Init Then Destroy"] = makeEventOrderTest({
+  test: function(assert, done, expect, panel) {
     panel.show();
     expect('inited').
       then('show', function() { panel.destroy(); }).
-      then('hide', function() { test.done(); });
+      then('hide', function() { done(); });
   }
 });
 
-tests.testShowThenHideThenDestroy = makeEventOrderTest({
-  test: function(test, expect, panel) {
+exports["test Show Then Hide Then Destroy"] = makeEventOrderTest({
+  test: function(assert, done, expect, panel) {
     panel.show();
     expect('show', function() { panel.hide(); }).
-      then('hide', function() { panel.destroy(); test.done(); });
+      then('hide', function() { panel.destroy(); done(); });
   }
 });
 
-tests.testContentURLOption = function(test) {
+exports["test Content URL Option"] = function(assert) {
+  const { Panel } = require('sdk/panel');
+
   const URL_STRING = "about:buildconfig";
   const HTML_CONTENT = "<html><title>Test</title><p>This is a test.</p></html>";
 
   let (panel = Panel({ contentURL: URL_STRING })) {
-    test.pass("contentURL accepts a string URL.");
-    test.assertEqual(panel.contentURL, URL_STRING,
+    assert.pass("contentURL accepts a string URL.");
+    assert.equal(panel.contentURL, URL_STRING,
                 "contentURL is the string to which it was set.");
   }
 
   let dataURL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML_CONTENT);
   let (panel = Panel({ contentURL: dataURL })) {
-    test.pass("contentURL accepts a data: URL.");
+    assert.pass("contentURL accepts a data: URL.");
   }
 
   let (panel = Panel({})) {
-    test.assert(panel.contentURL == null,
+    assert.ok(panel.contentURL == null,
                 "contentURL is undefined.");
   }
 
-  test.assertRaises(function () Panel({ contentURL: "foo" }),
-                    "The `contentURL` option must be a valid URL.",
+  assert.throws(function () Panel({ contentURL: "foo" }),
+                    /The `contentURL` option must be a valid URL./,
                     "Panel throws an exception if contentURL is not a URL.");
 };
 
-tests.testSVGDocument = function(test) {
+exports.testSVGDocument = function(assert) {
   let URL_STRING = self.data.url("mozilla_foundation_logo.svg");
 
-  let panel = Panel({
-    contentURL: URL_STRING
-  });
+  let panel = Panel({ contentURL: URL_STRING });
+
   panel.show();
   panel.hide();
   panel.destroy();
-  test.pass("contentURL accepts a svg document");
-  test.assertEqual(panel.contentURL, URL_STRING,
+
+  assert.pass("contentURL accepts a svg document");
+  assert.equal(panel.contentURL, URL_STRING,
               "contentURL is the string to which it was set.");
 };
 
-exports.testContentScriptOptionsOption = function(test) {
-  test.waitUntilDone();
-
+exports["test ContentScriptOptions Option"] = function(assert, done) {
   let loader = Loader(module);
   let panel = loader.require("sdk/panel").Panel({
       contentScript: "self.postMessage( [typeof self.options.d, self.options] );",
       contentScriptWhen: "end",
       contentScriptOptions: {a: true, b: [1,2,3], c: "string", d: function(){ return 'test'}},
+      contentURL: "data:text/html;charset=utf-8,",
       onMessage: function(msg) {
-        test.assertEqual( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
-        test.assertEqual( typeof msg[1], 'object', 'object as contentScriptOptions' );
-        test.assertEqual( msg[1].a, true, 'boolean in contentScriptOptions' );
-        test.assertEqual( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
-        test.assertEqual( msg[1].c, 'string', 'string in contentScriptOptions' );
-        test.done();
+        assert.equal( msg[0], 'undefined', 'functions are stripped from contentScriptOptions' );
+        assert.equal( typeof msg[1], 'object', 'object as contentScriptOptions' );
+        assert.equal( msg[1].a, true, 'boolean in contentScriptOptions' );
+        assert.equal( msg[1].b.join(), '1,2,3', 'array and numbers in contentScriptOptions' );
+        assert.equal( msg[1].c, 'string', 'string in contentScriptOptions' );
+        done();
       }
     });
 };
 
-let panelSupported = true;
-
 try {
-  panels = require("sdk/panel");
-  Panel = panels.Panel;
+  require("sdk/panel");
 }
-catch(ex if ex.message == [
-    "The panel module currently supports only Firefox.  In the future ",
-    "we would like it to support other applications, however.  Please see ",
-    "https://bugzilla.mozilla.org/show_bug.cgi?id=jetpack-panel-apps ",
-    "for more information."
-  ].join("")) {
-  panelSupported = false;
-}
+catch (e) {
+  if (!/supports only Firefox/.test(e.message))
+    throw e;
 
-if (panelSupported) {
-  for (let test in tests)
-    exports[test] = tests[test];
-}
-else {
-  exports.testPanelNotSupported = function(test) {
-    test.pass("The panel module is not supported on this app.");
+  module.exports = {
+    "test Unsupported Application": function Unsupported (assert) {
+      assert.pass(e.message);
+    }
   }
 }
+
+require("test").run(exports);
