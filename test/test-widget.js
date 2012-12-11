@@ -4,13 +4,12 @@
 
 "use strict";
 
-const {Cc,Ci} = require("chrome");
+const { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
-const widgets = require("sdk/widget");
 const url = require("sdk/url");
-const windowUtils = require("sdk/deprecated/window-utils");
-const tabBrowser = require("sdk/deprecated/tab-browser");
 const timer = require("sdk/timers");
+const self = require("self");
+const windowUtils = require("sdk/deprecated/window-utils");
 
 exports.testConstructor = function(test) {
   test.waitUntilDone(30000);
@@ -492,6 +491,8 @@ exports.testConstructor = function(test) {
 
   // test multiple windows
   tests.push(function testMultipleWindows() {
+    const tabBrowser = require("sdk/deprecated/tab-browser");
+
     tabBrowser.addTab("about:blank", { inNewWindow: true, onLoad: function(e) {
       let browserWindow = e.target.defaultView;
       let doc = browserWindow.document;
@@ -576,6 +577,8 @@ exports.testConstructor = function(test) {
   });
 
   tests.push(function testAddonBarHide() {
+    const tabBrowser = require("sdk/deprecated/tab-browser");
+
     // Hide the addon-bar
     browserWindow.setToolbarVisibility(container(), false);
     test.assert(container().collapsed,
@@ -1027,6 +1030,26 @@ exports.testPostMessageOnLocationChange = function(test) {
     });
 };
 
+exports.testSVGWidget = function(test) {
+  test.waitUntilDone();
+
+  // use of capital SVG here is intended, that was failing..
+  let SVG_URL = self.data.url("mofo_logo.SVG");
+
+  let widget = require("widget").Widget({
+    id: "mozilla-svg-logo",
+    label: "moz foundation logo",
+    contentURL: SVG_URL,
+    contentScript: "self.postMessage({count: window.document.images.length, src: window.document.images[0].src});",
+    onMessage: function(data) {
+      widget.destroy();
+      test.assertEqual(data.count, 1, 'only one image');
+      test.assertEqual(data.src, SVG_URL, 'only one image');
+      test.done();
+    }
+  });
+};
+
 exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
   test.waitUntilDone();
 
@@ -1135,7 +1158,7 @@ function closeBrowserWindow(window, callback) {
 // throw.  In that case, remove all tests above from exports, and add one dummy
 // test that passes.
 try {
-  require("sdk/widget");
+  const widgets = require("sdk/widget");
 }
 catch (err) {
   // This bug should be mentioned in the error message.

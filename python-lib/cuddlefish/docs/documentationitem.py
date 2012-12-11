@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys, os, re
+import sys, os, re, simplejson
 
 class DocumentationItemInfo(object):
     def __init__(self, env_root, md_path, filename):
@@ -47,6 +47,42 @@ class ModuleInfo(DocumentationItemInfo):
     def __init__(self, env_root, module_root, md_path, filename):
         DocumentationItemInfo.__init__(self, env_root, md_path, filename)
         self.module_root = module_root
+        self.metadata = self.get_metadata(self.js_module_path())
+
+    def remove_comments(self, text):
+        def replacer(match):
+            s = match.group(0)
+            if s.startswith('/'):
+                return ""
+            else:
+                return s
+        pattern = re.compile(
+            r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+            re.DOTALL | re.MULTILINE
+        )
+        return re.sub(pattern, replacer, text)
+
+    def get_metadata(self, path_to_js):
+        try:
+            js = unicode(open(path_to_js,"r").read(), 'utf8')
+        except IOError:
+            raise Exception, "JS module: '" + path_to_js + \
+                             "', corresponding to documentation file: '"\
+                             + self.source_path_and_filename() + "' wasn't found"
+        js = self.remove_comments(js)
+        js_lines = js.splitlines(True)
+        metadata = ''
+        reading_metadata = False
+        for line in js_lines:
+            if reading_metadata:
+                if line.startswith("};"):
+                    break
+                metadata += line
+                continue
+            if line.startswith("module.metadata"):
+                reading_metadata = True
+        metadata = metadata.replace("'", '"')
+        return simplejson.loads("{" + metadata + "}")
 
     def js_module_path(self):
         return os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")

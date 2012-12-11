@@ -4,16 +4,6 @@
 
 <!-- contributed by Erik Vold [erikvvold@gmail.com]  -->
 
-<div class="experimental">
-<br>
-
-**This module is currently experimental.**
-
-**Based on the feedback we get from users, we expect to change it,
-and may need to make incompatible changes in future releases.**
-
-</div>
-
 The `simple-prefs` module lets you store preferences across
 application restarts. You can store booleans, integers, and string
 values, and users can configure these preferences in the

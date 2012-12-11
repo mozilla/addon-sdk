@@ -2,12 +2,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-<div class="experimental">
-
-**This is currently an experimental API, so we might change it
-in future releases. In particular, we might make this the default
-style for certain pages loaded from "data".**
-
 With the Add-on SDK you can present information to the user,
 such as a guide to using your add-on, in a browser tab.
 You can supply the content in an HTML file in your add-on's
@@ -36,4 +30,3 @@ navigational elements:
 This only affects the page at "data/index.html":
 all other pages are displayed normally.
 
-</div>

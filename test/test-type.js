@@ -35,7 +35,7 @@ exports["test flat objects"] = function (assert) {
   assert.ok(utils.isFlat({}), "`{}` is a flat object");
   assert.ok(!utils.isFlat([]), "`[]` is not a flat object");
   assert.ok(!utils.isFlat(new function() {}), "derived objects are not flat");
-  assert.ok(utils.isFlat(Object.prototype), "Object.prototype is flat"); 
+  assert.ok(utils.isFlat(Object.prototype), "Object.prototype is flat");
 };
 
 exports["test json atoms"] = function (assert) {
