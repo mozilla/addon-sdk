@@ -8,6 +8,7 @@ const { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const url = require("sdk/url");
 const timer = require("sdk/timers");
+const self = require("self");
 const windowUtils = require("sdk/deprecated/window-utils");
 
 exports.testConstructor = function(test) {
@@ -1027,6 +1028,26 @@ exports.testPostMessageOnLocationChange = function(test) {
         }
       }
     });
+};
+
+exports.testSVGWidget = function(test) {
+  test.waitUntilDone();
+
+  // use of capital SVG here is intended, that was failing..
+  let SVG_URL = self.data.url("mofo_logo.SVG");
+
+  let widget = require("widget").Widget({
+    id: "mozilla-svg-logo",
+    label: "moz foundation logo",
+    contentURL: SVG_URL,
+    contentScript: "self.postMessage({count: window.document.images.length, src: window.document.images[0].src});",
+    onMessage: function(data) {
+      widget.destroy();
+      test.assertEqual(data.count, 1, 'only one image');
+      test.assertEqual(data.src, SVG_URL, 'only one image');
+      test.done();
+    }
+  });
 };
 
 exports.testNavigationBarWidgets = function testNavigationBarWidgets(test) {
