@@ -6,7 +6,6 @@ let { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 const self = require('self');
-const { Panel } = require('sdk/panel');
 
 exports["test Panel"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
@@ -456,16 +455,16 @@ exports["test Content URL Option"] = function(assert) {
 };
 
 exports.testSVGDocument = function(assert) {
-  let URL_STRING = self.data.url("mozilla_foundation_logo.svg");
+  let SVG_URL = self.data.url("mofo_logo.SVG");
 
-  let panel = Panel({ contentURL: URL_STRING });
+  let panel = require("sdk/panel").Panel({ contentURL: SVG_URL });
 
   panel.show();
   panel.hide();
   panel.destroy();
 
   assert.pass("contentURL accepts a svg document");
-  assert.equal(panel.contentURL, URL_STRING,
+  assert.equal(panel.contentURL, SVG_URL,
               "contentURL is the string to which it was set.");
 };
 

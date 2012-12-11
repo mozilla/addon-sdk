@@ -1042,6 +1042,7 @@ exports.testSVGWidget = function(test) {
     contentURL: SVG_URL,
     contentScript: "self.postMessage({count: window.document.images.length, src: window.document.images[0].src});",
     onMessage: function(data) {
+      widget.destroy();
       test.assertEqual(data.count, 1, 'only one image');
       test.assertEqual(data.src, SVG_URL, 'only one image');
       test.done();
