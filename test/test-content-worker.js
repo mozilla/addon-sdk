@@ -206,8 +206,8 @@ exports["test:post-json-values-only"] = WorkerTest(
           self.on("message", function (message) {
             self.postMessage([ message.fun === undefined,
                                typeof message.w,
-                               message.w && "port" in message.w,
-                               message.w.url,
+                               message.w && typeof(message.w.contentScript),
+                               message.d.url,
                                Array.isArray(message.array),
                                JSON.stringify(message.array)]);
           });
@@ -219,7 +219,7 @@ exports["test:post-json-values-only"] = WorkerTest(
     worker.on("message", function (message) {
       assert.ok(message[0], "function becomes undefined");
       assert.equal(message[1], "object", "object stays object");
-      assert.ok(message[2], "object's attributes are enumerable");
+      assert.equal(message[2], "string", "object shapes preserve");
       assert.equal(message[3], DEFAULT_CONTENT_URL,
                        "jsonable attributes are accessible");
       // See bug 714891, Arrays may be broken over compartements:
@@ -228,7 +228,9 @@ exports["test:post-json-values-only"] = WorkerTest(
                        "Array is correctly serialized");
       done();
     });
-    worker.postMessage({ fun: function () {}, w: worker, array: array });
+    worker.postMessage({ fun: function () {}, w: worker,
+                         d: { url: DEFAULT_CONTENT_URL },
+                         array: array });
   }
 );
 
@@ -240,12 +242,12 @@ exports["test:emit-json-values-only"] = WorkerTest(
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
           // Validate self.on and self.emit
-          self.port.on("addon-to-content", function (fun, w, obj, array) {
+          self.port.on("addon-to-content", function (fun, w, d, obj, array) {
             self.port.emit("content-to-addon", [
                             fun === null,
                             typeof w,
-                            "port" in w,
-                            w.url,
+                            typeof(w.contentScript),
+                            d.url,
                             "fun" in obj,
                             Object.keys(obj.dom).length,
                             Array.isArray(array),
@@ -260,7 +262,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
     worker.port.on("content-to-addon", function (result) {
       assert.ok(result[0], "functions become null");
       assert.equal(result[1], "object", "objects stay objects");
-      assert.ok(result[2], "object's attributes are enumerable");
+      assert.equal(result[2], "string", "object shapes preserve");
       assert.equal(result[3], DEFAULT_CONTENT_URL,
                        "json attribute is accessible");
       assert.ok(!result[4], "function as object attribute is removed");
@@ -276,7 +278,10 @@ exports["test:emit-json-values-only"] = WorkerTest(
       fun: function () {},
       dom: browser.contentWindow.document.createElement("div")
     };
-    worker.port.emit("addon-to-content", function () {}, worker, obj, array);
+
+    worker.port.emit("addon-to-content", function () {}, worker,
+                                         { url: DEFAULT_CONTENT_URL },
+                                         obj, array);
   }
 );
 
@@ -653,6 +658,7 @@ exports["test:check worker API with page history"] = WorkerTest(
 
   }
 );
+/**/
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
