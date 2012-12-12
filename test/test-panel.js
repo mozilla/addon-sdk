@@ -148,12 +148,10 @@ exports["test Parent Resize Hack"] = function(assert, done) {
     contentScript: "self.on('message', function(message){" +
                    "  if (message=='resize') " +
                    "    unsafeWindow.contentResize();" +
-                   "});",
+                   "});" +
+                   "self.postMessage()",
     contentScriptWhen: "ready",
     onMessage: function (message) {
-
-    },
-    onShow: function () {
       panel.postMessage('resize');
       timer.setTimeout(function () {
         assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
@@ -392,28 +390,29 @@ exports["test Automatic Destroy"] = function(assert) {
       "self.port.on('event', function() self.port.emit('event-back'));"
   });
 
+  panel.port.emit("event");
+
   loader.unload();
 
   panel.port.on("event-back", function () {
     assert.fail("Panel should have been destroyed on module unload");
   });
-  panel.port.emit("event");
   assert.pass("check automatic destroy");
 };
 
 exports["test Wait For Init Then Show Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
-    expect('inited', function() { panel.show(); }).
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
+
+    panel.show();
   }
 });
 
 exports["test Show Then Wait For Init Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
     panel.show();
-    expect('inited').
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
   }
 });
