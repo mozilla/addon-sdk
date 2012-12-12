@@ -212,4 +212,20 @@ exports['test emit.lazy'] = function(assert) {
   assert.deepEqual(errors, [ boom ], 'errors reporetd');
 };
 
+exports['test listen to all events'] = function(assert) {
+  let actual = []
+  let target = {}
+
+  on(target, '*', function(type, message) {
+    actual.push(type, message)
+  });
+
+  emit(target, 'foo', 1);
+  assert.deepEqual([ 'foo', 1 ], actual,
+                   'handler called for foo events');
+  emit(target, 'bar', 2);
+  assert.deepEqual([ 'foo', 1, 'bar', 2 ], actual,
+                   'handler called for bar events');
+};
+
 require('test').run(exports);
