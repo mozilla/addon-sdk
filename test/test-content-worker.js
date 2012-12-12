@@ -7,7 +7,7 @@
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("sdk/timers");
 const { Loader, Require, override } = require("sdk/test/loader");
-const { Worker } = require("sdk/content/worker");
+const { Worker, attach } = require("sdk/content/worker");
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
 
@@ -141,9 +141,10 @@ exports["test:emit"] = WorkerTest(
   }
 );
 
-exports["test:emit hack message"] = WorkerTest(
+exports["test:postMessage is just legacy alias over port.emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
+    let received = 0;
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -153,20 +154,23 @@ exports["test:emit hack message"] = WorkerTest(
           });
           // We should not receive message on self, but only on self.port
           self.on("message", function (data) {
-            self.postMessage("message", data);
+            self.postMessage(data);
           });
         },
         onError: function(e) {
-          assert.fail("Got exception: "+e);
+          assert.fail("Got exception: " + e);
         }
       });
 
     worker.port.on("message", function (data) {
-      assert.equal(data, "event data");
-      done();
+      received = received + 1;
+      assert.equal(data, "event data", "received on the port");
+      if (received == 4) done();
     });
     worker.on("message", function (data) {
-      assert.fail("Got an unexpected message : "+msg);
+      received = received + 1;
+      assert.equal(data, "event data", "recevied on worker");
+      if (received == 4) done();
     });
     worker.port.emit("message", "event data");
   }
@@ -401,7 +405,6 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
     });
   }
 );
-
 
 exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
@@ -661,6 +664,41 @@ exports["test:check worker API with page history"] = WorkerTest(
 
   }
 );
+
+
+exports["test:messages are queued"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+
+    assert.notEqual(browser.contentWindow.location.href, "about:blank",
+                        "window is now on the right document");
+
+    let window = browser.contentWindow
+    let worker =  Worker({
+      contentScript: "new " + function WorkerScope() {
+        // window is accessible
+        let myLocation = window.location.toString();
+        self.on("message", function(data) {
+          if (data == "hi!")
+            self.postMessage("bye!");
+        });
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(msg) {
+        assert.equal("bye!", msg);
+        assert.equal(worker.url, window.location.href,
+                         "worker.url still works");
+        done();
+      },
+      onAttach: function() {
+        assert.equal(worker.url, window.location.href, "worker.url works");
+      }
+    });
+
+    worker.postMessage("hi!");
+
+    attach(worker, window);
+  });
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
