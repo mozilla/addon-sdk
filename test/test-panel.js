@@ -260,6 +260,7 @@ exports["test Several Show Hides"] = function(assert, done) {
   panel.show();
 };
 
+/*
 exports["test Anchor And Arrow"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
@@ -315,6 +316,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
 
 
 };
+*/
 
 exports["test Panel Text Color"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
