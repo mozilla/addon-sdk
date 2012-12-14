@@ -25,6 +25,7 @@ exports.testPlainTextConsole = function(test) {
   }
 
   prefs.set(SDK_LOG_LEVEL_PREF, "all");
+  prefs.reset(ADDON_LOG_LEVEL_PREF);
 
   var Console = require("sdk/console/plain-text").PlainTextConsole;
   var con = new Console(print);
@@ -72,7 +73,7 @@ exports.testPlainTextConsole = function(test) {
   var tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
   test.assertEqual(tbLines[1], "Error: blah");
-  test.assertEqual(tbLines[2], module.uri + " 70");
+  test.assertEqual(tbLines[2], module.uri + " 71");
   test.assertEqual(tbLines[3], "Traceback (most recent call last):");
 
   prints = [];
