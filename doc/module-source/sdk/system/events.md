@@ -27,7 +27,7 @@ You can find a list of events dispatched by firefox codebase
 @param [event] {object}
   An optional object object with `data` and `subject` attributes.
   `data` refers to a string that you would like to pass through this event.
-  `subject` should refer to the actual actor of this event.
+  `subject` should refer to the actual actor/subject of this event (ie: the object emitting the event).
 </api>
 
 <api name="on">
@@ -45,10 +45,12 @@ You can find a list of events dispatched by firefox codebase
     * data: the event data string
 
 @param strong {boolean}
-  Should we keep a strong of weak reference to the listener method.
+  Default is `false`, a weak reference, which means it can be garbage collected at any time if
+  there are no other references to it.  Determines if we should keep a strong of weak reference
+  to the listener method.
 </api>
 
-<api name="on">
+<api name="once">
 @function
   Listen only once to a particular event topic
 
@@ -57,7 +59,9 @@ You can find a list of events dispatched by firefox codebase
 @param listener {function}
   Function that will be called when an event is fired.
 @param strong {boolean}
-  Should we keep a strong of weak reference to the listener method.
+  Default is `false`, a weak reference, which means it can be garbage collected at any time if
+  there are no other references to it.  Determines if we should keep a strong of weak reference
+  to the listener method.
 </api>
 
 <api name="off">
