@@ -74,7 +74,7 @@ function run(jQuery) {
         href: url,
         "class": $(this).attr("tagName")
       });
-      tocEntry.text($(this).text());
+      tocEntry.text($(this).attr("id"));
       $("#toc").append(tocEntry);
     });
 
