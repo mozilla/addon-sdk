@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const prefs = require("sdk/preferences/service");
+
 exports.testPlainTextConsole = function(test) {
   var prints = [];
   function print(message) {
@@ -12,6 +14,8 @@ exports.testPlainTextConsole = function(test) {
     prints = [];
     return last;
   }
+
+  prefs.set("extensions.sdk.console.logLevel", "debug");
 
   var Console = require("sdk/console/plain-text").PlainTextConsole;
   var con = new Console(print);
@@ -59,7 +63,7 @@ exports.testPlainTextConsole = function(test) {
   var tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
   test.assertEqual(tbLines[1], "Error: blah");
-  test.assertEqual(tbLines[2], module.uri + " 57");
+  test.assertEqual(tbLines[2], module.uri + " 61");
   test.assertEqual(tbLines[3], "Traceback (most recent call last):");
 
   prints = [];
