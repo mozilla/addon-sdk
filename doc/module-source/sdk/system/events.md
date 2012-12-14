@@ -22,8 +22,8 @@ You can find a list of events dispatched by firefox codebase
 @function
   Send an event to observer service
 
-@param topic {string}
-  The topic name for this event.
+@param type {string}
+  The event type.
 @param [event] {object}
   An optional object object with `data` and `subject` attributes.
   `data` refers to a string that you would like to pass through this event.
@@ -32,15 +32,15 @@ You can find a list of events dispatched by firefox codebase
 
 <api name="on">
 @function
-  Listen to events of a given topic
+  Listen to events of a given type
 
-@param topic {string}
-  The topic name to watch.
+@param type {string}
+  The event type name to watch.
 @param listener {function}
   Function that will be called when an event is fired, with a single `event`
   object as argument. This object has three attributes:
   
-    * topic: the event name
+    * type: the event type name
     * subject: the event subject object
     * data: the event data string
 
@@ -52,10 +52,10 @@ You can find a list of events dispatched by firefox codebase
 
 <api name="once">
 @function
-  Listen only once to a particular event topic
+  Listen only once to a particular event type
 
-@param topic {string}
-  The topic name to watch.
+@param type {string}
+  The event type name to watch.
 @param listener {function}
   Function that will be called when an event is fired.
 @param strong {boolean}
@@ -68,8 +68,8 @@ You can find a list of events dispatched by firefox codebase
 @function
   Stop listening for an event
 
-@param topic {string}
-  The topic name to unsubscribe to.
+@param type {string}
+  The event type name to unsubscribe to.
 @param listener {function}
   The function we registered to listen for events.
 </api>
