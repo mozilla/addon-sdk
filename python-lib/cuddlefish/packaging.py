@@ -11,8 +11,10 @@ import simplejson as json
 from cuddlefish.bunch import Bunch
 
 MANIFEST_NAME = 'package.json'
+DEFAULT_LOADER = 'addon-sdk'
 
-DEFAULT_LOADER = 'api-utils'
+# Is different from root_dir when running tests
+env_root = os.environ.get('CUDDLEFISH_ROOT')
 
 DEFAULT_PROGRAM_MODULE = 'main'
 
@@ -20,8 +22,8 @@ DEFAULT_ICON = 'icon.png'
 DEFAULT_ICON64 = 'icon64.png'
 
 METADATA_PROPS = ['name', 'description', 'keywords', 'author', 'version',
-                  'contributors', 'license', 'homepage', 'icon', 'icon64',
-                  'main', 'directories']
+                  'translators', 'contributors', 'license', 'homepage', 'icon',
+                  'icon64', 'main', 'directories']
 
 RESOURCE_HOSTNAME_RE = re.compile(r'^[a-z0-9_\-]+$')
 
@@ -213,6 +215,12 @@ def get_config_in_dir(path):
 
     base_json.root_dir = path
 
+    if "dependencies" in base_json:
+      deps = base_json["dependencies"]
+      deps = [x for x in deps if x not in ["addon-kit", "api-utils"]]
+      deps.append("addon-sdk")
+      base_json["dependencies"] = deps
+
     return base_json
 
 def _is_same_file(a, b):
@@ -221,7 +229,7 @@ def _is_same_file(a, b):
     return a == b
 
 def build_config(root_dir, target_cfg, packagepath=[]):
-    dirs_to_scan = []
+    dirs_to_scan = [env_root] # root is addon-sdk dir, diff from root_dir in tests
 
     def add_packages_from_config(pkgconfig):
         if 'packages' in pkgconfig:
@@ -318,7 +326,7 @@ def generate_build_for_target(pkg_cfg, target, deps,
 
     def add_locale_to_build(cfg):
         # Bug 730776: Ignore locales for addon-kit, that are only for unit tests
-        if not is_running_tests and cfg.name == "addon-kit":
+        if not is_running_tests and cfg.name == "addon-sdk":
             return
 
         path = resolve_dir(cfg, cfg['locale'])

@@ -5,7 +5,7 @@
 # cfx #
 
 The `cfx` command-line tool gives you access to the SDK documentation and
-development servers as well as testing, running, and building packages.
+development servers as well as testing, running, and building add-ons.
 `cfx` usage is:
 
 <pre>
@@ -47,22 +47,31 @@ This is useful if you're iteratively editing a single file, and don't want to wa
 regenerate the complete documentation tree.
 
 ### cfx init ####
-Create a new directory, change into it, and run `cfx init`.
+Create a new directory called "my-addon", change into it, and run `cfx init`.
 
 This command will create an skeleton add-on, as a starting point for your
 own add-on development, with the following file structure:
 
-<pre>
-  README.md
-  package.json
-  data/
-  lib/
-      main.js
-  tests/
-      test-main.js
-  docs/
-      main.md
-</pre>
+<ul class="tree">
+  <li>my-addon
+    <ul>
+    <li>data</li>
+    <li>docs
+      <ul><li>main.md</li></ul>
+    </li>
+    <li>lib
+      <ul><li>main.js</li></ul>
+    </li>
+    <li>package.json</li>
+    <li>README.md</li>
+    <li>tests
+      <ul><li>test-main.js</li></ul>
+    </li>
+    </ul>
+  </li>
+</ul>
+
+<div style="clear:both"></div>
 
 ### cfx run ###
 
@@ -130,7 +139,7 @@ See <a href="dev-guide/cfx-tool.html#profiledir">
   </td>
   <td>
     Extra packages to include, specified as a comma-separated list of package
-    names. Defaults to <code>addon-kit</code>.
+    names.
   </td>
 </tr>
 
@@ -231,7 +240,7 @@ To launch the application, enter the following command:
   <td>
     The <code>cfx run</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
@@ -298,7 +307,7 @@ they contain.
 
 See the
 [tutorial on unit testing](dev-guide/tutorials/unit-testing.html) and the
-[reference documentation for the `assert` module](packages/api-utils/test/assert.html)
+[reference documentation for the `assert` module](modules/sdk/test/assert.html)
 for details.
 
 #### Supported Options #####
@@ -348,12 +357,12 @@ times.
     <code>--dependencies</code>
   </td>
   <td>
-    Load and run any tests that are included with packages that your package
+    Load and run any tests that are included with modules that your package
     depends on.
     <br>
-    For example: if your add-on depends on <code>addon-kit</code> and you
-    supply this option, then <code>cfx</code> will run the unit tests for
-    <code>addon-kit</code> as well as those for your add-on.
+    For example: if your add-on depends on modules from the SDK, then
+    <code>cfx</code> will run the unit tests for the SDK's modules as well
+    as yours.
   </td>
 </tr>
 
@@ -607,7 +616,7 @@ add-on whenever it is run.
   </td>
   <td>
    Extra packages to include, specified as a comma-separated list of package
-   names. Defaults to <code>addon-kit</code>.
+   names.
   </td>
 </tr>
 
@@ -681,7 +690,7 @@ add-on whenever it is run.
   <td>
     The <code>cfx xpi</code> command constructs the add-on using a extension
     template which you can find under the SDK root, in
-    <code>python-lib/cuddlefish/app-extension</code>.
+    <code>app-extension</code>.
     Use the <code>--templatedir</code> option to specify a different template.
     TEMPLATEDIR may be specified as a full path or as a path relative to the
     current directory.
@@ -806,7 +815,7 @@ one run of `cfx` will not, by default, be available in the next run.
 
 This includes, for example, any extra add-ons you installed, or your
 history, or any data stored using the
-[simple-storage](packages/addon-kit/simple-storage.html) API.
+[simple-storage](modules/sdk/simple-storage.html) API.
 
 To make `cfx` use a specific profile, pass the `--profiledir` option,
 specifying the path to the profile you wish to use.

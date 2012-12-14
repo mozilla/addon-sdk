@@ -16,8 +16,8 @@ file. You can split your code into separate modules with clearly defined
 interfaces between them. You then import and use these modules from other
 parts of your add-on using the `require()` statement, in exactly that same
 way that you import core SDK modules like
-[`widget`](packages/addon-kit/widget.html) or
-[`panel`](packages/addon-kit/panel.html).
+[`widget`](modules/sdk/widget.html) or
+[`panel`](modules/sdk/panel.html).
 
 It can often make sense to structure a larger or more complex add-on as a
 collection of modules. This makes the design of the add-on easier to
@@ -373,15 +373,11 @@ there instead.
 
 ### Documentation ###
 
-If you document the package and the modules it contains, then people
-who install your package and execute `cfx docs` will see the documentation
+If you document your modules, people who install your package and
+execute `cfx docs` will see the documentation
 integrated with the SDK's own documentation.
 
-You can document the package that contains the geolocation module by editing
-the "README.md" file that `cfx init` created in the package root. It's in
-[Markdown](http://daringfireball.net/projects/markdown/syntax) syntax.
-
-You can document the geolocation module itself by creating a file called
+You can document the geolocation module by creating a file called
 "geolocation.md" in your package's "doc" directory. This file is also
 written in Markdown, although you can optionally use some
 [extended syntax](https://wiki.mozilla.org/Jetpack/SDK/Writing_Documentation#APIDoc_Syntax)
@@ -389,13 +385,12 @@ to document APIs.
 
 Try it:
 
-* edit "README.md", and add a "geolocation.md" under "doc"
+* add a "geolocation.md" under "doc"
 * copy your geolocation package under the "packages" directory in the SDK root
 * execute `cfx docs`
 
 Once `cfx docs` has finished, you should see a new entry appear in the
-sidebar called "Third-Party APIs", which lists the geolocation package
-and the module it contains.
+sidebar called "Third-Party APIs", which lists the geolocation module.
 
 ### Editing "package.json" ###
 

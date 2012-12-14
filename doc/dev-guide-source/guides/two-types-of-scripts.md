@@ -24,7 +24,7 @@ scripts".
 This is the place where the main logic of your add-on is implemented.
 
 Your add-on is implemented as a collection of one or more
-[CommonJS modules](dev-guide/guides/commonjs.html). Each module
+[CommonJS modules](dev-guide/guides/modules.html). Each module
 is supplied as a script stored under the `lib` directory under your add-on's
 root directory.
 

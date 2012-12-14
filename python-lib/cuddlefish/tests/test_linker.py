@@ -31,15 +31,15 @@ class Basic(unittest.TestCase):
         deps = packaging.get_deps_for_targets(pkg_cfg, ["one"])
         self.failUnlessEqual(deps, ["one"])
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "one"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "one"])
 
     def test_manifest(self):
         target_cfg = self.get_pkg("one")
         pkg_cfg = packaging.build_config(ROOT, target_cfg)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "one"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "one"])
         # target_cfg.dependencies is not provided, so we'll search through
         # all known packages (everything in 'deps').
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
@@ -48,10 +48,10 @@ class Basic(unittest.TestCase):
         def assertReqIs(modname, reqname, path):
             reqs = m["one/lib/%s.js" % modname]["requirements"]
             self.failUnlessEqual(reqs[reqname]["path"], path)
-        assertReqIs("main", "panel", "addon-kit/lib/panel.js")
+        assertReqIs("main", "panel", "addon-sdk/lib/sdk/panel.js")
         assertReqIs("main", "two.js", "one/lib/two.js")
         assertReqIs("main", "./two", "one/lib/two.js")
-        assertReqIs("main", "addon-kit/tabs.js", "addon-kit/lib/tabs.js")
+        assertReqIs("main", "sdk/tabs.js", "addon-sdk/lib/sdk/tabs.js")
         assertReqIs("main", "./subdir/three", "one/lib/subdir/three.js")
         assertReqIs("two", "main", "one/lib/main.js")
         assertReqIs("subdir/three", "../main", "one/lib/main.js")
@@ -69,8 +69,8 @@ class Basic(unittest.TestCase):
         pkg_cfg = packaging.build_config(ROOT, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "three"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "three"])
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         m = m.get_harness_options_manifest()
         def assertReqIs(modname, reqname, path):
@@ -86,8 +86,8 @@ class Basic(unittest.TestCase):
         pkg_cfg = packaging.build_config(ROOT, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "five"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "five"])
         # all we care about is that this next call doesn't raise an exception
         m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         m = m.get_harness_options_manifest()
@@ -100,8 +100,8 @@ class Basic(unittest.TestCase):
         pkg_cfg = packaging.build_config(ROOT, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "six"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "six"])
         self.assertRaises(manifest.UnreachablePrefixError,
                           manifest.build_manifest,
                           target_cfg, pkg_cfg, deps, scan_tests=False)
@@ -112,8 +112,8 @@ class Basic(unittest.TestCase):
         pkg_cfg = packaging.build_config(ROOT, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        self.failUnlessEqual(deps, ["addon-kit", "api-utils", "four"])
+                                              [target_cfg.name, "addon-sdk"])
+        self.failUnlessEqual(deps, ["addon-sdk", "four"])
         self.assertRaises(manifest.UnreachablePrefixError,
                           manifest.build_manifest,
                           target_cfg, pkg_cfg, deps, scan_tests=False)
@@ -190,7 +190,7 @@ class Contents(unittest.TestCase):
             names = zf.namelist()
             # the first problem found in bug 664840 was that cuddlefish.js
             # (the loader) was stripped out on windows, due to a /-vs-\ bug
-            self.assertIn("resources/api-utils/lib/cuddlefish.js", names)
+            self.assertIn("resources/addon-sdk/lib/sdk/loader/cuddlefish.js", names)
             # the second problem found in bug 664840 was that an addon
             # without an explicit tests/ directory would copy all files from
             # the package into a bogus JID-PKGNAME-tests/ directory, so check
@@ -220,7 +220,7 @@ class Contents(unittest.TestCase):
                 self.failUnlessEqual(e.args[0], 0)
             zf = zipfile.ZipFile("seven.xpi", "r")
             names = zf.namelist()
-            self.assertIn("resources/api-utils/lib/cuddlefish.js", names)
+            self.assertIn("resources/addon-sdk/lib/sdk/loader/cuddlefish.js", names)
             testfiles = [fn for fn in names if "seven/tests" in fn]
             self.failUnlessEqual([], testfiles)
             self.assertIn("resources/seven/data/text.data",

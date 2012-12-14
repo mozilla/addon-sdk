@@ -119,9 +119,9 @@ parser_groups = (
         (("", "--extra-packages",), dict(dest="extra_packages",
                                          help=("extra packages to include, "
                                                "comma-separated. Default is "
-                                               "'addon-kit'."),
+                                               "'addon-sdk'."),
                                          metavar=None,
-                                         default="addon-kit",
+                                         default="addon-sdk",
                                          cmds=['run', 'xpi', 'test', 'testex',
                                                'testpkgs', 'testall',
                                                'testcfx'])),
@@ -194,6 +194,11 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['test', 'testex', 'testpkgs'])),
+        (("", "--override-version",), dict(dest="override_version",
+                                  help="Pass in a version string to use in generated docs",
+                                  metavar=None,
+                                  default=False,
+                                  cmds=['sdocs'])),
         ]
      ),
 
@@ -216,7 +221,7 @@ parser_groups = (
                                                 "containing test runner "
                                                 "program (default is "
                                                 "test-harness)"),
-                                          default="test-harness",
+                                          default="addon-sdk",
                                           cmds=['test', 'testex', 'testpkgs',
                                                 'testall'])),
         # --keydir was removed in 1.0b5, but we keep it around in the options
@@ -323,11 +328,12 @@ def parse_args(arguments, global_options, usage, version, parser_groups,
 def test_all(env_root, defaults):
     fail = False
 
-    print >>sys.stderr, "Testing cfx..."
-    sys.stderr.flush()
-    result = test_cfx(env_root, defaults['verbose'])
-    if result.failures or result.errors:
-        fail = True
+    if not defaults['filter']:
+        print >>sys.stderr, "Testing cfx..."
+        sys.stderr.flush()
+        result = test_cfx(env_root, defaults['verbose'])
+        if result.failures or result.errors:
+            fail = True
 
     if not fail or not defaults.get("stopOnError"):
         print >>sys.stderr, "Testing all examples..."
@@ -335,6 +341,15 @@ def test_all(env_root, defaults):
 
         try:
             test_all_examples(env_root, defaults)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+
+    if not fail or not defaults.get("stopOnError"):
+        print >>sys.stderr, "Testing all unit-test addons..."
+        sys.stderr.flush()
+
+        try:
+            test_all_testaddons(env_root, defaults)
         except SystemExit, e:
             fail = (e.code != 0) or fail
 
@@ -365,6 +380,30 @@ def test_cfx(env_root, verbose):
     sys.stdout.flush(); sys.stderr.flush()
     return retval
 
+def test_all_testaddons(env_root, defaults):
+    addons_dir = os.path.join(env_root, "test", "addons")
+    addons = [dirname for dirname in os.listdir(addons_dir)
+                if os.path.isdir(os.path.join(addons_dir, dirname))]
+    addons.sort()
+    fail = False
+    for dirname in addons:
+        print >>sys.stderr, "Testing %s..." % dirname
+        sys.stderr.flush()
+        try:
+            run(arguments=["run",
+                           "--pkgdir",
+                           os.path.join(addons_dir, dirname)],
+                defaults=defaults,
+                env_root=env_root)
+        except SystemExit, e:
+            fail = (e.code != 0) or fail
+        if fail and defaults.get("stopOnError"):
+            break
+
+    if fail:
+        print >>sys.stderr, "Some test addons tests were unsuccessful."
+        sys.exit(-1)
+
 def test_all_examples(env_root, defaults):
     examples_dir = os.path.join(env_root, "examples")
     examples = [dirname for dirname in os.listdir(examples_dir)
@@ -391,8 +430,12 @@ def test_all_examples(env_root, defaults):
 
 def test_all_packages(env_root, defaults):
     packages_dir = os.path.join(env_root, "packages")
-    packages = [dirname for dirname in os.listdir(packages_dir)
-                if os.path.isdir(os.path.join(packages_dir, dirname))]
+    if os.path.isdir(packages_dir):
+      packages = [dirname for dirname in os.listdir(packages_dir)
+                  if os.path.isdir(os.path.join(packages_dir, dirname))]
+    else:
+      packages = []
+    packages.append(env_root)
     packages.sort()
     print >>sys.stderr, "Testing all available packages: %s." % (", ".join(packages))
     sys.stderr.flush()
@@ -521,6 +564,9 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "testpkgs":
         test_all_packages(env_root, defaults=options.__dict__)
         return
+    elif command == "testaddons":
+        test_all_testaddons(env_root, defaults=options.__dict__)
+        return
     elif command == "testex":
         test_all_examples(env_root, defaults=options.__dict__)
         return
@@ -528,19 +574,26 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         test_all(env_root, defaults=options.__dict__)
         return
     elif command == "testcfx":
+        if options.filter:
+            print >>sys.stderr, "The filter option is not valid with the testcfx command"
+            return
         test_cfx(env_root, options.verbose)
         return
     elif command == "docs":
         from cuddlefish.docs import generate
         if len(args) > 1:
-            docs_home = generate.generate_named_file(env_root, filename=args[1])
+            docs_home = generate.generate_named_file(env_root, filename_and_path=args[1])
         else:
             docs_home = generate.generate_local_docs(env_root)
             webbrowser.open(docs_home)
         return
     elif command == "sdocs":
         from cuddlefish.docs import generate
-        filename = generate.generate_static_docs(env_root)
+        filename=""
+        if options.override_version:
+            filename = generate.generate_static_docs(env_root, override_version=options.override_version)
+        else:
+            filename = generate.generate_static_docs(env_root)
         print >>stdout, "Wrote %s." % filename
         return
     elif command not in ["xpi", "test", "run"]:
@@ -650,11 +703,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # the choice of loader for manifest-generation purposes. In practice,
     # this means that alternative loaders probably won't work with
     # --strip-xpi.
-    assert packaging.DEFAULT_LOADER == "api-utils"
-    assert pkg_cfg.packages["api-utils"].loader == "lib/cuddlefish.js"
-    cuddlefish_js_path = os.path.join(pkg_cfg.packages["api-utils"].root_dir,
-                                      "lib", "cuddlefish.js")
-    loader_modules = [("api-utils", "lib", "cuddlefish", cuddlefish_js_path)]
+    assert packaging.DEFAULT_LOADER == "addon-sdk"
+    assert pkg_cfg.packages["addon-sdk"].loader == "lib/sdk/loader/cuddlefish.js"
+    cuddlefish_js_path = os.path.join(pkg_cfg.packages["addon-sdk"].root_dir,
+                                      "lib", "sdk", "loader", "cuddlefish.js")
+    loader_modules = [("addon-sdk", "lib", "sdk/loader/cuddlefish", cuddlefish_js_path)]
     scan_tests = command == "test"
     test_filter_re = None
     if scan_tests and options.filter:
@@ -700,8 +753,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     if command == "test":
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
-        harness_options['main'] = 'test-harness/run-tests'
-        harness_options['mainPath'] = manifest.get_manifest_entry("test-harness", "lib", "run-tests").get_path()
+        harness_options['main'] = 'sdk/test/runner'
+        harness_options['mainPath'] = manifest.get_manifest_entry("addon-sdk", "lib", "sdk/test/runner").get_path()
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainPath'] = manifest.top_path
@@ -722,7 +775,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         app_extension_dir = os.path.abspath(options.templatedir)
     else:
         mydir = os.path.dirname(os.path.abspath(__file__))
-        app_extension_dir = os.path.join(mydir, "app-extension")
+        app_extension_dir = os.path.join(mydir, "../../app-extension")
 
 
     if target_cfg.get('preferences'):
@@ -730,6 +783,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options['manifest'] = manifest.get_harness_options_manifest()
     harness_options['allTestModules'] = manifest.get_all_test_modules()
+    if len(harness_options['allTestModules']) == 0 and command == "test":
+        sys.exit(0)
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 

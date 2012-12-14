@@ -5,8 +5,8 @@
 function run(jQuery) {
 
   function showThirdPartyModules() {
-    if ($("#third-party-package-summaries").html() != "") {
-      $("#third-party-packages-subsection").show();
+    if ($("#third-party-module-summaries").html() != "") {
+      $("#third-party-module-subsection").show();
     }
   }
 
@@ -94,11 +94,19 @@ function run(jQuery) {
     }
   }
 
+  function refreshSearchBox() {
+    var searchBox = document.getElementById("search-box");
+    searchBox.value = "";
+    searchBox.focus();
+    searchBox.blur();
+  }
+
   showThirdPartyModules();
   highlightCode();
   $(".syntaxhighlighter").width("auto");
   generateAnchors();
   generateToC();
+  refreshSearchBox();
   jumpToAnchor();
 }
 

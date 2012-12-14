@@ -32,6 +32,8 @@ called `package.json`. This file is also referred to as the
   this is used as the add-on's `em:creator` element in its
   `install.rdf`.
 
+* `translators` - an Array of Strings consisted of translators of the package.
+
 * `contributors` - may be an Array of additional author Strings.
 
 * `homepage` - the URL of the package's website.
@@ -56,7 +58,7 @@ called `package.json`. This file is also referred to as the
   An array of JSON objects that use the following keys `name`, `type`, `value`,
   `title`, and `description`.  These JSON objects will be used to automatically
   create a preferences interface for the addon in the Add-ons Manager.
-  For more information see the documentation of [simple-prefs](packages/addon-kit/simple-prefs.html).
+  For more information see the documentation of [simple-prefs](modules/sdk/simple-prefs.html).
 
 * `license` - the name of the license as a String, with an optional
   URL in parentheses.
@@ -113,7 +115,7 @@ API documentation.
 Packages may optionally contain a directory called `data` into which
 arbitrary files may be placed, such as images or text files. The
 URL for these resources may be reached using the
-[self](packages/addon-kit/self.html) module.
+[self](modules/sdk/self.html) module.
 
   [Markdown]: http://daringfireball.net/projects/markdown/
   [non-bootstrapped XUL extension]: #guide/xul-extensions
