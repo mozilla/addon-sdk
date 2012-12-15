@@ -109,9 +109,9 @@ exports.testPlainTextConsole = function(test) {
     let methods = levels[level];
     for (let method in methods) {
       con[method]("");
-      test.assertEqual(lastPrint(), methods[method] ? messages[method] : null,
+      test.assertEqual(lastPrint(), (methods[method] ? messages[method] : null),
                        "at log level '" + level + "', " + method + "() " +
-                       methods[method] ? "prints" : "doesn't print");
+                       (methods[method] ? "prints" : "doesn't print"));
     }
   }
 
