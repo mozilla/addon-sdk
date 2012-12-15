@@ -105,10 +105,15 @@ exports.testPlainTextConsole = function(test) {
   };
 
   for (let level in levels) {
-    prefs.set(SDK_LOG_LEVEL_PREF, level);
     let methods = levels[level];
     for (let method in methods) {
+      // We have to reset the log level pref each time we run the test
+      // because the test runner relies on the console to print test output,
+      // and test results would not get printed to the console for some
+      // values of the pref.
+      prefs.set(SDK_LOG_LEVEL_PREF, level);
       con[method]("");
+      prefs.set(SDK_LOG_LEVEL_PREF, "all");
       test.assertEqual(lastPrint(), (methods[method] ? messages[method] : null),
                        "at log level '" + level + "', " + method + "() " +
                        (methods[method] ? "prints" : "doesn't print"));
@@ -124,6 +129,7 @@ exports.testPlainTextConsole = function(test) {
   prefs.set(SDK_LOG_LEVEL_PREF, "all");
   prefs.set(ADDON_LOG_LEVEL_PREF, "off");
   con.error("");
+  prefs.reset(ADDON_LOG_LEVEL_PREF);
   test.assertEqual(lastPrint(), null,
                    "addon log level 'off' overrides SDK log level 'all'");
 
