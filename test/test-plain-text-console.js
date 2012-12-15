@@ -82,117 +82,43 @@ exports.testPlainTextConsole = function(test) {
   test.assertEqual(tbLines[0], "info: " + name + ": Traceback (most recent call last):");
   test.assertEqual(tbLines[4].trim(), "con.trace();");
 
-  let debugMessage = "debug: " + name + ": \n";
-  let infoMessage = "info: " + name + ": \n";
-  let warnMessage = "warn: " + name + ": \n";
-  let errorMessage = "error: " + name + ": \n";
+  // Whether or not console methods should print at the various log levels,
+  // structured as a hash of levels, each of which contains a hash of methods,
+  // each of whose value is whether or not it should print, i.e.:
+  // { [level]: { [method]: [prints?], ... }, ... }.
+  let levels = {
+    all:   { debug: true,  log: true,  info: true,  warn: true,  error: true  },
+    debug: { debug: true,  log: true,  info: true,  warn: true,  error: true  },
+    info:  { debug: false, log: true,  info: true,  warn: true,  error: true  },
+    warn:  { debug: false, log: false, info: false, warn: true,  error: true  },
+    error: { debug: false, log: false, info: false, warn: false, error: true  },
+    off:   { debug: false, log: false, info: false, warn: false, error: false },
+  };
 
-  prefs.set(SDK_LOG_LEVEL_PREF, "all");
-  con.debug("");
-  test.assertEqual(lastPrint(), debugMessage,
-                   "when log level is 'all', debug() prints");
-  con.log("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'all', log() prints");
-  con.info("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'all', info() prints");
-  con.warn("");
-  test.assertEqual(lastPrint(), warnMessage,
-                   "when log level is 'all', warn() prints");
-  con.error("");
-  test.assertEqual(lastPrint(), errorMessage,
-                   "when log level is 'all', error() prints");
+  // The messages we use to test the various methods, as a hash of methods.
+  let messages = {
+    debug: "debug: " + name + ": \n",
+    log: "info: " + name + ": \n",
+    info: "info: " + name + ": \n",
+    warn: "warn: " + name + ": \n",
+    error: "error: " + name + ": \n",
+  };
 
-  prefs.set(SDK_LOG_LEVEL_PREF, "debug");
-  con.debug("");
-  test.assertEqual(lastPrint(), debugMessage,
-                   "when log level is 'debug', debug() prints");
-  con.log("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'debug', log() prints");
-  con.info("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'debug', info() prints");
-  con.warn("");
-  test.assertEqual(lastPrint(), warnMessage,
-                   "when log level is 'debug', warn() prints");
-  con.error("");
-  test.assertEqual(lastPrint(), errorMessage,
-                   "when log level is 'debug', error() prints");
-
-  prefs.set(SDK_LOG_LEVEL_PREF, "info");
-  con.debug("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'info', debug() doesn't print");
-  con.log("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'info', log() prints");
-  con.info("");
-  test.assertEqual(lastPrint(), infoMessage,
-                   "when log level is 'info', info() prints");
-  con.warn("");
-  test.assertEqual(lastPrint(), warnMessage,
-                   "when log level is 'info', warn() prints");
-  con.error("");
-  test.assertEqual(lastPrint(), errorMessage,
-                   "when log level is 'info', error() prints");
-
-  prefs.set(SDK_LOG_LEVEL_PREF, "warn");
-  con.debug("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'warn', debug() doesn't print");
-  con.log("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'warn', log() doesn't print");
-  con.info("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'warn', info() doesn't print");
-  con.warn("");
-  test.assertEqual(lastPrint(), warnMessage,
-                   "when log level is 'warn', warn() prints");
-  con.error("");
-  test.assertEqual(lastPrint(), errorMessage,
-                   "when log level is 'warn', error() prints");
-
-  prefs.set(SDK_LOG_LEVEL_PREF, "error");
-  con.debug("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'error', debug() doesn't print");
-  con.log("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'error', log() doesn't print");
-  con.info("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'error', info() doesn't print");
-  con.warn("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'error', warn() doesn't print");
-  con.error("");
-  test.assertEqual(lastPrint(), errorMessage,
-                   "when log level is 'error', error() prints");
-
-  prefs.set(SDK_LOG_LEVEL_PREF, "off");
-  con.debug("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'off', debug() doesn't print");
-  con.log("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'off', log() doesn't print");
-  con.info("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'off', info() doesn't print");
-  con.warn("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'off', warn() doesn't print");
-  con.error("");
-  test.assertEqual(lastPrint(), null,
-                   "when log level is 'off', error() doesn't print");
+  for (let level in levels) {
+    prefs.set(SDK_LOG_LEVEL_PREF, level);
+    let methods = levels[level];
+    for (let method in methods) {
+      con[method]("");
+      test.assertEqual(lastPrint(), methods[method] ? messages[method] : null,
+                       "at log level '" + level + "', " + method + "() " +
+                       methods[method] ? "prints" : "doesn't print");
+    }
+  }
 
   prefs.set(SDK_LOG_LEVEL_PREF, "off");
   prefs.set(ADDON_LOG_LEVEL_PREF, "all");
   con.debug("");
-  test.assertEqual(lastPrint(), debugMessage,
+  test.assertEqual(lastPrint(), messages["debug"],
                    "addon log level 'all' overrides SDK log level 'off'");
 
   prefs.set(SDK_LOG_LEVEL_PREF, "all");
