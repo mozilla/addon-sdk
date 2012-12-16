@@ -11,7 +11,7 @@ DEFAULT_COMMON_PREFS = {
     'javascript.options.strict': True,
     'javascript.options.showInConsole': True,
 
-    'extensions.sdk.console.level': 'info',
+    'extensions.sdk.console.logLevel': 'info',
 
     'extensions.checkCompatibility.nightly' : False,
 
