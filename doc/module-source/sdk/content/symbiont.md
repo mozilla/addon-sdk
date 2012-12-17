@@ -17,7 +17,9 @@ The `Symbiont` trait is composed from the
 
 * functions to load and configure content scripts from the `Loader`
 * functions to send messages between content scripts and the main
-add-on code from the `Worker`. It 
+add-on code from the `Worker`
+
+It also 
 
 It exports the `Symbiont` trait that can be used for creating JavaScript
 contexts that can:
