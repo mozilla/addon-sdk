@@ -121,7 +121,7 @@ exports['test early errors in module'] = function(assert) {
     let program = main(loader, 'main')
   } catch (error) {
     assert.equal(String(error),
-                 "Error: opening input stream (invalid filename?)",
+                 "opening input stream (invalid filename?)",
                  "thrown errors propagate");
 
     assert.equal(error.fileName.split("/").pop(), "boomer.js",
