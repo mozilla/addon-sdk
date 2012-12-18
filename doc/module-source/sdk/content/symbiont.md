@@ -5,36 +5,27 @@
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-The `symbiont` module exports the `Symbiont` trait, which is used by
-SDK modules, such as [`panel`](modules/sdk/panel.html) and
+The `symbiont` module exports the `Symbiont` trait, which is used in
+the internal implementation of SDK modules, such as
+[`panel`](modules/sdk/panel.html) and
 [`page-worker`](modules/sdk/page-mod.html), that can load web
 content and attach
 [content scripts](dev-guide/guides/content-scripts/index.html) to it.
 
-The `Symbiont` trait is composed from the
-[`Loader`](modules/sdk/content/loader.html) and
-[`Worker`](modules/sdk/content/page-mod.html) traits. It inherits:
-
-* functions to load and configure content scripts from the `Loader`
-* functions to send messages between content scripts and the main
-add-on code from the `Worker`
-
-It also 
-
-It exports the `Symbiont` trait that can be used for creating JavaScript
-contexts that can:
-
-* access web content loaded into Firefox frames (that is, XUL `<iframe>`
-and `<browser>` elements)
-* communicate with the main add-on code using the
+A `Symbiont` loads the specified `contentURL` and content scripts into
+a frame, and sets up an asynchronous channel between the content
+scripts and the add-on code, enabling them to exchange messages using the
 [`port`](dev-guide/guides/content-scripts/using-port.html) or
-[`postMessage()`](dev-guide/guides/content-scripts/using-postmessage.html) APIs.
+[`postMessage`](dev-guide/guides/content-scripts/using-postmessage.html)
+APIs. You map optionally pass a frame into the `Symbiont`'s constructor:
+if you don't, then a new hidden frame will be created to host the content.
 
-
-
-A `Symbiont` loads the specified contentURL and scripts into it, and sets up an asynchronous
-JSON pipe between the content symbiont object and the content symbiont
-context. If frame is not provided hidden frame will be created.
+This trait is composed from the
+[`Loader`](modules/sdk/content/loader.html) and
+[`Worker`](modules/sdk/content/worker.html) traits. It inherits
+functions to load and configure content scripts from the `Loader`,
+and functions to exchange messages between content scripts and the
+main add-on code from the `Worker`.
 
     var { Symbiont } = require('content');
     var Thing = Symbiont.resolve({ constructor: '_init' }).compose({
