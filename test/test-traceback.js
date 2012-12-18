@@ -78,7 +78,7 @@ exports.testFromExceptionWithNsIException = function(test) {
     test.fail("an exception should've been thrown");
   } catch (e if e.result == Cr.NS_ERROR_MALFORMED_URI) {
     var tb = traceback.fromException(e);
-    test.assertEqual(tb[0].name, "throwNsIException");
+    test.assertEqual(tb[tb.length - 1].name, "throwNsIException");
   }
 };
 
@@ -91,11 +91,11 @@ exports.testFormat = function(test) {
   test.assertEqual(typeof(formatted), "string");
   var lines = formatted.split("\n");
 
-  test.assertEqual(lines[1].indexOf("getTraceback") > 0,
+  test.assertEqual(lines[lines.length - 2].indexOf("getTraceback") > 0,
                    true,
                    "formatted traceback should include function name");
 
-  test.assertEqual(lines[2].trim(),
+  test.assertEqual(lines[lines.length - 1].trim(),
                    "return traceback.format();",
                    "formatted traceback should include source code");
 };
