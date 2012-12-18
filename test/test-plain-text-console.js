@@ -66,5 +66,5 @@ exports.testPlainTextConsole = function(test) {
   con.trace();
   tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "info: " + require("sdk/self").name + ": Traceback (most recent call last):");
-  test.assertEqual(tbLines[4].trim(), "con.trace();");
+  test.assertEqual(tbLines[tbLines.length - 2].trim(), "con.trace();");
 };
