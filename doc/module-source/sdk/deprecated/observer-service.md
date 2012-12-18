@@ -7,7 +7,8 @@
 
 <div class="warning">
 <p>The <code>observer-service</code> module is deprecated.</p>
-<p>To access the observer service, use the
+<p>To access the
+<a href="https://developer.mozilla.org/en-US/docs/Observer_Notifications">observer service</a>, use the
 <a href="modules/sdk/system/events.html"><code>system/events</code></a>
 module.</p>
 </div>

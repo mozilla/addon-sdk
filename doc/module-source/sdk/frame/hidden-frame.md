@@ -4,17 +4,14 @@
 
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 
-The `hidden-frame` module creates host application frames (i.e. XUL `<iframe>`
-elements) that are not displayed to the user.  It is useful in the construction
+The `hidden-frame` module creates Firefox frames (i.e. XUL `<iframe>`
+elements) that are not displayed to the user. It is useful in the construction
 of APIs that load web content not intended to be directly seen or accessed
-by users, like `page-worker`.  It is also useful in the construction of APIs
-that load web content for intermittent display, such as `panel`.
-
-This module is not intended to be used directly by programs.  Rather, it is
-intended to be used by other modules that provide APIs to programs.
-
-Introduction
-------------
+by users, like
+[`page-worker`](modules/sdk/page-worker.html).
+It is also useful in the construction of APIs
+that load web content for intermittent display, such as
+[`panel`](modules/sdk/panel.html).
 
 The module exports a constructor function, `HiddenFrame`, and two other
 functions, `add` and `remove`.
@@ -22,9 +19,6 @@ functions, `add` and `remove`.
 `HiddenFrame` constructs a new hidden frame.  `add` registers a hidden frame,
 preparing it to load content.  `remove` unregisters a frame, unloading any
 content that was loaded in it.
-
-Examples
---------
 
 The following code creates a hidden frame, loads a web page into it, and then
 logs its title:

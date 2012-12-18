@@ -6,7 +6,7 @@ The `frame/utils` module provides helper functions for working with platform
 internals like [frames](https://developer.mozilla.org/en/XUL/iframe) and
 [browsers](https://developer.mozilla.org/en/XUL/browser).
 
-### create
+## create ##
 
 Module exports `create` function that takes `nsIDOMDocument` of the
 [privileged document](https://developer.mozilla.org/en/Working_with_windows_in_chrome_code)

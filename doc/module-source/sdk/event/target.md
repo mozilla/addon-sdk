@@ -2,9 +2,22 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-Provides an exemplar `EventTarget` object, that implements interface for
-adding removing event listeners of a specific type. `EventTarget` is a
-base of all objects in SDK on which events are emitted.
+Many objects in the SDK can broadcast events. For example, a
+[`panel`](modules/sdk/panel.html) instance emits an `show` event when the
+panel is shown.
+
+The `event/target` module enables you to create objects that broadcast
+events. Users of the object can listen to the events using the standard
+`on()` and `once()` functions.
+
+Also see the
+[tutorial on implementing event targets](dev-guide/tutorials/event-targets.html)
+to get started with this API.
+
+This module provides an exemplar `EventTarget` object, that implements
+an interface for adding and removing event listeners of a specific type.
+`EventTarget` is the base class for all objects in SDK on which events
+are emitted.
 
 ### Instantiation
 

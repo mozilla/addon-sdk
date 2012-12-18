@@ -5,6 +5,13 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
 <!-- edited by Erik Vold [erikvvold@gmail.com] -->
 
+<div class="warning">
+<p>The <code>window-utils</code> module is deprecated.</p>
+<p>For low-level access to windows, use the
+<a href="modules/sdk/window/utils.html"><code>window/utils</code></a>
+module.</p>
+</div>
+
 The `window-utils` module provides helpers for accessing and tracking
 application windows.  These windows implement the [`nsIDOMWindow`][nsIDOMWindow]
 interface.

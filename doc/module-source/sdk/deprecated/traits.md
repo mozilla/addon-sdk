@@ -4,6 +4,13 @@
 
 <!-- contributed by Irakli Gozalishvil [gozala@mozilla.com]  -->
 
+<div class="warning">
+<p>The <code>traits</code> module is deprecated.</p>
+<p>To implement inheritance, use the
+<a href="modules/sdk/core/heritage.html"><code>heritage</code></a>
+module.</p>
+</div>
+
 The `traits` module provides base building blocks for secure object
 composition. It exports base trait / constructor function that
 constructs an instance of `Trait`.
