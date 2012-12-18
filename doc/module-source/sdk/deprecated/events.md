@@ -3,12 +3,13 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <div class="warning">
-The <code>events</code> module is deprecated. To implement your own event
+<p>The <code>events</code> module is deprecated.</p>
+<p>To implement your own event
 targets, use the
 <a href="modules/sdk/event/core.html"><code>event/core</code></a> and
 <a href="modules/sdk/event/target.html"><code>event/target</code><a/> modules,
 and refer to the
-<a href="dev-guide/tutorials/event-targets.html">tutorial on creating event emitters</a>.
+<a href="dev-guide/tutorials/event-targets.html">tutorial on creating event emitters</a>.</p>
 </div>
 
 <api name="EventEmitter">
