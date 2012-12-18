@@ -4,8 +4,8 @@
 
 <div class="warning">
 <p>The <code>cortex</code> module is deprecated.</p>
-<p>The <a href="modules/sdk/core/namespace.html"><code>namespace</code></a> module
-enables modules to provide property encapsulation.</p>
+<p>To provide property encapsulation for modules you implement, use the
+<a href="modules/sdk/core/namespace.html"><code>namespace</code></a> module.</p>
 </div>
 
 ## Property Encapsulation ##
