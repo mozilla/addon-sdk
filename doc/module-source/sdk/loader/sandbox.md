@@ -2,12 +2,12 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-Provides an API for creating javascript sandboxes and for executing scripts
+Provides an API for creating JavaScript sandboxes and executing scripts
 in them.
 
 ## Create a sandbox ##
 
-For the starting point you need to create a sandbox:
+To create a sandbox:
 
     const { sandbox, evaluate, load } = require("api-utils/sandbox");
     let scope = sandbox('http://example.com');
@@ -52,3 +52,49 @@ This module provides a limited API for loading scripts from local URLs.
     load(scope, 'resource://path/to/my/script.js');
     load(scope, 'file:///path/to/script.js');
     load(scope, 'data:,var a = 5;');
+
+<api name="sandbox">
+@function
+  Make a new sandbox that inherits principals from `source`.
+  @param source {string|window|null}
+  An object that determines the privileges that will be given to the
+  sandbox. This argument can be:
+
+  * a URI string, giving the sandbox the same privileges as a
+  script loaded from that URL
+  * a DOM window object, giving the sandbox the same privileges
+  as the DOM window
+  * `null`, to give the sandbox chrome privileges.
+
+@returns {sandbox}
+  A sandbox in which you can evaluate and load JavaScript.
+</api>
+
+<api name="evaluate">
+@function
+  Evaluate `code` in `sandbox`, and return the result.
+  @param sandbox {sandbox}
+  The sandbox to use.
+  @param code {string}
+  The code to execute.
+  @param uri {string}
+  Evaluate the code as if it were being loaded from the given URI. Optional.
+  @param line {number}
+  Evaluate the code starting at this line. Optional, defaults to 1.
+  @param version {string}
+  Evaluate the code using this version of JavaScript. Defaults to 1.8.
+@returns {result}
+  Returns whatever the evaluated code returns.
+</api>
+
+<api name="load">
+@function
+  Evaluate code from `uri` in `sandbox`.
+  @param sandbox {sandbox}
+  The sandbox to use.
+  @param uri {string}
+  The URL pointing to the script to load.
+  It must be a local `chrome:`, `resource:`, `file:` or `data:` URL.
+@returns {result}
+  Returns whatever the evaluated code returns.
+</api>
