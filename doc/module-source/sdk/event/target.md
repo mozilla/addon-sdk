@@ -126,14 +126,14 @@ event listeners.
 Registers an event `listener` that is called every time events of
 specified `type` are emitted.
 
+    worker.on('message', function (data) {
+      console.log('data received: ' + data)
+    });
+
 @param type {String}
    The type of event.
 @param listener {Function}
    The listener function that processes the event.
-
-    worker.on('message', function (data) {
-     console.log('data received: ' + data)
-    });
 </api>
 
 <api name="once">
