@@ -107,8 +107,16 @@ exports["test Update"] = function (assert, done) {
       next();
     }
     else {
-      observers.remove("addon-install-unit-test", eventsObserver);
-      done();
+      events = [];
+      AddonInstaller.uninstall(id).then(function() {
+        let expectedEvents = ["shutdown", "uninstall"];
+        assert.equal(JSON.stringify(events),
+                     JSON.stringify(expectedEvents),
+                     prefix + "addon's bootstrap.js functions have been called");
+
+        observers.remove("addon-install-unit-test", eventsObserver);
+        done();
+      });
     }
   }
   function onFailure(code) {
