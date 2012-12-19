@@ -36,8 +36,6 @@ logs its title:
 
 See the `panel` module for a real-world example of usage of this module.
 
-Reference
----------
 <api name="HiddenFrame">
 @class
 `HiddenFrame` objects represent hidden frames.

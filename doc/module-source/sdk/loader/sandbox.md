@@ -5,46 +5,49 @@
 Provides an API for creating javascript sandboxes and for executing scripts
 in them.
 
-### Create a sandbox ###
+## Create a sandbox ##
 
 For the starting point you need to create a sandbox:
 
     const { sandbox, evaluate, load } = require("api-utils/sandbox");
     let scope = sandbox('http://example.com');
 
-Argument passed to the sandbox defines it's privileges. Argument may be an URL
-string, in which case sandbox will get exact same privileges as a scripts
-loaded from that URL. Argument also could be a DOM window object, to inherit
-privileges from the window being passed. Finally if argument is omitted or is
-`null` sandbox will have a chrome privileges giving it access to all the XPCOM
-components. Optionally `sandbox` function can be passed a second optional
-argument (See [sandbox documentation on MDN](https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter)
+The argument passed to the sandbox defines its privileges. The argument may be:
+
+* a URL string, in which case the sandbox will get the same privileges as
+a script loaded from that URL
+* a DOM window object, to inherit privileges from the window being passed.
+* omitted or `null`: then the sandbox will have chrome privileges giving it
+access to all the XPCOM components.
+
+Optionally the `sandbox` function can be passed a second argument
+(See [sandbox documentation on MDN](https://developer.mozilla.org/en/Components.utils.Sandbox#Optional_parameter)
 for details).
 
-### Evaluate code ###
+## Evaluate code ##
 
-Module provides `evaluate` function that allows executing code in the given
+Module provides `evaluate` function that lets you execute code in the given
 sandbox:
 
     evaluate(scope, 'var a = 5;');
     evaluate(scope, 'a + 2;');      //=> 7
 
 More details about evaluated script may be passed via optional arguments that
-may improve an exception reporting:
+may improve exception reporting:
 
     // Evaluate code as if it was loaded from 'http://foo.com/bar.js' and
     // start from 2nd line.
     evaluate(scope, 'a ++', 'http://foo.com/bar.js', 2);
 
-Version of JavaScript can be also specified via optional argument:
+Version of JavaScript can be also specified via an optional argument:
 
     evaluate(scope, 'let b = 2;', 'bar.js', 1, '1.5');
     // throws cause `let` is not defined in JS 1.5.
 
-### Loading scripts ###
+## Load scripts ##
 
-API provides limited API for loading scripts right form the local URLs,
-but data: URLs are supported.
+This module provides a limited API for loading scripts from local URLs.
+`data:` URLs are supported.
 
     load(scope, 'resource://path/to/my/script.js');
     load(scope, 'file:///path/to/script.js');
