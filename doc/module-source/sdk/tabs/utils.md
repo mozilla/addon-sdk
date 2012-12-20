@@ -1,3 +1,6 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 The `tabs/utils` module contains low-level functions for working with
 XUL [`tabs`](https://developer.mozilla.org/en-US/docs/XUL/tab) and the XUL [`tabbrowser`](https://developer.mozilla.org/en-US/docs/XUL/tabbrowser)
