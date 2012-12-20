@@ -30,8 +30,9 @@ exports.testUnloadAndErrorLogging = function(test) {
   observers.notify("narg", "yo yo");
   var lines = prints[0].split("\n");
   test.assertEqual(lines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
-  test.assertEqual(lines[1], "Traceback (most recent call last):");
-  test.assertEqual(lines.slice(-2)[0], "Error: foo");
+  test.assertEqual(lines[1], "Error: foo");
+  test.assertEqual(lines[2], module.uri + " 24");
+  test.assertEqual(lines[3], "Traceback (most recent call last):");
 
   loader.unload();
   observers.notify("blarg", "yo yo");
