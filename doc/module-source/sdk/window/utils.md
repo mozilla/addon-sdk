@@ -103,7 +103,7 @@ element.
 
   @param window {nsIDOMWindow}
   @param options {object}
-    @prop close {bool}
+    @prop close {boolean}
     Whether to close the window on application exit. Defaults to `true`.
 </api>
 
@@ -180,7 +180,7 @@ element.
   is loaded, including the whole DOM document, images,
   and any other sub-resources.
   @param window {nsIDOMWindow}
-  @returns {bool}
+  @returns {boolean}
   `true` if the document is completely loaded.
 </api>
 
@@ -189,7 +189,7 @@ element.
   Returns true if the given window is a Firefox browser window:
   that is, its document has a `"windowtype"` of `"chrome://browser/content/browser.xul"`.
   @param window {nsIDOMWindow}
-  @returns {bool}
+  @returns {boolean}
 </api>
 
 <api name="getWindowTitle">
@@ -205,7 +205,7 @@ element.
   @function
   Returns true if the given window is a XUL window.
   @param window {nsIDOMWindow}
-  @returns {bool}
+  @returns {boolean}
 </api>
 
 <api name="getFocusedWindow">

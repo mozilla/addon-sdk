@@ -49,4 +49,7 @@ Execution of scripts may easily be enabled:
       Whether to allow Javascript execution. Defaults to `false`.
      @prop allowPlugins {Boolean}
       Whether to allow plugin execution. Defaults to `false`.
+@returns {frame}
+The new [`browser`](https://developer.mozilla.org/en-US/docs/XUL/browser)
+element.
 </api>

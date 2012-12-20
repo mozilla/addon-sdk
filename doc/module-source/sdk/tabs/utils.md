@@ -51,7 +51,7 @@ elements.
 <api name="getActiveTab">
 @function
 Given a browser window, get the active, or
-[selected tab](https://developer.mozilla.org/en-US/docs/XUL/tabbrowser#p-selectedTab),.
+[selected](https://developer.mozilla.org/en-US/docs/XUL/tabbrowser#p-selectedTab), tab.
 @param window {window}
 A browser window.
 @returns {tab}
@@ -78,11 +78,11 @@ URL for the document to load.
 @param options {object}
 Options for the new tab. These are currently only applicable
 to Firefox for Android.
-  @prop inBackground {bool}
+  @prop inBackground {boolean}
   If `true`, open the new tab, but keep the currently selected tab selected.
   If `false`, make the new tab the selected tab.
   Optional, defaults to `false`.
-  @prop pinned {bool}
+  @prop pinned {boolean}
   Pin this tab. Optional, defaults to `false`.
 @returns {tab}
 The new [`tab`](https://developer.mozilla.org/en-US/docs/XUL/tab).
@@ -93,8 +93,8 @@ The new [`tab`](https://developer.mozilla.org/en-US/docs/XUL/tab).
 Test whether the specified tab is open.
 @param tab {tab}
 A XUL [`tab`](https://developer.mozilla.org/en-US/docs/XUL/tab) element.
-@returns {bool}
-`true` is the tab is open, otherwise `false`.
+@returns {boolean}
+`true` if the tab is open, otherwise `false`.
 </api>
 
 <api name="closeTab">
