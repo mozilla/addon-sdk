@@ -55,14 +55,16 @@ exports.testPlainTextConsole = function(test) {
                    "PlainTextConsole.log() must stringify custom bad toString.");
 
   con.exception(new Error("blah"));
+
   var tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
-  test.assertEqual(tbLines[1], "Traceback (most recent call last):");
-  test.assertEqual(tbLines.slice(-2)[0], "Error: blah");
+  test.assertEqual(tbLines[1], "Error: blah");
+  test.assertEqual(tbLines[2], module.uri + " 57");
+  test.assertEqual(tbLines[3], "Traceback (most recent call last):");
 
   prints = [];
   con.trace();
   tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "info: " + require("sdk/self").name + ": Traceback (most recent call last):");
-  test.assertEqual(tbLines.slice(-2)[0].trim(), "con.trace();");
+  test.assertEqual(tbLines[tbLines.length - 2].trim(), "con.trace();");
 };
