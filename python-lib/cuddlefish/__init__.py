@@ -138,6 +138,12 @@ parser_groups = (
                                       metavar=None,
                                       default="{}",
                                       cmds=['run', 'xpi'])),
+        (("", "--parseable",), dict(dest="parseable",
+                                    help="display test output in a parseable format",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['test', 'testex', 'testpkgs',
+                                          'testall'])),
         ]
      ),
 
@@ -632,7 +638,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
-                                  'stopOnError'])
+                                  'stopOnError', 'parseable'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
