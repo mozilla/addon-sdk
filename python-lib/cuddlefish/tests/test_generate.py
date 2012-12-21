@@ -17,13 +17,15 @@ from cuddlefish.tests import env_root
 INITIAL_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "index.html"], \
                     ["modules", "sdk", "aardvark-feeder.html"], \
-                    ["modules", "sdk", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "anteater", "anteater.html"], \
+                    ["modules", "packages", "third_party.html"]]
 
 EXTENDED_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "extra.html"], \
                     ["dev-guide", "index.html"], \
                     ["modules", "sdk", "aardvark-feeder.html"], \
-                    ["modules", "sdk", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "anteater", "anteater.html"],\
+                    ["modules", "packages", "third_party.html"]]
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
