@@ -47,7 +47,7 @@ class ModuleInfo(DocumentationItemInfo):
     def __init__(self, env_root, module_root, md_path, filename):
         DocumentationItemInfo.__init__(self, env_root, md_path, filename)
         self.module_root = module_root
-        self.metadata = self.get_metadata(self.js_module_path())
+        self.metadata = self.get_metadata()
 
     def remove_comments(self, text):
         def replacer(match):
@@ -62,13 +62,14 @@ class ModuleInfo(DocumentationItemInfo):
         )
         return re.sub(pattern, replacer, text)
 
-    def get_metadata(self, path_to_js):
+    def get_metadata(self):
+        if self.level() == "third-party":
+            return simplejson.loads("{}")
+        path_to_js = os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
         try:
             js = unicode(open(path_to_js,"r").read(), 'utf8')
         except IOError:
-            raise Exception, "JS module: '" + path_to_js + \
-                             "', corresponding to documentation file: '"\
-                             + self.source_path_and_filename() + "' wasn't found"
+            return simplejson.loads("{}")
         js = self.remove_comments(js)
         js_lines = js.splitlines(True)
         metadata = ''
@@ -83,9 +84,6 @@ class ModuleInfo(DocumentationItemInfo):
                 reading_metadata = True
         metadata = metadata.replace("'", '"')
         return simplejson.loads("{" + metadata + "}")
-
-    def js_module_path(self):
-        return os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
 
     def source_path_relative_from_module_root(self):
         return self.source_path[len(self.module_root) + 1:]
@@ -137,6 +135,7 @@ def get_module_list(env_root):
     get_modules_in_package(env_root, module_root, module_list, True)
     # get the third-party modules
     packages_root = os.sep.join([env_root, "packages"])
+    print packages_root
     if os.path.exists(packages_root):
         for entry in os.listdir(packages_root):
             if os.path.isdir(os.sep.join([packages_root, entry])):
