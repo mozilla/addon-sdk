@@ -16,118 +16,61 @@
 * version
 * vendor
 
-/**
- * Parsed JSON object that was passed via `cfx --static-args "{ foo: 'bar' }"`
- */
-exports.staticArgs = options.staticArgs;
+<api name="staticArgs">
+@property {Object}
 
-/**
- * Environment variables. Environment variables are non-enumerable properties
- * of this object (key is name and value is value).
- */
-exports.env = require('./system/environment').env;
+The JSON object that was passed via
+[`cfx --static-args`](dev-guide/cfx-tool.html#arguments).
 
-/**
- * Ends the process with the specified `code`. If omitted, exit uses the
- * 'success' code 0. To exit with failure use `1`.
- * TODO: Improve platform to actually quit with an exit code.
- */
-exports.exit = function exit(code) {
-  // This is used by 'cfx' to find out exit code.
-  if ('resultFile' in options && options.resultFile) {
-    let mode = PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE;
-    let stream = openFile(options.resultFile, mode);
-    let status = code ? 'FAIL' : 'OK';
-    stream.write(status, status.length);
-    stream.flush();
-    stream.close();
-  }
+For example, suppose your add-on includes code like this:
 
-  appStartup.quit(code ? E_ATTEMPT : E_FORCE);
-};
+    var system = require("system");
+    console.log(system.staticArgs.foo);
 
-exports.stdout = new function() {
-  let write = dump
-  if ('logFile' in options && options.logFile) {
-    let mode = PR_WRONLY | PR_CREATE_FILE | PR_APPEND;
-    let stream = openFile(options.logFile, mode);
-    write = function write(data) {
-      let text = String(data);
-      stream.write(text, text.length);
-      stream.flush();
+If you pass it a static argument named "foo" using `--static-args`, then
+the value of "foo" will be written to the console:
+
+<pre>
+(addon-sdk)~/my-addons/system > cfx run --static-args="{ \"foo\": \"Hello\" }"
+Using binary at '/Applications/Firefox.app/Contents/MacOS/firefox-bin'.
+Using profile at '/var/folders/me/DVFDGavr5GDFGDtU/-Tmp-/tmpOCTgL3.mozrunner'.
+info: system: Hello
+</pre>
+
+</api>
+
+<api name="env">
+@property {Object}
+
+This object provides access to environment variables.
+
+You can get the
+value of an environment variable by accessing the property with that name:
+
+    var system = require("system");
+    console.log(system.env.PATH);
+
+You can test whether a variable exists by checking whether a property with
+that name exists:
+
+    var system = require("system");
+    if ('PATH' in system.env) {
+      console.log("PATH is set");
     }
-  }
-  return Object.freeze({ write: write });
-};
 
-/**
- * Returns a path of the system's or application's special directory / file
- * associated with a given `id`. For list of possible `id`s please see:
- * https://developer.mozilla.org/en/Code_snippets/File_I%2F%2FO#Getting_special_files
- * http://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsAppDirectoryServiceDefs.h
- * @example
- *
- *    // get firefox profile path
- *    let profilePath = require('system').pathFor('ProfD');
- *    // get OS temp files directory (/tmp)
- *    let temps = require('system').pathFor('TmpD');
- *    // get OS desktop path for an active user (~/Desktop on linux
- *    // or C:\Documents and Settings\username\Desktop on windows).
- *    let desktopPath = require('system').pathFor('Desk');
- */
-exports.pathFor = function pathFor(id) {
-  return directoryService.get(id, Ci.nsIFile).path;
-};
+You can set a variable by setting the property:
 
-/**
- * What platform you're running on (all lower case string).
- * For possible values see:
- * https://developer.mozilla.org/en/OS_TARGET
- */
-exports.platform = runtime.OS.toLowerCase();
+    var system = require("system");
+    system.env.FOO = "bar";
+    console.log(system.env.FOO);
 
-/**
- * What processor architecture you're running on:
- * `'arm', 'ia32', or 'x64'`.
- */
-exports.architecture = runtime.XPCOMABI.split('_')[0];
+You can unset a variable by deleting the property:
 
-/**
- * What compiler used for build:
- * `'msvc', 'n32', 'gcc2', 'gcc3', 'sunc', 'ibmc'...`
- */
-exports.compiler = runtime.XPCOMABI.split('_')[1];
+    var system = require("system");
+    delete system.env.FOO;
 
-/**
- * The application's build ID/date, for example "2004051604".
- */
-exports.build = appInfo.appBuildID;
+You **can't** enumerate environment variables.
 
-/**
- * The XUL application's UUID.
- * This has traditionally been in the form
- * `{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}` but for some applications it may
- * be: "appname@vendor.tld".
- */
-exports.id = appInfo.ID;
-
-/**
- * The name of the application. 
- */
-exports.name = appInfo.name;
-
-/**
- * The XUL application's version, for example "0.8.0+" or "3.7a1pre".
- */
-exports.version = appInfo.version;
-
-/**
- * XULRunner version.
- */
-exports.platformVersion = appInfo.platformVersion;
+</api>
 
 
-/**
- * The name of the application vendor, for example "Mozilla".
- */
-exports.vendor = appInfo.vendor;
