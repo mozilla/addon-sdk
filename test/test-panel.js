@@ -472,7 +472,7 @@ try {
   require("sdk/panel");
 }
 catch (e) {
-  if (!/supports only Firefox/.test(e.message))
+  if (!/^Unsupported Application/.test(e.message))
     throw e;
 
   module.exports = {

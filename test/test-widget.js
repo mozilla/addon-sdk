@@ -1140,15 +1140,12 @@ try {
   const widgets = require("sdk/widget");
 }
 catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
-  if (err.message.indexOf(bug) < 0)
+  if (!/^Unsupported Application/.test(err.message))
     throw err;
 
   module.exports = {
     testAppNotSupported: function (test) {
-      test.pass("the widget module does not support this application.");
+      test.pass(err.message);
     }
-  }
+  };
 }
-

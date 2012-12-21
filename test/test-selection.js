@@ -699,7 +699,7 @@ try {
   require("sdk/selection");
 }
 catch (err) {
-  if (err.message.indexOf("Unsupported Application:") !== 0)
+  if (!/^Unsupported Application/.test(err.message))
     throw err;
 
   module.exports = {

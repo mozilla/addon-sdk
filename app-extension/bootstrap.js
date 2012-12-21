@@ -255,6 +255,8 @@ function nukeModules() {
 
   // Unload sandbox used to evaluate loader.js
   unloadSandbox(cuddlefishSandbox.loaderSandbox);
+  unloadSandbox(cuddlefishSandbox.xulappSandbox);
+
   // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
   // and keep a reference to this compartment.
   unloadSandbox(cuddlefishSandbox);
