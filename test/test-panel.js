@@ -4,7 +4,7 @@
 
 let { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
-const timer = require("sdk/timers");
+const { setTimeout } = require("sdk/timers");
 const self = require('self');
 
 exports["test Panel"] = function(assert, done) {
@@ -154,7 +154,7 @@ exports["test Parent Resize Hack"] = function(assert, done) {
     contentScriptWhen: "ready",
     onMessage: function (message) {
       panel.postMessage('resize');
-      timer.setTimeout(function () {
+      setTimeout(function () {
         assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
         assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
         panel.destroy();
@@ -375,8 +375,7 @@ function makeEventOrderTest(options) {
       expectedEvents.push(event);
       panel.on(event, function() {
         assert.equal(event, expectedEvents.shift());
-        if (cb)
-          timer.setTimeout(cb, 1);
+        if (cb) cb();
       });
       return {then: expect};
     }
