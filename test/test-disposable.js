@@ -125,4 +125,30 @@ exports["test disposables are GC-able"] = function(assert, done) {
   }, 300);
 }
 
+exports["test disposables that throw"] = function(assert) {
+  let loader = Loader(module);
+  let { Disposable } = loader.require("sdk/core/disposable");
+
+  let disposals = 0
+
+  let Foo = Class({
+    extends: Disposable,
+    setup: function setup(a, b) {
+      throw Error("Boom!")
+    },
+    dispose: function dispose() {
+      disposals = disposals + 1
+    }
+  })
+
+  assert.throws(function() {
+    let foo1 = Foo()
+  }, /Boom/, "disposable constructors may throw");
+
+  loader.unload();
+
+  assert.equal(disposals, 0, "no disposan on if threw")
+}
+
+
 require('test').run(exports);
