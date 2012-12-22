@@ -7,7 +7,7 @@
 const { Cc, Ci } = require("chrome");
 const { setTimeout } = require("sdk/timers");
 const { Loader, Require, override } = require("sdk/test/loader");
-const { Worker } = require("sdk/content/worker");
+const { Worker, attach } = require("sdk/content/worker");
 
 const DEFAULT_CONTENT_URL = "data:text/html;charset=utf-8,foo";
 
@@ -141,9 +141,10 @@ exports["test:emit"] = WorkerTest(
   }
 );
 
-exports["test:emit hack message"] = WorkerTest(
+exports["test:postMessage is just legacy alias over port.emit"] = WorkerTest(
   DEFAULT_CONTENT_URL,
   function(assert, browser, done) {
+    let received = 0;
     let worker =  Worker({
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
@@ -153,20 +154,23 @@ exports["test:emit hack message"] = WorkerTest(
           });
           // We should not receive message on self, but only on self.port
           self.on("message", function (data) {
-            self.postMessage("message", data);
+            self.postMessage(data);
           });
         },
         onError: function(e) {
-          assert.fail("Got exception: "+e);
+          assert.fail("Got exception: " + e);
         }
       });
 
     worker.port.on("message", function (data) {
-      assert.equal(data, "event data");
-      done();
+      received = received + 1;
+      assert.equal(data, "event data", "received on the port");
+      if (received == 4) done();
     });
     worker.on("message", function (data) {
-      assert.fail("Got an unexpected message : "+msg);
+      received = received + 1;
+      assert.equal(data, "event data", "recevied on worker");
+      if (received == 4) done();
     });
     worker.port.emit("message", "event data");
   }
@@ -206,8 +210,8 @@ exports["test:post-json-values-only"] = WorkerTest(
           self.on("message", function (message) {
             self.postMessage([ message.fun === undefined,
                                typeof message.w,
-                               message.w && "port" in message.w,
-                               message.w.url,
+                               message.w && typeof(message.w.contentScript),
+                               message.d.url,
                                Array.isArray(message.array),
                                JSON.stringify(message.array)]);
           });
@@ -219,7 +223,7 @@ exports["test:post-json-values-only"] = WorkerTest(
     worker.on("message", function (message) {
       assert.ok(message[0], "function becomes undefined");
       assert.equal(message[1], "object", "object stays object");
-      assert.ok(message[2], "object's attributes are enumerable");
+      assert.equal(message[2], "string", "object shapes preserve");
       assert.equal(message[3], DEFAULT_CONTENT_URL,
                        "jsonable attributes are accessible");
       // See bug 714891, Arrays may be broken over compartements:
@@ -228,7 +232,11 @@ exports["test:post-json-values-only"] = WorkerTest(
                        "Array is correctly serialized");
       done();
     });
-    worker.postMessage({ fun: function () {}, w: worker, array: array });
+
+    worker.postMessage({ fun: function () {},
+                         w: { contentScript: worker.contentScript },
+                         d: { url: DEFAULT_CONTENT_URL },
+                         array: array });
   }
 );
 
@@ -240,12 +248,12 @@ exports["test:emit-json-values-only"] = WorkerTest(
         window: browser.contentWindow,
         contentScript: "new " + function WorkerScope() {
           // Validate self.on and self.emit
-          self.port.on("addon-to-content", function (fun, w, obj, array) {
+          self.port.on("addon-to-content", function (fun, w, d, obj, array) {
             self.port.emit("content-to-addon", [
                             fun === null,
                             typeof w,
-                            "port" in w,
-                            w.url,
+                            typeof(w.contentScript),
+                            d.url,
                             "fun" in obj,
                             Object.keys(obj.dom).length,
                             Array.isArray(array),
@@ -260,7 +268,7 @@ exports["test:emit-json-values-only"] = WorkerTest(
     worker.port.on("content-to-addon", function (result) {
       assert.ok(result[0], "functions become null");
       assert.equal(result[1], "object", "objects stay objects");
-      assert.ok(result[2], "object's attributes are enumerable");
+      assert.equal(result[2], "string", "object shapes preserve");
       assert.equal(result[3], DEFAULT_CONTENT_URL,
                        "json attribute is accessible");
       assert.ok(!result[4], "function as object attribute is removed");
@@ -276,7 +284,11 @@ exports["test:emit-json-values-only"] = WorkerTest(
       fun: function () {},
       dom: browser.contentWindow.document.createElement("div")
     };
-    worker.port.emit("addon-to-content", function () {}, worker, obj, array);
+
+    worker.port.emit("addon-to-content", function () {},
+                                         { contentScript: worker.contentScript },
+                                         { url: DEFAULT_CONTENT_URL },
+                                         obj, array);
   }
 );
 
@@ -393,7 +405,6 @@ exports["test:ensure console.xxx works in cs"] = WorkerTest(
     });
   }
 );
-
 
 exports["test:setTimeout can\"t be cancelled by content"] = WorkerTest(
   "data:text/html;charset=utf-8,<script>var documentValue=true;</script>",
@@ -653,6 +664,41 @@ exports["test:check worker API with page history"] = WorkerTest(
 
   }
 );
+
+
+exports["test:messages are queued"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+
+    assert.notEqual(browser.contentWindow.location.href, "about:blank",
+                        "window is now on the right document");
+
+    let window = browser.contentWindow
+    let worker =  Worker({
+      contentScript: "new " + function WorkerScope() {
+        // window is accessible
+        let myLocation = window.location.toString();
+        self.on("message", function(data) {
+          if (data == "hi!")
+            self.postMessage("bye!");
+        });
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(msg) {
+        assert.equal("bye!", msg);
+        assert.equal(worker.url, window.location.href,
+                         "worker.url still works");
+        done();
+      },
+      onAttach: function() {
+        assert.equal(worker.url, window.location.href, "worker.url works");
+      }
+    });
+
+    worker.postMessage("hi!");
+
+    attach(worker, window);
+  });
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {

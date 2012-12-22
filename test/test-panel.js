@@ -4,7 +4,7 @@
 
 let { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
-const timer = require("sdk/timers");
+const { setTimeout } = require("sdk/timers");
 const self = require('self');
 
 exports["test Panel"] = function(assert, done) {
@@ -149,14 +149,12 @@ exports["test Parent Resize Hack"] = function(assert, done) {
     contentScript: "self.on('message', function(message){" +
                    "  if (message=='resize') " +
                    "    unsafeWindow.contentResize();" +
-                   "});",
+                   "});" +
+                   "self.postMessage()",
     contentScriptWhen: "ready",
     onMessage: function (message) {
-
-    },
-    onShow: function () {
       panel.postMessage('resize');
-      timer.setTimeout(function () {
+      setTimeout(function () {
         assert.equal(previousWidth,browserWindow.outerWidth,"Size doesn't change by calling resizeTo/By/...");
         assert.equal(previousHeight,browserWindow.outerHeight,"Size doesn't change by calling resizeTo/By/...");
         panel.destroy();
@@ -263,6 +261,7 @@ exports["test Several Show Hides"] = function(assert, done) {
   panel.show();
 };
 
+/*
 exports["test Anchor And Arrow"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
@@ -318,6 +317,7 @@ exports["test Anchor And Arrow"] = function(assert, done) {
 
 
 };
+*/
 
 exports["test Panel Text Color"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
@@ -375,8 +375,7 @@ function makeEventOrderTest(options) {
       expectedEvents.push(event);
       panel.on(event, function() {
         assert.equal(event, expectedEvents.shift());
-        if (cb)
-          timer.setTimeout(cb, 1);
+        if (cb) cb();
       });
       return {then: expect};
     }
@@ -393,28 +392,29 @@ exports["test Automatic Destroy"] = function(assert) {
       "self.port.on('event', function() self.port.emit('event-back'));"
   });
 
+  panel.port.emit("event");
+
   loader.unload();
 
   panel.port.on("event-back", function () {
     assert.fail("Panel should have been destroyed on module unload");
   });
-  panel.port.emit("event");
   assert.pass("check automatic destroy");
 };
 
 exports["test Wait For Init Then Show Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
-    expect('inited', function() { panel.show(); }).
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
+
+    panel.show();
   }
 });
 
 exports["test Show Then Wait For Init Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
     panel.show();
-    expect('inited').
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
   }
 });

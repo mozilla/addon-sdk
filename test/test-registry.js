@@ -31,6 +31,7 @@ exports['test:add'] = function(test) {
 exports['test:remove'] = function(test) {
   function Class() {}
   let fixture = require('sdk/util/registry').Registry(Class);
+  let isRemoveEmitted = false;
   fixture.on('remove', function(item) {
      test.assert(
       item instanceof Class,
