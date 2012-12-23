@@ -1,0 +1,54 @@
+{
+  "name": "reducers",
+  "id": "reducers",
+  "version": "2.0.0",
+  "description": "Library for higher-order manipulation of collections",
+  "keywords": [
+    "reducers",
+    "reducible",
+    "reduce",
+    "data",
+    "sequence",
+    "stream",
+    "collection",
+    "transformation",
+    "composable",
+    "async",
+    "signal",
+    "manipulation"
+  ],
+  "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
+  "homepage": "https://github.com/Gozala/reducers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gozala/reducers.git",
+    "web": "https://github.com/Gozala/reducers"
+  },
+  "bugs": {
+    "url": "http://github.com/Gozala/reducers/issues/"
+  },
+  "dependencies": {
+    "eventual": "~1.0.0",
+    "watchables": "~0.1.0",
+    "reducible": "~1.0.0"
+  },
+  "devDependencies": {
+    "test": "~0.5.2",
+    "repl-utils": "~2.0.1",
+    "benchmark": ">=0.3.0",
+    "phantomify": "~0.x.0"
+  },
+  "scripts": {
+    "test": "npm run test-node && npm run test-browser",
+    "test-browser": "node ./node_modules/phantomify/bin/cmd.js ./test/index.js",
+    "test-node": "node ./test/index.js",
+    "repl": "node node_modules/repl-utils",
+    "benchmark": "node test/benchmark.js"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/Gozala/reducers/License.md"
+    }
+  ]
+}

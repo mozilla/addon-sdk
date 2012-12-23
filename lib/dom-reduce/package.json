@@ -1,0 +1,48 @@
+{
+  "name": "dom-reduce",
+  "id": "dom-reduce",
+  "version": "1.0.0",
+  "description": "Reducible DOM APIs",
+  "keywords": [
+    "dom",
+    "reduce",
+    "reducers",
+    "reducible",
+    "stream",
+    "FRP",
+    "functional",
+    "reactive",
+    "signal",
+    "event"
+  ],
+  "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
+  "homepage": "https://github.com/Gozala/dom-reduce",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gozala/dom-reduce.git",
+    "web": "https://github.com/Gozala/dom-reduce"
+  },
+  "bugs": {
+    "url": "http://github.com/Gozala/dom-reduce/issues/"
+  },
+  "dependencies": {
+    "reducible": "~1.0.1"
+  },
+  "devDependencies": {
+    "test": "~0.5.0",
+    "phantomify": "~0.x.0",
+    "reducers": "~2.0.0"
+  },
+  "main": "./index.js",
+  "scripts": {
+    "test": "node ./node_modules/phantomify/bin/cmd.js ./test/index.js",
+    "repl": "node node_modules/repl-utils",
+    "postinstall": "npm dedup"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/Gozala/dom-reduce/License.md"
+    }
+  ]
+}
