@@ -33,10 +33,16 @@ tar -xf addon-sdk.tar.gz
 cd addon-sdk
 </pre>
 
-Then run:
+Then run if you're a Bash user (most people are):
 
 <pre>
 source bin/activate
+</pre>
+
+And if you're a non-Bash user, you should run:
+
+<pre>
+bash bin/activate
 </pre>
 
 Your command prompt should now have a new prefix containing the name of the
