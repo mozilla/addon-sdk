@@ -25,7 +25,7 @@ class TestInit(unittest.TestCase):
             os.chdir(top)
 
     def do_test_init(self,basedir):
-        # Let's init the addon, no error admited
+        # Let's init the addon, no error admitted
         f = open(".ignoreme","w")
         f.write("stuff")
         f.close()
@@ -33,7 +33,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(init_run, 0)
+        self.assertEqual(init_run["result"], 0)
         self.assertTrue("* lib directory created" in out)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
@@ -46,16 +46,17 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),"")
-        self.assertEqual(open(package_json,"r").read(),
+        self.assertEqual(open(package_json,"r").read() % {"id":"tmp_addon_id" },
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
-                                         "fullName": "tmp_addon_SAMPLE" })
+                                         "fullName": "tmp_addon_SAMPLE",
+                                         "id":init_run["jid"] })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run,0)
+        self.failIfEqual(init_run["result"],0)
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
@@ -66,7 +67,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         init_run = initializer(None, ["init", "specified-dirname", "extra-arg"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run, 0)
+        self.failIfEqual(init_run["result"], 0)
         self.assertTrue("Too many arguments" in err)
 
     def test_args(self):
@@ -79,7 +80,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         rc = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc["result"], 1)
         self.failUnless("This command must be run in an empty directory" in err,
                         err)
         self.failIf(os.path.exists("lib"))
@@ -102,7 +103,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc["result"], 1)
         self.assertTrue("testing if directory is empty" in out, out)
         self.assertTrue("This command must be run in an empty directory." in err,
                         err)
@@ -112,7 +113,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc["result"], 0)
         self.assertTrue("* data directory created" in out, out)
         self.assertTrue("Have fun!" in out)
         self.assertEqual(err,"")
@@ -127,7 +128,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc["result"], 0)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
         self.assertEqual(err,"")
