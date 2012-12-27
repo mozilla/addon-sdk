@@ -125,6 +125,7 @@ exports.testTabProperties = function(test) {
       test.assertEqual(tab.style, null, "style of the new tab matches");
       test.assertEqual(tab.index, tabsLen, "index of the new tab matches");
       test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+      test.assertNotEqual(tab.id, null, "a tab object always has an id property");
 
       tab.close(function() {
         loader.unload();
