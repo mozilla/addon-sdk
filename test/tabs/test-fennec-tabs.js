@@ -620,3 +620,44 @@ exports.testActiveTab_getter_alt = function(test) {
     }
   });
 };
+
+exports.testUniqueTabIds = function(test) {
+  test.waitUntilDone();
+  var tabs = require('sdk/tabs');
+  var tabIds = {};
+  var steps = [
+    function (index) {
+      tabs.open({
+        url: "data:text/html;charset=utf-8,foo",
+        onOpen: function(tab) {
+          tabIds['tab1'] = tab.id;
+          next(index);
+        }
+      });
+    },
+    function (index) {
+      tabs.open({
+        url: "data:text/html;charset=utf-8,bar",
+        onOpen: function(tab) {
+          tabIds['tab2'] = tab.id;
+          next(index);
+        }
+      });
+    },
+    function (index) {
+      test.assertNotEqual(tabIds.tab1, tabIds.tab2, "Tab ids should be unique.");
+      test.done();
+    }
+  ];
+
+  function next(index) {
+    if (index === steps.length) {
+      return;
+    }
+    let fn = steps[index];
+    index++;
+    fn(index);
+  }
+
+  next(0);
+}
