@@ -28,15 +28,22 @@ and `cfx xpi` when targeting Firefox Mobile.
 
 Right now only the following modules are fully functional:
 
+**High Level APIs**
+
+* [base64](modules/sdk/base64.html)
+* [hotkeys](modules/sdk/hotkeys.html)
+* [l10n](modules/sdk/l10n.html)
+* [notifications ](modules/sdk/notifications.html)
 * [page-mod](modules/sdk/page-mod.html)
-* [page-worker](modules/sdk/page-worker.html)
 * [passwords](modules/sdk/passwords.html)
-* [private-browsing](modules/sdk/private-browsing.html)
+* [querystring](modules/sdk/querystring.html)
 * [request](modules/sdk/request.html)
 * [self](modules/sdk/self.html)
 * [simple-prefs](modules/sdk/simple-prefs.html)
 * [simple-storage](modules/sdk/simple-storage.html)
+* [tabs](modules/sdk/tabs.html)
 * [timers](modules/sdk/timers.html)
+* [url](modules/sdk/url.html)
 
 We're working on adding support for the other modules.
 
