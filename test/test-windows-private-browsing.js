@@ -6,33 +6,10 @@
 const { Cc, Ci } = require('chrome');
 const { browserWindows } = require('sdk/windows');
 const { pb, pbUtils } = require('private-browsing-helper');
+const { openDialog } = require('window/utils');
+const array = require('sdk/util/array');
 
-const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
-           getService(Ci.nsIWindowMediator);
-
-exports["test Per Window Private Browsing getter"] = function(assert) {
-  let activeWindow =  wm.
-                      getMostRecentWindow('navigator:browser');
-
-  // is per-window PB implemented?
-  let currentState = activeWindow.gPrivateBrowsingUI.privateWindow;
-
-  pbUtils.setMode(false, activeWindow);
-
-  assert.equal(activeWindow.gPrivateBrowsingUI.privateWindow,
-                   browserWindows.activeWindow.isPrivateBrowsing,
-                   'Active window is not in PB mode');
-
-  pbUtils.setMode(true, activeWindow);
-
-  assert.equal(activeWindow.gPrivateBrowsingUI.privateWindow,
-                   browserWindows.activeWindow.isPrivateBrowsing,
-                   'Active window is in PB mode');
-
-  pbUtils.setMode(currentState, activeWindow);
-}
-
-if (!pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
+if (!pbUtils.isWindowPBEnabled()) {
   module.exports = {
     "test Unsupported Test": function UnsupportedTest (assert) {
         assert.pass(
@@ -40,6 +17,28 @@ if (!pbUtils.isWindowPBEnabled(wm.getMostRecentWindow('navigator:browser'))) {
           " browsing."
         );
     }
+  }
+}
+else {
+  exports["test Per Window Private Browsing getter"] = function(assert, done) {
+    let win = openDialog({
+      private: true
+    });
+
+    win.addEventListener('DOMContentLoaded', function onload() {
+      win.removeEventListener('DOMContentLoaded', onload, false);
+
+      assert.equal(pbUtils.getMode(win),
+                   true, 'Newly opened window is in PB mode');
+      assert.equal(pb.isActive, true, 'PB mode is active');
+
+      win.addEventListener("unload", function onunload() {
+        win.removeEventListener('unload', onload, false);
+        assert.equal(pb.isActive, false, 'PB mode is not active');
+        done();
+      }, false);
+      win.close();
+    }, false);
   }
 }
 
