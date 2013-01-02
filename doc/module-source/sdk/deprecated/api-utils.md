@@ -5,6 +5,18 @@
 <!-- contributed by Drew Willcoxon [adw@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
+<div class="warning">
+<p>The <code>api-utils</code> module is deprecated.</p>
+<ul>
+<li>The <code>publicConstructor</code> function is not needed if you use the
+<a href="modules/sdk/core/heritage.html"><code>heritage</code></a> module
+to construct objects, as it creates public constructors automatically.</li>
+<li>The <code>validateOptions</code> will be moved to a different module.</li>
+<li>The <a href="modules/sdk/util/list.html"><code>util/list</code></a> module
+provides a better alternative to <code>addIterator</code>.</li>
+</ul>
+</div>
+
 The `api-utils` module provides some helpers useful to the SDK's high-level API
 implementations.
 
