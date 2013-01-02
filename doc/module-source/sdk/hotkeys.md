@@ -55,11 +55,11 @@ host application.
 
 <api name="Hotkey">
 @constructor
-Creates a hotkey who's `onPress` listener method is invoked when key combination
+Creates a hotkey whose `onPress` listener method is invoked when key combination
 defined by `hotkey` is pressed.
 
-Please note: If more than one `hotkey` is created for the same key
-combination, the listener is executed only on the last one created
+If more than one `hotkey` is created for the same key combination, the listener
+is executed only on the last one created.
 
 @param options {Object}
   Options for the hotkey, with the following keys:

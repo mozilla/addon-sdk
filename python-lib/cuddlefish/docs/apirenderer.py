@@ -266,8 +266,7 @@ def render_api_reference(api_docs):
 
 # take the JSON output of apiparser
 # return the HTML DIV containing the rendered component
-def json_to_div(json, markdown_filename):
-    module_name, ext = os.path.splitext(os.path.basename(markdown_filename))
+def json_to_div(json, markdown_filename, module_name):
     descriptions = [hunk[1] for hunk in json if hunk[0]=='markdown']
     api_docs = [hunk[1] for hunk in json if hunk[0]=='api-json']
     text = "<h1>" + module_name + "</h1>"
@@ -285,15 +284,15 @@ def json_to_html(json, markdown_filename):
 
 # take the name of a Markdown file
 # return the HTML DIV containing the rendered component
-def md_to_div(markdown_filename):
+def md_to_div(markdown_filename, module_name):
     markdown_contents = open(markdown_filename).read().decode('utf8')
     json = list(apiparser.parse_hunks(markdown_contents))
-    return json_to_div(json, markdown_filename)
+    return json_to_div(json, markdown_filename, module_name)
 
 # take the name of a Markdown file
 # return standalone HTML containing the rendered component
-def md_to_html(markdown_filename):
-    return indent(HTML_HEADER + md_to_div(markdown_filename) + HTML_FOOTER)
+def md_to_html(markdown_filename, module_name):
+    return indent(HTML_HEADER + md_to_div(markdown_filename, module_name) + HTML_FOOTER)
 
 if __name__ == '__main__':
     if (len(sys.argv) == 0):
