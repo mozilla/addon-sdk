@@ -2,10 +2,15 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-The `events` module provides base API for emitting events.
-
-This module is not intended to be used directly by programs. Rather, it is
-intended to be used by other modules that provide APIs to programs.
+<div class="warning">
+<p>The <code>events</code> module is deprecated.</p>
+<p>To implement your own event
+targets, use the
+<a href="modules/sdk/event/core.html"><code>event/core</code></a> and
+<a href="modules/sdk/event/target.html"><code>event/target</code><a/> modules,
+and refer to the
+<a href="dev-guide/tutorials/event-targets.html">tutorial on creating event emitters</a>.</p>
+</div>
 
 <api name="EventEmitter">
 @class

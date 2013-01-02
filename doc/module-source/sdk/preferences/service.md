@@ -15,7 +15,7 @@ application-wide preferences service singleton.
 @function
 Sets the application preference `name` to `value`.
 @param name {string} Preference name.
-@param value {string,number,bool} Preference value.
+@param value {string,number,boolean} Preference value.
 
 **Example:**
 
@@ -28,8 +28,8 @@ Sets the application preference `name` to `value`.
 @function
 Gets the application preference `name`.
 @param name {string}
-@param defaultValue {string,number,bool} Preference value.
-@returns {string,number,bool} Preference value, returns a default value if no
+@param defaultValue {string,number,boolean} Preference value.
+@returns {string,number,boolean} Preference value, returns a default value if no
 preference is set.
 
 **Example:**
@@ -42,7 +42,7 @@ preference is set.
 <api name="has">
 @function
 @param name {string} Preference name.
-@returns {bool} Returns whether or not the application preference `name` exists.
+@returns {boolean} Returns whether or not the application preference `name` exists.
 
 **Example:**
 
@@ -63,7 +63,7 @@ preference is set.
 <api name="isSet">
 @function
 @param name {string} Preference name.
-@returns {bool}
+@returns {boolean}
 Returns whether or not the application preference `name` both exists
 and has been set to a non-default value by the user (or a program
 acting on the user's behalf).
