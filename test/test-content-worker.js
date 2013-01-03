@@ -654,6 +654,60 @@ exports["test:check worker API with page history"] = WorkerTest(
   }
 );
 
+exports["test:global postMessage"] = WorkerTest(
+  DEFAULT_CONTENT_URL,
+  function(assert, browser, done) {
+    // Create a new module loader in order to be able to create a `console`
+    // module mockup:
+    let loader = Loader(module, {
+      console: {
+        log: hook.bind(null, "log"),
+        info: hook.bind(null, "info"),
+        warn: hook.bind(null, "warn"),
+        error: hook.bind(null, "error"),
+        debug: hook.bind(null, "debug"),
+        exception: hook.bind(null, "exception")
+      }
+    });
+
+    // Intercept all console method calls
+    let seenMessages = 0;
+    function hook(type, message) {
+      seenMessages++;
+      assert.equal(type, "error", "Should be an error");
+      assert.equal(message, "DEPRECATED: The global `postMessage()` function in " +
+                            "content scripts is deprecated in favor of the " +
+                            "`self.postMessage()` function, which works the same. " +
+                            "Replace calls to `postMessage()` with calls to " +
+                            "`self.postMessage()`." +
+                            "For more info on `self.on`, see " +
+                            "<https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/addon-development/web-content.html>.",
+                            "Should have seen the deprecation message")
+    }
+
+    assert.notEqual(browser.contentWindow.location.href, "about:blank",
+                        "window is now on the right document");
+
+    let window = browser.contentWindow
+    let worker = loader.require("sdk/content/worker").Worker({
+      window: window,
+      contentScript: "new " + function WorkerScope() {
+        postMessage("success");
+      },
+      contentScriptWhen: "ready",
+      onMessage: function(msg) {
+        assert.equal("success", msg, "Should have seen the right postMessage call");
+        assert.equal(1, seenMessages, "Should have seen the deprecation message");
+        done();
+      }
+    });
+
+    assert.equal(worker.url, window.location.href,
+                     "worker.url works");
+    worker.postMessage("hi!");
+  }
+);
+
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
     "test Unsupported Test": function UnsupportedTest (assert) {
