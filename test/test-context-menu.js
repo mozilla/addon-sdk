@@ -421,7 +421,7 @@ exports.testURLContextRemove = function (test) {
   let item = loader.cm.Item({
     label: "item",
     context: context,
-    contentScript: 'self.postMessage("ok");',
+    contentScript: 'self.postMessage("ok"); self.on("context", function () true);',
     onMessage: function (msg) {
       test.assert(shouldBeEvaled,
                   "content script should be evaluated when expected");
@@ -529,6 +529,82 @@ exports.testContentContextNoMatch = function (test) {
   test.showMenu(null, function (popup) {
     test.checkMenu([item], [item], []);
     test.done();
+  });
+};
+
+
+// Content contexts that return true should cause their items to be present
+// in the menu when context clicking an active element.
+exports.testContentContextMatchActiveElement = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({
+      label: "item 1",
+      contentScript: 'self.on("context", function () true);'
+    }),
+    new loader.cm.Item({
+      label: "item 2",
+      context: undefined,
+      contentScript: 'self.on("context", function () true);'
+    }),
+    // These items will always be hidden by the declarative usage of PageContext
+    new loader.cm.Item({
+      label: "item 3",
+      context: loader.cm.PageContext(),
+      contentScript: 'self.on("context", function () true);'
+    }),
+    new loader.cm.Item({
+      label: "item 4",
+      context: [loader.cm.PageContext()],
+      contentScript: 'self.on("context", function () true);'
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu(items, [items[2], items[3]], []);
+      test.done();
+    });
+  });
+};
+
+
+// Content contexts that return false should cause their items to be absent
+// from the menu when context clicking an active element.
+exports.testContentContextNoMatchActiveElement = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({
+      label: "item 1",
+      contentScript: 'self.on("context", function () false);'
+    }),
+    new loader.cm.Item({
+      label: "item 2",
+      context: undefined,
+      contentScript: 'self.on("context", function () false);'
+    }),
+    // These items will always be hidden by the declarative usage of PageContext
+    new loader.cm.Item({
+      label: "item 3",
+      context: loader.cm.PageContext(),
+      contentScript: 'self.on("context", function () false);'
+    }),
+    new loader.cm.Item({
+      label: "item 4",
+      context: [loader.cm.PageContext()],
+      contentScript: 'self.on("context", function () false);'
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu(items, items, []);
+      test.done();
+    });
   });
 };
 
