@@ -10,8 +10,10 @@ const { LoaderWithHookedConsole, pb } = require("private-browsing-helper");
 let pbService;
 // Currently, only Firefox implements the private browsing service.
 if (require("sdk/system/xul-app").is("Firefox")) {
-  pbService = Cc["@mozilla.org/privatebrowsing;1"].
-              getService(Ci.nsIPrivateBrowsingService);
+  try {
+    pbService = Cc["@mozilla.org/privatebrowsing;1"].
+                getService(Ci.nsIPrivateBrowsingService);
+  } catch(e) { /* PrivateBrowsingService has been removed (Bug 818800) */ }
 }
 
 if (pbService) {
