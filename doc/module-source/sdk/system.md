@@ -55,8 +55,8 @@ To quit the host application, use the
 <api name="staticArgs">
 @property {Object}
 
-The JSON object that was passed via
-[`cfx --static-args`](dev-guide/cfx-tool.html#arguments).
+The JSON object that was passed via the
+[`cfx --static-args` option](dev-guide/cfx-tool.html#arguments).
 
 For example, suppose your add-on includes code like this:
 
@@ -128,13 +128,16 @@ success code `0`. To exit with failure use `1`.
 <api name="pathFor">
 @function
 
-Returns the path of the "special" directory or file
-associated with the given `id`. For list of possible `id`s please see
+Firefox enables you to get the path to certain "special" directories,
+such as the desktop or the profile directory. This function exposes that
+functionality to add-on authors.
+
+For the full list of "special" directories and their IDs, see
 ["Getting_files in special directories"](https://developer.mozilla.org/en-US/docs/Code_snippets/File_I_O#Getting_files_in_special_directories).
 
 For example:
 
-    // get firefox profile path
+    // get Firefox profile path
     let profilePath = require('system').pathFor('ProfD');
     // get OS temp files directory (/tmp)
     let temps = require('system').pathFor('TmpD');
@@ -170,7 +173,7 @@ This will be one of: `"arm"``, `"ia32"`, or `"x64"`.
 </api>
 
 <api name="compiler">
-@function
+@property {String}
 The type of compiler used to build the host application.
 For example: `"msvc"`, `"n32"`, `"gcc2"`, `"gcc3"`, `"sunc"`, `"ibmc"`
 
