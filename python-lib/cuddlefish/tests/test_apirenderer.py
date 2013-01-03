@@ -15,7 +15,7 @@ class ParserTests(unittest.TestCase):
         return os.path.join(static_files_path, "docs", filename)
 
     def render_markdown(self, pathname):
-        return md_to_html(pathname)
+        return md_to_html(pathname, "APIsample")
 
     def test_renderer(self):
         test = self.render_markdown(self.pathname("APIsample.md"))
