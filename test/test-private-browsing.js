@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-let { Cc,Ci } = require("chrome");
+let { Cc, Ci } = require("chrome");
 const timer = require("sdk/timers");
-const { LoaderWithHookedConsole, pb } = require("private-browsing-helper");
+const { LoaderWithHookedConsole, pb, pbUtils } = require("private-browsing-helper");
+const windows = require("windows").browserWindows;
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -197,10 +198,47 @@ if (pbService) {
     tabs.open("about:");
   };
 }
-else {
-  // tests for the case where private browsing doesn't exist
-  exports.testNoImpl = function (test) {
-    test.assertEqual(pb.isActive, false,
-                     "pb.isActive returns false when private browsing isn't supported");
-  };
+else if (pbUtils.isWindowPBEnabled()) {
+  exports.testStart = function(test) {
+    test.waitUntilDone();
+    let opened = false;
+    
+    pb.on("start", function onStart() {
+      test.assertEqual(opened, false, "onOpen hasn't fired yet");
+      test.assertEqual(this, pb, "`this` should be private-browsing module");
+      test.assert(pbUtils.getMode(),
+                  'private mode is active when "start" event is emitted');
+      test.assert(pb.isActive,
+                  '`isActive` is `true` when "start" event is emitted');
+      pb.removeListener("start", onStart);
+    });
+
+    windows.open({
+      private: true,
+      onOpen: function(window) {
+        opened = true;
+        test.assert(pbUtils.getMode(),
+                    'private mode is active when "onOpen" event is emitted');
+        test.assert(pb.isActive,
+                    '`isActive` is `true` when "onOpen" event is emitted');
+        test.assert(window.isPrivateBrowsing,
+                    '`window.isPrivateBrowsing` is `true` when "start" event is emitted');
+
+        window.close(function() {
+          test.assert(!pbUtils.getMode(),
+                      'private mode is not active when pb window is closed');
+          test.assert(!pb.isActive,
+                      '`isActive` is `false` when pb window is closed');
+
+          test.done();
+        });
+      }
+    });
+  }
 }
+
+// tests for the case where private browsing doesn't exist
+exports.testDefault = function (test) {
+  test.assertEqual(pb.isActive, false,
+                   "pb.isActive returns false when private browsing isn't supported");
+};
