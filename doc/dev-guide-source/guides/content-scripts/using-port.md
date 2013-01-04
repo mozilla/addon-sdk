@@ -24,7 +24,7 @@ an optional payload. The payload can be any value that is
 
 Here's  simple add-on that sends a message to a content script using `port`:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     var alertContentScript = "self.port.on('alert', function(message) {" +
                              "  window.alert(message);" +
@@ -89,7 +89,7 @@ in all modules. The `panel` and `page-worker` objects integrate the
 worker API directly. So to receive events from a content script associated
 with a panel you use `panel.port.on()`:
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentScript: "self.port.emit('showing', 'panel is showing');"
     });
 
@@ -102,7 +102,7 @@ with a panel you use `panel.port.on()`:
 Conversely, to emit user-defined events from your add-on you can just call
 `panel.port.emit()`:
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentScript: "self.port.on('alert', function(text) {" +
                      "  console.log(text);" +
                      "});"
@@ -133,7 +133,7 @@ emit events to it.
                         "window.alert(message);" +
                         "});"
 
-    var pageMod = require('page-mod').PageMod({
+    var pageMod = require('sdk/page-mod').PageMod({
       include: ['*'],
       contentScript: pageModScript,
       onAttach: function(worker) {
