@@ -121,9 +121,7 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
       calls: 0,
       error: function(msg) {
         this.calls++;
-        if (this.calls == 1)
-          test.assertEqual(arguments[0], "TEST FAILED: wait4ever (timed out)");
-        else if (this.calls == 2) {
+        if (this.calls == 2) {
           test.assertEqual(arguments[0], "test assertion never became true:\n");
           test.assertEqual(arguments[1], "assertion failed, value is false\n");
           // We could additionally check that arguments[1] contains the correct
@@ -140,9 +138,34 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
         }
       },
       info: function (msg) {
-        test.assertEqual(msg, "executing 'wait4ever'");
+        this.calls++;
+        if (require("@test/options").parseable) {
+          test.fail("We got unexpected console.info() calls: " + msg)
+        }
+        else if (this.calls == 1) {
+          test.assertEqual(arguments[0], "executing 'wait4ever'");
+        }
+        else {
+          test.fail("We got unexpected console.info() calls: " + msg);
+        }
       },
-      trace: function () {}
+      trace: function () {},
+      exception: function () {},
+      print: function (str) {
+        this.calls++;
+        if (!require("@test/options").parseable) {
+          test.fail("We got unexpected console.print() calls: " + str)
+        }
+        else if (this.calls == 1) {
+          test.assertEqual(str, "TEST-START | wait4ever\n");
+        }
+        else if (this.calls == 3) {
+          test.assertEqual(str, "TEST-END | wait4ever\n");
+        }
+        else {
+          test.fail("We got unexpected console.print() calls: " + str);
+        }
+      }
     }
   });
 

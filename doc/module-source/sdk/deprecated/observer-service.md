@@ -5,6 +5,14 @@
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
+<div class="warning">
+<p>The <code>observer-service</code> module is deprecated.</p>
+<p>To access the
+<a href="https://developer.mozilla.org/en-US/docs/Observer_Notifications">observer service</a>, use the
+<a href="modules/sdk/system/events.html"><code>system/events</code></a>
+module.</p>
+</div>
+
 The `observer-service` module provides access to the
 application-wide observer service singleton.
 

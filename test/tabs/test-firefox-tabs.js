@@ -177,6 +177,7 @@ exports.testTabProperties = function(test) {
         test.assertEqual(tab.style, null, "style of the new tab matches");
         test.assertEqual(tab.index, 1, "index of the new tab matches");
         test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+        test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
         closeBrowserWindow(window, function() test.done());
       }
     });
@@ -913,6 +914,53 @@ exports['test ready event on new window tab'] = function(test) {
 
   let window = openBrowserWindow(function(){}, uri);
 };
+
+exports['test unique tab ids'] = function(test) {
+  test.waitUntilDone();
+
+  var windows = require('windows').browserWindows,
+    tabIds = {}, win1, win2;
+
+  let steps = [
+    function (index) {
+      win1 = windows.open({
+          url: "data:text/html;charset=utf-8,foo",
+          onOpen: function(window) {
+            tabIds['tab1'] = window.tabs.activeTab.id;
+            next(index);
+          }
+      });
+    },
+    function (index) {
+      win2 = windows.open({
+          url: "data:text/html;charset=utf-8,foo",
+          onOpen: function(window) {
+            tabIds['tab2'] = window.tabs.activeTab.id;
+            next(index);
+          }
+      });
+    },
+    function (index) {
+      test.assertNotEqual(tabIds.tab1, tabIds.tab2, "Tab ids should be unique.");
+      win1.close();
+      win2.close();
+      test.done();
+    }
+  ];
+
+  function next(index) {
+    if (index === steps.length) {
+      return;
+    }
+    let fn = steps[index];
+    index++
+    fn(index);
+  }
+
+  // run!
+  next(0);
+}
+
 /******************* helpers *********************/
 
 // Helper for getting the active window

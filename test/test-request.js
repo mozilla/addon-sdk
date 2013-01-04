@@ -43,12 +43,6 @@ exports.testContentValidator = function(test) {
   }).get();
 };
 
-// All tests below here require a network connection. They will be commented out
-// when checked in. If you'd like to run them, simply uncomment them.
-//
-// When we have the means, these tests will be converted so that they don't
-// require an external server nor a network connection.
-
 // This is a request to a file that exists.
 exports.testStatus200 = function (test) {
   let srv = startServerAsync(port, basePath);
@@ -86,38 +80,55 @@ exports.testStatus404 = function (test) {
   }).get();
 }
 
-/*
 // a simple file with a known header
 exports.testKnownHeader = function (test) {
+  var srv = startServerAsync(port, basePath);
+
+ // Create the file that will be requested with the associated headers file
+  let content = "This tests adding headers to the server's response.\n";
+  let basename = "test-request-headers.txt";
+  let headerContent = "x-jetpack-header: Jamba Juice\n";
+  let headerBasename = "test-request-headers.txt^headers^";
+  prepareFile(basename, content);
+  prepareFile(headerBasename, headerContent);
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/headers.php",
+    url: "http://localhost:" + port + "/test-request-headers.txt",
     onComplete: function (response) {
-      test.assertEqual(response.headers["x-zpao-header"], "Jamba Juice");
-      test.done();
+      test.assertEqual(response.headers["x-jetpack-header"], "Jamba Juice");
+      srv.stop(function() test.done());
     }
   }).get();
 }
 
 // complex headers
-exports.testKnownHeader = function (test) {
+exports.testComplexHeader = function (test) {
+  let srv = startServerAsync(port, basePath);
+
+  let basename = "test-request-complex-headers.sjs";
+  let content = handleRequest.toString();
+  prepareFile(basename, content);
+
   let headers = {
-    "x-zpao-header": "Jamba Juice is: delicious",
-    "x-zpao-header-2": "foo, bar",
+    "x-jetpack-header": "Jamba Juice is: delicious",
+    "x-jetpack-header-2": "foo,bar",
+    "x-jetpack-header-3": "sup dawg, i heard you like x, so we put a x in " +
+      "yo x so you can y while you y",
     "Set-Cookie": "foo=bar\nbaz=foo"
   }
+
   test.waitUntilDone();
   Request({
-    url: "http://playground.zpao.com/jetpack/request/complex_headers.php",
+    url: "http://localhost:" + port + "/test-request-complex-headers.sjs",
     onComplete: function (response) {
       for (k in headers) {
         test.assertEqual(response.headers[k], headers[k]);
       }
-      test.done();
+      srv.stop(function() test.done());
     }
   }).get();
 }
-*/
 
 exports.testSimpleJSON = function (test) {
   let srv = startServerAsync(port, basePath);
@@ -149,6 +160,12 @@ exports.testInvalidJSON = function (test) {
     }
   }).get();
 }
+
+// All tests below here require a network connection. They will be commented out
+// when checked in. If you'd like to run them, simply uncomment them.
+//
+// When we have the means, these tests will be converted so that they don't
+// require an external server nor a network connection.
 
 /*
 exports.testGetWithParamsNotContent = function (test) {
@@ -340,3 +357,24 @@ function prepareFile(basename, content) {
   fileStream.write(content);
   fileStream.close();
 }
+
+// Helper function for testComplexHeaders
+function handleRequest(request, response) {
+  // Test header with an extra colon
+  response.setHeader("x-jetpack-header", "Jamba Juice is: delicious", "true");
+
+  // Test that multiple headers with the same name coalesce
+  response.setHeader("x-jetpack-header-2", "foo", "true");
+  response.setHeader("x-jetpack-header-2", "bar", "true");
+
+  // Test that headers with commas work
+  response.setHeader("x-jetpack-header-3", "sup dawg, i heard you like x, " +
+    "so we put a x in yo x so you can y while you y", "true");
+
+  // Test that multiple cookies work
+  response.setHeader("Set-Cookie", "foo=bar", "true");
+  response.setHeader("Set-Cookie", "baz=foo", "true");
+
+  response.write("<html><body>This file tests more complex headers.</body></html>");
+}
+
