@@ -98,7 +98,7 @@ exports["test empty string"] = function(assert) {
                 "empty string check works");
 }
 
-require("test").run(exports);
+require("sdk/test").run(exports);
 </code></pre>
 
 This file: exports three functions, each of which expects to receive a single
