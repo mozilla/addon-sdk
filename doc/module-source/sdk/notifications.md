@@ -20,7 +20,7 @@ Examples
 Here's a typical example.  When the message is clicked, a string is logged to
 the console.
 
-    var notifications = require("notifications");
+    var notifications = require("sdk/notifications");
     notifications.notify({
       title: "Jabberwocky",
       text: "'Twas brillig, and the slithy toves",
@@ -34,7 +34,7 @@ the console.
 This one displays an icon that's stored in the add-on's `data` directory.  (See
 the [`self`](modules/sdk/self.html) module documentation for more information.)
 
-    var notifications = require("notifications");
+    var notifications = require("sdk/notifications");
     var self = require("self");
     var myIconURL = self.data.url("myIcon.png");
     notifications.notify({

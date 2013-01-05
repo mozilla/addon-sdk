@@ -27,7 +27,7 @@ functions to load and configure content scripts from the `Loader`,
 and functions to exchange messages between content scripts and the
 main add-on code from the `Worker`.
 
-    var { Symbiont } = require('content');
+    var { Symbiont } = require('sdk/content/content');
     var Thing = Symbiont.resolve({ constructor: '_init' }).compose({
       constructor: function Thing(options) {
         // `getMyFrame` returns the host application frame in which
