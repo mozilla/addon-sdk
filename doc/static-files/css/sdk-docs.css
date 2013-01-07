@@ -455,8 +455,8 @@ ul#module-index {
   column-gap: 1em;
 }
 
-span.unsupported,
-ul.module-list li.unsupported,
-ul.module-list li.unsupported > a {
+span.unsupported-on-mobile,
+ul.module-list li.unsupported-on-mobile,
+ul.module-list li.unsupported-on-mobile > a {
   color: maroon;
 }

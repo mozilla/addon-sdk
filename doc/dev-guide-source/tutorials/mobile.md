@@ -27,8 +27,8 @@ Mobile, and just specify some extra options to `cfx run`, `cfx test`,
 and `cfx xpi` when targeting Firefox Mobile.
 
 Right now not all modules are fully functional, but we're working on adding
-support for more modules. At the end of this document you can find current status
-of [modules' compatibility](dev-guide/tutorials/mobile.html#modules-compatibility).
+support for more modules.
+The [tables at the end of this guide](dev-guide/tutorials/mobile.html#modules-compatibility) list the modules that are currently supported on Firefox Mobile.
 
 This tutorial explains how to run SDK add-ons on an Android
 device connected via USB to your development machine.
@@ -238,31 +238,30 @@ rm my-addon.xpi
 </pre>
 
 <a name="modules-compatibility"></a>
-## Modules' compatibility
+## Module Compatibility
 
-The module in <span class="unsupported">red</span> are not supported yet in
-Firefox Mobile.
+Modules not yet supported in Firefox Mobile are <span class="unsupported-on-mobile">highlighted</span> in the tables below.
 
 ### High-Level APIs ###
 
 <ul class="module-list">
-  <li class="unsupported"><a href="modules/sdk/addon-page.html">addon-page</a>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/addon-page.html">addon-page</a></li>
   <li><a href="modules/sdk/base64.html">base64</a></li>
-  <li class="unsupported"><a href="modules/sdk/clipboard.html">clipboard</a>
-  <li class="unsupported"><a href="modules/sdk/context-menu.html">context-menu</a>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/clipboard.html">clipboard</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/context-menu.html">context-menu</a></li>
   <li><a href="modules/sdk/hotkeys.html">hotkeys</a></li>
   <!-- test-l10n-locale, test-l10n-plural-rules -->
   <li><a href="modules/sdk/l10n.html">l10n</a></li>
   <li><a href="modules/sdk/notifications.html">notifications</a></li>
   <!-- test-page-mod fails, but we know the module works -->
   <li><a href="modules/sdk/page-mod.html">page-mod</a></li>
-  <li class="unsupported"><a href="modules/sdk/panel.html">panel</a>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/panel.html">panel</a></li>
   <!-- test-passwords, test-passwords-utils (with exceptions / warning from js console) -->
   <li><a href="modules/sdk/passwords.html">passwords</a></li>
-  <li class="unsupported"><a href="modules/sdk/private-browsing.html">private-browsing</a>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/private-browsing.html">private-browsing</a></li>
   <li><a href="modules/sdk/querystring.html">querystring</a></li>
   <li><a href="modules/sdk/request.html">request</a></li>
-  <li class="unsupported"><a href="modules/sdk/selection.html">selection</a>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/selection.html">selection</a></li>
   <li><a href="modules/sdk/self.html">self</a></li>
   <li><a href="modules/sdk/simple-prefs.html">simple-prefs</a></li>
   <li><a href="modules/sdk/simple-storage.html">simple-storage</a></li>
@@ -283,11 +282,11 @@ Firefox Mobile.
   <li><a href="dev-guide/tutorials/chrome.html">chrome</a></li>
   <li><a href="modules/sdk/console/plain-text.html">console/plain-text</a></li>
   <li><a href="modules/sdk/console/traceback.html">console/traceback</a></li>
-  <li class="unsupported"><a href="modules/sdk/content/content.html">content/content</a></li>
-  <li class="unsupported"><a href="modules/sdk/content/content-proxy.html">content/content-proxy</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/content.html">content/content</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/content-proxy.html">content/content-proxy</a></li>
   <li><a href="modules/sdk/content/loader.html">content/loader</a></li>
-  <li class="unsupported"><a href="modules/sdk/content/symbiont.html">content/symbiont</a></li>
-  <li class="unsupported"><a href="modules/sdk/content/worker.html">content/worker</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/symbiont.html">content/symbiont</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/worker.html">content/worker</a></li>
   <li>core/disposable</li>
   <li><a href="modules/sdk/core/heritage.html">core/heritage</a></li>
   <li><a href="modules/sdk/core/namespace.html">core/namespace</a></li>
@@ -300,10 +299,10 @@ Firefox Mobile.
   <li><a href="modules/sdk/deprecated/light-traits.html">deprecated/light-traits</a></li>
   <li>deprecated/list</li>
   <li><a href="modules/sdk/deprecated/observer-service.html">deprecated/observer-service</a></li>
-  <li class="unsupported"><a href="modules/sdk/deprecated/tab-browser.html">deprecated/tab-browser</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/deprecated/tab-browser.html">deprecated/tab-browser</a></li>
   <!-- test-traits-core, test-traits -->
   <li><a href="modules/sdk/deprecated/traits.html">deprecated/traits</a></li>
-  <li class="unsupported"><a href="modules/sdk/deprecated/window-utils.html">deprecated/window-utils</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/deprecated/window-utils.html">deprecated/window-utils</a></li>
   <!-- test-dom -->
   <li>dom/events</li>
   <li><a href="modules/sdk/event/core.html">event/core</a></li>
