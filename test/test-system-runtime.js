@@ -16,8 +16,9 @@ exports["test system runtime"] = function(assert) {
                "runtime.processType is a number")
   assert.equal(typeof(runtime.widgetToolkit), "string",
                "runtime.widgetToolkit is string")
-  assert.equal(typeof(runtime.XPCOMABI), "string",
-               "runtime.XPCOMABI is string")
+  var XPCOMABI = typeof(runtime.XPCOMABI)
+  assert.ok(XPCOMABI === null || typeof(XPCOMABI) === "string",
+            "runtime.XPCOMABI is string or null if not supported by platform")
 };
 
 
