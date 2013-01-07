@@ -92,7 +92,7 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         # the harness will try to access it.
         dirs_to_create.add(base_arcpath)
         # cp -r stuff from abs_dirname/ into ZIP/resources/RESOURCEBASE/
-        for dirpath, dirnames, filenames in os.walk(abs_dirname):
+        for dirpath, dirnames, filenames in os.walk(abs_dirname, followlinks=True):
             goodfiles = list(filter_filenames(filenames, IGNORED_FILES))
             dirnames[:] = filter_dirnames(dirnames)
             for filename in goodfiles:
