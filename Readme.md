@@ -1,5 +1,6 @@
-Add-on SDK README
-==================
+# Add-on SDK README
+
+[![Build Status](https://travis-ci.org/mozilla/addon-sdk.png)](https://travis-ci.org/mozilla/addon-sdk)
 
 Before proceeding, please make sure you've installed Python 2.5,
 2.6, or 2.7 (if it's not already on your system):
@@ -16,24 +17,25 @@ To get started, first enter the same directory that this README file
 is in (the SDK's root directory) using a shell program. On Unix systems
 or on Windows with MSYS, you can execute the following command:
 
-  source bin/activate
+    source bin/activate
 
-Windows users using cmd.exe should instead run:
+Windows users using `cmd.exe` should instead run:
 
-  bin\activate.bat
+    bin\activate.bat
 
 Then run:
 
-  cfx docs
+    cfx docs
 
 This should start a documentation server and open a web browser
 with further instructions.
 
 If you get an error when running cfx or have any other problems getting
-started, see the "Troubleshooting" guide at:
-https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/tutorials/troubleshooting.html
+started, see the [Troubleshooting guide][]
 
-Bugs
+## Bugs
 -------
 
-* file a bug: https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK
+- [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Add-on%20SDK)
+
+[Troubleshooting guide]:https://addons.mozilla.org/en-US/developers/docs/sdk/latest/dev-guide/tutorials/troubleshooting.html
