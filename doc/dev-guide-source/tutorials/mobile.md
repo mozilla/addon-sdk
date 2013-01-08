@@ -283,7 +283,6 @@ Modules not yet supported in Firefox Mobile are <span class="unsupported-on-mobi
   <li><a href="modules/sdk/console/plain-text.html">console/plain-text</a></li>
   <li><a href="modules/sdk/console/traceback.html">console/traceback</a></li>
   <li class="unsupported-on-mobile"><a href="modules/sdk/content/content.html">content/content</a></li>
-  <li class="unsupported-on-mobile"><a href="modules/sdk/content/content-proxy.html">content/content-proxy</a></li>
   <li><a href="modules/sdk/content/loader.html">content/loader</a></li>
   <li class="unsupported-on-mobile"><a href="modules/sdk/content/symbiont.html">content/symbiont</a></li>
   <li class="unsupported-on-mobile"><a href="modules/sdk/content/worker.html">content/worker</a></li>
