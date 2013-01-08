@@ -67,9 +67,15 @@ function close() {
 function reload(window) {
   let { promise, resolve } = defer();
 
-  window.location.reload(true);
+  // Here we assuming that the most recent browser window is the one we're
+  // doing the test, and the active tab is the one we just opened.
+  let tab = tabs.activeTab;
 
-  setTimeout(resolve, 250, window);
+  tab.once("ready", function () {
+    resolve(window);
+  });
+
+  window.location.reload(true);
 
   return promise;
 }
