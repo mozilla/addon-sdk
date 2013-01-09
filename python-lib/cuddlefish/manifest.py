@@ -110,7 +110,7 @@ def hash_file(fn):
 
 def get_datafiles(datadir):
     # yields pathnames relative to DATADIR, ignoring some files
-    for dirpath, dirnames, filenames in os.walk(datadir):
+    for dirpath, dirnames, filenames in os.walk(datadir, followlinks=True):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
         dirnames[:] = filter_dirnames(dirnames)
