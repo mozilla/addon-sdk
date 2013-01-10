@@ -4,6 +4,10 @@
 
 <!-- contributed by Drew Willcoxon [adw@mozilla.com] -->
 
+<div class="warning">
+<p>The <code>errors</code> module is deprecated.</p>
+</div>
+
 The `errors` module provides helpers for safely invoking user callbacks.
 
 <api name="catchAndLog">
