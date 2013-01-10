@@ -340,10 +340,12 @@ exports.testRelatedTab = function(test) {
   let pageMod = new PageMod({
     include: "about:*",
     onAttach: function(worker) {
+      test.assert(!!worker.tab, "Worker.tab exists");
       test.assertEqual(tab, worker.tab, "Worker.tab is valid");
       pageMod.destroy();
-      tab.close();
-      test.done();
+      tab.close(function() {
+        test.done();
+      });
     }
   });
 
@@ -353,7 +355,28 @@ exports.testRelatedTab = function(test) {
       tab = t;
     }
   });
+};
 
+exports.testRelatedTabNoOtherReqs = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let { PageMod } = loader.require("sdk/page-mod");
+  let pageMod = new PageMod({
+    include: "about:*",
+    onAttach: function(worker) {
+      test.assert(!!worker.tab, "Worker.tab exists");
+      pageMod.destroy();
+      worker.tab.close(function() {
+        loader.unload();
+        test.done();
+      });
+    }
+  });
+
+  tabs.open({
+    url: "about:"
+  });
 };
 
 exports.testWorksWithExistingTabs = function(test) {
@@ -368,6 +391,7 @@ exports.testWorksWithExistingTabs = function(test) {
         include: url,
         attachTo: ["existing", "top", "frame"],
         onAttach: function(worker) {
+          test.assert(!!worker.tab, "Worker.tab exists");
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
 
           timer.setTimeout(function() {
