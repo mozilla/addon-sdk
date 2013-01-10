@@ -2,16 +2,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-<div class="experimental">
-<br>
-
-**This module is currently experimental.**
-
-**Based on the feedback we get from users, we expect to change it,
-and may need to make incompatible changes in future releases.**
-
-</div>
-
 The `indexed-db` module exposes the
 [IndexedDB API](https://developer.mozilla.org/en-US/docs/IndexedDB)
 to add-ons.
@@ -44,48 +34,18 @@ So you can use the `indexed-db` module to access the same API:
 
 This module also exports all the other objects that implement
 the IndexedDB API, listed below under
-[API Reference](packages/addon-kit/indexed-db.html#API Reference).
-
-<span class="aside">
-The only difference is that databases created using this API are
-[prepended with the add-on ID](packages/addon-kit/indexed-db.html#Database Naming).
-</span>
+[API Reference](modules/sdk/indexed-db.html#API Reference).
 
 The API exposed by `indexed-db` is almost identical to the DOM IndexedDB API,
 so we haven't repeated its documentation here, but refer you to the
 [IndexedDB API documentation](https://developer.mozilla.org/en-US/docs/IndexedDB)
 for all the details.
 
-## Database Naming ##
+The database created will be unique and private per addon, and is not linked to any website database. The module cannot be used to interact with a given website database. See [bug 778197](https://bugzilla.mozilla.org/show_bug.cgi?id=779197) and [bug 786688](https://bugzilla.mozilla.org/show_bug.cgi?id=786688).
 
-The only difference between this API and the standard IndexedDB API is that
-the names of databases created using this API are prepended with your
-[add-on ID](dev-guide/guides/program-id.html).
+## Example of Usage
 
-For example, suppose your add-on ID is "my-addon@me.org", and it creates
-a database, naming it "MyDatabase":
-
-    var { indexedDB } = require('indexed-db');
-    var request = indexedDB.open('MyDatabase');
-
-    request.onerror = function(event) {
-      console.log("failure");
-    };
-    request.onsuccess = function(event) {
-      console.log("success");
-      console.log(request.result.name);
-    };
-
-This add-on will give the following output:
-
-<pre>
-info: success
-info: my-addon@me.org:MyDatabase
-</pre>
-
-We do this to avoid possible naming conflicts between different add-ons.
-This may change in future, depending on the resolution of
-[bug 786688](https://bugzilla.mozilla.org/show_bug.cgi?id=786688).
+[Promise-based example using indexedDB for record storage](https://github.com/gregglind/micropilot/blob/ec65446d611a65b0646be1806359c463193d5a91/lib/micropilot.js#L80-L198).
 
 <api name="indexedDB">
 @property {object}
