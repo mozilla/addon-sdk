@@ -108,10 +108,8 @@ else if (pbUtils.isWindowPBEnabled()) {
 
   exports.testStopPWPB = function(test) {
     test.waitUntilDone();
-    let closed = false;
 
     pb.on("stop", function onStop() {
-      test.assertEqual(closed, true, "onClose has fired");
       test.assertEqual(this, pb, "`this` should be private-browsing module");
       test.assertEqual(pbUtils.getMode(), false,
                        "private mode is disabled when stop event is emitted");
@@ -128,7 +126,6 @@ else if (pbUtils.isWindowPBEnabled()) {
                     '`window.isPrivateBrowsing` is `true`');
 
         window.close(function() {
-          closed = true;
           test.assert(!pbUtils.getMode(),
                       'private mode is not active when pb window is closed');
           test.assert(!pb.isActive,
