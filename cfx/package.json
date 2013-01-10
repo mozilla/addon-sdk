@@ -1,0 +1,9 @@
+{
+  "id": "cfx",
+  "name": "cfx-js",
+  "description": "Helper addon for cfx to build xpi files for addon sdk addons",
+  "main": "./cfx.js",
+  "directories": {
+    "lib": "."
+  }
+}
