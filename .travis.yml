@@ -1,5 +1,16 @@
 before_script:
+  - cd ..
+  - url="http://ftp.mozilla.org/pub/mozilla.org/firefox/releases/latest/linux-x86_64/en-US/"
+  - index=`wget -q -O - $url`
+  - file=`echo $index | tr '\n' ' ' | sed 's/.*\(firefox-[0-9]*[\.0-9]*.tar.bz2\).*/\1/'`
+  - wget -O firefox.tar.bz2 "$url""$file"
+  - bzip2 -cd firefox.tar.bz2 | tar xvf -
+  - cd addon-sdk
+  - sh -e /etc/init.d/xvfb start
   - . bin/activate
 
+env:
+  - DISPLAY=':99.0'
+
 script:
-  - cfx testall
+  - cfx testall -b ../firefox/firefox
