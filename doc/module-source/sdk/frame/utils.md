@@ -6,11 +6,9 @@ The `frame/utils` module provides helper functions for working with platform
 internals like [frames](https://developer.mozilla.org/en/XUL/iframe) and
 [browsers](https://developer.mozilla.org/en/XUL/browser).
 
-### create
-
-Module exports `create` function that takes `nsIDOMDocument` of the
+Module exports `create` function that takes the `nsIDOMDocument` of a
 [privileged document](https://developer.mozilla.org/en/Working_with_windows_in_chrome_code)
-and creates a `browser` element in it's `documentElement`:
+and creates a `browser` element in its `documentElement`:
 
     let { open } = require('api-utils/window/utils');
     let { create } = require('api-utils/frame/utils');
@@ -18,28 +16,7 @@ and creates a `browser` element in it's `documentElement`:
     let frame = create(window.document);
 
 Optionally `create` can be passed set of `options` to configure created frame
-even further. Following options are supported:
-
-- `type`
-String that defines access type of the document loaded into it. Defaults to
-`'content'`. For more details and other possible values see
-[documentation on MDN](https://developer.mozilla.org/en/XUL/Attribute/browser.type)
-
-- `uri`
-URI of the document to be loaded into created frame. Defaults to `about:blank`.
-
-- `remote`
-If `true` separate process will be used for this frame, also in such case all
-the following options are ignored.
-
-- `allowAuth`
-Whether to allow auth dialogs. Defaults to `false`.
-
-- `allowJavascript`
-Whether to allow Javascript execution. Defaults to `false`.
-
-- `allowPlugins`
-Whether to allow plugin execution. Defaults to `false`.
+even further.
 
 Execution of scripts may easily be enabled:
 
@@ -51,3 +28,28 @@ Execution of scripts may easily be enabled:
       allowJavascript: true
     });
 
+<api name="create">
+@function
+  Creates a XUL `browser` element in a privileged document.
+   @param document {nsIDOMDocument}
+   @param options {object}
+    Options for the new frame, with the following properties:
+     @prop type {String}
+       String that defines access type of the document loaded into it. Defaults to
+       `"content"`. For more details and other possible values see
+       [documentation on MDN](https://developer.mozilla.org/en/XUL/Attribute/browser.type)
+     @prop uri {String}
+      URI of the document to be loaded into the new frame. Defaults to `about:blank`.
+     @prop remote {Boolean}
+      If `true` separate process will be used for this frame, and
+      all the following options are ignored.
+     @prop allowAuth {Boolean}
+      Whether to allow auth dialogs. Defaults to `false`.
+     @prop allowJavascript {Boolean}
+      Whether to allow Javascript execution. Defaults to `false`.
+     @prop allowPlugins {Boolean}
+      Whether to allow plugin execution. Defaults to `false`.
+@returns {frame}
+The new [`browser`](https://developer.mozilla.org/en-US/docs/XUL/browser)
+element.
+</api>

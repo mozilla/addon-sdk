@@ -138,6 +138,12 @@ parser_groups = (
                                       metavar=None,
                                       default="{}",
                                       cmds=['run', 'xpi'])),
+        (("", "--parseable",), dict(dest="parseable",
+                                    help="display test output in a parseable format",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['test', 'testex', 'testpkgs',
+                                          'testall'])),
         ]
      ),
 
@@ -484,12 +490,13 @@ def get_config_args(name, env_root):
 
 def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
+    from preflight import create_jid
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than two arguments
     if len(args) > 2:
         print >>err, 'Too many arguments.'
-        return 1
+        return {"result":1}
     if len(args) == 2:
         path = os.path.join(path,args[1])
         try:
@@ -501,14 +508,17 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
     if existing:
         print >>err, 'This command must be run in an empty directory.'
-        return 1
+        return {"result":1}
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open(os.path.join(path,'README.md'),'w').write('')
     print >>out, '* README.md written'
+    jid = create_jid()
+    print >>out, '* generated jID automatically:', jid
     open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon })
+                                                   'fullName':addon,
+                                                   'id':jid })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
@@ -522,7 +532,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     else:
         print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
         print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
-    return 0
+    return {"result":0, "jid":jid}
 
 def buildJID(target_cfg):
     if "id" in target_cfg:
@@ -632,7 +642,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
-                                  'stopOnError'])
+                                  'stopOnError', 'parseable'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True

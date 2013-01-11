@@ -2,8 +2,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-# Inheritance
-
 Doing [inheritance in JavaScript](https://developer.mozilla.org/en/Introduction_to_Object-Oriented_JavaScript)
 is both verbose and painful. Reading or writing such code requires sharp eye
 and lot's of discipline, mainly due to code fragmentation and lots of machinery
