@@ -6,6 +6,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import time
 
 from copy import copy
 import simplejson as json
@@ -334,6 +335,8 @@ def parse_args(arguments, global_options, usage, version, parser_groups,
 def test_all(env_root, defaults):
     fail = False
 
+    starttime = time.time()
+
     if not defaults['filter']:
         print >>sys.stderr, "Testing cfx..."
         sys.stderr.flush()
@@ -366,6 +369,8 @@ def test_all(env_root, defaults):
             test_all_packages(env_root, defaults)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+
+    print >>sys.stderr, "Total time for all tests: %f seconds" % (time.time() - starttime)
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
