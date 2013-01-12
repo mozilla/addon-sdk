@@ -2,6 +2,13 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<div class="warning">
+<p>The <code>app-strings</code> module is deprecated.</p>
+<p>If its functionality is still considered useful it will be added
+to the <a href="modules/sdk/l10n.html"><code>l10n</code></a> module,
+otherwise it will just be removed.</p>
+</div>
+
 The `app-strings` module gives you access to the host application's localized
 string bundles (`.properties` files).
 

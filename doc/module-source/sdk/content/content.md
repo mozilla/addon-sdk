@@ -4,12 +4,17 @@
 
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-The `content` module exports three different traits [Loader][], [Worker][] and
-[Symbiont][]. None of this traits is intended to be used directly by programs.
-Rather, they are intended to be used by other modules that provide high
-level APIs to programs or libraries.
+The `content` module re-exports three objects from
+three other modules: [`Loader`](modules/sdk/content/loader.html),
+[`Worker`](modules/sdk/content/worker.html), and
+[`Symbiont`](modules/sdk/content/symbiont.html).
 
-[Loader]:modules/sdk/content/loader.html
+These objects are used in the internal implementations of SDK modules which use
+[content scripts to interact with web content](dev-guide/guides/content-scripts/index.html),
+such as the [`panel`](modules/sdk/panel.html) or [`page-mod`](modules/sdk/page-mod.html)
+modules.
+
+[Loader]:
 [Worker]:modules/sdk/content/worker.html
 [Symbiont]:modules/sdk/content/symbiont.html
 

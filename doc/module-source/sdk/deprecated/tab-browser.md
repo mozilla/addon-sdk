@@ -4,6 +4,13 @@
 
 <!-- contributed by Dietrich Ayala [dietrich@mozilla.com]  -->
 
+<div class="warning">
+<p>The <code>tab-browser</code> module is deprecated.</p>
+<p>For low-level access to tabs, use the
+<a href="modules/sdk/tabs/utils.html"><code>tabs/utils</code></a>
+module.</p>
+</div>
+
 The `tab-browser` module is a low-level API that provides privileged
 access to browser tab events and actions.
 

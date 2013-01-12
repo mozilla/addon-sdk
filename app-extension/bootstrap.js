@@ -173,6 +173,7 @@ function startup(data, reasonCode) {
           profileMemory: options.profileMemory,
           stopOnError: options.stopOnError,
           verbose: options.verbose,
+          parseable: options.parseable,
         }
       }
     });
