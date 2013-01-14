@@ -45,7 +45,7 @@ From version 1.13 onwards they will still exist but will have no effect when cal
 
 <api name="start">
 @event
-Emitted immediately after the browser enters private browsing mode.
+Emitted immediately after a browser window enters private browsing mode.
 
     var pb = require("private-browsing");
     pb.on("start", function() {
