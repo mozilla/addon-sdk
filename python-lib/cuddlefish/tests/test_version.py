@@ -1,8 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import unittest
 import shutil
 
-from cuddlefish.version import get_version
+from cuddlefish._version import get_versions
 
 class Version(unittest.TestCase):
     def get_basedir(self):
@@ -19,14 +23,6 @@ class Version(unittest.TestCase):
     def test_current_version(self):
         # the SDK should be able to determine its own version. We don't care
         # what it is, merely that it can be computed.
-        env_root = os.environ.get('CUDDLEFISH_ROOT')
-        version = get_version(env_root)
+        version = get_versions()["version"]
         self.failUnless(isinstance(version, str), (version, type(version)))
         self.failUnless(len(version) > 0, version)
-    def test_read(self):
-        basedir = self.make_basedir()
-        f = open(os.path.join(basedir, ".version"), "w")
-        f.write("versioniffic\n")
-        f.close()
-        sdk_version = get_version(basedir)
-        self.failUnlessEqual(sdk_version, "versioniffic")

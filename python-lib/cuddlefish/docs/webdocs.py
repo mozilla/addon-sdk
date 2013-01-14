@@ -1,56 +1,25 @@
-import sys, os, re, errno
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import os, re, errno
 import markdown
-import simplejson as json
+import cgi
 
 from cuddlefish import packaging
-from cuddlefish import Bunch
-from cuddlefish.docs import apiparser
 from cuddlefish.docs import apirenderer
+from cuddlefish._version import get_versions
 
 INDEX_PAGE = '/doc/static-files/base.html'
 BASE_URL_INSERTION_POINT = '<base '
-HIGH_LEVEL_PACKAGE_SUMMARIES = '<li id="high-level-package-summaries">'
-LOW_LEVEL_PACKAGE_SUMMARIES = '<li id="low-level-package-summaries">'
+VERSION_INSERTION_POINT = '<div id="version">'
+MODULE_INDEX_INSERTION_POINT = '<ul id="module-index">'
+THIRD_PARTY_MODULE_SUMMARIES = '<ul id="third-party-module-summaries">'
+HIGH_LEVEL_MODULE_SUMMARIES = '<ul id="high-level-module-summaries">'
+LOW_LEVEL_MODULE_SUMMARIES = '<ul id="low-level-module-summaries">'
 CONTENT_ID = '<div id="main-content">'
 TITLE_ID = '<title>'
 DEFAULT_TITLE = 'Add-on SDK Documentation'
-
-def get_modules(modules_json):
-    modules = []
-    for name in modules_json:
-        typ = modules_json[name][0]
-        if typ == "directory":
-            sub_modules = get_modules(modules_json[name][1])
-            for sub_module in sub_modules:
-                modules.append([name, sub_module[0]])
-        elif typ == "file":
-            if not name.startswith(".") and name.endswith('.js'):
-                modules.append([name[:-3]])
-    return modules
-
-def get_documented_modules(root, package_name, modules_json):
-    modules = get_modules(modules_json)
-    doc_prefix = 'doc'
-    module_md_root = os.path.join(root, 'packages', package_name, 'doc')
-    mmr2 = os.path.join(root, 'packages', package_name, 'docs')
-    if os.path.isdir(mmr2):
-        doc_prefix = 'docs'
-        module_md_root = mmr2
-    documented_modules = []
-    for module in modules:
-        path = os.path.join(*module)
-        if module_md_exists(module_md_root, path):
-            documented_modules.append(module)
-    if package_name == "addon-kit":
-        # hack for bug 664001, self-maker.js is in api-utils, self.md is in
-        # addon-kit. Real fix is for this function to look for all .md files,
-        # not for .js files with matching .md file in the same package.
-        documented_modules.append(["self"])
-    return doc_prefix, documented_modules
-
-def module_md_exists(root, module_name):
-    module_md_path = os.path.join(root, module_name + '.md')
-    return os.path.exists(module_md_path)
 
 def tag_wrap(text, tag, attributes={}):
     result = '\n<' + tag
@@ -59,135 +28,77 @@ def tag_wrap(text, tag, attributes={}):
     result +='>' + text + '</'+ tag + '>\n'
     return result
 
-def is_high_level(package_json):
-    return not is_low_level(package_json)
-
-def is_low_level(package_json):
-    return 'jetpack-low-level' in package_json.get('keywords', [])
-
 def insert_after(target, insertion_point_id, text_to_insert):
     insertion_point = target.find(insertion_point_id) + len(insertion_point_id)
     return target[:insertion_point] + text_to_insert + target[insertion_point:]
 
 class WebDocs(object):
-    def __init__(self, root, base_url = '/'):
+    def __init__(self, root, module_list, version=get_versions()["version"], base_url = None):
         self.root = root
-        self.packages_json = self._create_packages_json(root)
+        self.module_list = module_list
+        self.version = version
+        self.pkg_cfg = packaging.build_pkg_cfg(root)
+        self.packages_json = packaging.build_pkg_index(self.pkg_cfg)
         self.base_page = self._create_base_page(root, base_url)
 
     def create_guide_page(self, path):
-        path, ext = os.path.splitext(path)
-        md_path = path + '.md'
-        md_content = unicode(open(md_path, 'r').read(), 'utf8')
+        md_content = unicode(open(path, 'r').read(), 'utf8')
         guide_content = markdown.markdown(md_content)
         return self._create_page(guide_content)
 
-    def create_module_page(self, path):
-        path, ext = os.path.splitext(path)
+    def create_module_page(self, module_info):
+        path, ext = os.path.splitext(module_info.source_path_and_filename())
         md_path = path + '.md'
-        module_content = apirenderer.md_to_div(md_path)
+        module_content = apirenderer.md_to_div(md_path, module_info.name())
+        stability = module_info.metadata.get("stability", "undefined")
+        stability_note = tag_wrap(stability, "a", {"class":"stability-note stability-" + stability, \
+                                                     "href":"dev-guide/guides/stability.html"})
+        module_content = stability_note + module_content
         return self._create_page(module_content)
 
-    def create_package_page(self, path):
-        path, ext = os.path.splitext(path)
-        head, package_name = os.path.split(path)
-        package_content = self._create_package_detail(package_name)
-        return self._create_page(package_content)
+    def create_module_index(self, path, module_list):
+        md_content = unicode(open(path, 'r').read(), 'utf8')
+        index_content = markdown.markdown(md_content)
+        module_list_content = self._make_module_text(module_list)
+        index_content = insert_after(index_content, MODULE_INDEX_INSERTION_POINT, module_list_content)
+        return self._create_page(index_content)
 
     def _create_page(self, page_content):
         page = self._insert_title(self.base_page, page_content)
         page = insert_after(page, CONTENT_ID, page_content)
         return page.encode('utf8')
 
-    def _create_module_list(self, package_json):
-        package_name = package_json['name']
-        libs = package_json['files'][1]['lib'][1]
-        doc_prefix, modules = get_documented_modules(self.root, package_name,
-                                                     libs)
-        modules.sort()
-        module_items = ''
-        for module in modules:
-            module_link = tag_wrap('/'.join(module), 'a', \
-                {'href':'packages/' + package_name + \
-                 '/' + doc_prefix + '/' + '/'.join(module) + '.html'})
-            module_items += tag_wrap(module_link, 'li', {'class':'module'})
-        return tag_wrap(module_items, 'ul', {'class':'modules'})
-
-    def _create_package_summaries(self, packages_json, include):
-        packages = ''
-        for package_name in packages_json.keys():
-            package_json = packages_json[package_name]
-            if not include(package_json):
-                continue
-            package_link = tag_wrap(package_name, 'a', {'href':'packages/' \
-                                    + package_name + "/" \
-                                    + package_name + '.html'})
-            text = tag_wrap(package_link, 'h4')
-            text += self._create_module_list(package_json)
-            packages += tag_wrap(text, 'div', {'class':'package-summary', \
-              'style':'display: block;'})
-        return packages
-
-    def _create_packages_json(self, root):
-        pkg_cfg = packaging.build_pkg_cfg(root)
-        return packaging.build_pkg_index(pkg_cfg)
+    def _make_module_text(self, module_list):
+        module_text = ''
+        for module in module_list:
+            module_link = tag_wrap(module.name(), 'a', \
+                {'href': "/".join(["modules", module.relative_url()])})
+            module_list_item = tag_wrap(module_link, "li")
+            module_text += module_list_item
+        return module_text
 
     def _create_base_page(self, root, base_url):
         base_page = unicode(open(root + INDEX_PAGE, 'r').read(), 'utf8')
-        base_tag = 'href="' + base_url + '"'
-        base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
-        high_level_summaries = \
-            self._create_package_summaries(self.packages_json, is_high_level)
+        if base_url:
+            base_tag = 'href="' + base_url + '"'
+            base_page = insert_after(base_page, BASE_URL_INSERTION_POINT, base_tag)
+        base_page = insert_after(base_page, VERSION_INSERTION_POINT, "Version " + self.version)
+
+        third_party_module_list = [module_info for module_info in self.module_list if module_info.level() == "third-party"]
+        third_party_module_text = self._make_module_text(third_party_module_list)
         base_page = insert_after(base_page, \
-            HIGH_LEVEL_PACKAGE_SUMMARIES, high_level_summaries)
-        low_level_summaries = \
-            self._create_package_summaries(self.packages_json, is_low_level)
+            THIRD_PARTY_MODULE_SUMMARIES, third_party_module_text)
+
+        high_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "high"]
+        high_level_module_text = self._make_module_text(high_level_module_list)
         base_page = insert_after(base_page, \
-            LOW_LEVEL_PACKAGE_SUMMARIES, low_level_summaries)
+            HIGH_LEVEL_MODULE_SUMMARIES, high_level_module_text)
+
+        low_level_module_list = [module_info for module_info in self.module_list if module_info.level() == "low"]
+        low_level_module_text = self._make_module_text(low_level_module_list)
+        base_page = insert_after(base_page, \
+            LOW_LEVEL_MODULE_SUMMARIES, low_level_module_text)
         return base_page
-
-    def _create_package_detail_row(self, field_value, \
-                                   field_descriptor, field_name):
-        meta = tag_wrap(tag_wrap(field_descriptor, 'span', \
-                                 {'class':'meta-header'}), 'td')
-        value = tag_wrap(tag_wrap(field_value, 'span', \
-                                 {'class':field_name}), 'td')
-        return tag_wrap(meta + value, 'tr')
-
-    def _create_package_detail_table(self, package_json):
-        table_contents = ''
-        if package_json.get('author', None):
-            table_contents += self._create_package_detail_row(\
-                package_json['author'], 'Author', 'author')
-        if package_json.get('version', None):
-            table_contents += self._create_package_detail_row(\
-                package_json['version'], 'Version', 'version')
-        if package_json.get('license', None):
-            table_contents += self._create_package_detail_row(\
-                package_json['license'], 'License', 'license')
-        if package_json.get('dependencies', None):
-            table_contents += self._create_package_detail_row(\
-                ', '.join(package_json['dependencies']), \
-                'Dependencies', 'dependencies')
-        table_contents += self._create_package_detail_row(\
-            self._create_module_list(package_json), 'Modules', 'modules')
-        return tag_wrap(tag_wrap(table_contents, 'tbody'), 'table', \
-            {'class':'meta-table'})
-
-    def _create_package_detail(self, package_name):
-        package_json = self.packages_json.get(package_name, None)
-        if not package_json:
-            raise IOError(errno.ENOENT, 'Package not found')
-        # pieces of the package detail: 1) title, 2) table, 3) description
-        package_title = tag_wrap(package_name, 'h1')
-        table = self._create_package_detail_table(package_json)
-        description = ''
-        if package_json.get('readme', None):
-            description += tag_wrap(tag_wrap(\
-                markdown.markdown(\
-                    package_json['readme']), 'p'), 'div', {'class':'docs'})
-        return tag_wrap(package_title + table + description, 'div', \
-                        {'class':'package-detail'})
 
     def _insert_title(self, target, content):
         match = re.search('<h1>.*</h1>', content)

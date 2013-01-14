@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import sys, re, textwrap
 
 VERSION = 4
@@ -110,7 +114,8 @@ class APIParser:
                         raise ParseError("unknown '@' section header %s in \
                                            '%s'" % (tag, line), lineno + 1)
             lineno += 1
-        raise ParseError("closing </api> tag not found", lineno + 1)
+        raise ParseError("closing </api> tag not found for <api name=\"" +
+                         api["name"] + "\">", lineno + 1)
 
     def _parse_title_line(self, title_line, lineno):
         if "name" not in title_line:

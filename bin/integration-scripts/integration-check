@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import signal
 import threading
@@ -256,7 +260,7 @@ class SDK:
             # Subprocess call to test the sample example for packaging.
             if self.bin!=None:
                 if self.mswindows:
-                    p = subprocess.Popen('bin\\activate && cfx run --pkgdir examples\\reading-data  --static-args="{\"quitWhenDone\":true}" -b \"" + self.bin + "\"' , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('bin\\activate && cfx run --pkgdir examples\\reading-data  --static-args="{\\"quitWhenDone\\":true}" -b \"" + self.bin + "\"' , stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     proc_handle = p._handle
                     (stdout, stderr) = p.communicate()
                 else:
@@ -265,7 +269,7 @@ class SDK:
                     (stdout, stderr) = p.communicate()
             elif self.bin==None:
                 if self.mswindows:
-                    p = subprocess.Popen('bin\\activate && cfx run  --pkgdir examples\\reading-data --static-args="{\"quitWhenDone\":true}"', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen('bin\\activate && cfx run  --pkgdir examples\\reading-data --static-args="{\\"quitWhenDone\\":true}"', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
                     proc_handle = p._handle
                     (stdout, stderr) = p.communicate()
                 else:

@@ -30,24 +30,36 @@
 </head>
 <body>
 
-<header id="global-header">
+<div id="global-header">
   <div class="funnel">
     <a id="mozilla-tab" href="http://www.mozilla.org/?ref=logo">Mozilla</a>
     <div class="menu">
-      <p>
-        <a href="https://addons.mozilla.org/en-US/developers/">Back to Developer Hub</a>
-      </p>
+	<!-- Google CSE Search Box Begins  -->
+	<!-- Use of this code assumes agreement with the Google Custom Search Terms of Service. -->
+	<!-- The terms of service are available at http://www.google.com/cse/docs/tos.html -->
+      <form action="dev-guide/search.html" id="cse-search-box">
+        <div>
+          <input type="hidden" name="cx" value="017013284162333743052:rvlazd1zehe" />
+          <input type="hidden" name="cof" value="FORID:10" />
+          <input type="hidden" name="ie" value="UTF-8" />
+          <input type="text" name="q" size="31" id="search-box" />
+          <input type="submit" name="sa" value="Search" />
+        </div>
+      </form>
+      <script type="text/javascript" src="http://www.google.com/cse/brand?form=cse-search-box&lang=en"></script>
+    <!-- Google CSE Search Box Ends -->
+    </div>
   </div>
-</header>
+</div>
 
-
-<header id="site-header">
+<div id="site-header">
   <div class="funnel">
     <h1>
-      <a href="dev-guide/welcome.html">Add-on SDK<span></span></a>
+      <a href="dev-guide/index.html">Add-on SDK<span></span></a>
     </h1>
+    <div id="version"></div>
   </div>
-</header>
+</div>
 
   <div id="container">
 
@@ -55,120 +67,66 @@
 
   <div id="main-content-column" class="column">
     <div id="toc"></div>
+    <div id="search-results"></div>
     <div id="main-content"></div>
   </div>
 
   <div id="sidebar" class="column">
     <div class="sidebar-section" id="addon-development">
-      <h2 class="sidebar-section-header"><a href="dev-guide/addon-development/about.html">Developer Guide</a></h2>
-      <div class="sidebar-section-contents" id="default-section-contents">
+      <a href="dev-guide/index.html"><h2 class="sidebar-section-header">Developer Guide</h2></a>
+      <ul class="sidebar-section-contents" id="default-section-contents">
 
-        <div class="sidebar-subsection">
-          <h3><a href="dev-guide/addon-development/installation.html">Installation</a></h3>
-          <div class="divider"></div>
-          <h3 class="sidebar-subsection-header"><a href="dev-guide/addon-development/tutorials.html">Tutorials</a></h3>
+        <li class="sidebar-subsection">
+          <a href="dev-guide/tutorials/installation.html"><h3>Installation</h3></a>
+        </li>
+        <li class="sidebar-subsection">
+          <a href="dev-guide/tutorials/index.html"><h3 class="sidebar-subsection-header">Tutorials</h3></a>
+        </li>
+
+        <li class="sidebar-subsection">
+          <a href="dev-guide/guides/index.html"><h3 class="sidebar-subsection-header">Guides</h3></a>
+        </li>
+
+        <li class="sidebar-subsection" id="third-party-module-subsection">
+          <a href="modules/third-party-modules.html"><h3 class="sidebar-subsection-header">Third-Party APIs</h3></a>
           <div class="sidebar-subsection-contents">
-          <ul>
-            <li><h4><a href="dev-guide/addon-development/getting-started.html">Getting Started</a></h4>
-            <ul>
-              <li><a href="dev-guide/addon-development/implementing-simple-addon.html">A Simple Add-on</a></li>
-              <li><a href="dev-guide/addon-development/commonjs.html">CommonJS</a></li>
-              <li><a href="dev-guide/addon-development/implementing-reusable-module.html">Reusable Modules</a></li>
-              <li><a href="dev-guide/addon-development/troubleshooting.html">Troubleshooting</a></li>
-            </ul></li>
-            <li><h4><a href="dev-guide/addon-development/api-intro.html" >Introducing the APIs</a></h4>
-            <ul>
-              <li><a href="dev-guide/addon-development/api-idioms.html">Common Idioms</a></li>
-              <li><a href="dev-guide/addon-development/api-modules.html">API Overview</a></li>
-            </ul></li>
-            <li><h4><a href="dev-guide/addon-development/annotator/annotator.html">Annotator: a More Complex Add-on</a></h4>
-            <ul>
-              <li><a href="dev-guide/addon-development/annotator/overview.html">Design Overview</a></li>
-              <li><a href="dev-guide/addon-development/annotator/widget.html">Implementing the Widget</a></li>
-              <li><a href="dev-guide/addon-development/annotator/creating.html">Creating Annotations</a></li>
-              <li><a href="dev-guide/addon-development/annotator/storing.html">Storing Annotations</a></li>
-              <li><a href="dev-guide/addon-development/annotator/displaying.html">Displaying Annotations</a></li>
-            </ul></li>
-          </ul>
+            <ul id="third-party-module-summaries"></ul>
           </div>
-        </div>
+        </li>
 
-        <div class="sidebar-subsection">
-          <div class="divider"></div>
-          <h3 class="sidebar-subsection-header"><a href="dev-guide/addon-development/guides.html">Programming Guides</a></h3>
+        <li class="sidebar-subsection">
+          <a href="modules/high-level-modules.html"><h3 class="sidebar-subsection-header">High-Level APIs</h3></a>
           <div class="sidebar-subsection-contents">
-          <ul>
-            <li><h4><a href="dev-guide/addon-development/two-types-of-scripts.html">Two Types of Scripts</a></h4></li>
-            <li><h4><a href="dev-guide/addon-development/events.html">Working with Events</a></h4></li>
-            <li><h4><a href="dev-guide/addon-development/web-content.html">Content Scripts</a></h4>
-              <ul>
-                <li><a href="dev-guide/addon-development/content-scripts/loading.html">Loading Content Scripts</a></li>
-                <li><a href="dev-guide/addon-development/content-scripts/access.html">Content Script Access</a></li>
-                <li><a href="dev-guide/addon-development/content-scripts/using-port.html">Using <code>port</code></a></li>
-                <li><a href="dev-guide/addon-development/content-scripts/using-postmessage.html">Using <code>postMessage</code></a></li>
-                <li><a href="dev-guide/addon-development/content-scripts/reddit-example.html">Example</a></li>
-              </ul></li>
-            <li><h4><a href="dev-guide/addon-development/program-id.html">The Program ID</a></h4></li>
-            <li><h4><a href="dev-guide/addon-development/module-search.html">Module Search</a></h4></li>
-          </ul>
+            <ul id="high-level-module-summaries"></ul>
           </div>
-        </div>
+        </li>
 
-        <div class="sidebar-subsection">
-          <div class="divider"></div>
-          <h3 class="sidebar-subsection-header"><a href="dev-guide/addon-development/reference.html">Reference</a></h3>
-          <div class="sidebar-subsection-contents always-show">
-          <ul>
-            <li id="high-level-package-summaries"></li>
-            <li><h4><a href="dev-guide/addon-development/console.html">console</a></h4></li>
-            <li><h4><a href="dev-guide/addon-development/cfx-tool.html">cfx</a></h4></li>
-            <li><h4><a href="dev-guide/addon-development/package-spec.html">Package Specification</a></h4></li>
-          </ul>
+        <li class="sidebar-subsection">
+          <a href="modules/low-level-modules.html"><h3 class="sidebar-subsection-header">Low-Level APIs</h3></a>
+          <div class="sidebar-subsection-contents">
+            <ul id="low-level-module-summaries"></ul>
           </div>
-        </div>
+        </li>
 
-      </div>
+        <li class="sidebar-subsection">
+          <h3 class="sidebar-subsection-header">Tools Reference</h3>
+          <div class="sidebar-subsection-contents">
+            <a href="dev-guide/console.html">console</a>
+            <a href="dev-guide/cfx-tool.html">cfx</a>
+            <a href="dev-guide/package-spec.html">package.json</a>
+          </div>
+        </li>
+
+      </ul>
     </div>
 
-    <div class="sidebar-section" id="module-development">
-      <h2 class="sidebar-section-header"><a href="dev-guide/module-development/about.html">Internals Guide</a></h2>
-      <div class="sidebar-section-contents">
+    <ul class="sidebar-section" id="appendices">
+        <li><a href="https://wiki.mozilla.org/Labs/Jetpack/Release_Notes"><h3>Release Notes</h3></a></li>
+        <li><a href="https://wiki.mozilla.org/Labs/Jetpack"><h3>Jetpack Wiki</h3></a></li>
+        <li><a href="dev-guide/glossary.html"><h3>Glossary</h3></a></li>
+        <li><a href="dev-guide/credits.html"><h3>Credits</h3></a></li>
 
-        <div class="sidebar-subsection">
-          <h3 class="sidebar-subsection-header"><a href="dev-guide/module-development/guides.html">Programming Guides</a></h3>
-          <div class="sidebar-subsection-contents">
-          <ul>
-            <li><h4><a href="dev-guide/module-development/best-practices.html">Low-Level Module Best Practices</a></h4>
-            <li><h4><a href="dev-guide/module-development/chrome.html">Chrome Authority</a></h4>
-            <li><h4><a href="dev-guide/module-development/xpi.html">XPI Generation</a></h4>
-            <li><h4><a href="dev-guide/module-development/e10s.html">Out-of-Process Add-ons</a></h4>
-          </ul>
-          </div>
-        </div>
-
-        <div class="sidebar-subsection">
-          <div class="divider"></div>
-          <h3 class="sidebar-subsection-header"><a href="dev-guide/module-development/reference.html">Reference</a></h3>
-          <div class="sidebar-subsection-contents">
-          <ul>
-            <li id="low-level-package-summaries"></li>
-            <li><h4><a href="dev-guide/module-development/globals.html">Globals</a></h4></li>
-          </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-section" id="appendices">
-        <h3><a href="https://wiki.mozilla.org/Labs/Jetpack/Release_Notes">Release Notes</a></h3>
-          <div class="divider"></div>
-        <h3><a href="https://wiki.mozilla.org/Labs/Jetpack">Jetpack Wiki</a></h3>
-          <div class="divider"></div>
-        <h3><a href="dev-guide/appendices/glossary.html">Glossary</a></h3>
-          <div class="divider"></div>
-        <h3><a href="dev-guide/appendices/credits.html">Credits</a></h3>
-
-    </div>
+    </ul>
 <!--end of sidebar column-->
   </div>
 <!--end of 'columns'-->
@@ -176,7 +134,7 @@
 </div>
 </div>
 
-<div role="contentinfo" id="footer">
+<div id="footer">
   <div class="section">
     <img alt="" src="static-files/media/footer-logo-med.png" class="footerlogo">
     <div id="social-footer">

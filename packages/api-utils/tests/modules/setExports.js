@@ -1,1 +1,0 @@
-module.setExports(5);

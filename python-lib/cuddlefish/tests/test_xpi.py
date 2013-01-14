@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import os
 import unittest
 import zipfile
@@ -5,14 +9,93 @@ import pprint
 import shutil
 
 import simplejson as json
-from cuddlefish import xpi, packaging, manifest
+from cuddlefish import xpi, packaging, manifest, buildJID
 from cuddlefish.tests import test_packaging
 from test_linker import up
+
+import xml.etree.ElementTree as ElementTree
 
 xpi_template_path = os.path.join(test_packaging.static_files_path,
                                  'xpi-template')
 
 fake_manifest = '<RDF><!-- Extension metadata is here. --></RDF>'
+
+class PrefsTests(unittest.TestCase):
+    def makexpi(self, pkg_name):
+        self.xpiname = "%s.xpi" % pkg_name
+        create_xpi(self.xpiname, pkg_name, 'preferences-files')
+        self.xpi = zipfile.ZipFile(self.xpiname, 'r')
+        options = self.xpi.read('harness-options.json')
+        self.xpi_harness_options = json.loads(options)
+
+    def setUp(self):
+        self.xpiname = None
+        self.xpi = None
+
+    def tearDown(self):
+        if self.xpi:
+            self.xpi.close()
+        if self.xpiname and os.path.exists(self.xpiname):
+            os.remove(self.xpiname)
+
+    def testPackageWithSimplePrefs(self):
+        self.makexpi('simple-prefs')
+        self.failUnless('options.xul' in self.xpi.namelist())
+        optsxul = self.xpi.read('options.xul').decode("utf-8")
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
+                             "jid1-fZHqN9JfrDBa8A@jetpack")
+
+        root = ElementTree.XML(optsxul.encode('utf-8'))
+
+        xulNamespacePrefix = \
+            "{http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul}"
+        
+        settings = root.findall(xulNamespacePrefix + 'setting')
+
+        def assertPref(setting, name, prefType, title):
+            packageName = 'jid1-fZHqN9JfrDBa8A@jetpack'
+            self.failUnlessEqual(setting.get('data-jetpack-id'), packageName)
+            self.failUnlessEqual(setting.get('pref'),
+                                 'extensions.' + packageName + '.' + name)
+            self.failUnlessEqual(setting.get('pref-name'), name)
+            self.failUnlessEqual(setting.get('type'), prefType)
+            self.failUnlessEqual(setting.get('title'), title)
+
+        assertPref(settings[0], 'test', 'bool', u't\u00EBst')
+        assertPref(settings[1], 'test2', 'string', u't\u00EBst')
+        assertPref(settings[2], 'test3', 'menulist', '"><test')
+        assertPref(settings[3], 'test4', 'radio', u't\u00EBst')
+
+        menuItems = settings[2].findall(
+            '%(0)smenulist/%(0)smenupopup/%(0)smenuitem' % { "0": xulNamespacePrefix })
+        radios = settings[3].findall(
+            '%(0)sradiogroup/%(0)sradio' % { "0": xulNamespacePrefix })
+
+        def assertOption(option, value, label):
+            self.failUnlessEqual(option.get('value'), value)
+            self.failUnlessEqual(option.get('label'), label)
+        
+        assertOption(menuItems[0], "0", "label1")
+        assertOption(menuItems[1], "1", "label2")
+        assertOption(radios[0], "red", "rouge")
+        assertOption(radios[1], "blue", "bleu")
+
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        exp = [u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test", false);',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test2", "\u00FCnic\u00F8d\u00E9");',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test3", "1");',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test4", "red");',
+               ]
+        self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
+
+    def testPackageWithNoPrefs(self):
+        self.makexpi('no-prefs')
+        self.failIf('options.xul' in self.xpi.namelist())
+        self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
+                             "jid1-fZHqN9JfrDBa8A@jetpack")
+        prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
+        self.failUnlessEqual(prefsjs, "")
+
 
 class Bug588119Tests(unittest.TestCase):
     def makexpi(self, pkg_name):
@@ -25,7 +108,7 @@ class Bug588119Tests(unittest.TestCase):
     def setUp(self):
         self.xpiname = None
         self.xpi = None
-        
+
     def tearDown(self):
         if self.xpi:
             self.xpi.close()
@@ -60,6 +143,36 @@ class Bug588119Tests(unittest.TestCase):
         self.makexpi('implicit-icon')
         assert 'icon64' not in self.xpi_harness_options
 
+class ExtraHarnessOptions(unittest.TestCase):
+    def setUp(self):
+        self.xpiname = None
+        self.xpi = None
+
+    def tearDown(self):
+        if self.xpi:
+            self.xpi.close()
+        if self.xpiname and os.path.exists(self.xpiname):
+            os.remove(self.xpiname)
+
+    def testOptions(self):
+        pkg_name = "extra-options"
+        self.xpiname = "%s.xpi" % pkg_name
+        create_xpi(self.xpiname, pkg_name, "bug-669274-files",
+                   extra_harness_options={"builderVersion": "futuristic"})
+        self.xpi = zipfile.ZipFile(self.xpiname, 'r')
+        options = self.xpi.read('harness-options.json')
+        hopts = json.loads(options)
+        self.failUnless("builderVersion" in hopts)
+        self.failUnlessEqual(hopts["builderVersion"], "futuristic")
+
+    def testBadOptionName(self):
+        pkg_name = "extra-options"
+        self.xpiname = "%s.xpi" % pkg_name
+        self.failUnlessRaises(xpi.HarnessOptionAlreadyDefinedError,
+                              create_xpi,
+                              self.xpiname, pkg_name, "bug-669274-files",
+                              extra_harness_options={"main": "already in use"})
+
 class SmallXPI(unittest.TestCase):
     def setUp(self):
         self.root = up(os.path.abspath(__file__), 4)
@@ -86,9 +199,9 @@ class SmallXPI(unittest.TestCase):
         pkg_cfg = packaging.build_config(self.root, target_cfg,
                                          packagepath=package_path)
         deps = packaging.get_deps_for_targets(pkg_cfg,
-                                              [target_cfg.name, "addon-kit"])
-        m = manifest.build_manifest(target_cfg, pkg_cfg, deps,
-                                    "P/", scan_tests=False)
+                                              [target_cfg.name, "addon-sdk"])
+        addon_sdk_dir = pkg_cfg.packages["addon-sdk"].lib[0]
+        m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=False)
         used_files = list(m.get_used_files())
         here = up(os.path.abspath(__file__))
         def absify(*parts):
@@ -97,16 +210,31 @@ class SmallXPI(unittest.TestCase):
         expected = [absify(*parts) for parts in
                     [("three", "lib", "main.js"),
                      ("three-deps", "three-a", "lib", "main.js"),
+                     ("three-deps", "three-a", "lib", "subdir", "subfile.js"),
+                     ("three", "data", "msg.txt"),
+                     ("three", "data", "subdir", "submsg.txt"),
                      ("three-deps", "three-b", "lib", "main.js"),
                      ("three-deps", "three-c", "lib", "main.js"),
-                     ("three-deps", "three-c", "lib", "sub", "foo.js"),
+                     ("three-deps", "three-c", "lib", "sub", "foo.js")
                      ]]
-        self.failUnlessEqual(sorted(used_files), sorted(expected))
+
+        add_addon_sdk= lambda path: os.path.join(addon_sdk_dir, path)
+        expected.extend([add_addon_sdk(module) for module in [
+            os.path.join("sdk", "self.js"),
+            os.path.join("sdk", "core", "promise.js"),
+            os.path.join("sdk", "net", "url.js"),
+            os.path.join("sdk", "util", "object.js")
+            ]])
+
+        missing = set(expected) - set(used_files)
+        extra = set(used_files) - set(expected)
+
+        self.failUnlessEqual(list(missing), [])
+        self.failUnlessEqual(list(extra), [])
         used_deps = m.get_used_packages()
 
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
                                                     used_deps,
-                                                    prefix="p-",
                                                     include_tests=False)
         options = {'main': target_cfg.main}
         options.update(build)
@@ -114,36 +242,166 @@ class SmallXPI(unittest.TestCase):
         xpi_name = os.path.join(basedir, "contents.xpi")
         xpi.build_xpi(template_root_dir=xpi_template_path,
                       manifest=fake_manifest,
-                      xpi_name=xpi_name,
+                      xpi_path=xpi_name,
                       harness_options=options,
                       limit_to=used_files)
         x = zipfile.ZipFile(xpi_name, "r")
         names = x.namelist()
-        expected = ["components/harness.js",
+        expected = ["components/",
+                    "components/harness.js",
                     # the real template also has 'bootstrap.js', but the fake
                     # one in tests/static-files/xpi-template doesn't
                     "harness-options.json",
                     "install.rdf",
-                    "resources/p-api-utils-data/",
-                    "resources/p-api-utils-lib/",
-                    "resources/p-three-lib/",
-                    "resources/p-three-lib/main.js",
-                    "resources/p-three-a-lib/",
-                    "resources/p-three-a-lib/main.js",
-                    "resources/p-three-b-lib/",
-                    "resources/p-three-b-lib/main.js",
-                    "resources/p-three-c-lib/",
-                    "resources/p-three-c-lib/main.js",
-                    "resources/p-three-c-lib/sub/foo.js",
-                    # notably absent: p-three-a-lib/unused.js
+                    "defaults/preferences/prefs.js",
+                    "resources/",
+                    "resources/addon-sdk/",
+                    "resources/addon-sdk/data/",
+                    "resources/addon-sdk/lib/",
+                    "resources/addon-sdk/lib/sdk/",
+                    "resources/addon-sdk/lib/sdk/self.js",
+                    "resources/addon-sdk/lib/sdk/core/",
+                    "resources/addon-sdk/lib/sdk/util/",
+                    "resources/addon-sdk/lib/sdk/net/",
+                    "resources/addon-sdk/lib/sdk/core/promise.js",
+                    "resources/addon-sdk/lib/sdk/util/object.js",
+                    "resources/addon-sdk/lib/sdk/net/url.js",
+                    "resources/three/",
+                    "resources/three/lib/",
+                    "resources/three/lib/main.js",
+                    "resources/three/data/",
+                    "resources/three/data/msg.txt",
+                    "resources/three/data/subdir/",
+                    "resources/three/data/subdir/submsg.txt",
+                    "resources/three-a/",
+                    "resources/three-a/lib/",
+                    "resources/three-a/lib/main.js",
+                    "resources/three-a/lib/subdir/",
+                    "resources/three-a/lib/subdir/subfile.js",
+                    "resources/three-b/",
+                    "resources/three-b/lib/",
+                    "resources/three-b/lib/main.js",
+                    "resources/three-c/",
+                    "resources/three-c/lib/",
+                    "resources/three-c/lib/main.js",
+                    "resources/three-c/lib/sub/",
+                    "resources/three-c/lib/sub/foo.js",
+                    # notably absent: three-a/lib/unused.js
+                    "locale/",
+                    "locale/fr-FR.json",
+                    "locales.json",
                     ]
         # showing deltas makes failures easier to investigate
         missing = set(expected) - set(names)
-        self.failUnlessEqual(list(missing), [])
         extra = set(names) - set(expected)
-        self.failUnlessEqual(list(extra), [])
+        self.failUnlessEqual((list(missing), list(extra)), ([], []))
         self.failUnlessEqual(sorted(names), sorted(expected))
 
+        # check locale files
+        localedata = json.loads(x.read("locales.json"))
+        self.failUnlessEqual(sorted(localedata["locales"]), sorted(["fr-FR"]))
+        content = x.read("locale/fr-FR.json")
+        locales = json.loads(content)
+        # Locale files are merged into one.
+        # Conflicts are silently resolved by taking last package translation,
+        # so that we get "No" translation from three-c instead of three-b one.
+        self.failUnlessEqual(locales, json.loads(u'''
+          {
+            "No": "Nein",
+            "one": "un",
+            "What?": "Quoi?",
+            "Yes": "Oui",
+            "plural": {
+              "other": "other",
+              "one": "one"
+            },
+            "uft8_value": "\u00e9"
+          }'''))
+
+    def test_scantests(self):
+        target_cfg = self.get_pkg("three")
+        package_path = [self.get_linker_files_dir("three-deps")]
+        pkg_cfg = packaging.build_config(self.root, target_cfg,
+                                         packagepath=package_path)
+
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-sdk"])
+        m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True)
+        self.failUnlessEqual(sorted(m.get_all_test_modules()),
+                             sorted(["test-one", "test-two"]))
+        # the current __init__.py code omits limit_to=used_files for 'cfx
+        # test', so all test files are included in the XPI. But the test
+        # runner will only execute the tests that m.get_all_test_modules()
+        # tells us about (which are put into the .allTestModules property of
+        # harness-options.json).
+        used_deps = m.get_used_packages()
+
+        build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
+                                                    used_deps,
+                                                    include_tests=True)
+        options = {'main': target_cfg.main}
+        options.update(build)
+        basedir = self.make_basedir()
+        xpi_name = os.path.join(basedir, "contents.xpi")
+        xpi.build_xpi(template_root_dir=xpi_template_path,
+                      manifest=fake_manifest,
+                      xpi_path=xpi_name,
+                      harness_options=options,
+                      limit_to=None)
+        x = zipfile.ZipFile(xpi_name, "r")
+        names = x.namelist()
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
+        # all files are copied into the XPI, even the things that don't look
+        # like tests.
+        self.failUnless("resources/three/tests/test-one.js" in names, names)
+        self.failUnless("resources/three/tests/test-two.js" in names, names)
+        self.failUnless("resources/three/tests/nontest.js" in names, names)
+
+    def test_scantests_filter(self):
+        target_cfg = self.get_pkg("three")
+        package_path = [self.get_linker_files_dir("three-deps")]
+        pkg_cfg = packaging.build_config(self.root, target_cfg,
+                                         packagepath=package_path)
+        deps = packaging.get_deps_for_targets(pkg_cfg,
+                                              [target_cfg.name, "addon-sdk"])
+        FILTER = ".*one.*"
+        m = manifest.build_manifest(target_cfg, pkg_cfg, deps, scan_tests=True,
+                                    test_filter_re=FILTER)
+        self.failUnlessEqual(sorted(m.get_all_test_modules()),
+                             sorted(["test-one"]))
+        # the current __init__.py code omits limit_to=used_files for 'cfx
+        # test', so all test files are included in the XPI. But the test
+        # runner will only execute the tests that m.get_all_test_modules()
+        # tells us about (which are put into the .allTestModules property of
+        # harness-options.json).
+        used_deps = m.get_used_packages()
+
+        build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
+                                                    used_deps,
+                                                    include_tests=True)
+        options = {'main': target_cfg.main}
+        options.update(build)
+        basedir = self.make_basedir()
+        xpi_name = os.path.join(basedir, "contents.xpi")
+        xpi.build_xpi(template_root_dir=xpi_template_path,
+                      manifest=fake_manifest,
+                      xpi_path=xpi_name,
+                      harness_options=options,
+                      limit_to=None)
+        x = zipfile.ZipFile(xpi_name, "r")
+        names = x.namelist()
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/deprecated/unit-test-finder.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/harness.js" in names, names)
+        self.failUnless("resources/addon-sdk/lib/sdk/test/runner.js" in names, names)
+        # get_all_test_modules() respects the filter. But all files are still
+        # copied into the XPI.
+        self.failUnless("resources/three/tests/test-one.js" in names, names)
+        self.failUnless("resources/three/tests/test-two.js" in names, names)
+        self.failUnless("resources/three/tests/nontest.js" in names, names)
 
 
 def document_dir(name):
@@ -195,14 +453,17 @@ def document_dir_files(path):
         print "%s:" % filename
         print "  %s" % contents
 
-def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files'):
+def create_xpi(xpiname, pkg_name='aardvark', dirname='static-files',
+               extra_harness_options={}):
     configs = test_packaging.get_configs(pkg_name, dirname)
-    options = {'main': configs.target_cfg.main}
+    options = {'main': configs.target_cfg.main,
+               'jetpackID': buildJID(configs.target_cfg), }
     options.update(configs.build)
     xpi.build_xpi(template_root_dir=xpi_template_path,
                   manifest=fake_manifest,
-                  xpi_name=xpiname,
-                  harness_options=options)
+                  xpi_path=xpiname,
+                  harness_options=options,
+                  extra_harness_options=extra_harness_options)
 
 if __name__ == '__main__':
     unittest.main()

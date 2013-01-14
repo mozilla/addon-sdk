@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /*
 Locate anchors for annotations and prepare to display the annotations.
 
@@ -38,9 +42,9 @@ self.on('message', function onMessage(annotations) {
 
 
 function createAnchor(annotation) {
-  annotationAnchorAncestor = $('#' + annotation.ancestorId);
+  annotationAnchorAncestor = $('#' + annotation.ancestorId)[0] || document.body;
   annotationAnchor = $(annotationAnchorAncestor).parent().find(
-                     ':contains(' + annotation.anchorText + ')').last();
-  $(annotationAnchor).addClass('annotated');
-  $(annotationAnchor).attr('annotation', annotation.annotationText);
+                     ':contains("' + annotation.anchorText + '")').last();
+  annotationAnchor.addClass('annotated');
+  annotationAnchor.attr('annotation', annotation.annotationText);
 }

@@ -1,7 +1,10 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 
 import os
 import unittest
-from cuddlefish.docs.apiparser import parse_hunks, ParseError
 from cuddlefish.docs.apirenderer import md_to_html
 
 tests_path = os.path.abspath(os.path.dirname(__file__))
@@ -12,7 +15,7 @@ class ParserTests(unittest.TestCase):
         return os.path.join(static_files_path, "docs", filename)
 
     def render_markdown(self, pathname):
-        return md_to_html(pathname)
+        return md_to_html(pathname, "APIsample")
 
     def test_renderer(self):
         test = self.render_markdown(self.pathname("APIsample.md"))

@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 
 import unittest
 from cuddlefish.manifest import filter_filenames, filter_dirnames
@@ -10,9 +14,9 @@ class Filter(unittest.TestCase):
                              sorted(["foo", "bar.js", "image.png"]))
 
     def test_filter_dirnames(self):
-        names = ["subdir", "data", ".git", ".hg", ".svn"]
+        names = ["subdir", "data", ".git", ".hg", ".svn", "defaults"]
         self.failUnlessEqual(sorted(filter_dirnames(names)),
-                             sorted(["subdir", "data"]))
+                             sorted(["subdir", "data", "defaults"]))
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 * {
   background: transparent;
   border: 0;
@@ -5,6 +9,11 @@
   margin: 0;
   padding: 0;
   vertical-align: baseline;
+}
+
+p, ul, ol, dl, address, table, pre, form, fieldset {
+  font-size: 1em;
+  margin-bottom: 1.0em;
 }
 
 html {
@@ -38,7 +47,7 @@ table, td, tr {
   border: 1px black solid;
 }
 
-td {
+th, td {
   padding: 0.5em;
 }
 
@@ -127,11 +136,13 @@ h5, h6 {
 
 li {
   margin-left: 2em;
+  padding-bottom: 0.5em;
 }
 
 ol {
   list-style-type: decimal;
   margin-left: 2em;
+  margin-bottom: 0;
 }
 
 dt {
@@ -143,11 +154,6 @@ ul ul, ol ol, ol ul, ul ol {
   margin-bottom: 0;
 }
 
-p, ul, ol, dl, address, table, pre, form, fieldset {
-  font-size: 1em;
-  margin-bottom: 1.5em;
-}
-
 th, td {
   text-align: left;
 }
@@ -156,5 +162,5 @@ th, td {
   font-family: 'MetaBlack';
   font-style: normal;
   font-weight: bold;
-  src: url('https://www.mozilla.com/img/fonts/MetaWebPro-Black.woff') format('woff');
+  src: url('https://www.mozilla.org/img/fonts/MetaWebPro-Black.woff') format('woff');
 }
