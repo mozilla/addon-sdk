@@ -140,10 +140,6 @@ XMLHttpRequest.prototype = {
   set upload(newValue) {
     throw new Error("not implemented");
   },
-  forceAllowThirdPartyCookie: function forceAllowThirdPartyCookie() {
-    this._req.channel.QueryInterface(Ci.nsIHttpChannelInternal).
-                     forceAllowThirdPartyCookie = true;
-  },
   get onreadystatechange() {
     return this._orsc;
   },
