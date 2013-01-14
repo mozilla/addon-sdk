@@ -211,7 +211,7 @@ It can then load them in the same way it would load a local module.
 For example, to load from `main`:
 
     // main.js code
-    var geo = require("/.dependencies/geolocation");
+    var geo = require("./dependencies/geolocation");
 
 <div style="clear:both"></div>
 
