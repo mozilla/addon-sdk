@@ -9,6 +9,7 @@ const { LoaderWithHookedConsole, pb, pbUtils } = require("private-browsing-helpe
 const windows = require("windows").browserWindows;
 const { windows: windowsIterator } = require("sdk/window/utils");
 const tabs = require("sdk/tabs");
+const events = require("sdk/system/events");
 
 let pbService;
 // Currently, only Firefox implements the private browsing service.
@@ -44,6 +45,7 @@ function deactivate(callback) {
   }
 }
 
+// is global pb is enabled?
 if (pbService && !pbUtils.isWindowPBEnabled()) {
   exports["test activate private mode via handler"] = function(test) {
     test.waitUntilDone();
@@ -77,10 +79,12 @@ if (pbService && !pbUtils.isWindowPBEnabled()) {
     tabs.open("about:");
   };
 }
+// is pwpb enabled?
 else if (pbUtils.isWindowPBEnabled()) {
   exports.testStartPWPB = function(test) {
     test.waitUntilDone();
     let started = false;
+    let stopped = false;
     
     pb.once("start", function onStart() {
       test.assertEqual(this, pb, "`this` should be private-browsing module");
@@ -89,7 +93,12 @@ else if (pbUtils.isWindowPBEnabled()) {
       test.assert(pb.isActive,
                   '`isActive` is `true` when "start" event is emitted');
     });
-    pb.once("stop", function() test.done());
+    pb.once("stop", function() stopped = true);
+
+    events.once("last-pb-context-exited", function() {
+      test.assert(stopped, "stop event was already fired");
+      test.done();
+    });
 
     windows.open({
       private: true,
@@ -109,13 +118,19 @@ else if (pbUtils.isWindowPBEnabled()) {
   exports.testStopPWPB = function(test) {
     test.waitUntilDone();
 
+    let stopped = false;
     pb.on("stop", function onStop() {
+      stopped = true;
       test.assertEqual(this, pb, "`this` should be private-browsing module");
       test.assertEqual(pbUtils.getMode(), false,
                        "private mode is disabled when stop event is emitted");
       test.assertEqual(pb.isActive, false,
                        "`isActive` is `false` when stop event is emitted");
       pb.removeListener("stop", onStop);
+    });
+
+    events.once("last-pb-context-exited", function() {
+      test.assert(stopped, "stop event was already fired");
       test.done();
     });
 
