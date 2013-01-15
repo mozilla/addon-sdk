@@ -95,9 +95,12 @@ else if (pbUtils.isWindowPBEnabled()) {
     });
     pb.once("stop", function() stopped = true);
 
-    events.once("last-pb-context-exited", function() {
-      test.assert(stopped, "stop event was already fired");
-      test.done();
+    events.once("last-pb-context-exiting", function() {
+      test.assert(!stopped, "stop event has not already fired");
+      events.once("last-pb-context-exited", function() {
+        test.assert(stopped, "stop event was already fired");
+        test.done();
+      });
     });
 
     windows.open({
@@ -129,9 +132,12 @@ else if (pbUtils.isWindowPBEnabled()) {
       pb.removeListener("stop", onStop);
     });
 
-    events.once("last-pb-context-exited", function() {
-      test.assert(stopped, "stop event was already fired");
-      test.done();
+    events.once("last-pb-context-exiting", function() {
+      test.assert(!stopped, "stop event has not already fired");
+      events.once("last-pb-context-exited", function() {
+        test.assert(stopped, "stop event was already fired");
+        test.done();
+      });
     });
 
     windows.open({
