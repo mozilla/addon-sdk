@@ -191,6 +191,7 @@ if (pbService) {
       tabs.removeListener("ready", onReady);
       tabs.on("ready", cleanup);
     });
+
     tabs.once("open", function onOpen() {
       tabs.open("about:robots");
     });
@@ -204,3 +205,6 @@ else {
                      "pb.isActive returns false when private browsing isn't supported");
   };
 }
+// disable tests
+module.exports = {};
+
