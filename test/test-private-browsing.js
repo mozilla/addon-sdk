@@ -331,3 +331,6 @@ exports.testDefault = function(test) {
   test.assertEqual(pb.isActive, false,
                    "pb.isActive returns false when private browsing isn't supported");
 };
+
+// disable tests
+module.exports = {};
