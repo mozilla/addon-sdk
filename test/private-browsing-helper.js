@@ -4,6 +4,7 @@
 'use strict';
 
 let { Cc,Ci } = require('chrome');
+const unload = require("sdk/system/unload");
 const { Loader } = require('sdk/test/loader');
 let { loader } = LoaderWithHookedConsole();
 const pb = loader.require('sdk/private-browsing');
