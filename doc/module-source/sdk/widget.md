@@ -608,6 +608,12 @@ Represents a widget object.
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">
@@ -813,6 +819,12 @@ In this example `WidgetView` is used to display different content for
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">
