@@ -26,19 +26,9 @@ You can use the same code to target both desktop Firefox and Firefox
 Mobile, and just specify some extra options to `cfx run`, `cfx test`,
 and `cfx xpi` when targeting Firefox Mobile.
 
-Right now only the following modules are fully functional:
-
-* [page-mod](modules/sdk/page-mod.html)
-* [page-worker](modules/sdk/page-worker.html)
-* [passwords](modules/sdk/passwords.html)
-* [private-browsing](modules/sdk/private-browsing.html)
-* [request](modules/sdk/request.html)
-* [self](modules/sdk/self.html)
-* [simple-prefs](modules/sdk/simple-prefs.html)
-* [simple-storage](modules/sdk/simple-storage.html)
-* [timers](modules/sdk/timers.html)
-
-We're working on adding support for the other modules.
+Right now not all modules are fully functional, but we're working on adding
+support for more modules.
+The [tables at the end of this guide](dev-guide/tutorials/mobile.html#modules-compatibility) list the modules that are currently supported on Firefox Mobile.
 
 This tutorial explains how to run SDK add-ons on an Android
 device connected via USB to your development machine.
@@ -246,3 +236,115 @@ adb shell
 cd /mnt/sdcard
 rm my-addon.xpi
 </pre>
+
+<a name="modules-compatibility"></a>
+## Module Compatibility
+
+Modules not yet supported in Firefox Mobile are <span class="unsupported-on-mobile">highlighted</span> in the tables below.
+
+### High-Level APIs ###
+
+<ul class="module-list">
+  <li class="unsupported-on-mobile"><a href="modules/sdk/addon-page.html">addon-page</a></li>
+  <li><a href="modules/sdk/base64.html">base64</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/clipboard.html">clipboard</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/context-menu.html">context-menu</a></li>
+  <li><a href="modules/sdk/hotkeys.html">hotkeys</a></li>
+  <!-- test-l10n-locale, test-l10n-plural-rules -->
+  <li><a href="modules/sdk/l10n.html">l10n</a></li>
+  <li><a href="modules/sdk/notifications.html">notifications</a></li>
+  <!-- test-page-mod fails, but we know the module works -->
+  <li><a href="modules/sdk/page-mod.html">page-mod</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/panel.html">panel</a></li>
+  <!-- test-passwords, test-passwords-utils (with exceptions / warning from js console) -->
+  <li><a href="modules/sdk/passwords.html">passwords</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/private-browsing.html">private-browsing</a></li>
+  <li><a href="modules/sdk/querystring.html">querystring</a></li>
+  <li><a href="modules/sdk/request.html">request</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/selection.html">selection</a></li>
+  <li><a href="modules/sdk/self.html">self</a></li>
+  <li><a href="modules/sdk/simple-prefs.html">simple-prefs</a></li>
+  <li><a href="modules/sdk/simple-storage.html">simple-storage</a></li>
+  <!-- test-tabs, test-tabs-common -->
+  <li><a href="modules/sdk/tabs.html">tabs</a></li>
+  <!-- test-timer -->
+  <li><a href="modules/sdk/timers.html">timers</a></li>
+  <li><a href="modules/sdk/url.html">url</a></li>
+  <li><a href="modules/sdk/widget.html">widget</a></li>
+  <!-- test-windows-common, test-windows -->
+  <li><a href="modules/sdk/windows.html">windows</a></li>
+</ul>
+
+### Low-Level APIs ###
+
+<ul class="module-list">
+  <li><a href="modules/toolkit/loader.html">/loader</a></li>
+  <li><a href="dev-guide/tutorials/chrome.html">chrome</a></li>
+  <li><a href="modules/sdk/console/plain-text.html">console/plain-text</a></li>
+  <li><a href="modules/sdk/console/traceback.html">console/traceback</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/content.html">content/content</a></li>
+  <li><a href="modules/sdk/content/loader.html">content/loader</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/symbiont.html">content/symbiont</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/content/worker.html">content/worker</a></li>
+  <li>core/disposable</li>
+  <li><a href="modules/sdk/core/heritage.html">core/heritage</a></li>
+  <li><a href="modules/sdk/core/namespace.html">core/namespace</a></li>
+  <li><a href="modules/sdk/core/promise.html">core/promise</a></li>
+  <li><a href="modules/sdk/deprecated/api-utils.html">deprecated/api-utils</a></li>
+  <li><a href="modules/sdk/deprecated/app-strings.html">deprecated/app-strings</a></li>
+  <li><a href="modules/sdk/deprecated/cortex.html">deprecated/cortex</a></li>
+  <li><a href="modules/sdk/deprecated/errors.html">deprecated/errors</a></li>
+  <li><a href="modules/sdk/deprecated/events.html">deprecated/events</a></li>
+  <li><a href="modules/sdk/deprecated/light-traits.html">deprecated/light-traits</a></li>
+  <li>deprecated/list</li>
+  <li><a href="modules/sdk/deprecated/observer-service.html">deprecated/observer-service</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/deprecated/tab-browser.html">deprecated/tab-browser</a></li>
+  <!-- test-traits-core, test-traits -->
+  <li><a href="modules/sdk/deprecated/traits.html">deprecated/traits</a></li>
+  <li class="unsupported-on-mobile"><a href="modules/sdk/deprecated/window-utils.html">deprecated/window-utils</a></li>
+  <!-- test-dom -->
+  <li>dom/events</li>
+  <li><a href="modules/sdk/event/core.html">event/core</a></li>
+  <li><a href="modules/sdk/event/target.html">event/target</a></li>
+  <li><a href="modules/sdk/frame/hidden-frame.html">frame/hidden-frame</a></li>
+  <li><a href="modules/sdk/frame/utils.html">frame/utils</a></li>
+  <li><a href="modules/sdk/io/byte-streams.html">io/byte-streams</a></li>
+  <li><a href="modules/sdk/io/file.html">io/file</a></li>
+  <li><a href="modules/sdk/io/text-streams.html">io/text-streams</a></li>
+  <li>keyboard/observer</li>
+  <li>keyboard/utils</li>
+  <li>lang/functional</li>
+  <li>lang/type</li>
+  <li><a href="modules/sdk/loader/cuddlefish.html">loader/cuddlefish</a></li>
+  <li><a href="modules/sdk/loader/sandbox.html">loader/sandbox</a></li>
+  <li><a href="modules/sdk/net/url.html">net/url</a></li>
+  <li><a href="modules/sdk/net/xhr.html">net/xhr</a></li>
+  <li><a href="modules/sdk/page-mod/match-pattern.html">page-mod/match-pattern</a></li>
+  <li><a href="modules/sdk/platform/xpcom.html">platform/xpcom</a></li>
+  <!-- test-preferences-service, test-preferences-target -->
+  <li><a href="modules/sdk/preferences/service.html">preferences/service</a></li>
+  <li><a href="modules/sdk/system/environment.html">system/environment</a></li>
+  <!-- No test for `system/events`, assuming it works because other compatible modules are using it -->
+  <li><a href="modules/sdk/system/events.html">system/events</a></li>
+  <li>system/globals</li>
+  <!-- No test for `system/events`, assuming it works because other compatible modules are using it -->
+  <li><a href="modules/sdk/system/runtime.html">system/runtime</a></li>
+  <li><a href="modules/sdk/system/unload.html">system/unload</a></li>
+  <li><a href="modules/sdk/system/xul-app.html">system/xul-app</a></li>
+  <!-- No test for `assert`, assuming it works because the test are using it -->
+  <li><a href="modules/sdk/test/assert.html">test/assert</a></li>
+  <!-- No test for `harness`, assuming it works because the test are using it -->
+  <li><a href="modules/sdk/test/harness.html">test/harness</a></li>
+  <li><a href="modules/sdk/test/httpd.html">test/httpd</a></li>
+  <!-- No test for `runner`, assuming it works because the test are using it -->
+  <li><a href="modules/sdk/test/runner.html">test/runner</a></li>
+  <li>test/tmp-file</li>
+  <li>util/array</li>
+  <li><a href="modules/sdk/util/collection.html">util/collection</a></li>
+  <li><a href="modules/sdk/util/deprecate.html">util/deprecate</a></li>
+  <li><a href="modules/sdk/util/list.html">util/list</a></li>
+  <li>util/registry</li>
+  <li><a href="modules/sdk/util/uuid.html">util/uuid</a></li>
+  <!-- test-window-utils2 -->
+  <li><a href="modules/sdk/window/utils.html">window/utils</a></li>
+</ul>

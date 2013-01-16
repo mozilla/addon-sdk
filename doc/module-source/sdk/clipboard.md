@@ -36,7 +36,7 @@ If the clipboard contains HTML content, open it in a new tab.
 
     var clipboard = require("sdk/clipboard");
     if (clipboard.currentFlavors.indexOf("html") != -1)
-      require("sdk/tabs").open("data:text/html," + clipboard.get("html"));
+      require("sdk/tabs").open("data:text/html;charset=utf-8," + clipboard.get("html"));
 
 Set the clipboard contents to an image.
 

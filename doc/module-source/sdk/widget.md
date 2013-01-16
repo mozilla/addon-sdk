@@ -589,6 +589,12 @@ Represents a widget object.
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">
@@ -725,9 +731,9 @@ In this example `WidgetView` is used to display different content for
 `http` and `https` schemes:
 
     // A widget that update its content specifically to each window.
-    let tabs = require("sdk/tabs");
-    let windows = require("sdk/windows").browserWindows;
-    let widget = require("sdk/widget").Widget({
+    var tabs = require("sdk/tabs");
+    var windows = require("sdk/windows").browserWindows;
+    var widget = require("sdk/widget").Widget({
       id: "window-specific-test",
       label: "Widget with content specific to each window",
       content: " ",
@@ -735,7 +741,7 @@ In this example `WidgetView` is used to display different content for
     });
     // Observe tab switch or document changes in each existing tab:
     function updateWidgetState(tab) {
-      let view = widget.getView(tab.window);
+      var view = widget.getView(tab.window);
       if (!view) return;
       // Update widget displayed text:
       view.content = tab.url.match(/^https/) ? "Secured" : "Unsafe";
@@ -794,6 +800,12 @@ In this example `WidgetView` is used to display different content for
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">
