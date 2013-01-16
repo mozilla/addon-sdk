@@ -57,7 +57,7 @@ but will have no effect when called.
 
 <api name="start">
 @event
-Emitted immediately after a browser window enters private browsing mode.
+Emitted immediately after global private browsing begins.
 
     var pb = require("private-browsing");
     pb.on("start", function() {
@@ -72,7 +72,7 @@ Emitted immediately after a browser window enters private browsing mode.
 
 <api name="stop">
 @event
-Emitted immediately after all browser windows exit private browsing mode.
+Emitted immediately after global private browsing ends.
 
     var pb = require("private-browsing");
     pb.on("stop", function() {
