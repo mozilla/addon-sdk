@@ -18,8 +18,8 @@ Create a new directory, navigate to it, and execute `cfx init`.
 Then open the file called "main.js" in the "lib" directory and
 add the following code to it:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -51,9 +51,9 @@ display using `contentURL`: this may refer to a remote file as in the
 example above, or may refer to a local file. The example below will load
 an icon file called "my-icon.png" from the add-on's `data` directory:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var self = require("self");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
+    var self = require("sdk/self");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -112,9 +112,9 @@ property</li>
 <li>listen for the new events:</li>
 </ul>
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var self = require("self");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
+    var self = require("sdk/self");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -147,15 +147,15 @@ alt="Panel attached to a widget">
 If you supply a `panel` object to the widget's constructor, then the panel
 will be shown when the user clicks the widget:
 
-    data = require("self").data
+    data = require("sdk/self").data
 
-    var clockPanel = require("panel").Panel({
+    var clockPanel = require("sdk/panel").Panel({
       width:215,
       height:160,
       contentURL: data.url("clock.html")
     });
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "open-clock-btn",
       label: "Clock",
       contentURL: data.url("History.png"),

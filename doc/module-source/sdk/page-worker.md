@@ -15,7 +15,7 @@ You specify the page to load using the `contentURL` option to the
 [`Page()` constructor](modules/sdk/page-worker.html#Page(options)).
 This can point to a remote file:
 
-    pageWorker = require("page-worker").Page({
+    pageWorker = require("sdk/page-worker").Page({
       contentScript: "console.log(document.body.innerHTML);",
       contentURL: "http://en.wikipedia.org/wiki/Internet"
     });
@@ -25,9 +25,9 @@ To do this, save the file in your add-on's `data` directory and create the
 URL using the `data.url()` method of the
 [`self`](modules/sdk/self.html) module:
 
-    pageWorker = require("page-worker").Page({
+    pageWorker = require("sdk/page-worker").Page({
       contentScript: "console.log(document.body.innerHTML);",
-      contentURL: require("self").data.url("myFile.html")
+      contentURL: require("sdk/self").data.url("myFile.html")
     });
 
 You can load a new page by setting the page worker's `contentURL` property.
@@ -38,7 +38,7 @@ the first paragraph of a different page:
                             "console.log(paras[0].textContent);" +
                             "self.port.emit('loaded');"
 
-    pageWorker = require("page-worker").Page({
+    pageWorker = require("sdk/page-worker").Page({
       contentScript: getFirstParagraph,
       contentURL: "http://en.wikipedia.org/wiki/Chalk"
     });
@@ -77,7 +77,7 @@ API or (preferably, usually) the
 For example, this add-on loads a page from Wikipedia, and runs a content script
 in it to send all the headers back to the main add-on code:
 
-    var pageWorkers = require("page-worker");
+    var pageWorkers = require("sdk/page-worker");
 
     // This content script sends header titles from the page to the add-on:
     var script = "var elements = document.querySelectorAll('h2 > span'); " +

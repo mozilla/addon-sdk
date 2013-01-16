@@ -44,9 +44,9 @@ For example: the page below redefines `window.confirm()` to return
 But thanks to the wrapper, a content script which calls
 `window.confirm()` will get the native implementation:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var data = require("self").data;
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
+    var data = require("sdk/self").data;
 
     var widget = widgets.Widget({
       id: "transfer",
