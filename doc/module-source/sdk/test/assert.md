@@ -19,8 +19,8 @@ For example:
     exports["test value of a"] = function(assert) {
       assert.ok(a == 1, "test that a is 1");
     }
-
-    require("test").run(exports);
+    
+    require("sdk/test").run(exports);
 
 <api name="Assert">
 @class

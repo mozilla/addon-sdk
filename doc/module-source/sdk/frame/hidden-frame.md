@@ -23,7 +23,7 @@ content that was loaded in it.
 The following code creates a hidden frame, loads a web page into it, and then
 logs its title:
 
-    var hiddenFrames = require("hidden-frame");
+    var hiddenFrames = require("sdk/frame/hidden-frame");
     let hiddenFrame = hiddenFrames.add(hiddenFrames.HiddenFrame({
       onReady: function() {
         this.element.contentWindow.location = "http://www.mozilla.org/";

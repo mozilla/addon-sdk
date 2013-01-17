@@ -10,13 +10,13 @@ The `tabs` module provides easy access to tabs and tab-related events.
 The module itself can be used like a basic list of all opened
 tabs across all windows. In particular, you can enumerate it:
 
-    var tabs = require('tabs');
+    var tabs = require('sdk/tabs');
     for each (var tab in tabs)
       console.log(tab.title);
 
 You can also access individual tabs by index:
 
-    var tabs = require('tabs');
+    var tabs = require('sdk/tabs');
 
     tabs.on('ready', function () {
       console.log('first: ' + tabs[0].title);
@@ -25,13 +25,13 @@ You can also access individual tabs by index:
 
 You can open a new tab, specifying various properties including location:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.open("http://www.example.com");
 
 You can register event listeners to be notified when tabs open, close, finish
 loading DOM content, or are made active or inactive:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     // Listen for tab openings.
     tabs.on('open', function onOpen(tab) {
@@ -48,7 +48,7 @@ You can get and set various properties of tabs (but note that properties
 values until after the tab's `ready` event fires). By setting the `url`
 property you can load a new page in the tab:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.on('activate', function(tab) {
       tab.url = "http://www.example.com";
     });
@@ -57,7 +57,7 @@ You can attach a [content script](dev-guide/guides/content-scripts/index.html)
 to the page hosted in a tab, and use that to access and manipulate the page's
 content:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     tabs.on('activate', function(tab) {
       tab.attach({
@@ -77,7 +77,7 @@ activate a `Tab` object, call its `activate` method.
 **Example**
 
     // Get the active tab's title.
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     console.log("title of active tab is " + tabs.activeTab.title);
 </api>
 
@@ -93,7 +93,7 @@ depending on the `inNewWindow` option.
 
 **Example**
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     // Open a new tab on active window and make tab active.
     tabs.open("http://www.mysite.com");
@@ -258,7 +258,7 @@ Returns thumbnail data URI of the page currently loaded in this tab.
 
 **Example**
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
 
     tabs.on('ready', function(tab) {
       tab.attach({
@@ -346,7 +346,7 @@ Properties relating to the tab's content (for example: `title`, `favicon`,
 and `url`) will not be correct at this point. If you need to access these
 properties, listen for the `ready` event:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.on('open', function(tab){
       tab.on('ready', function(tab){
         console.log(tab.url);
