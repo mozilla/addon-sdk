@@ -881,7 +881,7 @@ checking whether `staticArgs` exists in `system`.
 
 For example, if your add-on looks like this:
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log(system.staticArgs.foo);
 
 And you run cfx like this:

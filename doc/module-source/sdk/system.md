@@ -14,7 +14,7 @@ variables (such as `PATH`), find out which operating system your add-on is
 running on and get information about the host application (for example,
 Firefox or Fennec), such as its version.
 
-    var system = require("system");
+    var system = require("sdk/system");
     // PATH environment variable
     console.log(system.env.PATH);
     // operating system
@@ -41,7 +41,7 @@ Firefox or Fennec), such as its version.
 Static arguments are accessible by name as properties of the
 [`staticArgs`](modules/sdk/system.html#staticArgs) property.
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log(system.staticArgs.foo);
 
 ## Quit the host application ##
@@ -49,7 +49,7 @@ Static arguments are accessible by name as properties of the
 To quit the host application, use the 
 [`exit()`](modules/sdk/system.html#exit(code)) function.
 
-    var system = require("system");
+    var system = require("sdk/system");
     system.exit();
 
 <api name="staticArgs">
@@ -60,7 +60,7 @@ The JSON object that was passed via the
 
 For example, suppose your add-on includes code like this:
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log(system.staticArgs.foo);
 
 If you pass it a static argument named "foo" using `--static-args`, then
@@ -83,26 +83,26 @@ This object provides access to environment variables.
 You can get the
 value of an environment variable by accessing the property with that name:
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log(system.env.PATH);
 
 You can test whether a variable exists by checking whether a property with
 that name exists:
 
-    var system = require("system");
+    var system = require("sdk/system");
     if ('PATH' in system.env) {
       console.log("PATH is set");
     }
 
 You can set a variable by setting the property:
 
-    var system = require("system");
+    var system = require("sdk/system");
     system.env.FOO = "bar";
     console.log(system.env.FOO);
 
 You can unset a variable by deleting the property:
 
-    var system = require("system");
+    var system = require("sdk/system");
     delete system.env.FOO;
 
 You **can't** enumerate environment variables.
@@ -116,7 +116,7 @@ Quits the host application with the specified `code`.
 If `code` is omitted, `exit()` uses the
 success code `0`. To exit with failure use `1`.
 
-    var system = require("system");
+    var system = require("sdk/system");
     system.exit();
 
 @param code {integer}
@@ -138,12 +138,12 @@ For the full list of "special" directories and their IDs, see
 For example:
 
     // get Firefox profile path
-    let profilePath = require('system').pathFor('ProfD');
+    var profilePath = require('sdk/system').pathFor('ProfD');
     // get OS temp files directory (/tmp)
-    let temps = require('system').pathFor('TmpD');
+    var temps = require('sdk/system').pathFor('TmpD');
     // get OS desktop path for an active user (~/Desktop on linux
     // or C:\Documents and Settings\username\Desktop on windows).
-    let desktopPath = require('system').pathFor('Desk');
+    var desktopPath = require('sdk/system').pathFor('Desk');
 
 @param id {String}
   The ID of the special directory.
@@ -159,7 +159,7 @@ This will be one of the values listed as
 [OS_TARGET](https://developer.mozilla.org/en-US/docs/OS_TARGET),
 converted to lower case.
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("platform = " + system.platform);
 </api>
 
@@ -168,7 +168,7 @@ converted to lower case.
 The type of processor architecture you're running on.
 This will be one of: `"arm"``, `"ia32"`, or `"x64"`.
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("architecture = " + system.architecture);
 </api>
 
@@ -177,7 +177,7 @@ This will be one of: `"arm"``, `"ia32"`, or `"x64"`.
 The type of compiler used to build the host application.
 For example: `"msvc"`, `"n32"`, `"gcc2"`, `"gcc3"`, `"sunc"`, `"ibmc"`
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("compiler = " + system.compiler);
 </api>
 
@@ -187,7 +187,7 @@ An identifier for the specific build, derived from the build date.
 This is useful if you're trying to target individual nightly builds.
 See [nsIXULAppInfo's `appBuildID`](https://developer.mozilla.org/en-US/docs/Using_nsIXULAppInfo#Version).
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("build = " + system.build);
 </api>
 
@@ -202,7 +202,7 @@ be in the form `"appname@vendor.tld"`.
 
 See [nsIXULAppInfo's `ID`](https://developer.mozilla.org/en-US/docs/Using_nsIXULAppInfo#ID).
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("id = " + system.id);
 </api>
 
@@ -210,7 +210,7 @@ See [nsIXULAppInfo's `ID`](https://developer.mozilla.org/en-US/docs/Using_nsIXUL
 @property {String}
 The human-readable name for the host application. For example, "Firefox".
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("name = " + system.name);
 
 </api>
@@ -221,7 +221,7 @@ The version of the host application.
 
 See [nsIXULAppInfo's `version`](https://developer.mozilla.org/en-US/docs/Using_nsIXULAppInfo#Version).
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("version = " + system.version);
 </api>
 
@@ -231,7 +231,7 @@ The version of XULRunner that underlies the host application.
 
 See [nsIXULAppInfo's `platformVersion`](https://developer.mozilla.org/en-US/docs/Using_nsIXULAppInfo#Platform_version).
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("XULRunner version = " + system.platformVersion);
 </api>
 
@@ -239,6 +239,6 @@ See [nsIXULAppInfo's `platformVersion`](https://developer.mozilla.org/en-US/docs
 @property {String}
 The name of the host application's vendor, for example: `"Mozilla"`.
 
-    var system = require("system");
+    var system = require("sdk/system");
     console.log("vendor = " + system.vendor);
 </api>
