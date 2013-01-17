@@ -59,7 +59,7 @@ but will have no effect when called.
 @event
 Emitted immediately after global private browsing begins.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("start", function() {
       // Do something when the browser starts private browsing mode.
     });
@@ -74,7 +74,7 @@ Emitted immediately after global private browsing begins.
 @event
 Emitted immediately after global private browsing ends.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("stop", function() {
       // Do something when the browser stops private browsing mode.
     });

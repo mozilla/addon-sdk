@@ -18,8 +18,8 @@ to interact with web content, these scripts are called *content scripts*.
 
 Here's a simple example:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -69,9 +69,9 @@ in a file called `my-script.js`:
 
 We can load this script by changing the add-on code like this:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var self = require("self");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
+    var self = require("sdk/self");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -114,9 +114,9 @@ the content script. The content script now needs to look like this:
 In the add-on script, we'll send the content script a "drawBorder" message
 using the object returned from `attach()`:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
-    var self = require("self");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
+    var self = require("sdk/self");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
