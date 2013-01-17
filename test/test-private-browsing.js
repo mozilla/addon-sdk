@@ -7,10 +7,10 @@ const { pb, pbUtils } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 
 // is global pb is enabled?
-if (pbUtils.isGlobalPBEnabled()) {
+if (pbUtils.isGlobalPBSupported) {
   merge(module.exports, require('./private-browsing/global'));
 }
-else if (pbUtils.isWindowPBEnabled()) {
+else if (pbUtils.isWindowPBSupported) {
   merge(module.exports, require('./private-browsing/windows'));
 }
 

@@ -31,29 +31,11 @@ function LoaderWithHookedConsole() {
   }
 }
 
-function activate() {
-  if (pbUtils.isGlobalPBEnabled()) {
-    pb.activate();
-  }
-  else if (pbUtils.isWindowPBEnabled()) {
-    windows.open({private: true})
-  }
-}
-exports.activate = activate;
-
 function deactivate(callback) {
-  if (callback)
-    pb.once('stop', callback);
-
-  if (pbUtils.isGlobalPBEnabled()) {
+  if (pbUtils.isGlobalPBSupported) {
+    if (callback)
+      pb.once('stop', callback);
     pb.deactivate();
-  }
-  else if (pbUtils.isWindowPBEnabled()) {
-    for each (let win in windowsIterator()) {
-      if (pbUtils.isWindowPrivate(win)) {
-        return win.close();
-      }
-    }
   }
 }
 exports.deactivate = deactivate;

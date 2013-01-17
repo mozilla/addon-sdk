@@ -31,7 +31,7 @@ but will have no effect when called.
 
   <div class="warning">
   This property is deprecated. It will continue to work until version 1.13 of the SDK.
-  From version 1.13 onwards it will still exist but will have no effect when called.
+  From version 1.13 onwards it will always return false.
   </div>
 </api>
 
@@ -66,7 +66,7 @@ Emitted immediately after global private browsing begins.
 
   <div class="warning">
   This event is deprecated. It will continue to work until version 1.13 of the SDK.
-  From version 1.13 onwards it will still exist but will have no effect when called.
+  From version 1.13 onwards this event will not exist.
   </div>
 </api>
 
@@ -81,6 +81,6 @@ Emitted immediately after global private browsing ends.
 
   <div class="warning">
   This event is deprecated. It will continue to work until version 1.13 of the SDK.
-  From version 1.13 onwards it will still exist but will have no effect when called.
+  From version 1.13 onwards this event will not exist.
   </div>
 </api>

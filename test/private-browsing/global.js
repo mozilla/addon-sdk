@@ -14,7 +14,7 @@ exports["test activate private mode via handler"] = function(test) {
 
   function onReady(tab) {
     if (tab.url == "about:robots")
-      tab.close(function() activate());
+      tab.close(function() pb.activate());
   }
   function cleanup(tab) {
     if (tab.url == "about:") {
@@ -28,7 +28,7 @@ exports["test activate private mode via handler"] = function(test) {
   tabs.on("ready", onReady);
   pb.once("start", function onStart() {
     test.pass("private mode was activated");
-    deactivate();
+    pb.deactivate();
   });
   pb.once("stop", function onStop() {
     test.pass("private mode was deactivated");
@@ -53,9 +53,9 @@ exports.testGetIsActive = function (test) {
     test.assert(pb.isActive,
                   "private-browsing.isActive is correct after modifying PB service");
     // Switch back to normal mode.
-    deactivate();
+    pb.deactivate();
   });
-  activate();
+  pb.activate();
 
   pb.once("stop", function() {
     test.assert(!pb.isActive,
@@ -76,7 +76,7 @@ exports.testStart = function(test) {
     pb.removeListener("start", onStart);
     deactivate(function() test.done());
   });
-  activate();
+  pb.activate();
 };
 
 exports.testStop = function(test) {
@@ -89,9 +89,9 @@ exports.testStop = function(test) {
                      "`isActive` is `false` when stop event is emitted");
     test.done();
   });
-  activate();
+  pb.activate();
   pb.once("start", function() {
-    deactivate();
+    pb.deactivate();
   });
 };
 
@@ -111,7 +111,7 @@ exports.testBothListeners = function(test) {
     pb.on("start", finish);
     pb.removeListener("start", onStart);
     pb.removeListener("start", onStart2);
-    activate();
+    pb.activate();
     stop = true;
   }
 
@@ -124,7 +124,7 @@ exports.testBothListeners = function(test) {
                 "`isActive` is `true` when start event is emitted");
 
     pb.on("stop", onStop);
-    deactivate();
+    pb.deactivate();
     start = true;
   }
 
@@ -142,7 +142,7 @@ exports.testBothListeners = function(test) {
     pb.removeListener("start", finish);
     pb.removeListener("stop", onStop);
 
-    deactivate();
+    pb.deactivate();
     pb.once("stop", function () {
       test.assertEqual(pbUtils.getMode(), false);
       test.assertEqual(pb.isActive, false);
@@ -153,7 +153,7 @@ exports.testBothListeners = function(test) {
 
   pb.on("start", onStart);
   pb.on("start", onStart2);
-  activate();
+  pb.activate();
 };
 
 exports.testAutomaticUnload = function(test) {
@@ -180,7 +180,7 @@ exports.testAutomaticUnload = function(test) {
     }, 0);
   });
 
-  activate();
+  pb.activate();
 };
 
 exports.testUnloadWhileActive = function(test) {
@@ -195,7 +195,7 @@ exports.testUnloadWhileActive = function(test) {
   ul.when(function() {
     unloadHappened = true;
     timer.setTimeout(function() {
-      deactivate();
+      pb.deactivate();
     });
   });
   pb2.once("start", function() {
@@ -211,5 +211,5 @@ exports.testUnloadWhileActive = function(test) {
     test.done();
   });
 
-  activate();
+  pb.activate();
 };
