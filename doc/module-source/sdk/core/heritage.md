@@ -62,7 +62,7 @@ SDK provides utility functions to make it more declarative and less verbose.
 Module exports `Class` utility function for making `constructor` functions
 with a proper `prototype` chain setup in declarative manner:
 
-    var { Class } = require('api-utils/heritage');
+    var { Class } = require('sdk/core/heritage');
     var Dog = Class({
       initialize: function initialize(name) {
         this.name = name;
@@ -239,7 +239,7 @@ to `Object.create`, only difference is that second argument is an object
 containing properties to be defined, instead of property descriptor map. Also,
 keep in mind that returned object will be frozen.
 
-    var { extend } = require('api-utils/heritage');
+    var { extend } = require('sdk/core/heritage');
     var base = { a: 1 };
     var derived = extend(base, { b: 2 });
 
@@ -259,7 +259,7 @@ the object on the left are overridden by a same named property of the object
 on the right.
 
 
-    var { mix } = require('api-utils/heritage');
+    var { mix } = require('sdk/core/heritage');
     var object = mix({ a: 1, b: 1 }, { b: 2 }, { c: 3 });
     JSON.stringify(object)            // => { "a": 1, "b": 2, "c": 3 }
 

@@ -16,7 +16,7 @@ You can get notifications about new pages loading using the
 listens to the tab's built-in `ready` event and just logs the URL of each
 tab as the user loads it:
 
-    require("tabs").on("ready", logURL);
+    require("sdk/tabs").on("ready", logURL);
 
     function logURL(tab) {
       console.log(tab.url);
@@ -28,7 +28,7 @@ To access tab content you need to attach a script to the tab
 using `tab.attach()`. This add-on attaches a script to all open
 tabs. The script adds a red border to the tab's document:
 
-    require("tabs").on("ready", logURL);
+    require("sdk/tabs").on("ready", logURL);
 
     function logURL(tab) {
       runScript(tab);

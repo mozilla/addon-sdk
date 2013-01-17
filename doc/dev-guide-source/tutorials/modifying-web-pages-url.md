@@ -25,7 +25,7 @@ Here's a simple example. The content script is supplied as the `contentScript`
 option, and the URL pattern is given as the `include` option:
 
     // Import the page-mod API
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
 
     // Create a page mod
     // It will run a script whenever a ".org" URL is loaded
@@ -75,9 +75,9 @@ in a file called `my-script.js`:
 We can load this script by changing the page-mod code like this:
 
     // Import the page-mod API
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     // Import the self API
-    var self = require("self");
+    var self = require("sdk/self");
 
     // Create a page mod
     // It will run a script whenever a ".org" URL is loaded
@@ -100,9 +100,9 @@ load the script and jQuery together (making sure to load jQuery
 first):
 
     // Import the page-mod API
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     // Import the self API
-    var self = require("self");
+    var self = require("sdk/self");
 
     // Create a page mod
     // It will run a script whenever a ".org" URL is loaded
@@ -118,9 +118,9 @@ in the same page-mod: if you do this, scripts loaded using
 `contentScript` are loaded first:
 
     // Import the page-mod API
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     // Import the self API
-    var self = require("self");
+    var self = require("sdk/self");
 
     // Create a page mod
     // It will run a script whenever a ".org" URL is loaded
@@ -162,9 +162,9 @@ the document. The content script now needs to look like this:
 In the add-on script, we'll send the content script a message inside `onAttach`:
 
     // Import the page-mod API
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     // Import the self API
-    var self = require("self");
+    var self = require("sdk/self");
 
     // Create a page mod
     // It will run a script whenever a ".org" URL is loaded
@@ -192,7 +192,7 @@ but details of the API might need to change.**
 Rather than injecting JavaScript into a page, you can inject CSS by
 setting the page-mod's `contentStyle` option:
 
-    var pageMod = require("page-mod").PageMod({
+    var pageMod = require("sdk/page-mod").PageMod({
       include: "*",
       contentStyle: "body {" +
                     "  border: 5px solid green;" +
@@ -204,9 +204,9 @@ that's given the URL of a CSS file in your "data" directory, and it is
 good practice to use this option in preference to `contentStyle` if the
 CSS is at all complex:
 
-    var pageMod = require("page-mod").PageMod({
+    var pageMod = require("sdk/page-mod").PageMod({
       include: "*",
-      contentStyleFile: require("self").data.url("my-style.css")
+      contentStyleFile: require("sdk/self").data.url("my-style.css")
     });
 
 You can't currently use relative URLs in style sheets loaded with
