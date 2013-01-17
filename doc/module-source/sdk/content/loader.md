@@ -43,8 +43,8 @@ it loads content supplied as the `contentURL` option.
 The following code creates a wrapper on a hidden frame that reloads a web page
 in the frame every time the `contentURL` property is changed:
 
-    var hiddenFrames = require("hidden-frame");
-    var { Loader } = require("content");
+    var hiddenFrames = require("sdk/frame/hidden-frame");
+    var { Loader } = require("sdk/content/content");
     var PageLoader = Loader.compose({
       constructor: function PageLoader(options) {
         options = options || {};

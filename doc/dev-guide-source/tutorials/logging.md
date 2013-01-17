@@ -45,7 +45,7 @@ as in your main add-on code. The following add-on logs the HTML content
 of every tab the user loads, by calling `console.log()` inside a content
 script:
 
-    require("tabs").on("ready", function(tab) {
+    require("sdk/tabs").on("ready", function(tab) {
       tab.attach({
         contentScript: "console.log(document.body.innerHTML);"
       });

@@ -41,7 +41,7 @@ function. Again, `panel` and `page` integrate `worker` directly:
 However, for `page-mod` objects you need to listen to the `onAttach` event
 and use the worker supplied to that:
 
-    var pageMod = require('page-mod').PageMod({
+    var pageMod = require('sdk/page-mod').PageMod({
       include: ['*'],
       contentScript: pageModScript,
       onAttach: function(worker) {
@@ -53,7 +53,7 @@ To receive messages from a content script, use the worker's `on` function.
 To simplify this most content modules provide an `onMessage` property as an
 argument to the constructor:
 
-    panel = require("panel").Panel({
+    panel = require("sdk/panel").Panel({
       onMessage: function(contentScriptMessage) {
         // Handle message from the content script
       }
@@ -65,7 +65,7 @@ Content scripts are loaded according to the value of the
 [`contentScriptWhen`](dev-guide/guides/content-scripts/loading.html)
 option: until that point is reached, any attempt to send a message to
 the script using `postMessage()` will trigger an exception, probably
-the unintuitive message:
+this:
 
 <span class="aside">
 This is a generic message which is emitted whenever we try to
@@ -80,9 +80,9 @@ Error: Couldn't find the worker to receive this message. The script may not be i
 So code like this, where we create a panel and then
 synchronously send it a message using `postMessage()`, will not work:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentURL: "http://www.bbc.co.uk/mobile/index.html",
       contentScriptFile: data.url("panel.js")
     });
@@ -93,9 +93,9 @@ synchronously send it a message using `postMessage()`, will not work:
 queues messages until the content script is ready to receive them,
 so the equivalent code using `port.emit()` will work:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentURL: "http://www.bbc.co.uk/mobile/index.html",
       contentScriptFile: data.url("panel.js")
     });
@@ -111,7 +111,7 @@ You can use message events as an alternative to user-defined events:
                         "  self.postMessage(event.target.toString());" +
                         "}, false);";
 
-    var pageMod = require('page-mod').PageMod({
+    var pageMod = require('sdk/page-mod').PageMod({
       include: ['*'],
       contentScript: pageModScript,
       onAttach: function(worker) {
@@ -143,7 +143,7 @@ implement a switch function in the receiver to dispatch the message:
                         " }, false);"
 
 
-    var pageMod = require('page-mod').PageMod({
+    var pageMod = require('sdk/page-mod').PageMod({
       include: ['*'],
       contentScript: pageModScript,
       onAttach: function(worker) {
@@ -170,7 +170,7 @@ readable:
                         "  self.port.emit('mouseout', event.target.toString());" +
                         "}, false);";
 
-    var pageMod = require('page-mod').PageMod({
+    var pageMod = require('sdk/page-mod').PageMod({
       include: ['*'],
       contentScript: pageModScript,
       onAttach: function(worker) {

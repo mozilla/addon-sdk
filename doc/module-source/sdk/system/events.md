@@ -10,7 +10,7 @@ You can find a list of events dispatched by firefox codebase
 
 ## Example
 
-    var events = require("api-utils/system/events");
+    var events = require("sdk/system/events");
     var { Ci } = require("chrome");
 
     events.on("http-on-modify-request", function (event) {
