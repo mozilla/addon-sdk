@@ -40,6 +40,7 @@ def parse(lines, path=None):
         # by the regular expression. We have to strip spaces at the end.
         key = m.group(1).rstrip()
         val = m.group(3).rstrip()
+        val = val.encode('raw-unicode-escape').decode('raw-unicode-escape')
 
         # `key` can be empty when key is only made of spaces
         if not key:
