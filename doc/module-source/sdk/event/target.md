@@ -23,8 +23,8 @@ are emitted.
 
 It's easy to create event target objects, no special arguments are required.
 
-    const { EventTarget } = require('api-utils/event/target');
-    let target = EventTarget.new();
+    const { EventTarget } = require("sdk/event/target");
+    let target = EventTarget();
 
 For a convenience though optional `options` arguments may be used, in which
 case all the function properties with keys like: `onMessage`, `onMyEvent`...
@@ -65,11 +65,10 @@ events. In majority of cases party emitting events is different from party
 registering listeners. In order to emit events one needs to use `event/core`
 module instead:
 
-    let { emit } = require('api-utils/event/core');
+    let { emit } = require('sdk/event/core');
 
-    target.on('hi', function(person) { console.log(person + 'tells hi'); });
-    emit(target, 'hi', 'Mark');
-    // info: 'Mark tells hi'
+    target.on('hi', function(person) { console.log(person + ' says hi'); });
+    emit(target, 'hi', 'Mark'); // info: 'Mark says hi'
 
 For more details see **event/core** documentation.
 
@@ -78,20 +77,18 @@ For more details see **event/core** documentation.
 Listeners registered during the event propagation (by one of the listeners)
 won't be triggered until next emit of the matching type:
 
-    let { emit } = require('api-utils/event/core');
+    let { emit } = require('sdk/event/core');
 
     target.on('message', function onMessage(message) {
-      console.log('listener trigerred');
+      console.log('listener triggered');
       target.on('message', function() {
         console.log('nested listener triggered');
       });
     });
 
-    emit(target, 'message');
-    // info: 'listener trigerred'
-    emit(target, 'message');
-    // info: 'listener trigerred'
-    // info: 'nested listener trigerred'
+    emit(target, 'message'); // info: 'listener triggered'
+    emit(target, 'message'); // info: 'listener triggered'
+                             // info: 'nested listener triggered'
 
 Exceptions in the listeners can be handled via `'error'` event listeners:
 

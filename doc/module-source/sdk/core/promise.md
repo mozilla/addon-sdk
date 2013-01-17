@@ -200,7 +200,7 @@ code. As a matter of fact it would be great if we could convert any synchronous
 functions to asynchronous by making it aware of promises. Module exports
 `promised` function to do exactly that:
 
-    const { promised } = require('api-utils/promise');
+    const { promised } = require('sdk/core/promise');
     function sum(x, y) { return x + y }
     var sumAsync = promised(sum);
 
@@ -234,7 +234,7 @@ Module exports `defer` function, which is where all promises ultimately
 come from. Lets see implementation of `readAsync` that we used in lot's
 of examples above:
 
-    const { defer } = require('api-utils/promise');
+    const { defer } = require('sdk/core/promise');
     function readAsync(url) {
       var deferred = defer();
 
@@ -341,7 +341,7 @@ achieve same effect.
 
 Module provides a simple function for wrapping values into promises:
 
-    const { resolve } = require('api-utils/promise');
+    const { resolve } = require('sdk/core/promise');
 
     var a = resolve(5).then(function(value) {
       return value + 2
@@ -351,7 +351,7 @@ Module provides a simple function for wrapping values into promises:
 Also `resolve` not only takes values, but also promises. If you pass it
 a promise it will return new identical one:
 
-    const { resolve } = require('api-utils/promise');
+    const { resolve } = require('sdk/core/promise');
 
     resolve(resolve(resolve(3))).then(console.log); // => 3
 
@@ -382,7 +382,7 @@ way to create eventual errors. Module exports `reject` exactly for that.
 It takes anything as an argument and returns a promise that is rejected with
 it.
 
-    const { reject } = require('api-utils/promise');
+    const { reject } = require('sdk/core/promise');
 
     var boom = reject(Error('boom!'));
 

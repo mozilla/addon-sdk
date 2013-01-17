@@ -14,7 +14,7 @@ and learned the
 To open a new web page, you can use the
 [`tabs`](modules/sdk/tabs.html) module:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.open("http://www.example.com");
 
 This function is asynchronous, so you don't immediately get back a
@@ -22,7 +22,7 @@ This function is asynchronous, so you don't immediately get back a
 To do this, pass a callback function into `open()`. The callback is assigned
 to the `onReady` property, and will be passed the tab as an argument:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.open({
       url: "http://www.example.com",
       onReady: function onReady(tab) {
@@ -36,7 +36,7 @@ To access tab content you need to attach a script to the tab
 using `tab.attach()`. This add-on loads a page, then attaches a script to
 the page which adds a red border to it:
 
-    var tabs = require("tabs");
+    var tabs = require("sdk/tabs");
     tabs.open({
       url: "http://www.example.com",
       onReady: runScript

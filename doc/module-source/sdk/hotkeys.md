@@ -11,7 +11,7 @@ combination. For example, this add-on defines two hotkey combinations,
 to show and hide a panel:
 
     // Define keyboard shortcuts for showing and hiding a custom panel.
-    var { Hotkey } = require("hotkeys");
+    var { Hotkey } = require("sdk/hotkeys");
 
     var showHotKey = Hotkey({
       combo: "accel-shift-o",
