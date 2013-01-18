@@ -65,11 +65,12 @@ class ModuleInfo(DocumentationItemInfo):
     def get_metadata(self):
         if self.level() == "third-party":
             return simplejson.loads("{}")
-        path_to_js = os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
         try:
-            js = unicode(open(path_to_js,"r").read(), 'utf8')
+            js = unicode(open(self.js_module_path(),"r").read(), 'utf8')
         except IOError:
-            return simplejson.loads("{}")
+            raise Exception, "JS module: '" + path_to_js + \
+                             "', corresponding to documentation file: '"\
+                             + self.source_path_and_filename() + "' wasn't found"
         js = self.remove_comments(js)
         js_lines = js.splitlines(True)
         metadata = ''
@@ -95,6 +96,11 @@ class ModuleInfo(DocumentationItemInfo):
         root_pieces[-1] = "modules"
         relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return os.sep.join(root_pieces + relative_pieces)
+
+    def js_module_path(self):
+        return os.path.join(self.env_root, "lib", \
+                            self.source_path_relative_from_module_root(), \
+                            self.source_filename[:-len(".md")] + ".js")
 
     def relative_url(self):
         if self.level() == "third-party":
