@@ -10,7 +10,6 @@ const tabs = require("sdk/tabs");
 
 exports["test activate private mode via handler"] = function(test) {
   test.waitUntilDone();
-  test.waitUntilDone();
 
   function onReady(tab) {
     if (tab.url == "about:robots")
