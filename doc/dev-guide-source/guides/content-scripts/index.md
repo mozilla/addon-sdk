@@ -61,13 +61,13 @@ uses the [page-mod](modules/sdk/page-mod.html) module to replace the
 content of any web page in the `.co.uk` domain by executing a content script
 in the context of that page:
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
 
-    pageMod.add(new pageMod.PageMod({
+    pageMod.PageMod({
       include: ["*.co.uk"],
       contentScript: 'document.body.innerHTML = ' +
                      '"<h1>this page has been eaten</h1>";'
-    }));
+    });
 
 In this example the content script is supplied directly to the page mod via
 the `contentScript` option in its constructor, and does not need to be

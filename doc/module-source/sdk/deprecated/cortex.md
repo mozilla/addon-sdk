@@ -2,6 +2,11 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+<div class="warning">
+<p>The <code>cortex</code> module is deprecated.</p>
+<p>To provide property encapsulation for modules you implement, use the
+<a href="modules/sdk/core/namespace.html"><code>namespace</code></a> module.</p>
+</div>
 
 ## Property Encapsulation ##
 

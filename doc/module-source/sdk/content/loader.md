@@ -4,25 +4,47 @@
 
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-Loader is base trait and it provides set of core properties and associated
-validations. Trait is useful for all the compositions providing high level
-APIs for creating JavaScript contexts that can access web content.
+The `loader` module provides one of the building blocks for those modules
+in the SDK that use
+[content scripts to interact with web content](dev-guide/guides/content-scripts/index.html),
+such as the [`panel`](modules/sdk/panel.html) and [`page-mod`](modules/sdk/page-mod.html)
+modules.
 
-Loader is composed from the
-[EventEmitter](modules/sdk/deprecated/events.html) trait, therefore
-instances of Loader and their descendants expose all the public properties
-exposed by EventEmitter along with additional public properties:
+The module exports a constructor for the `Loader` object, which is composed
+from the [EventEmitter](modules/sdk/deprecated/events.html) trait, so it
+inherits `on()`, `once()`, and `removeListener()` functions that
+enable its users to listen to events.
 
-Value changes on all of the above mentioned properties emit `propertyChange`
-events on an instances.
+`Loader` adds code to initialize and validate a set of properties for
+managing content scripts:
+
+* `contentURL`
+* `contentScript`
+* `contentScriptFile`
+* `contentScriptWhen`
+* `contentScriptOptions`
+* `allow`
+
+When certain of these properties are set, the `Loader` emits a
+`propertyChange` event, enabling its users to take the appropriate action.
+
+The `Loader` is used by modules that use content scripts but don't
+themselves load content, such as [`page-mod`](modules/sdk/page-mod.html).
+
+Modules that load their own content, such as
+[`panel`](modules/sdk/panel.html), [`page-worker`](modules/sdk/page-worker.html), and
+[`widget`](modules/sdk/widget.html), use the
+[`symbiont`](modules/sdk/content/symbiont.html) module instead.
+`Symbiont` inherits from `Loader` but contains its own frame into which
+it loads content supplied as the `contentURL` option.
 
 **Example:**
 
-The following code creates a wrapper on hidden frame that reloads a web page
-in frame every time `contentURL` property is changed:
+The following code creates a wrapper on a hidden frame that reloads a web page
+in the frame every time the `contentURL` property is changed:
 
-    var hiddenFrames = require("hidden-frame");
-    var { Loader } = require("content");
+    var hiddenFrames = require("sdk/frame/hidden-frame");
+    var { Loader } = require("sdk/content/content");
     var PageLoader = Loader.compose({
       constructor: function PageLoader(options) {
         options = options || {};

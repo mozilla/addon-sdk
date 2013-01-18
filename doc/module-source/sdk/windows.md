@@ -20,7 +20,7 @@ their tabs or switching the current active window.
 
 `browserWindows` provides access to all the currently open browser windows:
 
-    var windows = require("windows");
+    var windows = require("sdk/windows");
     for each (var window in windows.browserWindows) {
       console.log(window.title);
     }
@@ -31,7 +31,7 @@ Object emits all the events listed under "Events" section.
 
 ####Examples####
 
-    var windows = require("windows").browserWindows;
+    var windows = require("sdk/windows").browserWindows;
 
     // add a listener to the 'open' event
     windows.on('open', function(window) {
@@ -62,7 +62,7 @@ The currently active window. This property is read-only.
 **Example**
 
     // get
-    var windows = require("windows");
+    var windows = require("sdk/windows");
     console.log("title of active window is " +
                 windows.browserWindows.activeWindow.title);
 
@@ -77,7 +77,7 @@ The currently active window. This property is read-only.
 @function
 Open a new window.
 
-    var windows = require("windows").browserWindows;
+    var windows = require("sdk/windows").browserWindows;
 
     // Open a new window.
     windows.open("http://www.example.com");
@@ -93,8 +93,8 @@ Open a new window.
 
 Returns the window that was opened:
 
-    var widgets = require("widget");
-    var windows = require("windows").browserWindows;
+    var widgets = require("sdk/widget");
+    var windows = require("sdk/windows").browserWindows;
 
     var example = windows.open("http://www.example.com");
 
@@ -143,7 +143,7 @@ This is an optional property.
 A `BrowserWindow` instance represents a single open window. They can be
 retrieved from the `browserWindows` property exported by this module.
 
-    var windows = require("windows").browserWindows;
+    var windows = require("sdk/windows").browserWindows;
 
     //Print how many tabs the current window has
     console.log("The active window has " +
@@ -156,8 +156,6 @@ retrieved from the `browserWindows` property exported by this module.
     }
 
     // close the active window
-    windows.activeWindow.close();
-
     windows.activeWindow.close(function() {
       console.log("The active window was closed");
     });

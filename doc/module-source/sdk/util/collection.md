@@ -14,7 +14,7 @@ like a set.
 A collection object provides for...in-loop iteration.  Items are yielded in the
 order they were added.  For example, the following code...
 
-    var collection = require("collection");
+    var collection = require("sdk/util/collection");
     var c = new collection.Collection();
     c.add(1);
     c.add(2);

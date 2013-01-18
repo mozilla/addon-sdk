@@ -198,9 +198,9 @@ hr {
   display: block;
   padding: 1em;
   border: solid 2px black;
-  width: 75%;
   background-color: #FBEDED;
   border: 1px solid #AC6262;
+  overflow: auto;
 }
 
 .logo {
@@ -321,8 +321,8 @@ hr {
   border-color: #a0d0fb;
 }
 
-#sidebar ul li:first-child {  
-   border-top: none;  
+#sidebar ul li:first-child {
+   border-top: none;
 }
 
 #sidebar li {
@@ -441,6 +441,7 @@ ul.tree ul li:last-child {
   background: #fff url("../media/icons/lastnode.png") no-repeat;
 }
 
+ul.module-list,
 ul#module-index {
   border-color: #a0d0fb;
   border: solid 1px #a0d0fb;
@@ -452,4 +453,10 @@ ul#module-index {
   -webkit-column-gap: 1em;
   column-count: 3;
   column-gap: 1em;
+}
+
+span.unsupported-on-mobile,
+ul.module-list li.unsupported-on-mobile,
+ul.module-list li.unsupported-on-mobile > a {
+  color: maroon;
 }

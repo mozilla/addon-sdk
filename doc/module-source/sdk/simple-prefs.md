@@ -62,7 +62,7 @@ These are attributes that all settings *must* have.
     <td><code>name</code></td>
     <td><p>An identifier for the setting.
 	This is used to access the setting from your add-on:</p>
-	<pre><code>console.log(require("simple-prefs").prefs.mySettingName);</code></pre>
+	<pre><code>console.log(require("sdk/simple-prefs").prefs.mySettingName);</code></pre>
 	<p>This means that it must be a valid JavaScript identifier.</p></td>
   </tr>
 
@@ -303,7 +303,7 @@ used by the Add-on Manager. All the inline settings are supported.
     "title": "Say Hello"
 }</pre>
            <p>In "main.js":</p><pre><code>
-var sp = require("simple-prefs");
+var sp = require("sdk/simple-prefs");
 sp.on("sayHello", function() {
   console.log("hello");
 });</code></pre></td>
@@ -333,11 +333,11 @@ for more details.
     function onPrefChange(prefName) {
         console.log("The " + prefName + " preference changed.");
     }
-    require("simple-prefs").on("somePreference", onPrefChange);
-    require("simple-prefs").on("someOtherPreference", onPrefChange);
+    require("sdk/simple-prefs").on("somePreference", onPrefChange);
+    require("sdk/simple-prefs").on("someOtherPreference", onPrefChange);
 
     // `""` listens to all changes in the extension's branch
-    require("simple-prefs").on("", onPrefChange);
+    require("sdk/simple-prefs").on("", onPrefChange);
 
 @param prefName {String}
   The name of the preference to watch for changes.

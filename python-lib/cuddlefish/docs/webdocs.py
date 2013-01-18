@@ -49,7 +49,7 @@ class WebDocs(object):
     def create_module_page(self, module_info):
         path, ext = os.path.splitext(module_info.source_path_and_filename())
         md_path = path + '.md'
-        module_content = apirenderer.md_to_div(md_path)
+        module_content = apirenderer.md_to_div(md_path, module_info.name())
         stability = module_info.metadata.get("stability", "undefined")
         stability_note = tag_wrap(stability, "a", {"class":"stability-note stability-" + stability, \
                                                      "href":"dev-guide/guides/stability.html"})

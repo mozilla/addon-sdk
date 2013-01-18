@@ -80,8 +80,8 @@ data file. It is most useful for data that can be displayed directly in a
 content frame. The url can be passed to a content frame constructor, such
 as the Panel:
 
-    var self = require("self");
-    var myPanel = require("panel").Panel({
+    var self = require("sdk/self");
+    var myPanel = require("sdk/panel").Panel({
       contentURL: self.data.url("my-panel-content.html")
     });
     myPanel.show();
