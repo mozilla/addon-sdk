@@ -4,7 +4,9 @@
 
 import os
 import unittest
+import shutil
 
+from cuddlefish.tests import env_root
 from cuddlefish.docs import webdocs
 from cuddlefish.docs.documentationitem import get_module_list
 from cuddlefish.docs.documentationitem import get_devguide_list
@@ -14,10 +16,12 @@ class WebDocTests(unittest.TestCase):
     def test_create_guide1_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
+        self.copy_static_files(root)
         module_list = get_module_list(root)
         web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
             root + '/doc/dev-guide-source/index.md'))
+        self.rm_static_files(root)
         self._test_common_contents(guide)
         self.assertTrue(\
             '<title>An Imposing Title - Add-on SDK Documentation</title>'\
@@ -27,13 +31,16 @@ class WebDocTests(unittest.TestCase):
         self.assertTrue('<div id="version">Version '\
             in guide)
 
+
     def test_create_guide2_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
+        self.copy_static_files(root)
         module_list = get_module_list(root)
         web_docs = webdocs.WebDocs(root, module_list)
         guide = web_docs.create_guide_page(os.path.join(\
             root + '/doc/dev-guide-source/no_h1.md'))
+        self.rm_static_files(root)
         self._test_common_contents(guide)
         self.assertTrue('<title>Add-on SDK Documentation</title>'\
             in guide)
@@ -43,6 +50,7 @@ class WebDocTests(unittest.TestCase):
     def test_create_module_doc(self):
         root = os.path.join(os.getcwd() + \
             '/python-lib/cuddlefish/tests/static-files')
+        self.copy_static_files(root)
         module_list = get_module_list(root)
         test_module_info = False
         for module_info in module_list:
@@ -54,6 +62,7 @@ class WebDocTests(unittest.TestCase):
         self.assertEqual(test_stability, "stable")
         web_docs = webdocs.WebDocs(root, module_list)
         module = web_docs.create_module_page(test_module_info)
+        self.rm_static_files(root)
         self._test_common_contents(module)
         self.assertTrue(\
             '<title>aardvark-feeder - Add-on SDK Documentation</title>'\
@@ -88,6 +97,19 @@ class WebDocTests(unittest.TestCase):
             '<a href="modules/sdk/anteater/anteater.html">anteater/anteater</a>' in doc)
         self.assertTrue(\
             '<a href="modules/sdk/aardvark-feeder.html">aardvark-feeder</a>' in doc)
+
+    def static_files_dir(self, root):
+        return os.path.join(root, "doc", "static-files")
+
+    def copy_static_files(self, test_root):
+        self.rm_static_files(test_root)
+        static_files_src = self.static_files_dir(env_root)
+        static_files_dst = self.static_files_dir(test_root)
+        shutil.copytree(static_files_src, static_files_dst)
+
+    def rm_static_files(self, test_root):
+        if os.path.exists(self.static_files_dir(test_root)):
+            shutil.rmtree(self.static_files_dir(test_root))
 
 if __name__ == "__main__":
     unittest.main()

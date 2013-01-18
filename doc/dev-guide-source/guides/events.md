@@ -56,7 +56,7 @@ For example, the following add-on registers two listeners with the
 listen for the `start` and `stop` events, and logs a string to the console
 reporting the change:
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
 
     pb.on("start", function() {
       console.log("Private browsing is on");
@@ -90,8 +90,8 @@ The following add-on creates a widget and assigns a listener to the
 `onClick` property of the `options` object supplied to the widget's
 constructor. The listener loads the Google home page:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     widgets.Widget({
       id: "google-link",
@@ -105,8 +105,8 @@ constructor. The listener loads the Google home page:
 This is exactly equivalent to constructing the widget and then calling the
 widget's `on()` method:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "google-link-alternative",
@@ -130,7 +130,7 @@ In the following add-on, we add two listeners to private-browsing's `start`
 event, enter and exit private browsing, then remove the first listener and
 enter private browsing again.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
 
     function listener1() {
       console.log("Listener 1");

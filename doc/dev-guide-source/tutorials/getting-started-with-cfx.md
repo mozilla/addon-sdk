@@ -67,8 +67,8 @@ The main code for an add-on is always kept in a file called `main.js` in your
 add-on's `lib` directory. Open the `main.js` for this add-on, and
 add the following code:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "mozilla-link",
@@ -111,8 +111,8 @@ the Mozilla home page in a new tab.
 Try editing this file. For example, we could change the icon displayed
 and the URL that gets loaded:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "jquery-link",

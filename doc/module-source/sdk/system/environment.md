@@ -5,25 +5,25 @@
 Module provides API to access, set and unset environment variables via exported
 `env` object.
 
-    var { env } = require('api-utils/environment');
+    var { env } = require('sdk/system/environment');
 
-You can get the value of an environment variable, by accessing property that
-has name of desired variable:
+You can get the value of an environment variable, by accessing the
+property with the name of the desired variable:
 
     var PATH = env.PATH;
 
-You can check existence of an environment variable by checking if property with
-such variable name exists:
+You can check for the existence of an environment variable by checking
+whether a property with that variable name exists:
 
     console.log('PATH' in env); // true
     console.log('FOO' in env);  // false
 
-You can set value of an environment variable by setting a property:
+You can set the value of an environment variable by setting the property:
 
     env.FOO = 'foo';
     env.PATH += ':/my/path/'
 
-You can unset environment variable by deleting a property:
+You can unset an environment variable by deleting the property:
 
     delete env.FOO;
 

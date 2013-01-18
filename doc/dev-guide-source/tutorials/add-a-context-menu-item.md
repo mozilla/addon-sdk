@@ -19,7 +19,7 @@ displayed whenever something in the page is selected. When it's
 clicked, the selection is sent to the main add-on code, which just
 logs it:
 
-     var contextMenu = require("context-menu");
+     var contextMenu = require("sdk/context-menu");
      var menuItem = contextMenu.Item({
       label: "Log Selection",
       context: contextMenu.SelectionContext(),

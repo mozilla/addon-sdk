@@ -47,7 +47,7 @@ From version 1.13 onwards they will still exist but will have no effect when cal
 @event
 Emitted immediately after the browser enters private browsing mode.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("start", function() {
       // Do something when the browser starts private browsing mode.
     });
@@ -58,7 +58,7 @@ Emitted immediately after the browser enters private browsing mode.
 @event
 Emitted immediately after the browser exits private browsing mode.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("stop", function() {
       // Do something when the browser stops private browsing mode.
     });

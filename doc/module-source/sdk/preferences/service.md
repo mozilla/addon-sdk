@@ -15,12 +15,12 @@ application-wide preferences service singleton.
 @function
 Sets the application preference `name` to `value`.
 @param name {string} Preference name.
-@param value {string,number,bool} Preference value.
+@param value {string,number,boolean} Preference value.
 
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    require("preferences-service").set(name, false);
+    require("sdk/preferences/service").set(name, false);
 </api>
 
 
@@ -28,26 +28,26 @@ Sets the application preference `name` to `value`.
 @function
 Gets the application preference `name`.
 @param name {string}
-@param defaultValue {string,number,bool} Preference value.
-@returns {string,number,bool} Preference value, returns a default value if no
+@param defaultValue {string,number,boolean} Preference value.
+@returns {string,number,boolean} Preference value, returns a default value if no
 preference is set.
 
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    var nightlyCompatChk = require("preferences-service").get(name);
+    var nightlyCompatChk = require("sdk/preferences/service").get(name);
 </api>
 
 
 <api name="has">
 @function
 @param name {string} Preference name.
-@returns {bool} Returns whether or not the application preference `name` exists.
+@returns {boolean} Returns whether or not the application preference `name` exists.
 
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    if (require("preferences-service").has(name)) {
+    if (require("sdk/preferences/service").has(name)) {
       // ...
     }
 </api>
@@ -63,7 +63,7 @@ preference is set.
 <api name="isSet">
 @function
 @param name {string} Preference name.
-@returns {bool}
+@returns {boolean}
 Returns whether or not the application preference `name` both exists
 and has been set to a non-default value by the user (or a program
 acting on the user's behalf).
@@ -71,7 +71,7 @@ acting on the user's behalf).
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    if (require("preferences-service").isSet(name)) {
+    if (require("sdk/preferences/service").isSet(name)) {
       // ...
     }
 </api>
@@ -87,7 +87,7 @@ does nothing. If no default value exists the preference will cease to exist.
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    require("preferences-service").reset(name);
+    require("sdk/preferences/service").reset(name);
 </api>
 
 <api name="getLocalized">
@@ -102,7 +102,7 @@ So that `prefs.get` returns the properties file URL whereas
 
 **Example:**
 
-    var prefs = require("preferences-service");
+    var prefs = require("sdk/preferences/service");
     var name = "general.useragent.locale";
     prefs.get(name); // is equal to "chrome://global/locale/intl.properties"
     prefs.getLocalized(name) // is equal to "en-US"
@@ -117,7 +117,7 @@ Sets the localized application preference `name` to `value`.
 
 **Example:**
 
-    require("preferences-service").set("general.useragent.locale",
+    require("sdk/preferences/service").set("general.useragent.locale",
                                        "chrome://global/locale/intl.properties");
 
 </api>
