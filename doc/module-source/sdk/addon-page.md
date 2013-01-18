@@ -21,10 +21,10 @@ To use the module import it using `require()`. After this,
 the page loaded from "data/index.html" will not contain
 navigational elements:
 
-    var addontab = require("addon-page");
-    var data = require("self").data;
+    var addontab = require("sdk/addon-page");
+    var data = require("sdk/self").data;
 
-    require("tabs").open(data.url("index.html"));
+    require("sdk/tabs").open(data.url("index.html"));
 
 <img src="static-files/media/screenshots/addon-page.png" alt="Example add-on page" class="image-center"/>
 This only affects the page at "data/index.html":

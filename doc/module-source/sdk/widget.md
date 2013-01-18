@@ -36,7 +36,7 @@ pixels.
 
 For example, this widget contains an image, so it looks like a simple icon:
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "mozilla-icon",
       label: "My Mozilla Widget",
       contentURL: "http://www.mozilla.org/favicon.ico"
@@ -50,9 +50,9 @@ packaged inside your add-on. Just save the file in your add-on's `data`
 directory, and reference it using the `data.url()` method of the
 [`self`](modules/sdk/self.html) module:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "my-widget",
       label: "My Widget",
       contentURL: data.url("my-content.html")
@@ -60,7 +60,7 @@ directory, and reference it using the `data.url()` method of the
 
 This widget contains an entire web page:
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "hello-display",
       label: "My Hello Widget",
       content: "Hello!",
@@ -157,8 +157,8 @@ Finally. in the add-on's "main.js" file, we create the widget, assign it
 the HTML file and the content script, and listen for events from the content
 script:
 
-    const widgets = require("widget");
-    const data = require("self").data;
+    const widgets = require("sdk/widget");
+    const data = require("sdk/self").data;
 
     var player = widgets.Widget({
       id: "player",
@@ -244,8 +244,8 @@ call its `init()` function on load:
 
 Finally, remove the line attaching the content script from "main.js":
 
-    const widgets = require("widget");
-    const data = require("self").data;
+    const widgets = require("sdk/widget");
+    const data = require("sdk/self").data;
 
     var player = widgets.Widget({
       id: "player",
@@ -282,15 +282,15 @@ http://creativecommons.org/licenses/by/2.5/ -->
 <img class="image-right" src="static-files/media/screenshots/widget-panel-clock.png"
 alt="Panel attached to a widget">
 
-    data = require("self").data
+    data = require("sdk/self").data
 
-    var clockPanel = require("panel").Panel({
+    var clockPanel = require("sdk/panel").Panel({
       width:215,
       height:160,
       contentURL: data.url("clock.html")
     });
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "open-clock-btn",
       label: "Clock",
       contentURL: data.url("History.png"),
@@ -303,15 +303,15 @@ You must supply the panel in the widget's constructor for it to work. If you
 assign the panel to the widget after construction, the panel can still be shown
 but will not be anchored to the widget:
 
-    data = require("self").data
+    data = require("sdk/self").data
 
-    var clockPanel = require("panel").Panel({
+    var clockPanel = require("sdk/panel").Panel({
       width:215,
       height:160,
       contentURL: data.url("clock.html")
     });
 
-    widget = require("widget").Widget({
+    widget = require("sdk/widget").Widget({
       id: "open-clock-btn",
       label: "Clock",
       contentURL: data.url("History.png")
@@ -325,15 +325,15 @@ but will not be anchored to the widget:
 Also, if you try to call `panel.show()` inside your widget's `click` event
 listener, the panel will not be anchored:
 
-    data = require("self").data
+    data = require("sdk/self").data
 
-    var clockPanel = require("panel").Panel({
+    var clockPanel = require("sdk/panel").Panel({
       width:215,
       height:160,
       contentURL: data.url("clock.html")
     });
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "open-clock-btn",
       label: "Clock",
       contentURL: data.url("History.png"),
@@ -355,7 +355,7 @@ create your content scripts in separate files and pass their URLs using the
 [Working with Content Scripts](dev-guide/guides/content-scripts/index.html) for more
 information.
 
-    var widgets = require("widget");
+    var widgets = require("sdk/widget");
 
     // A basic click-able image widget.
     widgets.Widget({
@@ -363,7 +363,7 @@ information.
       label: "Widget with an image and a click handler",
       contentURL: "http://www.google.com/favicon.ico",
       onClick: function() {
-        require("tabs").activeTab.url = "http://www.google.com/";
+        require("sdk/tabs").activeTab.url = "http://www.google.com/";
       }
     });
 <br>
@@ -394,47 +394,28 @@ information.
     });
 <br>
 
-    // A widget that loads a random Flickr photo every 5 minutes.
-    widgets.Widget({
-      id: "random-flickr",
-      label: "Random Flickr Photo Widget",
-      contentURL: "http://www.flickr.com/explore/",
-      contentScriptWhen: "ready",
-      contentScript: 'postMessage(document.querySelector(".pc_img").src);' +
-                     'setTimeout(function() {' +
-                     '  document.location = "http://www.flickr.com/explore/";' +
-                     '}, 5 * 60 * 1000);',
-      onMessage: function(imgSrc) {
-        this.contentURL = imgSrc;
-      },
-      onClick: function() {
-        require("tabs").activeTab.url = this.contentURL;
-      }
-    });
-<br>
-
     // A widget created with a specified width, that grows.
-    let myWidget = widgets.Widget({
+    var myWidget = widgets.Widget({
       id: "widget-effect",
       label: "Wide widget that grows wider on a timer",
       content: "I'm getting longer.",
       width: 50,
     });
-    require("timers").setInterval(function() {
+    require("sdk/timers").setInterval(function() {
       myWidget.width += 10;
     }, 1000);
 <br>
 
     // A widget communicating bi-directionally with a content script.
-    let widget = widgets.Widget({
+    var widget = widgets.Widget({
       id: "message-test",
       label: "Bi-directional communication!",
       content: "<foo>bar</foo>",
       contentScriptWhen: "ready",
-      contentScript: 'on("message", function(message) {' +
+      contentScript: 'self.on("message", function(message) {' +
                      '  alert("Got message: " + message);' +
                      '});' +
-                     'postMessage("ready");',
+                     'self.postMessage("ready");',
       onMessage: function(message) {
         if (message == "ready")
           widget.postMessage("me too");
@@ -608,6 +589,12 @@ Represents a widget object.
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">
@@ -744,9 +731,9 @@ In this example `WidgetView` is used to display different content for
 `http` and `https` schemes:
 
     // A widget that update its content specifically to each window.
-    let tabs = require("tabs");
-    let windows = require("windows").browserWindows;
-    let widget = widgets.Widget({
+    var tabs = require("sdk/tabs");
+    var windows = require("sdk/windows").browserWindows;
+    var widget = require("sdk/widget").Widget({
       id: "window-specific-test",
       label: "Widget with content specific to each window",
       content: " ",
@@ -754,7 +741,7 @@ In this example `WidgetView` is used to display different content for
     });
     // Observe tab switch or document changes in each existing tab:
     function updateWidgetState(tab) {
-      let view = widget.getView(tab.window);
+      var view = widget.getView(tab.window);
       if (!view) return;
       // Update widget displayed text:
       view.content = tab.url.match(/^https/) ? "Secured" : "Unsafe";
@@ -813,6 +800,12 @@ In this example `WidgetView` is used to display different content for
   content, an image or web content.  Setting it updates the widget's appearance
   immediately.  However, if the widget was created using `content`, then this
   property is meaningless, and setting it has no effect.
+
+  Setting the `contentURL` property will break the channel of communication
+  between this widget and any content scripts it contains. Messages sent from
+  the content script will no longer be received by the main add-on code, and
+  vice versa. This issue is currently tracked as
+  [bug 825434](https://bugzilla.mozilla.org/show_bug.cgi?id=825434).
 </api>
 
 <api name="panel">

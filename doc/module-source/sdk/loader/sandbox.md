@@ -9,7 +9,7 @@ in them.
 
 To create a sandbox:
 
-    const { sandbox, evaluate, load } = require("api-utils/sandbox");
+    const { sandbox, evaluate, load } = require("sdk/loader/sandbox");
     let scope = sandbox('http://example.com');
 
 The argument passed to the sandbox defines its privileges. The argument may be:
