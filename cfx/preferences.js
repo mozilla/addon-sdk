@@ -77,7 +77,7 @@ function generateOptionsXul(options, jetpackId) {
       setting.appendChild(doc.createTextNode(pref.description));
 
     if (pref.type == "control") {
-      button = doc.createElement("button");
+      let button = doc.createElement("button");
       button.setAttribute("pref-name", pref.name);
       button.setAttribute("data-jetpack-id", jetpackId);
       button.setAttribute("label", pref.label);
