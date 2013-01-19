@@ -20,7 +20,7 @@ Sets the application preference `name` to `value`.
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    require("preferences-service").set(name, false);
+    require("sdk/preferences/service").set(name, false);
 </api>
 
 
@@ -35,7 +35,7 @@ preference is set.
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    var nightlyCompatChk = require("preferences-service").get(name);
+    var nightlyCompatChk = require("sdk/preferences/service").get(name);
 </api>
 
 
@@ -47,7 +47,7 @@ preference is set.
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    if (require("preferences-service").has(name)) {
+    if (require("sdk/preferences/service").has(name)) {
       // ...
     }
 </api>
@@ -71,7 +71,7 @@ acting on the user's behalf).
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    if (require("preferences-service").isSet(name)) {
+    if (require("sdk/preferences/service").isSet(name)) {
       // ...
     }
 </api>
@@ -87,7 +87,7 @@ does nothing. If no default value exists the preference will cease to exist.
 **Example:**
 
     var name = "extensions.checkCompatibility.nightly";
-    require("preferences-service").reset(name);
+    require("sdk/preferences/service").reset(name);
 </api>
 
 <api name="getLocalized">
@@ -102,7 +102,7 @@ So that `prefs.get` returns the properties file URL whereas
 
 **Example:**
 
-    var prefs = require("preferences-service");
+    var prefs = require("sdk/preferences/service");
     var name = "general.useragent.locale";
     prefs.get(name); // is equal to "chrome://global/locale/intl.properties"
     prefs.getLocalized(name) // is equal to "en-US"
@@ -117,7 +117,7 @@ Sets the localized application preference `name` to `value`.
 
 **Example:**
 
-    require("preferences-service").set("general.useragent.locale",
+    require("sdk/preferences/service").set("general.useragent.locale",
                                        "chrome://global/locale/intl.properties");
 
 </api>

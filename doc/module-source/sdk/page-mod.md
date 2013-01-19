@@ -17,7 +17,7 @@ to be attached to that page.
 For example, the following add-on displays an alert whenever the user
 visits any page hosted at "mozilla.org":
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
 
     pageMod.PageMod({
       include: "*.mozilla.org",
@@ -26,7 +26,7 @@ visits any page hosted at "mozilla.org":
 
 You can modify the document in your script:
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
 
     pageMod.PageMod({
       include: "*.mozilla.org",
@@ -44,8 +44,8 @@ In this case files are specified by a URL typically constructed using the
 
 <!-- -->
 
-    var data = require("self").data;
-    var pageMod = require("page-mod");
+    var data = require("sdk/self").data;
+    var pageMod = require("sdk/page-mod");
     pageMod.PageMod({
       include: "*.mozilla.org",
       contentScriptFile: data.url("my-script.js")
@@ -53,8 +53,8 @@ In this case files are specified by a URL typically constructed using the
 
 <!-- -->
 
-    var data = require("self").data;
-    var pageMod = require("page-mod");
+    var data = require("sdk/self").data;
+    var pageMod = require("sdk/page-mod");
 
     pageMod.PageMod({
       include: "*.mozilla.org",
@@ -114,8 +114,8 @@ the HTML content of all the elements with that tag.
 /lib/main.js:
 
     var tag = "p";
-    var data = require("self").data;
-    var pageMod = require("page-mod");
+    var data = require("sdk/self").data;
+    var pageMod = require("sdk/page-mod");
 
     pageMod.PageMod({
       include: "*.mozilla.org",
@@ -170,8 +170,8 @@ this worker. You can use this to access
 the [`tabs API`](modules/sdk/tabs.html) for the tab associated
 with a specific document:
 
-    var pageMod = require("page-mod");
-    var tabs = require("tabs");
+    var pageMod = require("sdk/page-mod");
+    var tabs = require("sdk/tabs");
 
     pageMod.PageMod({
       include: ["*"],
@@ -191,7 +191,7 @@ For example, if you maintain a list of workers attached to a page-mod:
 
     var workers = [];
 
-    var pageMod = require("page-mod").PageMod({
+    var pageMod = require("sdk/page-mod").PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: data.url('pagemod.js'),
@@ -211,7 +211,7 @@ You can remove workers when they are no longer valid by listening to `detach`:
       }
     }
 
-    var pageMod = require("page-mod").PageMod({
+    var pageMod = require("sdk/page-mod").PageMod({
       include: ['*'],
       contentScriptWhen: 'ready',
       contentScriptFile: data.url('pagemod.js'),
@@ -241,8 +241,8 @@ scripts are executed immediately.
 The following add-on creates a widget which, when clicked, highlights all the
 `div` elements in the document loaded into the active tab:
 
-    var widgets = require("widget");
-    var tabs = require("tabs");
+    var widgets = require("sdk/widget");
+    var tabs = require("sdk/tabs");
 
     var widget = widgets.Widget({
       id: "div-show",
@@ -279,7 +279,7 @@ Creates a page-mod.
 
     You can specify a URL exactly:
 
-        var pageMod = require("page-mod");
+        var pageMod = require("sdk/page-mod");
         pageMod.PageMod({
           include: "http://www.iana.org/domains/example/",
           contentScript: 'window.alert("Page matches ruleset");'
@@ -287,7 +287,7 @@ Creates a page-mod.
 
     You can specify a number of wildcard forms, for example:
 
-        var pageMod = require("page-mod");
+        var pageMod = require("sdk/page-mod");
         pageMod.PageMod({
           include: "*.mozilla.org",
           contentScript: 'window.alert("Page matches ruleset");'
@@ -298,7 +298,7 @@ Creates a page-mod.
     The pattern must match the entire URL, not just a subset, and has
     `global`, `ignoreCase`, and `multiline` disabled.
 
-        var pageMod = require("page-mod");
+        var pageMod = require("sdk/page-mod");
         pageMod.PageMod({
           include: /.*developer.*/,
           contentScript: 'window.alert("Page matches ruleset");'
@@ -306,7 +306,7 @@ Creates a page-mod.
 
   To specify multiple patterns, pass an array of match patterns:
 
-      var pageMod = require("page-mod");
+      var pageMod = require("sdk/page-mod");
       pageMod.PageMod({
         include: ["*.developer.mozilla.org", "*.addons.mozilla.org"],
         contentScript: 'window.alert("Page matches ruleset");'
@@ -324,8 +324,8 @@ Creates a page-mod.
     `url()` method of the
     [`self` module's `data` object](modules/sdk/self.html#data).
 
-        var data = require("self").data;
-        var pageMod = require("page-mod");
+        var data = require("sdk/self").data;
+        var pageMod = require("sdk/page-mod");
         pageMod.PageMod({
           include: "*",
           contentScriptFile: data.url("my-script.js")
@@ -333,8 +333,8 @@ Creates a page-mod.
 
     To attach multiple scripts, pass an array of URLs.
 
-        var data = require("self").data;
-        var pageMod = require("page-mod");
+        var data = require("sdk/self").data;
+        var pageMod = require("sdk/page-mod");
 
         pageMod.PageMod({
           include: "*",
@@ -349,7 +349,7 @@ Creates a page-mod.
    This option specifies one or more content scripts to attach to targeted
    documents. Each script is supplied directly as a single string:
 
-        var pageMod = require("page-mod");
+        var pageMod = require("sdk/page-mod");
         pageMod.PageMod({
           include: "*",
           contentScript: 'window.alert("Page matches ruleset");'
@@ -392,7 +392,7 @@ secure, debug and review.</p>
 
 <!-- -->
 
-       var pageMod = require("page-mod");
+       var pageMod = require("sdk/page-mod");
        pageMod.PageMod({
          include: "*",
          contentScript: 'window.alert("Page matches ruleset");',
@@ -410,8 +410,8 @@ secure, debug and review.</p>
    The option consists of an object literal listing `name:value` pairs for
    the values you want to provide to the content script. For example:
 
-       var data = require("self").data;
-       var pageMod = require("page-mod");
+       var data = require("sdk/self").data;
+       var pageMod = require("sdk/page-mod");
        pageMod.PageMod({
          include: "*",
          contentScriptFile: data.url("my-script.js"),
@@ -448,8 +448,8 @@ secure, debug and review.</p>
     [`self` module's `data` object](modules/sdk/self.html#data).
     To add multiple stylesheet files, pass an array of URLs.
 
-        var data = require("self").data;
-        var pageMod = require("page-mod");
+        var data = require("sdk/self").data;
+        var pageMod = require("sdk/page-mod");
 
         pageMod.PageMod({
           include: "*.org",
@@ -471,8 +471,8 @@ secure, debug and review.</p>
     "data" directory, and construct a `contentStyle` option embedding that URL
     in your rule. For example:
 
-        var data = require("self").data;
-        var pageMod = require("page-mod").PageMod({
+        var data = require("sdk/self").data;
+        var pageMod = require("sdk/page-mod").PageMod({
           include: "*",
           contentStyleFile: data.url("my-style.css"),
           // contentStyle is built dynamically here to include an absolute URL
@@ -500,7 +500,7 @@ secure, debug and review.</p>
     Each stylesheet rule is supplied as a separate string. To supply
     multiple rules, pass an array of strings:
 
-        var pageMod = require("page-mod");
+        var pageMod = require("sdk/page-mod");
 
         pageMod.PageMod({
           include: "*.org",
@@ -543,7 +543,7 @@ secure, debug and review.</p>
    For example, the following page-mod will be attached to already opened
    tabs, but not to any iframes:
 
-       var pageMod = require("page-mod");
+       var pageMod = require("sdk/page-mod");
        pageMod.PageMod({
          include: "*",
          contentScript: "",

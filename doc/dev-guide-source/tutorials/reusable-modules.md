@@ -54,7 +54,7 @@ object, and retrieves the user's current position:
       xpcomGeolocation.getCurrentPosition(callback);
     }
 
-    var widget = require("widget").Widget({
+    var widget = require("sdk/widget").Widget({
       id: "whereami",
       label: "Where am I?",
       contentURL: "http://www.mozilla.org/favicon.ico",
@@ -95,7 +95,7 @@ So we'll extend the add-on to include an adapted version of the code in
 that MDN page:
 
 <pre><code>
-var activeBrowserWindow = require("window-utils").activeBrowserWindow;
+var activeBrowserWindow = require("sdk/window/utils").getMostRecentBrowserWindow();
 var {Cc, Ci} = require("chrome");
 
 // Ask the user to confirm that they want to share their location.
@@ -173,7 +173,7 @@ function getCurrentPosition(callback) {
   xpcomGeolocation.getCurrentPosition(callback);
 }
 
-var widget = require("widget").Widget({
+var widget = require("sdk/widget").Widget({
   id: "whereami",
   label: "Where am I?",
   contentURL: "http://www.mozilla.org/favicon.ico",
@@ -218,7 +218,7 @@ if they agree.
 So "geolocation.js" should look like this:
 
 <pre><code>
-var activeBrowserWindow = require("window-utils").activeBrowserWindow;
+var activeBrowserWindow = require("sdk/window/utils").getMostRecentBrowserWindow();
 var {Cc, Ci} = require("chrome");
 
 // Ask the user to confirm that they want to share their location.
@@ -320,7 +320,7 @@ Now "main.js" should look like this:
 <pre><code>
 var geolocation = require("./geolocation");
 
-var widget = require("widget").Widget({
+var widget = require("sdk/widget").Widget({
   id: "whereami",
   label: "Where am I?",
   contentURL: "http://www.mozilla.org/favicon.ico",
@@ -358,8 +358,8 @@ the preference used to store the user's choice are hardcoded:
 Instead we'll use the `self` module to ensure that they are specific
 to the add-on:
 
-    var addonName = require("self").name;
-    var addonId = require("self").id;
+    var addonName = require("sdk/self").name;
+    var addonId = require("sdk/self").id;
     let pref = "extensions." + addonId + ".allowGeolocation";
     let message = addonName + " Add-on wants to know your location."
 
