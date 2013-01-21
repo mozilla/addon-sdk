@@ -640,7 +640,7 @@ exports.testConstructor = function(test) {
   }));
 
   // test click handler not respond to right-click
-  let clickCount = 0;
+  let rightClickCount = 0;
   tests.push(function testNoRightClick() testSingleWidget({
     id: "click-content",
     label: "click test widget - content",
@@ -656,9 +656,34 @@ exports.testConstructor = function(test) {
                    "evt.initEvent('mouseover', true, true ); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "end",
-    onClick: function() clickCount++,
+    onClick: function() rightClickCount++,
     onMouseover: function() {
-      test.assertEqual(clickCount, 1, "right click wasn't sent to click handler");
+      test.assertEqual(rightClickCount, 1, "right click wasn't sent to click handler");
+      this.destroy();
+      doneTest();
+    }
+  }));
+
+  // test click handler not respond to middle-click
+  let middleClickCount = 0;
+  tests.push(function testNoMiddleClick() testSingleWidget({
+    id: "click-content",
+    label: "click test widget - content",
+    content: "<div id='me'>foo</div>",
+    contentScript: "var evt = document.createEvent('MouseEvents'); " +
+                   "evt.initMouseEvent('click', true, true, window, " +
+                   "  0, 0, 0, 0, 0, false, false, false, false, 1, null); " +
+                   "document.getElementById('me').dispatchEvent(evt); " +
+                   "evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('click', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt); " +
+                   "evt = document.createEvent('HTMLEvents'); " +
+                   "evt.initEvent('mouseover', true, true ); " +
+                   "document.getElementById('me').dispatchEvent(evt);",
+    contentScriptWhen: "end",
+    onClick: function() middleClickCount++,
+    onMouseover: function() {
+      test.assertEqual(middleClickCount, 1, "middle click wasn't sent to click handler");
       this.destroy();
       doneTest();
     }
