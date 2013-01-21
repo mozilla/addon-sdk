@@ -661,7 +661,7 @@ exports.testContentScriptOptionsOption = function(test) {
 exports.testPageModCss = function(test) {
   let [pageMod] = testPageMod(test,
     'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
-      include: "data:*",
+      include: ["*", "data:*"],
       contentStyle: "div { height: 100px; }",
       contentStyleFile:
         require("sdk/self").data.url("pagemod-css-include-file.css")
