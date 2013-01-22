@@ -641,12 +641,13 @@ def scan_requirements_with_grep(fn, lines):
                     iscomment = True
             if iscomment:
                 continue
-            mo = re.search(REQUIRE_RE, clause)
+            mo = re.finditer(REQUIRE_RE, clause)
             if mo:
-                modname = mo.group(1)
-                requires[modname] = {}
-                if modname not in first_location:
-                    first_location[modname] = lineno0+1
+                for mod in mo:
+                    modname = mod.group(1)
+                    requires[modname] = {}
+                    if modname not in first_location:
+                        first_location[modname] = lineno0 + 1
 
     # define() can happen across multiple lines, so join everyone up.
     wholeshebang = "\n".join(lines)
