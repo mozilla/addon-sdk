@@ -35,6 +35,15 @@ but will have no effect when called.
   </div>
 </api>
 
+
+<api name="isPrivate">
+@function
+  Returns true if the argument is a private window or tab.
+@param thing {any}
+  The thing to check if it is private, only handles windows and tabs at the moment.
+  Everything else returns false automatically.
+</api>
+
 <api name="activate">
 @function
   Turns on global private browsing mode.
