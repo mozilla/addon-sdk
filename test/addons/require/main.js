@@ -51,4 +51,27 @@ exports["test 3rd party vs sdk module"] = function (assert) {
                "Old and new layout both work");
 }
 
+// /!\ Always use distinct module for each test.
+//     Otherwise, the linker can correctly parse and allow the first usage of it
+//     but still silently fail on the second. 
+
+exports.testRelativeRequire = function (assert) {
+  assert.equal(require('./same-folder').id, 'same-folder');
+}
+
+exports.testRelativeSubFolderRequire = function (assert) {
+  assert.equal(require('./sub-folder/module').id, 'sub-folder');
+}
+
+exports.testMultipleRequirePerLine = function (assert) {
+  var a=require('./multiple/a'),b=require('./multiple/b');
+  assert.equal(a.id, 'a');
+  assert.equal(b.id, 'b');
+}
+
+exports.testSDKRequire = function (assert) {
+  assert.deepEqual(Object.keys(require('sdk/widget')), ['Widget']);
+  assert.equal(require('widget'), require('sdk/widget'));
+}
+
 require("sdk/test/runner").runTestsFromModule(module);
