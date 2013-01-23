@@ -100,7 +100,7 @@ exports.testWindowTabsObject = function(test) {
   }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onActivate: function onOpen(win) {
+    onActivate: function onActivate(win) {
       window = win;
       runTest();
     },
