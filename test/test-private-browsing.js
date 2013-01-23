@@ -5,6 +5,8 @@
 
 const { pb, pbUtils } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
+const windows = require('sdk/windows').browserWindows;
+const winUtils = require('sdk/window/utils');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
@@ -23,8 +25,22 @@ exports.testIsPrivateDefaults = function() {
   test.assertEqual(pb.isPrivate(function() {}), false, 'functions are not private');
 };
 
+exports.testWindowDefaults = function(test) {
+  test.waitUntilDone();
+
+  windows.open({
+  	onActivate: function(window) {
+      test.assertEqual(window.isPrivateBrowsing, false, 'window is not private browsing by default');
+      let chromeWin = winUtils.getMostRecentBrowserWindow();
+      test.assertEqual(pbUtils.getMode(chromeWin), false);
+      test.assertEqual(pbUtils.isWindowPrivate(chromeWin), false);
+      window.close(test.done());
+  	}
+  });
+}
+
 // tests for the case where private browsing doesn't exist
-exports.testDefault = function(test) {
+exports.testIsActiveDefault = function(test) {
   test.assertEqual(pb.isActive, false,
                    'pb.isActive returns false when private browsing isn\'t supported');
 };

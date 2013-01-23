@@ -75,7 +75,7 @@ Emitted immediately after global private browsing begins.
 
   <div class="warning">
   This event is deprecated. It will continue to work until version 1.13 of the SDK.
-  From version 1.13 onwards this event will not exist.
+  From version 1.13 onwards this event will not be emitted.
   </div>
 </api>
 
@@ -90,6 +90,6 @@ Emitted immediately after global private browsing ends.
 
   <div class="warning">
   This event is deprecated. It will continue to work until version 1.13 of the SDK.
-  From version 1.13 onwards this event will not exist.
+  From version 1.13 onwards this event will not be emitted.
   </div>
 </api>
