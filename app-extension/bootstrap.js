@@ -260,9 +260,11 @@ function nukeModules() {
   }
   loader = null;
 
-  // Unload sandbox used to evaluate loader.js
+  // both `toolkit/loader` and `system/xul-app` are loaded as JSM's via
+  // `cuddlefish.js`, and needs to be unloaded to avoid memory leaks, when
+  // the addon is unload.
+
   unloadSandbox(cuddlefishSandbox.loaderSandbox);
-  // Unload sandbox used to evaluate xulapp.js to parse metadata
   unloadSandbox(cuddlefishSandbox.xulappSandbox);
 
   // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
