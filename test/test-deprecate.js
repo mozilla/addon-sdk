@@ -76,4 +76,31 @@ exports["test Deprecate Function"] = function testDeprecateFunction(assert) {
   loader.unload();
 }
 
-require("test").run(exports)
+exports.testDeprecateEvent = function(assert, done) {
+  let { loader, deprecate, errors } = LoaderWithHookedConsole();
+
+  let { on, emit } = loader.require('sdk/event/core');
+  let testObj = {};
+  testObj.on = deprecate.deprecateEvent(on.bind(null, testObj), 'BAD', ['fire']);
+
+  testObj.on('fire', function() {
+    testObj.on('water', function() {
+      assert.equal(errors.length, 1, "only one error is dispatched");
+      loader.unload();
+      done();
+    })
+    assert.equal(errors.length, 1, "only one error is dispatched");
+    emit(testObj, 'water');
+  });
+  assert.equal(errors.length, 1, "only one error is dispatched");
+  let msg = errors[0];console.log(msg);
+  assert.ok(msg.indexOf("BAD") !== -1, "message contains the given message");
+  assert.ok(msg.indexOf("deprecateEvent") !== -1,
+            "message contains name of the caller function");
+  assert.ok(msg.indexOf(module.uri) !== -1,
+            "message contains URI of the caller module");
+
+  emit(testObj, 'fire');
+}
+
+require("test").run(exports);
