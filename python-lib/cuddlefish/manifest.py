@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
 import os, sys, re, hashlib
 import simplejson as json
 SEP = os.path.sep
@@ -110,7 +109,7 @@ def hash_file(fn):
 
 def get_datafiles(datadir):
     # yields pathnames relative to DATADIR, ignoring some files
-    for dirpath, dirnames, filenames in os.walk(datadir):
+    for dirpath, dirnames, filenames in os.walk(datadir, followlinks=True):
         filenames = list(filter_filenames(filenames))
         # this tells os.walk to prune the search
         dirnames[:] = filter_dirnames(dirnames)
