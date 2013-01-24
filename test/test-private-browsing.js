@@ -17,17 +17,10 @@ else if (pbUtils.isWindowPBSupported) {
 }
 
 exports.testWindowDefaults = function(test) {
-  test.waitUntilDone();
-
-  windows.open({
-  	onActivate: function(window) {
-      test.assertEqual(window.isPrivateBrowsing, false, 'window is not private browsing by default');
-      let chromeWin = winUtils.getMostRecentBrowserWindow();
-      test.assertEqual(pbUtils.getMode(chromeWin), false);
-      test.assertEqual(pbUtils.isWindowPrivate(chromeWin), false);
-      window.close(test.done());
-  	}
-  });
+  test.assertEqual(windows.activeWindow.isPrivateBrowsing, false, 'window is not private browsing by default');
+  let chromeWin = winUtils.getMostRecentBrowserWindow();
+  test.assertEqual(pbUtils.getMode(chromeWin), false);
+  test.assertEqual(pbUtils.isWindowPrivate(chromeWin), false);
 }
 
 // tests for the case where private browsing doesn't exist
