@@ -16,7 +16,7 @@ else if (pbUtils.isWindowPBSupported) {
   merge(module.exports, require('./private-browsing/windows'));
 }
 
-exports.testIsPrivateDefaults = function() {
+exports.testIsPrivateDefaults = function(test) {
   test.assertEqual(pb.isPrivate(), false, 'undefined is not private');
   test.assertEqual(pb.isPrivate('test'), false, 'strings are not private');
   test.assertEqual(pb.isPrivate({}), false, 'random objects are not private');

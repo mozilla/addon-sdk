@@ -38,7 +38,7 @@ exports.testIsPrivateOnWindowOn = function(assert, done) {
       assert.equal(isPrivate(window.tabs[0]), true, 'isPrivate for a tab is false when it should be');
       window.close(done);
     }
-  })
+  });
 }
 
 exports.testIsPrivateOnWindowOff = function(assert, done) {
