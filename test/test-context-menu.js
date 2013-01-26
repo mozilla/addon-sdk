@@ -19,6 +19,28 @@ const OVERFLOW_POPUP_CLASS = "addon-content-menu-overflow-popup";
 
 const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
+// Tests that when present the separator is placed before the separator from
+// the old context-menu module
+exports.testSeparatorPosition = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  // Create the old separator
+  let oldSeparator = test.contextMenuPopup.ownerDocument.createElement("menuseparator");
+  oldSeparator.id = "jetpack-context-menu-separator";
+  test.contextMenuPopup.appendChild(oldSeparator);
+
+  // Create an item.
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.assertEqual(test.contextMenuSeparator.nextSibling.nextSibling, oldSeparator,
+                     "New separator should appear before the old one");
+    test.contextMenuPopup.removeChild(oldSeparator);
+    test.done();
+  });
+};
+
 // Destroying items that were previously created should cause them to be absent
 // from the menu.
 exports.testConstructDestroy = function (test) {
