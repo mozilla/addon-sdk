@@ -97,6 +97,10 @@ function startup(data, reasonCode) {
 
     let id = options.jetpackID;
     let name = options.name;
+
+    // Clean the private-browsing flag
+    options.metadata[name]['private-browsing'] = options.metadata[name]['private-browsing'] === true ? true : false;
+
     // Register a new resource 'domain' for this addon which is mapping to
     // XPI's `resources` folder.
     // Generate the domain name by using jetpack ID, which is the extension ID

@@ -28,3 +28,10 @@ exports.testIsActiveDefault = function(test) {
   test.assertEqual(pb.isActive, false,
                    'pb.isActive returns false when private browsing isn\'t supported');
 };
+
+exports.testUsePrivateBrowsing = function(test) {
+  test.assert('usePrivateBrowsing' in pbUtils,
+  	               'usePrivateBrowsing property exists');
+  test.assertEqual(pbUtils.usePrivateBrowsing, false,
+  	               'usePrivateBrowsing property is false by default');
+}
