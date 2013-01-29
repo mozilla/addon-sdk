@@ -89,6 +89,7 @@ HTML_RE = r'(\<([a-zA-Z/][^\>]*?|\!--.*?--)\>)'               # <...>
 ENTITY_RE = r'(&[\#a-zA-Z0-9]*;)'               # &amp;
 LINE_BREAK_RE = r'  \n'                     # two spaces at end of line
 LINE_BREAK_2_RE = r'  $'                    # two spaces at end of text
+DELETE_RE = r'(~{2})(.*?)\2'                    # ~~delete~~
 
 
 def dequote(string):
