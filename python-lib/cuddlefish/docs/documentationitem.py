@@ -47,7 +47,7 @@ class ModuleInfo(DocumentationItemInfo):
     def __init__(self, env_root, module_root, md_path, filename):
         DocumentationItemInfo.__init__(self, env_root, md_path, filename)
         self.module_root = module_root
-        self.metadata = self.get_metadata(self.js_module_path())
+        self.metadata = self.get_metadata()
 
     def remove_comments(self, text):
         def replacer(match):
@@ -62,9 +62,11 @@ class ModuleInfo(DocumentationItemInfo):
         )
         return re.sub(pattern, replacer, text)
 
-    def get_metadata(self, path_to_js):
+    def get_metadata(self):
+        if self.level() == "third-party":
+            return simplejson.loads("{}")
         try:
-            js = unicode(open(path_to_js,"r").read(), 'utf8')
+            js = unicode(open(self.js_module_path(),"r").read(), 'utf8')
         except IOError:
             raise Exception, "JS module: '" + path_to_js + \
                              "', corresponding to documentation file: '"\
@@ -84,9 +86,6 @@ class ModuleInfo(DocumentationItemInfo):
         metadata = metadata.replace("'", '"')
         return simplejson.loads("{" + metadata + "}")
 
-    def js_module_path(self):
-        return os.path.join(self.env_root, "lib", self.source_path_relative_from_module_root(), self.source_filename[:-len(".md")] + ".js")
-
     def source_path_relative_from_module_root(self):
         return self.source_path[len(self.module_root) + 1:]
 
@@ -97,6 +96,11 @@ class ModuleInfo(DocumentationItemInfo):
         root_pieces[-1] = "modules"
         relative_pieces = self.source_path_relative_from_module_root().split(os.sep)
         return os.sep.join(root_pieces + relative_pieces)
+
+    def js_module_path(self):
+        return os.path.join(self.env_root, "lib", \
+                            self.source_path_relative_from_module_root(), \
+                            self.source_filename[:-len(".md")] + ".js")
 
     def relative_url(self):
         if self.level() == "third-party":

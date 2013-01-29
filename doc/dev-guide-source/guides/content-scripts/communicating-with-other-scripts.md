@@ -75,9 +75,9 @@ In the main add-on code, we have a
 [`page-mod`](modules/sdk/page-mod.html) that attaches the content script
 "talk.js" to the right page:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     pageMod.PageMod({
       include: "http://my-domain.org/listen.html",
       contentScriptFile: data.url("talk.js")
@@ -117,9 +117,9 @@ the same, but in reverse.
 Here "main.js" creates a [`page-mod`](modules/sdk/page-mod.html)
 that attaches "listen.js" to the web page:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     pageMod.PageMod({
       include: "http://my-domain.org/talk.html",
       contentScriptFile: data.url("listen.js")
@@ -167,9 +167,9 @@ from a content script to a page script.
 First, "main.js" will create a [`page-mod`](modules/sdk/page-mod.html)
 that will attach "talk.js" to the target web page:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     pageMod.PageMod({
       include: "http://my-domain.org/listen.html",
       contentScriptFile: data.url("talk.js")
@@ -209,9 +209,9 @@ to the content script is just the same, but in reverse.
 Again, "main.js" creates a [`page-mod`](modules/sdk/page-mod.html)
 to target the page we are interested in:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
-    var pageMod = require("page-mod");
+    var pageMod = require("sdk/page-mod");
     pageMod.PageMod({
       include: "http://my-domain.org/talk.html",
       contentScriptFile: data.url("listen.js")

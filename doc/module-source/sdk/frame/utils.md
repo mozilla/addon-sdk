@@ -10,8 +10,8 @@ Module exports `create` function that takes the `nsIDOMDocument` of a
 [privileged document](https://developer.mozilla.org/en/Working_with_windows_in_chrome_code)
 and creates a `browser` element in its `documentElement`:
 
-    let { open } = require('api-utils/window/utils');
-    let { create } = require('api-utils/frame/utils');
+    let { open } = require('sdk/window/utils');
+    let { create } = require('sdk/frame/utils');
     let window = open('data:text/html,Foo');
     let frame = create(window.document);
 
@@ -20,8 +20,8 @@ even further.
 
 Execution of scripts may easily be enabled:
 
-    let { open } = require('api-utils/window/utils');
-    let { create } = require('api-utils/frame/utils');
+    let { open } = require('sdk/window/utils');
+    let { create } = require('sdk/frame/utils');
     let window = open('data:text/html,top');
     let frame = create(window.document, {
       uri: 'data:text/html,<script>alert("Hello")</script>',

@@ -2248,12 +2248,22 @@ TestHelper.prototype = {
     if (itemType === "Item" || itemType === "Menu") {
       this.test.assertEqual(elt.getAttribute("label"), item.label,
                             "Item should have correct title");
-      if (typeof(item.image) === "string")
+      if (typeof(item.image) === "string") {
         this.test.assertEqual(elt.getAttribute("image"), item.image,
                               "Item should have correct image");
-      else
+        if (itemType === "Menu")
+          this.test.assert(elt.classList.contains("menu-iconic"),
+                           "Menus with images should have the correct class")
+        else
+          this.test.assert(elt.classList.contains("menuitem-iconic"),
+                           "Items with images should have the correct class")
+      }
+      else {
         this.test.assert(!elt.getAttribute("image"),
                          "Item should not have image");
+        this.test.assert(!elt.classList.contains("menu-iconic") && !elt.classList.contains("menuitem-iconic"),
+                         "The iconic classes should not be present")
+      }
     }
   },
 

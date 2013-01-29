@@ -137,7 +137,7 @@ later on
 At the top of the file import the `page-mod` module and declare an array for
 the workers:
 
-    var pageMod = require('page-mod');
+    var pageMod = require('sdk/page-mod');
     var selectors = [];
 
 Add `detachWorker`:
@@ -273,7 +273,7 @@ Now we'll update `main.js` again to create the editor and use it.
 
 First, import the `panel` module:
 
-    var panels = require('panel');
+    var panels = require('sdk/panel');
 
 Then add the following code to the `main` function:
 

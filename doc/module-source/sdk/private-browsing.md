@@ -14,20 +14,31 @@ transition into or out of private browsing mode. For all other applications,
 `pb.isActive` will always be `false`, and none of the events will be emitted.
 
 <div class="warning">
-The <a href="modules/sdk/private-browsing.html#activate()"><code>activate</code></a> and
-<a href="modules/sdk/private-browsing.html#deactivate()"><code>deactivate</code></a> functions
-are now deprecated. They will continue to work until version 1.13 of the SDK.
-From version 1.13 onwards they will still exist but will have no effect when called.
+The <a href="modules/sdk/private-browsing.html#activate()"><code>activate</code></a>
+and <a href="modules/sdk/private-browsing.html#deactivate()"><code>deactivate</code></a>
+functions, <a href="modules/sdk/private-browsing.html#isActive"><code>isActive</code></a>
+property, <a href="modules/sdk/private-browsing.html#start"><code>start</code></a>,
+and <a href="modules/sdk/private-browsing.html#stop"><code>stop</code></a>
+events are all
+now deprecated due to per-window private browsing. They will continue to work
+until version 1.13 of the SDK. From version 1.13 onwards they will still exist
+but will have no effect when called.
 </div>
 
 <api name="isActive">
 @property {boolean}
-  This read-only boolean is true if private browsing mode is turned on.
+  This read-only boolean is true if global private browsing mode is turned on.
+
+  <div class="warning">
+  This property is deprecated. It will continue to work until version 1.13 of the SDK.
+  From version 1.13 onwards it will always return false.
+  </div>
 </api>
 
 <api name="activate">
 @function
-  Turns on private browsing mode.
+  Turns on global private browsing mode.
+
   <div class="warning">
   This function is deprecated. It will continue to work until version 1.13 of the SDK.
   From version 1.13 onwards it will still exist but will have no effect when called.
@@ -36,7 +47,8 @@ From version 1.13 onwards they will still exist but will have no effect when cal
 
 <api name="deactivate">
 @function
-  Turns off private browsing mode.
+  Turns off global private browsing mode.
+
   <div class="warning">
   This function is deprecated. It will continue to work until version 1.13 of the SDK.
   From version 1.13 onwards it will still exist but will have no effect when called.
@@ -45,21 +57,30 @@ From version 1.13 onwards they will still exist but will have no effect when cal
 
 <api name="start">
 @event
-Emitted immediately after the browser enters private browsing mode.
+Emitted immediately after global private browsing begins.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("start", function() {
       // Do something when the browser starts private browsing mode.
     });
 
+  <div class="warning">
+  This event is deprecated. It will continue to work until version 1.13 of the SDK.
+  From version 1.13 onwards this event will not be emitted.
+  </div>
 </api>
 
 <api name="stop">
 @event
-Emitted immediately after the browser exits private browsing mode.
+Emitted immediately after global private browsing ends.
 
-    var pb = require("private-browsing");
+    var pb = require("sdk/private-browsing");
     pb.on("stop", function() {
       // Do something when the browser stops private browsing mode.
     });
+
+  <div class="warning">
+  This event is deprecated. It will continue to work until version 1.13 of the SDK.
+  From version 1.13 onwards this event will not be emitted.
+  </div>
 </api>

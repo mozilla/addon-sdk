@@ -6,14 +6,14 @@ Provides an API for creating namespaces for any given objects, which
 effectively may be used for creating fields that are not part of objects
 public API.
 
-      let { ns } = require('api-utils/namespace');
+      let { ns } = require('sdk/core/namespace');
       let aNamespace = ns();
 
       aNamespace(publicAPI).secret = secret;
 
 One namespace may be used with multiple objects:
 
-      let { ns } = require('api-utils/namespace');
+      let { ns } = require('sdk/core/namespace');
       let dom = ns();
 
       function View(element) {
@@ -35,7 +35,7 @@ Also, multiple namespaces can be used with one object:
       // ./widget.js
 
       let { Cu } = require('chrome');
-      let { ns } = require('api-utils/namespace');
+      let { ns } = require('sdk/core/namespace');
       let { View } = require('./view');
 
       // Note this is completely independent from View's internal Namespace object.

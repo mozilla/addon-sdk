@@ -15,14 +15,14 @@ platform see the MDN documentation for
 
 To generate a new UUID, call `uuid()` with no arguments:
 
-    let uuid = require('api-utils/uuid').uuid()
+    let uuid = require('sdk/util/uuid').uuid();
 
 ## Parsing UUID
 
 To convert a string representation of a UUID to an `nsID`, pass
 the string representation to `uuid()`:
 
-    let { uuid } = require('api-utils/uuid');
+    let { uuid } = require('sdk/util/uuid');
     let firefoxUUID = uuid('{ec8030f7-c20a-464f-9b0e-13a3a9e97384}');
 
 <api name="uuid">

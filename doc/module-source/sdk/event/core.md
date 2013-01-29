@@ -17,7 +17,7 @@ to get started with this API.
 An event `listener` may be registered to any event `target` using the
 `on` function:
 
-    var { on, once, off, emit } = require('api-utils/event/core');
+    var { on, once, off, emit } = require('sdk/event/core');
     var target = { name: 'target' };
     on(target, 'message', function listener(event) {
       console.log('hello ' + event);

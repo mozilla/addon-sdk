@@ -38,7 +38,7 @@ supplied in the `contentURL` option to the panel's constructor.
 
 You can load remote HTML into the panel:
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       width: 180,
       height: 180,
       contentURL: "https://en.wikipedia.org/w/index.php?title=Jetpack&useformat=mobile"
@@ -55,8 +55,8 @@ the HTML in your add-on's `data` directory and load it using the `data.url()`
 method exported by the
 [`self`](modules/sdk/self.html) module, like this:
 
-    var panel = require("panel").Panel({
-      contentURL: require("self").data.url("myFile.html")
+    var panel = require("sdk/panel").Panel({
+      contentURL: require("sdk/self").data.url("myFile.html")
     });
 
     panel.show();
@@ -71,14 +71,14 @@ shows Google's mobile site and one which shows Bing's mobile site. The widgets
 share a panel object, and switch between the two sites by updating the panel's
 `contentURL` property:
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentURL: "about:blank",
       onHide: function () {
         panel.contentURL = "about:blank";
       }
     });
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "bing",
       label: "Bing",
       contentURL: "http://www.bing.com/favicon.ico",
@@ -88,7 +88,7 @@ share a panel object, and switch between the two sites by updating the panel's
       }
     });
 
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       id: "google",
       label: "Google",
       contentURL: "http://www.google.com/favicon.ico",
@@ -129,7 +129,7 @@ add-on script receives them using `panel.port.on()`.
                    "    self.port.emit('click-link', t.toString());" +
                    "}, false);"
 
-    var panel = require("panel").Panel({
+    var panel = require("sdk/panel").Panel({
       contentURL: "http://www.bbc.co.uk/mobile/index.html",
       contentScript: myScript
     });
@@ -183,11 +183,11 @@ my-addon/
 
 The "main.js" looks like this:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
     // Create a panel whose content is defined in "text-entry.html".
     // Attach a content script called "get-text.js".
-    var text_entry = require("panel").Panel({
+    var text_entry = require("sdk/panel").Panel({
       width: 212,
       height: 200,
       contentURL: data.url("text-entry.html"),
@@ -211,7 +211,7 @@ The "main.js" looks like this:
 
     // Create a widget, and attach the panel to it, so the panel is
     // shown when the user clicks the widget.
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       label: "Text entry",
       id: "text-entry",
       contentURL: "http://www.mozilla.org/favicon.ico",
@@ -285,10 +285,10 @@ to use normal page scripts instead of content scripts.
 The main add-on code is exactly the same as the main add-on code in the
 previous example, except that we don't attach a content script:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
     // Create a panel whose content is defined in "text-entry.html".
-    var text_entry = require("panel").Panel({
+    var text_entry = require("sdk/panel").Panel({
       width: 212,
       height: 200,
       contentURL: data.url("text-entry.html"),
@@ -311,7 +311,7 @@ previous example, except that we don't attach a content script:
 
     // Create a widget, and attach the panel to it, so the panel is
     // shown when the user clicks the widget.
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       label: "Text entry",
       id: "text-entry",
       contentURL: "http://www.mozilla.org/favicon.ico",
