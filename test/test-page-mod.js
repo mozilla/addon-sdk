@@ -502,7 +502,9 @@ exports['test attachment to tabs only'] = function(test) {
           test.pass('Succesfully applied to tab documents and its iframe');
           worker.destroy();
           mod.destroy();
-          test.done();
+          openedTab.close(function() {
+            test.done();
+          });
         }
       }
       else {
@@ -591,9 +593,12 @@ exports['test111 attachTo [top]'] = function(test) {
         worker.on('message', function (href) {
           test.assertEqual(href, topDocumentURL,
                            "worker on top level document only");
+          let tab = worker.tab;
           worker.destroy();
           mod.destroy();
-          test.done();
+          tab.close(function() {
+            test.done();
+          });
         });
       }
       else {
@@ -628,7 +633,9 @@ exports['test111 attachTo [frame]'] = function(test) {
     this.destroy();
     if (++messageCount == 2) {
       mod.destroy();
-      test.done();
+      require('tabs').activeTab.close(function() {
+        test.done();
+      });
     }
   }
   let mod = PageMod({
@@ -678,7 +685,7 @@ exports.testContentScriptOptionsOption = function(test) {
 exports.testPageModCss = function(test) {
   let [pageMod] = testPageMod(test,
     'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
-      include: "data:*",
+      include: ["*", "data:*"],
       contentStyle: "div { height: 100px; }",
       contentStyleFile:
         require("sdk/self").data.url("pagemod-css-include-file.css")
@@ -985,6 +992,31 @@ exports.testIFramePostMessage = function(test) {
       });
     }
   });
+};
+
+exports.testEvents = function(test) {
+  let content = "<script>\n new " + function DocumentScope() {
+    window.addEventListener("ContentScriptEvent", function () {
+      window.receivedEvent = true;
+    }, false);
+  } + "\n</script>";
+  let url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  testPageMod(test, url, [{
+      include: "data:*",
+      contentScript: 'new ' + function WorkerScope() {
+        let evt = document.createEvent("Event");
+        evt.initEvent("ContentScriptEvent", true, true);
+        document.body.dispatchEvent(evt);
+      }
+    }],
+    function(win, done) {
+      test.assert(
+        win.receivedEvent,
+        "Content script sent an event and document received it"
+      );
+      done();
+    }
+  );
 };
 
 if (require("sdk/system/xul-app").is("Fennec")) {

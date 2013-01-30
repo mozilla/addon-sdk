@@ -23,6 +23,8 @@ const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
+const bind = Function.call.bind(Function.bind);
+
 let loader = null;
 let unload = null;
 let cuddlefishSandbox = null;
@@ -173,6 +175,7 @@ function startup(data, reasonCode) {
           profileMemory: options.profileMemory,
           stopOnError: options.stopOnError,
           verbose: options.verbose,
+          parseable: options.parseable,
         }
       }
     });
@@ -204,8 +207,13 @@ function loadSandbox(uri) {
   // correctly
   sandbox.exports = {};
   sandbox.module = { uri: uri, exports: sandbox.exports };
-  sandbox.require = function () {
-    throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+  sandbox.require = function (id) {
+    if (id !== "chrome")
+      throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+
+    return Object.freeze({ Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+      CC: bind(CC, Components), components: Components,
+      ChromeWorker: ChromeWorker });
   };
   scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
   return sandbox;
@@ -253,8 +261,13 @@ function nukeModules() {
   }
   loader = null;
 
-  // Unload sandbox used to evaluate loader.js
+  // both `toolkit/loader` and `system/xul-app` are loaded as JSM's via
+  // `cuddlefish.js`, and needs to be unloaded to avoid memory leaks, when
+  // the addon is unload.
+
   unloadSandbox(cuddlefishSandbox.loaderSandbox);
+  unloadSandbox(cuddlefishSandbox.xulappSandbox);
+
   // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
   // and keep a reference to this compartment.
   unloadSandbox(cuddlefishSandbox);

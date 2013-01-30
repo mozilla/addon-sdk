@@ -60,6 +60,26 @@ function close() {
   closeTab(getActiveTab(getMostRecentBrowserWindow()));
 }
 
+/**
+ * Reload the window given and return a promise, that will be resolved with the
+ * content window after a small delay.
+ */
+function reload(window) {
+  let { promise, resolve } = defer();
+
+  // Here we assuming that the most recent browser window is the one we're
+  // doing the test, and the active tab is the one we just opened.
+  let tab = tabs.activeTab;
+
+  tab.once("ready", function () {
+    resolve(window);
+  });
+
+  window.location.reload(true);
+
+  return promise;
+}
+
 // Selection's unit test utility function
 
 /**
@@ -676,6 +696,40 @@ exports["test Textarea OnSelect Listener on existing document"] = function(asser
     then(loader.unload)
 };
 
+exports["test Selection Listener on document reload"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  selection.once("select", function() {
+    assert.equal(selection.text, "fo");
+    done();
+  });
+
+  open(URL).
+    then(reload).
+    then(selectContentFirstDiv).
+    then(dispatchSelectionEvent).
+    then(close).
+    then(loader.unload);
+};
+
+exports["test Textarea OnSelect Listener on document reload"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  selection.once("select", function() {
+    assert.equal(selection.text, "noodles");
+    done();
+  });
+
+  open(URL).
+    then(reload).
+    then(selectTextarea).
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(loader.unload);
+};
+
 // TODO: test Selection Listener on long-held connection (Bug 661884)
 //
 //  I didn't find a way to do so with httpd, using `processAsync` I'm able to
@@ -699,7 +753,7 @@ try {
   require("sdk/selection");
 }
 catch (err) {
-  if (err.message.indexOf("Unsupported Application:") !== 0)
+  if (!/^Unsupported Application/.test(err.message))
     throw err;
 
   module.exports = {
