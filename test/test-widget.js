@@ -12,7 +12,7 @@ const self = require("self");
 const windowUtils = require("sdk/deprecated/window-utils");
 
 exports.testConstructor = function(test) {
-  test.waitUntilDone(30000);
+  test.waitUntilDone();
 
   let browserWindow = windowUtils.activeBrowserWindow;
   let doc = browserWindow.document;
