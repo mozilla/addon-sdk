@@ -455,6 +455,8 @@ h2[id="Module Compatibility"] ~ ul {
   column-gap: 1em;
 }
 
-span.unsupported-on-mobile {
+span.unsupported-on-mobile strong,
+h2[id="Module Compatibility"] ~ ul strong {
+  font-weight: normal;
   text-decoration: line-through;
 }

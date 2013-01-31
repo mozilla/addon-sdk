@@ -240,17 +240,18 @@ rm my-addon.xpi
 <a name="modules-compatibility"></a>
 ## Module Compatibility
 
-Modules not yet supported in Firefox Mobile are ~~marked~~ in the tables below.
+Modules not yet supported in Firefox Mobile are
+<span class="unsupported-on-mobile">**marked**</span> in the tables below.
 
 ### High-Level APIs ###
 
  - [page-worker](modules/sdk/page-worker.html)
- - ~~[panel](modules/sdk/panel.html)~~
+ - [**panel**](modules/sdk/panel.html)
  - [passwords](modules/sdk/passwords.html)
- - ~~[private-browsing](modules/sdk/private-browsing.html)~~
+ - [**private-browsing**](modules/sdk/private-browsing.html)
  - [querystring](modules/sdk/querystring.html)
  - [request](modules/sdk/request.html)
- - ~~[selection](modules/sdk/selection.html)~~
+ - [**selection**](modules/sdk/selection.html)
  - [self](modules/sdk/self.html)
  - [simple-prefs](modules/sdk/simple-prefs.html)
  - [simple-storage](modules/sdk/simple-storage.html)
@@ -258,7 +259,7 @@ Modules not yet supported in Firefox Mobile are ~~marked~~ in the tables below.
  - [tabs](modules/sdk/tabs.html)
  - [timers](modules/sdk/timers.html)
  - [url](modules/sdk/url.html)
- - ~~[widget](modules/sdk/widget.html)~~
+ - [**widget**](modules/sdk/widget.html)
  - [windows](modules/sdk/windows.html)
 
 ### Low-Level APIs ###
@@ -267,10 +268,10 @@ Modules not yet supported in Firefox Mobile are ~~marked~~ in the tables below.
  - [chrome](dev-guide/tutorials/chrome.html)
  - [console/plain-text](modules/sdk/console/plain-text.html)
  - [console/traceback](modules/sdk/console/traceback.html)
- - ~~[content/content](modules/sdk/content/content.html)~~
+ - [**content/content**](modules/sdk/content/content.html)
  - [content/loader](modules/sdk/content/loader.html)
- - ~~[content/symbiont](modules/sdk/content/symbiont.html)~~
- - ~~[content/worker](modules/sdk/content/worker.html)~~
+ - [**content/symbiont**](modules/sdk/content/symbiont.html)
+ - [**content/worker**](modules/sdk/content/worker.html)
  - core/disposable
  - [core/heritage](modules/sdk/core/heritage.html)
  - [core/namespace](modules/sdk/core/namespace.html)
@@ -283,9 +284,9 @@ Modules not yet supported in Firefox Mobile are ~~marked~~ in the tables below.
  - [deprecated/light-traits](modules/sdk/deprecated/light-traits.html)
  - deprecated/list
  - [deprecated/observer-service](modules/sdk/deprecated/observer-service.html)
- - ~~[deprecated/tab-browser](modules/sdk/deprecated/tab-browser.html)~~
+ - [**deprecated/tab-browser**](modules/sdk/deprecated/tab-browser.html)
  - [deprecated/traits](modules/sdk/deprecated/traits.html)
- - ~~[deprecated/window-utils](modules/sdk/deprecated/window-utils.html)~~
+ - [**deprecated/window-utils**](modules/sdk/deprecated/window-utils.html)
  - dom/events
  - [event/core](modules/sdk/event/core.html)
  - [event/target](modules/sdk/event/target.html)

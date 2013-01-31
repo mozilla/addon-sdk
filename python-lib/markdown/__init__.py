@@ -281,8 +281,6 @@ class Markdown:
             inlinepatterns.SimpleTagPattern(inlinepatterns.EMPHASIS_RE, 'em')
         self.inlinePatterns["emphasis2"] = \
             inlinepatterns.SimpleTagPattern(inlinepatterns.EMPHASIS_2_RE, 'em')
-        self.inlinePatterns["delete"] = \
-            inlinepatterns.SimpleTagPattern(inlinepatterns.DELETE_RE, 'del')
         # The order of the handlers matters!!!
 
 
