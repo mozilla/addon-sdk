@@ -4,8 +4,16 @@
 
 const { Request } = require("sdk/request");
 const { pathFor } = require("sdk/system");
-const { startServerAsync } = require("sdk/test/httpd");
 const file = require("sdk/io/file");
+
+const { Loader } = require("sdk/test/loader");
+const options = require("@test/options");
+
+const loader = Loader(module);
+const httpd = loader.require("sdk/test/httpd");
+if (options.parseable || options.verbose)
+  loader.sandbox("sdk/test/httpd").DEBUG = true;
+const { startServerAsync } = httpd;
 
 const basePath = pathFor("TmpD")
 const port = 8099;
