@@ -2053,6 +2053,43 @@ exports.testSubItemContextMatch = function (test) {
   });
 };
 
+
+// Child items should default to visible, not to PageContext
+exports.testSubItemDefaultVisible = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      context: loader.cm.SelectorContext("img"),
+      items: [
+        loader.cm.Item({
+          label: "subitem 1"
+        }),
+        loader.cm.Item({
+          label: "subitem 2",
+          context: loader.cm.SelectorContext("img")
+        }),
+        loader.cm.Item({
+          label: "subitem 3",
+          context: loader.cm.SelectorContext("a")
+        })
+      ]
+    })
+  ];
+
+  // subitem 3 will be hidden
+  let hiddenItems = [items[0].items[2]];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu(items, hiddenItems, []);
+      test.done();
+    });
+  });
+};
+
 exports.testSubItemClick = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
