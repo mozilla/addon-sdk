@@ -14,7 +14,9 @@ if (options.parseable || options.verbose)
   loader.sandbox("sdk/test/httpd").DEBUG = true;
 
 exports.testBasicHTTPServer = function(test) {
-  let basePath = pathFor("TmpD");
+  // Use the profile directory for the temporary file as that will be deleted
+  // when tests are complete
+  let basePath = pathFor("ProfD");
   let filePath = file.join(basePath, 'test-httpd.txt');
   let content = "This is the HTTPD test file.\n";
   let fileStream = file.open(filePath, 'w');
