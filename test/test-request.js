@@ -15,7 +15,7 @@ if (options.parseable || options.verbose)
   loader.sandbox("sdk/test/httpd").DEBUG = true;
 const { startServerAsync } = httpd;
 
-const basePath = pathFor("TmpD")
+const basePath = pathFor("ProfD")
 const port = 8099;
 
 
