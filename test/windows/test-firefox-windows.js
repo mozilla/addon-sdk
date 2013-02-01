@@ -278,11 +278,11 @@ exports.testActiveWindow = function(test) {
 
     var focused = (focusedChildWindow == childTargetWindow);
     if (focused) {
-      nextStep();
+      setTimeout(nextStep, 0);
     } else {
       childTargetWindow.addEventListener("focus", function focusListener() {
         childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextStep();
+        setTimeout(nextStep, 0);
       }, true);
     }
 
