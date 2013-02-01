@@ -15,6 +15,8 @@ if (options.parseable || options.verbose)
   loader.sandbox("sdk/test/httpd").DEBUG = true;
 const { startServerAsync } = httpd;
 
+// Use the profile directory for the temporary files as that will be deleted
+// when tests are complete
 const basePath = pathFor("ProfD")
 const port = 8099;
 
