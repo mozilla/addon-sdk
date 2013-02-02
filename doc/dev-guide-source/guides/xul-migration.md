@@ -176,27 +176,28 @@ object
 
 ### <a name="browser-chrome">Modifying the Browser Chrome</a> ###
 
-The [`window-utils`](modules/sdk/deprecated/window-utils.html) module gives
+The [`window/utils`](modules/sdk/window/utils.html) module gives
 you direct access to chrome windows, including the browser's chrome window.
 Here's a really simple example add-on that modifies the browser chrome using
-`window-utils`:
+`window/utils`:
 
-    var windowUtils = require("window-utils");
+    function removeForwardButton() {
+      var window = require("sdk/window/utils").getMostRecentBrowserWindow();
+      var forward = window.document.getElementById('forward-button');
+      var parent = window.document.getElementById('unified-back-forward-button');
+      parent.removeChild(forward);
+    }
 
-    windowUtils = new windowUtils.WindowTracker({
-      onTrack: function (window) {
-        if ("chrome://browser/content/browser.xul" != window.location) return;
-        var forward = window.document.getElementById('forward-button');
-        var parent = window.document.getElementById('unified-back-forward-button');
-        parent.removeChild(forward);
+    var widgets = require("sdk/widget");
+
+    widgets.Widget({
+      id: "remove-forward-button",
+      label: "Remove the forward button",
+      contentURL: "http://www.mozilla.org/favicon.ico",
+      onClick: function() {
+        removeForwardButton();
       }
     });
-
-This example just removes the 'forward' button from the browser. It constructs
-a `WindowTracker` object and assigns a function to the constructor's `onTrack`
-option. This function will be called whenever a window is opened. The function
-checks whether the window is the browser's chrome window, and if it is, uses
-DOM manipulation functions to modify it.
 
 There are more useful examples of this technique in the Jetpack Wiki's
 collection of [third party modules](https://wiki.mozilla.org/Jetpack/Modules).
@@ -204,15 +205,15 @@ collection of [third party modules](https://wiki.mozilla.org/Jetpack/Modules).
 ### <a name="accessing-tabbrowser">Accessing <a href="https://developer.mozilla.org/en/XUL/tabbrowser">tabbrowser</a> ###
 
 
-The [`tab-browser`](modules/sdk/deprecated/tab-browser.html) module gives
+The [`tabs/utils`](modules/sdk/tabs/utils.html) module gives
 you direct access to the
-[tabbrowser](https://developer.mozilla.org/en/XUL/tabbrowser) object. This
-simple example modifies the selected tab's CSS to enable the user to highlight
-the selected tab:
+[tabbrowser](https://developer.mozilla.org/en/XUL/tabbrowser) object and the
+XUL tab objects it contains. This simple example modifies the selected tab's
+CSS to enable the user to highlight the selected tab:
 
-    var widgets = require("widget");
-    var tabbrowser = require("tab-browser");
-    var self = require("self");
+    var widgets = require("sdk/widget");
+    var tabUtils = require("sdk/tabs/utils");
+    var self = require("sdk/self");
 
     function highlightTab(tab) {
       if (tab.style.getPropertyValue('background-color')) {
@@ -228,7 +229,8 @@ the selected tab:
       label: "Highlight tabs",
       contentURL: self.data.url("highlight.png"),
       onClick: function() {
-        highlightTab(tabbrowser.activeTab);
+        var window = require("sdk/window/utils").getMostRecentBrowserWindow();
+        highlightTab(tabUtils.getActiveTab(window));
       }
     });
 
@@ -266,7 +268,7 @@ to display an alert dialog:
     var promptSvc = Cc["@mozilla.org/embedcomp/prompt-service;1"].
                     getService(Ci.nsIPromptService);
 
-    var widget = require("widget").Widget({
+    var widget = require("sdk/widget").Widget({
       id: "xpcom example",
       label: "Mozilla website",
       contentURL: "http://www.mozilla.org/favicon.ico",
@@ -292,12 +294,12 @@ script like:
 If we save this as "alert.js" in our add-on's `lib` directory, we can rewrite
 `main.js` to use it as follows:
 
-    var widget = require("widget").Widget({
+    var widget = require("sdk/widget").Widget({
       id: "xpcom example",
       label: "Mozilla website",
       contentURL: "http://www.mozilla.org/favicon.ico",
       onClick: function() {
-        require("alert").alert("My Add-on", "Hello from XPCOM");
+        require("./alert").alert("My Add-on", "Hello from XPCOM");
       }
     });
 

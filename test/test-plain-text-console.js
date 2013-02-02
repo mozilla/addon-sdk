@@ -80,7 +80,7 @@ exports.testPlainTextConsole = function(test) {
   con.trace();
   tbLines = prints[0].split("\n");
   test.assertEqual(tbLines[0], "info: " + name + ": Traceback (most recent call last):");
-  test.assertEqual(tbLines[tbLines.length - 2].trim(), "con.trace();");
+  test.assertEqual(tbLines[tbLines.length - 4].trim(), "con.trace();");
 
   // Whether or not console methods should print at the various log levels,
   // structured as a hash of levels, each of which contains a hash of methods,

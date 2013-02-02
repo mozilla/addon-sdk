@@ -19,6 +19,28 @@ const OVERFLOW_POPUP_CLASS = "addon-content-menu-overflow-popup";
 
 const TEST_DOC_URL = module.uri.replace(/\.js$/, ".html");
 
+// Tests that when present the separator is placed before the separator from
+// the old context-menu module
+exports.testSeparatorPosition = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  // Create the old separator
+  let oldSeparator = test.contextMenuPopup.ownerDocument.createElement("menuseparator");
+  oldSeparator.id = "jetpack-context-menu-separator";
+  test.contextMenuPopup.appendChild(oldSeparator);
+
+  // Create an item.
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.assertEqual(test.contextMenuSeparator.nextSibling.nextSibling, oldSeparator,
+                     "New separator should appear before the old one");
+    test.contextMenuPopup.removeChild(oldSeparator);
+    test.done();
+  });
+};
+
 // Destroying items that were previously created should cause them to be absent
 // from the menu.
 exports.testConstructDestroy = function (test) {
@@ -2031,6 +2053,43 @@ exports.testSubItemContextMatch = function (test) {
   });
 };
 
+
+// Child items should default to visible, not to PageContext
+exports.testSubItemDefaultVisible = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      context: loader.cm.SelectorContext("img"),
+      items: [
+        loader.cm.Item({
+          label: "subitem 1"
+        }),
+        loader.cm.Item({
+          label: "subitem 2",
+          context: loader.cm.SelectorContext("img")
+        }),
+        loader.cm.Item({
+          label: "subitem 3",
+          context: loader.cm.SelectorContext("a")
+        })
+      ]
+    })
+  ];
+
+  // subitem 3 will be hidden
+  let hiddenItems = [items[0].items[2]];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu(items, hiddenItems, []);
+      test.done();
+    });
+  });
+};
+
 exports.testSubItemClick = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -2248,12 +2307,22 @@ TestHelper.prototype = {
     if (itemType === "Item" || itemType === "Menu") {
       this.test.assertEqual(elt.getAttribute("label"), item.label,
                             "Item should have correct title");
-      if (typeof(item.image) === "string")
+      if (typeof(item.image) === "string") {
         this.test.assertEqual(elt.getAttribute("image"), item.image,
                               "Item should have correct image");
-      else
+        if (itemType === "Menu")
+          this.test.assert(elt.classList.contains("menu-iconic"),
+                           "Menus with images should have the correct class")
+        else
+          this.test.assert(elt.classList.contains("menuitem-iconic"),
+                           "Items with images should have the correct class")
+      }
+      else {
         this.test.assert(!elt.getAttribute("image"),
                          "Item should not have image");
+        this.test.assert(!elt.classList.contains("menu-iconic") && !elt.classList.contains("menuitem-iconic"),
+                         "The iconic classes should not be present")
+      }
     }
   },
 

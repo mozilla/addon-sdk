@@ -10,6 +10,7 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 
 const { browserWindows } = require("sdk/windows");
+const tabs = require("tabs");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -72,32 +73,43 @@ exports.testAutomaticDestroy = function(test) {
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
 
+  let count = 0;
+  let window;
+  function runTest() {
+    if (++count != 2)
+      return;
+
+    test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
+    test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+    window.tabs.open({
+      url: "data:text/html;charset=utf-8,<title>tab 2</title>",
+      inBackground: true,
+      onReady: function onReady(newTab) {
+        test.assertEqual(window.tabs.length, 2, "New tab open");
+        test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
+        test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+        let i = 1;
+        for each (let tab in window.tabs)
+          test.assertEqual(tab.title, "tab " + i++, "Correct title");
+
+        window.close();
+      }
+    });
+  }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onOpen: function onOpen(window) {
-      test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-
-      window.tabs.open({
-        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
-        inBackground: true,
-        onReady: function onReady(newTab) {
-          test.assertEqual(window.tabs.length, 2, "New tab open");
-          test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
-
-          let i = 1;
-          for each (let tab in window.tabs)
-            test.assertEqual(tab.title, "tab " + i++, "Correct title");
-
-          window.close();
-        }
-      });
+    onActivate: function onOpen(win) {
+      window = win;
+      runTest();
     },
     onClose: function onClose(window) {
       test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
       test.done();
     }
   });
+  tabs.once("ready", runTest);
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
@@ -266,11 +278,11 @@ exports.testActiveWindow = function(test) {
 
     var focused = (focusedChildWindow == childTargetWindow);
     if (focused) {
-      nextStep();
+      setTimeout(nextStep, 0);
     } else {
       childTargetWindow.addEventListener("focus", function focusListener() {
         childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextStep();
+        setTimeout(nextStep, 0);
       }, true);
     }
 

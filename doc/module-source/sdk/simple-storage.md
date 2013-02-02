@@ -14,7 +14,7 @@ it as you would any other.
 
 To store a value, just assign it to a property on `storage`:
 
-    var ss = require("simple-storage");
+    var ss = require("sdk/simple-storage");
     ss.storage.myArray = [1, 1, 2, 3, 5, 8, 13];
     ss.storage.myBoolean = true;
     ss.storage.myNull = null;
@@ -29,7 +29,7 @@ them to strings or another one of these types.
 Be careful to set properties on the `storage` object and not the module itself:
 
     // This is no good!
-    var ss = require("simple-storage");
+    var ss = require("sdk/simple-storage");
     ss.foo = "I will not be saved! :(";
 
 Simple Storage and "cfx run"
@@ -55,14 +55,14 @@ zero them each time the construction code runs. For example, this add-on
 tries to store the URLs of pages the user visits:
 
 <pre><code>
-var ss = require("simple-storage");
+var ss = require("sdk/simple-storage");
 ss.storage.pages = [];
 
-require("tabs").on("ready", function(tab) {
+require("sdk/tabs").on("ready", function(tab) {
   ss.storage.pages.push(tab.url);
 });
 
-var widget = require("widget").Widget({
+var widget = require("sdk/widget").Widget({
   id: "log_history",
   label: "Log History",
   width: 30,
@@ -89,8 +89,8 @@ You can delete properties using the `delete` operator. Here's an add-on
 that adds three widgets to write, read, and delete a value:
 
 <pre><code>
-var widgets = require("widget");
-var ss = require("simple-storage");
+var widgets = require("sdk/widget");
+var ss = require("sdk/simple-storage");
 
 var widget = widgets.Widget({
   id: "write",
@@ -185,7 +185,7 @@ browsing.  If your add-on records the URL of the selected tab, here's how you
 might handle that:
 
     ss.storage.history = [];
-    var privateBrowsing = require("private-browsing");
+    var privateBrowsing = require("sdk/private-browsing");
     if (!privateBrowsing.isActive) {
       var url = getSelectedTabURL();
       ss.storage.history.push(url);

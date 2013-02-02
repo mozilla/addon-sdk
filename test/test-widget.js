@@ -12,7 +12,7 @@ const self = require("self");
 const windowUtils = require("sdk/deprecated/window-utils");
 
 exports.testConstructor = function(test) {
-  test.waitUntilDone(30000);
+  test.waitUntilDone();
 
   let browserWindow = windowUtils.activeBrowserWindow;
   let doc = browserWindow.document;
@@ -254,8 +254,7 @@ exports.testConstructor = function(test) {
     id: "click",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+    contentScript: "var evt = new MouseEvent('click', {button: 0});" +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "end",
     onClick: function() {
@@ -270,8 +269,7 @@ exports.testConstructor = function(test) {
     id: "mouseover",
     label: "mouseover test widget - content",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('mouseover', true, true ); " +
+    contentScript: "var evt = new MouseEvent('mouseover'); " +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "end",
     onMouseover: function() {
@@ -286,8 +284,7 @@ exports.testConstructor = function(test) {
     id: "mouseout",
     label: "mouseout test widget - content",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('mouseout', true, true ); " +
+    contentScript: "var evt = new MouseEvent('mouseout');" +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "end",
     onMouseout: function() {
@@ -302,8 +299,7 @@ exports.testConstructor = function(test) {
     id: "click",
     label: "click test widget - image",
     contentURL: require("sdk/self").data.url("moz_favicon.ico"),
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+    contentScript: "var evt = new MouseEvent('click'); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
     onClick: function() {
@@ -318,8 +314,7 @@ exports.testConstructor = function(test) {
     id: "mouseover",
     label: "mouseover test widget - image",
     contentURL: require("sdk/self").data.url("moz_favicon.ico"),
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('mouseover', true, true ); " +
+    contentScript: "var evt = new MouseEvent('mouseover');" +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
     onMouseover: function() {
@@ -334,8 +329,7 @@ exports.testConstructor = function(test) {
     id: "mouseout",
     label: "mouseout test widget - image",
     contentURL: require("sdk/self").data.url("moz_favicon.ico"),
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('mouseout', true, true ); " +
+    contentScript: "var evt = new MouseEvent('mouseout'); " +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
     onMouseout: function() {
@@ -645,20 +639,22 @@ exports.testConstructor = function(test) {
     id: "click-content",
     label: "click test widget - content",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('MouseEvents'); " +
-                   "evt.initMouseEvent('click', true, true, window, " +
-                   "  0, 0, 0, 0, 0, false, false, false, false, 2, null); " +
+    contentScript: // Left click
+                   "var evt = new MouseEvent('click', {button: 0});" +
                    "document.getElementById('me').dispatchEvent(evt); " +
-                   "evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+                   // Middle click
+                   "evt = new MouseEvent('click', {button: 1});" +
                    "document.getElementById('me').dispatchEvent(evt); " +
-                   "evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('mouseover', true, true ); " +
+                   // Right click
+                   "evt = new MouseEvent('click', {button: 2});" +
+                   "document.getElementById('me').dispatchEvent(evt); " +
+                   // Mouseover
+                   "evt = new MouseEvent('mouseover');" +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "end",
     onClick: function() clickCount++,
     onMouseover: function() {
-      test.assertEqual(clickCount, 1, "right click wasn't sent to click handler");
+      test.assertEqual(clickCount, 1, "only left click was sent to click handler");
       this.destroy();
       doneTest();
     }
@@ -675,8 +671,7 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
     id: "panel1",
     label: "panel widget 1",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+    contentScript: "var evt = new MouseEvent('click', {button: 0});" +
                    "document.body.dispatchEvent(evt);",
     contentScriptWhen: "end",
     panel: require("sdk/panel").Panel({
@@ -713,8 +708,7 @@ exports.testPanelWidget3 = function testPanelWidget3(test) {
     id: "panel3",
     label: "panel widget 3",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+    contentScript: "var evt = new MouseEvent('click', {button: 0});" +
                    "document.body.firstElementChild.dispatchEvent(evt);",
     contentScriptWhen: "end",
     onClick: function() {
@@ -790,8 +784,7 @@ exports.testWidgetViewsUIEvents = function testWidgetViewsUIEvents(test) {
     id: "foo",
     label: "foo",
     content: "<div id='me'>foo</div>",
-    contentScript: "var evt = document.createEvent('HTMLEvents'); " +
-                   "evt.initEvent('click', true, true ); " +
+    contentScript: "var evt = new MouseEvent('click', {button: 0});" +
                    "document.getElementById('me').dispatchEvent(evt);",
     contentScriptWhen: "ready",
     onAttach: function(attachView) {
@@ -1161,15 +1154,12 @@ try {
   const widgets = require("sdk/widget");
 }
 catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
-  if (err.message.indexOf(bug) < 0)
+  if (!/^Unsupported Application/.test(err.message))
     throw err;
 
   module.exports = {
     testAppNotSupported: function (test) {
-      test.pass("the widget module does not support this application.");
+      test.pass(err.message);
     }
-  }
+  };
 }
-

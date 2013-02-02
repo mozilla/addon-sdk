@@ -39,12 +39,6 @@ configurable with the `extensions.addon-sdk.context-menu.overflowThreshold`
 preference) all of the menu items will instead appear in an overflow menu to
 avoid making the context menu too large.
 
-Note that *context menu items are only displayed when the page has finished loading*.
-While the page is still loading, or if you cancel load, context menu items
-added using this module will not appear.
-[Bug 714914](https://bugzilla.mozilla.org/show_bug.cgi?id=714914) tracks
-this problem.
-
 Specifying Contexts
 -------------------
 
@@ -59,8 +53,9 @@ or the node the user clicked to open the menu.
 
 ### The Page Context
 
-First of all, you may not need to specify a context at all.  When an item does
-not specify a context, the page context applies.
+First of all, you may not need to specify a context at all.  When a top-level
+item does not specify a context, the page context applies.  An item that is in a
+submenu is visible unless you specify a context.
 
 The *page context* occurs when the user invokes the context menu on a
 non-interactive portion of the page.  Try right-clicking a blank spot in this
@@ -78,7 +73,7 @@ You can specify some simple, declarative contexts when you create a menu item by
 setting the `context` property of the options object passed to its constructor,
 like this:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "My Menu Item",
       context: cm.URLContext("*.mozilla.org")
@@ -149,7 +144,7 @@ exported by the `context-menu` module.
 Menu items also have a `context` property that can be used to add and remove
 declarative contexts after construction.  For example:
 
-    var context = require("context-menu").SelectorContext("img");
+    var context = require("sdk/context-menu").SelectorContext("img");
     myMenuItem.context.add(context);
     myMenuItem.context.remove(context);
 
@@ -177,7 +172,7 @@ content script is shown in the menu.
 For example, this item appears whenever the context menu is invoked on a page
 that contains at least one image:
 
-    require("context-menu").Item({
+    require("sdk/context-menu").Item({
       label: "This Page Has Images",
       contentScript: 'self.on("context", function (node) {' +
                      '  return !!document.querySelector("img");' +
@@ -195,7 +190,7 @@ are not current, then your context listener is never called.
 This example takes advantage of that fact.  The listener can be assured that
 `node` will always be an image:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "A Mozilla Image",
       context: cm.SelectorContext("img"),
@@ -224,7 +219,7 @@ content script.
 Therefore, to handle an item click, listen for the `"click"` event in that
 item's content script like so:
 
-    require("context-menu").Item({
+    require("sdk/context-menu").Item({
       label: "My Item",
       contentScript: 'self.on("click", function (node, data) {' +
                      '  console.log("Item clicked!");' +
@@ -240,7 +235,7 @@ so be sure to verify that the `data` value passed matches the item you expect.
 You can use this to simplify click handling by providing just a single click
 listener on a `Menu` that reacts to clicks for any child items.:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Menu({
       label: "My Menu",
       contentScript: 'self.on("click", function (node, data) {' +
@@ -260,7 +255,7 @@ associated with the content script, the content script can call the
 JSON-able data.  The menu item's `"message"` event listener will be called with
 that data.
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "Edit Image",
       context: cm.SelectorContext("img"),
@@ -283,7 +278,7 @@ The simplest method is to set the menu item's `label` property.  This example
 updates the item's label based on the number of times it's been clicked:
 
     var numClicks = 0;
-    var myItem = require("context-menu").Item({
+    var myItem = require("sdk/context-menu").Item({
       label: "Click Me: " + numClicks,
       contentScript: 'self.on("click", self.postMessage);',
       onMessage: function () {
@@ -304,7 +299,7 @@ returning true, your `"context"` listeners can also return strings.  When a
 
 This item implements the aforementioned search example:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "Search Google",
       context: cm.SelectionContext(),
@@ -344,7 +339,7 @@ secure, debug and review.</p>
 Show an "Edit Page Source" item when the user right-clicks a non-interactive
 part of the page:
 
-    require("context-menu").Item({
+    require("sdk/context-menu").Item({
       label: "Edit Page Source",
       contentScript: 'self.on("click", function (node, data) {' +
                      '  self.postMessage(document.URL);' +
@@ -356,7 +351,7 @@ part of the page:
 
 Show an "Edit Image" item when the menu is invoked on an image:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "Edit Image",
       context: cm.SelectorContext("img"),
@@ -371,7 +366,7 @@ Show an "Edit Image" item when the menu is invoked on an image:
 Show an "Edit Mozilla Image" item when the menu is invoked on an image in a
 mozilla.org or mozilla.com page:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "Edit Mozilla Image",
       context: [
@@ -388,7 +383,7 @@ mozilla.org or mozilla.com page:
 
 Show an "Edit Page Images" item when the page contains at least one image:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     cm.Item({
       label: "Edit Page Images",
       // This ensures the item only appears during the page context.
@@ -412,7 +407,7 @@ Show an "Edit Page Images" item when the page contains at least one image:
 Show a "Search With" menu when the user right-clicks an anchor that searches
 Google or Wikipedia with the text contained in the anchor:
 
-    var cm = require("context-menu");
+    var cm = require("sdk/context-menu");
     var googleItem = cm.Item({
       label: "Google",
       data: "http://www.google.com/search?q="

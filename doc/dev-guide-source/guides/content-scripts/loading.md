@@ -25,7 +25,7 @@ which the content script will be loaded. To supply the file
 root directory, use a line like:
 
     // "data" is supplied by the "self" module
-    var data = require("self").data;
+    var data = require("sdk/self").data;
     ...
     contentScriptFile: data.url("my-content-script.js")
 
@@ -34,7 +34,7 @@ can load multiple scripts, which can also interact directly with each other in
 the content process:
 
     // "data" is supplied by the "self" module
-    var data = require("self").data;
+    var data = require("sdk/self").data;
     ...
     contentScriptFile:
         [data.url("jquery-1.4.2.min.js"), data.url("my-content-script.js")]

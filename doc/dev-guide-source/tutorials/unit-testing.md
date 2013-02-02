@@ -36,7 +36,7 @@ To begin with, create a new directory, navigate to it, and run `cfx init`.
 Now create a new file in "lib" called "base64.js", and give it the
 following contents:
 
-    var window = require("window-utils").activeBrowserWindow;
+    var window = require("sdk/window/utils").getMostRecentBrowserWindow();
 
     exports.atob = function(a) {
       return window.atob(a);
@@ -50,8 +50,8 @@ This code exports two functions, which just call the corresponding
 functions on the `window` object. To show the module in use, edit
 the "main.js" file as follows:
 
-    var widgets = require("widget");
-    var base64 = require("base64");
+    var widgets = require("sdk/widget");
+    var base64 = require("./base64");
 
     var widget = widgets.Widget({
       id: "base64",
@@ -81,7 +81,7 @@ In its place create a file called `test-base64.js` with the following
 contents:
 
 <pre><code>
-var base64 = require("base64");
+var base64 = require("./base64");
 
 exports["test atob"] = function(assert) {
 	  assert.ok(base64.atob("aGVsbG8=") == "hello", "atob works");
@@ -98,7 +98,7 @@ exports["test empty string"] = function(assert) {
                 "empty string check works");
 }
 
-require("test").run(exports);
+require("sdk/test").run(exports);
 </code></pre>
 
 This file: exports three functions, each of which expects to receive a single

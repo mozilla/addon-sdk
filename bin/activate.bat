@@ -84,7 +84,6 @@ set PYTHONVERSION=
 set key=
 set reg=
 set _tokens=
-cd "%VIRTUAL_ENV%"
 python -c "from jetpack_sdk_env import welcome; welcome()"
 GOTO :EOF
 

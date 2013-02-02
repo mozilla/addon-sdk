@@ -17,13 +17,15 @@ from cuddlefish.tests import env_root
 INITIAL_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "index.html"], \
                     ["modules", "sdk", "aardvark-feeder.html"], \
-                    ["modules", "sdk", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "anteater", "anteater.html"], \
+                    ["modules", "packages", "third_party.html"]]
 
 EXTENDED_FILESET = [ ["static-files", "base.html"], \
                     ["dev-guide", "extra.html"], \
                     ["dev-guide", "index.html"], \
                     ["modules", "sdk", "aardvark-feeder.html"], \
-                    ["modules", "sdk", "anteater", "anteater.html"]]
+                    ["modules", "sdk", "anteater", "anteater.html"],\
+                    ["modules", "packages", "third_party.html"]]
 
 EXTRAFILE = ["dev-guide", "extra.html"]
 
@@ -134,6 +136,11 @@ class Generate_Docs_Tests(unittest.TestCase):
     def test_generate_docs(self):
         test_root = get_test_root()
         docs_root = os.path.join(test_root, "doc")
+        static_files_src = os.path.join(env_root, "doc", "static-files")
+        static_files_dst = os.path.join(test_root, "doc", "static-files")
+        if os.path.exists(static_files_dst):
+            shutil.rmtree(static_files_dst)
+        shutil.copytree(static_files_src, static_files_dst)
         generate.clean_generated_docs(docs_root)
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET)
         # touching an MD file under sdk **does** cause a regenerate
@@ -143,7 +150,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         os.utime(os.path.join(test_root, "doc", "module-source", "sdk", "not_a_doc.js"), None)
         self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching a non MD file under static-files **does not** cause a regenerate
-        os.utime(os.path.join(docs_root, "static-files", "another.html"), None)
+        os.utime(os.path.join(docs_root, "static-files", "css", "sdk-docs.css"), None)
         new_digest = self.check_generate_is_skipped(test_root, INITIAL_FILESET, new_digest)
         # touching an MD file under dev-guide **does** cause a regenerate
         os.utime(os.path.join(docs_root, "dev-guide-source", "index.md"), None)
@@ -156,6 +163,7 @@ class Generate_Docs_Tests(unittest.TestCase):
         new_digest = self.check_generate_regenerate_cycle(test_root, INITIAL_FILESET, new_digest)
         # remove the files
         generate.clean_generated_docs(docs_root)
+        shutil.rmtree(static_files_dst)
 
     def check_generate_is_skipped(self, test_root, files_to_expect, initial_digest):
         generate.generate_docs(test_root, stdout=StringIO.StringIO())

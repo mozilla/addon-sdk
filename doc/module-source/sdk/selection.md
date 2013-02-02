@@ -17,7 +17,7 @@ To be notified when the user makes a selection, register a listener for the
     function myListener() {
       console.log("A selection has been made.");
     }
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     selection.on('select', myListener);
 
     // You can remove listeners too.
@@ -36,13 +36,13 @@ Examples
 
 Log the current contiguous selection as text:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     if (selection.text)
       console.log(selection.text);
 
 Log the current discontiguous selections as HTML:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     if (!selection.isContiguous) {
       for (var subselection in selection) {
          console.log(subselection.html);
@@ -51,7 +51,7 @@ Log the current discontiguous selections as HTML:
 
 Surround HTML selections with delimiters:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     selection.on('select', function () {
       selection.html = "\\\" + selection.html + "///";
     });
