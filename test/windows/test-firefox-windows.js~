@@ -212,6 +212,19 @@ exports.testActiveWindow = function(test) {
       nextStep();
     },
     function() {
+      /**
+       * Bug 614079: This test fails intermittently on some specific linux
+       *             environnements, without being able to reproduce it in same
+       *             distribution with same window manager.
+       *             Disable it until being able to reproduce it easily.
+
+      // On linux, focus is not consistent, so we can't be sure
+      // what window will be on top.
+      // Here when we focus "non-browser" window,
+      // Any Browser window may be selected as "active".
+      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
+        "Non-browser windows aren't handled by this module");
+      */
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
       window2.activate();
@@ -258,6 +271,7 @@ exports.testActiveWindow = function(test) {
   }
 
   function continueAfterFocus(targetWindow) {
+    console.log("continueAfterFocus");
     // Based on SimpleTest.waitForFocus
     var fm = Cc["@mozilla.org/focus-manager;1"].
              getService(Ci.nsIFocusManager);
@@ -274,10 +288,13 @@ exports.testActiveWindow = function(test) {
 
     var focused = (focusedChildWindow == childTargetWindow);
     if (focused) {
+      console.log("Already focused " + focusedChildWindow.document.title + " " + childTargetWindow.document.title);
       setTimeout(nextStep, 0);
     } else {
+      console.log("Waiting for focus");
       childTargetWindow.addEventListener("focus", function focusListener() {
         childTargetWindow.removeEventListener("focus", focusListener, true);
+        console.log("Saw focus");
         setTimeout(nextStep, 0);
       }, true);
     }
