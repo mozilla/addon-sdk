@@ -159,6 +159,7 @@ exports.testCommunication1 = function(test) {
           test.fail('Errors where reported');
         });
         worker.on('message', function(value) {
+          console.log("message")
           test.assertEqual(
             "worked",
             value,

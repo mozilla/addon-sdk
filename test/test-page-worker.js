@@ -8,9 +8,7 @@ const { Loader } = require('sdk/test/loader');
 const Pages = require("sdk/page-worker");
 const Page = Pages.Page;
 
-const ERR_DESTROYED =
-  "Couldn't find the worker to receive this message. " +
-  "The script may not be initialized yet, or may already have been unloaded.";
+const ERR_DESTROYED = "No receiver for this message. Port is destroyed.";
 
 exports.testSimplePageCreation = function(assert, done) {
   let page = new Page({
