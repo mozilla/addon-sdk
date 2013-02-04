@@ -17,7 +17,7 @@ exports.testSimplePageCreation = function(assert, done) {
     contentScript: "self.postMessage(window.location.href)",
     contentScriptWhen: "end",
     onMessage: function (message) {
-      assert.equal(message, "about:blank",
+      assert.equal(message, "data:;charset=utf-8,",
                        "Page Worker should start with a blank page by default");
       assert.equal(this, page, "The 'this' object is the page itself.");
       done();
@@ -143,12 +143,6 @@ exports.testValidateOptions = function(assert) {
     function () Page({ contentURL: 'home' }),
     /The `contentURL` option must be a valid URL\./,
     "Validation correctly denied a non-URL contentURL"
-  );
-
-  assert.throws(
-    function () Page({ onMessage: "This is not a function."}),
-    /The event listener must be a function\./,
-    "Validation correctly denied a non-function onMessage."
   );
 
   assert.pass("Options validation is working.");
