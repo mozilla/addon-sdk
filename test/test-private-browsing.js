@@ -16,6 +16,15 @@ else if (pbUtils.isWindowPBSupported) {
   merge(module.exports, require('./private-browsing/windows'));
 }
 
+exports.testIsPrivateDefaults = function(test) {
+  test.assertEqual(pb.isPrivate(), false, 'undefined is not private');
+  test.assertEqual(pb.isPrivate('test'), false, 'strings are not private');
+  test.assertEqual(pb.isPrivate({}), false, 'random objects are not private');
+  test.assertEqual(pb.isPrivate(4), false, 'numbers are not private');
+  test.assertEqual(pb.isPrivate(/abc/), false, 'regex are not private');
+  test.assertEqual(pb.isPrivate(function() {}), false, 'functions are not private');
+};
+
 exports.testWindowDefaults = function(test) {
   test.assertEqual(windows.activeWindow.isPrivateBrowsing, false, 'window is not private browsing by default');
   let chromeWin = winUtils.getMostRecentBrowserWindow();
