@@ -13,6 +13,7 @@ const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/util
 const windowUtils = require('sdk/deprecated/window-utils');
 const { getTabContentWindow, getActiveTab, openTab, closeTab } = require('sdk/tabs/utils');
 const { data } = require('self');
+const { defer } = require('sdk/lang/functional')
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -42,14 +43,14 @@ exports.testPageMod1 = function(test) {
         test.assertEqual(this, mods[0], "The 'this' object is the page mod.");
       }
     }],
-    function(win, done) {
+    defer(function(win, done) {
       test.assertEqual(
         win.document.body.getAttribute("JEP-107"),
         "worked",
         "PageMod.onReady test"
       );
       done();
-    }
+    })
   );
 };
 
@@ -139,7 +140,7 @@ exports.testPageModErrorHandling = function(test) {
     "PageMod() throws when 'include' option is not specified.");
 };
 
-/* Tests for internal functions. */
+// Tests for internal functions.
 exports.testCommunication1 = function(test) {
   let workerDone = false,
       callbackDone = null;
