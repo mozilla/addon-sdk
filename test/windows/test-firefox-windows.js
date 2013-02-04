@@ -214,8 +214,8 @@ exports.testActiveWindow = function(test) {
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
-      window2.activate();
       continueAfterFocus(rawWindow2);
+      window2.activate();
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
@@ -237,16 +237,16 @@ exports.testActiveWindow = function(test) {
         test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title");
 
         windows.open({
-	  url: "data:text/html;charset=utf-8,<title>window 3</title>",
-	  onOpen: function(window) {
-	    window.tabs.activeTab.on('ready', function onReady() {
-	      window3 = window;
-	      rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-	      test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title");
-              rawWindow3.focus();
+          url: "data:text/html;charset=utf-8,<title>window 3</title>",
+          onOpen: function(window) {
+            window.tabs.activeTab.on('ready', function onReady() {
+              window3 = window;
+              rawWindow3 = wm.getMostRecentWindow("navigator:browser");
+              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title");
               continueAfterFocus(rawWindow3);
-	    });
-	  }
+              rawWindow3.focus();
+            });
+          }
         });
       });
     }
