@@ -39,12 +39,6 @@ configurable with the `extensions.addon-sdk.context-menu.overflowThreshold`
 preference) all of the menu items will instead appear in an overflow menu to
 avoid making the context menu too large.
 
-Note that *context menu items are only displayed when the page has finished loading*.
-While the page is still loading, or if you cancel load, context menu items
-added using this module will not appear.
-[Bug 714914](https://bugzilla.mozilla.org/show_bug.cgi?id=714914) tracks
-this problem.
-
 Specifying Contexts
 -------------------
 
@@ -59,8 +53,9 @@ or the node the user clicked to open the menu.
 
 ### The Page Context
 
-First of all, you may not need to specify a context at all.  When an item does
-not specify a context, the page context applies.
+First of all, you may not need to specify a context at all.  When a top-level
+item does not specify a context, the page context applies.  An item that is in a
+submenu is visible unless you specify a context.
 
 The *page context* occurs when the user invokes the context menu on a
 non-interactive portion of the page.  Try right-clicking a blank spot in this
