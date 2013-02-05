@@ -244,6 +244,7 @@ exports.testActiveWindow = function(test) {
         test.assert(newWindow, "A new window was opened");
         rawWindow2 = newWindow;
         newWindow = null;
+        test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
         test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
         windows.open({
@@ -254,6 +255,7 @@ exports.testActiveWindow = function(test) {
               test.assert(newWindow, "A new window was opened");
               rawWindow3 = newWindow;
               tracker.unload();
+              test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
               test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
               continueAfterFocus(rawWindow3);
               rawWindow3.focus();
