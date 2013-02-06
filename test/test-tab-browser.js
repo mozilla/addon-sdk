@@ -64,8 +64,7 @@ exports.testAddTab = function(test) {
     const tabBrowser = require("sdk/deprecated/tab-browser");
 
     let cache = [];
-    let windowUtils = require("sdk/deprecated/window-utils");
-    new windowUtils.WindowTracker({
+    require("sdk/window/tracker").WindowTracker({
       onTrack: function(win) {
         cache.push(win);
       },
