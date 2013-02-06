@@ -10,7 +10,10 @@ const { windows: windowsIterator } = require("sdk/window/utils");
 const windows = require("windows").browserWindows;
 const { merge } = require("sdk/util/object");
 
-let { loader } = LoaderWithHookedConsole({'private-browsing': true});
+let { loader } = PBLoader({
+  metadata: {'private-browsing': true},
+  ignoreDeprecationErrors: true
+});
 const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
@@ -19,20 +22,27 @@ const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 require('window/utils');
 require('windows');
 
-function LoaderWithHookedConsole(metadata) {
-  let options = JSON.parse(JSON.stringify(require("@loader/options")));
-  options.metadata = merge(options.metadata, metadata);
+function PBLoader(options) {
+  options = options || {};
+  let packaging = JSON.parse(JSON.stringify(require("@loader/options")));
+  packaging.metadata = merge(packaging.metadata, options.metadata);
+
+  let globals = {};
+  if (options.ignoreDeprecationErrors) {
+    globals.console = Object.create(console, {
+      error: {
+        value: function(e) {
+          errors.push(e);
+          if (!/DEPRECATED:/.test(e)) {
+            console.error(e);
+          }
+        }
+      }
+    });
+  }
 
   let errors = [];
-  let loader = Loader(module, {
-    console: Object.create(console, {
-      error: { value: function(e) {
-        if (!/DEPRECATED:/.test(e)) {
-          console.error(e);
-        }
-      }}
-    })
-  }, options);
+  let loader = Loader(module, globals, packaging);
 
   return {
     loader: loader,
@@ -52,4 +62,4 @@ exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
 exports.getOwnerWindow = getOwnerWindow;
-exports.LoaderWithHookedConsole = LoaderWithHookedConsole;
+exports.PBLoader = PBLoader;
