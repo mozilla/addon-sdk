@@ -4,10 +4,20 @@
 
 const { Request } = require("sdk/request");
 const { pathFor } = require("sdk/system");
-const { startServerAsync } = require("sdk/test/httpd");
 const file = require("sdk/io/file");
 
-const basePath = pathFor("TmpD")
+const { Loader } = require("sdk/test/loader");
+const options = require("@test/options");
+
+const loader = Loader(module);
+const httpd = loader.require("sdk/test/httpd");
+if (options.parseable || options.verbose)
+  loader.sandbox("sdk/test/httpd").DEBUG = true;
+const { startServerAsync } = httpd;
+
+// Use the profile directory for the temporary files as that will be deleted
+// when tests are complete
+const basePath = pathFor("ProfD")
 const port = 8099;
 
 

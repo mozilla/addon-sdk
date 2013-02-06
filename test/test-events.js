@@ -4,6 +4,8 @@
 
 'use strict';
 
+const { Loader } = require('sdk/test/loader');
+
 // Exposing private methods as public in order to test
 const EventEmitter = require('sdk/deprecated/events').EventEmitter.compose({
   listeners: function(type) this._listeners(type),
@@ -252,6 +254,21 @@ exports["test:removing once"] = function(test) {
 // Bug 726967: Ensure that `emit` doesn't do an infinite loop when `error`
 // listener throws an exception
 exports['test:emitLoop'] = function(test) {
+  // Override the console for this test so it doesn't log the exception to the
+  // test output
+  let loader = Loader(module, {
+    console: Object.create(console, {
+      exception: { value: function(e) { }}
+    })
+  });
+
+  let EventEmitter = loader.require('sdk/deprecated/events').EventEmitter.compose({
+    listeners: function(type) this._listeners(type),
+    emit: function() this._emit.apply(this, arguments),
+    emitOnObject: function() this._emitOnObject.apply(this, arguments),
+    removeAllListeners: function(type) this._removeAllListeners(type)
+  });
+
   let e = new EventEmitter();
 
   e.on("foo", function() {
