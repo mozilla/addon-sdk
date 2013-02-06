@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { pb, pbUtils } = require('./helper');
-const { openDialog } = require('window/utils');
-const { isPrivate } = require('private-browsing');
-const { browserWindows: windows } = require('windows');
+const { loader, pb, pbUtils } = require('./helper');
+const { openDialog } = loader.require('window/utils');
+const { isPrivate } = pb;
+const { browserWindows: windows } = loader.require('windows');
 
 exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
   let win = openDialog({

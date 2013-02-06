@@ -8,12 +8,20 @@ const unload = require("sdk/system/unload");
 const { Loader } = require('sdk/test/loader');
 const { windows: windowsIterator } = require("sdk/window/utils");
 const windows = require("windows").browserWindows;
+const { merge } = require("sdk/util/object");
 
-let { loader } = LoaderWithHookedConsole();
+let { loader } = LoaderWithHookedConsole({'private-browsing': true});
 const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
 
-function LoaderWithHookedConsole() {
+// need authority..
+require('window/utils');
+require('windows');
+
+function LoaderWithHookedConsole(metadata) {
+  let options = JSON.parse(JSON.stringify(require("@loader/options")));
+  options.metadata = merge(options.metadata, metadata);
+
   let errors = [];
   let loader = Loader(module, {
     console: Object.create(console, {
@@ -23,7 +31,7 @@ function LoaderWithHookedConsole() {
         }
       }}
     })
-  });
+  }, options);
 
   return {
     loader: loader,
@@ -39,7 +47,7 @@ function deactivate(callback) {
   }
 }
 exports.deactivate = deactivate;
-
+exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
 exports.LoaderWithHookedConsole = LoaderWithHookedConsole;

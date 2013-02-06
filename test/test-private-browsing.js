@@ -41,6 +41,8 @@ exports.testIsActiveDefault = function(test) {
 exports.testUsePrivateBrowsing = function(test) {
   test.assert('usePrivateBrowsing' in pbUtils,
   	               'usePrivateBrowsing property exists');
-  test.assertEqual(pbUtils.usePrivateBrowsing, false,
+  test.assertEqual(pbUtils.usePrivateBrowsing, true,
+                   'helper pbUtils.usePrivateBrowsing property is true by default');
+  test.assertEqual(require('sdk/private-browsing/utils').usePrivateBrowsing, false,
   	               'usePrivateBrowsing property is false by default');
 }
