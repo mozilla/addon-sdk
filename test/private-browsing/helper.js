@@ -12,6 +12,7 @@ const windows = require("windows").browserWindows;
 let { loader } = LoaderWithHookedConsole();
 const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
+const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
 function LoaderWithHookedConsole() {
   let errors = [];
@@ -42,4 +43,5 @@ exports.deactivate = deactivate;
 
 exports.pb = pb;
 exports.pbUtils = pbUtils;
+exports.getOwnerWindow = getOwnerWindow;
 exports.LoaderWithHookedConsole = LoaderWithHookedConsole;
