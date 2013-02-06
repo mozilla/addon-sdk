@@ -13,6 +13,7 @@ const { merge } = require("sdk/util/object");
 let { loader } = LoaderWithHookedConsole({'private-browsing': true});
 const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
+const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
 // need authority..
 require('window/utils');
@@ -50,4 +51,5 @@ exports.deactivate = deactivate;
 exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
+exports.getOwnerWindow = getOwnerWindow;
 exports.LoaderWithHookedConsole = LoaderWithHookedConsole;
