@@ -16,11 +16,13 @@ let { loader } = PBLoader({
 });
 const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
-const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
+const { getOwnerWindow } = loader.require('sdk/private-browsing/window/utils');
 
 // need authority..
 require('window/utils');
 require('windows');
+require('sdk/deprecated/window-utils');
+require('sdk/private-browsing/window/utils');
 
 function PBLoader(options) {
   options = options || {};

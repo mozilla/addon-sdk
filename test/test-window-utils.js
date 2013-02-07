@@ -7,6 +7,8 @@ var windowUtils = require("sdk/deprecated/window-utils");
 var timer = require("sdk/timers");
 var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
+const { loader: pbLoader, getOwnerWindow, pbUtils } = require('./private-browsing/helper');
+const { open, close } = pbLoader.require('sdk/window/utils');
 
 function toArray(iterator) {
   let array = [];
@@ -15,19 +17,23 @@ function toArray(iterator) {
   return array;
 }
 
-function makeEmptyWindow() {
+function makeEmptyWindow(options) {
+  options = options || {};
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
   var blankXul = ('<?xml version="1.0"?>' +
                   '<?xml-stylesheet href="chrome://global/skin/" ' +
                   '                 type="text/css"?>' +
                   '<window xmlns="' + xulNs + '" windowtype="test:window">' +
                   '</window>');
-  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul);
-  var features = ["chrome", "width=10", "height=10"];
 
-  var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-           .getService(Ci.nsIWindowWatcher);
-  return ww.openWindow(null, url, null, features.join(","), null);
+  return open("data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul), {
+    features: {
+      chrome: true,
+      width: 10,
+      height: 10,
+      private: !!options.private
+    }
+  });
 }
 
 exports['test close on unload'] = function(assert) {
@@ -326,17 +332,36 @@ exports['test windowIterator'] = function(assert, done) {
   window.addEventListener("load", function onload() {
     window.addEventListener("load", onload, false);
     assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) !== -1,
-              "window is now in windowIterator(false)");
+              "window is now in windowIterator()");
 
     // Wait for the window unload before ending test
-    window.addEventListener("unload", function onunload() {
-      window.addEventListener("unload", onunload, false);
-      done();
-    }, false);
-    window.close();
+    close(window, done);
   }, false);
-}
+};
 
+
+exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
+  // make a new window
+  pbLoader.require('windows').browserWindows.open({
+    private: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+      // PWPB
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.equal(toArray(windowUtils.windowIterator()).indexOf(window), -1,
+                     "window is not in windowIterator()");
+      }
+      else {
+        assert.ok(pbUtils.isWindowPrivate(window), false, "window is not private");
+        assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) > -1,
+                  "window is in windowIterator()"); 
+      }
+      win.close(function() done());
+    }
+  });
+};
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {

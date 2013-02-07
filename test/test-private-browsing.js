@@ -4,7 +4,7 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
+const { pb, pbUtils, getOwnerWindow, loader: pbLoader } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
@@ -49,7 +49,7 @@ exports.testUsePrivateBrowsing = function(test) {
 };
 
 exports.testGetOwnerWindow = function(test) {
-  let window = windows.activeWindow;
+  let window = pbLoader.require('windows').browserWindows.activeWindow;
   let chromeWindow = getOwnerWindow(window);
   test.assertEqual(chromeWindow instanceof Ci.nsIDOMWindow, true, 'associated window is found');
   test.assertEqual(chromeWindow, getOwnerWindow(window.tabs[0]), 'associated window is the same for window and window\'s tab');

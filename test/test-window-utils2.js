@@ -4,7 +4,7 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { open, backgroundify, windows, isBrowser,
+const { open, backgroundify, windows, isBrowser, close,
         getXULWindow, getBaseWindow, getMostRecentWindow,
         getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
@@ -27,15 +27,15 @@ exports['test get nsIXULWindow from nsIDomWindow'] = function(assert) {
             'base returns nsIXULWindow');
 };
 
-// TODO: wait for window unload event before ending test
-exports['test top window creation'] = function(assert) {
+exports['test top window creation'] = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,Hello top window');
   assert.ok(~windows().indexOf(window), 'window was opened');
-  window.close();
+
+  // Wait for the window unload before ending test
+  close(window, done);
 };
 
-// TODO: wait for window unload event before ending test
-exports['test new top window with options'] = function(assert) {
+exports['test new top window with options'] = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,Hi custom top window', {
     name: 'test',
     features: { height: 100, width: 200, toolbar: true }
@@ -45,11 +45,12 @@ exports['test new top window with options'] = function(assert) {
   assert.equal(window.innerHeight, 100, 'height is set');
   assert.equal(window.innerWidth, 200, 'height is set');
   assert.equal(window.toolbar.visible, true, 'toolbar was set');
-  window.close();
+
+  // Wait for the window unload before ending test
+  close(window, done);
 };
 
-// TODO: wait for window unload event before ending test
-exports['test backgroundify'] = function(assert) {
+exports['test backgroundify'] = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,backgroundy');
   assert.ok(~windows().indexOf(window),
             'window is in the list of windows');
@@ -57,7 +58,9 @@ exports['test backgroundify'] = function(assert) {
   assert.equal(backgroundy, window, 'backgroundify returs give window back');
   assert.ok(!~windows().indexOf(window),
             'backgroundifyied window is in the list of windows');
-  window.close();
+
+  // Wait for the window unload before ending test
+  close(window, done);
 };
 
 exports.testIsBrowser = function(assert) {
