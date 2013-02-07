@@ -9,6 +9,7 @@ var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
 const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
 const { open, close } = pbLoader.require('sdk/window/utils');
+const { getFrames } = require('sdk/window/utils');
 const { isPrivate } = require('sdk/private-browsing');
 
 function toArray(iterator) {
@@ -133,7 +134,7 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
   var privateWindowClosed = false;
 
   let { browserWindows: pbWindows } = pbLoader.require('windows');
-  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+  let pbWindowUtils = pbLoader.require('sdk/window/utils');
 
   var delegate = {
     onTrack: function(window) {
@@ -172,6 +173,8 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
       // PWPB case
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.equal(pbWindowUtils.getFrames(window).length > 1, true, 'there are frames');
+        assert.equal(getFrames(window).length, 0, 'there are no frames');
         privateWindowOpened = true;
       }
       win.close(function() privateWindowClosed = true);
