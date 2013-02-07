@@ -1,12 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 'use strict';
 
 const { Ci } = require('chrome');
-const { open, backgroundify, windows,
-        getXULWindow, getBaseWindow } = require('sdk/window/utils');
+const { open, backgroundify, windows, isBrowser,
+        getXULWindow, getBaseWindow, getMostRecentWindow,
+        getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
 
 exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
@@ -27,12 +27,14 @@ exports['test get nsIXULWindow from nsIDomWindow'] = function(assert) {
             'base returns nsIXULWindow');
 };
 
+// TODO: wait for window unload event before ending test
 exports['test top window creation'] = function(assert) {
   let window = open('data:text/html;charset=utf-8,Hello top window');
   assert.ok(~windows().indexOf(window), 'window was opened');
   window.close();
 };
 
+// TODO: wait for window unload event before ending test
 exports['test new top window with options'] = function(assert) {
   let window = open('data:text/html;charset=utf-8,Hi custom top window', {
     name: 'test',
@@ -46,6 +48,7 @@ exports['test new top window with options'] = function(assert) {
   window.close();
 };
 
+// TODO: wait for window unload event before ending test
 exports['test backgroundify'] = function(assert) {
   let window = open('data:text/html;charset=utf-8,backgroundy');
   assert.ok(~windows().indexOf(window),
@@ -55,6 +58,24 @@ exports['test backgroundify'] = function(assert) {
   assert.ok(!~windows().indexOf(window),
             'backgroundifyied window is in the list of windows');
   window.close();
+};
+
+exports.testIsBrowser = function(assert) {
+  // dummy window, good type
+  assert.equal(isBrowser({ document: { documentElement: { getAttribute: function() {
+    return 'navigator:browser';
+  }}}}), false, 'dummy object with correct stucture and type does not pass');
+
+  // dummy window, bad type
+  assert.equal(isBrowser({ document: { documentElement: { getAttribute: function() {
+    return 'navigator:browserx';
+  }}}}), false, 'dummy object with correct stucture and bad type does not pass');
+
+  assert.ok(isBrowser(getMostRecentBrowserWindow()), 'active browser window is a browser window');
+  assert.ok(!isBrowser({}), 'non window is not a browser window');
+  assert.ok(!isBrowser({ document: {} }), 'non window is not a browser window');
+  assert.ok(!isBrowser({ document: { documentElement: {} } }), 'non window is not a browser window');
+  assert.ok(!isBrowser(), 'no argument is not a browser window');
 };
 
 require('test').run(exports);
