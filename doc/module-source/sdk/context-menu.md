@@ -157,7 +157,7 @@ The declarative contexts are handy but not very powerful.  For instance, you
 might want your menu item to appear for any page that has at least one image,
 but declarative contexts won't help you there.
 
-When you need more control control over the context in which your menu items are
+When you need more control over the context in which your menu items are
 shown, you can use content scripts.  Like other APIs in the SDK, the
 `context-menu` API uses
 [content scripts](dev-guide/guides/content-scripts/index.html) to let your
@@ -184,11 +184,13 @@ in the page that the user context-clicked to invoke the menu.  You can use it to
 determine whether your item should be shown.
 
 You can both specify declarative contexts and listen for contexts in a content
-script.  In that case, the declarative contexts are evaluated first.  If they
-are not current, then your context listener is never called.
+script.  In that case, the declarative contexts are evaluated first, and your
+item is shown only when all declarative contexts are current and your
+context listener returns true.
 
-This example takes advantage of that fact.  The listener can be assured that
-`node` will always be an image:
+If any declarative contexts are not current, then your context listener
+is never called. This example takes advantage of that fact.  The listener
+can be assured that `node` will always be an image:
 
     var cm = require("sdk/context-menu");
     cm.Item({
@@ -199,8 +201,26 @@ This example takes advantage of that fact.  The listener can be assured that
                      '});'
     });
 
-Your item is shown only when all declarative contexts are current and your
-context listener returns true.
+However, if you do combine `SelectorContext` and the `"context"` event,
+be aware that the `node` argument passed to the `"context"` event will
+not always match the type specified in `SelectorContext`.
+
+`SelectorContext` will match if the menu is invoked on the node specified
+*or any descendant of that node*, but the `"context"` event handler is
+passed *the actual node* on which the menu was invoked. The example above
+works because `<IMG>` elements can't contain other elements, but in the
+example below, `node.nodeName` is not guaranteed to be "P" - for example,
+it won't be "P" if the user context-clicked a link inside a paragraph:
+
+    var cm = require("sdk/context-menu");
+    cm.Item({
+      label: "A Paragraph",
+      context: cm.SelectorContext("p"),
+      contentScript: 'self.on("context", function (node) {' +
+                     '  console.log(node.nodeName);' +
+                     '  return true;' +
+                     '});'
+    }); 
 
 The content script is executed for every page that a context menu is shown for.
 It will be executed the first time it is needed (i.e. when the context menu is
@@ -226,9 +246,67 @@ item's content script like so:
                      '});'
     });
 
-Note that the listener function has parameters called `node` and `data`.  `node`
-is the node that the user context-clicked to invoke the menu.  You can use it
-when performing some action.  `data` is the `data` property of the menu item
+Note that the listener function has parameters called `node` and `data`.
+
+### The "node" Argument ###
+
+`node` is the node that the user context-clicked to invoke the menu.
+
+* If you did not use `SelectorContext` to decide whether to show the menu item,
+then this is the actual node clicked.
+* If you did use `SelectorContext`, then this is the node that matched your
+selector.
+
+For example, suppose your add-on looks like this:
+
+    var script = "self.on('click', function (node, data) {" +
+                 "  console.log('clicked: ' + node.nodeName);" +
+                 "});";
+
+    var cm = require("sdk/context-menu");
+
+    cm.Item({
+      label: "body context",
+      context: cm.SelectorContext("body"),
+      contentScript: script
+    });
+
+This add-on creates a context-menu item that uses `SelectorContext` to display
+the item whenever the context menu is activated on any descendant of the
+`<BODY>` element. When clicked, the item just logs the
+[`nodeName`](https://developer.mozilla.org/en-US/docs/DOM/Node.nodeName)
+property for the node passed to the click handler.
+
+If you run this add-on you'll see that it always logs "BODY", even if you
+click on a paragraph element inside the page:
+
+<pre>
+info: contextmenu-example: clicked: BODY
+</pre>
+
+By contrast, this add-on uses the `PageContext`:
+
+    var script = "self.on('click', function (node, data) {" +
+                 "  console.log('clicked: ' + node.nodeName);" +
+                 "});";
+
+    var cm = require("sdk/context-menu");
+
+    cm.Item({
+      label: "body context",
+      context: cm.PageContext(),
+      contentScript: script
+    });
+
+It will log the name of the actual node clicked:
+
+<pre>
+info: contextmenu-example: clicked: P
+</pre>
+
+### The "data" Argument ###
+
+`data` is the `data` property of the menu item
 that was clicked.  Note that when you have a hierarchy of menu items the click
 event will be sent to the content script of the item clicked and all ancestors
 so be sure to verify that the `data` value passed matches the item you expect.
@@ -247,6 +325,8 @@ listener on a `Menu` that reacts to clicks for any child items.:
         cm.Item({ label: "Item 3", data: "item3" })
       ]
     });
+
+### Communicating With the Add-on ###
 
 Often you will need to collect some kind of information in the click listener
 and perform an action unrelated to content.  To communicate to the menu item
