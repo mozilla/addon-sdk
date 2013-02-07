@@ -89,7 +89,7 @@ exports['test close on unload'] = function(assert) {
                    "window not closed again on module unload.");
 };
 
-exports['test window watcher'] = function(assert, done) {
+exports.testWindowTracker = function(assert, done) {
   var myWindow;
   var finished = false;
 
@@ -97,27 +97,87 @@ exports['test window watcher'] = function(assert, done) {
     onTrack: function(window) {
       if (window == myWindow) {
         assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() { myWindow.close(); }, 1);
+        timer.setTimeout(function() myWindow.close());
       }
     },
     onUntrack: function(window) {
       if (window == myWindow) {
         assert.pass("onUntrack() called with our test window");
         timer.setTimeout(function() {
-                           if (!finished) {
-                             finished = true;
-                             myWindow = null;
-                             wt.unload();
-                             done();
-                           } else
-                             assert.fail("finishTest() called multiple times.");
-                         }, 1);
+          if (!finished) {
+           finished = true;
+           myWindow = null;
+           wt.unload();
+           done();
+          }
+          else {
+           assert.fail("finishTest() called multiple times.");
+          }
+        });
       }
     }
   };
 
   // test bug 638007 (new is optional), using new
   var wt = new windowUtils.WindowTracker(delegate);
+  myWindow = makeEmptyWindow();
+};
+
+exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
+  var myWindow;
+  var myWindowOpened = false;
+  var myWindowClosed = false;
+  var finished = false;
+  var privateWindow;
+  var privateWindowOpened = false;
+  var privateWindowClosed = false;
+
+  let { browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  var delegate = {
+    onTrack: function(window) {
+      if (window === myWindow) {
+      if (pbUtils.isWindowPrivate(window)) {
+        assert.fail('private window was tracked!');
+      }
+        myWindowOpened = true;
+        assert.pass("onTrack() called with our test window");
+        timer.setTimeout(function() myWindow.close());
+      }
+    },
+    onUntrack: function(window) {
+      if (pbUtils.isWindowPrivate(window)) {
+        assert.fail('private window was tracked!');
+      }
+      if (window === myWindow) {
+        timer.setTimeout(function() {
+          assert.ok(privateWindowClosed);
+          assert.equal(pbUtils.isWindowPBSupported, privateWindowOpened, 'private window was opened');
+          wt.unload();
+          done();
+        });
+      }
+    }
+  };
+  var wt = windowUtils.WindowTracker(delegate);
+
+  // make a new private window
+  pbWindows.open({
+    private: true,
+    onOpen: function(win) {
+      let window = privateWindow = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        privateWindowOpened = true;
+      }
+      win.close(function() privateWindowClosed = true);
+    }
+  });
+
   myWindow = makeEmptyWindow();
 };
 
@@ -338,10 +398,10 @@ exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
 
         // pb mode is supported
         assert.ok(
-          pb.isPrivate(pbWindowUtils.activeWindow),
+          pbUtils.isWindowPrivate(pbWindowUtils.activeWindow),
           "active window is private when pb mode is supported");
         assert.ok(
-          pb.isPrivate(pbWindowUtils.activeBrowserWindow),
+          pbUtils.isWindowPrivate(pbWindowUtils.activeBrowserWindow),
           "active browser window is private when pb mode is supported");
       }
       // Global case
