@@ -9,7 +9,7 @@ var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
 const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
 const { open, close } = pbLoader.require('sdk/window/utils');
-const { getFrames } = require('sdk/window/utils');
+const { getFrames, getWindowTitle } = require('sdk/window/utils');
 const { isPrivate } = require('sdk/private-browsing');
 
 function toArray(iterator) {
@@ -174,7 +174,10 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
         assert.equal(pbWindowUtils.getFrames(window).length > 1, true, 'there are frames');
-        assert.equal(getFrames(window).length, 0, 'there are no frames');
+        assert.equal(pbWindowUtils.getWindowTitle(window), window.document.title,
+                     'getWindowTitle works');
+        assert.equal(getWindowTitle(window), null,
+                     'getWindowTitle returns null for private window when they are not supported');
         privateWindowOpened = true;
       }
       win.close(function() privateWindowClosed = true);
