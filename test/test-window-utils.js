@@ -7,8 +7,9 @@ var windowUtils = require("sdk/deprecated/window-utils");
 var timer = require("sdk/timers");
 var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
-const { loader: pbLoader, getOwnerWindow, pbUtils } = require('./private-browsing/helper');
+const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
 const { open, close } = pbLoader.require('sdk/window/utils');
+const { isPrivate } = require('sdk/private-browsing');
 
 function toArray(iterator) {
   let array = [];
@@ -314,6 +315,44 @@ exports['test active window'] = function(assert, done) {
   nextTest();
 };
 
+exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
+  let {browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  // make a new private window
+  pbWindows.open({
+    private: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // pb mode not supported
+      assert.equal(isPrivate(windowUtils.activeWindow), false,
+                   "active window is not private when pb mode is not supported");
+      assert.equal(isPrivate(windowUtils.activeBrowserWindow), false,
+                   "active browser window is not private when pb mode is not supported");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+
+        // pb mode is supported
+        assert.ok(
+          pb.isPrivate(pbWindowUtils.activeWindow),
+          "active window is private when pb mode is supported");
+        assert.ok(
+          pb.isPrivate(pbWindowUtils.activeBrowserWindow),
+          "active browser window is private when pb mode is supported");
+      }
+      // Global case
+      else {
+        assert.equal(pbUtils.isWindowPrivate(window), false, "window is not private");
+      }
+      win.close(function() done());
+    }
+  });
+}
+
 exports['test windowIterator'] = function(assert, done) {
   // make a new window
   let window = makeEmptyWindow();
@@ -341,20 +380,21 @@ exports['test windowIterator'] = function(assert, done) {
 
 
 exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
-  // make a new window
+  // make a new private window
   pbLoader.require('windows').browserWindows.open({
     private: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
       assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
-      // PWPB
+      // PWPB case
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
         assert.equal(toArray(windowUtils.windowIterator()).indexOf(window), -1,
                      "window is not in windowIterator()");
       }
+      // Global case
       else {
-        assert.ok(pbUtils.isWindowPrivate(window), false, "window is not private");
+        assert.equal(pbUtils.isWindowPrivate(window), false, "window is not private");
         assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) > -1,
                   "window is in windowIterator()"); 
       }
