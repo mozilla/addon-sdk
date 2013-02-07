@@ -480,6 +480,48 @@ exports.testURLContextRemove = function (test) {
   });
 };
 
+// Loading a new page in the same tab should correctly start a new worker for
+// and content scripts
+exports.testPageReload = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = loader.cm.Item({
+    label: "Item",
+    contentScript: "var doc = document; self.on('context', function(node) doc.body.getAttribute('showItem') == 'true');"
+  });
+
+  test.withTestDoc(function (window, doc) {
+    // Set a flag on the document that the item uses
+    doc.body.setAttribute("showItem", "true");
+
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.hideMenu(function() {
+        let browser = this.tabBrowser.getBrowserForTab(this.tab)
+        test.delayedEventListener(browser, "load", function() {
+          test.delayedEventListener(browser, "load", function() {
+            window = browser.contentWindow;
+            doc = window.document;
+
+            // Set a flag on the document that the item uses
+            doc.body.setAttribute("showItem", "false");
+
+            test.showMenu(null, function (popup) {
+              test.checkMenu([item], [item], []);
+
+              test.done();
+            });
+          }, true);
+          browser.loadURI(TEST_DOC_URL, null, null);
+        }, true);
+        // Required to make sure we load a new page in history rather than
+        // just reloading the current page which would unload it
+        browser.loadURI("about:blank", null, null);
+      });
+    });
+  });
+};
 
 // Closing a page after it's been used with a worker should cause the worker
 // to be destroyed
