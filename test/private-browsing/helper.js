@@ -23,6 +23,7 @@ require('window/utils');
 require('windows');
 require('sdk/deprecated/window-utils');
 require('sdk/private-browsing/window/utils');
+require('sdk/deprecated/tab-browser');
 
 function PBLoader(options) {
   options = options || {};
