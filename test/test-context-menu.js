@@ -845,7 +845,7 @@ exports.testUnload = function (test) {
 
 
 // Using multiple module instances to add items without causing overflow should
-// work OK.  Assumes OVERFLOW_THRESH_DEFAULT <= 2.
+// work OK.  Assumes OVERFLOW_THRESH_DEFAULT >= 2.
 exports.testMultipleModulesAdd = function (test) {
   test = new TestHelper(test);
   let loader0 = test.newLoader();
@@ -1210,13 +1210,61 @@ exports.testMultipleModulesOrderOverflow = function (test) {
 
         // Same again
         test.checkMenu([item0, item2, item1, item3], [], []);
-        prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
         test.done();
       });
     });
   });
 };
 
+
+// Checks that if a module's items are all hidden then the overflow menu doesn't
+// get hidden
+exports.testMultipleModulesOverflowHidden = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let prefs = loader0.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  // Use each module to add an item, then unload each module in turn.
+  let item0 = new loader0.cm.Item({ label: "item 0" });
+  let item1 = new loader1.cm.Item({
+    label: "item 1",
+    context: loader1.cm.SelectorContext("a")
+  });
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu([item0, item1], [item1], []);
+    test.done();
+  });
+};
+
+
+// Checks that if a module's items are all hidden then the overflow menu doesn't
+// get hidden (reverse order to above)
+exports.testMultipleModulesOverflowHidden2 = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let prefs = loader0.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 0);
+
+  // Use each module to add an item, then unload each module in turn.
+  let item0 = new loader0.cm.Item({
+    label: "item 0",
+    context: loader0.cm.SelectorContext("a")
+  });
+  let item1 = new loader1.cm.Item({ label: "item 1" });
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu([item0, item1], [item0], []);
+    test.done();
+  });
+};
 
 // An item's click listener should work.
 exports.testItemClick = function (test) {
@@ -1635,7 +1683,6 @@ exports.testSetLabelBeforeShowOverflow = function (test) {
 
   test.showMenu(null, function (popup) {
     test.checkMenu(items, [], []);
-    prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
     test.done();
   });
 };
@@ -1663,7 +1710,6 @@ exports.testSetLabelAfterShowOverflow = function (test) {
     test.assertEqual(items[0].label, "z");
     test.showMenu(null, function (popup) {
       test.checkMenu(items, [], []);
-      prefs.set(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
       test.done();
     });
   });
@@ -2295,6 +2341,8 @@ function TestHelper(test) {
   this.browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                        getService(Ci.nsIWindowMediator).
                        getMostRecentWindow("navigator:browser");
+  this.overflowThreshValue = require("sdk/preferences/service").
+                             get(OVERFLOW_THRESH_PREF, OVERFLOW_THRESH_DEFAULT);
 }
 
 TestHelper.prototype = {
@@ -2478,12 +2526,16 @@ TestHelper.prototype = {
 
   // Call to finish the test.
   done: function () {
+    const self = this;
     function commonDone() {
       this.closeTab();
 
       while (this.loaders.length) {
         this.loaders[0].unload();
       }
+
+      require("sdk/preferences/service").set(OVERFLOW_THRESH_PREF, self.overflowThreshValue);
+
       this.test.done();
     }
 
