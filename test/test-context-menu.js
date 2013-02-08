@@ -481,7 +481,7 @@ exports.testURLContextRemove = function (test) {
 };
 
 // Loading a new page in the same tab should correctly start a new worker for
-// and content scripts
+// any content scripts
 exports.testPageReload = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -496,6 +496,7 @@ exports.testPageReload = function (test) {
     doc.body.setAttribute("showItem", "true");
 
     test.showMenu(null, function (popup) {
+      // With the attribute true the item should be visible in the menu
       test.checkMenu([item], [], []);
       test.hideMenu(function() {
         let browser = this.tabBrowser.getBrowserForTab(this.tab)
@@ -508,6 +509,9 @@ exports.testPageReload = function (test) {
             doc.body.setAttribute("showItem", "false");
 
             test.showMenu(null, function (popup) {
+              // In the new document with the attribute false the item should be
+              // hidden, but if the contentScript hasn't been reloaded it will
+              // still see the old value
               test.checkMenu([item], [item], []);
 
               test.done();
