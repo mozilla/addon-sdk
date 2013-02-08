@@ -250,7 +250,7 @@ Modules not yet supported in Firefox Mobile are
  - [**clipboard**](modules/sdk/clipboard.html)
  - [**context-menu**](modules/sdk/context-menu.html)
  - [hotkeys](modules/sdk/hotkeys.html)
- - [index-db](modules/sdk/indexed-db.html)
+ - [indexed-db](modules/sdk/indexed-db.html)
  - [l10n](modules/sdk/l10n.html)
  - [notifications](modules/sdk/notifications.html)
  - [page-mod](modules/sdk/notifications.html)
