@@ -9,7 +9,7 @@ var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
 const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
 const { open, close } = pbLoader.require('sdk/window/utils');
-const { getFrames, getWindowTitle } = require('sdk/window/utils');
+const { getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
 const { isPrivate } = require('sdk/private-browsing');
 
 function toArray(iterator) {
@@ -311,6 +311,7 @@ exports['test active window'] = function(assert, done) {
   let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
                       .getService(Ci.nsIWindowMediator)
                       .getMostRecentWindow("navigator:browser");
+  let continueAfterFocus = function(window) onFocus(window, nextTest);
 
   assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                "Browser window is the active browser window.");
@@ -318,8 +319,7 @@ exports['test active window'] = function(assert, done) {
 
   let testSteps = [
     function() {
-      windowUtils.activeWindow = browserWindow;
-      continueAfterFocus(browserWindow);
+      continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
@@ -339,45 +339,14 @@ exports['test active window'] = function(assert, done) {
     function() {
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [4]");
-      browserWindow = null;
       done();
     }
   ];
 
-  let nextTest = function() {
-    let func = testSteps.shift();
-    if (func) {
-      func();
-    }
+  function nextTest() {
+    if (testSteps.length)
+      testSteps.shift()();
   }
-
-  function continueAfterFocus(targetWindow) {
-    // Based on SimpleTest.waitForFocus
-    var fm = Cc["@mozilla.org/focus-manager;1"].
-             getService(Ci.nsIFocusManager);
-
-    var childTargetWindow = {};
-    fm.getFocusedElementForWindow(targetWindow, true, childTargetWindow);
-    childTargetWindow = childTargetWindow.value;
-
-    var focusedChildWindow = {};
-    if (fm.activeWindow) {
-      fm.getFocusedElementForWindow(fm.activeWindow, true, focusedChildWindow);
-      focusedChildWindow = focusedChildWindow.value;
-    }
-
-    var focused = (focusedChildWindow == childTargetWindow);
-    if (focused) {
-      nextTest();
-    } else {
-      childTargetWindow.addEventListener("focus", function focusListener() {
-        childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextTest();
-      }, true);
-    }
-
-  }
-
   nextTest();
 };
 

@@ -6,9 +6,7 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
-           getService(Ci.nsIWindowMediator);
-
+const { onFocus } = require('sdk/window/utils');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("tabs");
 const { WindowTracker } = require("window-utils");
@@ -267,36 +265,11 @@ exports.testActiveWindow = function(test) {
   });
 
   function nextStep() {
-    if (testSteps.length > 0)
+    if (testSteps.length)
       testSteps.shift()();
   }
 
-  function continueAfterFocus(targetWindow) {
-    // Based on SimpleTest.waitForFocus
-    var fm = Cc["@mozilla.org/focus-manager;1"].
-             getService(Ci.nsIFocusManager);
-
-    var childTargetWindow = {};
-    fm.getFocusedElementForWindow(targetWindow, true, childTargetWindow);
-    childTargetWindow = childTargetWindow.value;
-
-    var focusedChildWindow = {};
-    if (fm.activeWindow) {
-      fm.getFocusedElementForWindow(fm.activeWindow, true, focusedChildWindow);
-      focusedChildWindow = focusedChildWindow.value;
-    }
-
-    var focused = (focusedChildWindow == childTargetWindow);
-    if (focused) {
-      setTimeout(nextStep, 0);
-    } else {
-      childTargetWindow.addEventListener("focus", function focusListener() {
-        childTargetWindow.removeEventListener("focus", focusListener, true);
-        setTimeout(nextStep, 0);
-      }, true);
-    }
-
-  }
+  let continueAfterFocus = function(w) onFocus(w, nextStep);
 
   function finishTest() {
     window3.close(function() {
