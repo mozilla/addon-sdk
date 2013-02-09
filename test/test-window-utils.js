@@ -11,6 +11,7 @@ const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-bro
 const { open, close } = pbLoader.require('sdk/window/utils');
 const { getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
 const { isPrivate } = require('sdk/private-browsing');
+const WM = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 
 function toArray(iterator) {
   let array = [];
@@ -231,9 +232,7 @@ exports['test window watcher untracker'] = function(assert, done) {
 exports['test window watcher unregs 4 loading wins'] = function(assert, done) {
   var myWindow;
   var finished = false;
-  let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
-      .getService(Ci.nsIWindowMediator)
-      .getMostRecentWindow("navigator:browser");
+  let browserWindow =  WM.getMostRecentWindow("navigator:browser");
   var counter = 0;
 
   var delegate = {
@@ -308,9 +307,7 @@ exports['test window watcher without untracker'] = function(assert, done) {
 };
 
 exports['test active window'] = function(assert, done) {
-  let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
-                      .getService(Ci.nsIWindowMediator)
-                      .getMostRecentWindow("navigator:browser");
+  let browserWindow = WM.getMostRecentWindow("navigator:browser");
   let continueAfterFocus = function(window) onFocus(window, nextTest);
 
   assert.equal(windowUtils.activeBrowserWindow, browserWindow,
@@ -350,6 +347,137 @@ exports['test active window'] = function(assert, done) {
   nextTest();
 };
 
+// Test setting activeWIndow and onFocus for private windows
+exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
+  let {browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  let browserWindow = WM.getMostRecentWindow("navigator:browser");
+  let testSteps;
+
+  assert.equal(windowUtils.activeBrowserWindow, browserWindow,
+               "Browser window is the active browser window.");
+
+  // make a new private window
+  pbWindows.open({
+    private: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      let continueAfterFocus = function(window) onFocus(window, nextTest);
+
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(isPrivate(window), "window is private");
+
+        assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                     "Correct active browser window pb not supported");
+
+        // active window is different when pb mode is on vs off
+        assert.notDeepEqual(windowUtils.activeBrowserWindow, pbWindowUtils.activeBrowserWindow);
+      }
+      // Global case
+      else {
+        assert.ok(!isPrivate(window), "window is not private");
+
+        // active window is the same in global pb, private flag is ignored
+        assert.deepEqual(windowUtils.activeBrowserWindow, pbWindowUtils.activeBrowserWindow);
+      }
+
+      assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                   "Correct active browser window pb supported");
+
+      testSteps = [
+        function() {
+          continueAfterFocus(windowUtils.activeWindow = browserWindow);
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [1]");
+            assert.deepEqual(pbWindowUtils.activeWindow, window,
+                             "Correct active window when pb mode is supported [1]");
+          }
+          // Global case
+          else {
+            assert.deepEqual(windowUtils.activeWindow, window,
+                             "Correct active window when pb mode is not supported [1]");
+            assert.deepEqual(pbWindowUtils.activeWindow, window,
+                             "Correct active window when pb mode is supported [1]");
+          }
+
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            onFocus(
+              window,
+              function() {
+                assert.fail('this should not be called');
+              }
+            );
+          }
+          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          window.focus();
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            // pb not supported
+            assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                             "Correct active browser window when pb mode is not supported [2]");
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [2]");
+          }
+
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                           "Correct active browser window when pb mode is supported [2]");
+          assert.deepEqual(pbWindowUtils.activeWindow, window,
+                           "Correct active window when pb mode is supported [2]");
+
+          windowUtils.activeWindow = window;
+          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            // pb not supported
+            assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                             "Correct active browser window when pb mode is not supported [3]");
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [3]");
+          }
+
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                           "Correct active browser window when pb mode is supported [3]");
+          assert.deepEqual(pbWindowUtils.activeWindow, window,
+                           "Correct active window when pb mode is supported [3]");
+
+          continueAfterFocus(windowUtils.activeWindow = browserWindow);
+        },
+        function() {
+          // pb not supported
+          assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                           "Correct active browser window when pb mode is not supported [4]");
+          assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                           "Correct active window when pb mode is not supported [4]");
+          // pb supported
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, browserWindow,
+                           "Correct active browser window when pb mode is supported [4]");
+          assert.deepEqual(pbWindowUtils.activeWindow, browserWindow,
+                           "Correct active window when pb mode is supported [4]");
+          win.close(function() done());
+        }
+      ];
+      function nextTest() {
+        if (testSteps.length)
+          testSteps.shift()();
+      }
+      nextTest();
+    }
+  });
+};
+
 exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
   let {browserWindows: pbWindows } = pbLoader.require('windows');
   let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
@@ -370,6 +498,7 @@ exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
       // PWPB case
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.ok(isPrivate(window), "window is private");
 
         // pb mode is supported
         assert.ok(
@@ -378,10 +507,15 @@ exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
         assert.ok(
           pbUtils.isWindowPrivate(pbWindowUtils.activeBrowserWindow),
           "active browser window is private when pb mode is supported");
+        assert.ok(isPrivate(pbWindowUtils.activeWindow),
+                  "active window is private when pb mode is supported");
+        assert.ok(isPrivate(pbWindowUtils.activeBrowserWindow),
+          "active browser window is private when pb mode is supported");
       }
       // Global case
       else {
         assert.equal(pbUtils.isWindowPrivate(window), false, "window is not private");
+        assert.equal(isPrivate(window), false, "window is not private");
       }
       win.close(function() done());
     }
