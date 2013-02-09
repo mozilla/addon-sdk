@@ -1266,6 +1266,221 @@ exports.testMultipleModulesOverflowHidden2 = function (test) {
   });
 };
 
+
+// Checks that we don't overflow if there are more items than the overflow
+// threshold but not all of them are visible
+exports.testOverflowIgnoresHidden = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 2);
+
+  let allItems = [
+    new loader.cm.Item({
+      label: "item 0"
+    }),
+    new loader.cm.Item({
+      label: "item 1"
+    }),
+    new loader.cm.Item({
+      label: "item 2",
+      context: loader.cm.SelectorContext("a")
+    })
+  ];
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu(allItems, [allItems[2]], []);
+    test.done();
+  });
+};
+
+
+// Checks that we don't overflow if there are more items than the overflow
+// threshold but not all of them are visible
+exports.testOverflowIgnoresHiddenMultipleModules1 = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let prefs = loader0.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 2);
+
+  let allItems = [
+    new loader0.cm.Item({
+      label: "item 0"
+    }),
+    new loader0.cm.Item({
+      label: "item 1"
+    }),
+    new loader1.cm.Item({
+      label: "item 2",
+      context: loader1.cm.SelectorContext("a")
+    }),
+    new loader1.cm.Item({
+      label: "item 3",
+      context: loader1.cm.SelectorContext("a")
+    })
+  ];
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu(allItems, [allItems[2], allItems[3]], []);
+    test.done();
+  });
+};
+
+
+// Checks that we don't overflow if there are more items than the overflow
+// threshold but not all of them are visible
+exports.testOverflowIgnoresHiddenMultipleModules2 = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let prefs = loader0.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 2);
+
+  let allItems = [
+    new loader0.cm.Item({
+      label: "item 0"
+    }),
+    new loader0.cm.Item({
+      label: "item 1",
+      context: loader0.cm.SelectorContext("a")
+    }),
+    new loader1.cm.Item({
+      label: "item 2"
+    }),
+    new loader1.cm.Item({
+      label: "item 3",
+      context: loader1.cm.SelectorContext("a")
+    })
+  ];
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu(allItems, [allItems[1], allItems[3]], []);
+    test.done();
+  });
+};
+
+
+// Checks that we don't overflow if there are more items than the overflow
+// threshold but not all of them are visible
+exports.testOverflowIgnoresHiddenMultipleModules3 = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let prefs = loader0.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 2);
+
+  let allItems = [
+    new loader0.cm.Item({
+      label: "item 0",
+      context: loader0.cm.SelectorContext("a")
+    }),
+    new loader0.cm.Item({
+      label: "item 1",
+      context: loader0.cm.SelectorContext("a")
+    }),
+    new loader1.cm.Item({
+      label: "item 2"
+    }),
+    new loader1.cm.Item({
+      label: "item 3"
+    })
+  ];
+
+  test.showMenu(null, function (popup) {
+    // One should be hidden
+    test.checkMenu(allItems, [allItems[0], allItems[1]], []);
+    test.done();
+  });
+};
+
+
+// Tests that we transition between overflowing to non-overflowing to no items
+// and back again
+exports.testOverflowTransition = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let prefs = loader.loader.require("preferences-service");
+  prefs.set(OVERFLOW_THRESH_PREF, 2);
+
+  let pItems = [
+    new loader.cm.Item({
+      label: "item 0",
+      context: loader.cm.SelectorContext("p")
+    }),
+    new loader.cm.Item({
+      label: "item 1",
+      context: loader.cm.SelectorContext("p")
+    })
+  ];
+
+  let aItems = [
+    new loader.cm.Item({
+      label: "item 2",
+      context: loader.cm.SelectorContext("a")
+    }),
+    new loader.cm.Item({
+      label: "item 3",
+      context: loader.cm.SelectorContext("a")
+    })
+  ];
+
+  let allItems = pItems.concat(aItems);
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("link"), function (popup) {
+      // The menu should contain all items and will overflow
+      test.checkMenu(allItems, [], []);
+      popup.hidePopup();
+
+      test.showMenu(doc.getElementById("text"), function (popup) {
+        // Only contains hald the items and will not overflow
+        test.checkMenu(allItems, aItems, []);
+        popup.hidePopup();
+
+        test.showMenu(null, function (popup) {
+          // None of the items will be visible
+          test.checkMenu(allItems, allItems, []);
+          popup.hidePopup();
+
+          test.showMenu(doc.getElementById("text"), function (popup) {
+            // Only contains hald the items and will not overflow
+            test.checkMenu(allItems, aItems, []);
+            popup.hidePopup();
+
+            test.showMenu(doc.getElementById("link"), function (popup) {
+              // The menu should contain all items and will overflow
+              test.checkMenu(allItems, [], []);
+              popup.hidePopup();
+
+              test.showMenu(null, function (popup) {
+                // None of the items will be visible
+                test.checkMenu(allItems, allItems, []);
+                popup.hidePopup();
+
+                test.showMenu(doc.getElementById("link"), function (popup) {
+                  // The menu should contain all items and will overflow
+                  test.checkMenu(allItems, [], []);
+                  test.done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+};
+
+
 // An item's click listener should work.
 exports.testItemClick = function (test) {
   test = new TestHelper(test);
@@ -2445,6 +2660,9 @@ TestHelper.prototype = {
     let mainNodes = this.browserWindow.document.querySelectorAll("#contentAreaContextMenu > ." + ITEM_CLASS);
     let overflowNodes = this.browserWindow.document.querySelectorAll("." + OVERFLOW_POPUP_CLASS + " > ." + ITEM_CLASS);
 
+    this.test.assert(mainNodes.length == 0 || overflowNodes.length == 0,
+                     "Should only see nodes at the top level or in overflow");
+
     let overflow = this.overflowSubmenu;
     if (this.shouldOverflow(total)) {
       this.test.assert(overflow && !overflow.hidden,
@@ -2455,12 +2673,15 @@ TestHelper.prototype = {
     else {
       this.test.assert(!overflow || overflow.hidden,
                        "overflow menu should not be present");
-      this.test.assertEqual(overflowNodes.length, 0,
-                            "should be no items in the overflow context menu");
+      // When visible nodes == 0 they could be in overflow or top level
+      if (total > 0) {
+        this.test.assertEqual(overflowNodes.length, 0,
+                              "should be no items in the overflow context menu");
+      }
     }
 
-    let nodes = this.shouldOverflow(total) ? overflowNodes : mainNodes;
-
+    // Iterate over wherever the nodes have ended up
+    let nodes = mainNodes.length ? mainNodes : overflowNodes;
     this.checkNodes(nodes, presentItems, absentItems, removedItems)
     let pos = 0;
   },
@@ -2475,6 +2696,11 @@ TestHelper.prototype = {
       // Removed items shouldn't be in the list
       if (removedItems.indexOf(item) >= 0)
         continue;
+
+      if (nodes.length <= pos) {
+        this.test.assert(false, "Not enough nodes");
+        return;
+      }
 
       let hidden = absentItems.indexOf(item) >= 0;
 
