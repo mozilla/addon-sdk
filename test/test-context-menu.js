@@ -601,6 +601,143 @@ exports.testContentContextNoMatch = function (test) {
 };
 
 
+// Content contexts that return undefined should cause their items to be absent
+// from the menu.
+exports.testContentContextUndefined = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () {});'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [item], []);
+    test.done();
+  });
+};
+
+
+// Content contexts that return an empty string should cause their items to be
+// absent from the menu and shouldn't wipe the label
+exports.testContentContextEmptyString = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () "");'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [item], []);
+    test.assertEqual(item.label, "item", "Label should still be correct");
+    test.done();
+  });
+};
+
+
+// If any content contexts returns true then their items should be present in
+// the menu.
+exports.testMultipleContentContextMatch1 = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () true); ' +
+                   'self.on("context", function () false);',
+    onMessage: function() {
+      test.fail("Should not have called the second context listener");
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.done();
+  });
+};
+
+
+// If any content contexts returns true then their items should be present in
+// the menu.
+exports.testMultipleContentContextMatch2 = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () false); ' +
+                   'self.on("context", function () true);'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.done();
+  });
+};
+
+
+// If any content contexts returns a string then their items should be present
+// in the menu.
+exports.testMultipleContentContextString1 = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () "new label"); ' +
+                   'self.on("context", function () false);'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.assertEqual(item.label, "new label", "Label should have changed");
+    test.done();
+  });
+};
+
+
+// If any content contexts returns a string then their items should be present
+// in the menu.
+exports.testMultipleContentContextString2 = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () false); ' +
+                   'self.on("context", function () "new label");'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.assertEqual(item.label, "new label", "Label should have changed");
+    test.done();
+  });
+};
+
+
+// If many content contexts returns a string then the first should take effect
+exports.testMultipleContentContextString3 = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    contentScript: 'self.on("context", function () "new label 1"); ' +
+                   'self.on("context", function () "new label 2");'
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    test.assertEqual(item.label, "new label 1", "Label should have changed");
+    test.done();
+  });
+};
+
+
 // Content contexts that return true should cause their items to be present
 // in the menu when context clicking an active element.
 exports.testContentContextMatchActiveElement = function (test) {
@@ -665,6 +802,44 @@ exports.testContentContextNoMatchActiveElement = function (test) {
       label: "item 4",
       context: [loader.cm.PageContext()],
       contentScript: 'self.on("context", function () false);'
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("image"), function (popup) {
+      test.checkMenu(items, items, []);
+      test.done();
+    });
+  });
+};
+
+
+// Content contexts that return undefined should cause their items to be absent
+// from the menu when context clicking an active element.
+exports.testContentContextNoMatchActiveElement = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let items = [
+    new loader.cm.Item({
+      label: "item 1",
+      contentScript: 'self.on("context", function () {});'
+    }),
+    new loader.cm.Item({
+      label: "item 2",
+      context: undefined,
+      contentScript: 'self.on("context", function () {});'
+    }),
+    // These items will always be hidden by the declarative usage of PageContext
+    new loader.cm.Item({
+      label: "item 3",
+      context: loader.cm.PageContext(),
+      contentScript: 'self.on("context", function () {});'
+    }),
+    new loader.cm.Item({
+      label: "item 4",
+      context: [loader.cm.PageContext()],
+      contentScript: 'self.on("context", function () {});'
     })
   ];
 
