@@ -3,8 +3,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 'use strict';
 
-let {Cc,Ci} = require("chrome");
+let { Cc, Ci } = require("chrome");
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 
@@ -1429,7 +1430,9 @@ exports.testOverflowTransition = function (test) {
     }),
     new loader.cm.Item({
       label: "item 3",
-      context: loader.cm.SelectorContext("a")
+      contentScript: 'self.on("context", function(node) {' +
+        'if (node.nodeName == "A") return true;' +
+      '});'
     })
   ];
 
