@@ -121,6 +121,10 @@ exports["test behavior on close"] = function(assert, done) {
                      "After being closed, tab attributes are undefined (url)");
         assert.equal(tab.index, undefined,
                      "After being closed, tab attributes are undefined (index)");
+        // Ensure that we can call destroy multiple times without throwing
+        tab.destroy();
+        tab.destroy();
+
         done();
       });
     }
