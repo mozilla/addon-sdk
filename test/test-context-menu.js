@@ -2706,6 +2706,8 @@ exports.testSubItemDefaultVisible = function (test) {
   });
 };
 
+// Tests that the click event on sub menuitem
+// tiggers the click event for the sub menuitem and the parent menu
 exports.testSubItemClick = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -2761,7 +2763,8 @@ exports.testSubItemClick = function (test) {
   });
 };
 
-
+// Tests that the command event on sub menuitem
+// tiggers the click event for the sub menuitem and the parent menu
 exports.testSubItemCommand = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
