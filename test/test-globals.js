@@ -7,6 +7,7 @@ Object.defineProperty(this, "global", { value: this });
 
 const { merge } = require('sdk/util/object');
 const { getTimerTests } = require('./timers/suite');
+const { Loader } = require('sdk/test/loader');
 
 exports.testGlobals = function(test) {
   // the only globals in module scope should be:
@@ -31,3 +32,24 @@ exports.testGlobals = function(test) {
 };
 
 merge(module.exports, getTimerTests(global));
+
+exports.testUnload = function(test) {
+  test.waitUntilDone();
+
+  var loader = Loader(module);
+  var sbtimer = loader.require("sdk/system/globals");
+
+  var myFunc = function myFunc() {
+    test.fail("myFunc() should not be called in testUnload");
+  };
+
+  sbtimer.setTimeout(myFunc, 1);
+  sbtimer.setTimeout(myFunc, 1, 'foo', 4, {}, undefined);
+  sbtimer.setInterval(myFunc, 1);
+  sbtimer.setInterval(myFunc, 1, {}, null, 'bar', undefined, 87);
+  loader.unload();
+  setTimeout(function() {
+    test.pass("timer testUnload passed");
+    test.done();
+  }, 2);
+};
