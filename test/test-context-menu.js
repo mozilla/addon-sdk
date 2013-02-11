@@ -3,8 +3,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 'use strict';
 
-let {Cc,Ci} = require("chrome");
+let { Cc, Ci } = require("chrome");
+
 const { Loader } = require('sdk/test/loader');
 const timer = require("sdk/timers");
 
@@ -1656,6 +1658,137 @@ exports.testOverflowTransition = function (test) {
 };
 
 
+// An item's command listener should work.
+exports.testItemCommand = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "item",
+    data: "item data",
+    contentScript: 'self.on("click", function (node, data) {' +
+                   '  self.postMessage({' +
+                   '    tagName: node.tagName,' +
+                   '    data: data' +
+                   '  });' +
+                   '});',
+    onMessage: function (data) {
+      test.assertEqual(this, item, "`this` inside onMessage should be item");
+      test.assertEqual(data.tagName, "HTML", "node should be an HTML element");
+      test.assertEqual(data.data, item.data, "data should be item data");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    let elt = test.getItemElt(popup, item);
+
+    // create a command event
+    let evt = elt.ownerDocument.createEvent('Event');
+    evt.initEvent('command', true, true);
+    elt.dispatchEvent(evt);
+  });
+};
+
+
+// A menu's click listener should work and receive bubbling 'command' events from
+// sub-items appropriately.  This also tests menus and ensures that when a CSS
+// selector context matches the clicked node's ancestor, the matching ancestor
+// is passed to listeners as the clicked node.
+exports.testMenuCommand = function (test) {
+  // Create a top-level menu, submenu, and item, like this:
+  // topMenu -> submenu -> item
+  // Click the item and make sure the click bubbles.
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({
+    label: "submenu item",
+    data: "submenu item data",
+    context: loader.cm.SelectorContext("a"),
+  });
+
+  let submenu = new loader.cm.Menu({
+    label: "submenu",
+    context: loader.cm.SelectorContext("a"),
+    items: [item]
+  });
+
+  let topMenu = new loader.cm.Menu({
+    label: "top menu",
+    contentScript: 'self.on("click", function (node, data) {' +
+                   '  let Ci = Components["interfaces"];' +
+                   '  self.postMessage({' +
+                   '    tagName: node.tagName,' +
+                   '    data: data' +
+                   '  });' +
+                   '});',
+    onMessage: function (data) {
+      test.assertEqual(this, topMenu, "`this` inside top menu should be menu");
+      test.assertEqual(data.tagName, "A", "Clicked node should be anchor");
+      test.assertEqual(data.data, item.data,
+                       "Clicked item data should be correct");
+      test.done();
+    },
+    items: [submenu],
+    context: loader.cm.SelectorContext("a")
+  });
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(doc.getElementById("span-link"), function (popup) {
+      test.checkMenu([topMenu], [], []);
+      let topMenuElt = test.getItemElt(popup, topMenu);
+      let topMenuPopup = topMenuElt.firstChild;
+      let submenuElt = test.getItemElt(topMenuPopup, submenu);
+      let submenuPopup = submenuElt.firstChild;
+      let itemElt = test.getItemElt(submenuPopup, item);
+
+      // create a command event
+      let evt = itemElt.ownerDocument.createEvent('Event');
+      evt.initEvent('command', true, true);
+      itemElt.dispatchEvent(evt);
+    });
+  });
+};
+
+
+// Click listeners should work when multiple modules are loaded.
+exports.testItemCommandMultipleModules = function (test) {
+  test = new TestHelper(test);
+  let loader0 = test.newLoader();
+  let loader1 = test.newLoader();
+
+  let item0 = loader0.cm.Item({
+    label: "loader 0 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.fail("loader 0 item should not emit click event");
+    }
+  });
+  let item1 = loader1.cm.Item({
+    label: "loader 1 item",
+    contentScript: 'self.on("click", self.postMessage);',
+    onMessage: function () {
+      test.pass("loader 1 item clicked as expected");
+      test.done();
+    }
+  });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item0, item1], [], []);
+    let item1Elt = test.getItemElt(popup, item1);
+
+    // create a command event
+    let evt = item1Elt.ownerDocument.createEvent('Event');
+    evt.initEvent('command', true, true);
+    item1Elt.dispatchEvent(evt);
+  });
+};
+
+
+
+
 // An item's click listener should work.
 exports.testItemClick = function (test) {
   test = new TestHelper(test);
@@ -2009,6 +2142,7 @@ exports.testDrawImageOnClickNode = function (test) {
     });
   });
 };
+
 
 // Setting an item's label before the menu is ever shown should correctly change
 // its label.
@@ -2572,6 +2706,8 @@ exports.testSubItemDefaultVisible = function (test) {
   });
 };
 
+// Tests that the click event on sub menuitem
+// tiggers the click event for the sub menuitem and the parent menu
 exports.testSubItemClick = function (test) {
   test = new TestHelper(test);
   let loader = test.newLoader();
@@ -2623,6 +2759,68 @@ exports.testSubItemClick = function (test) {
       let topMenuPopup = topMenuElt.firstChild;
       let itemElt = test.getItemElt(topMenuPopup, items[0].items[0]);
       itemElt.click();
+    });
+  });
+};
+
+// Tests that the command event on sub menuitem
+// tiggers the click event for the sub menuitem and the parent menu
+exports.testSubItemCommand = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let state = 0;
+
+  let items = [
+    loader.cm.Menu({
+      label: "menu 1",
+      items: [
+        loader.cm.Item({
+          label: "subitem 1",
+          data: "foobar",
+          contentScript: 'self.on("click", function (node, data) {' +
+                         '  self.postMessage({' +
+                         '    tagName: node.tagName,' +
+                         '    data: data' +
+                         '  });' +
+                         '});',
+          onMessage: function(msg) {
+            test.assertEqual(msg.tagName, "HTML", "should have seen the right node");
+            test.assertEqual(msg.data, "foobar", "should have seen the right data");
+            test.assertEqual(state, 0, "should have seen the event at the right time");
+            state++;
+          }
+        })
+      ],
+      contentScript: 'self.on("click", function (node, data) {' +
+                     '  self.postMessage({' +
+                     '    tagName: node.tagName,' +
+                     '    data: data' +
+                     '  });' +
+                     '});',
+      onMessage: function(msg) {
+        test.assertEqual(msg.tagName, "HTML", "should have seen the right node");
+        test.assertEqual(msg.data, "foobar", "should have seen the right data");
+        test.assertEqual(state, 1, "should have seen the event at the right time");
+        state++
+
+        test.done();
+      }
+    })
+  ];
+
+  test.withTestDoc(function (window, doc) {
+    test.showMenu(null, function (popup) {
+      test.checkMenu(items, [], []);
+
+      let topMenuElt = test.getItemElt(popup, items[0]);
+      let topMenuPopup = topMenuElt.firstChild;
+      let itemElt = test.getItemElt(topMenuPopup, items[0].items[0]);
+
+      // create a command event
+      let evt = itemElt.ownerDocument.createEvent('Event');
+      evt.initEvent('command', true, true);
+      itemElt.dispatchEvent(evt);
     });
   });
 };
