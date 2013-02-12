@@ -15,4 +15,7 @@ Unless the documentation explicitly says otherwise, all these modules are
 "supported": meaning that they are relatively stable, and that we'll avoid
 making incompatible changes to them unless absolutely necessary.
 
+Not all modules are supported on Firefox for Android yet: the mobile phone
+icon beside a module indicates that it is supported.
+
 <ul id="module-index"></ul>
