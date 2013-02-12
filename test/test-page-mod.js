@@ -357,6 +357,27 @@ exports.testRelatedTab = function(test) {
   });
 };
 
+exports.testRelatedTabNoRequireTab = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let tab;
+  let url = "data:text/html;charset=utf-8," + encodeURI("Test related worker tab 2");
+  let { PageMod } = loader.require("sdk/page-mod");
+  let pageMod = new PageMod({
+    include: url,
+    onAttach: function(worker) {
+      test.assertEqual(worker.tab.url, url, "Worker.tab.url is valid");
+      worker.tab.close();
+      pageMod.destroy();
+      loader.unload();
+      test.done();
+    }
+  });
+
+  tabs.open(url);
+};
+
 exports.testRelatedTabNoOtherReqs = function(test) {
   test.waitUntilDone();
 
