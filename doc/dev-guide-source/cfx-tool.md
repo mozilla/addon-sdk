@@ -784,6 +784,12 @@ documentation. Use `cfx testcfx -v` for the specific list of tests.
 
 This accepts the same options as `cfx test`.
 
+### cfx testaddons ###
+
+This will run a number of test add-ons that are packaged with the SDK.
+
+This accepts the same options as `cfx test`.
+
 ### cfx testpkgs ###
 
 This will test all of the available CommonJS packages. Note that the number
@@ -872,16 +878,17 @@ You can use the cfx `--static-args` option to pass arbitrary data to your
 program.  This may be especially useful if you run cfx from a script.
 
 The value of `--static-args` must be a JSON string.  The object encoded by the
-JSON becomes the `staticArgs` member of the `options` object passed as the
-first argument to your program's `main` function.  The default value of
+JSON becomes the `staticArgs` property of the
+[`system` module](modules/sdk/system.html).
+
+The default value of
 `--static-args` is `"{}"` (an empty object), so you don't have to worry about
-checking whether `staticArgs` exists in `options`.
+checking whether `staticArgs` exists in `system`.
 
-For example, if your `main.js` looks like this:
+For example, if your add-on looks like this:
 
-    exports.main = function (options, callbacks) {
-      console.log(options.staticArgs.foo);
-    };
+    var system = require("sdk/system");
+    console.log(system.staticArgs.foo);
 
 And you run cfx like this:
 
@@ -892,7 +899,7 @@ And you run cfx like this:
 Then your console should contain this:
 
 <pre>
-  info: Hello from the command line
+info: my-addon: Hello from the command line
 </pre>
 
 The `--static-args` option is recognized by two of the package-specific

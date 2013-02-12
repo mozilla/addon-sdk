@@ -32,12 +32,12 @@ are listed below.
 
 **Example**
 
-    var workers = require("content/worker");
+    var workers = require("sdk/content/worker");
     let worker =  workers.Worker({
-      window: require("window-utils").activeWindow,
+      window: require("sdk/window/utils").getMostRecentBrowserWindow(),
       contentScript:
         "self.port.on('hello', function(name) { " +
-        "  self.port.emit('response', window.location); " +
+        "  self.port.emit('response', window.location.href); " +
         "});"
     });
     worker.port.emit("hello", { name: "worker"});

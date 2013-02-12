@@ -26,19 +26,9 @@ You can use the same code to target both desktop Firefox and Firefox
 Mobile, and just specify some extra options to `cfx run`, `cfx test`,
 and `cfx xpi` when targeting Firefox Mobile.
 
-Right now only the following modules are fully functional:
-
-* [page-mod](modules/sdk/page-mod.html)
-* [page-worker](modules/sdk/page-worker.html)
-* [passwords](modules/sdk/passwords.html)
-* [private-browsing](modules/sdk/private-browsing.html)
-* [request](modules/sdk/request.html)
-* [self](modules/sdk/self.html)
-* [simple-prefs](modules/sdk/simple-prefs.html)
-* [simple-storage](modules/sdk/simple-storage.html)
-* [timers](modules/sdk/timers.html)
-
-We're working on adding support for the other modules.
+Right now not all modules are fully functional, but we're working on adding
+support for more modules.
+The [tables at the end of this guide](dev-guide/tutorials/mobile.html#modules-compatibility) list the modules that are currently supported on Firefox Mobile.
 
 This tutorial explains how to run SDK add-ons on an Android
 device connected via USB to your development machine.
@@ -246,3 +236,100 @@ adb shell
 cd /mnt/sdcard
 rm my-addon.xpi
 </pre>
+
+<a name="modules-compatibility"></a>
+## Module Compatibility
+
+Modules not yet supported in Firefox Mobile are
+<span class="unsupported-on-mobile">**marked**</span> in the tables below.
+
+### High-Level APIs ###
+
+ - [**addon-page**](modules/sdk/addon-page.html)
+ - [base64](modules/sdk/clipboard.html)
+ - [**clipboard**](modules/sdk/clipboard.html)
+ - [**context-menu**](modules/sdk/context-menu.html)
+ - [hotkeys](modules/sdk/hotkeys.html)
+ - [indexed-db](modules/sdk/indexed-db.html)
+ - [l10n](modules/sdk/l10n.html)
+ - [notifications](modules/sdk/notifications.html)
+ - [page-mod](modules/sdk/notifications.html)
+ - [page-worker](modules/sdk/page-worker.html)
+ - [**panel**](modules/sdk/panel.html)
+ - [passwords](modules/sdk/passwords.html)
+ - [**private-browsing**](modules/sdk/private-browsing.html)
+ - [querystring](modules/sdk/querystring.html)
+ - [request](modules/sdk/request.html)
+ - [**selection**](modules/sdk/selection.html)
+ - [self](modules/sdk/self.html)
+ - [simple-prefs](modules/sdk/simple-prefs.html)
+ - [simple-storage](modules/sdk/simple-storage.html)
+ - [system](modules/sdk/system.html)
+ - [tabs](modules/sdk/tabs.html)
+ - [timers](modules/sdk/timers.html)
+ - [url](modules/sdk/url.html)
+ - [**widget**](modules/sdk/widget.html)
+ - [windows](modules/sdk/windows.html)
+
+### Low-Level APIs ###
+
+ - [/loader](modules/toolkit/loader.html)
+ - [chrome](dev-guide/tutorials/chrome.html)
+ - [console/plain-text](modules/sdk/console/plain-text.html)
+ - [console/traceback](modules/sdk/console/traceback.html)
+ - [**content/content**](modules/sdk/content/content.html)
+ - [content/loader](modules/sdk/content/loader.html)
+ - [**content/symbiont**](modules/sdk/content/symbiont.html)
+ - [**content/worker**](modules/sdk/content/worker.html)
+ - core/disposable
+ - [core/heritage](modules/sdk/core/heritage.html)
+ - [core/namespace](modules/sdk/core/namespace.html)
+ - [core/promise](modules/sdk/core/promise.html)
+ - [deprecated/api-utils](modules/sdk/deprecated/api-utils.html)
+ - [deprecated/app-strings](modules/sdk/deprecated/app-strings.html)
+ - [deprecated/cortex](modules/sdk/deprecated/cortex.html)
+ - [deprecated/errors](modules/sdk/deprecated/errors.html)
+ - [deprecated/events](modules/sdk/deprecated/events.html)
+ - [deprecated/light-traits](modules/sdk/deprecated/light-traits.html)
+ - deprecated/list
+ - [deprecated/observer-service](modules/sdk/deprecated/observer-service.html)
+ - [**deprecated/tab-browser**](modules/sdk/deprecated/tab-browser.html)
+ - [deprecated/traits](modules/sdk/deprecated/traits.html)
+ - [**deprecated/window-utils**](modules/sdk/deprecated/window-utils.html)
+ - dom/events
+ - [event/core](modules/sdk/event/core.html)
+ - [event/target](modules/sdk/event/target.html)
+ - [frame/hidden-frame](modules/sdk/frame/hidden-frame.html)
+ - [frame/utils](modules/sdk/frame/utils.html)
+ - [io/byte-streams](modules/sdk/io/byte-streams.html)
+ - [io/file](modules/sdk/io/file.html)
+ - [io/text-streams](modules/sdk/io/text-streams.html)
+ - keyboard/observer
+ - keyboard/utils
+ - lang/functional
+ - lang/type
+ - [loader/cuddlefish](modules/sdk/loader/cuddlefish.html)
+ - [loader/sandbox](modules/sdk/loader/sandbox.html)
+ - [net/url](modules/sdk/net/url.html)
+ - [net/xhr](modules/sdk/net/xhr.html)
+ - [page-mod/match-pattern](modules/sdk/page-mod/match-pattern.html)
+ - [platform/xpcom](modules/sdk/platform/xpcom.html)
+ - [preferences/service](modules/sdk/preferences/service.html)
+ - [system/environment](modules/sdk/system/environment.html)
+ - [system/events](modules/sdk/system/events.html)
+ - system/globals
+ - [system/runtime](modules/sdk/system/runtime.html)
+ - [system/unload](modules/sdk/system/unload.html)
+ - [system/xul-app](modules/sdk/system/xul-app.html)
+ - [test/assert](modules/sdk/test/assert.html)
+ - [test/harness](modules/sdk/test/harness.html)
+ - [test/httpd](modules/sdk/test/httpd.html)
+ - [test/runner](modules/sdk/test/runner.html)
+ - test/tmp-file
+ - util/array
+ - [util/collection](modules/sdk/util/collection.html)
+ - [util/deprecate](modules/sdk/util/deprecate.html)
+ - [util/list](modules/sdk/util/list.html)
+ - util/registry
+ - [util/uuid](modules/sdk/util/uuid.html)
+ - [window/utils](modules/sdk/window/utils.html)

@@ -23,25 +23,24 @@ Examples
 
 Set and get the contents of the clipboard.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
     clipboard.set("Lorem ipsum dolor sit amet");
     var contents = clipboard.get();
 
 Set the clipboard contents to some HTML.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
     clipboard.set("<blink>Lorem ipsum dolor sit amet</blink>", "html");
-
 
 If the clipboard contains HTML content, open it in a new tab.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
     if (clipboard.currentFlavors.indexOf("html") != -1)
-      require("tabs").open("data:text/html," + clipboard.get("html"));
+      require("sdk/tabs").open("data:text/html;charset=utf-8," + clipboard.get("html"));
 
 Set the clipboard contents to an image.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
     clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
                   "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
                   "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
@@ -49,16 +48,16 @@ Set the clipboard contents to an image.
 
 If the clipboard contains an image, open it in a new tab.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
     if (clipboard.currentFlavors.indexOf("image") != -1)
-      require("tabs").open(clipboard.get());
+      require("sdk/tabs").open(clipboard.get());
 
 As noted before, data type can be easily omitted for images.
 
 If the intention is set the clipboard to a data URL as string and not as image,
 it can be easily done specifying a different flavor, like `text`.
 
-    var clipboard = require("clipboard");
+    var clipboard = require("sdk/clipboard");
 
     clipboard.set("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
                   "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +

@@ -6,6 +6,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import time
 
 from copy import copy
 import simplejson as json
@@ -138,6 +139,12 @@ parser_groups = (
                                       metavar=None,
                                       default="{}",
                                       cmds=['run', 'xpi'])),
+        (("", "--parseable",), dict(dest="parseable",
+                                    help="display test output in a parseable format",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['test', 'testex', 'testpkgs',
+                                          'testall'])),
         ]
      ),
 
@@ -328,6 +335,8 @@ def parse_args(arguments, global_options, usage, version, parser_groups,
 def test_all(env_root, defaults):
     fail = False
 
+    starttime = time.time()
+
     if not defaults['filter']:
         print >>sys.stderr, "Testing cfx..."
         sys.stderr.flush()
@@ -360,6 +369,8 @@ def test_all(env_root, defaults):
             test_all_packages(env_root, defaults)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+
+    print >>sys.stderr, "Total time for all tests: %f seconds" % (time.time() - starttime)
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
@@ -636,7 +647,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
-                                  'stopOnError'])
+                                  'stopOnError', 'parseable'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True

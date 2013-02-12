@@ -131,6 +131,10 @@ exports.testEnUsLocaleName = createTest("en-US", function(assert, loader, done) 
   assert.equal(_("Translated"), "Yes",
                "String with translation is correctly translated");
 
+  // Check Unicode char escaping sequences
+  assert.equal(_("unicodeEscape"), " @ ",
+               "Unicode escaped sequances are correctly converted");
+
   // Check plural forms regular matching
   assert.equal(_("downloadsCount", 0),
                    "0 downloads",

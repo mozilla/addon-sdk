@@ -18,7 +18,7 @@ The following add-on adds a
 [`widget`](modules/sdk/widget.html) that logs
 the URLs of open tabs when the user clicks it:
 
-    var widget = require("widget").Widget({
+    var widget = require("sdk/widget").Widget({
       id: "mozilla-link",
       label: "Mozilla website",
       contentURL: "http://www.mozilla.org/favicon.ico",
@@ -26,7 +26,7 @@ the URLs of open tabs when the user clicks it:
     });
 
     function listTabs() {
-      var tabs = require("tabs");
+      var tabs = require("sdk/tabs");
       for each (var tab in tabs)
         console.log(tab.url);
     }
@@ -45,7 +45,7 @@ To access tab content you need to attach a script to the tab
 using `tab.attach()`. This add-on attaches a script to all open
 tabs. The script adds a red border to the tab's document:
 
-    var widget = require("widget").Widget({
+    var widget = require("sdk/widget").Widget({
       id: "mozilla-link",
       label: "Mozilla website",
       contentURL: "http://www.mozilla.org/favicon.ico",
@@ -53,7 +53,7 @@ tabs. The script adds a red border to the tab's document:
     });
 
     function listTabs() {
-      var tabs = require("tabs");
+      var tabs = require("sdk/tabs");
       for each (var tab in tabs)
         runScript(tab);
     }
