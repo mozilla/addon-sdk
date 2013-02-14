@@ -1718,7 +1718,6 @@ exports.testMenuCommand = function (test) {
   let topMenu = new loader.cm.Menu({
     label: "top menu",
     contentScript: 'self.on("click", function (node, data) {' +
-                   '  let Ci = Components["interfaces"];' +
                    '  self.postMessage({' +
                    '    tagName: node.tagName,' +
                    '    data: data' +
@@ -1798,7 +1797,6 @@ exports.testItemClick = function (test) {
     label: "item",
     data: "item data",
     contentScript: 'self.on("click", function (node, data) {' +
-                   '  let Ci = Components["interfaces"];' +
                    '  self.postMessage({' +
                    '    tagName: node.tagName,' +
                    '    data: data' +
@@ -1846,7 +1844,6 @@ exports.testMenuClick = function (test) {
   let topMenu = new loader.cm.Menu({
     label: "top menu",
     contentScript: 'self.on("click", function (node, data) {' +
-                   '  let Ci = Components["interfaces"];' +
                    '  self.postMessage({' +
                    '    tagName: node.tagName,' +
                    '    data: data' +
