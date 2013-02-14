@@ -14,6 +14,8 @@ const pb = loader.require('sdk/private-browsing');
 const pbUtils = loader.require('sdk/private-browsing/utils');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
+require('sdk/tabs/utils')
+
 function LoaderWithHookedConsole() {
   let errors = [];
   let loader = Loader(module, {
@@ -41,6 +43,7 @@ function deactivate(callback) {
 }
 exports.deactivate = deactivate;
 
+exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
 exports.getOwnerWindow = getOwnerWindow;
