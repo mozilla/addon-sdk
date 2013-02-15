@@ -10,7 +10,7 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 
 const { browserWindows } = require("sdk/windows");
-const tabs = require("tabs");
+const tabs = require("sdk/tabs");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
