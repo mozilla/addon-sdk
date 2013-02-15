@@ -3,7 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { pb, pbUtils } = require('./private-browsing/helper');
+const { Ci } = require('chrome');
+const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
@@ -43,4 +44,11 @@ exports.testUsePrivateBrowsing = function(test) {
   	               'usePrivateBrowsing property exists');
   test.assertEqual(pbUtils.usePrivateBrowsing, false,
   	               'usePrivateBrowsing property is false by default');
-}
+};
+
+exports.testGetOwnerWindow = function(test) {
+  let window = windows.activeWindow;
+  let chromeWindow = getOwnerWindow(window);
+  test.assertEqual(chromeWindow instanceof Ci.nsIDOMWindow, true, 'associated window is found');
+  test.assertEqual(chromeWindow, getOwnerWindow(window.tabs[0]), 'associated window is the same for window and window\'s tab');
+};

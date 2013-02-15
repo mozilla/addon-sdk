@@ -10,7 +10,8 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 
 const { browserWindows } = require("sdk/windows");
-const tabs = require("tabs");
+const tabs = require("sdk/tabs");
+const { WindowTracker } = require("sdk/deprecated/window-utils");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -228,21 +229,34 @@ exports.testActiveWindow = function(test) {
     }
   ];
 
+  let newWindow = null;
+  let tracker = new WindowTracker({
+    onTrack: function(window) {
+      newWindow = window;
+    }
+  });
+
   windows.open({
     url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
       window.tabs.activeTab.on('ready', function() {
         window2 = window;
-        rawWindow2 = wm.getMostRecentWindow("navigator:browser");
-        test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title");
+        test.assert(newWindow, "A new window was opened");
+        rawWindow2 = newWindow;
+        newWindow = null;
+        test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
+        test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
         windows.open({
           url: "data:text/html;charset=utf-8,<title>window 3</title>",
           onOpen: function(window) {
             window.tabs.activeTab.on('ready', function onReady() {
               window3 = window;
-              rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title");
+              test.assert(newWindow, "A new window was opened");
+              rawWindow3 = newWindow;
+              tracker.unload();
+              test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
+              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
               continueAfterFocus(rawWindow3);
               rawWindow3.focus();
             });
