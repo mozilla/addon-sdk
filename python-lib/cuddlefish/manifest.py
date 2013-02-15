@@ -58,10 +58,13 @@ class ManifestEntry:
         self.datamap = None
 
     def get_path(self):
-        path = "%s/%s/%s" % \
-               (self.packageName, self.sectionName, self.moduleName)
-        if not path.endswith(".js"):
-          path += ".js"
+        name = self.moduleName
+        if name.endswith(".js"):
+            name = name[:-3]
+        if self.sectionName == "tests":
+            path = "%s/%s/%s" % (self.packageName, self.sectionName, name)
+        else:
+            path = "%s/%s" % (self.packageName, name)
         return path
 
     def get_entry_for_manifest(self):
@@ -75,13 +78,13 @@ class ManifestEntry:
         for req in self.requirements:
             if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
-                them_path = them.get_path()
-                entry["requirements"][req] = {"path": them_path}
+                entry["requirements"][req] = them.get_path()
             else:
                 # something magic. The manifest entry indicates that they're
                 # allowed to require() it
                 entry["requirements"][req] = self.requirements[req]
-            assert isinstance(entry["requirements"][req], dict)
+            assert isinstance(entry["requirements"][req], unicode) or \
+                   isinstance(entry["requirements"][req], str)
         return entry
 
     def add_js(self, js_filename):
@@ -378,7 +381,7 @@ class ManifestBuilder:
             # If requirement is chrome or a pseudo-module (starts with @) make
             # path a requirement name.
             if reqname == "chrome" or reqname.startswith("@"):
-                me.add_requirement(reqname, {"path": reqname})
+                me.add_requirement(reqname, reqname)
             else:
                 # when two modules require() the same name, do they get a
                 # shared instance? This is a deep question. For now say yes.
