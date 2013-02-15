@@ -8,6 +8,7 @@ const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
+const { isPrivateBrowsingSupported } = require('self');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
@@ -39,10 +40,8 @@ exports.testIsActiveDefault = function(test) {
                    'pb.isActive returns false when private browsing isn\'t supported');
 };
 
-exports.testUsePrivateBrowsing = function(test) {
-  test.assert('usePrivateBrowsing' in pbUtils,
-  	               'usePrivateBrowsing property exists');
-  test.assertEqual(pbUtils.usePrivateBrowsing, false,
+exports.testIsPrivateBrowsingFalseDefault = function(test) {
+  test.assertEqual(isPrivateBrowsingSupported, false,
   	               'usePrivateBrowsing property is false by default');
 };
 
