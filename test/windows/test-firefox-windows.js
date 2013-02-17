@@ -12,6 +12,8 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const { WindowTracker } = require("sdk/deprecated/window-utils");
+const { isPrivate } = require('sdk/private-browsing');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -369,4 +371,25 @@ exports.testTrackWindows = function(test) {
   })
 
   openWindow();
+}
+
+// test that it is possible to open a private window
+exports.testWindowOpenPrivate = function(test) {
+  test.waitUntilDone();
+
+  browserWindows.open({
+    url: 'about:mozilla',
+    isPrivate: true,
+    onOpen: function(window) {
+      let tab = window.tabs[0];
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
+        test.assertEqual(isPrivate(tab), isWindowPBSupported, 'tab is private');
+
+        tab.close(function() {
+          test.done();
+        });
+      });
+    }
+  });
 }
