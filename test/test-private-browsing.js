@@ -8,13 +8,31 @@ const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
+const { is } = require('sdk/system/xul-app');
+const { isPrivate } = require('private-browsing');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
   merge(module.exports, require('./private-browsing/global'));
+
+  exports.testGlobalOnlyOnFirefox = function(test) {
+    test.assert(is("Firefox"), "isGlobalPBSupported is only true on Firefox");
+  }
 }
 else if (pbUtils.isWindowPBSupported) {
   merge(module.exports, require('./private-browsing/windows'));
+
+  exports.testPWOnlyOnFirefox = function(test) {
+    test.assert(is("Firefox"), "isWindowPBSupported is only true on Firefox");
+  }
+}
+// only on Fennec
+else if (pbUtils.isTabPBSupported) {
+  merge(module.exports, require('./private-browsing/tabs'));
+
+  exports.testPTOnlyOnFennec = function(test) {
+    test.assert(is("Fennec"), "isTabPBSupported is only true on Fennec");
+  }
 }
 
 exports.testIsPrivateDefaults = function(test) {
@@ -40,8 +58,30 @@ exports.testIsActiveDefault = function(test) {
 };
 
 exports.testGetOwnerWindow = function(test) {
+  test.waitUntilDone();
+
   let window = windows.activeWindow;
   let chromeWindow = getOwnerWindow(window);
-  test.assertEqual(chromeWindow instanceof Ci.nsIDOMWindow, true, 'associated window is found');
-  test.assertEqual(chromeWindow, getOwnerWindow(window.tabs[0]), 'associated window is the same for window and window\'s tab');
+  test.assert(chromeWindow instanceof Ci.nsIDOMWindow, 'associated window is found');
+
+  window.tabs.open({
+    url: 'about:blank',
+    private: true, // should be ignored in this case
+    onOpen: function(tab) {
+      // test that getOwnerWindow works as expected
+      if (is('Fennec')) {
+        test.assertNotStrictEqual(chromeWindow, getOwnerWindow(tab)); 
+        test.assert(getOwnerWindow(tab) instanceof Ci.nsIDOMWindow); 
+      }
+      else {
+        test.assertStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
+      }
+
+      // test that the tab is not private
+      // private flag should be ignored by default
+      test.assert(!isPrivate(tab));
+
+      tab.close(function() test.done());
+    }
+  });
 }
