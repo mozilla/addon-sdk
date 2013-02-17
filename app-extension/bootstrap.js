@@ -55,29 +55,6 @@ function readURI(uri) {
   return data;
 }
 
-// Utility function that converts cfx-py generated paths to a
-// module ids.
-function path2id(path) {
-  // Strips out `/lib` and `.js` from package/lib/path.js
-  return path.replace(/([^\/]*)\/lib/, '$1').replace(/.js$/, '');
-}
-// Utility function that takes old manifest format and creates a manifest
-// in a new format: https://github.com/mozilla/addon-sdk/wiki/JEP-Linker
-function manifestV2(manifest) {
-  return Object.keys(manifest).reduce(function(result, path) {
-    let entry = manifest[path];
-    let id = path2id(path);
-    let requirements = entry.requirements || {};
-    result[id] = {
-      requirements: Object.keys(requirements).reduce(function(result, path) {
-        result[path] = path2id(requirements[path].path);
-        return result;
-      }, {})
-    };
-    return result
-  }, {});
-}
-
 // We don't do anything on install & uninstall yet, but in a future
 // we should allow add-ons to cleanup after uninstall.
 function install(data, reason) {}
@@ -127,7 +104,7 @@ function startup(data, reasonCode) {
     });
 
     // Make version 2 of the manifest
-    let manifest = manifestV2(options.manifest);
+    let manifest = options.manifest;
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
     let cuddlefishURI = prefixURI + options.loader;
@@ -136,7 +113,7 @@ function startup(data, reasonCode) {
 
     // Normalize `options.mainPath` so that it looks like one that will come
     // in a new version of linker.
-    let main = path2id(options.mainPath);
+    let main = options.mainPath;
 
     unload = cuddlefish.unload;
     loader = cuddlefish.Loader({
