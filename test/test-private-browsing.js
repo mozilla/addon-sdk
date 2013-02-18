@@ -8,7 +8,7 @@ const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
-const { isPrivateBrowsingSupported } = require('self');
+const { isPrivateBrowsingSupported } = require('sdk/self');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
