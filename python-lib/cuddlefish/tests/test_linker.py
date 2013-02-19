@@ -48,10 +48,10 @@ class Basic(unittest.TestCase):
         def assertReqIs(modname, reqname, path):
             reqs = m["one/%s" % modname]["requirements"]
             self.failUnlessEqual(reqs[reqname], path)
-        assertReqIs("main", "panel", "addon-sdk/sdk/panel")
+        assertReqIs("main", "panel", "sdk/panel")
         assertReqIs("main", "two.js", "one/two")
         assertReqIs("main", "./two", "one/two")
-        assertReqIs("main", "sdk/tabs.js", "addon-sdk/sdk/tabs")
+        assertReqIs("main", "sdk/tabs.js", "sdk/tabs")
         assertReqIs("main", "./subdir/three", "one/subdir/three")
         assertReqIs("two", "main", "one/main")
         assertReqIs("subdir/three", "../main", "one/main")
