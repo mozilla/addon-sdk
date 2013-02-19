@@ -2477,6 +2477,27 @@ exports.testAlreadyOpenIframe = function (test) {
 };
 
 
+// Tests that items without an image don't attempt to show one
+exports.testItemNoImage = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item1 = new loader.cm.Item({ label: "item 1" });
+  let item2 = new loader.cm.Item({ label: "item 2", image: null });
+  let item3 = new loader.cm.Item({ label: "item 3", image: undefined });
+
+  test.assert(!item1.image, "Should be no defined image");
+  test.assert(!item2.image, "Should be no defined image");
+  test.assert(!item3.image, "Should be no defined image");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item1, item2, item3], [], []);
+
+    test.done();
+  });
+}
+
+
 // Test image support.
 exports.testItemImage = function (test) {
   test = new TestHelper(test);
@@ -2487,6 +2508,8 @@ exports.testItemImage = function (test) {
   let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [
     loader.cm.Item({ label: "subitem" })
   ]});
+  test.assertEqual(item.image, imageURL, "Should have set the image correctly");
+  test.assertEqual(menu.image, imageURL, "Should have set the image correctly");
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item, menu], [], []);
@@ -2494,10 +2517,14 @@ exports.testItemImage = function (test) {
     let imageURL2 = require("sdk/self").data.url("dummy.ico");
     item.image = imageURL2;
     menu.image = imageURL2;
+    test.assertEqual(item.image, imageURL2, "Should have set the image correctly");
+    test.assertEqual(menu.image, imageURL2, "Should have set the image correctly");
     test.checkMenu([item, menu], [], []);
 
     item.image = null;
     menu.image = null;
+    test.assertEqual(item.image, null, "Should have set the image correctly");
+    test.assertEqual(menu.image, null, "Should have set the image correctly");
     test.checkMenu([item, menu], [], []);
 
     test.done();
