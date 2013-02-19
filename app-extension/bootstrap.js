@@ -110,6 +110,10 @@ function startup(data, reasonCode) {
     // Maps sdk module folders to their resource folder
     paths['sdk/'] = prefixURI + 'addon-sdk/lib/sdk/';
     paths['toolkit/'] = prefixURI + 'addon-sdk/lib/toolkit/';
+    // test.js is usually found in root commonjs or SDK_ROOT/lib/ folder,
+    // so that it isn't shipped in the xpi. Keep a copy of it in sdk/ folder
+    // until we no longer support SDK modules in XPI:
+    paths['test'] = prefixURI + 'addon-sdk/lib/sdk/test.js';
 
     // Make version 2 of the manifest
     let manifest = options.manifest;
