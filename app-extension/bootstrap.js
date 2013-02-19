@@ -92,16 +92,24 @@ function startup(data, reasonCode) {
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     // Create path to URLs mapping supported by loader.
-    let paths = Object.keys(options.metadata).reduce(function(result, name) {
-      result[name + '/'] = prefixURI + name + '/lib/'
-      result[name + '/tests/'] = prefixURI + name + '/tests/'
-      return result
-    }, {
+    let paths = {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
-      'toolkit/': 'resource://gre/modules/toolkit/',
-      '': 'resources:///modules/'
-    });
+      './tests/': prefixURI + name + '/tests/',
+      '': 'resource://gre/modules/commonjs/'
+    };
+
+    // Maps addon lib and tests ressource folders
+    paths[name + '/'] = prefixURI + name + '/lib/';
+    paths[name + '/tests/'] = prefixURI + name + '/tests/';
+    // We need to map tests folder when we run sdk tests whose package name
+    // is stripped
+    if (name == 'addon-sdk')
+      paths['tests/'] = prefixURI + name + '/tests/';
+
+    // Maps sdk module folders to their resource folder
+    paths['sdk/'] = prefixURI + 'addon-sdk/lib/sdk/';
+    paths['toolkit/'] = prefixURI + 'addon-sdk/lib/toolkit/';
 
     // Make version 2 of the manifest
     let manifest = options.manifest;
@@ -157,7 +165,7 @@ function startup(data, reasonCode) {
       }
     });
 
-    let module = cuddlefish.Module('addon-sdk/sdk/loader/cuddlefish', cuddlefishURI);
+    let module = cuddlefish.Module('sdk/loader/cuddlefish', cuddlefishURI);
     let require = cuddlefish.Require(loader, module);
 
     require('sdk/addon/runner').startup(reason, {
