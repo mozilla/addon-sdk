@@ -9,7 +9,7 @@ const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
 const { is } = require('sdk/system/xul-app');
-const { isPrivate } = require('private-browsing');
+const { isPrivate } = require('sdk/private-browsing');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
