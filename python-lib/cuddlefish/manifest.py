@@ -229,7 +229,8 @@ class ManifestBuilder:
                 # search for all tests. self.test_modules will be passed
                 # through the harness-options.json file in the
                 # .allTestModules property.
-                self.test_modules.append(testname)
+                # Pass the absolute module path.
+                self.test_modules.append(tme.get_path())
 
         # include files used by the loader
         for em in self.extra_modules:
