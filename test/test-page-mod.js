@@ -12,7 +12,7 @@ const { Cc, Ci } = require("chrome");
 const { open, getFrames, getMostRecentBrowserWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
 const { getTabContentWindow, getActiveTab, openTab, closeTab } = require('sdk/tabs/utils');
-const { data } = require('self');
+const { data } = require('sdk/self');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -340,10 +340,12 @@ exports.testRelatedTab = function(test) {
   let pageMod = new PageMod({
     include: "about:*",
     onAttach: function(worker) {
+      test.assert(!!worker.tab, "Worker.tab exists");
       test.assertEqual(tab, worker.tab, "Worker.tab is valid");
       pageMod.destroy();
-      tab.close();
-      test.done();
+      tab.close(function() {
+        test.done();
+      });
     }
   });
 
@@ -353,7 +355,49 @@ exports.testRelatedTab = function(test) {
       tab = t;
     }
   });
+};
 
+exports.testRelatedTabNoRequireTab = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let tab;
+  let url = "data:text/html;charset=utf-8," + encodeURI("Test related worker tab 2");
+  let { PageMod } = loader.require("sdk/page-mod");
+  let pageMod = new PageMod({
+    include: url,
+    onAttach: function(worker) {
+      test.assertEqual(worker.tab.url, url, "Worker.tab.url is valid");
+      worker.tab.close();
+      pageMod.destroy();
+      loader.unload();
+      test.done();
+    }
+  });
+
+  tabs.open(url);
+};
+
+exports.testRelatedTabNoOtherReqs = function(test) {
+  test.waitUntilDone();
+
+  let loader = Loader(module);
+  let { PageMod } = loader.require("sdk/page-mod");
+  let pageMod = new PageMod({
+    include: "about:*",
+    onAttach: function(worker) {
+      test.assert(!!worker.tab, "Worker.tab exists");
+      pageMod.destroy();
+      worker.tab.close(function() {
+        loader.unload();
+        test.done();
+      });
+    }
+  });
+
+  tabs.open({
+    url: "about:"
+  });
 };
 
 exports.testWorksWithExistingTabs = function(test) {
@@ -368,6 +412,7 @@ exports.testWorksWithExistingTabs = function(test) {
         include: url,
         attachTo: ["existing", "top", "frame"],
         onAttach: function(worker) {
+          test.assert(!!worker.tab, "Worker.tab exists");
           test.assertEqual(tab, worker.tab, "A worker has been created on this existing tab");
 
           timer.setTimeout(function() {
@@ -609,7 +654,7 @@ exports['test111 attachTo [frame]'] = function(test) {
     this.destroy();
     if (++messageCount == 2) {
       mod.destroy();
-      require('tabs').activeTab.close(function() {
+      require('sdk/tabs').activeTab.close(function() {
         test.done();
       });
     }
@@ -661,7 +706,7 @@ exports.testContentScriptOptionsOption = function(test) {
 exports.testPageModCss = function(test) {
   let [pageMod] = testPageMod(test,
     'data:text/html;charset=utf-8,<div style="background: silver">css test</div>', [{
-      include: "data:*",
+      include: ["*", "data:*"],
       contentStyle: "div { height: 100px; }",
       contentStyleFile:
         require("sdk/self").data.url("pagemod-css-include-file.css")
@@ -768,7 +813,7 @@ exports.testPageModCssAutomaticDestroy = function(test) {
   test.waitUntilDone();
   let loader = Loader(module);
 
-  let pageMod = loader.require("page-mod").PageMod({
+  let pageMod = loader.require("sdk/page-mod").PageMod({
     include: "data:*",
     contentStyle: "div { width: 100px!important; }"
   });
@@ -808,7 +853,7 @@ exports.testPageModTimeout = function(test) {
   test.waitUntilDone();
   let tab = null
   let loader = Loader(module);
-  let { PageMod } = loader.require("page-mod");
+  let { PageMod } = loader.require("sdk/page-mod");
 
   let mod = PageMod({
     include: "data:*",
@@ -843,7 +888,7 @@ exports.testPageModcancelTimeout = function(test) {
   test.waitUntilDone();
   let tab = null
   let loader = Loader(module);
-  let { PageMod } = loader.require("page-mod");
+  let { PageMod } = loader.require("sdk/page-mod");
 
   let mod = PageMod({
     include: "data:*",
@@ -968,6 +1013,31 @@ exports.testIFramePostMessage = function(test) {
       });
     }
   });
+};
+
+exports.testEvents = function(test) {
+  let content = "<script>\n new " + function DocumentScope() {
+    window.addEventListener("ContentScriptEvent", function () {
+      window.receivedEvent = true;
+    }, false);
+  } + "\n</script>";
+  let url = "data:text/html;charset=utf-8," + encodeURIComponent(content);
+  testPageMod(test, url, [{
+      include: "data:*",
+      contentScript: 'new ' + function WorkerScope() {
+        let evt = document.createEvent("Event");
+        evt.initEvent("ContentScriptEvent", true, true);
+        document.body.dispatchEvent(evt);
+      }
+    }],
+    function(win, done) {
+      test.assert(
+        win.receivedEvent,
+        "Content script sent an event and document received it"
+      );
+      done();
+    }
+  );
 };
 
 if (require("sdk/system/xul-app").is("Fennec")) {

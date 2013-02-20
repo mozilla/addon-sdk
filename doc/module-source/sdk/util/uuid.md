@@ -2,26 +2,42 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-Module `uuid` provides low level API for generating / parsing UUID, that may
-be necessary when hacking on internals of the platform.
+The `uuid` module provides a low level API for generating or parsing
+UUIDs.
 
+It exports a single function, uuid().
+
+For more details about UUID representations and what they are used for by the
+platform see the MDN documentation for
+[JSID](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIJSID).
 
 ## Generate UUID
 
-Module exports `uuid` function. When called without arguments it will uses
-platform-specific methods to obtain a `nsID` that can be considered to be
-globally unique.
+To generate a new UUID, call `uuid()` with no arguments:
 
-    let uuid = require('api-utils/uuid').uuid()
+    let uuid = require('sdk/util/uuid').uuid();
 
 ## Parsing UUID
 
-Sometimes one might need to create `nsID` from an existing UUID string. Same
-`uuid` function may be used to parse such UUID strings into an `nsID`:
+To convert a string representation of a UUID to an `nsID`, pass
+the string representation to `uuid()`:
 
-    let { uuid } = require('api-utils/uuid');
+    let { uuid } = require('sdk/util/uuid');
     let firefoxUUID = uuid('{ec8030f7-c20a-464f-9b0e-13a3a9e97384}');
 
-For more details about UUID representations and what they are used for by the
-platform see MDN documentation for
-[JSID](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIJSID)
+<api name="uuid">
+@function
+  Generate a new [UUID](https://developer.mozilla.org/en-US/docs/Generating_GUIDs),
+  or convert a string representation of a UUID to an `nsID`.
+  @param stringId {string}
+  String representation of a UUID, such as:
+<pre>
+"8CBC9BF4-4A16-11E2-AEF7-C1A56188709B"
+</pre>
+  Optional. If this argument is supplied, it will be converted to an `nsID`
+  and returned. Otherwise a new `nsID` will be generated and returned.
+
+  @returns {nsID}
+  A UUID, represented as an `nsID` object.
+
+</api>

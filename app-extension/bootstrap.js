@@ -23,6 +23,8 @@ const scriptLoader = Cc['@mozilla.org/moz/jssubscript-loader;1'].
 const REASON = [ 'unknown', 'startup', 'shutdown', 'enable', 'disable',
                  'install', 'uninstall', 'upgrade', 'downgrade' ];
 
+const bind = Function.call.bind(Function.bind);
+
 let loader = null;
 let unload = null;
 let cuddlefishSandbox = null;
@@ -53,29 +55,6 @@ function readURI(uri) {
   return data;
 }
 
-// Utility function that converts cfx-py generated paths to a
-// module ids.
-function path2id(path) {
-  // Strips out `/lib` and `.js` from package/lib/path.js
-  return path.replace(/([^\/]*)\/lib/, '$1').replace(/.js$/, '');
-}
-// Utility function that takes old manifest format and creates a manifest
-// in a new format: https://github.com/mozilla/addon-sdk/wiki/JEP-Linker
-function manifestV2(manifest) {
-  return Object.keys(manifest).reduce(function(result, path) {
-    let entry = manifest[path];
-    let id = path2id(path);
-    let requirements = entry.requirements || {};
-    result[id] = {
-      requirements: Object.keys(requirements).reduce(function(result, path) {
-        result[path] = path2id(requirements[path].path);
-        return result;
-      }, {})
-    };
-    return result
-  }, {});
-}
-
 // We don't do anything on install & uninstall yet, but in a future
 // we should allow add-ons to cleanup after uninstall.
 function install(data, reason) {}
@@ -95,6 +74,15 @@ function startup(data, reasonCode) {
 
     let id = options.jetpackID;
     let name = options.name;
+
+    // Clean the metadata
+    options.metadata[name]['permissions'] = options.metadata[name]['permissions'] || {};
+
+    // freeze the permissionss
+    Object.freeze(options.metadata[name]['permissions']);
+    // freeze the metadata
+    Object.freeze(options.metadata[name]);
+
     // Register a new resource 'domain' for this addon which is mapping to
     // XPI's `resources` folder.
     // Generate the domain name by using jetpack ID, which is the extension ID
@@ -113,19 +101,35 @@ function startup(data, reasonCode) {
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     // Create path to URLs mapping supported by loader.
-    let paths = Object.keys(options.metadata).reduce(function(result, name) {
-      result[name + '/'] = prefixURI + name + '/lib/'
-      result[name + '/tests/'] = prefixURI + name + '/tests/'
-      return result
-    }, {
+    let paths = {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
-      'toolkit/': 'resource://gre/modules/toolkit/',
-      '': 'resources:///modules/'
-    });
+      './tests/': prefixURI + name + '/tests/',
+      '': 'resource://gre/modules/commonjs/'
+    };
+
+    // Maps addon lib and tests ressource folders for each package
+    paths = Object.keys(options.metadata).reduce(function(result, name) {
+      result[name + '/'] = prefixURI + name + '/lib/'
+      result[name + '/tests/'] = prefixURI + name + '/tests/'
+      return result;
+    }, paths);
+
+    // We need to map tests folder when we run sdk tests whose package name
+    // is stripped
+    if (name == 'addon-sdk')
+      paths['tests/'] = prefixURI + name + '/tests/';
+
+    // Maps sdk module folders to their resource folder
+    paths['sdk/'] = prefixURI + 'addon-sdk/lib/sdk/';
+    paths['toolkit/'] = prefixURI + 'addon-sdk/lib/toolkit/';
+    // test.js is usually found in root commonjs or SDK_ROOT/lib/ folder,
+    // so that it isn't shipped in the xpi. Keep a copy of it in sdk/ folder
+    // until we no longer support SDK modules in XPI:
+    paths['test'] = prefixURI + 'addon-sdk/lib/sdk/test.js';
 
     // Make version 2 of the manifest
-    let manifest = manifestV2(options.manifest);
+    let manifest = options.manifest;
 
     // Import `cuddlefish.js` module using a Sandbox and bootstrap loader.
     let cuddlefishURI = prefixURI + options.loader;
@@ -134,7 +138,7 @@ function startup(data, reasonCode) {
 
     // Normalize `options.mainPath` so that it looks like one that will come
     // in a new version of linker.
-    let main = path2id(options.mainPath);
+    let main = options.mainPath;
 
     unload = cuddlefish.unload;
     loader = cuddlefish.Loader({
@@ -173,11 +177,12 @@ function startup(data, reasonCode) {
           profileMemory: options.profileMemory,
           stopOnError: options.stopOnError,
           verbose: options.verbose,
+          parseable: options.parseable,
         }
       }
     });
 
-    let module = cuddlefish.Module('addon-sdk/sdk/loader/cuddlefish', cuddlefishURI);
+    let module = cuddlefish.Module('sdk/loader/cuddlefish', cuddlefishURI);
     let require = cuddlefish.Require(loader, module);
 
     require('sdk/addon/runner').startup(reason, {
@@ -204,8 +209,13 @@ function loadSandbox(uri) {
   // correctly
   sandbox.exports = {};
   sandbox.module = { uri: uri, exports: sandbox.exports };
-  sandbox.require = function () {
-    throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+  sandbox.require = function (id) {
+    if (id !== "chrome")
+      throw new Error("Bootstrap sandbox `require` method isn't implemented.");
+
+    return Object.freeze({ Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+      CC: bind(CC, Components), components: Components,
+      ChromeWorker: ChromeWorker });
   };
   scriptLoader.loadSubScript(uri, sandbox, 'UTF-8');
   return sandbox;
@@ -228,12 +238,16 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immediatly in order to allow executing some
-    // actions on addon disabling.
-    // We need to keep a reference to the timer, otherwise it is collected
-    // and won't ever fire.
-    nukeTimer = setTimeout(nukeModules, 1000);
+
+    // Don't waste time cleaning up if the application is shutting down
+    if (reason != "shutdown") {
+      // Avoid leaking all modules when something goes wrong with one particular
+      // module. Do not clean it up immediatly in order to allow executing some
+      // actions on addon disabling.
+      // We need to keep a reference to the timer, otherwise it is collected
+      // and won't ever fire.
+      nukeTimer = setTimeout(nukeModules, 1000);
+    }
   }
 };
 
@@ -253,8 +267,13 @@ function nukeModules() {
   }
   loader = null;
 
-  // Unload sandbox used to evaluate loader.js
+  // both `toolkit/loader` and `system/xul-app` are loaded as JSM's via
+  // `cuddlefish.js`, and needs to be unloaded to avoid memory leaks, when
+  // the addon is unload.
+
   unloadSandbox(cuddlefishSandbox.loaderSandbox);
+  unloadSandbox(cuddlefishSandbox.xulappSandbox);
+
   // Bug 764840: We need to unload cuddlefish otherwise it will stay alive
   // and keep a reference to this compartment.
   unloadSandbox(cuddlefishSandbox);

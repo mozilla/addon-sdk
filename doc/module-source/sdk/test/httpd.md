@@ -7,9 +7,9 @@ can be used in unit tests.
 
 The most basic usage is:
 
-    var {startServerAsync} = require("httpd");
+    var { startServerAsync } = require("sdk/test/httpd");
     var srv = startServerAsync(port, basePath);
-    require("unload").when(function cleanup() {
+    require("sdk/system/unload").when(function cleanup() {
       srv.stop(function() { // you should continue execution from this point.
       })
     });
@@ -24,7 +24,7 @@ on developer.mozilla.org.
 
 You can also use `nsHttpServer` to start the server manually:
 
-    var {nsHttpServer} = require("httpd");
+    var { nsHttpServer } = require("sdk/test/httpd");
     var srv = new nsHttpServer();
     // further documentation on developer.mozilla.org
 

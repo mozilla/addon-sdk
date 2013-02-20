@@ -7,9 +7,7 @@
 const { Loader } = require("sdk/test/loader");
 const { Class } = require("sdk/core/heritage");
 const { Cc, Ci, Cu } = require("chrome");
-const { setTimeout } = require("sdk/timers")
-
-
+const { setTimeout } = require("sdk/timers");
 
 exports["test disposables are desposed on unload"] = function(assert) {
   let loader = Loader(module);
@@ -117,12 +115,52 @@ exports["test disposables are GC-able"] = function(assert, done) {
   let foo1 = null
   let foo2 = null
 
+  Cu.forceGC();
   setTimeout(function() {
     Cu.forceGC();
     loader.unload();
     assert.equal(disposals, 0, "GC removed dispose listeners");
     done();
   }, 300);
+}
+
+
+exports["test loader unloads do not affect other loaders"] = function(assert) {
+  let loader1 = Loader(module);
+  let loader2 = Loader(module);
+  let { Disposable: Disposable1 } = loader1.require("sdk/core/disposable");
+  let { Disposable: Disposable2 } = loader2.require("sdk/core/disposable");
+
+  let arg1 = {}
+  let arg2 = 2
+  let disposals = 0
+
+  let Foo1 = Class({
+    extends: Disposable1,
+    dispose: function dispose() {
+      disposals = disposals + 1;
+    }
+  });
+
+  let Foo2 = Class({
+    extends: Disposable2,
+    dispose: function dispose() {
+      disposals = disposals + 1;
+    }
+  });
+
+  let foo1 = Foo1(arg1, arg2);
+  let foo2 = Foo2(arg1, arg2);
+
+  assert.equal(disposals, 0, "no destroy calls");
+
+  loader1.unload();
+
+  assert.equal(disposals, 1, "1 destroy calls");
+
+  loader2.unload();
+
+  assert.equal(disposals, 2, "2 destroy calls");
 }
 
 require('test').run(exports);

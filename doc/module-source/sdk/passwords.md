@@ -303,7 +303,7 @@ So if you pass in an empty set of properties, all stored credentials are
 returned:
 
     function show_all_passwords() {
-      require("passwords").search({
+      require("sdk/passwords").search({
         onComplete: function onComplete(credentials) {
           credentials.forEach(function(credential) {
             console.log(credential.username);
@@ -317,7 +317,7 @@ If you pass it a single property, only credentials matching that property are
 returned:
 
     function show_passwords_for_joe() {
-      require("passwords").search({
+      require("sdk/passwords").search({
         username: "joe",
         onComplete: function onComplete(credentials) {
           credentials.forEach(function(credential) {
@@ -332,7 +332,7 @@ If you pass more than one property, returned credentials must match all of
 them:
 
     function show_google_password_for_joe() {
-      require("passwords").search({
+      require("sdk/passwords").search({
         username: "joe",
         url: "https://www.google.com",
         onComplete: function onComplete(credentials) {
@@ -348,8 +348,8 @@ To retrieve only credentials associated with your add-on, use the `url`
 property, initialized from `self.uri`:
 
     function show_my_addon_passwords() {
-      require("passwords").search({
-        url: require("self").uri,
+      require("sdk/passwords").search({
+        url: require("sdk/self").uri,
         onComplete: function onComplete(credentials) {
           credentials.forEach(function(credential) {
             console.log(credential.username);
@@ -420,7 +420,7 @@ appropriate options differ depending on the sort of credential being stored.
 
 To store an add-on credential:
 
-    require("passwords").store({
+    require("sdk/passwords").store({
       realm: "User Registration",
       username: "joe",
       password: "SeCrEt123",
@@ -428,7 +428,7 @@ To store an add-on credential:
 
 To store an HTML form credential:
 
-    require("passwords").store({
+    require("sdk/passwords").store({
       url: "http://www.example.com",
       formSubmitURL: "http://login.example.com",
       username: "joe",
@@ -439,7 +439,7 @@ To store an HTML form credential:
 
 To store an HTTP Authentication credential:
 
-    require("passwords").store({
+    require("sdk/passwords").store({
       url: "http://www.example.com",
       realm: "ExampleCo Login",
       username: "joe",
@@ -503,21 +503,21 @@ Because you must supply all the credential's properties, it may be convenient
 to call `search` first, and use its output as the input to `remove`. For
 example, to remove all of joe's stored credentials:
 
-    require("passwords").search({
+    require("sdk/passwords").search({
       username: "joe",
       onComplete: function onComplete(credentials) {
-        credentials.forEach(require("passwords").remove);
+        credentials.forEach(require("sdk/passwords").remove);
       })
     });
 
 To change an existing credential just call `store` after `remove` succeeds:
 
-    require("passwords").remove({
+    require("sdk/passwords").remove({
       realm: "User Registration",
       username: "joe",
       password: "SeCrEt123"
       onComplete: function onComplete() {
-        require("passwords").store({
+        require("sdk/passwords").store({
           realm: "User Registration",
           username: "joe",
           password: "{{new password}}"

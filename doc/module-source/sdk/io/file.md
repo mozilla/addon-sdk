@@ -8,7 +8,6 @@
 
 The `file` module provides access to the local filesystem.
 
-
 Paths
 -----
 

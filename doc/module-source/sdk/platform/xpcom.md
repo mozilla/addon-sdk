@@ -34,10 +34,10 @@ For example, the add-on below implements the
 [`nsIObserver`](https://developer.mozilla.org/docs/XPCOM_Interface_Reference/nsIObserver)
 interface to listen for and log all topic notifications:
 
-    var { Class } = require("api-utils/heritage");
-    var { Unknown } = require('api-utils/xpcom');
+    var { Class } = require('sdk/core/heritage');
+    var { Unknown } = require('sdk/platform/xpcom');
     var { Cc, Ci } = require('chrome')
-    var observerService = Cc["@mozilla.org/observer-service;1"].
+    var observerService = Cc['@mozilla.org/observer-service;1'].
                             getService(Ci.nsIObserverService);
 
     var StarObserver = Class({
@@ -51,7 +51,7 @@ interface to listen for and log all topic notifications:
         addObserver.removeObserver(this, this.topic, false);
       },
       observe: function observe(subject, topic, data) {
-        console.log("star observer:", subject, topic, data);
+        console.log('star observer:', subject, topic, data);
       }
     });
 
@@ -78,9 +78,9 @@ so we use the technique documented under the "Using wrappedJSObject"
 section of
 [How to Build an XPCOM Component in JavaScript](https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript).</span>
 
-    var { Class } = require('api-utils/heritage');
-    var { Unknown, Factory } = require('api-utils/xpcom');
-    var { Cc, Ci } = require("chrome");
+    var { Class } = require('sdk/core/heritage');
+    var { Unknown, Factory } = require('sdk/platform/xpcom');
+    var { Cc, Ci } = require('chrome');
 
     var contractId = '@me.org/helloworld';
 
@@ -88,7 +88,7 @@ section of
     var HelloWorld = Class({
       extends: Unknown,
       get wrappedJSObject() this,
-      hello: function() {return "Hello World";}
+      hello: function() {return 'Hello World';}
     });
 
     // Create and register the factory
@@ -115,15 +115,15 @@ XPCOM users can look up the factory using the class ID instead of the
 contract ID. Here's the example above, rewritten to use class ID
 instead of contract ID for lookup:
 
-    var { Class } = require('api-utils/heritage');
-    var { Unknown, Factory } = require('api-utils/xpcom');
-    var { Cc, Ci, components } = require("chrome");
+    var { Class } = require('sdk/core/heritage');
+    var { Unknown, Factory } = require('sdk/platform/xpcom');
+    var { Cc, Ci, components } = require('chrome');
 
     // Define a component
     var HelloWorld = Class({
       extends: Unknown,
       get wrappedJSObject() this,
-      hello: function() {return "Hello World";}
+      hello: function() {return 'Hello World';}
     });
 
     // Create and register the factory
@@ -175,9 +175,9 @@ constructor with its
 [contract ID](https://developer.mozilla.org/en/Creating_XPCOM_Components/An_Overview_of_XPCOM#Contract_ID).
 After this, XPCOM users can access the service using the `getService()` API:
 
-    var { Class } = require('api-utils/heritage');
-    var { Unknown, Service } = require('api-utils/xpcom');
-    var { Cc, Ci } = require("chrome");
+    var { Class } = require('sdk/core/heritage');
+    var { Unknown, Service } = require('sdk/platform/xpcom');
+    var { Cc, Ci } = require('chrome');
 
     var contractId = '@me.org/timestampedlogger';
 
@@ -186,7 +186,7 @@ After this, XPCOM users can access the service using the `getService()` API:
       extends: Unknown,
       get wrappedJSObject() this,
       log: function(message) {
-        console.log(new Date().getTime() + " : " + message);
+        console.log(new Date().getTime() + ' : ' + message);
       }
     });
 
@@ -199,7 +199,7 @@ After this, XPCOM users can access the service using the `getService()` API:
     // Access the service using getService()
     var wrapper = Cc[contractId].getService(Ci.nsISupports);
     var logger = wrapper.wrappedJSObject;
-    logger.log("a timestamped message");
+    logger.log('a timestamped message');
 
 By default, services are registered and unregistered automatically.
 To learn more about this, see
@@ -214,7 +214,7 @@ that created them is unloaded.
 You can override this behavior using the `register` and `unregister`
 options to the factory or service constructor:
 
-    var xpcom = require("api-utils/xpcom");
+    var xpcom = require('sdk/platform/xpcom');
 
     var factory = xpcom.Factory({
       contract: contractId,
@@ -252,8 +252,8 @@ implementations of XPCOM interfaces. For example, this subclass implements the
 [`nsIRequest`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/NsIRequest)
 interface:
 
-    var { Class } = require('api-utils/heritage');
-    var { Unknown } = require('api-utils/xpcom');
+    var { Class } = require('sdk/core/heritage');
+    var { Unknown } = require('sdk/platform/xpcom');
 
     var Request = Class({
       extends: Unknown,
@@ -262,9 +262,9 @@ interface:
         this.pending = false;
       },
       isPending: function() { return this.pending; },
-      resume: function() { console.log("resuming..."); },
-      suspend: function() { console.log("suspending..."); },
-      cancel: function() { console.log("canceling..."); }
+      resume: function() { console.log('resuming...'); },
+      suspend: function() { console.log('suspending...'); },
+      cancel: function() { console.log('canceling...'); }
     });
 
 This component definition:
@@ -281,9 +281,9 @@ is accounted for when retrieving objects.</span>
 We can register a factory for this component by using the `Factory`
 class to associate its constructor with its contract ID:
 
-    var { Factory } = require('api-utils/xpcom');
-    var { Cc, Ci } = require("chrome");
-    var contractId = "@me.org/request"
+    var { Factory } = require('sdk/platform/xpcom');
+    var { Cc, Ci } = require('chrome');
+    var contractId = '@me.org/request'
 
     // Create and register the factory
     var factory = Factory({
@@ -342,7 +342,7 @@ and/or a
 
     // Create and register the factory
     var factory = Factory({
-      contract: "@me.org/myComponent",
+      contract: '@me.org/myComponent',
       Component: MyComponent
     });
 
@@ -376,7 +376,7 @@ A [contract ID](https://developer.mozilla.org/en/Creating_XPCOM_Components/An_Ov
 Users of XPCOM can use this value to retrieve the factory from
 [`Components.classes`](https://developer.mozilla.org/en-US/docs/Components.classes):
 
-    var factory = Components.classes["@me.org/request"]
+    var factory = Components.classes['@me.org/request']
     var component = factory.createInstance(Ci.nsIRequest);
 
 This parameter is formally optional, but if you don't specify it, users

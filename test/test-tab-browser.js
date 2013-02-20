@@ -217,7 +217,7 @@ exports.testTabTracker = function(test) {
     let url1 = "data:text/html;charset=utf-8,1";
     let url2 = "data:text/html;charset=utf-8,2";
     let url3 = "data:text/html;charset=utf-8,3";
-    let tabCount = 0; 
+    let tabCount = 0;
 
     function tabLoadListener(e) {
       let loadedURL = e.target.defaultView.location;
@@ -271,7 +271,7 @@ exports.testActiveTab = function(test) {
         let tabIndex = browser.getBrowserIndexForDocument(e.target);
         let tabAtIndex = browser.tabContainer.getItemAtIndex(tabIndex);
         test.assertEqual(tabAtIndex, tabBrowser.activeTab, "activeTab element matches");
-        
+
         tabBrowser.addTab(url2, {
           inBackground: true,
           onLoad: function() {
@@ -296,7 +296,7 @@ exports.testEventsAndLengthStayInModule = function(test) {
   openTwoWindows(function(window1, window2) {
     let tm1 = new TabModule(window1);
     let tm2 = new TabModule(window2);
-    
+
     let counter1 = 0, counter2 = 0;
     let counterTabs = 0;
 
@@ -438,7 +438,7 @@ exports.testModuleListenersDontInteract = function(test) {
     let url = "data:text/html;charset=utf-8,foo";
     let eventCount = 0, eventModule1 = 0, eventModule2 = 0;
 
-    
+
     let listener1 = function() {
       // this should be called twice: when tab is open and when
       // the url location is changed
@@ -500,14 +500,12 @@ try {
   require("sdk/deprecated/tab-browser");
 }
 catch (err) {
-  // This bug should be mentioned in the error message.
-  let bug = "https://bugzilla.mozilla.org/show_bug.cgi?id=560716";
-  if (err.message.indexOf(bug) < 0)
+  if (!/^Unsupported Application/.test(err.message))
     throw err;
 
   module.exports = {
     testAppNotSupported: function (test) {
-      test.pass("the tab-browser module does not support this application.");
+      test.pass(err.message);
     }
   };
 }

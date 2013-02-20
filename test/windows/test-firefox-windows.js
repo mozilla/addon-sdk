@@ -10,6 +10,8 @@ const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
            getService(Ci.nsIWindowMediator);
 
 const { browserWindows } = require("sdk/windows");
+const tabs = require("sdk/tabs");
+const { WindowTracker } = require("sdk/deprecated/window-utils");
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -72,32 +74,43 @@ exports.testAutomaticDestroy = function(test) {
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
 
+  let count = 0;
+  let window;
+  function runTest() {
+    if (++count != 2)
+      return;
+
+    test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
+    test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+    window.tabs.open({
+      url: "data:text/html;charset=utf-8,<title>tab 2</title>",
+      inBackground: true,
+      onReady: function onReady(newTab) {
+        test.assertEqual(window.tabs.length, 2, "New tab open");
+        test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
+        test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+        let i = 1;
+        for each (let tab in window.tabs)
+          test.assertEqual(tab.title, "tab " + i++, "Correct title");
+
+        window.close();
+      }
+    });
+  }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onOpen: function onOpen(window) {
-      test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-
-      window.tabs.open({
-        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
-        inBackground: true,
-        onReady: function onReady(newTab) {
-          test.assertEqual(window.tabs.length, 2, "New tab open");
-          test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
-
-          let i = 1;
-          for each (let tab in window.tabs)
-            test.assertEqual(tab.title, "tab " + i++, "Correct title");
-
-          window.close();
-        }
-      });
+    onActivate: function onOpen(win) {
+      window = win;
+      runTest();
     },
     onClose: function onClose(window) {
       test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
       test.done();
     }
   });
+  tabs.once("ready", runTest);
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
@@ -191,33 +204,24 @@ exports.testActiveWindow = function(test) {
         count++;
       test.assertEqual(count, 3, "Correct number of windows returned by iterator");
 
-      rawWindow2.focus();
+      test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
+
       continueAfterFocus(rawWindow2);
+      rawWindow2.focus();
     },
     function() {
       nextStep();
     },
     function() {
-      /**
-       * Bug 614079: This test fails intermittently on some specific linux
-       *             environnements, without being able to reproduce it in same
-       *             distribution with same window manager.
-       *             Disable it until being able to reproduce it easily.
+      test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
-      // On linux, focus is not consistent, so we can't be sure
-      // what window will be on top.
-      // Here when we focus "non-browser" window,
-      // Any Browser window may be selected as "active".
-      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
-        "Non-browser windows aren't handled by this module");
-      */
-      window2.activate();
       continueAfterFocus(rawWindow2);
+      window2.activate();
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
-      window3.activate();
       continueAfterFocus(rawWindow3);
+      window3.activate();
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
@@ -225,21 +229,39 @@ exports.testActiveWindow = function(test) {
     }
   ];
 
+  let newWindow = null;
+  let tracker = new WindowTracker({
+    onTrack: function(window) {
+      newWindow = window;
+    }
+  });
+
   windows.open({
     url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
-      window2 = window;
-      rawWindow2 = wm.getMostRecentWindow("navigator:browser");
+      window.tabs.activeTab.on('ready', function() {
+        window2 = window;
+        test.assert(newWindow, "A new window was opened");
+        rawWindow2 = newWindow;
+        newWindow = null;
+        test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
+        test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
-      windows.open({
-        url: "data:text/html;charset=utf-8,<title>window 3</title>",
-        onOpen: function(window) {
-          window.tabs.activeTab.on('ready', function onReady() {
-            window3 = window;
-            rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-            nextStep()
-          });
-        }
+        windows.open({
+          url: "data:text/html;charset=utf-8,<title>window 3</title>",
+          onOpen: function(window) {
+            window.tabs.activeTab.on('ready', function onReady() {
+              window3 = window;
+              test.assert(newWindow, "A new window was opened");
+              rawWindow3 = newWindow;
+              tracker.unload();
+              test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
+              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
+              continueAfterFocus(rawWindow3);
+              rawWindow3.focus();
+            });
+          }
+        });
       });
     }
   });
@@ -266,11 +288,11 @@ exports.testActiveWindow = function(test) {
 
     var focused = (focusedChildWindow == childTargetWindow);
     if (focused) {
-      nextStep();
+      setTimeout(nextStep, 0);
     } else {
       childTargetWindow.addEventListener("focus", function focusListener() {
         childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextStep();
+        setTimeout(nextStep, 0);
       }, true);
     }
 

@@ -5,78 +5,134 @@
 The `window/utils` module provides helper functions for working with
 application windows.
 
-### getInnerId
+<api name="getMostRecentBrowserWindow">
+  @function
+  Get the topmost browser window, as an
+  [`nsIDOMWindow`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDOMWindow) instance.
+  @returns {nsIDOMWindow}
+</api>
 
-Returns the ID of the given window's current inner window.
+<api name="getInnerId">
+  @function
+  Returns the ID of the specified window's current inner window.
+  This function wraps
+[`nsIDOMWindowUtils.currentInnerWindowID`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDOMWIndowUtils#Attributes).
+  @param window {nsIDOMWindow}
+  The window whose inner window we are interested in.
+  @returns {ID}
+</api>
 
-### getOuterId
+<api name="getOuterId">
+  @function
+  Returns the ID of the specified window's outer window.
+  This function wraps
+[`nsIDOMWindowUtils.outerWindowID`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDOMWIndowUtils#Attributes).
+  @param window {nsIDOMWindow}
+  The window whose outer window we are interested in.
+  @returns {ID}
+</api>
 
-Returns the ID of the given window's outer window.
+<api name="getXULWindow">
+  @function
+  Returns the
+  [`nsIXULWindow`](https://developer.mozilla.org/en/nsIDOMWindow) for the given
+  [`nsIDOMWindow`](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow):
 
-### getXULWindow
+      var { Ci } = require('chrome');
+      var utils = require('sdk/window/utils');
+      var active = utils.getMostRecentBrowserWindow();
+      active instanceof Ci.nsIXULWindow // => false
+      utils.getXULWindow(active) instanceof Ci.nsIXULWindow // => true
 
-Module provides `getXULWindow` function that can be used get access
-[nsIXULWindow](https://developer.mozilla.org/en/nsIDOMWindow) for the given
-[nsIDOMWindow](https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIXULWindow):
+  @param window {nsIDOMWindow}
+  @returns {nsIXULWindow}
+</api>
 
-    let { Ci } = require('chrome');
-    let utils = require('api-utils/window/utils');
-    let active = utils.activeBrowserWindow;
-    active instanceof Ci.nsIXULWindow // => false
-    utils.getXULWindow(active) instanceof Ci.nsIXULWindow // => true
+<api name="getBaseWindow">
+  @function
+  Returns the
+  [`nsIBaseWindow`](http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl)
+  for the given [`nsIDOMWindow`](https://developer.mozilla.org/en/nsIDOMWindow):
 
-### getBaseWindow
+      var { Ci } = require('chrome');
+      var utils = require('sdk/window/utils');
+      var active = utils.getMostRecentBrowserWindow();
+      active instanceof Ci.nsIBaseWindow // => false
+      utils.getBaseWindow(active) instanceof Ci.nsIBaseWindow // => true
 
-Module provides `getBaseWindow` function that can be used get access
-[nsIBaseWindow](http://mxr.mozilla.org/mozilla-central/source/widget/nsIBaseWindow.idl)
-for the given [nsIDOMWindow](https://developer.mozilla.org/en/nsIDOMWindow):
+  @param window {nsIDOMWindow}
+  @returns {nsIBaseWindow}
+</api>
 
-    let { Ci } = require('chrome');
-    let utils = require('api-utils/window/utils');
-    let active = utils.activeBrowserWindow;
-    active instanceof Ci.nsIBaseWindow // => false
-    utils.getBaseWindow(active) instanceof Ci.nsIBaseWindow // => true
+<api name="getWindowDocShell">
+  @function
+  Returns the
+[`nsIDocShell`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDocShell)
+  for the [tabbrowser](https://developer.mozilla.org/en-US/docs/XUL/tabbrowser)
+element.
+  @param window {nsIDOMWindow}
+  @returns {nsIDocShell}
+</api>
 
-### getFocusedWindow
+<api name="getWindowLoadingContext">
+  @function
+  Returns the `nsILoadContext`.
+  @param window {nsIDOMWindow}
+  @returns {nsILoadContext}
+</api>
 
-Module provides `getFocusedWindow` function that can be used to get the child
-window within the `activeWindow` that is focused.
-See
-[nsIFocusManager](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIFocusManager)
-for more details.
+<api name="backgroundify">
+  @function
+  This function takes the specified `nsIDOMWindow` and
+  removes it from the application's window registry, so it won't appear
+  in the OS specific window lists for the application.
 
-### getFocusedElement
+      var { backgroundify, open } = require('sdk/window/utils');
+      var bgwin = backgroundify(open('data:text/html,Hello backgroundy'));
 
-Module provides `getFocusedElement` function that can be used to get the element
-that is currently focused. This will always be an element within the document
-loaded in the focused window, or `null` if no element in that document is
-focused.
+  Optionally more configuration options may be passed via a second
+  `options` argument. If `options.close` is `false`, the unregistered
+  window won't automatically be closed on application quit, preventing
+  the application from quitting. You should make sure to close all such
+  windows manually.
 
-### open
+      var { backgroundify, open } = require('sdk/window/utils');
+      var bgwin = backgroundify(open('data:text/html,Foo'), {
+        close: false
+      });
 
-Module exports `open` function that may be used to open top level
-(application) windows. Function takes `uri` of the window document as a first
-argument and optional hash of `options` as second argument.
+  @param window {nsIDOMWindow}
+  @param options {object}
+    @prop close {boolean}
+    Whether to close the window on application exit. Defaults to `true`.
+</api>
 
-    let { open } = require('api-utils/window/utils');
-    let window = open('data:text/html,Hello Window');
+<api name="open">
+  @function
+  This function is used to open top level (application) windows.
+  It takes the `uri` of the window document as its first
+  argument and an optional hash of `options` as its second argument.
 
-Following options may be provided to configure created window behavior:
+      var { open } = require('sdk/window/utils');
+      var window = open('data:text/html,Hello Window');
 
-- `parent`
-If provided must be `nsIDOMWindow` and will be used as parent for the created
-window.
+  This function wraps [`nsIWindowWatcher.openWindow`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIWindowWatcher#openWindow%28%29).
+  @param uri {string}
+  URI of the document to be loaded into the window.
+  @param options {object}
+  Options for the function, with the following properties:
+    @prop parent {nsIDOMWindow}
+    Parent for the new window. Optional, defaults to `null`.
+    @prop name {String}
+    Name that is assigned to the window. Optional, defaults to `null`.
+    @prop features {Object}
+    Map of features to set for the window, defined like this:
+    `{ width: 10, height: 15, chrome: true }`. See the
+    [`window.open` features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
+    for more details.
 
-- `name`
-Optional name that will be assigned to the window.
-
-- `features`
-Hash of options that will be serialized to features string. See
-[features documentation](https://developer.mozilla.org/en/DOM/window.open#Position_and_size_features)
-for more details.
-
-        let { open } = require('api-utils/window/utils');
-        let window = open('data:text/html,Hello Window', {
+        var { open } = require('sdk/window/utils');
+        var window = open('data:text/html,Hello Window', {
           name: 'jetpack window',
           features: {
             width: 200,
@@ -85,26 +141,97 @@ for more details.
           }
         });
 
-### backgroundify
+    Optional, defaults to an empty map: `{}`.
+  @returns {nsIDOMWindow}
+</api>
 
-Module exports `backgroundify` function that takes `nsIDOMWindow` and
-removes it from the application's window registry, so that they won't appear
-in the OS specific window lists for the application.
+<api name="openDialog">
+  @function
+  Opens a top level window and returns its `nsIDOMWindow` representation.
+  This is the same as `open`, but you can supply more features.
+  It wraps [`window.openDialog`](https://developer.mozilla.org/en-US/docs/DOM/window.openDialog).
+  @param options {object}
+  Options for the function, with the following properties:
+    @prop url {String}
+    URI of the document to be loaded into the window.
+    Defaults to `"chrome://browser/content/browser.xul"`.
+    @prop name {String}
+    Optional name that is assigned to the window. Defaults to `"_blank"`.
+    @prop features {Object}
+    Map of features to set for the window, defined like:
+    `{ width: 10, height: 15, chrome: true }`. For the set of features
+    you can set, see the [`window.openDialog`](https://developer.mozilla.org/en-US/docs/DOM/window.openDialog)
+    documentation. Optional, defaults to: `{'chrome,all,dialog=no'}`.
+  @returns {nsIDOMWindow}
+</api>
 
-    let { backgroundify, open } = require('api-utils/window/utils');
-    let bgwin = backgroundify(open('data:text/html,Hello backgroundy'));
+<api name="windows">
+  @function
+  Returns an array of all currently opened windows.
+  Note that these windows may still be loading.
+  @returns {Array}
+  Array of `nsIDOMWindow` instances.
+</api>
 
-Optionally more configuration options via second `options` argument. If
-`options.close` is `false` unregistered window won't automatically
-be closed on application quit, preventing application from quitting. While this
-is possible you should make sure to close all such windows manually:
+<api name="isDocumentLoaded">
+  @function
+  Check if the given window's document is completely loaded.
+  This means that its "load" event has been fired and all content
+  is loaded, including the whole DOM document, images,
+  and any other sub-resources.
+  @param window {nsIDOMWindow}
+  @returns {boolean}
+  `true` if the document is completely loaded.
+</api>
 
-    let { backgroundify, open } = require('api-utils/window/utils');
-    let bgwin = backgroundify(open('data:text/html,Foo'), {
-      close: false
-    });
+<api name="isBrowser">
+  @function
+  Returns true if the given window is a Firefox browser window:
+  that is, its document has a `"windowtype"` of `"chrome://browser/content/browser.xul"`.
+  @param window {nsIDOMWindow}
+  @returns {boolean}
+</api>
 
-### isBrowser
+<api name="getWindowTitle">
+  @function
+  Get the [title](https://developer.mozilla.org/en-US/docs/DOM/document.title)
+  of the document hosted by the given window
+  @param window {nsIDOMWindow}
+  @returns {String}
+  This document's title.
+</api>
 
-Returns true if the given window is a Firefox browser window.
-(i.e windows with chrome://browser/content/browser.xul document)
+<api name="isXULBrowser">
+  @function
+  Returns true if the given window is a XUL window.
+  @param window {nsIDOMWindow}
+  @returns {boolean}
+</api>
+
+<api name="getFocusedWindow">
+  @function
+  Gets the child window within the topmost browser window that is focused.
+  See
+  [`nsIFocusManager`](https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIFocusManager)
+  for more details.
+  @returns {nsIDOMWindow}
+</api>
+
+<api name="getFocusedElement">
+  @function
+  Get the element that is currently focused.
+  This will always be an element within the document
+  loaded in the focused window, or `null` if no element in that document is
+  focused.
+  @returns {nsIDOMElement}
+</api>
+
+<api name="getFrames">
+  @function
+  Get the frames contained by the given window.
+  @param window {nsIDOMWindow}
+  @returns {Array}
+  Array of frames.
+</api>
+
+

@@ -5,30 +5,29 @@
 <!-- contributed by Myk Melez [myk@mozilla.org] -->
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
+The `symbiont` module exports the `Symbiont` trait, which is used in
+the internal implementation of SDK modules, such as
+[`panel`](modules/sdk/panel.html) and
+[`page-worker`](modules/sdk/page-mod.html), that can load web
+content and attach
+[content scripts](dev-guide/guides/content-scripts/index.html) to it.
 
-This module is not intended to be used directly by programs.  Rather, it is
-intended to be used by other modules that provide APIs to programs.
+A `Symbiont` loads the specified `contentURL` and content scripts into
+a frame, and sets up an asynchronous channel between the content
+scripts and the add-on code, enabling them to exchange messages using the
+[`port`](dev-guide/guides/content-scripts/using-port.html) or
+[`postMessage`](dev-guide/guides/content-scripts/using-postmessage.html)
+APIs. You map optionally pass a frame into the `Symbiont`'s constructor:
+if you don't, then a new hidden frame will be created to host the content.
 
+This trait is composed from the
+[`Loader`](modules/sdk/content/loader.html) and
+[`Worker`](modules/sdk/content/worker.html) traits. It inherits
+functions to load and configure content scripts from the `Loader`,
+and functions to exchange messages between content scripts and the
+main add-on code from the `Worker`.
 
-This module exports `Symbiont` trait that can be used for creating JavaScript
-contexts that can access web content in host application frames (i.e. XUL
-`<iframe>` and `<browser>` elements) and communicate with programs via
-asynchronous JSON pipes.  It is useful in the construction of APIs that
-are compatible with the execution model codenamed "electrolysis" in which
-programs run in separate processes from web content.
-
-Introduction
-------------
-
-`Symbiont` constructs a content symbiont for a given frame, it loads the
-specified contentURL and scripts into it, and plumbs an asynchronous
-JSON pipe between the content symbiont object and the content symbiont
-context. If frame is not provided hidden frame will be created.
-
-Examples
---------
-
-    var { Symbiont } = require('content');
+    var { Symbiont } = require('sdk/content/content');
     var Thing = Symbiont.resolve({ constructor: '_init' }).compose({
       constructor: function Thing(options) {
         // `getMyFrame` returns the host application frame in which
@@ -41,9 +40,6 @@ Examples
 See the [panel][] module for a real-world example of usage of this module.
 
 [panel]:modules/sdk/panel.html
-
-Reference
----------
 
 <api name="Symbiont">
 @class

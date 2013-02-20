@@ -2,23 +2,36 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-Provides an exemplar `EventTarget` object, that implements interface for
-adding removing event listeners of a specific type. `EventTarget` is a
-base of all objects in SDK on which events are emitted.
+Many objects in the SDK can broadcast events. For example, a
+[`panel`](modules/sdk/panel.html) instance emits an `show` event when the
+panel is shown.
 
-### Instantiation
+The `event/target` module enables you to create objects that broadcast
+events. Users of the object can listen to the events using the standard
+`on()` and `once()` functions.
+
+Also see the
+[tutorial on implementing event targets](dev-guide/tutorials/event-targets.html)
+to get started with this API.
+
+This module provides an exemplar `EventTarget` object, that implements
+an interface for adding and removing event listeners of a specific type.
+`EventTarget` is the base class for all objects in SDK on which events
+are emitted.
+
+## Instantiation
 
 It's easy to create event target objects, no special arguments are required.
 
-    const { EventTarget } = require('api-utils/event/target');
-    let target = EventTarget.new();
+    const { EventTarget } = require("sdk/event/target");
+    let target = EventTarget();
 
 For a convenience though optional `options` arguments may be used, in which
 case all the function properties with keys like: `onMessage`, `onMyEvent`...
 will be auto registered for associated `'message'`, `'myEvent'` events on
 the created instance. _All other properties of `options` will be ignored_.
 
-### Adding listeners
+## Adding listeners
 
 `EventTarget` interface defines `on` method, that can be used to register
 event listeners on them for the given event type:
@@ -38,47 +51,44 @@ next time event of the specified type is emitted:
       // Do the thing once ready!
     });
 
-### Removing listeners
+## Removing listeners
 
 `EventTarget` interface defines API for unregistering event listeners, via
 `removeListener` method:
 
     target.removeListener('message', onMessage);
 
-### Emitting events
+## Emitting events
 
 `EventTarget` interface intentionally does not defines an API for emitting
 events. In majority of cases party emitting events is different from party
 registering listeners. In order to emit events one needs to use `event/core`
 module instead:
 
-    let { emit } = require('api-utils/event/core');
+    let { emit } = require('sdk/event/core');
 
-    target.on('hi', function(person) { console.log(person + 'tells hi'); });
-    emit(target, 'hi', 'Mark');
-    // info: 'Mark tells hi'
+    target.on('hi', function(person) { console.log(person + ' says hi'); });
+    emit(target, 'hi', 'Mark'); // info: 'Mark says hi'
 
 For more details see **event/core** documentation.
 
-### More details
+## More details
 
 Listeners registered during the event propagation (by one of the listeners)
 won't be triggered until next emit of the matching type:
 
-    let { emit } = require('api-utils/event/core');
+    let { emit } = require('sdk/event/core');
 
     target.on('message', function onMessage(message) {
-      console.log('listener trigerred');
+      console.log('listener triggered');
       target.on('message', function() {
         console.log('nested listener triggered');
       });
     });
 
-    emit(target, 'message');
-    // info: 'listener trigerred'
-    emit(target, 'message');
-    // info: 'listener trigerred'
-    // info: 'nested listener trigerred'
+    emit(target, 'message'); // info: 'listener triggered'
+    emit(target, 'message'); // info: 'listener triggered'
+                             // info: 'nested listener triggered'
 
 Exceptions in the listeners can be handled via `'error'` event listeners:
 
@@ -93,3 +103,53 @@ Exceptions in the listeners can be handled via `'error'` event listeners:
 
 If there is no listener registered for `error` event or if it also throws
 exception then such exceptions are logged into a console.
+
+<api name="EventTarget">
+@class
+`EventTarget` is an exemplar for creating an objects that can be used to
+add / remove event listeners on them. Events on these objects may be emitted
+via `emit` function exported by [`event/core`](modules/sdk/event/core.html)
+module.
+
+<api name="initialize">
+@method
+Method initializes `this` event source. It goes through properties of a
+given `options` and registers listeners for the ones that look like
+event listeners.
+</api>
+
+<api name="on">
+@method
+Registers an event `listener` that is called every time events of
+specified `type` are emitted.
+
+    worker.on('message', function (data) {
+      console.log('data received: ' + data)
+    });
+
+@param type {String}
+   The type of event.
+@param listener {Function}
+   The listener function that processes the event.
+</api>
+
+<api name="once">
+@method
+Registers an event `listener` that is called only once:
+the next time an event of the specified `type` is emitted.
+@param type {String}
+   The type of event.
+@param listener {Function}
+   The listener function that processes the event.
+</api>
+
+<api name="removeListener">
+@method
+Removes an event `listener` for the given event `type`.
+@param type {String}
+   The type of event.
+@param listener {Function}
+   The listener function that processes the event.
+</api>
+
+</api>
