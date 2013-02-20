@@ -11,25 +11,12 @@ const { PlainTextConsole } = require("sdk/console/plain-text");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
 
-exports["test error reporting"] = function(assert) {
-  let prints = [];
-  let loader = Loader(module, {
-    console: new PlainTextConsole(function(_) {
-      prints.push(_);
-    })
-  });
 
-  let events = loader.require("sdk/system/events");
+exports["test basic"] = function(assert) {
   let type = Date.now().toString(32);
 
   let timesCalled = 0;
   function handler(subject, data) { timesCalled++; };
-  function brokenHandler(subject, data) { throw new Error("foo"); };
-
-  let lineNumber;
-  try { brokenHandler() } catch (error) { lineNumber = error.lineNumber }
-
-
 
   events.on(type, handler);
   events.emit(type, { data: "yo yo" });
@@ -46,21 +33,34 @@ exports["test error reporting"] = function(assert) {
   events.emit(type, { data: "it's always hard to say bye" });
 
   assert.equal(timesCalled, 2, "handlers added via once are triggered once");
+}
+
+exports["test error reporting"] = function(assert) {
+  let prints = [];
+  let loader = Loader(module, {
+    console: new PlainTextConsole(function(_) {
+      prints.push(_);
+    })
+  });
+
+  let events = loader.require("sdk/system/events");
+  function brokenHandler(subject, data) { throw new Error("foo"); };
+
+  let lineNumber;
+  try { brokenHandler() } catch (error) { lineNumber = error.lineNumber }
+
+
 
   let errorType = Date.now().toString(32);
 
   events.on(errorType, brokenHandler);
   events.emit(errorType, { data: "yo yo" });
 
-  let lines = prints[0].split("\n");
-
-  assert.equal(lines[0], "error: " + self.name + ": An exception occurred.",
-               "error is logged");
-  assert.equal(lines[1], "Error: foo", "error message is logged")
-
-  assert.equal(lines[2], module.uri + " " + lineNumber, "error line is logged");
-  assert.equal(lines[3], "Traceback (most recent call last):",
-               "stack trace is logged");
+  assert.ok(prints[0].indexOf(self.name + ": An exception occurred.") >= 0,
+            "error is logged");
+  assert.ok(prints[0].indexOf("Error: foo") >= 0, "error message is logged");
+  assert.ok(prints[0].indexOf(module.uri) >= 0, "module uri is logged");
+  assert.ok(prints[0].indexOf(lineNumber) >= 0, "error line is logged");
 
   events.off(errorType, brokenHandler);
 
@@ -68,23 +68,26 @@ exports["test error reporting"] = function(assert) {
 };
 
 exports["test listeners are GC-ed"] = function(assert, done) {
-  let received = [];
+  let receivedFromWeak = [];
+  let receivedFromStrong = [];
   let type = Date.now().toString(32);
-  function handler(event) { received.push(event); }
-  function weakHandler(event) { received.push(event); }
+  function handler(event) { receivedFromStrong.push(event); }
+  function weakHandler(event) { receivedFromWeak.push(event); }
 
   events.on(type, handler, true);
   events.on(type, weakHandler);
 
   events.emit(type, { data: 1 });
-  assert.equal(received.length, 2, "both handlers are invoked");
+  assert.equal(receivedFromStrong.length, 1, "strong listener invoked");
+  assert.equal(receivedFromWeak.length, 1, "weak listener invoked");
 
   handler = weakHandler = null;
 
   setTimeout(function() {
     Cu.forceGC();
     events.emit(type, { data: 2 });
-    assert.equal(received.length, 3, "only handler with strong ref is invoked");
+    assert.equal(receivedFromWeak.length, 1, "weak listener was GC-ed");
+    assert.equal(receivedFromStrong.length, 2, "strong listener was invoked");
     done();
   }, 300);
 };
