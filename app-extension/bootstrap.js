@@ -192,7 +192,7 @@ function startup(data, reasonCode) {
     });
   } catch (error) {
     dump('Bootstrap error: ' +
-         (error.message ? error.message : error.toString()) + '\n' +
+         (error.message ? error.message : String(error)) + '\n' +
          (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
     throw error;
   }
