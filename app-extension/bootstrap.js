@@ -99,9 +99,13 @@ function startup(data, reasonCode) {
       '': 'resource://gre/modules/commonjs/'
     };
 
-    // Maps addon lib and tests ressource folders
-    paths[name + '/'] = prefixURI + name + '/lib/';
-    paths[name + '/tests/'] = prefixURI + name + '/tests/';
+    // Maps addon lib and tests ressource folders for each package
+    paths = Object.keys(options.metadata).reduce(function(result, name) {
+      result[name + '/'] = prefixURI + name + '/lib/'
+      result[name + '/tests/'] = prefixURI + name + '/tests/'
+      return result;
+    }, paths);
+
     // We need to map tests folder when we run sdk tests whose package name
     // is stripped
     if (name == 'addon-sdk')
