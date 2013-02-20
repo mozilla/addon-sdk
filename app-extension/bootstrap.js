@@ -238,12 +238,16 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immediatly in order to allow executing some
-    // actions on addon disabling.
-    // We need to keep a reference to the timer, otherwise it is collected
-    // and won't ever fire.
-    nukeTimer = setTimeout(nukeModules, 1000);
+
+    // Don't waste time cleaning up if the application is shutting down
+    if (reason != "shutdown") {
+      // Avoid leaking all modules when something goes wrong with one particular
+      // module. Do not clean it up immediatly in order to allow executing some
+      // actions on addon disabling.
+      // We need to keep a reference to the timer, otherwise it is collected
+      // and won't ever fire.
+      nukeTimer = setTimeout(nukeModules, 1000);
+    }
   }
 };
 
