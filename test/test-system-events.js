@@ -83,6 +83,7 @@ exports["test listeners are GC-ed"] = function(assert, done) {
 
   handler = weakHandler = null;
 
+  Cu.forceGC();
   setTimeout(function() {
     Cu.forceGC();
     events.emit(type, { data: 2 });
