@@ -832,10 +832,12 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
+        # Generate extra options
         extra_harness_options = {}
         for kv in options.extra_harness_option_args:
             key,value = kv.split("=", 1)
             extra_harness_options[key] = value
+        # Generate xpi filepath
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,

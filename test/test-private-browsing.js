@@ -8,6 +8,7 @@ const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
+const { isPrivateBrowsingSupported } = require('sdk/self');
 const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
 
@@ -57,6 +58,11 @@ exports.testIsActiveDefault = function(test) {
                    'pb.isActive returns false when private browsing isn\'t supported');
 };
 
+exports.testIsPrivateBrowsingFalseDefault = function(test) {
+  test.assertEqual(isPrivateBrowsingSupported, false,
+  	               'usePrivateBrowsing property is false by default');
+};
+
 exports.testGetOwnerWindow = function(test) {
   test.waitUntilDone();
 
@@ -84,4 +90,4 @@ exports.testGetOwnerWindow = function(test) {
       tab.close(function() test.done());
     }
   });
-}
+};
