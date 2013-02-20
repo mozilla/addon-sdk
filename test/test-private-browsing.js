@@ -7,6 +7,9 @@ const { pb, pbUtils } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const winUtils = require('sdk/window/utils');
+const { isPrivateBrowsingSupported } = require('sdk/self');
+const { is } = require('sdk/system/xul-app');
+const { isPrivate } = require('sdk/private-browsing');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
@@ -29,3 +32,36 @@ exports.testIsActiveDefault = function(test) {
                    'pb.isActive returns false when private browsing isn\'t supported');
 };
 
+exports.testIsPrivateBrowsingFalseDefault = function(test) {
+  test.assertEqual(isPrivateBrowsingSupported, false,
+  	               'usePrivateBrowsing property is false by default');
+};
+
+exports.testGetOwnerWindow = function(test) {
+  test.waitUntilDone();
+
+  let window = windows.activeWindow;
+  let chromeWindow = getOwnerWindow(window);
+  test.assert(chromeWindow instanceof Ci.nsIDOMWindow, 'associated window is found');
+
+  window.tabs.open({
+    url: 'about:blank',
+    private: true, // should be ignored in this case
+    onOpen: function(tab) {
+      // test that getOwnerWindow works as expected
+      if (is('Fennec')) {
+        test.assertNotStrictEqual(chromeWindow, getOwnerWindow(tab)); 
+        test.assert(getOwnerWindow(tab) instanceof Ci.nsIDOMWindow); 
+      }
+      else {
+        test.assertStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
+      }
+
+      // test that the tab is not private
+      // private flag should be ignored by default
+      test.assert(!isPrivate(tab));
+
+      tab.close(function() test.done());
+    }
+  });
+};
