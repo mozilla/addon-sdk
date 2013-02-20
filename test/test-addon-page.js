@@ -146,4 +146,4 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
   });
 };
 
-require('sdk/test').run(exports);
+require('test').run(exports);

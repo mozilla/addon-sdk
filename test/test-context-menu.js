@@ -2477,6 +2477,124 @@ exports.testAlreadyOpenIframe = function (test) {
 };
 
 
+// Tests that a missing label throws an exception
+exports.testItemNoLabel = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  try {
+    new loader.cm.Item({});
+    test.assert(false, "Should have seen exception");
+  }
+  catch (e) {
+    test.assert(true, "Should have seen exception");
+  }
+
+  try {
+    new loader.cm.Item({ label: null });
+    test.assert(false, "Should have seen exception");
+  }
+  catch (e) {
+    test.assert(true, "Should have seen exception");
+  }
+
+  try {
+    new loader.cm.Item({ label: undefined });
+    test.assert(false, "Should have seen exception");
+  }
+  catch (e) {
+    test.assert(true, "Should have seen exception");
+  }
+
+  try {
+    new loader.cm.Item({ label: "" });
+    test.assert(false, "Should have seen exception");
+  }
+  catch (e) {
+    test.assert(true, "Should have seen exception");
+  }
+
+  test.done();
+}
+
+
+// Tests that items can have an empty data property
+exports.testItemNoData = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  function checkData(data) {
+    test.assertEqual(data, undefined, "Data should be undefined");
+  }
+
+  let item1 = new loader.cm.Item({
+    label: "item 1",
+    contentScript: 'self.on("click", function(node, data) self.postMessage(data))',
+    onMessage: checkData
+  });
+  let item2 = new loader.cm.Item({
+    label: "item 2",
+    data: null,
+    contentScript: 'self.on("click", function(node, data) self.postMessage(data))',
+    onMessage: checkData
+  });
+  let item3 = new loader.cm.Item({
+    label: "item 3",
+    data: undefined,
+    contentScript: 'self.on("click", function(node, data) self.postMessage(data))',
+    onMessage: checkData
+  });
+
+  test.assertEqual(item1.data, undefined, "Should be no defined data");
+  test.assertEqual(item2.data, null, "Should be no defined data");
+  test.assertEqual(item3.data, undefined, "Should be no defined data");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item1, item2, item3], [], []);
+
+    let itemElt = test.getItemElt(popup, item1);
+    itemElt.click();
+
+    test.hideMenu(function() {
+      test.showMenu(null, function (popup) {
+        let itemElt = test.getItemElt(popup, item2);
+        itemElt.click();
+
+        test.hideMenu(function() {
+          test.showMenu(null, function (popup) {
+            let itemElt = test.getItemElt(popup, item3);
+            itemElt.click();
+
+            test.done();
+          });
+        });
+      });
+    });
+  });
+}
+
+
+// Tests that items without an image don't attempt to show one
+exports.testItemNoImage = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item1 = new loader.cm.Item({ label: "item 1" });
+  let item2 = new loader.cm.Item({ label: "item 2", image: null });
+  let item3 = new loader.cm.Item({ label: "item 3", image: undefined });
+
+  test.assertEqual(item1.image, undefined, "Should be no defined image");
+  test.assertEqual(item2.image, null, "Should be no defined image");
+  test.assertEqual(item3.image, undefined, "Should be no defined image");
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item1, item2, item3], [], []);
+
+    test.done();
+  });
+}
+
+
 // Test image support.
 exports.testItemImage = function (test) {
   test = new TestHelper(test);
@@ -2487,6 +2605,8 @@ exports.testItemImage = function (test) {
   let menu = new loader.cm.Menu({ label: "menu", image: imageURL, items: [
     loader.cm.Item({ label: "subitem" })
   ]});
+  test.assertEqual(item.image, imageURL, "Should have set the image correctly");
+  test.assertEqual(menu.image, imageURL, "Should have set the image correctly");
 
   test.showMenu(null, function (popup) {
     test.checkMenu([item, menu], [], []);
@@ -2494,10 +2614,14 @@ exports.testItemImage = function (test) {
     let imageURL2 = require("sdk/self").data.url("dummy.ico");
     item.image = imageURL2;
     menu.image = imageURL2;
+    test.assertEqual(item.image, imageURL2, "Should have set the image correctly");
+    test.assertEqual(menu.image, imageURL2, "Should have set the image correctly");
     test.checkMenu([item, menu], [], []);
 
     item.image = null;
     menu.image = null;
+    test.assertEqual(item.image, null, "Should have set the image correctly");
+    test.assertEqual(menu.image, null, "Should have set the image correctly");
     test.checkMenu([item, menu], [], []);
 
     test.done();

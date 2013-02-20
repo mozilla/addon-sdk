@@ -59,13 +59,21 @@ class ManifestEntry:
 
     def get_path(self):
         name = self.moduleName
+
         if name.endswith(".js"):
             name = name[:-3]
+        items = []
+        # Only add package name for addons, so that system module paths match
+        # the path from the commonjs root directory and also match the loader
+        # mappings.
+        if self.packageName != "addon-sdk":
+            items.append(self.packageName)
+        # And for the same reason, do not append `lib/`.
         if self.sectionName == "tests":
-            path = "%s/%s/%s" % (self.packageName, self.sectionName, name)
-        else:
-            path = "%s/%s" % (self.packageName, name)
-        return path
+            items.append(self.sectionName)
+        items.append(name)
+
+        return "/".join(items)
 
     def get_entry_for_manifest(self):
         entry = { "packageName": self.packageName,
@@ -229,7 +237,8 @@ class ManifestBuilder:
                 # search for all tests. self.test_modules will be passed
                 # through the harness-options.json file in the
                 # .allTestModules property.
-                self.test_modules.append(testname)
+                # Pass the absolute module path.
+                self.test_modules.append(tme.get_path())
 
         # include files used by the loader
         for em in self.extra_modules:
