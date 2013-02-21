@@ -6,9 +6,7 @@
 
 const { Ci } = require('chrome');
 const { open, backgroundify, windows,
-        getXULWindow, getBaseWindow,
-        getDOMWindow } = require('sdk/window/utils');
-
+        getXULWindow, getBaseWindow } = require('sdk/window/utils');
 const windowUtils = require('sdk/deprecated/window-utils');
 
 exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
@@ -52,7 +50,7 @@ exports['test backgroundify'] = function(assert) {
   let window = open('data:text/html;charset=utf-8,backgroundy');
   assert.ok(~windows().indexOf(window),
             'window is in the list of windows');
-  let backgroundy = getDOMWindow(backgroundify(window));
+  let backgroundy = backgroundify(window);
   assert.equal(backgroundy, window, 'backgroundify returs give window back');
   assert.ok(!~windows().indexOf(window),
             'backgroundifyied window is in the list of windows');

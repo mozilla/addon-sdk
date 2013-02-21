@@ -13,7 +13,9 @@ exports['test loader'] = function(assert) {
     prints.push(message);
   }
 
-  let loader = Loader(override(packaging, {
+  let options = JSON.parse(JSON.stringify(packaging));
+
+  let loader = Loader(override(options, {
     globals: {
       print: print,
       foo: 1
