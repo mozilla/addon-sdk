@@ -81,17 +81,13 @@ exports.testGetOwnerWindow = function(test) {
         test.assert(getOwnerWindow(tab) instanceof Ci.nsIDOMWindow); 
       }
       else {
-        if (pbUtils.isWindowPBSupported) {
-          test.assertNotStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is not the same for window and window\'s tab'); 
-        }
-        else {
-          test.assertStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
-        }
+        test.assertStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
       }
 
       // test that the tab is not private
       // private flag should be ignored by default
-      // test.assert(!isPrivate(tab));
+      test.assert(!isPrivate(tab));
+      test.assert(!isPrivate(getOwnerWindow(tab)));
 
       tab.close(function() test.done());
     }
