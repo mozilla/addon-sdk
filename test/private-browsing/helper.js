@@ -26,8 +26,16 @@ require('sdk/private-browsing/window/utils');
 
 function PBLoader(options) {
   options = options || {};
-  let packaging = JSON.parse(JSON.stringify(require("@loader/options")));
-  packaging.metadata = merge(packaging.metadata, options.metadata);
+  let jpOptions = require("@loader/options");
+  let packaging = {
+    metadata: {}
+  };
+
+  shallowClone(jpOptions, packaging);
+  shallowClone(options, packaging);
+
+  shallowClone(jpOptions.metadata || {}, packaging.metadata);
+  shallowClone(options.metadata || {}, packaging.metadata);
 
   let globals = {};
   let errors = [];
@@ -50,6 +58,13 @@ function PBLoader(options) {
   return {
     loader: loader,
     errors: errors
+  }
+}
+
+function shallowClone(source, target) {
+  for (let prop in source) {
+    if (!(prop in target))
+      target[prop] = source[prop];
   }
 }
 
