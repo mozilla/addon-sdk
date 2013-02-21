@@ -11,7 +11,11 @@ const windows = require("windows").browserWindows;
 const { merge } = require("sdk/util/object");
 
 let { loader } = PBLoader({
-  metadata: {'private-browsing': true},
+  metadata: {
+    'permissions': {
+      'private-browsing': true
+    }
+  },
   ignoreDeprecationErrors: true
 });
 const pb = loader.require('sdk/private-browsing');
@@ -23,19 +27,27 @@ require('window/utils');
 require('windows');
 require('sdk/deprecated/window-utils');
 require('sdk/private-browsing/window/utils');
+require('sdk/self');
 
 function PBLoader(options) {
   options = options || {};
   let jpOptions = require("@loader/options");
   let packaging = {
-    metadata: {}
+    metadata: {
+      permissions: {}
+    }
   };
 
   shallowClone(jpOptions, packaging);
   shallowClone(options, packaging);
 
-  shallowClone(jpOptions.metadata || {}, packaging.metadata);
-  shallowClone(options.metadata || {}, packaging.metadata);
+  let jpMetadata = jpOptions.metadata || {};
+  let metadata = options.metadata || {};
+  shallowClone(jpMetadata, packaging.metadata);
+  shallowClone(metadata, packaging.metadata);
+
+  shallowClone(jpMetadata.permissions || {}, packaging.metadata.permissions);
+  shallowClone(metadata.permissions || {}, packaging.metadata.permissions);
 
   let globals = {};
   let errors = [];

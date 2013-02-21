@@ -62,7 +62,13 @@ exports.testIsActiveDefault = function(test) {
 
 exports.testIsPrivateBrowsingFalseDefault = function(test) {
   test.assertEqual(isPrivateBrowsingSupported, false,
-  	               'usePrivateBrowsing property is false by default');
+  	               'isPrivateBrowsingSupported property is false by default');
+};
+
+exports.testIsPrivateBrowsingTrue = function(test) {
+  test.assertEqual(pbLoader.require('sdk/self').isPrivateBrowsingSupported,
+                   true,
+                   'isPrivateBrowsingSupported property is false by default');
 };
 
 exports.testGetOwnerWindow = function(test) {

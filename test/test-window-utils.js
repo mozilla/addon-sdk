@@ -166,7 +166,7 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
 
   // make a new private window
   pbWindows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(win) {
       let window = privateWindow = getOwnerWindow(win);
       assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
@@ -174,13 +174,14 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
       // PWPB case
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
-        assert.equal(pbWindowUtils.getFrames(window).length > 1, true, 'there are frames');
-        assert.equal(pbWindowUtils.getWindowTitle(window), window.document.title,
-                     'getWindowTitle works');
-        assert.equal(getWindowTitle(window), null,
-                     'getWindowTitle returns null for private window when they are not supported');
+        assert.ok(pbWindowUtils.getFrames(window).length > 1, 'there are frames');
+        assert.equal(getFrames(window).length, 0, 'there are no frames');
         privateWindowOpened = true;
       }
+
+      assert.equal(pbWindowUtils.getWindowTitle(window), window.document.title,
+                   'getWindowTitle works');
+      assert.equal(getWindowTitle(window), window.document.title, 'getWindowTitle works');
       win.close(function() privateWindowClosed = true);
     }
   });
@@ -360,7 +361,7 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
 
   // make a new private window
   pbWindows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
       let continueAfterFocus = function(window) onFocus(window, nextTest);
@@ -484,7 +485,7 @@ exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
 
   // make a new private window
   pbWindows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
       assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
@@ -551,7 +552,7 @@ exports['test windowIterator'] = function(assert, done) {
 exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
   // make a new private window
   pbLoader.require('windows').browserWindows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
       assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
