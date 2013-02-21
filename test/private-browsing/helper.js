@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let { Cc,Ci } = require('chrome');
+let { Cc, Ci } = require('chrome');
 const unload = require("sdk/system/unload");
 const { Loader } = require('sdk/test/loader');
 const { windows: windowsIterator } = require("sdk/window/utils");
@@ -30,6 +30,8 @@ function PBLoader(options) {
   packaging.metadata = merge(packaging.metadata, options.metadata);
 
   let globals = {};
+  let errors = [];
+
   if (options.ignoreDeprecationErrors) {
     globals.console = Object.create(console, {
       error: {
@@ -43,7 +45,6 @@ function PBLoader(options) {
     });
   }
 
-  let errors = [];
   let loader = Loader(module, globals, packaging);
 
   return {
@@ -60,6 +61,7 @@ function deactivate(callback) {
   }
 }
 exports.deactivate = deactivate;
+
 exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;

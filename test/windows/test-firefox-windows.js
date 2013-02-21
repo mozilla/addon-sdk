@@ -8,8 +8,10 @@ const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
 const { onFocus } = require('sdk/window/utils');
 const { browserWindows } = require("sdk/windows");
-const tabs = require("tabs");
-const { WindowTracker } = require("window-utils");
+const tabs = require("sdk/tabs");
+const { WindowTracker } = require("sdk/deprecated/window-utils");
+const { isPrivate } = require('sdk/private-browsing');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -99,7 +101,7 @@ exports.testWindowTabsObject = function(test) {
   }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onActivate: function onOpen(win) {
+    onActivate: function onActivate(win) {
       window = win;
       runTest();
     },
@@ -342,4 +344,25 @@ exports.testTrackWindows = function(test) {
   })
 
   openWindow();
+}
+
+// test that it is not possible to open a private window by default
+exports.testWindowOpenPrivateDefault = function(test) {
+  test.waitUntilDone();
+
+  browserWindows.open({
+    url: 'about:mozilla',
+    isPrivate: true,
+    onOpen: function(window) {
+      let tab = window.tabs[0];
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
+        test.assertEqual(isPrivate(tab), false, 'tab is not private');
+
+        window.close(function() {
+          test.done();
+        });
+      });
+    }
+  });
 }

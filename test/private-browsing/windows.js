@@ -5,8 +5,10 @@
 
 const { loader, pb, pbUtils } = require('./helper');
 const { openDialog } = loader.require('window/utils');
-const { isPrivate } = pb;
-const { browserWindows: windows } = loader.require('windows');
+
+const { isPrivate } = require('sdk/private-browsing');
+const { browserWindows: windows } = require('sdk/windows');
+
 
 exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
   let win = openDialog({
@@ -32,10 +34,10 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
 
 exports.testIsPrivateOnWindowOn = function(assert, done) {
   windows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(window) {
-      assert.equal(isPrivate(window), true, 'isPrivate for a window is true when it should be');
-      assert.equal(isPrivate(window.tabs[0]), true, 'isPrivate for a tab is false when it should be');
+      assert.equal(isPrivate(window), false, 'isPrivate for a window is true when it should be');
+      assert.equal(isPrivate(window.tabs[0]), false, 'isPrivate for a tab is false when it should be');
       window.close(done);
     }
   });
