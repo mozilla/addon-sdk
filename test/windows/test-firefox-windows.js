@@ -373,8 +373,8 @@ exports.testTrackWindows = function(test) {
   openWindow();
 }
 
-// test that it is possible to open a private window
-exports.testWindowOpenPrivate = function(test) {
+// test that it is not possible to open a private window by default
+exports.testWindowOpenPrivateDefault = function(test) {
   test.waitUntilDone();
 
   browserWindows.open({
@@ -384,9 +384,9 @@ exports.testWindowOpenPrivate = function(test) {
       let tab = window.tabs[0];
       tab.once('ready', function() {
         test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
-        test.assertEqual(isPrivate(tab), isWindowPBSupported, 'tab is private');
+        test.assertEqual(isPrivate(tab), false, 'tab is not private');
 
-        tab.close(function() {
+        window.close(function() {
           test.done();
         });
       });

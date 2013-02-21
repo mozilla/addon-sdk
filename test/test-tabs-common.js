@@ -303,12 +303,13 @@ exports.testTabContentTypeAndReload = function(test) {
 exports.testTabOpenPrivate = function(test) {
   test.waitUntilDone();
 
+  let url = 'about:blank';
   tabs.open({
-    url: 'about:mozilla',
+    url: url,
     isPrivate: true,
     onReady: function(tab) {
-      test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
-      test.assertEqual(isPrivate(tab), (isWindowPBSupported || isTabPBSupported), 'tab is private');
+      test.assertEqual(tab.url, url, 'opened correct tab');
+      test.assertEqual(isPrivate(tab), false, 'private tabs arenot supported by default');
 
       tab.close(function() {
         test.done();
