@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let { Cc,Ci } = require('chrome');
+let { Cc, Ci } = require('chrome');
 const unload = require("sdk/system/unload");
 const { Loader } = require('sdk/test/loader');
 const { windows: windowsIterator } = require("sdk/window/utils");
@@ -11,7 +11,11 @@ const windows = require("windows").browserWindows;
 const { merge } = require("sdk/util/object");
 
 let { loader } = PBLoader({
-  metadata: {'private-browsing': true},
+  metadata: {
+    'permissions': {
+      'private-browsing': true
+    }
+  },
   ignoreDeprecationErrors: true
 });
 const pb = loader.require('sdk/private-browsing');
@@ -24,13 +28,31 @@ require('windows');
 require('sdk/deprecated/window-utils');
 require('sdk/private-browsing/window/utils');
 require('sdk/deprecated/tab-browser');
+require('sdk/self');
 
 function PBLoader(options) {
   options = options || {};
-  let packaging = JSON.parse(JSON.stringify(require("@loader/options")));
-  packaging.metadata = merge(packaging.metadata, options.metadata);
+  let jpOptions = require("@loader/options");
+  let packaging = {
+    metadata: {
+      permissions: {}
+    }
+  };
+
+  shallowClone(jpOptions, packaging);
+  shallowClone(options, packaging);
+
+  let jpMetadata = jpOptions.metadata || {};
+  let metadata = options.metadata || {};
+  shallowClone(jpMetadata, packaging.metadata);
+  shallowClone(metadata, packaging.metadata);
+
+  shallowClone(jpMetadata.permissions || {}, packaging.metadata.permissions);
+  shallowClone(metadata.permissions || {}, packaging.metadata.permissions);
 
   let globals = {};
+  let errors = [];
+
   if (options.ignoreDeprecationErrors) {
     globals.console = Object.create(console, {
       error: {
@@ -44,12 +66,18 @@ function PBLoader(options) {
     });
   }
 
-  let errors = [];
   let loader = Loader(module, globals, packaging);
 
   return {
     loader: loader,
     errors: errors
+  }
+}
+
+function shallowClone(source, target) {
+  for (let prop in source) {
+    if (!(prop in target))
+      target[prop] = source[prop];
   }
 }
 
@@ -61,6 +89,7 @@ function deactivate(callback) {
   }
 }
 exports.deactivate = deactivate;
+
 exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
