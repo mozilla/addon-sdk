@@ -296,7 +296,7 @@ exports.testActiveTabIgnoresPrivateWindows = function(test) {
   let startActiveTab = tabBrowser.activeTab;
   // make a new private window
   pbWindows.open({
-    private: true,
+    isPrivate: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
       test.assert(window instanceof Ci.nsIDOMWindow, "window was found");

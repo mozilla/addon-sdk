@@ -6,12 +6,12 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
-           getService(Ci.nsIWindowMediator);
-
+const { onFocus } = require('sdk/window/utils');
 const { browserWindows } = require("sdk/windows");
-const tabs = require("tabs");
-const { WindowTracker } = require("window-utils");
+const tabs = require("sdk/tabs");
+const { WindowTracker } = require("sdk/deprecated/window-utils");
+const { isPrivate } = require('sdk/private-browsing');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -101,7 +101,7 @@ exports.testWindowTabsObject = function(test) {
   }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onActivate: function onOpen(win) {
+    onActivate: function onActivate(win) {
       window = win;
       runTest();
     },
@@ -267,36 +267,11 @@ exports.testActiveWindow = function(test) {
   });
 
   function nextStep() {
-    if (testSteps.length > 0)
+    if (testSteps.length)
       testSteps.shift()();
   }
 
-  function continueAfterFocus(targetWindow) {
-    // Based on SimpleTest.waitForFocus
-    var fm = Cc["@mozilla.org/focus-manager;1"].
-             getService(Ci.nsIFocusManager);
-
-    var childTargetWindow = {};
-    fm.getFocusedElementForWindow(targetWindow, true, childTargetWindow);
-    childTargetWindow = childTargetWindow.value;
-
-    var focusedChildWindow = {};
-    if (fm.activeWindow) {
-      fm.getFocusedElementForWindow(fm.activeWindow, true, focusedChildWindow);
-      focusedChildWindow = focusedChildWindow.value;
-    }
-
-    var focused = (focusedChildWindow == childTargetWindow);
-    if (focused) {
-      setTimeout(nextStep, 0);
-    } else {
-      childTargetWindow.addEventListener("focus", function focusListener() {
-        childTargetWindow.removeEventListener("focus", focusListener, true);
-        setTimeout(nextStep, 0);
-      }, true);
-    }
-
-  }
+  let continueAfterFocus = function(w) onFocus(w, nextStep);
 
   function finishTest() {
     window3.close(function() {
@@ -369,4 +344,25 @@ exports.testTrackWindows = function(test) {
   })
 
   openWindow();
+}
+
+// test that it is not possible to open a private window by default
+exports.testWindowOpenPrivateDefault = function(test) {
+  test.waitUntilDone();
+
+  browserWindows.open({
+    url: 'about:mozilla',
+    isPrivate: true,
+    onOpen: function(window) {
+      let tab = window.tabs[0];
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
+        test.assertEqual(isPrivate(tab), false, 'tab is not private');
+
+        window.close(function() {
+          test.done();
+        });
+      });
+    }
+  });
 }
