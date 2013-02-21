@@ -4,9 +4,9 @@
 'use strict';
 
 const { pb, pbUtils } = require('./helper');
-const { openDialog } = require('window/utils');
-const { isPrivate } = require('private-browsing');
-const { browserWindows: windows } = require('windows');
+const { openDialog } = require('sdk/window/utils');
+const { isPrivate } = require('sdk/private-browsing');
+const { browserWindows: windows } = require('sdk/windows');
 
 exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
   let win = openDialog({

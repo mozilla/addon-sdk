@@ -74,6 +74,15 @@ function startup(data, reasonCode) {
 
     let id = options.jetpackID;
     let name = options.name;
+
+    // Clean the metadata
+    options.metadata[name]['permissions'] = options.metadata[name]['permissions'] || {};
+
+    // freeze the permissionss
+    Object.freeze(options.metadata[name]['permissions']);
+    // freeze the metadata
+    Object.freeze(options.metadata[name]);
+
     // Register a new resource 'domain' for this addon which is mapping to
     // XPI's `resources` folder.
     // Generate the domain name by using jetpack ID, which is the extension ID
@@ -92,16 +101,32 @@ function startup(data, reasonCode) {
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     // Create path to URLs mapping supported by loader.
-    let paths = Object.keys(options.metadata).reduce(function(result, name) {
-      result[name + '/'] = prefixURI + name + '/lib/'
-      result[name + '/tests/'] = prefixURI + name + '/tests/'
-      return result
-    }, {
+    let paths = {
       // Relative modules resolve to add-on package lib
       './': prefixURI + name + '/lib/',
-      'toolkit/': 'resource://gre/modules/toolkit/',
-      '': 'resources:///modules/'
-    });
+      './tests/': prefixURI + name + '/tests/',
+      '': 'resource://gre/modules/commonjs/'
+    };
+
+    // Maps addon lib and tests ressource folders for each package
+    paths = Object.keys(options.metadata).reduce(function(result, name) {
+      result[name + '/'] = prefixURI + name + '/lib/'
+      result[name + '/tests/'] = prefixURI + name + '/tests/'
+      return result;
+    }, paths);
+
+    // We need to map tests folder when we run sdk tests whose package name
+    // is stripped
+    if (name == 'addon-sdk')
+      paths['tests/'] = prefixURI + name + '/tests/';
+
+    // Maps sdk module folders to their resource folder
+    paths['sdk/'] = prefixURI + 'addon-sdk/lib/sdk/';
+    paths['toolkit/'] = prefixURI + 'addon-sdk/lib/toolkit/';
+    // test.js is usually found in root commonjs or SDK_ROOT/lib/ folder,
+    // so that it isn't shipped in the xpi. Keep a copy of it in sdk/ folder
+    // until we no longer support SDK modules in XPI:
+    paths['test'] = prefixURI + 'addon-sdk/lib/sdk/test.js';
 
     // Make version 2 of the manifest
     let manifest = options.manifest;
@@ -157,7 +182,7 @@ function startup(data, reasonCode) {
       }
     });
 
-    let module = cuddlefish.Module('addon-sdk/sdk/loader/cuddlefish', cuddlefishURI);
+    let module = cuddlefish.Module('sdk/loader/cuddlefish', cuddlefishURI);
     let require = cuddlefish.Require(loader, module);
 
     require('sdk/addon/runner').startup(reason, {
@@ -166,7 +191,8 @@ function startup(data, reasonCode) {
       prefsURI: rootURI + 'defaults/preferences/prefs.js'
     });
   } catch (error) {
-    dump('Bootstrap error: ' + error.message + '\n' +
+    dump('Bootstrap error: ' +
+         (error.message ? error.message : String(error)) + '\n' +
          (error.stack || error.fileName + ': ' + error.lineNumber) + '\n');
     throw error;
   }
@@ -213,12 +239,16 @@ function shutdown(data, reasonCode) {
   if (loader) {
     unload(loader, reason);
     unload = null;
-    // Avoid leaking all modules when something goes wrong with one particular
-    // module. Do not clean it up immediatly in order to allow executing some
-    // actions on addon disabling.
-    // We need to keep a reference to the timer, otherwise it is collected
-    // and won't ever fire.
-    nukeTimer = setTimeout(nukeModules, 1000);
+
+    // Don't waste time cleaning up if the application is shutting down
+    if (reason != "shutdown") {
+      // Avoid leaking all modules when something goes wrong with one particular
+      // module. Do not clean it up immediatly in order to allow executing some
+      // actions on addon disabling.
+      // We need to keep a reference to the timer, otherwise it is collected
+      // and won't ever fire.
+      nukeTimer = setTimeout(nukeModules, 1000);
+    }
   }
 };
 
