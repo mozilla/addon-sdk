@@ -121,6 +121,7 @@ This is a required property.
 @prop isPrivate {boolean}
 Boolean which will determine if a private window should be opened.
 Private browsing mode must be supported in order to do this.
+See the [private-browsing](modules/sdk/private-browsing.html) documentation for more information.
 
 @prop [onOpen] {function}
 A callback function that is called when the window has opened. This does not
