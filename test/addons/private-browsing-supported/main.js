@@ -17,6 +17,9 @@ exports.testIsPrivateBrowsingTrue = function(assert) {
             'isPrivateBrowsingSupported property is true');
 };
 
+// test tab.open with isPrivate: true
+// test isPrivate on a tab
+// test getOwnerWindow on windows and tabs
 exports.testGetOwnerWindow = function(assert, done) {
   let window = windows.activeWindow;
   let chromeWindow = getOwnerWindow(window);
@@ -33,23 +36,62 @@ exports.testGetOwnerWindow = function(assert, done) {
       }
       else {
         if (isWindowPBSupported) {
-          assert.notStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is not the same for window and window\'s tab'); 
+          assert.notStrictEqual(chromeWindow,
+          	                    getOwnerWindow(tab),
+          	                    'associated window is not the same for window and window\'s tab'); 
         }
         else {
-          assert.strictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
+          assert.strictEqual(chromeWindow,
+          	                 getOwnerWindow(tab),
+          	                 'associated window is the same for window and window\'s tab');
         }
       }
 
-      if (isTabPBSupported || isWindowPBSupported) {
-        // test that the tab is not private
-        // private flag should be ignored by default
-        assert.ok(isPrivate(tab));
-        assert.ok(isPrivate(getOwnerWindow(tab)));
-      }
+      let pbSupported = isTabPBSupported || isWindowPBSupported;
+
+      // test that the tab is private if it should be
+      assert.equal(isPrivate(tab), pbSupported);
+      assert.equal(isPrivate(getOwnerWindow(tab)), pbSupported);
 
       tab.close(function() done());
     }
   });
 };
+
+// test windows.open with isPrivate: true
+// test isPrivate on a window
+if (!is('Fennec')) {
+  exports.testIsPrivateOnWindowOn = function(assert, done) {
+    windows.open({
+      isPrivate: true,
+      onOpen: function(window) {
+        assert.equal(isPrivate(window), isWindowPBSupported, 'isPrivate for a window is true when it should be');
+        assert.equal(isPrivate(window.tabs[0]), isWindowPBSupported, 'isPrivate for a tab is false when it should be');
+        window.close(done);
+      }
+    });
+  };
+
+  exports.testIsPrivateOnWindowOffImplicit = function(assert, done) {
+    windows.open({
+      onOpen: function(window) {
+        assert.equal(isPrivate(window), false, 'isPrivate for a window is false when it should be');
+        assert.equal(isPrivate(window.tabs[0]), false, 'isPrivate for a tab is false when it should be');
+        window.close(done);
+      }
+    })
+  }
+
+  exports.testIsPrivateOnWindowOffExplicit = function(assert, done) {
+    windows.open({
+      isPrivate: false,
+      onOpen: function(window) {
+        assert.equal(isPrivate(window), false, 'isPrivate for a window is false when it should be');
+        assert.equal(isPrivate(window.tabs[0]), false, 'isPrivate for a tab is false when it should be');
+        window.close(done);
+      }
+    })
+  }
+}
 
 require('sdk/test/runner').runTestsFromModule(module);

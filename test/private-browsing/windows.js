@@ -34,8 +34,8 @@ exports.testIsPrivateOnWindowOn = function(assert, done) {
   windows.open({
     isPrivate: true,
     onOpen: function(window) {
-      assert.equal(isPrivate(window), true, 'isPrivate for a window is true when it should be');
-      assert.equal(isPrivate(window.tabs[0]), true, 'isPrivate for a tab is false when it should be');
+      assert.equal(isPrivate(window), false, 'isPrivate for a window is true when it should be');
+      assert.equal(isPrivate(window.tabs[0]), false, 'isPrivate for a tab is false when it should be');
       window.close(done);
     }
   });
