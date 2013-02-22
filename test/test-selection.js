@@ -20,7 +20,7 @@ const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTM
 const { defer } = require("sdk/core/promise");
 const tabs = require("sdk/tabs");
 const { getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
-const { getMostRecentBrowserWindow } = require("sdk/window/utils");
+const { getMostRecentBrowserWindow, open: openNewWindow } = require("sdk/window/utils");
 const { Loader } = require("sdk/test/loader");
 const { setTimeout } = require("sdk/timers");
 const { Cu } = require("chrome");
@@ -34,8 +34,20 @@ const { Cu } = require("chrome");
  * I believe this approach could be useful in most of our unit test, that
  * requires to open a tab and need to access to its content.
  */
-function open(url) {
+function open(url, options) {
   let { promise, resolve } = defer();
+
+  if (options && typeof(options) === "object") {
+    let chromeWindow = openNewWindow(url, options);
+
+    chromeWindow.addEventListener("DOMContentLoaded", function ready(event) {
+      this.removeEventListener(this, ready);
+
+      resolve(event.target.defaultView);
+    });
+
+    return promise;
+  }
 
   tabs.open({
     url: url,
@@ -58,10 +70,14 @@ function open(url) {
 /**
  * Close the Active Tab
  */
-function close() {
-  // Here we assuming that the most recent browser window is the one we're
-  // doing the test, and the active tab is the one we just opened.
-  closeTab(getActiveTab(getMostRecentBrowserWindow()));
+function close(window) {
+  if (window && typeof(window.close) === "function") {
+    window.close();
+  } else {
+    // Here we assuming that the most recent browser window is the one we're
+    // doing the test, and the active tab is the one we just opened.
+    closeTab(getActiveTab(getMostRecentBrowserWindow()));
+  }
 }
 
 /**
@@ -214,6 +230,8 @@ function dispatchSelectionEvent(window) {
   // contract the selection by one character. So if the text selected is "foo"
   // will be "fo".
   window.getSelection().modify("extend", "backward", "character");
+
+  return window;
 }
 
 /**
@@ -228,6 +246,8 @@ function dispatchOnSelectEvent(window) {
   event.initUIEvent("select", true, true, window, 1);
 
   textarea.dispatchEvent(event);
+
+  return window;
 }
 
 /**
@@ -817,6 +837,102 @@ exports["test Textarea onSelect Listener on frame"] = function(assert, done) {
     then(dispatchOnSelectEvent).
     then(close).
     then(loader.unload)
+};
+
+exports["test PBPW Selection Listener"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  selection.once("select", function() {
+    assert.fail("Shouldn't be never called");
+  });
+
+  assert.pass();
+
+  open(URL, {private: true}).
+    then(selectContentFirstDiv).
+    then(dispatchSelectionEvent).
+    then(close).
+    then(loader.unload).
+    then(done);
+};
+
+exports["test PBPW Textarea OnSelect Listener"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  selection.once("select", function() {
+    assert.fail("Shouldn't be never called");
+  });
+
+  assert.pass();
+
+  open(URL, {private: true}).
+    then(selectTextarea).
+    then(dispatchOnSelectEvent).
+    then(close).
+    then(loader.unload).
+    then(done);
+};
+
+
+exports["test PBPW Single DOM Selection"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  open(URL, {private: true}).then(selectFirstDiv).then(function(window) {
+
+    assert.equal(selection.isContiguous, false,
+      "selection.isContiguous with single DOM Selection in PBPW works.");
+
+    assert.equal(selection.text, null,
+      "selection.text with single DOM Selection in PBPW works.");
+
+    assert.equal(selection.html, null,
+      "selection.html with single DOM Selection in PBPW works.");
+
+    let selectionCount = 0;
+    for each (let sel in selection)
+      selectionCount++;
+
+    assert.equal(selectionCount, 0,
+      "No iterable selection in PBPW");
+
+    return window;
+  }).then(close).then(loader.unload).then(done);
+};
+
+exports["test PBPW Textarea Selection"] = function(assert, done) {
+  let loader = Loader(module);
+  let selection = loader.require("sdk/selection");
+
+  open(URL, {private: true}).then(selectTextarea).then(function(window) {
+
+    assert.equal(selection.isContiguous, false,
+      "selection.isContiguous with Textarea Selection in PBPW works.");
+
+    assert.equal(selection.text, null,
+      "selection.text with Textarea Selection in PBPW works.");
+
+    assert.strictEqual(selection.html, null,
+      "selection.html with Textarea Selection in PBPW works.");
+
+    let selectionCount = 0;
+    for each (let sel in selection) {
+      selectionCount++;
+
+      assert.equal(sel.text, null,
+        "iterable selection.text with Textarea Selection in PBPW works.");
+
+      assert.strictEqual(sel.html, null,
+        "iterable selection.html with Textarea Selection in PBPW works.");
+    }
+
+    assert.equal(selectionCount, 0,
+      "No iterable selection in PBPW");
+
+    return window;
+  }).then(close).then(loader.unload).then(done);
 };
 
 // TODO: test Selection Listener on long-held connection (Bug 661884)
