@@ -359,7 +359,7 @@ for more details.
 
 If you ever need to access your simple-prefs with the `preferences/service` module,
 you can do so using the extended preference name.  To get this
-just prepend `"extensions." + require("self").id + "."` to the preference name `"somePreference"`.
+just prepend `"extensions." + require("sdk/self").id + "."` to the preference name `"somePreference"`.
 
 For example, if you had a simple-pref named `"somePreference"` then you could
 get its value like so:
