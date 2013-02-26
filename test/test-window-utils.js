@@ -309,7 +309,7 @@ exports['test window watcher without untracker'] = function(assert, done) {
 
 exports['test active window'] = function(assert, done) {
   let browserWindow = WM.getMostRecentWindow("navigator:browser");
-  let continueAfterFocus = function(window) onFocus(window, nextTest);
+  let continueAfterFocus = function(window) onFocus(window).then(nextTest);
 
   assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                "Browser window is the active browser window.");
@@ -364,7 +364,7 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
     isPrivate: true,
     onOpen: function(win) {
       let window = getOwnerWindow(win);
-      let continueAfterFocus = function(window) onFocus(window, nextTest);
+      let continueAfterFocus = function(window) onFocus(window).then(nextTest);
 
       assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
 
@@ -409,8 +409,8 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
                              "Correct active window when pb mode is supported [1]");
           }
 
-          onFocus(window, function() {
-            pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          onFocus(window).then(function() {
+            pbLoader.require('sdk/window/utils').onFocus(window).then(nextTest);
           });
           window.focus();
         },
@@ -430,7 +430,7 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
                            "Correct active window when pb mode is supported [2]");
 
           windowUtils.activeWindow = window;
-          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          pbLoader.require('sdk/window/utils').onFocus(window).then(nextTest);
         },
         function() {
           // PWPB case

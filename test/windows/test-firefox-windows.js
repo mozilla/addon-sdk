@@ -271,7 +271,7 @@ exports.testActiveWindow = function(test) {
       testSteps.shift()();
   }
 
-  let continueAfterFocus = function(w) onFocus(w, nextStep);
+  let continueAfterFocus = function(w) onFocus(w).then(nextStep);
 
   function finishTest() {
     window3.close(function() {
