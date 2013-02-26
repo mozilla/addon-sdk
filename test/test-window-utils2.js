@@ -32,7 +32,7 @@ exports['test top window creation'] = function(assert, done) {
   assert.ok(~windows().indexOf(window), 'window was opened');
 
   // Wait for the window unload before ending test
-  close(window, done);
+  close(window).then(done);
 };
 
 exports['test new top window with options'] = function(assert, done) {
@@ -47,7 +47,7 @@ exports['test new top window with options'] = function(assert, done) {
   assert.equal(window.toolbar.visible, true, 'toolbar was set');
 
   // Wait for the window unload before ending test
-  close(window, done);
+  close(window).then(done);
 };
 
 exports['test backgroundify'] = function(assert, done) {
@@ -60,7 +60,7 @@ exports['test backgroundify'] = function(assert, done) {
             'backgroundifyied window is in the list of windows');
 
   // Wait for the window unload before ending test
-  close(window, done);
+  close(window).then(done);
 };
 
 exports.testIsBrowser = function(assert) {

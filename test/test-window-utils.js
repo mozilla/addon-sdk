@@ -537,7 +537,7 @@ exports['test windowIterator'] = function(assert, done) {
               "window is now in windowIterator()");
 
     // Wait for the window unload before ending test
-    close(window, done);
+    close(window).then(done);
   }, false);
 };
 
