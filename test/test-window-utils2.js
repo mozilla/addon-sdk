@@ -64,11 +64,6 @@ exports['test backgroundify'] = function(assert, done) {
 };
 
 exports.testIsBrowser = function(assert) {
-  // dummy window, good type
-  assert.equal(isBrowser({ document: { documentElement: { getAttribute: function() {
-    return 'navigator:browser';
-  }}}}), false, 'dummy object with correct stucture and type does not pass');
-
   // dummy window, bad type
   assert.equal(isBrowser({ document: { documentElement: { getAttribute: function() {
     return 'navigator:browserx';

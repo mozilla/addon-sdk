@@ -175,7 +175,7 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
       if (pbUtils.isWindowPBSupported) {
         assert.ok(pbUtils.isWindowPrivate(window), "window is private");
         assert.ok(pbWindowUtils.getFrames(window).length > 1, 'there are frames');
-        assert.equal(getFrames(window).length, 0, 'there are no frames');
+        assert.ok(getFrames(window).length > 1, 'there are frames for private window');
         privateWindowOpened = true;
       }
 
@@ -409,16 +409,9 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
                              "Correct active window when pb mode is supported [1]");
           }
 
-          // PWPB case
-          if (pbUtils.isWindowPBSupported) {
-            onFocus(
-              window,
-              function() {
-                assert.fail('this should not be called');
-              }
-            );
-          }
-          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          onFocus(window, function() {
+            pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          });
           window.focus();
         },
         function() {
