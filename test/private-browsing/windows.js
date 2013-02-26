@@ -3,11 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { pb, pbUtils } = require('./helper');
-const { openDialog } = require('sdk/window/utils');
+const { loader, pb, pbUtils } = require('./helper');
+const { openDialog, open } = loader.require('window/utils');
+
 const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
 
+// test openDialog() from window/utils with private option
+// test isActive state in pwpb case
+// test isPrivate on ChromeWindow
 exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
   let win = openDialog({
     private: true
@@ -18,6 +22,35 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
 
     assert.equal(pbUtils.getMode(win),
                  true, 'Newly opened window is in PB mode');
+    assert.ok(isPrivate(win), 'isPrivate(window) is true');
+    assert.equal(pb.isActive, false, 'PB mode is not active');
+
+    win.addEventListener("unload", function onunload() {
+      win.removeEventListener('unload', onload, false);
+      assert.equal(pb.isActive, false, 'PB mode is not active');
+      done();
+    }, false);
+
+    win.close();
+  }, false);
+}
+
+// test open() from window/utils with private feature
+// test isActive state in pwpb case
+// test isPrivate on ChromeWindow
+exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
+  let win = open('chrome://browser/content/browser.xul', {
+    features: {
+      private: true
+    }
+  });
+
+  win.addEventListener('DOMContentLoaded', function onload() {
+    win.removeEventListener('DOMContentLoaded', onload, false);
+
+    assert.equal(pbUtils.getMode(win),
+                 true, 'Newly opened window is in PB mode');
+    assert.ok(isPrivate(win), 'isPrivate(window) is true');
     assert.equal(pb.isActive, false, 'PB mode is not active');
 
     win.addEventListener("unload", function onunload() {

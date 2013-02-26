@@ -1,9 +1,15 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 'use strict';
 
-var timer = require("sdk/timers");
-var {Cc,Ci} = require("chrome");
+const timer = require('sdk/timers');
+const { Cc, Ci } = require('chrome');
+const tabBrowser = require("sdk/deprecated/tab-browser");
+const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
+const { open, close } = pbLoader.require('sdk/window/utils');
+const { getFrames, getWindowTitle } = require('sdk/window/utils');
+const { isPrivate } = require('sdk/private-browsing');
 
 function onBrowserLoad(callback, event) {
   if (event.target && event.target.defaultView == this) {
@@ -61,8 +67,6 @@ function closeTwoWindows(window1, window2, callback) {
 exports.testAddTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
-
     let cache = [];
     let windowUtils = require("sdk/deprecated/window-utils");
     new windowUtils.WindowTracker({
@@ -109,7 +113,6 @@ exports.testAddTab = function(test) {
 
 exports.testTrackerWithDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var delegate = {
     state: "initializing",
@@ -148,7 +151,6 @@ exports.testTrackerWithDelegate = function(test) {
 
 exports.testWhenContentLoaded = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var tracker = tabBrowser.whenContentLoaded(
     function(window) {
@@ -169,7 +171,6 @@ exports.testWhenContentLoaded = function(test) {
 
 exports.testTrackerWithoutDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var tb = new tabBrowser.Tracker();
@@ -198,7 +199,6 @@ exports.testTrackerWithoutDelegate = function(test) {
 
 exports.testTabTracker = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var delegate = {
@@ -252,7 +252,6 @@ exports.testTabTracker = function(test) {
 exports.testActiveTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(browserWindow, browser) {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
     const TabModule = require("sdk/deprecated/tab-browser").TabModule;
     let tm = new TabModule(browserWindow);
     test.assertEqual(tm.length, 1);
@@ -285,6 +284,44 @@ exports.testActiveTab = function(test) {
         });
       }
     });
+  });
+};
+
+exports.testActiveTabIgnoresPrivateWindows = function(test) {
+  test.waitUntilDone();
+
+  let {browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  let startActiveTab = tabBrowser.activeTab;
+  // make a new private window
+  pbWindows.open({
+    isPrivate: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      test.assert(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        test.assert(pbUtils.isWindowPrivate(window), "window is private");
+        test.assertEqual(tabBrowser.activeTab, startActiveTab,
+                     "active tab has not changed when pb mode is supported");
+        test.assertNotEqual(
+          tabBrowser.activeTab,
+          pbLoader.require('sdk/deprecated/tab-browser').activeTab,
+          "active tab has changed when pb mode is supported");
+      }
+      // Global case
+      else {
+        test.assertNotEqual(tabBrowser.activeTab, startActiveTab,
+                     "active tab has changed when in global pb mode");
+        test.assertEqual(
+          tabBrowser.activeTab,
+          pbLoader.require('sdk/deprecated/tab-browser').activeTab,
+          "active tab has changed when in global pb regardless");
+      }
+      win.close(function() test.done());
+    }
   });
 };
 
