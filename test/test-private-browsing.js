@@ -4,7 +4,7 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { pb, pbUtils, getOwnerWindow } = require('./private-browsing/helper');
+const { pb, pbUtils, loader: pbLoader } = require('./private-browsing/helper');
 const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const tabs = require('sdk/tabs');
@@ -12,6 +12,7 @@ const winUtils = require('sdk/window/utils');
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
+const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
@@ -61,7 +62,13 @@ exports.testIsActiveDefault = function(test) {
 
 exports.testIsPrivateBrowsingFalseDefault = function(test) {
   test.assertEqual(isPrivateBrowsingSupported, false,
-  	               'usePrivateBrowsing property is false by default');
+  	               'isPrivateBrowsingSupported property is false by default');
+};
+
+exports.testIsPrivateBrowsingTrue = function(test) {
+  test.assertEqual(pbLoader.require('sdk/self').isPrivateBrowsingSupported,
+                   true,
+                   'isPrivateBrowsingSupported property is false by default');
 };
 
 exports.testGetOwnerWindow = function(test) {

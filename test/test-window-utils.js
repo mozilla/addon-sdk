@@ -1,13 +1,17 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 "use strict";
 
 var windowUtils = require("sdk/deprecated/window-utils");
 var timer = require("sdk/timers");
 var { Cc, Ci } = require("chrome");
 var { Loader, unload } = require("sdk/test/loader");
+const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
+const { open, close } = pbLoader.require('sdk/window/utils');
+const { getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
+const { isPrivate } = require('sdk/private-browsing');
+const WM = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 
 function toArray(iterator) {
   let array = [];
@@ -16,19 +20,23 @@ function toArray(iterator) {
   return array;
 }
 
-function makeEmptyWindow() {
+function makeEmptyWindow(options) {
+  options = options || {};
   var xulNs = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
   var blankXul = ('<?xml version="1.0"?>' +
                   '<?xml-stylesheet href="chrome://global/skin/" ' +
                   '                 type="text/css"?>' +
                   '<window xmlns="' + xulNs + '" windowtype="test:window">' +
                   '</window>');
-  var url = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul);
-  var features = ["chrome", "width=10", "height=10"];
 
-  var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-           .getService(Ci.nsIWindowWatcher);
-  return ww.openWindow(null, url, null, features.join(","), null);
+  return open("data:application/vnd.mozilla.xul+xml;charset=utf-8," + escape(blankXul), {
+    features: {
+      chrome: true,
+      width: 10,
+      height: 10,
+      private: !!options.private
+    }
+  });
 }
 
 exports['test close on unload'] = function(assert) {
@@ -83,7 +91,7 @@ exports['test close on unload'] = function(assert) {
                    "window not closed again on module unload.");
 };
 
-exports['test window watcher'] = function(assert, done) {
+exports.testWindowTracker = function(assert, done) {
   var myWindow;
   var finished = false;
 
@@ -91,27 +99,93 @@ exports['test window watcher'] = function(assert, done) {
     onTrack: function(window) {
       if (window == myWindow) {
         assert.pass("onTrack() called with our test window");
-        timer.setTimeout(function() { myWindow.close(); }, 1);
+        timer.setTimeout(function() myWindow.close());
       }
     },
     onUntrack: function(window) {
       if (window == myWindow) {
         assert.pass("onUntrack() called with our test window");
         timer.setTimeout(function() {
-                           if (!finished) {
-                             finished = true;
-                             myWindow = null;
-                             wt.unload();
-                             done();
-                           } else
-                             assert.fail("finishTest() called multiple times.");
-                         }, 1);
+          if (!finished) {
+           finished = true;
+           myWindow = null;
+           wt.unload();
+           done();
+          }
+          else {
+           assert.fail("finishTest() called multiple times.");
+          }
+        });
       }
     }
   };
 
   // test bug 638007 (new is optional), using new
   var wt = new windowUtils.WindowTracker(delegate);
+  myWindow = makeEmptyWindow();
+};
+
+exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
+  var myWindow;
+  var myWindowOpened = false;
+  var myWindowClosed = false;
+  var finished = false;
+  var privateWindow;
+  var privateWindowOpened = false;
+  var privateWindowClosed = false;
+
+  let { browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/window/utils');
+
+  var delegate = {
+    onTrack: function(window) {
+      if (window === myWindow) {
+      if (pbUtils.isWindowPrivate(window)) {
+        assert.fail('private window was tracked!');
+      }
+        myWindowOpened = true;
+        assert.pass("onTrack() called with our test window");
+        timer.setTimeout(function() myWindow.close());
+      }
+    },
+    onUntrack: function(window) {
+      if (pbUtils.isWindowPrivate(window)) {
+        assert.fail('private window was tracked!');
+      }
+      if (window === myWindow) {
+        timer.setTimeout(function() {
+          assert.ok(privateWindowClosed);
+          assert.equal(pbUtils.isWindowPBSupported, privateWindowOpened, 'private window was opened');
+          wt.unload();
+          done();
+        });
+      }
+    }
+  };
+  var wt = windowUtils.WindowTracker(delegate);
+
+  // make a new private window
+  pbWindows.open({
+    isPrivate: true,
+    onOpen: function(win) {
+      let window = privateWindow = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.ok(pbWindowUtils.getFrames(window).length > 1, 'there are frames');
+        assert.equal(getFrames(window).length, 0, 'there are no frames');
+        privateWindowOpened = true;
+      }
+
+      assert.equal(pbWindowUtils.getWindowTitle(window), window.document.title,
+                   'getWindowTitle works');
+      assert.equal(getWindowTitle(window), window.document.title, 'getWindowTitle works');
+      win.close(function() privateWindowClosed = true);
+    }
+  });
+
   myWindow = makeEmptyWindow();
 };
 
@@ -159,9 +233,7 @@ exports['test window watcher untracker'] = function(assert, done) {
 exports['test window watcher unregs 4 loading wins'] = function(assert, done) {
   var myWindow;
   var finished = false;
-  let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
-      .getService(Ci.nsIWindowMediator)
-      .getMostRecentWindow("navigator:browser");
+  let browserWindow =  WM.getMostRecentWindow("navigator:browser");
   var counter = 0;
 
   var delegate = {
@@ -236,9 +308,8 @@ exports['test window watcher without untracker'] = function(assert, done) {
 };
 
 exports['test active window'] = function(assert, done) {
-  let browserWindow =  Cc["@mozilla.org/appshell/window-mediator;1"]
-                      .getService(Ci.nsIWindowMediator)
-                      .getMostRecentWindow("navigator:browser");
+  let browserWindow = WM.getMostRecentWindow("navigator:browser");
+  let continueAfterFocus = function(window) onFocus(window, nextTest);
 
   assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                "Browser window is the active browser window.");
@@ -246,8 +317,7 @@ exports['test active window'] = function(assert, done) {
 
   let testSteps = [
     function() {
-      windowUtils.activeWindow = browserWindow;
-      continueAfterFocus(browserWindow);
+      continueAfterFocus(windowUtils.activeWindow = browserWindow);
     },
     function() {
       assert.equal(windowUtils.activeWindow, browserWindow,
@@ -267,47 +337,191 @@ exports['test active window'] = function(assert, done) {
     function() {
       assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                        "Correct active browser window [4]");
-      browserWindow = null;
       done();
     }
   ];
 
-  let nextTest = function() {
-    let func = testSteps.shift();
-    if (func) {
-      func();
-    }
+  function nextTest() {
+    if (testSteps.length)
+      testSteps.shift()();
   }
-
-  function continueAfterFocus(targetWindow) {
-    // Based on SimpleTest.waitForFocus
-    var fm = Cc["@mozilla.org/focus-manager;1"].
-             getService(Ci.nsIFocusManager);
-
-    var childTargetWindow = {};
-    fm.getFocusedElementForWindow(targetWindow, true, childTargetWindow);
-    childTargetWindow = childTargetWindow.value;
-
-    var focusedChildWindow = {};
-    if (fm.activeWindow) {
-      fm.getFocusedElementForWindow(fm.activeWindow, true, focusedChildWindow);
-      focusedChildWindow = focusedChildWindow.value;
-    }
-
-    var focused = (focusedChildWindow == childTargetWindow);
-    if (focused) {
-      nextTest();
-    } else {
-      childTargetWindow.addEventListener("focus", function focusListener() {
-        childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextTest();
-      }, true);
-    }
-
-  }
-
   nextTest();
 };
+
+// Test setting activeWIndow and onFocus for private windows
+exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
+  let {browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  let browserWindow = WM.getMostRecentWindow("navigator:browser");
+  let testSteps;
+
+  assert.equal(windowUtils.activeBrowserWindow, browserWindow,
+               "Browser window is the active browser window.");
+
+  // make a new private window
+  pbWindows.open({
+    isPrivate: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      let continueAfterFocus = function(window) onFocus(window, nextTest);
+
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(isPrivate(window), "window is private");
+
+        assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                     "Correct active browser window pb not supported");
+
+        // active window is different when pb mode is on vs off
+        assert.notDeepEqual(windowUtils.activeBrowserWindow, pbWindowUtils.activeBrowserWindow);
+      }
+      // Global case
+      else {
+        assert.ok(!isPrivate(window), "window is not private");
+
+        // active window is the same in global pb, private flag is ignored
+        assert.deepEqual(windowUtils.activeBrowserWindow, pbWindowUtils.activeBrowserWindow);
+      }
+
+      assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                   "Correct active browser window pb supported");
+
+      testSteps = [
+        function() {
+          continueAfterFocus(windowUtils.activeWindow = browserWindow);
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [1]");
+            assert.deepEqual(pbWindowUtils.activeWindow, window,
+                             "Correct active window when pb mode is supported [1]");
+          }
+          // Global case
+          else {
+            assert.deepEqual(windowUtils.activeWindow, window,
+                             "Correct active window when pb mode is not supported [1]");
+            assert.deepEqual(pbWindowUtils.activeWindow, window,
+                             "Correct active window when pb mode is supported [1]");
+          }
+
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            onFocus(
+              window,
+              function() {
+                assert.fail('this should not be called');
+              }
+            );
+          }
+          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+          window.focus();
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            // pb not supported
+            assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                             "Correct active browser window when pb mode is not supported [2]");
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [2]");
+          }
+
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                           "Correct active browser window when pb mode is supported [2]");
+          assert.deepEqual(pbWindowUtils.activeWindow, window,
+                           "Correct active window when pb mode is supported [2]");
+
+          windowUtils.activeWindow = window;
+          pbLoader.require('sdk/window/utils').onFocus(window, nextTest);
+        },
+        function() {
+          // PWPB case
+          if (pbUtils.isWindowPBSupported) {
+            // pb not supported
+            assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                             "Correct active browser window when pb mode is not supported [3]");
+            assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                             "Correct active window when pb mode is not supported [3]");
+          }
+
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, window,
+                           "Correct active browser window when pb mode is supported [3]");
+          assert.deepEqual(pbWindowUtils.activeWindow, window,
+                           "Correct active window when pb mode is supported [3]");
+
+          continueAfterFocus(windowUtils.activeWindow = browserWindow);
+        },
+        function() {
+          // pb not supported
+          assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+                           "Correct active browser window when pb mode is not supported [4]");
+          assert.deepEqual(windowUtils.activeWindow, browserWindow,
+                           "Correct active window when pb mode is not supported [4]");
+          // pb supported
+          assert.deepEqual(pbWindowUtils.activeBrowserWindow, browserWindow,
+                           "Correct active browser window when pb mode is supported [4]");
+          assert.deepEqual(pbWindowUtils.activeWindow, browserWindow,
+                           "Correct active window when pb mode is supported [4]");
+          win.close(function() done());
+        }
+      ];
+      function nextTest() {
+        if (testSteps.length)
+          testSteps.shift()();
+      }
+      nextTest();
+    }
+  });
+};
+
+exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
+  let {browserWindows: pbWindows } = pbLoader.require('windows');
+  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+
+  // make a new private window
+  pbWindows.open({
+    isPrivate: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+
+      // pb mode not supported
+      assert.equal(isPrivate(windowUtils.activeWindow), false,
+                   "active window is not private when pb mode is not supported");
+      assert.equal(isPrivate(windowUtils.activeBrowserWindow), false,
+                   "active browser window is not private when pb mode is not supported");
+
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.ok(isPrivate(window), "window is private");
+
+        // pb mode is supported
+        assert.ok(
+          pbUtils.isWindowPrivate(pbWindowUtils.activeWindow),
+          "active window is private when pb mode is supported");
+        assert.ok(
+          pbUtils.isWindowPrivate(pbWindowUtils.activeBrowserWindow),
+          "active browser window is private when pb mode is supported");
+        assert.ok(isPrivate(pbWindowUtils.activeWindow),
+                  "active window is private when pb mode is supported");
+        assert.ok(isPrivate(pbWindowUtils.activeBrowserWindow),
+          "active browser window is private when pb mode is supported");
+      }
+      // Global case
+      else {
+        assert.equal(pbUtils.isWindowPrivate(window), false, "window is not private");
+        assert.equal(isPrivate(window), false, "window is not private");
+      }
+      win.close(function() done());
+    }
+  });
+}
 
 exports['test windowIterator'] = function(assert, done) {
   // make a new window
@@ -327,17 +541,37 @@ exports['test windowIterator'] = function(assert, done) {
   window.addEventListener("load", function onload() {
     window.addEventListener("load", onload, false);
     assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) !== -1,
-              "window is now in windowIterator(false)");
+              "window is now in windowIterator()");
 
     // Wait for the window unload before ending test
-    window.addEventListener("unload", function onunload() {
-      window.addEventListener("unload", onunload, false);
-      done();
-    }, false);
-    window.close();
+    close(window, done);
   }, false);
-}
+};
 
+
+exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
+  // make a new private window
+  pbLoader.require('windows').browserWindows.open({
+    isPrivate: true,
+    onOpen: function(win) {
+      let window = getOwnerWindow(win);
+      assert.ok(window instanceof Ci.nsIDOMWindow, "window was found");
+      // PWPB case
+      if (pbUtils.isWindowPBSupported) {
+        assert.ok(pbUtils.isWindowPrivate(window), "window is private");
+        assert.equal(toArray(windowUtils.windowIterator()).indexOf(window), -1,
+                     "window is not in windowIterator()");
+      }
+      // Global case
+      else {
+        assert.equal(pbUtils.isWindowPrivate(window), false, "window is not private");
+        assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) > -1,
+                  "window is in windowIterator()"); 
+      }
+      win.close(function() done());
+    }
+  });
+};
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
