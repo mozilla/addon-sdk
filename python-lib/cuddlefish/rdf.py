@@ -141,7 +141,7 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         
             for line in codecs.open(os.path.join(target_cfg.get("locale", ""), anotherLocale), "r", "utf").readlines():
                 yalks = line.split("=")[0].split("_")
-                if len(yalks) == 2 and yalks[0] == "addon":
+                if len(yalks) == 2 and yalks[0] == "addon" and (yalks[1] == "name" or yalks[1] == "creator" or yalks[1] == "description" or yalks[1] == "homepageURL"):
                     yallde = dom.createElement("em:" + yalks[1])
                     yallde.appendChild(dom.createTextNode(("=").join(line.split("=")[1:])))
                     localizedElementDescription.appendChild(yallde)
