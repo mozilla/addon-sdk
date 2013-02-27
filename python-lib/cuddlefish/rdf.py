@@ -5,6 +5,8 @@
 import os
 import xml.dom.minidom
 import StringIO
+import codecs
+import glob
 
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 EM_NS = "http://www.mozilla.org/2004/em-rdf#"
@@ -121,12 +123,43 @@ def gen_manifest(template_root_dir, target_cfg, jid,
     manifest.set("em:id", jid)
     manifest.set("em:version",
                  target_cfg.get('version', '1.0'))
-    manifest.set("em:name",
-                 target_cfg.get('fullName', target_cfg['name']))
-    manifest.set("em:description",
-                 target_cfg.get("description", ""))
-    manifest.set("em:creator",
-                 target_cfg.get("author", ""))
+    
+    # Using keys:
+    #   addon_creator
+    #   addon_name
+    #   addon_description
+    #   addon_homepageURL
+    locales = glob.glob(os.path.join(target_cfg.get("locale", ""), "*.properties"))
+    if len(locales) > 0:
+        for anotherLocale in locales:
+            localizedElement = dom.createElement("em:localized")
+            localizedElementDescription = dom.createElement("Description")
+
+            locale = dom.createElement("em:locale")
+            locale.appendChild(dom.createTextNode(os.path.splitext(anotherLocale)[0]))
+            localizedElementDescription.appendChild(locale)
+        
+            for line in codecs.open(os.path.join(target_cfg.get("locale", ""), anotherLocale), "r", "utf").readlines():
+                yalks = line.split("=")[0].split("_")
+                if len(yalks) == 2 and yalks[0] == "addon":
+                    yallde = dom.createElement("em:" + yalks[1])
+                    yallde.appendChild(dom.createTextNode(("=").join(line.split("=")[1:])))
+                    localizedElementDescription.appendChild(yallde)
+        
+            localizedElement.appendChild(localizedElementDescription)
+            dom.documentElement.getElementsByTagName("Description")[0].appendChild(localizedElement)
+    else:
+        manifest.set("em:name",
+                     target_cfg.get('fullName', target_cfg['name']))
+        manifest.set("em:description",
+                     target_cfg.get("description", ""))
+        manifest.set("em:creator",
+                     target_cfg.get("author", ""))
+        if target_cfg.get("homepage"):
+            manifest.set("em:homepageURL", target_cfg.get("homepage"))
+        else:
+            manifest.remove("em:homepageURL")
+        
     manifest.set("em:bootstrap", str(bootstrap).lower())
     # XPIs remain packed by default, but package.json can override that. The
     # RDF format accepts "true" as True, anything else as False. We expect
@@ -171,11 +204,6 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         elem = dom.createElement("em:maxVersion")
         elem.appendChild(dom.createTextNode("21.0a1"))
         ta_desc.appendChild(elem)
-
-    if target_cfg.get("homepage"):
-        manifest.set("em:homepageURL", target_cfg.get("homepage"))
-    else:
-        manifest.remove("em:homepageURL")
 
     return manifest
 
