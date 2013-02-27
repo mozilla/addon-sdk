@@ -139,9 +139,11 @@ def gen_manifest(template_root_dir, target_cfg, jid, harness_options,
         localizedElementDescription.appendChild(locale)
 
         for yalf in localizableFields:
-            yallde = dom.createElement("em:" + yalf)
-            yallde.appendChild(dom.createTextNode(harness_options["locale"][yal]["addon_" + yalf]))
-            localizedElementDescription.appendChild(yallde)
+            yalfk = "addon_" + yalf
+            if yalfk in harness_options["locale"][yal]:
+                yallde = dom.createElement("em:" + yalf)
+                yallde.appendChild(dom.createTextNode(harness_options["locale"][yal][yalfk]))
+                localizedElementDescription.appendChild(yallde)
 
         localizedElement.appendChild(localizedElementDescription)
         dom.documentElement.getElementsByTagName("Description")[0].appendChild(localizedElement)
