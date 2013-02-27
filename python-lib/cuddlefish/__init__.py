@@ -856,7 +856,8 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                                 jid=jid,
                                 update_url=options.update_url,
                                 bootstrap=True,
-                                enable_mobile=options.enable_mobile)
+                                enable_mobile=options.enable_mobile,
+                                harness_options=harness_options)
 
     if command == "xpi" and options.update_link:
         if not options.update_link.startswith("https"):
