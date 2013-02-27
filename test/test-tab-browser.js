@@ -6,10 +6,8 @@
 const timer = require('sdk/timers');
 const { Cc, Ci } = require('chrome');
 const tabBrowser = require("sdk/deprecated/tab-browser");
-const { loader: pbLoader, getOwnerWindow, pbUtils, pb } = require('./private-browsing/helper');
-const { open, close } = pbLoader.require('sdk/window/utils');
-const { getFrames, getWindowTitle } = require('sdk/window/utils');
-const { isPrivate } = require('sdk/private-browsing');
+const { openDialog } = require('sdk/window/utils');
+const pbUtils = require('sdk/private-browsing/utils');
 
 function onBrowserLoad(callback, event) {
   if (event.target && event.target.defaultView == this) {
@@ -287,43 +285,75 @@ exports.testActiveTab = function(test) {
   });
 };
 
-exports.testActiveTabIgnoresPrivateWindows = function(test) {
+exports.testActiveTabIgnorePrivateTab = function(test) {
   test.waitUntilDone();
 
-  let {browserWindows: pbWindows } = pbLoader.require('windows');
-  let pbWindowUtils = pbLoader.require('sdk/deprecated/window-utils');
+  let win = openDialog({
+    private: true
+  });
 
   let startActiveTab = tabBrowser.activeTab;
-  // make a new private window
-  pbWindows.open({
-    private: true,
-    onOpen: function(win) {
-      let window = getOwnerWindow(win);
-      test.assert(window instanceof Ci.nsIDOMWindow, "window was found");
+  win.addEventListener('DOMContentLoaded', function onload() {
+    win.removeEventListener('DOMContentLoaded', onload, false);
 
-      // PWPB case
-      if (pbUtils.isWindowPBSupported) {
-        test.assert(pbUtils.isWindowPrivate(window), "window is private");
-        test.assertEqual(tabBrowser.activeTab, startActiveTab,
-                     "active tab has not changed when pb mode is supported");
-        test.assertNotEqual(
-          tabBrowser.activeTab,
-          pbLoader.require('sdk/deprecated/tab-browser').activeTab,
-          "active tab has changed when pb mode is supported");
-      }
-      // Global case
-      else {
-        test.assertNotEqual(tabBrowser.activeTab, startActiveTab,
-                     "active tab has changed when in global pb mode");
-        test.assertEqual(
-          tabBrowser.activeTab,
-          pbLoader.require('sdk/deprecated/tab-browser').activeTab,
-          "active tab has changed when in global pb regardless");
-      }
-      win.close(function() test.done());
+    // PWPB case
+    if (pbUtils.isWindowPBSupported) {
+      test.assert(pbUtils.isWindowPrivate(win), "window is private");
+      test.assert(!tabBrowser.activeTab,
+                  "active tab becomes null");
     }
+    else {
+    // Global case, openDialog didn't opened a private window/tab
+      test.assertNotEqual(tabBrowser.activeTab, startActiveTab,
+                          "active tab changed for the new opened window's tab");
+      test.assertEqual(tabBrowser.activeTab.ownerDocument.defaultView, win,
+                          "active tab is from the new window");
+      test.assert(!pbUtils.isWindowPrivate(win),
+                          "but the new window isn't private");
+    }
+
+    win.addEventListener("unload", function onunload() {
+      win.removeEventListener('unload', onload, false);
+      test.done();
+    }, false);
+
+    win.close();
   });
 };
+
+exports.testTrackerIgnorePrivateTab = function(test) {
+  test.waitUntilDone();
+
+  let win = openDialog({
+    private: true
+  });
+
+  var tb = new tabBrowser.Tracker();
+  var startCount = tb.length;
+  win.addEventListener('load', function onload() {
+    win.removeEventListener('load', onload, false);
+
+    // PWPB case
+    if (pbUtils.isWindowPBSupported) {
+      test.assert(pbUtils.isWindowPrivate(win), "window is private");
+      test.assertEqual(tb.length, startCount,
+                       "Tracker doesn't refer the new private tab");
+    }
+    else {
+    // Global case, openDialog didn't opened a private window/tab
+      test.assertEqual(tb.length, startCount + 1,
+                       "openDialog didn't opened private window so Tracker" +
+                       "count the newly opened tab");
+    }
+
+    win.addEventListener("unload", function onunload() {
+      win.removeEventListener('unload', onload, false);
+      test.done();
+    }, false);
+
+    win.close();
+  });
+}
 
 // TabModule tests
 exports.testEventsAndLengthStayInModule = function(test) {
