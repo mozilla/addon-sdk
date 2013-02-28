@@ -5,6 +5,7 @@
 
 const { pb, pbUtils } = require('./helper');
 const { openDialog, open } = require('window/utils');
+const { once, close } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
 
@@ -16,22 +17,17 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
     private: true
   });
 
-  win.addEventListener('DOMContentLoaded', function onload() {
-    win.removeEventListener('DOMContentLoaded', onload, false);
-
+  once(win, 'DOMContentLoaded').then(function onload() {
     assert.equal(pbUtils.getMode(win),
                  true, 'Newly opened window is in PB mode');
     assert.ok(isPrivate(win), 'isPrivate(window) is true');
     assert.equal(pb.isActive, false, 'PB mode is not active');
 
-    win.addEventListener("unload", function onunload() {
-      win.removeEventListener('unload', onload, false);
+    close(win).then(function() {
       assert.equal(pb.isActive, false, 'PB mode is not active');
       done();
-    }, false);
-
-    win.close();
-  }, false);
+    });
+  });
 }
 
 // test open() from window/utils with private feature
@@ -44,22 +40,17 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
     }
   });
 
-  win.addEventListener('DOMContentLoaded', function onload() {
-    win.removeEventListener('DOMContentLoaded', onload, false);
-
+  once(win, 'DOMContentLoaded').then(function onload() {
     assert.equal(pbUtils.getMode(win),
                  true, 'Newly opened window is in PB mode');
     assert.ok(isPrivate(win), 'isPrivate(window) is true');
     assert.equal(pb.isActive, false, 'PB mode is not active');
 
-    win.addEventListener("unload", function onunload() {
-      win.removeEventListener('unload', onload, false);
+    close(win).then(function() {
       assert.equal(pb.isActive, false, 'PB mode is not active');
       done();
-    }, false);
-
-    win.close();
-  }, false);
+    });
+  });
 }
 
 exports.testIsPrivateOnWindowOn = function(assert, done) {
