@@ -12,6 +12,7 @@ const winUtils = require('sdk/window/utils');
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
+const { LoaderWithHookedConsole } = require("sdk/test/loader");
 
 // is global pb is enabled?
 if (pbUtils.isGlobalPBSupported) {
@@ -47,7 +48,14 @@ exports.testIsPrivateDefaults = function(test) {
 };
 
 exports.testWindowDefaults = function(test) {
-  test.assertEqual(windows.activeWindow.isPrivateBrowsing, false, 'window is not private browsing by default');
+  // Ensure that browserWindow still works while being deprecated
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let windows = loader.require("sdk/windows").browserWindows;
+  test.assertEqual(windows.activeWindow.isPrivateBrowsing, false,
+                   'window is not private browsing by default');
+  test.assertMatches(messages[0].msg, /DEPRECATED.+isPrivateBrowsing/,
+                     'isPrivateBrowsing is deprecated');
+
   let chromeWin = winUtils.getMostRecentBrowserWindow();
   test.assertEqual(pbUtils.getMode(chromeWin), false);
   test.assertEqual(pbUtils.isWindowPrivate(chromeWin), false);
