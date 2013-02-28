@@ -10,7 +10,7 @@ const { getFrames, getWindowTitle, onFocus, isWindowPrivate } = require('sdk/win
 const { open, close, focus } = require('sdk/window/helpers');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].getService(Ci.nsIWindowMediator);
 const { isPrivate } = require('sdk/private-browsing');
-const { toArray } = require('sdk/util/iterator');
+const { fromIterator: toArray } = require('sdk/util/array');
 
 function makeEmptyBrowserWindow(options) {
   options = options || {};

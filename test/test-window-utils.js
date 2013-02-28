@@ -9,7 +9,7 @@ const { Cc, Ci } = require("chrome");
 const { Loader } = require("sdk/test/loader");
 const { open, getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
 const { close } = require('sdk/window/helpers');
-const { toArray } = require('sdk/util/iterator');
+const { fromIterator: toArray } = require('sdk/util/array');
 
 const WM = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 

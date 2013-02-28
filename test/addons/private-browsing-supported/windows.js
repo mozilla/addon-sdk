@@ -11,7 +11,7 @@ const { onFocus, getMostRecentWindow, getWindowTitle, getFrames, windows, open: 
 const { open, close, focus, once } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const winUtils = require("sdk/deprecated/window-utils");
-const { toArray } = require('sdk/util/iterator');
+const { fromIterator: toArray } = require('sdk/util/array');
 
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].getService(Ci.nsIWindowMediator);
 
