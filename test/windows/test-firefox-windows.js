@@ -6,7 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const { onFocus, open: openWindow, close, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { onFocus, open: openWindow, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { close } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const winUtils = require("sdk/deprecated/window-utils");

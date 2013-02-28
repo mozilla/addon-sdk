@@ -4,9 +4,10 @@
 'use strict';
 
 const { Ci } = require('chrome');
-const { open, backgroundify, windows, isBrowser, close,
+const { open, backgroundify, windows, isBrowser,
         getXULWindow, getBaseWindow, getMostRecentWindow,
         getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { close } = require('sdk/window/helpers');
 const windowUtils = require('sdk/deprecated/window-utils');
 
 exports['test get nsIBaseWindow from nsIDomWindow'] = function(assert) {
