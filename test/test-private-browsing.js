@@ -15,6 +15,7 @@ const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
 const { isWindowPrivate, getMode, isGlobalPBSupported,
         isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
+const { pb } = require('./private-browsing/helper');
 
 // is global pb is enabled?
 if (isGlobalPBSupported) {
@@ -65,7 +66,6 @@ exports.testWindowDefaults = function(test) {
 
 // tests for the case where private browsing doesn't exist
 exports.testIsActiveDefault = function(test) {
-  let pb = require('sdk/private-browsing');
   test.assertEqual(pb.isActive, false,
                    'pb.isActive returns false when private browsing isn\'t supported');
 };

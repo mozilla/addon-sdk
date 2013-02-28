@@ -3,12 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let { Cc, Ci } = require("chrome");
 const timer = require("sdk/timers");
-const { PBLoader, deactivate } = require("./helper");
+const { LoaderWithHookedConsole, deactivate, pb, pbUtils } = require("./helper");
 const tabs = require("sdk/tabs");
-const pbUtils = require('sdk/private-browsing/utils');
-const pb = require('sdk/private-browsing');
 
 exports["test activate private mode via handler"] = function(test) {
   test.waitUntilDone();
@@ -178,7 +175,7 @@ exports.testAutomaticUnload = function(test) {
   test.waitUntilDone();
 
   // Create another private browsing instance and unload it
-  let { loader, errors } = PBLoader();
+  let { loader, errors } = LoaderWithHookedConsole(module);
   let pb2 = loader.require("sdk/private-browsing");
   let called = false;
   pb2.on("start", function onStart() {
@@ -208,7 +205,7 @@ exports.testUnloadWhileActive = function(test) {
   test.waitUntilDone();
 
   let called = false;
-  let { loader, errors } = PBLoader();
+  let { loader, errors } = LoaderWithHookedConsole(module);
   let pb2 = loader.require("sdk/private-browsing");
   let ul = loader.require("sdk/system/unload");
 

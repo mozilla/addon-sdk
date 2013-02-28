@@ -3,43 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-let { Cc, Ci } = require('chrome');
-const unload = require("sdk/system/unload");
 const { Loader } = require('sdk/test/loader');
-const { windows: windowsIterator } = require("sdk/window/utils");
-const windows = require("windows").browserWindows;
-const { merge } = require("sdk/util/object");
-const pb = require('sdk/private-browsing');
-const pbUtils = require('sdk/private-browsing/utils');
-const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
-// need authority..
-require('window/utils');
-require('windows');
-require('sdk/deprecated/window-utils');
-require('sdk/private-browsing/window/utils');
-require('sdk/self');
+const { loader } = LoaderWithHookedConsole(module);
 
-function PBLoader(options) {
-  options = options || {};
-  let jpOptions = require("@loader/options");
-  let packaging = {
-    metadata: {
-      permissions: {}
-    }
-  };
+const pb = loader.require('sdk/private-browsing');
+const pbUtils = loader.require('sdk/private-browsing/utils');
 
-  shallowClone(jpOptions, packaging);
-  shallowClone(options, packaging);
-
-  let jpMetadata = jpOptions.metadata || {};
-  let metadata = options.metadata || {};
-  shallowClone(jpMetadata, packaging.metadata);
-  shallowClone(metadata, packaging.metadata);
-
-  shallowClone(jpMetadata.permissions || {}, packaging.metadata.permissions);
-  shallowClone(metadata.permissions || {}, packaging.metadata.permissions);
-
+function LoaderWithHookedConsole(module) {
   let globals = {};
   let errors = [];
 
@@ -54,18 +25,11 @@ function PBLoader(options) {
     }
   });
 
-  let loader = Loader(module, globals, packaging);
+  let loader = Loader(module, globals);
 
   return {
     loader: loader,
     errors: errors
-  }
-}
-
-function shallowClone(source, target) {
-  for (let prop in source) {
-    if (!(prop in target))
-      target[prop] = source[prop];
   }
 }
 
@@ -80,5 +44,4 @@ exports.deactivate = deactivate;
 
 exports.pb = pb;
 exports.pbUtils = pbUtils;
-exports.getOwnerWindow = getOwnerWindow;
-exports.PBLoader = PBLoader;
+exports.LoaderWithHookedConsole = LoaderWithHookedConsole;
