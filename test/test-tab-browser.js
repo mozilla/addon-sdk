@@ -1,9 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 'use strict';
 
-var timer = require("sdk/timers");
-var {Cc,Ci} = require("chrome");
+const timer = require('sdk/timers');
+const { Cc, Ci } = require('chrome');
+const tabBrowser = require("sdk/deprecated/tab-browser");
+const { openDialog } = require('sdk/window/utils');
+const pbUtils = require('sdk/private-browsing/utils');
 
 function onBrowserLoad(callback, event) {
   if (event.target && event.target.defaultView == this) {
@@ -61,8 +65,6 @@ function closeTwoWindows(window1, window2, callback) {
 exports.testAddTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(window, browser) {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
-
     let cache = [];
     let windowUtils = require("sdk/deprecated/window-utils");
     new windowUtils.WindowTracker({
@@ -109,7 +111,6 @@ exports.testAddTab = function(test) {
 
 exports.testTrackerWithDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var delegate = {
     state: "initializing",
@@ -148,7 +149,6 @@ exports.testTrackerWithDelegate = function(test) {
 
 exports.testWhenContentLoaded = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   var tracker = tabBrowser.whenContentLoaded(
     function(window) {
@@ -169,7 +169,6 @@ exports.testWhenContentLoaded = function(test) {
 
 exports.testTrackerWithoutDelegate = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var tb = new tabBrowser.Tracker();
@@ -198,7 +197,6 @@ exports.testTrackerWithoutDelegate = function(test) {
 
 exports.testTabTracker = function(test) {
   test.waitUntilDone();
-  const tabBrowser = require("sdk/deprecated/tab-browser");
 
   openBrowserWindow(function(browserWindow, browser) {
     var delegate = {
@@ -252,7 +250,6 @@ exports.testTabTracker = function(test) {
 exports.testActiveTab = function(test) {
   test.waitUntilDone();
   openBrowserWindow(function(browserWindow, browser) {
-    const tabBrowser = require("sdk/deprecated/tab-browser");
     const TabModule = require("sdk/deprecated/tab-browser").TabModule;
     let tm = new TabModule(browserWindow);
     test.assertEqual(tm.length, 1);
@@ -287,6 +284,76 @@ exports.testActiveTab = function(test) {
     });
   });
 };
+
+exports.testActiveTabIgnorePrivateTab = function(test) {
+  test.waitUntilDone();
+
+  let win = openDialog({
+    private: true
+  });
+
+  let startActiveTab = tabBrowser.activeTab;
+  win.addEventListener('DOMContentLoaded', function onload() {
+    win.removeEventListener('DOMContentLoaded', onload, false);
+
+    // PWPB case
+    if (pbUtils.isWindowPBSupported) {
+      test.assert(pbUtils.isWindowPrivate(win), "window is private");
+      test.assert(!tabBrowser.activeTab,
+                  "active tab becomes null");
+    }
+    else {
+    // Global case, openDialog didn't opened a private window/tab
+      test.assertNotEqual(tabBrowser.activeTab, startActiveTab,
+                          "active tab changed for the new opened window's tab");
+      test.assertEqual(tabBrowser.activeTab.ownerDocument.defaultView, win,
+                          "active tab is from the new window");
+      test.assert(!pbUtils.isWindowPrivate(win),
+                          "but the new window isn't private");
+    }
+
+    win.addEventListener("unload", function onunload() {
+      win.removeEventListener('unload', onload, false);
+      test.done();
+    }, false);
+
+    win.close();
+  });
+};
+
+exports.testTrackerIgnorePrivateTab = function(test) {
+  test.waitUntilDone();
+
+  let win = openDialog({
+    private: true
+  });
+
+  var tb = new tabBrowser.Tracker();
+  var startCount = tb.length;
+  win.addEventListener('load', function onload() {
+    win.removeEventListener('load', onload, false);
+
+    // PWPB case
+    if (pbUtils.isWindowPBSupported) {
+      test.assert(pbUtils.isWindowPrivate(win), "window is private");
+      test.assertEqual(tb.length, startCount,
+                       "Tracker doesn't refer the new private tab");
+    }
+    else {
+    // Global case, openDialog didn't opened a private window/tab
+      test.assertEqual(tb.length, startCount + 1,
+                       "openDialog didn't opened private window so Tracker" +
+                       "count the newly opened tab");
+    }
+
+    win.addEventListener("unload", function onunload() {
+      win.removeEventListener('unload', onload, false);
+      test.done();
+    }, false);
+
+    win.close();
+  });
+}
 
 // TabModule tests
 exports.testEventsAndLengthStayInModule = function(test) {
