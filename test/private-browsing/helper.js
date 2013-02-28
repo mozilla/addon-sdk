@@ -9,18 +9,9 @@ const { Loader } = require('sdk/test/loader');
 const { windows: windowsIterator } = require("sdk/window/utils");
 const windows = require("windows").browserWindows;
 const { merge } = require("sdk/util/object");
-
-let { loader } = PBLoader({
-  metadata: {
-    'permissions': {
-      'private-browsing': true
-    }
-  },
-  ignoreDeprecationErrors: true
-});
-const pb = loader.require('sdk/private-browsing');
-const pbUtils = loader.require('sdk/private-browsing/utils');
-const { getOwnerWindow } = loader.require('sdk/private-browsing/window/utils');
+const pb = require('sdk/private-browsing');
+const pbUtils = require('sdk/private-browsing/utils');
+const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 
 // need authority..
 require('window/utils');
@@ -52,18 +43,16 @@ function PBLoader(options) {
   let globals = {};
   let errors = [];
 
-  if (options.ignoreDeprecationErrors) {
-    globals.console = Object.create(console, {
-      error: {
-        value: function(e) {
-          errors.push(e);
-          if (!/DEPRECATED:/.test(e)) {
-            console.error(e);
-          }
+  globals.console = Object.create(console, {
+    error: {
+      value: function(e) {
+        errors.push(e);
+        if (!/DEPRECATED:/.test(e)) {
+          console.error(e);
         }
       }
-    });
-  }
+    }
+  });
 
   let loader = Loader(module, globals, packaging);
 
@@ -89,7 +78,6 @@ function deactivate(callback) {
 }
 exports.deactivate = deactivate;
 
-exports.loader = loader;
 exports.pb = pb;
 exports.pbUtils = pbUtils;
 exports.getOwnerWindow = getOwnerWindow;

@@ -3,9 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
 
-const { loader, pb, pbUtils } = require('./helper');
-const { openDialog, open } = loader.require('window/utils');
-
+const { pb, pbUtils } = require('./helper');
+const { openDialog, open } = require('window/utils');
 const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
 

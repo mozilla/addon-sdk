@@ -5,8 +5,10 @@
 
 let { Cc, Ci } = require("chrome");
 const timer = require("sdk/timers");
-const { PBLoader, pb, pbUtils, activate, deactivate } = require("./helper");
+const { PBLoader, deactivate } = require("./helper");
 const tabs = require("sdk/tabs");
+const pbUtils = require('sdk/private-browsing/utils');
+const pb = require('sdk/private-browsing');
 
 exports["test activate private mode via handler"] = function(test) {
   test.waitUntilDone();
@@ -176,7 +178,7 @@ exports.testAutomaticUnload = function(test) {
   test.waitUntilDone();
 
   // Create another private browsing instance and unload it
-  let { loader, errors } = PBLoader({ ignoreDeprecationErrors: true });
+  let { loader, errors } = PBLoader();
   let pb2 = loader.require("sdk/private-browsing");
   let called = false;
   pb2.on("start", function onStart() {
@@ -206,7 +208,7 @@ exports.testUnloadWhileActive = function(test) {
   test.waitUntilDone();
 
   let called = false;
-  let { loader, errors } = PBLoader({ ignoreDeprecationErrors: true });
+  let { loader, errors } = PBLoader();
   let pb2 = loader.require("sdk/private-browsing");
   let ul = loader.require("sdk/system/unload");
 
