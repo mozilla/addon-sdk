@@ -8,12 +8,13 @@ const { merge } = require('sdk/util/object');
 const windows = require('sdk/windows').browserWindows;
 const tabs = require('sdk/tabs');
 const winUtils = require('sdk/window/utils');
+const { isWindowPrivate } = winUtils;
 const { isPrivateBrowsingSupported } = require('sdk/self');
 const { is } = require('sdk/system/xul-app');
 const { isPrivate } = require('sdk/private-browsing');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { LoaderWithHookedConsole } = require("sdk/test/loader");
-const { isWindowPrivate, getMode, isGlobalPBSupported,
+const { getMode, isGlobalPBSupported,
         isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { pb } = require('./private-browsing/helper');
 

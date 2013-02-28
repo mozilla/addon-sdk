@@ -5,7 +5,8 @@
 
 const { Cc, Ci } = require('chrome');
 const { isPrivate } = require('sdk/private-browsing');
-const { isWindowPrivate, isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { isWindowPrivate } = require('../window/utils');
 const { onFocus, getMostRecentWindow, getWindowTitle, getFrames, windows, open: openWindow } = require('sdk/window/utils');
 const { open, close, focus, once } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");

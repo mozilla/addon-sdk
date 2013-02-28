@@ -5,8 +5,8 @@
 
 const windowUtils = require('sdk/deprecated/window-utils');
 const { Cc, Ci } = require('chrome');
-const { isWindowPrivate, isWindowPBSupported } = require('sdk/private-browsing/utils');
-const { getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { getFrames, getWindowTitle, onFocus, isWindowPrivate } = require('sdk/window/utils');
 const { open, close, focus } = require('sdk/window/helpers');
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].getService(Ci.nsIWindowMediator);
 const { isPrivate } = require('sdk/private-browsing');
