@@ -6,10 +6,11 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const { onFocus } = require('sdk/window/utils');
+const { onFocus, open: openWindow, close, getMostRecentWindow, windows } = require('sdk/window/utils');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
-const { WindowTracker } = require("sdk/deprecated/window-utils");
+const winUtils = require("sdk/deprecated/window-utils");
+const { WindowTracker } = winUtils;
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
@@ -354,6 +355,8 @@ exports.testWindowOpenPrivateDefault = function(test) {
     url: 'about:mozilla',
     isPrivate: true,
     onOpen: function(window) {
+      test.assertEqual();
+
       let tab = window.tabs[0];
       tab.once('ready', function() {
         test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
@@ -365,4 +368,45 @@ exports.testWindowOpenPrivateDefault = function(test) {
       });
     }
   });
+}
+
+// test that it is not possible to find a private window in
+// windows module's iterator
+exports.testWindowIteratorPrivateDefault = function(test) {
+  test.waitUntilDone();
+
+  test.assertEqual(browserWindows.length, 1, 'only one window open');
+
+  let window = openWindow('chrome://browser/content/browser.xul', {
+    features: {
+      private: true,
+      chrome: true
+    }
+  });
+  window.addEventListener('load', function onLoad() {
+    window.removeEventListener('load', onLoad, false);
+
+    // test that there is a private window opened
+    test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
+    test.assertEqual(isPrivate(winUtils.activeWindow), isWindowPBSupported);
+    test.assertEqual(isPrivate(getMostRecentWindow()), isWindowPBSupported);
+    test.assert(!isPrivate(browserWindows.activeWindow));
+
+    if (isWindowPBSupported) {
+      test.assertEqual(browserWindows.length, 1, 'only one window open');
+      test.assertEqual(windows().length, 1);
+    }
+    else {
+      test.assertEqual(browserWindows.length, 2, 'two windows open');
+      test.assertEqual(windows().length, 2);
+    }
+    test.assertEqual(windows(null, { isPrivateBrowsing: true }).length, 2);
+
+    for each(let window in browserWindows) {
+      // test that all windows in iterator are not private
+      test.assert(!isPrivate(window));
+    }
+
+    close(window).then(function() test.done());
+  }, false);
 }
