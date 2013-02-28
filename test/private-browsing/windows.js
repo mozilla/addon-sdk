@@ -51,4 +51,36 @@ exports.testIsPrivateOnWindowOff = function(assert, done) {
   })
 }
 
+exports.testPerWindowPrivateBrowsingExit = function(assert, done) {
+  const READY = 'DOMContentLoaded';
+  const UNLOAD = 'unload';
+
+  let closed = 0;
+
+  pb.once('exit', function onExit() {
+    assert.equal(closed, 2, "'exit' event is emitted when all private windows are closed");
+    done();
+  })
+
+  openDialog({private: true}).addEventListener(READY, function ready() {
+    this.removeEventListener(READY, ready);
+    this.addEventListener(UNLOAD, function unload() {
+      this.removeEventListener(UNLOAD, unload);
+      closed++;
+    });
+
+    openDialog({private: true}).addEventListener(READY, function ready() {
+      this.removeEventListener(READY, ready);
+      this.addEventListener(UNLOAD, function unload() {
+        this.removeEventListener(UNLOAD, unload);
+        closed++;
+      });
+
+      this.close();
+    });
+
+    this.close();
+  });
+}
+
 require("test").run(exports);

@@ -64,6 +64,19 @@ but will have no effect when called.
   </div>
 </api>
 
+<api name="exit">
+  @event
+
+Emitted when the private browsing sessions ends (ie. when the last private
+window is closed).
+
+    var pb = require("sdk/private-browsing");
+    pb.on("exit", function() {
+      // Do something when the private browsing session ends.
+    });
+
+</api>
+
 <api name="start">
 @event
 Emitted immediately after global private browsing begins.
