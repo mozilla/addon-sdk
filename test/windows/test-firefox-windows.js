@@ -401,7 +401,7 @@ exports.testWindowIteratorPrivateDefault = function(test) {
       test.assertEqual(browserWindows.length, 2, 'two windows open');
       test.assertEqual(windows().length, 2);
     }
-    test.assertEqual(windows(null, { isPrivateBrowsing: true }).length, 2);
+    test.assertEqual(windows(null, { includePrivate: true }).length, 2);
 
     for each(let window in browserWindows) {
       // test that all windows in iterator are not private
