@@ -23,6 +23,9 @@ CLEANUP_ADB = re.compile(r'^(I|E)/(stdout|stderr|GeckoConsole)\s*\(\s*\d+\):\s*(
 # Used to filter only messages send by `console` module
 FILTER_ONLY_CONSOLE_FROM_ADB = re.compile(r'^I/(stdout|stderr)\s*\(\s*\d+\):\s*((info|warning|error|debug): .*)$')
 
+# Used to detect the currently running test
+PARSEABLE_TEST_NAME = re.compile(r'TEST-START \| ([^\n]+)\n')
+
 # Maximum time we'll wait for tests to finish, in seconds.
 # The purpose of this timeout is to recover from infinite loops.  It should be
 # longer than the amount of time any test run takes, including those on slow
@@ -401,7 +404,7 @@ def set_overloaded_modules(env_root, app_type, addon_id, preferences, overloads)
 
 def run_app(harness_root_dir, manifest_rdf, harness_options,
             app_type, binary=None, profiledir=None, verbose=False,
-            enforce_timeouts=False,
+            parseable=False, enforce_timeouts=False,
             logfile=None, addons=None, args=None, extra_environment={},
             norun=None,
             used_files=None, enable_mobile=False,
@@ -704,6 +707,14 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
 
     done = False
     result = None
+    test_name = "unknown"
+
+    def Timeout(message):
+        if parseable:
+            sys.stderr.write("TEST-UNEXPECTED-FAIL | %s | %s\n" % (test_name, message))
+            sys.stderr.flush()
+        return Exception(message)
+
     try:
         while not done:
             time.sleep(0.05)
@@ -714,6 +725,10 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                         last_output_time = time.time()
                         sys.stderr.write(new_chars)
                         sys.stderr.flush()
+                        if is_running_tests:
+                            match = PARSEABLE_TEST_NAME.search(new_chars)
+                            if match:
+                                test_name = match.group(1)
             if os.path.exists(resultfile):
                 result = open(resultfile).read()
                 if result:
@@ -724,11 +739,11 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
                         sys.stderr.write("'"+result+"'\n")
             if enforce_timeouts:
                 if time.time() - last_output_time > OUTPUT_TIMEOUT:
-                    raise Exception("Test output exceeded timeout (%ds)." %
-                                    OUTPUT_TIMEOUT)
+                    raise Timeout("Test output exceeded timeout (%ds)." %
+                                  OUTPUT_TIMEOUT)
                 if time.time() - starttime > RUN_TIMEOUT:
-                    raise Exception("Test run exceeded timeout (%ds)." %
-                                    RUN_TIMEOUT)
+                    raise Timeout("Test run exceeded timeout (%ds)." %
+                                  RUN_TIMEOUT)
     except:
         runner.stop()
         raise
