@@ -11,6 +11,7 @@ const { isPrivate } = require('sdk/private-browsing');
 const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { is } = require('sdk/system/xul-app');
 const { isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
+const { merge } = require('sdk/util/object');
 
 const TAB_URL = 'data:text/html;charset=utf-8,TEST-TAB';
 
@@ -162,5 +163,7 @@ if (!is('Fennec')) {
     })
   }
 }
+
+merge(module.exports, require('./windows'));
 
 require('sdk/test/runner').runTestsFromModule(module);
