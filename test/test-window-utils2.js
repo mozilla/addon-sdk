@@ -51,7 +51,7 @@ exports['test new top window with options'] = function(assert, done) {
   close(window).then(done);
 };
 
-exports['test backgroundify'] = function(assert, done) {
+exports.testBackgroundify = function(assert, done) {
   let window = open('data:text/html;charset=utf-8,backgroundy');
   assert.ok(~windows().indexOf(window),
             'window is in the list of windows');

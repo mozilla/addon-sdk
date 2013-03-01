@@ -5,7 +5,7 @@
 
 const { pb, pbUtils } = require('./helper');
 const { openDialog, open } = require('window/utils');
-const { once, close } = require('sdk/window/helpers');
+const { promise, close } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
 
@@ -17,7 +17,7 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
     private: true
   });
 
-  once(win, 'DOMContentLoaded').then(function onload() {
+  promise(win, 'DOMContentLoaded').then(function onload() {
     assert.equal(pbUtils.getMode(win),
                  true, 'Newly opened window is in PB mode');
     assert.ok(isPrivate(win), 'isPrivate(window) is true');
@@ -40,7 +40,7 @@ exports.testPerWindowPrivateBrowsingGetter = function(assert, done) {
     }
   });
 
-  once(win, 'DOMContentLoaded').then(function onload() {
+  promise(win, 'DOMContentLoaded').then(function onload() {
     assert.equal(pbUtils.getMode(win),
                  true, 'Newly opened window is in PB mode');
     assert.ok(isPrivate(win), 'isPrivate(window) is true');
