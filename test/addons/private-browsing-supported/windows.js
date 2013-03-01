@@ -6,8 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { isPrivate } = require('sdk/private-browsing');
 const { isWindowPBSupported } = require('sdk/private-browsing/utils');
-const { isWindowPrivate } = require('../window/utils');
-const { onFocus, getMostRecentWindow, getWindowTitle, getFrames, windows, open: openWindow } = require('sdk/window/utils');
+const { onFocus, getMostRecentWindow, getWindowTitle,
+        getFrames, windows, open: openWindow, isWindowPrivate } = require('sdk/window/utils');
 const { open, close, focus, promise } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const winUtils = require("sdk/deprecated/window-utils");
@@ -61,7 +61,7 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
       private: true
     }
   });
-  once(myPrivateWindow, 'load').then(function(window) {
+  promise(myPrivateWindow, 'load').then(function(window) {
     assert.equal(isPrivate(window), isWindowPBSupported, 'private window isPrivate');
     assert.equal(isWindowPrivate(window), isWindowPBSupported);
     assert.ok(getFrames(window).length > 1, 'there are frames for private window');
@@ -223,8 +223,7 @@ exports.testWindowIteratorPrivateDefault = function(assert, done) {
     assert.equal(isPrivate(browserWindows.activeWindow), isWindowPBSupported);
 
     assert.equal(browserWindows.length, 2, '2 windows open');
-    assert.equal(windows().length, 2);
-    assert.equal(windows().length, 2);
+    assert.equal(windows(null, { includePrivate: true }).length, 2);
 
     close(window).then(done);
   });
