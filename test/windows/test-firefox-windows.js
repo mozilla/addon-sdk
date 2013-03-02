@@ -6,8 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const { onFocus, open: openWindow, getMostRecentWindow, windows } = require('sdk/window/utils');
-const { close } = require('sdk/window/helpers');
+const { onFocus, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { open, close } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const winUtils = require("sdk/deprecated/window-utils");
@@ -378,36 +378,34 @@ exports.testWindowIteratorPrivateDefault = function(test) {
 
   test.assertEqual(browserWindows.length, 1, 'only one window open');
 
-  let window = openWindow('chrome://browser/content/browser.xul', {
+  open('chrome://browser/content/browser.xul', {
     features: {
       private: true,
       chrome: true
     }
-  });
-  window.addEventListener('load', function onLoad() {
-    window.removeEventListener('load', onLoad, false);
-
+  }).then(function(window) {
     // test that there is a private window opened
     test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
-    test.assertEqual(isPrivate(winUtils.activeWindow), isWindowPBSupported);
-    test.assertEqual(isPrivate(getMostRecentWindow()), isWindowPBSupported);
+    test.assertStrictEqual(window, winUtils.activeWindow);
+    test.assertStrictEqual(window, getMostRecentWindow());
+
     test.assert(!isPrivate(browserWindows.activeWindow));
 
     if (isWindowPBSupported) {
-      test.assertEqual(browserWindows.length, 1, 'only one window open');
-      test.assertEqual(windows().length, 1);
+      test.assertEqual(browserWindows.length, 1, 'only one window in browserWindows');
+      test.assertEqual(windows().length, 1, 'only one window in windows()');
     }
     else {
       test.assertEqual(browserWindows.length, 2, 'two windows open');
-      test.assertEqual(windows().length, 2);
+      test.assertEqual(windows().length, 2, 'two windows in windows()');
     }
     test.assertEqual(windows(null, { includePrivate: true }).length, 2);
 
     for each(let window in browserWindows) {
       // test that all windows in iterator are not private
-      test.assert(!isPrivate(window));
+      test.assert(!isPrivate(window), 'no window in browserWindows is private');
     }
 
-    close(window).then(function() test.done());
-  }, false);
+    close(window).then(test.done.bind(test));
+  });
 }
