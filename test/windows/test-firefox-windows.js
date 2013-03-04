@@ -6,8 +6,8 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const { onFocus, open: openWindow, getMostRecentWindow, windows } = require('sdk/window/utils');
-const { close } = require('sdk/window/helpers');
+const { onFocus, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { open, close, focus } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const winUtils = require("sdk/deprecated/window-utils");
@@ -378,15 +378,12 @@ exports.testWindowIteratorPrivateDefault = function(test) {
 
   test.assertEqual(browserWindows.length, 1, 'only one window open');
 
-  let window = openWindow('chrome://browser/content/browser.xul', {
+  let window = open('chrome://browser/content/browser.xul', {
     features: {
       private: true,
       chrome: true
     }
-  });
-  window.addEventListener('load', function onLoad() {
-    window.removeEventListener('load', onLoad, false);
-
+  }).then(function(window) focus(window).then(function() {
     // test that there is a private window opened
     test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
     test.assertEqual(isPrivate(winUtils.activeWindow), isWindowPBSupported);
@@ -408,6 +405,6 @@ exports.testWindowIteratorPrivateDefault = function(test) {
       test.assert(!isPrivate(window));
     }
 
-    close(window).then(function() test.done());
-  }, false);
+    close(window).then(test.done.bind(test));
+  }));
 }
