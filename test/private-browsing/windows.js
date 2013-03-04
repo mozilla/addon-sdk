@@ -4,7 +4,7 @@
 'use strict';
 
 const { pb, pbUtils } = require('./helper');
-const { openDialog } = require('sdk/window/utils');
+const { openDialog, open } = require('sdk/window/utils');
 
 exports["test Per Window Private Browsing getter"] = function(assert, done) {
   let win = openDialog({
