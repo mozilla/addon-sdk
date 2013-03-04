@@ -4,7 +4,7 @@
 'use strict';
 
 const { pb, pbUtils } = require('./helper');
-const { openDialog, open } = require('window/utils');
+const { openDialog, open } = require('sdk/window/utils');
 const { promise, close } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const { browserWindows: windows } = require('sdk/windows');
