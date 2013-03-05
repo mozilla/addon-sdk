@@ -72,7 +72,7 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
 };
 
 // Test setting activeWIndow and onFocus for private windows
-exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
+exports.testSettingActiveWindowAcceptPrivateWindow = function(assert, done) {
   let browserWindow = WM.getMostRecentWindow("navigator:browser");
   let testSteps;
 
@@ -88,47 +88,53 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
     // PWPB case
     if (isWindowPBSupported) {
       assert.ok(isPrivate(window), "window is private");
-      assert.notDeepEqual(windowUtils.activeBrowserWindow, browserWindow);
+      assert.notStrictEqual(windowUtils.activeBrowserWindow, browserWindow);
     }
     // Global case
     else {
       assert.ok(!isPrivate(window), "window is not private");
     }
 
-    assert.deepEqual(windowUtils.activeBrowserWindow, window,
+    assert.strictEqual(windowUtils.activeBrowserWindow, window,
                  "Correct active browser window pb supported");
 
     testSteps = [
       function() {
+        // Ensure waiting for the private window focus that may still be
+        // in process...
+        continueAfterFocus(window);
+      },
+      function() {
+        // Focus back the non-private window
         continueAfterFocus(windowUtils.activeWindow = browserWindow);
       },
       function() {
-          assert.deepEqual(windowUtils.activeWindow, window,
+        // Check that we can focus again to the private window
+        assert.strictEqual(windowUtils.activeWindow, browserWindow,
                            "Correct active window [1]");
-
-        focus(window).then(nextTest);
+        continueAfterFocus(windowUtils.activeWindow = window);
       },
       function() {
-        assert.deepEqual(windowUtils.activeBrowserWindow, window,
+        assert.strictEqual(windowUtils.activeBrowserWindow, window,
                          "Correct active browser window [2]");
-        assert.deepEqual(windowUtils.activeWindow, window,
+        assert.strictEqual(windowUtils.activeWindow, window,
                          "Correct active window [2]");
 
         windowUtils.activeWindow = window;
         onFocus(window).then(nextTest);
       },
       function() {
-        assert.deepEqual(windowUtils.activeBrowserWindow, window,
+        assert.strictEqual(windowUtils.activeBrowserWindow, window,
                          "Correct active browser window [3]");
-        assert.deepEqual(windowUtils.activeWindow, window,
+        assert.strictEqual(windowUtils.activeWindow, window,
                          "Correct active window [3]");
 
         continueAfterFocus(windowUtils.activeWindow = browserWindow);
       },
       function() {
-        assert.deepEqual(windowUtils.activeBrowserWindow, browserWindow,
+        assert.strictEqual(windowUtils.activeBrowserWindow, browserWindow,
                          "Correct active browser window when pb mode is supported [4]");
-        assert.deepEqual(windowUtils.activeWindow, browserWindow,
+        assert.strictEqual(windowUtils.activeWindow, browserWindow,
                          "Correct active window when pb mode is supported [4]");
         close(window).then(done);
       }
