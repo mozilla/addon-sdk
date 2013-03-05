@@ -72,17 +72,18 @@ exports.testWindowTrackerIgnoresPrivateWindows = function(assert, done) {
 };
 
 // Test setting activeWIndow and onFocus for private windows
-exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
+exports.testSettingActiveWindowDoesNotIgnorePrivateWindow = function(assert, done) {
   let browserWindow = WM.getMostRecentWindow("navigator:browser");
   let testSteps;
 
   assert.equal(windowUtils.activeBrowserWindow, browserWindow,
                "Browser window is the active browser window.");
+  assert.ok(!isPrivate(browserWindow), "Browser window is not private.");
 
   // make a new private window
   makeEmptyBrowserWindow({
     private: true
-  }).then(function(window) {
+  }).then(focus).then(function(window) {
     let continueAfterFocus = function(window) onFocus(window).then(nextTest);
 
     // PWPB case
@@ -95,27 +96,34 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
       assert.ok(!isPrivate(window), "window is not private");
     }
 
-    assert.deepEqual(windowUtils.activeBrowserWindow, window,
+    assert.strictEqual(windowUtils.activeBrowserWindow, window,
                  "Correct active browser window pb supported");
+    assert.notStrictEqual(browserWindow, window,
+                 "The window is not the old browser window");
 
     testSteps = [
       function() {
+        // test setting a non private window
         continueAfterFocus(windowUtils.activeWindow = browserWindow);
       },
       function() {
-          assert.deepEqual(windowUtils.activeWindow, window,
+        assert.strictEqual(windowUtils.activeWindow, browserWindow,
                            "Correct active window [1]");
+        assert.strictEqual(windowUtils.activeBrowserWindow, browserWindow,
+                           "Correct active browser window [1]");
 
+        // test focus(window)
         focus(window).then(nextTest);
       },
-      function() {
-        assert.deepEqual(windowUtils.activeBrowserWindow, window,
-                         "Correct active browser window [2]");
-        assert.deepEqual(windowUtils.activeWindow, window,
-                         "Correct active window [2]");
+      function(w) {
+        assert.strictEqual(w, window, 'require("sdk/window/helpers").focus on window works');
+        assert.strictEqual(windowUtils.activeBrowserWindow, window,
+                           "Correct active browser window [2]");
+        assert.strictEqual(windowUtils.activeWindow, window,
+                           "Correct active window [2]");
 
-        windowUtils.activeWindow = window;
-        onFocus(window).then(nextTest);
+        // test setting a private window
+        continueAfterFocus(windowUtils.activeWindow = window);
       },
       function() {
         assert.deepEqual(windowUtils.activeBrowserWindow, window,
@@ -123,6 +131,7 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
         assert.deepEqual(windowUtils.activeWindow, window,
                          "Correct active window [3]");
 
+        // just to get back to original state
         continueAfterFocus(windowUtils.activeWindow = browserWindow);
       },
       function() {
@@ -130,18 +139,24 @@ exports.testSettingActiveWindowIgnoresPrivateWindow = function(assert, done) {
                          "Correct active browser window when pb mode is supported [4]");
         assert.deepEqual(windowUtils.activeWindow, browserWindow,
                          "Correct active window when pb mode is supported [4]");
+
         close(window).then(done);
       }
     ];
+
     function nextTest() {
-      if (testSteps.length)
-        testSteps.shift()();
+      let args = arguments;
+      if (testSteps.length) {
+        require('sdk/timers').setTimeout(function() {
+          (testSteps.shift()).apply(null, args);
+        }, 0);
+      }
     }
     nextTest();
   });
 };
 
-exports.testActiveWindowIgnoresPrivateWindow = function(assert, done) {
+exports.testActiveWindowDoesNotIgnorePrivateWindow = function(assert, done) {
   // make a new private window
   makeEmptyBrowserWindow({
     private: true
