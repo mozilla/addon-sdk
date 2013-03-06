@@ -81,6 +81,15 @@ function startup(data, reasonCode) {
 
     let id = options.jetpackID;
     let name = options.name;
+
+    // Clean the metadata
+    options.metadata[name]['permissions'] = options.metadata[name]['permissions'] || {};
+
+    // freeze the permissionss
+    Object.freeze(options.metadata[name]['permissions']);
+    // freeze the metadata
+    Object.freeze(options.metadata[name]);
+
     // Register a new resource 'domain' for this addon which is mapping to
     // XPI's `resources` folder.
     // Generate the domain name by using jetpack ID, which is the extension ID
