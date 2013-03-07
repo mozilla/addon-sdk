@@ -658,6 +658,34 @@ function testShowPanel(assert, panel) {
   return promise;
 }
 
+exports['test Style Applied Only Once'] = function (assert, done) {
+  let loader = Loader(module);
+  let panel = loader.require("sdk/panel").Panel({
+    contentURL: "data:text/html;charset=utf-8,",
+    contentScript:
+      'self.port.on("check",function() { self.port.emit("count", document.getElementsByTagName("style").length); });' +
+      'self.port.on("ping", function (count) { self.port.emit("pong", count); });'
+  });
+  
+  panel.port.on('count', function (styleCount) {
+    assert.equal(styleCount, 1, 'should only have one style');
+    done();
+  });
+
+  panel.port.on('pong', function (counter) {
+    panel[--counter % 2 ? 'hide' : 'show']();
+    panel.port.emit(!counter ? 'check' : 'ping', counter);
+  });
+
+  panel.on('show', init);
+  panel.show();
+
+  function init () {
+    panel.removeListener('show', init);
+    panel.port.emit('ping', 10);
+  }
+};
+
 try {
   require("sdk/panel");
 }
