@@ -510,6 +510,30 @@ exports["test console.log in Panel"] = function(assert, done) {
   }
 };
 
+exports['test Style Applied Only Once'] = function (assert, done) {
+  const { Panel } = require('sdk/panel');
+  let counter = 10;
+  let panel = Panel({
+    contentURL: "data:text/html;charset=utf-8,",
+    contentScript:
+      'self.port.on("check",function() { self.port.emit("count", document.getElementsByTagName("style").length); });'
+  });
+  
+  panel.port.on('count', function (styleCount) {
+    assert.equal(styleCount, 1, 'should only have one style');
+    done();
+  });
+
+  let interval = timer.setInterval(function () {
+    panel[panel.isShowing ? 'hide' : 'show']();
+    if (!--counter) {
+      timer.clearInterval(interval);
+      panel.port.emit('check');
+    }
+  }, 10);
+
+};
+
 try {
   require("sdk/panel");
 }
