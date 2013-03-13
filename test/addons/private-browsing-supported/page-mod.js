@@ -53,9 +53,13 @@ exports["test page-mod on private tab"] = function (assert, done) {
                 "Got a worker attached to the private window tab");
 
       if (setPrivate) {
+        assert.ok(isPrivate(worker), "The worker is really private");
         assert.ok(isPrivate(worker.tab), "The document is really private");
       }
       else {
+        assert.ok(!isPrivate(worker),
+                  "private browsing isn't supported, " +
+                  "so that the worker isn't private");
         assert.ok(!isPrivate(worker.tab),
                   "private browsing isn't supported, " +
                   "so that the document isn't private");
@@ -80,6 +84,7 @@ exports["test page-mod on non-private tab"] = function (assert, done) {
     onAttach: function(worker) {
       assert.equal(worker.tab.url, "about:buildconfig",
                    "Got a worker attached to the private window tab");
+      assert.ok(!isPrivate(worker), "The worker is really non-private");
       assert.ok(!isPrivate(worker.tab), "The document is really non-private");
       pageMod.destroy();
       page.close().then(done);
