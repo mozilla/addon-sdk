@@ -140,8 +140,8 @@ If present and true, the new tab will be opened to the right of the active tab
 and will not be active. This is an optional property.
 
 @prop isPrivate {boolean}
-Boolean which will determine if a private tab should be opened.
-Private browsing mode must be supported in order to do this.
+Boolean which will determine whether the new tab should be private or not.
+If your add-on does not support private browsing this will have no effect.
 See the [private-browsing](modules/sdk/private-browsing.html) documentation for more information.
 
 @prop [isPinned] {boolean}

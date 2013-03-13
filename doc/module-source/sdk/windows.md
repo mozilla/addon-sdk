@@ -119,8 +119,8 @@ String URL to be opened in the new window.
 This is a required property.
 
 @prop isPrivate {boolean}
-Boolean which will determine if a private window should be opened.
-Private browsing mode must be supported in order to do this.
+Boolean which will determine whether the new window should be private or not.
+If your add-on does not support private browsing this will have no effect.
 See the [private-browsing](modules/sdk/private-browsing.html) documentation for more information.
 
 @prop [onOpen] {function}
@@ -185,8 +185,7 @@ Returns `true` if the window is in private browsing mode, and `false` otherwise.
 
 <div class="warning">
   This property is deprecated.
-  From version 1.14, please consider using following code instead:<br/>
-  <code>require("private-browsing").isPrivate(browserWindow)</code>
+  From version 1.14, use the <a href="modules/sdk/private-browsing.html#isPrivate()">private-browsing module's <code>isPrivate()</code></a> function instead.
 </div>
 
 </api>
