@@ -45,9 +45,14 @@ exports["test page-mod on private tab"] = function (assert, done) {
   // tab)
   let setPrivate = isTabPBSupported || isWindowPBSupported;
 
+  let id = Date.now().toString(36);
+  let frameUri = "data:text/html;charset=utf-8," + id;
+  let uri = "data:text/html;charset=utf-8," +
+            encodeURIComponent(id + "<iframe src='" + frameUri + "'><iframe>");
+
   let count = 0;
   let pageMod = new PageMod({
-    include: "data:*",
+    include: [uri, frameUri],
     onAttach: function(worker) {
       assert.ok(worker.tab.url == uri || worker.tab.url == frameUri,
                 "Got a worker attached to the private window tab");
@@ -72,9 +77,6 @@ exports["test page-mod on private tab"] = function (assert, done) {
     }
   });
 
-  let frameUri = "data:text/html;charset=utf-8,frame";
-  let uri = "data:text/html;charset=utf-8," +
-            encodeURIComponent("document<iframe src=\"" + frameUri + "\" />");
   let page = openWebpage(uri, setPrivate);
 }
 
