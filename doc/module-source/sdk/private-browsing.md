@@ -26,9 +26,38 @@ following key in their [`package.json`](dev-guide/package-spec.html) file:
 Add-ons that have not opted in will never see private windows, or objects
 (such as tabs) that are associated with private windows.
 
+* the [`windows`](modules/sdk/windows.html) module will not list any
+private browser windows, generate any events for private browser windows,
+or let the add-on open any private browser windows
+
+* the [`tabs`](modules/sdk/tabs.html) module will not list any tabs that
+belong to private browser windows, and the add-on won't receive any events
+for such tabs
+
+* any [`widgets`](modules/sdk/widget.html) will not be displayed in
+private browser windows
+
+* any menus or menu items created using the
+[`context-menu`](modules/sdk/context-menu.html) will not be shown in
+context menus that belong to private browser windows
+
+* the [`page-mod`](modules/sdk/page-mod.html) module will not attach
+content scripts to documents belonging to private browser windows
+
+* any [`panel`](modules/sdk/panel.html) objects will not be shown if the
+active window is a private browser window
+
+* the [`selection`](modules/sdk/selection.html) module will not include
+any selections made in private browser windows
+
 Add-ons that have opted in will see private windows, so they will need to
 use the `private-browsing` module to check whether objects are private,
 so as to avoid storing data derived from such objects.
+
+Additionally, add-ons that use low-level modules such as
+[`window/utils`](modules/sdk/window/utils.html) may see private browser
+windows with certain functions, even if they have not explicitly opted
+into private browsing.
 
 ## Respecting private browsing ##
 

@@ -376,6 +376,16 @@ when applying your own styles. For example, if you set the panel's
 `background-color` property to `white` and do not set the `color` property,
 then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
 
+## Private Windows ##
+
+If your add-on calls `panel.show()` when the currently active window is a
+[private window](modules/sdk/private-browsing.html#Per-window private browsing),
+then the panel will not be shown.
+
+Due to [bug 849723](https://bugzilla.mozilla.org/show_bug.cgi?id=849723),
+the panel will not be shown even if your add-on has opted into
+private-browsing.
+
 <api name="Panel">
 @class
 The Panel object represents a floating modal dialog that can by an add-on to
