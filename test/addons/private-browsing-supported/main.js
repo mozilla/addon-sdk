@@ -167,5 +167,6 @@ if (!is('Fennec')) {
 merge(module.exports, require('./windows'));
 merge(module.exports, require('./tabs'));
 merge(module.exports, require('./page-mod'));
+merge(module.exports, require('./test-panel'));
 
 require('sdk/test/runner').runTestsFromModule(module);
