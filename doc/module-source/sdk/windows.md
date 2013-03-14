@@ -35,7 +35,7 @@ to support private browsing, refer to the
 
     console.log(windows.browserWindows.length);
 
-This object emits all the events listed under "Events" section:
+This object emits all the events listed under the "Events" section:
 
     var windows = require("sdk/windows").browserWindows;
 

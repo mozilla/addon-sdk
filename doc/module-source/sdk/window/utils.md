@@ -7,7 +7,7 @@ application windows.
 
 ## Private Windows ##
 
-If it uses this module your add-on will see private browser windows
+With this module your add-on will see private browser windows
 even if it has not explicitly opted into private browsing, so you need
 to take care not to store any user data derived from private browser windows.
 

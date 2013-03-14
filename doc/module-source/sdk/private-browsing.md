@@ -23,8 +23,9 @@ following key in their [`package.json`](dev-guide/package-spec.html) file:
 
 <pre>"permissions": {"private-browsing": true}</pre>
 
-Add-ons that have not opted in will never see private windows, or objects
-(such as tabs) that are associated with private windows.
+If an add-on has not opted in, then the high-level SDK modules will not
+expose private windows, or objects (such as tabs) that are associated
+with private windows:
 
 * the [`windows`](modules/sdk/windows.html) module will not list any
 private browser windows, generate any events for private browser windows,
