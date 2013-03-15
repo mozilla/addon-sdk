@@ -19,10 +19,9 @@ const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTM
 
 const { defer } = require("sdk/core/promise");
 const tabs = require("sdk/tabs");
-const { setTabURL } = require("sdk/tabs/utils");
-const { getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
+const { setTabURL, getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
 const { getMostRecentBrowserWindow } = require("sdk/window/utils");
-const { open: openNewWindow } = require("sdk/window/helpers");
+const { open: openNewWindow, close: closeWindow } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
 const { merge } = require("sdk/util/object");
 const { isPrivate } = require("sdk/private-browsing");
@@ -86,18 +85,19 @@ function open(url, options) {
  * Close the Active Tab
  */
 function close(window) {
+  let { promise, resolve } = defer();
+
   if (window && typeof(window.close) === "function") {
-    window.close();
-  } else {
+    closeWindow(window).then(function() resolve());
+  }
+  else {
     // Here we assuming that the most recent browser window is the one we're
     // doing the test, and the active tab is the one we just opened.
-    let tab = getActiveTab(getMostRecentBrowserWindow());
-    tab.addEventListener("unload", function unload (event) {
-      this.removeEventListener(event.type, unload);
-      console.log("unloaded: ", event.target);
-    })
-    closeTab(tab);
+    closeTab(getActiveTab(getMostRecentBrowserWindow()));
+    resolve();
   }
+
+  return promise;
 }
 
 /**
