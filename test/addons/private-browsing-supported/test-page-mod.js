@@ -1,41 +1,46 @@
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { PageMod } = require("sdk/page-mod");
-const { openDialog } = require('sdk/window/utils');
 const { getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require('sdk/system/xul-app');
 const windowHelpers = require('sdk/window/helpers');
-const promise = require("sdk/core/promise");
+const { defer } = require("sdk/core/promise");
 const { isPrivate } = require('sdk/private-browsing');
 const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 function openWebpage(url, enablePrivate) {
+  let { promise, resolve, reject } = defer();
+
   if (xulApp.is("Fennec")) {
     let chromeWindow = getMostRecentBrowserWindow();
     let rawTab = openTab(chromeWindow, url, {
       isPrivate: enablePrivate
     });
-    return {
-      close: function () {
-        closeTab(rawTab)
-        // Returns a resolved promise as there is no need to wait
-        return promise.resolve();
-      }
-    };
+
+    resolve(function() {
+      closeTab(rawTab)
+    });
+
+    return promise;
   }
   else {
-    let win = openDialog({
-      private: enablePrivate
+    windowHelpers.open("", {
+      features: {
+        toolbar: true,
+        private: enablePrivate
+      }
+    }).then(function(chromeWindow) {
+      if (isPrivate(chromeWindow) !== !!enablePrivate)
+        reject(new Error("Window should have Private set to " + !!enablePrivate));
+
+      let tab = getActiveTab(chromeWindow);
+      setTabURL(tab, url);
+
+      resolve(function(){
+        windowHelpers.close(chromeWindow);
+      });
     });
-    win.addEventListener("load", function onLoad() {
-      win.removeEventListener("load", onLoad, false);
-      setTabURL(getActiveTab(win), url);
-    });
-    return {
-      close: function () {
-        return windowHelpers.close(win);
-      },
-      window: win
-    };
+
+    return promise;
   }
 }
 
@@ -52,52 +57,55 @@ exports["test page-mod on private tab"] = function (assert, done) {
             encodeURIComponent(id + "<iframe src='" + frameUri + "'><iframe>");
 
   let count = 0;
-  let pageMod = new PageMod({
-    include: [uri, frameUri],
-    onAttach: function(worker) {
-      assert.ok(worker.tab.url == uri || worker.tab.url == frameUri,
-                "Got a worker attached to the private window tab");
 
-      if (setPrivate) {
-        assert.ok(isPrivate(worker), "The worker is really private");
-        assert.ok(isPrivate(worker.tab), "The document is really private");
-      }
-      else {
-        assert.ok(!isPrivate(worker),
-                  "private browsing isn't supported, " +
-                  "so that the worker isn't private");
-        assert.ok(!isPrivate(worker.tab),
-                  "private browsing isn't supported, " +
-                  "so that the document isn't private");
-      }
+  openWebpage(uri, setPrivate).then(function(close) {
+    PageMod({
+      include: [uri, frameUri],
 
-      if (++count == 2) {
-        pageMod.destroy();
-        page.close().then(done, assert.fail);
-      }
-    }
-  });
+      onAttach: function(worker) {
+        assert.ok(worker.tab.url == uri || worker.tab.url == frameUri,
+                  "Got a worker attached to the private window tab");
 
-  let page = openWebpage(uri, setPrivate);
-  assert.equal(isPrivate(page.window), isWindowPBSupported);
-}
+        if (setPrivate) {
+          assert.ok(isPrivate(worker), "The worker is really private");
+          assert.ok(isPrivate(worker.tab), "The document is really private");
+        }
+        else {
+          assert.ok(!isPrivate(worker),
+                    "private browsing isn't supported, " +
+                    "so that the worker isn't private");
+          assert.ok(!isPrivate(worker.tab),
+                    "private browsing isn't supported, " +
+                    "so that the document isn't private");
+        }
+
+        if (++count == 2) {
+          this.destroy();
+          close();
+          done();
+        }
+      }
+    });
+  }).then(null, assert.fail);
+};
 
 exports["test page-mod on non-private tab"] = function (assert, done) {
   let id = Date.now().toString(36);
   let url = "data:text/html;charset=utf-8," + encodeURIComponent(id);
 
-  let pageMod = new PageMod({
-    include: url,
-    onAttach: function(worker) {
-      assert.equal(worker.tab.url, url,
-                   "Got a worker attached to the private window tab");
-      assert.ok(!isPrivate(worker), "The worker is really non-private");
-      assert.ok(!isPrivate(worker.tab), "The document is really non-private");
-      pageMod.destroy();
-      page.close().then(done, assert.fail);
-    }
-  });
+  openWebpage(url, false).then(function(close){
+    PageMod({
+      include: url,
+      onAttach: function(worker) {
+        assert.equal(worker.tab.url, url,
+                     "Got a worker attached to the private window tab");
+        assert.ok(!isPrivate(worker), "The worker is really non-private");
+        assert.ok(!isPrivate(worker.tab), "The document is really non-private");
 
-  let page = openWebpage(url, false);
-  assert.equal(isPrivate(page.window), false, 'opened window is not private');
+        this.destroy();
+        close();
+        done();
+      }
+    });
+  }).then(null, assert.fail);
 }
