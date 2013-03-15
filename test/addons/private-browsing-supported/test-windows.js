@@ -12,6 +12,7 @@ const { open, close, focus, promise } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
 const winUtils = require("sdk/deprecated/window-utils");
 const { fromIterator: toArray } = require('sdk/util/array');
+const tabs = require('sdk/tabs');
 
 const WM = Cc['@mozilla.org/appshell/window-mediator;1'].getService(Ci.nsIWindowMediator);
 
@@ -223,7 +224,16 @@ exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
 // test that it is not possible to find a private window in
 // windows module's iterator
 exports.testWindowIteratorPrivateDefault = function(assert, done) {
-  assert.equal(browserWindows.length, 1, 'only one window open');
+  // there should only be one window open here, if not give us the
+  // the urls
+  if (browserWindows.length > 1) {
+    for each (let tab in tabs) {
+      assert.fail("TAB URL: " + tab.url);
+    }
+  }
+  else {
+    assert.equal(browserWindows.length, 1, 'only one window open');
+  }
 
   open('chrome://browser/content/browser.xul', {
     features: {
