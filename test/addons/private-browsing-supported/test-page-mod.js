@@ -81,10 +81,13 @@ exports["test page-mod on private tab"] = function (assert, done) {
 }
 
 exports["test page-mod on non-private tab"] = function (assert, done) {
+  let id = Date.now().toString(36);
+  let url = "data:text/html;charset=utf-8," + encodeURIComponent(id);
+
   let pageMod = new PageMod({
-    include: "about:buildconfig",
+    include: url,
     onAttach: function(worker) {
-      assert.equal(worker.tab.url, "about:buildconfig",
+      assert.equal(worker.tab.url, url,
                    "Got a worker attached to the private window tab");
       assert.ok(!isPrivate(worker), "The worker is really non-private");
       assert.ok(!isPrivate(worker.tab), "The document is really non-private");
@@ -93,5 +96,5 @@ exports["test page-mod on non-private tab"] = function (assert, done) {
     }
   });
 
-  let page = openWebpage("about:buildconfig", false);
+  let page = openWebpage(url, false);
 }
