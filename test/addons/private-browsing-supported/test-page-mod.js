@@ -33,7 +33,8 @@ function openWebpage(url, enablePrivate) {
     return {
       close: function () {
         return windowHelpers.close(win);
-      }
+      },
+      window: win
     };
   }
 }
@@ -72,12 +73,13 @@ exports["test page-mod on private tab"] = function (assert, done) {
 
       if (++count == 2) {
         pageMod.destroy();
-        page.close().then(done);
+        page.close().then(done, assert.fail);
       }
     }
   });
 
   let page = openWebpage(uri, setPrivate);
+  assert.equal(isPrivate(page.window), isWindowPBSupported);
 }
 
 exports["test page-mod on non-private tab"] = function (assert, done) {
@@ -92,9 +94,10 @@ exports["test page-mod on non-private tab"] = function (assert, done) {
       assert.ok(!isPrivate(worker), "The worker is really non-private");
       assert.ok(!isPrivate(worker.tab), "The document is really non-private");
       pageMod.destroy();
-      page.close().then(done);
+      page.close().then(done, assert.fail);
     }
   });
 
   let page = openWebpage(url, false);
+  assert.equal(isPrivate(page.window), false, 'opened window is not private');
 }
