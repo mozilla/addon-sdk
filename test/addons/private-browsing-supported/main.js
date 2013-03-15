@@ -168,7 +168,8 @@ merge(module.exports,
   require('./test-windows'),
   require('./test-tabs'),
   require('./test-page-mod'),
-  require('./test-selection')
+  require('./test-selection'),
+  require('./test-panel')
 );
 
 require('sdk/test/runner').runTestsFromModule(module);
