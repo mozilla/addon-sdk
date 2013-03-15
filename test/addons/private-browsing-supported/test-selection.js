@@ -227,32 +227,40 @@ exports["test PWPB Selection Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
 
-  selection.once("select", function() {
-    assert.equal(selection.text, "fo");
-    done();
-  });
-
   open(URL, {private: true}).
+    then(function(window) {
+      selection.once("select", function() {
+        assert.equal(selection.text, "fo");
+
+        close(window).
+          then(loader.unload).
+          then(done, assert.fail);
+      });
+      return window;
+    }).
     then(selectContentFirstDiv).
     then(dispatchSelectionEvent).
-    then(close).
-    then(loader.unload, assert.fail);
+    then(null, assert.fail);
 };
 
 exports["test PWPB Textarea OnSelect Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
 
-  selection.once("select", function() {
-    assert.equal(selection.text, "noodles");
-    done();
-  });
-
   open(URL, {private: true}).
+    then(function(window) {
+      selection.once("select", function() {
+        assert.equal(selection.text, "noodles");
+
+        close(window).
+          then(loader.unload).
+          then(done, assert.fail);
+      });
+      return window;
+    }).
     then(selectTextarea).
     then(dispatchOnSelectEvent).
-    then(close).
-    then(loader.unload, assert.fail);
+    then(null, assert.fail);
 };
 
 exports["test PWPB Single DOM Selection"] = function(assert, done) {
