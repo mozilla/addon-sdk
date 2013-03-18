@@ -1944,6 +1944,7 @@ exports.testParentMenu = function (test) {
   });
 };
 
+
 // Existing context menu modifications should apply to new windows.
 exports.testNewWindow = function (test) {
   test = new TestHelper(test);
@@ -1972,6 +1973,81 @@ exports.testNewWindowMultipleModules = function (test) {
     popup.hidePopup();
     loader.unload();
     test.withNewWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([item], [], [item]);
+        test.done();
+      });
+    });
+  });
+};
+
+
+// Existing context menu modifications should not apply to new private windows.
+exports.testNewPrivateWindow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.withNewPrivateWindow(function () {
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], [item]);
+      test.done();
+    });
+  });
+};
+
+
+// When a new private window is opened, items added by an unloaded module should
+// not be present in the menu.
+exports.testNewPrivateWindowMultipleModules = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newLoader();
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+    loader.unload();
+    test.withNewPrivateWindow(function () {
+      test.showMenu(null, function (popup) {
+        test.checkMenu([item], [], [item]);
+        test.done();
+      });
+    });
+  });
+};
+
+
+// Existing context menu modifications should apply to new private windows when
+// private browsing support is enabled.
+exports.testNewPrivateEnabledWindow = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newPrivateLoader();
+
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.withNewPrivateWindow(function () {
+    test.showMenu(null, function (popup) {
+      test.checkMenu([item], [], []);
+      test.done();
+    });
+  });
+};
+
+
+// When a new private window is opened, items added by an unloaded module should
+// not be present in the menu when private browsing support is enabled.
+exports.testNewPrivateEnabledWindowMultipleModules = function (test) {
+  test = new TestHelper(test);
+  let loader = test.newPrivateLoader();
+  let item = new loader.cm.Item({ label: "item" });
+
+  test.showMenu(null, function (popup) {
+    test.checkMenu([item], [], []);
+    popup.hidePopup();
+    loader.unload();
+    test.withNewPrivateWindow(function () {
       test.showMenu(null, function (popup) {
         test.checkMenu([item], [], [item]);
         test.done();
@@ -3339,6 +3415,47 @@ TestHelper.prototype = {
     return wrapper;
   },
 
+  // As above but the loader has private-browsing support enabled.
+  newPrivateLoader: function() {
+    function shallowClone(source, target) {
+      for (let prop in source) {
+        if (!(prop in target))
+          target[prop] = source[prop];
+      }
+    }
+
+    let options = {
+      metadata: {
+        permissions: {
+          'private-browsing': true
+        }
+      }
+    }
+
+    let base = require("@loader/options");
+    // Clone current loader's options into the options for the private loader
+    shallowClone(base, options);
+    shallowClone(base.metadata || {}, options.metadata);
+    shallowClone(base.metadata.permissions || {}, options.metadata.permissions);
+
+    const self = this;
+    let loader = Loader(module, null, options);
+    let wrapper = {
+      loader: loader,
+      cm: loader.require("sdk/context-menu"),
+      globalScope: loader.sandbox("sdk/context-menu"),
+      unload: function () {
+        loader.unload();
+        let idx = self.loaders.indexOf(wrapper);
+        if (idx < 0)
+          throw new Error("Test error: tried to unload nonexistent loader");
+        self.loaders.splice(idx, 1);
+      }
+    };
+    this.loaders.push(wrapper);
+    return wrapper;
+  },
+
   // Returns true if the count crosses the overflow threshold.
   shouldOverflow: function (count) {
     return count >
@@ -3400,6 +3517,15 @@ TestHelper.prototype = {
   // done() is called.
   withNewWindow: function (onloadCallback) {
     let win = this.browserWindow.OpenBrowserWindow();
+    this.delayedEventListener(win, "load", onloadCallback, true);
+    this.oldBrowserWindow = this.browserWindow;
+    this.browserWindow = win;
+  },
+
+  // Opens a new private browser window.  The window will be closed
+  // automatically when done() is called.
+  withNewPrivateWindow: function (onloadCallback) {
+    let win = this.browserWindow.OpenBrowserWindow({private: true});
     this.delayedEventListener(win, "load", onloadCallback, true);
     this.oldBrowserWindow = this.browserWindow;
     this.browserWindow = win;
