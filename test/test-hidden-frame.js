@@ -10,21 +10,19 @@ const { HiddenFrame } = hiddenFrames;
 
 exports["test Frame"] = function(assert, done) {
   let url = "data:text/html;charset=utf-8,<!DOCTYPE%20html>";
+  let loadCount = 0;
 
   let hiddenFrame = hiddenFrames.add(HiddenFrame({
     onReady: function () {
-      assert.equal(this.element.contentWindow.location, "about:blank",
-                       "HiddenFrame loads about:blank by default.");
-
-      function onDOMReady() {
-        hiddenFrame.element.removeEventListener("DOMContentLoaded", onDOMReady,
-                                                false);
+      if (!loadCount++)
+        assert.equal(this.element.contentWindow.location, "about:blank",
+                         "HiddenFrame loads about:blank by default.");
+      else {
         assert.equal(hiddenFrame.element.contentWindow.location, url,
                          "HiddenFrame loads the specified content.");
         done();
       }
 
-      this.element.addEventListener("DOMContentLoaded", onDOMReady, false);
       this.element.setAttribute("src", url);
     }
   }));
