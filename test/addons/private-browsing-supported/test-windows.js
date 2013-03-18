@@ -172,7 +172,7 @@ exports.testActiveWindowDoesNotIgnorePrivateWindow = function(assert, done) {
   // make a new private window
   makeEmptyBrowserWindow({
     private: true
-  }).then(function(window) {
+  }).then(focus).then(function(window) {
     // PWPB case
     if (isWindowPBSupported) {
       assert.equal(isPrivate(winUtils.activeWindow), true,
@@ -212,7 +212,7 @@ exports.testWindowIteratorIgnoresPrivateWindows = function(assert, done) {
   // make a new private window
   makeEmptyBrowserWindow({
     private: true
-  }).then(function(window) {
+  }).then(focus).then(function(window) {
     assert.equal(isWindowPrivate(window), isWindowPBSupported);
     assert.ok(toArray(winUtils.windowIterator()).indexOf(window) > -1,
               "window is in windowIterator()");
@@ -240,7 +240,7 @@ exports.testWindowIteratorPrivateDefault = function(assert, done) {
       private: true,
       chrome: true
     }
-  }).then(function(window) {
+  }).then(focus).then(function(window) {
     // test that there is a private window opened
     assert.equal(isPrivate(window), isWindowPBSupported, 'there is a private window open');
     assert.equal(isPrivate(winUtils.activeWindow), isWindowPBSupported);
