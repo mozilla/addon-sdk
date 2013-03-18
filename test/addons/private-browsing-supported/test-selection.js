@@ -18,9 +18,10 @@ const FRAME_HTML = "<iframe src='" + URL + "'><iframe>";
 const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTML);
 
 const { defer } = require("sdk/core/promise");
+const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
 const { setTabURL, getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
-const { getMostRecentBrowserWindow } = require("sdk/window/utils");
+const { getMostRecentBrowserWindow, isFocused } = require("sdk/window/utils");
 const { open: openNewWindow, close: closeWindow } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
 const { merge } = require("sdk/util/object");
@@ -229,7 +230,24 @@ exports["test PWPB Selection Listener"] = function(assert, done) {
 
   open(URL, {private: true}).
     then(function(window) {
+
       selection.once("select", function() {
+        // check number of tabs per window
+        for each (let win in browserWindows) {
+          if (win.tabs.length > 1) {
+            for each (let tab in win.tabs) {
+              assert.fail("TAB URL: " + tab.url);
+            }
+          }
+          assert.equal(win.tabs.length, 1, "only one tab open per window atm");
+        }
+        // check the number of windows
+        assert.equal(browserWindows.length, 2, "there should be only two windows open atm");
+
+        // check state of window
+        assert.ok(isFocused(window), "the window is focused");
+        assert.ok(isPrivate(window), "the window should be a private window");
+
         assert.equal(selection.text, "fo");
 
         close(window).
