@@ -5,6 +5,9 @@
 "use strict";
 
 const HTML = "<html>\
+  <head>\
+    <title>{{title}}</title>\
+  </head>\
   <body>\
     <div>foo</div>\
     <div>and</div>\
@@ -20,9 +23,9 @@ const FRAME_URL = "data:text/html;charset=utf-8," + encodeURIComponent(FRAME_HTM
 const { defer } = require("sdk/core/promise");
 const { browserWindows } = require("sdk/windows");
 const tabs = require("sdk/tabs");
-const { setTabURL, getActiveTab, getTabContentWindow, closeTab } = require("sdk/tabs/utils")
+const { setTabURL, getActiveTab, getTabContentWindow, closeTab, getTabs, getURI } = require("sdk/tabs/utils")
 const { getMostRecentBrowserWindow, isFocused } = require("sdk/window/utils");
-const { open: openNewWindow, close: closeWindow } = require("sdk/window/helpers");
+const { open: openNewWindow, close: closeWindow, focus } = require("sdk/window/helpers");
 const { Loader } = require("sdk/test/loader");
 const { merge } = require("sdk/util/object");
 const { isPrivate } = require("sdk/private-browsing");
@@ -227,32 +230,28 @@ function dispatchOnSelectEvent(window) {
 exports["test PWPB Selection Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "PWPB Selection Listener");
 
-  open(URL, {private: true}).
+  open(testURL, {private: true}).
     then(function(window) {
-
       selection.once("select", function() {
-        // check number of tabs per window
-        for each (let win in browserWindows) {
-          if (win.tabs.length > 1) {
-            for each (let tab in win.tabs) {
-              assert.fail("TAB URL: " + tab.url);
-            }
-          }
-          assert.equal(win.tabs.length, 1, "only one tab open per window atm");
-        }
-        // check the number of windows
-        assert.equal(browserWindows.length, 2, "there should be only two windows open atm");
+        assert.equal(browserWindows.length, 2, "there should be only two windows open.");
+        assert.equal(getTabs().length, 2, "there should be only two tabs open: " +
+                     getTabs().map(function(tab) getURI(tab))
+        );
 
-        // check state of window
-        assert.ok(isFocused(window), "the window is focused");
-        assert.ok(isPrivate(window), "the window should be a private window");
+        // window should be focused, but force the focus anyhow.. see bug 841823
+        focus(window).then(function() {
+          // check state of window
+          assert.ok(isFocused(window), "the window is focused");
+          assert.ok(isPrivate(window), "the window should be a private window");
 
-        assert.equal(selection.text, "fo");
+          assert.equal(selection.text, "fo");
 
-        close(window).
-          then(loader.unload).
-          then(done, assert.fail);
+          close(window).
+            then(loader.unload).
+            then(done, assert.fail);
+        });
       });
       return window;
     }).
@@ -264,15 +263,24 @@ exports["test PWPB Selection Listener"] = function(assert, done) {
 exports["test PWPB Textarea OnSelect Listener"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "PWPB OnSelect Listener");
 
-  open(URL, {private: true}).
+  open(testURL, {private: true}).
     then(function(window) {
       selection.once("select", function() {
-        assert.equal(selection.text, "noodles");
+        assert.equal(browserWindows.length, 2, "there should be only two windows open.");
+        assert.equal(getTabs().length, 2, "there should be only two tabs open: " +
+                     getTabs().map(function(tab) getURI(tab))
+        );
 
-        close(window).
-          then(loader.unload).
-          then(done, assert.fail);
+        // window should be focused, but force the focus anyhow.. see bug 841823
+        focus(window).then(function() {
+          assert.equal(selection.text, "noodles");
+
+          close(window).
+            then(loader.unload).
+            then(done, assert.fail);
+        });
       });
       return window;
     }).
@@ -284,8 +292,9 @@ exports["test PWPB Textarea OnSelect Listener"] = function(assert, done) {
 exports["test PWPB Single DOM Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "PWPB Single DOM Selection");
 
-  open(URL, {private: true}).then(selectFirstDiv).then(function() {
+  open(testURL, {private: true}).then(selectFirstDiv).then(function() {
 
     assert.equal(selection.isContiguous, true,
       "selection.isContiguous with single DOM Selection works.");
@@ -317,8 +326,9 @@ exports["test PWPB Single DOM Selection"] = function(assert, done) {
 exports["test PWPB Textarea Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "PWPB Textarea Listener");
 
-  open(URL, {private: true}).then(selectTextarea).then(function() {
+  open(testURL, {private: true}).then(selectTextarea).then(function() {
 
     assert.equal(selection.isContiguous, true,
       "selection.isContiguous with Textarea Selection works.");
@@ -349,8 +359,9 @@ exports["test PWPB Textarea Selection"] = function(assert, done) {
 exports["test PWPB Set HTML in Multiple DOM Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "PWPB Set HTML in Multiple DOM Selection");
 
-  open(URL, {private: true}).then(selectAllDivs).then(function() {
+  open(testURL, {private: true}).then(selectAllDivs).then(function() {
     let html = "<span>b<b>a</b>r</span>";
 
     let expectedText = ["bar", "and"];
@@ -385,8 +396,9 @@ exports["test PWPB Set HTML in Multiple DOM Selection"] = function(assert, done)
 exports["test PWPB Set Text in Textarea Selection"] = function(assert, done) {
   let loader = Loader(module);
   let selection = loader.require("sdk/selection");
+  let testURL = URL.replace(/{{title}}/, "test PWPB Set Text in Textarea Selection");
 
-  open(URL, {private: true}).then(selectTextarea).then(function() {
+  open(testURL, {private: true}).then(selectTextarea).then(function() {
 
     let text = "bar";
 
