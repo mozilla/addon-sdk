@@ -31,6 +31,13 @@ in preparation for the next time it is shown.
 Your add-on can receive notifications when a panel is shown or hidden by
 listening to its `show` and `hide` events.
 
+<div class="warning">
+If your add-on has
+<a href="modules/sdk/private-browsing.html#Opting into private browsing">opted into private browsing</a>,
+then you can't use panels in your add-on. This is due to a platform bug which we expect to
+be fixed in Firefox 21.
+</div>
+
 ## Panel Content ##
 
 The panel's content is specified as HTML, which is loaded from the URL
@@ -376,15 +383,17 @@ when applying your own styles. For example, if you set the panel's
 `background-color` property to `white` and do not set the `color` property,
 then the panel's text will be invisible on OS X although it looks fine on Ubuntu.
 
-## Private Windows ##
+## Private Browsing ##
 
-If your add-on calls `panel.show()` when the currently active window is a
+If your add-on has
+[opted into private browsing](modules/sdk/private-browsing.html#Opting into private browsing),
+then **you can't use panels in your add-on**. This is due to a platform bug which we expect to
+be fixed in Firefox 21.
+
+If your add-on has not opted into private browsing, and it calls `panel.show()`
+when the currently active window is a
 [private window](modules/sdk/private-browsing.html#Per-window private browsing),
 then the panel will not be shown.
-
-Due to [bug 849723](https://bugzilla.mozilla.org/show_bug.cgi?id=849723),
-the panel will not be shown even if your add-on has opted into
-private-browsing.
 
 <api name="Panel">
 @class
