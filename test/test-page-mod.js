@@ -1101,6 +1101,8 @@ exports["test page-mod on private tab"] = function (test) {
                          nonPrivateUri,
                          "page-mod should only attach to the non-private tab");
       }
+      test.assert(!isPrivate(worker),
+                  "The worker is really non-private");
       test.assert(!isPrivate(worker.tab),
                   "The document is really non-private");
       pageMod.destroy();
