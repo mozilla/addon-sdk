@@ -126,6 +126,23 @@ event, it passes the worker into `isPrivate()`:
       onAttach: logPublicPageContent
     });
 
+## Tracking private-browsing exit ##
+
+Sometimes it can be useful to cache some data from private windows while they
+are open, as long as you don't store it after the private browsing windows
+have been closed. For example, the "Downloads" window might want to display
+all downloads while there are still some private windows open, then clean out
+all the private data when all private windows have closed.
+
+To do this with the SDK, you can listen to the system event named
+"last-pb-context-exited":
+
+    var events = require("sdk/system/events");
+
+    events.on("last-pb-context-exited", function (event) {
+      console.log("last private window closed");
+      // clean up any cached private data here
+    });
 
 ## Working with Firefox 19 ##
 
