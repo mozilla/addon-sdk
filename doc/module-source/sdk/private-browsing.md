@@ -139,10 +139,11 @@ To do this with the SDK, you can listen to the system event named
 
     var events = require("sdk/system/events");
 
-    events.on("last-pb-context-exited", function (event) {
+    function listener(event) {
       console.log("last private window closed");
-      // clean up any cached private data here
-    });
+    }
+
+    events.on("last-pb-context-exited", listener);
 
 ## Working with Firefox 19 ##
 
