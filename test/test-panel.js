@@ -348,6 +348,89 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   });
 };
 
+exports["test Panel Focus True"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
+
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    focus: true,
+    onShow: function () {
+      assert.ok(focusedElement !== FM.focusedElement,
+        "The panel takes the focus away.");
+      done();
+    }
+  });
+  panel.show();
+};
+
+exports["test Panel Focus False"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
+
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    focus: false,
+    onShow: function () {
+      assert.ok(focusedElement === FM.focusedElement,
+        "The panel does not take the focus away.");
+      done();
+    }
+  });
+  panel.show();
+};
+
+exports["test Panel Focus Not Set"] = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
+  const FM = Cc["@mozilla.org/focus-manager;1"].
+                getService(Ci.nsIFocusManager);
+
+  let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Ci.nsIWindowMediator).
+                      getMostRecentWindow("navigator:browser");
+
+  // Make sure there is a focused element
+  browserWindow.document.documentElement.focus();
+
+  // Get the current focused element
+  let focusedElement = FM.focusedElement;
+
+  let panel = Panel({
+    contentURL: "about:buildconfig",
+    onShow: function () {
+      assert.ok(focusedElement !== FM.focusedElement,
+        "The panel takes the focus away.");
+      done();
+    }
+  });
+  panel.show();
+};
+
 exports["test Panel Text Color"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
@@ -527,7 +610,7 @@ exports["test console.log in Panel"] = function(assert, done) {
   });
 
   panel.show();
-  
+
   function onMessage(type, message) {
     assert.equal(type, 'log', 'console.log() works');
     assert.equal(message, text, 'console.log() works');
