@@ -12,6 +12,7 @@ const { getOwnerWindow } = require('sdk/private-browsing/window/utils');
 const { is } = require('sdk/system/xul-app');
 const { isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/utils');
 const { merge } = require('sdk/util/object');
+const app = require("sdk/system/xul-app");
 
 const TAB_URL = 'data:text/html;charset=utf-8,TEST-TAB';
 
@@ -165,11 +166,15 @@ if (!is('Fennec')) {
 }
 
 merge(module.exports,
-  require('./test-windows'),
   require('./test-tabs'),
   require('./test-page-mod'),
   require('./test-selection'),
   require('./test-panel')
 );
+
+// Doesn't make sense to test window-utils and windows on fennec,
+// as there is only one window which is never private
+if (!app.is("Fennec"))
+  merge(module.exports, require('./test-windows'));
 
 require('sdk/test/runner').runTestsFromModule(module);
