@@ -31,6 +31,8 @@ in preparation for the next time it is shown.
 Your add-on can receive notifications when a panel is shown or hidden by
 listening to its `show` and `hide` events.
 
+Opening a panel will close an already opened panel.
+
 <div class="warning">
 If your add-on has
 <a href="modules/sdk/private-browsing.html#Opting into private browsing">opted into private browsing</a>,
