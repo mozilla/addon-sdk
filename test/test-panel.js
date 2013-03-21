@@ -287,7 +287,10 @@ exports["test Anchor And Arrow"] = function(assert, done) {
   const { Panel } = require('sdk/panel');
 
   let count = 0;
-  function newPanel(tab, anchor) {
+  let queue = [];
+  let tab;
+
+  function newPanel(anchor) {
     let panel = Panel({
       contentURL: "data:text/html;charset=utf-8,<html><body style='padding: 0; margin: 0; " +
                   "background: gray; text-align: center;'>Anchor: " +
@@ -295,16 +298,22 @@ exports["test Anchor And Arrow"] = function(assert, done) {
       width: 200,
       height: 100,
       onShow: function () {
-        count++;
         panel.destroy();
-        if (count==5) {
-          assert.pass("All anchored panel test displayed");
-          tab.close(function () {
-            done();
-          });
-        }
+        next();
       }
     });
+    queue.push({ panel: panel, anchor: anchor });
+  }
+
+  function next () {
+    if (!queue.length) {
+      assert.pass("All anchored panel test displayed");
+      tab.close(function () {
+        done();
+      });
+      return;
+    }
+    let { panel, anchor } = queue.shift();
     panel.show(anchor);
   }
 
@@ -321,22 +330,22 @@ exports["test Anchor And Arrow"] = function(assert, done) {
 
   tabs.open({
     url: url,
-    onReady: function(tab) {
+    onReady: function(_tab) {
+      tab = _tab;
       let browserWindow = Cc["@mozilla.org/appshell/window-mediator;1"].
                       getService(Ci.nsIWindowMediator).
                       getMostRecentWindow("navigator:browser");
       let window = browserWindow.content;
-      newPanel(tab, window.document.getElementById('tl'));
-      newPanel(tab, window.document.getElementById('tr'));
-      newPanel(tab, window.document.getElementById('bl'));
-      newPanel(tab, window.document.getElementById('br'));
+      newPanel(window.document.getElementById('tl'));
+      newPanel(window.document.getElementById('tr'));
+      newPanel(window.document.getElementById('bl'));
+      newPanel(window.document.getElementById('br'));
       let anchor = browserWindow.document.getElementById("identity-box");
-      newPanel(tab, anchor);
+      newPanel(anchor);
+
+      next();
     }
   });
-
-
-
 };
 
 exports["test Panel Text Color"] = function(assert, done) {
@@ -684,6 +693,39 @@ exports['test Style Applied Only Once'] = function (assert, done) {
     panel.removeListener('show', init);
     panel.port.emit('ping', 10);
   }
+};
+
+exports['test Only One Panel Open Concurrently'] = function (assert, done) {
+  const loader = Loader(module);
+  const { Panel } = loader.require('sdk/panel')
+
+  let panelA = Panel({
+    contentURL: 'about:buildconfig'
+  });
+
+  let panelB = Panel({
+    contentURL: 'about:buildconfig',
+    onShow: function () {
+      // When loading two panels simulataneously, only the second
+      // should be shown, never showing the first
+      assert.equal(panelA.isShowing, false, 'First panel is hidden');
+      assert.equal(panelB.isShowing, true, 'Second panel is showing');
+      panelC.show();
+    }
+  });
+
+  let panelC = Panel({
+    contentURL: 'about:buildconfig',
+    onShow: function () {
+      assert.equal(panelA.isShowing, false, 'First panel is hidden');
+      assert.equal(panelB.isShowing, false, 'Second panel is hidden');
+      assert.equal(panelC.isShowing, true, 'Third panel is showing');
+      done();
+    }
+  });
+
+  panelA.show();
+  panelB.show();
 };
 
 try {
