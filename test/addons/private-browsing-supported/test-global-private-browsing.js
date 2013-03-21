@@ -9,7 +9,6 @@ const { getFrames, getWindowTitle, onFocus, isWindowPrivate, windows, isBrowser 
 const { open, close, focus } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
 const pb = require('sdk/private-browsing');
-const { Panel } = require('sdk/panel');
 const { Widget } = require('sdk/widget');
 const { fromIterator: toArray } = require('sdk/util/array');
 
@@ -25,6 +24,8 @@ function makeEmptyBrowserWindow(options) {
 }
 
 exports.testShowPanelAndWidgetOnPrivateWindow = function(assert, done) {
+  const { Panel } = require('sdk/panel');
+
   var myPrivateWindow;
   var finished = false;
   var privateWindow;
