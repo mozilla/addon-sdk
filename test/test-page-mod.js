@@ -14,10 +14,11 @@ const windowUtils = require('sdk/deprecated/window-utils');
 const windowHelpers = require('sdk/window/helpers');
 const { getTabContentWindow, getActiveTab, setTabURL, openTab, closeTab } = require('sdk/tabs/utils');
 const xulApp = require("sdk/system/xul-app");
-const { data } = require('sdk/self');
+const { data, isPrivateBrowsingSupported } = require('sdk/self');
 const { isPrivate } = require('sdk/private-browsing');
-const { isTabPBSupported, isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { isTabPBSupported, isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const promise = require("sdk/core/promise");
+const { pb } = require('./private-browsing/helper');
 
 /* XXX This can be used to delay closing the test Firefox instance for interactive
  * testing or visual inspection. This test is registered first so that it runs
@@ -1112,4 +1113,47 @@ exports["test page-mod on private tab"] = function (test) {
 
   let page1 = openWebpage(privateUri, true);
   let page2 = openWebpage(nonPrivateUri, false);
+}
+
+exports["test page-mod on private tab in global pb"] = function (test) {
+  test.waitUntilDone();
+  if (!isGlobalPBSupported) {
+    test.pass();
+    return test.done();
+  }
+
+  let privateUri = "data:text/html;charset=utf-8," +
+                   "<iframe%20src=\"data:text/html;charset=utf-8,frame\"/>";
+
+  let pageMod = new PageMod({
+    include: privateUri,
+    onAttach: function(worker) {
+      test.assertEqual(worker.tab.url,
+                       privateUri,
+                       "page-mod should attach");
+      test.assertEqual(isPrivateBrowsingSupported,
+                       false,
+                       "private browsing is not supported");
+      test.assert(isPrivate(worker),
+                  "The worker is really non-private");
+      test.assert(isPrivate(worker.tab),
+                  "The document is really non-private");
+      pageMod.destroy();
+
+      worker.tab.close(function() {
+        pb.once('stop', function() {
+          test.pass('global pb stop');
+          test.done();
+        });
+        pb.deactivate();
+      });
+    }
+  });
+
+  let page1;
+  pb.once('start', function() {
+    test.pass('global pb start');
+    tabs.open({ url: privateUri });
+  });
+  pb.activate();
 }
