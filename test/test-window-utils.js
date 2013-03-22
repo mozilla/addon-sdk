@@ -7,9 +7,10 @@ const windowUtils = require("sdk/deprecated/window-utils");
 const timer = require("sdk/timers");
 const { Cc, Ci } = require("chrome");
 const { Loader } = require("sdk/test/loader");
-const { open, getFrames, getWindowTitle, onFocus } = require('sdk/window/utils');
+const { open, getFrames, getWindowTitle, onFocus, getDOMWindow, getMostRecentBrowserWindow, getBrowserWindow } = require('sdk/window/utils');
 const { close } = require('sdk/window/helpers');
 const { fromIterator: toArray } = require('sdk/util/array');
+const { browserWindows } = require('sdk/windows');
 
 const WM = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 
@@ -300,6 +301,24 @@ exports.testWindowIterator = function(assert, done) {
     close(window).then(done);
   }, false);
 };
+
+exports["test getBrowserWindow"] = function(assert) {
+  let window = browserWindows.activeWindow;
+  let chromeWindow = getMostRecentBrowserWindow();
+
+  assert.equal(getBrowserWindow(chromeWindow), window, "getBrowserWindow should have worked");
+}
+
+exports["test getDOMWindow"] = function(assert) {
+  let window = browserWindows.activeWindow;
+  let tab = window.tabs.activeTab;
+
+  let chromeWindow = getMostRecentBrowserWindow();
+  let contentWindow = chromeWindow.content;
+
+  assert.equal(getDOMWindow(window), chromeWindow, "getDOMWindow should have worked for a window");
+  assert.equal(getDOMWindow(tab), contentWindow, "getDOMWindow should have worked for a window");
+}
 
 if (require("sdk/system/xul-app").is("Fennec")) {
   module.exports = {
