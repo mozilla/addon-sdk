@@ -686,21 +686,6 @@ exports.testPanelWidget1 = function testPanelWidget1(test) {
   test.waitUntilDone();
 };
 
-exports.testPanelWidget2 = function testPanelWidget2(test) {
-  const widgets = require("sdk/widget");
-  test.assertRaises(
-    function() {
-      widgets.Widget({
-        id: "panel2",
-        label: "panel widget 2",
-        panel: {}
-      });
-    },
-    "The option \"panel\" must be one of the following types: null, undefined, object",
-    "widget.panel must be a Panel object"
-  );
-};
-
 exports.testPanelWidget3 = function testPanelWidget3(test) {
   const widgets = require("sdk/widget");
   let onClickCalled = false;
