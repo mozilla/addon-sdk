@@ -31,6 +31,8 @@ in preparation for the next time it is shown.
 Your add-on can receive notifications when a panel is shown or hidden by
 listening to its `show` and `hide` events.
 
+Opening a panel will close an already opened panel.
+
 <div class="warning">
 If your add-on has
 <a href="modules/sdk/private-browsing.html#Opting into private browsing">opted into private browsing</a>,
@@ -419,6 +421,10 @@ Creates a panel.
     The width of the panel in pixels. Optional.
   @prop [height] {number}
     The height of the panel in pixels. Optional.
+  @prop [focus] {boolean}
+    Set to `false` to prevent taking the focus away when the panel is shown.
+    Only turn this off if necessary, to prevent accessibility issue.
+    Optional, default to `true`.
   @prop [contentURL] {string}
     The URL of the content to load in the panel.
   @prop [allow] {object}
@@ -489,6 +495,12 @@ The height of the panel in pixels.
 <api name="width">
 @property {number}
 The width of the panel in pixels.
+</api>
+
+<api name="focus">
+@property {boolean}
+Whether of not focus will be taken away when the panel is shown.
+This property is read-only.
 </api>
 
 <api name="contentURL">
