@@ -148,12 +148,3 @@ exports.testWindowIteratorDoesNotIgnorePrivateWindows = function(assert, done) {
   });
   pb.activate();
 };
-
-if (!isGlobalPBSupported) {
-  module.exports = {
-    "test Unsupported Test": function UnsupportedTest (assert) {
-        assert.pass(
-          "Skipping global private browsing tests");
-    }
-  }
-}
