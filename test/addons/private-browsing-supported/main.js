@@ -4,6 +4,8 @@
 'use strict';
 
 const { merge } = require('sdk/util/object');
+const app = require("sdk/system/xul-app");
+const { isGlobalPBSupported } = require('sdk/private-browsing/utils');
 
 merge(module.exports,
   require('./test-windows'),
@@ -12,7 +14,7 @@ merge(module.exports,
   require('./test-selection'),
   require('./test-panel'),
   require('./test-private-browsing'),
-  require('./test-global-private-browsing')
+  isGlobalPBSupported ? require('./test-global-private-browsing') : {}
 );
 
 require('sdk/test/runner').runTestsFromModule(module);
