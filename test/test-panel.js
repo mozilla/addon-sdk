@@ -10,9 +10,11 @@ const timer = require("sdk/timers");
 const self = require('sdk/self');
 const { open, close, focus } = require('sdk/window/helpers');
 const { isPrivate } = require('sdk/private-browsing');
-const { isWindowPBSupported } = require('sdk/private-browsing/utils');
+const { isWindowPBSupported, isGlobalPBSupported } = require('sdk/private-browsing/utils');
 const { defer } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
+const { getWindow } = require('sdk/panel/window');
+const { pb } = require('./private-browsing/helper');
 
 const SVG_URL = self.data.url('mofo_logo.SVG');
 
@@ -777,6 +779,45 @@ exports['test Style Applied Only Once'] = function (assert, done) {
     panel.port.emit('ping', 10);
   }
 };
+
+if (isWindowPBSupported) {
+  exports.testGetWindow = function(assert, done) {
+    let activeWindow = getMostRecentBrowserWindow();
+    open(null, { features: {
+      toolbar: true,
+      chrome: true,
+      private: true
+    } }).then(function(window) {
+      assert.ok(isPrivate(window), 'window is private');
+      assert.equal(getWindow(window.gBrowser), null, 'private window elements returns null');
+      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
+      close(window).then(done);
+    })
+  }
+}
+else if (isGlobalPBSupported) {
+  exports.testGetWindow = function(assert, done) {
+    let activeWindow = getMostRecentBrowserWindow();
+
+    assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'non-private window elements returns window');
+    pb.once('start', function() {
+      assert.ok(isPrivate(activeWindow), 'window is private');
+      assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'private window elements returns window');
+      open(null, { features: {
+        toolbar: true,
+        chrome: true
+      } }).then(function(window) {
+        assert.ok(isPrivate(window), 'window is private');
+        assert.equal(getWindow(window.gBrowser), window, 'private window elements returns window');
+        assert.equal(getWindow(activeWindow.gBrowser), activeWindow, 'active window elements returns window');
+        
+        pb.once('stop', done);
+        pb.deactivate();
+      })
+    });
+    pb.activate();
+  }
+}
 
 exports['test Only One Panel Open Concurrently'] = function (assert, done) {
   const loader = Loader(module);
