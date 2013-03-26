@@ -694,6 +694,9 @@ The related `WidgetView` object.
 <api name="click">
 @event
 This event is emitted when the widget is clicked.
+
+@argument {WidgetView}
+Listeners are passed a single argument which is the `WidgetView` that triggered the click event.
 </api>
 
 <api name="message">
