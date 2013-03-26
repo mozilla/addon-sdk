@@ -4,7 +4,7 @@
 
 #Template used by test-main.js
 TEST_MAIN_JS = '''\
-var main = require("main");
+var main = require("./main");
 
 exports["test main"] = function(assert) {
   assert.pass("Unit test running!");
@@ -15,7 +15,7 @@ exports["test main async"] = function(assert, done) {
   done();
 };
 
-require("test").run(exports);
+require("sdk/test").run(exports);
 '''
 
 #Template used by package.json
@@ -23,6 +23,7 @@ PACKAGE_JSON = '''\
 {
   "name": "%(name)s",
   "fullName": "%(fullName)s",
+  "id": "%(id)s",
   "description": "a basic add-on",
   "author": "",
   "license": "MPL 2.0",

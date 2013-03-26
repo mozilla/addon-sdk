@@ -6,6 +6,7 @@ import sys
 import os
 import optparse
 import webbrowser
+import time
 
 from copy import copy
 import simplejson as json
@@ -138,6 +139,12 @@ parser_groups = (
                                       metavar=None,
                                       default="{}",
                                       cmds=['run', 'xpi'])),
+        (("", "--parseable",), dict(dest="parseable",
+                                    help="display test output in a parseable format",
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['test', 'testex', 'testpkgs',
+                                          'testall'])),
         ]
      ),
 
@@ -154,6 +161,28 @@ parser_groups = (
                                 default="firefox",
                                 cmds=['test', 'run', 'testex', 'testpkgs',
                                       'testall'])),
+        (("-o", "--overload-modules",), dict(dest="overload_modules",
+                                     help=("Overload JS modules integrated into"
+                                           " Firefox with the one from your SDK"
+                                           " repository"),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test', 'testex', 'testpkgs',
+                                           'testall'])),
+        (("", "--strip-sdk",), dict(dest="bundle_sdk",
+                                    help=("Do not ship SDK modules in the xpi"),
+                                    action="store_false",
+                                    default=True,
+                                    cmds=['run', 'test', 'testex', 'testpkgs',
+                                          'testall', 'xpi'])),
+        (("", "--force-use-bundled-sdk",), dict(dest="force_use_bundled_sdk",
+                                    help=("When --strip-sdk isn't passed, "
+                                          "force using sdk modules shipped in "
+                                          "the xpi instead of firefox ones"),
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['run', 'test', 'testex', 'testpkgs',
+                                          'testall', 'xpi'])),
         (("", "--no-run",), dict(dest="no_run",
                                      help=("Instead of launching the "
                                            "application, just show the command "
@@ -328,6 +357,8 @@ def parse_args(arguments, global_options, usage, version, parser_groups,
 def test_all(env_root, defaults):
     fail = False
 
+    starttime = time.time()
+
     if not defaults['filter']:
         print >>sys.stderr, "Testing cfx..."
         sys.stderr.flush()
@@ -360,6 +391,8 @@ def test_all(env_root, defaults):
             test_all_packages(env_root, defaults)
         except SystemExit, e:
             fail = (e.code != 0) or fail
+
+    print >>sys.stderr, "Total time for all tests: %f seconds" % (time.time() - starttime)
 
     if fail:
         print >>sys.stderr, "Some tests were unsuccessful."
@@ -484,12 +517,13 @@ def get_config_args(name, env_root):
 
 def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     from templates import PACKAGE_JSON, TEST_MAIN_JS
+    from preflight import create_jid
     path = os.getcwd()
     addon = os.path.basename(path)
     # if more than two arguments
     if len(args) > 2:
         print >>err, 'Too many arguments.'
-        return 1
+        return {"result":1}
     if len(args) == 2:
         path = os.path.join(path,args[1])
         try:
@@ -501,14 +535,17 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     existing = [fn for fn in os.listdir(path) if not fn.startswith(".")]
     if existing:
         print >>err, 'This command must be run in an empty directory.'
-        return 1
+        return {"result":1}
     for d in ['lib','data','test','doc']:
         os.mkdir(os.path.join(path,d))
         print >>out, '*', d, 'directory created'
     open(os.path.join(path,'README.md'),'w').write('')
     print >>out, '* README.md written'
+    jid = create_jid()
+    print >>out, '* generated jID automatically:', jid
     open(os.path.join(path,'package.json'),'w').write(PACKAGE_JSON % {'name':addon.lower(),
-                                                   'fullName':addon })
+                                                   'fullName':addon,
+                                                   'id':jid })
     print >>out, '* package.json written'
     open(os.path.join(path,'test','test-main.js'),'w').write(TEST_MAIN_JS)
     print >>out, '* test/test-main.js written'
@@ -522,7 +559,7 @@ def initializer(env_root, args, out=sys.stdout, err=sys.stderr):
     else:
         print >>out, '\nYour sample add-on is now ready in the \'' + args[1] +  '\' directory.'
         print >>out, 'Change to that directory, then do "cfx test" to test it, \nand "cfx run" to try it.  Have fun!' 
-    return 0
+    return {"result":0, "jid":jid}
 
 def buildJID(target_cfg):
     if "id" in target_cfg:
@@ -632,7 +669,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         if 'tests' not in target_cfg:
             target_cfg['tests'] = []
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
-                                  'stopOnError'])
+                                  'stopOnError', 'parseable'])
         enforce_timeouts = True
     elif command == "run":
         use_main = True
@@ -749,12 +786,20 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
 
     harness_options.update(build)
 
+    # When cfx is run from sdk root directory, we will strip sdk modules and
+    # override them with local modules.
+    # So that integration tools will continue to work and use local modules
+    if os.getcwd() == env_root:
+        options.bundle_sdk = True
+        options.force_use_bundled_sdk = False
+        options.overload_modules = True
+
     extra_environment = {}
     if command == "test":
         # This should be contained in the test runner package.
         # maybe just do: target_cfg.main = 'test-harness/run-tests'
         harness_options['main'] = 'sdk/test/runner'
-        harness_options['mainPath'] = manifest.get_manifest_entry("addon-sdk", "lib", "sdk/test/runner").get_path()
+        harness_options['mainPath'] = 'sdk/test/runner'
     else:
         harness_options['main'] = target_cfg.get('main')
         harness_options['mainPath'] = manifest.top_path
@@ -777,14 +822,32 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         mydir = os.path.dirname(os.path.abspath(__file__))
         app_extension_dir = os.path.join(mydir, "../../app-extension")
 
-
     if target_cfg.get('preferences'):
         harness_options['preferences'] = target_cfg.get('preferences')
 
-    harness_options['manifest'] = manifest.get_harness_options_manifest()
-    harness_options['allTestModules'] = manifest.get_all_test_modules()
-    if len(harness_options['allTestModules']) == 0 and command == "test":
-        sys.exit(0)
+    # Do not add entries for SDK modules
+    harness_options['manifest'] = manifest.get_harness_options_manifest(False)
+
+    # Gives an hint to tell if sdk modules are bundled or not
+    harness_options['is-sdk-bundled'] = options.bundle_sdk
+
+    if options.force_use_bundled_sdk:
+        if not options.bundle_sdk:
+            print >>sys.stderr, ("--force-use-bundled-sdk and --strip-sdk "
+                                 "can't be used at the same time.")
+            sys.exit(1)
+        if options.overload_modules:
+            print >>sys.stderr, ("--force-use-bundled-sdk and --overload-modules "
+                                 "can't be used at the same time.")
+            sys.exit(1)
+        # Pass a flag in order to force using sdk modules shipped in the xpi
+        harness_options['force-use-bundled-sdk'] = True
+
+    # Pass the list of absolute path for all test modules
+    if command == "test":
+        harness_options['allTestModules'] = manifest.get_all_test_modules()
+        if len(harness_options['allTestModules']) == 0:
+            sys.exit(0)
 
     from cuddlefish.rdf import gen_manifest, RDFUpdate
 
@@ -810,17 +873,19 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # build_manifest earlier
     used_files = None
     if command == "xpi":
-      used_files = set(manifest.get_used_files())
+        used_files = set(manifest.get_used_files(options.bundle_sdk))
 
     if options.no_strip_xpi:
         used_files = None # disables the filter, includes all files
 
     if command == 'xpi':
         from cuddlefish.xpi import build_xpi
+        # Generate extra options
         extra_harness_options = {}
         for kv in options.extra_harness_option_args:
             key,value = kv.split("=", 1)
             extra_harness_options[key] = value
+        # Generate xpi filepath
         xpi_path = XPI_FILENAME % target_cfg.name
         print >>stdout, "Exporting extension to %s." % xpi_path
         build_xpi(template_root_dir=app_extension_dir,
@@ -847,6 +912,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              binary=options.binary,
                              profiledir=options.profiledir,
                              verbose=options.verbose,
+                             parseable=options.parseable,
                              enforce_timeouts=enforce_timeouts,
                              logfile=options.logfile,
                              addons=options.addons,
@@ -855,7 +921,11 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              norun=options.no_run,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,
-                             mobile_app_name=options.mobile_app_name)
+                             mobile_app_name=options.mobile_app_name,
+                             env_root=env_root,
+                             is_running_tests=(command == "test"),
+                             overload_modules=options.overload_modules,
+                             bundle_sdk=options.bundle_sdk)
         except ValueError, e:
             print ""
             print "A given cfx option has an inappropriate value:"

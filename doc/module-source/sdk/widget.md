@@ -346,6 +346,15 @@ listener, the panel will not be anchored:
 
 See [bug 638142](https://bugzilla.mozilla.org/show_bug.cgi?id=638142).
 
+## Private Windows ##
+
+If your add-on has not opted into private browsing, then your widget will
+not appear in any private browser windows.
+
+To learn more about private windows, how to opt into private browsing, and how
+to support private browsing, refer to the
+[documentation for the `private-browsing` module](modules/sdk/private-browsing.html).
+
 ## Examples ##
 
 For conciseness, these examples create their content scripts as strings and use

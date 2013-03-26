@@ -51,6 +51,20 @@ Creates a hidden frame.
     content the moment they are added.
 </api>
 
+<api name="element">
+@property {DOMElement}
+The host application frame in which the page is loaded.
+</api>
+
+<api name="ready">
+@event
+
+This event is emitted when the DOM for a hidden frame content is ready.
+It is equivalent to the `DOMContentLoaded` event for the content page in
+a hidden frame.
+</api>
+</api>
+
 <api name="add">
 @function
 Register a hidden frame, preparing it to load content.
@@ -61,15 +75,4 @@ Register a hidden frame, preparing it to load content.
 @function
 Unregister a hidden frame, unloading any content that was loaded in it.
 @param hiddenFrame {HiddenFrame} the frame to remove
-</api>
-
-<api name="element">
-@property {DOMElement}
-The host application frame in which the page is loaded.
-</api>
-
-<api name="onReady">
-@property {array}
-Functions to call when the frame is ready to load content.
-</api>
 </api>

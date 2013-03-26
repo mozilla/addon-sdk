@@ -155,7 +155,7 @@ exports['test instance mutability'] = function(assert) {
   let f1 = Foo();
 
   assert.throws(function() {
-    f1.name = 'f1';
+    f1.initialize = 'f1';
     if (f1.name !== 'f1')
       throw Error('Property was not set');
   }, 'can not change prototype properties');
@@ -168,6 +168,9 @@ exports['test instance mutability'] = function(assert) {
 
   f1.initialize(1);
   assert.equal(f1.number, 1, 'method can mutate instances own properties');
+
+  f1.name = 'bar';
+  assert.equal(f1.name, 'bar', 'data properties are mutable on instance');
 };
 
 exports['test super'] = function(assert) {

@@ -784,6 +784,12 @@ documentation. Use `cfx testcfx -v` for the specific list of tests.
 
 This accepts the same options as `cfx test`.
 
+### cfx testaddons ###
+
+This will run a number of test add-ons that are packaged with the SDK.
+
+This accepts the same options as `cfx test`.
+
 ### cfx testpkgs ###
 
 This will test all of the available CommonJS packages. Note that the number

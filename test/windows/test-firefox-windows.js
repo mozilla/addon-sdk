@@ -6,10 +6,14 @@
 const { Cc, Ci } = require('chrome');
 const { setTimeout } = require('sdk/timers');
 const { Loader } = require('sdk/test/loader');
-const wm = Cc['@mozilla.org/appshell/window-mediator;1'].
-           getService(Ci.nsIWindowMediator);
-
+const { onFocus, getMostRecentWindow, windows } = require('sdk/window/utils');
+const { open, close, focus } = require('sdk/window/helpers');
 const { browserWindows } = require("sdk/windows");
+const tabs = require("sdk/tabs");
+const winUtils = require("sdk/deprecated/window-utils");
+const { WindowTracker } = winUtils;
+const { isPrivate } = require('sdk/private-browsing');
+const { isWindowPBSupported } = require('sdk/private-browsing/utils');
 
 // TEST: open & close window
 exports.testOpenAndCloseWindow = function(test) {
@@ -72,32 +76,43 @@ exports.testAutomaticDestroy = function(test) {
 exports.testWindowTabsObject = function(test) {
   test.waitUntilDone();
 
+  let count = 0;
+  let window;
+  function runTest() {
+    if (++count != 2)
+      return;
+
+    test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
+    test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+    window.tabs.open({
+      url: "data:text/html;charset=utf-8,<title>tab 2</title>",
+      inBackground: true,
+      onReady: function onReady(newTab) {
+        test.assertEqual(window.tabs.length, 2, "New tab open");
+        test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
+        test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
+
+        let i = 1;
+        for each (let tab in window.tabs)
+          test.assertEqual(tab.title, "tab " + i++, "Correct title");
+
+        window.close();
+      }
+    });
+  }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onOpen: function onOpen(window) {
-      test.assertEqual(window.tabs.length, 1, "Only 1 tab open");
-
-      window.tabs.open({
-        url: "data:text/html;charset=utf-8,<title>tab 2</title>",
-        inBackground: true,
-        onReady: function onReady(newTab) {
-          test.assertEqual(window.tabs.length, 2, "New tab open");
-          test.assertEqual(newTab.title, "tab 2", "Correct new tab title");
-          test.assertEqual(window.tabs.activeTab.title, "tab 1", "Correct active tab");
-
-          let i = 1;
-          for each (let tab in window.tabs)
-            test.assertEqual(tab.title, "tab " + i++, "Correct title");
-
-          window.close();
-        }
-      });
+    onActivate: function onOpen(win) {
+      window = win;
+      runTest();
     },
     onClose: function onClose(window) {
       test.assertEqual(window.tabs.length, 0, "No more tabs on closed window");
       test.done();
     }
   });
+  tabs.once("ready", runTest);
 };
 
 exports.testOnOpenOnCloseListeners = function(test) {
@@ -191,33 +206,24 @@ exports.testActiveWindow = function(test) {
         count++;
       test.assertEqual(count, 3, "Correct number of windows returned by iterator");
 
-      rawWindow2.focus();
+      test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
+
       continueAfterFocus(rawWindow2);
+      rawWindow2.focus();
     },
     function() {
       nextStep();
     },
     function() {
-      /**
-       * Bug 614079: This test fails intermittently on some specific linux
-       *             environnements, without being able to reproduce it in same
-       *             distribution with same window manager.
-       *             Disable it until being able to reproduce it easily.
+      test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
 
-      // On linux, focus is not consistent, so we can't be sure
-      // what window will be on top.
-      // Here when we focus "non-browser" window,
-      // Any Browser window may be selected as "active".
-      test.assert(windows.activeWindow == window2 || windows.activeWindow == window3,
-        "Non-browser windows aren't handled by this module");
-      */
-      window2.activate();
       continueAfterFocus(rawWindow2);
+      window2.activate();
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window2.title, "Correct active window - 2");
-      window3.activate();
       continueAfterFocus(rawWindow3);
+      window3.activate();
     },
     function() {
       test.assertEqual(windows.activeWindow.title, window3.title, "Correct active window - 3");
@@ -225,56 +231,49 @@ exports.testActiveWindow = function(test) {
     }
   ];
 
+  let newWindow = null;
+  let tracker = new WindowTracker({
+    onTrack: function(window) {
+      newWindow = window;
+    }
+  });
+
   windows.open({
     url: "data:text/html;charset=utf-8,<title>window 2</title>",
     onOpen: function(window) {
-      window2 = window;
-      rawWindow2 = wm.getMostRecentWindow("navigator:browser");
+      window.tabs.activeTab.on('ready', function() {
+        window2 = window;
+        test.assert(newWindow, "A new window was opened");
+        rawWindow2 = newWindow;
+        newWindow = null;
+        test.assertEqual(rawWindow2.content.document.title, "window 2", "Got correct raw window 2");
+        test.assertEqual(rawWindow2.document.title, window2.title, "Saw correct title on window 2");
 
-      windows.open({
-        url: "data:text/html;charset=utf-8,<title>window 3</title>",
-        onOpen: function(window) {
-          window.tabs.activeTab.on('ready', function onReady() {
-            window3 = window;
-            rawWindow3 = wm.getMostRecentWindow("navigator:browser");
-            nextStep()
-          });
-        }
+        windows.open({
+          url: "data:text/html;charset=utf-8,<title>window 3</title>",
+          onOpen: function(window) {
+            window.tabs.activeTab.on('ready', function onReady() {
+              window3 = window;
+              test.assert(newWindow, "A new window was opened");
+              rawWindow3 = newWindow;
+              tracker.unload();
+              test.assertEqual(rawWindow3.content.document.title, "window 3", "Got correct raw window 3");
+              test.assertEqual(rawWindow3.document.title, window3.title, "Saw correct title on window 3");
+              continueAfterFocus(rawWindow3);
+              rawWindow3.focus();
+            });
+          }
+        });
       });
     }
   });
 
   function nextStep() {
-    if (testSteps.length > 0)
+    if (testSteps.length)
       testSteps.shift()();
   }
 
-  function continueAfterFocus(targetWindow) {
-    // Based on SimpleTest.waitForFocus
-    var fm = Cc["@mozilla.org/focus-manager;1"].
-             getService(Ci.nsIFocusManager);
-
-    var childTargetWindow = {};
-    fm.getFocusedElementForWindow(targetWindow, true, childTargetWindow);
-    childTargetWindow = childTargetWindow.value;
-
-    var focusedChildWindow = {};
-    if (fm.activeWindow) {
-      fm.getFocusedElementForWindow(fm.activeWindow, true, focusedChildWindow);
-      focusedChildWindow = focusedChildWindow.value;
-    }
-
-    var focused = (focusedChildWindow == childTargetWindow);
-    if (focused) {
-      nextStep();
-    } else {
-      childTargetWindow.addEventListener("focus", function focusListener() {
-        childTargetWindow.removeEventListener("focus", focusListener, true);
-        nextStep();
-      }, true);
-    }
-
-  }
+  let continueAfterFocus = function(w) onFocus(w).then(nextStep);
 
   function finishTest() {
     window3.close(function() {
@@ -347,4 +346,66 @@ exports.testTrackWindows = function(test) {
   })
 
   openWindow();
+}
+
+// test that it is not possible to open a private window by default
+exports.testWindowOpenPrivateDefault = function(test) {
+  test.waitUntilDone();
+
+  browserWindows.open({
+    url: 'about:mozilla',
+    isPrivate: true,
+    onOpen: function(window) {
+      test.assertEqual();
+
+      let tab = window.tabs[0];
+      tab.once('ready', function() {
+        test.assertEqual(tab.url, 'about:mozilla', 'opened correct tab');
+        test.assertEqual(isPrivate(tab), false, 'tab is not private');
+
+        window.close(function() {
+          test.done();
+        });
+      });
+    }
+  });
+}
+
+// test that it is not possible to find a private window in
+// windows module's iterator
+exports.testWindowIteratorPrivateDefault = function(test) {
+  test.waitUntilDone();
+
+  test.assertEqual(browserWindows.length, 1, 'only one window open');
+
+  open('chrome://browser/content/browser.xul', {
+    features: {
+      private: true,
+      chrome: true
+    }
+  }).then(function(window) {
+    // test that there is a private window opened
+    test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
+    test.assertStrictEqual(window, winUtils.activeWindow);
+    test.assertStrictEqual(window, getMostRecentWindow());
+
+    test.assert(!isPrivate(browserWindows.activeWindow));
+
+    if (isWindowPBSupported) {
+      test.assertEqual(browserWindows.length, 1, 'only one window in browserWindows');
+      test.assertEqual(windows().length, 1, 'only one window in windows()');
+    }
+    else {
+      test.assertEqual(browserWindows.length, 2, 'two windows open');
+      test.assertEqual(windows().length, 2, 'two windows in windows()');
+    }
+    test.assertEqual(windows(null, { includePrivate: true }).length, 2);
+
+    for each(let window in browserWindows) {
+      // test that all windows in iterator are not private
+      test.assert(!isPrivate(window), 'no window in browserWindows is private');
+    }
+
+    close(window).then(test.done.bind(test));
+  });
 }

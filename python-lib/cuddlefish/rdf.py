@@ -165,11 +165,11 @@ def gen_manifest(template_root_dir, target_cfg, jid,
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:minVersion")
-        elem.appendChild(dom.createTextNode("18.0"))
+        elem.appendChild(dom.createTextNode("19.0"))
         ta_desc.appendChild(elem)
 
         elem = dom.createElement("em:maxVersion")
-        elem.appendChild(dom.createTextNode("19.*"))
+        elem.appendChild(dom.createTextNode("20.*"))
         ta_desc.appendChild(elem)
 
     if target_cfg.get("homepage"):

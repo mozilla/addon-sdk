@@ -21,7 +21,7 @@ function isChromeVisible(window) {
 
 exports['test that add-on page has no chrome'] = function(assert, done) {
   let loader = Loader(module);
-  loader.require('addon-kit/addon-page');
+  loader.require('sdk/addon-page');
 
   let window = windows.activeBrowserWindow;
   let tab = openTab(window, uri);
@@ -42,6 +42,95 @@ exports['test that add-on page has no chrome'] = function(assert, done) {
   });
 };
 
+exports['test that add-on page with hash has no chrome'] = function(assert, done) {
+  let loader = Loader(module);
+  loader.require('sdk/addon-page');
+
+  let window = windows.activeBrowserWindow;
+  let tab = openTab(window, uri + "#foo");
+
+  assert.ok(isChromeVisible(window), 'chrome is visible for non addon page');
+
+  // need to do this in another turn to make sure event listener
+  // that sets property has time to do that.
+  setTimeout(function() {
+    activateTab(tab);
+
+    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+
+    closeTab(tab);
+    assert.ok(isChromeVisible(window), 'chrome is visible again');
+    loader.unload();
+    done();
+  });
+};
+
+exports['test that add-on page with querystring has no chrome'] = function(assert, done) {
+  let loader = Loader(module);
+  loader.require('sdk/addon-page');
+
+  let window = windows.activeBrowserWindow;
+  let tab = openTab(window, uri + '?foo=bar');
+
+  assert.ok(isChromeVisible(window), 'chrome is visible for non addon page');
+
+  // need to do this in another turn to make sure event listener
+  // that sets property has time to do that.
+  setTimeout(function() {
+    activateTab(tab);
+
+    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+
+    closeTab(tab);
+    assert.ok(isChromeVisible(window), 'chrome is visible again');
+    loader.unload();
+    done();
+  });
+};
+
+exports['test that add-on page with hash and querystring has no chrome'] = function(assert, done) {
+  let loader = Loader(module);
+  loader.require('sdk/addon-page');
+
+  let window = windows.activeBrowserWindow;
+  let tab = openTab(window, uri + '#foo?foo=bar');
+
+  assert.ok(isChromeVisible(window), 'chrome is visible for non addon page');
+
+  // need to do this in another turn to make sure event listener
+  // that sets property has time to do that.
+  setTimeout(function() {
+    activateTab(tab);
+
+    assert.equal(isChromeVisible(window), is('Fennec'), 'chrome is not visible for addon page');
+
+    closeTab(tab);
+    assert.ok(isChromeVisible(window), 'chrome is visible again');
+    loader.unload();
+    done();
+  });
+};
+
+exports['test that malformed uri is not an addon-page'] = function(assert, done) {
+  let loader = Loader(module);
+  loader.require('sdk/addon-page');
+
+  let window = windows.activeBrowserWindow;
+  let tab = openTab(window, uri + 'anguage');
+
+  // need to do this in another turn to make sure event listener
+  // that sets property has time to do that.
+  setTimeout(function() {
+    activateTab(tab);
+
+    assert.ok(isChromeVisible(window), 'chrome is visible for malformed uri');
+
+    closeTab(tab);
+    loader.unload();
+    done();
+  });
+};
+
 exports['test that add-on pages are closed on unload'] = function(assert, done) {
   let loader = Loader(module);
   loader.require('sdk/addon-page');
@@ -57,4 +146,4 @@ exports['test that add-on pages are closed on unload'] = function(assert, done) 
   });
 };
 
-require('sdk/test').run(exports);
+require('test').run(exports);
