@@ -79,11 +79,9 @@ exports.testDeprecateEvent = function(assert, done) {
     assert.equal(messages.length, 1, "only one error is dispatched");
     emit(testObj, 'water');
   });
-
   assert.equal(messages.length, 1, "only one error is dispatched");
   assert.equal(messages[0].type, "error", "the console message is an error");
   let msg = messages[0].msg;
-
   assert.ok(msg.indexOf("BAD") !== -1, "message contains the given message");
   assert.ok(msg.indexOf("deprecateEvent") !== -1,
             "message contains name of the caller function");

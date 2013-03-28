@@ -103,7 +103,7 @@ exports.testWindowTabsObject = function(test) {
   }
   browserWindows.open({
     url: "data:text/html;charset=utf-8,<title>tab 1</title>",
-    onActivate: function onOpen(win) {
+    onActivate: function onActivate(win) {
       window = win;
       runTest();
     },
@@ -383,7 +383,7 @@ exports.testWindowIteratorPrivateDefault = function(test) {
       private: true,
       chrome: true
     }
-  }).then(function(window) {
+  }).then(function(window) focus(window).then(function() {
     // test that there is a private window opened
     test.assertEqual(isPrivate(window), isWindowPBSupported, 'there is a private window open');
     test.assertStrictEqual(window, winUtils.activeWindow);
@@ -407,5 +407,5 @@ exports.testWindowIteratorPrivateDefault = function(test) {
     }
 
     close(window).then(test.done.bind(test));
-  });
+  }));
 }

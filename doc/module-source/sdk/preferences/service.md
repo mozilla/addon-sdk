@@ -7,9 +7,12 @@
 <!-- contributed by Atul Varma [atul@mozilla.com]  -->
 <!-- edited by Noelle Murata [fiveinchpixie@gmail.com]  -->
 
-The `preferences-service` module provides access to the
+The `preferences/service` module provides access to the
 application-wide preferences service singleton.
 
+To define preferences for your own add-on and expose them to the user in
+the [Add-on Manager](https://developer.mozilla.org/en-US/docs/Addons/Add-on_Manager),
+you can use the [simple-prefs](modules/sdk/simple-prefs.html) module.
 
 <api name="set">
 @function

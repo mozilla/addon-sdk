@@ -12,8 +12,14 @@ const { Panel } = require('sdk/panel');
 const { Widget } = require('sdk/widget');
 const { fromIterator: toArray } = require('sdk/util/array');
 
-let { LoaderWithHookedConsole } = require('sdk/test/loader');
-let { loader } = LoaderWithHookedConsole(module, function() {});
+let { Loader } = require('sdk/test/loader');
+let loader = Loader(module, {
+  console: Object.create(console, {
+    error: {
+      value: function(e) !/DEPRECATED:/.test(e) ? console.error(e) : undefined
+    }
+  })
+});
 const pb = loader.require('sdk/private-browsing');
 
 function makeEmptyBrowserWindow(options) {

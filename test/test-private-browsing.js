@@ -106,31 +106,3 @@ exports.testGetOwnerWindow = function(test) {
   });
 };
 
-exports.testGetOwnerWindow = function(test) {
-  test.waitUntilDone();
-
-  let window = windows.activeWindow;
-  let chromeWindow = getOwnerWindow(window);
-  test.assert(chromeWindow instanceof Ci.nsIDOMWindow, 'associated window is found');
-
-  window.tabs.open({
-    url: 'about:blank',
-    private: true, // should be ignored in this case
-    onOpen: function(tab) {
-      // test that getOwnerWindow works as expected
-      if (is('Fennec')) {
-        test.assertNotStrictEqual(chromeWindow, getOwnerWindow(tab)); 
-        test.assert(getOwnerWindow(tab) instanceof Ci.nsIDOMWindow); 
-      }
-      else {
-        test.assertStrictEqual(chromeWindow, getOwnerWindow(tab), 'associated window is the same for window and window\'s tab');
-      }
-
-      // test that the tab is not private
-      // private flag should be ignored by default
-      test.assert(!isPrivate(tab));
-
-      tab.close(function() test.done());
-    }
-  });
-}
