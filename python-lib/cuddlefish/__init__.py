@@ -228,6 +228,11 @@ parser_groups = (
                                   metavar=None,
                                   default=False,
                                   cmds=['sdocs'])),
+        (("", "--force-private-browsing",), dict(dest="force_private_browsing",
+                                    help=("Set private browsing permission when running tests"),
+                                    action="store_true",
+                                    default=False,
+                                    cmds=['test', 'testpkgs', 'testall'])),
         ]
      ),
 
@@ -671,6 +676,10 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
         inherited_options.extend(['iterations', 'filter', 'profileMemory',
                                   'stopOnError'])
         enforce_timeouts = True
+        if options.force_private_browsing:
+            if not 'permissions' in target_cfg:
+                target_cfg['permissions'] = {}
+            target_cfg['permissions']['private-browsing'] = True
     elif command == "run":
         use_main = True
     else:
