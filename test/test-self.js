@@ -33,7 +33,7 @@ exports.testSelf = function(test) {
   // loadReason may change here, as we change the way tests addons are installed
   // Bug 854937 fixed loadReason and is now install
   let testLoadReason = xulApp.versionInRange(xulApp.platformVersion,
-                                             "22.0a1", "*") ? "install"
+                                             "23.0a1", "*") ? "install"
                                                             : "startup";
   test.assertEqual(self.loadReason, testLoadReason,
                    "self.loadReason is either startup or install on test runs");
