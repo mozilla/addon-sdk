@@ -114,7 +114,7 @@ exports.testWaitUntilErrorInCallback = function(test) {
 }
 
 exports.testWaitUntilTimeoutInCallback = function(test) {
-  test.waitUntilDone(1000);
+  test.waitUntilDone();
 
   let expected = [];
   let message = 0;
