@@ -243,19 +243,19 @@ exports.testDataURLparseBase64 = function (test) {
   test.assertEqual(dataURL.toString(), "data:text/plain;base64," + encodeURIComponent(b64text));
 }
 
-exports.testIsValidUrl = function (test) {
-  validUrls().forEach(function (aUrl) {
-    test.assertEqual(url.isValidURL(aUrl), true, aUrl + ' is a valid URL');
+exports.testIsValidURI = function (test) {
+  validURIs().forEach(function (aUri) {
+    test.assertEqual(url.isValidURI(aUri), true, aUri + ' is a valid URL');
   });
 };
 
-exports.testIsInvalidUrl = function (test) {
-  invalidUrls().forEach(function (aUrl) {
-    test.assertEqual(url.isValidURL(aUrl), false, aUrl + ' is an invalid URL');
+exports.testIsInvalidURI = function (test) {
+  invalidURIs().forEach(function (aUri) {
+    test.assertEqual(url.isValidURI(aUri), false, aUri + ' is an invalid URL');
   });
 };
 
-function validUrls() {
+function validURIs() {
   return [
   'http://foo.com/blah_blah',
   'http://foo.com/blah_blah/',
@@ -301,11 +301,11 @@ function validUrls() {
   ];
 }
 
-// Some invalidUrls are valid according to the regex used,
+// Some invalidURIs are valid according to the regex used,
 // can be improved in the future, but better to pass some
 // invalid URLs than prevent valid URLs
 
-function invalidUrls () {
+function invalidURIs () {
   return [
 //  'http://',
 //  'http://.',
