@@ -117,6 +117,7 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
   test.waitUntilDone(1000);
 
   let expected = [];
+  let message = 0;
   if (require("@test/options").parseable) {
     expected.push(["print", "TEST-START | wait4ever\n"]);
     expected.push(["error", "fail:", "Timed out"]);
@@ -135,9 +136,10 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
       return;
     }
 
+    message++;
     let expectedArgs = expected.shift().slice(1);
     for (let i = 0; i < expectedArgs.length; i++)
-      test.assertEqual(args[i], expectedArgs[i]);
+      test.assertEqual(args[i], expectedArgs[i], "Should have seen the right message in argument " + i + " of message " + message);
     if (expected.length == 0)
       test.done();
   }
