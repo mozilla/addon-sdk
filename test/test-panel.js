@@ -15,6 +15,7 @@ const { defer } = require('sdk/core/promise');
 const { getMostRecentBrowserWindow } = require('sdk/window/utils');
 const { getWindow } = require('sdk/panel/window');
 const { pb } = require('./private-browsing/helper');
+const { URL } = require('sdk/url');
 
 const SVG_URL = self.data.url('mofo_logo.SVG');
 
@@ -125,7 +126,8 @@ exports["test Document Reload"] = function(assert, done) {
     "</script>";
   let messageCount = 0;
   let panel = Panel({
-    contentURL: "data:text/html;charset=utf-8," + encodeURIComponent(content),
+    // using URL here is intentional, see bug 859009
+    contentURL: URL("data:text/html;charset=utf-8," + encodeURIComponent(content)),
     contentScript: "self.postMessage(window.location.href)",
     onMessage: function (message) {
       messageCount++;
