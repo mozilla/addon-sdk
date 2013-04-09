@@ -516,19 +516,10 @@ exports["test Automatic Destroy"] = function(assert) {
   assert.pass("check automatic destroy");
 };
 
-exports["test Wait For Init Then Show Then Destroy"] = makeEventOrderTest({
-  test: function(assert, done, expect, panel) {
-    expect('inited', function() { panel.show(); }).
-      then('show', function() { panel.destroy(); }).
-      then('hide', function() { done(); });
-  }
-});
-
-exports["test Show Then Wait For Init Then Destroy"] = makeEventOrderTest({
+exports["test Show Then Destroy"] = makeEventOrderTest({
   test: function(assert, done, expect, panel) {
     panel.show();
-    expect('inited').
-      then('show', function() { panel.destroy(); }).
+    expect('show', function() { panel.destroy(); }).
       then('hide', function() { done(); });
   }
 });
