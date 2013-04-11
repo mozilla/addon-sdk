@@ -114,7 +114,7 @@ exports.testPageModIncludes = function(test) {
       // so we attach it on 'start'.
       contentScriptWhen: 'start',
       onAttach: function(worker) {
-        worker.postMessage(this.include[0]);
+        worker.postMessage(this.include.toArray()[0]);
       }
     };
   }
