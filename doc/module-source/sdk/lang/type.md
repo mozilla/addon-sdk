@@ -205,7 +205,7 @@ Similar to jQuery's [`isPlainObject`](http://api.jquery.com/jQuery.isPlainObject
 
 <api name="isEmpty">
 @function
-Returns `true` is `value` if it is an `Object` with no properties and `false` otherwise.
+Returns `true` is `value` if it is an [`Object`](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object) with no properties and `false` otherwise.
 
     isEmpty({}); // true
     isEmpty({ init: false }); // false
@@ -219,7 +219,7 @@ Returns `true` is `value` if it is an `Object` with no properties and `false` ot
 
 <api name="isJSON">
 @function
-Returns `true` if `value` is an `Array`/flat `Object` containing only
+Returns `true` if `value` is an [`Array`](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array)/flat [`Object`](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object) containing only
 atomic values and other flat objects.
 
     isJSON({ value: 42 }); // true
@@ -253,4 +253,64 @@ module or sandbox.
   Boolean indicating if `value` is an instance of `Type`.
 </api>
 
+<api name="source">
+@function
+Returns textual representation of `value`, containing property descriptors and types
+of properties contained within the object.
 
+    var obj = {
+      name: undefined,
+      twitter: '@horse_js',
+      tweets: [
+        { id: 100, text: 'What happens to you if you break the monad laws?' },
+        { id: 101, text: 'JAVASCRIPT DUBSTEP GENERATOR' }
+      ]
+    };
+
+    console.log(source(obj));
+    // Prints the below
+    /*
+    { // [object Object]
+        // writable configurable enumerable 
+        name: undefined,
+        // writable configurable enumerable 
+        twitter: "@horse_js",
+        // writable configurable enumerable 
+        tweets: [
+            { // [object Object]
+                // writable configurable enumerable 
+                id: 100,
+                // writable configurable enumerable 
+                text: "What happens to you if you break the monad laws?",
+                "__proto__": { // [object Object]
+
+                }
+            },
+            { // [object Object]
+                // writable configurable enumerable 
+                id: 101,
+                // writable configurable enumerable 
+                text: "JAVASCRIPT DUBSTEP GENERATOR",
+                "__proto__": { // [object Object]
+
+                }
+            }
+        ],
+        "__proto__": { // [object Object]
+
+        }
+    }
+    */
+
+@param value {mixed}
+  The source object to create a textual representation of.
+
+@param indent {string}
+  Optional. `String` to be used as indentation in output. 4 spaces by default.
+
+@param limit {number}
+  Optional. Amount of properties to display per object.
+
+@returns {string}
+  Textual representation of `value`.
+</api>
