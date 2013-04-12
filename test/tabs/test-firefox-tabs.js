@@ -1037,7 +1037,48 @@ exports.testOnLoadEventWithImage = function(test) {
   });
 };
 
+// related to Bug 671305
 exports.testOnPageShowEvent = function (test) {
+  test.waitUntilDone();
+
+  let firstUrl = 'about:home';
+  let secondUrl = 'about:newtab';
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require('sdk/tabs');
+
+    let firstUrlVists = 0;
+    tabs.on('pageshow', function setup(tab, persisted) {
+      if (tab.url === firstUrl) {
+        if (!firstUrlVists++) return tab.url = secondUrl;
+
+        tabs.removeListener('pageshow', setup);
+        test.pass('pageshow event called on history.back()');
+        closeBrowserWindow(window, function() test.done());
+      }
+      else {
+        test.pass('pageshow event called on next page loading');
+        tab.attach({
+          contentScript: 'setTimeout(function () { window.history.back(); }, 0)'
+        });
+      }
+    });
+
+    tabs.open({
+      url: firstUrl
+    });
+  });
+};
+
+// This is the same test as above except ensuring that
+// the pageshow event is called while the page is loaded from the cache.
+// Currently, there are no good ways to determine if the page has been
+// cached for the next visit (that we can currently find), so we attempt
+// to wait longer and longer. In some testing environments, this would take
+// much longer than 5seconds staying on the page.
+/*
+// related to Bug 671305
+exports.testOnPageShowEventFromCache = function (test) {
   test.waitUntilDone();
 
   let firstUrl = 'about:home';
@@ -1088,6 +1129,8 @@ exports.testOnPageShowEvent = function (test) {
     });
   });
 };
+*/
+
 
 /******************* helpers *********************/
 
