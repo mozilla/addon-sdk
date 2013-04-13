@@ -21,6 +21,15 @@ def mkzipdir(zf, path):
     dirinfo.external_attr = int("040755", 8) << 16L
     zf.writestr(dirinfo, "")
 
+bulitin_prefs = [
+  {
+    "name": "allowPrivateBrowsing",
+    "title": "Allow in private browsing",
+    "type": "bool",
+    "value": False
+  }
+]
+
 def build_xpi(template_root_dir, manifest, xpi_path,
               harness_options, limit_to=None, extra_harness_options={},
               bundle_sdk=True):
@@ -40,24 +49,26 @@ def build_xpi(template_root_dir, manifest, xpi_path,
         del harness_options['icon64']
 
     # Handle simple-prefs
-    if 'preferences' in harness_options:
-        from options_xul import parse_options, validate_prefs
+    addon_prefs = []
+    if "preferences" in harness_options:
+      addon_prefs = harness_options["preferences"]
 
-        validate_prefs(harness_options["preferences"])
+    prefs = addon_prefs + bulitin_prefs
 
-        opts_xul = parse_options(harness_options["preferences"],
-                                 harness_options["jetpackID"])
-        open('.options.xul', 'wb').write(opts_xul.encode("utf-8"))
-        zf.write('.options.xul', 'options.xul')
-        os.remove('.options.xul')
+    from options_xul import parse_options, validate_prefs
 
-        from options_defaults import parse_options_defaults
-        prefs_js = parse_options_defaults(harness_options["preferences"],
-                                          harness_options["jetpackID"])
-        open('.prefs.js', 'wb').write(prefs_js.encode("utf-8"))
+    validate_prefs(prefs)
 
-    else:
-        open('.prefs.js', 'wb').write("")
+    opts_xul = parse_options(prefs,
+                             harness_options["jetpackID"])
+    open('.options.xul', 'wb').write(opts_xul.encode("utf-8"))
+    zf.write('.options.xul', 'options.xul')
+    os.remove('.options.xul')
+
+    from options_defaults import parse_options_defaults
+    prefs_js = parse_options_defaults(prefs,
+                                      harness_options["jetpackID"])
+    open('.prefs.js', 'wb').write(prefs_js.encode("utf-8"))
 
     zf.write('.prefs.js', 'defaults/preferences/prefs.js')
     os.remove('.prefs.js')

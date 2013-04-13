@@ -85,16 +85,18 @@ class PrefsTests(unittest.TestCase):
                u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test2", "\u00FCnic\u00F8d\u00E9");',
                u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test3", "1");',
                u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.test4", "red");',
+               u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.allowPrivateBrowsing", false);'
                ]
         self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
 
     def testPackageWithNoPrefs(self):
         self.makexpi('no-prefs')
-        self.failIf('options.xul' in self.xpi.namelist())
+        self.failUnless('options.xul' in self.xpi.namelist())
         self.failUnlessEqual(self.xpi_harness_options["jetpackID"],
                              "jid1-fZHqN9JfrDBa8A@jetpack")
         prefsjs = self.xpi.read('defaults/preferences/prefs.js').decode("utf-8")
-        self.failUnlessEqual(prefsjs, "")
+        exp = [u'pref("extensions.jid1-fZHqN9JfrDBa8A@jetpack.allowPrivateBrowsing", false);']
+        self.failUnlessEqual(prefsjs, "\n".join(exp)+"\n")
 
 
 class Bug588119Tests(unittest.TestCase):
