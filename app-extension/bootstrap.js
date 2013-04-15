@@ -224,6 +224,8 @@ function startup(data, reasonCode) {
       logFile: options.logFile,
       // Arguments passed as --static-args
       staticArgs: options.staticArgs,
+      // Option to prevent automatic kill of firefox during tests
+      noQuit: options.no_quit,
 
       // Arguments related to test runner.
       modules: {

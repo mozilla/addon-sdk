@@ -192,6 +192,12 @@ parser_groups = (
                                      action="store_true",
                                      default=False,
                                      cmds=['run', 'test'])),
+        (("", "--no-quit",), dict(dest="no_quit",
+                                     help=("Prevent from killing Firefox when"
+                                           "running tests"),
+                                     action="store_true",
+                                     default=False,
+                                     cmds=['run', 'test'])),
         (("", "--no-strip-xpi",), dict(dest="no_strip_xpi",
                                     help="retain unused modules in XPI",
                                     action="store_true",
@@ -660,7 +666,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
     # a Mozilla application (which includes running tests).
 
     use_main = False
-    inherited_options = ['verbose', 'enable_e10s', 'parseable']
+    inherited_options = ['verbose', 'enable_e10s', 'parseable', 'no_quit']
     enforce_timeouts = False
 
     if command == "xpi":
@@ -919,6 +925,7 @@ def run(arguments=sys.argv[1:], target_cfg=None, pkg_cfg=None,
                              args=options.cmdargs,
                              extra_environment=extra_environment,
                              norun=options.no_run,
+                             noquit=options.no_quit,
                              used_files=used_files,
                              enable_mobile=options.enable_mobile,
                              mobile_app_name=options.mobile_app_name,
