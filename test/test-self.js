@@ -38,7 +38,7 @@ exports.testSelf = function(test) {
   test.assertEqual(self.loadReason, testLoadReason,
                    "self.loadReason is either startup or install on test runs");
 
-  test.assertEqual(self.isPrivateBrowsingSupported, false,
+  test.assertEqual(self.isPrivateBrowsingSupported(), false,
                    'usePrivateBrowsing property is false by default');
 };
 

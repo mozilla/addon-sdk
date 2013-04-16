@@ -15,7 +15,7 @@ const { isWindowPBSupported, isTabPBSupported } = require('sdk/private-browsing/
 const TAB_URL = 'data:text/html;charset=utf-8,TEST-TAB';
 
 exports.testIsPrivateBrowsingTrue = function(assert) {
-  assert.ok(isPrivateBrowsingSupported,
+  assert.ok(isPrivateBrowsingSupported(),
             'isPrivateBrowsingSupported property is true');
 };
 
