@@ -238,7 +238,8 @@ class SmallXPI(unittest.TestCase):
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
                                                     used_deps,
                                                     include_tests=False)
-        options = {'main': target_cfg.main}
+        options = {'main': target_cfg.main,
+                   'jetpackID': target_cfg.name + '@jetpack'}
         options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
@@ -255,6 +256,7 @@ class SmallXPI(unittest.TestCase):
                     # one in tests/static-files/xpi-template doesn't
                     "harness-options.json",
                     "install.rdf",
+                    "options.xul",
                     "defaults/preferences/prefs.js",
                     "resources/",
                     "resources/addon-sdk/",
@@ -341,7 +343,8 @@ class SmallXPI(unittest.TestCase):
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
                                                     used_deps,
                                                     include_tests=True)
-        options = {'main': target_cfg.main}
+        options = {'main': target_cfg.main,
+                   'jetpackID': target_cfg.name + '@jetpack'}
         options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
@@ -384,7 +387,8 @@ class SmallXPI(unittest.TestCase):
         build = packaging.generate_build_for_target(pkg_cfg, target_cfg.name,
                                                     used_deps,
                                                     include_tests=True)
-        options = {'main': target_cfg.main}
+        options = {'main': target_cfg.main,
+                   'jetpackID': target_cfg.name + '@jetpack'}
         options.update(build)
         basedir = self.make_basedir()
         xpi_name = os.path.join(basedir, "contents.xpi")
