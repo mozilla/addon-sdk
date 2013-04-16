@@ -61,10 +61,7 @@ exports.testBackgroundify = function(assert, done) {
             'backgroundifyied window is in the list of windows');
 
   // Wait for the window unload before ending test
-  // backgroundified windows doesn't dispatch domwindowclosed event
-  // so that we have to manually wait for unload event
-  window.onunload = done;
-  window.close();
+  close(window).then(done);
 };
 
 exports.testIsBrowser = function(assert) {
