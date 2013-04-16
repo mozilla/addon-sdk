@@ -1,17 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+'use strict';
 
-"use strict";
-
-const events = require("sdk/system/events");
+const events = require('sdk/system/observer');
 const self = require("sdk/self");
 const { Cc, Ci, Cu } = require("chrome");
 const { setTimeout } = require("sdk/timers");
 const { LoaderWithHookedConsole2 } = require("sdk/test/loader");
 const nsIObserverService = Cc["@mozilla.org/observer-service;1"].
                            getService(Ci.nsIObserverService);
-
 
 exports["test basic"] = function(assert) {
   let type = Date.now().toString(32);
@@ -39,7 +34,7 @@ exports["test basic"] = function(assert) {
 exports["test error reporting"] = function(assert) {
   let { loader, messages } = LoaderWithHookedConsole2(module);
 
-  let events = loader.require("sdk/system/events");
+  let events = loader.require("sdk/system/observer");
   function brokenHandler(subject, data) { throw new Error("foo"); };
 
   let lineNumber;
@@ -61,32 +56,6 @@ exports["test error reporting"] = function(assert) {
   events.off(errorType, brokenHandler);
 
   loader.unload();
-};
-
-exports["test listeners are GC-ed"] = function(assert, done) {
-  let receivedFromWeak = [];
-  let receivedFromStrong = [];
-  let type = Date.now().toString(32);
-  function handler(event) { receivedFromStrong.push(event); }
-  function weakHandler(event) { receivedFromWeak.push(event); }
-
-  events.on(type, handler, true);
-  events.on(type, weakHandler);
-
-  events.emit(type, { data: 1 });
-  assert.equal(receivedFromStrong.length, 1, "strong listener invoked");
-  assert.equal(receivedFromWeak.length, 1, "weak listener invoked");
-
-  handler = weakHandler = null;
-
-  Cu.forceGC();
-  setTimeout(function() {
-    Cu.forceGC();
-    events.emit(type, { data: 2 });
-    assert.equal(receivedFromWeak.length, 1, "weak listener was GC-ed");
-    assert.equal(receivedFromStrong.length, 2, "strong listener was invoked");
-    done();
-  }, 300);
 };
 
 exports["test handle nsIObserverService notifications"] = function(assert) {
@@ -214,5 +183,75 @@ exports["test emit to nsIObserverService observers"] = function(assert) {
   events.emit(topic, { data: "last data" });
   assert.equal(timesCalled, 3, "removed observers no longer invoked");
 }
+
+exports.testUnloadAndErrorLogging = function(assert) {
+  let { loader, messages } = LoaderWithHookedConsole2(module);
+  var sbobsvc = loader.require("sdk/system/observer");
+
+  var timesCalled = 0;
+  var cb = function(subject, data) {
+    timesCalled++;
+  };
+  var badCb = function(subject, data) {
+    throw new Error("foo");
+  };
+  sbobsvc.on("blarg", cb);
+  events.emit("blarg", {data: "yo yo"});
+  assert.equal(timesCalled, 1);
+  sbobsvc.on("narg", badCb);
+  events.emit("narg", {data: "yo yo"});
+  var lines = messages[0].split("\n");
+  assert.equal(lines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
+  assert.equal(lines[0], "error: " + require("sdk/self").name + ": An exception occurred.");
+  assert.equal(lines[1], "Error: foo");
+  // Keep in mind to update "18" to the line of "throw new Error("foo")"
+  assert.equal(lines[2], module.uri + " 196");
+  assert.equal(lines[3], "Traceback (most recent call last):");
+
+  loader.unload();
+  events.emit("blarg", {data: "yo yo"});
+  assert.equal(timesCalled, 1);
+};
+
+exports.testObserverService = function(assert) {
+  var ios = Cc['@mozilla.org/network/io-service;1']
+            .getService(Ci.nsIIOService);
+  var service = Cc["@mozilla.org/observer-service;1"].
+                getService(Ci.nsIObserverService);
+  var uri = ios.newURI("http://www.foo.com", null, null);
+  var timesCalled = 0;
+  var lastSubject = null;
+  var lastData = null;
+
+  var cb = function({subject, data}) {
+    timesCalled++;
+    lastSubject = subject;
+    lastData = data;
+  };
+
+  events.on("blarg", cb);
+  service.notifyObservers(uri, "blarg", "some data");
+  assert.equal(timesCalled, 1,
+                   "on() should call callback");
+  assert.equal(lastSubject, uri,
+                   "on() should pass subject");
+  assert.equal(lastData, "some data",
+                   "on() should pass data");
+
+  function customSubject() {}
+  function customData() {}
+  events.emit("blarg", {subject: customSubject, data: customData});
+  assert.equal(timesCalled, 2,
+                   "emit() should work");
+  assert.equal(lastSubject, customSubject,
+                   "emit() should pass+wrap subject");
+  assert.equal(lastData, customData,
+                   "emit() should pass data");
+
+  events.off("blarg", cb);
+  service.notifyObservers(null, "blarg", "some data");
+  assert.equal(timesCalled, 2,
+                   "off() should work");
+};
 
 require("test").run(exports);
