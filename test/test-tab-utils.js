@@ -22,10 +22,10 @@ if (isGlobalPBSupported) {
           assert.equal(getTabs().length, 2, 'there are two tabs');
           assert.equal(browserWindows.length, 2, 'there are two windows');
           pb.once('stop', function() {
-          	done();
+            done();
           });
           pb.deactivate();
-      	}
+        }
       });
     });
     pb.activate();
@@ -35,9 +35,9 @@ else if (isWindowPBSupported) {
   exports.testGetTabs = function(assert, done) {
     open(null, {
       features: {
-      	private: true,
-      	toolbar: true,
-      	chrome: true
+        private: true,
+        toolbar: true,
+        chrome: true
       }
     }).then(function(window) {
       assert.ok(isPrivate(window), 'new tab is private');
@@ -60,11 +60,22 @@ else if (isTabPBSupported) {
       tab.close(function() {
         done();
       });
-	});
+    });
     openTab(getMostRecentBrowserWindow(), 'about:blank', {
       isPrivate: true
     });
   };
 }
+
+exports.testIgnoreClosingTabs = function(assert, done) {
+  tabs.once('open', function(tab) {
+    assert.equal(getTabs().length, 2, 'there are two tabs found');
+    tab.close(function() {
+      assert.equal(getTabs().length, 1, 'there is one tab found');
+      done();
+    });
+  });
+  openTab(getMostRecentBrowserWindow(), 'about:blank');
+};
 
 require('test').run(exports);

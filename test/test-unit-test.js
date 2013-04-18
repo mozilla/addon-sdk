@@ -122,12 +122,16 @@ exports.testWaitUntilTimeoutInCallback = function(test) {
     expected.push(["print", "TEST-START | wait4ever\n"]);
     expected.push(["error", "fail:", "Timed out"]);
     expected.push(["error", "test assertion never became true:\n", "assertion failed, value is false\n"]);
+    expected.push(["info", "pass:", "Should not be any unexpected windows open"]);
+    expected.push(["info", "pass:", "Should not be any unexpected tabs open"]);
     expected.push(["print", "TEST-END | wait4ever\n"]);
   }
   else {
     expected.push(["info",  "executing 'wait4ever'"]);
     expected.push(["error", "fail:", "Timed out"]);
     expected.push(["error", "test assertion never became true:\n", "assertion failed, value is false\n"]);
+    expected.push(["info", "pass:", "Should not be any unexpected windows open"]);
+    expected.push(["info", "pass:", "Should not be any unexpected tabs open"]);
   }
 
   function checkExpected(name, args) {
