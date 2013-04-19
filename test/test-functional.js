@@ -5,8 +5,7 @@
 
 const { setTimeout } = require('sdk/timers');
 const utils = require('sdk/lang/functional');
-const { invoke, defer, curry, partial, compose, memoize, once, delay, wrap } = utils;
-const deprecate = require('sdk/util/deprecate');
+const { invoke, defer, partial, compose, memoize, once, delay, wrap } = utils;
 const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 exports['test forwardApply'] = function(assert) {
@@ -46,8 +45,8 @@ exports['test partial function'] = function(assert) {
 };
 
 exports['test curry function'] = function(assert) {
-  let { loader, messages } = LoaderWithHookedCOnsole(module);
-  let deprecate = loader.require('sdk/util/deprecate');
+  let { loader, messages } = LoaderWithHookedConsole(module);
+  let { curry } = loader.require('sdk/lang/functional');
 
   function sum(b, c) this.a + b + c;
 
@@ -55,14 +54,8 @@ exports['test curry function'] = function(assert) {
 
   foo.sum7 = curry(sum, 7);
 
-  let deprecateFunction = deprecate.deprecateFunction(foo.sum7(2),
-                          'curry is deprecated');
-
-  deprecateFunction();
-
   let msg = messages[0].msg;
-  assert.ok(msg.indexOf('curry is deprecated') !== -1,
-            'message contains the given message');
+  assert.ok(msg.indexOf('curry is deprecated') !== -1);
 
   loader.unload();
 };
