@@ -14,6 +14,7 @@ git_full = "$Format:%H$"
 
 
 import subprocess
+import re
 
 def run_command(args, cwd=None, verbose=False):
     try:
@@ -36,6 +37,12 @@ import sys
 import re
 import os.path
 
+def get_version_from_tag(tag, tag_pattern):
+    match = re.match(tag_pattern, tag)
+    if match:
+        return match.group(1)
+    return None
+
 def get_expanded_variables(versionfile_source):
     # the code embedded in _version.py can just fetch the value of these
     # variables. When used from setup.py, we don't want to import
@@ -56,7 +63,7 @@ def get_expanded_variables(versionfile_source):
         pass
     return variables
 
-def versions_from_expanded_variables(variables, tag_prefix):
+def versions_from_expanded_variables(variables, tag_pattern):
     refnames = variables["refnames"].strip()
     if refnames.startswith("$Format"):
         return {} # unexpanded, so not in an unpacked git-archive tarball
@@ -72,15 +79,15 @@ def versions_from_expanded_variables(variables, tag_prefix):
             # "release" and "stabilization", as well as "HEAD" and "master".
     for ref in sorted(refs):
         # sorting will prefer e.g. "2.0" over "2.0rc1"
-        if ref.startswith(tag_prefix):
-            r = ref[len(tag_prefix):]
+        r = get_version_from_tag(ref, tag_pattern)
+        if r:
             return { "version": r,
                      "full": variables["full"].strip() }
     # no suitable tags, so we use the full revision id
     return { "version": variables["full"].strip(),
              "full": variables["full"].strip() }
 
-def versions_from_vcs(tag_prefix, versionfile_source, verbose=False):
+def versions_from_vcs(tag_pattern, versionfile_source, verbose=False):
     # this runs 'git' from the root of the source tree. That either means
     # someone ran a setup.py command (and this code is in versioneer.py, thus
     # the containing directory is the root of the source tree), or someone
@@ -112,16 +119,18 @@ def versions_from_vcs(tag_prefix, versionfile_source, verbose=False):
                          cwd=root)
     if stdout is None:
         return {}
-    if not stdout.startswith(tag_prefix):
+    tag = get_version_from_tag(stdout, tag_pattern)
+    if tag is None:
         if verbose:
-            print "tag '%s' doesn't start with prefix '%s'" % (stdout, tag_prefix)
+            print "tag '%s' doesn't match pattern '%s'" % (stdout, tag_pattern)
         return {}
-    tag = stdout[len(tag_prefix):]
+    dirty = stdout.endswith("-dirty")
     stdout = run_command([GIT, "rev-parse", "HEAD"], cwd=root)
     if stdout is None:
         return {}
     full = stdout.strip()
-    if tag.endswith("-dirty"):
+    if dirty:
+        tag += "-dirty"
         full += "-dirty"
     return {"version": tag, "full": full}
 
@@ -154,15 +163,15 @@ def versions_from_parentdir(parentdir_prefix, versionfile_source, verbose=False)
         return None
     return {"version": dirname[len(parentdir_prefix):], "full": ""}
 
-tag_prefix = ""
+tag_pattern = "firefox-([\d\.]+(?:-dev|(?=-release)))"
 parentdir_prefix = "addon-sdk-"
 versionfile_source = "python-lib/cuddlefish/_version.py"
 
 def get_versions():
     variables = { "refnames": git_refnames, "full": git_full }
-    ver = versions_from_expanded_variables(variables, tag_prefix)
+    ver = versions_from_expanded_variables(variables, tag_pattern)
     if not ver:
-        ver = versions_from_vcs(tag_prefix, versionfile_source)
+        ver = versions_from_vcs(tag_pattern, versionfile_source)
     if not ver:
         ver = versions_from_parentdir(parentdir_prefix, versionfile_source)
     if not ver:
