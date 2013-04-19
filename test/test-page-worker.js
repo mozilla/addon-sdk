@@ -147,7 +147,7 @@ exports.testValidateOptions = function(assert) {
 
   assert.throws(
     function () Page({ onMessage: "This is not a function."}),
-    /The event listener must be a function\./,
+    /The option "onMessage" must be one of the following types: function/,
     "Validation correctly denied a non-function onMessage."
   );
 
