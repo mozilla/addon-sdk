@@ -54,8 +54,8 @@ exports['test curry function'] = function(assert) {
 
   foo.sum7 = curry(sum, 7);
 
-  let msg = messages[0].msg;
-  assert.ok(msg.indexOf('curry is deprecated') !== -1);
+  assert.equal(messages.length, 1, "only one error is dispatched");
+  assert.ok(messages[0].msg.indexOf('curry is deprecated') > -1);
 
   loader.unload();
 };
