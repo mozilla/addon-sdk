@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
 const { setTimeout } = require('sdk/timers');
 const utils = require('sdk/lang/functional');
 const { invoke, defer, curry, partial, compose, memoize, once, delay, wrap } = utils;
+const deprecate = require('sdk/util/deprecate');
+const { LoaderWithHookedConsole } = require('sdk/test/loader');
 
 exports['test forwardApply'] = function(assert) {
   function sum(b, c) this.a + b + c
@@ -29,19 +32,6 @@ exports['test deferred function'] = function(assert, done) {
   nextTurn = true;
 };
 
-exports['test curry function'] = function(assert) {
-  function sum(b, c) this.a + b + c;
-
-  let foo = { a : 5 };
-
-  foo.sum7 = curry(sum, 7);
-  foo.sum8and4 = curry(sum, 8, 4);
-
-  assert.equal(foo.sum7(2), 14, 'curry one arguments works');
-
-  assert.equal(foo.sum8and4(), 17, 'curry both arguments works');
-};
-
 exports['test partial function'] = function(assert) {
   function sum(b, c) this.a + b + c;
 
@@ -53,6 +43,28 @@ exports['test partial function'] = function(assert) {
   assert.equal(foo.sum7(2), 14, 'partial one arguments works');
 
   assert.equal(foo.sum8and4(), 17, 'partial both arguments works');
+};
+
+exports['test curry function'] = function(assert) {
+  let { loader, messages } = LoaderWithHookedCOnsole(module);
+  let deprecate = loader.require('sdk/util/deprecate');
+
+  function sum(b, c) this.a + b + c;
+
+  let foo = { a : 5 };
+
+  foo.sum7 = curry(sum, 7);
+
+  let deprecateFunction = deprecate.deprecateFunction(foo.sum7(2),
+                          'curry is deprecated');
+
+  deprecateFunction();
+
+  let msg = messages[0].msg;
+  assert.ok(msg.indexOf('curry is deprecated') !== -1,
+            'message contains the given message');
+
+  loader.unload();
 };
 
 exports['test compose'] = function(assert) {
