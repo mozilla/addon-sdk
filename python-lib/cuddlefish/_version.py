@@ -115,24 +115,31 @@ def versions_from_vcs(tag_pattern, versionfile_source, verbose=False):
     GIT = "git"
     if sys.platform == "win32":
         GIT = "git.cmd"
-    stdout = run_command([GIT, "describe", "--tags", "--dirty", "--always"],
+
+    stdout = run_command([GIT, "describe", "--dirty", "--always"], cwd=root)
+    if stdout is None:
+        return {}
+    dirty = stdout.endswith("-dirty")
+
+    full = run_command([GIT, "rev-parse", "HEAD"], cwd=root)
+    if full is None:
+        return {}
+    full = full.strip()
+
+    stdout = run_command([GIT, "log", "--pretty=format:%d"],
                          cwd=root)
     if stdout is None:
         return {}
-    tag = get_version_from_tag(stdout, tag_pattern)
-    if tag is None:
-        if verbose:
-            print "tag '%s' doesn't match pattern '%s'" % (stdout, tag_pattern)
-        return {}
-    dirty = stdout.endswith("-dirty")
-    stdout = run_command([GIT, "rev-parse", "HEAD"], cwd=root)
-    if stdout is None:
-        return {}
-    full = stdout.strip()
-    if dirty:
-        tag += "-dirty"
-        full += "-dirty"
-    return {"version": tag, "full": full}
+    for line in stdout.split("\n"):
+        refs = [r.strip() for r in line.strip(" ()").split(",")]
+        for ref in sorted(refs):
+            version = get_version_from_tag(ref, tag_pattern)
+            if version:
+                if dirty:
+                    version += "-dirty"
+                    full += "-dirty"
+                return {"version": version, "full": full}
+    return {}
 
 
 def versions_from_parentdir(parentdir_prefix, versionfile_source, verbose=False):
