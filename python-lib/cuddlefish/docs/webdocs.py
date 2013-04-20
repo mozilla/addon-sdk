@@ -73,7 +73,10 @@ class WebDocs(object):
         for module in module_list:
             module_link = tag_wrap(module.name(), 'a', \
                 {'href': "/".join(["modules", module.relative_url()])})
-            module_list_item = tag_wrap(module_link, "li")
+            if module.is_supported_on_mobile():
+                module_list_item = tag_wrap(module_link, "li", {"class":"supported-on-mobile"})
+            else:
+                module_list_item = tag_wrap(module_link, "li")
             module_text += module_list_item
         return module_text
 

@@ -32,5 +32,7 @@ example, [windows](modules/sdk/windows.html) or
 These modules are still in active development, and we expect to
 make incompatible changes to them in future releases.
 
+Not all modules are supported on Firefox for Android yet: the mobile phone
+icon beside a module indicates that it is supported.
 
 <ul id="module-index"></ul>

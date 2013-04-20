@@ -148,7 +148,6 @@ def generate_docs_from_scratch(env_root, version, base_url):
     third_party_module_list = [module_info for module_info in module_list if module_info.level() == "third-party"]
     write_module_index(env_root, web_docs, third_party_index_file, third_party_module_list, must_rewrite_links)
 
-
     # generate high-level module index
     high_level_index_file = os.sep.join([env_root, "doc", "module-source", "high-level-modules.md"])
     high_level_module_list = [module_info for module_info in module_list if module_info.level() == "high"]

@@ -125,6 +125,17 @@ class ModuleInfo(DocumentationItemInfo):
             else:
                 return "low"
 
+    def is_supported_on_mobile(self):
+        if self.level() == "third-party":
+            return False
+        engines = self.metadata.get("engines", None)
+        if not engines:
+            return True
+        fennec_supported = engines.get("Fennec", False)
+        if fennec_supported:
+            return True
+        return False
+
 def get_modules_in_package(env_root, package_docs_dir, module_list, ignore_files_in_root):
     for (dirpath, dirnames, filenames) in os.walk(package_docs_dir):
         for filename in filenames:
