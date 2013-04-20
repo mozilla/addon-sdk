@@ -1101,7 +1101,7 @@ exports["test page-mod on private tab in global pb"] = function (test) {
       test.assertEqual(worker.tab.url,
                        privateUri,
                        "page-mod should attach");
-      test.assertEqual(isPrivateBrowsingSupported,
+      test.assertEqual(isPrivateBrowsingSupported(),
                        false,
                        "private browsing is not supported");
       test.assert(isPrivate(worker),

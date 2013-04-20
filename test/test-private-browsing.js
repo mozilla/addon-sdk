@@ -72,7 +72,7 @@ exports.testIsActiveDefault = function(test) {
 };
 
 exports.testIsPrivateBrowsingFalseDefault = function(test) {
-  test.assertEqual(isPrivateBrowsingSupported, false,
+  test.assertEqual(isPrivateBrowsingSupported(), false,
   	               'isPrivateBrowsingSupported property is false by default');
 };
 
