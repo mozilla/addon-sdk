@@ -412,7 +412,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
             env_root=None,
             is_running_tests=False,
             overload_modules=False,
-            bundle_sdk=True):
+            bundle_sdk=True,
+            pkgdir=""):
     if binary:
         binary = os.path.expanduser(binary)
 
@@ -516,7 +517,8 @@ def run_app(harness_root_dir, manifest_rdf, harness_options,
               xpi_path=xpi_path,
               harness_options=harness_options,
               limit_to=used_files,
-              bundle_sdk=bundle_sdk)
+              bundle_sdk=bundle_sdk,
+              pkgdir=pkgdir)
     addons.append(xpi_path)
 
     starttime = last_output_time = time.time()
