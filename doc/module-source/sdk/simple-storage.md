@@ -14,7 +14,7 @@ it as you would any other.
 
 To store a value, just assign it to a property on `storage`:
 
-    var ss = require("simple-storage");
+    var ss = require("sdk/simple-storage");
     ss.storage.myArray = [1, 1, 2, 3, 5, 8, 13];
     ss.storage.myBoolean = true;
     ss.storage.myNull = null;
@@ -29,7 +29,7 @@ them to strings or another one of these types.
 Be careful to set properties on the `storage` object and not the module itself:
 
     // This is no good!
-    var ss = require("simple-storage");
+    var ss = require("sdk/simple-storage");
     ss.foo = "I will not be saved! :(";
 
 Simple Storage and "cfx run"
@@ -55,14 +55,14 @@ zero them each time the construction code runs. For example, this add-on
 tries to store the URLs of pages the user visits:
 
 <pre><code>
-var ss = require("simple-storage");
+var ss = require("sdk/simple-storage");
 ss.storage.pages = [];
 
-require("tabs").on("ready", function(tab) {
+require("sdk/tabs").on("ready", function(tab) {
   ss.storage.pages.push(tab.url);
 });
 
-var widget = require("widget").Widget({
+var widget = require("sdk/widget").Widget({
   id: "log_history",
   label: "Log History",
   width: 30,
@@ -89,8 +89,8 @@ You can delete properties using the `delete` operator. Here's an add-on
 that adds three widgets to write, read, and delete a value:
 
 <pre><code>
-var widgets = require("widget");
-var ss = require("simple-storage");
+var widgets = require("sdk/widget");
+var ss = require("sdk/simple-storage");
 
 var widget = widgets.Widget({
   id: "write",
@@ -172,33 +172,13 @@ data you remove is up to you.  For example:
 Private Browsing
 ----------------
 If your storage is related to your users' Web history, personal information, or
-other sensitive data, your add-on should respect [private browsing mode][SUMO].
-While private browsing mode is active, you should not store any sensitive data.
+other sensitive data, your add-on should respect
+[private browsing](http://support.mozilla.com/en-US/kb/Private+Browsing).
 
-Because any kind of data can be placed into simple storage, support for private
-browsing is not built into the module.  Instead, use the
-[`private-browsing`](modules/sdk/private-browsing.html) module to
-check private browsing status and respond accordingly.
-
-For example, the URLs your users visit should not be stored during private
-browsing.  If your add-on records the URL of the selected tab, here's how you
-might handle that:
-
-    ss.storage.history = [];
-    var privateBrowsing = require("private-browsing");
-    if (!privateBrowsing.isActive) {
-      var url = getSelectedTabURL();
-      ss.storage.history.push(url);
-    }
-
-For more information on supporting private browsing, see its [Mozilla Developer
-Network documentation][MDN].  While that page does not apply specifically to
-SDK-based add-ons (and its code samples don't apply at all), you should follow
-its guidance on best practices and policies.
-
-[SUMO]: http://support.mozilla.com/en-US/kb/Private+Browsing
-[MDN]: https://developer.mozilla.org/En/Supporting_private_browsing_mode
-
+To read about how to opt into private browsing mode and how to use the
+SDK to avoid storing user data associated with private windows, refer to the
+documentation for the
+[`private-browsing` module](modules/sdk/private-browsing.html).
 
 <api name="storage">
 @property {object}

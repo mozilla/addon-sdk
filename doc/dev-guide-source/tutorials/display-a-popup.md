@@ -41,12 +41,12 @@ The add-on consists of three files:
 
 The "main.js" looks like this:
 
-    var data = require("self").data;
+    var data = require("sdk/self").data;
 
     // Construct a panel, loading its content from the "text-entry.html"
     // file in the "data" directory, and loading the "get-text.js" script
     // into it.
-    var text_entry = require("panel").Panel({
+    var text_entry = require("sdk/panel").Panel({
       width: 212,
       height: 200,
       contentURL: data.url("text-entry.html"),
@@ -55,7 +55,7 @@ The "main.js" looks like this:
 
     // Create a widget, and attach the panel to it, so the panel is
     // shown when the user clicks the widget.
-    require("widget").Widget({
+    require("sdk/widget").Widget({
       label: "Text entry",
       id: "text-entry",
       contentURL: "http://www.mozilla.org/favicon.ico",

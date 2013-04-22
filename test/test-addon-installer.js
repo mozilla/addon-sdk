@@ -110,9 +110,9 @@ exports["test Update"] = function (assert, done) {
       events = [];
       AddonInstaller.uninstall(id).then(function() {
         let expectedEvents = ["shutdown", "uninstall"];
-        test.assertEqual(JSON.stringify(events),
-                         JSON.stringify(expectedEvents),
-                         prefix + "addon's bootstrap.js functions have been called");
+        assert.equal(JSON.stringify(events),
+                     JSON.stringify(expectedEvents),
+                     prefix + "addon's bootstrap.js functions have been called");
 
         observers.remove("addon-install-unit-test", eventsObserver);
         done();

@@ -58,11 +58,22 @@ class ManifestEntry:
         self.datamap = None
 
     def get_path(self):
-        path = "%s/%s/%s" % \
-               (self.packageName, self.sectionName, self.moduleName)
-        if not path.endswith(".js"):
-          path += ".js"
-        return path
+        name = self.moduleName
+
+        if name.endswith(".js"):
+            name = name[:-3]
+        items = []
+        # Only add package name for addons, so that system module paths match
+        # the path from the commonjs root directory and also match the loader
+        # mappings.
+        if self.packageName != "addon-sdk":
+            items.append(self.packageName)
+        # And for the same reason, do not append `lib/`.
+        if self.sectionName == "tests":
+            items.append(self.sectionName)
+        items.append(name)
+
+        return "/".join(items)
 
     def get_entry_for_manifest(self):
         entry = { "packageName": self.packageName,
@@ -75,13 +86,13 @@ class ManifestEntry:
         for req in self.requirements:
             if isinstance(self.requirements[req], ManifestEntry):
                 them = self.requirements[req] # this is another ManifestEntry
-                them_path = them.get_path()
-                entry["requirements"][req] = {"path": them_path}
+                entry["requirements"][req] = them.get_path()
             else:
                 # something magic. The manifest entry indicates that they're
                 # allowed to require() it
                 entry["requirements"][req] = self.requirements[req]
-            assert isinstance(entry["requirements"][req], dict)
+            assert isinstance(entry["requirements"][req], unicode) or \
+                   isinstance(entry["requirements"][req], str)
         return entry
 
     def add_js(self, js_filename):
@@ -226,7 +237,8 @@ class ManifestBuilder:
                 # search for all tests. self.test_modules will be passed
                 # through the harness-options.json file in the
                 # .allTestModules property.
-                self.test_modules.append(testname)
+                # Pass the absolute module path.
+                self.test_modules.append(tme.get_path())
 
         # include files used by the loader
         for em in self.extra_modules:
@@ -248,7 +260,7 @@ class ManifestBuilder:
             used.add(package)
         return sorted(used)
 
-    def get_used_files(self):
+    def get_used_files(self, bundle_sdk_modules):
         # returns all .js files that we reference, plus data/ files. You will
         # need to add the loader, off-manifest files that it needs, and
         # generated metadata.
@@ -257,16 +269,22 @@ class ManifestBuilder:
                 yield absname
 
         for me in self.get_module_entries():
-            yield me.js_filename
+            # Only ship SDK files if we are told to do so
+            if me.packageName != "addon-sdk" or bundle_sdk_modules:
+                yield me.js_filename
 
     def get_all_test_modules(self):
         return self.test_modules
 
-    def get_harness_options_manifest(self):
+    def get_harness_options_manifest(self, bundle_sdk_modules):
         manifest = {}
         for me in self.get_module_entries():
             path = me.get_path()
-            manifest[path] = me.get_entry_for_manifest()
+            # Do not add manifest entries for system modules.
+            # Doesn't prevent from shipping modules.
+            # Shipping modules is decided in `get_used_files`.
+            if me.packageName != "addon-sdk" or bundle_sdk_modules:
+                manifest[path] = me.get_entry_for_manifest()
         return manifest
 
     def get_manifest_entry(self, package, section, module):
@@ -378,7 +396,7 @@ class ManifestBuilder:
             # If requirement is chrome or a pseudo-module (starts with @) make
             # path a requirement name.
             if reqname == "chrome" or reqname.startswith("@"):
-                me.add_requirement(reqname, {"path": reqname})
+                me.add_requirement(reqname, reqname)
             else:
                 # when two modules require() the same name, do they get a
                 # shared instance? This is a deep question. For now say yes.
@@ -456,18 +474,6 @@ class ManifestBuilder:
         # non-relative import. Might be a short name (requiring a search
         # through "library" packages), or a fully-qualified one.
 
-        # Search for a module in new layout.
-        # First normalize require argument in order to easily find a mapping
-        normalized = reqname
-        if normalized.endswith(".js"):
-            normalized = normalized[:-len(".js")]
-        if normalized.startswith("addon-kit/"):
-            normalized = normalized[len("addon-kit/"):]
-        if normalized.startswith("api-utils/"):
-            normalized = normalized[len("api-utils/"):]
-        if normalized in NEW_LAYOUT_MAPPING:
-          reqname = NEW_LAYOUT_MAPPING[normalized]
-
         if "/" in reqname:
             # 2: PKG/MOD: find PKG, look inside for MOD
             bits = reqname.split("/")
@@ -489,9 +495,32 @@ class ManifestBuilder:
         # their own package first, then the list of packages defined by their
         # .dependencies list
         from_pkg = from_module.package.name
-        return self._search_packages_for_module(from_pkg,
-                                                lookfor_sections, reqname,
-                                                looked_in)
+        mi = self._search_packages_for_module(from_pkg,
+                                              lookfor_sections, reqname,
+                                              looked_in)
+        if mi:
+            return mi
+
+        # Only after we look for module in the addon itself, search for a module
+        # in new layout.
+        # First normalize require argument in order to easily find a mapping
+        normalized = reqname
+        if normalized.endswith(".js"):
+            normalized = normalized[:-len(".js")]
+        if normalized.startswith("addon-kit/"):
+            normalized = normalized[len("addon-kit/"):]
+        if normalized.startswith("api-utils/"):
+            normalized = normalized[len("api-utils/"):]
+        if normalized in NEW_LAYOUT_MAPPING:
+            # get the new absolute path for this module
+            reqname = NEW_LAYOUT_MAPPING[normalized]
+            from_pkg = from_module.package.name
+            return self._search_packages_for_module(from_pkg,
+                                                    lookfor_sections, reqname,
+                                                    looked_in)
+        else:
+            # We weren't able to find this module, really.
+            return None
 
     def _handle_module(self, mi):
         if not mi:
@@ -641,12 +670,13 @@ def scan_requirements_with_grep(fn, lines):
                     iscomment = True
             if iscomment:
                 continue
-            mo = re.search(REQUIRE_RE, clause)
+            mo = re.finditer(REQUIRE_RE, clause)
             if mo:
-                modname = mo.group(1)
-                requires[modname] = {}
-                if modname not in first_location:
-                    first_location[modname] = lineno0+1
+                for mod in mo:
+                    modname = mod.group(1)
+                    requires[modname] = {}
+                    if modname not in first_location:
+                        first_location[modname] = lineno0 + 1
 
     # define() can happen across multiple lines, so join everyone up.
     wholeshebang = "\n".join(lines)

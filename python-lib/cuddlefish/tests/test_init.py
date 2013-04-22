@@ -25,7 +25,7 @@ class TestInit(unittest.TestCase):
             os.chdir(top)
 
     def do_test_init(self,basedir):
-        # Let's init the addon, no error admited
+        # Let's init the addon, no error admitted
         f = open(".ignoreme","w")
         f.write("stuff")
         f.close()
@@ -33,7 +33,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(init_run, 0)
+        self.assertEqual(init_run["result"], 0)
         self.assertTrue("* lib directory created" in out)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
@@ -46,16 +46,17 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(package_json))
         self.assertTrue(os.path.exists(test_main_js))
         self.assertEqual(open(main_js,"r").read(),"")
-        self.assertEqual(open(package_json,"r").read(),
+        self.assertEqual(open(package_json,"r").read() % {"id":"tmp_addon_id" },
                          PACKAGE_JSON % {"name":"tmp_addon_sample",
-                                         "fullName": "tmp_addon_SAMPLE" })
+                                         "fullName": "tmp_addon_SAMPLE",
+                                         "id":init_run["jid"] })
         self.assertEqual(open(test_main_js,"r").read(),TEST_MAIN_JS)
 
         # Let's check that the addon is initialized
         out, err = StringIO(), StringIO()
         init_run = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run,0)
+        self.failIfEqual(init_run["result"],0)
         self.assertTrue("This command must be run in an empty directory." in err)
 
     def test_initializer(self):
@@ -66,7 +67,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         init_run = initializer(None, ["init", "specified-dirname", "extra-arg"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.failIfEqual(init_run, 0)
+        self.failIfEqual(init_run["result"], 0)
         self.assertTrue("Too many arguments" in err)
 
     def test_args(self):
@@ -79,7 +80,7 @@ class TestInit(unittest.TestCase):
         out,err = StringIO(), StringIO()
         rc = initializer(None, ["init"], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc["result"], 1)
         self.failUnless("This command must be run in an empty directory" in err,
                         err)
         self.failIf(os.path.exists("lib"))
@@ -102,7 +103,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc["result"], 1)
         self.assertTrue("testing if directory is empty" in out, out)
         self.assertTrue("This command must be run in an empty directory." in err,
                         err)
@@ -112,7 +113,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc["result"], 0)
         self.assertTrue("* data directory created" in out, out)
         self.assertTrue("Have fun!" in out)
         self.assertEqual(err,"")
@@ -127,7 +128,7 @@ class TestInit(unittest.TestCase):
         out, err = StringIO(), StringIO()
         rc = initializer(None, ["init", basedir], out, err)
         out, err = out.getvalue(), err.getvalue()
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc["result"], 0)
         self.assertTrue("* data directory created" in out)
         self.assertTrue("Have fun!" in out)
         self.assertEqual(err,"")
@@ -140,16 +141,15 @@ class TestInit(unittest.TestCase):
 
 class TestCfxQuits(unittest.TestCase):
 
-    def run_cfx(self, addon_name, command):
+    def run_cfx(self, addon_path, command):
         old_cwd = os.getcwd()
-        addon_path = os.path.join(tests_path,
-                                  "addons", addon_name)
         os.chdir(addon_path)
         import sys
         old_stdout = sys.stdout
         old_stderr = sys.stderr
         sys.stdout = out = StringIO()
         sys.stderr = err = StringIO()
+        rc = 0
         try:
             import cuddlefish
             args = list(command)
@@ -181,15 +181,43 @@ class TestCfxQuits(unittest.TestCase):
                                                   container)
             self.fail(standardMsg)
 
-    def test_run(self):
-        rc, out, err = self.run_cfx("simplest-test", ["run"])
+    def test_cfx_run(self):
+        addon_path = os.path.join(tests_path,
+                                  "addons", "simplest-test")
+        rc, out, err = self.run_cfx(addon_path, ["run"])
         self.assertEqual(rc, 0)
         self.assertIn("Program terminated successfully.", err)
 
-    def test_test(self):
-        rc, out, err = self.run_cfx("simplest-test", ["test"])
+    def test_cfx_test(self):
+        addon_path = os.path.join(tests_path,
+                                  "addons", "simplest-test")
+        rc, out, err = self.run_cfx(addon_path, ["test"])
         self.assertEqual(rc, 0)
         self.assertIn("1 of 1 tests passed.", err)
+        self.assertIn("Program terminated successfully.", err)
+
+    def test_cfx_init(self):
+        # Create an empty test directory
+        addon_path = os.path.abspath(os.path.join(".test_tmp", "test-cfx-init"))
+        if os.path.isdir(addon_path):
+            shutil.rmtree(addon_path)
+        os.makedirs(addon_path)
+
+        # Fake a call to cfx init
+        old_cwd = os.getcwd()
+        os.chdir(addon_path)
+        out, err = StringIO(), StringIO()
+        rc = initializer(None, ["init"], out, err)
+        os.chdir(old_cwd)
+        out, err = out.getvalue(), err.getvalue()
+        self.assertEqual(rc["result"], 0)
+        self.assertTrue("Have fun!" in out)
+        self.assertEqual(err,"")
+
+        # run cfx test
+        rc, out, err = self.run_cfx(addon_path, ["test"])
+        self.assertEqual(rc, 0)
+        self.assertIn("2 of 2 tests passed.", err)
         self.assertIn("Program terminated successfully.", err)
 
 

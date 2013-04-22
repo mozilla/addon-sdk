@@ -6,7 +6,7 @@ The module provides data encoding and decoding using Base64 algorithms.
 
 ##Example
 
-    var base64 = require("base64");
+    var base64 = require("sdk/base64");
 
     var encodedData = base64.encode("Hello, World");
     var decodedData = base64.decode(encodedData);
@@ -16,7 +16,7 @@ The module provides data encoding and decoding using Base64 algorithms.
 In order to `encode` and `decode` properly Unicode strings, the `charset`
 parameter needs to be set to `"utf-8"`:
 
-    var base64 = require("base64");
+    var base64 = require("sdk/base64");
 
     var encodedData = base64.encode(unicodeString, "utf-8");
     var decodedData = base64.decode(encodedData, "utf-8");

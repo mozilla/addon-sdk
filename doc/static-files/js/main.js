@@ -53,6 +53,18 @@ function run(jQuery) {
    });
   }
 
+  function stripArgumentsOrDataType(apiName) {
+    var argumentStart = apiName.indexOf("(");
+    if (argumentStart != -1) {
+        return apiName.slice(0, argumentStart) + "()";
+    }
+    var dataTypeStart = apiName.indexOf(":");
+    if (dataTypeStart != -1) {
+        return apiName.slice(0, dataTypeStart);
+    }
+  return apiName;
+  }
+
   function generateToC() {
     var headings = '.api_reference h2, .api_reference h3, ' +
                    '.api_reference h4, .api_reference h5, ' +
@@ -74,7 +86,7 @@ function run(jQuery) {
         href: url,
         "class": $(this).attr("tagName")
       });
-      tocEntry.text($(this).text());
+      tocEntry.text(stripArgumentsOrDataType($(this).text()));
       $("#toc").append(tocEntry);
     });
 

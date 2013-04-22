@@ -10,7 +10,7 @@ incompatible changes to them in future releases.</span>
 
 The [guide to event-driven programming with the SDK](dev-guide/guides/events.html)
 describes how to consume events: that is, how to listen to events generated
-by event targets. For example, you can listen to [`private-browsing`'s `start` event](modules/sdk/private-browsing.html#start) or the
+by event targets. For example, you can listen to the [`tabs` module's `ready` event](modules/sdk/tabs.html#ready) or the
 [`Panel` object's `show` event](modules/sdk/panel.html#show).
 
 With the SDK, it's also simple to implement your own event targets.
@@ -70,7 +70,7 @@ module.
 
 Create a new file in "lib" called "bookmarks.js", and add the following code:
 
-    var { emit, on, once, off } = require("api-utils/event/core");
+    var { emit, on, once, off } = require("sdk/event/core");
 
     var {Cc, Ci, Cu} = require("chrome");
     Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
@@ -84,7 +84,7 @@ Create a new file in "lib" called "bookmarks.js", and add the following code:
       onItemVisited: function(aItemId, aVisitID, time) {
         emit(exports, "visited", bookmarkService.getBookmarkURI(aItemId).spec);
       },
-      QueryInterface: XPCOMUtils.generateQI([Components.interfaces.nsINavBookmarkObserver])
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver])
     };
 
     bookmarkService.addObserver(bookmarkObserver, false);
@@ -151,10 +151,10 @@ from `EventTarget` and emits `added` and `visited` events.
 
 Open "bookmarks.js" and replace its contents with this code:
 
-    var { emit } = require("api-utils/event/core");
-    var { EventTarget } = require("api-utils/event/target");
-    var { Class } = require("api-utils/heritage");
-    var { merge } = require("api-utils/utils/object");
+    var { emit } = require("sdk/event/core");
+    var { EventTarget } = require("sdk/event/target");
+    var { Class } = require("sdk/core/heritage");
+    var { merge } = require("sdk/util/object");
 
     var {Cc, Ci, Cu} = require("chrome");
     Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
@@ -169,7 +169,7 @@ Open "bookmarks.js" and replace its contents with this code:
          onItemVisited: function(aItemId, aVisitID, time) {
            emit(target, "visited", bookmarkService.getBookmarkURI(aItemId).spec);
          },
-         QueryInterface: XPCOMUtils.generateQI([Components.interfaces.nsINavBookmarkObserver])
+         QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver])
        };
        bookmarkService.addObserver(bookmarkObserver, false);
     }
@@ -243,7 +243,7 @@ either by calling:
 
 or by passing the `onShow` option to `Panel`'s constructor:
 
-    var myPanel = require("panel").Panel({
+    var myPanel = require("sdk/panel").Panel({
       onShow: listenerFunction,
       contentURL: "https://en.wikipedia.org/w/index.php"
     });

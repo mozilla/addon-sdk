@@ -31,11 +31,12 @@ performing an assignment. However, keep in mind that the same validation rules
 that apply to `options` in the constructor will apply during assignment. Thus,
 each can throw if given an invalid value.
 
-The example below shows how to use Request to get the most recent public tweet.
+The example below shows how to use Request to get the most recent tweet
+from the [@mozhacks](https://twitter.com/mozhacks) account:
 
-    var Request = require("request").Request;
+    var Request = require("sdk/request").Request;
     var latestTweetRequest = Request({
-      url: "http://api.twitter.com/1/statuses/public_timeline.json",
+      url: "https://api.twitter.com/1/statuses/user_timeline.json?screen_name=mozhacks&count=1",
       onComplete: function (response) {
         var tweet = response.json[0];
         console.log("User: " + tweet.user.screen_name);
@@ -61,8 +62,8 @@ This constructor creates a request object that can be used to make network
 requests. The constructor takes a single parameter `options` which is used to
 set several properties on the resulting `Request`.
 @param options {object}
-    @prop url {string}
-    This is the url to which the request will be made.
+    @prop [url] {string,url}
+    This is the url to which the request will be made. Can either be a [String](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String) or an instance of the SDK's [URL](https://addons.mozilla.org/en-US/developers/docs/sdk/latest/modules/sdk/url.html#URL).
 
     @prop [onComplete] {function}
     This function will be called when the request has received a response (or in
@@ -98,7 +99,7 @@ set several properties on the resulting `Request`.
     certain characters will not display correctly. To force the response to
     be interpreted as Latin-1, use `overrideMimeType`:
 
-        var Request = require("request").Request;
+        var Request = require("sdk/request").Request;
         var quijote = Request({
           url: "http://www.latin1files.org/quijote.txt",
           overrideMimeType: "text/plain; charset=latin1",
@@ -180,7 +181,7 @@ if the document cannot be processed by `JSON.parse`.
 </api>
 
 <api name="status">
-@property {string}
+@property {integer}
 The HTTP response status code (e.g. *200*).
 </api>
 

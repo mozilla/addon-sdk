@@ -8,6 +8,11 @@ const { Loader } = require('sdk/test/loader');
 const timer = require('sdk/timers');
 const { StringBundle } = require('sdk/deprecated/app-strings');
 
+const base64png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYA" +
+                  "AABzenr0AAAASUlEQVRYhe3O0QkAIAwD0eyqe3Q993AQ3cBSUKpygfsNTy" +
+                  "N5ugbQpK0BAADgP0BRDWXWlwEAAAAAgPsA3rzDaAAAAHgPcGrpgAnzQ2FG" +
+                  "bWRR9AAAAABJRU5ErkJggg%3D%3D";
+
 // TEST: tabs.activeTab getter
 exports.testActiveTab_getter = function(test) {
   test.waitUntilDone();
@@ -177,10 +182,27 @@ exports.testTabProperties = function(test) {
         test.assertEqual(tab.style, null, "style of the new tab matches");
         test.assertEqual(tab.index, 1, "index of the new tab matches");
         test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
-        closeBrowserWindow(window, function() test.done());
+        test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
+        onReadyOrLoad(window);
+      },
+      onLoad: function(tab) {
+        test.assertEqual(tab.title, "foo", "title of the new tab matches");
+        test.assertEqual(tab.url, url, "URL of the new tab matches");
+        test.assert(tab.favicon, "favicon of the new tab is not empty");
+        test.assertEqual(tab.style, null, "style of the new tab matches");
+        test.assertEqual(tab.index, 1, "index of the new tab matches");
+        test.assertNotEqual(tab.getThumbnail(), null, "thumbnail of the new tab matches");
+        test.assertNotEqual(tab.id, null, "a tab object always has an id property.");
+        onReadyOrLoad(window);
       }
     });
   });
+
+  let count = 0;
+  function onReadyOrLoad (window) {
+    if (count++)
+      closeBrowserWindow(window, function() test.done());
+  }
 };
 
 // TEST: tab properties
@@ -913,6 +935,132 @@ exports['test ready event on new window tab'] = function(test) {
 
   let window = openBrowserWindow(function(){}, uri);
 };
+
+exports['test unique tab ids'] = function(test) {
+  var windows = require('sdk/windows').browserWindows;
+  var { all, defer } = require('sdk/core/promise');
+
+  function openWindow() {
+    // console.log('in openWindow');
+    let deferred = defer();
+    let win = windows.open({
+      url: "data:text/html;charset=utf-8,<html>foo</html>",
+    });
+
+    win.on('open', function(window) {
+      test.assert(window.tabs.length);
+      test.assert(window.tabs.activeTab);
+      test.assert(window.tabs.activeTab.id);
+      deferred.resolve({
+        id: window.tabs.activeTab.id,
+        win: win
+      });
+    });
+   
+    return deferred.promise;
+  }
+
+  test.waitUntilDone();
+  var one = openWindow(), two = openWindow();
+  all([one, two]).then(function(results) {
+    test.assertNotEqual(results[0].id, results[1].id, "tab Ids should not be equal.");
+    results[0].win.close();
+    results[1].win.close();
+    test.done();
+  });  
+}
+
+// related to Bug 671305
+exports.testOnLoadEventWithDOM = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require('sdk/tabs');
+    let count = 0;
+    tabs.on('load', function onLoad(tab) {
+      test.assertEqual(tab.title, 'tab', 'tab passed in as arg, load called');
+      if (!count++) {
+        tab.reload();
+      }
+      else {
+        // end of test
+        tabs.removeListener('load', onLoad);
+        test.pass('onLoad event called on reload');
+        closeBrowserWindow(window, function() test.done());
+      }
+    });
+
+    // open a about: url
+    tabs.open({
+      url: 'data:text/html;charset=utf-8,<title>tab</title>',
+      inBackground: true
+    });
+  });
+};
+
+// related to Bug 671305
+exports.testOnLoadEventWithImage = function(test) {
+  test.waitUntilDone();
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require('sdk/tabs');
+    let count = 0;
+    tabs.on('load', function onLoad(tab) {
+      if (!count++) {
+        tab.reload();
+      }
+      else {
+        // end of test
+        tabs.removeListener('load', onLoad);
+        test.pass('onLoad event called on reload with image');
+        closeBrowserWindow(window, function() test.done());
+      }
+    });
+
+    // open a image url
+    tabs.open({
+      url: base64png,
+      inBackground: true
+    });
+  });
+};
+
+exports.testOnPageShowEvent = function (test) {
+  test.waitUntilDone();
+
+  let firstUrl = 'data:text/html;charset=utf-8,First';
+  let secondUrl = 'data:text/html;charset=utf-8,Second';
+
+  openBrowserWindow(function(window, browser) {
+    let tabs = require('sdk/tabs');
+
+    let counter = 0;
+    tabs.on('pageshow', function onPageShow(tab, persisted) {
+      counter++;
+      if (counter === 1) {
+        test.assert(!persisted, 'page should not be cached on initial load');
+        tab.url = secondUrl;
+      }
+      else if (counter === 2) {
+        test.assert(!persisted, 'second test page should not be cached either');
+        tab.attach({
+          contentScript: 'setTimeout(function () { window.history.back(); }, 0)'
+        });
+      }
+      else {
+        test.assert(persisted, 'when we get back to the fist page, it has to' +
+                               'come from cache');
+        tabs.removeListener('pageshow', onPageShow);
+        closeBrowserWindow(window, function() test.done());
+      }
+    });
+
+    tabs.open({
+      url: firstUrl
+    });
+  });
+};
+
 /******************* helpers *********************/
 
 // Helper for getting the active window

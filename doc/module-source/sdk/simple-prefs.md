@@ -62,7 +62,7 @@ These are attributes that all settings *must* have.
     <td><code>name</code></td>
     <td><p>An identifier for the setting.
 	This is used to access the setting from your add-on:</p>
-	<pre><code>console.log(require("simple-prefs").prefs.mySettingName);</code></pre>
+	<pre><code>console.log(require("sdk/simple-prefs").prefs.mySettingName);</code></pre>
 	<p>This means that it must be a valid JavaScript identifier.</p></td>
   </tr>
 
@@ -303,7 +303,7 @@ used by the Add-on Manager. All the inline settings are supported.
     "title": "Say Hello"
 }</pre>
            <p>In "main.js":</p><pre><code>
-var sp = require("simple-prefs");
+var sp = require("sdk/simple-prefs");
 sp.on("sayHello", function() {
   console.log("hello");
 });</code></pre></td>
@@ -333,11 +333,11 @@ for more details.
     function onPrefChange(prefName) {
         console.log("The " + prefName + " preference changed.");
     }
-    require("simple-prefs").on("somePreference", onPrefChange);
-    require("simple-prefs").on("someOtherPreference", onPrefChange);
+    require("sdk/simple-prefs").on("somePreference", onPrefChange);
+    require("sdk/simple-prefs").on("someOtherPreference", onPrefChange);
 
     // `""` listens to all changes in the extension's branch
-    require("simple-prefs").on("", onPrefChange);
+    require("sdk/simple-prefs").on("", onPrefChange);
 
 @param prefName {String}
   The name of the preference to watch for changes.
@@ -355,3 +355,17 @@ for more details.
   The listener function that processes the event.
 </api>
 
+## Using the Preferences Service to Access Simple Prefs ##
+
+If you ever need to access your simple-prefs with the `preferences/service` module,
+you can do so using the extended preference name.  To get this
+just prepend `"extensions." + require("sdk/self").id + "."` to the preference name `"somePreference"`.
+
+For example, if you had a simple-pref named `"somePreference"` then you could
+get its value like so:
+
+    require('sdk/preferences/service').get(['extensions', require('sdk/self').id, 'somePreference'].join('.'))
+
+This would give you the same value as:
+
+    require('sdk/simple-prefs').prefs['somePreference']

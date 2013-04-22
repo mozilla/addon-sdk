@@ -17,7 +17,7 @@ To be notified when the user makes a selection, register a listener for the
     function myListener() {
       console.log("A selection has been made.");
     }
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     selection.on('select', myListener);
 
     // You can remove listeners too.
@@ -30,19 +30,27 @@ Discontiguous selections can be accessed by iterating over the `selection`
 module itself. Each iteration yields a `Selection` object from which `text`,
 `html`, and `isContiguous` properties can be accessed.
 
+## Private Windows ##
+
+If your add-on has not opted into private browsing, then you won't see any
+selections made in tabs that are hosted by private browser windows.
+
+To learn more about private windows, how to opt into private browsing, and how
+to support private browsing, refer to the
+[documentation for the `private-browsing` module](modules/sdk/private-browsing.html).
 
 Examples
 --------
 
 Log the current contiguous selection as text:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     if (selection.text)
       console.log(selection.text);
 
 Log the current discontiguous selections as HTML:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     if (!selection.isContiguous) {
       for (var subselection in selection) {
          console.log(subselection.html);
@@ -51,7 +59,7 @@ Log the current discontiguous selections as HTML:
 
 Surround HTML selections with delimiters:
 
-    var selection = require("selection");
+    var selection = require("sdk/selection");
     selection.on('select', function () {
       selection.html = "\\\" + selection.html + "///";
     });

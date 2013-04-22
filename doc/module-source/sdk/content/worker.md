@@ -4,19 +4,24 @@
 
 <!-- contributed by Irakli Gozalishvili [gozala@mozilla.com] -->
 
-This module exports the `Worker` trait, which may be used to construct objects
-implementing the [Worker][] interface defined by the W3C, with minor
-differences.
+This module is used in the internal implementation of SDK modules
+which use
+[content scripts to interact with web content](dev-guide/guides/content-scripts/index.html),
+such as the [`panel`](modules/sdk/panel.html) or [`page-mod`](modules/sdk/page-mod.html)
+modules.
 
-Content workers are message-passing facilities for communication between
-[content scripts](dev-guide/guides/content-scripts/index.html) and the main
-add-on code.
+It exports the `Worker` trait, which enables content
+scripts and the add-on code to exchange messages using the
+[`port`](dev-guide/guides/content-scripts/using-port.html) or
+[`postMessage`](dev-guide/guides/content-scripts/using-postmessage.html)
+APIs.
 
-It is important to note that unlike "web workers," these workers run in the
+The `Worker` is similar to the [web worker][] interface defined by the W3C.
+But unlike "web workers," these workers run in the
 same process as web content and browser chrome, so code within workers can
 block the UI.
 
-[Worker]:http://www.w3.org/TR/workers/#worker
+[web worker]:http://www.w3.org/TR/workers/#worker
 
 <api name="Worker">
 @class
@@ -27,12 +32,12 @@ are listed below.
 
 **Example**
 
-    var workers = require("content/worker");
+    var workers = require("sdk/content/worker");
     let worker =  workers.Worker({
-      window: require("window-utils").activeWindow,
+      window: require("sdk/window/utils").getMostRecentBrowserWindow(),
       contentScript:
         "self.port.on('hello', function(name) { " +
-        "  self.port.emit('response', window.location); " +
+        "  self.port.emit('response', window.location.href); " +
         "});"
     });
     worker.port.emit("hello", { name: "worker"});
